@@ -16,9 +16,11 @@ The rules over all of it:
   engine's own words are shown, saying why.
 - **Warn, never limit.** Siri confirms a route change ("Go direct?") the
   way a delete is confirmed; nothing refuses.
-- **On-device first.** Apple's on-device model and Vision on the phone;
-  the planner's Claude only where the phone cannot and the pilot is
-  online; no AI at all is a working state.
+- **On-device first, then Apple's cloud, then Claude.** Apple's
+  on-device model and Vision on the phone; Apple's Private Cloud Compute
+  where the phone's model cannot answer (the owner, 2026-11-09: "Yes to AI
+  cloud"); the planner's Claude only where a feature has a Claude path and
+  neither of Apple's could; no AI at all is a working state.
 
 ## What iOS 27 has (read from the 27.2 SDK, Xcode 27.2, 27B52)
 
@@ -65,11 +67,12 @@ branch (`claude/ios27-ai`). Built in order of value to a pilot.
 | Brief | The ranked NOTAMs in plain words ("The NOTAMs in words" under the Brief's NOTAMs), each sentence citing its NOTAM | Foundation Models guided generation (`WordsAnswer`) over the engine's `notams_ranked` and its reasons (`Words/NotamsInWords.swift`) | **On-device only**; hidden where the model can't run | Built (part 2) |
 | Brief | The briefing at a glance and the weather in words | `BriefSummary` (on-device glance from the Go / No-Go), `WordsFor` (planner's Claude, then on-device) | Both | Already there before iOS 27; unchanged |
 | Documents | Handbook performance and weight-and-balance pages, logbook pages and clearance notes read on the phone; the engine on the phone checks the figures (`handbook_read_check`, `logbook_read_check`) as the server's reader has them checked; the assistant reads only where the phone can't | iOS 27 image prompts (`Attachment(CGImage)`), `capabilities.contains(.vision)`, `OCRTool` as the model's tool (device SDK only; the simulator SDK has no `_Vision_FoundationModels`), `@Generable` drafts member for member the assistant's (`Documents/DocumentDrafts.swift`, `OnDeviceDocumentReader.swift`) | **On-device first**, Claude fallback | Built (part 2) |
-| ATC / clearance | A typed or heard clearance said back as the controller would say it, for the engine's `read_clearance` to read; the engine stays the reader | `OnDeviceDocumentReader.said(clearance:)`, guided `ClearanceTextDraft` | On-device | Built and evaluated; not yet on the clearance sheet, which is at its size cap (422 lines) and needs splitting first |
-| Logbook | Remarks drafted from the flown track | Foundation Models over the engine's `logbook_from_track` figures | On-device | Not yet: the planner's draft already fills every figure; remarks are the pilot's |
-| Nav log | "Why this altitude" | Foundation Models over the engine's altitude reasons | On-device | Not yet |
-| In flight | Weather on the route worse than at the Brief, told as a notification | Background refresh + the engine's `weather_along` against the kept briefing, `appEntityIdentifiers` | On-device | Not yet: the gateway's flight watch mails it today; the notification side is ready (`Notifications.tell(about:)`) |
-| Evaluations | The NOTAMs in words (no figure of the model's own; the matter named) on `notamsRanked.json`; a clearance said back read the same by the engine on `clearances.json` | Evaluations framework: `Evaluation`, `Evaluator`, `Metric`, `ArrayLoader` (`WingtipTests/AIEvaluations.swift`) | Simulator where the model is present, else skipped; the fixtures' known answers always | Built (part 2). First run on the iOS 27.2 simulator: no invented figure in 6 of 6; the NOTAM named in 2 of 6, then 4 of 6 after the prompt asked for it (hill-climbing, wwdc2026/335); the clearance read the same in every sample |
+| ATC / clearance | "Said in Full" under the clearance's words: a clearance typed in shorthand or as the recognizer wrote it, said as the controller would say it, offered with what the engine reads in it that it did not before, and put in only on Use These Words; offered only where every number in it is one the words as typed hold (the engine's `tokens` for spoken figures), the engine reads every item it read before the same, and it reads more (`Words/ClearanceInFull.swift`, `Views/ClearanceInFullRow.swift`). The sheet was split first (`ClearanceCraftSection`, `ClearanceSheetParts`), nothing changed | `OnDeviceDocumentReader.said(clearance:)`, guided `ClearanceTextDraft` | On-device, then PCC | Built (part 3) |
+| Logbook | Draft a Remark, as Android's: under Remarks in a logbook entry and in Flight Logged (which gains a Remarks field), from the entry's columns as typed and, for a flight drawn from its track, the approaches, holds and landings the engine found; into the field for the pilot to keep, change or clear, saved only with Save or Log (`Logbook/RemarkDraft.swift`, `DraftRemarkButton.swift`) | Guided `WordsAnswer` (`WordsKind.remark`), `Words.checked`, `NumberGuard` | On-device, then PCC | Built (part 3) |
+| Profile / altitude wheel | "Why This Altitude?" under How the Altitude Was Chosen: the altitude flown and the engine's direction-of-flight rule on the phone (`is_eastbound`, `legal_cruising_altitudes`; 14 CFR 91.159(a), 91.179(b)) in the prompt, the floor (91.119; 91.177 IFR), ceiling, clouds (91.155), Class B (91.131), freezing level, the plans' winds, fuel and oxygen (91.211) and the cautions (`own_altitude_caution`) by three tools; the engine's own sentences where the model's do not pass (`Words/AltitudeWhy.swift`, `AltitudeWhyTools.swift`, `Views/AltitudeWhySection.swift`) | Tool calling + guided `WordsAnswer`, `FigureLog`, `Words.checked`, `NumberGuard` | On-device, then PCC | Built (part 3) |
+| In flight | Weather on the route worse than at the Brief: every quarter hour while the app runs and on iOS's background refresh (`BGAppRefreshTask` `app.wingtipmaps.weather-watch`), the planner's briefing for the kept route fetched again and held against the one briefed by the engine's new `weather_worse` (a METAR's flight category worse and worse than VFR, AIM 7-1-7; a SIGMET, AIRMET or G-AIRMET newly on the route, AIM 7-1-6; the TAF where the flight lands worse for the flight's time there); each change told once (its key), as a time-sensitive notification with the fields and the flight as `appEntityIdentifiers`, and on the Live Activity; nothing where the pilot has the app's alerts off in Settings; with the app in front the Brief is refreshed instead. Permission is asked on the Brief (`WeatherWatch/`) | `UNMutableNotificationContent.appEntityIdentifiers`, ActivityKit, BackgroundTasks | Phone + planner's briefing | Built (part 3) |
+| Everywhere | Apple's Private Cloud Compute after the on-device model for all of the above, Ask's phone path and the glance (`Words/AppleModels.swift`) | `PrivateCloudComputeLanguageModel` (iOS 27), `LanguageModelSession(model:tools:instructions:)` | Apple's servers | Built, off until the entitlement (below) |
+| Evaluations | The NOTAMs in words (no figure of the model's own; the matter named) on `notamsRanked.json`; a clearance said back read the same by the engine on `clearances.json`; a remark (no figure of its own, a remark survives the guard, a field of the route named) on `logbookCsv.json`'s entries; why this altitude (no figure of its own, the model's words survive, the direction or rule named) on `altitude.json`'s legal cases | Evaluations framework: `Evaluation`, `Evaluator`, `Metric`, `ArrayLoader` (`WingtipTests/AIEvaluations.swift`, `AIEvaluationsMore.swift`) | Simulator where the model is present, else skipped; the fixtures' known answers always | Built (parts 2 and 3). On the iOS 27.2 simulator, 2026-11-09: the NOTAMs, no invented figure in 6 of 6, the NOTAM named 2 of 6, then 4 of 6 after the prompt asked for it (hill-climbing, wwdc2026/335), 4 of 6 again on the re-run, and 5 of 6 twice once the prompt spelled out the contractions, so its bar is back at 80%; the clearance read the same in 13 of 13, 12 of 13, then 13 of 13 (bar 80%); the remark, no invented figure in 3 of 3, a remark in 2 of 3, a route field named in 2 of 3, on two runs (bars 50%); why this altitude, no invented figure in 8 of 8, the model's words kept in 6 of 8 and the rule or direction named in 0 of 8 with the rule offered only by a tool, then 5 of 8 and 5 of 8, and 4 and 4 of 8 in the whole suite's run, with it in the prompt (the engine's own sentences given where the words were not kept; bars 50%). Private Cloud Compute is not scored: it is off until the entitlement |
 
 ## What was left out, and why
 
@@ -101,10 +104,45 @@ branch (`claude/ios27-ai`). Built in order of value to a pilot.
   `_Vision_FoundationModels` overlay, which the iOS 27.2 device SDK has
   and the simulator SDK does not; the simulator build reads a photo with
   the model alone, and a phone gives it the tool.
-- **Private Cloud Compute (`PrivateCloudComputeLanguageModel`).** Apple's
-  bigger model off the phone, free for small developers (WWDC26 guide).
-  It is a second server path beside the planner's Claude; the owner's
-  rule is on-device first, so it is not added without his word.
+- **Claude where Private Cloud Compute cannot serve.** The order is
+  on-device, then Private Cloud Compute, then Claude. Claude stays for:
+  a photographed page where neither of Apple's models takes images (the
+  assistant's reader); Ask under Automatic with a signal, which goes to
+  the planner's assistant first because its tools (plan a flight, the
+  briefing, the Go / No-Go, divert) are the planner's and Apple's models
+  have only the phone's five; and the Brief's weather and risk words
+  (`WordsFor`, planner first), which were never on-device features. The
+  NOTAMs in words, the clearance said in full, the remark and why this
+  altitude have no Claude path: with neither of Apple's models they are
+  hidden, as before.
+
+## Private Cloud Compute
+
+`PrivateCloudComputeLanguageModel` (iOS 27.2 SDK, FoundationModels; WWDC26
+"Build with the new Apple Foundation Model on Private Cloud Compute",
+session 319) is Apple's larger model on Apple's servers: 32K tokens of
+context, tool calling and guided generation as on the phone, no API key
+or account, and, by Apple's design, a request's data used for that
+request only and never stored. `AppleModels` asks the on-device model
+first and Private Cloud Compute where the phone's cannot run, fails, or
+gives words every sentence of which the guard drops; the same
+`Words.checked` and `NumberGuard` hold both, and the caption says "Apple's
+Private Cloud Compute". A photo goes there only where its
+`capabilities` include `.vision`.
+
+The terms (developer.apple.com/private-cloud-compute, read 2026-11-09):
+free to developers in the App Store Small Business Program with fewer
+than 2 million first-time downloads across their apps, with the Private
+Cloud Compute entitlement assigned to the account (requested at
+developer.apple.com/contact/request/private-cloud-compute); past the
+threshold or out of the program, six months to move off it; a daily
+limit per iCloud account (raised by iCloud+), which the app reads
+(`quotaUsage.isLimitReached`) before asking. Apple's pages do not name
+the entitlement's key; a developer forum report names
+`com.apple.developer.private-cloud-compute`, unconfirmed. Until the owner
+has the entitlement, Info.plist's `WingtipPrivateCloudCompute` is NO and
+the model is never made (`AppleModels.cloudEnabled`): the owner's to-do
+is to request it, then set the key YES and add the entitlement.
 
 ## What only a real iPhone can show
 

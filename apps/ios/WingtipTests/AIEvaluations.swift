@@ -19,12 +19,13 @@ final class AIEvaluationsTests: XCTestCase {
     /// the figures. The rest are quality, held where they have got to: on
     /// the iOS 27.2 simulator (2026-11-09) the NOTAMs' words named what
     /// each NOTAM does in 2 of 6 samples, then in 4 of 6 once the prompt
-    /// asked for it (Words.swift, OnDeviceWords.instructions(.notams)); a
-    /// prompt change that drops it below half (left for the model's run to
-    /// run variance) fails here. The clearance said back
-    /// read the same in every sample.
+    /// asked for it (Words.swift, OnDeviceWords.instructions(.notams)), 4 of
+    /// 6 again on the re-run, and 5 of 6 once the prompt had the NOTAM's
+    /// contractions spelled out (RWY, TWY, CLSD), so the bar is back at the
+    /// floor. The clearance said back read the same in 13 of 13 samples,
+    /// then 12 of 13.
     static let floor = 0.8
-    static let namesFloor = 0.5
+    static let namesFloor = 0.8
 
     private func modelOrSkip() throws {
         if let why = OnDeviceWords.unavailableWhy { throw XCTSkip("No on-device model here: \(why)") }
@@ -37,6 +38,7 @@ final class AIEvaluationsTests: XCTestCase {
         let evaluation = NotamWordsEvaluation(samples: try NotamWordsEvaluation.samples())
         XCTAssertFalse(evaluation.samples.isEmpty)
         let result = try await evaluation.run()
+        print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
         XCTAssertEqual(result.aggregateValue(.mean(of: NotamWordsEvaluation.noInvented)), 1, result.groupedSummary)
         XCTAssertGreaterThanOrEqual(result.aggregateValue(.mean(of: NotamWordsEvaluation.namesIt)), Self.namesFloor, result.groupedSummary)
     }
@@ -47,6 +49,7 @@ final class AIEvaluationsTests: XCTestCase {
         let evaluation = ClearanceSaidEvaluation(samples: try ClearanceSaidEvaluation.samples())
         XCTAssertFalse(evaluation.samples.isEmpty)
         let result = try await evaluation.run()
+        print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
         XCTAssertGreaterThanOrEqual(result.aggregateValue(.mean(of: ClearanceSaidEvaluation.sameReading)), Self.floor, result.groupedSummary)
     }
 

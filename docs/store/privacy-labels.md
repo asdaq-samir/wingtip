@@ -85,6 +85,13 @@ Not collected, though the app uses them on the device:
   photographed page is read on the phone where it can be (iOS 27,
   `Documents/OnDeviceDocumentReader.swift`), else sent to the assistant
   to read and not kept. Nothing new is collected.
+- **Apple's Private Cloud Compute** (`Words/AppleModels.swift`, iOS 27,
+  off until the entitlement is assigned): where the on-device model
+  cannot answer, the same words, figures or page go to Apple's Private
+  Cloud Compute, which uses them for the request only and never stores
+  them. Apple is the processor and nothing reaches the developer, so it
+  is not "collected" in Apple's sense and no label changes; App Store
+  Connect's answers stay as above.
 
 ### The privacy manifest
 

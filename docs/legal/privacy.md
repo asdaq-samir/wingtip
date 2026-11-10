@@ -68,7 +68,9 @@ Some features are written by Claude, an AI model made by Anthropic: Ask, the wri
 
 We do not send your name, email address or account to Anthropic. We do not keep your Ask conversations: each one stays on your device. Anthropic receives this as our service provider and handles it under its commercial terms. What Claude writes can be wrong; the app says so where it shows it.
 
-Some phones write a few of these on the device instead, with Apple's own on-device model, where the iPhone has one; nothing is sent for those. On an iPhone with Apple Intelligence, the NOTAMs in plain words and what a NOTAM means for your flight are written only on the phone, and a photographed page is read on the phone first (iOS 27).
+Some phones write a few of these on the device instead, with Apple's own on-device model, where the iPhone has one; nothing is sent for those. On an iPhone with Apple Intelligence, the NOTAMs in plain words and what a NOTAM means for your flight, a drafted logbook remark, a clearance said in full and why your plan flies its altitude are written by Apple's models, and a photographed page is read on the phone first (iOS 27).
+
+Where the iPhone's own model cannot do one of these (it is still downloading, it cannot see a photo, or its answer did not pass our checks), the app may ask Apple's Private Cloud Compute instead, before it would ask Claude: Apple's larger model on Apple's servers, which Apple designs so that what is sent is used only to answer and is never stored, and which neither we nor Anthropic receive. What goes there is what that feature needs: the NOTAMs and why each matters, the logbook entry's columns and what the app found in your track, the clearance's words, the reasons for your altitude, your question to Ask with the figures the app worked out for it, the Go / No-Go's findings, or the photographed page. Apple counts it against your iCloud account's daily allowance. Claude is asked after that only for a page neither of Apple's models can read, for Ask when it needs our planner's look-ups, and for the Brief's weather and risk words, as above.
 
 On an Android phone that has Google's Gemini Nano (through Android's AICore; Setup's On-Phone AI says whether yours does), the app does these on the phone first and sends nothing to Anthropic for them: Ask, the words beside the Brief, an airport's weather, the route's NOTAMs, the nav log and the Coach's debriefs, a drafted logbook remark, and the reading of a photographed page (its text is read by Google's on-device text recognition, then by Gemini Nano). Ask's look-ups still ask our planner for the airport, the route or the NOTAMs, as the screens do. Where the phone has no Gemini Nano, these come from Claude as above, or not at all when you are signed out.
 
@@ -93,6 +95,7 @@ There is no analytics or advertising kit in any of the apps, and no third party 
 ## Who else receives anything
 
 - **Anthropic,** for the features Claude writes, as above.
+- **Apple,** on an iPhone, for the features its Private Cloud Compute writes where the phone's own model cannot, as above; Apple uses it only to answer and does not keep it.
 - **Our email sender** (Amazon SES), which delivers the email we send: your sign-in link, the reminders you turn on, flight watch's changes, and the email between you and an instructor you ask in.
 - **Your instructor or student,** once you ask them in: your name and address, the experience and endorsements in your logbook, your knowledge test codes, and the saved flights you put to them. Either of you can end it.
 - **Google and Apple,** if you sign in with them; they tell us your name, email and identifier, and know that you signed in.

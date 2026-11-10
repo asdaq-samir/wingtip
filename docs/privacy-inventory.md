@@ -62,7 +62,39 @@ longer than it takes to answer the request.
   mean for me" and the Brief's "NOTAMs in words" are written by Apple's
   on-device model from the NOTAMs and the engine's reasons
   (`Intents/AskIntents.swift`, `Words/NotamsInWords.swift`); nothing is
-  sent, and there is no server path for them.
+  sent to us or to Anthropic for them. The same model drafts a logbook
+  remark from the entry (`Logbook/RemarkDraft.swift`), says a clearance in
+  full for the engine to read (`Words/ClearanceInFull.swift`) and says why
+  the plan flies its altitude (`Words/AltitudeWhy.swift`).
+- **Apple's Private Cloud Compute on the iPhone** (`Words/AppleModels.swift`,
+  iOS 27, the owner's "Yes to AI cloud", 2026-11-09; off until Apple
+  assigns the account the entitlement, Info.plist
+  `WingtipPrivateCloudCompute`). Where the on-device model cannot answer
+  (still downloading, a page it cannot see, an answer it could not give
+  or whose every sentence the guard dropped), the same ask goes to
+  Apple's Private Cloud Compute before any Claude path: the NOTAMs and
+  their engine reasons; a NOTAM asked about; the logbook entry's columns
+  and, for a flight drawn from its track, the approaches, holds and
+  landings found in it; a clearance's words as typed or heard; the
+  altitude's reasons (the course, the floor, the ceiling, the clouds,
+  Class B, the freezing level, the plans' winds and fuel); Ask's question
+  with the figures its tools give on the phone; the Go / No-Go's findings
+  for the glance; and a photographed page where the phone's model cannot
+  read it. Apple's design keeps nothing: a request's data is used for that
+  request only and never stored, needs no account or key of ours, and is
+  checked by outside researchers (WWDC26 session 319). Apple counts it
+  against the pilot's iCloud account's daily limit. Apple is the
+  processor; we receive nothing more than with the on-device model.
+  Claude is then asked only where a feature has a Claude path (the
+  photographed page, through the assistant, where neither of Apple's
+  models can see it; Ask under Automatic with a signal, whose planner
+  tools Apple's models do not have; the Brief's weather and risk words).
+- **The route's weather watched on the iPhone** (`WeatherWatch/`): the
+  kept route's briefing is fetched again from the planner every quarter
+  hour while the app runs and on iOS's background refresh, as the Brief
+  fetches it; it is compared on the phone by the engine and nothing new
+  is sent or kept on a server. The keys of the changes told stay on the
+  phone (UserDefaults).
 - **Gemini Nano on Android** (docs/android-ai.md). Where the phone has
   it (ML Kit's Prompt API over AICore, `ai/Nano.kt`), Ask
   (`ai/OnPhoneAsk.kt`), In Plain Words (`ai/AiWords.kt`), a drafted
