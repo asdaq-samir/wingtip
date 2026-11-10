@@ -235,9 +235,8 @@ export default function ProcedureMenu({
         align="start"
         side="bottom"
         className="flex h-[26rem] w-80 flex-col gap-3 overflow-y-auto p-3"
-        // No Back: the close goes back a page where one is pushed, at the
-        // owner's ask ("remove the back buttons, because close button should
-        // behave as the back button", 2026-10-22).
+        // No Back: the close goes back a page where one is pushed, at the owner's ask
+        // ("remove the back buttons, because close button should behave as the back button", 2026-10-22).
         action={
           <CloseButton
             label={page ? "Back" : "Close"}

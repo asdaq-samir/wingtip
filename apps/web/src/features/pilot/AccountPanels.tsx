@@ -1,24 +1,21 @@
 import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { FormDateField, FormNumberField } from "../../components/FormFields";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { numberOrNull, optionalHours, pastDay, requiredPastDay, textOrNull, z } from "./formSchema";
+import { numberOrNull, optionalHours, pastDay, textOrNull, z } from "./formSchema";
 import { done } from "../../lib/doneNote";
 import { Info, Plus } from "lucide-react";
 import FieldHit from "../../components/FieldHit";
 import RowField from "../../components/RowField";
-import { invalidProps } from "../../lib/fieldError";
 import { ariaInvalid } from "../../components/ui/ariaInvalid";
 import IconButton from "../../components/IconButton";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
-import { DateField } from "../../components/ui/date-field";
 import { Input } from "../../components/ui/input";
-import { NumberField } from "../../components/ui/number-field";
 import NumberRow from "./NumberRow";
 import { useAirplanes } from "./airplanes/useAirplanes";
 import { Spinner } from "../../components/ui/spinner";
-import PullDown from "../../components/PullDown";
 import { ListChoices, ListGroup, ListRow } from "../../components/GroupedList";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../components/ResponsivePopover";
 import { useConfirm } from "../../components/useConfirm";
@@ -27,7 +24,7 @@ import ChecklistPage from "../../components/ChecklistPage";
 import SquawksPage from "./SquawksPage";
 import { aircraftKey, choiceOf } from "../../lib/aircraftChoice";
 import { api } from "../../lib/api/client";
-import type { Aircraft, AircraftRequest, HandbookFigures, InspectionsRequest, VorCheckRequest } from "../../lib/api/types";
+import type { Aircraft, AircraftRequest, HandbookFigures, InspectionsRequest } from "../../lib/api/types";
 import { HandbookPhotoRow, mergeHandbook, type ConfirmedHandbook } from "../document-photo";
 import { cruiseReferenceFt } from "../../lib/performance";
 import { usePreferences } from "../../lib/preferences";
@@ -36,10 +33,10 @@ import { altFt } from "../../lib/format";
 import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
 import { aircraftProfilesQuery } from "../../lib/queryClient";
-import { callEngine } from "../../lib/engine/engine";
 import TogglePill from "../../components/TogglePill";
 import { daysBetween, daysWords, dueTone } from "./paperwork";
 import DueItemsGroup from "./DueItemsGroup";
+import { VorCheckGroup } from "./VorCheckGroup";
 
 // Mirrors services/gateway's own AircraftRequest validation
 // (@NotBlank/@Positive in dto/AircraftRequest.java) so a bad value is
@@ -140,180 +137,6 @@ function formOf(a: AircraftRequest): AircraftFormValues {
  *  form as a new one's), and delete. The picker under the route offers
  *  the same choice. The Library's (PilotPanel), shown only to someone
  *  signed in: it says once, for all three, what signing in keeps. */
-/** The ways a VOR is checked for IFR (14 CFR 91.171(b), (c)); the error
- *  each allows is the engine's (`vor_check_limit_deg`). */
-const VOR_CHECKS: { value: VorCheckRequest["kind"]; label: string }[] = [
-  { value: "VOT", label: "VOT" },
-  { value: "REPAIR_STATION", label: "Repair station signal" },
-  { value: "GROUND", label: "Ground checkpoint" },
-  { value: "AIRBORNE", label: "Airborne checkpoint" },
-  { value: "RADIAL", label: "Airway radial in flight" },
-  { value: "DUAL", label: "Dual receivers" },
-];
-
-// The server's own limits on a VOR check (VorCheckRequest.java): the day
-// not ahead, the place at most 80 characters, and an error within 30° --
-// a typing slip past that, not a reading; 91.171's own 4° and 6° are
-// the check's standing, said once it is recorded, never refused.
-const vorCheckSchema = z.object({
-  checkedOn: requiredPastDay("The day is required"),
-  kind: z.enum(["VOT", "REPAIR_STATION", "GROUND", "AIRBORNE", "RADIAL", "DUAL"]),
-  place: z.string().trim().max(80, "At most 80 characters"),
-  errorDeg: z
-    .string()
-    .trim()
-    .min(1, "The error is required")
-    .refine((value) => Number.isFinite(Number(value)) && Math.abs(Number(value)) <= 30, "Within 30° either way"),
-});
-type VorCheckValues = z.infer<typeof vorCheckSchema>;
-
-/**
- * The airplane's VOR check for IFR (14 CFR 91.171): the last one and how
- * long it is good for -- 30 days, its error within its kind's limit (4
- * degrees at a VOT, a repair station's signal, a ground checkpoint or
- * between two receivers; 6 at an airborne checkpoint or on a radial) --
- * and the next recorded with the date, kind, place and error 91.171(d)
- * asks for. Its own Record, apart from the airplane's Save.
- */
-function VorCheckGroup({ aircraft }: { aircraft: Aircraft }) {
-  const queryClient = useQueryClient();
-  const id = useId();
-  const {
-    register,
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<VorCheckValues>({
-    resolver: zodResolver(vorCheckSchema),
-    defaultValues: { checkedOn: localDay(), kind: "VOT", place: "", errorDeg: "0" },
-  });
-  const record = useMutation({
-    mutationFn: (request: VorCheckRequest) => api.aircraft.vorCheck(aircraft.id, request),
-    onSuccess: () => {
-      done("VOR Check Saved");
-      void queryClient.invalidateQueries({ queryKey: ["aircraft"] });
-    },
-  });
-  // Inside the airplane's own form, so its Record is a button, not a
-  // second <form>: handleSubmit checks the fields, then sends them, or
-  // focuses the first one wrong.
-  const onRecord = handleSubmit((values) =>
-    record.mutate({
-      checkedOn: values.checkedOn,
-      kind: values.kind,
-      place: values.place.trim() || null,
-      errorDeg: Number(values.errorDeg),
-    }),
-  );
-  const last = aircraft.vorCheck;
-  const today = localDay();
-  const good = !!last && last.withinLimit && last.goodThrough >= today;
-  return (
-    // For IFR by VOR: every 30 days, within 4° at a VOT, a repair station's
-    // signal, a ground checkpoint or between two receivers, within 6° at an
-    // airborne checkpoint or on an airway's radial (14 CFR 91.171).
-    <ListGroup title="VOR check">
-      <ListRow
-        title="Last check"
-        description={
-          last
-            ? `${last.checkedOn} · ${VOR_CHECKS.find((k) => k.value === last.kind)?.label ?? last.kind}${last.place ? ` · ${last.place}` : ""} · ${last.errorDeg}°`
-            : "None recorded"
-        }
-        value={
-          !last ? undefined : (
-            <span className={cn(good ? FINDING_TONE.ok : FINDING_TONE.stop)} data-testid="vor-check-standing">
-              {!last.withinLimit ? `Over ${last.limitDeg}°` : good ? `To ${last.goodThrough}` : `Ended ${last.goodThrough}`}
-            </span>
-          )
-        }
-      />
-      <ListRow id={`${id}-on`} title="Checked on">
-        <RowField id={`${id}-on`} error={errors.checkedOn?.message}>
-          <Controller
-            control={control}
-            name="checkedOn"
-            render={({ field }) => (
-              <DateField
-                id={`${id}-on`}
-                className="h-8 w-40"
-                max={today}
-                value={field.value}
-                onChange={field.onChange}
-                onBlur={field.onBlur}
-                {...ariaInvalid(`${id}-on`, errors.checkedOn?.message)}
-                aria-label="VOR check date"
-                data-testid="vor-check-date"
-              />
-            )}
-          />
-        </RowField>
-      </ListRow>
-      <ListRow title="How">
-        <Controller
-          control={control}
-          name="kind"
-          render={({ field }) => (
-            <PullDown
-              label="How the VOR was checked"
-              value={field.value}
-              testId="vor-check-kind"
-              options={VOR_CHECKS.map((k) => ({
-                value: k.value,
-                label: `${k.label} (±${callEngine("vor_check_limit_deg", { kind: k.value })}°)`,
-              }))}
-              onChange={field.onChange}
-            />
-          )}
-        />
-      </ListRow>
-      <ListRow id={`${id}-place`} title="Where">
-        <RowField id={`${id}-place`} error={errors.place?.message}>
-          <FieldHit htmlFor={`${id}-place`}>
-            <Input
-              id={`${id}-place`}
-              className="h-8 w-40 text-right"
-              placeholder="KDLH VOT"
-              {...register("place")}
-              {...invalidProps(`${id}-place`, errors.place?.message)}
-              aria-label="Where the VOR was checked"
-            />
-          </FieldHit>
-        </RowField>
-      </ListRow>
-      <ListRow id={`${id}-error`} title="Bearing error">
-        <RowField id={`${id}-error`} error={errors.errorDeg?.message}>
-          <FieldHit htmlFor={`${id}-error`}>
-            <Controller
-              control={control}
-              name="errorDeg"
-              render={({ field }) => (
-                <NumberField
-                  id={`${id}-error`}
-                  className="h-8 w-24"
-                  inputClassName="text-right"
-                  value={field.value === "" ? null : Number(field.value)}
-                  onChange={(v) => field.onChange(v == null ? "" : String(v))}
-                  onBlur={field.onBlur}
-                  {...ariaInvalid(`${id}-error`, errors.errorDeg?.message)}
-                  aria-label="Bearing error in degrees"
-                  data-testid="vor-check-error"
-                />
-              )}
-            />
-          </FieldHit>
-        </RowField>
-      </ListRow>
-      <ListRow
-        title={<span className="font-medium text-tint">Record check</span>}
-        onClick={() => void onRecord()}
-        disabled={record.isPending}
-        data-testid="vor-check-record"
-      />
-    </ListGroup>
-  );
-}
-
 /** The inspections' dates, each with the rule that asks for it. */
 const DATED: {
   key: "annualOn" | "staticCheckOn" | "transponderCheckOn" | "eltInspectedOn";
@@ -439,22 +262,15 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
           }
         >
           <RowField id={`${id}-${d.key}`} error={errors[d.key]?.message}>
-            <Controller
+            <FormDateField
               control={control}
               name={d.key}
-              render={({ field }) => (
-                <DateField
-                  id={`${id}-${d.key}`}
-                  aria-label={d.title}
-                  className="h-8 w-40"
-                  max={today}
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  {...ariaInvalid(`${id}-${d.key}`, errors[d.key]?.message)}
-                  data-testid={`inspection-${d.key}-date`}
-                />
-              )}
+              id={`${id}-${d.key}`}
+              aria-label={d.title}
+              className="h-8 w-40"
+              max={today}
+              {...ariaInvalid(`${id}-${d.key}`, errors[d.key]?.message)}
+              data-testid={`inspection-${d.key}-date`}
             />
           </RowField>
         </ListRow>
@@ -480,20 +296,13 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
           </>
         }
       >
-        <Controller
+        <FormDateField
           control={control}
           name="eltBatteryDueOn"
-          render={({ field }) => (
-            <DateField
-              id={`${id}-battery`}
-              aria-label="ELT battery replace by"
-              className="h-8 w-40"
-              value={field.value}
-              onChange={field.onChange}
-              onBlur={field.onBlur}
-              data-testid="inspection-eltBattery-date"
-            />
-          )}
+          id={`${id}-battery`}
+          aria-label="ELT battery replace by"
+          className="h-8 w-40"
+          data-testid="inspection-eltBattery-date"
         />
       </ListRow>
       {/* Whether the 100-hour is owed at all: carrying anyone for hire, or
@@ -535,22 +344,15 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
       >
         <RowField id={`${id}-at`} error={errors.hundredHourAtHours?.message}>
           <FieldHit htmlFor={`${id}-at`}>
-            <Controller
+            <FormNumberField
               control={control}
               name="hundredHourAtHours"
-              render={({ field }) => (
-                <NumberField
-                  id={`${id}-at`}
-                  minValue={0}
-                  className="h-8 w-28"
-                  inputClassName="text-right"
-                  value={field.value === "" ? null : Number(field.value)}
-                  onChange={(v) => field.onChange(v == null ? "" : String(v))}
-                  onBlur={field.onBlur}
-                  {...ariaInvalid(`${id}-at`, errors.hundredHourAtHours?.message)}
-                  data-testid="inspection-hundredHourAt"
-                />
-              )}
+              id={`${id}-at`}
+              minValue={0}
+              className="h-8 w-28"
+              inputClassName="text-right"
+              {...ariaInvalid(`${id}-at`, errors.hundredHourAtHours?.message)}
+              data-testid="inspection-hundredHourAt"
             />
           </FieldHit>
         </RowField>
@@ -558,22 +360,15 @@ function InspectionsGroup({ aircraft }: { aircraft: Aircraft }) {
       <ListRow id={`${id}-now`} title="Hours now">
         <RowField id={`${id}-now`} error={errors.hoursNow?.message}>
           <FieldHit htmlFor={`${id}-now`}>
-            <Controller
+            <FormNumberField
               control={control}
               name="hoursNow"
-              render={({ field }) => (
-                <NumberField
-                  id={`${id}-now`}
-                  minValue={0}
-                  className="h-8 w-28"
-                  inputClassName="text-right"
-                  value={field.value === "" ? null : Number(field.value)}
-                  onChange={(v) => field.onChange(v == null ? "" : String(v))}
-                  onBlur={field.onBlur}
-                  {...ariaInvalid(`${id}-now`, errors.hoursNow?.message)}
-                  data-testid="inspection-hoursNow"
-                />
-              )}
+              id={`${id}-now`}
+              minValue={0}
+              className="h-8 w-28"
+              inputClassName="text-right"
+              {...ariaInvalid(`${id}-now`, errors.hoursNow?.message)}
+              data-testid="inspection-hoursNow"
             />
           </FieldHit>
         </RowField>

@@ -137,9 +137,8 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   when.setHours(15, 0, 0, 0);
   const pad = (n: number) => String(n).padStart(2, "0");
   const isoDay = `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}`;
-  // The date picker: the day from React Aria's calendar in its popover
-  // (the next month's, when the day after tomorrow falls there), then
-  // the time in the box beside it. No native datetime-local control.
+  // The date picker: the day from React Aria's calendar in its popover (the next month's, when the day
+  // after tomorrow falls there), then the time in the box beside it. No native datetime-local control.
   expect(await page.locator('input[type="datetime-local"]').count()).toBe(0);
   await controlsInSight(page);
   await page.getByTestId("depart-date").click();

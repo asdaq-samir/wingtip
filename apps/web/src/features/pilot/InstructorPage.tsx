@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { FormDateField } from "../../components/FormFields";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, X } from "lucide-react";
 import { cn } from "cn";
@@ -9,11 +10,9 @@ import ConsoleClose from "../../components/ConsoleClose";
 import FieldHit from "../../components/FieldHit";
 import RowField from "../../components/RowField";
 import { invalidProps } from "../../lib/fieldError";
-import { ariaInvalid } from "../../components/ui/ariaInvalid";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import Segmented from "../../components/Segmented";
 import { Button } from "../../components/ui/button";
-import { DateField } from "../../components/ui/date-field";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
 import { api } from "../../lib/api/client";
@@ -143,21 +142,14 @@ function CertificateForm({ instructor, onDone }: { instructor: Instructor; onDon
         </ListRow>
         <ListRow id={ids.until} title={untilKind === "RE" ? "Recent experience through" : "Certificate expires"}>
           <RowField id={ids.until} error={errors.until?.message}>
-            <Controller
+            <FormDateField
               control={control}
               name="until"
-              render={({ field }) => (
-                <DateField
-                  id={ids.until}
-                  aria-label={untilKind === "RE" ? "Recent experience through" : "Certificate expires"}
-                  value={field.value}
-                  onChange={field.onChange}
-                  onBlur={field.onBlur}
-                  className="h-8 w-40"
-                  {...ariaInvalid(ids.until, errors.until?.message)}
-                  data-testid="cfi-until"
-                />
-              )}
+              id={ids.until}
+              aria-label={untilKind === "RE" ? "Recent experience through" : "Certificate expires"}
+              className="h-8 w-40"
+              error={errors.until?.message}
+              data-testid="cfi-until"
             />
           </RowField>
         </ListRow>

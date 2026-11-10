@@ -652,11 +652,9 @@ export default function RouteBox({
             }
           }}
         >
-          {/* The search bar's field, as Maps' is with no route: its grey,
-              no line round it, its corners round, the pills on it in the
-              sheet's own colour -- one line tall, a second as the route
-              needs it, at the pilot's ask, where it was two however short
-              the route and a short one left a line of grey empty under it. */}
+          {/* The search bar's field, as Maps' is with no route: its grey, no line round it, its corners round, the
+             pills on it in the sheet's own colour -- one line tall, a second as the route needs it, at the pilot's
+             ask, where it was two however short the route and a short one left a line of grey empty under it. */}
           <InputGroup
             ref={setBoxEl}
             onMouseDown={(e) => {
@@ -675,12 +673,9 @@ export default function RouteBox({
             data-testid="route-box"
             data-tip="route"
           >
-            {/* The pills in one row that slides sideways under a finger
-                when the route is longer than the box (the owner,
-                2026-11-04), as ForeFlight's flight plan box does; the end
-                faded where it runs on, so a point past it reads as there.
-                A drag up or down on it is the sheet's (useSheetDrag), across
-                is the row's. */}
+            {/* The pills in one row that slides sideways under a finger when the route is longer than the box (the
+               owner, 2026-11-04), as ForeFlight's flight plan box does; the end faded where it runs on, so a point
+               past it reads as there. A drag up or down on it is the sheet's (useSheetDrag), across is the row's. */}
             <div
               ref={slide}
               className={cn(

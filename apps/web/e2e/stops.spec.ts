@@ -907,9 +907,8 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
     }
     await expect(add).toBeVisible({ timeout: 3000 });
   }).toPass({ timeout: slow(15000) });
-  // What it is beside its ident, where it is on a line of its own: in its
-  // popup over the chart, or on a phone its card in the map's sheet
-  // (MapPopup), its name and line in its head beside its close.
+  // What it is beside its ident, where it is on a line of its own: in its popup over the chart, or
+  // on a phone its card in the map's sheet (MapPopup), its name and line in its head beside its close.
   const popup = page.locator(".maplibregl-popup, [data-sheet-card]");
   await expect(popup.getByText("VFR waypoint", { exact: true })).toBeVisible();
   await expect(popup.getByText("3 nm SW of Campbell", { exact: true })).toBeVisible();

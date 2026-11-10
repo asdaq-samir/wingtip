@@ -5,7 +5,7 @@ import TabBar, { type BarTab } from "../../components/TabBar";
 import type { PanelTab } from "./hooks/useTabCards";
 import { MAX_STOPS, routeName } from "../../lib/identSchema";
 import type { WorkspaceProps } from "../shell";
-import { ShareMenu } from "./shareMenuChunk";
+import { ShareMenu } from "./ShareMenuLazy";
 import { RouteShareMenu, type RouteCard } from "../../lib/openCards";
 import { CardHead } from "../../components/PanelCard";
 import type { BriefingPart } from "./components/briefing/sections";
@@ -538,47 +538,41 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     ],
   );
 
-  // On its own chunk with the menus it opens (shareMenuChunk), its room
-  // kept until it is in.
   const shareMenu = (align: "start" | "end", testId?: string, card?: RouteCard) => (
-    <Suspense fallback={<div className={card === undefined ? "size-8 shrink-0" : "size-9 shrink-0"} />}>
-      <ShareMenu
-        align={align}
-        testId={testId}
-        card={card}
-        planned={planned}
-        course={course}
-        selected={selected}
-        altitudeFt={s.nav?.altitude_ft ?? undefined}
-        routed={routed}
-        local={!!s.local}
-        fileable={fileable}
-        onFile={fileFlightPlan}
-        saving={(askReview) => (
-          <Suspense fallback={null}>
-            <SaveFlightButton {...flightToSave} />
-            <ReviewAskItem flight={flightToSave} onAsk={askReview} />
-          </Suspense>
-        )}
-        reviewSheet={(done) => (
-          <Suspense fallback={null}>
-            <ReviewAskSheet flight={flightToSave} onDone={done} />
-          </Suspense>
-        )}
-        // Plan again in the route's own menu, at the owner's pick ("A") to
-        // keep the route box's row on one line; Share marked where it is due.
-        planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
-        onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
-        onNavLog={card === undefined && routed && course ? openNavLogCard : undefined}
-      />
-    </Suspense>
+    <ShareMenu
+      align={align}
+      testId={testId}
+      card={card}
+      planned={planned}
+      course={course}
+      selected={selected}
+      altitudeFt={s.nav?.altitude_ft ?? undefined}
+      routed={routed}
+      local={!!s.local}
+      fileable={fileable}
+      onFile={fileFlightPlan}
+      saving={(askReview) => (
+        <Suspense fallback={null}>
+          <SaveFlightButton {...flightToSave} />
+          <ReviewAskItem flight={flightToSave} onAsk={askReview} />
+        </Suspense>
+      )}
+      reviewSheet={(done) => (
+        <Suspense fallback={null}>
+          <ReviewAskSheet flight={flightToSave} onDone={done} />
+        </Suspense>
+      )}
+      // Plan again in the route's own menu, at the owner's pick ("A") to
+      // keep the route box's row on one line; Share marked where it is due.
+      planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
+      onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
+      onNavLog={card === undefined && routed && course ? openNavLogCard : undefined}
+    />
   );
 
-  // The route's Share menu for its cards' heads (CardClose): the Brief's,
-  // the nav log's and the profile's.
-  const routeShare = (card: RouteCard) => shareMenu("start", "card-share", card);
+  // The route's Share menu for its cards' heads (CardClose).
   return (
-    <RouteShareMenu.Provider value={routeShare}>
+    <RouteShareMenu.Provider value={(card: RouteCard) => shareMenu("start", "card-share", card)}>
       {children({
         // The map stays mounted beside the briefing (the arrow walk still
         // pans it) but stays off the paper: the drawer is the printed page.

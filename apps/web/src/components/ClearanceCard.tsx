@@ -101,12 +101,10 @@ function Line({ name, children }: { name: string; children: ReactNode }) {
 }
 
 /**
- * One of the card's four rows: its name at the left, where it stands at
- * the right, a control of its own beside it (a microphone, Enter Route)
- * and its detail folded under, opened by a tap on the row (shadcn's
- * Collapsible on a ListRow, as the airport card folds its fuel remarks).
- * The row's own height is its hit area (a ListRow is 44 at the least);
- * the control beside it gets its 44 from a pseudo-element.
+ * One of the card's four rows: its name at the left, where it stands at the right, a control of its own
+ * beside it (a microphone, Enter Route) and its detail folded under, opened by a tap on the row (shadcn's
+ * Collapsible on a ListRow, as the airport card folds its fuel remarks). The row's own height is its hit
+ * area (a ListRow is 44 at the least); the control beside it gets its 44 from a pseudo-element.
  */
 function Step({
   id,

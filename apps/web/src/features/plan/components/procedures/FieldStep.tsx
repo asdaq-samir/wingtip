@@ -190,24 +190,17 @@ export function FieldStep({
     return (
       <div className="space-y-3 pt-3">
         <div className="flex items-center gap-2">
-          {/* The glyph and its runways one tray, at the owner's pick of the
-              canvas (2026-10-27, G2, artifact JMQabZH2W33kzmvUuahbad): the
-              landing's or the takeoff's glyph at its head, the runway
-              picked after it with its arrow while it is folded, every
-              runway in it while it is open. The head is the line's
-              button where it folds, a tap on it opening or folding it, as
-              a tap on the runway picked opens it; it was a small arrow
-              after the glyph ("the arrow next to runway can be next to
-              the depart/arrive symbol"). The pull-downs follow the tray,
-              sliding with the runways (the owner's "Approach doesn't need
-              to go next line just let it slide with runways"). Its head
-              level with the runways' line, not the middle of two where
-              the pull-downs wrap under it (the owner's screenshot,
-              2026-10-27, the head between "12" and "+ Arrival"). The tray
-              a stock Collapsible, open while its runways are out: the head
-              its trigger, and the line of runways (PatternChips) its
-              content. Its open state stays the page's (useOpenRunwayLines),
-              as the list is drawn again as the sheet moves. */}
+          {/* The glyph and its runways one tray, at the owner's pick of the canvas (2026-10-27, G2, artifact
+             JMQabZH2W33kzmvUuahbad): the landing's or the takeoff's glyph at its head, the runway picked after it
+             with its arrow while it is folded, every runway in it while it is open. The head is the line's button
+             where it folds, a tap on it opening or folding it, as a tap on the runway picked opens it; it was a
+             small arrow after the glyph ("the arrow next to runway can be next to the depart/arrive symbol"). The
+             pull-downs follow the tray, sliding with the runways (the owner's "Approach doesn't need to go next line
+             just let it slide with runways"). Its head level with the runways' line, not the middle of two where the
+             pull-downs wrap under it (the owner's screenshot, 2026-10-27, the head between "12" and "+ Arrival").
+             The tray a stock Collapsible, open while its runways are out: the head its trigger, and the line of
+             runways (PatternChips) its content. Its open state stays the page's (useOpenRunwayLines), as the list is
+             drawn again as the sheet moves. */}
           <Collapsible
             open={foldable && lineOpen}
             onOpenChange={(next) =>
