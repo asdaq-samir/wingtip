@@ -229,6 +229,22 @@ final class AccessibilityAuditTests: XCTestCase {
         sleep(UIDevice.current.userInterfaceIdiom == .pad ? 4 : 2)
     }
 
+    /// The Native look (Look.native: iOS's system blue, labels and grounds)
+    /// held to the same audit as the brand's, on the plan, the search,
+    /// Setup and the strip: the system's blue is Apple's to set, so its
+    /// contrast is measured here, on the screens a pilot sees it on.
+    /// `-look` sets the kept look for the run (the argument domain).
+    @MainActor
+    func testTheNativeLookPassesTheAudit() throws {
+        for (screen, arguments) in [("fpl", ["-layout", "plan", "-screen", "fpl"]), ("airport", ["-layout", "plan", "-screen", "airport"]),
+                                    ("setup", ["-layout", "plan", "-screen", "setup"]), ("strip", ["-layout", "strip"])] {
+            let app = launch(arguments + ["-look", "native"])
+            if screen == "fpl" || screen == "strip" { raiseTheSheet(app) } else { settle() }
+            try audit(app, screen)
+            app.terminate()
+        }
+    }
+
     @MainActor
     func testTheStripPassesTheAudit() throws {
         let app = launch(["-layout", "strip"])

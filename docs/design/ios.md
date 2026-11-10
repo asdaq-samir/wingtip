@@ -1161,8 +1161,10 @@ reader could not parse plays a warning notification once.
   just deactivate it" ([HIG Accounts][hig-accounts]).
 - **HIG Dark Mode:** "Avoid offering an app-specific appearance setting"
   ([HIG Dark Mode][hig-darkmode]).
-  - Wingtip's Look (Glass Cockpit, Chart ink) and Sunlight are a
-    cockpit need, not a light/dark switch, so they stay.
+  - Wingtip's Look (Wingtip, Glass Cockpit, Chart ink, Native) and
+    Sunlight are a cockpit need, not a light/dark switch, so they stay.
+    Native is iOS's own: `systemBlue`, the system's labels and grouped
+    grounds, by name (design/tokens.json `color.system`).
   - Night follows the system.
 
 **Structure, top to bottom (inset-grouped `List`):**

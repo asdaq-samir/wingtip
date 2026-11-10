@@ -29,7 +29,15 @@ enum WingtipInk {
     /// the sheet's own colour, by day or at night.
     static let sheet = Color(dynamic(\.sheet))
 
+    /// The roles by the appearance, and in the Native look (Look's
+    /// "native", read by its key so the widgets, which have no Look, build)
+    /// iOS's own label, grounds and blue; the states stay the theme's there.
     private static func dynamic(_ role: KeyPath<WingtipPalette, UIColor>) -> UIColor {
-        UIColor { $0.userInterfaceStyle == .dark ? WingtipPalette.dark[keyPath: role] : WingtipPalette.light[keyPath: role] }
+        UIColor { traits in
+            let dark = traits.userInterfaceStyle == .dark
+            let native = UserDefaults.standard.string(forKey: "look") == "native"
+            let palette = native ? (dark ? WingtipPalette.nativeDark : .nativeLight) : (dark ? WingtipPalette.dark : .light)
+            return palette[keyPath: role].resolvedColor(with: traits)
+        }
     }
 }

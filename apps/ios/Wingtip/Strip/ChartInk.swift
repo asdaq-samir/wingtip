@@ -49,6 +49,18 @@ struct ChartInk: Equatable, Sendable {
     /// The scheme for the appearance.
     static func scheme(dark: Bool) -> ChartInk { dark ? night : light }
 
+    /// The strip in the Native look: iOS's grouped grounds, labels and
+    /// blue (WingtipPalette.nativeLight, .nativeDark, system colours by
+    /// name), the chart's inks and the states kept as they are, being
+    /// aviation's rather than the look's.
+    static func native(dark: Bool) -> ChartInk {
+        let ink = scheme(dark: dark)
+        let p = dark ? WingtipPalette.nativeDark : WingtipPalette.nativeLight
+        return ChartInk(paper: Color(uiColor: p.sheet), card: Color(uiColor: p.card), magenta: ink.magenta, brown: ink.brown, field: ink.field,
+                        flown: ink.flown, tint: Color(uiColor: p.tint), caution: ink.caution, go: ink.go, stop: ink.stop,
+                        ink: Color(uiColor: p.foreground), muted: Color(uiColor: p.mutedForeground), night: dark)
+    }
+
     /// The same inks with the picked look's tint (Look): the brand's blue
     /// unless the pilot picked Glass Cockpit or Chart Ink in Setup.
     func tinted(_ tint: Color) -> ChartInk {
@@ -116,7 +128,8 @@ private struct ChartInkTheme: ViewModifier {
 
     func body(content: Content) -> some View {
         let dark = scheme == .dark
-        let ink = ChartInk.scheme(dark: dark).tinted(Color(uiColor: (Look(rawValue: look) ?? .standard).tint(dark: dark)))
+        let picked = Look(rawValue: look) ?? .standard
+        let ink = picked == .native ? ChartInk.native(dark: dark) : ChartInk.scheme(dark: dark).tinted(Color(uiColor: picked.tint(dark: dark)))
         content
             .environment(\.chartInk, ink)
             .tint(ink.tint)
