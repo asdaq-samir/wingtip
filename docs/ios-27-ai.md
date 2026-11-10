@@ -62,12 +62,14 @@ branch (`claude/ios27-ai`). Built in order of value to a pilot.
 | Airplane | "Fly N123AB" | `AirplaneEntity`, `FlyAirplaneIntent` | Phone | Built |
 | Camera | Point at a sectional, a plate, a METAR printout or a sign: the fields in it, opened in Wingtip | `IntentValueQuery` over `SemanticContentDescriptor`, Vision text recognition | **On-device** read; idents looked up | Built |
 | Notifications | A notification's field or flight is what Siri's "what does this mean" is about | `appEntityIdentifiers` | Phone | Built (API in `Notifications.tell`) |
-| Brief | Summary of the briefing and ranked NOTAMs in plain words | Foundation Models guided generation, tools into the engine | On-device; planner's Claude; none | Part 2 |
-| ATC / clearance | A heard or typed clearance parsed into its parts, the engine's clearance reader the authority | `@Generable` clearance, checked against `read_clearance` | On-device | Part 2 |
-| Documents | Handbook, logbook and clearance photos read on the phone instead of sent to Claude | Image `Attachment` + `OCRTool` where `capabilities.contains(.vision)`; server read as fallback | **On-device first** | Part 2 |
-| Logbook | Remarks drafted from the flown track, for the pilot to confirm | Foundation Models over the engine's `logbook_from_track` figures | On-device | Part 2 |
-| Nav log | "Why this altitude" | Foundation Models over the engine's altitude reasons | On-device | Part 2 |
-| Evaluations | Each AI feature scored on shared aviation fixtures | Evaluations framework, Swift Testing `.evaluates` | Simulator (model where present) | Part 2 |
+| Brief | The ranked NOTAMs in plain words ("The NOTAMs in words" under the Brief's NOTAMs), each sentence citing its NOTAM | Foundation Models guided generation (`WordsAnswer`) over the engine's `notams_ranked` and its reasons (`Words/NotamsInWords.swift`) | **On-device only**; hidden where the model can't run | Built (part 2) |
+| Brief | The briefing at a glance and the weather in words | `BriefSummary` (on-device glance from the Go / No-Go), `WordsFor` (planner's Claude, then on-device) | Both | Already there before iOS 27; unchanged |
+| Documents | Handbook performance and weight-and-balance pages, logbook pages and clearance notes read on the phone; the engine on the phone checks the figures (`handbook_read_check`, `logbook_read_check`) as the server's reader has them checked; the assistant reads only where the phone can't | iOS 27 image prompts (`Attachment(CGImage)`), `capabilities.contains(.vision)`, `OCRTool` as the model's tool (device SDK only; the simulator SDK has no `_Vision_FoundationModels`), `@Generable` drafts member for member the assistant's (`Documents/DocumentDrafts.swift`, `OnDeviceDocumentReader.swift`) | **On-device first**, Claude fallback | Built (part 2) |
+| ATC / clearance | A typed or heard clearance said back as the controller would say it, for the engine's `read_clearance` to read; the engine stays the reader | `OnDeviceDocumentReader.said(clearance:)`, guided `ClearanceTextDraft` | On-device | Built and evaluated; not yet on the clearance sheet, which is at its size cap (422 lines) and needs splitting first |
+| Logbook | Remarks drafted from the flown track | Foundation Models over the engine's `logbook_from_track` figures | On-device | Not yet: the planner's draft already fills every figure; remarks are the pilot's |
+| Nav log | "Why this altitude" | Foundation Models over the engine's altitude reasons | On-device | Not yet |
+| In flight | Weather on the route worse than at the Brief, told as a notification | Background refresh + the engine's `weather_along` against the kept briefing, `appEntityIdentifiers` | On-device | Not yet: the gateway's flight watch mails it today; the notification side is ready (`Notifications.tell(about:)`) |
+| Evaluations | The NOTAMs in words (no figure of the model's own; the matter named) on `notamsRanked.json`; a clearance said back read the same by the engine on `clearances.json` | Evaluations framework: `Evaluation`, `Evaluator`, `Metric`, `ArrayLoader` (`WingtipTests/AIEvaluations.swift`) | Simulator where the model is present, else skipped; the fixtures' known answers always | Built (part 2). First run on the iOS 27.2 simulator: no invented figure in 6 of 6; the NOTAM named in 2 of 6, then 4 of 6 after the prompt asked for it (hill-climbing, wwdc2026/335); the clearance read the same in every sample |
 
 ## What was left out, and why
 
@@ -95,10 +97,27 @@ branch (`claude/ios27-ai`). Built in order of value to a pilot.
   "Dive into Core AI model authoring and optimization", wwdc2026/325),
   not scikit-learn's. Not used; revisit if the chart reader moves on
   device.
+- **Vision's OCR tool in the simulator.** `OCRTool` lives in the
+  `_Vision_FoundationModels` overlay, which the iOS 27.2 device SDK has
+  and the simulator SDK does not; the simulator build reads a photo with
+  the model alone, and a phone gives it the tool.
 - **Private Cloud Compute (`PrivateCloudComputeLanguageModel`).** Apple's
   bigger model off the phone, free for small developers (WWDC26 guide).
   It is a second server path beside the planner's Claude; the owner's
   rule is on-device first, so it is not added without his word.
+
+## What only a real iPhone can show
+
+Apple Intelligence runs on an iPhone 15 Pro or later (and the iPhone 16
+and 17 families) with it turned on in Settings. On such a phone, and not
+in the simulator:
+
+- Siri acting on what is on the screen ("fly direct to that airport",
+  "what does this NOTAM mean for me") and the spoken follow-ups;
+- a camera look-up of a chart, plate or printout;
+- the on-device model's words (NOTAMs, the NOTAM explained), and a
+  photographed page read on the phone with Vision's OCR tool;
+- the evaluations' model runs, where the simulator has no model.
 
 ## Privacy
 
