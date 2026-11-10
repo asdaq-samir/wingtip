@@ -380,6 +380,8 @@ export default function MapPanel(props: Props) {
               // under a finger, and not before its first measure (it would
               // slide in from its full height as the page opens).
               "[transform:translateY(calc(var(--drawer-snap-point-offset)_+_var(--drawer-swipe-movement-y)))]",
+              // Copied for what is inside it (SheetParts): Base UI's own do not inherit.
+              "[--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)]",
               life.ready && "transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)]",
               "data-swiping:transition-none motion-reduce:transition-none",
               fromBottom ? "bottom-0" : "top-0",
