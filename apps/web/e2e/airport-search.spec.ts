@@ -15,7 +15,7 @@ const airport = (ident: string, name: string) => ({ ident, name, municipality: n
 /** The route's destination changed: from its pill's menu, a tap on it
  *  opening the airport's card (RouteBox). */
 async function changeDestination(page: Page) {
-  await page.getByLabel("Destination", { exact: true }).click({ button: "right" });
+  await page.getByLabel(/^(\S+, )?Destination$/).click({ button: "right" });
   await page.getByTestId("pill-menu-change").click();
 }
 
@@ -44,7 +44,7 @@ test(
     await slowSearch(page, "KDLH");
     await page.goto("/app/plan?dep=C81&dest=KMSP");
     await openPanel(page);
-    const destination = page.getByLabel("Destination", { exact: true });
+    const destination = page.getByLabel(/^(\S+, )?Destination$/);
     await changeDestination(page);
     const box = page.getByPlaceholder("Search for a destination");
     await box.fill("KD");
@@ -60,7 +60,7 @@ test("once the rows answer the box, Enter takes the highlighted row", async ({ p
   await slowSearch(page, "");
   await page.goto("/app/plan?dep=C81&dest=KMSP");
   await openPanel(page);
-  const destination = page.getByLabel("Destination", { exact: true });
+  const destination = page.getByLabel(/^(\S+, )?Destination$/);
   await changeDestination(page);
   const box = page.getByPlaceholder("Search for a destination");
   await box.fill("KD");

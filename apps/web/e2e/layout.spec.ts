@@ -73,7 +73,7 @@ test.describe("/app/plan", () => {
     // The plan, the sheet's main content with a route.
     await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeVisible();
     await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
-    await expect(page.getByLabel("Departure", { exact: true })).toBeVisible();
+    await expect(page.getByLabel(/^(\S+, )?Departure$/)).toBeVisible();
     expect(await page.getByTestId("toolbar-trigger").count()).toBe(0);
   });
 
@@ -159,7 +159,7 @@ test.describe("/app/dev", () => {
     // The training page's route form is all the way up's: its pill is the
     // tabs (MapPanel).
     await grabberTo(page, "full");
-    await expect(page.getByLabel("Departure", { exact: true })).toBeVisible();
+    await expect(page.getByLabel(/^(\S+, )?Departure$/)).toBeVisible();
     expect(await page.getByTestId("toolbar-trigger").count()).toBe(0);
   });
 
@@ -240,7 +240,7 @@ test.describe("/app/plan", () => {
       expect(bar.y).toBeLessThan(100);
       expect(headerBox.y).toBeLessThan(bar.y + bar.height + 8);
     }
-    const departureBox = (await header.getByLabel("Departure", { exact: true }).boundingBox())!;
+    const departureBox = (await header.getByLabel(/^(\S+, )?Departure$/).boundingBox())!;
     expect(departureBox.x - headerBox.x).toBeLessThan(40);
 
     // The grabber on the panel's far edge: the top of a phone's sheet,

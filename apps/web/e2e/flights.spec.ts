@@ -158,7 +158,7 @@ test("opening a saved flight puts its route in the header, and Load plans that r
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await openPanel(page);
-  await expect(page.getByLabel("Departure", { exact: true })).toContainText("C81", { timeout: 15_000 });
+  await expect(page.getByLabel(/^(\S+, )?Departure$/)).toContainText("C81", { timeout: 15_000 });
 
   // The console's button is at the end of the route's capsule, lowered.
   await grabberTo(page, "peek");
@@ -174,7 +174,7 @@ test("opening a saved flight puts its route in the header, and Load plans that r
 
   await openPanel(page);
   // Planned at once: there is no Load to press.
-  await expect(page.getByLabel("Departure", { exact: true })).toContainText("KMSP");
+  await expect(page.getByLabel(/^(\S+, )?Departure$/)).toContainText("KMSP");
   await expect(page).toHaveURL(/dep=KMSP/);
   await expect(page).toHaveURL(/altitude_ft=5500/);
   // And at the altitudes the pilot set at its points: Duluth's pattern.

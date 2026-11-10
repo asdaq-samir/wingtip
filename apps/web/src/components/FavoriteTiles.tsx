@@ -104,7 +104,6 @@ function PlaceTile({
       type="button"
       onClick={onClick}
       data-testid={testId}
-      aria-label={label}
       disabled={disabled}
       className="flex w-[4.5rem] shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
     >
@@ -117,6 +116,8 @@ function PlaceTile({
           {detail}
         </span>
       )}
+      {/* Named by its words, the rest after them (WCAG 2.5.3, Label in Name). */}
+      {label && <span className="sr-only">, {label}</span>}
     </button>
   );
 }

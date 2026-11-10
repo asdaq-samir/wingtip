@@ -30,7 +30,7 @@ test(
     await expect(title.getByRole("heading", { name: "Wingtip Maps" })).toBeVisible();
     await expect(row.getByTestId("account-button")).toHaveCount(0);
     await expect(sideDrawer(page).getByRole("tablist", { name: "Tabs" })).toHaveCount(0);
-    await expect(sideDrawer(page).getByLabel("Departure", { exact: true })).toContainText("C81");
+    await expect(sideDrawer(page).getByLabel(/^(\S+, )?Departure$/)).toContainText("C81");
 
     // Focused: the search's own page, the flight first, Cancel beside the
     // field, the title row kept over it as Apple's is while typing.
@@ -66,7 +66,7 @@ test(
     await expect(page).toHaveURL(/[?&]dep=KOSH(&|$)/);
     await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
     await expect(card).toHaveCount(0);
-    await expect(sideDrawer(page).getByLabel("Departure", { exact: true })).toContainText("KOSH");
+    await expect(sideDrawer(page).getByLabel(/^(\S+, )?Departure$/)).toContainText("KOSH");
     await expect(title.getByTestId("account-button")).toBeVisible();
   },
 );

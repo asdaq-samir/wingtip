@@ -110,7 +110,9 @@ export default function AirportPicker({
           // opens the airport's card (`onTap`), the search its menu's.
           role={onTap ? undefined : "combobox"}
           aria-expanded={onTap ? undefined : open}
-          aria-label={ariaLabel}
+          // Its ident first, as seen, then which field (WCAG 2.5.3, Label
+          // in Name): "C81, Departure"; empty, the placeholder it shows.
+          aria-label={value && !children ? `${value}, ${ariaLabel}` : ariaLabel}
           aria-invalid={invalid}
           data-testid={testId}
           onPointerDown={prefetchSearch}

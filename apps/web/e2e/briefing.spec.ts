@@ -112,7 +112,12 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   // account button beside the search, not a gear in the head.
   await openTab(page, "Nav Log");
   await expect(drawer.getByTestId("flight-line")).toBeVisible();
-  expect(await page.locator("header").getByLabel("Departure", { exact: true }).count()).toBe(1);
+  expect(
+    await page
+      .locator("header")
+      .getByLabel(/^(\S+, )?Departure$/)
+      .count(),
+  ).toBe(1);
   expect(await page.locator("header").getByTestId("account-button").count()).toBe(0);
 
   // The route's buttons, the Brief (where the Nav log was) and Share, at

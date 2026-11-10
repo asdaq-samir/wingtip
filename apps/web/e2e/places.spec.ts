@@ -90,9 +90,8 @@ test("an airport's card has the field's pictures across its top, its ident over 
   );
   expect(bar.y).toBeGreaterThanOrEqual(actions.y + actions.height);
 
-  // Weather: the panel all the way up, the weather's card at the tab's
-  // top, its category in the FAA's colour: with no TAF, a sentence from
-  // the report and Now alone.
+  // Weather: the panel all the way up, the weather's card at the tab's top, its category in the FAA's colour:
+  // with no TAF, a sentence from the report and Now alone.
   await card(page).getByTestId("place-tab-weather").click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   await expect(card(page).getByTestId("place-category")).toBeVisible();
@@ -1053,7 +1052,7 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
   await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
   await grabberTo(page, "half");
-  await expect(page.getByLabel("Departure", { exact: true })).toContainText("C81");
+  await expect(page.getByLabel(/^(\S+, )?Departure$/)).toContainText("C81");
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/dep=/);
   await expect(sideDrawer(page).getByTestId("route-type")).toBeVisible();

@@ -84,7 +84,7 @@ export function SmallTile({
   mark: ReactNode;
   title: string;
   detail?: string;
-  label?: string;
+  label?: string; // said after its words (WCAG 2.5.3, Label in Name)
   onClick: () => void;
   testId?: string;
   /** Room for a route's two idents (SavedStrip), not one's. */
@@ -95,7 +95,6 @@ export function SmallTile({
       type="button"
       onClick={onClick}
       data-testid={testId}
-      aria-label={label}
       className={cn(
         wide ? "w-24" : "w-[4.5rem]",
         "flex shrink-0 flex-col items-center gap-1.5 rounded-xl outline-none hover:bg-foreground/5 focus-visible:ring-2 focus-visible:ring-ring",
@@ -105,6 +104,7 @@ export function SmallTile({
       <span className={cn("w-full truncate text-center font-medium text-foreground", TEXT.detail)}>{title}</span>
       {/* 4.5:1 on the pill's glass, as the tab bar's words are. */}
       {detail && <span className={cn("-mt-1.5 w-full truncate text-center text-foreground/65 tabular-nums", TEXT.note)}>{detail}</span>}
+      {label && <span className="sr-only">, {label}</span>}
     </button>
   );
 }
@@ -126,7 +126,6 @@ export function PillSection({
   large = false,
 }: {
   title: string;
-  /** A large bold title, as Apple Maps' web sheet's sections (2026-11-10). */
   large?: boolean;
   /** The list in full, the title the way to it, in the tint with its
    *  chevron -- every section's alike, the tabs' Saved, Favorites and
@@ -142,13 +141,11 @@ export function PillSection({
   testId?: string;
 }) {
   // Every section's title (lib/text SECTION_TITLE) -- not bold, not
-  // capitals ("Section labels don't need to be bold or all caps") -- in
-  // the text's own colour, or the tint where it opens more ("for
-  // clickable sections you can make them blue").
+  // capitals -- in the text's colour, or the tint where it opens more;
+  // `large` bold, as the owner's Apple Maps screenshot has them.
   const heading = large ? cn("font-bold text-foreground", TEXT.card) : SECTION_TITLE;
   return (
-    // Eight under the title, so its 44-point hit area (index.css) stays
-    // its own over the tiles' (the iOS audit's P1).
+    // Eight under the title: its 44-point hit area its own (the iOS audit's P1).
     <section className="flex min-w-0 flex-col gap-2" data-testid={testId}>
       <div className="flex min-h-7 items-center gap-2">
         {onMore ? (
