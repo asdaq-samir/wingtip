@@ -556,6 +556,7 @@ jobs:
                 - scripts/build/engine-contract-apps.*
                 - design/**
                 - scripts/ci/content-mtimes.py
+                - scripts/build/ios-strings.sh
                 - .github/workflows/native-ios.yml
               android:
                 - apps/android/**

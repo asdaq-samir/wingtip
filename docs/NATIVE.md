@@ -258,7 +258,11 @@ owner, 2026-11-03):
   (`SWIFT_TREAT_WARNINGS_AS_ERRORS`).
 - **A string catalog** (`Wingtip/Localizable.xcstrings`,
   `SWIFT_EMIT_LOC_STRINGS`): every `Text` gathered at build, so a second
-  language is a column, not a rewrite.
+  language is a column, not a rewrite. xcodebuild extracts the strings
+  but, unlike Xcode's editor, never writes them back: after a build that
+  adds or drops a string, `scripts/build/ios-strings.sh` syncs the catalog
+  from the build's `.stringsdata` (`xcrun xcstringstool sync`), and CI's
+  iOS job fails with `--check` when the committed one differs.
 - **Scene restoration**: the pages a scene was on come back with it
   (`@SceneStorage` in `RootView`).
 - **A UI smoke test** (`WingtipUITests/LaunchTests`): the app launched

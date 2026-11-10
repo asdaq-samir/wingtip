@@ -32,6 +32,7 @@ on:
       - design/**
       - scripts/build/engine-contract-apps.*
       - scripts/ci/content-mtimes.py
+      - scripts/build/ios-strings.sh
       - .github/workflows/native-ios.yml
   workflow_dispatch:
     inputs:
@@ -164,6 +165,13 @@ jobs:
           grep -nE "error:|error\b|Could not|Test (Case|Suite)|Executed|\*\* (BUILD|TEST)" -A6 "$RUNNER_TEMP/xcodebuild.log" | tail -200 || true
           grep -E "✔ Test|✘ Test|Test run with" "$RUNNER_TEMP/xcodebuild.log" || true
           grep -qE "\*\* TEST SUCCEEDED \*\*" "$RUNNER_TEMP/xcodebuild.log"
+      # The string catalog holds every word the Swift says: the build above
+      # extracted them (SWIFT_EMIT_LOC_STRINGS), and xcodebuild, unlike
+      # Xcode's editor, never writes them back, so a change that adds or
+      # drops a string must commit the catalog scripts/build/ios-strings.sh
+      # syncs. After the build, since it reads the build's .stringsdata.
+      - name: The string catalog is what the Swift says
+        run: scripts/build/ios-strings.sh --check --derived-data "$RUNNER_TEMP/derived"
       - name: DerivedData, kept
         if: always() && steps.derived.outputs.cache-hit != 'true' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         continue-on-error: true
