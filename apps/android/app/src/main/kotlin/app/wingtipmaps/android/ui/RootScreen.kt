@@ -20,7 +20,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.semantics.hideFromAccessibility
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -220,11 +224,23 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val cardView: @Composable (SheetPage) -> Unit = { page ->
         SheetCard(page, pages, plan, session, ownShip.ownShip, ownShip.on, assistant, airports, showPlan)
     }
-    val pagesView: @Composable (Modifier, Boolean) -> Unit = { modifier, backEnabled ->
+    // The phone's sheet (neither the strip, the wide panes nor the fold).
+    val sheetLayout = !stripLayout && !wide && fold == null
+    // The search's row as measured, whatever the font scale: the sheet's
+    // peek is the handle, this row and the navigation bar.
+    var searchRowPx by remember { mutableIntStateOf(0) }
+    val pagesView: @Composable (Modifier, Boolean, @Composable () -> Unit) -> Unit = { modifier, backEnabled, head ->
         SheetPagesHost(
-            pages, backEnabled, modifier,
-            // The strip's field and timeline are its Home and its plan.
-            home = { if (!stripLayout) Home(plan, answer, picks::pick) },
+            pages, backEnabled, modifier, head = head,
+            // The strip's field and timeline are its Home and its plan. At
+            // the peek only the search shows, so what lies under it (the
+            // flight's card, under the gesture bar) is kept from TalkBack.
+            home = {
+                if (!stripLayout) {
+                    val hidden = sheetLayout && sheet.atPeek
+                    Home(plan, answer, picks::pick, Modifier.semantics { if (hidden) hideFromAccessibility() })
+                }
+            },
             plan = {
                 PlanPage(
                     plan, onClose = pages::closePlan, onField = { pages.push(SheetPage.Airport(it)) },
@@ -242,7 +258,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     if (stripLayout) {
         StripLayout(
             plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, raise = raised, searchRow = searchRow,
-            covered = pages.covered, cards = { modifier -> pagesView(modifier, true) },
+            covered = pages.covered, cards = { modifier -> pagesView(modifier, true) {} },
             map = { MapPane(plan, ownShip, covered = 0.dp, onPick = onPick, onAsk = null, onNearest = { pages.show(SheetPage.Nearest) }) },
         )
     } else if (wide) {
@@ -252,7 +268,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                 Column(Modifier.fillMaxSize()) {
                     searchRow(null)
                     // The list pane keeps Home or the plan; its Back waits on the card's.
-                    pagesView(Modifier.fillMaxSize(), pages.card == null)
+                    pagesView(Modifier.fillMaxSize(), pages.card == null) {}
                 }
             },
             detail = cardView,
@@ -272,19 +288,23 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     } else if (fold != null) {
         TabletopPanes(fold, map = { Box(Modifier.fillMaxSize()) { mapView(0.dp); SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter)) } }) {
             // A card takes the search's place, as on the phone's sheet.
-            if (!pages.covered) searchRow(null)
-            pagesView(Modifier.weight(1f), true)
+            pagesView(Modifier.weight(1f), true) { searchRow(null) }
         }
     } else {
-        // Over the navigation bar (edge to edge): its peek is the search above it.
+        // Over the navigation bar (edge to edge): its peek is the handle and
+        // the search's row as measured, above the bar, so the bar fits at
+        // every font scale (the sheet audit's S-1).
         val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val peek = if (pages.covered) halfWindow() else SearchPeek + navigationBar
+        val searchHeight = with(LocalDensity.current) { searchRowPx.toDp() }.takeIf { it > 0.dp } ?: WingtipSize.TapTarget
+        val peek = if (pages.covered) halfWindow() else SheetHandle + searchHeight + WingtipSpace.Sm + navigationBar
         MapSheet(state = sheet, peek = peek, snackbars = snackbars, lowerOnBack = !pages.covered, body = { covered -> mapView(covered) }) {
-            // A card takes the search's place, its name and ← where the search was.
-            if (!pages.covered) searchRow(null)
+            // A card takes the search's place, its name and ← where the
+            // search was; Home and the plan carry the search's row.
             // Back closes a card at once; with none it lowers the expanded
             // sheet first (MapSheet), then goes back a page.
-            pagesView(Modifier.weight(1f).padding(bottom = navigationBar), pages.covered || sheet.atPeek)
+            pagesView(Modifier.weight(1f).padding(bottom = navigationBar), pages.covered || sheet.atPeek) {
+                Box(Modifier.onSizeChanged { searchRowPx = it.height }) { searchRow(null) }
+            }
         }
     }
 
@@ -301,5 +321,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     WelcomeHost(plan) { showPlan() }
 }
 
-/** The peek: the drag handle and the search's row, as tall as the strip's. */
-private val SearchPeek = WingtipSize.TapTarget * 2 + WingtipSpace.Lg + WingtipSpace.Xs
+/** The stock drag handle's height: its 4-dp bar in 22 dp above and below,
+ *  Material's 48-dp target (SheetDefaults.DragHandle). */
+private val SheetHandle = WingtipSize.TapTarget

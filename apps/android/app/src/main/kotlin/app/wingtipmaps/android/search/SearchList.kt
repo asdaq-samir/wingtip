@@ -123,8 +123,9 @@ fun LazyListScope.nothingTyped(
     item(key = "nearest-title") { Heading(R.string.nearest) }
     nearestProblem?.let { item(key = "nearest-problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg)) } }
     if (nearest.isNullOrEmpty()) {
-        // No position yet: Nearest itself, which asks for it.
-        item(key = "nearest-open") { ResultRow(stringResource(R.string.nearest), null, null, Icons.Filled.NearMe) { onPick(SearchPick.Do(DoAction.Open(Screen.NEAREST))) } }
+        // No position yet: the Nearest page, which asks for it, named for
+        // what it does rather than the heading's word again.
+        item(key = "nearest-open") { ResultRow(stringResource(R.string.find_nearest), null, null, Icons.Filled.NearMe) { onPick(SearchPick.Do(DoAction.Open(Screen.NEAREST))) } }
     } else {
         items(nearest, key = { "near-" + it.ident }) { n ->
             // The field's flight category as its chip at the row's end,

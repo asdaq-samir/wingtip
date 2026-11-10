@@ -1,6 +1,8 @@
 package app.wingtipmaps.android.ui.sheet
 
 import androidx.activity.compose.PredictiveBackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -24,9 +26,16 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
@@ -34,7 +43,13 @@ import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
+import kotlin.math.min
 
 /**
  * The map's sheet's state: Material's own standard bottom sheet, which
@@ -95,7 +110,8 @@ fun rememberMapSheetState(): MapSheetState {
  * and rises over the keyboard, so a field in the sheet is never typed
  * into under it. The standard sheet has no back handling of its own, so
  * Back, with the system's predictive gesture, brings an expanded sheet
- * down to its peek, then the app's exit -- but only with no card open
+ * down to its peek, the sheet following the gesture as the modal sheet
+ * does, then the app's exit -- but only with no card open
  * (`lowerOnBack`): while a card covers the search, Back closes the card
  * and never just lowers the sheet (the card rule, 2026-11-10).
  *
@@ -120,9 +136,23 @@ fun MapSheet(
     body: @Composable (covered: Dp) -> Unit,
     sheet: @Composable ColumnScope.() -> Unit,
 ) {
+    // The back gesture's progress drawn as Material's modal sheet draws it
+    // (ModalBottomSheet's predictive back): the sheet narrows by up to
+    // 48 dp and drops by up to 24 dp about its foot as the gesture goes,
+    // its content kept unsquashed; released, the sheet lowers to its peek,
+    // and cancelled it springs back.
+    val backProgress = remember { Animatable(0f) }
+    var sheetSize by remember { mutableStateOf(IntSize.Zero) }
+    val scope = rememberCoroutineScope()
     PredictiveBackHandler(enabled = state.expanded && lowerOnBack) { progress ->
-        progress.collect {}
-        state.lower()
+        try {
+            progress.collect { event -> backProgress.snapTo(PredictiveBackEasing.transform(event.progress)) }
+            scope.launch { backProgress.animateTo(0f) }
+            state.lower()
+        } catch (e: CancellationException) {
+            scope.launch { backProgress.animateTo(0f) }
+            throw e
+        }
     }
     Box(modifier.fillMaxSize()) {
         body(peek)
@@ -133,6 +163,12 @@ fun MapSheet(
             // the sheet does not.
             containerColor = Color.Transparent,
             modifier = Modifier
+                .onSizeChanged { sheetSize = it }
+                .graphicsLayer {
+                    scaleX = backScale(backProgress.value, PredictiveBackMaxX.toPx(), sheetSize.width)
+                    scaleY = backScale(backProgress.value, PredictiveBackMaxY.toPx(), sheetSize.height)
+                    transformOrigin = TransformOrigin(0.5f, 1f)
+                }
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
                 .padding(top = WingtipSpace.Sm)
                 .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars).only(WindowInsetsSides.Bottom)),
@@ -140,6 +176,12 @@ fun MapSheet(
                 // Clear of a cutout or a navigation bar at the side in landscape.
                 Column(
                     Modifier.weight(1f).fillMaxWidth().windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+                        // Counter the sheet's drop, so its words keep their shape.
+                        .graphicsLayer {
+                            val p = backProgress.value
+                            scaleY = backScale(p, PredictiveBackMaxX.toPx(), sheetSize.width) / backScale(p, PredictiveBackMaxY.toPx(), sheetSize.height)
+                            transformOrigin = TransformOrigin(0.5f, 0f)
+                        }
                         .testTag(MAP_SHEET_TAG).semantics { sheetDetent = state.sheet.currentValue.name },
                 ) {
                     sheet()
@@ -149,3 +191,15 @@ fun MapSheet(
         )
     }
 }
+
+/** The sheet's scale `progress` of the way through a back gesture: up to
+ *  `maxPx` off its `sizePx`, as ModalBottomSheet's predictive back. */
+private fun backScale(progress: Float, maxPx: Float, sizePx: Int): Float =
+    if (sizePx <= 0) 1f else 1f - lerp(0f, min(maxPx, sizePx.toFloat()), progress) / sizePx
+
+// Material's own figures for a sheet's predictive back (BottomSheet.kt,
+// material3 1.5.0-rc01): 48 dp narrower and 24 dp lower at the most, and
+// the gesture's progress eased as Material eases it.
+private val PredictiveBackMaxX = 48.dp
+private val PredictiveBackMaxY = 24.dp
+private val PredictiveBackEasing = CubicBezierEasing(0.1f, 0.1f, 0f, 1f)

@@ -42,11 +42,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.account.AccountButton
+import app.wingtipmaps.android.account.AccountEndMargin
 import app.wingtipmaps.android.airplane.OwnAirplanes
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.atc.RadioListener
@@ -54,14 +58,15 @@ import app.wingtipmaps.android.atc.micAllowed
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
+import app.wingtipmaps.android.ui.WingtipIcons
 import app.wingtipmaps.android.ui.isWide
 import app.wingtipmaps.android.voice.VoiceInput
 import kotlinx.coroutines.launch
 
 /**
  * The sheet's first row in both layouts, where the tabs were (the owner's
- * one search, 2026-11-09): Material's search bar, "Search airports,
- * airplanes, or ask", then the microphone as a button of its own and the
+ * one search, 2026-11-09): Material's search bar, "Search or ask" (read
+ * out as "Search airports, airplanes, or ask"), then the microphone as a button of its own and the
  * account button (AccountButton, Settings in one tap). While a card is
  * open its bar takes this row's place (CardPage). Tapped, the bar opens
  * full screen, as Material's does: with nothing typed the flight's card,
@@ -109,7 +114,7 @@ fun OneSearch(
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
 
     // Opened from elsewhere: an Airport link, the plan's Add a Stop.
-    LaunchedEffect(control.asked) { if (control.asked > 0) searchBarState.animateToExpanded() }
+    LaunchedEffect(control.asked) { if (control.takeAsk()) searchBarState.animateToExpanded() }
     LaunchedEffect(searchBarState) {
         snapshotFlow { searchBarState.currentValue }.collect { if (it == SearchBarValue.Collapsed) control.done() }
     }
@@ -179,6 +184,12 @@ fun OneSearch(
             },
         )
     }
+    // The short placeholder is what fits one line; TalkBack reads the
+    // whole sentence for it (the sheet audit's S-1, 2026-11-10).
+    val spokenHint = stringResource(R.string.search_hint_spoken)
+    val placeholderSpoken = if (placeholder == stringResource(R.string.search_hint)) spokenHint else placeholder
+    val open = searchBarState.currentValue == SearchBarValue.Expanded
+    val back = stringResource(R.string.back)
     val clear = stringResource(R.string.said_clear_search)
     val inputField: @Composable () -> Unit = {
         SearchBarDefaults.InputField(
@@ -186,8 +197,20 @@ fun OneSearch(
             textFieldState = textFieldState,
             onSearch = ::submit,
             enabled = !flying,
-            placeholder = { Text(placeholder) },
-            leadingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
+            // One line at every font scale, so the bar stays Material's
+            // 56 dp and the peek fits under it.
+            placeholder = {
+                Text(placeholder, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { contentDescription = placeholderSpoken })
+            },
+            // Open, the stock expanded search bar's ← closes it, as
+            // Material's own sample has it; closed, the search glyph.
+            leadingIcon = {
+                if (open) {
+                    IconButton(onClick = { scope.launch { searchBarState.animateToCollapsed() } }) { Icon(WingtipIcons.back, contentDescription = back) }
+                } else {
+                    Icon(Icons.Filled.Search, contentDescription = null)
+                }
+            },
             trailingIcon = if (textFieldState.text.isNotEmpty()) {
                 { IconButton(onClick = { textFieldState.clearText() }) { Icon(Icons.Filled.Close, contentDescription = clear) } }
             } else {
@@ -198,7 +221,10 @@ fun OneSearch(
 
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
         Row(
-            Modifier.fillMaxWidth().padding(start = WingtipSpace.Lg, end = WingtipSpace.Xs),
+            // Even margins: the bar's edge 16 dp from the left, the
+            // account's circle 16 dp from the right, its 48-dp target
+            // reaching past it (the sheet audit's P-1).
+            Modifier.fillMaxWidth().padding(start = WingtipSpace.Lg, end = AccountEndMargin),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
         ) {

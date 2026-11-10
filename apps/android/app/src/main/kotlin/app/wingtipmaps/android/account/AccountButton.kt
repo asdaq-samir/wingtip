@@ -16,9 +16,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.Pilot
+import app.wingtipmaps.android.design.generated.WingtipSize
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.strip.StripData
@@ -44,7 +47,7 @@ fun AccountButton(pilot: Pilot?, modifier: Modifier = Modifier) {
             contentDescription = pilot?.let { "${it.displayName}: $name" } ?: name
         },
     ) {
-        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(36.dp)) {
+        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(AccountAvatar)) {
             Box(contentAlignment = Alignment.Center) {
                 if (initials.isNotEmpty()) {
                     Text(initials, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimary)
@@ -55,3 +58,11 @@ fun AccountButton(pilot: Pilot?, modifier: Modifier = Modifier) {
         }
     }
 }
+
+/** The circle's size inside Material's 48-dp IconButton. */
+private val AccountAvatar = 36.dp
+
+/** The row's end padding that puts the circle 16 dp from the screen's
+ *  edge, as the search bar is from the other (the sheet audit's P-1):
+ *  the target's 6 dp beyond the circle taken off the 16. */
+val AccountEndMargin: Dp = WingtipSpace.Lg - (WingtipSize.TapTarget - AccountAvatar) / 2
