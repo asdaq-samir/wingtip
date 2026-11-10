@@ -77,7 +77,7 @@ test("shown in the map's settings, the airplanes about are drawn on their tracks
 
 test.describe("on a touch screen", () => {
   test.use({ hasTouch: true });
-  test("on a phone the credit rides on the sheet's top, under a finger and at rest", { tag: "@smoke" }, async ({ page }) => {
+  test("on a phone the credit rides on the sheet's top, at rest and where a drag lands it", { tag: "@smoke" }, async ({ page }) => {
     test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
     await showTraffic(page, true);
     await page.goto("/app/plan?place=C81");
@@ -94,9 +94,13 @@ test.describe("on a touch screen", () => {
       await grabberTo(page, size);
       await expect.poll(gap).toBeLessThan(3);
     }
-    // Dragged up from its grabber and held (the card is the sheet, no search
-    // over it): the credit goes with it, where it stayed at the inset the
-    // sheet had at rest (the owner, 2026-10-28).
+    // Dragged up from its grabber and let go (the card is the sheet, no
+    // search over it): the credit on the sheet's top where the throw lands
+    // it, where it once stayed at the inset the sheet had before (the
+    // owner, 2026-10-28). Under the finger it waits for the throw: the
+    // map's buttons and credits, outside the stock Drawer's tree, take the
+    // height the sheet is going to once per snap point (sheetCover; the
+    // Drawer as it is, the owner 2026-11-10).
     const tabs = (await page.getByTestId("sidebar-trigger-button").boundingBox())!;
     const at = { x: tabs.x + tabs.width / 2, y: tabs.y + tabs.height / 2 };
     const cdp = await page.context().newCDPSession(page);
@@ -104,8 +108,8 @@ test.describe("on a touch screen", () => {
       cdp.send("Input.dispatchTouchEvent", { type, touchPoints: q ? [{ ...q, id: 1 }] : [] });
     await touch("touchStart", at);
     for (let i = 1; i <= 6; i++) await touch("touchMove", { x: at.x, y: at.y - 25 * i });
-    await expect.poll(gap).toBeLessThan(3);
     await touch("touchEnd");
+    await expect.poll(gap).toBeLessThan(3);
   });
 });
 
