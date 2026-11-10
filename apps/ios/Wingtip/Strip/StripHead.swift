@@ -3,7 +3,7 @@ import SwiftUI
 /// The strip's head: the verdict -- go, caution or no-go, in the planner's
 /// words (Verdict, POST /api/go-no-go) -- on a paper card, the route's
 /// line under it in condensed capitals ("C81 → KJVL → KDLH · C172 ·
-/// FL-045 · leaving now"), the route's other ways as chips, and at most
+/// FL-045 · leaving now"), the route's other ways in a menu, and at most
 /// three one-line findings from the glance (Glance.lines), each a row
 /// into the Brief. The route's menu (Share, File, Clear) at the head's
 /// corner, where the tabs' route box had it. No photo behind the
@@ -127,23 +127,12 @@ struct StripHead: View {
         .accessibilityLabel("The route's menu")
     }
 
-    /// The route's other ways (the planner's chips): each a chip, the one
-    /// flown filled; a tap flies it (Plan.use).
+    /// The route's other ways (the planner's chips), in the system's
+    /// menu picker as the plan's sheet has them (RouteWayPicker).
     @ViewBuilder
     private var ways: some View {
         if let chips = plan.routes?.chips, chips.count > 1 {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: WingtipSpace.sm) {
-                    ForEach(chips) { chip in
-                        let picked = (plan.pickedChip?.key ?? "none") == chip.key
-                        Button(chip.label) { plan.use(chip) }
-                            .buttonStyle(InkChipStyle(filled: picked))
-                            .accessibilityAddTraits(picked ? .isSelected : [])
-                    }
-                }
-                .padding(.horizontal, WingtipSpace.xxs).padding(.vertical, WingtipSpace.sm)
-            }
-            .accessibilityLabel("The route's ways")
+            RouteWayPicker()
         }
     }
 }

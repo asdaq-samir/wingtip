@@ -65,7 +65,7 @@ struct PlanView: View {
                 }
                 if plan.routed && plan.course != nil && RouteLine.shows(plan.routes, picked: plan.pickedChip, problem: plan.routesProblem) {
                     // Routes: the ways to fly it, right under the route's
-                    // ends, folding as a runway line does.
+                    // ends, in the system's menu picker.
                     RouteLineRow()
                 }
                 if let stage = plan.stage {
