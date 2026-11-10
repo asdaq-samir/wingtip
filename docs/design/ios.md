@@ -1163,8 +1163,15 @@ reader could not parse plays a warning notification once.
   ([HIG Dark Mode][hig-darkmode]).
   - Wingtip's Look (Wingtip, Glass Cockpit, Chart ink, Native) and
     Sunlight are a cockpit need, not a light/dark switch, so they stay.
-    Native is iOS's own: `systemBlue`, the system's labels and grouped
-    grounds, by name (design/tokens.json `color.system`).
+    Native is iOS out of the box (the owner, 2026-11-10): no tint of the
+    app's, the system's labels and grouped grounds by name
+    (design/tokens.json `color.system`), the text styles as SwiftUI sets
+    them, no brand haptics, corners or shadows (`Look.isStock` gates each
+    modifier). An untinted control draws in the AccentColor asset, which
+    the build compiles in as the global accent, so Native's controls are
+    the brand's blue, not `systemBlue`: that cannot change at run time.
+    The chart, the course, airspace, flight categories and the caution,
+    go and no-go colours stay as they are in every look.
   - Night follows the system.
 
 **Structure, top to bottom (inset-grouped `List`):**

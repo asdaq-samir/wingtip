@@ -15,6 +15,7 @@ struct ClearanceSheet: View {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.look) private var look
     private var listener: ClearanceListener { ClearanceListener.shared }
     /// The words read: the newest transmission settled while listening,
     /// until the pilot picks one from the log or types.
@@ -168,8 +169,9 @@ struct ClearanceSheet: View {
                 words = (try? await Planner.clearanceWords(near: near, dep: plan.dep)) ?? []
             }
             // A clearance read in full is felt as a success; one with a
-            // place the reader is unsure of, as a warning, once each.
-            .sensoryFeedback(.success, trigger: ready) { was, now in !was && now }
+            // place the reader is unsure of, as a warning, once each. In
+            // Native (Look.isStock) only the warning, which carries meaning.
+            .sensoryFeedback(.success, trigger: ready) { was, now in !look.isStock && !was && now }
             .sensoryFeedback(.warning, trigger: ClearanceCraftSection.unsure(found)) { was, now in !was && now }
             .onAppear { if let given = listener.sheetText { text = given; following = false } }
             .onChange(of: listener.heard.last(where: \.final)?.text) { _, newest in
