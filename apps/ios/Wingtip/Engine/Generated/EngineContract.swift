@@ -5298,6 +5298,16 @@ enum EngineContract {
         var limit: Double?
     }
 
+    struct IfrAlternateWindowAnswer: Codable, Equatable, Sendable {
+        var start: Double
+        var end: Double
+    }
+
+    struct IfrAlternateWindowInput: Codable, Equatable, Sendable {
+        var eta: Double
+        var `for`: String
+    }
+
     struct IfrFloorsAnswerItem: Codable, Equatable, Sendable {
         var floorFt: Double
         var highestFt: Double

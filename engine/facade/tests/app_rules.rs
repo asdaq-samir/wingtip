@@ -1,7 +1,7 @@
 //! The small rules every app once wrote for itself (the simplicity
 //! measure of 2026-11-10: aircraft form limits, the traffic notice, the
-//! paperwork's due tone, the drills' boxes, the sphere's figures), each
-//! held to its shared fixture (apps/web/src/lib/fixtures) and its answers
+//! paperwork's due tone, the drills' boxes, the sphere's figures, the IFR
+//! alternate's window), each held to its shared fixture (apps/web/src/lib/fixtures) and its answers
 //! to the contract
 //! (engine/contract/engine.schema.json), asked by name as every host asks.
 
@@ -122,5 +122,14 @@ fn the_spheres_figures() {
     for (got, case) in to.as_array().unwrap().iter().zip(cases) {
         close(&got["lat"], &case["to"]["lat"], "lat");
         close(&got["lon"], &case["to"]["lon"], "lon");
+    }
+}
+
+#[test]
+fn the_ifr_alternates_window() {
+    for case in fixture("plannerRules.json")["alternateWindow"].as_array().unwrap() {
+        let window = ask("ifr_alternate_window", json!({ "eta": case["eta"], "for": case["for"] }));
+        close(&window["start"], &case["start"], "start");
+        close(&window["end"], &case["end"], "end");
     }
 }

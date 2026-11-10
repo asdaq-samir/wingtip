@@ -1027,6 +1027,12 @@ fun Engine.ifrAlternateDestination(ident: String, approaches: EngineContract.Ifr
     rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast))
 
 /**
+ * The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).
+ */
+fun Engine.ifrAlternateWindow(eta: Double, `for`: String): Result<EngineContract.IfrAlternateWindowAnswer> =
+    rule("ifr_alternate_window", EngineContract.IfrAlternateWindowInput(eta = eta, `for` = `for`))
+
+/**
  * The fields offered as the IFR alternate: those that will do, or that meet the standard minimums and publish their own, good first then nearest, `limit` of them.
  */
 fun Engine.ifrAlternatesRanked(checks: List<Map<String, JsonElement>>, limit: Double? = null): Result<List<Map<String, JsonElement>>> =

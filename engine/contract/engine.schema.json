@@ -12593,6 +12593,52 @@
       ],
       "additionalProperties": false
     },
+    "ifr_alternate_window": {
+      "description": "The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "IfrAlternateWindowInput",
+          "type": "object",
+          "properties": {
+            "eta": {
+              "type": "number"
+            },
+            "for": {
+              "enum": [
+                "destination",
+                "alternate"
+              ]
+            }
+          },
+          "required": [
+            "eta",
+            "for"
+          ]
+        },
+        "answer": {
+          "title": "IfrAlternateWindowAnswer",
+          "type": "object",
+          "properties": {
+            "start": {
+              "type": "number"
+            },
+            "end": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "start",
+            "end"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "ifr_alternates_ranked": {
       "description": "The fields offered as the IFR alternate: those that will do, or that meet the standard minimums and publish their own, good first then nearest, `limit` of them.",
       "type": "object",
@@ -24843,6 +24889,7 @@
     "icing_forecast_route",
     "ifr_alternate_check",
     "ifr_alternate_destination",
+    "ifr_alternate_window",
     "ifr_alternates_ranked",
     "ifr_floors",
     "ifr_obstacle_radius_nm",

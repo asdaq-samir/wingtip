@@ -5217,6 +5217,18 @@ object EngineContract {
     )
 
     @Serializable
+    data class IfrAlternateWindowAnswer(
+        val start: Double,
+        val end: Double,
+    )
+
+    @Serializable
+    data class IfrAlternateWindowInput(
+        val eta: Double,
+        val `for`: String,
+    )
+
+    @Serializable
     data class IfrFloorsAnswerItem(
         @SerialName("floor_ft")
         val floorFt: Double,

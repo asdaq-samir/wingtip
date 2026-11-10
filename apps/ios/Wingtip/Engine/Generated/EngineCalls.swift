@@ -854,6 +854,11 @@ extension Engine {
         try rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast))
     }
 
+    /// The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).
+    static func ifrAlternateWindow(eta: Double, `for`: String) throws -> EngineContract.IfrAlternateWindowAnswer {
+        try rule("ifr_alternate_window", EngineContract.IfrAlternateWindowInput(eta: eta, for: `for`))
+    }
+
     /// The fields offered as the IFR alternate: those that will do, or that meet the standard minimums and publish their own, good first then nearest, `limit` of them.
     static func ifrAlternatesRanked(checks: [[String: JSONValue]], limit: Double? = nil) throws -> [[String: JSONValue]] {
         try rule("ifr_alternates_ranked", EngineContract.IfrAlternatesRankedInput(checks: checks, limit: limit))
