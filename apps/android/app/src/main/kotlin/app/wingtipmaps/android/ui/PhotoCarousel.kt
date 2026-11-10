@@ -37,8 +37,6 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.picture
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.design.predictiveBack
-import app.wingtipmaps.android.design.rememberPredictiveBack
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -50,8 +48,8 @@ data class CardPicture(val label: String, val address: String, val credit: Strin
 /**
  * A card's pictures under its tabs, as Google Maps' place sheet has its
  * previews: Material's multi-browse carousel,
- * each picture a tap to the full-screen viewer, which Back closes with
- * the system's predictive back. A picture that cannot be had is left out.
+ * each picture a tap to the full-screen viewer, a stock Dialog, which
+ * Back closes. A picture that cannot be had is left out.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,13 +83,12 @@ fun PhotoCarousel(pictures: List<CardPicture>, modifier: Modifier = Modifier) {
 private val PictureWidth = 240.dp
 private val PictureHeight = 180.dp
 
-/** One picture at the whole screen, its credit under it; Back and the
- *  close go back to the card, drawn away with the predictive gesture. */
+/** One picture at the whole screen, its credit under it; Back (the
+ *  Dialog's own) and the close go back to the card. */
 @Composable
 private fun PictureViewer(picture: CardPicture, bitmap: ImageBitmap, onClose: () -> Unit) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
-        val back = rememberPredictiveBack(enabled = true, onBack = onClose)
-        Box(Modifier.fillMaxSize().predictiveBack(back).background(Color.Black)) {
+        Box(Modifier.fillMaxSize().background(Color.Black)) {
             Image(bitmap = bitmap, contentDescription = picture.label, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
             IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd).padding(WingtipSpace.Lg)) {
                 Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close), tint = Color.White)

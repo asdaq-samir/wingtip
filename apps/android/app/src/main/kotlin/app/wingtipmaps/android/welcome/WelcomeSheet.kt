@@ -2,8 +2,10 @@ package app.wingtipmaps.android.welcome
 
 import android.Manifest
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,10 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.design.SharedAxisContent
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import app.wingtipmaps.android.design.predictiveBack
-import app.wingtipmaps.android.design.rememberPredictiveBack
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.notify.Notifications
 import app.wingtipmaps.android.plan.FlightChoices
@@ -89,9 +88,8 @@ fun WelcomeHost(plan: Plan, onOpen: (sample: Boolean) -> Unit) {
     val state by model.state.collectAsStateWithLifecycle()
 
     WingtipSheet(title = stringResource(R.string.welcome), onClose = { end(model.skip()) }, full = true) {
-        // Back goes a page back, the page drawn back with the predictive
-        // gesture before it gives way.
-        val pageBack = rememberPredictiveBack(enabled = state.index > 0) { model.back() }
+        // Back goes a page back.
+        BackHandler(enabled = state.index > 0) { model.back() }
         // Where the pilot is in the welcome: Material's linear progress
         // indicator stepped by page, said as "Step 2 of 5".
         val said = stringResource(R.string.said_welcome_step, state.index + 1, state.steps.size)
@@ -103,9 +101,8 @@ fun WelcomeHost(plan: Plan, onOpen: (sample: Boolean) -> Unit) {
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(top = WingtipSpace.Lg),
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Lg),
         ) {
-            // A page gives way to the next along X (Material's shared axis;
-            // a cross-fade under Reduce Motion).
-            SharedAxisContent(state.index, Modifier.predictiveBack(pageBack)) { i -> WelcomePage(state.steps[i], state, plan, model) }
+            // A page gives way to the next with AnimatedContent's own transition.
+            AnimatedContent(state.index, label = "welcomePage") { i -> WelcomePage(state.steps[i], state, plan, model) }
         }
         // The page's buttons at the sheet's foot, under the thumb, where
         // they stay as the page scrolls (Google's research on big

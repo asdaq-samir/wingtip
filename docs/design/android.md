@@ -239,8 +239,12 @@ end, and nothing on this page describes a Google app from memory.
     predictive preview.
   - No back arrow is drawn in a top app bar's navigation slot. That is
     the one place Wingtip departs from Material's top app bar.
-  - Back steps down the same ladder as close: card, then lower sheet
-    size, then leave the app (`design/PredictiveBack`).
+  - Back steps down the same ladder as close: lower the sheet
+    (`MapSheet`'s `PredictiveBackHandler`), then a page back (the
+    sheet's Navigation Compose `NavHost`, `ui/PlanSheet`; a card in the
+    wide panes by `NavigableListDetailPaneScaffold`), then leave the
+    app. Overlays are stock `Dialog`s, which Back closes. The
+    hand-built shrink-on-back (`design/PredictiveBack`) is gone.
 - **Android 17**: activities are no longer recreated for keyboard,
   navigation-mode or colour-mode changes unless they opt in
   (`android:recreateOnConfigChanges`). Dark mode switching must

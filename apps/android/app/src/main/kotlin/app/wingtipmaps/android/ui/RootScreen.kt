@@ -34,7 +34,6 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.airplane.AirplaneProfileHost
 import app.wingtipmaps.android.airplane.AskFigures
-import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.api.AssistantSource
@@ -105,8 +104,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val context = LocalContext.current
     val resources = LocalResources.current
     val search = rememberSearchControl()
-    // The sheet's pages, the last on top: Close and Back go back one.
-    var pages by rememberSaveable { mutableStateOf(listOf(SheetPage.Home.key)) }
     var picked by remember { mutableStateOf<MapPick?>(null) }
     var asking by rememberSaveable { mutableStateOf(false) }
     var nearestOpen by rememberSaveable { mutableStateOf(false) }
@@ -123,23 +120,14 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val planState by plan.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val fix by ownShip.ownShip.fix.collectAsStateWithLifecycle()
-    val profile by ProfileOpen.at.collectAsStateWithLifecycle()
     val strips by strip.state.collectAsStateWithLifecycle()
     val conversation by assistant.conversation.collectAsStateWithLifecycle()
 
-    // A page shown on top (a field's card in place of another's, the map's
-    // ring let go as it closes), the sheet raised from its peek.
-    fun show(page: SheetPage) {
-        if (pages.last().startsWith(AIRPORT_KEY) && pages.last() != page.key) airports.close()
-        pages = if (page == SheetPage.Home) listOf(page.key) else pages.filterNot { it == page.key || it.startsWith(AIRPORT_KEY) } + page.key
-        scope.launch { if (sheet.atPeek) sheet.expand() }
-    }
-    fun back() {
-        if (pages.last().startsWith(AIRPORT_KEY)) airports.close()
-        pages = pages.dropLast(1).ifEmpty { listOf(SheetPage.Home.key) }
-    }
-    val showPlan: () -> Unit = { if (stripLayout) raised++ else show(SheetPage.Plan) }
-    val openField: (String) -> Unit = { ident -> if (stripLayout) picked = MapPick.Airport(ident) else show(SheetPage.Airport(ident)) }
+    // The sheet's pages (SheetNav), a page shown raising the sheet from its peek.
+    val raise: () -> Unit = { scope.launch { if (sheet.atPeek) sheet.expand() } }
+    val pages = rememberSheetNav(wide, active = !stripLayout, airports, onShown = raise)
+    val showPlan: () -> Unit = { if (stripLayout) raised++ else pages.show(SheetPage.Plan) }
+    val openField: (String) -> Unit = { ident -> if (stripLayout) picked = MapPick.Airport(ident) else pages.show(SheetPage.Airport(ident)) }
 
     val link by pending.collectAsStateWithLifecycle()
     val shared: SharedFlightModel = viewModel()
@@ -218,9 +206,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             )
         }
     }
-    val page = profile?.let { SheetPage.Airplane(it) } ?: SheetPage.of(pages.last())
-    val pagesView: @Composable (SheetPage, Dp, Modifier, Boolean) -> Unit = { shown, bar, modifier, atPill ->
-        SheetPagesFor(shown, plan, airports, bar, answer, ::show, ::back, picks::pick, search, modifier, atPill)
+    val pagesView: @Composable (Dp, Modifier, Boolean) -> Unit = { bar, modifier, backEnabled ->
+        SheetPagesHost(pages, plan, airports, bar, answer, picks::pick, search, backEnabled, modifier)
     }
 
     val mapView: @Composable (Dp) -> Unit = { covered -> MapPane(plan, ownShip, covered = covered, onPick = onPick, onAsk = { asking = true }, onNearest = onNearest) }
@@ -230,23 +217,21 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         })
     } else if (wide) {
         WidePanes(
-            card = page.takeIf { it is SheetPage.Airport || it is SheetPage.Airplane },
+            pages,
             list = {
                 Column(Modifier.fillMaxSize()) {
                     searchRow(null)
-                    // The list pane keeps Home or the plan under a card.
-                    val under = if (pages.last() == SheetPage.Plan.key || (pages.size > 1 && pages[pages.size - 2] == SheetPage.Plan.key)) SheetPage.Plan else SheetPage.Home
-                    pagesView(under, 0.dp, Modifier.fillMaxSize(), true)
+                    // The list pane keeps Home or the plan; its Back waits on the card's.
+                    pagesView(0.dp, Modifier.fillMaxSize(), pages.card == null)
                 }
             },
-            detail = { shown -> pagesView(shown, 0.dp, Modifier.fillMaxSize(), false) },
-            onBack = { if (profile != null) ProfileOpen.close() else back() },
+            detail = { shown -> SheetPageContent(shown, pages, plan, airports, answer, picks::pick, search) },
             // The route being worked on: its floating toolbar over the map,
             // an edit's Snackbar over that.
             map = {
                 Box(Modifier.fillMaxSize()) {
                     mapView(0.dp)
-                    val editing = SheetPage.Plan.key in pages && planState.routed
+                    val editing = pages.planShown && planState.routed
                     Column(Modifier.align(Alignment.BottomCenter), horizontalAlignment = Alignment.CenterHorizontally) {
                         SnackbarHost(snackbars, if (editing) Modifier else Modifier.navigationBarsPadding())
                         if (editing) RouteToolbar(plan, onAddPoint = search::addStop)
@@ -257,14 +242,15 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     } else if (fold != null) {
         TabletopPanes(fold, map = { Box(Modifier.fillMaxSize()) { mapView(0.dp); SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter)) } }) {
             searchRow(null)
-            pagesView(page, 0.dp, Modifier.weight(1f), false)
+            pagesView(0.dp, Modifier.weight(1f), true)
         }
     } else {
         // Over the navigation bar (edge to edge): its peek is the search above it.
         val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         MapSheet(state = sheet, peek = SearchPeek + navigationBar, snackbars = snackbars, body = { covered -> mapView(covered) }) {
             searchRow(null)
-            pagesView(page, navigationBar, Modifier.weight(1f), sheet.atPeek)
+            // Back lowers the expanded sheet first (MapSheet), then goes back a page.
+            pagesView(navigationBar, Modifier.weight(1f), sheet.atPeek)
         }
     }
 
@@ -309,5 +295,3 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
 
 /** The peek: the drag handle and the search's row, as tall as the strip's. */
 private val SearchPeek = WingtipSize.TapTarget * 2 + WingtipSpace.Lg + WingtipSpace.Xs
-
-private const val AIRPORT_KEY = "airport:"
