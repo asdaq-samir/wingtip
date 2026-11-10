@@ -10,6 +10,7 @@
         <item quantity="one">%d sentence left out: its figure was not the app\'s.</item>
         <item quantity="other">%d sentences left out: their figures were not the app\'s.</item>
     </plurals>
+    <string name="ai_draft_remark">Draft a Remark</string>
     <string name="ai_on_phone">On-Phone AI</string>
     <string name="ai_on_phone_ready">Gemini Nano is on this phone. Words, Ask and pages read stay on it.</string>
     <string name="ai_on_phone_download">Gemini Nano can be added to this phone by Android. Until then, words come from Wingtip\'s assistant when you\'re signed in.</string>
