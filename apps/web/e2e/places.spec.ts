@@ -7,11 +7,13 @@ import {
   consoleSheet,
   drawn,
   expectDrawerClosed,
+  firstRow,
   grabberTo,
   mapStill,
   openConsole,
   openMapSettings,
   openPanel,
+  searchAirports,
   settle,
   showTabs,
   sideDrawer,
@@ -71,10 +73,10 @@ test("an airport's card has the field's pictures across its top, its ident over 
   // Measured from the route's departure while the pilot's own position
   // is not known.
   await expect(card(page).getByTestId("place-line")).toHaveText(/^\d+ nm NW of C81 · Elevation [\d,]+ ft$/);
-  // Its share and close on the pictures, the tabs over the card as they
-  // stay over every card (TabBar).
+  // Its share and close on the pictures, the one search over the card as
+  // it stays over every card (OneSearchField).
   for (const id of ["place-share", "place-close"]) await expect(card(page).getByTestId(id)).toBeInViewport();
-  await expect(page.getByTestId("tab-bar")).toBeVisible();
+  await expect(firstRow(page)).toBeVisible();
   // Its actions in a row under them at half -- no Add Stop for the
   // route's own destination -- and its tabs right under them, Info open.
   for (const id of ["fly-here", "place-call", "place-favorite"]) await expect(card(page).getByTestId(id)).toBeInViewport({ ratio: 1 });
@@ -154,7 +156,7 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   await settle(page);
   // The aerial the first page of the pictures, the runways after it (the
   // owner's ask, 2026-10-29).
-  const pages = card(page).getByTestId("place-head").locator('[data-slot="carousel-item"]');
+  const pages = card(page).getByTestId("place-pictures").locator('[data-slot="carousel-item"]');
   await expect(pages).toHaveCount(2, { timeout: slow(15000) });
   await expect(pages.nth(0).getByTestId("place-aerial")).toHaveCount(1);
   await expect(pages.nth(1).getByTestId("place-runway-sketch")).toBeVisible();
@@ -441,12 +443,10 @@ test("an airport's Info lists its first frequencies, and its title the way to ev
   await more.click();
   expect(await rows.count()).toBeGreaterThan(3);
   await expect(more).toHaveCount(0);
-  // Down past them to the Details' address, under the frequencies since
-  // the owner's 2026-10-29 ask, the pictures scrolled up out of sight.
+  // Down past them to the Details' address: the one search still over
+  // the card, the way out of it.
   await card(page).getByTestId("place-address").scrollIntoViewIfNeeded();
-  await expect(card(page).getByTestId("place-head-bar")).toHaveCSS("opacity", "1");
-  await expect(card(page).getByTestId("place-head-bar")).toHaveText("KDLH");
-  await expect(card(page).getByTestId("place-close")).toBeInViewport();
+  await expect(page.getByTestId("search-airports")).toBeInViewport();
 });
 
 /** A field's procedures' list, not one procedure's drawing. */
@@ -473,11 +473,11 @@ test("the route's Procedures open its destination's card on its approaches, and 
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  // Nearest is Airport's (its pill's second strip), not a button on the
-  // map's left; the map's own buttons stay on its right.
+  // Nearest is the search's own page's (its Nearest section), not a button
+  // on the map's left; the map's own buttons stay on its right.
   await expect(page.locator("[data-map-controls-left]")).toHaveCount(0);
   await showTabs(page);
-  await expect(page.getByTestId("tab-airport")).toBeVisible();
+  await expect(page.getByTestId("search-airports")).toBeVisible();
   const settings = page.locator("[data-map-controls]").getByTestId("map-settings-button");
   const width = page.viewportSize()!.width;
   expect((await settings.boundingBox())!.x).toBeGreaterThan(width / 2);
@@ -691,8 +691,9 @@ test("an airport tapped on the chart while Setup is up puts Setup away and opens
   await expect(page).toHaveURL(/[?&]place=[A-Z0-9]+/);
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(card(page).getByTestId("place-name")).not.toBeEmpty();
+  // The account page put away for the card, the one search over it again.
   await showTabs(page);
-  await expect(page.getByTestId("tab-airport")).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("account-button")).toBeVisible();
 });
 
 test("a tap on an airport on the chart opens its card, a tap elsewhere puts it away, and Fly Here makes it the destination", async ({
@@ -975,18 +976,18 @@ test("the airport search answers from the phone's own copy, asking the planner n
   await page.goto("/app/plan");
   await settle(page);
   await downloaded;
-  // Out of the tabs alone, on Airport's search.
+  // Out, on the one search.
   await grabberTo(page, "full");
   await showTabs(page);
-  await page.getByTestId("tab-airport").click();
   const search = page.getByTestId("search-airports");
   const read = index();
   await search.click();
   await read;
   await search.pressSequentially("oshk");
-  // Wittman by its town, the bigger field first, as the planner would.
-  await expect(page.getByTestId("search-result")).toHaveText([/KOSH/, /2WN8/]);
-  expect(asked).toEqual([]);
+  // Wittman by its town, the bigger field first, from the browser's own
+  // copy (the waypoints and navaids beside them are the planner's).
+  await expect(searchAirports(page)).toHaveText([/KOSH/, /2WN8/]);
+  expect(asked.filter((url) => !/fixes=true/.test(url))).toEqual([]);
 });
 
 test("with no route the panel is a search bar: Home is set from Favorites, an airport found is starred onto Favorites, and Fly Here flies from Home", async ({
@@ -999,11 +1000,10 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await page.reload();
   await settle(page);
   const search = page.getByTestId("search-airports");
-  // The pill, as a fresh load opens; out on Airport's search.
+  // The pill, as a fresh load opens; out on the one search.
   await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
   await grabberTo(page, "full");
   await showTabs(page);
-  await page.getByTestId("tab-airport").click();
   await expect(search).toBeVisible();
 
   // Focused, the sheet comes all the way up on Favorites, Home not set yet;
@@ -1016,14 +1016,14 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await page.getByTestId("pill-home").click();
   await expect(search).toHaveAttribute("placeholder", "Search for your home airport");
   await search.fill("C81");
-  await page.getByTestId("search-result").filter({ hasText: "C81" }).first().click();
+  await searchAirports(page).filter({ hasText: "C81" }).first().click();
   await expect(page.getByTestId("pill-home")).not.toContainText("Add");
 
   // A word of the town finds the field, the bigger one first; the star
   // on its card makes it a favorite.
   await search.click();
   await search.fill("duluth");
-  const first = page.getByTestId("search-result").first();
+  const first = searchAirports(page).first();
   await expect(first).toContainText("KDLH", { timeout: slow(10000) });
   await first.click();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
@@ -1062,10 +1062,10 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(sideDrawer(page).getByTestId("panel-tab-enroute")).toBeHidden();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   await showTabs(page);
-  // Another tab picked all the way up stays all the way up (TabBar).
-  await page.getByTestId("tab-airport").click();
+  // The search's own page all the way up, as the sheet was.
+  await search.click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
-  await expect(search).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("search-home")).toBeVisible();
 
   // Favorites in full: Edit lets KDLH go.
   await search.click();

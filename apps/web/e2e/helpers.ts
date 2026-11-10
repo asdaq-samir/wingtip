@@ -1,6 +1,8 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 export { closeProfile, openProfile, pressDryRunStart } from "./dryRun";
+import { planFromSearch } from "./oneSearch";
+export { emptyPlan, firstRow, searchAirports, showPlan, showSearch, showTraffic } from "./oneSearch";
 
 /**
  * What the browser suite's specs share: the two pages, the waits CI
@@ -43,13 +45,14 @@ export async function settle(page: Page) {
  *  `data-panel`: peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
 
-/** The tab bar's tabs in sight: the sheet's first row, static over a
- *  card as the platform's own tabs are (TabBar), at the pill too. */
+/** The first row in sight: the sheet's, static over a card, at the pill
+ *  too. */
 export async function showTabs(page: Page) {
   // From the sheet at rest: settling to the pill it keeps the half's
-  // layout until it lands (MapPanel).
+  // layout until it lands (MapPanel). The first row: the one search, or
+  // the developer's places (DevBar).
   await settled(sideDrawer(page));
-  if (!(await page.getByTestId("tab-bar").isVisible())) await grabberTo(page, "half");
+  if (!(await page.getByTestId("search-airports").or(page.getByTestId("dev-tabs")).first().isVisible())) await grabberTo(page, "half");
 }
 
 /** The panel's head in sight: half way, with the route's box and its
@@ -136,6 +139,8 @@ export async function controlsInSight(page: Page) {
   await closeBrief(page);
   await grabberTo(page, "full");
   await settled(panel);
+  // With no route the search's page is up: Plan a Flight, the empty box.
+  await planFromSearch(page);
 }
 
 /** FPL's Brief, a card over the route (BriefCard), from the chips' Brief:
@@ -181,12 +186,10 @@ async function panelFull(page: Page) {
  *  tab tapped again opens it, as every tab's does. */
 export async function openConsole(page: Page) {
   await showTabs(page);
-  const settings = page.getByTestId("setup-button");
-  await settings.click();
-  // Setup is the panel's on every screen and both pages (MapPage), which
-  // at the pill is out of sight.
-  // Opened at the pill's size, Setup's pill; all the way up for the rest.
-  await expect(settings).toHaveAttribute("aria-selected", "true");
+  // The account button's menu, its first row the account page (Setup).
+  await page.getByTestId("account-button").click();
+  await page.getByTestId("account-menu-setup").click();
+  await expect(page.getByTestId("console-sheet")).toBeVisible();
   await grabberTo(page, "full");
 }
 
@@ -704,22 +707,19 @@ export async function consolePage(scope: Page | Locator, name: "Account" | "Guid
   if (name !== "Account") await setup.getByRole("button", { name: new RegExp(`^${name}`) }).click();
 }
 
-/** Airport's search bar, in sight: on the Airport tab, its pill's one row
- *  or its head half way (FPL is the tab a fresh load opens on). */
-/** A tab's one strip set to show one of its lists -- FPL's Saved or
- *  Recents, Airport's Favorites, Recents or Nearest, Aircraft's Favorites,
- *  Recents or a question -- from the filter menu at its heading's right
- *  (StripSection). */
-export async function stripShows(page: Page, menu: "fpl-strip-shows" | "airport-strip-shows" | "aircraft-question", item: string) {
+/** A strip set to show one of its lists -- the flights' Saved or Recents
+ *  (the one search's own page), the traffic's Favorites, Recents or a
+ *  question -- from the filter menu at its heading's right (StripSection). */
+export async function stripShows(page: Page, menu: "fpl-strip-shows" | "aircraft-question", item: string) {
   await sideDrawer(page).getByTestId(menu).click();
   await page.getByTestId(item).click();
 }
 
+/** The one search, in sight: the sheet's first row, at every height. */
 export async function airportSearch(page: Page) {
   const search = page.getByTestId("search-airports");
   if (await search.isVisible()) return search;
   await showTabs(page);
-  await page.getByTestId("tab-airport").click();
   await expect(search).toBeVisible();
   return search;
 }

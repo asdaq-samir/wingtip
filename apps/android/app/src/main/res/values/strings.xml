@@ -114,11 +114,6 @@
     <string name="said_open_field">Open %1$s</string>
     <string name="said_best_field">Best field %1$s, %2$s</string>
     <string name="said_atc_heard">Call for you: %1$s</string>
-    <string name="said_sheet_pill">Panel lowered</string>
-    <string name="said_sheet_half">Panel at half</string>
-    <string name="said_sheet_full">Panel full screen</string>
-    <string name="said_sheet_up">Raise the panel</string>
-    <string name="said_sheet_down">Lower the panel</string>
 
     <!-- The map's buttons (the UI audit's #12: the state said, not only drawn). -->
     <string name="own_ship_button">My Position</string>
@@ -383,7 +378,6 @@
     <!-- The Logbook's Coach, the pilot's proficiency plan (coach/). -->
     <string name="coach">Coach</string>
     <string name="coach_line">What is due, and sessions to fly for it</string>
-    <string name="coach_certificate">Your Certificate</string>
     <string name="coach_certificate_short">Certificate</string>
     <string name="certificate_student">Student</string>
     <string name="certificate_private">Private or Higher</string>
@@ -475,7 +469,7 @@
     <string name="welcome_home_line">Where your flights usually start. You can leave it empty.</string>
     <string name="welcome_home_is">Home: %1$s</string>
     <string name="welcome_rules">VFR or IFR</string>
-    <string name="welcome_rules_line">How you usually fly. Change it any time in FPL.</string>
+    <string name="welcome_rules_line">How you usually fly. Change it any time in the plan.</string>
     <string name="welcome_location">Location</string>
     <string name="welcome_location_line">Wingtip plans from where you are and shows your airplane on the chart.</string>
     <string name="welcome_notifications">Notifications</string>

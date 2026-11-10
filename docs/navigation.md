@@ -60,10 +60,10 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 
 | Link (`open=`) | Screen | Web | iOS | Android | What it is |
 |---|---|---|---|---|---|
-| `fpl` | FPL | yes | yes | yes | The route, its altitude and its figures: the FPL tab. |
-| `airport` | Airport | yes | yes | yes | The Airport tab: search, favorites, recents, nearest. |
-| `airplane` | Airplane | yes | yes | yes | The Airplane tab: the airplane picked and the traffic. |
-| `setup` | Setup | yes | yes | yes | The Setup tab. |
+| `fpl` | FPL | yes | yes | yes | The plan: the route, its altitude and its figures, the sheet's main content under the one search. |
+| `airport` | Airport | yes | yes | yes | The one search with nothing typed: the flight, favorites, recents, nearest. |
+| `airplane` | Airplane | yes | yes | yes | The airplane picked's profile, or the traffic about where none is picked. |
+| `setup` | Setup | yes | yes | yes | The account and settings page, the account button's. |
 | `brief` | Brief | yes | yes | yes | The route's Brief and its Go / No-Go (needs a route). |
 | `navlog` | Nav Log | yes | yes | yes | The nav log, leg by leg (needs a route). Android's FPL tab is its nav log. |
 | `profile` | Profile | yes | yes | -- | The route's side view and its altitudes (needs a route). |
@@ -90,6 +90,7 @@ The plan's own keys go beside it, and alone they open what they name:
 - `stops`: The points between, idents comma-separated.
 - `place`: A field's card, by its ident.
 - `flight`: An airplane tracked, by its ICAO address (six hex digits).
+- `airplane`: An airplane's profile, by its N-number.
 - `altitude_ft`: A shared plan's cruise altitude, feet MSL.
 - `depart`: A shared plan's departure time, an ISO 8601 instant in UTC; none for about now.
 - `type`: A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own.
@@ -145,27 +146,38 @@ otherwise.
 
 ### Web
 
+Since the one search (the owner's approved design, 2026-11-09, branch
+`claude/one-search-web`) the web's sheet has no tabs. Its first row is one
+field, "Search airports, airplanes, or ask", with the microphone and the
+account button beside it; under it the plan (with a route) or the search's
+own page (with none, or the field in use). On a desktop the same in the
+side panel, ⌘K or Ctrl K focusing the field (the command palette it
+replaced), `/` too, and the airport card's F, D and S for Fly Here, Depart
+From and Add as Stop. Counted from the map with the sheet at rest: the
+search field or the account button tapped is 1. "Before" is the tab bar's
+count.
+
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| FPL: route box, route list, nav log rows | FPL | 1 | Route pills drag to reorder; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; altitude and departure time chips open popovers; **Undo bar under the route after a removal or clear (was a toast; new)** |
-| Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; **Dist opens the nav log (new)** |
-| Brief | FPL → Brief | 2 | Alternate filed or taken off; Ask chips apply changes |
-| Nav log card | FPL → ••• → Nav log; **Dist tapped (new)** | 3 → 1 | Rows select; **a field's name opens its card (new)** |
-| Profile | FPL → Profile | 2 | VFR/IFR, altitude in the side view, Dry run |
-| Saved flights | FPL (no route) → Saved; Setup → Flights | 2 | **Name and notes edited in the row (Edit in its menu; new)**; delete with a confirm |
-| Airport card | Tap a field; a route row's More Info; **a nav log field (new)** | 1 | Add stop, Fly Here, favorite; **frequencies copy (new)** |
-| Airport Favorites | Airport → Favorites | 2 | Drag to reorder, swipe to delete, **Undo row (new)** |
-| Nearest | Airport → Nearest | 2 | Change the place it is from |
-| Airplane card, past flight | Tap traffic; its past row | 1, 2 | Replay |
-| Map menu | Map button | 1 | Every switch in place |
-| Emergency assistant | Flying head; voice; **Setup → Emergency Assistant (new)**; the checklist page | 1 in flight, 5–6 → **2** on the ground | Its frequencies copy |
-| Setup | Setup | 1 | Layout tiles in place |
-| Airplanes, Flights, Logbook, Minimums | Setup → row | 2 | Minimums inline; **logbook entry edited in the row, delete with an Undo row (new)**; airplane in a popover form |
-| Checklists | **Setup → Checklists (new)**; Setup → Airplanes → airplane → row | 4 → **2** | Checklist as one text |
-| Coach | **Setup → Coach (new)**; Setup → Logbook → Coach | 3 → **2** | -- |
-| Practice (Holding, Lost comms, the drills) | **Setup → Practice (new)**; Setup → Guide → row | 3 → **2** | -- |
-| Checkride, Instructing | Setup → Logbook → row | 3 | Checkride inline |
-| Squawks | Setup → Airplanes → airplane → row | 4 | Squawks inline |
+| Plan: route box, route list, nav log rows | the sheet (with a route); the search's Your Flight card | 1 → **0** with a route, 1 from the search | Route pills drag to reorder; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; altitude and departure time chips open popovers; Undo bar under the route after a removal or clear |
+| Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Dist opens the nav log |
+| Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off; Ask chips apply changes |
+| Nav log card | plan → ••• → Nav log; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
+| Profile | plan → Profile | 2 → **1** with a route | VFR/IFR, altitude in the side view, Dry run |
+| Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
+| Saved flights | search → Saved; account → Flights | 2 | Name and notes edited in the row; delete with a confirm |
+| Airport card | Tap a field; a search result; a route row's More Info; a nav log field | 1 (2 from the search) | **Fly Here, Depart From, Add as Stop at its top (new)**, favorite; frequencies copy |
+| Airport Favorites, Recents | search → Favorites / Recents | 2 | Drag to reorder, swipe to delete, Undo row |
+| Nearest | search → Nearest; search → Do → Nearest | 2 | Change the place it is from |
+| Airplane profile | an N-number tapped; a search result (yours, the FAA registry's) | 1, 2 | **Fly This Airplane (new)**; every figure edited in place |
+| Traffic, airplane card, past flight | Tap traffic; search → Do → Traffic Nearby; its past row | 1, 2 | Replay |
+| Map menu | Map button | 1 | Every switch in place; its Search row focuses the search |
+| Emergency assistant | Flying head; voice; search → Do → Emergency Assistant | 1 in flight, **2** on the ground | Its frequencies copy |
+| Account and Settings (was Setup) | account button → Account and Settings | 1 → **2** | Layout tiles in place |
+| Airplanes, Flights, Logbook, Minimums, Checklists, Coach, Practice | account button → row | 2 | Minimums inline; logbook entry edited in the row, delete with an Undo row; airplane in a popover form |
+| Status, Guide, About | account button → row | 3 → **2** | -- |
+| Checkride, Instructing | account button → Logbook → row | 3 | Checkride inline |
+| Squawks | account button → Airplanes → airplane → row | 4 | Squawks inline |
 
 ### iOS
 

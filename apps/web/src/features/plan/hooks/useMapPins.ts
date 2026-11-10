@@ -6,7 +6,7 @@ import { useKeptAirport } from "../../../lib/preferences";
 import { airportQuery, nearestQuery } from "../../../lib/queryClient";
 import type { PlannedRoute } from "./planAddress";
 import type { PlanCourse } from "./planTypes";
-import type { useAddressCards } from "./useTabCards";
+import type { useAddressCards } from "./usePanelView";
 
 type AddressCards = ReturnType<typeof useAddressCards>;
 

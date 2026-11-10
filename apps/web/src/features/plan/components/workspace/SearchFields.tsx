@@ -4,66 +4,17 @@ import { SearchField } from "../../../../components/PanelCapsule";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 
 /**
- * The tab's head (PlanWorkspace's `head`) where it is not FPL's: Aircraft's
- * field, Nearest's, or Airport's search bar, what is typed kept in the view
- * model and features/plan/lib/tabSearch. One SearchField in the one place whichever it
- * is, as before, so a switch between them changes its props and keeps the
- * field itself.
+ * A list's own field under the one search (PlanWorkspace's `head`): the
+ * traffic's search for an airplane heard, or Nearest's place to measure
+ * from, what is typed kept in features/plan/lib/tabSearch. One SearchField
+ * in the one place whichever it is, so a switch between them changes its
+ * props and keeps the field itself.
  */
-export default function TabSearchField({ vm }: { vm: PlanWorkspaceModel }) {
-  return vm.tab === "aircraft" ? aircraftSearch(vm) : vm.nearOpen ? nearSearch(vm) : airportSearch(vm);
+export default function ListSearchField({ vm }: { vm: PlanWorkspaceModel }) {
+  return vm.view === "traffic" ? aircraftSearch(vm) : nearSearch(vm);
 }
 
-/** Airport's search bar, the tab's head: an airport picked opens its card. */
-function airportSearch(vm: PlanWorkspaceModel) {
-  const {
-    listAway,
-    pickPlace,
-    picking,
-    place,
-    query,
-    quietFocus,
-    search,
-    searchInput,
-    selectPlace,
-    setPanel,
-    setPicking,
-    setQuery,
-    upAsTyped,
-  } = vm;
-  return (
-    <SearchField
-      value={query}
-      onChange={(q) => {
-        setQuery(q);
-        upAsTyped(q);
-      }}
-      inputRef={searchInput}
-      placeholder={
-        picking === "home" ? "Search for your home airport" : picking === "favorite" ? "Search for an airport to keep" : "Search airports"
-      }
-      onFocus={() => {
-        if (place) selectPlace(null);
-        listAway("favorites");
-        if (!quietFocus.current) setPanel("full");
-      }}
-      onCancel={() => {
-        setQuery("");
-        setPicking("place");
-        listAway("favorites");
-        if (place) selectPlace(null);
-        setPanel("peek");
-      }}
-      onSubmit={() => {
-        const first = search.answered ? search.rows[0] : undefined;
-        if (first) void pickPlace({ ident: first.ident, name: first.name, municipality: first.municipality });
-        else if (search.typed) void pickPlace({ ident: search.typed.toUpperCase(), name: search.typed.toUpperCase() });
-      }}
-    />
-  );
-}
-
-/** Aircraft's field, the search bar's shape in the same place. */
+/** The traffic's field, the search bar's shape. */
 function aircraftSearch(vm: PlanWorkspaceModel) {
   const { aircraftInput, aircraftTyped, listAway, panel, pickingFavorite, pickingMine, quietFocus, setPanel, upAsTyped } = vm;
   return (

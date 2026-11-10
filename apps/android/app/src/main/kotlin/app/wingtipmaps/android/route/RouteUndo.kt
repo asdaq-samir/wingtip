@@ -9,8 +9,9 @@ import kotlinx.coroutines.flow.asStateFlow
  * or changed it -- a stop removed, moved or added, a Direct To, the route
  * replaced by Fly Here -- for the Undo row in the route's list (the
  * iPhone's UndoBar and its PlanHistory): one step back, kept until the
- * next edit or until the row's time is up. Plan writes it and applies it;
- * the words are the screen's.
+ * next edit or until the row's time is up; and the edit undone, for Redo,
+ * kept until the next edit. Plan writes them and applies them; the words
+ * are the screen's.
  */
 class RouteUndo {
     enum class Kind { REMOVED, MOVED, ADDED, DIRECT, FLY_HERE, DEPART_FROM }
@@ -30,10 +31,32 @@ class RouteUndo {
     private var count = 0L
     private val _note = MutableStateFlow<Note?>(null)
     val note: StateFlow<Note?> = _note.asStateFlow()
+    private val _redo = MutableStateFlow<Note?>(null)
+    val redo: StateFlow<Note?> = _redo.asStateFlow()
 
+    /** A new edit: what it changed kept for Undo, and a Redo forgotten,
+     *  since it would put back a route this edit has moved on from. */
     fun took(kind: Kind, ident: String, route: RouteEdits.Route, holds: List<String>, direct: String?, was: RouteEdits.Route?) {
         count += 1
         _note.value = Note(count, kind, ident, route, holds, direct, was)
+        _redo.value = null
+    }
+
+    /** The route an Undo left, for Redo. */
+    fun keepRedo(now: Note) {
+        _redo.value = now
+    }
+
+    /** The route a Redo left, for Undo again; the Redo is spent. */
+    fun keepUndo(now: Note) {
+        count += 1
+        _note.value = now.copy(id = count)
+    }
+
+    fun takeRedo(): Note? {
+        val now = _redo.value ?: return null
+        _redo.value = null
+        return now
     }
 
     /** The edit to undo, and none left. */

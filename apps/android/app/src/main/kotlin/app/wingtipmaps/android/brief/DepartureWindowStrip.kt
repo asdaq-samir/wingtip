@@ -15,6 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -91,20 +92,21 @@ fun DepartureWindowStrip(plan: Plan.State, signedIn: Boolean, model: DepartureWi
             }
             answer.hours.firstOrNull { it.depart == state.picked }?.let { h ->
                 val finding = HourWords.finding(h.verdict)
-                Column(
-                    Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.shapes.medium).padding(WingtipSpace.Md),
-                    verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-                        FindingIcon(finding)
-                        Text(
-                            stringResource(R.string.when_to_go_leaving, HourWords.word(h.verdict), HourWords.clock(h.depart)),
-                            fontWeight = FontWeight.Medium, color = LocalInk.current.words(finding, MaterialTheme.colorScheme.onSurface),
-                        )
+                // The hour's why, in Material's card, as the Brief's other
+                // glance blocks sit.
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(WingtipSpace.Md), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+                            FindingIcon(finding)
+                            Text(
+                                stringResource(R.string.when_to_go_leaving, HourWords.word(h.verdict), HourWords.clock(h.depart)),
+                                fontWeight = FontWeight.Medium, color = LocalInk.current.words(finding, MaterialTheme.colorScheme.onSurface),
+                            )
+                        }
+                        h.reasons.forEach { r -> Text("${r.label} · ${r.detail}", style = MaterialTheme.typography.bodySmall) }
+                        HourWords.nightLine(h)?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                        Text(HourWords.hourFigures(h, state.airplane), style = MaterialTheme.typography.bodySmall, color = muted)
                     }
-                    h.reasons.forEach { r -> Text("${r.label} · ${r.detail}", style = MaterialTheme.typography.bodySmall) }
-                    HourWords.nightLine(h)?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                    Text(HourWords.hourFigures(h, state.airplane), style = MaterialTheme.typography.bodySmall, color = muted)
                 }
             }
         }

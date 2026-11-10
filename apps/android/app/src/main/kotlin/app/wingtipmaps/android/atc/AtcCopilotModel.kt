@@ -42,6 +42,8 @@ class AtcCopilotModel(
     val state: StateFlow<State> = _state.asStateFlow()
     val listening: StateFlow<Boolean> get() = listener.listening
     val error: StateFlow<String?> get() = listener.error
+    /** What the radio says as it is heard, for the listening capsule. */
+    val heard: StateFlow<List<Heard>> get() = listener.heard
 
     private var tail: String? = null
     private var started = false
@@ -69,6 +71,12 @@ class AtcCopilotModel(
             started = false
             listener.stop()
         }
+    }
+
+    /** The listening capsule's Stop: the radio let go until the pilot
+     *  taps Listen again or the flight starts anew. */
+    fun stop() {
+        listener.stop()
     }
 
     /** The Listen tap, where listening did not start by itself (the

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, slow, grabberTo } from "./helpers";
+import { firstRow, grabberTo, settle, slow } from "./helpers";
 
 /**
  * The traffic about the map (TrafficLayer), from adsb.lol through the
@@ -94,9 +94,9 @@ test.describe("on a touch screen", () => {
       await grabberTo(page, size);
       await expect.poll(gap).toBeLessThan(3);
     }
-    // Dragged up from its tabs and held: the credit goes with it, where it
-    // stayed at the inset the sheet had at rest (the owner, 2026-10-28).
-    const tabs = (await panel.getByTestId("tab-bar").boundingBox())!;
+    // Dragged up from its first row and held: the credit goes with it, where
+    // it stayed at the inset the sheet had at rest (the owner, 2026-10-28).
+    const tabs = (await firstRow(page).boundingBox())!;
     const at = { x: tabs.x + tabs.width / 2, y: tabs.y + tabs.height / 2 };
     const cdp = await page.context().newCDPSession(page);
     const touch = (type: string, q?: { x: number; y: number }) =>

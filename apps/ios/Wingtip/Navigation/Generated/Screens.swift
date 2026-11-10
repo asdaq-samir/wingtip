@@ -67,6 +67,7 @@ enum LinkKey: String, CaseIterable, Sendable {
     case stops
     case place
     case flight
+    case airplane
     case altitudeFt = "altitude_ft"
     case depart
     case type

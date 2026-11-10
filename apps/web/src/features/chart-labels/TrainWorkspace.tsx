@@ -6,10 +6,8 @@ import { statusQuery } from "../../lib/queryClient";
 import { useProgressToast } from "../../lib/useProgressToast";
 import type { WorkspaceProps } from "../shell";
 import { loadPilotPanel } from "../pilot";
-import { ChartColumn, GraduationCap } from "lucide-react";
-import TabBar, { type BarTab } from "../../components/TabBar";
-import { fromLucide } from "../../components/fromLucide";
-import { useDevTab, type DevTab } from "./devTab";
+import DevBar from "./DevBar";
+import { useDevTab } from "./devTab";
 import type { PilotPanelPart } from "./dev/DevPanel";
 import ChartMap from "./components/ChartMap";
 import WaypointPanel, { WaypointActions } from "./components/WaypointPanel";
@@ -25,13 +23,6 @@ const FOCUS_ZOOM = 12;
 /** The dev console's chunk, with the pilot console it is drawn in: both
  *  asked for together, so the console draws at once when opened. */
 type DevChunk = typeof import("./dev/DevPanel") & { PilotPanel: PilotPanelPart };
-
-/** The developer's places (TabBar), at their ask: the ratings, and how
- *  good the models are; Settings, the console, the bar's own last. */
-const DEV_TABS: BarTab<DevTab>[] = [
-  { value: "train", label: "Train", icon: fromLucide(GraduationCap) },
-  { value: "perf", label: "Perf", icon: fromLucide(ChartColumn) },
-];
 
 /**
  * the developer's training workspace on the page (MapPage): the
@@ -330,12 +321,11 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
           onResetAll={() => void store.resetAll()}
         />
       ),
-    // The developer's tabs, at their ask -- Train, Perf and Settings --
+    // The developer's places, Train and Perf, and the account button,
     // the panel's first row and at rest the pill itself, as the planner's
-    // (MapPanel): the tab up tapped opens it.
+    // search (MapPanel): the place up tapped opens it.
     bar: (
-      <TabBar
-        tabs={DEV_TABS}
+      <DevBar
         tab={devTab}
         onPick={pickDevTab}
         onUp={() => {

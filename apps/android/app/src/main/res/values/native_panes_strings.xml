@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The wide window's route toolbar (route/RouteToolbar), added with the
+     Android design reference (docs/design/android.md). -->
+<resources>
+    <string name="redo">Redo</string>
+    <string name="add_point">Add Point</string>
+</resources>

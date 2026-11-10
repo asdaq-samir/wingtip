@@ -27,13 +27,6 @@ export const useSheetCards = create<{ host: HTMLElement | null; stack: Entry[] }
 export const raisedFor = (stack: Entry[]): "half" | "full" | null =>
   stack.length === 0 ? null : stack.some((entry) => entry.raise === "full") ? "full" : "half";
 
-/** Every card put away, the top first: another tab picked (TabBar), whose
- *  page is not what they were opened over; a field tapped on the chart
- *  (AirportsGl), whose tap goes no further for the cards to hear. */
-export function closeSheetCards() {
-  for (const entry of [...useSheetCards.getState().stack].reverse()) entry.close();
-}
-
 /** The head's place for a card whose content draws its own name there --
  *  a map card's (MapCard), its mark beside its name -- the id that name
  *  takes, which names the card, and what the pill shows of it there. */

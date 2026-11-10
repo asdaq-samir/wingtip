@@ -25,8 +25,11 @@ own maps follow this table.
 | flightPlan | lucide `Route` | `point.topleft.down.to.point.bottomright.curvepath` | `route` | A route as a list's mark. |
 | nearest | lucide `LocateFixed` | `scope` | `my_location` | Nearest fields. |
 | directTo | `DirectToIcon` (the chart's D-arrow) | the same, drawn | the same, as a vector | Direct To; Fly Here. |
-| addToRoute | lucide `MapPinPlus` | `mappin.and.ellipse` with `plus` | `add_location` | Add Stop; Add to Route. |
+| departFrom | lucide `PlaneTakeoff` | `airplane.departure` | `flight_takeoff` | Depart From. |
+| addToRoute | lucide `MapPinPlus` | `mappin.and.ellipse` with `plus` | `add_location` | Add as Stop; Add to Route. |
 | holdHere | lucide `Repeat2` | `arrow.triangle.2.circlepath` | `sync` | Hold Here. |
+| undo | lucide `Undo2` | `arrow.uturn.backward` | `undo` | The route's last edit taken back. |
+| redo | lucide `Redo2` | `arrow.uturn.forward` | `redo` | An edit taken back, put back (the wide window's route toolbar). |
 | call | lucide `Phone` | `phone` | `call` | A field's phone. |
 | address | lucide `MapPin` | `mappin` | `place` | A place in Maps. |
 | copy | lucide `ClipboardCopy` | `doc.on.doc` | `content_copy` | A frequency to the clipboard. |
@@ -51,13 +54,15 @@ filled:
 
 | Card | Actions, in order |
 |---|---|
-| Airport | Fly Here, Add Stop, Call, Address |
+| Airport | Fly Here, Depart From, Add as Stop, Call, Address |
 | A point held on the map (the airspace card) | Direct To, Add to Route, Hold Here |
 | A VOR, a fix or a VFR waypoint | Direct To, Add to Route, Copy |
 
 - **Fly Here**: a new route from the airplane to this field.
 - **Direct To**: from the airplane to the point, then on along the route.
-- **Add Stop**: the field a landing on the way, as Maps' Add Stop.
+- **Depart From**: the field the route's departure, the rest of the route kept
+  (the one-search design, 2026-11-09).
+- **Add as Stop**: the field a landing on the way, as Maps' Add Stop.
 - **Add to Route**: the point a turn on the way, where it bends the route
   least; not a landing.
 - **Hold Here**: a hold at the point (AIM 5-3-8).

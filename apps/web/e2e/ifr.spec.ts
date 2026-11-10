@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { openProfile, slow, settle, openTab, openSection, controlsInSight, openNavLog, closeNavLog, closeCard } from "./helpers";
+import { closeCard, closeNavLog, controlsInSight, emptyPlan, openNavLog, openProfile, openSection, openTab, settle, slow } from "./helpers";
 
 // A route's handler still running as the test ends -- the Recents and
 // Saved planned ahead at idle ask the planner then -- found the page
@@ -173,7 +173,7 @@ test(
     );
     await page.goto("/app/plan");
     await settle(page);
-    await page.getByTestId("sidebar-trigger-button").click();
+    await emptyPlan(page);
     const field = page.getByTestId("route-type");
     await field.fill("C81 BAEE1 BAE OSH OSHH2 KATW");
     await field.press("Enter");

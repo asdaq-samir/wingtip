@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.map
 
+import android.os.Build
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,14 +16,14 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,6 +49,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.design.rememberHaptics
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
@@ -79,7 +82,7 @@ data class FrameTime(val zulu: String, val local: String, val age: String, val o
 
 /**
  * The loop's bar over the map, under the receiver's chip, only while a
- * loop is on: play or pause, the scrubber -- a time scrubber is the one
+ * loop is on, as Material's floating toolbar: play or pause, the scrubber -- a time scrubber is the one
  * place a slider is right, the owner's rule for discrete settings aside
  * -- and the frame's time in Zulu and on this phone's clock, with its
  * age, said plainly as old once past the source's own pace. Fetching and
@@ -110,52 +113,71 @@ fun WeatherLoopBar(modifier: Modifier = Modifier) {
     val name = state.kind.label
     val time = state.frame?.let { FrameTime.of(it, Instant.ofEpochMilli(now), state.oldAfterS) }
     val caution = LocalWingtipPalette.current.cautionInk
-    Surface(shape = RoundedCornerShape(WingtipRadius.Banner), tonalElevation = 3.dp, modifier = modifier.widthIn(max = 360.dp).padding(horizontal = WingtipSpace.Md)) {
-        Row(Modifier.padding(end = WingtipSpace.Md), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
-            val playLabel = stringResource(if (state.playing) R.string.loop_pause else R.string.loop_play)
-            IconButton(onClick = loop::toggle, enabled = state.frames.size >= 2) {
-                Icon(if (state.playing) Icons.Filled.Pause else Icons.Filled.PlayArrow, contentDescription = playLabel)
-            }
-            Column(Modifier.weight(1f).padding(vertical = WingtipSpace.Xs)) {
-                when {
-                    state.failed -> Text(stringResource(R.string.loop_unavailable, name), color = caution, style = MaterialTheme.typography.bodyMedium)
-                    state.frames.isEmpty() -> Text(stringResource(R.string.loop_fetching, name.lowercase()), style = MaterialTheme.typography.bodyMedium)
-                    else -> {
-                        val frameLabel = stringResource(R.string.loop_frame, name)
-                        // A stop per frame; the slider's state follows the
-                        // loop's frame, which a drag seeks.
-                        val steps = maxOf(0, state.frames.size - 2)
-                        val range = 0f..maxOf(1, state.frames.lastIndex).toFloat()
-                        val scrub = remember(steps, range) { SliderState(steps = steps, trackRange = range) }
-                        scrub.value = state.shown.coerceAtLeast(0).toFloat()
-                        Slider(
-                            state = scrub,
-                            onValueChange = { loop.seek(it.roundToInt()) },
-                            enabled = state.ready,
-                            modifier = Modifier.fillMaxWidth().semantics { contentDescription = frameLabel },
-                        )
-                        if (time != null) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
-                                Text(time.zulu, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
-                                Text(time.local, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium, maxLines = 1)
-                                Spacer(Modifier.weight(1f))
-                                Text(
-                                    if (time.old) stringResource(R.string.loop_old, time.age) else time.age,
-                                    color = if (time.old) caution else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontWeight = if (time.old) FontWeight.SemiBold else FontWeight.Normal,
-                                    style = MaterialTheme.typography.labelMedium,
-                                )
-                            }
+    val haptics = rememberHaptics()
+    // Material 3 Expressive's floating toolbar, in the banner's capsule:
+    // Play at its start under the thumb, then the stepped scrubber and the
+    // frame's time, as Pixel Weather's map keeps its timeline at the foot.
+    HorizontalFloatingToolbar(
+        expanded = true,
+        shape = RoundedCornerShape(WingtipRadius.Banner),
+        modifier = modifier.widthIn(max = 360.dp).fillMaxWidth().padding(horizontal = WingtipSpace.Md),
+    ) {
+        val playLabel = stringResource(if (state.playing) R.string.loop_pause else R.string.loop_play)
+        IconToggleButton(checked = state.playing, onCheckedChange = { loop.toggle() }, enabled = state.frames.size >= 2) {
+            Icon(if (state.playing) Icons.Filled.Pause else Icons.Filled.PlayArrow, contentDescription = playLabel)
+        }
+        Column(Modifier.weight(1f).padding(vertical = WingtipSpace.Xs)) {
+            when {
+                state.failed -> Text(stringResource(R.string.loop_unavailable, name), color = caution, style = MaterialTheme.typography.bodyMedium)
+                state.frames.isEmpty() -> Text(stringResource(R.string.loop_fetching, name.lowercase()), style = MaterialTheme.typography.bodyMedium)
+                else -> {
+                    val frameLabel = stringResource(R.string.loop_frame, name)
+                    // A stop per frame; the slider's state follows the
+                    // loop's frame, which a drag seeks. Time is a continuous
+                    // scrub, so a slider is right here (decision 0017 is for
+                    // discrete settings).
+                    val steps = maxOf(0, state.frames.size - 2)
+                    val range = 0f..maxOf(1, state.frames.lastIndex).toFloat()
+                    val scrub = remember(steps, range) { SliderState(steps = steps, trackRange = range) }
+                    scrub.value = state.shown.coerceAtLeast(0).toFloat()
+                    Slider(
+                        state = scrub,
+                        onValueChange = {
+                            val to = it.roundToInt()
+                            // Each frame crossed is felt, as Android's own
+                            // stepped sliders tick (SEGMENT_TICK, API 34).
+                            if (to != state.shown) haptics.tap(FrameTick)
+                            loop.seek(to)
+                        },
+                        enabled = state.ready,
+                        modifier = Modifier.fillMaxWidth().semantics { contentDescription = frameLabel },
+                    )
+                    if (time != null) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
+                            Text(time.zulu, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.labelMedium)
+                            Text(time.local, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                            Spacer(Modifier.weight(1f))
+                            Text(
+                                if (time.old) stringResource(R.string.loop_old, time.age) else time.age,
+                                color = if (time.old) caution else MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontWeight = if (time.old) FontWeight.SemiBold else FontWeight.Normal,
+                                style = MaterialTheme.typography.labelMedium,
+                            )
                         }
-                        // The frames kept for the air, shown with no signal: how
-                        // old the list is (each frame's own age is above).
-                        KeptAgeLine(KeptForAir.WEATHER_LOOP, state.keptAtMs)
                     }
+                    // The frames kept for the air, shown with no signal: how
+                    // old the list is (each frame's own age is above).
+                    KeptAgeLine(KeptForAir.WEATHER_LOOP, state.keptAtMs)
                 }
             }
         }
     }
 }
+
+/** A frame crossed on the scrubber: Android's segment tick from API 34,
+ *  the clock tick below that. */
+private val FrameTick: Int
+    get() = if (Build.VERSION.SDK_INT >= 34) HapticFeedbackConstants.SEGMENT_TICK else HapticFeedbackConstants.CLOCK_TICK
 
 /**
  * The loop's two menus in Setup's Map section (Android's map menu):

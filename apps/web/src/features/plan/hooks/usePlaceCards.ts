@@ -4,11 +4,11 @@ import type { PanelState } from "../../../lib/mapChrome";
 import { takePlace, useWanted } from "../../../lib/navigation/wanted";
 import { patched } from "../../../lib/useSearchParamsNow";
 import { panelNow } from "./panelNow";
-import { useAddressCards, type PanelTab } from "./useTabCards";
+import { useAddressCards, type PanelView } from "./usePanelView";
 
 /**
  * The cards over the planner's tabs (usePlanWorkspace): an airport's, the
- * airspace over a point, an airplane's -- the address's (useTabCards) --
+ * airspace over a point, an airplane's -- the address's (usePanelView) --
  * opened and closed, each close putting the sheet back at the height it
  * had before the card, as Apple Maps does.
  */
@@ -25,13 +25,13 @@ export function usePlaceCards({
 }) {
   // The cards the address holds -- an airport's, the airspace over a
   // point, Nearest's, Aircraft's, an airplane's and its past flight's
-  // (useTabCards), the airport's opened here (selectPlace), which the
+  // (usePanelView), the airport's opened here (selectPlace), which the
   // route's Approaches ask for too.
   const cards = useAddressCards(searchParams, setSearchParams, setPanel);
   const { place, heldPoint, nearOpen, flight, selectFlight } = cards;
   const cardOpen = !!place || !!heldPoint || !!flight;
   // FPL's Brief, a card over it (BriefCard): `?brief=1`, kept for FPL as
-  // its other cards are (useTabCards).
+  // its other cards are (usePanelView).
   const briefOpen = searchParams.get("brief") === "1";
   // A card's own Close puts the sheet back at the height it had before the
   // card opened, as Apple Maps does, not the height the card was dragged
@@ -46,13 +46,13 @@ export function usePlaceCards({
   }, [cardOpen, briefOpen, panel]);
   // The tab an airplane's card was opened over from the route box's
   // N-number (openAirplaneCard), and the tab setter, set once the tabs
-  // are (usePanelTabs, in the workspace): its close goes back there, FPL,
+  // are (usePanelView, in the workspace): its close goes back there, FPL,
   // not to Aircraft's list under it (the owner's "when closing the card,
   // it doesn't go back to fpl").
-  const airplaneFrom = useRef<PanelTab | null>(null);
-  const backToTab = useRef<(tab: PanelTab) => void>(() => {});
-  const setBackToTab = useCallback((go: (tab: PanelTab) => void) => {
-    backToTab.current = go;
+  const airplaneFrom = useRef<PanelView | null>(null);
+  const backToView = useRef<(view: PanelView) => void>(() => {});
+  const setBackToView = useCallback((go: (view: PanelView) => void) => {
+    backToView.current = go;
   }, []);
   const closeCard = useCallback(
     (close: () => void) => {
@@ -134,7 +134,7 @@ export function usePlaceCards({
         selectFlight(null);
         const from = airplaneFrom.current;
         airplaneFrom.current = null;
-        if (from) backToTab.current(from);
+        if (from) backToView.current(from);
       }),
     [closeCard, selectFlight],
   );
@@ -167,7 +167,7 @@ export function usePlaceCards({
     cards,
     cardOpen,
     briefOpen,
-    setBackToTab,
+    setBackToView,
     closeCard,
     under,
     setUnder,

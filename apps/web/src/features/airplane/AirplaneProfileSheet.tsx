@@ -1,6 +1,8 @@
 import { useRef } from "react";
 import { cn } from "cn";
 import SheetDialog from "../../components/SheetDialog";
+import { SheetCard } from "../../components/SheetCard";
+import { useIsDesktop } from "../../hooks/use-desktop";
 import { LINK } from "../../components/airplane/link";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
@@ -124,6 +126,35 @@ function PhotoRead({ vm }: { vm: AirplaneProfileModel }) {
  */
 export default function AirplaneProfileSheet() {
   const vm = useAirplaneProfile();
+  const desktop = useIsDesktop();
+  const body = (
+    <div className="flex flex-col gap-5" data-testid={desktop ? "airplane-profile" : undefined}>
+      {/* First, as the one-search design has it (2026-11-09): this
+          airplane the plan's, and the plan shown. */}
+      <Button type="button" className="h-11 w-full" disabled={vm.flying} onClick={vm.fly} data-testid="fly-this-airplane">
+        {vm.flying ? "Flying This Airplane" : "Fly This Airplane"}
+      </Button>
+      <ListGroup>
+        <ListRow title="Registration" value={vm.tail} />
+        <ListRow title="Type" value={vm.type ?? "Not known"} data-testid="airplane-profile-type" />
+      </ListGroup>
+      <ListGroup title="Figures">
+        {vm.rows.map((row) => (
+          <FigureRow key={row.key} vm={vm} row={row} />
+        ))}
+      </ListGroup>
+      <PhotoRead vm={vm} />
+    </div>
+  );
+  // On a desktop a card of the side panel, beside the search, as an
+  // airport's is (the owner, 2026-11-09: cards the web's own way); on a
+  // phone the sheet over the page, as before.
+  if (desktop)
+    return (
+      <SheetCard title={vm.tail} onClose={vm.close} raise="full">
+        {body}
+      </SheetCard>
+    );
   return (
     <SheetDialog
       open={vm.open}
@@ -140,18 +171,7 @@ export default function AirplaneProfileSheet() {
         return field;
       }}
     >
-      <div className="flex flex-col gap-5">
-        <ListGroup>
-          <ListRow title="Registration" value={vm.tail} />
-          <ListRow title="Type" value={vm.type ?? "Not known"} data-testid="airplane-profile-type" />
-        </ListGroup>
-        <ListGroup title="Figures">
-          {vm.rows.map((row) => (
-            <FigureRow key={row.key} vm={vm} row={row} />
-          ))}
-        </ListGroup>
-        <PhotoRead vm={vm} />
-      </div>
+      {body}
     </SheetDialog>
   );
 }

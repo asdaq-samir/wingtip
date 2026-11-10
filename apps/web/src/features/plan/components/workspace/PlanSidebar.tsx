@@ -1,27 +1,37 @@
-import { Suspense, lazy, type ReactNode, type ComponentProps } from "react";
+import { Suspense, lazy, useEffect, type ReactNode, type ComponentProps } from "react";
 import { cn } from "cn";
+import { fromChunk } from "../../../../lib/fromChunk";
 import { loadAccountPanels } from "../../../pilot";
 import type { LatLon } from "../../../../lib/geo";
 import { pickKeptAircraft } from "../../lib/tabSearch";
 import { MAX_STOPS, routeName } from "../../../../lib/identSchema";
 import type { FlightRules } from "../../../../lib/preferences";
 import Segmented from "../../../../components/Segmented";
-import { AirportRecentsPage, RecentAirportTiles, SearchResults } from "../../../../components/PanelCapsule";
-import { FavoriteStrip } from "../../../../components/Favorites";
+import { AirportRecentsPage } from "../../../../components/PanelCapsule";
 import { sameField } from "../../../../lib/procedures";
-import { NearestStrip } from "../NearestStrip";
 import { AircraftCard, AircraftPill, AircraftRecentsPage, usePrefetchAircraftTab } from "../../aircraftTabChunk";
+import type { OneSearchModel } from "../../hooks/useOneSearch";
 import TabKept from "../../../../components/TabKept";
 import TabPage from "../../../../components/TabPage";
 import PullToRefresh from "../../../../components/PullToRefresh";
 import { refreshLive } from "../../../../lib/liveRefresh";
-import AirportPill from "../AirportPill";
 import FplStrip from "../FplStrip";
 import { RecentRoutesPage } from "../RecentRoutes";
 import ProfileCard from "../ProfileCard";
 import { BriefCard, AirspaceCard, FlightCard, PastFlightCard, PlaceCard, StopsCard, DryRunControls } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import ProfileSideView from "./ProfileSideView";
+
+/** The one search's parts on chunks of their own, out of the first load
+ *  (its 1.10 MB budget, scripts/first-load.mjs): its own page, drawn once
+ *  the sheet is out, asked for a moment after the page draws; and its
+ *  results, at the first letter typed. */
+const searchHome = fromChunk(
+  () => import("../search/SearchHome"),
+  (m) => m.default,
+);
+const SearchHome = searchHome.Part;
+const OneSearchResults = lazy(() => import("../search/OneSearchResults"));
 
 /** The saved flights in full, FPL's card (the console's list, loaded as
  *  it opens). */
@@ -42,19 +52,24 @@ const FLIGHT_RULES = [
 ];
 
 /**
- * The tab's body (PlanWorkspace's `sidebar`): FPL's nav log, kept mounted
- * under whatever is open over it and on paper; Airport's search, its
- * Favorites and Recents and what answers, or Nearest's list; Aircraft's
- * list. A card -- an airport's, the airspace's, an airplane's -- over the
- * tab it was opened from, its close back to it.
+ * The sheet's body under the one search (PlanWorkspace's `sidebar`): the
+ * plan's nav log, kept mounted under whatever is open over it and on
+ * paper; the search's own page (SearchHome) or what answers what is typed
+ * (OneSearchResults), and its lists in full -- Favorites, Recents, Saved,
+ * the routes planned, Nearest; the traffic. A card -- an airport's, the
+ * airspace's, an airplane's -- over the place it was opened from, its
+ * close back to it.
  */
 export default function PlanSidebar({
   vm,
+  model,
   navLog,
   briefContents,
   briefNotice,
 }: {
   vm: PlanWorkspaceModel;
+  /** The one search's view model (useOneSearch). */
+  model: OneSearchModel;
   navLog: ReactNode;
   briefContents: ComponentProps<typeof BriefCard>["contents"];
   briefNotice: ReactNode;
@@ -83,13 +98,13 @@ export default function PlanSidebar({
     closeSaved,
     closeStops,
     course,
+    departFrom,
     depAlone,
     depart,
     dropIntoRoute,
     dryRunning,
     favorites,
     favoritesOpen,
-    findNearby,
     flight,
     flightRules,
     flyHere,
@@ -104,16 +119,12 @@ export default function PlanSidebar({
     moveFavoriteAirport,
     nearFrom,
     nearOpen,
-    nearOrigin,
-    nearStrip,
     openAirportOverFlight,
     openList,
-    openNearest,
     openSaved,
     opened,
     past,
     pickPlace,
-    picking,
     place,
     planned,
     profileCautions,
@@ -142,11 +153,15 @@ export default function PlanSidebar({
     stopsScope,
     stripsDrawn,
     suggestedAt,
-    tab,
+    view,
     tabTap,
     toggleFavoriteAirport,
   } = vm;
   usePrefetchAircraftTab();
+  useEffect(() => {
+    const later = window.setTimeout(searchHome.prefetch, 1500);
+    return () => window.clearTimeout(later);
+  }, []);
   const flightCard =
     flight && past ? (
       <Suspense fallback={null}>
@@ -168,6 +183,7 @@ export default function PlanSidebar({
           from={measuredFrom}
           onClose={closePlace}
           onFlyHere={(to) => void flyHere(to)}
+          onDepartFrom={departFrom}
           onExpand={() => setPanel("full")}
           onLower={() => setPanel("half")}
           // None for a point of the route, or past the planner's most stops.
@@ -192,29 +208,6 @@ export default function PlanSidebar({
         />
       </Suspense>
     </PullToRefresh>
-  );
-  // Each tab's one strip, what it shows picked from its filter, the
-  // Favorites first: half way, and all the way up the same, where it was,
-  // at the owner's ask ("I want the favorites filter to stay when it's
-  // full"); each list's title opens it in full, all the way up.
-  const airportStrip = (
-    <AirportPill
-      favorites={
-        <FavoriteStrip
-          home={home}
-          favorites={favorites}
-          onOpen={(a) => selectPlace(a.ident)}
-          onAddHome={() => addFromPill("home")}
-          onAddFavorite={() => askFor("favorite")}
-        />
-      }
-      recents={<RecentAirportTiles onPick={(airport) => void pickPlace(airport)} />}
-      nearest={<NearestStrip fields={nearStrip} located={!!nearOrigin} onOpen={selectPlace} />}
-      onAllFavorites={() => openList("favorites")}
-      onAllRecents={() => openList("recents")}
-      onAllNearest={openNearest}
-      onFindNearby={findNearby}
-    />
   );
   // With the Map switch at its right (AircraftPill).
   const aircraftStrip = (
@@ -249,10 +242,10 @@ export default function PlanSidebar({
           />
         </Suspense>
       ) : null}
-      {/* Each tab once opened kept under the others, as iOS keeps a
-          tab's screen (TabKept): back to it, as it was left. */}
-      {opened.includes("aircraft") && (
-        <TabKept away={cardUp || tab !== "aircraft"}>
+      {/* Each place once opened kept under the others (TabKept): back to
+          it, as it was left. */}
+      {opened.includes("traffic") && (
+        <TabKept away={cardUp || view !== "traffic"}>
           {flightCard ??
             (aircraftOpen &&
               (aircraftFavoritesOpen && !aircraftTyped ? (
@@ -289,13 +282,13 @@ export default function PlanSidebar({
               )))}
         </TabKept>
       )}
-      {!cardUp && tab !== "aircraft" && nearOpen && (
+      {!cardUp && view === "search" && nearOpen && (
         <Suspense fallback={null}>
           <NearestCard onOpen={selectPlace} from={nearFrom} onFrom={setNearFrom} onBack={closeNearest} />
         </Suspense>
       )}
-      {opened.includes("airport") && (
-        <TabKept away={cardUp || tab !== "airport" || nearOpen}>
+      {opened.includes("search") && (
+        <TabKept away={cardUp || view !== "search" || nearOpen}>
           {favoritesOpen ? (
             <TabPage testId="favorites-page">
               <Suspense fallback={null}>
@@ -322,52 +315,43 @@ export default function PlanSidebar({
                 }}
               />
             </TabPage>
-          ) : (
-            <TabPage testId="airport-page">
-              <SearchResults
-                query={query}
-                onPick={(airport) => void pickPlace(airport)}
-                // The pill's strip where it was, the Recents under it.
-                places={picking === "place" && stripsDrawn && airportStrip}
-                onAllRecents={() => openList("recents")}
-              />
+          ) : routeRecentsOpen ? (
+            <TabPage testId="route-recents-list">
+              <RecentRoutesPage onBack={closeList} />
             </TabPage>
-          )}
-        </TabKept>
-      )}
-      {opened.includes("fpl") && (
-        <TabKept away={cardUp || tab !== "fpl"}>
-          {/* And while a finger takes it up: the pill's own are out of
-          sight then (the owner's notice, "Fpl hides Saved while dragging
-          up"). */}
-          {/* Not under the Stops with no route: FPL's Saved stood over
-          its list (the owner's screenshot, 2026-10-26). */}
-          {!savedOpen &&
-            !hasPoints &&
-            !stopsHere &&
-            stripsDrawn &&
-            (routeRecentsOpen ? (
-              <TabPage testId="route-recents-list">
-                <RecentRoutesPage onBack={closeList} />
-              </TabPage>
-            ) : (
-              // The flights saved or the routes planned last, picked from its
-              // filter as every tab's strip is.
-              <TabPage>
-                <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
-              </TabPage>
-            ))}
-          {savedOpen && (
+          ) : savedOpen ? (
             <TabPage testId="saved-flights">
               <Suspense fallback={null}>
                 <SavedFlights onBack={closeSaved} />
               </Suspense>
             </TabPage>
+          ) : model.typed || model.direct ? (
+            <TabPage testId="search-page">
+              <OneSearchResults model={model} />
+            </TabPage>
+          ) : (
+            stripsDrawn && <SearchHome vm={vm} model={model} />
+          )}
+        </TabKept>
+      )}
+      {opened.includes("plan") && (
+        <TabKept away={cardUp || view !== "plan"}>
+          {/* And while a finger takes it up: the pill's own are out of
+          sight then (the owner's notice, "Fpl hides Saved while dragging
+          up"). */}
+          {/* Not under the Stops with no route: FPL's Saved stood over
+          its list (the owner's screenshot, 2026-10-26). */}
+          {!hasPoints && !stopsHere && stripsDrawn && (
+            // The flights saved or the routes planned last, under the empty
+            // box, picked from its filter as before.
+            <TabPage>
+              <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
+            </TabPage>
           )}
           {/* The Brief over FPL, a card of its own: the route's head and its
           figures out of sight while it is open, as an airport's card has
           them. */}
-          {briefHere && !savedOpen && (
+          {briefHere && (
             <PullToRefresh onRefresh={() => refreshLive("brief")} testId="brief-refresh">
               <BriefCard
                 name={routeName(planned.dep, planned.dest, planned.stops)}
@@ -384,7 +368,7 @@ export default function PlanSidebar({
           )}
           {/* FPL's nav log once there is a route, at the pilot's ask: the
           empty box alone before. */}
-          {profileHere && !savedOpen && (
+          {profileHere && (
             <ProfileCard
               name={routeName(planned.dep, planned.dest, planned.stops)}
               line={briefLine}
@@ -415,7 +399,7 @@ export default function PlanSidebar({
               )}
             </ProfileCard>
           )}
-          {stopsHere && !savedOpen && (
+          {stopsHere && (
             <StopsCard
               at={stopsAt}
               route={stopsRoute}
@@ -430,7 +414,7 @@ export default function PlanSidebar({
             className={cn(
               "flex min-h-0 flex-col print:flex",
               depAlone ? "flex-none" : "flex-1",
-              (savedOpen || briefHere || profileHere || stopsHere || !hasPoints) && "hidden",
+              (briefHere || profileHere || stopsHere || !hasPoints) && "hidden",
             )}
           >
             {navLog}
@@ -438,7 +422,7 @@ export default function PlanSidebar({
           {/* A departure alone: under it the flights saved and the routes
           planned last, to pick from, where the sheet stood empty under
           the one field (the owner's screenshot, 2026-10-23). */}
-          {depAlone && hasPoints && !savedOpen && !briefHere && !profileHere && !stopsHere && (
+          {depAlone && hasPoints && !briefHere && !profileHere && !stopsHere && (
             <div className="px-4 pt-2" data-testid="fpl-departure-strip">
               <FplStrip onAllSaved={openSaved} onAllRecents={() => openList("routes")} />
             </div>

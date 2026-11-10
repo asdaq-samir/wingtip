@@ -131,6 +131,30 @@ export function useRouteEdits({
     },
     [routePoints, planned.dep, planned.dest, setSearchParams],
   );
+  // An airport's card's Depart From (the one search, 2026-11-09): the
+  // field the route's departure, its stops and destination kept -- the
+  // field out of them where it was one -- and the card put away for the
+  // plan, which the route's change brings up (usePanelView).
+  const departFrom = useCallback(
+    (from: { ident: string }) => {
+      setSearchParams(
+        (prev) => {
+          const kept = stopsOf(prev.get("stops")).filter((stop) => !sameField(stop, from.ident));
+          const dest = identOf(prev.get("dest"));
+          return patched(prev, {
+            dep: from.ident,
+            stops: kept.length ? kept.join(",") : null,
+            dest: dest && !sameField(dest, from.ident) ? dest : null,
+            place: null,
+            direct: null,
+            was: null,
+          });
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   // A point's own altitude set, or (null) given back to the plan.
   const setPointAltitude = useCallback(
     (ident: string, feet: number | null) => {
@@ -225,5 +249,5 @@ export function useRouteEdits({
     },
     [setSearchParams],
   );
-  return { setRoute, addStop, setPointAltitude, setStops, removeStop, insertStopAfter, acceptClassB, avoidClassB, flyAltitude };
+  return { setRoute, addStop, departFrom, setPointAltitude, setStops, removeStop, insertStopAfter, acceptClassB, avoidClassB, flyAltitude };
 }

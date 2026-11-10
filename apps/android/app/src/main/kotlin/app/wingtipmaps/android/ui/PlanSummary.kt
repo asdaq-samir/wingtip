@@ -8,19 +8,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.Button
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -48,7 +44,7 @@ fun PlanHead(state: Plan.State, tail: String?, onClose: () -> Unit) {
         Column(Modifier.padding(vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
             Row(Modifier.fillMaxWidth().padding(start = WingtipSpace.Lg), verticalAlignment = Alignment.CenterVertically) {
                 val title = if (state.dep.isEmpty() && state.dest.isEmpty()) stringResource(R.string.plan) else StripData.routeName(state.dep, state.dest, state.stops)
-                Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f).semantics { heading() })
+                Text(title, style = MaterialTheme.typography.headlineSmallEmphasized, modifier = Modifier.weight(1f).semantics { heading() })
                 IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) }
             }
             if (state.routed) FiguresStrip(state)
@@ -66,15 +62,22 @@ fun PlanHead(state: Plan.State, tail: String?, onClose: () -> Unit) {
     }
 }
 
-/** The plan's three doors, as the canvas has them: the Brief (filled),
- *  the Nav Log (its legs, further down the plan) and the Airplane. */
+/** The plan's three doors, as the canvas has them, in Material's button
+ *  group: the Brief (filled, the plan's primary action), the Nav Log (its
+ *  legs, further down the plan) and the Airplane, each labelled. */
 @Composable
 fun PlanButtons(routed: Boolean, onBrief: () -> Unit, onNavLog: () -> Unit) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
-        Button(onClick = onBrief, enabled = routed, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.brief)) }
-        FilledTonalButton(onClick = onNavLog, enabled = routed, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.nav_log)) }
-        FilledTonalButton(onClick = { ScreenRequests.ask(Screen.AIRPLANE) }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.airplane)) }
-    }
+    val brief = stringResource(R.string.brief)
+    val navLog = stringResource(R.string.nav_log)
+    val airplane = stringResource(R.string.airplane)
+    CardButtonGroup(
+        listOf(
+            GroupAction(brief, WingtipIcons.brief, filled = true, enabled = routed, onClick = onBrief),
+            GroupAction(navLog, WingtipIcons.navLog, enabled = routed, onClick = onNavLog),
+            GroupAction(airplane, WingtipIcons.airplane) { ScreenRequests.ask(Screen.AIRPLANE) },
+        ),
+        Modifier.fillMaxWidth(),
+    )
 }
 
 /**
@@ -86,31 +89,34 @@ fun PlanButtons(routed: Boolean, onBrief: () -> Unit, onNavLog: () -> Unit) {
 @Composable
 fun RouteStops(state: Plan.State, onField: (String) -> Unit, onFind: () -> Unit, onAddStop: () -> Unit) {
     val course = state.course
-    Column(Modifier.fillMaxWidth()) {
-        StopRow(state.dep, course?.departure?.name, R.string.route_depart, R.string.where_from, onField, onFind)
+    // Material 3 Expressive's segmented list: the route's rows as one
+    // rounded group with small gaps between them, no rules.
+    val count = state.stops.size + 3
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)) {
+        StopRow(state.dep, course?.departure?.name, R.string.route_depart, R.string.where_from, 0, count, onField, onFind)
         state.stops.forEachIndexed { i, stop ->
-            HorizontalDivider()
-            StopRow(stop, course?.stops?.getOrNull(i)?.name, R.string.route_stop, R.string.where_to, onField, onFind)
+            StopRow(stop, course?.stops?.getOrNull(i)?.name, R.string.route_stop, R.string.where_to, i + 1, count, onField, onFind)
         }
-        HorizontalDivider()
-        ListItem(
+        SegmentedListItem(
+            onClick = onAddStop,
+            enabled = state.routed,
+            shapes = ListItemDefaults.segmentedShapes(index = count - 2, count = count),
             leadingContent = { Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
-            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-            modifier = Modifier.fillMaxWidth().clickable(enabled = state.routed, role = Role.Button, onClick = onAddStop),
+            modifier = Modifier.fillMaxWidth(),
             content = { Text(stringResource(R.string.add_a_stop), color = if (state.routed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
         )
-        HorizontalDivider()
-        StopRow(state.dest, course?.destination?.name, R.string.route_arrive, R.string.where_to, onField, onFind)
+        StopRow(state.dest, course?.destination?.name, R.string.route_arrive, R.string.where_to, count - 1, count, onField, onFind)
     }
 }
 
 @Composable
-private fun StopRow(ident: String, name: String?, role: Int, ask: Int, onField: (String) -> Unit, onFind: () -> Unit) {
+private fun StopRow(ident: String, name: String?, role: Int, ask: Int, index: Int, count: Int, onField: (String) -> Unit, onFind: () -> Unit) {
     val given = ident.isNotEmpty()
-    ListItem(
+    SegmentedListItem(
+        onClick = { if (given) onField(ident) else onFind() },
+        shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
         supportingContent = { Text(listOfNotNull(stringResource(role), name).joinToString(" · "), color = MaterialTheme.colorScheme.onSurfaceVariant) },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button) { if (given) onField(ident) else onFind() },
+        modifier = Modifier.fillMaxWidth(),
         content = { Text(if (given) ident else stringResource(ask), color = if (given) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary) },
     )
 }

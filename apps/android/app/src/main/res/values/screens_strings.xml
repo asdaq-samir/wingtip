@@ -4,6 +4,7 @@
     <string name="screen_brief">Brief</string>
     <string name="screen_nearest">Nearest</string>
     <string name="screen_emergency">Emergency Assistant</string>
+    <string name="screen_emergency_short">Emergency</string>
     <string name="screen_ask">Ask</string>
     <string name="screen_navlog">Nav Log</string>
     <string name="screen_fpl">FPL</string>
@@ -13,7 +14,9 @@
     <string name="screen_checklists">Checklists</string>
     <string name="screen_coach">Coach</string>
     <string name="screen_minimums">Personal Minimums</string>
+    <string name="screen_minimums_short">Minimums</string>
     <string name="screen_downloads">Downloads</string>
     <string name="screen_passengers">Passenger Briefing</string>
+    <string name="screen_passengers_short">Passengers</string>
     <string name="screen_setup">Setup</string>
 </resources>

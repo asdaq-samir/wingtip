@@ -2,6 +2,7 @@ import { test, expect } from "@playwright/test";
 import {
   cardClose,
   closeCard,
+  firstRow,
   grabberTo,
   openMapSettings,
   openTab,
@@ -43,11 +44,11 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   await expect(page.getByRole("dialog")).toHaveCount(0);
   // Its name where a screen reader starts reading it.
   await expect(card.getByRole("heading", { name: "Map", level: 2 })).toBeFocused();
-  // Its name and close in its own head, the tabs over it as they stay
-  // over every card (TabBar, static as the platform's): the panel back to
-  // the pill as it closes.
+  // Its name and close in its own head, the one search over it as it
+  // stays over every card (OneSearchField): the panel back to the pill as
+  // it closes.
   await expect(card.getByRole("heading", { name: "Map", level: 2 })).toBeVisible();
-  await expect(panel.getByTestId("tab-bar")).toBeVisible();
+  await expect(firstRow(page)).toBeVisible();
   await expect(panelTabs(page)).toHaveCount(0);
   await closeCard(page, "sheet-card-close");
   await expect(card).toHaveCount(0);

@@ -34,7 +34,7 @@ import { COPILOT_MODES, useCopilotMode, type CopilotMode } from "./copilotMode";
 import { useMicPrimer } from "./MicPrimer";
 import { ATC_LISTEN_MODES, setAtcListen, useAtcListen, type AtcListen } from "../lib/atc/listenSetting";
 import { useCanListen } from "../lib/speechLocal";
-import PaletteHint from "./PaletteHint";
+import SearchHint from "./SearchHint";
 import { CHART } from "../lib/tokens";
 
 /**
@@ -342,7 +342,7 @@ export default function MapSettings() {
           data-testid="traffic-age"
         />
       </ListGroup>
-      <PaletteHint />
+      <SearchHint />
     </div>
   );
 }

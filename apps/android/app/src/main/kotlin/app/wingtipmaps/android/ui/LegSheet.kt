@@ -51,11 +51,12 @@ fun LegSheet(number: Int?, leg: Leg, onClose: () -> Unit) {
 }
 
 /** A figure's row, read as one: its name, then the figure in words
- *  (`said`) or as written where there is no spoken form. */
+ *  (`said`) or as written where there is no spoken form. Tabular digits
+ *  ("tnum"), as the nav log's columns are, so figures line up. */
 @Composable
 private fun Row(name: String, value: String, said: String = value) {
     ListItem(
-        trailingContent = { Text(value, style = MaterialTheme.typography.bodyLarge) },
+        trailingContent = { Text(value, style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum")) },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clearAndSetSemantics { contentDescription = "$name, $said" },
         content = { Text(name) },

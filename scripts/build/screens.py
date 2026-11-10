@@ -176,9 +176,33 @@ enum class LinkKey(
 """
 
 
+# A shortcut's labels as Android's shortcut guide sizes them: the short
+# label ten characters at most, the long one 25
+# (developer.android.com/develop/ui/views/launch/shortcuts/best-practices).
+SHORT_LABEL_MAX = 10
+LONG_LABEL_MAX = 25
+
+
+def short_label(s):
+    """A shortcut's short label: its own `shortLabel`, else its title."""
+    return s.get("shortLabel", s["title"])
+
+
 def shortcuts_of(spec):
-    """Android's screens with a shortcut, in their order."""
-    return sorted((s for s in on(spec, "android") if "shortcut" in s), key=lambda s: s["shortcut"])
+    """Android's screens with a shortcut, in their order, each label held
+    to the launcher's lengths so none is cut short on the home screen."""
+    found = sorted((s for s in on(spec, "android") if "shortcut" in s), key=lambda s: s["shortcut"])
+    for s in found:
+        if len(short_label(s)) > SHORT_LABEL_MAX:
+            raise SystemExit(f"screens.json: {s['id']}'s shortcut label is over {SHORT_LABEL_MAX} characters; give it a shortLabel")
+        if len(s["title"]) > LONG_LABEL_MAX:
+            raise SystemExit(f"screens.json: {s['id']}'s title is over {LONG_LABEL_MAX} characters for a shortcut's long label")
+    return found
+
+
+def short_name(s):
+    """The string resource of a shortcut's short label."""
+    return f"screen_{s['id']}_short" if "shortLabel" in s else f"screen_{s['id']}"
 
 
 def xml_text(text):
@@ -197,7 +221,7 @@ def android_shortcuts(spec):
         f"""    <shortcut
         android:shortcutId="screen_{s['id']}"
         android:enabled="true"
-        android:shortcutShortLabel="@string/screen_{s['id']}"
+        android:shortcutShortLabel="@string/{short_name(s)}"
         android:shortcutLongLabel="@string/screen_{s['id']}">
         <intent
             android:action="android.intent.action.VIEW"
@@ -224,7 +248,11 @@ def android_shortcuts(spec):
 
 
 def android_shortcut_words(spec):
-    rows = "\n".join(f'    <string name="screen_{s["id"]}">{xml_text(s["title"])}</string>' for s in shortcuts_of(spec))
+    rows = "\n".join(
+        f'    <string name="screen_{s["id"]}">{xml_text(s["title"])}</string>'
+        + (f'\n    <string name="{short_name(s)}">{xml_text(s["shortLabel"])}</string>' if "shortLabel" in s else "")
+        for s in shortcuts_of(spec)
+    )
     return f"""<?xml version="1.0" encoding="utf-8"?>
 <!-- {XML_BANNER} -->
 <resources>

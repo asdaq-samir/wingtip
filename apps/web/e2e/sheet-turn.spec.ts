@@ -31,7 +31,7 @@ async function frames(page: Page, move: () => Promise<void>): Promise<Frame[]> {
         const r = document.querySelector(`[data-slot=map-panel] ${selector}`)?.getBoundingClientRect();
         return r && r.height > 0 ? { top: r.top - panel.top, bottom: r.bottom - panel.top } : null;
       };
-      w.__frames.push({ height: panel.height, bar: at("[data-testid=tab-bar]"), figures: at("[data-testid=flight-line]") });
+      w.__frames.push({ height: panel.height, bar: at("[role=search]"), figures: at("[data-testid=flight-line]") });
       if (performance.now() - t0 < 1200) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);

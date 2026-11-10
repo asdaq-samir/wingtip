@@ -70,7 +70,8 @@ internal fun WelcomePage(step: Step, state: WelcomeModel.State, plan: Plan, mode
 
 @Composable
 private fun Words(@StringRes title: Int, @StringRes line: Int) {
-    Text(stringResource(title), style = MaterialTheme.typography.headlineSmall)
+    // The page's title in the emphasized headline, the one thing it is about.
+    Text(stringResource(title), style = MaterialTheme.typography.headlineLargeEmphasized)
     Text(stringResource(line), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 

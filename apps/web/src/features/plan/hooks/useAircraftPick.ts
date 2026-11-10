@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { AircraftChoice } from "../../../lib/api/types";
-import { aircraftKey, choiceOf } from "../../../lib/aircraftChoice";
+import { aircraftKey, choiceOf, tailChoice } from "../../../lib/aircraftChoice";
 import { usePreferences } from "../../../lib/preferences";
 import { aircraftListQuery, aircraftProfilesQuery, pilotQuery } from "../../../lib/queryClient";
 
@@ -51,9 +51,7 @@ export function useAircraftPick() {
   const pickTail = useCallback(
     (tail: string, profile: string) => {
       // With the figures the pilot set for it on this device, where they have (features/airplane).
-      // No stock profile (its type not known yet, or none): its N-number alone.
-      const label = profile ? `${tail} · ${profile.toUpperCase()}` : tail;
-      setAircraft({ profile, label, tail, ...usePreferences.getState().tailFigures[tail] });
+      setAircraft(tailChoice(tail, profile, usePreferences.getState().tailFigures[tail]));
     },
     [setAircraft],
   );
