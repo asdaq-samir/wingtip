@@ -52,4 +52,22 @@ class FlightUpdateTest {
         assertTrue(FlightUpdate.due(update(nowMs = 5_000L)!!, first, 5_000L))
         assertTrue(FlightUpdate.due(update(nowMs = 1_000L)!!.copy(nextFix = "DLH"), first, 5_000L))
     }
+
+    @Test
+    fun theBarHasASegmentALegAndAPointAtEachWaypointBetween() {
+        val u = FlightUpdate.of(answer(), true, "C81", "KDLH", true, 40.0, 0L, legsNm = listOf(12.0, 38.0, 50.0))!!
+        val bar = u.bar(1000)
+        assertEquals(listOf(120, 380, 500), bar.segments)
+        assertEquals(listOf(120, 500), bar.points)
+        assertEquals(250, bar.progress)
+        // No legs: one segment, the bar a tenth of a percent a step.
+        assertEquals(FlightUpdate.Bar(listOf(1000), emptyList(), 250), update()!!.bar(1000))
+    }
+
+    @Test
+    fun withNoTimeToGoTheChipIsTheMilesToTheNextPoint() {
+        val u = update()!!.copy(nextEteMin = null, destEteMin = null, nextNm = 12.0)
+        assertEquals("12.0 nm", u.chip)
+        assertEquals("Next PIPER, 12.0 nm", u.title)
+    }
 }

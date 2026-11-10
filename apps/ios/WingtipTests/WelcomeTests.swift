@@ -2,9 +2,10 @@ import Foundation
 import Testing
 @testable import Wingtip
 
-/// The welcome (WelcomeModel): shown once per install, skippable, shown
-/// again from Setup, its sample flight KMSN to KOSH, and no airplane
-/// assumed (docs/decisions/0011). Each test has defaults of its own.
+/// The welcome (WelcomeModel): one card shown once per install, put away
+/// for good by Not Now, shown again from Settings, its one action the one
+/// search, its sample flight KMSN to KOSH, and nothing asked up front
+/// (docs/design/ios.md §14). Each test has defaults of its own.
 @MainActor
 struct WelcomeTests {
     private func fresh() -> UserDefaults {
@@ -14,39 +15,33 @@ struct WelcomeTests {
         return defaults
     }
 
-    private func model(_ defaults: UserDefaults) -> WelcomeModel {
-        WelcomeModel(defaults: defaults, search: { _ in [] })
-    }
-
-    @Test func itIsShownOnceAndNeverAgainOnceFinished() {
+    @Test func itIsShownOnceAndNeverAgainOnceNotNow() {
         let defaults = fresh()
-        let welcome = model(defaults)
+        let welcome = WelcomeModel(defaults: defaults, focusSearch: {})
         welcome.showIfWanted(arguments: [])
-        #expect(welcome.presented && welcome.step == .airplane)
-        for _ in WelcomeModel.Step.allCases { welcome.next() }
+        #expect(welcome.presented)
+        welcome.finish()
         #expect(!welcome.presented && welcome.seen)
-        let later = model(defaults)
+        let later = WelcomeModel(defaults: defaults, focusSearch: {})
         later.showIfWanted(arguments: [])
         #expect(!later.presented)
-    }
-
-    @Test func skipEndsItAtAnyStepForGood() {
-        let defaults = fresh()
-        let welcome = model(defaults)
-        welcome.showIfWanted(arguments: [])
-        welcome.next()
-        #expect(welcome.step == .home)
-        welcome.skip()
-        #expect(!welcome.presented && welcome.seen)
         #expect(!WelcomeModel.wanted(defaults: defaults, arguments: []))
     }
 
-    @Test func setupShowsItAgain() {
-        let defaults = fresh()
-        let welcome = model(defaults)
-        welcome.skip()
+    @Test func searchAnAirportPutsItAwayAndFocusesTheSearch() {
+        var focused = 0
+        let welcome = WelcomeModel(defaults: fresh(), focusSearch: { focused += 1 })
+        welcome.showIfWanted(arguments: [])
+        welcome.searchAnAirport()
+        #expect(focused == 1)
+        #expect(!welcome.presented && welcome.seen)
+    }
+
+    @Test func settingsShowsItAgain() {
+        let welcome = WelcomeModel(defaults: fresh(), focusSearch: {})
+        welcome.finish()
         welcome.again()
-        #expect(welcome.presented && welcome.step == .airplane && !welcome.seen)
+        #expect(welcome.presented && !welcome.seen)
     }
 
     @Test func theUITestsLaunchWithoutIt() {
@@ -56,18 +51,8 @@ struct WelcomeTests {
         #expect(WelcomeModel.wanted(defaults: defaults, arguments: ["-screen", "fpl", "-welcome"]))
     }
 
-    @Test func answeredPermissionsArePassedOver() {
-        let welcome = model(fresh())
-        welcome.knowAnswered(location: true, notifications: true)
-        welcome.next(); welcome.next()
-        #expect(welcome.step == .rules)
-        welcome.next()
-        #expect(welcome.step == .finish)
-    }
-
     @Test func theSampleFlightIsMadisonToOshkosh() {
-        let defaults = fresh()
-        let welcome = model(defaults)
+        let welcome = WelcomeModel(defaults: fresh(), focusSearch: {})
         let plan = Plan()
         plan.stops = ["KJVL"]
         welcome.showIfWanted(arguments: [])
@@ -76,23 +61,18 @@ struct WelcomeTests {
         #expect(!welcome.presented && welcome.seen)
     }
 
-    @Test func noAirplaneIsTheDefault() {
+    @Test func nothingIsAssumedOrAskedUpFront() {
         let plan = Plan()
-        let welcome = model(fresh())
+        let welcome = WelcomeModel(defaults: fresh(), focusSearch: {})
+        welcome.showIfWanted(arguments: [])
+        welcome.finish()
         #expect(!plan.airplaneChosen && plan.tail == nil)
-        plan.aircraft = "pa28"
-        welcome.flyNoAirplane(plan)
-        #expect(plan.aircraft == Plan.noAirplane && plan.tail == nil)
     }
 
-    @Test func theHomeAirportAndTheRulesAreKept() {
+    @Test func aHomeAirportKeptByAnEarlierWelcomeIsStillRead() {
         let defaults = fresh()
-        let welcome = model(defaults)
-        #expect(welcome.rules == .vfr && welcome.home == nil)
-        welcome.rules = .ifr
-        welcome.pickHome("KMSN")
-        #expect(FlightRules.saved(defaults) == .ifr && WelcomeModel.savedHome(defaults) == "KMSN")
-        welcome.pickHome(nil)
         #expect(WelcomeModel.savedHome(defaults) == nil)
+        defaults.set("KMSN", forKey: WelcomeModel.homeKey)
+        #expect(WelcomeModel.savedHome(defaults) == "KMSN")
     }
 }

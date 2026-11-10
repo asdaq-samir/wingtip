@@ -95,13 +95,13 @@ struct RouteLineRow: View {
                     if routes.hazards.indices.contains(index), routes.hazards[index].kind != "fuel" {
                         let hazard = routes.hazards[index]
                         Label(hazard.name.isEmpty ? hazard.kind : hazard.name, systemImage: "exclamationmark.triangle.fill")
-                            .font(.footnote).foregroundStyle(.orange)
+                            .font(.footnote).foregroundStyle(WingtipInk.caution)
                     }
                 }
             }
         }
         // The fold slides; with Reduce Motion on it just changes.
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.25), value: open)
+        .animation(reduceMotion ? nil : .default, value: open)
         .onDisappear { folding?.cancel(); open = false }
     }
 

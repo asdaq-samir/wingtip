@@ -4,7 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,8 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,11 +23,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -41,7 +36,10 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.ActionSettingRow
 import app.wingtipmaps.android.ui.SectionTitle
+import app.wingtipmaps.android.ui.SettingsGroup
+import app.wingtipmaps.android.ui.ValueSettingRow
 
 /**
  * About, from the foot of Setup: the app and its build, the chart edition
@@ -71,12 +69,19 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = viewModel(), charts: Cha
                 Image(painterResource(R.mipmap.ic_launcher_background), contentDescription = null, modifier = Modifier.matchParentSize())
                 Image(painterResource(R.mipmap.ic_launcher_foreground), contentDescription = null, modifier = Modifier.matchParentSize())
             }
-            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmall)
+            Text(stringResource(R.string.app_name), style = MaterialTheme.typography.headlineSmallEmphasized)
         }
-        Figure(stringResource(R.string.about_version), model.version)
-        Figure(stringResource(R.string.about_build), model.build.toString())
-        chart?.chartCycle?.let { Figure(stringResource(R.string.about_chart_edition), it) }
-        packsCycle?.let { Figure(stringResource(R.string.about_cycle_packs), it) }
+        // The build and the data in use, one segmented group; a figure the
+        // phone does not have is left out, so the group counts what it has.
+        val figures = listOfNotNull(
+            stringResource(R.string.about_version) to model.version,
+            stringResource(R.string.about_build) to model.build.toString(),
+            chart?.chartCycle?.let { stringResource(R.string.about_chart_edition) to it },
+            packsCycle?.let { stringResource(R.string.about_cycle_packs) to it },
+        )
+        SettingsGroup {
+            figures.forEachIndexed { i, (name, value) -> ValueSettingRow(name, value, index = i, count = figures.size) }
+        }
 
         SectionTitle(stringResource(R.string.about_planning_aid))
         Text(stringResource(R.string.about_planning_aid_text), style = MaterialTheme.typography.bodyMedium)
@@ -86,9 +91,11 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = viewModel(), charts: Cha
         AboutCredits.software.forEach { Credit(it) }
 
         SectionTitle(stringResource(R.string.about_legal))
-        LegalRow(stringResource(R.string.about_privacy)) { openSite(context, "/privacy") }
-        LegalRow(stringResource(R.string.about_terms)) { openSite(context, "/terms") }
-        LegalRow(stringResource(R.string.about_support)) { openSite(context, "/support") }
+        SettingsGroup {
+            ActionSettingRow(stringResource(R.string.about_privacy), index = 0, count = 3) { openSite(context, "/privacy") }
+            ActionSettingRow(stringResource(R.string.about_terms), index = 1, count = 3) { openSite(context, "/terms") }
+            ActionSettingRow(stringResource(R.string.about_support), index = 2, count = 3) { openSite(context, "/support") }
+        }
 
         Button(
             onClick = {
@@ -100,31 +107,12 @@ fun AboutScreen(onDemo: () -> Unit, model: AboutModel = viewModel(), charts: Cha
     }
 }
 
-/** A figure of the build or the data: its name, and its value at the end. */
-@Composable
-private fun Figure(name: String, value: String) {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text(name, style = MaterialTheme.typography.bodyLarge)
-        Text(value, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
 @Composable
 private fun Credit(credit: AboutCredits.Credit) {
     Column(Modifier.fillMaxWidth()) {
         Text(credit.what, style = MaterialTheme.typography.bodyMedium)
         Text(credit.terms, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
-}
-
-/** A page of the site: the whole row the button, Material's list item. */
-@Composable
-private fun LegalRow(title: String, onOpen: () -> Unit) {
-    ListItem(
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onOpen),
-        content = { Text(title, color = MaterialTheme.colorScheme.primary) },
-    )
 }
 
 /** The site's page in the phone's browser: the policy and terms are the

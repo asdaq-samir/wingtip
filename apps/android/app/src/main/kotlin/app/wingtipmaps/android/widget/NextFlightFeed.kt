@@ -1,9 +1,11 @@
 package app.wingtipmaps.android.widget
 
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
@@ -25,5 +27,13 @@ fun NextFlightFeed(plan: Plan) {
         val snapshot = FlightSnapshot.of(state, System.currentTimeMillis())
         val changed = withContext(Dispatchers.IO) { FlightSnapshot.write(context, snapshot) }
         if (changed) NextFlightWidget().updateAll(context)
+    }
+    // The picker's preview drawn again from the widget once a launch
+    // (Android 15 and later). Android limits how often; refused, the last
+    // one stays until the next launch, so the answer needs nothing more.
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) return@LaunchedEffect
+        val result = GlanceAppWidgetManager(context).setWidgetPreviews(NextFlightReceiver::class)
+        if (result == GlanceAppWidgetManager.SET_WIDGET_PREVIEWS_RESULT_RATE_LIMITED) return@LaunchedEffect
     }
 }

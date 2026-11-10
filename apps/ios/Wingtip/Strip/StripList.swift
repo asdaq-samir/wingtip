@@ -93,7 +93,7 @@ struct StripList: View {
             Circle().fill(ink.paper).frame(width: 8, height: 8)
                 .overlay(Circle().strokeBorder(ink.brown, lineWidth: 2))
                 .padding(.leading, WingtipSpace.xs)
-            Button("\(hidden) more checkpoints") { withAnimation(Motion.animation(.easeOut(duration: 0.3))) { unfolded = true } }
+            Button("\(hidden) more checkpoints") { withAnimation(Motion.animation(.default)) { unfolded = true } }
                 .font(ChartInk.text.weight(.semibold))
                 .frame(minHeight: 44)
                 .buttonStyle(.plain)

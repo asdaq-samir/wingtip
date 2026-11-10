@@ -142,6 +142,22 @@ fn an_estimate_carries_the_taxi_allowance_and_45_minutes() {
 }
 
 #[test]
+fn endurance_keeps_the_reserve_the_rules_ask_back() {
+    // 53 gal at 10 gph lasts 318 minutes; IFR keeps 45 back (14 CFR
+    // 91.167(a)(3)), 7.5 gal, leaving 273; day VFR keeps 30 (91.151(a)(1)).
+    let ifr = ask("endurance", json!({"usable_gal": 53.0, "burn_gph": 10.0, "reserve": "ifr"}));
+    assert_eq!((ifr["minutes"].as_f64(), ifr["reserve_gal"].as_f64()), (Some(318.0), Some(7.5)));
+    assert_eq!((ifr["after_reserve_min"].as_f64(), ifr["below_reserve"].as_bool()), (Some(273.0), Some(false)));
+    let day = ask("endurance", json!({"usable_gal": 53.0, "burn_gph": 10.0, "reserve": "vfr_day"}));
+    assert_eq!(day["after_reserve_min"].as_f64(), Some(288.0));
+    // Under the reserve: zero left and flagged, never refused.
+    let short = ask("endurance", json!({"usable_gal": 4.0, "burn_gph": 10.0, "reserve": "vfr_night"}));
+    assert_eq!((short["after_reserve_min"].as_f64(), short["below_reserve"].as_bool()), (Some(0.0), Some(true)));
+    // No usable fuel in the profile: no figure, none assumed.
+    assert_eq!(ask("endurance", json!({"burn_gph": 10.0, "reserve": "ifr"}))["minutes"], serde_json::Value::Null);
+}
+
+#[test]
 fn a_table_without_its_pohs_wind_notes_takes_no_other_airplanes() {
     // The 172S's takeoff table with its notes taken out: no credit for a
     // headwind, and a tailwind said rather than corrected by its notes.

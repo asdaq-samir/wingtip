@@ -56,17 +56,21 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     }
 
     func start() {
-        // The system's question waits for the welcome, which says why first
-        // and asks it on Allow (askLocation); launches after it ask here.
-        if !WelcomeModel.wanted() { manager.requestWhenInUseAuthorization() }
+        // No question at launch (HIG Onboarding, docs/design/ios.md §14):
+        // the position is asked for the first time the pilot wants it, the
+        // position button, Nearest, the emergency assistant or Ready to
+        // Fly (askLocation). Until then the updates simply bring nothing.
         manager.startUpdatingLocation()
         if aheadEvery == nil {
             aheadEvery = Ticker.shared.every(Self.aheadEveryS) { [weak self] in self?.askAhead() }
         }
     }
 
-    /// The system's question for the position, on the welcome's Allow.
+    /// The system's question for the position, the first time the pilot
+    /// asks for something that needs it; iOS asks once and ignores the
+    /// rest.
     func askLocation() {
+        guard manager.authorizationStatus == .notDetermined else { return }
         manager.requestWhenInUseAuthorization()
     }
 

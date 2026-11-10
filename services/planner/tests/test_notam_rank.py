@@ -116,3 +116,42 @@ def test_each_field_is_timed_round_when_the_flight_is_there():
         ("2026-11-14T14:10:00Z", "2026-11-14T16:10:00Z"),
     ]
     assert flight == {"from": "2026-11-14T13:00:00Z", "until": "2026-11-14T16:10:00Z"}
+
+
+def test_a_fields_card_gets_its_own_notams_and_the_tfrs_near_it(monkeypatch):
+    asked = _feed(
+        monkeypatch,
+        [
+            {
+                "id": "MSN 11/040",
+                "location": "MSN",
+                "starts": "2020-01-01T00:00:00Z",
+                "ends": None,
+                "schedule": None,
+                "text": "RWY 18/36 CLSD",
+                "raw": "!MSN 11/040 MSN RWY 18/36 CLSD 2001010000-PERM",
+            }
+        ],
+    )
+    near = {}
+
+    def near_point(lat, lon, start, end):
+        near["at"] = (round(lat, 1), round(lon, 1))
+        return []
+
+    monkeypatch.setattr(tfr, "near_point", near_point)
+    resp = client.get("/api/airport/kmsn/notams")
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert asked["fields"] == ["KMSN"]
+    assert near["at"] == (43.1, -89.3)
+    only = body["notams"][0]
+    assert only["id"] == "MSN 11/040" and only["field"] == "KMSN" and only["role"] == "stop"
+    assert only["in_force"] is True and only["closed"] and only["raw"].startswith("!MSN 11/040")
+    assert body["unchecked"] == []
+
+
+def test_a_field_no_one_knows_is_a_404(monkeypatch):
+    _feed(monkeypatch, [])
+    resp = client.get("/api/airport/ZZZZ9/notams")
+    assert resp.status_code == 404

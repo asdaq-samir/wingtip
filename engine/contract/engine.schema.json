@@ -6619,6 +6619,87 @@
       ],
       "additionalProperties": false
     },
+    "endurance": {
+      "description": "An airplane's endurance from its own figures: its usable fuel over its cruise burn, minutes, and the minutes left once the reserve is kept back -- 30 minutes at normal cruise by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)), or none. The reserve's fuel at the burn, gallons. Below the reserve the minutes left are 0 and below_reserve is true: a warning, never a refusal. Null where the airplane gives no usable fuel or no burn; never a stock airplane's figures.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "EnduranceInput",
+          "type": "object",
+          "properties": {
+            "usable_gal": {
+              "description": "The airplane's usable fuel, gallons (its profile's); null or missing where it has none.",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "burn_gph": {
+              "description": "The airplane's cruise burn, gallons an hour (its profile's); null or missing where it has none.",
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "reserve": {
+              "description": "The reserve kept back: vfr_day (30 min, 91.151(a)(1)), vfr_night (45 min, 91.151(a)(2)), ifr (45 min, 91.167(a)(3)) or none.",
+              "type": "string",
+              "enum": [
+                "vfr_day",
+                "vfr_night",
+                "ifr",
+                "none"
+              ]
+            }
+          },
+          "required": [
+            "reserve"
+          ]
+        },
+        "answer": {
+          "title": "EnduranceAnswer",
+          "type": "object",
+          "properties": {
+            "minutes": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "reserve_min": {
+              "type": "number"
+            },
+            "reserve_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "after_reserve_min": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "below_reserve": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "minutes",
+            "reserve_min",
+            "reserve_gal",
+            "after_reserve_min",
+            "below_reserve"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "faa_ids": {
       "description": "The FAA identifiers an airport may go by in NASR (KSTL and STL).",
       "type": "object",
@@ -24097,6 +24178,7 @@
     "endorsement_records",
     "endorsement_render",
     "endorsements_in_force",
+    "endurance",
     "faa_ids",
     "faa_words",
     "field_hours",

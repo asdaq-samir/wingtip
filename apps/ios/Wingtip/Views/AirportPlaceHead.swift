@@ -11,9 +11,6 @@ import SwiftUI
 struct AirportPlaceHead: View {
     let place: AirportPlace
     let photos: AirportPhotos?
-    /// The miles from the airplane, where the planner's nearest list has
-    /// the field (NearestAirport.distanceNm).
-    let distanceNm: Double?
     @Binding var shown: ShownPicture?
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
@@ -43,7 +40,8 @@ struct AirportPlaceHead: View {
             }
             titles
             actions
-            AirportFacts(place: place, distanceNm: distanceNm)
+            AirportFacts(place: place, distance: AirportDistance.of(lat: place.lat, lon: place.lon, ident: place.ident,
+                                                                    fix: ownShip.fix?.coordinate, departure: plan.course?.departure))
         }
         .padding(.bottom, WingtipSpace.md)
         .padding(.top, expanded ? 0 : WingtipSpace.xl)
@@ -67,17 +65,20 @@ struct AirportPlaceHead: View {
         }
     }
 
-    /// The field's ident on its own tile, in its weather's colour where it
-    /// reports (FlightCategory's token colours), as Maps' logo tile.
+    /// The field's ident on its own white tile, as Maps' logo tile: the
+    /// ident in the sectional's towered blue or untowered magenta (FAA
+    /// Chart User's Guide, Airports), its edge in its weather's colour
+    /// where it reports (FlightCategory's token colours).
     private var identTile: some View {
         let category = AirportHead.category(place)?.category
         return Text(place.ident)
             .font(.title2.weight(.bold).monospaced())
+            .foregroundStyle(Color(uiColor: place.towered ? WingtipColor.Chart.towered : WingtipColor.Chart.untowered))
             .minimumScaleFactor(0.6)
             .lineLimit(1)
             .padding(WingtipSpace.sm)
             .frame(width: tile, height: tile)
-            .background(.background, in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
+            .background(.white, in: RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: WingtipRadius.card, style: .continuous)
                 .strokeBorder(category.map { Color(uiColor: FlightCategory.mark($0)) } ?? .clear, lineWidth: 3))
             .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
@@ -85,8 +86,10 @@ struct AirportPlaceHead: View {
 
     private var titles: some View {
         VStack(spacing: WingtipSpace.xs) {
+            // The name grows to the hero size with the picture, as Maps'
+            // title does at full height; half way it is a card's.
             Text(place.name)
-                .font(WingtipType.card)
+                .font(expanded ? WingtipType.hero : WingtipType.card)
                 .multilineTextAlignment(.center)
                 .accessibilityAddTraits(.isHeader)
                 // The UI tests' sign the card is up (WingtipUITests/FlowTests).
@@ -193,38 +196,27 @@ struct ActionFace: View {
 
 /// The field's four facts, label over value, as Maps' facts row: its
 /// weather's category in its colour (≈ where it is not the field's own),
-/// the wind reported, its longest runway and how far it is.
+/// the wind reported, its longest runway and how far it is (from the
+/// airplane, else from the departure: AirportDistance).
 struct AirportFacts: View {
     let place: AirportPlace
-    let distanceNm: Double?
+    let distance: AirportDistance?
 
     var body: some View {
         let chip = AirportHead.category(place)
         let metar = place.metar
         let wind = metar.flatMap { $0.windSpeedKt != nil || $0.windDirTrueDeg != nil ? $0 : nil }
         let longest = place.runways.compactMap(\.lengthFt).max()
-        HStack(alignment: .top, spacing: WingtipSpace.sm) {
-            fact("Weather", chip.map { ($0.own ? "" : "≈") + $0.category } ?? "—",
-                 colour: chip.map { Color(uiColor: FlightCategory.words($0.category)) },
-                 spoken: chip.map { $0.own ? SpokenFigures.flightCategory($0.category) : "about \(SpokenFigures.flightCategory($0.category))" })
-            fact("Wind", wind.map { AirportWords.windLine(dirTrueDeg: $0.windDirTrueDeg, speedKt: $0.windSpeedKt, gustKt: $0.windGustKt) } ?? "—")
-            fact("Longest", longest.map { Format.altitude(Double($0)) } ?? "—",
-                 spoken: longest.map { "longest runway \(SpokenFigures.feet(Double($0)))" })
-            fact("Distance", distanceNm.map { Format.distance($0, decimals: 0) } ?? "—",
-                 spoken: distanceNm.map { SpokenFigures.nauticalMiles($0.rounded()) })
-        }
+        FactsRow(facts: [
+            .init(label: "Weather", value: chip.map { ($0.own ? "" : "≈") + $0.category } ?? "—",
+                  spoken: chip.map { $0.own ? SpokenFigures.flightCategory($0.category) : "about \(SpokenFigures.flightCategory($0.category))" },
+                  colour: chip.map { Color(uiColor: FlightCategory.words($0.category)) }),
+            .init(label: "Wind", value: wind.map { AirportWords.windLine(dirTrueDeg: $0.windDirTrueDeg, speedKt: $0.windSpeedKt, gustKt: $0.windGustKt) } ?? "—"),
+            .init(label: "Longest", value: longest.map { Format.altitude(Double($0)) } ?? "—",
+                  spoken: longest.map { "longest runway \(SpokenFigures.feet(Double($0)))" }),
+            .init(label: distance?.caption ?? "Distance", value: distance.map { Format.distance($0.nm, decimals: 0) } ?? "—", spoken: distance?.spoken),
+        ])
         .padding(.horizontal, WingtipSpace.lg)
-    }
-
-    private func fact(_ label: String, _ value: String, colour: Color? = nil, spoken: String? = nil) -> some View {
-        VStack(spacing: WingtipSpace.xxs) {
-            Text(label).font(.footnote).foregroundStyle(.secondary)
-            Text(value).font(.headline.monospacedDigit()).foregroundStyle(colour ?? .primary)
-                .lineLimit(1).minimumScaleFactor(0.6)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(label): \(value == "—" ? "not known" : spoken ?? value)")
     }
 }
 
@@ -233,4 +225,27 @@ extension EnvironmentValues {
     /// detent (PlaceCardSheet, the airplane's profile), or a card with no
     /// detents (the iPad's inspector, a page pushed), which is always.
     @Entry var cardExpanded = true
+}
+
+/// What the card's head says of a field: its weather's colour -- its own
+/// report's, or with none the modelled one or a near station's, marked
+/// "≈" -- and a field to keep out of.
+enum AirportHead {
+    /// The category the chip shows, and whether it is the field's own.
+    static func category(_ place: AirportPlace) -> (category: String, own: Bool)? {
+        if let own = place.metar?.flightCategory { return (own, true) }
+        if place.metar == nil, let modelled = place.modelledWeather?.flightCategory { return (modelled, false) }
+        if place.metar == nil, let near = place.nearbyMetar, near.near, let category = near.metar.flightCategory { return (category, false) }
+        return nil
+    }
+
+    /// A field the armed services own (the FAA's airport file), or a
+    /// private one: a field most pilots may not land at unasked.
+    static func restriction(_ place: AirportPlace) -> String? {
+        switch place.military {
+        case "military": return "Military, permission required"
+        case "joint": return "Joint use"
+        default: return place.isPrivate == true ? "Private, permission required" : nil
+        }
+    }
 }

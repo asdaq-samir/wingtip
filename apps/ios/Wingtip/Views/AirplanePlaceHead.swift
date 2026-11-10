@@ -42,12 +42,7 @@ struct AirplanePlaceHead: View {
                     .font(WingtipType.detail).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: WingtipSize.tapTarget)
             }
-            HStack(alignment: .top, spacing: WingtipSpace.sm) {
-                fact("Cruise", .cruiseTasKt)
-                fact("Burn", .fuelBurnGph)
-                fact("Usable", .usableFuelGal)
-                fact("Glide", .glideRatio)
-            }
+            FactsRow(facts: [fact("Cruise", .cruiseTasKt), fact("Burn", .fuelBurnGph), fact("Usable", .usableFuelGal), fact("Glide", .glideRatio)])
         }
         .padding(.horizontal, WingtipSpace.lg)
         .padding(.vertical, WingtipSpace.md)
@@ -56,15 +51,8 @@ struct AirplanePlaceHead: View {
 
     /// A figure, label over value with its unit, as the rows below give it;
     /// "—" where the airplane has none, asked for in its row.
-    private func fact(_ label: String, _ figure: OwnFigure) -> some View {
+    private func fact(_ label: String, _ figure: OwnFigure) -> FactsRow.Fact {
         let text = model.text(figure)
-        let value = text.isEmpty ? "—" : "\(text) \(figure.unit)"
-        return VStack(spacing: WingtipSpace.xxs) {
-            Text(label).font(.footnote).foregroundStyle(.secondary)
-            Text(value).font(.headline.monospacedDigit()).lineLimit(1).minimumScaleFactor(0.6)
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(figure.label): \(text.isEmpty ? "not set" : value)")
+        return FactsRow.Fact(label: label, value: text.isEmpty ? "—" : "\(text) \(figure.unit)")
     }
 }

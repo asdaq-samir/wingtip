@@ -49,6 +49,7 @@ struct AirplaneProfileView: View {
                         ProblemLine(model.problem)
                     }
                 }
+                EnduranceSection(model: model)
                 ProfilePhotoSection(model: model) { Task { await model.commitDrafts(plan: plan, signedIn: session.signedIn) } }
                 if let record = Airplanes.shared.record(model.tail) {
                     Section {

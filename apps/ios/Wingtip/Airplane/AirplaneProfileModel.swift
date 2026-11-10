@@ -66,6 +66,15 @@ final class AirplaneProfileModel {
         figures = Airplanes.answer(book: book, handbook: handbook, own: own)?.figures ?? []
     }
 
+    /// How long its tanks last at its cruise burn, with the reserve kept
+    /// back that the rule names (the engine's endurance: 14 CFR
+    /// 91.151(a)(1) 30 minutes VFR by day, (a)(2) 45 at night, 91.167(a)(3)
+    /// 45 IFR); nil where the engine cannot answer. Every figure is nil
+    /// without the airplane's own usable fuel and burn: none is assumed.
+    func endurance(_ reserve: EnduranceReserve) -> EngineContract.EnduranceAnswer? {
+        try? Engine.endurance(usableGal: item(.usableFuelGal)?.value, burnGph: item(.fuelBurnGph)?.value, reserve: reserve.rawValue)
+    }
+
     /// The figure's row, for its source and book figure.
     func item(_ figure: OwnFigure) -> EngineContract.AirplaneFiguresAnswerFiguresItem? {
         figures.first { $0.key == figure.rawValue }
@@ -143,5 +152,20 @@ final class AirplaneProfileModel {
     func keptWords(signedIn: Bool) -> String? {
         if case .device(let why)? = kept, let why { return why }
         return signedIn ? nil : "Kept on this iPhone; offered to your account when you sign in."
+    }
+}
+
+/// The reserves the endurance is given after, as the engine names them.
+enum EnduranceReserve: String, CaseIterable, Identifiable {
+    case vfrDay = "vfr_day", vfrNight = "vfr_night", ifr
+    var id: String { rawValue }
+
+    /// The row's words, with the rule it comes from.
+    var title: String {
+        switch self {
+        case .vfrDay: "After VFR Day Reserve"
+        case .vfrNight: "After VFR Night Reserve"
+        case .ifr: "After IFR Reserve"
+        }
     }
 }

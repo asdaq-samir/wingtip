@@ -88,7 +88,7 @@ struct PaperworkTests {
         let p = try JSONDecoder().decode(Paperwork.self, from: Data(json.utf8))
         #expect(p.items.map(\.named) == ["N3429J · ELT battery", "Flight review", "N3429J · 100-hour inspection"])
         #expect(p.items.map(\.when) == ["In 7 days", "In 143 days", "Due now"])
-        #expect(p.items.map(\.tone) == [.orange, .green, .red])
+        #expect(p.items.map(\.tone) == [WingtipInk.caution, WingtipInk.go, WingtipInk.problem])
         #expect(Set(p.items.map(\.key)).count == 3)
     }
 

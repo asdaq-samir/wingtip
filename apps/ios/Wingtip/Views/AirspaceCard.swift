@@ -103,7 +103,7 @@ struct AirspaceCard: View {
                 Section(title: "TFRs") {
                     if here.tfrsUnavailable == true {
                         Link("tfr.faa.gov did not answer. Check it before flight.", destination: URL(string: "https://tfr.faa.gov")!)
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(WingtipInk.caution)
                     } else if (here.tfrs ?? []).isEmpty {
                         Text("None here now or to come").foregroundStyle(.secondary)
                     } else {
@@ -113,7 +113,7 @@ struct AirspaceCard: View {
                                         title: "TFR \(tfr.notamId)" + (tfr.kind.map { " · \($0)" } ?? ""),
                                         detail: [tfr.activeNow ? "In force now" : "To come", tfr.title].compactMap { $0 }.joined(separator: " · "))
                             }
-                            .foregroundStyle(tfr.activeNow ? Color.red : Color.primary)
+                            .foregroundStyle(tfr.activeNow ? WingtipInk.problem : Color.primary)
                         }
                     }
                 }

@@ -70,6 +70,11 @@ struct OneSearch: ViewModifier {
                 SearchBarItems(model: model, hear: listener.canListen ? { Task { await hear() } } : nil, open: host.page)
             }
             .airplaneProfile($profile)
+            .onChange(of: model.profileTail, initial: true) { _, tail in
+                guard let tail else { return }
+                profile = ProfileAsk(tail: tail)
+                model.profileTail = nil
+            }
             .task { await model.loadTypes() }
             // The nearest fields from where the airplane is, asked again
             // once it has moved a mile.

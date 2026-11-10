@@ -20,6 +20,9 @@ final class OneSearchModel {
     var text = ""
     /// The search up: the field focused and its suggestions in sight.
     var presented = false
+    /// An airplane's profile asked for from outside the search (a link's
+    /// `?airplane=`), opened as a picked airplane is, then cleared.
+    var profileTail: String?
     /// Why a line sent or said was not done, said under the field.
     var problem: String?
     /// The microphone is hearing one line.

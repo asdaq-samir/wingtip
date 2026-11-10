@@ -145,10 +145,14 @@ struct ClearanceSheet: View {
             .navigationTitle("Clearance")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    // Listening goes on with the sheet put away: the captions over the map carry it, and Stop ends it.
-                    CloseButton { dismiss() }
-                }
+                // Cancel throws away what was heard here, the plan untouched
+                // (HIG Sheets: Cancel leading, Done trailing); listening goes
+                // on with the sheet put away: the captions over the map carry
+                // it, and Stop ends it.
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                // Done enters the route, as Enter the route does: nothing
+                // heard reaches the plan before one of them.
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { enter() }.disabled(!ready) }
                 if listener.canListen { // speech recognised on the iPhone, else no Listen or Read back: typed
                     ToolbarItem(placement: .bottomBar) {
                         Button {
@@ -163,6 +167,10 @@ struct ClearanceSheet: View {
             .task {
                 words = (try? await Planner.clearanceWords(near: near, dep: plan.dep)) ?? []
             }
+            // A clearance read in full is felt as a success; one with a
+            // place the reader is unsure of, as a warning, once each.
+            .sensoryFeedback(.success, trigger: ready) { was, now in !was && now }
+            .sensoryFeedback(.warning, trigger: ClearanceCraftSection.unsure(found)) { was, now in !was && now }
             .onAppear { if let given = listener.sheetText { text = given; following = false } }
             .onChange(of: listener.heard.last(where: \.final)?.text) { _, newest in
                 guard let newest else { return }

@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -112,6 +113,8 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onFind:
         if (state.routed) item(key = "ready") { Box(pad) { ReadyToFlyRow(plan, onSetRoute = null) } }
         item(key = "route") { Box(pad) { RouteFields(plan, state, dryRun) } }
         item(key = "rules") { Box(pad) { FlightRulesRow(onChanged = { if (state.routed) plan.plan() }) } }
+        // The cruise altitude, under the rules it is picked by (AltitudeRow).
+        item(key = "altitude") { Box(pad) { AltitudeRow(plan, state) } }
         item(key = "problem") {
             Column(pad) {
                 ProblemLine(state.problem ?: dryRunState.problem)
@@ -143,7 +146,7 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onFind:
 
 /** Where the legs start in the plan's list (the undo row's place), for
  *  the Nav Log button to scroll to. */
-private const val LEGS_AT = 7
+private const val LEGS_AT = 8
 
 /** The route typed and planned, as the FPL tab had it: the departure and
  *  the destination, the stops, Plan, Share and the dry run. */
@@ -231,13 +234,24 @@ private fun LegFigures(leg: Leg, modifier: Modifier) {
             Text(leg.to, style = MaterialTheme.typography.titleMedium)
             Text(Format.cruiseAltitude(leg.altitudeFt), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Figure(stringResource(R.string.figure_dist), Format.distance(leg.distanceNm))
+        LegFigure(stringResource(R.string.figure_dist), Format.distance(leg.distanceNm))
         // The heading needs the airplane's airspeed against the wind: with
         // none chosen, the leg's magnetic course instead (decision 0011).
         val heading = leg.magneticHeadingDeg
-        if (heading != null) Figure(stringResource(R.string.figure_mh), Format.heading(heading))
-        else Figure(stringResource(R.string.figure_mc), Format.heading(leg.magneticCourseDeg))
-        leg.eteMin?.let { Figure(stringResource(R.string.figure_ete), Format.navLogTime(it)) }
+        if (heading != null) LegFigure(stringResource(R.string.figure_mh), Format.heading(heading))
+        else LegFigure(stringResource(R.string.figure_mc), Format.heading(leg.magneticCourseDeg))
+        leg.eteMin?.let { LegFigure(stringResource(R.string.figure_ete), Format.navLogTime(it)) }
+    }
+}
+
+/** One of a leg's figures, its name over it: the nav log is a table read
+ *  down its columns, so the figures are bodyLarge with tabular digits
+ *  ("tnum") and line up leg under leg, never smaller to fit. */
+@Composable
+private fun RowScope.LegFigure(name: String, value: String) {
+    Column(Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+        Text(name, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"), maxLines = 1)
     }
 }
 

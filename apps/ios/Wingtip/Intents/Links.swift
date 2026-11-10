@@ -4,7 +4,8 @@ import Foundation
 /// addresses (universal links, the associated domain in project.yml) as
 /// the web app's ShareMenu, AirportCard and AirplaneCard write them --
 /// `/app/plan?dep=C81&stops=KJVL&dest=KDLH` a route shared, `?place=KDLH`
-/// a field's card, `?flight=a1b2c3` an airplane tracked, `?open=logbook`
+/// a field's card, `?airplane=N3429J` an airplane's profile,
+/// `?flight=a1b2c3` an airplane tracked, `?open=logbook`
 /// one of the app's screens (design/screens.json; the same from the app's
 /// own wingtipmaps://plan?open=logbook) -- and a track
 /// file (GPX, KML) handed over from Files or Mail, which the app is a
@@ -32,6 +33,7 @@ enum Links {
             return SharedFlightLink.of(query).map { .sharedFlight($0) }
         }
         if let place = ident(query["place"]) { return .weather(ident: place) }
+        if let tail = ident(query[LinkKey.airplane.rawValue]) { return .airplane(tail: tail) }
         if let hex = query["flight"]?.trimmingCharacters(in: .whitespaces).lowercased(), !hex.isEmpty { return .aircraft(hex: hex) }
         // The route as the web app's URL has it: idents, the stops
         // comma-separated; a link with only a destination plans from the

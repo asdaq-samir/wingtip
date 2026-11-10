@@ -77,7 +77,7 @@ private struct FigureTransition<V: Equatable>: ViewModifier {
     func body(content: Content) -> some View {
         content
             .contentTransition(.numericText())
-            .motion(.snappy(duration: WingtipMotion.page), value: value)
+            .motion(.default, value: value)
     }
 }
 
@@ -105,9 +105,9 @@ struct SaveLabel: View {
         .task(id: saves) {
             guard saves > 0 else { return }
             AccessibilityNotification.Announcement("Saved").post()
-            withAnimation(Motion.animation(.easeOut(duration: WingtipMotion.page))) { shown = true }
+            withAnimation(Motion.animation(.default)) { shown = true }
             try? await Task.sleep(for: .seconds(2))
-            withAnimation(Motion.animation(.easeIn(duration: WingtipMotion.fade))) { shown = false }
+            withAnimation(Motion.animation(.default)) { shown = false }
         }
     }
 }

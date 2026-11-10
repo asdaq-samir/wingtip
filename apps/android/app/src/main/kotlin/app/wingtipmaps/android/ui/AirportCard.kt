@@ -12,12 +12,10 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconToggleButton
@@ -70,7 +68,9 @@ import app.wingtipmaps.android.search.SearchMemory
  * first): Material's large flexible top app bar, "KOSH · Wittman
  * Regional" large over its town, shrinking as the card scrolls, with the
  * star and the close; the facts row -- Weather, Wind, Longest Runway,
- * Distance -- as containers; the sections in a tab row, Overview's the
+ * Distance (from own ship, else "From KMSN", the route's departure) --
+ * as containers, under a card of the field's closures and TFRs where it
+ * has any (FieldAlertCard); the sections in a tab row, Overview's the
  * pictures (AirportSections); and the actions docked at the foot: Fly Here
  * filled, with its time at the airplane's cruise speed, then Depart From,
  * Add as Stop, Diagram, Call and Address. The planner's words throughout,
@@ -89,8 +89,11 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
     LaunchedEffect(ident) { if (ident.isNotEmpty()) model.open(ident) }
     val place = state.place?.takeIf { it.ident.equals(ident, ignoreCase = true) }
     LaunchedEffect(place?.ident) { if (place != null) model.loadPhotos() }
-    // Where Fly Here starts: the airplane, else the route's departure.
-    val from = fix?.let { it.lat to it.lon } ?: planState.course?.departure?.let { it.lat to it.lon }
+    // Where the distance and Fly Here start: the airplane, else the
+    // route's departure, its place the course's or its own card's.
+    val known = planState.course?.departure?.let { AirportModel.Departure(it.ident, it.lat, it.lon) }
+    LaunchedEffect(planState.dep, known) { model.departFrom(planState.dep, known) }
+    val from = fix?.let { AirportFacts.From(it.lat, it.lon) } ?: state.departure?.let { AirportFacts.From(it.lat, it.lon, it.ident) }
     val cruise = airplane.value(FigureKey.CRUISE)
     val facts = remember(place, from, cruise) { place?.let { AirportFacts.of(it, from, cruise) } }
     val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -105,8 +108,12 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
             LargeFlexibleTopAppBar(
                 title = { Text(place?.let { "${it.ident} · ${it.name}" } ?: ident.uppercase(), maxLines = 2, overflow = TextOverflow.Ellipsis) },
                 subtitle = place?.let { p -> listOfNotNull(p.municipality, p.region).joinToString(", ").ifEmpty { null }?.let { where -> { Text(where) } } },
-                navigationIcon = { IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) } },
-                actions = { if (place != null) Star(place) },
+                // Close at the end, as every level's title row has it
+                // (decision 0015), never a back arrow at the start.
+                actions = {
+                    if (place != null) Star(place)
+                    IconButton(onClick = onClose) { Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close)) }
+                },
                 windowInsets = WindowInsets(0),
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
                 scrollBehavior = scroll,
@@ -127,6 +134,13 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
                     if (state.loading) item(key = "loading") { Skeleton(Modifier.padding(WingtipSpace.Lg)) }
                     return@LazyColumn
                 }
+                // Closures and TFRs first, as Maps puts its live cards.
+                val alerts = FieldAlerts.of(state.notams)
+                if (alerts.isNotEmpty()) {
+                    item(key = "alerts") {
+                        FieldAlertCard(place.ident, alerts, onOpen = { section = AirportSection.NOTAMS.ordinal }, Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm))
+                    }
+                }
                 facts?.let { f -> item(key = "facts") { FactsRow(f) } }
                 item(key = "tabs") {
                     SecondaryScrollableTabRow(selectedTabIndex = section, containerColor = Color.Transparent, edgePadding = WingtipSpace.Lg) {
@@ -135,7 +149,7 @@ fun AirportCard(ident: String, plan: Plan, onClose: () -> Unit, onDone: () -> Un
                         }
                     }
                 }
-                airportSection(AirportSection.entries[section], place, state, model)
+                airportSection(AirportSection.entries[section], place, state)
             }
         }
     }
@@ -172,7 +186,7 @@ private fun FactsRow(f: AirportFacts) {
         stringResource(R.string.fact_weather) to (f.category ?: stringResource(R.string.fact_no_report)),
         wind?.let { stringResource(R.string.fact_wind) to it },
         f.longestRunwayFt?.let { stringResource(R.string.fact_longest_runway) to Format.altitude(it.toDouble()) },
-        f.distanceNm?.let { stringResource(R.string.fact_distance) to Format.distance(it) },
+        f.distanceNm?.let { (f.fromIdent?.let { from -> stringResource(R.string.fact_from, from) } ?: stringResource(R.string.fact_distance)) to Format.distance(it) },
     )
     LazyRow(contentPadding = PaddingValues(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
         facts.forEach { (name, value) ->
@@ -188,9 +202,16 @@ private fun FactsRow(f: AirportFacts) {
     }
 }
 
-/** The actions docked at the card's foot, as Maps docks its pills: Fly
- *  Here filled with its time, then Depart From, Add as Stop, Diagram,
- *  Call and Address, each one this field can do now. */
+/**
+ * The actions docked at the card's foot, as Maps docks its pills, in
+ * Material 3 Expressive's button group: Fly Here filled with its time
+ * (none without an airplane, decision 0011), then Depart From, Add as
+ * Stop, Diagram, Call and Address tonal, each one this field can do now.
+ * Every action keeps its word (Google's research found actions harder to
+ * use without labels); what does not fit the width goes into the group's
+ * own overflow menu, never a smaller button. A pressed button widens and
+ * its neighbours make room, the group's stock motion.
+ */
 @Composable
 private fun ActionPills(place: AirportPlace, facts: AirportFacts?, actions: RouteActions, onDiagram: () -> Unit, onDone: () -> Unit) {
     val route = listOf(CardAction.DEPART_FROM, CardAction.ADD_STOP).filter { actions.canAirport(it, place) }
@@ -198,31 +219,11 @@ private fun ActionPills(place: AirportPlace, facts: AirportFacts?, actions: Rout
     val flyHere = facts?.minutes?.let { stringResource(R.string.fly_here_in, Format.duration(it)) } ?: stringResource(R.string.action_fly_here)
     val diagram = stringResource(R.string.diagram)
     val words = (route + leave).associateWith { stringResource(it.label) }
-    LazyRow(contentPadding = PaddingValues(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm), modifier = Modifier.fillMaxWidth()) {
-        item(key = "fly") {
-            Button(onClick = { actions.airport(CardAction.FLY_HERE, place); onDone() }) {
-                Icon(CardAction.FLY_HERE.icon, contentDescription = null)
-                Text(flyHere, Modifier.padding(start = WingtipSpace.Sm))
-            }
-        }
-        route.forEach { a ->
-            item(key = a.name) {
-                FilledTonalButton(onClick = { actions.airport(a, place); onDone() }) {
-                    Icon(a.icon, contentDescription = null)
-                    Text(words.getValue(a), Modifier.padding(start = WingtipSpace.Sm))
-                }
-            }
-        }
-        if (place.airportDiagramUrl != null) {
-            item(key = "diagram") { FilledTonalButton(onClick = onDiagram) { Text(diagram) } }
-        }
-        leave.forEach { a ->
-            item(key = a.name) {
-                FilledTonalButton(onClick = { actions.airport(a, place) }) {
-                    Icon(a.icon, contentDescription = null)
-                    Text(words.getValue(a), Modifier.padding(start = WingtipSpace.Sm))
-                }
-            }
-        }
+    val items = buildList {
+        add(GroupAction(flyHere, CardAction.FLY_HERE.icon, filled = true) { actions.airport(CardAction.FLY_HERE, place); onDone() })
+        route.forEach { a -> add(GroupAction(words.getValue(a), a.icon) { actions.airport(a, place); onDone() }) }
+        if (place.airportDiagramUrl != null) add(GroupAction(diagram, null, onClick = onDiagram))
+        leave.forEach { a -> add(GroupAction(words.getValue(a), a.icon) { actions.airport(a, place) }) }
     }
+    CardButtonGroup(items, Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm))
 }

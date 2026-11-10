@@ -22122,6 +22122,52 @@
         }
       }
     },
+    "/api/airport/{ident}/notams": {
+      "get": {
+        "description": "One field's own NOTAMs (the FAA's feed, by any ident it goes by)\nand the TFRs within 5 nm of it, best first, as /api/notams/ranked ranks\na route's: the field read as a stop from an hour ago to three hours\nahead (14 CFR 91.103 asks for the NOTAMs of every field a flight\nuses). With no flight there is no runway in use or cruise altitude to\nweigh. `unchecked` names the TFRs when their list could not be had.",
+        "operationId": "airport_notams_api_airport__ident__notams_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "title": "Ident",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotamsRanked"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No such field"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Airport Notams",
+        "x-gateway": {
+          "access": "public"
+        }
+      }
+    },
     "/api/airport/{ident}/photos": {
       "get": {
         "description": "The pictures an airport's card swipes through behind its diagram, at\nthe owner's ask (\"airport photos swipe behind the airport diagram\nthumbnail\", 2026-10-23): its aerial (/api/airport-aerial, every US\nfield's, from the USGS) and its Wikipedia article's photo where there\nis a free one (wingtip.airport_photos).",

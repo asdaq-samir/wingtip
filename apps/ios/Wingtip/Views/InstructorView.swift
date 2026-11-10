@@ -274,7 +274,7 @@ struct ReviewSection: View {
                     Text(c.label)
                     Text("\(c.rule) · \(c.detail)")
                 } icon: {
-                    Image(systemName: c.met ? "checkmark.circle.fill" : "xmark.circle").foregroundStyle(c.met ? Color.green : Color.red)
+                    Image(systemName: c.met ? "checkmark.circle.fill" : "xmark.circle").foregroundStyle(c.met ? WingtipInk.go : WingtipInk.problem)
                 }
             }
             NavigationLink("Endorse This Flight") {
@@ -372,7 +372,7 @@ struct SignView: View {
                 .disabled(!ready || signing)
                 if let lapsed {
                     Label(lapsed, systemImage: "exclamationmark.triangle.fill")
-                        .font(.footnote).foregroundStyle(.orange)
+                        .font(.footnote).foregroundStyle(WingtipInk.caution)
                 }
                 if !missing.isEmpty {
                     Text("Fill in \(missing.map { $0.label.lowercased() }.joined(separator: ", "))").font(.footnote).foregroundStyle(.secondary)

@@ -33,3 +33,9 @@ suspend fun Planner.departureWindow(ask: DepartureWindowAsk): DepartureWindow =
  *  Ready to fly's Get NOTAMs, the ranking the engine's. */
 suspend fun Planner.notamsRanked(ask: NotamsRankedAsk): NotamsRanked =
     Gateway.json.decodeFromString(Gateway.send("POST", Config.plannerPath("/api/notams/ranked"), Gateway.json.encodeToString(ask)))
+
+/** One field's own NOTAMs and the TFRs within 5 nm of it, ranked by the
+ *  engine's notams_ranked as a route's are and in the same shape (GET
+ *  /api/airport/{ident}/notams): the airport card's NOTAMs and its alerts. */
+suspend fun Planner.airportNotams(ident: String): NotamsRanked =
+    Gateway.json.decodeFromString(fetch("/api/airport/$ident/notams"))

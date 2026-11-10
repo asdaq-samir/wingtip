@@ -74,7 +74,8 @@ final class FlightActivityTests: XCTestCase {
         let lines = FlightActivityLines(FlightActivityContent.state(inputs(progress: progress(), frequency: "Approach 124.35")))
         XCTAssertEqual(lines.next, "PIPER")
         XCTAssertEqual(lines.nextEte, "12m")
-        XCTAssertEqual(lines.compact, "12m")
+        // The compact island's figure is the time to the destination.
+        XCTAssertEqual(lines.compact, "1h 5m")
         XCTAssertEqual(lines.toGo, "1h 5m · 102 nm")
         XCTAssertEqual(lines.fuel, "33.6 gal")
         XCTAssertEqual(lines.glyph, "airplane")
@@ -84,11 +85,11 @@ final class FlightActivityTests: XCTestCase {
     }
 
     func testNarrowIslandsFigureIsShort() {
-        let lines = FlightActivityLines(FlightActivityContent.state(inputs(progress: progress())))
+        let lines = FlightActivityLines(FlightActivityContent.state(inputs(progress: progress(destEte: 45))))
         // Under an hour it is the usual figure.
-        XCTAssertEqual(lines.compactNarrow, "12m")
+        XCTAssertEqual(lines.compactNarrow, "45m")
         var long = lines.state
-        long.nextEteMin = 85
+        long.destEteMin = 85
         XCTAssertEqual(FlightActivityLines(long).compact, "1h 25m")
         XCTAssertEqual(FlightActivityLines(long).compactNarrow, "1:25")
         XCTAssertEqual(FlightActivityLines(FlightActivityContent.state(inputs(progress: nil))).compactNarrow, "—")
@@ -133,5 +134,52 @@ final class FlightActivityTests: XCTestCase {
         var later = first
         later.updatedAt = now.addingTimeInterval(30)
         XCTAssertTrue(FlightActivityContent.due(later, after: first, every: 30))
+    }
+
+    // MARK: - Phases (docs/design/ios.md §15, Flighty's)
+
+    func testInTheAirTheProgressIsTheEnginesMilesAlong() {
+        let state = FlightActivityContent.state(inputs(progress: progress()))
+        XCTAssertEqual(state.phase, .airborne)
+        XCTAssertEqual(state.progress ?? 0, 40.0 / 142.0, accuracy: 1e-9)
+        XCTAssertEqual(state.nextNm, 21)
+        XCTAssertEqual(FlightActivityLines(state).nextLine, "PIPER · 21 nm · 12m")
+        // No progress before the first fix.
+        XCTAssertNil(FlightActivityContent.state(inputs(progress: nil)).progress)
+    }
+
+    func testBeforeDepartureTheBoardShowsTheCategoryAndThePlannedTime() {
+        var ready = inputs(progress: nil)
+        ready.phase = .ready
+        ready.depCategory = "MVFR"
+        ready.plannedEteMin = 95
+        let lines = FlightActivityLines(FlightActivityContent.state(ready))
+        XCTAssertEqual(lines.phase, .ready)
+        XCTAssertEqual(lines.readyLine, "Ready to depart · MVFR")
+        XCTAssertEqual(lines.compact, "1h 35m")
+        XCTAssertEqual(lines.compactNarrow, "1:35")
+        XCTAssertEqual(lines.spoken, "Ready to depart · MVFR, 1h 35m en route")
+    }
+
+    func testArrivedGivesTheLandingAndTheBlockTime() {
+        var down = inputs(progress: progress())
+        down.phase = .arrived
+        down.startedAt = now
+        down.landedAt = now.addingTimeInterval(85 * 60)
+        let state = FlightActivityContent.state(down)
+        XCTAssertEqual(state.progress, 1)
+        XCTAssertEqual(state.blockMin ?? 0, 85, accuracy: 1e-9)
+        let lines = FlightActivityLines(state)
+        XCTAssertEqual(lines.block, "Block 1h 25m")
+        XCTAssertEqual(lines.compact, "Landed")
+        XCTAssertEqual(lines.compactNarrow, "")
+        // A phase change is sent at once.
+        XCTAssertTrue(FlightActivityContent.due(state, after: FlightActivityContent.state(inputs(progress: progress())), every: 30))
+    }
+
+    func testAStateFromBeforePhasesReadsAsInTheAir() {
+        var state = FlightActivityContent.state(inputs(progress: progress()))
+        state.phase = nil
+        XCTAssertEqual(FlightActivityLines(state).phase, .airborne)
     }
 }

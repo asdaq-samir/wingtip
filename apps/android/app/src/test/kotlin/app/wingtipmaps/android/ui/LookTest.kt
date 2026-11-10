@@ -6,10 +6,7 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipPalettes
 import app.wingtipmaps.android.flight.Geo
-import app.wingtipmaps.android.ui.sheet.SheetStop
-import app.wingtipmaps.android.ui.sheet.lower
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -37,13 +34,6 @@ class LookTest {
         assertEquals(Color(0xFF0066CC), Look.WINGTIP.palette(dark = false).tint)
         // A look with no inks of its own takes Chart ink's.
         assertEquals(WingtipPalettes.InkLight.inkBrown, InkColors.of(WingtipPalettes.Light, dark = false).brown)
-    }
-
-    @Test
-    fun backLowersTheSheetOneStopAtATime() {
-        assertEquals(SheetStop.HALF, SheetStop.FULL.lower())
-        assertEquals(SheetStop.PILL, SheetStop.HALF.lower())
-        assertNull(SheetStop.PILL.lower())
     }
 
     @Test

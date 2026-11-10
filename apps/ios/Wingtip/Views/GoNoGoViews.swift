@@ -17,9 +17,10 @@ enum FindingStyle {
 
     static func colour(_ finding: String) -> Color {
         switch finding {
-        case "ok": .green
-        case "caution": .orange
-        case "stop": .red
+        // The tokens' inks (go, caution, destructive), as the web says them.
+        case "ok": WingtipInk.go
+        case "caution": WingtipInk.caution
+        case "stop": WingtipInk.problem
         default: .secondary
         }
     }
@@ -202,7 +203,7 @@ struct VerdictRow: View {
             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(item.label).font(.body.weight(.semibold))
                 Text(item.detail).font(.subheadline)
-                    .foregroundStyle(item.finding == "stop" ? Color.red : Color.secondary)
+                    .foregroundStyle(item.finding == "stop" ? WingtipInk.problem : Color.secondary)
             }
         }
         .contentShape(Rectangle())

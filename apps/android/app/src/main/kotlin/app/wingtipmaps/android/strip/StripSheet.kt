@@ -50,13 +50,12 @@ import app.wingtipmaps.android.ui.BriefSheet
 import app.wingtipmaps.android.ui.LegSheet
 import app.wingtipmaps.android.ui.ProblemLine
 import app.wingtipmaps.android.ui.SourceSheet
-import app.wingtipmaps.android.ui.sheet.DockedSheet
-import app.wingtipmaps.android.ui.sheet.SheetStop
-import app.wingtipmaps.android.ui.sheet.rememberDockedSheetState
+import app.wingtipmaps.android.ui.sheet.MapSheet
+import app.wingtipmaps.android.ui.sheet.rememberMapSheetState
 
 /**
- * The strip layout: the map under the docked sheet (DockedSheet: pill,
- * half, full), the sheet's one row at its foot the one search (OneSearch,
+ * The strip layout: the map under Material's standard bottom sheet
+ * (MapSheet: its peek or expanded), the sheet's one row at its foot the one search (OneSearch,
  * the root's `searchRow`) with its microphone and the account button, and over the field, when the sheet is
  * up, the flight as one strip in time -- the ribbon (StripRibbon), the
  * head with the Brief's verdict and at most three actions (StripHead,
@@ -115,16 +114,16 @@ fun StripLayout(
     }
     LaunchedEffect(state.totals, state.planning) { brief.brief(state) }
 
-    val sheet = rememberDockedSheetState()
+    val sheet = rememberMapSheetState()
     // The sheet up from its foot once a line is done, as the web's sheet
-    // comes up from the pill (fieldLine's `up`): one stop.
+    // comes up from the pill (fieldLine's `up`).
     LaunchedEffect(strip.done) {
-        if (strip.done > 0 && sheet.stop == SheetStop.PILL) sheet.moveTo(SheetStop.HALF)
+        if (strip.done > 0 && sheet.atPeek) sheet.expand()
     }
     // And when the welcome ends into a flight (`raise` bumped by the root):
     // the sample's strip, or "Where to?" over the field.
     LaunchedEffect(raise) {
-        if (raise > 0 && sheet.stop == SheetStop.PILL) sheet.moveTo(SheetStop.HALF)
+        if (raise > 0 && sheet.atPeek) sheet.expand()
     }
 
     val ask = conversation.turns.lastOrNull()?.takeIf { it.role == AssistantTurn.Role.ASSISTANT }
@@ -132,14 +131,14 @@ fun StripLayout(
     val dismissAnswer = { assistant.clear(); model.dismissAnswer() }
     // Back at the pill with the answer's card open closes the card before
     // leaving the app, the card drawn back with the predictive gesture;
-    // the sheet's own back lowers it first (DockedSheet).
+    // the sheet's own back lowers it first (MapSheet).
     val answerBack = rememberPredictiveBack(enabled = answerShown) { dismissAnswer() }
 
     // The foot is the handle and the field's row; in the air the ribbon
     // and the next checkpoint too, since they are what is glanced at.
     val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
     val peek = (if (flying && rows.isNotEmpty()) StripAirPeek else WingtipSize.TapTarget * 2 + WingtipSpace.Lg + WingtipSpace.Xs) + navigationBar
-    DockedSheet(state = sheet, peek = peek, body = { Box(Modifier.fillMaxSize()) { map() } }) {
+    MapSheet(state = sheet, peek = peek, body = { Box(Modifier.fillMaxSize()) { map() } }) {
         // The one search, the root's (OneSearch), as the plan's sheet has it.
         searchRow(positionProblem)
         if (flying && rows.isNotEmpty()) {

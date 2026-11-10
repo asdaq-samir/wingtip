@@ -8,6 +8,7 @@ import SwiftUI
 /// arrow's other face fits the course again; tapped then, the arrow
 /// comes back to bring the map to the position.
 struct MapButtons: View {
+    @Environment(OwnShip.self) private var ownShip
     @Binding var following: Bool
     let routeAway: Bool
     let fitRoute: () -> Void
@@ -18,6 +19,8 @@ struct MapButtons: View {
     var body: some View {
         VStack(spacing: WingtipSpace.md) {
             Button {
+                // The position asked for here, the first time it is wanted.
+                ownShip.askLocation()
                 if routeAway && !following { fitRoute() } else { following.toggle() }
             } label: {
                 Image(systemName: routeAway && !following ? WingtipIcon.flightPlan : following ? WingtipIcon.myLocationOn : WingtipIcon.myLocation)
@@ -32,6 +35,8 @@ struct MapButtons: View {
             // material on iOS 18 (Design/Glass.swift).
             .floatingGlass(in: Circle(), interactive: true)
             .foregroundStyle(.primary)
+            // A pointer lifts it, as Maps' buttons on the iPad.
+            .hoverEffect(.highlight)
             if let ask {
                 Button(action: ask) {
                     Image(systemName: WingtipIcon.brief)
@@ -40,6 +45,7 @@ struct MapButtons: View {
                 }
                 .accessibilityLabel("Ask about this flight")
                 .floatingGlass(in: Circle(), interactive: true)
+                .hoverEffect(.highlight)
                 .foregroundStyle(Color.accentColor)
             }
         }
@@ -53,4 +59,5 @@ struct MapButtons: View {
 #Preview("MapButtons") {
     @Previewable @State var following = true
     MapButtons(following: $following, routeAway: false, fitRoute: {}, ask: {})
+        .environment(OwnShip())
 }

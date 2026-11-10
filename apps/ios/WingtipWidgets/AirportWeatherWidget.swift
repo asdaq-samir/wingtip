@@ -18,7 +18,7 @@ struct AirportWeatherWidget: Widget {
         }
         .configurationDisplayName("Airport Weather")
         .description("An airport's METAR and TAF, as sent.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular, .accessoryCircular, .accessoryInline])
     }
 }
 
@@ -65,6 +65,8 @@ private struct AirportWeatherView: View {
         if let ident = entry.ident {
             switch family {
             case .accessoryRectangular: lock(ident)
+            case .accessoryCircular: circle(ident)
+            case .accessoryInline: Text("\(ident) \(entry.weather?.report?.flightCategory ?? "—")")
             case .systemMedium: card(ident, taf: true)
             default: card(ident, taf: false)
             }
@@ -107,6 +109,19 @@ private struct AirportWeatherView: View {
         .accessibilityElement(children: .combine)
     }
 
+    /// The Lock Screen's circle: the ident over its category, the word
+    /// itself, never the colour alone.
+    private func circle(_ ident: String) -> some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            VStack(spacing: 0) {
+                Text(ident).font(.caption2.weight(.semibold)).widgetAccentable()
+                Text(entry.weather?.report?.flightCategory ?? "—").font(.headline)
+            }
+        }
+        .accessibilityElement(children: .combine)
+    }
+
     private func lock(_ ident: String) -> some View {
         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
             HStack(spacing: WingtipSpace.xs) {
@@ -132,6 +147,7 @@ private struct CategoryChip: View {
             Text(category)
                 .font(.caption.weight(.bold))
                 .foregroundStyle(Color(uiColor: FlightCategory.words(category)))
+                .widgetAccentable()
         }
     }
 }
@@ -147,7 +163,8 @@ private struct AsOf: View {
         if let weather, let at = weather.fetchedAt {
             HStack(spacing: WingtipSpace.xs) {
                 if let from = weather.reportFrom { Text("From \(from)") }
-                Text("\(kept ? "Kept" : "As of") \(at, style: .time)")
+                // Not live: when it was had (HIG Widgets), as reports say it.
+                Text("\(kept ? "Kept" : "Updated") \(Format.zulu(at))")
             }
             .font(.caption2)
             .foregroundStyle(kept ? WingtipInk.caution : .secondary)

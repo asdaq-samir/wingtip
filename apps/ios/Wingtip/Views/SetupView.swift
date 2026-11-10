@@ -4,7 +4,11 @@ import SwiftUI
 /// one-search design, 2026-11-09): the pilot's account, the flying
 /// screens, the map's switches, the alerts, the look, and the chart's
 /// edition and what of it is kept for the air. A page of the sheet's
-/// stack; its rows open their pages on it.
+/// stack; its rows open their pages on it. Laid out as iOS's Settings
+/// (docs/design/ios.md §13): a large title, the pilot first (AccountHeadRow,
+/// their account a page of its own with Delete Account last), then the
+/// groups as they were, each row led by a badge-coloured square. No Save:
+/// every row keeps itself as it changes.
 struct SetupView: View {
     @Environment(Session.self) private var session
     @Environment(Charts.self) private var charts
@@ -25,18 +29,8 @@ struct SetupView: View {
 
     var body: some View {
         List {
-            Section(title: "Account") {
-                if let pilot = session.pilot {
-                    LabeledContent("Signed in as", value: pilot.displayName)
-                    LabeledContent("Email", value: pilot.email)
-                    NavigationLink("Contact") { ContactView().closesBack() }
-                    ExportDataButton()
-                    Button("Sign Out", role: .destructive) { Task { await session.signOut(); plan.forgetPilot() } }
-                    DeleteAccountButton()
-                } else {
-                    Button("Sign In") { signingIn = true }
-                        .disabled(!session.loaded)
-                }
+            Section {
+                AccountHeadRow { signingIn = true }
                 ProblemLine(session.problem)
             }
             // Every screen of the pilot's own two taps from the map
@@ -45,17 +39,17 @@ struct SetupView: View {
             // and the drills, each a row here as well as in its home.
             Section(title: "Flying") {
                 EmergencyAssistantRow()
-                NavigationLink(Screen.checklists.title) { ChecklistsPage().closesBack() }
-                NavigationLink(Screen.flights.title) { FlightsView().closesBack() }
-                NavigationLink(Screen.airplanes.title) { OwnAircraftListView().closesBack() }
-                NavigationLink("Practice") { PracticeView().closesBack() }
+                NavigationLink { ChecklistsPage().closesBack() } label: { SettingsLabel(Screen.checklists.title, systemImage: "checklist", colour: WingtipColor.Badge.ground) }
+                NavigationLink { FlightsView().closesBack() } label: { SettingsLabel(Screen.flights.title, systemImage: "tray.full", colour: WingtipColor.Badge.tower) }
+                NavigationLink { OwnAircraftListView().closesBack() } label: { SettingsLabel(Screen.airplanes.title, systemImage: WingtipIcon.airplane, colour: WingtipColor.Badge.approach) }
+                NavigationLink { PracticeView().closesBack() } label: { SettingsLabel("Practice", systemImage: "figure.walk.motion", colour: WingtipColor.Badge.traffic) }
             }
             if session.signedIn {
                 Section(title: "Pilot") {
-                    NavigationLink("Logbook and Currency") { LogbookView().closesBack() }
-                    NavigationLink("Training") { TrainingView().closesBack() }
-                    NavigationLink("Instructing") { InstructorView().closesBack() }
-                    NavigationLink("Coach") { CoachView().closesBack() }
+                    NavigationLink { LogbookView().closesBack() } label: { SettingsLabel("Logbook and Currency", systemImage: "book", colour: WingtipColor.Badge.fuel) }
+                    NavigationLink { TrainingView().closesBack() } label: { SettingsLabel("Training", systemImage: "graduationcap", colour: WingtipColor.Badge.lodging) }
+                    NavigationLink { InstructorView().closesBack() } label: { SettingsLabel("Instructing", systemImage: "person.2", colour: WingtipColor.Badge.ground) }
+                    NavigationLink { CoachView().closesBack() } label: { SettingsLabel("Coach", systemImage: "brain.head.profile", colour: WingtipColor.Badge.food) }
                 }
             }
             // The weather the pilot will not take off or land in, kept
@@ -63,8 +57,8 @@ struct SetupView: View {
             // Here alone (docs/decisions/0014, one home per control): the
             // Brief's own link to it is gone (the UI audit, 2026-11-09).
             Section {
-                NavigationLink("Personal Minimums") { MinimumsView().closesBack() }
-                NavigationLink("Guide") { PilotGuideView().closesBack() }
+                NavigationLink { MinimumsView().closesBack() } label: { SettingsLabel("Personal Minimums", systemImage: "cloud.sun", colour: WingtipColor.Badge.weather) }
+                NavigationLink { PilotGuideView().closesBack() } label: { SettingsLabel("Guide", systemImage: "questionmark.circle", colour: WingtipColor.Badge.rule) }
                 // The first launch's welcome, shown again from here alone.
                 Button("Show Welcome Again") { WelcomeModel.shared.again() }
             }
@@ -133,7 +127,7 @@ struct SetupView: View {
                     LabeledContent("Edition", value: "Fetching…")
                 }
                 // Regions' charts kept for flying with no signal.
-                NavigationLink("Downloads") { DownloadsView().closesBack() }
+                NavigationLink { DownloadsView().closesBack() } label: { SettingsLabel("Downloads", systemImage: "arrow.down.circle", colour: WingtipColor.Badge.chart) }
                 ProblemLine(charts.problem)
             }
             Section {
@@ -142,11 +136,12 @@ struct SetupView: View {
                 // The build, the data's cycles, the planning aid's words,
                 // the credits, the legal pages and the demo flight, as
                 // Settings > General > About has them.
-                NavigationLink("About") { AboutView().closesBack() }
+                NavigationLink { AboutView().closesBack() } label: { SettingsLabel("About", systemImage: "info.circle", colour: WingtipColor.Badge.other) }
             }
         }
+        .listStyle(.insetGrouped)
         .navigationTitle("Settings")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $signingIn) { SignInView() }
         .task { keptBytes = TileStore.shared.bytes() }
         .refreshable {

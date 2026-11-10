@@ -171,7 +171,12 @@ struct NotamsSection: View {
                 if !rest.isEmpty {
                     DisclosureGroup("\(rest.count) more") { ForEach(rest, id: \.id) { notam in row(notam) } }
                 }
-                if ranked.notams.isEmpty { Text("None for the route").foregroundStyle(.secondary) }
+                if ranked.notams.isEmpty {
+                    Text("None for the route").foregroundStyle(.secondary)
+                } else {
+                    // Every one, searchable by place and kind (NotamListView).
+                    NavigationLink("Show All \(ranked.notams.count)", value: SheetPage.notams(.route))
+                }
             }
             NotamWordsSection(ranked: ranked.notams, flight: plan.routed
                 ? WordsFigures.flight(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin) : nil)
