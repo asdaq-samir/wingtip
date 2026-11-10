@@ -54,7 +54,7 @@ struct RouteBoxRow: View {
                 .accessibilityHint("Pick one for the time, fuel and groundspeed")
             }
             TextField(Format.cruiseAltitude(plan.altitudeFt), text: $altitude)
-                .textFieldStyle(.roundedBorder).keyboardType(.numberPad).font(WingtipType.row.monospaced())
+                .borderedField().keyboardType(.numberPad).font(WingtipType.row.monospaced())
                 .frame(width: altitudeWidth).multilineTextAlignment(.trailing)
                 .focused(focused, equals: .altitude)
                 .onSubmit(fly)
