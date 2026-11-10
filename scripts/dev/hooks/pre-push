@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # The quick checks, before a push, for the parts of the repo the push
 # changes against origin/main: TypeScript and ESLint for apps/web/, ruff for
-# the Python, `cargo check` for engine/, and each changed language's
-# formatter (scripts/dev/format.sh --check). A type error or a lint failure
+# the Python, `cargo check` for engine/, each changed language's formatter
+# (scripts/dev/format.sh --check), and the generated files and budgets CI
+# checks (the screens, the design tokens, the toolchain versions, the file
+# sizes, the brand guard), each only when the push changes what it covers. A type error or a lint failure
 # then stops on the Mac in seconds rather than in CI minutes later (the
 # owner, 2026-11-06: development faster). The full checks -- the tests --
 # stay with scripts/dev/one-at-a-time.sh and CI; this runs outside the lock,
@@ -55,6 +57,7 @@ if [ -z "$changed" ]; then exit 0; fi
 # commit is checked out detached into a temporary worktree, removed on exit.
 pushed=$(printf '%s\n' "$refs" | awk -v z="$zero" '$2 != z { sha = $2 } END { print sha }')
 tmp=""
+# shellcheck disable=SC2329  # run by the EXIT trap below
 cleanup() {
   if [ -n "$tmp" ]; then
     git -C "$repo" worktree remove --force "$tmp" >/dev/null 2>&1 || rm -rf "$tmp"
@@ -219,19 +222,45 @@ if [ ${#fmt[@]} -gt 0 ]; then
   esac
 fi
 
-# --- the layering and the file budget: seconds, the standard library ---------
+# --- the engine's layering: seconds, the standard library ------------------
 if has_area engine; then
   note "engine: the crates' layering"
   out=$(python3 "$here/scripts/ci/engine_layers.py") || { grep "::error" <<<"$out"; fail "engine layers"; }
 fi
-if has_area arch; then
-  note "arch: the file-size budget"
-  out=$(python3 "$here/scripts/ci/file_sizes.py" --base origin/main) || { grep "::error" <<<"$out"; fail "file sizes"; }
-  note "arch: every version is .tool-versions'"
-  out=$("$here/scripts/build/toolchain.sh" --check) || { grep "::error" <<<"$out"; fail "toolchain drift (scripts/build/toolchain.sh writes them)"; }
-  note "arch: no raw style value outside the design tokens"
-  out=$(python3 "$here/scripts/ci/brand_guard.py") || { grep -A3 "::error" <<<"$out"; fail "brand guard (design/tokens.json)"; }
-fi
+# --- the generated files and the budgets CI holds the tree to ---------------
+# Each a second or two, Python's standard library alone, and each run only
+# when the push changes what it reads or writes: the files it generates, its
+# source, or the script itself. Every one broke CI on 2026-11-10 after
+# pushing clean here, so they stop here first. Without python3 they are
+# left to CI with a note, as the checks above are.
+gen() {   # gen <pattern of the paths it covers> <label> <fix> <command>...
+  local paths=$1 label=$2 fix=$3
+  shift 3
+  grep -qE "$paths" <<<"$changed" || return 0
+  if ! command -v python3 >/dev/null; then
+    note "$label: left to CI (no python3 here)"
+    return 0
+  fi
+  note "$label"
+  out=$("$@" 2>&1) || { tail -n 12 <<<"$out"; fail "$label ($fix)"; }
+}
+gen '^(design/screens\.json$|scripts/build/screens\.|docs/navigation\.md$|apps/web/src/lib/navigation/generated/|apps/ios/Wingtip/Navigation/Generated/|apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/|apps/android/app/src/main/res/xml/shortcuts\.xml$|apps/android/app/src/main/res/values/screens_strings\.xml$)' \
+  "the screens' links are design/screens.json's" "scripts/build/screens.sh writes them" \
+  "$here/scripts/build/screens.sh" --check
+gen '^(design/|scripts/build/design[-_]tokens|apps/web/src/styles/tokens\.css$|apps/web/src/lib/tokens\.ts$|apps/web/src/lib/fixtures/formats\.json$|apps/ios/Wingtip/Design/Generated/|apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/)' \
+  "the design tokens are design/tokens.json's" "scripts/build/design-tokens.sh writes them" \
+  "$here/scripts/build/design-tokens.sh" --check
+# Every place scripts/build/toolchain.py holds to .tool-versions (areas.yml's
+# arch paths for it).
+gen '(^\.tool-versions$|rust-toolchain\.toml$|^engine/.*Cargo\.toml$|^scripts/build/toolchain\.|\.sh$|Dockerfile|docker-compose.*\.yml$|^\.github/workflows/.*\.yml$|^\.devcontainer/devcontainer\.json$|^apps/web/\.nvmrc$|^apps/web/package\.json$|^services/gateway/pom\.xml$|^apps/android/app/build\.gradle\.kts$|^apps/android/gradle/|^services/.*/requirements-dev.*\.txt$|^scripts/dev/format\.sh$|^CLAUDE\.md$|^README\.md$|^docs/[^/]*\.md$|^\.claude/skills/checks/SKILL\.md$)' \
+  "every version is .tool-versions'" "scripts/build/toolchain.sh writes them" \
+  "$here/scripts/build/toolchain.sh" --check
+gen '(\.(ts|tsx|py|rs|swift|kt|java)$|^scripts/ci/file_sizes)' \
+  "the file-size budget" "split the file, or scripts/ci/file_sizes_allow.txt" \
+  python3 "$here/scripts/ci/file_sizes.py" --base origin/main
+gen '(^apps/web/src/.*\.(ts|tsx|css)$|^apps/ios/.*\.swift$|^apps/android/app/src/main/.*\.kt$|^scripts/ci/brand_guard|^design/tokens\.json$)' \
+  "no raw style value outside the design tokens" "use design/tokens.json's" \
+  python3 "$here/scripts/ci/brand_guard.py"
 
 if [ "$failed" -ne 0 ]; then
   echo "pre-push: fix the above, or push anyway with git push --no-verify (or SKIP_HOOKS=1)"
