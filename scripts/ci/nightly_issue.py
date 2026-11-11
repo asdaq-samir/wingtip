@@ -1,17 +1,21 @@
-"""A red night opens or updates one issue, the same morning (docs/CI.md,
-"Rules"; decision 0034). .github/workflows/nightly-issue.yml runs this
-when a scheduled run of CI, Native iOS or Native Android completes.
+"""A red night, or a red run after merge, opens or updates one issue
+(docs/CI.md, "Rules" and "The tiers"; decision 0034).
+.github/workflows/nightly-issue.yml runs this when a run of CI, Native iOS
+or Native Android completes: a scheduled one (tier 3), or main's push
+(tier 2: the browser smoke, the images, the iPhone's UI smoke).
 
-The issue, "Nightly CI failed", is labelled "ready" (for agents: nothing
-for the owner to decide) and holds one section per workflow: the night's
-date, the conclusion, the jobs that failed and the run. A failure is fixed
-before new feature work. The script makes at most one GitHub write a run:
-the issue created when there is none and something failed, or its body
-edited when this workflow's section changed. A green night on a workflow
-with no open issue writes nothing. Agents close the issue once every
-section is green.
+Each kind keeps its own issue, "Nightly CI failed" or "Main CI failed
+(after merge)", labelled "ready" (for agents: nothing for the owner to
+decide), with one section per workflow: the date, the conclusion, the jobs
+that failed and the run. Neither holds a merge; a failure is fixed before
+new feature work. The script makes at most one GitHub write a run: the
+issue created when there is none and something failed, or its body edited
+when this workflow's section changed. A green run on a workflow with no
+open issue writes nothing. Agents close the issue once every section is
+green.
 
-Env: GH_TOKEN, GH_REPO, WORKFLOW, CONCLUSION, RUN_ID, RUN_URL.
+Env: GH_TOKEN, GH_REPO, WORKFLOW, EVENT (schedule or push; schedule if
+unset), CONCLUSION, RUN_ID, RUN_URL.
 
   python3 scripts/ci/nightly_issue.py [--dry-run]
 """
@@ -25,7 +29,11 @@ import re
 import subprocess
 import sys
 
-TITLE = "Nightly CI failed"
+TITLES = {"schedule": "Nightly CI failed", "push": "Main CI failed (after merge)"}
+WHAT = {
+    "schedule": "A scheduled run failed (docs/CI.md, \"Rules\": a red nightly comes first).",
+    "push": "A run on main after a merge failed: tier 2, which no pull request waits for (docs/CI.md, \"The tiers\").",
+}
 LABEL = "ready"
 
 
@@ -52,20 +60,22 @@ def main() -> int:
     dry = "--dry-run" in sys.argv
     repo, workflow = os.environ["GH_REPO"], os.environ["WORKFLOW"]
     conclusion, url = os.environ["CONCLUSION"], os.environ["RUN_URL"]
-    if conclusion in ("skipped", "neutral"):
+    event = os.environ.get("EVENT") or "schedule"
+    if conclusion in ("skipped", "neutral") or event not in TITLES:
         return 0
+    title = TITLES[event]
     jobs = [] if conclusion == "success" else failed_jobs(repo, os.environ["RUN_ID"])
     new = section(workflow, conclusion, jobs, url)
-    found = json.loads(gh("issue", "list", "--state", "open", "--search", f'in:title "{TITLE}"', "--json", "number,title,body"))
-    issue = next((i for i in found if i["title"] == TITLE), None)
+    found = json.loads(gh("issue", "list", "--state", "open", "--search", f'in:title "{title}"', "--json", "number,title,body"))
+    issue = next((i for i in found if i["title"] == title), None)
     if issue is None:
         if conclusion == "success":
             print(f"{workflow} green, no open issue: nothing to write")
             return 0
-        body = f"A scheduled run failed (docs/CI.md, \"Rules\": a red nightly comes first).\n\n{new}\n"
+        body = f"{WHAT[event]}\n\n{new}\n"
         print(body)
         if not dry:
-            gh("issue", "create", "--title", TITLE, "--label", LABEL, "--body", body)
+            gh("issue", "create", "--title", title, "--label", LABEL, "--body", body)
         return 0
     old = issue["body"] or ""
     pattern = re.compile(rf"<!-- nightly:{re.escape(workflow)} -->.*?<!-- /nightly:{re.escape(workflow)} -->", re.S)

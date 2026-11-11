@@ -54,6 +54,17 @@ class Job:
         cond = self.keys.get("if", "")
         return "schedule" in cond and "pull_request" not in cond
 
+    @property
+    def after_merge(self) -> bool:
+        """A job main's push runs and a pull request never does (tier 2,
+        docs/CI.md): its `if:` says so in these words."""
+        return "github.event_name != 'pull_request'" in self.keys.get("if", "")
+
+    @property
+    def tier(self) -> int:
+        """1, the pull request's gate; 2, after merge; 3, the night."""
+        return 3 if self.nightly_only else 2 if self.after_merge else 1
+
 
 @dataclass
 class Workflow:

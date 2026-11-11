@@ -23,7 +23,7 @@ the file and line, and how to put it right:
   allow file's `budget`, set at the total when this guard came in; a new
   workflow or step makes room by moving logic into a script.
 
-The standard library only; seconds. Run in ci.yml's rules-boundary job.
+The standard library only; seconds. Run in ci.yml's guards job (scripts/ci/guards.sh).
 
   python3 scripts/ci/workflow_rules.py
 """

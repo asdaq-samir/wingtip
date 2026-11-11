@@ -137,15 +137,15 @@ checks, read by check.sh, the pre-push hook and CI. A change to
 jobs, whose images build on `services/Dockerfile.base` (none starts
 without it).
 
-| Area | What it runs | On a pull request / at night (docs/CI.md) |
+| Area | What it runs | On a pull request / after merge / at night (docs/CI.md) |
 |---|---|---|
-| `web` (`apps/web/`) | `npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npx vitest run` | all, and the `@smoke` browser tests / every browser test |
+| `web` (`apps/web/`) | `npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npx vitest run` | lint in `guards`, the tests the change reaches (`--changed`) and the build / every test, and the `@smoke` browser tests / every browser test |
 | `py` (`services/planner/wingtip`, `tests_wingtip/`) | `ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/`, with the engine's wheel | all |
 | `planner` (`services/planner/` app) | `ruff check app tests && lint-imports && pytest tests/` | all |
 | `ingest`, `weather`, `assistant`, `jobs` | each service's ruff and pytest; the assistant's `python -m app.openapi` after a route change | all |
-| `engine` | `scripts/ci/engine_layers.py`, `cargo machete`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --profile ci` | all |
+| `engine` | `scripts/ci/engine_layers.py`, `cargo machete`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --profile ci` over `scripts/ci/engine_affected.py --all` | lint in `guards`, the touched crates, those that use them and the contract test / every crate |
 | `java` (`services/gateway/`) | `mvn -B test` (Docker, for Testcontainers) | all |
-| `ios` (`apps/ios/`) | `xcodegen`, then `xcodebuild test` on the newest iPhone simulator (docs/NATIVE.md) | unit tests and `CardSmokeTests` on the iPhone / the full suites on the iPhone, iPad and iPhone Duo |
+| `ios` (`apps/ios/`) | `xcodegen`, then `xcodebuild test` on the newest iPhone simulator (docs/NATIVE.md) | the build and unit tests on the iPhone / and `CardSmokeTests` / the full suites on the iPhone, iPad and iPhone Duo |
 | `android` (`apps/android/`) | `engine/bindings/ffi/build-android.sh`, then `./gradlew testDebugUnitTest lintDebug assembleDebug` (docs/NATIVE-ANDROID.md) | unit tests and lint / plus the instrumented tests on an emulator |
 | `site` (`apps/site/`) | `python3 apps/site/build.py && python3 apps/site/check.py` | all |
 | `arch` (any source file) | `scripts/ci/file_sizes.py --base origin/main` (no new or grown file over 400 lines), `scripts/build/toolchain.sh --check`, `scripts/ci/brand_guard.py` (no raw style value outside `design/tokens.json`), `scripts/ci/dead_python.sh`; CI adds `scripts/ci/rules_boundary.py` (no aviation figure outside the engine) | all |
@@ -165,19 +165,23 @@ without it).
   gateway), then `npm run types` and `scripts/build/api-models-apps.sh`;
   commit them all.
 - **Browser tests** (Playwright, `apps/web/e2e`) need the whole stack:
-  write or update the spec for a change a pilot sees, with the code. A
-  pull request runs only `@smoke`, one test per journey that proves it end
-  to end; the rest run at night. A new spec tags its one `@smoke` or is
+  write or update the spec for a change a pilot sees, with the code.
+  Main's push runs only `@smoke` (and `@flight-critical`) after the merge,
+  one test per journey that proves it end to end; the rest run at night. A new spec tags its one `@smoke` or is
   listed in `scripts/ci/test_tiers_nightly.txt`.
-- **CI stays lean** (docs/CI.md, "Rules"; decision 0034): a pull request
-  in about 10 minutes, each check in one tier and run once, only what a
+- **CI stays lean** (docs/CI.md, "Rules" and "The tiers"; decision 0034):
+  a pull request in about 3 minutes (tier 1: one `guards` job, the unit
+  tests a change reaches, the phones' builds when touched); the browser
+  smoke, the images and the iPhone's UI smoke after merge on main's push
+  (tier 2, a failure one `ready` issue, no merge held); everything at
+  night (tier 3). Each check in one tier and run once, only what a
   change touches, everything cached, newest versions, warnings fatal,
   pushes batched, and never a timeout raised to get green. Also: no flaky
   test kept on the PR, no live internet in PR tests, a red night fixed
   first, CI calling the same scripts as the Mac, every failure named,
   a rule tested once at the lowest level, least privilege, macOS for iOS
-  only, and small workflows. `rules-boundary` and `CI budget` enforce what
-  a script can check.
+  only, and small workflows. `guards` (`scripts/ci/guards.sh`) and `CI
+  budget` enforce what a script can check.
 - **On the owner's Mac**, every browser run, suite, image build and
   measurement goes through `scripts/dev/one-at-a-time.sh "<label>"
   <command>` (three at once with the live stack down, two with it up;
