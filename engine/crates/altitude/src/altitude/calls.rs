@@ -6,12 +6,12 @@
 use super::floor::{self, Ground, Obstacle, IFR_OBSTACLE_RADIUS_NM};
 use super::select;
 use super::words::{self, Via};
-use super::{cautions, clouds, congested, cruising};
+use super::{cautions, clouds, congested, cruising, profile_calls};
 use crate::json::{self, Value};
 
-type R<T> = Result<T, String>;
+pub(super) type R<T> = Result<T, String>;
 
-fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
+pub(super) fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
     match v.get(key) {
         None | Some(Value::Null) => Ok(None),
         Some(Value::Number(n)) => Ok(Some(*n)),
@@ -19,11 +19,11 @@ fn opt_num(name: &str, v: &Value, key: &str) -> R<Option<f64>> {
     }
 }
 
-fn num(name: &str, v: &Value, key: &str) -> R<f64> {
+pub(super) fn num(name: &str, v: &Value, key: &str) -> R<f64> {
     opt_num(name, v, key)?.ok_or_else(|| format!("{name}: \"{key}\" is missing"))
 }
 
-fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
+pub(super) fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
     match v.get(key) {
         None | Some(Value::Null) => Ok(&[]),
         Some(Value::Array(items)) => Ok(items),
@@ -31,7 +31,7 @@ fn list<'a>(name: &str, v: &'a Value, key: &str) -> R<&'a [Value]> {
     }
 }
 
-fn nums(name: &str, v: &Value, key: &str) -> R<Vec<f64>> {
+pub(super) fn nums(name: &str, v: &Value, key: &str) -> R<Vec<f64>> {
     list(name, v, key)?.iter().map(|x| x.as_f64().ok_or_else(|| format!("{name}: \"{key}\" holds a non-number"))).collect()
 }
 
@@ -45,7 +45,7 @@ fn point(name: &str, v: Option<&Value>) -> R<(f64, f64)> {
     }
 }
 
-fn written(v: &Value) -> String {
+pub(super) fn written(v: &Value) -> String {
     let mut out = String::new();
     json::value(&mut out, v);
     out
@@ -61,7 +61,7 @@ fn numbers(xs: &[f64]) -> String {
     written(&Value::Array(xs.iter().copied().map(Value::Number).collect()))
 }
 
-fn obj(members: Vec<(&str, Value)>) -> Value {
+pub(super) fn obj(members: Vec<(&str, Value)>) -> Value {
     Value::Object(members.into_iter().map(|(k, v)| (k.to_owned(), v)).collect())
 }
 
@@ -100,6 +100,8 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "cloud_clearance_at_ft" => Ok(number(Some(clouds::clearance_at_ft(num(name, v, "altitude_ft")?)))),
         "congested_points" => congested_points(name, v),
         "altitude_wheel" => Ok(numbers(&cruising::wheel(&nums(name, v, "legal_ft")?, opt_num(name, v, "flown_ft")?))),
+        "profile_clearance" => profile_calls::profile_clearance(name, v),
+        "altitude_advisor" => profile_calls::altitude_advisor(name, v),
         "ifr_obstacle_radius_nm" => Ok(number(Some(IFR_OBSTACLE_RADIUS_NM))),
         "airway_floor_ft" => Ok(number(floor::published(opt_num(name, v, "mea_ft")?, opt_num(name, v, "gnss_mea_ft")?))),
         "vfr_floors" => {

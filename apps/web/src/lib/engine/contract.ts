@@ -11,6 +11,17 @@ export type AirwayFloorFtAnswer = number | null;
  * via the `definition` "AheadPolygons".
  */
 export type AheadPolygons = [number, number][][][];
+export type AltitudeAdvisorAnswer = {
+  altitude_ft: number;
+  ete_min: number | null;
+  fuel_gal: number | null;
+  tailwind_kt: number | null;
+  legal: boolean;
+  flown: boolean;
+  fastest: boolean;
+  economical: boolean;
+  warning: string | null;
+}[];
 export type AltitudeAllowedAnswer = boolean;
 export type AltitudeAnywayAnswer = number | null;
 export type AltitudeSaidAnswer = string;
@@ -983,6 +994,13 @@ export interface EngineContract {
     answer: AlertsAheadAnswer;
   };
   /**
+   * The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a warning (the owner's warn, never limit).
+   */
+  altitude_advisor: {
+    input: AltitudeAdvisorInput;
+    answer: AltitudeAdvisorAnswer;
+  };
+  /**
    * Whether an altitude asked for may be planned: at least 500 ft (91.119(c)), under Class A for VFR (any figure under 18,000 ft MSL, 71.33(a), 91.135), at most FL410 for IFR (91.179(b)(4)).
    */
   altitude_allowed: {
@@ -995,6 +1013,13 @@ export interface EngineContract {
   altitude_anyway: {
     input: AltitudeAnywayInput;
     answer: AltitudeAnywayAnswer;
+  };
+  /**
+   * A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its climb speed scaled by the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
+   */
+  altitude_change: {
+    input: AltitudeChangeInput;
+    answer: AltitudeChangeAnswer;
   };
   /**
    * The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.
@@ -2593,6 +2618,13 @@ export interface EngineContract {
     answer: ProficiencyPlanAnswer;
   };
   /**
+   * The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red within 100 ft of it or above it and yellow within 1,000 ft -- ForeFlight's Hazard Advisor display defaults (ForeFlight Pilot's Guide), not a regulation; the legal minimums over the ground are 14 CFR 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
+   */
+  profile_clearance: {
+    input: ProfileClearanceInput;
+    answer: ProfileClearanceAnswer;
+  };
+  /**
    * Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
    */
   prohibited_caution: {
@@ -3488,12 +3520,71 @@ export interface AlertsAheadAnswer {
    */
   ground_ft?: number | null;
 }
+export interface AltitudeAdvisorInput {
+  figures: {
+    altitude_ft: number;
+    ete_min?: number | null;
+    fuel_gal?: number | null;
+    tailwind_kt?: number | null;
+    everywhere?: boolean;
+  }[];
+  flown_ft?: number | null;
+  plans?:
+    | {
+        kind: string;
+        altitude_ft: number;
+      }[]
+    | null;
+}
 export interface AltitudeAllowedInput {
   ft: number;
   ifr?: boolean | null;
 }
 export interface AltitudeAnywayInput {
   selection: {};
+}
+export interface AltitudeChangeInput {
+  profile?: NavLogProfile | null;
+  along_nm: number;
+  from_ft: number;
+  to_ft: number;
+  mode: "start_at" | "cross_at";
+  groundspeed_kt?: number | null;
+  tas_kt?: number | null;
+  fuel_burn_gph?: number | null;
+  oat_c?: number | null;
+}
+/**
+ * An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogProfile".
+ */
+export interface NavLogProfile {
+  /**
+   * At its cruise power at cruise_altitude_ft (else 6,000 ft) on a standard day.
+   */
+  cruise_tas_kt?: number;
+  fuel_burn_gph?: number;
+  service_ceiling_ft?: number;
+  cruise_power_pct?: number | null;
+  cruise_altitude_ft?: number | null;
+  climb_tas_kt?: number | null;
+  climb_fuel_burn_gph?: number | null;
+  climb_rate_fpm_sea_level?: number | null;
+  taxi_fuel_gal?: number | null;
+  usable_fuel_gal?: number | null;
+  supplemental_oxygen?: boolean | null;
+  pressurized?: boolean | null;
+  [k: string]: unknown;
+}
+export interface AltitudeChangeAnswer {
+  kind: "climb" | "descent" | "level";
+  begins_nm: number;
+  ends_nm: number;
+  ft_per_nm: number | null;
+  minutes: number | null;
+  gallons: number | null;
 }
 export interface AltitudeLimitsInput {
   ifr?: boolean | null;
@@ -7547,30 +7638,6 @@ export interface NavLogAlternateLegInput {
   } | null;
 }
 /**
- * An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none.
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "NavLogProfile".
- */
-export interface NavLogProfile {
-  /**
-   * At its cruise power at cruise_altitude_ft (else 6,000 ft) on a standard day.
-   */
-  cruise_tas_kt?: number;
-  fuel_burn_gph?: number;
-  service_ceiling_ft?: number;
-  cruise_power_pct?: number | null;
-  cruise_altitude_ft?: number | null;
-  climb_tas_kt?: number | null;
-  climb_fuel_burn_gph?: number | null;
-  climb_rate_fpm_sea_level?: number | null;
-  taxi_fuel_gal?: number | null;
-  usable_fuel_gal?: number | null;
-  supplemental_oxygen?: boolean | null;
-  pressurized?: boolean | null;
-  [k: string]: unknown;
-}
-/**
  * The wind aloft, the direction it blows from in true degrees, carried onto the leg as it is.
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
@@ -8792,6 +8859,35 @@ export interface ProficiencySession {
     acs: string;
     note: string;
   } | null;
+}
+export interface ProfileClearanceInput {
+  altitude_ft: number;
+  along_nm: number[];
+  ground_ft: number[];
+  obstacles?:
+    | {
+        along_nm: number;
+        amsl_ft: number;
+      }[]
+    | null;
+  points?:
+    | {
+        ident: string;
+        along_nm: number;
+      }[]
+    | null;
+}
+export interface ProfileClearanceAnswer {
+  red_from_ft: number;
+  yellow_from_ft: number;
+  highest_ft: number | null;
+  least_ft: number | null;
+  least_along_nm: number | null;
+  obstacle: boolean;
+  strike_nm: number | null;
+  level: "red" | "yellow" | "clear" | null;
+  near: string | null;
+  words: string;
 }
 export interface ProhibitedCautionInput {
   selection: {};

@@ -1115,6 +1115,147 @@
       ],
       "additionalProperties": false
     },
+    "altitude_advisor": {
+      "description": "The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a warning (the owner's warn, never limit).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AltitudeAdvisorInput",
+          "type": "object",
+          "properties": {
+            "figures": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "altitude_ft": {
+                    "type": "number"
+                  },
+                  "ete_min": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "fuel_gal": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "tailwind_kt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "everywhere": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "altitude_ft"
+                ]
+              }
+            },
+            "flown_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "plans": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "type": "string"
+                  },
+                  "altitude_ft": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "altitude_ft"
+                ]
+              }
+            }
+          },
+          "required": [
+            "figures"
+          ]
+        },
+        "answer": {
+          "title": "AltitudeAdvisorAnswer",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "altitude_ft": {
+                "type": "number"
+              },
+              "ete_min": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "fuel_gal": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "tailwind_kt": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "legal": {
+                "type": "boolean"
+              },
+              "flown": {
+                "type": "boolean"
+              },
+              "fastest": {
+                "type": "boolean"
+              },
+              "economical": {
+                "type": "boolean"
+              },
+              "warning": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "altitude_ft",
+              "ete_min",
+              "fuel_gal",
+              "tailwind_kt",
+              "legal",
+              "flown",
+              "fastest",
+              "economical",
+              "warning"
+            ]
+          }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "altitude_allowed": {
       "description": "Whether an altitude asked for may be planned: at least 500 ft (91.119(c)), under Class A for VFR (any figure under 18,000 ft MSL, 71.33(a), 91.135), at most FL410 for IFR (91.179(b)(4)).",
       "x-tool": true,
@@ -1170,6 +1311,125 @@
           "type": [
             "number",
             "null"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "altitude_change": {
+      "description": "A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its climb speed scaled by the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AltitudeChangeInput",
+          "type": "object",
+          "properties": {
+            "profile": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/NavLogProfile"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "along_nm": {
+              "type": "number"
+            },
+            "from_ft": {
+              "type": "number"
+            },
+            "to_ft": {
+              "type": "number"
+            },
+            "mode": {
+              "type": "string",
+              "enum": [
+                "start_at",
+                "cross_at"
+              ]
+            },
+            "groundspeed_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "tas_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "fuel_burn_gph": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "oat_c": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "along_nm",
+            "from_ft",
+            "to_ft",
+            "mode"
+          ]
+        },
+        "answer": {
+          "title": "AltitudeChangeAnswer",
+          "type": "object",
+          "properties": {
+            "kind": {
+              "type": "string",
+              "enum": [
+                "climb",
+                "descent",
+                "level"
+              ]
+            },
+            "begins_nm": {
+              "type": "number"
+            },
+            "ends_nm": {
+              "type": "number"
+            },
+            "ft_per_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "minutes": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "gallons": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "begins_nm",
+            "ends_nm",
+            "ft_per_nm",
+            "minutes",
+            "gallons"
           ]
         }
       },
@@ -18562,6 +18822,157 @@
       ],
       "additionalProperties": false
     },
+    "profile_clearance": {
+      "description": "The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red within 100 ft of it or above it and yellow within 1,000 ft -- ForeFlight's Hazard Advisor display defaults (ForeFlight Pilot's Guide), not a regulation; the legal minimums over the ground are 14 CFR 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack (\"3,500 ft, terrain within 500 ft near KXYZ\").",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "ProfileClearanceInput",
+          "type": "object",
+          "properties": {
+            "altitude_ft": {
+              "type": "number"
+            },
+            "along_nm": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "ground_ft": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "obstacles": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "along_nm": {
+                    "type": "number"
+                  },
+                  "amsl_ft": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "along_nm",
+                  "amsl_ft"
+                ]
+              }
+            },
+            "points": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "items": {
+                "type": "object",
+                "properties": {
+                  "ident": {
+                    "type": "string"
+                  },
+                  "along_nm": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "ident",
+                  "along_nm"
+                ]
+              }
+            }
+          },
+          "required": [
+            "altitude_ft",
+            "along_nm",
+            "ground_ft"
+          ]
+        },
+        "answer": {
+          "title": "ProfileClearanceAnswer",
+          "type": "object",
+          "properties": {
+            "red_from_ft": {
+              "type": "number"
+            },
+            "yellow_from_ft": {
+              "type": "number"
+            },
+            "highest_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "least_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "least_along_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "obstacle": {
+              "type": "boolean"
+            },
+            "strike_nm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "level": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "red",
+                "yellow",
+                "clear",
+                null
+              ]
+            },
+            "near": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "words": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "red_from_ft",
+            "yellow_from_ft",
+            "highest_ft",
+            "least_ft",
+            "least_along_nm",
+            "obstacle",
+            "strike_nm",
+            "level",
+            "near",
+            "words"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "prohibited_caution": {
       "description": "Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.",
       "type": "object",
@@ -24277,8 +24688,10 @@
     "airway_floor_ft",
     "alert_fires",
     "alerts_ahead",
+    "altitude_advisor",
     "altitude_allowed",
     "altitude_anyway",
+    "altitude_change",
     "altitude_limits",
     "altitude_lines",
     "altitude_said",
@@ -24507,6 +24920,7 @@
     "procedures_read",
     "procedures_write",
     "proficiency_plan",
+    "profile_clearance",
     "prohibited_caution",
     "radial_of",
     "radio_call_sign",

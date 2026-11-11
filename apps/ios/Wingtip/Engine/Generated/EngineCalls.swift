@@ -59,6 +59,11 @@ extension Engine {
         try rule("alerts_ahead", EngineContract.AlertsAheadInput(lat: lat, lon: lon, trackDeg: trackDeg, gsKt: gsKt, altFt: altFt, vsFpm: vsFpm, now: now, groundFt: groundFt, airspace: airspace, specialUse: specialUse, tfrs: tfrs, nearField: nearField, swathGroundFt: swathGroundFt, obstacles: obstacles))
     }
 
+    /// The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a warning (the owner's warn, never limit).
+    static func altitudeAdvisor(figures: [EngineContract.AltitudeAdvisorInputFiguresItem], flownFt: Double? = nil, plans: [EngineContract.AltitudeAdvisorInputPlansItem]? = nil) throws -> [EngineContract.AltitudeAdvisorAnswerItem] {
+        try rule("altitude_advisor", EngineContract.AltitudeAdvisorInput(figures: figures, flownFt: flownFt, plans: plans))
+    }
+
     /// Whether an altitude asked for may be planned: at least 500 ft (91.119(c)), under Class A for VFR (any figure under 18,000 ft MSL, 71.33(a), 91.135), at most FL410 for IFR (91.179(b)(4)).
     static func altitudeAllowed(ft: Double, ifr: Bool? = nil) throws -> Bool {
         try rule("altitude_allowed", EngineContract.AltitudeAllowedInput(ft: ft, ifr: ifr))
@@ -67,6 +72,11 @@ extension Engine {
     /// The altitude a route with no legal one is flown at anyway (the owner's warn, never limit): the lowest over the floor everywhere on the course's own altitudes (14 CFR 91.159, 91.179(b)); null where no floor is known.
     static func altitudeAnyway(selection: [String: JSONValue]) throws -> Double? {
         try rule("altitude_anyway", EngineContract.AltitudeAnywayInput(selection: selection))
+    }
+
+    /// A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its climb speed scaled by the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
+    static func altitudeChange(profile: EngineContract.NavLogProfile? = nil, alongNm: Double, fromFt: Double, toFt: Double, mode: String, groundspeedKt: Double? = nil, tasKt: Double? = nil, fuelBurnGph: Double? = nil, oatC: Double? = nil) throws -> EngineContract.AltitudeChangeAnswer {
+        try rule("altitude_change", EngineContract.AltitudeChangeInput(profile: profile, alongNm: alongNm, fromFt: fromFt, toFt: toFt, mode: mode, groundspeedKt: groundspeedKt, tasKt: tasKt, fuelBurnGph: fuelBurnGph, oatC: oatC))
     }
 
     /// The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.
@@ -1207,6 +1217,11 @@ extension Engine {
     /// A pilot's proficiency plan: what is due and when (the flight review, 14 CFR 61.56(c); passengers by day and at night, 61.57(a), (b); instrument currency, 61.57(c), (d); a student's solo endorsement, 61.87(n), (p); the medical as given), the reminders for those lapsing within remind_days, the weak areas the pilot's own debriefs show (an approach off course or glidepath under the 500 ft gate, AC 61-98D 2.1.4; an approach past full scale or under a minimum; a downwind off pattern altitude, ACS PA.III.B; a leg not held, PA.VI.A), each with its evidence, and up to four sessions: what to practise, why, the nearest suited field of `places`, how long, and whether it may count toward a WINGS flight activity (AC 61-91K 7.3). Every decision is the engine's; a model only words it, citing the ids.
     static func proficiencyPlan(today: String, entries: [EngineContract.LogbookEntry], flightReviewOn: String? = nil, medicalExpiresOn: String? = nil, ipcOn: String? = nil, ratings: [String]? = nil, held: [EngineContract.ProficiencyPlanInputHeldItem]? = nil, debriefs: [EngineContract.CoachDebrief]? = nil, places: [EngineContract.PracticePlace]? = nil, remindDays: Int? = nil) throws -> EngineContract.ProficiencyPlanAnswer {
         try rule("proficiency_plan", EngineContract.ProficiencyPlanInput(today: today, entries: entries, flightReviewOn: flightReviewOn, medicalExpiresOn: medicalExpiresOn, ipcOn: ipcOn, ratings: ratings, held: held, debriefs: debriefs, places: places, remindDays: remindDays))
+    }
+
+    /// The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red within 100 ft of it or above it and yellow within 1,000 ft -- ForeFlight's Hazard Advisor display defaults (ForeFlight Pilot's Guide), not a regulation; the legal minimums over the ground are 14 CFR 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
+    static func profileClearance(altitudeFt: Double, alongNm: [Double], groundFt: [Double], obstacles: [EngineContract.ProfileClearanceInputObstaclesItem]? = nil, points: [EngineContract.ProfileClearanceInputPointsItem]? = nil) throws -> EngineContract.ProfileClearanceAnswer {
+        try rule("profile_clearance", EngineContract.ProfileClearanceInput(altitudeFt: altitudeFt, alongNm: alongNm, groundFt: groundFt, obstacles: obstacles, points: points))
     }
 
     /// Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.

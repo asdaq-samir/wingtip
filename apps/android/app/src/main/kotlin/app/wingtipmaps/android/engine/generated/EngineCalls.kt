@@ -73,6 +73,12 @@ fun Engine.alertsAhead(lat: Double, lon: Double, trackDeg: Double, gsKt: Double,
     rule("alerts_ahead", EngineContract.AlertsAheadInput(lat = lat, lon = lon, trackDeg = trackDeg, gsKt = gsKt, altFt = altFt, vsFpm = vsFpm, now = now, groundFt = groundFt, airspace = airspace, specialUse = specialUse, tfrs = tfrs, nearField = nearField, swathGroundFt = swathGroundFt, obstacles = obstacles))
 
 /**
+ * The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a warning (the owner's warn, never limit).
+ */
+fun Engine.altitudeAdvisor(figures: List<EngineContract.AltitudeAdvisorInputFiguresItem>, flownFt: Double? = null, plans: List<EngineContract.AltitudeAdvisorInputPlansItem>? = null): Result<List<EngineContract.AltitudeAdvisorAnswerItem>> =
+    rule("altitude_advisor", EngineContract.AltitudeAdvisorInput(figures = figures, flownFt = flownFt, plans = plans))
+
+/**
  * Whether an altitude asked for may be planned: at least 500 ft (91.119(c)), under Class A for VFR (any figure under 18,000 ft MSL, 71.33(a), 91.135), at most FL410 for IFR (91.179(b)(4)).
  */
 fun Engine.altitudeAllowed(ft: Double, ifr: Boolean? = null): Result<Boolean> =
@@ -83,6 +89,12 @@ fun Engine.altitudeAllowed(ft: Double, ifr: Boolean? = null): Result<Boolean> =
  */
 fun Engine.altitudeAnyway(selection: Map<String, JsonElement>): Result<Double?> =
     rule("altitude_anyway", EngineContract.AltitudeAnywayInput(selection = selection))
+
+/**
+ * A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its climb speed scaled by the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
+ */
+fun Engine.altitudeChange(profile: EngineContract.NavLogProfile? = null, alongNm: Double, fromFt: Double, toFt: Double, mode: String, groundspeedKt: Double? = null, tasKt: Double? = null, fuelBurnGph: Double? = null, oatC: Double? = null): Result<EngineContract.AltitudeChangeAnswer> =
+    rule("altitude_change", EngineContract.AltitudeChangeInput(profile = profile, alongNm = alongNm, fromFt = fromFt, toFt = toFt, mode = mode, groundspeedKt = groundspeedKt, tasKt = tasKt, fuelBurnGph = fuelBurnGph, oatC = oatC))
 
 /**
  * The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.
@@ -1451,6 +1463,12 @@ fun Engine.proceduresWrite(picks: List<EngineContract.ProceduresWriteInputPicksI
  */
 fun Engine.proficiencyPlan(today: String, entries: List<EngineContract.LogbookEntry>, flightReviewOn: String? = null, medicalExpiresOn: String? = null, ipcOn: String? = null, ratings: List<String>? = null, held: List<EngineContract.ProficiencyPlanInputHeldItem>? = null, debriefs: List<EngineContract.CoachDebrief>? = null, places: List<EngineContract.PracticePlace>? = null, remindDays: Int? = null): Result<EngineContract.ProficiencyPlanAnswer> =
     rule("proficiency_plan", EngineContract.ProficiencyPlanInput(today = today, entries = entries, flightReviewOn = flightReviewOn, medicalExpiresOn = medicalExpiresOn, ipcOn = ipcOn, ratings = ratings, held = held, debriefs = debriefs, places = places, remindDays = remindDays))
+
+/**
+ * The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red within 100 ft of it or above it and yellow within 1,000 ft -- ForeFlight's Hazard Advisor display defaults (ForeFlight Pilot's Guide), not a regulation; the legal minimums over the ground are 14 CFR 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
+ */
+fun Engine.profileClearance(altitudeFt: Double, alongNm: List<Double>, groundFt: List<Double>, obstacles: List<EngineContract.ProfileClearanceInputObstaclesItem>? = null, points: List<EngineContract.ProfileClearanceInputPointsItem>? = null): Result<EngineContract.ProfileClearanceAnswer> =
+    rule("profile_clearance", EngineContract.ProfileClearanceInput(altitudeFt = altitudeFt, alongNm = alongNm, groundFt = groundFt, obstacles = obstacles, points = points))
 
 /**
  * Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.

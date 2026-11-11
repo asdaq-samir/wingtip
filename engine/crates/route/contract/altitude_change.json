@@ -1,0 +1,120 @@
+{
+  "x-call": "wingtip_route::navlog::change::call",
+  "description": "A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its climb speed scaled by the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AltitudeChangeInput",
+      "type": "object",
+      "properties": {
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "along_nm": {
+          "type": "number"
+        },
+        "from_ft": {
+          "type": "number"
+        },
+        "to_ft": {
+          "type": "number"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "start_at",
+            "cross_at"
+          ]
+        },
+        "groundspeed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "tas_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_burn_gph": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "oat_c": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "along_nm",
+        "from_ft",
+        "to_ft",
+        "mode"
+      ]
+    },
+    "answer": {
+      "title": "AltitudeChangeAnswer",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "climb",
+            "descent",
+            "level"
+          ]
+        },
+        "begins_nm": {
+          "type": "number"
+        },
+        "ends_nm": {
+          "type": "number"
+        },
+        "ft_per_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "minutes": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gallons": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "begins_nm",
+        "ends_nm",
+        "ft_per_nm",
+        "minutes",
+        "gallons"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

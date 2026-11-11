@@ -433,6 +433,51 @@ object EngineContract {
     )
 
     @Serializable
+    data class AltitudeAdvisorAnswerItem(
+        @SerialName("altitude_ft")
+        val altitudeFt: Double,
+        @SerialName("ete_min")
+        val eteMin: Double? = null,
+        @SerialName("fuel_gal")
+        val fuelGal: Double? = null,
+        @SerialName("tailwind_kt")
+        val tailwindKt: Double? = null,
+        val legal: Boolean,
+        val flown: Boolean,
+        val fastest: Boolean,
+        val economical: Boolean,
+        val warning: String? = null,
+    )
+
+    @Serializable
+    data class AltitudeAdvisorInput(
+        val figures: List<EngineContract.AltitudeAdvisorInputFiguresItem>,
+        @SerialName("flown_ft")
+        val flownFt: Double? = null,
+        val plans: List<EngineContract.AltitudeAdvisorInputPlansItem>? = null,
+    )
+
+    @Serializable
+    data class AltitudeAdvisorInputFiguresItem(
+        @SerialName("altitude_ft")
+        val altitudeFt: Double,
+        @SerialName("ete_min")
+        val eteMin: Double? = null,
+        @SerialName("fuel_gal")
+        val fuelGal: Double? = null,
+        @SerialName("tailwind_kt")
+        val tailwindKt: Double? = null,
+        val everywhere: Boolean? = null,
+    )
+
+    @Serializable
+    data class AltitudeAdvisorInputPlansItem(
+        val kind: String,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double,
+    )
+
+    @Serializable
     data class AltitudeAllowedInput(
         val ft: Double,
         val ifr: Boolean? = null,
@@ -441,6 +486,39 @@ object EngineContract {
     @Serializable
     data class AltitudeAnywayInput(
         val selection: Map<String, JsonElement>,
+    )
+
+    @Serializable
+    data class AltitudeChangeAnswer(
+        val kind: String,
+        @SerialName("begins_nm")
+        val beginsNm: Double,
+        @SerialName("ends_nm")
+        val endsNm: Double,
+        @SerialName("ft_per_nm")
+        val ftPerNm: Double? = null,
+        val minutes: Double? = null,
+        val gallons: Double? = null,
+    )
+
+    @Serializable
+    data class AltitudeChangeInput(
+        val profile: EngineContract.NavLogProfile? = null,
+        @SerialName("along_nm")
+        val alongNm: Double,
+        @SerialName("from_ft")
+        val fromFt: Double,
+        @SerialName("to_ft")
+        val toFt: Double,
+        val mode: String,
+        @SerialName("groundspeed_kt")
+        val groundspeedKt: Double? = null,
+        @SerialName("tas_kt")
+        val tasKt: Double? = null,
+        @SerialName("fuel_burn_gph")
+        val fuelBurnGph: Double? = null,
+        @SerialName("oat_c")
+        val oatC: Double? = null,
     )
 
     @Serializable
@@ -7740,6 +7818,53 @@ object EngineContract {
          */
         val acs: String,
         val note: String,
+    )
+
+    @Serializable
+    data class ProfileClearanceAnswer(
+        @SerialName("red_from_ft")
+        val redFromFt: Double,
+        @SerialName("yellow_from_ft")
+        val yellowFromFt: Double,
+        @SerialName("highest_ft")
+        val highestFt: Double? = null,
+        @SerialName("least_ft")
+        val leastFt: Double? = null,
+        @SerialName("least_along_nm")
+        val leastAlongNm: Double? = null,
+        val obstacle: Boolean,
+        @SerialName("strike_nm")
+        val strikeNm: Double? = null,
+        val level: String? = null,
+        val near: String? = null,
+        val words: String,
+    )
+
+    @Serializable
+    data class ProfileClearanceInput(
+        @SerialName("altitude_ft")
+        val altitudeFt: Double,
+        @SerialName("along_nm")
+        val alongNm: List<Double>,
+        @SerialName("ground_ft")
+        val groundFt: List<Double>,
+        val obstacles: List<EngineContract.ProfileClearanceInputObstaclesItem>? = null,
+        val points: List<EngineContract.ProfileClearanceInputPointsItem>? = null,
+    )
+
+    @Serializable
+    data class ProfileClearanceInputObstaclesItem(
+        @SerialName("along_nm")
+        val alongNm: Double,
+        @SerialName("amsl_ft")
+        val amslFt: Double,
+    )
+
+    @Serializable
+    data class ProfileClearanceInputPointsItem(
+        val ident: String,
+        @SerialName("along_nm")
+        val alongNm: Double,
     )
 
     @Serializable

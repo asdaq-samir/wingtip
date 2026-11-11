@@ -1,0 +1,152 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red within 100 ft of it or above it and yellow within 1,000 ft -- ForeFlight's Hazard Advisor display defaults (ForeFlight Pilot's Guide), not a regulation; the legal minimums over the ground are 14 CFR 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack (\"3,500 ft, terrain within 500 ft near KXYZ\").",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProfileClearanceInput",
+      "type": "object",
+      "properties": {
+        "altitude_ft": {
+          "type": "number"
+        },
+        "along_nm": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "ground_ft": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "obstacles": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "along_nm": {
+                "type": "number"
+              },
+              "amsl_ft": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "along_nm",
+              "amsl_ft"
+            ]
+          }
+        },
+        "points": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "along_nm": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "ident",
+              "along_nm"
+            ]
+          }
+        }
+      },
+      "required": [
+        "altitude_ft",
+        "along_nm",
+        "ground_ft"
+      ]
+    },
+    "answer": {
+      "title": "ProfileClearanceAnswer",
+      "type": "object",
+      "properties": {
+        "red_from_ft": {
+          "type": "number"
+        },
+        "yellow_from_ft": {
+          "type": "number"
+        },
+        "highest_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "least_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "least_along_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "obstacle": {
+          "type": "boolean"
+        },
+        "strike_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "level": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "red",
+            "yellow",
+            "clear",
+            null
+          ]
+        },
+        "near": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "words": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "red_from_ft",
+        "yellow_from_ft",
+        "highest_ft",
+        "least_ft",
+        "least_along_nm",
+        "obstacle",
+        "strike_nm",
+        "level",
+        "near",
+        "words"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

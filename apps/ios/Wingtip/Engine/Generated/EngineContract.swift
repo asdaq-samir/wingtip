@@ -451,6 +451,68 @@ enum EngineContract {
         }
     }
 
+    struct AltitudeAdvisorAnswerItem: Codable, Equatable, Sendable {
+        var altitudeFt: Double
+        var eteMin: Double?
+        var fuelGal: Double?
+        var tailwindKt: Double?
+        var legal: Bool
+        var flown: Bool
+        var fastest: Bool
+        var economical: Bool
+        var warning: String?
+
+        enum CodingKeys: String, CodingKey {
+            case altitudeFt = "altitude_ft"
+            case eteMin = "ete_min"
+            case fuelGal = "fuel_gal"
+            case tailwindKt = "tailwind_kt"
+            case legal
+            case flown
+            case fastest
+            case economical
+            case warning
+        }
+    }
+
+    struct AltitudeAdvisorInput: Codable, Equatable, Sendable {
+        var figures: [EngineContract.AltitudeAdvisorInputFiguresItem]
+        var flownFt: Double?
+        var plans: [EngineContract.AltitudeAdvisorInputPlansItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case figures
+            case flownFt = "flown_ft"
+            case plans
+        }
+    }
+
+    struct AltitudeAdvisorInputFiguresItem: Codable, Equatable, Sendable {
+        var altitudeFt: Double
+        var eteMin: Double?
+        var fuelGal: Double?
+        var tailwindKt: Double?
+        var everywhere: Bool?
+
+        enum CodingKeys: String, CodingKey {
+            case altitudeFt = "altitude_ft"
+            case eteMin = "ete_min"
+            case fuelGal = "fuel_gal"
+            case tailwindKt = "tailwind_kt"
+            case everywhere
+        }
+    }
+
+    struct AltitudeAdvisorInputPlansItem: Codable, Equatable, Sendable {
+        var kind: String
+        var altitudeFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case kind
+            case altitudeFt = "altitude_ft"
+        }
+    }
+
     struct AltitudeAllowedInput: Codable, Equatable, Sendable {
         var ft: Double
         var ifr: Bool?
@@ -458,6 +520,48 @@ enum EngineContract {
 
     struct AltitudeAnywayInput: Codable, Equatable, Sendable {
         var selection: [String: JSONValue]
+    }
+
+    struct AltitudeChangeAnswer: Codable, Equatable, Sendable {
+        var kind: String
+        var beginsNm: Double
+        var endsNm: Double
+        var ftPerNm: Double?
+        var minutes: Double?
+        var gallons: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case kind
+            case beginsNm = "begins_nm"
+            case endsNm = "ends_nm"
+            case ftPerNm = "ft_per_nm"
+            case minutes
+            case gallons
+        }
+    }
+
+    struct AltitudeChangeInput: Codable, Equatable, Sendable {
+        var profile: EngineContract.NavLogProfile?
+        var alongNm: Double
+        var fromFt: Double
+        var toFt: Double
+        var mode: String
+        var groundspeedKt: Double?
+        var tasKt: Double?
+        var fuelBurnGph: Double?
+        var oatC: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case profile
+            case alongNm = "along_nm"
+            case fromFt = "from_ft"
+            case toFt = "to_ft"
+            case mode
+            case groundspeedKt = "groundspeed_kt"
+            case tasKt = "tas_kt"
+            case fuelBurnGph = "fuel_burn_gph"
+            case oatC = "oat_c"
+        }
     }
 
     struct AltitudeLimitsAnswer: Codable, Equatable, Sendable {
@@ -7877,6 +7981,68 @@ enum EngineContract {
         /// The ACS task flown to.
         var acs: String
         var note: String
+    }
+
+    struct ProfileClearanceAnswer: Codable, Equatable, Sendable {
+        var redFromFt: Double
+        var yellowFromFt: Double
+        var highestFt: Double?
+        var leastFt: Double?
+        var leastAlongNm: Double?
+        var obstacle: Bool
+        var strikeNm: Double?
+        var level: String?
+        var near: String?
+        var words: String
+
+        enum CodingKeys: String, CodingKey {
+            case redFromFt = "red_from_ft"
+            case yellowFromFt = "yellow_from_ft"
+            case highestFt = "highest_ft"
+            case leastFt = "least_ft"
+            case leastAlongNm = "least_along_nm"
+            case obstacle
+            case strikeNm = "strike_nm"
+            case level
+            case near
+            case words
+        }
+    }
+
+    struct ProfileClearanceInput: Codable, Equatable, Sendable {
+        var altitudeFt: Double
+        var alongNm: [Double]
+        var groundFt: [Double]
+        var obstacles: [EngineContract.ProfileClearanceInputObstaclesItem]?
+        var points: [EngineContract.ProfileClearanceInputPointsItem]?
+
+        enum CodingKeys: String, CodingKey {
+            case altitudeFt = "altitude_ft"
+            case alongNm = "along_nm"
+            case groundFt = "ground_ft"
+            case obstacles
+            case points
+        }
+    }
+
+    struct ProfileClearanceInputObstaclesItem: Codable, Equatable, Sendable {
+        var alongNm: Double
+        var amslFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case alongNm = "along_nm"
+            case amslFt = "amsl_ft"
+        }
+    }
+
+    struct ProfileClearanceInputPointsItem: Codable, Equatable, Sendable {
+        var ident: String
+        var alongNm: Double
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case alongNm = "along_nm"
+        }
     }
 
     struct ProhibitedCautionInput: Codable, Equatable, Sendable {
