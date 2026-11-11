@@ -185,3 +185,22 @@ def test_the_planner_serves_mcp_where_an_issuer_is_set(monkeypatch):
         metadata = client.get("/.well-known/oauth-protected-resource/mcp").json()
     assert metadata["resource"] == "https://wingtip.test/mcp"
     assert "/mcp" not in planner.openapi()["paths"]
+
+
+def test_junk_key_ids_do_not_make_the_planner_fetch_the_gateways_keys_each_time(monkeypatch):
+    """L7: a token with a made-up key id is refused; the gateway's key set
+    is fetched again for one at most once a minute, not for each of twenty."""
+    reader = GatewayTokens(jwks_url="http://gateway.test/oauth2/jwks", issuer=ISSUER, resource=RESOURCE, live=_live)
+    fetched = []
+
+    def fetch():
+        fetched.append(1)
+        return {"keys": [_jwk()]}
+
+    monkeypatch.setattr(reader._keys, "fetch_data", fetch)
+    assert anyio.run(reader.verify_token, signed()) is not None
+    for i in range(20):
+        junk = jwt.encode({"sub": "1"}, KEY, algorithm="RS256", headers={"kid": f"junk-{i}"})
+        assert anyio.run(reader.verify_token, junk) is None
+    # The first fetch, and one more for the first unknown id; none after.
+    assert len(fetched) == 2
