@@ -16,6 +16,11 @@ How the Google overlay works:
 - **Session.** The browser asks Google's Map Tiles API for a session for
   the kind of map, and keeps the session for its two weeks (`OverlayTiles`).
 - **Tiles.** The browser draws the tiles from that session.
+- **Referer.** The page sends no Referer anywhere (`Referrer-Policy:
+  no-referrer`) except to Google: the session, tile and viewport requests
+  carry the site's origin alone (`strict-origin`, `googleReferrer`), so a
+  key restricted to the site's address works. Without it Google refuses a
+  restricted key, and only an open one, which anyone could bill, would do.
 - **Credit.** The map's lower corner says "Google Maps" with the data's
   copyright for the view, from Google's viewport service, as Google's
   policies ask.
@@ -37,8 +42,14 @@ How the Google overlay works:
      `https://10.0.0.218:8443/*` and `http://localhost:8080/*`.
    - **API restrictions:** the Map Tiles API alone.
 
-   The key reaches every visitor's browser, as a browser key must. The
-   restrictions are what keep it to this site.
+   The key reaches every visitor's browser, as a browser key must
+   (`GET /api/map/google` hands it to anyone). The restrictions are what
+   keep it to this site; never leave either off.
+   - **Quotas:** in APIs & Services → Map Tiles API → Quotas, cap the
+     requests a day (say 50,000 tiles and 1,000 sessions, raised as the
+     pilots grow) so a key used elsewhere costs at most a day's cap.
+   - **A budget alert:** Billing → Budgets & alerts, a monthly budget with
+     alerts at 50, 90 and 100 per cent mailed to the owner.
 4. **Give it to the stack:**
    - On the server: `GOOGLE_MAPS_API_KEY` in the stack's AppSecret
      (`infra/server/env.example`), then run `deploy.sh`.
