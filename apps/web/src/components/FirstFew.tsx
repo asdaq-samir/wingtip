@@ -13,7 +13,9 @@ const FIRST_ROWS = 3;
  * Frequencies were first, and then every section of lists on it, at the
  * owner's ask (2026-10-29: "I like the frequencies only show 3 and then
  * rest can be seen by clicking on it. Can we do similar to other
- * sections?"). Opened, it stays open while the card is.
+ * sections?"). Opened, its title closes it again, its chevron turned
+ * down while it is open (the owner, 2026-11-11: "how do you go back to
+ * shorter list once it's expanded?").
  */
 export function FirstFew({
   title,
@@ -33,12 +35,14 @@ export function FirstFew({
   testId?: string;
 }) {
   const [all, setAll] = useState(open);
-  const more = !all && rows.length > FIRST_ROWS;
+  const long = rows.length > FIRST_ROWS;
+  const more = !all && long;
   return (
     <PillSection
       title={title}
       testId={testId}
-      onMore={more ? () => setAll(true) : undefined}
+      onMore={long ? () => setAll(!all) : undefined}
+      expanded={long ? all : undefined}
       right={more ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${FIRST_ROWS} of ${rows.length}`}</span> : undefined}
     >
       <ListGroup>

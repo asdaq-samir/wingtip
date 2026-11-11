@@ -119,18 +119,17 @@ export function SmallTile({
 export function PillSection({
   title,
   onMore,
+  expanded,
   beside,
   right,
   children,
   testId,
 }: {
   title: string;
-  /** The list in full, the title the way to it, in the tint with its
-   *  chevron -- every section's alike, the tabs' Saved, Favorites and
-   *  Recents as the cards' are -- at the owner's ask ("make saved,
-   *  favorites and recents into links, when clicked shows what See All
-   *  does"), where the tabs' had a See All at the row's right. */
+  /** The list in full, the title the way to it with its tinted chevron, every section's alike (the owner: "make saved,
+   *  favorites and recents into links ..."); `expanded`, opened in place (FirstFew), its chevron down, a tap closing it. */
   onMore?: () => void;
+  expanded?: boolean;
   /** Beside the title: what the strip is of, to change there (Aircraft's
    *  airport asked of). */
   beside?: ReactNode;
@@ -151,6 +150,7 @@ export function PillSection({
           <button
             type="button"
             onClick={onMore}
+            aria-expanded={expanded}
             data-testid={testId && `${testId}-more`}
             className={cn(
               "relative flex items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2",
@@ -158,7 +158,7 @@ export function PillSection({
             )}
           >
             {title}
-            <ChevronRight className="size-5 text-tint" aria-hidden="true" />
+            <ChevronRight className={cn("size-5 text-tint transition-transform", expanded && "rotate-90")} aria-hidden="true" />
           </button>
         ) : (
           <SectionTitle>{title}</SectionTitle>

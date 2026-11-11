@@ -202,30 +202,28 @@ function Unchecked({ data }: { data: FieldNotams | undefined }) {
 /**
  * The field's NOTAMs in its card's Info tab: the engine's first three (its
  * ranking), each read for a pilot (NotamRow), how many in all at the
- * title's right, and the title the way to every one, on a card over this
- * one with the same rows, as every list on the card shows three and opens
- * the rest from its title (the owner, 2026-11-11: "Can notams also show as
- * a list of three like others and can we decipher them better?").
+ * title's right, and the title opening every one in place and closing
+ * them again, as every list on the card does (FirstFew; the owner,
+ * 2026-11-11: "Can notams also show as a list of three like others", then
+ * "Notams should open like other sections").
  */
 export function PlaceNotamsSection({ ident }: { ident: string }) {
-  const { data, isError, notams, first, more, listOpen, openList, closeList } = useFieldNotams(ident);
+  const { data, isError, total, shown, long, all, toggle } = useFieldNotams(ident);
   if (!data && !isError) return null;
-  // "3 of 9" at the right where there are more, as FirstFew's sections.
-  const count = more ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${first.length} of ${notams.length}`}</span> : undefined;
+  // "3 of 9" at the right while closed, as FirstFew's sections.
+  const count = long && !all ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${shown.length} of ${total}`}</span> : undefined;
   return (
     <div className="scroll-mt-16 pt-5" data-testid={SECTION}>
-      <PillSection title="NOTAMs" testId="place-notams-first" onMore={more ? openList : undefined} right={count}>
-        <NotamRows notams={first} ident={ident} state={<NotamsState data={data} isError={isError} />} />
+      <PillSection
+        title="NOTAMs"
+        testId="place-notams-first"
+        onMore={long ? toggle : undefined}
+        expanded={long ? all : undefined}
+        right={count}
+      >
+        <NotamRows notams={shown} ident={ident} state={<NotamsState data={data} isError={isError} />} />
         <Unchecked data={data} />
       </PillSection>
-      {listOpen && (
-        <SheetCard title="NOTAMs" description={ident} onClose={closeList} testId="place-notams-all">
-          <div className="flex flex-col pb-6">
-            <NotamRows notams={notams} ident={ident} state={null} />
-            <Unchecked data={data} />
-          </div>
-        </SheetCard>
-      )}
     </div>
   );
 }

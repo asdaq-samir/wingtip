@@ -31,23 +31,23 @@ const FIRST = 3;
 
 /**
  * The airport card's NOTAMs, its view model: the field's NOTAMs best
- * first, the first three for the section, and whether the list in full is
- * open over the card (the owner, 2026-11-11: "Can notams also show as a
- * list of three like others").
+ * first, the first three or all of them, opened and closed again in place
+ * by the section's title as every section on the card is (FirstFew; the
+ * owner, 2026-11-11: "Notams should open like other sections").
  */
 export function useFieldNotams(ident: string) {
   const { data, isError } = useQuery(fieldNotamsQuery(ident));
-  const [listOpen, setListOpen] = useState(false);
+  const [all, setAll] = useState(false);
   const notams = data?.notams ?? [];
+  const long = notams.length > FIRST;
   return {
     data,
     isError,
-    notams,
-    first: notams.slice(0, FIRST),
-    more: notams.length > FIRST,
-    listOpen,
-    openList: () => setListOpen(true),
-    closeList: () => setListOpen(false),
+    total: notams.length,
+    shown: all || !long ? notams : notams.slice(0, FIRST),
+    long,
+    all,
+    toggle: () => setAll(!all),
   };
 }
 

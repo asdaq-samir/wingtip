@@ -112,11 +112,12 @@ const ranked = (n: number, raw: string) => ({
 
 /**
  * The card shows the engine's first three NOTAMs, as every list on it
- * shows three, and its title, "NOTAMs ›", opens every one on a card over
- * it with the same rows (the owner, 2026-11-11: "Can notams also show as a
- * list of three like others and can we decipher them better?").
+ * shows three, and its title, "NOTAMs ›", opens every one in place and
+ * closes them again, as every section does (the owner, 2026-11-11:
+ * "Notams should open like other sections. Also how do you go back to
+ * shorter list once it's expanded?").
  */
-test("a field's NOTAMs show three, and their title opens every one", async ({ page }) => {
+test("a field's NOTAMs show three, and their title opens every one in place and closes them", async ({ page }) => {
   const notams = [
     ranked(1, "!DLH 11/101 DLH RWY 27 PAPI U/S 2611101200-2611202359EST"),
     ranked(2, "!DLH 11/102 DLH TWY A BTN TWY B AND TWY C CLSD 2611101200-2611202359"),
@@ -143,13 +144,19 @@ test("a field's NOTAMs show three, and their title opens every one", async ({ pa
   await expect(rows.nth(2).getByTestId("place-notam-where")).toHaveText("KDLH, 1.2 nm southeast of the field");
   await expect(section).toContainText("5");
 
-  await section.getByTestId("place-notams-first-more").click();
-  const all = page.getByTestId("place-notams-all");
-  await expect(all).toBeVisible();
+  const title = section.getByTestId("place-notams-first-more");
+  await expect(title).toHaveAttribute("aria-expanded", "false");
+  await title.click();
+  await expect(title).toHaveAttribute("aria-expanded", "true");
+  const all = section;
   await expect(all.getByTestId("place-notam")).toHaveCount(5);
   await expect(all.getByTestId("place-notam").nth(3).getByTestId("place-notam-heading")).toHaveText("100LL fuel not available");
   // The glide slope out: a localizer approach (AIM 1-1-9).
   await expect(all.getByTestId("place-notam").nth(4).getByTestId("place-notam-heading")).toHaveText("Glide slope runway 09 out of service");
+  // Its title again: back to three.
+  await title.click();
+  await expect(section.getByTestId("place-notam")).toHaveCount(3);
+  await expect(section).toContainText("3 of 5");
 });
 
 /**
