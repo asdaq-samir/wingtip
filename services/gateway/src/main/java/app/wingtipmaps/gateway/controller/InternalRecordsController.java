@@ -4,6 +4,7 @@ import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.AircraftDto;
 import app.wingtipmaps.gateway.dto.FlightSummaryDto;
 import app.wingtipmaps.gateway.dto.SaveFlightRequest;
+import app.wingtipmaps.gateway.security.mcp.ConnectorGrants;
 import app.wingtipmaps.gateway.security.mcp.ConnectorSettings;
 import app.wingtipmaps.gateway.service.AircraftService;
 import app.wingtipmaps.gateway.service.DueItemService;
@@ -35,9 +36,10 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>A token of its own rather than the pilot's: the MCP spec forbids an
  * MCP server passing on the token it was given, which is for it alone.
- * Not in the API's document, and a 404 to anyone without the token, so
- * this answers nobody else -- and nobody at all where the deployment set
- * no token.
+ * Not in the API's document, on the gateway's internal port alone, which
+ * no compose file publishes (InternalPortConfig), and a 404 to anyone
+ * without the token, so this answers nobody else -- and nobody at all
+ * where the deployment set no token.
  */
 @RestController
 @Hidden
@@ -45,12 +47,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class InternalRecordsController {
 
     static final String TOKEN_HEADER = "X-Internal-Token";
+    static final String CLIENT_HEADER = "X-Client-Id";
 
     private final ConnectorSettings settings;
     private final PilotService pilots;
     private final AircraftService aircraft;
     private final FlightService flights;
     private final AircraftDtos dtos;
+    private final ConnectorGrants grants;
 
     public InternalRecordsController(
             ConnectorSettings settings,
@@ -59,12 +63,14 @@ public class InternalRecordsController {
             FlightService flights,
             SquawkService squawks,
             PlannerClient planner,
-            DueItemService dueItems) {
+            DueItemService dueItems,
+            ConnectorGrants grants) {
         this.settings = settings;
         this.pilots = pilots;
         this.aircraft = aircraft;
         this.flights = flights;
         this.dtos = new AircraftDtos(squawks, planner, dueItems);
+        this.grants = grants;
     }
 
     @GetMapping("/aircraft")
@@ -94,6 +100,23 @@ public class InternalRecordsController {
             @RequestHeader(value = PlannerProxyController.PILOT_HEADER, required = false) String pilotId,
             @Valid @RequestBody SaveFlightRequest request) {
         return asPilot(token, pilotId, pilot -> FlightSummaryDto.of(flights.save(pilot, request)));
+    }
+
+    /**
+     * Whether the pilot's connection through this client is still live
+     * (ConnectorGrants.live): 204, or 404 once they deleted their account
+     * or disconnected. The planner asks before every MCP call.
+     */
+    @GetMapping("/connection")
+    public ResponseEntity<Void> connection(
+            @RequestHeader(value = TOKEN_HEADER, required = false) String token,
+            @RequestHeader(value = PlannerProxyController.PILOT_HEADER, required = false) String pilotId,
+            @RequestHeader(value = CLIENT_HEADER, required = false) String clientId) {
+        return pilot(token, pilotId)
+                        .filter(pilot -> clientId != null && grants.live(pilot.getId(), clientId))
+                        .isPresent()
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 
     private <T> ResponseEntity<T> asPilot(String token, String pilotId, Function<Pilot, T> answer) {

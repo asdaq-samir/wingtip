@@ -2,6 +2,7 @@ import { MutationCache, QueryCache, QueryClient, queryOptions } from "@tanstack/
 import { ApiError, api, describeError, isDropped, isUnknownPlace } from "./api/client";
 import type { ChartInfo } from "./api/types";
 import { keptStore } from "./storage";
+import { signedInPilot } from "./pilotCache";
 import { clearProblem, raiseProblem, showError } from "./problems";
 
 declare module "@tanstack/react-query" {
@@ -158,12 +159,11 @@ function retryable(error: unknown): boolean {
  * what is its own (`enabled`, `placeholderData`).
  */
 
-/** Who is signed in, if anyone. Never a toast: the pilot console shows
+/** Who is signed in, if anyone (signedInPilot). Never a toast: the pilot console shows
  *  a failed check in place ("Retry sign-in check"), and the header's
  *  Dev switch, which observes it too, simply stays hidden. */
-// Fresh for a minute: every tab of the planning panel reads it, and each
-// switch asked again (/api/me, measured on every one).
-export const pilotQuery = queryOptions({ queryKey: ["pilot"], queryFn: () => api.me(), staleTime: 60_000, meta: { silent: true } });
+// Fresh for a minute: every tab of the planning panel reads it (/api/me, measured on each).
+export const pilotQuery = queryOptions({ queryKey: ["pilot"], queryFn: signedInPilot, staleTime: 60_000, meta: { silent: true } });
 
 /** The planner's snapshot of the stack, which the Developer console
  *  and the training drawer's Retrain button poll together. Fresh for

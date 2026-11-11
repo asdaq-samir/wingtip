@@ -3,7 +3,7 @@ import type { RasterLayerSpecification } from "maplibre-gl";
 import { useEffect, useState } from "react";
 import { googleMapsQuery } from "../../../queryClient";
 import { usePreferences, type OverlayStrength } from "../../../preferences";
-import { GOOGLE, useGoogleSession } from "../../sources/googleSession";
+import { GOOGLE, GOOGLE_REFERRER_POLICY, googleReferrer, useGoogleSession } from "../../sources/googleSession";
 import { USGS_URL } from "../../sources/imagery";
 import { useShownOverlay } from "../../sources/useShownOverlay";
 import { useGlLayer, useGlMap, useGlPaint, type Slot } from "../glLayer";
@@ -141,6 +141,12 @@ function Google({ kind, opacity }: { kind: "map" | "satellite"; opacity: number 
   // Google's copyright for what is in sight, asked at each rest, as its
   // Map Tiles API's terms ask.
   const [copyright, setCopyright] = useState("");
+  // Its tiles with the site's origin as their Referer, which the key's
+  // restriction is checked against (googleReferrer); every other request
+  // the map makes is passed through as it was.
+  useEffect(() => {
+    map.setTransformRequest(googleReferrer);
+  }, [map]);
   useEffect(() => {
     if (!google || !session) return;
     let live = true;
@@ -155,7 +161,7 @@ function Google({ kind, opacity }: { kind: "map" | "satellite"; opacity: number 
         east: String(Math.max(-179.9, Math.min(179.9, b.getEast()))),
         west: String(Math.max(-179.9, Math.min(179.9, b.getWest()))),
       });
-      void fetch(`${GOOGLE}/tile/v1/viewport?${q}`)
+      void fetch(`${GOOGLE}/tile/v1/viewport?${q}`, { referrerPolicy: GOOGLE_REFERRER_POLICY })
         .then((r) => (r.ok ? r.json() : null))
         .then((info: { copyright?: string } | null) => {
           if (live && info?.copyright) setCopyright(info.copyright);

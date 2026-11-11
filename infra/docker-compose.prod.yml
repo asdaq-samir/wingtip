@@ -258,6 +258,10 @@ services:
       # (SlidingWindowLimiter.clientOf).
       GATEWAY_TRUSTED_PROXIES: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
       APP_DEVELOPER_EMAILS: ${APP_DEVELOPER_EMAILS:-}
+      # The AI connector (docs/design/mcp-connector.md): off, every one of
+      # its addresses a 404, until it launches. On, it needs
+      # MCP_INTERNAL_TOKEN here and on the planner, and MCP_SIGNING_KEY.
+      MCP_ENABLED: "false"
       # The nightly speed lab's token (SpeedController; CI's SPEED_LAB_TOKEN).
       APP_SPEED_LAB_TOKEN: ${APP_SPEED_LAB_TOKEN:-}
       MAIL_HOST: ${MAIL_HOST}

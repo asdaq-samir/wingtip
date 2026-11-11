@@ -194,6 +194,10 @@ class Settings(BaseSettings):
     #: The gateway's address (GATEWAY_URL), for the status page's health probe
     #: and the connector's records and signing keys (app.mcp).
     gateway_url: str = "http://gateway:8080"
+    #: The gateway's own port for the services alone (GATEWAY_INTERNAL_URL,
+    #: its app.internal.port), which no compose file publishes: the
+    #: connector's records are asked there (app.mcp.records).
+    gateway_internal_url: str = "http://gateway:8081"
     #: Who issues the connector's tokens: the gateway's public address
     #: (MCP_ISSUER); None serves no /mcp (app.mcp).
     mcp_issuer: str | None = None

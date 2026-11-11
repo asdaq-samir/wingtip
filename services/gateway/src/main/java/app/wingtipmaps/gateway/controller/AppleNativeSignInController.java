@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -61,15 +62,26 @@ public class AppleNativeSignInController {
 
     private final PilotService pilots;
     private final JwtDecoder decoder;
+    /** Whether a token must come with its nonce (AppleNonce): off until
+     *  the app sends one, then on (APP_APPLE_REQUIRE_NONCE). */
+    private final boolean requireNonce;
 
     @Autowired
-    public AppleNativeSignInController(PilotService pilots, @Value("${APP_IOS_BUNDLE_ID:}") String bundleId) {
-        this(pilots, bundleId.isBlank() ? null : appleTokens(bundleId.trim()));
+    public AppleNativeSignInController(
+            PilotService pilots,
+            @Value("${APP_IOS_BUNDLE_ID:}") String bundleId,
+            @Value("${app.apple.require-nonce:false}") boolean requireNonce) {
+        this(pilots, bundleId.isBlank() ? null : appleTokens(bundleId.trim()), requireNonce);
     }
 
     AppleNativeSignInController(PilotService pilots, JwtDecoder decoder) {
+        this(pilots, decoder, false);
+    }
+
+    AppleNativeSignInController(PilotService pilots, JwtDecoder decoder, boolean requireNonce) {
         this.pilots = pilots;
         this.decoder = decoder;
+        this.requireNonce = requireNonce;
     }
 
     /** Apple's identity tokens for this app alone. */
@@ -89,16 +101,37 @@ public class AppleNativeSignInController {
                 : OAuth2TokenValidatorResult.failure(new OAuth2Error("invalid_token", "not this app's token", null));
     }
 
-    /** What the app's Apple sheet answered. */
-    public record AppleToken(@NotBlank @Size(max = 8000) String identityToken) {}
+    /** What the app's Apple sheet answered, and the nonce it was asked
+     *  with (AppleNonce), which an app before it asks for one leaves out. */
+    public record AppleToken(
+            @NotBlank @Size(max = 8000) String identityToken,
+            @Nullable @Size(max = 200) String nonce) {
+
+        public AppleToken(String identityToken) {
+            this(identityToken, null);
+        }
+    }
+
+    /** A nonce for this session's next Apple sign-in. */
+    public record AppleNonceAnswer(String nonce) {}
+
+    @Operation(
+            summary = "A nonce for Sign in with Apple from the iOS app",
+            description = "Kept by this session, used once. Give Apple its SHA-256 as lowercase hex "
+                    + "(ASAuthorizationAppleIDRequest.nonce), then send it as `nonce` with the identity token.")
+    @PostMapping("/nonce")
+    public AppleNonceAnswer nonce(HttpServletRequest request) {
+        return new AppleNonceAnswer(AppleNonce.issue(request));
+    }
 
     /** Signed in: where the app goes next (SignInLanding). */
     public record SignedIn(String next) {}
 
     @Operation(
             summary = "Sign in with Apple from the iOS app",
-            description = "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id) and "
-                    + "signs the pilot in on this session. 404 where no iOS app is set up.")
+            description = "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, "
+                    + "and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS "
+                    + "app is set up.")
     @ApiResponses({
         @ApiResponse(
                 responseCode = "200",
@@ -118,6 +151,10 @@ public class AppleNativeSignInController {
         try {
             jwt = decoder.decode(body.identityToken());
         } catch (JwtException refused) {
+            return ResponseEntity.status(401)
+                    .body(new ErrorResponse("Apple's sign-in could not be confirmed. Try again."));
+        }
+        if (!AppleNonce.checks(request, jwt, body.nonce(), requireNonce)) {
             return ResponseEntity.status(401)
                     .body(new ErrorResponse("Apple's sign-in could not be confirmed. Try again."));
         }
