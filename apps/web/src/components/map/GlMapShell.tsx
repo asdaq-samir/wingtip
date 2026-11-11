@@ -14,6 +14,7 @@ import MapLoading from "../MapLoading";
 import { MapInsetsContext, SHEET_SECONDS, type MapInsets } from "../../lib/mapChrome";
 import { SheetCard } from "../SheetCard";
 import { DRAWER_MS } from "../sheet/insets";
+import { drawerEasing } from "./drawerEasing";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { usePreferences } from "../../lib/preferences";
@@ -575,11 +576,11 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
         });
         if (camera?.center !== undefined && camera.zoom !== undefined) {
           fitZoom.current = camera.zoom;
-          map.easeTo({ center: camera.center, zoom: camera.zoom, padding: room, duration, easing: easeOut });
+          map.easeTo({ center: camera.center, zoom: camera.zoom, padding: room, duration, easing: drawerEasing });
           return;
         }
       }
-      map.easeTo({ padding: padOf(to), duration, easing: easeOut });
+      map.easeTo({ padding: padOf(to), duration, easing: drawerEasing });
     },
     [map, course, routeBounds],
   );
@@ -671,6 +672,3 @@ function routeInSight(map: maplibregl.Map, course: Course, insets: MapInsets): b
 function padOf({ top, bottom, left }: MapInsets): PaddingOptions {
   return { top, bottom, left, right: 0 };
 }
-
-/** The map's camera ease-out as it follows the sheet (MapPanel). */
-const easeOut = (t: number) => 1 - (1 - t) ** 3;
