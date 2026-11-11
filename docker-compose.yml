@@ -68,14 +68,15 @@ x-mcp-internal-token: &mcp-internal-token ${MCP_INTERNAL_TOKEN:-}
 #     refuses to start without them. See infra/local-https for the
 #     certificate.
 #   The developer's doors from another device:
-#     DEV_PUBLISH_ADDRESS=0.0.0.0 the planner's port (8084) and Jupyter's
-#                                 (8888), which answer without
-#                                 authentication -- Jupyter runs code --
+#     DEV_PUBLISH_ADDRESS=0.0.0.0 Jupyter's port (8888), which answers
+#                                 without authentication and runs code,
 #                                 so a network you control, for as long as
-#                                 you need it. The database and the
-#                                 assistant (8085, which holds the Claude
-#                                 key and has no sign-in) are never
-#                                 published beyond loopback.
+#                                 you need it. The database, the planner
+#                                 (8084, whose developer routes the
+#                                 gateway alone checks) and the assistant
+#                                 (8085, which holds the Claude key and
+#                                 has no sign-in) are never published
+#                                 beyond loopback.
 #   Front-end work without rebuilding the image:
 #     COMPOSE_PROFILES=web-dev    starts web-build (vite --watch into
 #                                 apps/web/dist)
@@ -269,8 +270,13 @@ services:
       dockerfile: services/planner/Dockerfile
       additional_contexts:
         wingtip-base: service:base
+    # Loopback only, whatever DEV_PUBLISH_ADDRESS says: the planner answers
+    # without sign-in, its developer routes (/api/retrain,
+    # /api/dev/services/*) and X-Pilot-Id among them, which the gateway
+    # puts behind its developer check (DeveloperOnly); from the Wi-Fi it
+    # would skip that check. Another device reaches it through the gateway.
     ports:
-      - "${DEV_PUBLISH_ADDRESS:-127.0.0.1}:8084:8000"
+      - "127.0.0.1:8084:8000"
     # docker-control as well as the default network: the only service
     # besides dev-services itself that can reach the sidecar.
     networks: [default, docker-control]
