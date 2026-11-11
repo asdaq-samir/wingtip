@@ -10219,6 +10219,7 @@ enum EngineContract {
     }
 
     struct TrafficMarksInput: Codable, Equatable, Sendable {
+        /// Own ship's height above mean sea level, ft, as the phone's GNSS gives it (iOS CLLocation altitude, Android's MSL altitude).
         var ownFt: Double?
         var planes: [EngineContract.TrafficMarksInputPlanesItem]
         var own: EngineContract.TrafficMarksInputOwn?
@@ -10240,12 +10241,15 @@ enum EngineContract {
         var verticalFpm: Double?
         var lat: Double?
         var lon: Double?
+        /// The airplane's height is its pressure altitude as sent (29.92 "Hg), not set on an altimeter: own_ft is the phone's GNSS above mean sea level, so the near band is 1,000 ft wider for it (PRESSURE_SLACK_FT, about an inch of mercury, FAA-H-8083-25C ch. 11 Figure 11-3).
+        var pressureAltitude: Bool?
 
         enum CodingKeys: String, CodingKey {
             case altitudeFt = "altitude_ft"
             case verticalFpm = "vertical_fpm"
             case lat
             case lon
+            case pressureAltitude = "pressure_altitude"
         }
     }
 

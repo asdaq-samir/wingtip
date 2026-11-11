@@ -19,7 +19,7 @@ private struct AircraftFormFixture: Decodable {
 
 private struct TrafficRulesFixture: Decodable {
     struct Place: Decodable { let lat, lon: Double }
-    struct Plane: Decodable { let lat, lon: Double; let altitudeFt: Double? }
+    struct Plane: Decodable { let lat, lon: Double; let altitudeFt: Double?; let pressureAltitude: Bool? }
     struct Notice: Decodable { let own: Place?; let ownFt: Double?; let plane: Plane; let nm, bearingDeg: Double?; let near, tell: Bool }
     struct Fresh: Decodable { let ageS, seenS: Double?; let fresh: Bool }
     let notice: [Notice]
@@ -93,7 +93,8 @@ struct EngineRuleFixturesTests {
         let f = try fixture("traffic", as: TrafficRulesFixture.self, decoder: snakeCase)
         #expect(!f.notice.isEmpty && !f.fresh.isEmpty)
         for c in f.notice {
-            let plane = TrafficAircraft(altitudeFt: c.plane.altitudeFt, hex: "x", lat: c.plane.lat, lon: c.plane.lon)
+            let plane = TrafficAircraft(altitudeFt: c.plane.altitudeFt, hex: "x", lat: c.plane.lat, lon: c.plane.lon,
+                                        pressureAltitude: c.plane.pressureAltitude)
             let own = c.own.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }
             let mark = try #require(try Traffic.marks([plane], ownFt: c.ownFt, own: own).first)
             #expect(mark.near == c.near && mark.tell == c.tell, "\(c.plane) against \(String(describing: c.own))")

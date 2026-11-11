@@ -3055,7 +3055,7 @@ export interface EngineContract {
     answer: TrafficKindAnswer;
   };
   /**
-   * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
+   * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159), 2,000 ft for an airplane whose height is an uncorrected pressure altitude (pressure_altitude: the two are not on one reference); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
    */
   traffic_marks: {
     input: TrafficMarksInput;
@@ -10503,12 +10503,19 @@ export interface TrafficKindInput {
   category?: string | null;
 }
 export interface TrafficMarksInput {
+  /**
+   * Own ship's height above mean sea level, ft, as the phone's GNSS gives it (iOS CLLocation altitude, Android's MSL altitude).
+   */
   own_ft?: number | null;
   planes: {
     altitude_ft?: number | null;
     vertical_fpm?: number | null;
     lat?: number | null;
     lon?: number | null;
+    /**
+     * The airplane's height is its pressure altitude as sent (29.92 "Hg), not set on an altimeter: own_ft is the phone's GNSS above mean sea level, so the near band is 1,000 ft wider for it (PRESSURE_SLACK_FT, about an inch of mercury, FAA-H-8083-25C ch. 11 Figure 11-3).
+     */
+    pressure_altitude?: boolean | null;
   }[];
   own?: {
     lat: number;

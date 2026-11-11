@@ -21,9 +21,13 @@ type Mark = EngineAnswer<"traffic_marks">[number];
  *  all, as a call an airplane cost 5 ms for 554 of them, each fix. */
 const marked = new WeakMap<TrafficAircraft, { own: number | null; mark: Mark }>();
 
-const heights = (p: Pick<TrafficAircraft, "altitude_ft" | "vertical_fpm">) => ({
+/** What the engine reads of an airplane's height: with whether it is an
+ *  uncorrected pressure altitude, which the engine compares with own
+ *  ship's GNSS height on a wider band (traffic_marks). */
+const heights = (p: Pick<TrafficAircraft, "altitude_ft" | "vertical_fpm" | "pressure_altitude">) => ({
   altitude_ft: p.altitude_ft ?? null,
   vertical_fpm: p.vertical_fpm ?? null,
+  pressure_altitude: p.pressure_altitude ?? null,
 });
 
 /** Works out the label and colour of every airplane in `planes` against
@@ -33,7 +37,7 @@ export function markTraffic(planes: TrafficAircraft[], ownFt: number | null): vo
   planes.forEach((p, i) => marked.set(p, { own: ownFt, mark: marks[i]! }));
 }
 
-function mark(plane: Pick<TrafficAircraft, "altitude_ft" | "vertical_fpm">, own: number | null): Mark {
+function mark(plane: Pick<TrafficAircraft, "altitude_ft" | "vertical_fpm" | "pressure_altitude">, own: number | null): Mark {
   const kept = marked.get(plane as TrafficAircraft);
   if (kept && kept.own === own) return kept.mark;
   return callEngine("traffic_marks", { own_ft: own, planes: [heights(plane)] })[0]!;

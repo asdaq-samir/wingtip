@@ -351,6 +351,59 @@
       "bearing_deg": null,
       "near": true,
       "tell": false
+    },
+    {
+      "own": {
+        "lat": 42.0,
+        "lon": -88.0
+      },
+      "ownFt": 3000,
+      "plane": {
+        "lat": 42.05,
+        "lon": -88.0,
+        "altitude_ft": 4800,
+        "pressure_altitude": true
+      },
+      "nm": 3.0020230366309564,
+      "bearing_deg": 0.0,
+      "near": true,
+      "tell": true,
+      "_why": "An uncorrected pressure altitude 1,800 ft above own ship's GNSS height: not like with like (about 1,000 ft an inch from 29.92, FAA-H-8083-25C Figure 11-3), so near on the band widened to 2,000 ft, and told within 5 nm."
+    },
+    {
+      "own": {
+        "lat": 42.0,
+        "lon": -88.0
+      },
+      "ownFt": 3000,
+      "plane": {
+        "lat": 42.05,
+        "lon": -88.0,
+        "altitude_ft": 4800
+      },
+      "nm": 3.0020230366309564,
+      "bearing_deg": 0.0,
+      "near": false,
+      "tell": false,
+      "_why": "The same height set on an altimeter, or a GNSS height: 1,800 ft apart is not near (1,000 ft, 14 CFR 91.159)."
+    },
+    {
+      "own": {
+        "lat": 42.0,
+        "lon": -88.0
+      },
+      "ownFt": 3000,
+      "plane": {
+        "lat": 42.05,
+        "lon": -88.0,
+        "altitude_ft": 5100,
+        "pressure_altitude": true
+      },
+      "nm": 3.0020230366309564,
+      "bearing_deg": 0.0,
+      "near": false,
+      "tell": false,
+      "_why": "An uncorrected pressure altitude 2,100 ft above: past even the widened band."
     }
   ],
   "fresh": [

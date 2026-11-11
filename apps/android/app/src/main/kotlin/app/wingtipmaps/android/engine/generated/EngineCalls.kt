@@ -1831,7 +1831,7 @@ fun Engine.trafficKind(category: String? = null): Result<String> =
     rule("traffic_kind", EngineContract.TrafficKindInput(category = category))
 
 /**
- * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
+ * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159), 2,000 ft for an airplane whose height is an uncorrected pressure altitude (pressure_altitude: the two are not on one reference); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
  */
 fun Engine.trafficMarks(ownFt: Double? = null, planes: List<EngineContract.TrafficMarksInputPlanesItem>, own: EngineContract.TrafficMarksInputOwn? = null): Result<List<EngineContract.TrafficMarksAnswerItem>> =
     rule("traffic_marks", EngineContract.TrafficMarksInput(ownFt = ownFt, planes = planes, own = own))
