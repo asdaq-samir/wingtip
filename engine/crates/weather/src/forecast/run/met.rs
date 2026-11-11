@@ -14,7 +14,7 @@ use wingtip_core::sort::StableSort;
 /// Whose forecast a figure is.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Source {
-    /// A TAF (AC 00-45H), its station and how far it is, nm (0 a field's own).
+    /// A TAF (FAA-H-8083-28B 27.4), its station and how far it is, nm (0 a field's own).
     Taf { ident: String, nm: f64 },
     /// The NWS's Gridded LAMP for the hour valid at `valid` (s since 1970):
     /// modelled guidance, not an issued forecast.

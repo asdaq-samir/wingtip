@@ -4,7 +4,7 @@
 //! an icing AIRMET or SIGMET over it (the planner's `icing_possible`,
 //! wingtip.altitude) -- with the pilot reports of icing near the route
 //! (structural icing needs visible moisture at or below 0 °C, the Aviation
-//! Weather Handbook, FAA-H-8083-28A, Icing). Under VFR the flight stays
+//! Weather Handbook, FAA-H-8083-28B ch. 20, Icing). Under VFR the flight stays
 //! clear of cloud (14 CFR 91.155), and the freezing level is the altitude
 //! reasoning's line alone -- though freezing rain or drizzle (FZRA, FZDZ)
 //! ices an airplane out of cloud, which this does not read.

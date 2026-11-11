@@ -173,7 +173,7 @@ def test_a_departure_time_picks_the_winds_forecast_period(monkeypatch, messages)
 
 
 def test_the_winds_product_is_the_one_whose_for_use_window_holds_the_departure(monkeypatch):
-    """AC 00-45H table 5-21, the 1200Z run: the 6-hour product for use
+    """FAA-H-8083-28B Table 27-2, the 1200Z run: the 6-hour product for use
     1400-2100Z, the 12-hour 2100-0600Z, the 24-hour 0600-1800Z."""
     from datetime import datetime, timezone
 

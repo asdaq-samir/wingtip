@@ -348,7 +348,7 @@ def recent_wind(ident: str) -> dict | None:
 
 
 #: How far a station's report is said of a field, approximately: a design
-#: choice, not a rule. AC 00-45H (Aviation Weather Services) takes a METAR's
+#: choice, not a rule. FAA-H-8083-28B 24.4.3.8.2 (Aviation Weather Handbook) takes a METAR's
 #: "VC" to be 5 to 10 statute miles from the station for the phenomena it
 #: reports, and does not say a station's flight category holds at another
 #: field; the top of that range is where the card's "≈" chip stops, and
@@ -605,7 +605,7 @@ def pireps_in_box(box: tuple, now: float | None = None) -> list:
 
 # The G-AIRMET hazards a VFR flight is told of, code to words, and how near
 # some time of the flight a snapshot is told (seconds): the engine's
-# (forecast/awc.rs; AC 00-45H, Graphical AIRMET).
+# (forecast/awc.rs; FAA-H-8083-28B 26.3.1.1).
 _GAIRMET = _ask("gairmet_hazards")
 GAIRMET_HAZARDS: dict = _GAIRMET["hazards"]
 GAIRMET_SNAPSHOT_S: int = _GAIRMET["snapshot_s"]

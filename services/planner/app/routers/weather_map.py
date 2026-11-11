@@ -37,7 +37,7 @@ def weather_on_the_map(
     """The SIGMETs valid at `at` and the G-AIRMETs nearest it, the PIREPs
     of the last 90 minutes up to 18,000 ft, and -- with `altitude_ft` --
     the FD stations' winds and temperatures there for the period that
-    holds `at` (planning.forecast_hour_for, AC 00-45H's for-use windows),
+    holds `at` (planning.forecast_hour_for, FAA-H-8083-28B Table 27-2's for-use windows),
     in the box; and when the radar mosaic was made."""
     if north < south or east < west or north - south > MAX_SPAN_DEG or east - west > MAX_SPAN_DEG:
         raise HTTPException(422, "The box is south to north and west to east, at most 70 degrees each way.")

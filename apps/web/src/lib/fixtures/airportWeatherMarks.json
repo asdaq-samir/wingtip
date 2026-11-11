@@ -1,5 +1,5 @@
 {
-  "about": "The airport weather marks on the map (the owner's pick, 2026-11-10): a field's least crosswind on its runways (least_crosswind), whether its wind earns an arrow and whether the arrow is red (wind_arrow), the station model's barb (wind_barb, FAA-H-8083-28A 25.2.3.4.5), and the getting-worse badge, a route field's METAR now against its TAF for the flight's time there (weather_worse, AIM 7-1-7). Read by the engine's tests (engine/facade/tests/weather_marks.rs), the web's (lib/map/marks/airportWeather.test.ts) and the phones'.",
+  "about": "The airport weather marks on the map (the owner's pick, 2026-11-10): a field's least crosswind on its runways (least_crosswind), whether its wind earns an arrow and whether the arrow is red (wind_arrow), the station model's barb (wind_barb, FAA-H-8083-28B 25.2.3.4.5), and the getting-worse badge, a route field's METAR now against its TAF for the flight's time there (weather_worse, AIM 7-1-7). Read by the engine's tests (engine/facade/tests/weather_marks.rs), the web's (lib/map/marks/airportWeather.test.ts) and the phones'.",
   "leastCrosswind": [
     {
       "why": "220 at 18 gusting 26 over 18/36 and 27/09: 40 degrees off runway 18, the gust's 26 sin 40 = 16.7, 17 kt; 27 leaves more (50 degrees off).",

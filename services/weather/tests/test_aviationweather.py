@@ -130,8 +130,8 @@ def test_the_metars_are_the_newest_report_per_station_from_the_cache_file():
 
 def test_metars_are_kept_however_long_an_outage_with_their_own_times():
     """Each METAR carries its own observation time, which the pilot sees,
-    so the stored copy is served through an outage of any length (AC
-    00-45H; the owner's call of 2026-11-04). The products with a validity
+    so the stored copy is served through an outage of any length
+    (FAA-H-8083-28B 24.4.1; the owner's call of 2026-11-04). The products with a validity
     of their own run out: the TAF and SIGMET tests below."""
     _serve("metars", METARS)
     assert weather_store.read("metars").until is None

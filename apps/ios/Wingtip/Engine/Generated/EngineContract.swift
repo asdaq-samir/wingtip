@@ -3144,7 +3144,7 @@ enum EngineContract {
         }
     }
 
-    /// One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (AC 00-45H's change groups).
+    /// One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (FAA-H-8083-28B 27.4.2.10's change groups).
     struct FieldHour: Codable, Equatable, Sendable {
         /// The hour's start, ms; Now's the report's time (or now).
         var at: Double
@@ -3162,7 +3162,7 @@ enum EngineContract {
         var atTimes: String?
         var atTimesGustKt: Double?
         var atTimesThunder: Bool
-        /// The worse weather at times comes only from a PROB group (AC 00-45H).
+        /// The worse weather at times comes only from a PROB group (FAA-H-8083-28B 27.4.2.10.3).
         var atTimesChance: Bool
 
         enum CodingKeys: String, CodingKey {

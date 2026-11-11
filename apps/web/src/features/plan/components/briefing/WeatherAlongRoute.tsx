@@ -20,7 +20,7 @@ import OnRouteRow from "./OnRouteRow";
 type Pirep = Briefing["pireps"][number];
 
 /** How far from a field without a TAF of its own a neighbour's is named
- *  for it. A TAF is for 5 sm round its own airport (FAA-H-8083-28,
+ *  for it. A TAF is for 5 sm round its own airport (FAA-H-8083-28B 27.4.1,
  *  Aviation Weather Handbook), so a neighbour's is not this field's
  *  forecast, and the row says whose it is and how far; past this, none
  *  is offered. The planner's own choice. */

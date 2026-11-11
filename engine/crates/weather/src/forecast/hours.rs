@@ -2,7 +2,7 @@
 //! web's lib/hourly, moved here in #482 phase 2 with the TAF's reading,
 //! which the web did with metar-taf-parser): Now from the METAR, then each
 //! whole hour the field's TAF covers, its groups read by taf.rs and what
-//! they make of the hour by `super::hour` (AC 00-45H's change groups).
+//! they make of the hour by `super::hour` (FAA-H-8083-28B 27.4.2.10's change groups).
 //! Times in and out are milliseconds, as the web's.
 
 use super::{hour, Figures, Group};
@@ -11,7 +11,7 @@ use crate::metar::{self, Layer, Wind};
 use crate::taf::{self, Period, Taf};
 
 const HOUR_S: i64 = 3600;
-/// How many hours after Now: a TAF covers 24 or 30 (AC 00-45H).
+/// How many hours after Now: a TAF covers 24 or 30 (FAA-H-8083-28B 27.4.1).
 pub const HOURS: usize = 24;
 
 /// The sky for the hour's glyph: clear (or no cloud said), few or

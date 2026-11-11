@@ -193,8 +193,8 @@ fn tenths(group: &str) -> Option<(f64, Option<f64>)> {
 }
 
 /// The bounds of the flight categories with the visibility known (AIM
-/// 7-1-7, "Categorical Outlooks", and AC 00-45H's flight categories; the
-/// worse of the two decides): LIFR a ceiling under 500 ft or under a mile;
+/// 7-1-7, "Categorical Ceiling and Visibility Conditions", and FAA-H-8083-
+/// 28B 3.4.2.14's flight categories; the worse of the two decides): LIFR a ceiling under 500 ft or under a mile;
 /// IFR under 1,000 or under 3; MVFR 1,000 to 3,000 ft or 3 to 5 miles
 /// inclusive; else VFR. No ceiling (None) is no limit.
 fn category_bounds(ceiling_ft: Option<f64>, visibility_sm: f64) -> &'static str {

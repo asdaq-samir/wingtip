@@ -10,7 +10,7 @@ IEM or nowCOAST. Split out of the planner on 2026-11-08 (#535).
 
 It fetches, parses into the stored form and stores. Every rule over the
 weather -- the ceiling (14 CFR 1.1), the flight category (AIM 7-1-7,
-AC 00-45H), when a forecast stops counting -- is the engine's, asked
+FAA-H-8083-28B 3.4.2.14), when a forecast stops counting -- is the engine's, asked
 through `wingtip_native`, the same answer the planner and the phones get.
 
 ## Products and schedule

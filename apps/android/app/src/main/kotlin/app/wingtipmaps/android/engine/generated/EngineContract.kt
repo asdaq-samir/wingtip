@@ -3022,7 +3022,7 @@ object EngineContract {
     )
 
     /**
-     * One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (AC 00-45H's change groups).
+     * One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (FAA-H-8083-28B 27.4.2.10's change groups).
      */
     @Serializable
     data class FieldHour(
@@ -3057,7 +3057,7 @@ object EngineContract {
         @SerialName("at_times_thunder")
         val atTimesThunder: Boolean,
         /**
-         * The worse weather at times comes only from a PROB group (AC 00-45H).
+         * The worse weather at times comes only from a PROB group (FAA-H-8083-28B 27.4.2.10.3).
          */
         @SerialName("at_times_chance")
         val atTimesChance: Boolean,

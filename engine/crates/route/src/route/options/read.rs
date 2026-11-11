@@ -22,7 +22,7 @@ pub const COARSE_MARGIN_FT: f64 = 1000.0;
 /// radar to tell which.
 pub const STORM_NM: f64 = 20.0;
 /// How far round a field under minimums its report or forecast closes the
-/// grid: a TAF is for 5 sm of the airport (AC 00-45H, NWSI 10-813), and
+/// grid: a TAF is for 5 sm of the airport (FAA-H-8083-28B 27.4.1, NWSI 10-813), and
 /// route options keep out to its vicinity, 10 sm (8.7 nm), twice that --
 /// the planner's choice, narrower than the 25 nm a field's brief reads a
 /// TAF from (TAF_REACH_NM), as closing cells that far round every low
@@ -236,7 +236,7 @@ fn field_weather(grid: &mut Grid, r: &Report, min_ceiling_ft: f64, min_visibilit
         grid.close(&at, "weather", &format!("{} {how} under minimums ({words})", r.ident));
         return;
     }
-    // Marginal: a flight category worse than VFR (AC 00-45H, AIM 7-1-7:
+    // Marginal: a flight category worse than VFR (FAA-H-8083-28B 3.4.2.14, AIM 7-1-7:
     // MVFR is a ceiling of 1,000 to 3,000 ft and/or visibility 3 to 5
     // miles, inclusive; metar.rs). A ceiling of unknown height could be
     // any: marked, as a pilot is warned and never stopped by the planner,

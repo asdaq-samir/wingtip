@@ -30,7 +30,7 @@ object StationPictures {
      *  a METAR has sent. */
     private const val MOST_FLAGS = 3
 
-    /** The barb's picture for the engine's `wind_barb` (FAA-H-8083-28A,
+    /** The barb's picture for the engine's `wind_barb` (FAA-H-8083-28B,
      *  25.2.3.4.5): calm's ring, or the stem with its flags (50 kt), barbs
      *  (10 kt) and half-barb (5 kt). */
     fun barbId(barb: EngineContract.WindBarbAnswer): String =

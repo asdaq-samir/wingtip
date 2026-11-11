@@ -47,7 +47,7 @@ def test_the_stored_copy_is_served_while_its_product_is_valid_and_not_after(monk
 
 def test_metars_have_no_limit_and_keep_their_own_times(monkeypatch):
     """A METAR has no period of validity, only the time it was made, which
-    each report carries (AC 00-45H): the last set heard is served, its age
+    each report carries (FAA-H-8083-28B 24.4.1): the last set heard is served, its age
     said."""
     _store("metars", {"KORD": {"flight_category": "IFR", "observed_at": "2026-09-20T01:51:00.000Z"}})
     monkeypatch.setattr(weather_store.time, "time", lambda: T0200Z + 6 * 3600)

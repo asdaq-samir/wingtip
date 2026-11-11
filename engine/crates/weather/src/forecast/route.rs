@@ -26,8 +26,8 @@ pub use super::covers::Worst;
 /// Every period of a TAF's (`fcsts`, awc.rs's shape) that says something
 /// about [start, end]: the prevailing periods and TEMPO and PROB groups
 /// overlapping it, and a BECMG group that began before its end -- a
-/// BECMG's change lasts past its own window to the next FM (AC 00-45H,
-/// the TAF's change groups), and the AWC's feed carries no prevailing
+/// BECMG's change lasts past its own window to the next FM (WMO No. 306;
+/// FAA-H-8083-28B 27.4.2.10), and the AWC's feed carries no prevailing
 /// period after it.
 pub fn periods_in_window(fcsts: &[Value], start: f64, end: f64) -> Vec<&Value> {
     let overlaps = |p: &Value| num(p, "timeFrom").is_some_and(|f| f <= end) && num(p, "timeTo").is_some_and(|t| t > start);
@@ -74,7 +74,7 @@ pub fn current_period(fcsts: &[Value], at: f64) -> Option<&Value> {
 
 /// The prevailing forecast at `at` for its wind: the first line or FM
 /// period covering it, or a BECMG begun by then (it lasts to the next
-/// change), never a TEMPO or PROB group (AC 00-45H). None where no period
+/// change), never a TEMPO or PROB group (FAA-H-8083-28B 27.4.2.10). None where no period
 /// covers `at` at all.
 pub fn prevailing_at(fcsts: &[Value], at: f64) -> Option<&Value> {
     current_period(fcsts, at)?;

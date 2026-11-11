@@ -173,7 +173,7 @@ struct LegRow: View {
     /// heading zero nine zero degrees magnetic, ninety-eight knots, wind
     /// two seven zero degrees true at twelve knots, twenty nautical miles,
     /// twelve minutes, one point four gallons". The winds aloft are given
-    /// from true north (FAA Aviation Weather Handbook, FAA-H-8083-28, the
+    /// from true north (FAA Aviation Weather Handbook, FAA-H-8083-28B 27.2.1.1.1, the
     /// winds and temperatures aloft forecast), the nav log's heading and
     /// course magnetic, so each says which.
     static func spoken(_ leg: Leg, number: Int?) -> String {

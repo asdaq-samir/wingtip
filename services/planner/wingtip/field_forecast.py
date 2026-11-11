@@ -3,9 +3,9 @@ at..." filter (the one search's Filters page, 2026-11-10): the TAF that
 speaks for the field, read at that time, all by the engine's rules.
 
 Which TAF is the engine's `field_taf`: the field's own, else the nearest
-within its reach (25 nm, AC 00-45H's vicinity and the planner's reach
+within its reach (25 nm, FAA-H-8083-28B 24.4.3.8.2's vicinity and the planner's reach
 past it). What it forecasts then is `taf_window`'s worst at that moment,
-TEMPO and PROB groups included (AC 00-45H's change groups) -- a filter
+TEMPO and PROB groups included (FAA-H-8083-28B 27.4.2.10's change groups) -- a filter
 that keeps a field as VFR keeps it only where nothing in its forecast
 then says otherwise. The category is `flight_category`'s (AIM 7-1-7,
 the ceiling 14 CFR 1.1's). Nothing here works a figure out.

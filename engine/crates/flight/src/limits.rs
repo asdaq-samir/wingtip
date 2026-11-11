@@ -15,9 +15,10 @@ pub const VFR_HIGHEST_FT: f64 = 17_500.0;
 /// The highest altitude IFR is planned at here: FL410, the highest
 /// 91.179(b)(4) names ("such as flight level 290, 310, ... 410").
 pub const IFR_HIGHEST_FT: f64 = 41_000.0;
-/// The lowest an altitude may be asked for: 500 ft, 91.119(c)'s least
-/// height over other than congested areas (the planner still raises it
-/// over the ground, obstacles and towns, 91.119(b)).
+/// The lowest an altitude may be asked for, ft MSL: a design floor for the
+/// wheel and the typed altitude, no rule. 91.119(c)'s 500 ft is above the
+/// surface, not sea level; the legal floor over the ground, obstacles and
+/// towns is the planner's (altitude floor.rs, 91.119(b), (c)).
 pub const LOWEST_FT: f64 = 500.0;
 /// 91.159(a)'s cruising altitudes are thousands plus 500, so the wheel
 /// steps by 500 ft.

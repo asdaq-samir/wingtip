@@ -174,6 +174,10 @@ pub fn own_altitude(selection: &Value, legs: &[Value], profile: Option<&Value>) 
                     // only that, the GNSS MEA), which the selection puts
                     // in `floor_ft`; the 4 nm rule of (a)(2) applies only
                     // "if no applicable minimum altitude is prescribed".
+                    // The MEA, never the MOCA: (a)(1) lets a flight within
+                    // 22 nm of the VOR fly down to the MOCA, which the
+                    // caution does not offer -- simplified toward the
+                    // higher, safer figure.
                     let kind = if num(airway, "mea_ft").is_some_and(|m| m != 0.0) { "MEA" } else { "GNSS MEA" };
                     let id = airway.get("id").and_then(Value::as_str).filter(|s| !s.is_empty());
                     found.push(match id {

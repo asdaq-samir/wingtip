@@ -145,7 +145,10 @@ fn figures(name: &str, v: &Value) -> R<String> {
 /// totals also the start, taxi and takeoff allowance (the POH's Section 5
 /// note beside its climb chart; 14 CFR 91.151's reserve is on top); the glide its
 /// still-air glide ratio (the POH's Section 3); the climb its speed, its
-/// sea-level rate and its ceiling (the rate falls to 100 fpm there); a
+/// sea-level rate and its ceiling (the rate falls to 100 fpm there:
+/// FAA-H-8083-25C ch. 11, p. 11-9, "The service ceiling is the altitude at
+/// which the aircraft is unable to climb at a rate greater than 100 feet
+/// per minute"); a
 /// weight and balance its loading envelope and its own empty weight and
 /// moment (FAA-H-8083-1B; 14 CFR 91.9, the AFM's limits); takeoff and
 /// landing their charts (the POH's Section 5).

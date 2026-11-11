@@ -45,7 +45,7 @@ enum FieldWeatherMarks {
     /// The second: the ceiling as a METAR codes its layer, the cover the
     /// planner sends (`ceiling_cover`: BKN, OVC or VV, the layers that make
     /// a ceiling, 14 CFR 1.1) and its height in hundreds of feet above the
-    /// field ("OVC 008" for 800 ft, AC 00-45H), or "CIG 008" where no cover
+    /// field ("OVC 008" for 800 ft, FAA-H-8083-28B 24.4.3.9), or "CIG 008" where no cover
     /// came, as Android writes it (StationLines); "OVC ///" or "CIG ///"
     /// where the report sent a ceiling with no height; none with no ceiling.
     static func ceilingLine(_ ft: Double?, unknown: Bool, cover: String? = nil) -> String? {

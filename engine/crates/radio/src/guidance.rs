@@ -67,8 +67,13 @@ pub const GUIDANCE: [Item; 7] = [
     },
     Item {
         title: "Climb if you can",
-        detail: "Height helps the radio and the radar find you",
-        source: "AIM 6-3-2",
+        detail: "Height helps the radio and the radar find you. Under IFR in controlled airspace, not without a clearance unless the emergency requires it",
+        // AIM 6-3-2 a.1: "Climb, if possible, for improved communications,
+        // and better radar and direction finding detection. However, it
+        // must be understood that unauthorized climb or descent under IFR
+        // conditions within controlled airspace is prohibited, except as
+        // permitted by 14 CFR section 91.3(b)."
+        source: "AIM 6-3-2; 14 CFR 91.3(b)",
     },
     Item {
         title: "Stay in VFR conditions where a course allows",

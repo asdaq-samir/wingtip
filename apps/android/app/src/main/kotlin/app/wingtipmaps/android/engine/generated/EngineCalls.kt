@@ -589,7 +589,7 @@ fun Engine.faaWords(text: String? = null, texts: List<String?>? = null): Result<
     rule("faa_words", EngineContract.FaaWordsInput(text = text, texts = texts))
 
 /**
- * A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as AC 00-45H sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
+ * A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as FAA-H-8083-28B 27.4.2.10 sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
  */
 fun Engine.fieldHours(metar: Map<String, JsonElement>? = null, taf: String? = null, now: Double, count: Double? = null): Result<List<EngineContract.FieldHour>> =
     rule("field_hours", EngineContract.FieldHoursInput(metar = metar, taf = taf, now = now, count = count))
@@ -601,7 +601,7 @@ fun Engine.fieldRelation(plane: EngineContract.FieldRelationInputPlane, field: E
     rule("field_relation", EngineContract.FieldRelationInput(plane = plane, field = field))
 
 /**
- * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (AC 00-45H).
+ * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (FAA-H-8083-28B 27.4.1, 24.4.3.8.2).
  */
 fun Engine.fieldTaf(ident: String, at: EngineContract.FieldTafInputAt? = null, stations: List<EngineContract.FieldTafInputStationsItem>): Result<EngineContract.FieldTafAnswer> =
     rule("field_taf", EngineContract.FieldTafInput(ident = ident, at = at, stations = stations))
@@ -685,7 +685,7 @@ fun Engine.floorCaution(segment: Map<String, JsonElement>, altitudeFt: Double): 
     rule("floor_caution", EngineContract.FloorCautionInput(segment = segment, altitudeFt = altitudeFt))
 
 /**
- * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, AC 00-45H).
+ * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).
  */
 fun Engine.forecastHour(hoursAhead: Double? = null): Result<String> =
     rule("forecast_hour", EngineContract.ForecastHourInput(hoursAhead = hoursAhead))
@@ -757,7 +757,7 @@ fun Engine.fuelStops(start: List<Double>, end: List<Double>, fuelPerNm: Double, 
     rule("fuel_stops", EngineContract.FuelStopsInput(start = start, end = end, fuelPerNm = fuelPerNm, minPerNm = minPerNm, usableGal = usableGal, taxiGal = taxiGal, reserveGal = reserveGal, groundMin = groundMin, skip = skip, fields = fields))
 
 /**
- * The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (AC 00-45H).
+ * The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (FAA-H-8083-28B 26.3.1.1).
  */
 fun Engine.gairmetHazards(): Result<EngineContract.GairmetHazardsAnswer> =
     rule("gairmet_hazards", EngineContract.GairmetHazardsInput())
@@ -769,7 +769,7 @@ fun Engine.gairmetTitle(hazard: String? = null, severity: String? = null): Resul
     rule("gairmet_title", EngineContract.GairmetTitleInput(hazard = hazard, severity = severity))
 
 /**
- * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (AC 00-45H).
+ * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (FAA-H-8083-28B 26.3.1.1).
  */
 fun Engine.gairmetsAlongRoute(advisories: List<Map<String, JsonElement>>, path: List<List<Double>>, start: Double, end: Double): Result<List<Map<String, JsonElement>>> =
     rule("gairmets_along_route", EngineContract.GairmetsAlongRouteInput(advisories = advisories, path = path, start = start, end = end))
@@ -1723,7 +1723,7 @@ fun Engine.sigmetHazard(hazard: String? = null, kind: String? = null): Result<St
     rule("sigmet_hazard", EngineContract.SigmetHazardInput(hazard = hazard, kind = kind))
 
 /**
- * The SIGMETs in force whose area the route crosses (AC 00-45H).
+ * The SIGMETs in force whose area the route crosses (FAA-H-8083-28B 26.2.4).
  */
 fun Engine.sigmetsAlongRoute(advisories: List<Map<String, JsonElement>>, from: List<Double>, to: List<Double>, corridorNm: Double? = null, now: Double): Result<List<Map<String, JsonElement>>> =
     rule("sigmets_along_route", EngineContract.SigmetsAlongRouteInput(advisories = advisories, from = from, to = to, corridorNm = corridorNm, now = now))
@@ -1759,7 +1759,7 @@ fun Engine.suaAltitudes(floorFt: Double? = null, floorRef: String? = null, ceili
     rule("sua_altitudes", EngineContract.SuaAltitudesInput(floorFt = floorFt, floorRef = floorRef, ceilingFt = ceilingFt, ceilingRef = ceilingRef, midSentence = midSentence))
 
 /**
- * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (AC 00-45H).
+ * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
  */
 fun Engine.tafWindow(fcsts: List<EngineContract.TafPeriod>, start: Double, end: Double? = null): Result<EngineContract.TafWindowAnswer> =
     rule("taf_window", EngineContract.TafWindowInput(fcsts = fcsts, start = start, end = end))
@@ -1903,19 +1903,19 @@ fun Engine.vorCheckLimitDeg(kind: String): Result<Double> =
     rule("vor_check_limit_deg", EngineContract.VorCheckLimitDegInput(kind = kind))
 
 /**
- * When a weather report stops counting, Unix seconds UTC, or null where nothing says: a routine METAR an hour after it was observed (AIM 7-1-28, "METAR-hourly"; FMH-1 ch. 2), a SPECI when the next routine report is due, a TAF, the FB winds or an advisory at the end of the valid time its header gives (AC 00-45H).
+ * When a weather report stops counting, Unix seconds UTC, or null where nothing says: a routine METAR an hour after it was observed (AIM 7-1-28, "METAR-hourly"; FMH-1 ch. 2), a SPECI when the next routine report is due, a TAF, the FB winds or an advisory at the end of the valid time its header gives (FAA-H-8083-28B 27.4.1, Table 27-2, 26.2-26.3).
  */
 fun Engine.weatherExpiresAt(product: String, observed: Double? = null, lastRoutine: Double? = null, validTo: Double? = null): Result<Double?> =
     rule("weather_expires_at", EngineContract.WeatherExpiresAtInput(product = product, observed = observed, lastRoutine = lastRoutine, validTo = validTo))
 
 /**
- * To when a stored copy may be served when later fetches fail, by its product's own validity (AC 00-45H): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
+ * To when a stored copy may be served when later fetches fail, by its product's own validity (FAA-H-8083-28B 24.4.1, 26.2-26.3, 27.4.1): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
  */
 fun Engine.weatherHeldUntil(product: String, data: JsonElement? = null, fetched: Double): Result<Double?> =
     rule("weather_held_until", EngineContract.WeatherHeldUntilInput(product = product, data = data, fetched = fetched))
 
 /**
- * Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (AC 00-45H).
+ * Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (FAA-H-8083-28B 27.4.1).
  */
 fun Engine.weatherInForce(product: String, now: Double, observed: Double? = null, lastRoutine: Double? = null, validFrom: Double? = null, validTo: Double? = null): Result<Boolean> =
     rule("weather_in_force", EngineContract.WeatherInForceInput(product = product, now = now, observed = observed, lastRoutine = lastRoutine, validFrom = validFrom, validTo = validTo))
@@ -1939,7 +1939,7 @@ fun Engine.windAtAltitude(levels: Map<String, EngineContract.WindAtAltitudeInput
     rule("wind_at_altitude", EngineContract.WindAtAltitudeInput(levels = levels, altitudeFt = altitudeFt, altitudes = altitudes))
 
 /**
- * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28A, 25.2.3.4.5).
+ * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28B, 25.2.3.4.5).
  */
 fun Engine.windBarb(speedKt: Double): Result<EngineContract.WindBarbAnswer> =
     rule("wind_barb", EngineContract.WindBarbInput(speedKt = speedKt))

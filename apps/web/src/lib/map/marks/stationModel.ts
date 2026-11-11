@@ -29,7 +29,7 @@ export function barbId(barb: { calm: boolean; flags: number; barbs: number; half
 const line = (x1: number, y1: number, x2: number, y2: number, width: number, ink: string) =>
   `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${ink}" stroke-width="${width}" stroke-linecap="round"/>`;
 
-/** The station model's wind symbol (FAA-H-8083-28A 25.2.3.4.5, the
+/** The station model's wind symbol (FAA-H-8083-28B 25.2.3.4.5, the
  *  engine's wind_barb): a stem toward where the wind is from, flags (50
  *  kt), barbs (10) and half-barbs (5) from its far end on the clockwise
  *  side, as the NWS's surface charts draw them; calm a circle over the

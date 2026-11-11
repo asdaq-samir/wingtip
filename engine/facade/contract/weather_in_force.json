@@ -1,6 +1,6 @@
 {
   "x-call": "crate::call::rule",
-  "description": "Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (AC 00-45H).",
+  "description": "Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (FAA-H-8083-28B 27.4.1).",
   "type": "object",
   "properties": {
     "input": {

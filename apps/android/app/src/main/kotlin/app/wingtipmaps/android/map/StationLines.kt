@@ -13,7 +13,7 @@ import kotlin.math.roundToInt
  * weather reported with it ("2 sm BR") and the ceiling as the METAR
  * codes its layer: the cover the planner sends (`ceiling_cover`: BKN, OVC
  * or VV, the layers that make a ceiling, 14 CFR 1.1) and its height in
- * hundreds of feet above the ground ("OVC 008", AC 00-45H), or "CIG 008"
+ * hundreds of feet above the ground ("OVC 008", FAA-H-8083-28B 24.4.3.9), or "CIG 008"
  * where no cover came; "///" where the lowest layer was sent with no
  * height. How a figure is written is the app's; every rule the engine's.
  */
