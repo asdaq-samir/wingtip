@@ -223,7 +223,7 @@ never a stock airplane's (decision 0011).
 | `plan_route` | the nav log: altitude and why, each leg's courses, heading, wind, ground speed, time and fuel, the totals with reserve and margin, the cautions, a link to open it in Wingtip | `GET /api/plan` |
 | `flight_briefing` | the Go / No-Go line, each finding, the risk assessment | `POST /api/go-no-go` |
 | `my_airplanes` | the pilot's airplanes and their figures, inspections and open squawks | gateway `/internal/mcp/aircraft` |
-| `my_flights` | the pilot's saved flights | gateway `/internal/mcp/flights` |
+| `my_flights` | the pilot's saved flights as a route summary (name, route, airplane, altitude, distance, time, fuel, when); never the notes, the risk assessment or the share link | gateway `/internal/mcp/flights` |
 | `save_flight` | plans the route and saves it to the pilot's Flights | `GET /api/plan`, then gateway `POST /internal/mcp/flights` |
 
 Hints, on every tool: `title`, `readOnlyHint`, `destructiveHint`,

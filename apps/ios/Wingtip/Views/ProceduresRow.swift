@@ -13,6 +13,8 @@ struct ProceduresRow: View {
     /// "arrival" and "approach" for the rest.
     let kinds: [String]
     @State private var list: ProcedureList?
+    /// Said in the row where the list couldn't be fetched, never a spinner left turning.
+    @State private var problem: String?
 
     var body: some View {
         HStack(spacing: WingtipSpace.sm) {
@@ -46,12 +48,20 @@ struct ProceduresRow: View {
                         }
                     }
                 }
+            } else if let problem {
+                ProblemLine(problem)
             } else {
                 ProgressView().controlSize(.small)
             }
         }
         .task(id: ident) {
-            list = try? await Planner.procedures(ident)
+            do {
+                list = try await Planner.procedures(ident)
+                problem = nil
+            } catch {
+                list = nil
+                problem = "Its procedures couldn't be fetched."
+            }
         }
     }
 }

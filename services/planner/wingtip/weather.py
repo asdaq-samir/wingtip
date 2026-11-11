@@ -483,8 +483,8 @@ def _periods_in_window(fcsts: list, start: float, end: float) -> list:
 
 def _worst_in_window(fcsts: list, start: float, end: float) -> dict | None:
     """The lowest ceiling and visibility the TAF forecasts anywhere in
-    [start, end], TEMPO and PROB groups included, and whether any period
-    forecasts a ceiling of no height: the engine's (taf_window's
+    [start, end], TEMPO and PROB groups included, any ceiling of no height,
+    and whether the TAF "covers" the window: the engine's (taf_window's
     "worst"). None when the TAF says nothing about the window."""
     return _ask("taf_window", fcsts=fcsts, start=start, end=end)["worst"]
 
@@ -536,8 +536,8 @@ def tafs_over(windows: dict) -> dict:
         window = windows.get(station["icaoId"])
         if window is None:
             continue
-        worst = _worst_in_window(station["fcsts"], *window) or {"ceiling_ft": None, "ceiling_unknown": False, "visibility_sm": None}
-        found[station["icaoId"]] = {**worst, "raw": station.get("raw")}
+        nothing = {"ceiling_ft": None, "ceiling_unknown": False, "visibility_sm": None, "covers": False}
+        found[station["icaoId"]] = {**(_worst_in_window(station["fcsts"], *window) or nothing), "raw": station.get("raw")}
     return found
 
 

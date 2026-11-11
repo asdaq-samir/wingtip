@@ -67,20 +67,25 @@ enum FieldWeatherMarks {
 
     /// The mark for `report`: `demonstratedKt` the picked airplane's
     /// maximum demonstrated crosswind, nil with none picked or no figure
-    /// (never red then); `worse` whether the ↓ shows.
+    /// (never red then); `worse` whether the ↓ shows. Where the engine
+    /// cannot read the wind (logged by Engine.rule) it is not drawn as calm
+    /// or as a barb it might not be: the arrow and its figures still show,
+    /// never red, and VoiceOver says the wind couldn't be worked out.
     static func mark(_ report: Report, demonstratedKt: Double?, worse: Bool) -> FieldWeatherMark {
         let speed = report.windSpeedKt
-        let calm = (try? Engine.windCalm(speedKt: speed)) ?? false
+        let calm = try? Engine.windCalm(speedKt: speed)
         let arrow = try? Engine.windArrow(speedKt: speed, gustKt: report.windGustKt, crosswindKt: report.crosswindKt, demonstratedKt: demonstratedKt)
-        let barb = speed.flatMap { try? Engine.windBarb(speedKt: $0) }
+        let barb = speed.map { kt in Result { try Engine.windBarb(speedKt: kt) } }
+        let unknown = speed != nil && (calm == nil || arrow == nil || (try? barb?.get()) == nil)
+        let shown = arrow?.shown ?? (unknown && speed.map { $0 > 0 } == true)
         return FieldWeatherMark(
             category: report.category,
-            windFromDeg: report.windDirTrueDeg, windKt: speed, gustKt: report.windGustKt, calm: calm,
-            feathers: barb.map { Feathers(flags: $0.flags, barbs: $0.barbs, halfBarbs: $0.halfBarbs) },
-            arrow: arrow?.shown == true && report.windDirTrueDeg != nil, arrowRed: arrow?.over == true,
+            windFromDeg: report.windDirTrueDeg, windKt: speed, gustKt: report.windGustKt, calm: calm == true,
+            feathers: (try? barb?.get()).map { Feathers(flags: $0.flags, barbs: $0.barbs, halfBarbs: $0.halfBarbs) },
+            arrow: shown && report.windDirTrueDeg != nil, arrowRed: arrow?.over == true,
             windLabel: windLabel(dirTrueDeg: report.windDirTrueDeg, speedKt: speed, gustKt: report.windGustKt),
             visibilityLine: report.visibilityLine, ceilingLine: report.ceilingLine, worse: worse,
-            spoken: spoken(report, calm: calm, red: arrow?.over == true, worse: worse))
+            spoken: spoken(report, calm: calm == true, red: arrow?.over == true, worse: worse, windUnknown: unknown))
     }
 
     /// The arrow's words as a METAR has them, tens of degrees and knots:
@@ -94,9 +99,11 @@ enum FieldWeatherMarks {
 
     /// What VoiceOver says after the ident: "IFR, wind 220 at 18 gusting
     /// 26", with the crosswind and the ↓ said where they show.
-    static func spoken(_ report: Report, calm: Bool, red: Bool, worse: Bool) -> String {
+    static func spoken(_ report: Report, calm: Bool, red: Bool, worse: Bool, windUnknown: Bool = false) -> String {
         var parts = [SpokenFigures.flightCategory(report.category)]
-        if calm {
+        if windUnknown {
+            parts.append("wind couldn't be worked out from the report")
+        } else if calm {
             parts.append("wind calm")
         } else if let speed = report.windSpeedKt {
             let from = report.windDirTrueDeg.map { String(format: "%03d", Int($0.rounded())) } ?? "variable"
@@ -139,11 +146,33 @@ enum FieldWeatherMarks {
     static func worse(now: [EngineContract.WorseField], atEta: [EngineContract.WorseField]) -> Set<String> {
         guard !atEta.isEmpty else { return [] }
         if let last = lastWorse, last.now == now, last.atEta == atEta { return last.answer }
-        let answer = try? Engine.weatherWorse(then: .init(metars: nil, advisories: nil, tafs: now),
-                                              now: .init(metars: nil, advisories: nil, tafs: atEta))
-        let worse = Set((answer?.worse ?? []).filter { $0.kind == "taf" }.compactMap(\.ident))
+        let worse: Set<String>
+        do {
+            let answer = try Engine.weatherWorse(then: .init(metars: nil, advisories: nil, tafs: now),
+                                                 now: .init(metars: nil, advisories: nil, tafs: atEta))
+            worse = Set(answer.worse.filter { $0.kind == "taf" }.compactMap(\.ident))
+        } catch {
+            // The map has no line to say it on: no ↓ is drawn, the failure
+            // is logged, and the Brief's forecasts are there in full.
+            Log.app.error("weather_worse refused the map's fields: \(error.localizedDescription, privacy: .public)")
+            worse = []
+        }
         lastWorse = (now, atEta, worse)
         return worse
+    }
+
+    /// The alternates whose forecast at the ETA there is worse than their
+    /// METAR now (AlternateCheck.atEta), each METAR the map's own report of
+    /// the field (FieldWeatherFeed): the same rule as the route's fields,
+    /// asked only for the alternates in view with a report.
+    @MainActor
+    static func worse(alternates atEta: [EngineContract.WorseField], reports: [String: AirportPin]) -> Set<String> {
+        let shown = atEta.filter { reports[$0.ident]?.weather != nil }
+        let now: [EngineContract.WorseField] = shown.compactMap { field in
+            guard let w = reports[field.ident]?.weather else { return nil }
+            return .init(ident: field.ident, ceilingFt: w.ceilingFt, visibilitySm: w.visibilitySm, ceilingUnknown: w.ceilingUnknown, arrival: true)
+        }
+        return worse(now: now, atEta: shown)
     }
 
     // MARK: The airplane

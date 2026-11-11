@@ -3595,6 +3595,12 @@ struct APIDisplacedPick: Codable, Equatable, Sendable {
     var lat, lon: Double
 }
 
+/// A pilot's own notes, for their account's export.
+// MARK: - APIPilotNotes
+struct APIPilotNotes: Codable, Equatable, Sendable {
+    var notes: [APICheckpointNote]
+}
+
 /// How many of one pilot's own notes went, as their account did.
 // MARK: - APIPilotNotesForgotten
 struct APIPilotNotesForgotten: Codable, Equatable, Sendable {

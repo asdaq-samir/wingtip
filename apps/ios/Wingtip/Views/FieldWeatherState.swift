@@ -18,6 +18,9 @@ struct AirportWeatherSetting: DynamicProperty {
 /// airplane's demonstrated crosswind (nil with none).
 struct FieldWeatherInput: Equatable {
     var worse: Set<String> = []
+    /// Under IFR, the alternates' forecasts at the ETA there
+    /// (AlternateCheck.atEta), for their ↓ against the map's METARs.
+    var alternates: [EngineContract.WorseField] = []
     var demonstratedKt: Double?
 }
 
@@ -29,6 +32,8 @@ final class FieldWeatherState {
     private let feed = FieldWeatherFeed()
     private var input = FieldWeatherInput()
     private var marks: [String: FieldWeatherMark] = [:]
+    /// The alternates in view worse by the ETA there.
+    private var alternatesWorse: Set<String> = []
 
     /// The mark for a field, as an annotation takes it: made from its
     /// report once and kept until the report or the plan's part changes,
@@ -36,7 +41,7 @@ final class FieldWeatherState {
     func mark(_ ident: String) -> FieldWeatherMark? {
         if let kept = marks[ident] { return kept }
         guard let pin = feed.reports[ident] else { return nil }
-        let made = FieldWeatherMarks.mark(FieldWeatherMarks.report(pin), demonstratedKt: input.demonstratedKt, worse: input.worse.contains(ident))
+        let made = FieldWeatherMarks.mark(FieldWeatherMarks.report(pin), demonstratedKt: input.demonstratedKt, worse: input.worse.contains(ident) || alternatesWorse.contains(ident))
         marks[ident] = made
         return made
     }
@@ -68,6 +73,7 @@ final class FieldWeatherState {
     /// put on the fields drawn whose mark changed.
     private func remake(_ map: MKMapView) {
         marks = [:]
+        alternatesWorse = input.alternates.isEmpty ? [] : FieldWeatherMarks.worse(alternates: input.alternates, reports: feed.reports)
         for case let field as AirportAnnotation in map.annotations {
             let fresh = mark(field.ident)
             guard field.weather != fresh else { continue }

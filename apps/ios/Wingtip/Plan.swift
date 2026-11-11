@@ -56,6 +56,11 @@ final class Plan {
     /// same route (a new altitude, a procedure) does not ask again.
     private var routesAskedFor: String?
     private(set) var briefingProblem: String?
+    /// What the plan's side fetches could not get, said where each shows
+    /// (the nav log's checkpoints, the profile's ground), never taken for
+    /// a route with none.
+    private(set) var sideProblems: [SideFetch: String] = [:]
+    enum SideFetch { case checkpoints, profile }
     /// When the briefing on the page was fetched, for ready_to_fly's age.
     private(set) var briefedAt: Date?
     /// The legs a hazard tapped in the Brief is on, shown on the map
@@ -315,16 +320,26 @@ final class Plan {
                 // first read of a new route's chart takes a while, and the
                 // log's legs name the same points as they come.
                 Task { [weak self] in
-                    if let points = try? await Planner.checkpoints(dep: dep, dest: dest, stops: stops), !Task.isCancelled {
+                    do {
+                        let points = try await Planner.checkpoints(dep: dep, dest: dest, stops: stops)
+                        guard !Task.isCancelled else { return }
                         self?.checkpoints = points
+                        self?.sideProblems[.checkpoints] = nil
                         self?.keep()
+                    } catch {
+                        self?.sideProblems[.checkpoints] = "The checkpoints couldn't be fetched: \(error.localizedDescription)"
                     }
                 }
                 if self.profile == nil || self.profile?.lengthNm != course.distanceNm {
                     Task { [weak self] in
-                        if let ground = try? await Planner.routeProfile(dep: dep, dest: dest, stops: stops), !Task.isCancelled {
+                        do {
+                            let ground = try await Planner.routeProfile(dep: dep, dest: dest, stops: stops)
+                            guard !Task.isCancelled else { return }
                             self?.profile = ground
+                            self?.sideProblems[.profile] = nil
                             self?.keep()
+                        } catch {
+                            self?.sideProblems[.profile] = "The ground along the route couldn't be fetched: \(error.localizedDescription)"
                         }
                     }
                 }

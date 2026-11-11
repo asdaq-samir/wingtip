@@ -10,12 +10,12 @@ import SwiftUI
 struct AircraftView: View {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
-    @State private var profiles: [AircraftProfile] = []
-    @State private var own: [OwnAircraftRecord] = []
+    @State private var model = AirplanePickModel()
     @State private var typed = ""
-    @State private var problem: String?
     /// Why what was typed could not be flown, said under the field.
     @State private var tailProblem: String?
+    private var profiles: [AircraftProfile] { model.profiles }
+    private var own: [OwnAircraftRecord] { model.own }
 
     var body: some View {
         List {
@@ -67,6 +67,7 @@ struct AircraftView: View {
             }
             if session.signedIn || !own.isEmpty {
                 Section("Yours") {
+                    ProblemLine(model.ownProblem)
                     ForEach(own) { airplane in
                         HStack {
                             Button {
@@ -100,7 +101,7 @@ struct AircraftView: View {
             }
             Section("Types the Planner Has Figures for") {
                 if profiles.isEmpty {
-                    if let problem {
+                    if let problem = model.problem {
                         ProblemLine(problem)
                     } else {
                         ForEach(0..<3, id: \.self) { _ in
@@ -128,14 +129,10 @@ struct AircraftView: View {
             }
         }
         .navigationTitle("Airplane")
-        .task {
-            do { profiles = try await Planner.aircraftProfiles() } catch { problem = error.localizedDescription }
-        }
-        .task(id: session.signedIn) {
-            own = (try? await Gateway.aircraftRecords()) ?? []
-        }
+        .task { await model.loadProfiles() }
+        .task(id: session.signedIn) { await model.loadOwn(signedIn: session.signedIn) }
         // Back from Your Airplanes with one added or changed.
-        .onAppear { Task { own = (try? await Gateway.aircraftRecords()) ?? [] } }
+        .onAppear { Task { await model.loadOwn(signedIn: session.signedIn) } }
     }
 
     private func fly() {

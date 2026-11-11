@@ -23,13 +23,14 @@ struct AirportDistance: Equatable {
         return from.map { "\(miles) from \(SpokenFigures.digits($0))" } ?? "\(miles) from you"
     }
 
-    static func of(lat: Double, lon: Double, ident: String, fix: CLLocationCoordinate2D?, departure: CourseEnd?) -> AirportDistance? {
-        if let fix, let nm = try? Engine.distanceNm(lat1: fix.latitude, lon1: fix.longitude, lat2: lat, lon2: lon) {
-            return AirportDistance(nm: nm, from: nil)
-        }
-        if let departure, departure.ident != ident,
-           let nm = try? Engine.distanceNm(lat1: departure.lat, lon1: departure.lon, lat2: lat, lon2: lon) {
-            return AirportDistance(nm: nm, from: departure.ident)
+    /// From the airplane, else from the departure; nil with neither (or
+    /// on the departure's own card); thrown where the engine cannot
+    /// measure, said under the facts rather than shown as no distance.
+    static func of(lat: Double, lon: Double, ident: String, fix: CLLocationCoordinate2D?, departure: CourseEnd?) throws -> AirportDistance? {
+        let field = CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        if let fix { return AirportDistance(nm: try Flight.distanceNm(fix, field), from: nil) }
+        if let departure, departure.ident != ident {
+            return AirportDistance(nm: try Flight.distanceNm(CLLocationCoordinate2D(latitude: departure.lat, longitude: departure.lon), field), from: departure.ident)
         }
         return nil
     }

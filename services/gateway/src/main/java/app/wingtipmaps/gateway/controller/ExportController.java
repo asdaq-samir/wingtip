@@ -1,15 +1,24 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.dto.AccountRecordsDto;
 import app.wingtipmaps.gateway.dto.AircraftDto;
+import app.wingtipmaps.gateway.dto.ConnectorGrantDto;
 import app.wingtipmaps.gateway.dto.CurrencyDto;
 import app.wingtipmaps.gateway.dto.FlightDto;
+import app.wingtipmaps.gateway.dto.FlightShareDto;
 import app.wingtipmaps.gateway.dto.FlightSummaryDto;
+import app.wingtipmaps.gateway.dto.FlightWatchDto;
 import app.wingtipmaps.gateway.dto.InstructorDto;
 import app.wingtipmaps.gateway.dto.LogbookEntryDto;
 import app.wingtipmaps.gateway.dto.PilotDto;
+import app.wingtipmaps.gateway.dto.RemindersDto;
 import app.wingtipmaps.gateway.dto.SquawkDto;
 import app.wingtipmaps.gateway.dto.TrackDto;
 import app.wingtipmaps.gateway.dto.TrainingDto;
+import app.wingtipmaps.gateway.planner.model.PlannerCheckpointNote;
+import app.wingtipmaps.gateway.security.mcp.ConnectorGrants;
+import app.wingtipmaps.gateway.service.AccountRecords;
+import app.wingtipmaps.gateway.service.CheckpointNotesClient;
 import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -22,6 +31,8 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
+import org.jspecify.annotations.Nullable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -30,17 +41,22 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Everything the gateway keeps for a pilot, in one file they can take
- * away: the account, their airplanes with their squawks, every saved
- * flight with its nav log and track, the logbook, currency, training and
+ * away: the account (with the phone number and home base), their
+ * airplanes with their squawks, every saved flight with its nav log,
+ * track, share link and flight watch, the logbook, currency, training and
  * the instructing they do -- each part exactly as the app's own endpoint
  * answers it, since it is read through those endpoints, so the file and
- * the app can never disagree on a field. The right to a copy of one's
- * data (GDPR article 20, CCPA 1798.100) is the reason; the logbook's own
- * CSV stays in the Logbook page, for other logbooks to read.
+ * the app can never disagree on a field -- and what no screen reads back
+ * whole: the checkpoint notes they wrote (kept by the planner), the
+ * reminders setting and the reminders already sent, the subscription and
+ * the paid features' monthly counts, and the AI apps they connected
+ * (never a token). The right to a copy of one's data (GDPR article 20,
+ * CCPA 1798.100) is the reason, and the privacy policy promises
+ * "everything we keep for your account" (docs/legal/privacy.md); the
+ * logbook's own CSV stays in the Logbook page, for other logbooks to read.
  *
- * <p>What the gateway does not keep is not in it: the checkpoint notes
- * the planner holds are read in the app, and what each device keeps for
- * itself (settings, checklists, kept charts) stays there.
+ * <p>What each device keeps for itself (settings, checklists, kept
+ * charts) stays there.
  */
 @RestController
 @Tag(name = "Pilot", description = "The signed-in pilot")
@@ -56,6 +72,11 @@ public class ExportController {
     private final LogbookController logbook;
     private final TrainingController training;
     private final InstructorController instructing;
+    private final FlightWatchController watches;
+    private final CheckpointNotesClient notes;
+    private final AccountRecords records;
+    /** The connector's grants, absent in a slice test with no database. */
+    private ConnectorGrants connections;
 
     public ExportController(
             PilotService pilots,
@@ -64,7 +85,10 @@ public class ExportController {
             FlightController flights,
             LogbookController logbook,
             TrainingController training,
-            InstructorController instructing) {
+            InstructorController instructing,
+            FlightWatchController watches,
+            CheckpointNotesClient notes,
+            AccountRecords records) {
         this.pilots = pilots;
         this.account = account;
         this.airplanes = airplanes;
@@ -72,13 +96,26 @@ public class ExportController {
         this.logbook = logbook;
         this.training = training;
         this.instructing = instructing;
+        this.watches = watches;
+        this.notes = notes;
+        this.records = records;
+    }
+
+    @Autowired(required = false)
+    void setConnections(ConnectorGrants connections) {
+        this.connections = connections;
     }
 
     /** An airplane with its squawks. */
     public record ExportedAirplane(AircraftDto airplane, List<SquawkDto> squawks) {}
 
-    /** A saved flight with its nav log, and its track where one was saved. */
-    public record ExportedFlight(FlightDto flight, TrackDto track) {}
+    /** A saved flight with its nav log, and its track, share link and
+     *  flight watch where it has them. */
+    public record ExportedFlight(
+            FlightDto flight,
+            @Nullable TrackDto track,
+            @Nullable FlightShareDto share,
+            @Nullable FlightWatchDto watch) {}
 
     /** The whole of it. */
     public record AccountExport(
@@ -90,12 +127,18 @@ public class ExportController {
             List<LogbookEntryDto> logbook,
             CurrencyDto currency,
             TrainingDto training,
-            InstructorDto instructing) {}
+            InstructorDto instructing,
+            @Nullable List<PlannerCheckpointNote> checkpointNotes,
+            RemindersDto reminders,
+            AccountRecordsDto records,
+            List<ConnectorGrantDto> connectedApps) {}
 
     @Operation(
             summary = "Everything kept for the signed-in pilot, as one JSON file",
-            description = "The account, airplanes and squawks, flights with nav logs and tracks, logbook, currency, "
-                    + "training and instructing, each as its own endpoint answers it; sent as a download.")
+            description = "The account, airplanes and squawks, flights with nav logs, tracks, share links and "
+                    + "watches, logbook, currency, training and instructing, each as its own endpoint answers it; "
+                    + "the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected "
+                    + "AI apps (never a token); sent as a download.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "The file"),
         @ApiResponse(responseCode = "401", description = "No session")
@@ -107,9 +150,8 @@ public class ExportController {
                     .map(a -> new ExportedAirplane(a, body(airplanes.squawks(authentication, a.id()), List.of())))
                     .toList();
             List<ExportedFlight> saved = body(flights.list(authentication), List.<FlightSummaryDto>of()).stream()
-                    .map(f -> body(flights.get(authentication, f.id()), null))
+                    .map(f -> exported(authentication, f))
                     .filter(Objects::nonNull)
-                    .map(f -> new ExportedFlight(f, body(flights.track(authentication, f.id()), null)))
                     .toList();
             AccountExport file = new AccountExport(
                     FORMAT,
@@ -120,12 +162,28 @@ public class ExportController {
                     body(logbook.list(authentication), List.of()),
                     worked(() -> body(logbook.currency(authentication), null)),
                     worked(() -> body(training.get(authentication), null)),
-                    worked(() -> body(instructing.get(authentication), null)));
+                    worked(() -> body(instructing.get(authentication), null)),
+                    worked(() -> notes.mine(pilot)),
+                    new RemindersDto(pilot.isReminders()),
+                    records.of(pilot),
+                    connections == null ? List.of() : connections.of(pilot.getId()));
             String name = "wingtip-maps-" + LocalDate.now(ZoneOffset.UTC) + ".json";
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"")
                     .body(file);
         });
+    }
+
+    /** A flight in full, with what hangs off it; null where it went meanwhile. */
+    private @Nullable ExportedFlight exported(Authentication authentication, FlightSummaryDto summary) {
+        FlightDto flight = body(flights.get(authentication, summary.id()), null);
+        return flight == null
+                ? null
+                : new ExportedFlight(
+                        flight,
+                        body(flights.track(authentication, flight.id()), null),
+                        summary.share(),
+                        body(watches.get(authentication, flight.id()), null));
     }
 
     /** A part the planner works out from the records (currency, training,

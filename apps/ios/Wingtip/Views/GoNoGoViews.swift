@@ -83,6 +83,8 @@ struct GoNoGoSection: View {
     /// The instructor the pilot asked in, once they accepted, for the
     /// note at the foot.
     @State private var instructor: InstructorLink?
+    /// Said where the instructor's line goes, rather than read as none.
+    @State private var instructorProblem: String?
     @State private var restOpen = false
 
     var body: some View {
@@ -144,6 +146,8 @@ struct GoNoGoSection: View {
                 }
                 .accessibilityElement(children: .combine)
             }
+            ProblemLine(verdict.pilotProblem)
+            ProblemLine(instructorProblem)
         } header: {
             HStack {
                 Text("Go / No-Go")
@@ -153,8 +157,13 @@ struct GoNoGoSection: View {
         .task(id: session.signedIn) {
             // The instructor's name comes with the training (Gateway);
             // none for a pilot with no instructor, or signed out.
-            guard session.signedIn else { instructor = nil; return }
-            instructor = (try? await Gateway.training())??.instructors.first { $0.accepted }
+            guard session.signedIn else { instructor = nil; instructorProblem = nil; return }
+            do {
+                instructor = (try await Gateway.training())?.instructors.first { $0.accepted }
+                instructorProblem = nil
+            } catch {
+                instructorProblem = "Whether an instructor reviews your flights couldn't be fetched."
+            }
         }
         // The words for the answer on the page; the findings stay as they
         // are while they are written.

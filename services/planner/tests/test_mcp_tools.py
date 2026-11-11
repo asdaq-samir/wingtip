@@ -136,7 +136,22 @@ def test_my_airplanes_and_flights_are_the_pilots_own(monkeypatch):
         return [AIRPLANE]
 
     async def flights(pilot_id):
-        return [{"id": 9, "departureIdent": "C81", "destinationIdent": "KDLH", "stops": [], "share": None, "notes": None}]
+        # The gateway's whole row: notes, the risk assessment, the share and
+        # the picks are not the route summary the connector gives.
+        return [
+            {
+                "id": 9,
+                "name": "Lake run",
+                "departureIdent": "C81",
+                "destinationIdent": "KDLH",
+                "stops": [],
+                "share": {"url": "https://wingtipmaps.app/s/abc"},
+                "notes": "Medical renewal next week",
+                "risk": {"score": 14, "level": "caution", "factors": ["Pilot: illness"]},
+                "picks": "altitude_ft=4500",
+                "altitudes": "VPBNG:4500",
+            }
+        ]
 
     monkeypatch.setattr(records, "airplanes", airplanes)
     monkeypatch.setattr(records, "flights", flights)
@@ -144,7 +159,7 @@ def test_my_airplanes_and_flights_are_the_pilots_own(monkeypatch):
     assert asked == ["42"]
     assert mine["airplanes"][0]["tailNumber"] == "N123AB" and mine["airplanes"][0]["figures"] == {"serviceCeilingFt": 13000.0}
     flown = answer(call("my_flights", token="read-42"))
-    assert flown["flights"] == [{"id": 9, "departureIdent": "C81", "destinationIdent": "KDLH", "stops": []}]
+    assert flown["flights"] == [{"id": 9, "name": "Lake run", "departureIdent": "C81", "destinationIdent": "KDLH", "stops": []}]
 
 
 def test_records_without_the_internal_token_say_what_is_missing(monkeypatch):

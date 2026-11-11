@@ -4,13 +4,13 @@ import Foundation
 /// weather from the planner (Home Airport Weather, and a saved flight's
 /// departure in Next Flight), and the pilot's currency from the gateway
 /// (Currency Status). Each through the gateway the app talks to (Config),
-/// with the app's cookies from the App Group (WidgetStore.cookies), so the
+/// with the app's cookies from the Keychain the two share (SessionCookies), so the
 /// currency is the signed-in pilot's. The last good answer is kept in the
 /// App Group and shown, with its time, while a new one cannot be had.
 enum WidgetFetch {
     private static let session: URLSession = {
         let config = URLSessionConfiguration.default
-        config.httpCookieStorage = WidgetStore.cookies
+        config.httpCookieStorage = SessionCookies.jar
         config.httpShouldSetCookies = true
         // A widget's timeline is given seconds, not a minute: a slow
         // answer gives way to the one kept.

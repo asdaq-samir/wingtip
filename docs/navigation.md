@@ -177,7 +177,7 @@ list is where it was.
 |---|---|---|---|
 | Plan: route box, route list, nav log rows | the sheet (with a route); the search's Your Flight card | 1 → **0** with a route, 1 from the search | Route pills drag to reorder; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; altitude and departure time chips open popovers; Undo bar under the route after a removal or clear |
 | Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Dist opens the nav log |
-| Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off; Ask chips apply changes |
+| Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off (iOS too: the Brief's Alternate sections, and the plan's Alternate row under IFR, 1 tap); Ask chips apply changes |
 | Nav log card | plan → ••• → Nav log; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
 | Profile | plan → Profile | 2 → **1** with a route | VFR/IFR, altitude in the side view, Dry run |
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
@@ -235,7 +235,7 @@ Flights, Share and Undo, which were the bar's, are in the route card's
 | Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
 | Nav Log | the route card's Nav Log; the strip | 2 → **1** / 1 | -- |
 | Brief | the route card's Brief; the search's Do | 2 → **1** | the Brief's one foot bar, Start Flight |
-| Profile | the route card's ••• → Profile; the search's Do | 2 | -- |
+| Profile | the route card's ••• → Profile; the cruise altitude in the route section; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
 | Saved Flights | the route card's ••• → Saved Flights (was the bar's, 1); the search's Do; Settings' Flights row | 1 → **2** (one-row header, owner decision 2026-11-10) | Swipe to delete with an Undo row |
 | Share | the route card's ••• → Share → a way (was the bar's Share, 1 → 2) | 2 → **3** | -- |
 | Undo | the route card's ••• → Undo (was the bar's, 1); shake; ⌘Z | 1 → **2**, shake 0 | -- |
@@ -288,7 +288,7 @@ or overflow).
 
 | On | Actions | Web | iOS | Android |
 |---|---|---|---|---|
-| A waypoint of the route | Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Move, Remove, Undo | point menu (all) | point menu (all but Add a Stop After; More Info new) | **⋮ point menu: all but Set Altitude… (a waypoint's altitude is set on the Profile card, Start At or Cross At); Undo row (new)** |
+| A waypoint of the route | Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Move, Remove, Undo | point menu (all) | point menu (all but Add a Stop After; More Info new; Set Altitude… opens the Profile on the point's Start At / Cross At popover, which also takes typed feet) | **⋮ point menu: all but Set Altitude… (a waypoint's altitude is set on the Profile card, Start At or Cross At); Undo row (new)** |
 | The destination | More Info (weather, frequencies, runways, approaches), Brief, Nearest | More Info; Brief on FPL | point menu: More Info, **Brief (new)** | Brief beside Plan; **point menu: More Info, Brief (new)** |
 | The figures | the nav log | **Dist (new)** | **strip (new)** | **strip (new)** |
 | A nav log row | its field's card | **name (new)** | leg detail | leg sheet |

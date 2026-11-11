@@ -12,6 +12,18 @@
             },
             "type" : "array"
           },
+          "checkpointNotes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/PlannerCheckpointNote"
+            },
+            "type" : [ "array", "null" ]
+          },
+          "connectedApps" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ConnectorGrantDto"
+            },
+            "type" : "array"
+          },
           "currency" : {
             "$ref" : "#/components/schemas/CurrencyDto"
           },
@@ -37,11 +49,42 @@
             },
             "type" : "array"
           },
+          "records" : {
+            "$ref" : "#/components/schemas/AccountRecordsDto"
+          },
+          "reminders" : {
+            "$ref" : "#/components/schemas/RemindersDto"
+          },
           "training" : {
             "$ref" : "#/components/schemas/TrainingDto"
           }
         },
-        "required" : [ "account", "airplanes", "currency", "exportedAt", "flights", "format", "instructing", "logbook", "training" ],
+        "required" : [ "account", "airplanes", "checkpointNotes", "connectedApps", "currency", "exportedAt", "flights", "format", "instructing", "logbook", "records", "reminders", "training" ],
+        "type" : "object"
+      },
+      "AccountRecordsDto" : {
+        "properties" : {
+          "featureUses" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FeatureUse"
+            },
+            "type" : "array"
+          },
+          "remindersSent" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SentReminder"
+            },
+            "type" : "array"
+          },
+          "subscription" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/SubscriptionRow"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "featureUses", "remindersSent", "subscription" ],
         "type" : "object"
       },
       "AircraftDto" : {
@@ -460,6 +503,29 @@
           }
         },
         "required" : [ "access", "claudeFeatures", "providers", "subscriptions" ],
+        "type" : "object"
+      },
+      "ConnectorGrantDto" : {
+        "properties" : {
+          "app" : {
+            "type" : "string"
+          },
+          "at" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "scopes" : {
+            "type" : [ "string", "null" ]
+          },
+          "until" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "app", "at", "kind", "scopes", "until" ],
         "type" : "object"
       },
       "Corner" : {
@@ -1037,11 +1103,29 @@
           "flight" : {
             "$ref" : "#/components/schemas/FlightDto"
           },
+          "share" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/FlightShareDto"
+            }, {
+              "type" : "null"
+            } ]
+          },
           "track" : {
-            "$ref" : "#/components/schemas/TrackDto"
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/TrackDto"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "watch" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/FlightWatchDto"
+            }, {
+              "type" : "null"
+            } ]
           }
         },
-        "required" : [ "flight", "track" ],
+        "required" : [ "flight", "share", "track", "watch" ],
         "type" : "object"
       },
       "FaultReport" : {
@@ -2216,6 +2300,27 @@
         "required" : [ "developer", "displayName", "email", "fullName", "homeBase", "id", "phone" ],
         "type" : "object"
       },
+      "PlannerCheckpointNote" : {
+        "properties" : {
+          "created_at" : {
+            "type" : "string"
+          },
+          "description" : {
+            "type" : "string"
+          },
+          "lat" : {
+            "type" : "number"
+          },
+          "lon" : {
+            "type" : "number"
+          },
+          "route" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "created_at", "description", "lat", "lon", "route" ],
+        "type" : "object"
+      },
       "Quiz" : {
         "properties" : {
           "answers" : {
@@ -2439,6 +2544,27 @@
           }
         },
         "required" : [ "aircraftId", "altitudes", "checkpoints", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "picks", "plannedFor", "risk", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
+        "type" : "object"
+      },
+      "SentReminder" : {
+        "properties" : {
+          "daysBefore" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "dueOn" : {
+            "format" : "date",
+            "type" : "string"
+          },
+          "sentAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "what" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "daysBefore", "dueOn", "sentAt", "what" ],
         "type" : "object"
       },
       "ShareFlightRequest" : {
@@ -2778,6 +2904,37 @@
           }
         },
         "required" : [ "entitled", "plan", "state", "store", "trialAvailable", "trialDays", "until", "uses" ],
+        "type" : "object"
+      },
+      "SubscriptionRow" : {
+        "properties" : {
+          "paidUntil" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "plan" : {
+            "type" : [ "string", "null" ]
+          },
+          "store" : {
+            "type" : [ "string", "null" ]
+          },
+          "storeRef" : {
+            "type" : [ "string", "null" ]
+          },
+          "trialEndsAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "trialStartedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "updatedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [ "paidUntil", "plan", "store", "storeRef", "trialEndsAt", "trialStartedAt", "updatedAt" ],
         "type" : "object"
       },
       "TokenRequest" : {
@@ -5009,7 +5166,7 @@
     },
     "/api/me/export" : {
       "get" : {
-        "description" : "The account, airplanes and squawks, flights with nav logs and tracks, logbook, currency, training and instructing, each as its own endpoint answers it; sent as a download.",
+        "description" : "The account, airplanes and squawks, flights with nav logs, tracks, share links and watches, logbook, currency, training and instructing, each as its own endpoint answers it; the pilot's own checkpoint notes, reminders, subscription, paid-feature counts and connected AI apps (never a token); sent as a download.",
         "operationId" : "export",
         "responses" : {
           "200" : {

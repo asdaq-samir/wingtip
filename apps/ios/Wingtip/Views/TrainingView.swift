@@ -279,6 +279,9 @@ struct ReviewAskView: View {
     var ask: (AskReviewRequest) async -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var flights: [SavedFlight] = []
+    /// The saved flights' failure, said where they are listed rather than
+    /// "Save the planned flight first" for flights that couldn't be fetched.
+    @State private var flightsProblem: String?
     @State private var flightId: Int?
     @State private var instructorId: Int?
     @State private var makeModel = ""
@@ -289,7 +292,11 @@ struct ReviewAskView: View {
     var body: some View {
         Form {
             Section("Flight") {
-                if flights.isEmpty { Text("Save the planned flight first, from Flights.").foregroundStyle(.secondary) }
+                if let flightsProblem {
+                    ProblemLine(flightsProblem)
+                } else if flights.isEmpty {
+                    Text("Save the planned flight first, from Flights.").foregroundStyle(.secondary)
+                }
                 Picker("Saved flight", selection: $flightId) {
                     Text("Pick one").tag(Int?.none)
                     ForEach(flights) { f in
@@ -320,7 +327,11 @@ struct ReviewAskView: View {
             }
         }
         .navigationTitle("Ask for a Review")
-        .task { flights = (try? await Gateway.flights()) ?? [] }
+        .task {
+            do { flights = try await Gateway.flights(); flightsProblem = nil } catch {
+                flightsProblem = "Your saved flights couldn't be fetched: \(error.localizedDescription)"
+            }
+        }
     }
 
     private var chosen: InstructorLink? { instructors.first { $0.id == instructorId } ?? instructors.first }

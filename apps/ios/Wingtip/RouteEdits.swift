@@ -98,6 +98,18 @@ struct RouteExtras: Equatable, Sendable {
     /// The point flown direct to now, and the route before it.
     var direct: String?
     var was: RouteWas?
+    /// The IFR alternate filed (14 CFR 91.169), its ident: sent under IFR,
+    /// where the planner adds the leg on to it and its fuel (91.167(a)(2),
+    /// the engine's navlog_alternate_leg) to the totals, as the web's
+    /// `alternate` does.
+    var alternate: String?
+
+    /// The alternate as the planner takes it: only under IFR, VFR having
+    /// none to file.
+    func filedAlternate(rules: FlightRules) -> String? {
+        guard rules == .ifr, let alternate = self.alternate, !alternate.isEmpty else { return nil }
+        return alternate
+    }
 
     /// "IDENT:FEET" pairs, as the planner reads `altitudes` and `crossings`.
     static func pairs(_ feet: [String: Int]) -> String? {
@@ -108,7 +120,7 @@ struct RouteExtras: Equatable, Sendable {
     /// written again only where one is flown direct, "KELD:I22::BXCMB"
     /// (PlanQuery.procedures: the fix after a fourth colon). Thrown where
     /// the engine cannot write a hold or a procedure.
-    func query(procedures: [ProcedurePick]) throws -> [String: String?] {
+    func query(procedures: [ProcedurePick], rules: FlightRules = .saved()) throws -> [String: String?] {
         var query: [String: String?] = [:]
         if let altitudes = Self.pairs(altitudes) { query["altitudes"] = altitudes }
         if let crossings = Self.pairs(crossings) { query["crossings"] = crossings }
@@ -118,6 +130,7 @@ struct RouteExtras: Equatable, Sendable {
         if !procedureDirect.isEmpty, !procedures.isEmpty {
             query["procedures"] = try ProcedurePick.text(procedures, direct: procedureDirect)
         }
+        if let alternate = filedAlternate(rules: rules) { query["alternate"] = alternate }
         return query
     }
 
@@ -220,6 +233,13 @@ extension Plan {
         let key = ident.uppercased()
         extras.altitudes[key] = feet
         if feet != nil, mode == .startAt { extras.starts.insert(key) } else { extras.starts.remove(key) }
+        plan()
+    }
+
+    /// The IFR alternate filed, or (nil) taken off: planned again, so the
+    /// nav log's totals carry the fuel on to it. Undo puts it back.
+    func setAlternate(_ ident: String?) {
+        extras.alternate = ident?.uppercased()
         plan()
     }
 

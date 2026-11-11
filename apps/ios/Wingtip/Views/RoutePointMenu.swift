@@ -29,7 +29,12 @@ struct RoutePointMenu: View {
                 } label: {
                     Label(plan.extras.direct == ident ? "Fly as Planned" : "Direct To", systemImage: WingtipIcon.directTo)
                 }
-                Button { FlightUI.shared.altitudeAt = ident } label: {
+                // The Profile, open on this point's Start At / Cross At
+                // popover: the app's one altitude control.
+                Button {
+                    FlightUI.shared.altitudeAt = ident
+                    PendingCommand.shared.command = .open(.profile)
+                } label: {
                     Label(plan.extras.altitudes[ident.uppercased()].map { "Set Altitude… (\(Format.altitude(Double($0))))" } ?? "Set Altitude…", systemImage: "arrow.up.and.down")
                 }
             }

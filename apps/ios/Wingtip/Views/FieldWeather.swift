@@ -124,21 +124,21 @@ struct WeatherModules: View {
                 module("Temperature", "thermometer.medium", "\(Int(temp.rounded())) °C", line: metar.dewpointC.map { "Dew point \(Int($0.rounded())) °C" },
                        spoken: "\(SpokenFigures.number(temp)) degrees Celsius")
             }
-            if let density = Self.densityAltitude(place, metar) {
+            switch FieldDensity.altitudeFt(elevationFt: place.elevationFt, altimeterInHg: metar.altimeterInHg, tempC: metar.tempC) {
+            case .success(let density)?:
                 module("Density Altitude", "arrow.up.and.down", Format.altitude(density), line: "The engine's, at this report",
                        spoken: SpokenFigures.feet(density))
+            case .failure(let error)?:
+                // Said in its module, never left out as if the report lacked it.
+                VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+                    Label("Density Altitude", systemImage: "arrow.up.and.down").font(.footnote.weight(.semibold)).foregroundStyle(.secondary)
+                    ProblemLine(Result<Void, any Error>.failure(error), "The density altitude")
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            case nil: EmptyView()
             }
         }
         .padding(.horizontal, WingtipSpace.lg)
-    }
-
-    /// The engine's density altitude at the field: its pressure altitude
-    /// (elevation and altimeter) and the temperature; nil without them.
-    static func densityAltitude(_ place: AirportPlace, _ metar: APIMetar) -> Double? {
-        guard let elevation = place.elevationFt, let altimeter = metar.altimeterInHg, let temp = metar.tempC,
-              let pressure = try? Engine.pressureAltitudeFt(elevationFt: elevation, altimeterInhg: altimeter),
-              let sigma = try? Engine.densityRatio(altitudeFt: pressure, oatC: temp) else { return nil }
-        return try? Engine.densityAltitudeFt(sigma: sigma)
     }
 
     private func module(_ title: String, _ symbol: String, _ value: String, line: String?, spoken: String? = nil) -> some View {
