@@ -16,6 +16,7 @@ import { phasesOf, type Phase } from "./sections";
 import { categoryAt, nearestStation, ownStation, placesOf, tafReachNm, type Station } from "./fieldWeather";
 import { FINDING_TONE } from "../../../../lib/findings";
 import OnRouteRow from "./OnRouteRow";
+import { useTipAnchor } from "../../../../lib/tipAnchors";
 
 type Pirep = Briefing["pireps"][number];
 
@@ -122,6 +123,8 @@ export default function WeatherAlongRoute({
   departIso: string;
   unchecked: (source: Briefing["weather_unavailable"][number]) => boolean;
 }) {
+  // Its first-run tip's control (lib/tipAnchors, TipHost).
+  const placesTip = useTipAnchor("weather-places");
   const printing = usePrinting();
   const places = placesOf(course);
   const stations = briefing.forecast.stations;
@@ -147,7 +150,7 @@ export default function WeatherAlongRoute({
     // A field's weather under its own tab's title, Weather; the way between
     // Along the Route.
     <AccordionSection title={phase === "depart" || phase === "arrive" ? "Weather" : "Along the Route"}>
-      <div className="space-y-4" data-testid="weather-places" data-tip="weather-places">
+      <div ref={placesTip} className="space-y-4" data-testid="weather-places" data-tip="weather-places">
         {places.map((place, i) => {
           const metar = briefing.metars[place.ident];
           const station = own.get(place.ident);

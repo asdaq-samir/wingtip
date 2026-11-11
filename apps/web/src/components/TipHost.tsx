@@ -1,10 +1,14 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Lightbulb } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import { usePopups } from "./popupsChunk";
 import { TEXT } from "../lib/text";
 import { TIPS, unseen, useTips, useWelcomeOpen, type TipSpec } from "../lib/firstRunTips";
+import { useTipSight } from "../lib/tipAnchors";
+
+/** How long a tip's control is in view before the tip is offered. */
+const SETTLE_MS = 700;
 
 /** In sight and not under anything: the point at its middle is its own.
  *  Not in the panel at rest: there the pill is the tab bar and a strip
@@ -40,66 +44,54 @@ const somethingOpen = () =>
 export default function TipHost() {
   const seen = useTips((s) => s.seen);
   const see = useTips((s) => s.see);
-  const [current, setCurrent] = useState<TipSpec | null>(null);
-  const anchor = useRef<HTMLElement | null>(null);
+  // The tip up, and the control it is beside.
+  const [current, setCurrent] = useState<{ tip: TipSpec; el: HTMLElement } | null>(null);
+  // The tips' controls on the screen now, each registered by itself
+  // (useTipAnchor) and watched by an IntersectionObserver.
+  const inView = useTipSight((s) => s.inView);
   // None over the welcome, which says its own first words.
   const welcoming = useWelcomeOpen((s) => s.open);
   const waiting = welcoming ? [] : TIPS.filter((t) => unseen(seen, t.id) && (!t.after || seen.includes(t.after)));
-  const waitingKey = waiting.map((t) => t.id).join(",");
+  const showing = current && inView.some((v) => v.el === current.el) ? current : null;
+  const next = showing ? null : (waiting.find((t) => inView.some((v) => v.id === t.id)) ?? null);
+  const nextEl = next ? (inView.find((v) => v.id === next.id)?.el ?? null) : null;
 
   useEffect(() => {
-    if (!waitingKey) return;
-    const ids = waitingKey.split(",");
-    // Found in sight on two looks running before it is offered: not a
-    // control passing by as the panel moves.
-    let candidate: string | null = null;
-    const look = () => {
-      // Not while something moves -- the sheet turning, the map's zoom or
-      // pan, each a running animation: each look lays the page out to
-      // read where its control is, and in the middle of a move that was
-      // a layout forced into the move's frames (a probe of the sheet's
-      // turns, 2026-11-03). The next look, 0.7 s on, is soon enough. One
-      // that runs for ever -- a spinner, the radio's wave -- is no move.
-      if (document.getAnimations().some((a) => a.playState === "running" && a.effect?.getTiming().iterations !== Infinity)) return;
-      const up = anchor.current;
-      if (up) {
-        if (!up.isConnected || !inSight(up)) {
-          anchor.current = null;
-          setCurrent(null);
-        }
+    if (!next || !nextEl) return;
+    // In sight a moment before it is offered -- not a control passing by
+    // as the panel moves -- and then only with nothing else up, nothing
+    // moving, and the control not under anything; else a moment on, while
+    // it stays in view. Not while something moves -- the sheet turning,
+    // the map's zoom or pan, each a running animation: the look lays the
+    // page out to read where its control is, a layout forced into the
+    // move's frames (a probe of the sheet's turns, 2026-11-03). One that
+    // runs for ever -- a spinner, the radio's wave -- is no move.
+    let timer = 0;
+    const offer = () => {
+      const moving = document.getAnimations().some((a) => a.playState === "running" && a.effect?.getTiming().iterations !== Infinity);
+      if (moving || somethingOpen() || !inSight(nextEl)) {
+        timer = window.setTimeout(offer, SETTLE_MS);
         return;
       }
-      if (somethingOpen()) {
-        candidate = null;
-        return;
-      }
-      const found = ids
-        .map((id) => ({ id, el: document.querySelector<HTMLElement>(`[data-tip="${id}"]`) }))
-        .find((t) => t.el && inSight(t.el));
-      if (!found) {
-        candidate = null;
-        return;
-      }
-      if (candidate !== found.id) {
-        candidate = found.id;
-        return;
-      }
-      anchor.current = found.el;
-      setCurrent(TIPS.find((t) => t.id === found.id) ?? null);
+      setCurrent({ tip: next, el: nextEl });
     };
-    const timer = window.setInterval(look, 700);
-    return () => window.clearInterval(timer);
-  }, [waitingKey]);
+    timer = window.setTimeout(offer, SETTLE_MS);
+    return () => window.clearTimeout(timer);
+  }, [next, nextEl]);
+
+  // Put away, not seen, as its control goes: out of view (the observer:
+  // `showing` above), or out of sight under the sheet's clip (the
+  // Positioner's anchorHidden).
+  const putAway = useCallback(() => setCurrent(null), []);
 
   const popups = usePopups();
   const done = () => {
-    if (current) see(current.id);
-    anchor.current = null;
-    setCurrent(null);
+    if (current) see(current.tip.id);
+    putAway();
   };
 
   // The popover is on the popups' chunk (popupsChunk); a tip waits for it.
-  if (!current || !popups) return null;
+  if (!showing || !popups) return null;
   const { Popover, PopoverContent } = popups;
   return (
     <Popover
@@ -114,20 +106,21 @@ export default function TipHost() {
         align="start"
         sideOffset={10}
         collisionPadding={12}
-        anchor={anchor}
+        anchor={showing.el}
+        onAnchorHidden={putAway}
         className="w-80 max-w-[calc(100vw-2rem)] gap-0.5 p-3"
         initialFocus={false}
         data-tip-content=""
         data-testid="tip"
-        aria-label={current.title}
+        aria-label={showing.tip.title}
       >
         <div className="flex items-center gap-3">
           <Lightbulb className="size-5 shrink-0 text-tint" aria-hidden />
-          <p className={cn("min-w-0 flex-1 font-semibold", TEXT.row)}>{current.title}</p>
+          <p className={cn("min-w-0 flex-1 font-semibold", TEXT.row)}>{showing.tip.title}</p>
           <CloseButton label="Close the tip" className="-my-1 -mr-1" onClick={done} data-testid="tip-close" />
         </div>
         {/* Under the title, in line with it past the light. */}
-        <p className={cn("pl-8", TEXT.prose)}>{current.message}</p>
+        <p className={cn("pl-8", TEXT.prose)}>{showing.tip.message}</p>
       </PopoverContent>
     </Popover>
   );

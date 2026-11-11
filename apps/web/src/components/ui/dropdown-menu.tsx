@@ -1,5 +1,6 @@
 import * as React from "react";
 import { cn } from "cn";
+import { anchorHiddenRender } from "./anchorHidden";
 import { MENU_CHECK, MENU_CHECK_ITEM, MENU_CONTENT, MENU_ITEM, MENU_LABEL, MENU_SEPARATOR } from "./menuLook";
 import { Menu as DropdownMenuPrimitive } from "@base-ui/react/menu";
 import { CheckIcon, ChevronRightIcon } from "lucide-react";
@@ -14,16 +15,6 @@ function DropdownMenuPortal({ ...props }: DropdownMenuPrimitive.Portal.Props) {
 
 function DropdownMenuTrigger({ ...props }: DropdownMenuPrimitive.Trigger.Props) {
   return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
-}
-
-/** Calls `onHidden` as the menu's anchor goes out of sight: Base UI's
- *  hide middleware, the Positioner's anchorHidden (data-anchor-hidden),
- *  which counts a clipping ancestor (the sheet) as out of sight. */
-function AnchorHidden({ hidden, onHidden }: { hidden: boolean; onHidden: () => void }) {
-  React.useEffect(() => {
-    if (hidden) onHidden();
-  }, [hidden, onHidden]);
-  return null;
 }
 
 function DropdownMenuContent({
@@ -51,16 +42,7 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
         anchor={anchor}
-        render={
-          onAnchorHidden
-            ? (props, state) => (
-                <div {...props}>
-                  {props.children}
-                  <AnchorHidden hidden={state.anchorHidden} onHidden={onAnchorHidden} />
-                </div>
-              )
-            : undefined
-        }
+        render={anchorHiddenRender(onAnchorHidden)}
       >
         <DropdownMenuPrimitive.Popup
           data-slot="dropdown-menu-content"

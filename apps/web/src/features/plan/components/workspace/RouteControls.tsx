@@ -7,6 +7,7 @@ import { useClaudeOn } from "../../../../lib/subscription";
 import { LocalDuration } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import { LOCAL_MINUTES } from "../../hooks/planAddress";
+import { useTipAnchor } from "../../../../lib/tipAnchors";
 
 /** The route's chips: the airplane, the altitude and the time
  *  (`flightInputs`), a local flight's time aloft, and the route's buttons --
@@ -21,6 +22,8 @@ const WORDED = "lg:pointer-fine:w-auto lg:pointer-fine:gap-1 lg:pointer-fine:px-
 const WORD = cn("hidden font-medium lg:pointer-fine:inline", TEXT.detail);
 
 export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWorkspaceModel; flightInputs: ReactNode; share: ReactNode }) {
+  // Its first-run tip's control (lib/tipAnchors, TipHost).
+  const briefTip = useTipAnchor("brief");
   const { altitudeMark, briefMark, changeLocalMin, localMin, openBrief, openProfile, profileReady, routed, s } = vm;
   // "AI brief" only where Claude writes some of it (lib/subscription): off,
   // the Brief is the engine's alone and is called just that.
@@ -116,6 +119,7 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             data-testid="route-brief"
             data-finding={briefMark ?? undefined}
             data-tip="brief"
+            ref={briefTip}
           >
             <span className="relative">
               <ICON.brief className="size-[18px]" strokeWidth={2} />

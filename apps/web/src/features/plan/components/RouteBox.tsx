@@ -1,4 +1,14 @@
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import { ArrowRight, Coffee, Fuel, PlaneLanding, PlaneTakeoff, Plus, Route, Trash2, TriangleAlert } from "lucide-react";
 import { mergeProps } from "@base-ui/react/merge-props";
 import { ScrollArea } from "@base-ui/react/scroll-area";
@@ -24,6 +34,7 @@ import { prefersReducedMotion } from "../../../lib/motion";
 import { usePreferences, type AirspaceClass, type RecentAirport } from "../../../lib/preferences";
 import { useAirportSearch, type AirportSearchRow } from "../../../lib/useAirportSearch";
 import { useKeyboardInset } from "../../../hooks/use-viewport";
+import { useTipAnchor } from "../../../lib/tipAnchors";
 import { useAirspace } from "../../../lib/useAirspace";
 import { airportMarkSvg } from "../../../lib/map/marks/airportMark";
 import { colourOf } from "../../../lib/map/marks/flightCategory";
@@ -193,6 +204,15 @@ export default function RouteBox({
   // The box, which the suggestions are placed under (their popover's
   // anchor) and a press in which is not one outside them.
   const [boxEl, setBoxEl] = useState<HTMLDivElement | null>(null);
+  // The box is the route's first-run tip's control too (lib/tipAnchors).
+  const routeTip = useTipAnchor("route");
+  const boxRef = useCallback(
+    (el: HTMLDivElement | null) => {
+      setBoxEl(el);
+      return routeTip(el);
+    },
+    [routeTip],
+  );
   // Where the field is: before point `at` (a stop typed in there, or at 0
   // with no departure, the departure), or null -- after the last point,
   // where what is typed is the destination.
@@ -598,7 +618,7 @@ export default function RouteBox({
              pills on it in the sheet's own colour -- one line tall, a second as the route needs it, at the pilot's
              ask, where it was two however short the route and a short one left a line of grey empty under it. */}
           <InputGroup
-            ref={setBoxEl}
+            ref={boxRef}
             onMouseDown={(e) => {
               if (isRoom(e)) e.preventDefault();
             }}

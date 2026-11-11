@@ -1,6 +1,7 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
+import { useTipAnchor } from "../lib/tipAnchors";
 
 /**
  * A short field in the route box's row with a glass button at its end --
@@ -59,6 +60,8 @@ export function InlineField({
   /** At its end, shown when it has something to open. */
   button?: ReactNode;
 }) {
+  // Its first-run tip's control (lib/tipAnchors, TipHost).
+  const tipAnchor = useTipAnchor(tip);
   return (
     // A row's size to a finger, but no larger than it is at the owner's
     // 17.88 px text (19 px): at 19.65 the two chips and the route's three
@@ -77,6 +80,7 @@ export function InlineField({
       )}
       data-testid={testId}
       data-tip={tip}
+      ref={tipAnchor}
     >
       <span aria-hidden="true" className="invisible col-start-1 row-start-1 flex h-0 overflow-hidden">
         <span className={cn("whitespace-pre pr-1.5 pl-2.5 font-semibold", tabular && "tabular-nums")}>{widest}</span>
