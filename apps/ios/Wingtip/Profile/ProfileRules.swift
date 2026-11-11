@@ -2,8 +2,8 @@ import Foundation
 
 /// The profile's questions of the engine, by name (engine/facade/src/call.rs):
 /// how close the ground along the route comes to an altitude
-/// (`profile_clearance`, coloured red within 100 ft and yellow within
-/// 1,000 ft, ForeFlight's display defaults and not a regulation; the legal
+/// (`profile_clearance`, coloured red under 500 ft, 14 CFR 91.119(c)'s
+/// least height, and yellow within 1,000 ft, 91.119(b)'s; the legal
 /// minimums, 14 CFR 91.119 and 91.177, are kept by the legal altitudes
 /// themselves) and the Altitude Advisor's rows (`altitude_advisor`: the
 /// wheel's altitudes with the route's time, fuel and wind at each, Fastest

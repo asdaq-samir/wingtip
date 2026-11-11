@@ -38,8 +38,8 @@ import kotlin.math.ceil
  * plan's altitude line in the tint and the altitude previewed on the
  * slider as a dashed level across. The ground and obstacles near the
  * previewed altitude are drawn in the engine's bands (`profile_clearance`:
- * red within 100 ft, amber within 1,000 ft, ForeFlight's display
- * defaults, no regulation's). Each waypoint is a 48 dp target over the
+ * red under 500 ft, 14 CFR 91.119(c)'s least height, amber within
+ * 1,000 ft, 91.119(b)'s). Each waypoint is a 48 dp target over the
  * chart that opens its altitude (LegAltitudeSheet). Nothing is worked out
  * here: the planner's side view and the engine's line and bands, drawn.
  * The chart is a picture for the eye; TalkBack hears the clearance on the

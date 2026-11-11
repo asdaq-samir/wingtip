@@ -48,7 +48,7 @@ struct ProfileTests {
             ProfileGround(alongNm: 0, groundFt: 1000), ProfileGround(alongNm: 28, groundFt: 3000), ProfileGround(alongNm: 62, groundFt: 2500),
         ])
         let near = try ProfileRules.clearance(altitudeFt: 3500, profile: profile, legs: Self.legs)
-        #expect(near.level == "yellow" && near.redFromFt == 3400 && near.yellowFromFt == 2500)
+        #expect(near.level == "yellow" && near.redFromFt == 3000 && near.yellowFromFt == 2500)
         #expect(near.words == "3,500 ft, terrain within 500 ft near KLVK")
         #expect(try ProfileRules.clearance(altitudeFt: 3050, profile: profile, legs: Self.legs).level == "red")
     }

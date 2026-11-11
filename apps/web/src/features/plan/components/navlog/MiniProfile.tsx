@@ -124,9 +124,9 @@ export default memo(function MiniProfile({
   // chart empty, at the owner's notice ("y axis has extra white space").
   const top = scaleTop ?? Math.ceil((highest + 300) / 500) * 500;
   // The ground tinted against the altitude shown, as ForeFlight's profile
-  // does: red within 100 ft of it or above, yellow within 1,000 ft, else the
-  // ground's own -- the engine's (profile_clearance), whose thresholds are
-  // ForeFlight's display defaults, not a rule. Offsets in the chart's own
+  // does: red under 500 ft of it or above (14 CFR 91.119(c)), yellow within
+  // 1,000 ft (91.119(b)), else the ground's own -- the engine's
+  // (profile_clearance). Offsets in the chart's own
   // height, moved by the Profile card's slider as it goes (data-tint), not
   // drawn again.
   const tintAt = preview ?? cruise;

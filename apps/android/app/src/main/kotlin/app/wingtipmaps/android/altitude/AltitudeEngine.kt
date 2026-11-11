@@ -12,8 +12,8 @@ import app.wingtipmaps.android.engine.generated.profileClearance
 /**
  * The engine's answers the altitude screens draw, asked by name: the
  * clearance at an altitude previewed on the profile's slider
- * (`profile_clearance`: red within 100 ft, yellow within 1,000 ft,
- * ForeFlight's display defaults, no regulation's), the Altitude Advisor's
+ * (`profile_clearance`: red under 500 ft, 14 CFR 91.119(c)'s least
+ * height, yellow within 1,000 ft, 91.119(b)'s), the Altitude Advisor's
  * rows (`altitude_advisor`) and a waypoint's Start At or Cross At change
  * (`altitude_change`). The Kotlin only hands the planner's data over.
  */

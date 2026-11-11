@@ -1,18 +1,27 @@
 //! The profile's clearance preview: how close the ground and the
-//! obstacles along the route come to an altitude, coloured as ForeFlight's
-//! profile and Hazard Advisor colour them by default -- red within 100 ft
-//! of the altitude or above it, yellow within 1,000 ft (ForeFlight Pilot's
-//! Guide, Hazard Advisor). These are display defaults, not a regulation:
-//! the legal minimums over the ground are 14 CFR 91.119 (VFR: 500 ft, 1,000
-//! ft over a congested area) and 91.177 (IFR), which the planner's legal
-//! altitudes already keep (floor.rs).
+//! obstacles along the route come to an altitude, coloured red where they
+//! come within 500 ft of it, or above it, and yellow within 1,000 ft.
+//!
+//! The red band is 14 CFR 91.119(c)'s: "Over other than congested areas.
+//! An altitude of 500 feet above the surface ... In those cases, the
+//! aircraft may not be operated closer than 500 feet to any person,
+//! vessel, vehicle, or structure." A clearance under 500 ft is under the
+//! least the rule allows anywhere outside a congested area, so it must not
+//! read as merely a caution; exactly 500 ft meets it and is yellow. The
+//! yellow band, 1,000 ft, is 91.119(b)'s height over a congested area,
+//! where the preview does not know the town: a caution, no more lenient
+//! than the rule. ForeFlight's profile draws red at 100 ft and yellow at
+//! 1,000 by default (its Pilot's Guide, Hazard Advisor); the yellow is
+//! kept, the red widened to the rule. The legal floors themselves are
+//! 91.119 and 91.177's, which the planner's legal altitudes keep
+//! (floor.rs).
 
 use crate::figures::words::grouped;
 
-/// Ground or an obstacle this close under the altitude, or above it, is
-/// red: ForeFlight's default (a display choice, not 14 CFR).
-pub const RED_WITHIN_FT: f64 = 100.0;
-/// And this close, yellow: ForeFlight's default too.
+/// Ground or an obstacle less than this under the altitude, or above it,
+/// is red: 91.119(c)'s 500 ft above the surface, and from any structure.
+pub const RED_WITHIN_FT: f64 = 500.0;
+/// And this close, yellow: 91.119(b)'s 1,000 ft over a congested area.
 pub const YELLOW_WITHIN_FT: f64 = 1000.0;
 
 /// A place along the route and its height, feet MSL.
@@ -57,8 +66,9 @@ pub fn at(altitude_ft: f64, heights: &[Height], points: &[(String, f64)]) -> Cle
     let strike_nm = heights.iter().filter(|h| h.ft >= altitude_ft).map(|h| h.along_nm).min_by(f64::total_cmp);
     let near = highest
         .and_then(|h| points.iter().min_by(|a, b| (a.1 - h.along_nm).abs().total_cmp(&(b.1 - h.along_nm).abs())).map(|p| p.0.clone()));
+    // Red under 500 ft of clearance: exactly 500 meets 91.119(c).
     let level = highest.map(|h| {
-        if h.ft >= red_from_ft {
+        if h.ft > red_from_ft {
             "red"
         } else if h.ft >= yellow_from_ft {
             "yellow"
@@ -105,15 +115,18 @@ mod tests {
     }
 
     #[test]
-    fn red_within_100_ft_yellow_within_1000() {
+    fn red_under_500_ft_by_91_119_c_yellow_within_1000() {
         let points = [("KAAA".to_owned(), 0.0), ("KXYZ".to_owned(), 30.0)];
         let c = at(3500.0, &ground(&[1000.0, 2000.0, 3000.0, 2500.0]), &points);
-        assert_eq!((c.red_from_ft, c.yellow_from_ft), (3400.0, 2500.0));
+        assert_eq!((c.red_from_ft, c.yellow_from_ft), (3000.0, 2500.0));
         assert_eq!(c.level, Some("yellow"));
         assert_eq!(c.least_ft, Some(500.0));
         assert_eq!(c.words, "3,500 ft, terrain within 500 ft near KXYZ");
         assert_eq!(c.strike_nm, None);
         assert_eq!(at(3050.0, &ground(&[3000.0]), &[]).level, Some("red"));
+        // 91.119(c): 500 ft above the surface meets it, 499 does not.
+        assert_eq!(at(3499.0, &ground(&[3000.0]), &[]).level, Some("red"));
+        assert_eq!(at(3500.0, &ground(&[3000.0]), &[]).level, Some("yellow"));
         assert_eq!(at(6000.0, &ground(&[3000.0]), &[]).words, "6,000 ft, clear of terrain and obstacles by 3,000 ft");
     }
 

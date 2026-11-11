@@ -27,8 +27,8 @@ const LEVEL_INK: Record<string, string> = { red: "text-destructive-ink", yellow:
  * The Profile card's body, ForeFlight's way (the owner, 2026-11-10): the
  * route from the side (`chart`) with the stock Base UI Slider upright down
  * its left, stepping through the engine's altitudes. Sliding it previews
- * the clearance -- the ground red within 100 ft of the altitude, yellow
- * within 1,000 ft (the engine's profile_clearance) -- and changes nothing
+ * the clearance -- the ground red within 500 ft of the altitude (14 CFR
+ * 91.119(c)), yellow within 1,000 ft (the engine's profile_clearance) -- and changes nothing
  * till Set; in flight, Auto holds the preview at the GPS's altitude. A tap
  * on a waypoint's mark sets the leg from it, Start At or Cross At
  * (LegAltitude). Under the graph, the ground against the altitude, then
