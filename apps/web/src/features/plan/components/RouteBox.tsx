@@ -428,6 +428,8 @@ export default function RouteBox({
     onDone?.();
   };
 
+  // Whether a suggestion is lit now (the list's own highlight).
+  const lit = useRef(false);
   const onKeyDown = (e: BaseUIEvent<KeyboardEvent<HTMLInputElement>>) => {
     if (e.key === "Enter") {
       // The first suggestion, once they answer what is typed (the list's
@@ -439,21 +441,20 @@ export default function RouteBox({
       const word = typed.trim().toUpperCase();
       const exact = rows.some((r) => r.ident === word);
       if (open && rows.length > 0 && (answered || !exact)) {
-        // The list takes Enter on its highlighted row, but typed key by
-        // key, as a phone's keyboard does, the rows change under it and
-        // none stays highlighted, so Return did nothing (the FPL audit's
-        // A1, 2026-11-08, under cmdk). With none highlighted the first row
-        // shown is the one Return takes, as Maps' search does; its click
-        // is its select. By the suggestions' own popover.
-        const list = document.querySelector('[data-testid="route-suggestions"]');
-        if (list && !list.querySelector("[role=option][data-highlighted]")) {
-          const first = list.querySelector<HTMLElement>("[role=option]:not([data-disabled])");
-          if (first) {
-            e.preventDefault();
-            e.preventBaseUIHandler();
-            first.click();
-            return;
-          }
+        // The list takes Enter on its highlighted row, the first lit as the
+        // rows come (autoHighlight "always", as the one search's). Typed key
+        // by key, as a phone's keyboard does, rows that come after the last
+        // change of what is typed can be none lit (the FPL audit's A1,
+        // 2026-11-08): then the first row shown is the one Return takes, as
+        // Maps' search does, from the rows themselves -- an airport first,
+        // as the list shows them, else a waypoint.
+        if (!lit.current) {
+          const first = rows.find((r) => r.kind !== "fix") ?? rows[0]!;
+          e.preventDefault();
+          e.preventBaseUIHandler();
+          if (first.kind === "fix") pick(first.ident);
+          else pick(first.ident, { ident: first.ident, name: first.name, municipality: first.municipality });
+          return;
         }
         return;
       }
@@ -589,7 +590,14 @@ export default function RouteBox({
     // list's root (Base UI's Autocomplete) round the box and its
     // suggestions: the field moves the highlight with the arrows and takes
     // it with Enter.
-    <CommandRoot value={typed} onValueChange={(v) => setTyped(v.toUpperCase())}>
+    <CommandRoot
+      value={typed}
+      onValueChange={(v) => setTyped(v.toUpperCase())}
+      autoHighlight="always"
+      onItemHighlighted={(item) => {
+        lit.current = item !== undefined;
+      }}
+    >
       {/* eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the presses and keys of the pills and the field inside it, caught as they bubble (as cmdk's root caught them). */}
       <div
         className="min-w-0"
