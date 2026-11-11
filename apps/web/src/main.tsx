@@ -19,6 +19,7 @@ import { registerSW } from "virtual:pwa-register";
 import { followDynamicType } from "./features/shell/dynamicType";
 import { prepareAnnouncer } from "./lib/announce";
 import { keepAddressThroughReload, startFresh } from "./features/shell/freshLoad";
+import { recoverChunk, useChunkFailure } from "./lib/chunkRecovery";
 import { installErrorReports, reportOf, sendReport } from "./lib/errorReports";
 import { startSpeedReports } from "./lib/speed";
 import { startLongTaskReports } from "./lib/longTasks";
@@ -216,23 +217,37 @@ if (opening.get("stops")) void engineLoaded.then(prefetchCourse, () => {});
 else prefetchCourse();
 
 // A chunk that will not load -- the deploy after this page's own replaced
-// it, or no signal -- loads the page again, once a minute at most, as
-// Vite's own guide does: past that it falls to the route's PageError.
-window.addEventListener("vite:preloadError", (event) => {
-  let last = 0;
-  try {
-    last = Number(sessionStorage.getItem("wingtip.chunkReload")) || 0;
-  } catch {
-    /* storage refused: reload once */
-  }
-  if (Date.now() - last < 60_000) return;
-  try {
-    sessionStorage.setItem("wingtip.chunkReload", String(Date.now()));
-  } catch {
-    /* as above */
-  }
-  event.preventDefault();
-  window.location.reload();
+// it, or no signal -- recovered by itself where a newer build is served:
+// the page loaded again once, its route kept (lib/chunkRecovery). The
+// error goes on to the route's PageError meanwhile, which says which it
+// was where it stays: a newer version ready, no connection, or a part that
+// did not load.
+window.addEventListener("vite:preloadError", () => {
+  void recoverChunk({
+    fetchIndex: () =>
+      fetch(`${import.meta.env.BASE_URL}index.html`, { cache: "no-store" }).then(
+        (r) => (r.ok ? r.text() : null),
+        () => null,
+      ),
+    entry: document.querySelector<HTMLScriptElement>('script[type="module"][src]')?.src ?? null,
+    update: async () => {
+      await (await navigator.serviceWorker?.getRegistration())?.update();
+    },
+    reload: () => {
+      keepAddressThroughReload();
+      window.location.reload();
+    },
+    storage: (() => {
+      try {
+        return sessionStorage;
+      } catch {
+        return null;
+      }
+    })(),
+    online: navigator.onLine,
+  }).then((outcome) => {
+    if (outcome !== "reloaded") useChunkFailure.setState({ failure: outcome });
+  });
 });
 
 // A render React could not finish takes the page down: reported too.

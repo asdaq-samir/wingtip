@@ -20,7 +20,7 @@ import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/s
 // then moved into the served directory a file at a time by rename, which
 // a reader sees either before or after, never half done: the hashed
 // chunks first, which nothing yet names, then the service worker, and
-// index.html last. The files of builds replaced within the last hour stay
+// index.html last. The files of builds replaced within the last day stay
 // beside them, for pages already open that have yet to load a lazy chunk
 // (main.tsx reloads a page whose chunk has gone, on vite:preloadError);
 // PUBLISHED lists each build's files and when it was replaced. The service
@@ -30,7 +30,10 @@ const publishDir = process.env.VITE_PUBLISH_DIR;
 
 const STAGING = ".dist-next";
 const PUBLISHED = ".published.json";
-const STALE_MS = 60 * 60 * 1000;
+// A day, not an hour: a page left open overnight on the phone asked for
+// a lazy chunk the next morning that had gone, and fell to "Part of the
+// app didn't load" (the owner's screenshot, 2026-11-10).
+const STALE_MS = 24 * 60 * 60 * 1000;
 type Published = { files: string[]; replacedAt?: number }[];
 
 function filesUnder(dir: string): string[] {
