@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type Ref } from "react";
 import { cn } from "cn";
 import { parseDate, parseTime, type CalendarDate, type Time } from "@internationalized/date";
 import {
@@ -66,6 +66,8 @@ function DateField({
   "data-testid": testId,
   ...props
 }: Omit<DateFieldProps<CalendarDate>, Own> & {
+  /** React Aria's field's own box, round the segments. */
+  ref?: Ref<HTMLDivElement>;
   value?: string | null;
   defaultValue?: string | null;
   onChange?: (iso: string) => void;
