@@ -1208,6 +1208,9 @@
     "Dismiss the answer" : {
 
     },
+    "Display" : {
+
+    },
     "Dist" : {
 
     },
@@ -1455,6 +1458,12 @@
 
     },
     "Fill in %@" : {
+
+    },
+    "Find Nearby" : {
+
+    },
+    "Find Nearby is from where the airplane is." : {
 
     },
     "Find an Airplane" : {
@@ -1871,6 +1880,9 @@
     "Its pilot stopped sharing it." : {
 
     },
+    "Its profile" : {
+
+    },
     "J. J. Jones" : {
 
     },
@@ -1878,6 +1890,9 @@
 
     },
     "KDLH VOT" : {
+
+    },
+    "KXXX" : {
 
     },
     "Keep Editing" : {
@@ -2303,6 +2318,9 @@
     "Night" : {
 
     },
+    "No %@ Within 25 nm" : {
+
+    },
     "No Airplane" : {
 
     },
@@ -2355,9 +2373,6 @@
     "No briefing" : {
 
     },
-    "No card for %@" : {
-
-    },
     "No checklist yet" : {
 
     },
@@ -2365,9 +2380,6 @@
 
     },
     "No codes yet" : {
-
-    },
-    "No field %@" : {
 
     },
     "No fields near here" : {
@@ -2788,10 +2800,10 @@
     "Profile" : {
 
     },
-    "Profile, highest %@" : {
+    "Profile, Altitude Caution" : {
 
     },
-    "Profile, your altitude has a caution" : {
+    "Profile, highest %@" : {
 
     },
     "Put In a GPX File…" : {
@@ -3450,7 +3462,7 @@
     "The field's name · its longest runway" : {
 
     },
-    "The figures are the planner's; the assistant puts them in words and shows what it read." : {
+    "The figures are the engine's and the planner's; each answer shows what it read." : {
 
     },
     "The flight in words" : {
