@@ -358,7 +358,7 @@ def test_a_station_is_read_for_when_the_flight_is_there():
     told, and not one arriving at 01Z: each place over its own hour."""
     _serve("tafs", FOG_IN_A_TEMPO)
     assert weather.tafs_over({"KDLH": (_at(4), _at(6))}) == {
-        "KDLH": {"ceiling_ft": 200, "ceiling_unknown": False, "visibility_sm": 0.5, "raw": "TAF KDLH ..."}
+        "KDLH": {"ceiling_ft": 200, "ceiling_unknown": False, "visibility_sm": 0.5, "covers": True, "raw": "TAF KDLH ..."}
     }
     assert weather.tafs_over({"KDLH": (_at(0), _at(2))})["KDLH"]["visibility_sm"] == 6.0
     # One with no TAF held is left out; asked for none, nothing is read.

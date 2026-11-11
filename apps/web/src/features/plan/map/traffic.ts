@@ -56,7 +56,7 @@ export function trafficLabel(plane: TrafficAircraft, ownFt: number | null): stri
 /** Whether two heights are within 1,000 ft of each other: the map's
  *  traffic coloured so, and the airplane card's closest approach said in
  *  red. */
-export const nearInHeight = (apartFt: number) => mark({ altitude_ft: apartFt }, 0).near;
+export const nearInHeight = (apartFt: number) => mark({ altitude_ft: apartFt, pressure_altitude: false }, 0).near;
 
 /** Whether it is within 1,000 ft of own ship's height. */
 export function nearOwnHeight(plane: TrafficAircraft, ownFt: number | null): boolean {

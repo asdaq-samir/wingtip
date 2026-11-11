@@ -29412,7 +29412,7 @@
     },
     "/api/weather/map": {
       "get": {
-        "description": "The SIGMETs valid at `at` and the G-AIRMETs nearest it, the PIREPs\nof the last 90 minutes up to 18,000 ft, and -- with `altitude_ft` --\nthe FD stations' winds and temperatures there for the period that\nholds `at` (planning.forecast_hour_for, AC 00-45H's for-use windows),\nin the box; and when the radar mosaic was made.",
+        "description": "The SIGMETs valid at `at` and the G-AIRMETs nearest it, the PIREPs\nof the last 90 minutes up to 18,000 ft, and -- with `altitude_ft` --\nthe FD stations' winds and temperatures there for the period that\nholds `at` (planning.forecast_hour_for, FAA-H-8083-28B Table 27-2's for-use windows),\nin the box; and when the radar mosaic was made.",
         "operationId": "weather_on_the_map_api_weather_map_get",
         "parameters": [
           {
