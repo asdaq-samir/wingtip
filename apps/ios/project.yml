@@ -190,6 +190,12 @@ targets:
         com.apple.developer.icloud-services: [CloudKit]
         com.apple.developer.icloud-container-identifiers:
           - iCloud.$(PRODUCT_BUNDLE_IDENTIFIER)
+        # Development here, which the archive's development signing needs;
+        # the App Store export re-signs with the distribution profile and
+        # the app carries that profile's value, production, in its place
+        # (the profile's entitlements win over the file's at signing).
+        # native-ios.yml checks the exported app where the export leaves
+        # one (docs/NATIVE.md, "Push in the App Store build").
         aps-environment: development
         # A call to us on the radio, traffic near own ship and a watched
         # airplane's takeoff or landing are time-sensitive notifications
