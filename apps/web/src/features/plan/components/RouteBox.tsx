@@ -397,7 +397,10 @@ export default function RouteBox({
   // or a tap elsewhere, until the next thing typed.
   const { rows, answered } = useAirportSearch(typed, !!typed.trim(), true);
   // Room under the suggestions' last row for a phone's keyboard, as the
-  // airport picker's sheet has, so they scroll up above it.
+  // airport picker's sheet has, so they scroll up above it. The window's
+  // own reading (useKeyboardInset), not the Drawer's: the suggestions are a
+  // popover on the page's body, outside the sheet's viewport, which alone
+  // carries --drawer-keyboard-inset.
   const keyboard = useKeyboardInset();
   // The pilot's own point off a fix, typed as a flight plan writes one
   // ("VPBNG/090/30", at the owner's ask): offered first, as it reads.

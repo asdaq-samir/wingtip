@@ -103,8 +103,9 @@ const keyboardInset = held(() => {
 /** How much of the bottom of the window the on-screen keyboard covers:
  *  0 with no keyboard, and where the browser shrinks the window for one
  *  instead (Chrome on Android), since the window's own height says it.
- *  For what is not a sheet (the route's box, the airport search's list):
- *  the sheets take the stock Drawer's own (VirtualKeyboardProvider). */
+ *  For what is not in a sheet's Drawer (the route's suggestions, a
+ *  popover put on the page's body): what is in one takes the stock
+ *  Drawer's own (VirtualKeyboardProvider's --drawer-keyboard-inset). */
 export function useKeyboardInset(): number {
   return useSyncExternalStore(keyboardInset.subscribe, keyboardInset.get, () => 0);
 }
