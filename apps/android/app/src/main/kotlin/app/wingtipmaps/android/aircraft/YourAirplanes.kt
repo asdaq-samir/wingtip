@@ -118,7 +118,7 @@ private fun AirplaneRow(a: AircraftDto, onOpen: () -> Unit) {
 
 @Composable
 private fun AirplaneEditor(editing: AircraftModel.Editing, problem: String?, model: AircraftModel) {
-    AircraftFormFields(editing.form, showProblems = editing.tried, onChange = model::change)
+    AircraftFormFields(editing.form, editing.problems, onChange = model::change)
     ProblemLine(problem)
     Button(onClick = model::save, enabled = !editing.saving, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.save_airplane)) }
     if (editing.id != null) {

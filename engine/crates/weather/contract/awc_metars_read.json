@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_weather::forecast::calls::call",
-  "description": "The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1), visibility, wind, altimeter, temperature and dewpoint, and where it is.",
+  "description": "The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1) and its layer's cover, visibility, wind, altimeter, temperature and dewpoint, and where it is.",
   "type": "object",
   "properties": {
     "input": {
@@ -17,7 +17,125 @@
     },
     "answer": {
       "title": "AwcMetarsReadAnswer",
-      "type": "object"
+      "type": "object",
+      "additionalProperties": {
+        "title": "AwcMetar",
+        "description": "A station's newest METAR as the weather store keeps it.",
+        "type": "object",
+        "properties": {
+          "raw": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "observed_at": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "flight_category": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wx": {
+            "type": "string"
+          },
+          "ceiling_ft": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "ceiling_unknown": {
+            "type": "boolean"
+          },
+          "ceiling_cover": {
+            "description": "The ceiling layer's cover as a METAR writes the ceiling (OVC008, VV002; FMH-1 ch. 9): BKN, OVC or VV for an obscuration; null with no ceiling or one of unknown height.",
+            "enum": [
+              "BKN",
+              "OVC",
+              "VV",
+              null
+            ]
+          },
+          "visibility_sm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "wind_dir_true_deg": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "wind_speed_kt": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "wind_gust_kt": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "altimeter_in_hg": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "temp_c": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "dewpoint_c": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "lat": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "lon": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "raw",
+          "observed_at",
+          "flight_category",
+          "wx",
+          "ceiling_ft",
+          "ceiling_unknown",
+          "ceiling_cover",
+          "visibility_sm",
+          "wind_dir_true_deg",
+          "wind_speed_kt",
+          "wind_gust_kt",
+          "altimeter_in_hg",
+          "temp_c",
+          "dewpoint_c",
+          "lat",
+          "lon"
+        ]
+      }
     }
   },
   "required": [

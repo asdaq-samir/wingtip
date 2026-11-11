@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.airportNotams
 import app.wingtipmaps.android.api.airportPhotos
 import app.wingtipmaps.android.api.generated.AirportPhotos
@@ -76,7 +77,7 @@ class AirportModel : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(problem = e.message, loading = false) }
+                _state.update { it.copy(problem = Problems.say("Fields could not be found", e), loading = false) }
             }
         }
     }
@@ -100,7 +101,7 @@ class AirportModel : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(problem = e.message, loading = false) }
+                _state.update { it.copy(problem = Problems.say("${ident.trim().uppercase()} could not be fetched", e), loading = false) }
             }
         }
     }
@@ -128,7 +129,7 @@ class AirportModel : ViewModel() {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            _state.update { if (it.place?.ident == ident) it.copy(notamsProblem = "The NOTAMs could not be fetched: ${e.message}") else it }
+            _state.update { if (it.place?.ident == ident) it.copy(notamsProblem = Problems.say("The NOTAMs could not be fetched", e)) else it }
         }
     }
 

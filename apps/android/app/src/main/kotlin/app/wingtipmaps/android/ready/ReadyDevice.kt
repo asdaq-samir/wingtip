@@ -44,9 +44,10 @@ object ReadyDevice {
         )
     }
 
-    /** The route's charts, every two nm along its line. */
+    /** The route's charts, every two nm along its line; the item left out
+     *  where the line's points cannot be had (Engine.rule has logged why). */
     private fun charts(context: Context, line: List<List<Double>>): EngineContract.ReadyToFlyInputCharts? =
-        ReadyFacts.charts(OfflineStore.of(context).kept.value, CyclePacks.samples(line, everyNm = 2.0))
+        CyclePacks.samples(line, everyNm = 2.0).getOrNull()?.let { ReadyFacts.charts(OfflineStore.of(context).kept.value, it) }
 
     /**
      * The cycle packs' edition: the NASR effective date the kept packs are

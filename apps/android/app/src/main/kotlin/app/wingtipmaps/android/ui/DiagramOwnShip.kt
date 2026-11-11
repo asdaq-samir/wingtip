@@ -52,6 +52,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -119,7 +120,7 @@ fun DiagramOwnShipDialog(ident: String, url: String, onClose: () -> Unit) {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            problem = "The FAA's diagram for $ident could not be fetched. ${e.message ?: ""}".trim()
+            problem = Problems.say("The FAA's diagram for $ident could not be fetched", e)
         }
     }
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false)) {

@@ -13,6 +13,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExposedDropdownMenu
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -70,6 +75,7 @@ fun SetupScreen(session: Session, onMapSettings: () -> Unit) {
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val loaded by session.loaded.collectAsStateWithLifecycle()
     val problem by session.problem.collectAsStateWithLifecycle()
+    val checkFailed by session.checkFailed.collectAsStateWithLifecycle()
     val linkSent by session.linkSent.collectAsStateWithLifecycle()
     var email by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
@@ -80,7 +86,9 @@ fun SetupScreen(session: Session, onMapSettings: () -> Unit) {
     ) {
         // The plan under the one search, or the strip (StripLayout), as
         // the web app's Layout tile has it, and the look, as its Theme
-        // tile: a setting of a few is a segmented control (decision 0017).
+        // tile: a setting of a few is a segmented control (decision 0017),
+        // but the four looks' names are too long to share a row at a large
+        // font, so the look is the stock exposed dropdown menu.
         SectionTitle(stringResource(R.string.layout))
         val layout by rememberLayout()
         Segmented(
@@ -89,7 +97,7 @@ fun SetupScreen(session: Session, onMapSettings: () -> Unit) {
         ) { LayoutPreference.set(context, it) }
         SectionTitle(stringResource(R.string.theme))
         val look by rememberLook()
-        Segmented(Look.entries.map { it to it.label }, selected = look ?: Look.WINGTIP) { LookPreference.set(context, it) }
+        LookPicker(look ?: Look.WINGTIP) { LookPreference.set(context, it) }
 
         SectionTitle(stringResource(R.string.account))
         val signedIn = pilot
@@ -114,7 +122,7 @@ fun SetupScreen(session: Session, onMapSettings: () -> Unit) {
                 if (linkSent) Text(stringResource(R.string.check_email), style = MaterialTheme.typography.bodyMedium)
             }
         }
-        ProblemLine(problem)
+        ProblemLine(problem, onRetry = if (checkFailed) session::refresh else null)
         // What falls due, the pilot's and their airplanes': under the
         // account it belongs to.
         signedIn?.let { ComingUpSection(signedInAs = it.email) }
@@ -161,6 +169,38 @@ fun SetupScreen(session: Session, onMapSettings: () -> Unit) {
         SettingsGroup(Modifier.padding(top = WingtipSpace.Md)) {
             ActionSettingRow(stringResource(R.string.welcome_again), index = 0, count = 2) { WelcomeMemory.of(context).reset() }
             ValueSettingRow(stringResource(R.string.server), Config.host, index = 1, count = 2)
+        }
+    }
+}
+
+/**
+ * The look, one of four, as Material's exposed dropdown menu (the sheet
+ * audit's P-2: the four in a button group broke "Wingti/p" and "Glass
+ * Cock…" at font scales 1.3 and 2.0): a read-only field with the look's
+ * name whole, its menu under it, as the airplane picker has it.
+ */
+@Composable
+private fun LookPicker(look: Look, onPick: (Look) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = it }) {
+        OutlinedTextField(
+            value = look.label,
+            onValueChange = {},
+            readOnly = true,
+            singleLine = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            Look.entries.forEach { choice ->
+                DropdownMenuItem(
+                    text = { Text(choice.label) },
+                    onClick = {
+                        onPick(choice)
+                        expanded = false
+                    },
+                )
+            }
         }
     }
 }

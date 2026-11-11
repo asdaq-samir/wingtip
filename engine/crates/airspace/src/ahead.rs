@@ -19,6 +19,7 @@
 //! tiles point by point, so the phone's ground can stand some hundreds of
 //! feet higher on a ridge and alert sooner, never later.
 
+use crate::geo::destination;
 use crate::json::{self, Value};
 use crate::pack::Pack;
 
@@ -90,17 +91,6 @@ fn special_use_need(kind: &str) -> Option<(&'static str, &'static str)> {
 
 const TERRAIN_WARNING: &str = "At or near the airplane's altitude: climb or turn now.";
 const TERRAIN_CAUTION: &str = "Within 500 ft of the airplane's altitude: climb or turn (91.119(c)).";
-
-/// A point reached from (lat, lon) along a great circle on wingtip.geo's
-/// sphere, as its `destination_point` (pyproj's Geod with f = 0) reaches it.
-pub fn destination(lat: f64, lon: f64, bearing_deg: f64, nm: f64) -> (f64, f64) {
-    let d = nm / crate::geo::EARTH_RADIUS_NM;
-    let (p1, l1, b) = (lat.to_radians(), lon.to_radians(), bearing_deg.to_radians());
-    let p2 = (p1.sin() * d.cos() + p1.cos() * d.sin() * b.cos()).clamp(-1.0, 1.0).asin();
-    let l2 = l1 + (b.sin() * d.sin() * p1.cos()).atan2(d.cos() - p1.sin() * p2.sin());
-    let lon2 = (l2.to_degrees() + 540.0).rem_euclid(360.0) - 180.0;
-    (p2.to_degrees(), lon2)
-}
 
 struct Track {
     times: Vec<f64>,
@@ -1048,14 +1038,6 @@ fn alerts_ahead(v: &Value) -> R<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn destination_is_the_sphere_s() {
-        // Due north 60 nm is a degree of latitude on wingtip.geo's sphere.
-        let (lat, lon) = destination(45.0, -93.0, 0.0, 60.0);
-        assert!((lat - 45.999_413).abs() < 1e-4 && (lon + 93.0).abs() < 1e-9, "{lat} {lon}");
-        assert!((crate::geo::distance_nm(45.0, -93.0, lat, lon) - 60.0).abs() < 1e-9);
-    }
 
     #[test]
     fn nothing_on_the_ground_and_a_tfr_ahead_in_the_air() {

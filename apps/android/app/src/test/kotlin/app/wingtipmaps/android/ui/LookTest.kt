@@ -12,6 +12,7 @@ import app.wingtipmaps.android.flight.Geo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import kotlin.math.hypot
 
 /** The pieces of the look and the sheet that hold without a screen. */
 class LookTest {
@@ -70,9 +71,15 @@ class LookTest {
     fun aPointGoesWhereItBendsTheRouteLeast() {
         // Chicago to Milwaukee to Green Bay: a point near Milwaukee's south
         // goes on the first leg, one past it to the north on the second.
+        // The distances are the engine's on the phone; here, a flat
+        // chart's, near enough over a few degrees to place a point.
+        val flat = Geo.Distance { lat1, lon1, lat2, lon2 -> Result.success(hypot(lat2 - lat1, (lon2 - lon1) * 0.73) * 60) }
         val route = listOf(41.98 to -87.90, 42.95 to -87.90, 44.48 to -88.13)
-        assertEquals(0, Geo.bestStopIndex(route, 42.5, -87.9))
-        assertEquals(1, Geo.bestStopIndex(route, 43.8, -88.0))
+        assertEquals(0, Geo.bestStopIndex(route, 42.5, -87.9, flat).getOrThrow())
+        assertEquals(1, Geo.bestStopIndex(route, 43.8, -88.0, flat).getOrThrow())
+        // A distance the engine could not give places it nowhere.
+        val failing = Geo.Distance { _, _, _, _ -> Result.failure(IllegalStateException("no engine")) }
+        assertTrue(Geo.bestStopIndex(route, 42.5, -87.9, failing).isFailure)
     }
 
     @Test

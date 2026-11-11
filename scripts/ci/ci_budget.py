@@ -51,6 +51,7 @@ BUDGETS = [
     ("test-assistant", 2, 2),
     ("test-weather", 2, 2),
     ("Flight-critical", 3, 3),
+    ("Engine wheel", 3, 3),
     ("build (*)", 4, 6),
     ("e2e (*)", 8, 15),
     ("Native Android / build", 8, 10),

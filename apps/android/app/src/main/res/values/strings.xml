@@ -13,10 +13,13 @@
     <string name="airport">Airport</string>
     <string name="airplane">Airplane</string>
     <string name="settings">Settings</string>
-    <string name="search_hint">Search airports, airplanes, or ask</string>
+    <!-- The bar's placeholder, one line at every font scale (Material's
+         search bar is 56 dp); TalkBack reads the whole sentence. -->
+    <string name="search_hint">Search or ask</string>
+    <string name="search_hint_spoken">Search airports, airplanes, or ask</string>
     <string name="search_hint_flying">Tap the mic and say it</string>
     <string name="search_add_stop">Add a stop</string>
-    <string name="say_it">Say it</string>
+    <string name="say_it">Ask by voice</string>
     <!-- Ask by voice (voice/VoiceInput): the mic's own words, never the radio's. -->
     <string name="voice_listening">Listening…</string>
     <string name="voice_speak">Speak your question</string>
@@ -218,6 +221,9 @@
     <string name="metar">METAR</string>
     <string name="no_weather_report">No weather report at this field.</string>
     <string name="nearest">Nearest</string>
+    <!-- The row under the Nearest heading with no position yet: what it
+         does, not the heading's word again. -->
+    <string name="find_nearest">Find Nearest Airports</string>
 
     <!-- The Airplane tab. -->
     <string name="checklists">Checklists</string>

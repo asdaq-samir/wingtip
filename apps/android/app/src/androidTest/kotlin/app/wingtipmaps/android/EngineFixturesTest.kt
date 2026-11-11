@@ -72,7 +72,8 @@ private fun difference(got: JsonElement?, want: JsonElement?, path: String = "$"
  * checklist_read and checklist_write, read_clearance, cleared_route,
  * our_call, direct_of, hold_read, hold_write, holding_leg_minutes,
  * logbook_csv_read and logbook_csv_write, readback_check, traffic_marks,
- * kept_age.
+ * traffic_fresh, kept_age, aircraft_problems, due_tone, distance_nm,
+ * bearing_deg and destination.
  */
 @RunWith(AndroidJUnit4::class)
 class EngineFixturesTest {
@@ -239,9 +240,72 @@ class EngineFixturesTest {
         assertTrue(all.size >= 20)
         for (c in all) {
             val got = ask("traffic_marks", "own_ft" to c["ownFt"], "planes" to JsonArray(listOf(c.getValue("plane"))))
-            val want = JsonArray(listOf(JsonObject(mapOf("label" to c.getValue("label"), "near" to c.getValue("near")))))
+            // With no own ship's place, no miles, no bearing, and none told.
+            val want = JsonArray(
+                listOf(
+                    JsonObject(
+                        mapOf(
+                            "label" to c.getValue("label"), "near" to c.getValue("near"),
+                            "nm" to JsonNull, "bearing_deg" to JsonNull, "tell" to JsonPrimitive(false),
+                        ),
+                    ),
+                ),
+            )
             check(got, want, "${c["plane"]} against ${c["ownFt"]}")
         }
+        done()
+    }
+
+    @Test
+    fun trafficIsToldAndKeptFreshThroughTheBridge() {
+        val f = fixture("traffic.json")
+        val notice = f.cases("notice")
+        val fresh = f.cases("fresh")
+        assertTrue(notice.isNotEmpty() && fresh.isNotEmpty())
+        for (c in notice) {
+            val got = ask("traffic_marks", "own_ft" to c["ownFt"], "own" to c["own"], "planes" to JsonArray(listOf(c.getValue("plane"))))
+            val mark = (got as? JsonArray)?.singleOrNull() as? JsonObject
+            for (key in listOf("nm", "bearing_deg", "near", "tell")) check(mark?.get(key), c[key], "${c["plane"]} from ${c["own"]}: $key")
+        }
+        for (c in fresh) {
+            val planes = JsonArray(listOf(JsonObject(mapOf("seen_s" to (c["seen_s"] ?: JsonNull)))))
+            check(ask("traffic_fresh", "age_s" to c["age_s"], "planes" to planes), JsonArray(listOf(c.getValue("fresh"))), "seen ${c["seen_s"]} s, ${c["age_s"]} s old")
+        }
+        done()
+    }
+
+    @Test
+    fun anAirplanesFormIsCheckedThroughTheBridge() {
+        val all = fixture("aircraftForm.json").cases("cases")
+        assertTrue(all.isNotEmpty())
+        for (c in all) {
+            val form = c.getValue("form").jsonObject
+            check(ask("aircraft_problems", *form.entries.map { it.key to it.value }.toTypedArray()), c["problems"], "$form")
+        }
+        done()
+    }
+
+    @Test
+    fun whatFallsDueIsTonedThroughTheBridge() {
+        val all = fixture("records.json").cases("dueTone")
+        assertTrue(all.isNotEmpty())
+        for (c in all) {
+            check(ask("due_tone", "days_left" to c["days_left"], "hours_left" to c["hours_left"]), c["tone"], "${c["days_left"]} days, ${c["hours_left"]} h")
+        }
+        done()
+    }
+
+    @Test
+    fun theSpheresFiguresComeThroughTheBridge() {
+        val f = fixture("sphere.json")
+        fun between(c: JsonObject) = arrayOf("lat1" to c["lat1"], "lon1" to c["lon1"], "lat2" to c["lat2"], "lon2" to c["lon2"])
+        for (c in f.cases("distance")) check(ask("distance_nm", *between(c)), c["nm"], "distance $c")
+        for (c in f.cases("bearing")) check(ask("bearing_deg", *between(c)), c["deg"], "bearing $c")
+        // Every point in one call, as the map carries its airplanes.
+        val reach = f.cases("destination")
+        assertTrue(reach.isNotEmpty())
+        val points = JsonArray(reach.map { c -> JsonObject(c.filterKeys { it != "to" }) })
+        check(ask("destination", "points" to points), JsonArray(reach.map { it.getValue("to") }), "destination")
         done()
     }
 

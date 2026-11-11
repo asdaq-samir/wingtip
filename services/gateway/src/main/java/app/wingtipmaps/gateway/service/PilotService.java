@@ -171,6 +171,13 @@ public class PilotService {
         return pilots.save(pilot);
     }
 
+    /** A pilot by their id: the subject of a connector's token, which the
+     *  planner's tools ask about (InternalRecordsController). */
+    @Transactional(readOnly = true)
+    public Optional<Pilot> byId(long id) {
+        return pilots.findById(id);
+    }
+
     /**
      * The pilot for the current request, or empty when nobody is signed
      * in or the principal is a kind this app never issues.

@@ -206,7 +206,9 @@ the airport weather marks: docs/design/rules.md, on all three apps.
   `scripts/build/design-tokens.sh`: change a value there, never in a
   generated copy.
 - Panels are the platform's stock sheet with detents, like Apple Maps
-  (decision 0018).
+  (decision 0018). On the web the sheet is solid at every size, the look's
+  `--sheet`, not Liquid Glass; glass only on what floats over the map, its
+  buttons (owner decision 2026-11-10 (decisions page)).
 - Errors show where they happen (`lib/problems`), not in a toast.
 - Discrete settings are menus or segmented controls, not sliders.
 

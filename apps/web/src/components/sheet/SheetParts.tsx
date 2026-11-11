@@ -5,10 +5,22 @@ import { SheetCardHost } from "../SheetCard";
 import TabKept from "../TabKept";
 import type { useSheetDetents } from "./useSheetDetents";
 import { useScrollAway } from "./useScrollAway";
+export { SheetViewport } from "./SheetViewport";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
  *  in it four from the edge. */
 const ROW_PAD = "pt-2.5";
+/** The one search's row, its 46-point field (OneSearchField) sixteen in
+ *  from either side as everything in the sheet is (the sheet audit's
+ *  F-P1, F-P2, 2026-11-10): under the title four over it and eighteen
+ *  under, 68 in all (useSheetDetents' BAR_REM); with no title over it on a
+ *  bottom sheet, clear of the grabber's 24-point hit area over it, 76
+ *  (BAR_ALONE_REM); else ten over it and twelve under, 68. */
+function barRowPad(titled: boolean, underGrabber: boolean) {
+  if (titled) return "h-[4.25rem] pt-1 pb-4.5";
+  if (underGrabber) return "h-[4.75rem] pt-6 pb-1.5";
+  return cn("h-[4.25rem] pb-3", ROW_PAD);
+}
 const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 
 /** Under the head, the body and the foot a shade darker than the glass
@@ -55,10 +67,14 @@ export function SheetGrabber({
       data-testid="sidebar-trigger-button"
       onClick={cycle}
       onKeyDown={arrows}
+      // 56 by 24 to a finger, as iOS's grabber takes a drag well round its
+      // bar (the sheet audit's F-SC1: it was 96 by 10), its own box that
+      // size and its hit area no more than it, so what is under it -- the
+      // title row's ends, the field all the way up -- is clear of it.
       className={cn(
-        "absolute inset-x-0 z-30 mx-auto flex w-24 justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset print:hidden",
+        "absolute inset-x-0 z-30 mx-auto flex h-6 w-14 justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset print:hidden",
         "after:inset-x-0! after:top-0! after:bottom-0!",
-        at === "top" ? "top-0 h-2.5 items-start pt-1" : "bottom-0 h-4 items-end pb-1.25",
+        at === "top" ? "top-0 items-start pt-1" : "bottom-0 items-end pb-1.25",
       )}
     >
       <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" aria-hidden="true" />
@@ -143,8 +159,8 @@ export function SheetParts(p: PartsProps) {
   const headPad = topSheet ? "max(0.5rem, env(safe-area-inset-top))" : "0.25rem";
   const bodyPad = topSheet ? "env(safe-area-inset-top)" : "0px";
   const vars = {
-    "--corner-line": "calc((2.5625rem - 36px) / 2)",
-    "--corner-inset": `calc(${headPad} - ${bodyPad} + (2.5625rem - 36px) / 2)`,
+    "--corner-line": "calc((2.875rem - 36px) / 2)",
+    "--corner-inset": `calc(${headPad} - ${bodyPad} + (2.875rem - 36px) / 2)`,
   } as CSSProperties;
   const pillFoot = size === "peek" && !!(p.bar || p.compact);
   // On a phone, what stays in sight at the sheet's free edge while the
@@ -163,17 +179,19 @@ export function SheetParts(p: PartsProps) {
         className={cn("relative flex shrink-0 flex-col", under && "z-20", topSheet && "pt-[env(safe-area-inset-top)]", topSheet && follows)}
       >
         {/* The title row, Apple Maps' "Maps" on the web: the app's name
-            and the account button (the owner's screenshot, 2026-11-10). */}
+            and the account button (the owner's screenshot, 2026-11-10),
+            46 tall as the field under it is, ten under the sheet's edge
+            for the grabber (useSheetDetents' TITLE_REM). */}
         {p.title && p.titleShown && (
-          <div className={cn("flex h-[3.25rem] shrink-0 items-center gap-2 px-4", ROW_PAD)} data-testid="sheet-title">
+          <div className="mt-2.5 flex h-[2.875rem] shrink-0 items-center gap-2 px-4" data-testid="sheet-title">
             {p.title}
           </div>
         )}
         {p.bar && (
           <div
             className={cn(
-              "flex h-[4.25rem] shrink-0 px-2 pb-1.5",
-              p.titleShown ? "pt-1" : ROW_PAD,
+              "flex shrink-0 px-4",
+              barRowPad(p.titleShown, p.fromBottom),
               !p.barShown && "hidden",
               // All the way up on a phone the search alone is pinned at the
               // top, a hairline under it, as Apple Maps' is.

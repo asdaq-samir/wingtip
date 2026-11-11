@@ -3,6 +3,7 @@ package app.wingtipmaps.gateway.service;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
+import app.wingtipmaps.gateway.security.mcp.ConnectorGrants;
 import app.wingtipmaps.gateway.tracing.TraceHeaders;
 import java.io.IOException;
 import java.io.Serial;
@@ -34,7 +35,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * endorsements, their instructors and students and the solo
  * cross-countries between them (V26), the approaches set as lessons
  * between them (V30) -- and the sign-in links ever sent
- * to their address; last
+ * to their address, and the connections to AI apps they made (the
+ * connector's tokens and consents, ConnectorGrants); last
  * every session they hold, on any device, under any of the names they
  * sign in by. Only the planner being down leaves the account whole: the
  * notes cannot be given back, so a database failure after them leaves
@@ -64,6 +66,9 @@ public class AccountService {
             HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
     /** The trace's and the page's headers on the planner's request (TraceHeaders). */
     private TraceHeaders traceHeaders = TraceHeaders.NONE;
+    /** The AI apps the pilot connected (the MCP connector), absent in a
+     *  slice test that has no database. */
+    private ConnectorGrants connections;
 
     public AccountService(
             PilotRepository pilots,
@@ -85,6 +90,11 @@ public class AccountService {
         this.traceHeaders = traceHeaders;
     }
 
+    @Autowired(required = false)
+    void setConnections(ConnectorGrants connections) {
+        this.connections = connections;
+    }
+
     /**
      * Deletes the pilot and everything that was theirs.
      *
@@ -96,6 +106,10 @@ public class AccountService {
         apple.revoke(pilot.getAppleRefreshToken());
         transaction.executeWithoutResult(status -> {
             magicLinks.deleteByEmail(pilot.getEmail());
+            // Claude's and ChatGPT's tokens for the connector end with it.
+            if (connections != null) {
+                connections.forget(pilot.getId());
+            }
             pilots.deleteNow(pilot.getId());
         });
         // A magic link signs in under the address, Google and Apple under

@@ -6,6 +6,7 @@ import app.wingtipmaps.android.airplane.OwnRecord
 import app.wingtipmaps.android.api.AirportSuggestion
 import app.wingtipmaps.android.api.NearestAirport
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.findAirplane
 import app.wingtipmaps.android.api.generated.AircraftProfileSummary
 import app.wingtipmaps.android.api.nearest
@@ -93,7 +94,7 @@ class SearchModel : ViewModel() {
                 throw e
             } catch (e: Exception) {
                 nearestAt = null
-                _state.update { it.copy(nearestProblem = "The nearest fields could not be found: ${e.message}") }
+                _state.update { it.copy(nearestProblem = Problems.say("The nearest fields could not be found", e)) }
             }
         }
     }
@@ -106,10 +107,10 @@ class SearchModel : ViewModel() {
         throw e
     } catch (e: Planner.Failure) {
         // An N-number the registry has no record of is no failure.
-        if (e.status != 404) problems += "The search failed: ${e.message}"
+        if (e.status != 404) problems += Problems.say("The search failed", e)
         null
     } catch (e: Exception) {
-        problems += "The search failed: ${e.message}"
+        problems += Problems.say("The search failed", e)
         null
     }
 

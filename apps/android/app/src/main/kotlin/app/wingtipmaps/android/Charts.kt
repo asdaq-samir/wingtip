@@ -10,6 +10,7 @@ import app.wingtipmaps.android.api.ChartLayer
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.map.CloseMap
 import app.wingtipmaps.android.tiles.TileTemplate
@@ -86,7 +87,7 @@ class Charts(app: Application) : AndroidViewModel(app) {
                 throw e
             } catch (e: Exception) {
                 // Offline, or the planner down: the kept chart stands.
-                _problem.value = if (_info.value == null) "The chart could not be fetched: ${e.message}" else null
+                _problem.value = if (_info.value == null) Problems.say("The chart could not be fetched", e) else null
             }
         }
     }
