@@ -16,6 +16,18 @@ export const UNDER_INDICATOR =
   "after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-[env(safe-area-inset-bottom)] after:bg-inherit";
 
 /**
+ * What the sheet holds under a card, as Base UI's nested drawers demo has
+ * its content: faded out while a nested drawer is open
+ * (data-nested-drawer-open) and back while a finger drags it
+ * (data-nested-drawer-swiping), on the demo's 300 ms and curve. Hidden
+ * too once faded, so it is out of a finger's, the keyboard's and a screen
+ * reader's way: visibility holds visible to a transition's end and turns
+ * visible at its start, so it never cuts the fade.
+ */
+const GIVE_WAY =
+  "transition-[opacity,visibility] duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] motion-reduce:transition-none group-data-nested-drawer-open/sheet:invisible group-data-nested-drawer-open/sheet:opacity-0 group-data-nested-drawer-swiping/sheet:visible group-data-nested-drawer-swiping/sheet:opacity-100";
+
+/**
  * The phone's sheet itself, Base UI's stock Drawer (MapPanel's, the owner
  * 2026-11-10): open and non-modal, so the map stays the map's; its snap
  * points the pill, half and all the way up, a throw going where the Drawer
@@ -122,17 +134,20 @@ export function SheetDrawer({
                 "[transform:translateY(calc(var(--drawer-snap-point-offset)_+_var(--drawer-swipe-movement-y)))]",
                 // Copied for what is inside it (SheetParts, CardStack): Base UI's own do not inherit.
                 "[--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)] [--sheet-base:var(--drawer-snap-point-offset)]",
-                ready && "transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                // Its ground, edge and shadow fade on the same time as a card comes and goes.
+                ready &&
+                  "transition-[transform,background-color,box-shadow,backdrop-filter] duration-450 ease-[cubic-bezier(0.32,0.72,0,1)]",
                 "data-swiping:transition-none motion-reduce:transition-none",
                 fromBottom ? cn("bottom-0", UNDER_INDICATOR) : "top-0",
                 look,
                 // A card up (Base UI's own data-nested-drawer-open): the card
                 // is the one sheet in sight, as Apple Maps' place card stands
                 // in for its search, so this one's ground, edge and shadow
-                // give way; the card, drawn inside it, stays (the owner's
+                // fade away; the card, drawn inside it, stays (the owner's
                 // iPhone, 2026-11-11: an empty grey sheet over a card at its
-                // pill).
-                "data-nested-drawer-open:bg-transparent data-nested-drawer-open:shadow-none data-nested-drawer-open:ring-0 data-nested-drawer-open:backdrop-blur-none",
+                // pill). Back while a finger drags the card
+                // (data-nested-drawer-swiping), as in Base UI's nested drawers.
+                "data-nested-drawer-open:not-data-nested-drawer-swiping:bg-transparent data-nested-drawer-open:not-data-nested-drawer-swiping:shadow-none data-nested-drawer-open:not-data-nested-drawer-swiping:ring-0 data-nested-drawer-open:not-data-nested-drawer-swiping:backdrop-blur-none",
               )}
             >
               {/* Over its top edge, the parts that ride it (OnSheetTop):
@@ -146,11 +161,13 @@ export function SheetDrawer({
                   className="pointer-events-none absolute inset-x-0 bottom-full"
                 />
               )}
-              {/* Its grabber and body out of sight under a card, the card's own in their place. */}
-              <div className="contents group-data-nested-drawer-open/sheet:invisible">{grabber}</div>
+              {/* Its grabber and body fade out under a card, the card's own in
+                  their place. The grabber's in a box of no height, not
+                  display: contents, which has no opacity to fade. */}
+              <div className={GIVE_WAY}>{grabber}</div>
               {/* Clipped to its corners here, not on the popup, which the
                   parts over its top stand outside of. */}
-              <div className="relative flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit] group-data-nested-drawer-open/sheet:invisible">
+              <div className={cn("relative flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]", GIVE_WAY)}>
                 {children}
               </div>
               {cards}
