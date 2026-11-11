@@ -124,8 +124,7 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
-    // On a TV (lib/tv) the map takes the remote's arrows while focused.
-    keyboard: onTv,
+    // MapLibre's own keys everywhere (arrows pan, + and - zoom), not only a TV's.
     // Symbols placed at once, not faded in over 0.3 s.
     fadeDuration: 0,
     renderWorldCopies: false,
@@ -140,6 +139,7 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
   // A remote has no pinch: the map's own + and - to reach with its arrows.
   if (onTv) m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
   m.touchZoomRotate.disableRotation();
+  m.keyboard.disableRotation();
   m.setPadding(padOf(insets));
   // A tile 404 left blank; any other failure said and reported (mapErrors).
   watchMapErrors(m);
