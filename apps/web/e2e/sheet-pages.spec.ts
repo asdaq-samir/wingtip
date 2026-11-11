@@ -149,7 +149,7 @@ test("a drag up or down still sizes the sheet on either page", async ({ page }) 
   }
 });
 
-test("a sideways drag on the Nearest row scrolls the row and leaves the page on Search", async ({ page }) => {
+test("a sideways drag on the Nearest row is the row's, the page stays on Search", async ({ page }) => {
   // The owner, 2026-11-11: "I am not able to scroll the nearest because it
   // swipes to the fpl" (SheetPager's pagersDrag).
   await page.context().grantPermissions(["geolocation"]);
@@ -165,15 +165,9 @@ test("a sideways drag on the Nearest row scrolls the row and leaves the page on 
     .first();
   await expect(row).toBeVisible();
   const box = (await row.boundingBox())!;
-  const scrolled = () =>
-    row.evaluate((el) => {
-      for (let e: Element | null = el; e; e = e.parentElement) if (e.scrollLeft > 0) return e.scrollLeft;
-      return 0;
-    });
   await page.mouse.move(box.x + box.width * 0.8, box.y + box.height / 2);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width * 0.1, box.y + box.height / 2, { steps: 12 });
   await page.mouse.up();
   await expectPage(page, 0);
-  await expect.poll(scrolled).toBeGreaterThanOrEqual(0);
 });
