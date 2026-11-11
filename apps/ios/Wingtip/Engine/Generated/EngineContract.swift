@@ -7422,6 +7422,12 @@ enum EngineContract {
         var heading: String?
         /// The thing it is about, named by the words straight after its keyword (1-2-1), as notam_subject reads them: a runway or taxiway as designated (3-3-5, 3-3-6: "Runway 06/24", "Taxiways B and C"), an apron, an ILS's part by its runway ("Glide slope runway 09"), a navaid by its ident ("OSH VOR"), an FDC approach NOTAM's procedure as the plate prints it (7-1-3), an obstacle's kind ("Obstacle: crane"), the fuel and its grade ("Fuel 100LL"), a facility and its frequency ("Tower 120.75"), the field's beacon or closure. Null where they name nothing it knows: the heading is then the title.
         var title: String?
+        /// In our words, one line: what it is and its condition ("Runway 04L/22R closed except taxiing", "Glide slope runway 09 out of service", "Crane 759 ft MSL (145 ft above ground)", "ILS Z RWY 10R (SA CAT I): not authorized"), said only where its subject's words (1-2-1) say all of it; null otherwise, its words then standing in.
+        var what: String?
+        /// The field and the place on it as the NOTAM gives it: "KORD, runway 06/24", "KORD, taxiway A2 between taxiway A and taxiway B", "KORD, 1.3 nm west of the field"; null where it says no more than the field.
+        var `where`: String?
+        /// What it means to the pilot, only where that is a settled rule or a plain fact: a runway or the field closed, no landing or takeoff (CLSD, JO 7340.2), crossing or taxiing where EXC XNG or EXC TAX allows it; the glide slope out, a localizer approach to the LOC minimums, the localizer or the ILS out, no ILS or localizer approach (AIM 1-1-9); a PAPI or VASI out, no visual glide path guidance (AIM 2-1-2); approach lights out, visibility minimums may be higher (AIM 2-1-1, 1-1-9); an FDC approach NOTAM's minimums in place of the chart's (AIM 5-1-3) or the procedure not authorized; fuel not available; a frequency out of service; an obstacle's top; a TFR's limits to read (14 CFR 91.137-91.145, 91.103). Null otherwise, never guessed.
+        var why: String?
         /// Its words written out in sentence case, ending as a sentence ends.
         var words: String
         /// Its start of activity, ISO 8601 UTC, from its text.

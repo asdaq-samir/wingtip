@@ -115,9 +115,17 @@ fn is_window(w: &str) -> bool {
 /// The keyword, the words after it, and its text after it as sent (an
 /// IAP's title is read from that, commas and all).
 pub(crate) fn subject_of(text: &str) -> Option<(String, Vec<String>, String)> {
-    if text.contains("Q)") || text.contains("E)") {
+    // The ICAO form by its items, as notam_read tells it: a domestic
+    // NOTAM's case number, "(2020-AGL-1577-OE)", ends in an "E)" too.
+    if !text.starts_with('!') && (item(text, b'Q').is_some() || item(text, b'E').is_some()) {
         let e = item(text, b'E')?;
-        let words: Vec<String> = e.split_whitespace().map(word).collect();
+        let mut words: Vec<String> = e.split_whitespace().map(word).collect();
+        // E) may begin with the place before its keyword ("ORD NAV ILS RWY
+        // 09R U/S"): the place is no part of the subject.
+        let place = item(text, b'A').and_then(|a| a.split_whitespace().next()).unwrap_or("");
+        if words.len() > 1 && (words[0] == place || place.strip_prefix('K') == Some(words[0].as_str())) {
+            words.remove(0);
+        }
         if let Some(first) = words.first().filter(|w| KEYWORDS.split(' ').any(|k| k == w.as_str())) {
             return Some((first.clone(), words[1..].to_vec(), e[e.find(first.as_str())? + first.len()..].to_owned()));
         }

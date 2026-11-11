@@ -64,6 +64,13 @@ export function readNotam(n: FieldNotam, ident: string): NotamReading {
   return callEngine("notam_read", { text: n.raw, idents: identsOf(ident) });
 }
 
+/** A NOTAM's first line: what it is and its condition in our words
+ *  ("Runway 04L/22R closed except taxiing"), the engine's (notam_read's
+ *  what), else its title. */
+export function whatOf(n: FieldNotam, ident: string): string {
+  return (n.kind !== "tfr" && readNotam(n, ident).what) || headingOf(n, ident);
+}
+
 /** A NOTAM's title: the thing it is about where its words name it
  *  ("Runway 06/24", "Taxiway A", "Fuel 100LL"), else its keyword as a
  *  heading, both the engine's (notam_read); "TFR" for a TFR. The owner,
@@ -131,11 +138,22 @@ function corner(at: Date, local: boolean): string {
  *  gives): the end an estimate with "(est.)", not EST (Eastern time),
  *  "Permanent" where it is PERM
  *  (JO 7930.2 4-2-1), null where none is given. */
-export function cornerOf(n: FieldNotam, read: NotamReading): { from: string | null; until: string | null } {
+function cornerOf(n: FieldNotam, read: NotamReading): { from: string | null; until: string | null } {
   const window = windowOf(n, read);
   const [starts, ends] = [dateOf(window.starts), dateOf(window.ends)];
   const until = ends ? `${corner(ends, true)}${read.estimated ? " (est.)" : ""}` : read.permanent ? "Permanent" : null;
   return { from: starts ? corner(starts, !ends) : null, until };
+}
+
+/** Its window on one line in the device's own time, as the corner said it:
+ *  "11/10 06:00 – 11/12 08:32 local", "Until 11/12 08:32 local",
+ *  "Permanent" (the owner, 2026-11-11: "title(what), when, where, why ...
+ *  on different lines"); null where none is given. */
+export function whenLine(n: FieldNotam, read: NotamReading): string | null {
+  const { from, until } = cornerOf(n, read);
+  if (from && until) return `${from} – ${until}`;
+  if (until) return until === "Permanent" ? until : `Until ${until}`;
+  return from ? `From ${from}` : null;
 }
 
 const LOCAL = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });

@@ -71,11 +71,15 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   const notams = card(page).getByTestId("place-notams");
   await expect(notams).toBeVisible();
   const one = notams.getByTestId("place-notam");
-  // The engine's reading: its title, the runway it names, and its words written out.
-  await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway 09/27");
-  // Its start and end at the row's top right, in the device's own time.
-  await expect(one.getByTestId("place-notam-window")).toHaveText(/^11\/1[01] \d\d:\d\d– 11\/12 \d\d:\d\d local$/);
-  await expect(one.getByTestId("place-notam-words")).toHaveText("Runway 09/27 closed.");
+  // The engine's reading in our words, a line each (the owner,
+  // 2026-11-11: "title(what), when, where, why ... on different lines"):
+  // what, its start and end in the device's own time, where, and why.
+  await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway 09/27 closed");
+  await expect(one.getByTestId("place-notam-when")).toHaveText(/^11\/1[01] \d\d:\d\d – 11\/12 \d\d:\d\d local$/);
+  await expect(one.getByTestId("place-notam-where")).toHaveText("KDLH, runway 09/27");
+  await expect(one.getByTestId("place-notam-why")).toHaveText("No landing or takeoff on it while it is closed.");
+  // Said in our words, its own words are left to its full card.
+  await expect(one.getByTestId("place-notam-words")).toHaveCount(0);
   // A tap opens it in full on a card of its own: its window, as sent.
   await one.click();
   const full = page.getByTestId("place-notam-full");
@@ -132,16 +136,22 @@ test("a field's NOTAMs show three, and their title opens every one", async ({ pa
   await card(page).getByRole("tab", { name: "Info" }).click();
   const section = card(page).getByTestId("place-notams");
   await expect(section.getByTestId("place-notam")).toHaveCount(3);
-  await expect(section.getByTestId("place-notam-heading").first()).toHaveText("Runway 27 PAPI");
-  await expect(section.getByTestId("place-notam-words").first()).toHaveText("Runway 27 PAPI out of service.");
-  await expect(section.getByTestId("place-notam-words").nth(2)).toContainText("1,600 ft MSL (210 ft above ground)");
+  const rows = section.getByTestId("place-notam");
+  await expect(rows.first().getByTestId("place-notam-heading")).toHaveText("Runway 27 PAPI out of service");
+  await expect(rows.first().getByTestId("place-notam-why")).toHaveText("No visual glide path guidance to runway 27.");
+  await expect(rows.nth(1).getByTestId("place-notam-heading")).toHaveText("Taxiway A closed between taxiway B and taxiway C");
+  await expect(rows.nth(2).getByTestId("place-notam-heading")).toHaveText("Crane 1,600 ft MSL (210 ft above ground)");
+  await expect(rows.nth(2).getByTestId("place-notam-where")).toHaveText("KDLH, 1.2 nm southeast of the field");
   await expect(section).toContainText("5");
 
   await section.getByTestId("place-notams-first-more").click();
   const all = page.getByTestId("place-notams-all");
   await expect(all).toBeVisible();
   await expect(all.getByTestId("place-notam")).toHaveCount(5);
-  await expect(all.getByTestId("place-notam-words").nth(3)).toHaveText("Airport 100LL fuel not available.");
+  await expect(all.getByTestId("place-notam").nth(3).getByTestId("place-notam-heading")).toHaveText("100LL fuel not available");
+  await expect(all.getByTestId("place-notam").nth(3).getByTestId("place-notam-why")).toHaveText("Plan to fuel elsewhere.");
+  // The glide slope out: a localizer approach (AIM 1-1-9).
+  await expect(all.getByTestId("place-notam").nth(4).getByTestId("place-notam-heading")).toHaveText("Glide slope runway 09 out of service");
 });
 
 /**
@@ -172,5 +182,7 @@ test("a taxiway closed between runways puts no badge on a runway", async ({ page
   await expect(card(page).getByTestId("place-alert")).toHaveCount(0);
   // It is still in the Info tab's list.
   await card(page).getByRole("tab", { name: "Info" }).click();
-  await expect(card(page).getByTestId("place-notams").getByTestId("place-notam-heading").first()).toHaveText("Taxiway A");
+  await expect(card(page).getByTestId("place-notams").getByTestId("place-notam-heading").first()).toHaveText(
+    "Taxiway A closed between runway 09 and taxiway C",
+  );
 });

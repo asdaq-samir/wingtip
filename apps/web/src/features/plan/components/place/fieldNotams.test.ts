@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { localWords, whenWords, zulu } from "./fieldNotams";
+import { localWords, whenLine, whenWords, zulu, type FieldNotam, type NotamReading } from "./fieldNotams";
 
 describe("a field's NOTAMs on its card", () => {
   it("says its times in UTC with the day, a feed time with no zone read as UTC (AIM 5-1-3)", () => {
@@ -26,5 +26,14 @@ describe("a field's NOTAMs on its card", () => {
     expect(localWords(null, null)).toBeNull();
     expect(localWords("2026-11-12T12:00:00Z", null)).toMatch(/^From /);
     expect(localWords(null, "2026-11-12T14:32:00Z")).toMatch(/^Until /);
+  });
+
+  it("gives its when on one line in local time, an estimate and PERM said (JO 7930.2 4-2-1)", () => {
+    const n = { in_force: true, starts: "2026-11-10T12:00:00Z", ends: "2026-11-12T14:32:00Z" } as FieldNotam;
+    const read = { estimated: false, permanent: false, starts: null, ends: null } as unknown as NotamReading;
+    expect(whenLine(n, read)).toMatch(/^11\/1[01] \d\d:\d\d – 11\/12 \d\d:\d\d local$/);
+    expect(whenLine(n, { ...read, estimated: true })).toMatch(/local \(est\.\)$/);
+    expect(whenLine({ ...n, starts: null, ends: null }, { ...read, permanent: true })).toBe("Permanent");
+    expect(whenLine({ ...n, starts: null, ends: null }, read)).toBeNull();
   });
 });

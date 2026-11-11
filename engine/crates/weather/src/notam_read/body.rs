@@ -57,7 +57,7 @@ fn split(word: &str) -> Word<'_> {
 
 /// "1049" as "1,049" (as the app writes a figure, crate::ready's); a
 /// decimal or a fraction as written, ".5" as "0.5".
-fn grouped(n: &str) -> String {
+pub(super) fn grouped(n: &str) -> String {
     if n.starts_with('.') {
         return ["0", n].concat();
     }

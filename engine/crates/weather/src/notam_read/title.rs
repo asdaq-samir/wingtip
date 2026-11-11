@@ -12,7 +12,7 @@ use crate::notam_subject::parts::{designations, is_fuel, lamp_of, mhz_of};
 use crate::notam_subject::subject_of;
 
 /// A list as a title says it: "B", "B and C", "B, C and D".
-fn listed(items: &[&str]) -> String {
+pub(super) fn listed(items: &[&str]) -> String {
     match items {
         [] => String::new(),
         [one] => (*one).to_owned(),
@@ -125,8 +125,10 @@ fn navaid(body: &[String]) -> Option<String> {
 fn approach(after: &str) -> Option<String> {
     let end = after.match_indices(". ").map(|(i, _)| i).find(|&i| !after[..i].ends_with('.'))?;
     let (title, _) = after[end + 2..].split_once(',')?;
-    let title = title.trim();
-    (!title.is_empty() && title.len() <= 40).then(|| title.to_owned())
+    // One space between its words, as the plate prints it: the feed's
+    // "RNAV (GPS)  RWY 4R" has two.
+    let title = title.split_whitespace().collect::<Vec<_>>().join(" ");
+    (!title.is_empty() && title.len() <= 40).then_some(title)
 }
 
 /// An obstacle's kind, its first word ("OBST CRANE ..."): "Obstacle: crane".

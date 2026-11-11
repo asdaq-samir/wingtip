@@ -25,6 +25,7 @@
 //! stays the word it was, and a NOTAM in neither form is its words alone.
 
 mod body;
+mod four;
 #[cfg(test)]
 mod tests;
 mod title;
@@ -56,6 +57,12 @@ pub struct NotamRead {
     /// The thing it is about, named by its subject's words (title):
     /// "Runway 06/24", "Taxiway A"; None where they name none.
     pub title: Option<String>,
+    /// In our words, a line each (four): what it is and its condition,
+    /// where it is on the field, and what it means to the pilot; None where
+    /// its words do not say all of it.
+    pub what: Option<String>,
+    pub place: Option<String>,
+    pub why: Option<String>,
     pub words: String,
     pub starts: Option<String>,
     pub ends: Option<String>,
@@ -275,11 +282,13 @@ pub fn read(text: &str, idents: &[String]) -> NotamRead {
     let mut r =
         if !t.starts_with('!') && (item(t, b'Q').is_some() || item(t, b'E').is_some()) { icao(t, idents) } else { domestic(t, idents) };
     r.title = title::title(t);
+    let four = four::four(t, &r, idents);
+    (r.what, r.place, r.why) = (four.what, four.place, four.why);
     r
 }
 
 /// `notam_read`: `{"text", "idents"?}` to `{"form", "number", "location",
-/// "keyword", "heading", "title", "words", "starts", "ends", "estimated",
+/// "keyword", "heading", "title", "what", "where", "why", "words", "starts", "ends", "estimated",
 /// "permanent"}`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     if name != "notam_read" {
@@ -297,6 +306,9 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         ("keyword", r.keyword.as_deref()),
         ("heading", r.heading.as_deref()),
         ("title", r.title.as_deref()),
+        ("what", r.what.as_deref()),
+        ("where", r.place.as_deref()),
+        ("why", r.why.as_deref()),
         ("words", Some(r.words.as_str())),
         ("starts", r.starts.as_deref()),
         ("ends", r.ends.as_deref()),
@@ -312,3 +324,5 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     out.push_str(if r.permanent { "\"permanent\":true}" } else { "\"permanent\":false}" });
     Ok(out)
 }
+#[cfg(test)]
+mod four_tests;

@@ -8,14 +8,16 @@ import { NotamGlyph } from "./NotamGlyph";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
 import {
-  cornerOf,
   headingOf,
   localWords,
   readNotam,
   useFieldNotams,
+  whatOf,
+  whenLine,
   whenWords,
   windowOf,
   type FieldNotam,
+  type NotamReading,
   type FieldNotams,
 } from "./fieldNotams";
 
@@ -23,21 +25,62 @@ import {
 const SECTION = "place-notams";
 
 /**
- * One NOTAM in full, on a card of its own over the list: what it is about
- * (its keyword as a heading, the card's title) and its words with the
- * FAA's contractions written out, both the engine's (notam_read); when it
- * is in force in UTC, as the NOTAM gives it, and in the device's own time;
- * and its text as sent folded beneath, never rewritten (raw reports as
- * sent).
+ * A NOTAM's lines in our words, under its what: when (in the device's own
+ * time), where on the field, and why it matters to the pilot, each the
+ * engine's (notam_read) and each on its own line, the where and the why
+ * only where the engine can say them (the owner, 2026-11-11: "title(what),
+ * when, where, why (significance to pilot) on different lines"). Where the
+ * engine has no what, the NOTAM's words written out stand first.
+ */
+function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; clamp: boolean }) {
+  const when = whenLine(n, read);
+  return (
+    <span className={cn("flex flex-col gap-0.5", n.in_force === false && "text-muted-foreground")}>
+      {(!read.what || n.kind === "tfr") && (
+        <span className={cn(clamp && "line-clamp-2")} data-testid="place-notam-words">
+          {read.words}
+        </span>
+      )}
+      {when && (
+        <span className="text-muted-foreground tabular-nums" data-testid="place-notam-when">
+          {when}
+        </span>
+      )}
+      {read.where && (
+        <span className="text-muted-foreground" data-testid="place-notam-where">
+          {read.where}
+        </span>
+      )}
+      {read.why && <span data-testid="place-notam-why">{read.why}</span>}
+    </span>
+  );
+}
+
+/**
+ * One NOTAM in full, on a card of its own over the list: its what, when,
+ * where and why as its row says them (NotamLines), its words with the
+ * FAA's contractions written out where the what says them shorter, both
+ * the engine's (notam_read); when it is in force in UTC, as the NOTAM gives
+ * it, beside the device's own time; and its text as sent folded beneath,
+ * never rewritten (raw reports as sent).
  */
 export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
   const read = readNotam(n, ident);
   const when = windowOf(n, read);
   const utc = whenWords(when, read);
   const local = localWords(when.starts, when.ends);
+  const ours = !!read.what && n.kind !== "tfr";
   return (
     <div className="flex flex-col gap-1 pb-6" data-testid="place-notam-full">
-      <p className={cn(TEXT.prose, n.in_force === false && "text-muted-foreground")}>{read.words}</p>
+      {ours && (
+        <p className={cn("font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")} data-testid="place-notam-what">
+          {read.what}
+        </p>
+      )}
+      <p className={TEXT.prose}>
+        <NotamLines n={n} read={read} clamp={false} />
+      </p>
+      {ours && <p className={cn("text-muted-foreground", TEXT.note)}>{read.words}</p>}
       {utc && <p className={cn("text-muted-foreground tabular-nums", TEXT.note)}>{utc}</p>}
       {local && (
         <p className={cn("text-muted-foreground tabular-nums", TEXT.note)} data-testid="place-notam-local">
@@ -65,7 +108,7 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
 /**
  * The rows, as every list on the card has them (the owner, 2026-11-11:
  * "Notams show differently then other sections"): a grouped list, each
- * row its badge, its heading and two lines of its words, a tap opening it
+ * row its symbol, its what and its when, where and why (NotamLines), a tap opening it
  * in full (NotamFull) on a card over this one. Each asks the engine as it
  * draws, which a card's content waits for (SheetCard's one EngineGate).
  */
@@ -76,36 +119,16 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
       <ListGroup>
         {state}
         {notams.map((n) => {
-          const out = n.in_force === false;
           const read = readNotam(n, ident);
-          const { from, until } = cornerOf(n, read);
           return (
             <ListRow
               key={n.id}
               media={<NotamGlyph keyword={read.keyword} tfr={n.kind === "tfr"} />}
-              // Its start and end at the top right, under each other (the
-              // owner, 2026-11-11: "For each notam, we should put the start
-              // and end on top right corner").
-              wide
-              title={
-                <span className="flex items-start justify-between gap-2">
-                  <span data-testid="place-notam-heading">{headingOf(n, ident)}</span>
-                  {(from || until) && (
-                    <span
-                      className={cn("shrink-0 text-right text-muted-foreground tabular-nums", TEXT.note)}
-                      data-testid="place-notam-window"
-                    >
-                      {from && <span className="block">{from}</span>}
-                      {until && <span className="block">{from ? `– ${until}` : until === "Permanent" ? until : `Until ${until}`}</span>}
-                    </span>
-                  )}
-                </span>
-              }
-              description={
-                <span className={cn("line-clamp-2", out && "text-muted-foreground")} data-testid="place-notam-words">
-                  {read.words}
-                </span>
-              }
+              // Its what first, by its symbol; its when, where and why a line
+              // each under it (NotamLines), the window moved from the row's
+              // top right corner into its own line.
+              title={<span data-testid="place-notam-heading">{whatOf(n, ident)}</span>}
+              description={<NotamLines n={n} read={read} clamp />}
               chevron
               onClick={() => setOpen(n)}
               data-testid="place-notam"
