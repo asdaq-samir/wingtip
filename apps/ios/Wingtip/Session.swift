@@ -51,21 +51,63 @@ final class Session {
         }
     }
 
-    /// A universal link opened in the app: the sign-in link's token is
-    /// verified here; any other link is left to the screens later.
+    /// A sign-in link waiting on the pilot's yes (LinkSignInPrompt): set
+    /// by `open`, spent by `confirmLink`, dropped by `cancelLink`.
+    private(set) var pendingLink: PendingLink?
+    /// Who a link signed the pilot in as, said once so a link that was not
+    /// theirs is seen and undone at once ("That's Not Me").
+    var signedInByLink: String?
+
+    /// A sign-in link's token and who it would sign out, named in the ask.
+    struct PendingLink: Equatable, Identifiable {
+        let token: String
+        /// The account signed in now, which the link's would replace.
+        let replacing: String?
+        var id: String { token }
+    }
+
+    /// A link opened in the app: only the emailed sign-in link, https on
+    /// this build's own gateway, is taken, and only as a question. Opening
+    /// it signs nobody in, as the web's LinkSignIn does not: an attacker's
+    /// link for their own account (the custom scheme, or another host)
+    /// would otherwise put this pilot's records into it (security audit
+    /// 2026-11-10, M1).
     func open(_ url: URL) async {
-        guard url.path.hasSuffix("/api/auth/magic-link/verify"),
-              let token = URLComponents(url: url, resolvingAgainstBaseURL: false)?
-                  .queryItems?.first(where: { $0.name == "token" })?.value
-        else { return }
+        guard let token = Self.signInToken(url) else { return }
+        pendingLink = PendingLink(token: token, replacing: pilot?.email)
+    }
+
+    /// The token of an emailed sign-in link, or nil for anything else:
+    /// https only, on `host` (Config.host, a port included where the build
+    /// names one), the verify path exactly, never the app's own scheme.
+    nonisolated static func signInToken(_ url: URL, host: String = Config.host) -> String? {
+        guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              parts.scheme?.lowercased() == "https", let linkHost = parts.host?.lowercased(),
+              parts.user == nil, parts.password == nil,
+              linkHost + (parts.port.map { ":\($0)" } ?? "") == host.lowercased(),
+              parts.path == "/api/auth/magic-link/verify",
+              let token = parts.queryItems?.first(where: { $0.name == "token" })?.value, !token.isEmpty
+        else { return nil }
+        return token
+    }
+
+    /// The pilot said yes: the token spent, and who it signed in as said.
+    func confirmLink() async {
+        guard let link = pendingLink else { return }
+        pendingLink = nil
         do {
-            try await Gateway.verifyMagicLink(token: token)
+            try await Gateway.verifyMagicLink(token: link.token)
             await refresh()
+            // Said only where who is signed in could be asked again.
+            signedInByLink = problem == nil ? pilot?.email : nil
         } catch {
             problem = "The sign-in link did not work: \(error.localizedDescription)"
             Log.app.error("the sign-in link was refused: \(error.localizedDescription, privacy: .public)")
         }
     }
+
+    /// The pilot said no: the link forgotten, the session as it was.
+    func cancelLink() { pendingLink = nil }
 
     /// Signing out ends the session on the gateway and forgets what this
     /// device kept of the pilot's (the owner's pick: sign-out clears,
@@ -104,8 +146,8 @@ final class Session {
         Kept.forget()
         KeptForAir.forgetPilotOwn()
         Tracking.shared.erase()
-        let jar = Gateway.session.configuration.httpCookieStorage
-        for cookie in jar?.cookies(for: Config.gateway) ?? [] { jar?.deleteCookie(cookie) }
+        for cookie in SessionCookies.jar.cookies ?? [] { SessionCookies.jar.deleteCookie(cookie) }
+        SessionCookies.keep()
         WidgetFeed.shared.forgetPilot()
         pilot = nil
     }

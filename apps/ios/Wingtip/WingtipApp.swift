@@ -33,6 +33,8 @@ struct WingtipApp: App {
                 // 20 pt", docs/decisions/0021), drawn by the system rather
                 // than a hand-built title (the owner, 2026-11-10).
                 .headerProminence(.increased)
+                // An emailed sign-in link asks before it signs anyone in.
+                .modifier(LinkSignInPrompt(session: session))
                 .environment(session)
                 .environment(charts)
                 .environment(plan)
