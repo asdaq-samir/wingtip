@@ -104,11 +104,62 @@ struct OnDeviceAskTests {
         var unavailableWhy: String?
         var sentences: [WordsSentence] = []
         var fails = false
-        func sentences(_ question: String, earlier: [AssistantTurn], facts: OnDeviceFacts, log: FigureLog) async throws -> [WordsSentence] {
+        /// Streams each sentence before the next, as the model's snapshots do.
+        func sentences(_ question: String, earlier: [AssistantTurn], facts: OnDeviceFacts, log: FigureLog,
+                       partial: @escaping @Sendable ([WordsSentence]) -> Void) async throws -> [WordsSentence] {
             if fails { throw AskRefused(why: "boom") }
             log.add(try FieldFigures.crosswind("KMSN", runway: "36", facts: facts), by: "runwayWind")
+            for count in sentences.indices.dropFirst() { partial(Array(sentences.prefix(count))) }
             return sentences
         }
+    }
+
+    /// Fed from the model's callback, which may run off the test's task.
+    final class Seen: @unchecked Sendable {
+        private let lock = NSLock()
+        private var answers: [[String]] = []
+        func add(_ answer: OnDeviceAnswer) { lock.lock(); answers.append(answer.words.sentences.map(\.text)); lock.unlock() }
+        var all: [[String]] { lock.lock(); defer { lock.unlock() }; return answers }
+    }
+
+    /// Only checked sentences are streamed, each once, and the stream's
+    /// lines append to what the finished answer says.
+    @Test func partialAnswersStreamOnlyCheckedSentences() async throws {
+        let model = FakeModel(sentences: [
+            WordsSentence(sources: ["wind:KMSN:36"], text: "Runway 36 has 8 kt across from the left."),
+            WordsSentence(sources: ["wind:KMSN:36"], text: "That is 9 kt across."),
+            WordsSentence(sources: ["wind:KMSN:36"], text: "Gusts make it 18 kt across."),
+        ])
+        let seen = Seen()
+        let answer = await OnDeviceAsk(model: model).answer("Crosswind on 36?", facts: try Self.facts()) { seen.add($0) }
+        #expect(seen.all == [["Runway 36 has 8 kt across from the left."], ["Runway 36 has 8 kt across from the left."]])
+        let streamed = StreamedWords()
+        #expect(streamed.lines(for: seen.all[0]) == [.text("Runway 36 has 8 kt across from the left.")])
+        #expect(answer.lines(after: streamed).contains(.text(" Gusts make it 18 kt across.")))
+    }
+
+    /// Streamed words the finished answer does not go on from are withdrawn.
+    @Test func streamedWordsAnEndingDoesNotContinueAreWithdrawn() {
+        let streamed = StreamedWords()
+        _ = streamed.lines(for: ["One."])
+        #expect(streamed.lines(for: ["One."]).isEmpty)
+        #expect(streamed.lines(for: ["Two."]) == [.retract, .text("Two.")])
+        var conversation = AssistantConversation()
+        conversation.ask("Q")
+        conversation.take(.text("One."))
+        conversation.take(.retract)
+        #expect(conversation.turns.last?.content == "")
+    }
+
+    /// With no figure on the phone for any tool, the model is not asked:
+    /// the engine says what is missing at once, with no "why" of a model.
+    @Test func noFigureForAnyToolSkipsTheModel() async {
+        let empty = OnDeviceFacts()
+        let pins: FlightFigures.Pins = { _, _, _, _ in [] }
+        #expect(!EngineWords.holdsAny("crosswind at KMSN", facts: empty, pins: pins))
+        let answer = await OnDeviceAsk(model: FakeModel(fails: true), pins: pins).answer("crosswind at KMSN", facts: empty)
+        #expect(answer.origin == .engine)
+        #expect(answer.why == nil)
     }
 
     @Test func onlySentencesCitingAToolsFigureWithItsNumbersAreKept() async throws {

@@ -96,11 +96,16 @@ final class Plan {
     }
 
     /// The last plan kept, back on the page at launch: planned again when
-    /// the planner answers, kept as it was when it does not.
-    func restore() {
+    /// the planner answers, kept as it was when it does not. The file
+    /// holds the whole briefing, so it is read and decoded off the main
+    /// actor, where it held up the launch's first frames; a route the
+    /// pilot began meanwhile is not overwritten.
+    func restore() async {
         // A UI test launched with -fresh starts with no route, whatever
         // the simulator kept from the last run (WingtipUITests).
-        guard !CommandLine.arguments.contains("-fresh"), let kept = Kept.load() else { return }
+        guard !CommandLine.arguments.contains("-fresh") else { return }
+        guard let kept = await Task.detached(priority: .userInitiated, operation: { Kept.load() }).value,
+              dep.isEmpty, dest.isEmpty, stops.isEmpty else { return }
         dep = kept.dep; dest = kept.dest; stops = kept.stops
         (aircraft, tail) = Self.airplane(kept: kept)
         figures = OwnFigureStore.load(OwnFigureStore.name(tail: tail, aircraft: aircraft))

@@ -10,20 +10,30 @@ final class Charts {
     private(set) var info: ChartInfo?
     private(set) var problem: String?
 
-    private static let kept = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+    private nonisolated static let kept = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         .appending(path: "chart.json")
 
+    /// The chart kept from the last answer, read off the main actor, as
+    /// it is at launch, before the first frames are drawn.
+    private nonisolated static func readKept() async -> ChartInfo? {
+        await Task.detached(priority: .userInitiated) {
+            guard let data = try? Data(contentsOf: kept) else { return nil }
+            return try? JSONDecoder().decode(ChartInfo.self, from: data)
+        }.value
+    }
+
     func load() async {
-        if info == nil, let data = try? Data(contentsOf: Self.kept),
-           let last = try? JSONDecoder().decode(ChartInfo.self, from: data) {
+        if info == nil, let last = await Self.readKept(), info == nil {
             info = last
         }
         do {
             let fresh = try await Planner.chart()
             info = fresh
             problem = nil
-            try? FileManager.default.createDirectory(at: Self.kept.deletingLastPathComponent(), withIntermediateDirectories: true)
-            try? JSONEncoder().encode(fresh).write(to: Self.kept, options: .atomic)
+            Task.detached(priority: .utility) {
+                try? FileManager.default.createDirectory(at: Self.kept.deletingLastPathComponent(), withIntermediateDirectories: true)
+                try? JSONEncoder().encode(fresh).write(to: Self.kept, options: .atomic)
+            }
             TileStore.shared.keepOnly(cycle: fresh.chartCycle)
             // The airspace kept for the air, fetched again where the FAA's
             // cycle has turned since it was.

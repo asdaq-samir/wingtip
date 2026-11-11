@@ -71,7 +71,7 @@ struct AskRouter: Sendable {
             let task = Task {
                 let onPhone = !claudeOn() || pick == .device || (pick == .automatic && !online())
                 if onPhone {
-                    for line in await device.answer(question, earlier: earlier, facts: facts).lines { continuation.yield(line) }
+                    await onDevice(question, earlier: earlier, facts: facts, into: continuation)
                     continuation.finish()
                     return
                 }
@@ -99,11 +99,33 @@ struct AskRouter: Sendable {
                     guard pick == .automatic, !begun else { return continuation.finish(throwing: failure) }
                     Log.onDevice.notice("the planner did not answer, asking the phone: \(failure.localizedDescription, privacy: .public)")
                     continuation.yield(.tool(name: "on-device", label: "No answer from the planner; working it out on this iPhone…"))
-                    for line in await device.answer(question, earlier: earlier, facts: facts).lines { continuation.yield(line) }
+                    await onDevice(question, earlier: earlier, facts: facts, into: continuation)
                 }
                 continuation.finish()
             }
             continuation.onTermination = { _ in task.cancel() }
         }
+    }
+
+    /// This iPhone's answer, its checked sentences streamed as the model
+    /// finishes each, then the rest, the chips and the end.
+    private func onDevice(_ question: String, earlier: [AssistantTurn], facts: OnDeviceFacts,
+                          into continuation: AsyncThrowingStream<AssistantLine, any Error>.Continuation) async {
+        let streamed = StreamedWords()
+        let answer = await device.answer(question, earlier: earlier, facts: facts) { partial in
+            let lines = streamed.lines(for: partial.words.sentences.map(\.text))
+            if !lines.isEmpty { continuation.yield(.origin(partial.caption)) }
+            for line in lines { continuation.yield(line) }
+        }
+        for line in answer.lines(after: streamed) { continuation.yield(line) }
+    }
+
+    /// Apple's model made ready for a question about to be asked on this
+    /// iPhone (AppleAskModel.prewarm): when the one search takes focus
+    /// and when Ask opens. Not when the planner will answer.
+    @MainActor
+    static func prewarm(from pick: AskWhere = .current) {
+        guard !ServerFeatures.claudeOnNow || pick != .planner else { return }
+        AppleAskModel.prewarm()
     }
 }

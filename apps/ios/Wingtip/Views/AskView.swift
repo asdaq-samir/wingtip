@@ -55,7 +55,10 @@ struct AskView: View {
         .toolbar { ToolbarItem(placement: .topBarLeading) { AskWherePicker() } }
         // A chip's report pushed in Ask's own card, with Back.
         .navigationDestination(item: $source) { source in SourceSheet(source: source) }
-        .task { if let first, client.turns.isEmpty { send(first) } }
+        .task {
+            AskRouter.prewarm()
+            if let first, client.turns.isEmpty { send(first) }
+        }
         // Put away, the answer stops; a report pushed over it is not
         // putting it away.
         .onDisappear { if source == nil { client.cancel() } }

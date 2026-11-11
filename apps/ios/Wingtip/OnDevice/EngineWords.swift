@@ -61,6 +61,15 @@ enum EngineWords {
         }
     }
 
+    /// Whether the phone holds any figure a tool could hand a model for
+    /// this question, by every topic, not only the ones it names: the
+    /// model picks its tools, and none answering means no model is asked
+    /// (OnDeviceAsk). The cheap figures first; the nearest fields read
+    /// the packs.
+    static func holdsAny(_ question: String, facts: OnDeviceFacts, pins: FlightFigures.Pins = FlightFigures.packPins) -> Bool {
+        Topic.allCases.contains { topic in (try? figures(topic, question: question, facts: facts, pins: pins))?.isEmpty == false }
+    }
+
     /// The answer: each figure's sentence citing itself; with none, why
     /// not, from the first topic asked.
     static func answer(_ question: String, facts: OnDeviceFacts, pins: FlightFigures.Pins = FlightFigures.packPins) -> Words {

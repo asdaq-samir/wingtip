@@ -49,7 +49,7 @@ struct WingtipApp: App {
                 }
                 .task { await charts.load() }
                 .task { OfflineDownloads.shared.start() }
-                .task { plan.restore() }
+                .task { await plan.restore() }
                 // The flight in progress on the Lock Screen and in the
                 // Dynamic Island (FlightActivity, a Live Activity: the
                 // owner's ask, 2026-11-03, as Apple recommends for anything

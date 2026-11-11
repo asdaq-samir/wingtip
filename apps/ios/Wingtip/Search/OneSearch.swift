@@ -72,6 +72,9 @@ struct OneSearch: ViewModifier {
             .autocorrectionDisabled()
             .onSubmit(of: .search) { Task { await send(model.text) } }
             .onChange(of: model.text) { _, _ in model.problem = nil; model.typed() }
+            // A question may be typed here: Apple's model is made ready as
+            // the field takes focus, not when it is sent.
+            .onChange(of: model.presented) { _, on in if on { AskRouter.prewarm() } }
             .toolbar {
                 SearchBarItems(model: model, hear: voice.canListen ? { Task { await hear() } } : nil, open: host.page, undo: !oneRow)
             }
