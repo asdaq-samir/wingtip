@@ -110,6 +110,9 @@ struct ChartMap: UIViewRepresentable {
         flight.attach(map)
         context.coordinator.flight = flight
         context.coordinator.legLayer.attach(map)
+        // A tap on the course opens its leg, not the plate under it.
+        let legs = context.coordinator.legLayer
+        context.coordinator.extras.plates.tapIsCourse = { [weak legs] at, map in legs?.hits(at, on: map) == true }
         return map
     }
 
@@ -356,7 +359,7 @@ struct ChartMap: UIViewRepresentable {
                 return renderer
             }
             if let tiles = overlay as? MKTileOverlay { return MKTileOverlayRenderer(tileOverlay: tiles) }
-            if let plate = overlay as? PlateMapOverlay { return PlateRenderer(overlay: plate) }
+            if let renderer = MainActor.assumeIsolated({ extras.plates.renderer(for: overlay) }) { return renderer }
             if let edge = overlay as? CourseEdgePolyline {
                 let renderer = MKPolylineRenderer(polyline: edge)
                 renderer.strokeColor = NightPalette.routeEdge(night: shade > 0)

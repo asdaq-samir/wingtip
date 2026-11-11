@@ -38,12 +38,22 @@ final class RouteLegLayer: NSObject, UIGestureRecognizerDelegate {
     nonisolated func gestureRecognizer(_ a: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith b: UIGestureRecognizer) -> Bool { true }
 
     @objc private func tapped(_ tap: UITapGestureRecognizer) {
-        guard let map = tap.view as? MKMapView, !input.legs.isEmpty, let onSelect = input.onSelect else { return }
+        guard let map = tap.view as? MKMapView, let onSelect = input.onSelect else { return }
         let at = tap.location(in: map)
         // A tap on a mark is the mark's, not the course's under it.
         if map.hitTest(at, with: nil).map({ $0 is MKAnnotationView || $0.superview is MKAnnotationView }) == true { return }
+        if let index = leg(at, on: map) { onSelect(index) }
+    }
+
+    /// Whether a point of the map is close enough to the course for a
+    /// tap there to be the course's (PlateLayer asks, so a leg's card wins
+    /// over the plate's page under it).
+    func hits(_ at: CGPoint, on map: MKMapView) -> Bool { input.onSelect != nil && leg(at, on: map) != nil }
+
+    private func leg(_ at: CGPoint, on map: MKMapView) -> Int? {
+        guard !input.legs.isEmpty else { return nil }
         let segments = input.legs.map { (map.convert($0.start, toPointTo: map), map.convert($0.end, toPointTo: map)) }
-        if let index = RouteLegs.nearest(to: at, segments: segments) { onSelect(index) }
+        return RouteLegs.nearest(to: at, segments: segments)
     }
 
     func update(_ map: MKMapView, _ next: RouteLegInput, night: Bool, below edge: (any MKOverlay)?) {

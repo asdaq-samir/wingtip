@@ -35,6 +35,9 @@ enum SheetPage: Hashable {
     /// The map's own settings: its layers, weather and alerts (the Map
     /// button's card, as Maps' Choose Map card).
     case mapSettings
+    /// An approach plate on the map, by its key ("KOSH:I36"): its card's
+    /// Hide Plate, View Full Screen and how the page is drawn (PlateCard).
+    case plate(String)
     /// The clearance heard or typed into the route.
     case clearance
     /// The first launch's welcome, a flight another pilot sent, and the
@@ -55,7 +58,7 @@ enum SheetPage: Hashable {
         switch self {
         case .airport(let text): RootLayout.inspects(AirportRoute(text))
         case .screen(let screen): [.brief, .profile, .flights].contains(screen)
-        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .clearance, .welcome, .sharedFlight, .flightLogged: true
+        case .traffic, .tail, .hold, .flown, .leg, .ask, .mapSettings, .plate, .clearance, .welcome, .sharedFlight, .flightLogged: true
         case .flight, .notams, .practice, .training, .instructing, .contact: false
         }
     }
@@ -66,7 +69,7 @@ enum SheetPage: Hashable {
         switch self {
         case .screen(let screen): ![.nearest, .favorites].contains(screen)
         case .flight, .notams, .practice, .training, .instructing, .contact, .ask, .clearance: true
-        case .airport, .leg, .traffic, .tail, .hold, .flown, .mapSettings, .welcome, .sharedFlight, .flightLogged: false
+        case .airport, .leg, .traffic, .tail, .hold, .flown, .mapSettings, .plate, .welcome, .sharedFlight, .flightLogged: false
         }
     }
 
@@ -105,6 +108,7 @@ enum SheetPage: Hashable {
         case .flown: "card-flown"
         case .ask: "card-ask"
         case .mapSettings: "card-map"
+        case .plate: "card-plate"
         case .clearance: "card-clearance"
         case .welcome: "card-welcome"
         case .sharedFlight: "card-shared"
@@ -124,6 +128,7 @@ enum SheetPage: Hashable {
         case .instructing: "+instructing"
         case .contact: "+contact"
         case .mapSettings: "+map"
+        case .plate(let key): "+plate:" + key
         case .notams(.route): "+notams"
         case .notams(.field(let ident)): "+notams:" + ident
         case .leg, .flight, .traffic, .tail, .hold, .flown, .ask, .clearance, .welcome, .sharedFlight, .flightLogged: nil
@@ -146,6 +151,7 @@ enum SheetPage: Hashable {
         // Never kept (stored is nil), but opened by the UI tests' `-card`.
         case "+clearance": self = .clearance
         case "+notams": self = .notams(.route)
+        case let text where text.hasPrefix("+plate:") && PlateKey.parts(String(text.dropFirst(7))) != nil: self = .plate(String(text.dropFirst(7)))
         case let text where text.hasPrefix("+notams:") && text.count > 8: self = .notams(.field(String(text.dropFirst(8))))
         default:
             guard let screen = Screen(rawValue: stored), Self.pages(screen) else { return nil }
@@ -210,6 +216,7 @@ struct SheetPageView: View {
         case .flown(let id, let title): FlownTrackView(flight: id, title: title).id(id)
         case .ask(let question): AskView(first: question)
         case .mapSettings: MapSettingsView()
+        case .plate(let key): PlateCard(key: key).id(key)
         case .clearance: ClearanceSheet()
         case .welcome:
             ScrollView { WelcomeView(model: .shared) }
