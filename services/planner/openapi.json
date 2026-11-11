@@ -2959,6 +2959,108 @@
         "title": "AltitudeStep",
         "type": "object"
       },
+      "ApproachCoded": {
+        "description": "An altitude a final codes beside a fix's limits (ARINC 424-18 5.29,\nits second altitude): `code` \"G\" or \"H\" the glide slope's at the final\napproach fix, \"I\" or \"J\" the glide slope's intercept at the final\napproach course fix, \"V\" the vertical path's at a step-down fix.",
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "fix": {
+            "title": "Fix",
+            "type": "string"
+          },
+          "ft": {
+            "title": "Ft",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "fix",
+          "code",
+          "ft"
+        ],
+        "title": "ApproachCoded",
+        "type": "object"
+      },
+      "ApproachFacts": {
+        "description": "What the CIFP says of an approach besides its legs\n(wingtip.approach_facts): its runway, the altitudes coded beside its\nfixes' limits, and the levels of service it authorises (ARINC 424-19\n5.275, 5.276: \"LPV\", \"LNAV/VNAV\", \"LNAV\", ...). No decision altitude or\nMDA: those are the plate's minimums alone.",
+        "properties": {
+          "coded": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ApproachCoded"
+            },
+            "title": "Coded",
+            "type": "array"
+          },
+          "levels": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Levels",
+            "type": "array"
+          },
+          "runway": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApproachRunway"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "ApproachFacts",
+        "type": "object"
+      },
+      "ApproachRunway": {
+        "description": "The approach's runway as the CIFP's runway record gives it: its\nthreshold (`ident` \"RW36\"), the threshold's elevation (ARINC 424-18\n5.68) and the threshold crossing height (5.67), ft; and its touchdown\nzone elevation, ft MSL to a tenth, from NASR (APT_RWY_END's TDZ_ELEV),\nNone where NASR has none.",
+        "properties": {
+          "ident": {
+            "title": "Ident",
+            "type": "string"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "tch_ft": {
+            "title": "Tch Ft",
+            "type": "integer"
+          },
+          "tdze_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tdze Ft"
+          },
+          "threshold_ft": {
+            "title": "Threshold Ft",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ident",
+          "lat",
+          "lon",
+          "threshold_ft",
+          "tch_ft"
+        ],
+        "title": "ApproachRunway",
+        "type": "object"
+      },
       "Briefing": {
         "description": "`weather_unavailable` names which of hazards/forecast/metars/tfrs\ncome from a call that failed rather than one that found nothing: an\nempty `hazards` must not read the same as \"no hazards reported\".",
         "properties": {
@@ -16205,8 +16307,27 @@
         "title": "PlannedStep",
         "type": "object"
       },
+      "PlateCorner": {
+        "description": "A corner of a plate's page on the ground.",
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lon"
+        ],
+        "title": "PlateCorner",
+        "type": "object"
+      },
       "PlateOverlay": {
-        "description": "An approach's plate's plan view placed on the map (wingtip.plates): the\nFAA's plate of `name` in d-TPP cycle `cycle`, its picture at\n/api/approach-plate/{cycle}/{ident}/{procedure}.png, black on clear,\nnorth up between these latitudes and longitudes, as the plate's own\ngeoreference places it; `fixes` the approach's fixes inside it;\n`circling` whether the plate publishes circling minimums, so a pilot\nflying the approach may circle to land on another runway.",
+        "description": "An approach's plate's plan view placed on the map (wingtip.plates): the\nFAA's plate of `name` in d-TPP cycle `cycle`, its picture at\n/api/approach-plate/{cycle}/{ident}/{procedure}.png, black on clear,\nnorth up between these latitudes and longitudes, as the plate's own\ngeoreference places it; `fixes` the approach's fixes inside it;\n`circling` whether the plate publishes circling minimums, so a pilot\nflying the approach may circle to land on another runway; `page` the\nwhole page placed (PlatePage), None where its page is turned in the\nPDF and so not placed.",
         "properties": {
           "circling": {
             "title": "Circling",
@@ -16235,6 +16356,16 @@
             "title": "North",
             "type": "number"
           },
+          "page": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PlatePage"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "south": {
             "title": "South",
             "type": "number"
@@ -16255,6 +16386,41 @@
           "circling"
         ],
         "title": "PlateOverlay",
+        "type": "object"
+      },
+      "PlatePage": {
+        "description": "An approach plate's whole page placed on the map (wingtip.plate_page):\nits picture at /api/approach-plate-page/{cycle}/{ident}/{procedure}.png,\ngreyscale on white, `width` by `height` pixels, drawn between its four\ncorners on the ground, which put its plan view where the plate's own\ngeoreference does; the rest of the page goes round it at the same scale\nand turn, as ForeFlight lays a plate on its chart. The page may turn a\nlittle from north up (the plate's Lambert projection's meridians lean),\nso it is drawn between the four corners, not in a box.",
+        "properties": {
+          "bottom_left": {
+            "$ref": "#/components/schemas/PlateCorner"
+          },
+          "bottom_right": {
+            "$ref": "#/components/schemas/PlateCorner"
+          },
+          "height": {
+            "title": "Height",
+            "type": "integer"
+          },
+          "top_left": {
+            "$ref": "#/components/schemas/PlateCorner"
+          },
+          "top_right": {
+            "$ref": "#/components/schemas/PlateCorner"
+          },
+          "width": {
+            "title": "Width",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "width",
+          "height",
+          "top_left",
+          "top_right",
+          "bottom_right",
+          "bottom_left"
+        ],
+        "title": "PlatePage",
         "type": "object"
       },
       "PointOffFix": {
@@ -16302,6 +16468,16 @@
           "airport": {
             "title": "Airport",
             "type": "string"
+          },
+          "approach": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ApproachFacts"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "cycle": {
             "title": "Cycle",
@@ -22578,7 +22754,7 @@
     },
     "/api/airport/{ident}/procedures/{procedure}": {
       "get": {
-        "description": "One of the field's procedures drawn for the map, with the\ntransition picked (`transition`, one of its `transitions`; none for an\napproach from vectors): its lines, holds and fixes, each fix with the\naltitudes and speed it is crossed at (wingtip.procedures.procedure_drawing).",
+        "description": "One of the field's procedures drawn for the map, with the\ntransition picked (`transition`, one of its `transitions`; none for an\napproach from vectors): its lines, holds and fixes, each fix with the\naltitudes and speed it is crossed at (wingtip.procedures.procedure_drawing);\nan approach with the CIFP's own figures for its fixes' tags\n(`approach`, wingtip.approach_facts; the engine's approach_fix_tags).",
         "operationId": "airport_procedure_api_airport__ident__procedures__procedure__get",
         "parameters": [
           {
@@ -22652,7 +22828,7 @@
     },
     "/api/airport/{ident}/procedures/{procedure}/plate": {
       "get": {
-        "description": "An approach's plate's plan view placed on the map for the approach\npicked (wingtip.plates): where its picture goes, made once a cycle from the\nFAA's d-TPP plate and its own georeference, and whether it publishes\ncircling minimums. 404 where the field has no plate for it, the plate\nhas no georeference, or the FAA cannot be reached.",
+        "description": "An approach's plate placed on the map for the approach picked\n(wingtip.plates): where its plan view's picture goes, and its whole\npage's (`page`, wingtip.plate_page), made once a cycle from the FAA's\nd-TPP plate and its own georeference, and whether it publishes\ncircling minimums. 404 where the field has no plate for it, the plate\nhas no georeference, or the FAA cannot be reached.",
         "operationId": "airport_procedure_plate_api_airport__ident__procedures__procedure__plate_get",
         "parameters": [
           {
@@ -23293,6 +23469,67 @@
         "summary": "Alternate",
         "x-gateway": {
           "access": "public"
+        }
+      }
+    },
+    "/api/approach-plate-page/{cycle}/{ident}/{procedure}.png": {
+      "get": {
+        "description": "An approach plate's whole page placed on the map\n(`airport_procedure_plate`'s `page`), as a picture: greyscale on solid\nwhite, drawn between the page's four corners, for the cycle in force.",
+        "operationId": "approach_plate_page_api_approach_plate_page__cycle___ident___procedure__png_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "cycle",
+            "required": true,
+            "schema": {
+              "title": "Cycle",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "ident",
+            "required": true,
+            "schema": {
+              "title": "Ident",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "procedure",
+            "required": true,
+            "schema": {
+              "title": "Procedure",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "image/png": {}
+            },
+            "description": "Successful Response"
+          },
+          "404": {
+            "description": "No page placed for it in that cycle"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Approach Plate Page",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
         }
       }
     },
