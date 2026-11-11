@@ -540,9 +540,6 @@
     "ATC" : {
 
     },
-    "ATIS at ${airport}" : {
-
-    },
     "ATIS at an Airport" : {
 
     },
@@ -570,7 +567,10 @@
     "Add" : {
 
     },
-    "Add ${approach} to the route" : {
+    "Add Alternate" : {
+
+    },
+    "Add Alternate, Required" : {
 
     },
     "Add Date" : {
@@ -676,6 +676,18 @@
     "Alt" : {
 
     },
+    "Alternate" : {
+
+    },
+    "Alternate · Destination" : {
+
+    },
+    "Alternate · Filed" : {
+
+    },
+    "Alternates That Will Do" : {
+
+    },
     "Alternating" : {
 
     },
@@ -685,10 +697,16 @@
     "Altitude at %@" : {
 
     },
+    "Altitude in feet above sea level" : {
+
+    },
     "Altitude not read" : {
 
     },
     "An airport's METAR and TAF, as sent." : {
+
+    },
+    "An alternate is required" : {
 
     },
     "And %lld more" : {
@@ -805,16 +823,10 @@
     "Brief" : {
 
     },
-    "Brief ${approach}" : {
-
-    },
     "Brief Them" : {
 
     },
     "Brief a Flight" : {
-
-    },
-    "Brief a flight to ${airport}" : {
 
     },
     "Brief a flight to where?" : {
@@ -896,6 +908,9 @@
 
     },
     "Check your mail: the link opens Wingtip Maps and signs you in." : {
+
+    },
+    "Check, File" : {
 
     },
     "Checked on" : {
@@ -1058,7 +1073,7 @@
     "Cruise" : {
 
     },
-    "Cruise altitude, hundreds of feet" : {
+    "Cruise altitude" : {
 
     },
     "Cruise figures at %@, standard day" : {
@@ -1130,6 +1145,9 @@
     "Demo Flight" : {
 
     },
+    "Density Altitude" : {
+
+    },
     "Departs" : {
 
     },
@@ -1167,12 +1185,6 @@
 
     },
     "Direct To %@" : {
-
-    },
-    "Direct to ${airport}" : {
-
-    },
-    "Direct to ${place}" : {
 
     },
     "Direct to %@" : {
@@ -1373,9 +1385,6 @@
     "Expires" : {
 
     },
-    "Explain ${notam}" : {
-
-    },
     "Explain a NOTAM" : {
 
     },
@@ -1397,9 +1406,6 @@
     "FAA Registration" : {
 
     },
-    "FL-045 as 045" : {
-
-    },
     "Favorite" : {
 
     },
@@ -1416,6 +1422,9 @@
 
     },
     "Fetching the airspace here…" : {
+
+    },
+    "Fetching the destination's forecast…" : {
 
     },
     "Fetching the fields round you…" : {
@@ -1458,6 +1467,9 @@
 
     },
     "Filed: %@" : {
+
+    },
+    "Files it as the alternate" : {
 
     },
     "Filing…" : {
@@ -1561,9 +1573,6 @@
 
     },
     "Fly" : {
-
-    },
-    "Fly ${airplane}" : {
 
     },
     "Fly %@" : {
@@ -1792,6 +1801,9 @@
     "How the Altitude Was Chosen" : {
 
     },
+    "I Understand" : {
+
+    },
     "I can't tell where you are, so here are the nearest airports." : {
 
     },
@@ -1821,6 +1833,9 @@
 
     },
     "In Flight" : {
+
+    },
+    "In still air: the winds there couldn't be read." : {
 
     },
     "In the Brief: %@" : {
@@ -1875,6 +1890,9 @@
 
     },
     "It goes from your airplanes and from the nav log's picker. This can't be undone." : {
+
+    },
+    "Its Alternate Minimums" : {
 
     },
     "Its date" : {
@@ -2070,6 +2088,9 @@
 
     },
     "Loading the map" : {
+
+    },
+    "Location Is Off" : {
 
     },
     "Log" : {
@@ -2290,6 +2311,9 @@
     "Nearest is from where the airplane is." : {
 
     },
+    "Nearest is from where the airplane is. Put the iPhone where it sees the sky." : {
+
+    },
     "Nearest to you" : {
 
     },
@@ -2349,6 +2373,9 @@
     "No Flights Yet" : {
 
     },
+    "No GPS Position" : {
+
+    },
     "No Legs Yet" : {
 
     },
@@ -2371,6 +2398,9 @@
 
     },
     "No airports" : {
+
+    },
+    "No alternate required" : {
 
     },
     "No answer from the planner." : {
@@ -2434,6 +2464,9 @@
 
     },
     "None for the route" : {
+
+    },
+    "None found within 100 nm. File one you have checked yourself." : {
 
     },
     "None here" : {
@@ -2520,6 +2553,9 @@
     "On the clock" : {
 
     },
+    "On to %@" : {
+
+    },
     "Open" : {
 
     },
@@ -2589,6 +2625,9 @@
     "Opens the nav log" : {
 
     },
+    "Opens the profile and the Altitude Advisor" : {
+
+    },
     "Opens your account" : {
 
     },
@@ -2605,6 +2644,9 @@
 
     },
     "Or by Email" : {
+
+    },
+    "Or type feet, as 2340" : {
 
     },
     "Other" : {
@@ -2676,6 +2718,9 @@
     "Phone" : {
 
     },
+    "Pick an Airplane" : {
+
+    },
     "Pick an airplane on the iPhone." : {
 
     },
@@ -2713,9 +2758,6 @@
 
     },
     "Plan a route first for Direct To" : {
-
-    },
-    "Plan a trip to ${airport} leaving ${departure}" : {
 
     },
     "Plan a trip…" : {
@@ -3215,6 +3257,9 @@
     "Signed" : {
 
     },
+    "Signed In" : {
+
+    },
     "Signing…" : {
 
     },
@@ -3357,6 +3402,9 @@
     "Swipe up or down to preview another altitude; Set flies it." : {
 
     },
+    "Switch" : {
+
+    },
     "TFRs" : {
 
     },
@@ -3364,6 +3412,9 @@
 
     },
     "Take Back" : {
+
+    },
+    "Take It Off" : {
 
     },
     "Takeoff" : {
@@ -3385,6 +3436,9 @@
 
     },
     "Terms of Use" : {
+
+    },
+    "That's Not Me" : {
 
     },
     "The %@ at %@ couldn't be briefed: %@" : {
@@ -3445,9 +3499,6 @@
       }
     },
     "The altitude ATC gave you to cross it at, in feet above sea level." : {
-
-    },
-    "The altitudes couldn't be listed: %@" : {
 
     },
     "The approach plates" : {
@@ -3652,6 +3703,9 @@
     "Try Again" : {
 
     },
+    "Turn On Location in Settings" : {
+
+    },
     "Turns" : {
 
     },
@@ -3745,9 +3799,6 @@
     "Weather When I Land" : {
 
     },
-    "Weather at ${airport}" : {
-
-    },
     "Weather at an Airport" : {
 
     },
@@ -3790,7 +3841,7 @@
     "Where to?" : {
 
     },
-    "Where you are, at %@, the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind." : {
+    "Where you are%@, the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind." : {
 
     },
     "Which NOTAM?" : {
@@ -3894,6 +3945,9 @@
 
     },
     "You took" : {
+
+    },
+    "You're signed in as %@. Your airplanes, flights and logbook are saved to this account." : {
 
     },
     "Your Airplane in the Day's Air" : {
