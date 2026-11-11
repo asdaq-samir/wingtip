@@ -156,6 +156,17 @@ export function SheetGrabber({
       </button>
     );
   const { names } = pages;
+  // Whether the pressed bar was the page up before the press: the Tabs
+  // pick a bar as it takes the focus, which a press gives it before its
+  // click, so by the click the other page's bar was up too and sized the
+  // sheet as well as turning the page. A key's click has no press: the
+  // focused bar is the page up already.
+  const pressedUp = useRef<boolean | null>(null);
+  const tapped = (up: boolean) => {
+    const was = pressedUp.current ?? up;
+    pressedUp.current = null;
+    if (was) cycle();
+  };
   return (
     <Tabs.Root
       value={pages.at}
@@ -195,8 +206,12 @@ export function SheetGrabber({
               data-page-bar={i}
               // The page up's bar is the grabber the specs and a drag hold.
               data-testid={up ? "sidebar-trigger-button" : undefined}
-              onClick={up ? cycle : undefined}
-              onKeyDown={arrows}
+              onPointerDown={() => (pressedUp.current = up)}
+              onClick={() => tapped(up)}
+              onKeyDown={(event) => {
+                pressedUp.current = null;
+                arrows(event);
+              }}
               className={cn(
                 "group/bar relative flex h-full flex-1 rounded-full",
                 at === "top" ? "items-start" : "items-end",

@@ -55,6 +55,8 @@ test("Search to FPL and back, by a swipe and by the grabber's bars, the sheet's 
   await expectPage(page, 0);
   await bar(page, 1).click();
   await expectPage(page, 1);
+  // A tap on the other page's bar turns the page and leaves the size.
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   await bar(page, 0).click();
   await expectPage(page, 0);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
