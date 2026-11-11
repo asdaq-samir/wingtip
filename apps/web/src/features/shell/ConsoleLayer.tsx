@@ -98,7 +98,7 @@ export default function ConsoleLayer({
           frosted as a card's head (PinnedHead), and at the sheet's smallest
           size all of it in sight (data-sheet-head). */}
           <div className="frost-head sticky top-0 z-20 flex items-center gap-2 px-4 pt-3 pb-1" data-slot="layer-head" data-sheet-head="">
-            <h2 className={cn("flex-1 font-bold", TEXT.title)}>Account and Settings</h2>
+            <h2 className={cn("flex-1 font-bold", TEXT.title)}>Settings</h2>
             <CloseButton label="Back to the map" onClick={onClose} data-back="" data-testid="console-close" />
           </div>
           {/* A page opened straight from the search closes the console by
