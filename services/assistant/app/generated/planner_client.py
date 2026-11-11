@@ -307,6 +307,15 @@ def forget_pilots_notes(*, x_pilot_id: str | None = None) -> m.PilotNotesForgott
     return _FORGET_PILOTS_NOTES.validate_python(found)
 
 
+_PILOTS_NOTES = _Answer(m.PilotNotes)
+
+
+def pilots_notes(*, x_pilot_id: str | None = None) -> m.PilotNotes:
+    """GET /api/checkpoint-notes/mine: Pilots Notes"""
+    found = _send('GET', '/api/checkpoint-notes/mine', query={}, body=None, headers={'X-Pilot-Id': x_pilot_id})
+    return _PILOTS_NOTES.validate_python(found)
+
+
 _NOTES_TO_WRITE = _Answer(m.NotesToWrite)
 
 

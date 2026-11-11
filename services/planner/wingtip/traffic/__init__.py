@@ -71,8 +71,8 @@ from .adsb_lol import (
 )
 from .adsbx import ADSBX_HOST, ADSBX_MIN_GAP_S, ADSBX_MONTHLY, ADSBX_SOURCE, ADSBX_URL, ADSBX_USAGE_FILE
 from .adsbfi import ADSBFI_BACKOFF_S, ADSBFI_MIN_GAP_S, ADSBFI_SOURCE, ADSBFI_URL
-from .radar import ELSEWHERE_RECORD_S, LOOKED_S, forget_stale, heard_elsewhere, looked_at, radar_wanted
-from .recorded import RECORD_KEEP_S, follow, followed
+from .radar import ELSEWHERE_RECORD_S, LOOKED_S, forget_looks, forget_stale, heard_elsewhere, looked_at, prune, prune_forever, radar_wanted
+from .recorded import FOLLOW_KEEP_S, RECORD_KEEP_S, follow, followed
 from .watched import FOLLOW_EVERY_S, WATCH_FOR_S, WATCH_GAP_S, follow_forever, follow_round
 from .view import ALTIMETER_NM, near, on_altimeter
 from .lookup import ADSBX_BY, FOUND_TTL_S, find, find_credited, registered
@@ -161,6 +161,7 @@ __all__ = [
     "RECENT_TTL_S",
     "RECENT_URL",
     "RECORD_KEEP_S",
+    "FOLLOW_KEEP_S",
     "REGION_DEG",
     "REGION_RADIUS_NM",
     "ROUTE_TTL_S",
@@ -185,7 +186,10 @@ __all__ = [
     "follow_forever",
     "follow_round",
     "followed",
+    "forget_looks",
     "forget_stale",
+    "prune",
+    "prune_forever",
     "heard_elsewhere",
     "history",
     "looked_at",

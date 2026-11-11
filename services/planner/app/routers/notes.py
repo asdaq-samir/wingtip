@@ -13,7 +13,7 @@ from wingtip import checkpoint_notes
 from wingtip import geo
 
 from ..router_basics import load_route
-from ..schemas.notes import CheckpointNoteSaved, NoteSeeded, NotesToWrite, NoteToWrite, PilotNotesForgotten
+from ..schemas.notes import CheckpointNote, CheckpointNoteSaved, NoteSeeded, NotesToWrite, NoteToWrite, PilotNotes, PilotNotesForgotten
 from ..checkpoint_scoring import route_checkpoints
 from ..gateway import gateway
 
@@ -126,6 +126,16 @@ def save_checkpoint_note(
     route = _hop_key(_hop_of(r, note.lat, note.lon))
     saved = checkpoint_notes.save_note(route, note.lat, note.lon, note.description.strip(), x_pilot_id)
     return CheckpointNoteSaved(ok=True, note=saved)
+
+
+@router.get("/api/checkpoint-notes/mine")
+def pilots_notes(x_pilot_id: str | None = Header(default=None, alias=PILOT_HEADER)) -> PilotNotes:
+    """A pilot's own notes, every one, for their account's export (the
+    gateway's GET /api/me/export). Asked by the gateway alone, as the
+    delete below is: the pilot is named by the header it sets."""
+    if not x_pilot_id:
+        raise HTTPException(422, f"{PILOT_HEADER} names the pilot whose notes these are")
+    return PilotNotes(notes=[CheckpointNote(**n) for n in checkpoint_notes.pilots_notes(x_pilot_id)])
 
 
 @router.delete("/api/checkpoint-notes/mine")

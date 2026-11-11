@@ -39,6 +39,7 @@ import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.ai.AiSources
 import app.wingtipmaps.android.ai.AiTask
 import app.wingtipmaps.android.ai.AiWordsRow
+import app.wingtipmaps.android.alternate.AlternateRows
 import app.wingtipmaps.android.brief.DepartureWindowStrip
 import app.wingtipmaps.android.brief.IcingRows
 import app.wingtipmaps.android.design.LoadingRow
@@ -117,6 +118,8 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
                         content = { Text(item.label) },
                     )
                 }
+                // Under IFR, the alternate (14 CFR 91.169), filed here.
+                AlternateRows(planModel)
                 // In the weather's adverse conditions: the forecast icing a leg.
                 IcingRows(plan)
             }

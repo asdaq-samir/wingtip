@@ -1,7 +1,7 @@
 # Privacy answers for the stores
 
 App Store Connect's App Privacy ("nutrition label") and Google Play's
-Data safety form, answered from the code on 2026-11-09.
+Data safety form, answered from the code on 2026-11-10.
 [`docs/privacy-inventory.md`](../privacy-inventory.md) is the one source
 of what is collected; this page is that list put into each store's
 questions, with the file each answer rests on. When the inventory
@@ -29,13 +29,14 @@ page, and the flight watch's changes.
 
 ## The policy these answers point to
 
-No `docs/legal` drafts have landed (no trust or legal branch on origin,
-and nothing under `docs/legal` on `claude/integration` as of 2026-11-09).
-Today's policy and terms are the web app's pages,
-`apps/web/public/privacy.html` and `apps/web/public/terms.html` (served
-at `/app/privacy.html` and `/app/terms.html`), which the site will serve
-at `/privacy` and `/terms`. When the drafts land, link them here and
-check these answers against them.
+The policy, terms and support page are `docs/legal/privacy.md`,
+`terms.md` and `support.md`, written to `apps/web/public/*.html` by
+`scripts/build/legal_pages.py` (CI checks they are current,
+`scripts/ci/guards.sh`) and served at `/privacy`, `/terms` and
+`/support` (`WebMvcConfig`). Deleting an account without the app is at
+`/delete-account` (`DeleteAccountController`), linked from the support
+page and the policy. Check these answers against the policy whenever
+either changes.
 
 ## App Store Connect: App Privacy
 
@@ -52,10 +53,11 @@ Crashlytics, Firebase or analytics kit: a grep of `apps/ios` finds none).
 | Apple's type | What | Where in the code |
 |---|---|---|
 | Contact Info: Email Address | The address signed in with, Apple's or the emailed link's | `apps/ios/Wingtip/Session.swift`, `API/Gateway.swift`; the gateway's `pilots` |
+| Contact Info: Phone Number | The telephone number the pilot adds, optional, for a flight plan's item 19 | `Session.swift` (`setContact`); the gateway's `pilots.phone` |
 | Contact Info: Name | The name Apple gives at sign-in; the name as on a pilot certificate where given for endorsements | `Views/SignInView.swift`, `Views/InstructorView.swift` |
 | Identifiers: User ID | The account's id, Apple's subject for the sign-in | `Session.swift` |
 | User Content: Other User Content | Airplanes, saved flights and nav logs, the logbook, endorsements, currency dates, checkpoint notes | `Views/AircraftView.swift`, `Views/LogbookViews.swift`, `Logbook/AutoLogbook.swift`, `API/` |
-| Location: Precise Location | A flight's track, when the pilot logs or saves it (the auto-drafted logbook entry sends the track to the planner, and the logged flight keeps it) | `Logbook/FlightRecorder.swift`, `Logbook/AutoLogbook.swift`; the gateway's `flight_tracks` |
+| Location: Precise Location | A flight's track, when the pilot logs or saves it (the auto-drafted logbook entry sends the track to the planner, and the logged flight keeps it), linked to the account | `Logbook/FlightRecorder.swift`, `Logbook/AutoLogbook.swift`; the gateway's `flight_tracks` |
 | Usage Data: Product Interaction | The month's count of each Claude-written feature used, for its cap | the gateway's `paid_feature_uses` (privacy-inventory.md) |
 
 ### Data not linked to you
@@ -114,32 +116,42 @@ Not collected, though the app uses them on the device:
 
 ### The privacy manifest
 
-`apps/ios/Wingtip/PrivacyInfo.xcprivacy` declares email (linked),
-precise location (unlinked) and other user content (linked). To match
-the answers above it should also declare Name, User ID and the linked
-precise location of a saved track (and Product Interaction if the
-Claude caps ever count on iOS); that is a code change for the iOS app's
-owner, noted here, not made by this page.
+`apps/ios/Wingtip/PrivacyInfo.xcprivacy` must declare the same rows:
+Email Address, Name, Phone Number, User ID, Other User Content and
+Precise Location (the saved track), linked; Precise Location (the live
+position), Crash Data and Performance Data, not linked; all for App
+Functionality. privacy-inventory.md, "The iOS app's privacy manifest",
+lists what the file declares today and its required-reason APIs; the
+missing rows come with the iPhone's privacy fixes. Product Interaction
+joins them if the Claude caps ever count on iOS.
 
 ## Google Play: Data safety
 
 **Does your app collect or share any of the required user data types?**
 Yes. **Is all of the user data collected by your app encrypted in
-transit?** Yes (every call is HTTPS to the gateway, `Config.kt`).
+transit?** Yes: every call is HTTPS, to the gateway (`Config.kt`) and,
+straight from the phone, to Google's map tiles once the map is zoomed
+close in (`Charts.kt`, `map/CloseMap.kt`) and to the weather loop's
+tiles from Iowa State's IEM and NOAA's nowCOAST (`map/WeatherLoop.kt`);
+`usesCleartextTraffic` is false.
 **Do you provide a way for users to request that their data is
-deleted?** Yes: the web app's Setup deletes the account (`DELETE
-/api/me`), and the support page says how; the Android app has no Delete
-Account button of its own yet (see listing.md).
+deleted?** Yes: Setup, Delete Account in the app
+(`account/AccountActions.kt`, wired in `ui/SetupScreen.kt`), and, for
+the form's web link, `https://wingtipmaps.app/delete-account`, where a
+pilot without the app asks by email and confirms from the link
+(`DeleteAccountController`); both delete the same
+(`AccountService.delete`).
 
 | Google's type | Collected | Shared | Optional | Why | Android code |
 |---|---|---|---|---|---|
 | Personal info: Email address | Yes | No | No (to sign in; planning needs no account) | App functionality, Account management | `Session.kt` |
 | Personal info: Name | Yes, only where given for endorsements | No | Yes | App functionality | `pilot/` |
+| Personal info: Phone number | Yes, only where the pilot adds it (a flight plan's item 19) | No | Yes | App functionality | the gateway's `pilots.phone` |
 | Personal info: User IDs | Yes | No | No | Account management | `Session.kt` |
 | Location: Precise location | Yes, a logged flight's track | No | Yes | App functionality | `logbook/FlightRecorder.kt`, `logbook/AutoLogbookHost.kt` |
 | App activity: Other user-generated content | Yes (airplanes, flights, logbook, notes) | No | Yes | App functionality | `logbook/`, `records/` |
 | App activity: Other actions | Yes, the count of Claude-written features for their cap (none while they are off, the default) | No | Yes | App functionality | the gateway |
-| App info and performance: Crash logs | Yes: the exits Android kept (`ApplicationExitInfo`: crashes, ANRs with their traces, low-memory kills) and an uncaught exception's stack, with the app's version, the Android version and phone or tablet; nothing of the pilot's; kept 30 days | No | No | App functionality (finding faults) | `diagnostics/ExitReasons.kt`, `CrashCatcher.kt`, `DiagnosticsReporter.kt` |
+| App info and performance: Crash logs | Yes: the exits Android kept (`ApplicationExitInfo`: crashes, ANRs with their traces, low-memory kills) and an uncaught exception's stack, with the app's version, the Android version and phone or tablet; sent as the phone has it and scrubbed on receipt (queries, emails, home folders and UUIDs, `DiagnosticText`), no account; kept 30 days | No | No | App functionality (finding faults) | `diagnostics/ExitReasons.kt`, `CrashCatcher.kt`, `DiagnosticsReporter.kt` |
 | App info and performance: Diagnostics | Yes: the start-up time and the share of slow frames (JankStats), the same way; kept 400 days | No | No | App functionality (keeping the app fast) | `diagnostics/FrameStats.kt` |
 | Photos and videos: Photos | **No**: a page photographed for Add from a Photo is read on the phone where it has Gemini Nano (ML Kit text recognition, then Nano, `ai/read/OnPhoneReader.kt`); otherwise it is sent to be read and not kept, "processed ephemerally" | | | | `documents/` |
 | Audio: Voice or sound recordings | **No**: the radio is heard by the phone's on-device `SpeechRecognizer` only (`createOnDeviceSpeechRecognizer`, `atc/RadioListener.kt`) and read on the phone, and a question asked by voice by its own on-device recognizer (`voice/VoiceInput.kt`, since 2026-11-10), its words typed into the field as a typed question; nothing is sent by the app or to Google; without an on-device recognizer voice is not offered | | | | |
@@ -148,7 +160,12 @@ Account button of its own yet (see listing.md).
 Amazon SES, and Anthropic only while the Claude features are on)
 process data for the app and are not sharing. The device's live
 position, sent to answer Nearest and the copilot and not kept, is
-"processed ephemerally" and not collected in Google's sense.
+"processed ephemerally" and not collected in Google's sense. The map
+tiles the phone asks of Google (close in), IEM and nowCOAST carry the
+device's internet address and the view, as any map's, and no account;
+Google is the app's Maps Platform provider. Before answering, check each
+Google SDK's own entry in Play's SDK Index (`play-services-location`,
+ML Kit's document scanner and text recognition) against these rows.
 
 AI on the phone (docs/android-ai.md) adds nothing to collect: where the
 phone has Gemini Nano, Ask, In Plain Words, a drafted remark and a page
@@ -159,15 +176,22 @@ the pilot asks them for through AppFunctions (`ai/functions/`), answered
 on the phone; that is the agent's maker's collection, under its terms.
 
 Permissions Play will see, each with what it is for
-(`apps/android/app/src/main/AndroidManifest.xml`): location (the
-airplane on the chart; `FOREGROUND_SERVICE_LOCATION` for the flight
-recorder while flying, shown as a notification, never background
-location), `RECORD_AUDIO` and `FOREGROUND_SERVICE_MICROPHONE` (the ATC
-copilot, only when turned on), `CHANGE_WIFI_MULTICAST_STATE` and
+(`apps/android/app/src/main/AndroidManifest.xml`):
+`ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION` (the airplane on the
+chart, asked in the foreground only; never `ACCESS_BACKGROUND_LOCATION`),
+`FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_LOCATION` (while flying, the
+position keeps being read with the app in the background, for the
+flight recorder and the alerts ahead, shown as a notification,
+`flight/OwnShip.kt`), `RECORD_AUDIO` and `FOREGROUND_SERVICE_MICROPHONE`
+(the ATC copilot, only when turned on), `CHANGE_WIFI_MULTICAST_STATE` and
 `FOREGROUND_SERVICE_CONNECTED_DEVICE` (a cockpit ADS-B receiver),
-`POST_NOTIFICATIONS`. Play's foreground-service declaration form wants
-a short video of each; the shot list in preview-video.md covers the
-copilot and the recorder.
+`POST_NOTIFICATIONS` and `POST_PROMOTED_NOTIFICATIONS` (the flight's
+notification, promoted as a live update while flying), `INTERNET` and
+`ACCESS_NETWORK_STATE`. Play's foreground-service declaration form wants
+a description, the impact if deferred, a use case and a short video for
+each of the three types (`location`, `microphone`, `connectedDevice`);
+the shot list in preview-video.md covers the copilot and the recorder,
+and the receiver's in-app setup is still to film (launch-checklist.md).
 
 ## Account deletion
 
@@ -175,7 +199,8 @@ copilot and the recorder.
 |---|---|---|
 | iOS | Setup, Account, Delete Account (asked first) | `apps/ios/Wingtip/Views/AccountViews.swift` |
 | Web | Setup's account, Delete account | `DELETE /api/me` |
-| Android | none yet; the web's, from support | add before the first release |
+| Android | Setup, Delete Account (asked first) | `account/AccountActions.kt`, `ui/SetupScreen.kt` |
+| Without the app | `https://wingtipmaps.app/delete-account`: the address, an emailed link, Delete Account | `DeleteAccountController` |
 
 Deleting removes everything linked above; an endorsement an instructor
 signed stays with the other party, as 14 CFR 61.189 asks

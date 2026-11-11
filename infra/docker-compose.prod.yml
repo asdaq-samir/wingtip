@@ -264,6 +264,12 @@ services:
       MCP_ENABLED: "false"
       # The nightly speed lab's token (SpeedController; CI's SPEED_LAB_TOKEN).
       APP_SPEED_LAB_TOKEN: ${APP_SPEED_LAB_TOKEN:-}
+      # The store reviewers' sign-in (ReviewSignIn, docs/store/listing.md
+      # "Review access"): off unless the owner sets REVIEW_SIGN_IN to true
+      # for a review, with the review account's address and its code.
+      REVIEW_SIGN_IN: ${REVIEW_SIGN_IN:-false}
+      REVIEW_SIGN_IN_EMAIL: ${REVIEW_SIGN_IN_EMAIL:-}
+      REVIEW_SIGN_IN_CODE: ${REVIEW_SIGN_IN_CODE:-}
       MAIL_HOST: ${MAIL_HOST}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME}
