@@ -6,7 +6,6 @@ import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { shareOrCopy } from "../../../lib/share";
 import { CardHead } from "../../../components/CardHead";
 import { SheetCard } from "../../../components/SheetCard";
-import { useCardSize } from "../../../lib/sheetCards";
 import { PINNED_BELOW } from "../../../components/PinnedHead";
 import { CardTitle } from "../../../components/CardTitle";
 import { CardPictures, type CardSlide } from "../../../components/CardPictures";
@@ -80,10 +79,6 @@ function subtitleOf(place: AirportPlace, from: { point: LatLon; name: string | n
     .filter(Boolean)
     .join(" · ");
 }
-
-/** How long the panel takes to come all the way up before the tabs' bar or
- *  the approaches are scrolled to: the Drawer's settle (DRAWER_MS) and a frame. */
-const RISEN_MS = 520;
 
 /** How old a report is, "14m ago", for the weather's line. */
 function ageOf(at: string | null | undefined): string | null {
@@ -200,38 +195,27 @@ export default function PlaceCard({
   // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the card opens on its approaches; each tab its own place in the scroll (useTabScroll).
   const [tab, setPicked] = useCardTab<CardTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
   useTabScroll(tabsRef, tab);
-  // Opened on its approaches (the route's Approaches): its own drawer all
-  // the way up and, once the answer is in and it has risen, Charts open
-  // on the approaches. The callbacks effect events, so the card rising
-  // draws nothing that restarts this.
+  // Opened on its approaches (the route's Approaches): at half as every
+  // card opens (the owner, 2026-11-11), Charts open on the approaches once
+  // the answer is in; the pilot swipes up for the plates. The card may
+  // already be open on another tab (it does not remount), and an inactive
+  // tab's groups are not drawn: switch, and look the frame after it has drawn.
   const placeIn = !!place;
   const cardId = useId();
-  const card = useCardSize(cardId);
-  const expand = useEffectEvent(() => card?.setSize("full"));
   const started = useEffectEvent(() => onStarted?.());
   useEffect(() => {
     if (startOn !== "approaches" || !placeIn) return;
-    expand();
-    // The card may already be open on another tab (it does not remount),
-    // and an inactive tab's groups are not drawn: switch, and look a frame
-    // or so after it has drawn.
-    let look = 0;
-    const scroll = window.setTimeout(() => {
-      setPicked("diagrams");
-      look = window.setTimeout(() => {
-        tabsRef.current
-          ?.closest('[data-testid="place-card"]')
-          ?.querySelector('[data-chart-group="Approaches"]')
-          // Smooth only where motion is welcome: CSS's Reduce Motion rule
-          // (index.css) cannot reach a script's own behavior.
-          ?.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
-        started();
-      }, 50);
-    }, RISEN_MS);
-    return () => {
-      window.clearTimeout(scroll);
-      window.clearTimeout(look);
-    };
+    setPicked("diagrams");
+    const look = requestAnimationFrame(() => {
+      tabsRef.current
+        ?.closest('[data-testid="place-card"]')
+        ?.querySelector('[data-chart-group="Approaches"]')
+        // Smooth only where motion is welcome: CSS's Reduce Motion rule
+        // (index.css) cannot reach a script's own behavior.
+        ?.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
+      started();
+    });
+    return () => cancelAnimationFrame(look);
   }, [startOn, placeIn, setPicked]);
   // The runways, sketched or the FAA's diagram cropped to them, a page of
   // the pictures: a tap shows it full screen -- the FAA's diagram, or for
