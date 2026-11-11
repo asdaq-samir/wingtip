@@ -187,7 +187,7 @@ fn is_runway(core: &str) -> bool {
 }
 
 /// A taxiway's designator: "A", "B3", "EL", "A1-A6".
-fn is_taxiway(core: &str) -> bool {
+pub(super) fn is_taxiway(core: &str) -> bool {
     core.split('-').all(|t| {
         let letters = t.trim_end_matches(|c: char| c.is_ascii_digit());
         !t.is_empty() && t.len() <= 4 && (1..=2).contains(&letters.len()) && letters.bytes().all(|b| b.is_ascii_uppercase())

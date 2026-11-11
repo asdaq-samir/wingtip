@@ -27,6 +27,7 @@
 mod body;
 #[cfg(test)]
 mod tests;
+mod title;
 
 use crate::contractions::{listed, lookup};
 use crate::json::{self, Value};
@@ -52,6 +53,9 @@ pub struct NotamRead {
     pub location: Option<String>,
     pub keyword: Option<String>,
     pub heading: Option<String>,
+    /// The thing it is about, named by its subject's words (title):
+    /// "Runway 06/24", "Taxiway A"; None where they name none.
+    pub title: Option<String>,
     pub words: String,
     pub starts: Option<String>,
     pub ends: Option<String>,
@@ -265,15 +269,13 @@ pub fn read(text: &str, idents: &[String]) -> NotamRead {
     if t.bytes().any(|b| b.is_ascii_lowercase()) {
         return NotamRead { form: "text", words: t.to_owned(), ..NotamRead::default() };
     }
-    if t.contains("Q)") || t.contains("E)") {
-        icao(t, idents)
-    } else {
-        domestic(t, idents)
-    }
+    let mut r = if t.contains("Q)") || t.contains("E)") { icao(t, idents) } else { domestic(t, idents) };
+    r.title = title::title(t);
+    r
 }
 
 /// `notam_read`: `{"text", "idents"?}` to `{"form", "number", "location",
-/// "keyword", "heading", "words", "starts", "ends", "estimated",
+/// "keyword", "heading", "title", "words", "starts", "ends", "estimated",
 /// "permanent"}`.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     if name != "notam_read" {
@@ -290,6 +292,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         ("location", r.location.as_deref()),
         ("keyword", r.keyword.as_deref()),
         ("heading", r.heading.as_deref()),
+        ("title", r.title.as_deref()),
         ("words", Some(r.words.as_str())),
         ("starts", r.starts.as_deref()),
         ("ends", r.ends.as_deref()),

@@ -71,8 +71,8 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   const notams = card(page).getByTestId("place-notams");
   await expect(notams).toBeVisible();
   const one = notams.getByTestId("place-notam");
-  // The engine's reading: its keyword as a heading, its words written out.
-  await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway");
+  // The engine's reading: its title, the runway it names, and its words written out.
+  await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway 09/27");
   // Its start and end at the row's top right, in the device's own time.
   await expect(one.getByTestId("place-notam-window")).toHaveText(/^Nov 1[01], .+– Nov 12, .+[A-Z]{2,}/);
   await expect(one.getByTestId("place-notam-words")).toHaveText("Runway 09/27 closed.");
@@ -132,7 +132,7 @@ test("a field's NOTAMs show three, and their title opens every one", async ({ pa
   await card(page).getByRole("tab", { name: "Info" }).click();
   const section = card(page).getByTestId("place-notams");
   await expect(section.getByTestId("place-notam")).toHaveCount(3);
-  await expect(section.getByTestId("place-notam-heading").first()).toHaveText("Runway");
+  await expect(section.getByTestId("place-notam-heading").first()).toHaveText("Runway 27 PAPI");
   await expect(section.getByTestId("place-notam-words").first()).toHaveText("Runway 27 PAPI out of service.");
   await expect(section.getByTestId("place-notam-words").nth(2)).toContainText("1,600 ft MSL (210 ft above ground)");
   await expect(section).toContainText("5");
@@ -172,5 +172,5 @@ test("a taxiway closed between runways puts no badge on a runway", async ({ page
   await expect(card(page).getByTestId("place-alert")).toHaveCount(0);
   // It is still in the Info tab's list.
   await card(page).getByRole("tab", { name: "Info" }).click();
-  await expect(card(page).getByTestId("place-notams").getByTestId("place-notam-heading").first()).toHaveText("Taxiway");
+  await expect(card(page).getByTestId("place-notams").getByTestId("place-notam-heading").first()).toHaveText("Taxiway A");
 });

@@ -7420,6 +7420,8 @@ enum EngineContract {
         var keyword: String?
         /// What it is about, in words: Runway, Taxiway, Obstacle, Instrument approach, Temporary flight restriction ...
         var heading: String?
+        /// The thing it is about, named by the words straight after its keyword (1-2-1), as notam_subject reads them: a runway or taxiway as designated (3-3-5, 3-3-6: "Runway 06/24", "Taxiways B and C"), an apron, an ILS's part by its runway ("Glide slope runway 09"), a navaid by its ident ("OSH VOR"), an FDC approach NOTAM's procedure as the plate prints it (7-1-3), an obstacle's kind ("Obstacle: crane"), the fuel and its grade ("Fuel 100LL"), a facility and its frequency ("Tower 120.75"), the field's beacon or closure. Null where they name nothing it knows: the heading is then the title.
+        var title: String?
         /// Its words written out in sentence case, ending as a sentence ends.
         var words: String
         /// Its start of activity, ISO 8601 UTC, from its text.

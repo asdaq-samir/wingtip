@@ -42,7 +42,7 @@
 //!   field's "TFR".
 
 mod answer;
-mod parts;
+pub(crate) mod parts;
 #[cfg(test)]
 mod tests;
 
@@ -114,7 +114,7 @@ fn is_window(w: &str) -> bool {
 
 /// The keyword, the words after it, and its text after it as sent (an
 /// IAP's title is read from that, commas and all).
-fn subject_of(text: &str) -> Option<(String, Vec<String>, String)> {
+pub(crate) fn subject_of(text: &str) -> Option<(String, Vec<String>, String)> {
     if text.contains("Q)") || text.contains("E)") {
         let e = item(text, b'E')?;
         let words: Vec<String> = e.split_whitespace().map(word).collect();

@@ -64,9 +64,14 @@ export function readNotam(n: FieldNotam, ident: string): NotamReading {
   return callEngine("notam_read", { text: n.raw, idents: identsOf(ident) });
 }
 
-/** A NOTAM's heading: its keyword (the engine's), "TFR" for a TFR. */
+/** A NOTAM's title: the thing it is about where its words name it
+ *  ("Runway 06/24", "Taxiway A", "Fuel 100LL"), else its keyword as a
+ *  heading, both the engine's (notam_read); "TFR" for a TFR. The owner,
+ *  2026-11-11: "the notam title can be a bit more specific". */
 export function headingOf(n: FieldNotam, ident: string): string {
-  return n.kind === "tfr" ? "TFR" : (readNotam(n, ident).heading ?? "NOTAM");
+  if (n.kind === "tfr") return "TFR";
+  const read = readNotam(n, ident);
+  return read.title ?? read.heading ?? "NOTAM";
 }
 
 /** A feed's time as a date, one with no zone read as UTC; null where it

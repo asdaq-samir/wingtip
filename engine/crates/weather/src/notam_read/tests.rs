@@ -110,3 +110,40 @@ fn what_is_not_known_is_kept_as_written() {
     assert_eq!(words("Runway 18 closed for paint"), "Runway 18 closed for paint");
     assert_eq!(read("RWY 18 CLSD", &[]).form, "text");
 }
+
+#[test]
+fn its_title_names_the_thing_its_subject_words_say() {
+    let title = |text: &str| read(text, &[]).title;
+    let cases = [
+        // RWY (JO 7930.2 1-2-1), its designation as written (3-3-5).
+        ("!OSH 11/041 OSH RWY 06/24 CLSD EXC XNG 2511120900-2511121700", Some("Runway 06/24")),
+        ("!ORD 11/041 ORD RWY 04L/22R CLSD 2511120900-2511121700", Some("Runway 04L/22R")),
+        ("!OSH 11/052 OSH RWY 27 PAPI U/S 2511101200-2512012359EST", Some("Runway 27 PAPI")),
+        // TWY (3-3-6): the taxiways first, not those it runs between.
+        ("!OSH 11/070 OSH TWY A BTN TWY B AND TWY C CLSD 2511120000-2511202359", Some("Taxiway A")),
+        ("!OSH 11/071 OSH TWY B, C CLSD 2511120000-2511202359", Some("Taxiways B and C")),
+        ("!OSH 11/072 OSH APRON C CLSD 2511120000-2511202359", Some("Apron C")),
+        ("!OSH 11/073 OSH NAV ILS RWY 09 GP U/S 2511120000-2511202359", Some("Glide slope runway 09")),
+        ("!OSH 11/074 OSH NAV ILS RWY 09 U/S 2511120000-2511202359", Some("ILS runway 09")),
+        ("!OSH 11/075 OSH NAV OSH VOR U/S 2511120000-2511202359", Some("OSH VOR")),
+        // IAP, the FDC form (7-1-3): the procedure as the plate prints it.
+        (
+            "!FDC 5/1234 OSH IAP WITTMAN RGNL, OSHKOSH, WI. RNAV (GPS) RWY 36, AMDT 2... LPV DA 1095/HAT 300 ALL CATS. 2511120000-2602122359EST",
+            Some("RNAV (GPS) RWY 36"),
+        ),
+        ("!OSH 11/060 OSH OBST CRANE (ASN 2025-AGL-1234-NRA) 435800N0883300W 1047FT (210FT AGL) 2511110000-2512312359", Some("Obstacle: crane")),
+        ("!OSH 11/076 OSH SVC FUEL 100LL NOT AVBL 2511120000-2511202359", Some("Fuel 100LL")),
+        ("!OSH 11/077 OSH AD AP JET A FUEL NOT AVBL 2511120000-2511202359", Some("Fuel Jet A")),
+        ("!OSH 11/078 OSH COM TWR 120.75 U/S 2511120000-2511202359", Some("Tower 120.75")),
+        ("!OSH 11/079 OSH AD AP BCN U/S 2511120000-2511202359", Some("Aerodrome beacon")),
+        ("!OSH 11/082 OSH AD AP CLSD 2511120000-2511202359", Some("Aerodrome closed")),
+        ("A1234/25 NOTAMN Q) KZMP/QMRLC/IV/NBO/A/000/999/4359N08833W005 A) KOSH B) 2511120900 C) 2511121700 EST E) RWY 18/36 CLSD", Some("Runway 18/36")),
+        // Nothing it knows: the heading is the title.
+        ("!OSH 11/080 OSH AD AP WINDCONE FOR RWY 18 LGT U/S 2511120000-2511202359", None),
+        ("!OSH 11/083 OSH TWY ALL CLSD 2511120000-2511202359", None),
+        ("Runway 18 closed for paint", None),
+    ];
+    for (text, want) in cases {
+        assert_eq!(title(text).as_deref(), want, "{text}");
+    }
+}
