@@ -540,6 +540,9 @@
     "ATC" : {
 
     },
+    "ATIS at ${airport}" : {
+
+    },
     "ATIS at an Airport" : {
 
     },
@@ -565,6 +568,9 @@
 
     },
     "Add" : {
+
+    },
+    "Add ${approach} to the route" : {
 
     },
     "Add Alternate" : {
@@ -823,10 +829,16 @@
     "Brief" : {
 
     },
+    "Brief ${approach}" : {
+
+    },
     "Brief Them" : {
 
     },
     "Brief a Flight" : {
+
+    },
+    "Brief a flight to ${airport}" : {
 
     },
     "Brief a flight to where?" : {
@@ -1187,6 +1199,12 @@
     "Direct To %@" : {
 
     },
+    "Direct to ${airport}" : {
+
+    },
+    "Direct to ${place}" : {
+
+    },
     "Direct to %@" : {
 
     },
@@ -1385,6 +1403,9 @@
     "Expires" : {
 
     },
+    "Explain ${notam}" : {
+
+    },
     "Explain a NOTAM" : {
 
     },
@@ -1573,6 +1594,9 @@
 
     },
     "Fly" : {
+
+    },
+    "Fly ${airplane}" : {
 
     },
     "Fly %@" : {
@@ -2760,6 +2784,9 @@
     "Plan a route first for Direct To" : {
 
     },
+    "Plan a trip to ${airport} leaving ${departure}" : {
+
+    },
     "Plan a trip…" : {
 
     },
@@ -3797,6 +3824,9 @@
 
     },
     "Weather When I Land" : {
+
+    },
+    "Weather at ${airport}" : {
 
     },
     "Weather at an Airport" : {

@@ -59,7 +59,7 @@ if [ -z "$derived" ] || [ ! -d "$intermediates" ]; then
 fi
 
 # The configuration's .stringsdata whose source file is still there, one
-# per source (each architecture writes the same strings).
+# per source and file name (each architecture writes the same strings).
 list=$(mktemp)
 trap 'rm -f "$list"; [ -z "${tmp:-}" ] || rm -rf "$tmp"' EXIT
 find "$intermediates" -path "*/$config-*/*" -name '*.stringsdata' -print0 \
@@ -71,8 +71,12 @@ for path in sorted(p for p in sys.stdin.buffer.read().decode().split("\0") if p)
         source = json.load(open(path)).get("source", "")
     except (OSError, ValueError):
         continue
-    if source and os.path.exists(source) and source not in seen:
-        seen.add(source)
+    # One per source and kind: a Swift file can have two, its own strings
+    # and, for an AppShortcutsProvider, the Siri phrases the App Intents
+    # tool extracts (ExtractedAppShortcutsMetadata.stringsdata).
+    key = (source, os.path.basename(path))
+    if source and os.path.exists(source) and key not in seen:
+        seen.add(key)
         print(path)
 ' > "$list"
 if [ ! -s "$list" ]; then
