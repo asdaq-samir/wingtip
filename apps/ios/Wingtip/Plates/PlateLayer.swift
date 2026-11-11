@@ -25,10 +25,9 @@ final class PlateLayer: NSObject, UIGestureRecognizerDelegate {
     /// accessible way to do the same).
     private var actions: [UIAccessibilityCustomAction] = []
 
-    /// The final approach segment's colour: the pattern's teal, the
-    /// nearest design/tokens.json has to ForeFlight's cyan until a token of
-    /// its own is added there (asked in the branch's report).
-    static var finalColour: UIColor { WingtipColor.Chart.pattern }
+    /// The final approach segment's colour: ForeFlight's cyan
+    /// (design/tokens.json's chart.final-approach).
+    static var finalColour: UIColor { WingtipColor.Chart.finalApproach }
 
     override nonisolated init() { super.init() }
 

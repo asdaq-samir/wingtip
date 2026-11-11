@@ -92,6 +92,8 @@ enum WingtipColor {
         static let pattern = rgb(0x0E8F8A)
         /// A pattern leg's name ground, a step darker: white words on it 5.2:1, where the line's teal is 3.95:1 (WCAG 1.4.3).
         static let patternLabel = rgb(0x0B7A75)
+        /// An approach's final segment, its final approach fix to its missed approach point, over its plate on the map: the cyan ForeFlight marks it in (the owner's screenshot, 2026-11-11), apart from the procedure's indigo and the course's magenta. A chart colour, so the same in every look and at night.
+        static let finalApproach = rgb(0x00B4E6)
         /// An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red.
         static let obstacle = rgb(0x7A1F1F)
     }

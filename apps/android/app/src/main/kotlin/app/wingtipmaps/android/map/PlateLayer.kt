@@ -97,11 +97,9 @@ class PlateLayer(private val density: Float) {
             finals.setGeoJson(drawing.finals)
         } else {
             style.addSource(GeoJsonSource(FINALS, drawing.finals))
-            // TODO(claude/plates-engine): the final approach's own cyan
-            // token from design/tokens.json once that branch adds it; the
-            // pattern's teal, ForeFlight's cyan's nearest, until then.
+            // The final approach's cyan, ForeFlight's (design/tokens.json).
             val line = LineLayer(FINALS, FINALS).withProperties(
-                PropertyFactory.lineColor(WingtipColors.Chart.PATTERN_HEX.toColorInt()),
+                PropertyFactory.lineColor(WingtipColors.Chart.FINAL_APPROACH_HEX.toColorInt()),
                 PropertyFactory.lineWidth(FINAL_WIDTH),
                 PropertyFactory.lineCap(Property.LINE_CAP_ROUND),
             )

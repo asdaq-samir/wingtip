@@ -42,6 +42,7 @@ export const CHART = {
   courseChip: "#b000b0",
   pattern: "#0e8f8a",
   patternLabel: "#0b7a75",
+  finalApproach: "#00b4e6",
   obstacle: "#7a1f1f",
 };
 
