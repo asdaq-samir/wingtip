@@ -132,27 +132,12 @@ test("the grabber's bars are 44 points tall to a finger and meet in the middle, 
   expect(hits[1].markRight - hits[0].markLeft).toBeCloseTo(36, 0);
 });
 
-test("with no route, FPL's Search lands on the search's field, focused", async ({ page }) => {
-  await page.goto("/app/plan");
-  await settle(page);
-  await grabberTo(page, "half");
-  await bar(page, 1).click();
-  await expectPage(page, 1);
-  await sideDrawer(page).getByTestId("fpl-empty-search").click();
-  await expectPage(page, 0);
-  await expect(page.getByTestId("search-airports")).toBeFocused();
-});
-
 test("a route made goes to FPL; cleared, the page stays", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
   await expectPage(page, 0);
-  // Open Sample Flight, FPL's own: a route made.
-  await bar(page, 1).click();
-  await sideDrawer(page).getByTestId("fpl-empty-sample").click();
-  await expectPage(page, 1);
-  // A route in the address (a link) opens on FPL too.
+  // A route in the address (a link) opens on FPL.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expectPage(page, 1);

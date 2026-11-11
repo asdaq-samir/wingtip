@@ -1,21 +1,16 @@
 import type { ComponentProps, ReactNode } from "react";
-import { Route } from "lucide-react";
 import { cn } from "cn";
 import { routeName } from "../../../../lib/identSchema";
-import { askSearch } from "../../../../lib/oneSearch";
 import type { FlightRules } from "../../../../lib/preferences";
-import EmptyState from "../../../../components/EmptyState";
 import Segmented from "../../../../components/Segmented";
 import TabKept from "../../../../components/TabKept";
 import TabPage from "../../../../components/TabPage";
-import { Button } from "../../../../components/ui/button";
 import FplStrip from "../FplStrip";
 import ProfileCard from "../ProfileCard";
 import { BriefCard, StopsCard, DryRunControls } from "../../routePanelParts";
 import { CardLayer } from "../../../../components/sheet/CardLayer";
 import { useOpenedOnce } from "../../../../components/sheet/useOpenedOnce";
 import ProfileLine from "./ProfileLine";
-import { SAMPLE_FLIGHT } from "../../lib/sampleFlight";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import ProfileSideView from "./ProfileSideView";
 import Waits from "./Waits";
@@ -35,10 +30,10 @@ const FLIGHT_RULES = [
  * Log, the Profile and the Stops cards of their own over it (the owner,
  * 2026-11-11: pages are cards), each its own size, grabber and ✕. The Nav
  * Log, the Profile and the Stops are kept between their openings
- * (CardLayer's `open`), built once. With no route, "Plan a flight" (EmptyState, iOS's
- * ContentUnavailableView), its Search going to the first page with the
- * field focused, its Open Sample Flight (lib/sampleFlight), and the
- * flights saved and the routes planned last under it.
+ * (CardLayer's `open`), built once. With no route, the empty box and the
+ * flights saved and the routes planned last under it, nothing between
+ * (the owner, 2026-11-11: "We don't need plan a flight either with two
+ * buttons"; the search is the first page, a swipe away).
  */
 export default function PlanPage({
   vm,
@@ -73,7 +68,6 @@ export default function PlanPage({
     navLogShown,
     openList,
     openSaved,
-    pickView,
     planned,
     profileCautions,
     profileShown,
@@ -82,7 +76,6 @@ export default function PlanPage({
     s,
     selectPlace,
     setFlightRules,
-    setRoute,
     setStopsScope,
     showLegs,
     stopDryRun,
@@ -96,38 +89,9 @@ export default function PlanPage({
   const navLogDrawn = useOpenedOnce(navLogShown);
   const profileDrawn = useOpenedOnce(profileShown);
   const stopsDrawn = useOpenedOnce(stopsShown);
-  // The search's page up and its field focused (useOneSearch takes the ask).
-  const toSearch = () => {
-    pickView("search");
-    askSearch();
-  };
   return (
     // Always built: swiped to from the search, it is in sight before it is picked.
     <TabKept away={cardUp}>
-      {!hasPoints && (
-        <EmptyState
-          icon={<Route />}
-          title="Plan a flight"
-          action={
-            <div className="flex flex-wrap justify-center gap-2">
-              <Button type="button" onClick={toSearch} data-testid="fpl-empty-search">
-                Search
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setRoute(SAMPLE_FLIGHT)} data-testid="fpl-empty-sample">
-                Open Sample Flight
-              </Button>
-            </div>
-          }
-          // At the top under the box, not centred in the sheet's whole
-          // height, its two buttons side by side: at half the box, the
-          // buttons and the flights saved come up in that order, as far as
-          // there is room (the owner, 2026-11-11: "FPL should show the box
-          // and the button and the saved in half card if we have space").
-          className="flex-none px-6 pt-4 pb-2"
-        >
-          Search for an airport, then Fly Here or Depart From.
-        </EmptyState>
-      )}
       {/* And while a finger takes it up: the pill's own are out of
           sight then (the owner's notice, "Fpl hides Saved while dragging
           up"). */}
