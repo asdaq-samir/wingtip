@@ -53,7 +53,6 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
     pickStopField,
     pickWay,
     placePin,
-    procedureCover,
     procedureFocus,
     routeRows,
     routed,
@@ -100,7 +99,6 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
           patternFocus={patternFocus}
           procedures={mapProcedures}
           procedureFocus={procedureFocus}
-          procedureCover={procedureCover}
           place={placePin}
           start={startPin}
           nearest={nearOpen ? nearestPoints : null}

@@ -91,7 +91,6 @@ interface GlRouteMapProps {
   procedures: ProcedureDrawing[];
   focusedProcedure: { lat: number; lon: number }[];
   procedureFocus: string | null;
-  procedureCover?: { top: number; bottom: number };
   crossings: Record<string, number>;
   directs: string;
   onProcedureFix?: (field: string, kind: ProcedureDrawing["kind"], fix: string) => void;
@@ -175,7 +174,9 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
   useGlFit(p.start ? [p.start] : NONE, p.start?.ident ?? null, 9, undefined, placed);
   useGlFit(p.nearest ?? NONE, p.nearest ? "nearest" : null, undefined, undefined, placed);
   useGlFit(p.stopFields, p.stopFields.length ? "stops" : null);
-  useGlFit(p.focusedProcedure, p.focusedProcedure.length ? p.procedureFocus : null, 12, p.procedureCover);
+  // Framed clear of the sheet as it really is: the map's insets (the
+  // Drawer's own cover, useSheetCover) are its padding already.
+  useGlFit(p.focusedProcedure, p.focusedProcedure.length ? p.procedureFocus : null, 12);
   useGlFit(p.focusedPattern, p.focusedPattern.length ? p.patternFocus : null, 13);
   const route = course ? [course.departure.ident, ...(course.stops ?? []).map((s) => s.ident), course.destination.ident] : [];
   const worse = useWorseByArrival(p.briefing, course);

@@ -1,8 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import type { SetURLSearchParams } from "react-router";
-import { useIsMobile } from "../../../hooks/use-mobile";
-import { useNavEdge } from "../../../hooks/use-nav-edge";
 import { api } from "../../../lib/api/client";
 import type { ProcedureDrawing } from "../../../lib/api/types";
 import { altitudesOf, altitudesParam } from "../../../lib/identSchema";
@@ -205,7 +203,6 @@ export function useProcedurePicks({
   // The Procedures' sheet, open at one kind of a field's (ProceduresRoute):
   // from its row in FPL's route, or a procedure's chip in the route's box.
   const [proceduresAt, setProceduresAt] = useState<ProceduresAt>(null);
-  const proceduresOpen = proceduresAt !== null;
   // The procedure on its own page in the Procedures, drawn on the map and
   // brought in above the sheet before it is added to the route, as
   // ForeFlight's Procedure Advisor previews one (the owner's pick); the
@@ -227,23 +224,11 @@ export function useProcedurePicks({
       ? [...procedureDrawings.filter((d) => !(d.kind === preview.kind && sameField(d.airport, preview.airport))), preview]
       : procedureDrawings;
   }, [procedureDrawings, procedurePreview, previewDrawing]);
-  // On a phone their card opens at half whatever it covers
-  // (ProceduresRoute's phoneOpens), the map above it the procedure's; the
-  // sheet under it stays as it was.
-  const isMobile = useIsMobile();
   const setProceduresShown = useCallback((at: ProceduresAt) => {
     setProceduresAt(at);
     if (at === null) setProcedurePreview(null);
   }, []);
   const openProcedures = useCallback((p: RouteProcedure) => setProceduresShown({ ident: p.ident, kind: p.kind }), [setProceduresShown]);
-  // What the sheet covers of the screen, from the navigation bar's edge
-  // it comes from, for the map to bring the procedure in clear of it: its
-  // 55% (the sheet's 55dvh, ProceduresRoute).
-  const navEdge = useNavEdge();
-  const procedureCover = useMemo(() => {
-    const covered = isMobile && proceduresOpen ? Math.round(window.innerHeight * 0.55) : 0;
-    return navEdge === "top" ? { top: covered, bottom: 0 } : { top: 0, bottom: covered };
-  }, [isMobile, proceduresOpen, navEdge]);
   return {
     pickedProcedures,
     procedureFocus,
@@ -263,6 +248,5 @@ export function useProcedurePicks({
     openProcedures,
     previewProcedure,
     mapProcedures,
-    procedureCover,
   };
 }

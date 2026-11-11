@@ -355,7 +355,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     openProcedures,
     previewProcedure,
     mapProcedures,
-    procedureCover,
   } = useProcedurePicks({ planned, searchParams, setSearchParams, procedureAirports, crossings, patterns });
   const directParam = searchParams.get("direct");
   // Where the map is brought to (useMapPins).
@@ -1112,7 +1111,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     preselectTakeoff,
     previewProcedure,
     procedureAirports,
-    procedureCover,
     procedureFocus,
     proceduresAt,
     profileCautions,
