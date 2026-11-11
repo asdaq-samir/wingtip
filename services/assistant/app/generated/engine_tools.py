@@ -142,7 +142,7 @@ TOOLS: list[dict] = json.loads(r'''
   },
   {
     "name": "distance_nm",
-    "description": "The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0).",
+    "description": "The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0), the great circle of FAA-H-8083-25C ch. 16.",
     "input_schema": {
       "type": "object",
       "properties": {

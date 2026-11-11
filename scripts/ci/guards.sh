@@ -106,7 +106,7 @@ machete() {
 
 clippy() {
   need cargo || return $?
-  rustup component add clippy > /dev/null 2>&1
+  # clippy is added before the checks start, above.
   cargo clippy --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings
 }
 
@@ -126,6 +126,13 @@ flight_planner() {
   need pytest || return $?
   cd services/planner && pytest tests/test_flight_critical.py -v
 }
+
+# The engine's toolchain (engine/rust-toolchain.toml) and its components,
+# installed once before the checks start: four rustups at once raced on
+# one download (run 42932986845, "could not rename 'downloaded' file").
+if { on ENGINE || on FLIGHT; } && command -v rustup > /dev/null; then
+  (cd engine && rustup toolchain install > /dev/null 2>&1 && rustup component add clippy rustfmt > /dev/null 2>&1) || true
+fi
 
 start "Areas filter" python3 scripts/areas.py check
 start "Rules boundary" python3 scripts/ci/rules_boundary.py

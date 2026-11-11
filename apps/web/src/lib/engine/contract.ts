@@ -1480,7 +1480,7 @@ export interface EngineContract {
     answer: DirectOfAnswer;
   };
   /**
-   * The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0).
+   * The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0), the great circle of FAA-H-8083-25C ch. 16.
    */
   distance_nm: {
     input: DistanceNmInput;

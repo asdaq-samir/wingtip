@@ -481,7 +481,7 @@ fun Engine.directOf(text: String): Result<String?> =
     rule("direct_of", EngineContract.DirectOfInput(text = text))
 
 /**
- * The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0).
+ * The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0), the great circle of FAA-H-8083-25C ch. 16.
  */
 fun Engine.distanceNm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Result<Double> =
     rule("distance_nm", EngineContract.DistanceNmInput(lat1 = lat1, lon1 = lon1, lat2 = lat2, lon2 = lon2))
