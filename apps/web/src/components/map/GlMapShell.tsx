@@ -1,5 +1,5 @@
 import * as maplibregl from "maplibre-gl";
-import type { LayerSpecification, LngLatBoundsLike, MapMouseEvent, PaddingOptions, StyleSpecification } from "maplibre-gl";
+import type { LayerSpecification, MapMouseEvent, PaddingOptions, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 // The worker MapLibre parses its sources in (worker.ts).
 import "../../lib/map/gl/worker";
@@ -16,11 +16,11 @@ import { SheetCard } from "../SheetCard";
 import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
 import { watchMapErrors } from "./mapErrors";
+import { useRouteFit } from "./useRouteFit";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { usePreferences } from "../../lib/preferences";
 import { chartQuery, overlayTilesQuery, queryClient } from "../../lib/queryClient";
-import { FIT_MARGIN } from "../../lib/map/clear";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
 import { prefetchRing, registerOverlayProtocol } from "../../lib/map/sources/overlayTiles";
 import { COUNTRY_ZOOM, OPEN_ZOOM, useOwnShip } from "../../lib/map/position/ownShip";
@@ -43,8 +43,6 @@ import { picked, watchPilotMoves } from "../../lib/map/gl/pilotCamera";
 import { tvPlatform, zoomInKey, zoomOutKey } from "../../lib/tv";
 
 const COUNTRY: [number, number] = [39.5, -98.35];
-/** The least the map is fitted to round a route, ~10 nm. */
-const MIN_FIT_DEG = 0.08;
 /** RouteMap's: how close in an airport's card brings the map. */
 const PLACE_ZOOM = 9;
 /** The map's first showing (GlMap's reveal): at the latest this long after
@@ -440,79 +438,9 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     if (api) sweepLayers(api.map);
   }, [api]);
 
-  // Fit to the route: once per route, clear of the panel and the buttons.
-  const routeKey = course ? `${course.departure.ident}->${course.destination.ident}` : null;
-  const routeBounds = useCallback((): LngLatBoundsLike | null => {
-    if (!course) return null;
-    const line = course.course_line as [number, number][];
-    const lats = line.map((p) => p[0]),
-      lons = line.map((p) => p[1]);
-    const pad = MIN_FIT_DEG / 2;
-    return [
-      [Math.min(...lons) - pad, Math.min(...lats) - pad],
-      [Math.max(...lons) + pad, Math.max(...lats) + pad],
-    ];
-  }, [course]);
-  // A route made, or asked for again from the location arrow: the pilot's
-  // pick, so the map is the app's to fit (lib/map/gl/pilotCamera).
-  const fit = useCallback(
-    (animate: boolean) => {
-      const bounds = routeBounds();
-      if (!map || !bounds) return;
-      picked();
-      const ownShip = useOwnShip.getState();
-      if (ownShip.enabled && ownShip.follow) ownShip.setFollow(false);
-      // Over the map's own padding, the room the panel leaves (MapLibre adds
-      // the two): a margin, and the map's buttons cleared.
-      map.fitBounds(bounds, { padding: FIT_MARGIN, duration: animate ? flight() : 0 });
-    },
-    [map, routeBounds],
-  );
-  const fitted = useRef<string | null>(null);
-  useEffect(() => {
-    if (!routeKey) {
-      fitted.current = null;
-      return;
-    }
-    if (!map || fitted.current === routeKey) return;
-    fit(fitted.current !== null);
-    fitted.current = routeKey;
-  }, [map, routeKey, fit]);
-  // The whole route again, from the location arrow (MyPositionButton).
-  const routeAsked = useOwnShip((s) => s.routeAsked);
-  const routeAskedWas = useRef(routeAsked);
-  useEffect(() => {
-    if (routeAsked === routeAskedWas.current) return;
-    routeAskedWas.current = routeAsked;
-    useOwnShip.getState().setFollow(false);
-    fit(true);
-  }, [routeAsked, fit]);
-  useEffect(() => {
-    useOwnShip.setState({ routeDrawn: !!course && !!map });
-    return () => {
-      useOwnShip.setState({ routeDrawn: false, routeOutOfView: false });
-    };
-  }, [course, map]);
-  // Whether the route is out of sight at each rest, for the location
-  // arrow to offer it back.
-  useEffect(() => {
-    if (!map || !course) return;
-    const line = course.course_line as [number, number][];
-    const check = () => {
-      const { top, bottom, left } = insetsRef.current;
-      const { clientWidth: w, clientHeight: h } = map.getContainer();
-      const out = line.some(([lat, lon]) => {
-        const p = map.project([lon, lat]);
-        return p.x < left - 8 || p.x > w + 8 || p.y < top - 8 || p.y > h - bottom + 8;
-      });
-      if (useOwnShip.getState().routeOutOfView !== out) useOwnShip.setState({ routeOutOfView: out });
-    };
-    check();
-    map.on("moveend", check);
-    return () => {
-      map.off("moveend", check);
-    };
-  }, [map, course]);
+  // Fit to the route: once for each set of its points, clear of the panel
+  // and the buttons, and aimed again as the sheet turns under it (useRouteFit).
+  const aimFitAgain = useRouteFit(map, course, insetsRef, padOf, flight());
 
   // The map follows the sheet: MapLibre's padding is what the panel
   // covers, eased in the sheet's own time, so what was in the middle of
@@ -526,6 +454,8 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       const was = insetsRef.current;
       insetsRef.current = to;
       if (!map || (was.top === to.top && was.bottom === to.bottom && was.left === to.left)) return;
+      // A route's fit still flying: aimed again at the room now left.
+      if (aimFitAgain(to)) return;
       // A point still being flown to (a checkpoint tapped, whose card is what
       // turned the sheet): the flight aimed again with the new padding. A
       // second camera move stops MapLibre's first where it is, so an ease of
@@ -543,7 +473,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       }
       map.easeTo({ padding: padOf(to), duration: DRAWER_MS, easing: drawerEasing });
     },
-    [map],
+    [map, aimFitAgain],
   );
   useEffect(() => {
     follow(insets);
@@ -618,6 +548,6 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
 }
 
 /** What the panel covers, as MapLibre's padding: its middle is the map's. */
-function padOf({ top, bottom, left }: MapInsets): PaddingOptions {
+function padOf({ top, bottom, left }: MapInsets): Required<PaddingOptions> {
   return { top, bottom, left, right: 0 };
 }

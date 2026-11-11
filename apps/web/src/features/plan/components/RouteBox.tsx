@@ -1084,10 +1084,10 @@ function Pill({
         // airport pills"); a finger's 44 round it (index.css).
         // A line under a row's size, as the pills were: three fields and a
         // procedure's chip keep to one line on a phone (procedures.spec).
-        // Five letters wide whatever its ident, the ident centred, so the
-        // pills line up (the owner, 2026-11-06: "make the route box a fixed
-        // width of 5 letters"); a longer one, a pilot's own point, wider.
-        className={cn("h-7 min-w-[calc(5ch+6px)] rounded-full px-0.75", TEXT.detail, "font-semibold", unknown && "text-destructive")}
+        // As wide as its ident, every gap the same: five letters wide, C81 sat
+        // 14 points short of its arrow to KUGN's 6 (the owner, 2026-11-11:
+        // "Look at the spacing of first airport in route").
+        className={cn("h-7 rounded-full px-0.75", TEXT.detail, "font-semibold", unknown && "text-destructive")}
         onChange={onChange}
         invalid={unknown || undefined}
         open={changing}

@@ -71,6 +71,7 @@ radio-input.spec.ts
 ready-to-fly.spec.ts
 recents.spec.ts
 risk.spec.ts
+route-change.spec.ts
 route-fields.spec.ts
 route-fit.spec.ts
 route-leg.spec.ts
