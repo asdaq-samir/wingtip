@@ -91,7 +91,7 @@ engine/crates/route/src/route/options/fuel.rs 464
 engine/crates/route/src/route/options/read.rs 430
 engine/crates/route/src/route/options/terrain.rs 424
 engine/crates/weather/src/forecast/awc.rs 522
-engine/crates/weather/src/forecast/route.rs 441
+engine/crates/weather/src/forecast/route.rs 435
 engine/crates/weather/src/metar.rs 490
 engine/crates/wording/src/wording/script.rs 600
 engine/facade/src/call.rs 1179

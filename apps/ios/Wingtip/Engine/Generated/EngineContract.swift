@@ -5412,37 +5412,39 @@ enum EngineContract {
 
     struct IfrAlternateIn: Codable, Equatable, Sendable {
         var ident: String
-        /// The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+        /// The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
         var approaches: EngineContract.IfrAlternateInApproaches
-        /// The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+        /// The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
         var forecast: EngineContract.IfrAlternateInForecast?
     }
 
-    /// The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+    /// The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
     struct IfrAlternateInApproaches: Codable, Equatable, Sendable {
-        var any: Bool
-        var precision: Bool
+        /// The field's instrument approach charts (IAP) by their d-TPP names, "ILS OR LOC RWY 27", "RNAV (GPS) RWY 9"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a)).
+        var names: [String]
         var alternateMinimumsUrl: String?
 
         enum CodingKeys: String, CodingKey {
-            case any
-            case precision
+            case names
             case alternateMinimumsUrl = "alternate_minimums_url"
         }
     }
 
-    /// The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+    /// The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
     struct IfrAlternateInForecast: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var ceilingUnknown: Bool?
         var visibilitySm: Double?
         var raw: String?
+        /// taf_window's worst.covers: whether the TAF covers the whole window. Missing is taken as not.
+        var covers: Bool
 
         enum CodingKeys: String, CodingKey {
             case ceilingFt = "ceiling_ft"
             case ceilingUnknown = "ceiling_unknown"
             case visibilitySm = "visibility_sm"
             case raw
+            case covers
         }
     }
 
@@ -10723,16 +10725,19 @@ enum EngineContract {
         var source: String
     }
 
-    /// The worst a TAF forecasts in a window, TEMPO and PROB groups included.
+    /// The worst a TAF forecasts in a window, TEMPO and PROB groups included, and whether the TAF covers the whole window.
     struct WeatherWorst: Codable, Equatable, Sendable {
         var ceilingFt: Double?
         var ceilingUnknown: Bool
         var visibilitySm: Double?
+        /// Whether the prevailing periods (the first line and each FM) cover the whole window without a gap: a TAF ending or beginning inside it says nothing of the rest (14 CFR 91.169(b)(2)(i)).
+        var covers: Bool
 
         enum CodingKeys: String, CodingKey {
             case ceilingFt = "ceiling_ft"
             case ceilingUnknown = "ceiling_unknown"
             case visibilitySm = "visibility_sm"
+            case covers
         }
     }
 

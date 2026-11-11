@@ -21,14 +21,7 @@ fn prefix(s: &str, n: usize) -> &str {
     s.get(..n).unwrap_or(s)
 }
 
-/// The worst a TAF forecasts in a window: the lowest ceiling and
-/// visibility, and whether any period forecasts a ceiling of no height.
-#[derive(Clone, Debug, PartialEq, Default)]
-pub struct Worst {
-    pub ceiling_ft: Option<f64>,
-    pub ceiling_unknown: bool,
-    pub visibility_sm: Option<f64>,
-}
+pub use super::covers::Worst;
 
 /// Every period of a TAF's (`fcsts`, awc.rs's shape) that says something
 /// about [start, end]: the prevailing periods and TEMPO and PROB groups
@@ -57,7 +50,7 @@ pub fn periods_in_window(fcsts: &[Value], start: f64, end: f64) -> Vec<&Value> {
 /// 1/2SM FG" read as VFR. None where the TAF says nothing of the window.
 /// `ceiling_unknown` where any period forecasts a ceiling of no height
 /// (14 CFR 1.1; metar.rs sky_ceiling_of): the lowest known ceiling is then
-/// not the worst the forecast allows.
+/// not the worst the forecast allows. `covers`: covers::covers_window.
 pub fn worst_in_window(fcsts: &[Value], start: f64, end: f64) -> Option<Worst> {
     let periods = periods_in_window(fcsts, start, end);
     if periods.is_empty() {
@@ -68,6 +61,7 @@ pub fn worst_in_window(fcsts: &[Value], start: f64, end: f64) -> Option<Worst> {
         ceiling_ft: least("ceiling_ft"),
         ceiling_unknown: periods.iter().any(|p| p.get("ceiling_unknown") == Some(&Value::Bool(true))),
         visibility_sm: least("visibility_sm"),
+        covers: super::covers::covers_window(fcsts, start, end),
     })
 }
 
