@@ -22,13 +22,13 @@ import {
  * taken out for the map's room (the owner, 2026-11-10); nothing typed, the search's own page (the flight,
  * Favorites, Recents, Nearest); typed, one list in groups -- Airports,
  * Waypoints and Navaids, Airplanes, Do -- and "Ask:"; an airport picked,
- * its card with Fly Here, Depart From and Add as Stop at its top, each
- * setting the plan and showing it; the account button's menu, Setup's
+ * its card with Fly Here, Add as Stop, Call and Address at its top (the
+ * owner, 2026-11-11), the first two setting the plan and showing it; the account button's menu, Setup's
  * rows. The plan is the sheet's main content with a route.
  */
 
 test(
-  "the account button at the one search's end, no title row over it; typed, its results come in groups, and an airport's Depart From sets the plan",
+  "the account button at the one search's end, no title row over it; typed, its results come in groups, and an airport's card's Add as Stop sets the plan",
   { tag: "@smoke" },
   async ({ page }) => {
     await claudeFeatures(page); // the Ask suggestion, which is Claude's (./claude)
@@ -69,19 +69,19 @@ test(
     await expect(top.getByTestId("search-top-depart-from")).toBeVisible();
     await expect(results.getByRole("group", { name: "Suggestions" }).getByTestId("search-do-ask")).toContainText("Ask: “osh”");
 
-    // KOSH picked: its card, the plan's three actions at its top.
+    // KOSH picked: its card, its four actions at its top and no others.
     await searchAirports(page).filter({ hasText: "KOSH" }).first().click();
     const card = sideDrawer(page).getByTestId("place-card");
     await expect(card.getByTestId("place-name")).toHaveText("KOSH", { timeout: slow(10_000) });
-    for (const id of ["fly-here", "place-depart-from", "place-add-stop"]) await expect(card.getByTestId(id)).toBeVisible();
+    for (const id of ["fly-here", "place-add-stop", "place-call", "place-address-action"]) await expect(card.getByTestId(id)).toBeVisible();
+    await expect(card.getByTestId("place-actions").locator(":scope > *")).toHaveCount(4);
     await expect(card.getByTestId("place-add-stop")).toContainText("Add as Stop");
 
-    // Depart From: KOSH the route's start, its destination kept, the plan up.
-    await card.getByTestId("place-depart-from").click();
-    await expect(page).toHaveURL(/[?&]dep=KOSH(&|$)/);
+    // Add as Stop: KOSH a landing on the way, both ends kept.
+    await card.getByTestId("place-add-stop").click();
+    await expect(page).toHaveURL(/[?&]stops=KOSH(&|$)/);
+    await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
     await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);
-    await expect(card).toHaveCount(0);
-    await expect(sideDrawer(page).getByLabel(/^(\S+, )?Departure$/)).toContainText("KOSH");
     await expect(row.getByTestId("account-button")).toBeVisible();
   },
 );

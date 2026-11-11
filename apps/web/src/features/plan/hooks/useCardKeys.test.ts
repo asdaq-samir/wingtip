@@ -17,18 +17,18 @@ describe("the airport card's letters on a desktop", () => {
     takeSearchAsk();
   });
 
-  it("F, D and S run Fly Here, Depart From and Add as Stop, ahead of the page's own D", () => {
+  it("F and S run Fly Here and Add as Stop, and D stays the page's Direct To", () => {
     const fly = vi.fn(),
-      depart = vi.fn(),
       stop = vi.fn();
     document.addEventListener("keydown", onShortcut);
-    const { unmount } = renderHook(() => useCardKeys(true, { F: fly, D: depart, S: stop }));
+    const { unmount } = renderHook(() => useCardKeys(true, { F: fly, S: stop }));
     expect(press("f").defaultPrevented).toBe(true);
-    press("D");
     press("s");
-    expect([fly, depart, stop].map((f) => f.mock.calls.length)).toEqual([1, 1, 1]);
-    // Not the page's Direct To, which D is with no card open.
-    expect(useSearchAsk.getState().ask).toBeNull();
+    expect([fly, stop].map((f) => f.mock.calls.length)).toEqual([1, 1]);
+    // The card has no D since Depart From left it (the owner, 2026-11-11):
+    // the page's Direct To hears it.
+    press("d");
+    expect(useSearchAsk.getState().ask).not.toBeNull();
     unmount();
     document.removeEventListener("keydown", onShortcut);
   });

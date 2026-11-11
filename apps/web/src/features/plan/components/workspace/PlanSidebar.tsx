@@ -71,7 +71,6 @@ export default function PlanSidebar({
     closePlace,
     closeSaved,
     course,
-    departFrom,
     depart,
     dropIntoRoute,
     favorites,
@@ -131,7 +130,6 @@ export default function PlanSidebar({
         from={measuredFrom}
         onClose={closePlace}
         onFlyHere={(to) => void flyHere(to)}
-        onDepartFrom={departFrom}
         onExpand={() => setPanel("full")}
         onLower={() => setPanel("half")}
         // None for a point of the route, or past the planner's most stops.

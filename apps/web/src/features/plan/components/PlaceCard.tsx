@@ -13,7 +13,7 @@ import { CardTabBar, CardTabPanel } from "../../../components/CardTabs";
 import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../lib/cardTab";
 import { useTabScroll } from "../lib/tabScroll";
-import PlaceActions from "./place/PlaceActions";
+import PlaceActions, { PlaceFavorite } from "./place/PlaceActions";
 import PlaceSubtitle from "./place/PlaceSubtitle";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
@@ -118,8 +118,9 @@ const CARD_TABS: { value: CardTab; label: string }[] = [
  * An airport's card in the panel, as a place's is in Maps, laid out at
  * the owner's pick of its redesign (A2, 2026-10-29): the field's pictures
  * across its top -- its runways, from the air, from the ground -- its ident
- * large over them with its name and town; four things to do under them --
- * fly there, land there on the way, call it, keep it as a Favorite -- and
+ * large over them with its name and town, its star beside its Share; four
+ * things to do under them -- fly there, land there on the way, call it,
+ * find it in Maps (the owner, 2026-11-11) -- and
  * right under them its four tabs, back at the owner's ask: Info (its
  * details, frequencies, lights and services), Weather (the weather there
  * hour by hour, G1, over the reports as sent), Runways and Charts. Opened
@@ -134,7 +135,6 @@ export default function PlaceCard({
   from,
   onClose,
   onFlyHere,
-  onDepartFrom,
   onAddStop,
   onExpand,
   onLower,
@@ -149,8 +149,6 @@ export default function PlaceCard({
   from: { point: LatLon; name: string | null } | null;
   onClose: () => void;
   onFlyHere: (place: AirportPlace) => void;
-  /** Depart From: the field the route's departure, the rest kept. */
-  onDepartFrom: (place: AirportPlace) => void;
   /** Add as Stop: the field the route's next stop, before its destination
    *  (or the end a half route lacks, or the first point of a new one);
    *  none where it is in the route already. */
@@ -486,6 +484,7 @@ export default function PlaceCard({
             onShare={share}
             closeTestId="place-close"
             shareTestId="place-share"
+            beside={<PlaceFavorite ident={kept?.ident ?? ident} place={place ?? null} />}
             pill={{ line: pillLine || undefined, picture: pillPicture }}
           />
           {/* The pictures' lightboxes (Base UI Dialogs), opened from the
@@ -529,10 +528,7 @@ export default function PlaceCard({
               setFlying(true);
               onFlyHere(p);
             }}
-            onDepartFrom={onDepartFrom}
             onAddStop={onAddStop}
-            onWeather={() => (setPicked("weather"), raise())}
-            favoriteIdent={kept?.ident ?? ident}
           />
           {/* The field from the air, its runways and from the ground, a row
               of large tiles under the actions, as Apple Maps' place card

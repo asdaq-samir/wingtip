@@ -14,8 +14,7 @@ import { TEXT } from "../lib/text";
  * lower in it, CardPictures): its name in one row pinned at the sheet's
  * top (PinnedHead; the owner, 2026-11-10: no large title), what it is and
  * a line under that scrolling with the card, and at the row's right its share, a round button of its own
- * (`beside`: an airplane's star; an airport's star and Refresh are in its
- * action tiles, owner decision 2026-11-10 (decisions page)) and
+ * (`beside`: an airplane's star, an airport's, the owner 2026-11-11) and
  * its close, which goes back one card, as every card's does. What the
  * pill shows of it down at its smallest is its own (`pill`).
  */

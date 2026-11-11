@@ -7,24 +7,19 @@ import { ICON } from "./icons";
  * its own set. The first of a card's actions is its filled one.
  *
  * - Fly Here: a new route from the airplane to this field.
- * - Depart From: this field the route's departure, the rest kept.
  * - Direct To: from the airplane to the point, then on along the route.
  * - Add as Stop: the field a landing on the way (stops=), as Maps' Add
  *   Stop (the one-search design's name for it, 2026-11-09).
  * - Add to Route: the point a turn on the way, where it bends the route
  *   least; not a landing.
  * - Hold Here: a hold at the point (AIM 5-3-8).
- * - Weather: the field's Weather tab, the fourth of the airport card's row
- *   as Apple Maps' place card has four (the owner's screenshot, 2026-11-10).
  */
 export const ACTION = {
   flyHere: { label: "Fly Here", icon: ICON.flyHere },
   directTo: { label: "Direct To", icon: ICON.directTo },
-  departFrom: { label: "Depart From", icon: ICON.departFrom },
   addStop: { label: "Add as Stop", icon: ICON.addToRoute },
   addToRoute: { label: "Add to Route", icon: ICON.addToRoute },
   holdHere: { label: "Hold Here", icon: ICON.holdHere },
-  weather: { label: "Weather", icon: ICON.weather },
   call: { label: "Call", icon: ICON.call },
   address: { label: "Address", icon: ICON.address },
   copy: { label: "Copy", icon: ICON.copy },
@@ -34,7 +29,7 @@ type ActionName = keyof typeof ACTION;
 
 /** The actions each card kind offers, in order. */
 export const CARD_ACTIONS = {
-  airport: ["flyHere", "departFrom", "addStop", "weather", "call", "address"],
+  airport: ["flyHere", "addStop", "call", "address"],
   /** A point held on the map: the airspace card's. */
   point: ["directTo", "addToRoute", "holdHere"],
   /** A VOR, a fix or a VFR waypoint. */

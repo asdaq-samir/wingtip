@@ -4,8 +4,8 @@ import { shortcutKey, useShortcutKeys } from "../../../lib/shortcutKeys";
 
 /**
  * A card's actions by a letter each on a desktop (the owner, 2026-11-09:
- * the airport card's F Fly Here, D Depart From, S Add as Stop, shown on
- * their buttons), while `on` and the focus is in no field, menu or
+ * the airport card's F Fly Here and S Add as Stop, shown on their
+ * buttons), while `on` and the focus is in no field, menu or
  * dialog. Heard before the page's own letters (useShortcuts' D, Direct
  * To), in the capture phase, so the card's letter is the one that runs.
  * Pressed as the pilot picked (lib/shortcutKeys): alone, with Alt, or off.

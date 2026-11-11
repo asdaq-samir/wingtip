@@ -360,10 +360,13 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
 
 **Structure, airport card, top to bottom.**
 1. Head (sticky in the panel): ident tile, name, city, the flight
-   category chip and the METAR's age; Share at the left of the bar, close
-   at the right (going back one level).
-2. Actions row: Fly Here (filled, first), Add Stop, Call, Address
-   (`lib/cardActions`; `docs/design/icons.md`).
+   category chip and the METAR's age; Share, the star (Favorite) and close
+   (going back one level) at the bar's right.
+2. Actions row, one row of equal tiles and no others (the owner,
+   2026-11-11): Fly Here (filled, first), Add as Stop (where the field can
+   be one; else the row holds three), Call, Address (`lib/cardActions`;
+   `docs/design/icons.md`). Refresh is at the right of the Weather tab's
+   first row.
 3. Facts row: elevation, longest runway, the frequencies a pilot needs
    first (each copies on click), fuel.
 4. Tabs: the card's sections as today (`CardTabs`), the airport diagram
@@ -1072,7 +1075,7 @@ The owner's rule: a screenshot of another app means ours should show this.
 | Privacy \| Terms \| Legal \| Imagery at the map's bottom right, over the sheet | `MapCredits`: one MapLibre AttributionControl at the bottom right, riding the sheet's top, Privacy \| Terms \| Legal then each drawn source's credit (imagery, Google, the traffic, the overlay tiles' FAA cycle); gone all the way up, where the footer has them |
 | A place picked: its card is the whole sheet, no search | Any card (a field, an airplane, a point, the Brief, the Map card) hides the search; its ✕ goes back to the search with the query kept |
 | A place card scrolled: its title and ✕ stay in sight | `PinnedHead` (owner decision 2026-11-10: one pinned frosted head, no large title): the card's head is one row, its name, Share and ✕, pinned at the sheet's top under the grabber from the start, the content scrolling under it blurred through its frost (`frost-head`), solid where there is no backdrop-filter and under Reduce Transparency. It replaced a large title folding into a compact bar, which on an iPhone stuck partway down the sheet with the card scrolling above it. Every card with a head has it: `CardTitle` (airport, airplane, Stops), `CardHead` (Brief, Nav Log, Profile, Nearest, airspace, past flight), `SheetCard` (Map card and the cards in the sheet) and the lists in full (`ListPageHead`). The airport card's tabs pin under it, each tab keeping its own place in the scroll (`useTabScroll`) |
-| Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share and ✕, Fly Here (filled), Depart From, Add as Stop, Weather; the pictures as a sliding row |
+| Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share, the star and ✕, Fly Here (filled), Add as Stop, Call, Address; the pictures as a sliding row |
 | Typing: top hit with inline action pills, suggestion rows, places | `OneSearchResults`: one white group, the top hit with Fly Here and Depart From pills, Search Nearby and Ask as suggestions, the match in bold |
 | One search field (the one card rule, 2026-11-10) | The traffic's airplane and Nearest's place are the one search's field scoped to them (`listSearchOf`, OneSearchField's `list`); the route's points, the route box's arrow between two points (a stop there, `useStopAsked`) and the traffic's airport ask it for an airport (`askSearchPick`, AirportPicker), its placeholder what they ask for; the developer's page, with no one search, keeps the picker's own |
 | Questions over the page | Ready to Fly's prompt and a source's report as sent are SheetDialog's: from the bottom on a phone with their ✕, centred from `md` up |

@@ -171,9 +171,11 @@ Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXz
   (Direct To, Brief, Nearest, Emergency and every screen by name, and
   "Ask: …" to the assistant). Results come from the existing endpoints
   and generated models; the search holds no aviation logic.
-- **Picking:** an airport opens its card with Fly Here, Depart From and
-  Add as Stop at the top; an airplane its profile with Fly This Airplane;
-  an action runs.
+- **Picking:** an airport opens its card with Fly Here, Add as Stop, Call
+  and Address at the top, its star beside Share and Refresh in its
+  Weather tab (the owner, 2026-11-11; the web first, the phones still
+  with Depart From); an airplane its profile with Fly This Airplane; an
+  action runs.
 - **The plan is the sheet's main content** with a route, everything the
   FPL tab had in the same order.
 - **Desktop web:** the same search and plan in the side panel; ⌘K, Ctrl K

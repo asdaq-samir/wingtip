@@ -52,7 +52,7 @@ test("/ and ⌘K go to the one search, Escape goes back a level", async ({ page 
   await expect(page.getByTestId("console-sheet")).toHaveCount(0);
 });
 
-test("an airport's card has its actions' keys, F, D and S, and the search's rows preview a field under the mouse", async ({ page }) => {
+test("an airport's card has its actions' keys, F and S, and the search's rows preview a field under the mouse", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -65,14 +65,13 @@ test("an airport's card has its actions' keys, F, D and S, and the search's rows
   await row.click();
   const card = sideDrawer(page).getByTestId("place-card");
   await expect(card.getByTestId("fly-here")).toContainText("F");
-  await expect(card.getByTestId("place-depart-from")).toHaveAttribute("aria-keyshortcuts", "D");
   await expect(card.getByTestId("place-add-stop")).toHaveAttribute("aria-keyshortcuts", "S");
-  // D, Depart From: the field the route's start, the rest kept, the plan up.
+  // S, Add as Stop: the field a landing on the way, both ends kept.
   await page.locator("body").click({ position: { x: 1000, y: 400 } });
-  await page.keyboard.press("d");
-  await expect(page).toHaveURL(/[?&]dep=KOSH/);
+  await page.keyboard.press("s");
+  await expect(page).toHaveURL(/[?&]stops=KOSH/);
+  await expect(page).toHaveURL(/[?&]dep=C81/);
   await expect(page).toHaveURL(/[?&]dest=KDLH/);
-  await expect(card).toHaveCount(0);
 });
 
 test("the route box's Profile and Brief say their words on a desktop", async ({ page }) => {

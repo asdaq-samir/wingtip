@@ -76,13 +76,12 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-ident")).toHaveCount(0);
   // Measured from the route's departure while the pilot's own position is not known.
   await expect(card(page).getByTestId("place-line")).toHaveText(/^\d+ nm NW of C81 · Elevation [\d,]+ ft$/);
-  // Its share and close at the title's right; the card the whole sheet, no search over it.
-  for (const id of ["place-share", "place-close"]) await expect(card(page).getByTestId(id)).toBeInViewport();
+  // Its share, its star and close at the title's right (the owner, 2026-11-11); the card the whole sheet, no search over it.
+  for (const id of ["place-share", "place-favorite", "place-close"]) await expect(card(page).getByTestId(id)).toBeInViewport();
   await expect(firstRow(page)).toBeHidden();
-  // Its four tiles in a row at half -- no Add Stop for the route's destination, Weather last -- Info open.
-  for (const id of ["fly-here", "place-weather-action", "place-call", "place-favorite"])
-    await expect(card(page).getByTestId(id)).toBeInViewport({ ratio: 1 });
-  await expect(card(page).getByTestId("place-add-stop")).toHaveCount(0);
+  // Three tiles in a row at half, nothing else -- no Add Stop for the route's destination -- Info open.
+  await expect(card(page).getByTestId("place-actions")).toBeInViewport({ ratio: 1 });
+  await expect(card(page).getByTestId("place-actions").locator(":scope > *")).toHaveText([/Fly Here/, /Call/, /Address/]);
   await expect(card(page).getByRole("tab")).toHaveText(["Info", "Weather", "Runways", "Charts"]);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
   const [actions, bar] = await Promise.all(
@@ -91,11 +90,12 @@ test("an airport's card has the field's pictures across its top, its ident over 
   expect(bar.y).toBeGreaterThanOrEqual(actions.y + actions.height);
 
   // Weather: the panel all the way up, the weather's card at the tab's top, its category in the FAA's colour:
-  // with no TAF, a sentence from the report and Now alone.
+  // with no TAF, a sentence from the report and Now alone; its first row ends in the card's Refresh (the owner, 2026-11-11).
   await card(page).getByTestId("place-tab-weather").click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   await expect(card(page).getByTestId("place-category")).toBeVisible();
   await expect(card(page).getByTestId("place-forecast-sentence")).toHaveText("VFR now, no forecast for this field.");
+  await card(page).getByTestId("place-weather-summary").getByTestId("airport-refresh").click();
   await expect(card(page).getByTestId("place-hour")).toHaveCount(1);
   await expect(card(page).getByTestId("place-hour").first()).toContainText("Now");
 
