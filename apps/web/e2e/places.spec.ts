@@ -71,7 +71,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-head")).toBeInViewport();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   // The name · the town on one line, the town a link (Apple Maps' place card, 2026-11-10).
-  await expect(card(page).getByTestId("place-where")).toHaveText("Duluth International Airport · Duluth, MN");
+  await expect(card(page).getByTestId(/^place-(full-name|town)$/)).toHaveText(["Duluth International Airport", "Duluth, MN"]);
   await expect(card(page).getByTestId("place-town")).toHaveText("Duluth, MN");
   await expect(card(page).getByTestId("place-ident")).toHaveCount(0);
   // Measured from the route's departure while the pilot's own position is not known.
@@ -421,10 +421,10 @@ test("an airport's card has four tabs right under its actions, in sight at half,
   // Shown in the app (airport-diagram.spec), not a link out of it.
   await expect(approach).not.toHaveAttribute("href", /.*/);
 
-  // The open tab tapped again up there: down half way, as the route's
-  // pages do, the bar still under the actions.
+  // The open tab tapped again: the sheet stays where it was dragged (the
+  // owner, 2026-11-11: a tab only switches what is shown).
   await card(page).getByTestId("place-tab-diagrams").click();
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   await expect(card(page).getByRole("tablist")).toBeVisible();
 });
 

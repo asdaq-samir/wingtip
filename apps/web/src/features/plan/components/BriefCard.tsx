@@ -26,7 +26,6 @@ export default function BriefCard({
   notice,
   marks,
   onClose,
-  onTap,
   onLegs,
   route,
 }: {
@@ -39,8 +38,6 @@ export default function BriefCard({
   /** Pages with something to fix (red) or to look at (amber). */
   marks?: Partial<Record<PanelTab, "stop" | "caution">>;
   onClose: () => void;
-  /** A page's tab tapped (PanelTabs' `onTap`). */
-  onTap: (again: boolean) => void;
   /** The legs asked for from a page: FPL's nav log in place of the card. */
   onLegs: () => void;
   route: string;
@@ -56,7 +53,6 @@ export default function BriefCard({
           route={route}
           notice={notice}
           contents={contents}
-          onTap={onTap}
           onLegs={onLegs}
           overview={BriefOverview}
           before={

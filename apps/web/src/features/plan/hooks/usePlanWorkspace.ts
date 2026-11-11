@@ -745,7 +745,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const unflyableBrief = s.unflyable?.brief;
   // A tab tapped takes the panel all the way up to show it; the tab up
   // tapped again there takes it back to half, at the pilot's ask.
-  const tabTap = useCallback((again: boolean) => setPanel(again && panelNow.current === "full" ? "half" : "full"), [setPanel]);
   // In sight all the way up: half way the panel ends at the tabs, so a
   // checkpoint picked then is brought into view as it comes up.
   const drawerOpen = panel === "full";
@@ -1193,7 +1192,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     stripsDrawn,
     suggestedAt,
     view,
-    tabTap,
     tankFigures,
     tightLeg,
     toggleFavoriteAirport,

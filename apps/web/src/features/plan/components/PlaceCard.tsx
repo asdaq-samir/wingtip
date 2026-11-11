@@ -138,7 +138,6 @@ export default function PlaceCard({
   onAddStop,
   addStopOff,
   onExpand,
-  onLower,
   startOn,
   onStarted,
   stop,
@@ -156,11 +155,8 @@ export default function PlaceCard({
   onAddStop?: (place: AirportPlace) => void;
   /** Why Add Stop is greyed (on the route already, the route full). */
   addStopOff?: string;
-  /** The panel all the way up, as a tab is picked. */
+  /** The panel all the way up: opened on its approaches (startOn). */
   onExpand: () => void;
-  /** Back down half way: the open tab tapped again with the panel all the
-   *  way up, as the route's tabs do (PanelTabs). */
-  onLower: () => void;
   /** Opened on a part of a tab: the route's Approaches opens the
    *  destination's on its approaches. `onStarted` once it has. */
   startOn?: "approaches";
@@ -204,15 +200,6 @@ export default function PlaceCard({
   // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the card opens on its approaches; each tab its own place in the scroll (useTabScroll).
   const [tab, setPicked] = useCardTab<CardTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
   useTabScroll(tabsRef, tab);
-  // A tab picked takes the panel all the way up, as the route's tabs do;
-  // the bar back in sight if the card was scrolled past it, once the panel
-  // is up, clear of the name's bar over the card (PhotoHead).
-  const isUp = () => tabsRef.current?.closest("[data-panel]")?.getAttribute("data-panel") === "full";
-  const raise = () => {
-    const up = isUp();
-    onExpand();
-    window.setTimeout(() => tabsRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" }), up ? 50 : RISEN_MS);
-  };
   // Opened on its approaches (the route's Approaches): the panel all the
   // way up and, once the answer is in and the panel has risen, Charts open
   // on the approaches.
@@ -579,7 +566,6 @@ export default function PlaceCard({
             activateOnFocus
             testIdPrefix="place-tab"
             disabled={!place}
-            raise={{ onExpand: raise, onLower }}
             barRef={tabsRef}
             // Pinned directly under the card's head (PINNED_BELOW, plain CSS), frosted as it is, its sections a tap away.
             className={cn("frost-head sticky z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1", PINNED_BELOW)}
