@@ -340,7 +340,7 @@ export async function closeSidebarWithTheStockKey(page: Page) {
  *  rejects, with an AbortError, and Promise.all used to take that for
  *  the whole wait failing (the Model Training drawer, its table drawn
  *  at once from the planner's kept read, three times running on CI).
- *  Nor one out of sight in a tab not up (PanelTabs' tab-away,
+ *  Nor one out of sight in a tab not up (PanelTabs' data-hidden page,
  *  content-visibility: hidden) or scrolled out of sight under
  *  content-visibility: auto: the browser stops updating it there, and
  *  its `finished` never comes -- the nav log's rows, arriving as the

@@ -448,17 +448,20 @@ html[data-tv] .maplibregl-canvas:focus {
   outline-offset: -6px;
 }
 
-/* A panel tab not up (PanelTabs): skipped, its layout and its charts'
+/* A panel tab not up (PanelTabs: its Base UI Tabs.Panel's data-hidden;
+   TabKept: tab-away): skipped, its layout and its charts'
    sizes kept for its return, where display: none threw them away -- a
    tab shown again was laid out from nothing, and its charts drawn again.
    Out of the way of the pointer, the keys and VoiceOver (it is inert as
    well). Where content-visibility is not known (Safari before 18), out of
    the layout as before. */
-.tab-away {
+.tab-away,
+.tab-page[data-hidden] {
   content-visibility: hidden;
 }
 @supports not (content-visibility: hidden) {
-  .tab-away {
+  .tab-away,
+  .tab-page[data-hidden] {
     display: none;
   }
 }

@@ -574,7 +574,7 @@ export function contrastFindings(page: Page, scope = "body"): Promise<ContrastFi
       if (box.width < 2 || box.height < 2) continue;
       const cs = getComputedStyle(el);
       if (cs.visibility !== "visible") continue;
-      // Nor a word in a panel tab not up (PanelTabs' tab-away,
+      // Nor a word in a panel tab not up (PanelTabs' tab-page[data-hidden],
       // content-visibility: hidden): it has a box, measured, but is not
       // drawn, and its colours read as one -- 1:1, on CI's iPhone.
       if (!el.checkVisibility()) continue;
@@ -780,7 +780,7 @@ export function keyboardFindings(page: Page, scope = "body"): Promise<KeyboardFi
     for (const el of document.querySelectorAll<HTMLInputElement>(`${scope} input`)) {
       if (NOT_TYPED.has(el.type)) continue;
       const box = el.getBoundingClientRect();
-      if (!box.width || !box.height || el.closest("[inert], [aria-hidden=true], .tab-away")) continue;
+      if (!box.width || !box.height || el.closest("[inert], [aria-hidden=true], .tab-away, .tab-page[data-hidden]")) continue;
       const missing = [!el.hasAttribute("enterkeyhint") && "enterkeyhint", !el.hasAttribute("autocomplete") && "autocomplete"]
         .filter(Boolean)
         .join(", ");

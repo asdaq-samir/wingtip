@@ -46,7 +46,7 @@ const PRINTED: PanelTab[] = TABS.map((t) => t.value);
  * quarter of a laptop's speed), and every tab shared one scroll. Hidden
  * plainly, not under React's Activity: its effects stopped and started
  * again on every return, half a second of the Nav Log's. And hidden with
- * its layout kept (index.css's tab-away), not taken out of it: shown
+ * its layout kept (index.css's tab-page, by Base UI's data-hidden), not taken out of it: shown
  * again from display: none, a tab was laid out from nothing -- 0.6 s of
  * the Nav Log's on a phone -- and its charts, measured at nothing while
  * hidden, drawn again from nothing. Preflight is up to begin with.
@@ -255,19 +255,20 @@ export default function PanelTabs({
                 the subtabs into sections Legs, Profile"). */}
               {drawn &&
                 (printing ? PRINTED : TABS.map((t) => t.value).filter((t) => opened.includes(t))).map((t) => {
-                  const away = !printing && t !== tab;
                   return (
                     <TabsContent
                       key={t}
                       value={t}
                       // Kept, and laid out where Base UI would hide it:
-                      // tab-away keeps a page's layout for its return.
+                      // a page not up is skipped by its data-hidden
+                      // (index.css's tab-page), its layout kept for its
+                      // return, and inert by Base UI's own. Printed, every
+                      // page shows.
                       keepMounted
                       hidden={false}
                       data-testid={`panel-${t}`}
                       data-tab={t}
-                      inert={away}
-                      className={cn("mt-0", away && "tab-away")}
+                      className={cn("mt-0", !printing && "tab-page")}
                     >
                       {contents[t]}
                     </TabsContent>

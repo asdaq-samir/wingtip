@@ -32,12 +32,12 @@ export function sheetScroller(node: HTMLElement | null): HTMLElement | null {
  * Something opened anew in the sheet -- a card, a tab's page -- starts at
  * the top (the one scrolling rule): the sheet's one scroller (SheetParts)
  * put at its top as it is first drawn in sight. Out of sight (a kept tab's,
- * tab-away) it leaves the scroller to what is shown.
+ * tab-away, or a panel tab's page not up) it leaves the scroller to what is shown.
  */
 export function useStartAtTop(anchor: RefObject<HTMLElement | null>) {
   useLayoutEffect(() => {
     const node = anchor.current;
-    if (!node || node.closest(".tab-away")) return;
+    if (!node || node.closest(".tab-away, .tab-page[data-hidden]")) return;
     const scroller = sheetScroller(node);
     if (scroller) scroller.scrollTop = 0;
   }, [anchor]);
