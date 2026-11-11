@@ -15,6 +15,9 @@
 //!   path (the TPP's rate of descent table), the approach category (14 CFR
 //!   97.3), the minimums' kind, the missed approach in the plate's words
 //!   (the web's lib/approachLesson);
+//! - `tags`: the tags an approach's fixes carry on the map with its plate
+//!   (crossing altitudes, the glide slope's at the final approach fix, the
+//!   runway's TCH and TDZE) and its final approach segment;
 //! - `calls`: the rules by name, as crate::call lists them.
 //!
 //! Both read the procedure as the planner draws it from the FAA's CIFP
@@ -26,6 +29,7 @@
 pub mod calls;
 pub mod debrief;
 pub mod lesson;
+pub mod tags;
 
 use crate::json::Value;
 
