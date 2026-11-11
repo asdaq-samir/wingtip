@@ -345,8 +345,7 @@ export default function RouteBox({
   // viewport (data-overflow-x-start / -end), read as the box or its pills
   // change and as it is slid -- for the fade at each edge that says there
   // is more there.
-  // The pills' row itself (ScrollArea.Content), whose room types at the
-  // end as the box's does (isRoom).
+  // The pills' row (ScrollArea.Content): its room types at the end (isRoom).
   const slideRow = useRef<HTMLDivElement>(null);
   // The field taken, and each point typed into it: the row slid to its
   // end, where the field and the new point are. Not as it opens -- a
@@ -397,10 +396,8 @@ export default function RouteBox({
   // or a tap elsewhere, until the next thing typed.
   const { rows, answered } = useAirportSearch(typed, !!typed.trim(), true);
   // Room under the suggestions' last row for a phone's keyboard, as the
-  // airport picker's sheet has, so they scroll up above it. The window's
-  // own reading (useKeyboardInset), not the Drawer's: the suggestions are a
-  // popover on the page's body, outside the sheet's viewport, which alone
-  // carries --drawer-keyboard-inset.
+  // airport picker's sheet has, so they scroll up above it: the window's
+  // reading, as the popover is on the body, out of the Drawer's viewport.
   const keyboard = useKeyboardInset();
   // The pilot's own point off a fix, typed as a flight plan writes one
   // ("VPBNG/090/30", at the owner's ask): offered first, as it reads.
@@ -428,8 +425,7 @@ export default function RouteBox({
     onDone?.();
   };
 
-  // Whether a suggestion is lit now (the list's own highlight).
-  const lit = useRef(false);
+  const lit = useRef(false); // a suggestion lit now (the list's own highlight)
   const onKeyDown = (e: BaseUIEvent<KeyboardEvent<HTMLInputElement>>) => {
     if (e.key === "Enter") {
       // The first suggestion, once they answer what is typed (the list's
@@ -652,8 +648,7 @@ export default function RouteBox({
             <ScrollArea.Root overflowEdgeThreshold={RUNS_ON_PX} className="min-w-0 flex-1">
               <ScrollArea.Viewport
                 ref={slide}
-                // Kept out of the tab order, as the row was; a drag up or
-                // down the sheet's, the stock viewport's scroll across only.
+                // Out of the tab order; a drag up or down is the sheet's.
                 tabIndex={-1}
                 style={{ overflowY: "hidden" }}
                 className={cn(

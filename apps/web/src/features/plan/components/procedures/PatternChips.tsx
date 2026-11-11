@@ -10,37 +10,11 @@ import { trafficPattern } from "../../../../lib/trafficPattern";
 import type { EndFit } from "./runwayFit";
 import { useOpenRunwayLines, type ProcedureAirport } from "../../hooks/useProceduresRoute";
 import { CHIP } from "../routeListStyle";
+import { centre } from "./centreChip";
 
 /** The value of a choice's "None" (no transition), and a runway line's
  *  with none picked yet: a toggle's value is a string. */
 export const NONE = "none";
-
-/** `chip` brought to the middle of `row` sideways, by the browser's own
- *  scrollIntoView, the row alone moved: `container: "nearest"` keeps it to
- *  the row where the browser reads it (Chrome 140); where it does not
- *  (Safari), "nearest" could still scroll the sheet up or down to bring
- *  the chip in, so every scroller above the row is put back where it was,
- *  in the same frame. */
-function centre(chip: HTMLElement, row: HTMLElement) {
-  const kept: [Element, number, number][] = [];
-  for (let el = row.parentElement; el; el = el.parentElement) kept.push([el, el.scrollTop, el.scrollLeft]);
-  let contained = false;
-  const options = {
-    inline: "center",
-    block: "nearest",
-    behavior: "instant",
-    get container() {
-      contained = true;
-      return "nearest";
-    },
-  } as ScrollIntoViewOptions;
-  chip.scrollIntoView(options);
-  if (contained) return;
-  for (const [el, top, left] of kept) {
-    if (el.scrollTop !== top) el.scrollTop = top;
-    if (el.scrollLeft !== left) el.scrollLeft = left;
-  }
-}
 
 /**
  * Choices laid out as chips, as iOS's filters are, one of them picked:
@@ -80,16 +54,12 @@ export function Chips({
   children: ReactNode;
 }) {
   const row = useRef<HTMLDivElement>(null);
-  // The chip chosen in the middle of the line, the runways either side of
-  // it in sight, at the owner's ask ("when unfolding runway, make selected
-  // the center one so we can see what's on the left and right"); where the
-  // line does not scroll, as far as it goes. One past the row's end
-  // (O'Hare's 9L of eight runways) came in at the edge before. Sideways
-  // only -- as it is picked, and again
-  // whenever the line or its chips change size after it opens: brought in
-  // once at its first layout, 9L was out of sight again by the time it was
-  // looked for, one run in two (procedures:306). A pilot's own scroll
-  // resizes nothing, so it is never undone.
+  // The chip chosen in the middle of the line, the runways either side in
+  // sight (the owner: "make selected the center one"), as far as it goes
+  // where the line does not scroll. Sideways only, as it is picked and
+  // whenever the line or its chips change size (9L, O'Hare's eighth, was
+  // out of sight again after its first layout, procedures:306); a pilot's
+  // own scroll resizes nothing, so it is never undone.
   useEffect(() => {
     const box = row.current;
     if (!box) return;
@@ -97,9 +67,7 @@ export function Chips({
     const show = () => {
       const on = box.querySelector<HTMLElement>("[data-pressed]");
       if (!on) return;
-      // The browser's own centring (scrollIntoView). Not while the chips
-      // slide in as the line opens (`enter`): a chip's place on screen
-      // then was 24 points off the middle (procedures:307), so after.
+      // After the chips slide in (`enter`): 24 points off before (procedures:307).
       const moving = (on.closest<HTMLElement>("[data-slot=toggle-group]") ?? on.parentElement!).getAnimations({ subtree: true });
       if (moving.length) {
         void Promise.allSettled(moving.map((a) => a.finished)).then(() => !gone && centre(on, box));

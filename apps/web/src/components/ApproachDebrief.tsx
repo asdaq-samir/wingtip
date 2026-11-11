@@ -175,8 +175,7 @@ function ApproachSection({
         <PlanView d={d} />
         {d.hasAltitude && <ProfileView d={d} />}
         <ListRow title={<label htmlFor={`mins-${d.fafAt}`}>Your minimums</label>} description="The DA or MDA you flew to, from the plate">
-          {/* Read in the pilot's locale (React Aria's NumberField), the
-              findings again as it is typed. */}
+          {/* Read in the pilot's locale, the findings again as typed. */}
           <NumberField
             id={`mins-${d.fafAt}`}
             defaultValue={minimumsFt}
