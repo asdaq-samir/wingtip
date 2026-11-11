@@ -67,7 +67,8 @@ export function TrafficGl() {
 }
 
 function viewOf(map: ReturnType<typeof useGlMap>["map"]) {
-  const c = map.getCenter();
+  // In -180 to 180: past the antimeridian the world's copy's centre is not.
+  const c = map.getCenter().wrap();
   const ne = map.getBounds().getNorthEast();
   return { lat: c.lat, lon: c.lng, radiusNm: Math.min(165, Math.max(10, c.distanceTo(ne) / M_PER_NM)), zoom: appZoomOf(map.getZoom()) };
 }

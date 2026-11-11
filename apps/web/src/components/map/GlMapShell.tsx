@@ -124,10 +124,10 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
-    // MapLibre's own keys everywhere (arrows pan, + and - zoom), not only a TV's.
+    // MapLibre's own keys everywhere (its default: arrows pan, + and - zoom), not only a TV's.
     // Symbols placed at once, not faded in over 0.3 s.
     fadeDuration: 0,
-    renderWorldCopies: false,
+    // And its world copies (its default): the Western Aleutian sectional runs across 180°.
   });
   if (tiles) overlaysOf.set(m, tiles);
   // A tile's picture the moment its layout asks for it, from the ones

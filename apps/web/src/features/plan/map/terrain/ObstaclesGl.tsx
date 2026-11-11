@@ -15,7 +15,8 @@ type Box = { south: number; west: number; north: number; east: number };
  *  a post would be a pixel. */
 function obstacleBox(map: MlMap): Box | null {
   if (map.getZoom() < glZoom(9)) return null;
-  const c = map.getCenter();
+  // In -180 to 180: past the antimeridian the world's copy's centre is not.
+  const c = map.getCenter().wrap();
   const out = (v: number, up: boolean) => (up ? Math.ceil(v * 2) : Math.floor(v * 2)) / 2;
   return { south: out(c.lat - 0.5, false), north: out(c.lat + 0.5, true), west: out(c.lng - 0.5, false), east: out(c.lng + 0.5, true) };
 }
