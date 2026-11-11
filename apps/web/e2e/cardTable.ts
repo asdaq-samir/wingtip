@@ -230,6 +230,28 @@ export const CARDS: CardRow[] = [
     not: { sideways: "no sideways row" },
   },
   {
+    // A Settings page opened straight from the search: one ✕, its own, and
+    // it goes back to the search in one tap, the console closed with it --
+    // not to Settings first (the card rule, docs/design/rules.md).
+    name: "Minimums from search",
+    card: "console-page",
+    close: "console-page-close",
+    entries: [
+      {
+        name: "search Do",
+        open: async (p) => {
+          await go(p, "/app/plan");
+          await showTabs(p);
+          await p.getByTestId("search-airports").fill("minimums");
+          await sideDrawer(p).getByTestId("search-do-screen-minimums").click();
+          await expect(p.getByTestId("console-close")).toBeHidden();
+        },
+        back: "search",
+      },
+    ],
+    not: { sideways: "no sideways row", position: "nothing opens inside it", scroll: "six rows: shorter than the sheet" },
+  },
+  {
     name: "Emergency",
     card: "emergency-sheet",
     close: "sheet-card-close",

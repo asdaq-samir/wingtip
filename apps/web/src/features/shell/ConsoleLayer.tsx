@@ -1,3 +1,4 @@
+import { ConsoleLeave } from "../../components/consoleLeave";
 import { type CSSProperties, useEffect, useEffectEvent, useRef, type ReactNode } from "react";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
@@ -92,7 +93,9 @@ export default function ConsoleLayer({
         <h2 className={cn("flex-1 font-bold", TEXT.title)}>Account and Settings</h2>
         <CloseButton label="Back to the map" onClick={onClose} data-back="" data-testid="console-close" />
       </div>
-      {children}
+      {/* A page opened straight from the search closes the console by
+          its own ✕ (ConsolePages), back to where the pilot came from. */}
+      <ConsoleLeave.Provider value={onClose}>{children}</ConsoleLeave.Provider>
     </section>
   );
 }

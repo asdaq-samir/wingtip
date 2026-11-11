@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
 import { ListRow } from "./GroupedList";
@@ -7,6 +7,7 @@ import { holdOpenCard } from "../lib/openCards";
 import { useWantedPage } from "./wantedPage";
 import { useScrollPlace } from "../lib/scrollPlace";
 import CloseButton from "./CloseButton";
+import { ConsoleLeave } from "./consoleLeave";
 
 /** The way to open one of a tab's pages, and the page back came from. */
 const Pages = createContext<{ open: (page: string) => void; from: string | null } | null>(null);
@@ -38,6 +39,9 @@ export function ConsolePages({
 }) {
   const [open, setOpen] = useState<string | null>(null);
   const [from, setFrom] = useState<string | null>(null);
+  // Opened straight from outside (useWantedPage), not from a row here.
+  const [direct, setDirect] = useState(false);
+  const leave = useContext(ConsoleLeave);
   // The tab's own page eases in only coming back to it from a page, as a
   // pop: drawn as Setup opens, it faded in from nothing every time, its
   // switches' icons blinking out and back at each tap on the tab, at the
@@ -50,15 +54,20 @@ export function ConsolePages({
   // brings it into view.
   // The page open is the top of what the close, a swipe back and a
   // device's Back take away, one at a time: a page of a page first.
+  // A page opened straight from outside goes back there, the console
+  // closed with it; one opened from a row here, back to the list.
+  const shut = () => {
+    if (direct && leave) {
+      leave();
+      return;
+    }
+    setPopped(true);
+    setOpen(null);
+  };
+  const shutNow = useEffectEvent(shut);
   useEffect(() => {
     if (!open) return;
-    return holdOpenCard({
-      close: () => {
-        setPopped(true);
-        setOpen(null);
-      },
-      inBar: false,
-    });
+    return holdOpenCard({ close: () => shutNow(), inBar: false });
   }, [open]);
   // Back, the list is where it was (useScrollPlace).
   useScrollPlace(top, !!open);
@@ -80,6 +89,7 @@ export function ConsolePages({
     if (wanted && known.split(" ").includes(wanted)) {
       setFrom(wanted);
       setOpen(wanted);
+      setDirect(true);
     }
   }
   useEffect(() => {
@@ -116,12 +126,9 @@ export function ConsolePages({
               {page.title}
             </h3>
             <CloseButton
-              label={`Back to ${back}`}
+              label={direct && leave ? "Back to the map" : `Back to ${back}`}
               className="-mr-1"
-              onClick={() => {
-                setPopped(true);
-                setOpen(null);
-              }}
+              onClick={shut}
               data-testid="console-page-close"
             />
           </div>
@@ -134,6 +141,7 @@ export function ConsolePages({
               open: (p) => {
                 setFrom(p);
                 setOpen(p);
+                setDirect(false);
               },
               from,
             }}

@@ -126,8 +126,9 @@ test("the search's Do runs a screen by its name, and the Traffic Nearby", async 
   await search.fill("logb");
   await sideDrawer(page).getByTestId("search-do-screen-logbook").click();
   await expect(page.getByTestId("console-sheet")).toBeVisible();
+  // Opened from the search, its one ✕ goes back there in one tap.
   await page.getByTestId("console-page-close").click();
-  await page.getByTestId("console-close").click();
+  await expect(page.getByTestId("console-sheet")).toHaveCount(0);
   await search.fill("traffic");
   await sideDrawer(page).getByTestId("search-do-traffic").click();
   await expect(page).toHaveURL(/[?&]aircraft=1/);
