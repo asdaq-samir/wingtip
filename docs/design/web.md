@@ -953,6 +953,36 @@ bar: the panel's head carries Share, and the browser's Back is the close.
 **Avoid.** An install banner of Wingtip's own over the map; asking for
 notifications before a tap; a different app per `start_url`.
 
+**In the air, with no connection (the offline audit, 2026-11-10).** The
+service worker (Workbox, `vite.config.ts`) holds the app, the engine's
+WebAssembly and what Keep for the Air fetched; the page asks it first.
+- Every query is asked with no connection (TanStack Query's `networkMode:
+  "offlineFirst"`, `lib/queryClient`), so the worker's kept answer
+  reaches the page; one it did not keep says "No connection" in place
+  (`QueryState`, `lib/problems`), never a blank or a skeleton for good.
+- Emergency's best fields and Nearest rank the fields round the airplane
+  on the device when the planner cannot be had: the airport index the
+  browser keeps, the engine's `best_fields` (`lib/fieldsOnDevice`), said
+  "From this device, without weather".
+- Direct To works its leg out on the device (the engine's `navlog_leg`
+  and `navlog_totals`, `features/plan/hooks/directOnDevice`), "Worked out
+  on this device" under the Direct strip; where it cannot, the route is
+  left as it was and "Not changed: no connection" is said.
+- Keep for the Air keeps the map's overlay archive whole once a cycle,
+  where the browser has room (`overlay-archive`, answered in ranges by
+  Workbox's range-requests plugin), the route's side view, and the
+  newest radar frame over the corridor (`radar-frames`, capped).
+- The glide ring keeps the last field elevation it was given (within 20
+  nm of that field).
+- Ages: the airport weather marks say "Field weather 45m old" in the
+  map's credits past half an hour; the briefing's age is the network's,
+  after a reload too.
+- In flying mode a read waits 4 s on the network before the kept answer
+  (15 s on the ground), and a request that sends data fails "No answer in
+  time" after 10 s.
+- Safari's captions offline say "Speech needs a connection in this
+  browser".
+
 **Sources.** [webdev-install], [webdev-richer-install], [safari-26],
 [webkit-push], [mdn-id], [mdn-wco], [mdn-launch-handler],
 [mdn-share-target], [mdn-file-handlers], [mdn-env], [webdev-viewport],
