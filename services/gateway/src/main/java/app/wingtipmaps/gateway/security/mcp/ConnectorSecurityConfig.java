@@ -70,8 +70,9 @@ public class ConnectorSecurityConfig {
     /** The security headers written as the request comes in, as
      *  SecurityConfig has them and for its reason: /mcp's answer is piped
      *  on a thread of its own (StreamingProxy), and two threads must not
-     *  write headers at once. */
-    static SecurityFilterChain headersFirst(SecurityFilterChain chain) {
+     *  write headers at once. Every chain of the gateway's goes through
+     *  it (CacheHeadersTest holds them to it). */
+    public static SecurityFilterChain headersFirst(SecurityFilterChain chain) {
         for (Filter filter : chain.getFilters()) {
             if (filter instanceof HeaderWriterFilter writer) {
                 writer.setShouldWriteHeadersEagerly(true);

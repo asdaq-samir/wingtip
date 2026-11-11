@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.security;
 
+import app.wingtipmaps.gateway.security.mcp.ConnectorSecurityConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -19,7 +20,9 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
  * (ConnectorSecurityConfig). The forms carry the cookie-held CSRF token the
  * app's other forms do. The confirm page's address holds the link's
  * token, so no Referer is sent from it; the pages run no script, load
- * nothing but their icon and are never framed.
+ * nothing but their icon and are never framed. Its headers, no-store
+ * among them, are written as the request comes in, as every chain's are
+ * (ConnectorSecurityConfig.headersFirst).
  */
 @Configuration
 public class DeleteAccountSecurityConfig {
@@ -37,6 +40,6 @@ public class DeleteAccountSecurityConfig {
                         .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; img-src 'self'; "
                                 + "style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; "
                                 + "frame-ancestors 'none'")));
-        return http.build();
+        return ConnectorSecurityConfig.headersFirst(http.build());
     }
 }
