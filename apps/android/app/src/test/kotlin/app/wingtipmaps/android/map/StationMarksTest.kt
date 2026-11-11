@@ -45,6 +45,7 @@ class StationMarksTest {
         val arrowIn: JsonObject? = null,
         val arrowOut: EngineContract.WindArrowAnswer? = null,
         val barbOut: EngineContract.WindBarbAnswer? = null,
+        val calmOut: Boolean? = null,
     ) : StationMarks.Rules {
         override fun barb(speedKt: Double) = barbOut
 
@@ -58,6 +59,8 @@ class StationMarksTest {
         }
 
         override fun worse(now: List<EngineContract.WorseField>, atEta: List<EngineContract.WorseField>) = emptySet<String>()
+
+        override fun calm(speedKt: Double) = calmOut
     }
 
     private fun field(speed: Double?, gust: Double?, crosswind: Double?, from: Double? = 220.0) =
@@ -152,9 +155,13 @@ class StationMarksTest {
 
     @Test
     fun talkBackReadsTheCategoryAndWind() {
-        assertEquals("IFR, wind 220 at 18 gusting 26", StationMarks.said(field(18.0, 26.0, 17.0)))
-        assertEquals("IFR, wind calm", StationMarks.said(field(0.0, null, null)))
-        assertEquals("IFR, wind variable at 6", StationMarks.said(field(6.0, null, null, from = null)))
+        // Whether it is calm is the engine's `wind_calm`, answered here.
+        val windy = FixtureRules(calmOut = false)
+        assertEquals("IFR, wind 220 at 18 gusting 26", StationMarks.said(field(18.0, 26.0, 17.0), windy))
+        assertEquals("IFR, wind calm", StationMarks.said(field(0.0, null, null), FixtureRules(calmOut = true)))
+        assertEquals("IFR, wind variable at 6", StationMarks.said(field(6.0, null, null, from = null), windy))
+        // Where the engine cannot say, the figures are said.
+        assertEquals("IFR, wind 220 at 0", StationMarks.said(field(0.0, null, null), FixtureRules()))
     }
 
     @Test

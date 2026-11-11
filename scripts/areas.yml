@@ -156,6 +156,9 @@ areas:
       # are generated from these (UpstreamRoutes)
       - services/assistant/openapi.json
       - services/planner/openapi.json
+      # AircraftRequest's limits are held to the engine's aircraft_problems
+      # cases (AircraftRequestFixtureTest)
+      - apps/web/src/lib/fixtures/aircraftForm.json
   ios:
     ci: ios
     check: xcodegen, then xcodebuild test on the newest iPhone simulator

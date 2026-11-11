@@ -33,6 +33,7 @@ import kotlinx.coroutines.launch
  */
 class HandbookPhotoModel(
     private val check: (HandbookRead) -> Result<HandbookCheck> = { Engine.rule("handbook_read_check", it) },
+    private val rules: AircraftForm.Rules = AircraftForm.EngineRules,
 ) : ViewModel() {
     data class State(
         val page: Documents.Kind = Documents.Kind.PERFORMANCE,
@@ -46,6 +47,8 @@ class HandbookPhotoModel(
         val form: AircraftForm = AircraftForm(),
         /** Save was tried, so each field's problem is shown under it. */
         val tried: Boolean = false,
+        /** What is wrong with the form, by field, once Save was tried. */
+        val problems: Map<AircraftForm.Field, String> = emptyMap(),
         val saving: Boolean = false,
         val saved: Boolean = false,
     )
@@ -105,7 +108,9 @@ class HandbookPhotoModel(
         )
     }
 
-    fun edit(how: (AircraftForm) -> AircraftForm) = _state.update { it.copy(form = how(it.form), saved = false) }
+    fun edit(how: (AircraftForm) -> AircraftForm) = _state.update { s ->
+        how(s.form).let { f -> s.copy(form = f, problems = if (s.tried) f.problems(rules) else emptyMap(), saved = false) }
+    }
 
     /** Back to the items, to confirm another or take one back. */
     fun review() = _state.update { it.copy(kept = null, saved = false) }
@@ -115,17 +120,20 @@ class HandbookPhotoModel(
     fun save() {
         val s = _state.value
         val kept = s.kept ?: return
-        if (s.form.request == null) {
-            _state.update { it.copy(tried = true) }
+        val problems = s.form.problems(rules)
+        if (s.form.request(problems) == null) {
+            _state.update { it.copy(tried = true, problems = problems) }
             return
         }
-        _state.update { it.copy(saving = true, tried = true, problem = null) }
+        _state.update { it.copy(saving = true, tried = true, problems = problems, problem = null) }
         viewModelScope.launch {
             try {
                 val tail = s.form.tailNumber.trim()
                 val was = Gateway.aircraft().orEmpty().firstOrNull { it.tailNumber.equals(tail, ignoreCase = true) }
                 // What the page does not give is kept as the pilot set it.
-                val ask = checkNotNull((was?.let(s.form::over) ?: s.form).request)
+                // The record's own figures in the blanks are checked again.
+                val whole = was?.let(s.form::over) ?: s.form
+                val ask = checkNotNull(whole.request(whole.problems(rules))) { "The airplane's record is not as the gateway takes it." }
                 val saved = if (was != null) Gateway.updateAircraft(was.id, ask) else Gateway.addAircraft(ask)
                 Gateway.saveHandbook(saved.id, HandbookReview.forGateway(kept.handbook))
                 _state.update { it.copy(saving = false, saved = true) }

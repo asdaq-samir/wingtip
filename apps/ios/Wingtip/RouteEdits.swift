@@ -136,11 +136,15 @@ struct RouteExtras: Equatable, Sendable {
 
     /// Where a point goes into the route so it bends it least: after the
     /// point whose leg it adds the fewest miles to (the web app's
-    /// bestStopIndex), as an index into the stops.
-    static func bestStopIndex(_ points: [CLLocationCoordinate2D], at: CLLocationCoordinate2D) -> Int {
+    /// bestStopIndex), as an index into the stops. The miles are the
+    /// engine's (`distance_nm`); thrown where it cannot say them.
+    static func bestStopIndex(_ points: [CLLocationCoordinate2D], at: CLLocationCoordinate2D) throws -> Int {
+        func nm(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) throws -> Double {
+            try Engine.distanceNm(lat1: a.latitude, lon1: a.longitude, lat2: b.latitude, lon2: b.longitude)
+        }
         var best = 0, added = Double.infinity
         for i in 0..<max(0, points.count - 1) {
-            let more = Flight.nm(from: points[i], to: at) + Flight.nm(from: at, to: points[i + 1]) - Flight.nm(from: points[i], to: points[i + 1])
+            let more = try nm(points[i], at) + nm(at, points[i + 1]) - nm(points[i], points[i + 1])
             if more < added { best = i; added = more }
         }
         return best
@@ -251,7 +255,16 @@ extension Plan {
     func drop(_ ident: String, at point: CLLocationCoordinate2D, then: Drop, from fix: OwnShip.Fix?) {
         guard let course else { return }
         let ends = [course.departure] + (course.stops ?? []) + [course.destination]
-        let index = min(stops.count, RouteExtras.bestStopIndex(ends.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }, at: point))
+        // Where the engine cannot say the miles, the point goes in last,
+        // before the destination, still in the route for the pilot to move.
+        let best: Int
+        do {
+            best = try RouteExtras.bestStopIndex(ends.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }, at: point)
+        } catch {
+            Log.engine.error("distance_nm: \(error.localizedDescription, privacy: .public)")
+            best = stops.count
+        }
+        let index = min(stops.count, best)
         if then == .direct {
             let was = extras.was ?? current
             if let fix { dep = RouteExtras.position(fix) }

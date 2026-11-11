@@ -122,10 +122,8 @@ export function PillSection({
   right,
   children,
   testId,
-  large = false,
 }: {
   title: string;
-  large?: boolean;
   /** The list in full, the title the way to it, in the tint with its
    *  chevron -- every section's alike, the tabs' Saved, Favorites and
    *  Recents as the cards' are -- at the owner's ask ("make saved,
@@ -139,10 +137,12 @@ export function PillSection({
   children: ReactNode;
   testId?: string;
 }) {
-  // Every section's title (lib/text SECTION_TITLE) -- not bold, not
-  // capitals -- in the text's colour, or the tint where it opens more;
-  // `large` bold, as the owner's Apple Maps screenshot has them.
-  const heading = large ? cn("font-bold text-foreground", TEXT.card) : SECTION_TITLE;
+  // Every section's title one style (lib/text SECTION_TITLE: 20 points,
+  // medium, decision 0021), its words in the text's colour and the
+  // chevron in the tint where it opens the list in full (owner decision
+  // 2026-11-10 (decisions page): the search's page had bold 22-point
+  // titles in the tint beside these).
+  const heading = SECTION_TITLE;
   return (
     // Eight under the title: its 44-point hit area its own (the iOS audit's P1).
     <section className="flex min-w-0 flex-col gap-2" data-testid={testId}>
@@ -155,11 +155,10 @@ export function PillSection({
             className={cn(
               "relative flex items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2",
               heading,
-              "text-tint",
             )}
           >
             {title}
-            <ChevronRight className="size-5" aria-hidden="true" />
+            <ChevronRight className="size-5 text-tint" aria-hidden="true" />
           </button>
         ) : (
           <h3 className={heading}>{title}</h3>
@@ -304,11 +303,11 @@ export function StripNote({ children, status = false }: { children: ReactNode; s
   );
 }
 
-/** A pill's row of small tiles, along it, sliding sideways where more
- *  than fit. */
-export function PillStrip({ children, testId }: { children: ReactNode; testId?: string }) {
+const STRIP = "-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 [scrollbar-width:none]";
+/** A pill's row of small tiles, sliding sideways where more than fit (`className`: strips laid into it). */
+export function PillStrip({ children, testId, className }: { children: ReactNode; testId?: string; className?: string }) {
   return (
-    <div className="-mx-1 flex gap-3 overflow-x-auto overscroll-x-contain px-1 [scrollbar-width:none]" data-testid={testId}>
+    <div className={cn(STRIP, className)} data-testid={testId}>
       {children}
     </div>
   );

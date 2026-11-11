@@ -90,16 +90,19 @@ export function ResultRow({
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className={cn("block truncate font-semibold", tint ? "text-tint" : "text-foreground", TEXT.row)}>{title}</span>
         {detail && <span className={cn("block truncate text-muted-foreground", TEXT.detail)}>{detail}</span>}
-        {actions && <span className="flex flex-wrap gap-2 pt-1.5">{actions}</span>}
+        {/* Side by side, each half the row, never on two lines: at 19.65 px
+            Fly Here and Depart From wrapped (the sheet audit's F-S5). */}
+        {actions && <span className="flex gap-2 pt-1.5">{actions}</span>}
       </span>
       {end}
     </CommandItem>
   );
 }
 
-/** A quick action in the top hit, a grey pill with the tint's words, as
- *  Apple's Directions in a result: a pointer's shortcut to what the card's
- *  own button does. Out of the tab order -- the field keeps the keyboard,
+/** A quick action in the top hit, the stock secondary button with the
+ *  tint's words (CLAUDE.md: tappable things are the tint), as Apple's
+ *  Directions in a result: a pointer's shortcut to what the card's own
+ *  button does; its 44-point hit area index.css's pseudo-element. Out of the tab order -- the field keeps the keyboard,
  *  and Enter opens the card with the same action -- and its tap is its own,
  *  not the row's too. */
 export function QuickAction({
@@ -126,8 +129,9 @@ export function QuickAction({
       tabIndex={-1}
       onClick={tap}
       onPointerDown={(event) => event.stopPropagation()}
-      // The only one, the row's width, as Apple's lone Directions is.
-      className={cn("relative h-8 rounded-full px-3.5 font-semibold text-tint after:absolute after:-inset-1.5", wide && "w-full")}
+      // Each an equal share of the row, the only one all of it, as Apple's
+      // lone Directions is.
+      className={cn("min-w-0 flex-1 text-tint", wide && "w-full")}
       data-testid={testId}
     >
       {label}

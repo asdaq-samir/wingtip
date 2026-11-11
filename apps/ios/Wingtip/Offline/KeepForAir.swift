@@ -28,8 +28,16 @@ final class KeepForAir {
     func keep(plan: Plan, template: TileTemplate, minZoom: Int, verdict: Verdict?, signedIn: Bool) {
         guard let course = plan.course else { return }
         task?.cancel()
-        let tiles = KeepRoute.tiles(along: course.coordinates, minZoom: max(minZoom, 6), maxZoom: 10)
-        let regions = CyclePacks.regions(along: course.coordinates)
+        // The corridor's miles are the engine's; where it cannot say them
+        // nothing is kept, and Ready to Fly goes on saying the chart is not.
+        let tiles: Set<KeepRoute.Tile>, regions: Set<String>
+        do {
+            tiles = try KeepRoute.tiles(along: course.coordinates, minZoom: max(minZoom, 6), maxZoom: 10)
+            regions = try CyclePacks.regions(along: course.coordinates)
+        } catch {
+            Log.engine.error("distance_nm: \(error.localizedDescription, privacy: .public)")
+            return
+        }
         let route = ReadyToFly.flightKey(plan)
         keeping = (0, tiles.count)
         sizeMb = nil

@@ -191,8 +191,20 @@ class Settings(BaseSettings):
     google_maps_api_key: str = ""
     #: The compose stack's dev-services sidecar; None everywhere else.
     dev_services_url: str | None = None
-    #: The gateway's address (GATEWAY_URL), for the status page's health probe.
+    #: The gateway's address (GATEWAY_URL), for the status page's health probe
+    #: and the connector's records and signing keys (app.mcp).
     gateway_url: str = "http://gateway:8080"
+    #: Who issues the connector's tokens: the gateway's public address
+    #: (MCP_ISSUER); None serves no /mcp (app.mcp).
+    mcp_issuer: str | None = None
+    #: The connector's public address, the audience its tokens must carry
+    #: (MCP_RESOURCE_URL); the issuer's /mcp when unset.
+    mcp_resource_url: str | None = None
+    #: The secret the gateway's /internal/mcp records ask for (MCP_INTERNAL_TOKEN).
+    mcp_internal_token: str | None = None
+    #: Tool calls one pilot's connector may make a minute and a day (app.mcp.limits).
+    mcp_calls_per_minute: int = 30
+    mcp_calls_per_day: int = 600
 
     read_switches = field_validator(
         "charts_fetch_for_tiles",
@@ -207,13 +219,15 @@ class Settings(BaseSettings):
         mode="before",
     )(_switch)
 
-    @field_validator("chart_tiles_url", "dev_services_url", "feed_alert_webhook", "weather_url", mode="before")
+    @field_validator(
+        "chart_tiles_url", "dev_services_url", "feed_alert_webhook", "weather_url", "mcp_resource_url", "mcp_issuer", mode="before"
+    )
     @classmethod
     def read_base_url(cls, value):
         """A base address without its trailing slash, None where blank."""
         return _none_if_blank(value.rstrip("/") if isinstance(value, str) else value)
 
-    read_blank_as_unset = field_validator("chart_tiles_bucket", "chart_landmarks_dir", mode="before")(_none_if_blank)
+    read_blank_as_unset = field_validator("chart_tiles_bucket", "chart_landmarks_dir", "mcp_internal_token", mode="before")(_none_if_blank)
 
     @field_validator("chart_tiles_prefix", mode="before")
     @classmethod

@@ -25,7 +25,9 @@ export default function FindNearby({ onFind }: { onFind: (kind: StopKind) => voi
             onClick={() => onFind(kind)}
             data-testid={`find-nearby-${kind}`}
             className={cn(
-              "flex h-14 min-w-0 items-center gap-3 rounded-2xl bg-foreground/8 px-3 text-left font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              // White cards on the sheet's grey, as the rest of its page
+              // is: the grey at 8% stood 1.19:1 against it (F-L2).
+              "flex h-14 min-w-0 items-center gap-3 rounded-2xl bg-card px-3 text-left font-medium text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring",
               TEXT.row,
             )}
           >

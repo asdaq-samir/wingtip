@@ -276,8 +276,8 @@ struct NowFlightRow: View {
                     .foregroundStyle(FlightWords.squawk(squawk) != nil ? WingtipInk.problem : Color.secondary)
                     .accessibilityLabel("Squawk \(SpokenFigures.digits(squawk))\(FlightWords.squawk(squawk).map { ", \($0)" } ?? "")")
             }
-            if let fix = ownShip.fix {
-                Text(fromYou(fix)).font(.subheadline).foregroundStyle(.secondary)
+            if let fix = ownShip.fix, let from = fromYou(fix) {
+                Text(from).font(.subheadline).foregroundStyle(.secondary)
             }
         }
         .accessibilityElement(children: .combine)
@@ -303,12 +303,12 @@ struct NowFlightRow: View {
                 plane.trackDeg.map { "track \(SpokenFigures.degrees($0)) true" }].compactMap { $0 }.joined(separator: ", ")
     }
 
-    private func fromYou(_ fix: OwnShip.Fix) -> String {
-        let here = CLLocationCoordinate2D(latitude: plane.lat, longitude: plane.lon)
-        let nm = Flight.nm(from: fix.coordinate, to: here)
-        let bearing = Flight.bearing(from: fix.coordinate, to: here)
-        let height = fix.altitudeFt.flatMap { own in plane.altitudeFt.map { ", " + FlightWords.against($0 - own) } } ?? ""
-        return "\(Format.distance(nm, decimals: 0)) \(AirportWords.compassPoint(bearing)) of you" + height
+    /// How far and which way, the engine's (`distance_nm`, `bearing_deg`); nil where it cannot say.
+    private func fromYou(_ fix: OwnShip.Fix) -> String? {
+        let (lat, lon) = (fix.coordinate.latitude, fix.coordinate.longitude)
+        guard let nm = try? Engine.distanceNm(lat1: lat, lon1: lon, lat2: plane.lat, lon2: plane.lon),
+              let bearing = try? Engine.bearingDeg(lat1: lat, lon1: lon, lat2: plane.lat, lon2: plane.lon) else { return nil }
+        return "\(Format.distance(nm, decimals: 0)) \(AirportWords.compassPoint(bearing)) of you" + (fix.altitudeFt.flatMap { own in plane.altitudeFt.map { ", " + FlightWords.against($0 - own) } } ?? "")
     }
 }
 

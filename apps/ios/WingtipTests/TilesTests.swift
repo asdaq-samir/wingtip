@@ -69,11 +69,11 @@ struct KeepRouteTests {
 
     @Test func aShortRouteWantsAFewTilesAtEachZoomAndMoreAtTheFiner() throws {
         let line = [CLLocationCoordinate2D(latitude: 42.32, longitude: -88.07), CLLocationCoordinate2D(latitude: 42.42, longitude: -87.87)]
-        let coarse = KeepRoute.tiles(along: line, minZoom: 7, maxZoom: 7)
-        let fine = KeepRoute.tiles(along: line, minZoom: 10, maxZoom: 10)
+        let coarse = try KeepRoute.tiles(along: line, minZoom: 7, maxZoom: 7)
+        let fine = try KeepRoute.tiles(along: line, minZoom: 10, maxZoom: 10)
         #expect(coarse.count >= 9 && coarse.count <= 16)
         #expect(fine.count > coarse.count)
-        #expect(KeepRoute.tiles(along: [line[0]], minZoom: 7, maxZoom: 10).isEmpty)
+        #expect(try KeepRoute.tiles(along: [line[0]], minZoom: 7, maxZoom: 10).isEmpty)
     }
 }
 

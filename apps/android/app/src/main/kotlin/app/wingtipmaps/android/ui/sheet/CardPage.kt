@@ -10,6 +10,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LargeFlexibleTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -41,10 +42,12 @@ class CardExit(val back: () -> Unit, val close: () -> Unit) {
  * 2026-11-10): while it is open its bar takes the search's place at the
  * sheet's head -- ← and the card's name, as Maps turns its search bar
  * into "← KOSH" -- and the card fills the sheet below it. Material 3
- * Expressive's large flexible top app bar on every card and page (the
- * scrolling rule, 2026-11-10), its title large over the card and folding
- * into the pinned bar as the card scrolls (exitUntilCollapsed), so the
- * title, ← and ✕ never scroll away; the card's own actions, then ✕ at the
+ * Expressive's large flexible top app bar on every card and page at the
+ * sheet's full height (the scrolling rule, 2026-11-10), its title large
+ * over the card and folding into the pinned bar as the card scrolls
+ * (exitUntilCollapsed), and the small bar at half, title and actions on
+ * one row (LocalSheetFull; the owner, 2026-11-10), so the title, ← and ✕
+ * never scroll away; the card's own actions, then ✕ at the
  * end, which closes every card back to the search. The plan, under the
  * search, has the same bar with no ← (`showBack`). Back, with the system's predictive gesture, is the NavHost's
  * own (SheetPagesHost): one level, then the search.
@@ -71,8 +74,14 @@ fun CardPage(
     snackbarHost: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
 ) {
-    val scroll = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val titleText: @Composable () -> Unit = { Text(title, maxLines = 2, overflow = TextOverflow.Ellipsis) }
+    // At half the small bar, its title and actions on one row, so the card
+    // keeps its room; at full the large flexible bar, folding as it scrolls
+    // (the owner's decision, 2026-11-10, on the audit's H-1).
+    val full = LocalSheetFull.current
+    val collapsing = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val pinned = TopAppBarDefaults.pinnedScrollBehavior()
+    val scroll = if (full) collapsing else pinned
+    val titleText: @Composable () -> Unit = { Text(title, maxLines = if (full) 2 else 1, overflow = TextOverflow.Ellipsis) }
     val subtitleText: (@Composable () -> Unit)? = subtitle?.let { s -> { Text(s, maxLines = 1, overflow = TextOverflow.Ellipsis) } }
     val back: @Composable () -> Unit = {
         IconButton(onClick = exit.back) { Icon(WingtipIcons.back, contentDescription = stringResource(R.string.back)) }
@@ -89,11 +98,22 @@ fun CardPage(
         containerColor = Color.Transparent,
         contentWindowInsets = WindowInsets(0),
         topBar = {
-            LargeFlexibleTopAppBar(
-                title = titleText, subtitle = subtitleText, navigationIcon = if (showBack) back else ({}), actions = barActions,
-                windowInsets = WindowInsets(0), colors = colors, scrollBehavior = scroll,
-                modifier = Modifier.testTag(CardPageTags.BAR),
-            )
+            val navigation = if (showBack) back else ({})
+            val barModifier = Modifier.testTag(CardPageTags.BAR)
+            when {
+                full -> LargeFlexibleTopAppBar(
+                    title = titleText, subtitle = subtitleText, navigationIcon = navigation, actions = barActions,
+                    windowInsets = WindowInsets(0), colors = colors, scrollBehavior = scroll, modifier = barModifier,
+                )
+                subtitleText != null -> TopAppBar(
+                    title = titleText, subtitle = subtitleText, navigationIcon = navigation, actions = barActions,
+                    windowInsets = WindowInsets(0), colors = colors, scrollBehavior = scroll, modifier = barModifier,
+                )
+                else -> TopAppBar(
+                    title = titleText, navigationIcon = navigation, actions = barActions,
+                    windowInsets = WindowInsets(0), colors = colors, scrollBehavior = scroll, modifier = barModifier,
+                )
+            }
         },
         bottomBar = bottomBar,
         floatingActionButton = floatingActionButton,

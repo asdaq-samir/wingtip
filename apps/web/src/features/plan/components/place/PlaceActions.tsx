@@ -1,8 +1,14 @@
+import { useState } from "react";
+import { RefreshCw, Star } from "lucide-react";
 import { cn } from "cn";
 import { CardAction as Action } from "../../../../components/CardAction";
 import { useIsDesktop } from "../../../../hooks/use-desktop";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { ACTION } from "../../../../lib/cardActions";
+import { refreshLive, useLiveRefresh } from "../../../../lib/liveRefresh";
+import { FAVORITE_STAR_ON } from "../../../../lib/mapChrome";
+import { usePreferences } from "../../../../lib/preferences";
+import { sameField } from "../../../../lib/procedures";
 import { useShown } from "../../../../lib/shown";
 import { useKeyHint } from "../../../../lib/shortcutKeys";
 import { useCardKeys } from "../../hooks/useCardKeys";
@@ -16,8 +22,11 @@ import { mapsLink } from "./mapsLink";
  * it -- and Weather, the field's Weather tab: one row of four, as Apple
  * Maps' place card on the web has Directions, Call, Website and Tickets
  * (the owner's screenshot, 2026-11-10). Under them Call, the field's own
- * phone from the FAA's airport file, greyed where it lists none, and the
- * address in Maps. On a desktop the
+ * phone from the FAA's airport file, greyed where it lists none, the
+ * address in Maps, the star that keeps it in the Favorites and Refresh:
+ * the two came down from the card's head, which keeps its Share and ✕
+ * alone, into the second row of four, under the first's four (owner
+ * decision 2026-11-10 (decisions page), the sheet audit's F-B1). On a desktop the
  * plan's three by a letter each, F, D and S, shown on them, while the
  * card is in sight (lib/shown: not under a card over it).
  */
@@ -28,6 +37,7 @@ export default function PlaceActions({
   onDepartFrom,
   onAddStop,
   onWeather,
+  favoriteIdent,
 }: {
   place: AirportPlace | null;
   /** Fly Here tapped, the route on its way. */
@@ -38,6 +48,8 @@ export default function PlaceActions({
   onAddStop?: (place: AirportPlace) => void;
   /** The card's Weather tab, opened. */
   onWeather: () => void;
+  /** The field the star keeps: its kept ident, else the one asked for. */
+  favoriteIdent: string;
 }) {
   const desktop = useIsDesktop();
   const shown = useShown();
@@ -88,7 +100,7 @@ export default function PlaceActions({
           testId="place-weather-action"
         />
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <Action
           icon={<ACTION.call.icon />}
           label={ACTION.call.label}
@@ -105,7 +117,52 @@ export default function PlaceActions({
           spoken={place?.address ? `Address in Maps: ${place.address}` : "Open in Maps"}
           testId="place-address-action"
         />
+        <FavoriteTile ident={favoriteIdent} place={place} />
+        <RefreshTile ident={place?.ident ?? favoriteIdent} />
       </div>
     </div>
+  );
+}
+
+/** The star: the field in the Favorites or out, pressed while it is
+ *  there -- a Favorite's star already as the card waits on its answer. */
+function FavoriteTile({ ident, place }: { ident: string; place: AirportPlace | null }) {
+  const mine = place?.ident ?? ident;
+  const kept = usePreferences((s) => s.favoriteAirports.some((a) => sameField(a.ident, mine)));
+  const toggle = usePreferences((s) => s.toggleFavoriteAirport);
+  return (
+    <Action
+      icon={<Star className={cn(kept && FAVORITE_STAR_ON)} />}
+      label="Favorite"
+      spoken={kept ? "Remove from Favorites" : "Add to Favorites"}
+      pressed={kept}
+      disabled={!place}
+      onClick={() => {
+        if (place) toggle({ ident: place.ident, name: place.name, municipality: place.municipality, lat: place.lat, lon: place.lon });
+      }}
+      testId="place-favorite"
+    />
+  );
+}
+
+/** Refresh: what the card shows asked again now, the spinner in its
+ *  glyph's place until the answers are in; the card keeps itself fresh
+ *  besides (useLiveRefresh), on a timer and as it comes back into sight. */
+function RefreshTile({ ident }: { ident: string }) {
+  useLiveRefresh("airport");
+  const [busy, setBusy] = useState(false);
+  return (
+    <Action
+      icon={<RefreshCw />}
+      label="Refresh"
+      spoken={`Refresh ${ident}`}
+      busy={busy}
+      onClick={() => {
+        if (busy) return;
+        setBusy(true);
+        void refreshLive("airport").finally(() => setBusy(false));
+      }}
+      testId="airport-refresh"
+    />
   );
 }

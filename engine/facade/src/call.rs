@@ -401,7 +401,6 @@ pub fn rule(name: &str, v: &Value) -> Result<String, String> {
         | "pressure_altitude_ft"
         | "is_eastbound"
         | "lowest_vfr_cruising_altitude"
-        | "distance_nm"
         | "region_of"
         | "groundspeed_kt" => flight_rule(&ask),
         "words_num"
@@ -677,7 +676,7 @@ fn debrief_marked_rule(ask: &Ask) -> Result<String, String> {
     Ok(out)
 }
 
-/// The flight's figures (crate::flight, geo, phone, motion) as the
+/// The flight's figures (crate::flight, phone, motion) as the
 /// planner's wingtip_native functions of the same names work them out.
 fn flight_rule(ask: &Ask) -> Result<String, String> {
     use crate::flight;
@@ -689,7 +688,6 @@ fn flight_rule(ask: &Ask) -> Result<String, String> {
         "density_altitude_ft" => flight::density_altitude_ft(ask.num("sigma")?),
         "pressure_altitude_ft" => flight::pressure_altitude_ft(ask.num("elevation_ft")?, ask.num("altimeter_inhg")?),
         "lowest_vfr_cruising_altitude" => flight::lowest_vfr_cruising_altitude(ask.num("floor_ft")?, ask.num("magnetic_course_deg")?),
-        "distance_nm" => crate::geo::distance_nm(ask.num("lat1")?, ask.num("lon1")?, ask.num("lat2")?, ask.num("lon2")?),
         "is_eastbound" => return Ok(flight::is_eastbound(ask.num("magnetic_course_deg")?).to_string()),
         "groundspeed_kt" => flight::groundspeed_kt(
             ask.num("true_course_deg")?,

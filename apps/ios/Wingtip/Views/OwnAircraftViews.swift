@@ -110,7 +110,7 @@ struct AircraftFormView: View {
                 field("Surveillance", text: $form.surveillance, placeholder: "B1", key: "surveillance", problems: problems, codes: true)
                 field("Color", text: $form.colour, placeholder: "White, blue stripe", key: "colour", problems: problems, codes: false)
             }
-            ProblemLine(problem)
+            ProblemLine(problem ?? problems[AircraftForm.formKey])
         }
         .navigationTitle(record == nil ? "New Airplane" : "Edit Airplane")
         .toolbar {

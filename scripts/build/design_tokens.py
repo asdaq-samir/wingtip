@@ -95,8 +95,8 @@ def schemes(tree):
     dark = theme_group(tree, "color", "theme", "dark")
     sun = theme_group(tree, "color", "theme", "sunlight")
     layers = {
-        "light": [light],
-        "dark": [light, dark],
+        "light": [light, theme_group(tree, "color", "material", "wingtip", "light")],
+        "dark": [light, dark, theme_group(tree, "color", "material", "wingtip", "dark")],
         "sunlight": [light, sun],
         "cockpitLight": [light, theme_group(tree, "color", "look", "cockpit", "light")],
         "cockpitDark": [light, dark, theme_group(tree, "color", "look", "cockpit", "dark")],

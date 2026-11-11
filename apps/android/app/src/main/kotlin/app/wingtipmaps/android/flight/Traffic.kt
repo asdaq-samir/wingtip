@@ -13,6 +13,7 @@ import app.wingtipmaps.android.api.traffic
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.ownShipHex
+import app.wingtipmaps.android.engine.generated.trafficFresh
 import app.wingtipmaps.android.engine.generated.trafficMarks
 import app.wingtipmaps.android.notify.Notifications
 import app.wingtipmaps.android.receiver.Receiver
@@ -153,14 +154,18 @@ class Traffic private constructor(private val context: Context, private val tick
         }
         if (!on.value) return
         val age = answer.ageS ?: 0.0
-        val heard = answer.aircraft.filter { (it.seenS ?: 0.0) + age <= STALE_S }
+        // Only the airplanes heard lately enough to be where they are given
+        // (the engine's `traffic_fresh`); where it cannot say, none, as an
+        // airplane drawn where it no longer is misleads.
+        val fresh = Engine.trafficFresh(answer.ageS, answer.aircraft.map { EngineContract.TrafficFreshInputPlanesItem(it.seenS) })
+        val heard = fresh.map { kept -> answer.aircraft.filterIndexed { i, _ -> kept.getOrElse(i) { false } } }.getOrDefault(emptyList())
         // Own ship's own transponder, heard by the receivers on the ground,
         // is not traffic to itself (the engine's `own_ship_hex`).
         val own = ownShipHex(heard.map { it.copy(seenS = (it.seenS ?: 0.0) + age) }, fix)
         internet = heard.filter { it.hex != own.getOrNull() }
         _source.value = answer.source
         _heardAtMs.value = System.currentTimeMillis() - (age * 1000).toLong()
-        publish(fix, tell = true, ownProblem = own.exceptionOrNull())
+        publish(fix, tell = true, ownProblem = fresh.exceptionOrNull() ?: own.exceptionOrNull())
     }
 
     /** The airplanes drawn -- the receiver's first, then the internet's it
@@ -175,23 +180,23 @@ class Traffic private constructor(private val context: Context, private val tick
         val relayed = internet.toHashSet()
         val planes = Receiver.of(context).traffic(internet, fix?.altitudeFt, nowMs)
             .map { if (it in relayed) it else it.copy(seenS = (it.seenS ?: 0.0) - since) }
-        val marks = marks(planes, fix?.altitudeFt)
+        val marks = marks(planes, fix)
         _planes.value = planes
         // A mark the engine could not give is blank, not near: the airplane
         // is still drawn, and the card says why it has no mark.
-        _marks.value = marks.getOrElse { planes.map { Mark("", false) } }
+        _marks.value = marks.getOrElse { planes.map { Mark("", near = false, tell = false) } }
         _problem.value = (ownProblem ?: marks.exceptionOrNull())?.let { "The traffic rules failed: ${it.message}" }
         Tracking.of(context).heard(planes)
         if (tell) tellNear(fix, planes, _marks.value)
     }
 
-    /** The airplanes near own ship (the engine's `traffic_marks`, the
-     *  amber mark: within 1,000 ft of its height) and within
-     *  TELL_WITHIN_NM, each told once as it comes near, as a heads-up
-     *  notification while the app is not in front; on the screen the
-     *  amber mark says it, so nothing is sent then. Permission is asked
-     *  the first time traffic is near with the app in front, the moment
-     *  the pilot sees what it is for. */
+    /** The airplanes near own ship, in height and in miles (the engine's
+     *  `traffic_marks` tell: within 1,000 ft of its height and 5 nm of
+     *  it), each told once as it comes near, as a heads-up notification
+     *  while the app is not in front; on the screen the amber mark says
+     *  it, so nothing is sent then. How far off and which way are the
+     *  mark's too. Permission is asked the first time traffic is near
+     *  with the app in front, the moment the pilot sees what it is for. */
     private fun tellNear(fix: OwnShip.Fix?, planes: List<TrafficAircraft>, marks: List<Mark>) {
         val ownFt = fix?.altitudeFt
         if (fix == null || ownFt == null) {
@@ -200,17 +205,19 @@ class Traffic private constructor(private val context: Context, private val tick
         }
         val near = HashSet<String>()
         for ((plane, mark) in planes.zip(marks)) {
-            if (!mark.near) continue
-            val nm = Geo.nm(fix.lat, fix.lon, plane.lat, plane.lon)
-            if (nm > TELL_WITHIN_NM) continue
+            if (!mark.tell) continue
             near += plane.hex
             if (plane.hex in nearHexes) continue
             if (Notifications.inFront) {
                 Notifications.allow()
                 continue
             }
+            // A mark told always has its miles and bearing; without them
+            // there is nothing to say where it is.
+            val nm = mark.nm ?: continue
+            val bearing = mark.bearingDeg ?: continue
             val against = plane.altitudeFt?.let { ", ${against(it - ownFt)}" } ?: ""
-            val place = "${nm.roundToInt()} nm ${Geo.compassPoint(Geo.bearingDeg(fix.lat, fix.lon, plane.lat, plane.lon))} of you"
+            val place = "${nm.roundToInt()} nm ${Geo.compassPoint(bearing)} of you"
             Notifications.tell(context, Notifications.CHANNEL_TRAFFIC, "Traffic near you", "${plane.name}, $place$against", "traffic-${plane.hex}")
         }
         nearHexes = near
@@ -232,16 +239,6 @@ class Traffic private constructor(private val context: Context, private val tick
          *  seconds (wingtip.traffic), so no sooner than that; twice that with
          *  the app put away (Ticker). */
         const val EVERY_MS = 5_000L
-        /** No newer report than this, s, and the airplane is not drawn:
-         *  the web app's CARRY_S. */
-        const val STALE_S = 30.0
-        /** An airplane within this of own ship, with its height within
-         *  1,000 ft (`near`), is told while the app is not in front. A
-         *  design choice, no rule: the amber mark says it on the screen
-         *  out to the map's edge, but a notification is for traffic a
-         *  pilot looks for now, so the bound keeps an airplane 40 nm off
-         *  quiet. */
-        const val TELL_WITHIN_NM = 5.0
 
         // The application's context alone (of), which lives as long as the process.
         @SuppressLint("StaticFieldLeak")
@@ -272,9 +269,14 @@ class Traffic private constructor(private val context: Context, private val tick
         }
 
         /** Each airplane's mark, in one call (the engine's `traffic_marks`,
-         *  the web app's trafficLabel). */
-        fun marks(planes: List<TrafficAircraft>, ownFt: Double?): Result<List<Mark>> =
-            Engine.trafficMarks(ownFt, planes.map { EngineContract.TrafficMarksInputPlanesItem(it.altitudeFt, it.verticalFpm) })
+         *  the web app's trafficLabel): with own ship's fix, its miles and
+         *  bearing from it and whether it is told. */
+        fun marks(planes: List<TrafficAircraft>, fix: OwnShip.Fix?): Result<List<Mark>> =
+            Engine.trafficMarks(
+                fix?.altitudeFt,
+                planes.map { EngineContract.TrafficMarksInputPlanesItem(it.altitudeFt, it.verticalFpm, it.lat, it.lon) },
+                fix?.let { EngineContract.TrafficMarksInputOwn(it.lat, it.lon) },
+            )
 
         /** A height against own ship's in words for a notification: "500
          *  ft above", "1,200 ft below", "at your height". */

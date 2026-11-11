@@ -23,7 +23,8 @@ import { useSheetDetents } from "./sheet/useSheetDetents";
 import { useSheetCover } from "./sheet/sheetCover";
 import { prefersReducedMotion } from "../lib/motion";
 import { useSheetLife } from "./sheet/useSheetLife";
-import { SheetGrabber, SheetParts, type PartsProps } from "./sheet/SheetParts";
+import { useCardRaise } from "./sheet/useCardRaise";
+import { SheetGrabber, SheetParts, SheetViewport, type PartsProps } from "./sheet/SheetParts";
 
 interface Props {
   /** The panel's name -- "Flight Planning", "Model Training" -- for its
@@ -73,7 +74,6 @@ interface Props {
 
 /** The grabber's row at the far edge of a top sheet or the side panel. */
 const GRABBER = 16;
-const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 
 /**
  * The page's one panel over the map, the way Maps on an iPhone has one:
@@ -149,6 +149,7 @@ export default function MapPanel(props: Props) {
     moving,
     barInPill: !flying,
     titleInPill: !!props.title && barShown,
+    grabberOver: bottomSheet,
     footShown,
     pillChrome,
     halfChrome,
@@ -222,21 +223,8 @@ export default function MapPanel(props: Props) {
     };
   }, [panel, fromBottom, ask, halfEdge, onPhone, life.sizeRef]);
 
-  // A card opened comes up half way at the least, all the way for a
-  // search; the last put away, the panel goes back to where it was. By where it is going, not its
-  // layout, kept at half on its way down: a card reopened then landed at the pill, out of sight.
-  const raisedFrom = useRef<PanelState | null>(null);
-  useEffect(() => {
-    const now = life.snapRef.current;
-    if (raised) {
-      raisedFrom.current ??= now;
-      if (RANK[now] < RANK[raised]) ask(raised);
-    } else if (raisedFrom.current !== null) {
-      const back = raisedFrom.current;
-      raisedFrom.current = null;
-      if (back !== now) ask(back);
-    }
-  }, [raised, ask, life.snapRef]);
+  // A card opened comes up half way at the least, all the way for a search (useCardRaise).
+  useCardRaise(raised, ask, life.snapRef);
 
   // The panel's size on <body>, for index.css's rules over the map.
   useLayoutEffect(() => {
@@ -284,8 +272,7 @@ export default function MapPanel(props: Props) {
     children,
   };
   const grabber = <SheetGrabber label={label} size={size} ask={ask} at={bottomSheet ? "top" : "bottom"} />;
-  // On a phone the light grey of Apple Maps' web sheet (2026-11-10): the
-  // look's --sheet, Canvas in Native.
+  // On a phone the light grey of Apple Maps' web sheet (2026-11-10): the look's --sheet, Canvas in Native.
   const look = onPhone
     ? GLASS_SHEET
     : cn(MATERIAL, "w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-inset ring-black/5 shadow-float dark:ring-white/10");
@@ -356,7 +343,7 @@ export default function MapPanel(props: Props) {
       <Drawer.Portal>
         {/* The screen the sheet is held on: on the keyboard while it is up.
             Not a target itself, so the map under it is the map's. */}
-        <Drawer.Viewport className="pointer-events-none fixed inset-x-0 top-0 z-40 print:static" style={{ bottom: keyboard }}>
+        <SheetViewport className="pointer-events-none fixed inset-x-0 top-0 z-40 print:static" style={{ bottom: keyboard }}>
           <Drawer.Popup
             ref={setPanel}
             {...common}
@@ -393,7 +380,7 @@ export default function MapPanel(props: Props) {
             <SheetParts {...shared} />
             {!fromBottom && grabber}
           </Drawer.Popup>
-        </Drawer.Viewport>
+        </SheetViewport>
       </Drawer.Portal>
     </Drawer.Root>
   );

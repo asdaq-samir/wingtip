@@ -20,7 +20,7 @@ extension RootView {
         case .fpl:
             // The plan, the sheet's root.
             showPlan()
-            if detent == RootView.pill { detent = .medium }
+            if detent == RootView.pill { detent = .half }
         case .airport:
             // What the Airport tab was: the search, up with its Favorites,
             // Recents and Nearest.
@@ -51,6 +51,6 @@ extension RootView {
     func showPlan() {
         search.close()
         nav.showPlan()
-        if layout == .sheet, detent != .medium { detent = .medium }
+        if layout == .sheet, detent != .half { detent = .half }
     }
 }

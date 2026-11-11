@@ -1,5 +1,7 @@
 package app.wingtipmaps.android.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -21,6 +24,7 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.OwnAirplanes
+import app.wingtipmaps.android.design.SharedAxisX
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
@@ -33,7 +37,11 @@ import app.wingtipmaps.android.search.nothingTyped
 /**
  * The docked sheet's pages in Navigation Compose's NavHost: Home and the
  * plan under the one search, and every card and page over it (CardRoute,
- * SheetCard), with the NavHost's own transitions and predictive back.
+ * SheetCard), with Material's shared axis between them, which the
+ * NavHost seeks with the predictive back gesture (SharedAxisX). The
+ * search's row (`head`) is part of Home and the plan, not over the
+ * NavHost, so Back from a card shows them coming in with their search, as
+ * they will be once it is released.
  * `backEnabled` false hands Back to what comes first (the expanded sheet
  * lowering under the search, MapSheet; a card in the wide layout's detail
  * pane) through a child of the system's navigation event dispatcher,
@@ -49,6 +57,7 @@ internal fun SheetPagesHost(
     sheet: SheetNav,
     backEnabled: Boolean,
     modifier: Modifier,
+    head: @Composable () -> Unit = {},
     home: @Composable () -> Unit,
     plan: @Composable () -> Unit,
     card: @Composable (SheetPage) -> Unit,
@@ -56,9 +65,16 @@ internal fun SheetPagesHost(
     val owner = rememberNavigationEventDispatcherOwner(enabled = backEnabled)
     val models = checkNotNull(LocalViewModelStoreOwner.current)
     CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides owner) {
-        NavHost(sheet.nav, startDestination = SheetPage.Home, modifier = modifier.fillMaxWidth()) {
-            composable<SheetPage.Home> { CompositionLocalProvider(LocalViewModelStoreOwner provides models) { home() } }
-            composable<SheetPage.Plan> { CompositionLocalProvider(LocalViewModelStoreOwner provides models) { plan() } }
+        val shift = with(LocalDensity.current) { SharedAxisX.Shift.roundToPx() }
+        NavHost(
+            sheet.nav, startDestination = SheetPage.Home, modifier = modifier.fillMaxWidth(),
+            enterTransition = { SharedAxisX.enter(shift, forward = true) },
+            exitTransition = { SharedAxisX.exit(shift, forward = true) },
+            popEnterTransition = { SharedAxisX.enter(shift, forward = false) },
+            popExitTransition = { SharedAxisX.exit(shift, forward = false) },
+        ) {
+            composable<SheetPage.Home> { CompositionLocalProvider(LocalViewModelStoreOwner provides models) { UnderSearch(head, home) } }
+            composable<SheetPage.Plan> { CompositionLocalProvider(LocalViewModelStoreOwner provides models) { UnderSearch(head, plan) } }
             composable<CardRoute> { entry ->
                 val page = remember(entry) { SheetPage.of(entry.toRoute<CardRoute>().key) }
                 CompositionLocalProvider(LocalViewModelStoreOwner provides models) { card(page) }
@@ -67,10 +83,19 @@ internal fun SheetPagesHost(
     }
 }
 
+/** A page under the one search: the search's row, then the page. */
+@Composable
+private fun UnderSearch(head: @Composable () -> Unit, page: @Composable () -> Unit) {
+    Column(Modifier.fillMaxSize()) {
+        head()
+        Box(Modifier.weight(1f)) { page() }
+    }
+}
+
 /** Nothing typed: the assistant's answer where there is one, the flight's
  *  card, then Favorites, Recents and Nearest, as the search shows them. */
 @Composable
-internal fun Home(plan: Plan, fix: OwnShip.Fix?, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit) {
+internal fun Home(plan: Plan, fix: OwnShip.Fix?, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val state by plan.state.collectAsStateWithLifecycle()
     val search: SearchModel = viewModel()
@@ -80,7 +105,7 @@ internal fun Home(plan: Plan, fix: OwnShip.Fix?, answer: @Composable () -> Unit,
     val recents by memory.recents.collectAsStateWithLifecycle()
     val own by remember(context) { OwnAirplanes.of(context) }.records.collectAsStateWithLifecycle()
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(top = WingtipSpace.Sm, bottom = WingtipSpace.Xl)) {
+    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(top = WingtipSpace.Sm, bottom = WingtipSpace.Xl)) {
         item(key = "answer") { answer() }
         item(key = "flight") {
             FlightCard(state, tail, onOpen = { onPick(SearchPick.Flight) }, modifier = Modifier.padding(horizontal = WingtipSpace.Lg))
