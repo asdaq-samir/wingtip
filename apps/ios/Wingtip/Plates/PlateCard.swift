@@ -94,7 +94,7 @@ final class PlateCardModel {
         guard let parts = PlateKey.parts(key) else { return nil }
         if let chartURL { return .faaChart(title, url: chartURL, airport: parts.ident) }
         guard let plate else { return nil }
-        return .paths(title, [Planner.platePicturePath(cycle: plate.cycle, ident: parts.ident, procedure: parts.procedure)])
+        return .paths(title, [PlatePlacement.picturePath(plate, ident: parts.ident, procedure: parts.procedure)])
     }
 }
 

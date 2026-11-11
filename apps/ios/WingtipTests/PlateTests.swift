@@ -132,10 +132,31 @@ struct PlateTests {
         #expect(window.dropFirst().map(\.text) == ["5,000'", "2,500'"])
     }
 
-    @Test func theRunwayShowsTheThresholdWithoutASourcedMinimum() {
+    /// KOSH's ILS RWY 36 from the shared fixture (approachKosh.json), its
+    /// drawing tagged by the engine and drawn as the plate prints it: POBER
+    /// at or above 2,700 with the glide slope's 2,610, CFBSM 2,700, the
+    /// runway's TCH 53 and TDZE 809, the final segment POBER to RW36.
+    @Test func koshILS36IsTaggedAsItsPlateIs() throws {
+        let url = try #require(Bundle(for: FixtureAnchor.self).url(forResource: "approachKosh", withExtension: "json"))
+        let whole = try #require(try JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let drawings = try #require(whole["drawings"] as? [String: Any])
+        let drawing = try CoachApproaches.drawing(JSONSerialization.data(withJSONObject: try #require(drawings["I36"])))
+        let tags = PlateTags.of(drawing)
+        let lines = Dictionary(tags.fixes.map { ($0.ident, PlateTagLines.lines($0)) }, uniquingKeysWith: { a, _ in a })
+        #expect(lines["POBER"] == [
+            PlateTagLine(text: "POBER", weight: .name), PlateTagLine(text: "2,700'", bars: .under), PlateTagLine(text: "GS 2,610'", weight: .note),
+        ])
+        #expect(lines["CFBSM"]?.dropFirst().first == PlateTagLine(text: "2,700'", bars: .under))
+        #expect(lines["RW36"]?.map(\.text) == ["RW36", "TCH 53'", "TDZE 809'"])
+        #expect(tags.finalSegment.count == 2)
+        #expect(abs((tags.finalSegment.first?.latitude ?? 0) - 43.873792) < 1e-6, "the final segment starts at POBER, the FAF")
+    }
+
+    @Test func theRunwayShowsItsThresholdNotAMinimum() {
         let rw36 = PlateFixTag(ident: "RW36", coordinate: pober, thresholdCrossingFt: 53, touchdownZoneFt: 809)
         #expect(PlateTagLines.lines(rw36).map(\.text) == ["RW36", "TCH 53'", "TDZE 809'"])
-        let withDA = PlateFixTag(ident: "RW36", coordinate: pober, decisionFt: 1009, decisionWord: "DA", thresholdCrossingFt: 53, touchdownZoneFt: 809)
-        #expect(PlateTagLines.lines(withDA).map(\.text) == ["RW36", "DA 1,009'"])
     }
 }
+
+/// The test bundle, where the shared fixtures are its resources.
+private final class FixtureAnchor {}

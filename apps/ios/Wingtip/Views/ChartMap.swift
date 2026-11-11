@@ -109,10 +109,7 @@ struct ChartMap: UIViewRepresentable {
         let flight = FlightMapLayer()
         flight.attach(map)
         context.coordinator.flight = flight
-        context.coordinator.legLayer.attach(map)
-        // A tap on the course opens its leg, not the plate under it.
-        let legs = context.coordinator.legLayer
-        context.coordinator.extras.plates.tapIsCourse = { [weak legs] at, map in legs?.hits(at, on: map) == true }
+        context.coordinator.attachLegs(map)
         return map
     }
 

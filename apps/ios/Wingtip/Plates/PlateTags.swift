@@ -27,18 +27,16 @@ struct PlateFixTag: Equatable {
     var glidepathFt: Double?
     /// "GS" for a glideslope (ILS), "GP" for an RNAV glidepath.
     var glidepathWord = "GS"
-    /// At the runway: the decision altitude or MDA where a sourced figure
-    /// exists, else the threshold crossing height and the touchdown zone's
-    /// elevation (the engine says which).
-    var decisionFt: Double?
-    var decisionWord: String?
+    /// At the runway: the threshold crossing height and the touchdown
+    /// zone's elevation. No DA or MDA: the d-TPP's minimums are not in the
+    /// CIFP, so they stay the plate's alone (the engine's rule says so).
     var thresholdCrossingFt: Double?
     var touchdownZoneFt: Double?
 
     static func == (a: Self, b: Self) -> Bool {
         a.ident == b.ident && a.coordinate.latitude == b.coordinate.latitude && a.coordinate.longitude == b.coordinate.longitude
             && a.sense == b.sense && a.minFt == b.minFt && a.maxFt == b.maxFt && a.glidepathFt == b.glidepathFt
-            && a.glidepathWord == b.glidepathWord && a.decisionFt == b.decisionFt && a.decisionWord == b.decisionWord
+            && a.glidepathWord == b.glidepathWord
             && a.thresholdCrossingFt == b.thresholdCrossingFt && a.touchdownZoneFt == b.touchdownZoneFt
     }
 }
@@ -64,12 +62,28 @@ struct PlateTags: Equatable {
         return of(drawing)
     }
 
-    /// The engine's tags for the approach drawn.
+    /// The engine's tags for the approach drawn (`approach_fix_tags`);
+    /// none where the engine cannot answer (logged by Engine.rule).
     static func of(_ drawing: EngineContract.ProcedureDrawing) -> PlateTags {
-        // TODO(claude/plates-engine): Engine.approachFixTags(drawing:) once
-        // the rule is generated, its answer mapped field by field onto these.
-        _ = drawing
-        return PlateTags()
+        guard let answer = try? Engine.approachFixTags(drawing: drawing) else { return PlateTags() }
+        return of(answer)
+    }
+
+    /// The engine's answer as the map draws it, field by field.
+    static func of(_ answer: EngineContract.ApproachFixTagsAnswer) -> PlateTags {
+        let fixes = answer.tags.map { tag in
+            PlateFixTag(
+                ident: tag.ident, coordinate: CLLocationCoordinate2D(latitude: tag.lat, longitude: tag.lon),
+                sense: tag.altitude.flatMap { PlateFixTag.Sense(rawValue: $0.sense) },
+                minFt: tag.altitude?.minFt, maxFt: tag.altitude?.maxFt,
+                glidepathFt: tag.vertical?.ft, glidepathWord: tag.vertical?.kind == "glidepath" ? "GP" : "GS",
+                thresholdCrossingFt: tag.runway?.tchFt, touchdownZoneFt: tag.runway?.tdzeFt)
+        }
+        let final = (answer.final?.points ?? []).compactMap { point -> CLLocationCoordinate2D? in
+            guard point.count >= 2, case .number(let lat) = point[0], case .number(let lon) = point[1] else { return nil }
+            return CLLocationCoordinate2D(latitude: lat, longitude: lon)
+        }
+        return PlateTags(fixes: fixes, finalSegment: final)
     }
 }
 
@@ -107,12 +121,8 @@ enum PlateTagLines {
             break
         }
         if let gp = tag.glidepathFt { out.append(.init(text: "\(tag.glidepathWord) \(feet(gp))", weight: .note)) }
-        if let da = tag.decisionFt, let word = tag.decisionWord {
-            out.append(.init(text: "\(word) \(feet(da))"))
-        } else {
-            if let tch = tag.thresholdCrossingFt { out.append(.init(text: "TCH \(feet(tch))", weight: .note)) }
-            if let tdze = tag.touchdownZoneFt { out.append(.init(text: "TDZE \(feet(tdze))", weight: .note)) }
-        }
+        if let tch = tag.thresholdCrossingFt { out.append(.init(text: "TCH \(feet(tch))", weight: .note)) }
+        if let tdze = tag.touchdownZoneFt { out.append(.init(text: "TDZE \(feet(tdze))", weight: .note)) }
         return out
     }
 

@@ -16,17 +16,29 @@ struct PlatePlacement: Equatable {
         self.corners = corners
     }
 
-    /// The plate as the planner places it.
+    /// The plate as the planner places it: its whole page between the
+    /// page's four corners, else, where the page is not placed (turned in
+    /// the PDF), the plan view's north-up box.
     init?(_ plate: PlateOverlay) {
-        // TODO(claude/plates-engine): the page's own four corners from the
-        // planner's whole-page fields once its models are regenerated; until
-        // then the plan view's north-up box.
+        if let page = plate.page {
+            self.init(corners: [page.topLeft, page.topRight, page.bottomRight, page.bottomLeft].map {
+                CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon)
+            })
+            return
+        }
         self.init(corners: [
             CLLocationCoordinate2D(latitude: plate.north, longitude: plate.west),
             CLLocationCoordinate2D(latitude: plate.north, longitude: plate.east),
             CLLocationCoordinate2D(latitude: plate.south, longitude: plate.east),
             CLLocationCoordinate2D(latitude: plate.south, longitude: plate.west),
         ])
+    }
+
+    /// The picture drawn between the corners: the whole page where the
+    /// planner placed it, else the plan view.
+    static func picturePath(_ plate: PlateOverlay, ident: String, procedure: String) -> String {
+        plate.page != nil ? Planner.platePagePath(cycle: plate.cycle, ident: ident, procedure: procedure)
+            : Planner.platePicturePath(cycle: plate.cycle, ident: ident, procedure: procedure)
     }
 
     static func == (a: Self, b: Self) -> Bool {

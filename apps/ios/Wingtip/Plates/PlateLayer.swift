@@ -25,10 +25,9 @@ final class PlateLayer: NSObject, UIGestureRecognizerDelegate {
     /// accessible way to do the same).
     private var actions: [UIAccessibilityCustomAction] = []
 
-    /// The final approach segment's colour.
-    // TODO(claude/plates-engine): the final segment's cyan token
-    // (design/tokens.json, ForeFlight's cyan) once it is added; until then
-    // the pattern's teal, the nearest the tokens have.
+    /// The final approach segment's colour: the pattern's teal, the
+    /// nearest design/tokens.json has to ForeFlight's cyan until a token of
+    /// its own is added there (asked in the branch's report).
     static var finalColour: UIColor { WingtipColor.Chart.pattern }
 
     override nonisolated init() { super.init() }
@@ -112,7 +111,7 @@ final class PlateLayer: NSObject, UIGestureRecognizerDelegate {
                 // lines alone.
                 guard let plate = try? await Planner.plate(pick.ident, procedure: pick.id),
                       let placement = PlatePlacement(plate),
-                      let image = try? await PictureCache.image(Planner.platePicturePath(cycle: plate.cycle, ident: pick.ident, procedure: pick.id)),
+                      let image = try? await PictureCache.image(PlatePlacement.picturePath(plate, ident: pick.ident, procedure: pick.id)),
                       !Task.isCancelled, let self, let map, self.keys.contains(key), self.pages[key] == nil else { continue }
                 let page = PlateMapOverlay(key: key, name: plate.name, placement: placement, image: image)
                 pages[key] = page
@@ -167,5 +166,16 @@ final class PlateLayer: NSObject, UIGestureRecognizerDelegate {
             }
         }
         map.accessibilityCustomActions = others + actions
+    }
+}
+
+extension ChartMap.Coordinator {
+    /// The course's taps (RouteLegLayer), and the plates told of them: a
+    /// tap on the course opens its leg, not the plate under it.
+    @MainActor
+    func attachLegs(_ map: MKMapView) {
+        legLayer.attach(map)
+        let legs = legLayer
+        extras.plates.tapIsCourse = { [weak legs] at, map in legs?.hits(at, on: map) == true }
     }
 }
