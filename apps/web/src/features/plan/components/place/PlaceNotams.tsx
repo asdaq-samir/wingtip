@@ -5,6 +5,7 @@ import { PillSection } from "../../../../components/Favorites";
 import { SheetCard } from "../../../../components/SheetCard";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { NotamGlyph } from "./NotamGlyph";
+import { Badge } from "../../../../components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
 import {
@@ -26,11 +27,11 @@ const SECTION = "place-notams";
 
 /**
  * A NOTAM's lines in our words, under its what: when (in the device's own
- * time), where on the field, and why it matters to the pilot, each the
- * engine's (notam_read) and each on its own line, the where and the why
- * only where the engine can say them (the owner, 2026-11-11: "title(what),
- * when, where, why (significance to pilot) on different lines"). Where the
- * engine has no what, the NOTAM's words written out stand first.
+ * time) and where on the field, each the engine's (notam_read) and each on
+ * its own line, the where only where the engine can say it (the owner,
+ * 2026-11-11: "title(what), when, where ... on different lines"; then "Why
+ * is not needed"). Where the engine has no what, the NOTAM's words written
+ * out stand first.
  */
 function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; clamp: boolean }) {
   const when = whenLine(n, read);
@@ -51,14 +52,13 @@ function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; cla
           {read.where}
         </span>
       )}
-      {read.why && <span data-testid="place-notam-why">{read.why}</span>}
     </span>
   );
 }
 
 /**
- * One NOTAM in full, on a card of its own over the list: its what, when,
- * where and why as its row says them (NotamLines), its words with the
+ * One NOTAM in full, on a card of its own over the list: its what with
+ * its Active or Inactive badge, its when and where as its row says them (NotamLines), its words with the
  * FAA's contractions written out where the what says them shorter, both
  * the engine's (notam_read); when it is in force in UTC, as the NOTAM gives
  * it, beside the device's own time; and its text as sent folded beneath,
@@ -73,8 +73,12 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
   return (
     <div className="flex flex-col gap-1 pb-6" data-testid="place-notam-full">
       {ours && (
-        <p className={cn("font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")} data-testid="place-notam-what">
+        <p
+          className={cn("flex items-start justify-between gap-2 font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")}
+          data-testid="place-notam-what"
+        >
           {read.what}
+          <NotamState n={n} />
         </p>
       )}
       <p className={TEXT.prose}>
@@ -108,7 +112,7 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
 /**
  * The rows, as every list on the card has them (the owner, 2026-11-11:
  * "Notams show differently then other sections"): a grouped list, each
- * row its symbol, its what and its when, where and why (NotamLines), a tap opening it
+ * row its symbol, its what with its Active or Inactive badge, and its when and where (NotamLines), a tap opening it
  * in full (NotamFull) on a card over this one. Each asks the engine as it
  * draws, which a card's content waits for (SheetCard's one EngineGate).
  */
@@ -124,10 +128,15 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
             <ListRow
               key={n.id}
               media={<NotamGlyph keyword={read.keyword} tfr={n.kind === "tfr"} />}
-              // Its what first, by its symbol; its when, where and why a line
-              // each under it (NotamLines), the window moved from the row's
-              // top right corner into its own line.
-              title={<span data-testid="place-notam-heading">{whatOf(n, ident)}</span>}
+              // Its what first, by its symbol, whether it is in force at the
+              // line's end; its when and where a line each under it (NotamLines).
+              wide
+              title={
+                <span className="flex items-start justify-between gap-2">
+                  <span data-testid="place-notam-heading">{whatOf(n, ident)}</span>
+                  <NotamState n={n} />
+                </span>
+              }
               description={<NotamLines n={n} read={read} clamp />}
               chevron
               onClick={() => setOpen(n)}
@@ -143,6 +152,24 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
         </SheetCard>
       )}
     </>
+  );
+}
+
+/** Whether it is in force now: "Active" in red, "Inactive" in the
+ *  caution's colours, as the card's NOTAM badges are (NotamBadge; the
+ *  owner, 2026-11-11: "put a active and inactive badge on each notam").
+ *  In force unless the planner says it is not yet (in_force false). */
+function NotamState({ n }: { n: FieldNotam }) {
+  const active = n.in_force !== false;
+  return (
+    <Badge
+      variant={active ? "destructive" : "secondary"}
+      className={cn("shrink-0", !active && "bg-caution-wash text-caution-ink")}
+      data-testid="place-notam-state"
+      data-active={active}
+    >
+      {active ? "Active" : "Inactive"}
+    </Badge>
   );
 }
 

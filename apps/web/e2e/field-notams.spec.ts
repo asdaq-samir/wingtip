@@ -73,11 +73,11 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   const one = notams.getByTestId("place-notam");
   // The engine's reading in our words, a line each (the owner,
   // 2026-11-11: "title(what), when, where, why ... on different lines"):
-  // what, its start and end in the device's own time, where, and why.
+  // what with its Active badge, its start and end in the device's own time, and where.
+  await expect(one.getByTestId("place-notam-state")).toHaveText("Active");
   await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway 09/27 closed");
   await expect(one.getByTestId("place-notam-when")).toHaveText(/^11\/1[01] \d\d:\d\d – 11\/12 \d\d:\d\d local$/);
   await expect(one.getByTestId("place-notam-where")).toHaveText("KDLH, runway 09/27");
-  await expect(one.getByTestId("place-notam-why")).toHaveText("No landing or takeoff on it while it is closed.");
   // Said in our words, its own words are left to its full card.
   await expect(one.getByTestId("place-notam-words")).toHaveCount(0);
   // A tap opens it in full on a card of its own: its window, as sent.
@@ -138,7 +138,6 @@ test("a field's NOTAMs show three, and their title opens every one", async ({ pa
   await expect(section.getByTestId("place-notam")).toHaveCount(3);
   const rows = section.getByTestId("place-notam");
   await expect(rows.first().getByTestId("place-notam-heading")).toHaveText("Runway 27 PAPI out of service");
-  await expect(rows.first().getByTestId("place-notam-why")).toHaveText("No visual glide path guidance to runway 27.");
   await expect(rows.nth(1).getByTestId("place-notam-heading")).toHaveText("Taxiway A closed between taxiway B and taxiway C");
   await expect(rows.nth(2).getByTestId("place-notam-heading")).toHaveText("Crane 1,600 ft MSL (210 ft above ground)");
   await expect(rows.nth(2).getByTestId("place-notam-where")).toHaveText("KDLH, 1.2 nm southeast of the field");
@@ -149,7 +148,6 @@ test("a field's NOTAMs show three, and their title opens every one", async ({ pa
   await expect(all).toBeVisible();
   await expect(all.getByTestId("place-notam")).toHaveCount(5);
   await expect(all.getByTestId("place-notam").nth(3).getByTestId("place-notam-heading")).toHaveText("100LL fuel not available");
-  await expect(all.getByTestId("place-notam").nth(3).getByTestId("place-notam-why")).toHaveText("Plan to fuel elsewhere.");
   // The glide slope out: a localizer approach (AIM 1-1-9).
   await expect(all.getByTestId("place-notam").nth(4).getByTestId("place-notam-heading")).toHaveText("Glide slope runway 09 out of service");
 });
