@@ -1,0 +1,64 @@
+name: The engine's Python wheel
+description: >
+  wingtip's Rust extension (engine/bindings/py, wingtip_native), built once
+  a run and installed by every Python job that imports it. It was built six
+  times a run, once in each such job (ci.yml, 2026-11-10). `mode: build`
+  (ci.yml's engine-wheel job) restores the wheel from the Actions cache,
+  keyed on everything under engine/ and the toolchains, builds it in the
+  light `ci` profile only on a miss, and uploads it as this run's
+  `engine-wheel` artifact. `mode: install` downloads that artifact and
+  installs it with uv. The wheel is abi3 (pyo3's abi3-py311), so one build
+  serves whatever Python 3.11 or later a job runs; it is built for the
+  runner's own platform (`--compatibility linux`), so the jobs that install
+  it run on the same runner as engine-wheel.
+inputs:
+  mode:
+    description: build (the engine-wheel job) or install (its consumers)
+    required: true
+runs:
+  using: composite
+  steps:
+    # In the workspace, not the runner's temp: a cache's paths are part of
+    # its key, and the Mac mini's runners each have their own temp.
+    - if: inputs.mode == 'build'
+      id: cache
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: .engine-wheel
+        key: engine-wheel-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/**', 'rust-toolchain.toml', '.tool-versions') }}
+    # A Python for maturin, only when there is something to build.
+    - if: inputs.mode == 'build' && steps.cache.outputs.cache-hit != 'true'
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+      with:
+        python-version-file: .tool-versions
+    - if: inputs.mode == 'build' && steps.cache.outputs.cache-hit != 'true'
+      name: The engine's wheel, built (maturin)
+      shell: bash
+      run: |
+        echo "::notice title=Cache miss::engine-wheel"
+        pip install -q uv && uv pip install --system maturin==1.16.0
+        maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o .engine-wheel
+    # Main and the night save; a pull request reads (docs/CI.md, rule 4).
+    - if: inputs.mode == 'build' && steps.cache.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      with:
+        path: .engine-wheel
+        key: ${{ steps.cache.outputs.cache-primary-key }}
+    - if: inputs.mode == 'build'
+      uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+      with:
+        name: engine-wheel
+        path: .engine-wheel/*.whl
+        if-no-files-found: error
+        retention-days: 1
+    - if: inputs.mode == 'install'
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333  # v8.0.2
+      with:
+        name: engine-wheel
+        path: ${{ runner.temp }}/engine-wheel
+    - if: inputs.mode == 'install'
+      name: The engine's wheel, installed
+      shell: bash
+      run: |
+        command -v uv > /dev/null || pip install -q uv
+        uv pip install --system "$RUNNER_TEMP"/engine-wheel/*.whl

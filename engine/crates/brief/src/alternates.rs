@@ -34,6 +34,11 @@ use crate::json::{self, Value};
 /// above the field and 3 sm.
 pub const DESTINATION_CEILING_FT: f64 = 2000.0;
 pub const DESTINATION_VISIBILITY_SM: f64 = 3.0;
+/// 91.169(b)(2)(i), for aircraft other than helicopters: "For at least 1
+/// hour before and for 1 hour after the estimated time of arrival",
+/// seconds either side of the ETA. (A helicopter's, (b)(2)(ii), is the ETA
+/// to an hour after; the app plans airplanes.)
+pub const DESTINATION_WINDOW_S: f64 = 3600.0;
 /// 91.169(c)(1)(i): the standard alternate minimums, ceiling and
 /// visibility, for a precision approach ...
 pub const PRECISION_MINIMUMS: (f64, f64) = (600.0, 2.0);
@@ -228,9 +233,32 @@ fn ranked(checks: &[Value], limit: usize) -> Value {
     Value::Array(kept.into_iter().take(limit).cloned().collect())
 }
 
+/// The window, unix seconds, a field's TAF is read over (the planner's
+/// wingtip.alternates reads it, then asks `taf_window`): the destination's
+/// an hour either side of the ETA (91.169(b)(2)(i)); an alternate's the
+/// ETA there alone, "at the estimated time of arrival at the alternate
+/// airport" (91.169(c)).
+pub fn window(eta: f64, destination: bool) -> (f64, f64) {
+    if destination {
+        (eta - DESTINATION_WINDOW_S, eta + DESTINATION_WINDOW_S)
+    } else {
+        (eta, eta)
+    }
+}
+
 /// The rule `name` worked on `v`.
 pub fn call(name: &str, v: &Value) -> R<String> {
     let answer = match name {
+        "ifr_alternate_window" => {
+            let eta = v.get("eta").and_then(Value::as_f64).ok_or_else(|| format!("{name}: \"eta\" is missing or not a number"))?;
+            let destination = match v.get("for").and_then(Value::as_str) {
+                Some("destination") => true,
+                Some("alternate") => false,
+                _ => return Err(format!("{name}: \"for\" is not \"destination\" or \"alternate\"")),
+            };
+            let (start, end) = window(eta, destination);
+            obj(vec![("start", Value::Number(start)), ("end", Value::Number(end))])
+        }
         "ifr_alternates_ranked" => {
             let checks = v.get("checks").and_then(Value::as_array).unwrap_or(&[]);
             let limit = v.get("limit").and_then(Value::as_f64).map_or(5, |l| l.max(0.0) as usize);
@@ -255,6 +283,15 @@ pub fn call(name: &str, v: &Value) -> R<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_destinations_window_is_an_hour_either_side_and_an_alternates_its_eta() {
+        assert_eq!(window(10_000.0, true), (6_400.0, 13_600.0));
+        assert_eq!(window(10_000.0, false), (10_000.0, 10_000.0));
+        let v = json::parse(r#"{"eta":7200,"for":"destination"}"#).unwrap();
+        assert_eq!(call("ifr_alternate_window", &v).unwrap(), r#"{"start":3600.0,"end":10800.0}"#);
+        assert!(call("ifr_alternate_window", &json::parse(r#"{"eta":1}"#).unwrap()).is_err());
+    }
 
     #[test]
     fn visibilities_are_written_as_python_wrote_them() {

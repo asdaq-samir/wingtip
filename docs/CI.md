@@ -15,9 +15,9 @@ script can check, and the rest are for whoever writes a test or a job.
    budget, in minutes (`BUDGETS` in `scripts/ci/ci_budget.py`): the
    seconds-long guards (`changes`, `rules-boundary`, `links`, `site`,
    `architecture`, `api-compat`, `dependency-review`) 1, `infra`,
-   `test-ingest`, `test-assistant`, `test-weather` 2, `flight-critical` 3,
-   `test-gateway`, `test-planner`, the image builds 4, `test`, `test-web`
-   5, each `e2e` shard 8, Android 8, iOS 10. The `budget` job writes
+   `test-ingest`, `test-assistant`, `test-weather` 2, `flight-critical`,
+   `engine-wheel` 3, `test-gateway`, `test-planner`, the image builds 4,
+   `test`, `test-web` 5, each `e2e` shard 8, Android 8, iOS 10. The `budget` job writes
    every run's table to its summary, and a job over its budget, a job
    with none, or a run over 10 minutes is a warning on the run.
    *Guard:* `ci_budget.py` (warns, never fails).
@@ -128,7 +128,8 @@ touched what it reads (`changes`; a skipped job counts as passing):
 | Job | What | Expected |
 |---|---|---|
 | `changes`, `rules-boundary`, `links`, `architecture`, `site`, `infra`, `api-compat`, `dependency-review` | The path filter and the seconds-long guards | under 1 min |
-| `test`, `test-web`, `test-gateway`, `test-planner`, `test-ingest`, `test-assistant`, `test-weather` | Each area's lint, types and unit tests | 1-4 min |
+| `engine-wheel` | The engine's Python wheel, once, for every job that imports it (cached: seconds unless `engine/` changed) | under 1 min warm, a few minutes cold |
+| `test`, `test-web`, `test-gateway`, `test-python` (`test-planner`, `test-ingest`, `test-assistant`, `test-weather`) | Each area's lint, types and unit tests | 1-4 min |
 | `flight-critical` | The engine's FAA worked examples and the planner's nav log, on every change | 2 min |
 | `build-images`, `e2e-images` | The images whose inputs changed (built, not pushed, on a PR) and the browser suite's | 1-3 min |
 | `e2e` (2 shards) | The `@smoke` and `@flight-critical` browser tests on the phone project, against the whole stack | 5-8 min |
@@ -297,7 +298,8 @@ change needs; a job it skips counts as passing.
 | `test` | The engine's `cargo test`, that the committed WebAssembly matches the engine; ruff and pytest over `services/planner/wingtip` and the charts job; wingtip's pdoc |
 | `test-web` | `npm run types`, `tsc`, ESLint and Vitest over `apps/web`, and that the phones' API models are the committed ones |
 | `test-gateway` | `mvn test`: the gateway's JUnit suite, with a real Postgres in Testcontainers |
-| `test-planner`, `test-ingest`, `test-assistant`, `test-weather` | ruff and pytest over each service's own suite |
+| `test-python` | One matrix leg per Python service a change touches, each named as its job was (`test-planner`, `test-ingest`, `test-assistant`, `test-weather`): ruff and pytest over the service's own suite, on its own requirements; the planner's leg also runs `lint-imports`, the assistant's checks its generated client. `changes` lists the legs (its `python` output, from each service's filter in `scripts/areas.yml`); none skips the job, which counts as passing |
+| `engine-wheel` | wingtip's Rust extension (`engine/bindings/py`), built once a run by `.github/actions/engine-wheel` (`mode: build`) and uploaded as the `engine-wheel` artifact, which `test`, `test-python`, `flight-critical` and the flake hunt install (`mode: install`). The cache is keyed on everything under `engine/` and the toolchains, so a run that leaves the engine alone restores it in seconds; main and the night save it. It was built in six jobs before (2026-11-10) |
 | `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): the `@smoke` and `@flight-critical` sets over two shards on a pull request, everything over ten at night |
 | `build-images` | Every service image whose inputs changed; each Python image imports its own code as its last step, so a missing dependency fails the build |
 | `android`, `ios` | The phone builds (`native-android.yml`, `native-ios.yml`), when a pull request touches them (above) |
@@ -361,7 +363,7 @@ architecture"), each layer by a check that fails the run:
   nor `features/`; a component or another feature reaches a feature only
   through its `index.ts` ([apps/web/README.md](../apps/web/README.md#project-layout)).
 - **The planner:** `lint-imports` (`services/planner/.importlinter`, in
-  `test` and `test-planner`): `wingtip` never imports `app`, no router
+  `test-planner`): `wingtip` never imports `app`, no router
   imports another, and only `app.main` imports the routers.
 - **The engine:** `scripts/ci/engine_layers.py` (in `test`): each crate's
   wingtip-* dependencies are exactly engine/README.md's crate table's.

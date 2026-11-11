@@ -40,7 +40,8 @@ import app.wingtipmaps.android.dryrun.DryRun
 import app.wingtipmaps.android.dryrun.DryRunBar
 import app.wingtipmaps.android.emergency.EmergencyModel
 import app.wingtipmaps.android.emergency.EmergencyOpen
-import app.wingtipmaps.android.flight.Geo
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.distanceNm
 import app.wingtipmaps.android.flight.GlideRing
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnTrail
@@ -145,7 +146,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         }
         mapWeather.view(view)
         traffic.mapCentre = (view.south + view.north) / 2 to (view.west + view.east) / 2
-        traffic.mapRadiusNm = Geo.nm((view.south + view.north) / 2, (view.west + view.east) / 2, view.north, view.east)
+        // The miles to the map's corner, the engine's `distance_nm`; where
+        // it cannot say (Engine.rule has logged why), the last kept.
+        Engine.distanceNm((view.south + view.north) / 2, (view.west + view.east) / 2, view.north, view.east)
+            .onSuccess { traffic.mapRadiusNm = it }
         // The street map's session asked for only once the map is near
         // where it comes in, as the web asks it (BaseGl CloseBase).
         if (view.zoom >= MapStyle.CLOSE_FROM - 1) charts.wantClose()

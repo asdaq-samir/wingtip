@@ -31,7 +31,16 @@ ALLOW = ROOT / "scripts/ci/rules_boundary_allow.txt"
 
 # Where rules must not be written, and the files there that are not code
 # the rule could hide in (generated types, tests, fixtures).
-AREAS = ["apps/web/src", "apps/ios/Wingtip", "apps/android/app/src/main", "services/gateway/src/main", "services/planner/app"]
+# The planner's wingtip/ too: its 91.169 window was a figure the engine
+# also judged by (the simplicity measure of 2026-11-10).
+AREAS = [
+    "apps/web/src",
+    "apps/ios/Wingtip",
+    "apps/android/app/src/main",
+    "services/gateway/src/main",
+    "services/planner/app",
+    "services/planner/wingtip",
+]
 SUFFIXES = {".ts", ".tsx", ".swift", ".kt", ".java", ".py"}
 SKIP = re.compile(
     r"(\.test\.|\.spec\.|/fixtures/|/Generated/|/generated/|lib/engine/contract\.ts|lib/api/types\.ts|"
@@ -52,7 +61,10 @@ COMMENT = re.compile(r"^\s*(//|/\*|\*|#|///)")
 RULE_NAMES = re.compile(
     r"\b(?:function|func|fun|def)\s+(flightLevel|flight_level|isNight|is_night|cruisingAltitudes|"
     r"cruising_altitudes|reserveMinutes|reserve_min|vfrMinimums|vfr_minimums|holdEntry|hold_entry|"
-    r"windTriangle|wind_triangle|descentFtPerNm|descent_ft_per_nm)\s*[(<]"
+    r"windTriangle|wind_triangle|descentFtPerNm|descent_ft_per_nm|"
+    # The small rules each app once wrote for itself: the paperwork's tone,
+    # the drills' boxes, the aircraft form's limits, the sphere's figures.
+    r"dueTone|due_tone|drillNext|drill_next|aircraftProblems|aircraft_problems|bearingDeg|bearing_deg)\s*[(<]"
 )
 
 

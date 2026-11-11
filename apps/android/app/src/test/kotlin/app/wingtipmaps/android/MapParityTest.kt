@@ -6,7 +6,6 @@ import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.api.generated.OverlayTilesLayer
 import app.wingtipmaps.android.engine.generated.EngineContract
-import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.map.AirportWeatherMarks
 import app.wingtipmaps.android.map.AirportWeatherMode
@@ -161,24 +160,38 @@ class MapParityTest {
     private fun plane(hex: String, track: Double?, speed: Double?, callsign: String? = null) =
         TrafficAircraft(hex = hex, lat = 41.0, lon = -88.0, trackDeg = track, speedKt = speed, callsign = callsign)
 
-    @Test
-    fun anAirplaneIsCarriedOnAlongItsTrack() {
-        // 120 kt for 30 s due east: a mile on.
-        val (lat, lon) = TrafficDrawing.carriedOn(plane("a", 90.0, 120.0), 30.0)
-        assertEquals(41.0, lat, 1e-3)
-        assertEquals(1.0, Geo.nm(41.0, -88.0, lat, lon), 1e-6)
-        assertEquals(41.0 to -88.0, TrafficDrawing.carriedOn(plane("b", null, 120.0), 30.0))
+    /** The engine's `traffic_fresh` and `destination` stood in for: a
+     *  report half a minute old or less fresh, and each step answered a
+     *  degree north per nm, so the test reads which step went where; the
+     *  engine itself is held to traffic.json and sphere.json by
+     *  EngineFixturesTest. */
+    private open class Steps : TrafficDrawing.Rules {
+        val asked = mutableListOf<EngineContract.DestinationInputPointsItem>()
+
+        override fun fresh(seenS: List<Double>): Result<List<Boolean>> = Result.success(seenS.map { it <= 30 })
+
+        override fun along(steps: List<EngineContract.DestinationInputPointsItem>): Result<List<EngineContract.DestinationAnswerItem>> {
+            asked += steps
+            return Result.success(steps.map { EngineContract.DestinationAnswerItem(it.lat + it.nm, it.lon) })
+        }
     }
 
     @Test
     fun theTrafficIsDrawnByItsMarkAndAStaleOneIsLeftOff() {
         val now = 1_000_000L
         val targets = listOf(
-            TrafficDrawing.Target(plane("a1", 92.0, 100.0, "N123AB"), EngineContract.TrafficMarksAnswerItem("+05", true), now - 2_000),
-            TrafficDrawing.Target(plane("b2", null, null), EngineContract.TrafficMarksAnswerItem("", false), now - 1_000),
+            TrafficDrawing.Target(plane("a1", 92.0, 120.0, "N123AB"), EngineContract.TrafficMarksAnswerItem("+05", near = true, tell = false), now - 30_000),
+            TrafficDrawing.Target(plane("b2", null, null), EngineContract.TrafficMarksAnswerItem("", near = false, tell = false), now - 1_000),
             TrafficDrawing.Target(plane("c3", 0.0, 100.0), null, now - 31_000),
         )
-        val (points, trends) = TrafficDrawing.features(targets, tracked = "A1", nowMs = now)
+        val steps = Steps()
+        val (points, trends) = TrafficDrawing.features(targets, tracked = "A1", nowMs = now, rules = steps)
+        // One call for the step: the moving airplane carried on its 30 s
+        // at 120 kt, a mile, and its line's end a minute further, three.
+        assertEquals(
+            listOf(EngineContract.DestinationInputPointsItem(41.0, -88.0, 92.0, 1.0), EngineContract.DestinationInputPointsItem(41.0, -88.0, 92.0, 3.0)),
+            steps.asked,
+        )
         val features = points["features"]!!.jsonArray
         assertEquals(2, features.size)
         val a = features[0].jsonObject["properties"]!!.jsonObject
@@ -186,11 +199,34 @@ class MapParityTest {
         assertEquals("90", a["rotate"]!!.jsonPrimitive.content)
         assertEquals("+05\nN123AB", a["both"]!!.jsonPrimitive.content)
         assertEquals("true", a["tracked"]!!.jsonPrimitive.content)
+        assertEquals("[-88.0,42.0]", features[0].jsonObject["geometry"]!!.jsonObject["coordinates"].toString())
         val b = features[1].jsonObject["properties"]!!.jsonObject
         assertEquals("traffic|far|dot", b["icon"]!!.jsonPrimitive.content)
         assertEquals("", b["both"]!!.jsonPrimitive.content)
-        // Only the one with a track and a speed has a trend line.
-        assertEquals(1, trends["features"]!!.jsonArray.size)
+        // Not moving, it is drawn where it was given.
+        assertEquals("[-88.0,41.0]", features[1].jsonObject["geometry"]!!.jsonObject["coordinates"].toString())
+        // Only the one with a track and a speed has a trend line, from
+        // where it is to where it will be.
+        val line = trends["features"]!!.jsonArray.single().jsonObject["geometry"]!!.jsonObject["coordinates"].toString()
+        assertEquals("[[-88.0,42.0],[-88.0,44.0]]", line)
+    }
+
+    @Test
+    fun trafficTheEngineCannotCarryIsNotDrawn() {
+        val now = 1_000_000L
+        val targets = listOf(TrafficDrawing.Target(plane("a1", 92.0, 120.0), null, now - 2_000))
+        val failing = object : Steps() {
+            override fun along(steps: List<EngineContract.DestinationInputPointsItem>): Result<List<EngineContract.DestinationAnswerItem>> =
+                Result.failure(IllegalStateException("no engine"))
+        }
+        val unknown = object : Steps() {
+            override fun fresh(seenS: List<Double>): Result<List<Boolean>> = Result.failure(IllegalStateException("no engine"))
+        }
+        for (rules in listOf(failing, unknown)) {
+            val (points, trends) = TrafficDrawing.features(targets, tracked = null, nowMs = now, rules = rules)
+            assertTrue(points["features"]!!.jsonArray.isEmpty())
+            assertTrue(trends["features"]!!.jsonArray.isEmpty())
+        }
     }
 
     @Test

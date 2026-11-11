@@ -1,7 +1,8 @@
 """The IFR alternate as the planner reads it: each field's instrument
 approaches from the FAA's terminal procedures (the d-TPP,
 wingtip.publications) and the worst its TAF forecasts over the window
-(wingtip.weather), handed to the engine, whose rules they are -- 14 CFR
+(wingtip.weather) over the window the engine gives, handed to the
+engine, whose rules they are -- 14 CFR
 91.169(b)'s "1-2-3" for the destination, (c)'s alternate minimums for a
 field offered as the alternate (wingtip_brief::alternates:
 `ifr_alternate_destination`, `ifr_alternate_check`,
@@ -14,9 +15,6 @@ from dataclasses import dataclass
 
 from . import geo, publications, weather
 from .engine import ask as engine
-
-#: 91.169(b)(2)(i): an hour either side of the ETA, read here.
-DESTINATION_WINDOW_S = 3600
 
 #: Alternates offered within this of the destination.
 NEAR_NM = 100.0
@@ -60,18 +58,25 @@ def _asked(ident: str, procs: Approaches, forecast: dict | None) -> dict:
     }
 
 
+def _window(ident: str, eta: float, kind: str) -> dict | None:
+    """The field's TAF at its worst over the window the engine gives
+    (`ifr_alternate_window`: the destination's an hour either side of the
+    ETA, 91.169(b)(2)(i); an alternate's the ETA, 91.169(c))."""
+    window = engine("ifr_alternate_window", eta=eta, **{"for": kind})
+    return _forecast(ident, window["start"], window["end"])
+
+
 def destination(ident: str, eta: float) -> dict:
     """Whether the destination needs an alternate (91.169(b)), and why: the
-    engine's, over the TAF an hour either side of the ETA."""
-    forecast = _forecast(ident, eta - DESTINATION_WINDOW_S, eta + DESTINATION_WINDOW_S)
-    return engine("ifr_alternate_destination", **_asked(ident, approaches(ident), forecast))
+    engine's, over the TAF across the engine's window round the ETA."""
+    return engine("ifr_alternate_destination", **_asked(ident, approaches(ident), _window(ident, eta, "destination")))
 
 
 def alternate(ident: str, eta: float) -> dict:
     """Whether a field will do as the alternate at `eta` (91.169(c)):
     `good` True, False, or None where the pilot has to look (nonstandard
     minimums, no approach, no TAF), with why -- the engine's."""
-    return engine("ifr_alternate_check", **_asked(ident, approaches(ident), _forecast(ident, eta, eta)))
+    return engine("ifr_alternate_check", **_asked(ident, approaches(ident), _window(ident, eta, "alternate")))
 
 
 def nearby(dest: tuple[float, float], dest_ident: str, eta_of, limit: int = 5) -> list[dict]:

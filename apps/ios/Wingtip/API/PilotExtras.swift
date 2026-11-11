@@ -197,12 +197,21 @@ extension Due {
         return dueAtHours.map { "At \(Format.hours($0))" } ?? ""
     }
 
-    /// Past in the problem ink, within the reminders' 30 days (or 10
-    /// hours) in caution, further off in go, as the web's lib/paperwork says it.
+    /// How near it falls due, the engine's (`due_tone`: past, within the
+    /// reminders' 30 days or 10 hours, further off), in the app's inks;
+    /// plain where the engine cannot say, the refusal logged.
     var tone: Color {
-        if let d = daysLeft { return d < 0 ? WingtipInk.problem : d <= 30 ? WingtipInk.caution : WingtipInk.go }
-        if let h = hoursLeft { return h <= 0 ? WingtipInk.problem : h <= 10 ? WingtipInk.caution : WingtipInk.go }
-        return .secondary
+        do {
+            switch try Engine.dueTone(daysLeft: daysLeft.map(Double.init), hoursLeft: hoursLeft) {
+            case "stop": return WingtipInk.problem
+            case "caution": return WingtipInk.caution
+            case "ok": return WingtipInk.go
+            default: return .secondary
+            }
+        } catch {
+            Log.engine.error("due_tone: \(error.localizedDescription, privacy: .public)")
+            return .secondary
+        }
     }
 }
 

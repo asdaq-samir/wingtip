@@ -38,7 +38,7 @@ apps/web/src/components/map/GlMapShell.tsx 686
 apps/web/src/features/chart-labels/dev/DevPanel.tsx 1097
 apps/web/src/features/chart-labels/hooks/useTraining.test.ts 484
 apps/web/src/features/chart-labels/hooks/useTraining.ts 422
-apps/web/src/features/pilot/AccountPanels.tsx 846
+apps/web/src/features/pilot/AccountPanels.tsx 818
 apps/web/src/features/pilot/FlightPage.tsx 475
 apps/web/src/features/pilot/InstructorPage.tsx 566
 apps/web/src/features/plan/PlanWorkspace.tsx 640
@@ -68,7 +68,7 @@ apps/web/src/lib/map/gl/layers/RouteExtrasGl.tsx 492
 apps/web/src/lib/preferences.ts 625
 apps/web/src/lib/queryClient.ts 469
 apps/web/vite.config.ts 447
-engine/crates/airspace/src/ahead.rs 1073
+engine/crates/airspace/src/ahead.rs 1055
 engine/crates/airspace/src/rules.rs 553
 engine/crates/airspace/src/spoken.rs 560
 engine/crates/airspace/src/view.rs 830
@@ -97,16 +97,16 @@ engine/crates/weather/src/forecast/awc.rs 522
 engine/crates/weather/src/forecast/route.rs 441
 engine/crates/weather/src/metar.rs 490
 engine/crates/wording/src/wording/script.rs 600
-engine/facade/src/call.rs 1181
+engine/facade/src/call.rs 1179
 engine/facade/tests/approach.rs 818
 engine/facade/tests/contract.rs 699
 engine/facade/tests/figures.rs 480
 engine/facade/tests/gonogo.rs 1185
-engine/facade/tests/motion.rs 773
+engine/facade/tests/motion.rs 767
 engine/facade/tests/navlog.rs 684
 engine/facade/tests/runway.rs 598
 scripts/build/assistant_client.py 426
-scripts/build/design_tokens.py 557
+scripts/build/design_tokens.py 556
 services/assistant/app/toolbox.py 498
 services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 441
 services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 534

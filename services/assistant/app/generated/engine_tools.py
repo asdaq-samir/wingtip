@@ -142,7 +142,7 @@ TOOLS: list[dict] = json.loads(r'''
   },
   {
     "name": "distance_nm",
-    "description": "The geodesic distance between two points on the WGS 84 ellipsoid, nm.",
+    "description": "The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0).",
     "input_schema": {
       "type": "object",
       "properties": {

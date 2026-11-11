@@ -1,0 +1,40 @@
+{
+  "x-call": "wingtip_pilot::pilot::due_tone::call",
+  "description": "How near a paperwork item falls due, as every app colours its row: past is a stop, within 30 days (the reminders' first email, the gateway's ReminderService) or 10 hours of time in service a caution, further off ok; unknown with neither. By its day where it has one, else its hours.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DueToneInput",
+      "type": "object",
+      "properties": {
+        "days_left": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "hours_left": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": []
+    },
+    "answer": {
+      "title": "DueToneAnswer",
+      "enum": [
+        "stop",
+        "caution",
+        "ok",
+        "unknown"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}
