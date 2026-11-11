@@ -406,7 +406,7 @@ export function LessonGl() {
   );
   useGlMarks(ring);
   useEffect(() => {
-    if (fix) map.easeTo({ center: [fix.lon, fix.lat], duration: prefersReducedMotion() ? 0 : 400 });
+    if (fix) map.easeTo({ center: [fix.lon, fix.lat], duration: 400 });
   }, [map, fix]);
   // The airplane flown from the last fix to this one over a second and a half.
   useEffect(() => {

@@ -20,7 +20,6 @@ import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { usePreferences } from "../../lib/preferences";
 import { chartQuery, overlayTilesQuery, queryClient } from "../../lib/queryClient";
-import { prefersReducedMotion } from "../../lib/motion";
 import { FIT_MARGIN } from "../../lib/map/clear";
 import { CardCloseContext } from "../../lib/map/cards/cardClose";
 import { prefetchRing, registerOverlayProtocol } from "../../lib/map/sources/overlayTiles";
@@ -62,7 +61,7 @@ const FIRST_STYLE_WAIT_MS = 1500;
 const PARK_MS = 10_000;
 /** Sent on the map's element as it is first shown (makeMap's reveal). */
 const REVEAL_EVENT = "mapreveal";
-const flight = () => (prefersReducedMotion() ? 0 : SHEET_SECONDS * 1000 * 2);
+const flight = () => SHEET_SECONDS * 1000 * 2;
 
 // The overlay tiles' protocol, once for the page (lib/map/sources/overlayTiles).
 registerOverlayProtocol(maplibregl);
@@ -203,7 +202,8 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     m.off("sourcedata", tileIn);
     m.off("idle", rested);
     window.clearTimeout(latest);
-    canvas.style.transition = prefersReducedMotion() ? "" : `opacity ${REVEAL_FADE_MS}ms ease-out`;
+    // Under Reduce Motion index.css stills it (its !important beats this).
+    canvas.style.transition = `opacity ${REVEAL_FADE_MS}ms ease-out`;
     canvas.style.opacity = "1";
     el.dataset.revealed = "";
     // For the page's loading mark (MapLoading) to fade as the map comes in.
@@ -533,7 +533,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       // in to the point.
       const aim = flying.current;
       if (aim && map.isMoving()) {
-        map.flyTo({ ...aim, padding: padOf(to), duration: prefersReducedMotion() ? 0 : DRAWER_MS });
+        map.flyTo({ ...aim, padding: padOf(to), duration: DRAWER_MS });
         return;
       }
       // Half way to all the way up and back the map stays put.
@@ -541,8 +541,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
         map.setPadding(padOf(to));
         return;
       }
-      const duration = prefersReducedMotion() ? 0 : DRAWER_MS;
-      map.easeTo({ padding: padOf(to), duration, easing: drawerEasing });
+      map.easeTo({ padding: padOf(to), duration: DRAWER_MS, easing: drawerEasing });
     },
     [map],
   );

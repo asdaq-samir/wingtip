@@ -1,6 +1,5 @@
 import { useContext, useEffect, useEffectEvent, useRef } from "react";
 import { MapInsetsContext, SHEET_SECONDS } from "../../../lib/mapChrome";
-import { prefersReducedMotion } from "../../../lib/motion";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { useGlMap } from "../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../lib/map/gl/glStyle";
@@ -64,7 +63,7 @@ export function useGlFit(
       {
         padding: { ...FIT_MARGIN, top: FIT_MARGIN.top + top, bottom: FIT_MARGIN.bottom + bottom },
         maxZoom: glZoom(maxZoom),
-        duration: prefersReducedMotion() ? 0 : SHEET_SECONDS * 2000,
+        duration: SHEET_SECONDS * 2000,
       },
     );
   });

@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import type { ChartInfo } from "../../../../lib/api/types";
-import { prefersReducedMotion } from "../../../../lib/motion";
 import { usePreferences } from "../../../../lib/preferences";
 import { classBQuery } from "../../../../lib/queryClient";
 import { useAhead } from "../../../../lib/map/position/ahead";
@@ -59,7 +58,7 @@ export function ClassBGl({
                     map.flyTo({
                       center: [a.lon, a.lat],
                       zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)),
-                      duration: prefersReducedMotion() ? 0 : 600,
+                      duration: 600,
                     });
                 },
               };

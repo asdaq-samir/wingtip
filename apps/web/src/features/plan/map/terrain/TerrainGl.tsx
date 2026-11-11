@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { prefersReducedMotion } from "../../../../lib/motion";
 import { slotId, useGlMap } from "../../../../lib/map/gl/glLayer";
 import AloftGl from "./AloftGl";
 import { DEM, EXAGGERATION, FLAT_MAX_PITCH, HILLSHADE, HILLSHADE_LAYER, MAX_PITCH, OPEN_PITCH, SKY, SV_TINT, demSource } from "./dem";
@@ -7,6 +6,10 @@ import type { AloftPoint } from "./geometry";
 import ObstaclesGl from "./ObstaclesGl";
 import PilotCamera from "./PilotCamera";
 import type { TerrainMode } from "./useTerrainView";
+
+/** How long the map takes to tilt into 3D and back (MapLibre makes it
+ *  instant under Reduce Motion itself). */
+const TILT_MS = 600;
 
 /**
  * The ground under the chart (the Map menu's Terrain; useTerrainView): its
@@ -61,8 +64,7 @@ export default function TerrainGl({
     map.touchPitch.enable();
     map.touchZoomRotate.enableRotation();
     el.dataset.terrain = "3d";
-    const duration = prefersReducedMotion() ? 0 : 600;
-    if (map.getPitch() < 1) map.easeTo({ pitch: OPEN_PITCH, duration });
+    if (map.getPitch() < 1) map.easeTo({ pitch: OPEN_PITCH, duration: TILT_MS });
     return () => {
       delete el.dataset.terrain;
       if (!map.style) return;
@@ -70,7 +72,7 @@ export default function TerrainGl({
       map.dragRotate.disable();
       map.touchPitch.disable();
       map.touchZoomRotate.disableRotation();
-      map.easeTo({ pitch: 0, bearing: 0, duration });
+      map.easeTo({ pitch: 0, bearing: 0, duration: TILT_MS });
       map.setMaxPitch(FLAT_MAX_PITCH);
     };
   }, [map, raised]);

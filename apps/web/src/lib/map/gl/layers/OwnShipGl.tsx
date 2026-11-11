@@ -1,7 +1,6 @@
 import { Marker } from "maplibre-gl";
 import { useEffect, useRef } from "react";
 import { SHEET_SECONDS } from "../../../mapChrome";
-import { prefersReducedMotion } from "../../../motion";
 import { usePreferences } from "../../../preferences";
 import { underway } from "../../position/glide";
 import { ownShipHtml } from "../../marks/icons";
@@ -76,10 +75,10 @@ export function OwnShipGl() {
       flown.current = recentred;
       picked();
       const zoom = recentreZoom !== null ? glZoom(recentreZoom) : Math.max(map.getZoom(), glZoom(LOCAL_ZOOM));
-      map.flyTo({ center: [fix.lon, fix.lat], zoom, duration: prefersReducedMotion() ? 0 : SHEET_SECONDS * 2000 });
+      map.flyTo({ center: [fix.lon, fix.lat], zoom, duration: SHEET_SECONDS * 2000 });
       return;
     }
-    if (follow) map.easeTo({ center: [fix.lon, fix.lat], duration: prefersReducedMotion() ? 0 : 500 });
+    if (follow) map.easeTo({ center: [fix.lon, fix.lat], duration: 500 });
   }, [map, fix, enabled, follow, recentred, recentreZoom]);
   return null;
 }

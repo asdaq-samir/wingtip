@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { TrafficAircraft } from "../../../../lib/api/types";
 import { api } from "../../../../lib/api/client";
 import { M_PER_NM } from "../../../../lib/geo";
-import { prefersReducedMotion } from "../../../../lib/motion";
 import { clearProblem, raiseProblem } from "../../../../lib/problems";
 import { usePreferences } from "../../../../lib/preferences";
 import { TRAFFIC_COLOURS, trafficIcon, trafficTag } from "../../../../lib/map/marks/icons";
@@ -230,7 +229,7 @@ function Traffic() {
     map.flyTo({
       center: [latest.plane.lon, latest.plane.lat],
       zoom: Math.max(map.getZoom(), glZoom(9)),
-      duration: prefersReducedMotion() ? 0 : 800,
+      duration: 800,
     });
   }, [map, hex, follow, heard]);
 
