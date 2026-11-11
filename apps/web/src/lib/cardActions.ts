@@ -8,7 +8,7 @@ import { ICON } from "./icons";
  *
  * - Fly Here: a new route from the airplane to this field.
  * - Direct To: from the airplane to the point, then on along the route.
- * - Add as Stop: the field a landing on the way (stops=), as Maps' Add
+ * - Add Stop: the field a landing on the way (stops=), as Maps' Add
  *   Stop (the one-search design's name for it, 2026-11-09).
  * - Add to Route: the point a turn on the way, where it bends the route
  *   least; not a landing.
@@ -17,7 +17,7 @@ import { ICON } from "./icons";
 export const ACTION = {
   flyHere: { label: "Fly Here", icon: ICON.flyHere },
   directTo: { label: "Direct To", icon: ICON.directTo },
-  addStop: { label: "Add as Stop", icon: ICON.addToRoute },
+  addStop: { label: "Add Stop", icon: ICON.addToRoute },
   addToRoute: { label: "Add to Route", icon: ICON.addToRoute },
   holdHere: { label: "Hold Here", icon: ICON.holdHere },
   call: { label: "Call", icon: ICON.call },

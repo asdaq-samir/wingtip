@@ -22,13 +22,13 @@ import {
  * taken out for the map's room (the owner, 2026-11-10); nothing typed, the search's own page (the flight,
  * Favorites, Recents, Nearest); typed, one list in groups -- Airports,
  * Waypoints and Navaids, Airplanes, Do -- and "Ask:"; an airport picked,
- * its card with Fly Here, Add as Stop, Call and Address at its top (the
+ * its card with Fly Here, Add Stop, Call and Address at its top (the
  * owner, 2026-11-11), the first two setting the plan and showing it; the account button's menu, Setup's
  * rows. The plan is the sheet's main content with a route.
  */
 
 test(
-  "the account button at the one search's end, no title row over it; typed, its results come in groups, and an airport's card's Add as Stop sets the plan",
+  "the account button at the one search's end, no title row over it; typed, its results come in groups, and an airport's card's Add Stop sets the plan",
   { tag: "@smoke" },
   async ({ page }) => {
     await claudeFeatures(page); // the Ask suggestion, which is Claude's (./claude)
@@ -75,9 +75,9 @@ test(
     await expect(card.getByTestId("place-name")).toHaveText("KOSH", { timeout: slow(10_000) });
     for (const id of ["fly-here", "place-add-stop", "place-call", "place-address-action"]) await expect(card.getByTestId(id)).toBeVisible();
     await expect(card.getByTestId("place-actions").locator(":scope > *")).toHaveCount(4);
-    await expect(card.getByTestId("place-add-stop")).toContainText("Add as Stop");
+    await expect(card.getByTestId("place-add-stop")).toContainText("Add Stop");
 
-    // Add as Stop: KOSH a landing on the way, both ends kept.
+    // Add Stop: KOSH a landing on the way, both ends kept.
     await card.getByTestId("place-add-stop").click();
     await expect(page).toHaveURL(/[?&]stops=KOSH(&|$)/);
     await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);

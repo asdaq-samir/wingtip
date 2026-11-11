@@ -146,7 +146,7 @@ export default function PlaceCard({
   from: { point: LatLon; name: string | null } | null;
   onClose: () => void;
   onFlyHere: (place: AirportPlace) => void;
-  /** Add as Stop: the field the route's next stop, before its destination
+  /** Add Stop: the field the route's next stop, before its destination
    *  (or the end a half route lacks, or the first point of a new one);
    *  none where it is in the route already. */
   onAddStop?: (place: AirportPlace) => void;
