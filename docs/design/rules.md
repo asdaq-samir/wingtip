@@ -81,7 +81,9 @@ Compose. Nothing here is built by hand where a stock part does it.
    `CardHeadRow` (`CardHead`, `CardTitle`, `SheetCard`,
    `ListPageHead` and Settings and its pages draw it); a section's title
    `SectionTitle` (`ListGroup`, `PillSection`, `AccordionSection`,
-   `SectionPane`); a close `CloseButton` (`CardClose` on a card a
+   `SectionPane`; the Altitude Advisor's, the approach lesson's step count
+   and the search Filters' groups too, no small grey capitals over a
+   section: the owner, 2026-11-11); a close `CloseButton` (`CardClose` on a card a
    device's Back holds); a list's row `ListRow`; nothing to show
    `EmptyState`; two or three choices `Segmented`.
    `scripts/ci/shared_parts_guard.py` fails a heading or a ✕ drawn by

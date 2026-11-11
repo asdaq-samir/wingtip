@@ -26,7 +26,8 @@ import { NO_FOCUS, endLessonMap, useLessonMap } from "../../../lib/map/route/les
 import type { PickedProcedure } from "../../../lib/procedures";
 import { airportQuery, procedureQuery } from "../../../lib/queryClient";
 import { FINDING_TONE } from "../../../lib/findings";
-import { GROUP_HEADING, TEXT, TEXT_POINTS } from "../../../lib/text";
+import { TEXT, TEXT_POINTS } from "../../../lib/text";
+import SectionTitle from "../../../components/SectionTitle";
 import { altFt } from "../../../lib/format";
 import { CHART } from "../../../lib/tokens";
 
@@ -198,11 +199,14 @@ function Lesson({ input, from }: { input: LessonInput; from?: FromInstructor }) 
   );
 }
 
-/** "3 of 10" over a step, as a group's heading. */
+/** "3 of 10" over a step, a section's title as every other is
+ *  (SectionTitle, 20 points), said as it changes. */
 const Progress = ({ at, of }: { at: number; of: number }) => (
-  <p className={GROUP_HEADING} aria-live="polite" data-testid="approach-lesson-progress">
-    {at + 1} of {of}
-  </p>
+  <div aria-live="polite" data-testid="approach-lesson-progress">
+    <SectionTitle>
+      {at + 1} of {of}
+    </SectionTitle>
+  </div>
 );
 
 function BriefPage({ input, from, onDone }: { input: LessonInput; from?: FromInstructor; onDone: () => void }) {
