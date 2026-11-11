@@ -66,6 +66,7 @@ from wingtip.planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
 from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words
 from .routers import engine as engine_router, forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
+from .routers import plates as plates_router
 from .schemas.common import Index
 from .settings import get_settings
 
@@ -441,6 +442,7 @@ for module in (
     offline,
     coach,
     mcp,
+    plates_router,
 ):
     app.include_router(module.router)
 
