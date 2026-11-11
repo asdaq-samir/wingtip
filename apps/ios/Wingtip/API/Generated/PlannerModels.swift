@@ -1463,7 +1463,7 @@ struct APIDepartureWindowAsk: Codable, Equatable, Sendable {
     var alternate, altitudeChoice: String?
     var altitudeFt: Double?
     var altitudeNearest: Bool?
-    var altitudes: String?
+    var altitudeStarts, altitudes: String?
     var checkpoints, classBClearance: Bool?
     var climbFuelBurnGph: Double?
     var climbRateFpm: Double?
@@ -2281,7 +2281,7 @@ struct APIGoNoGoAsk: Codable, Equatable, Sendable {
     var alternate, altitudeChoice: String?
     var altitudeFt: Double?
     var altitudeNearest: Bool?
-    var altitudes: String?
+    var altitudeStarts, altitudes: String?
     var checkpoints, classBClearance: Bool?
     var climbFuelBurnGph: Double?
     var climbRateFpm: Double?
@@ -4027,11 +4027,13 @@ struct APIRouteOption: Codable, Equatable, Sendable {
 }
 
 /// The route's side view (wingtip.profile): its length, the ground under
-/// it, and the controlled airspace it passes through.
+/// it, the controlled airspace it passes through and the obstacles near
+/// its line.
 // MARK: - APIRouteProfile
 struct APIRouteProfile: Codable, Equatable, Sendable {
     var airspace: [APIProfileAirspace]
     var lengthNm: Double
+    var obstacles: [APIProfileObstacle]?
     var terrain: [APIProfileGround]
 }
 
@@ -4055,6 +4057,13 @@ struct APIProfileAirspace: Codable, Equatable, Sendable {
         case ident, name
         case toNm
     }
+}
+
+/// An obstacle of the FAA's DOF near the route's line: where along it,
+/// and its top, feet MSL.
+// MARK: - APIProfileObstacle
+struct APIProfileObstacle: Codable, Equatable, Sendable {
+    var alongNm, amslFt: Double
 }
 
 // MARK: - APIProfileGround

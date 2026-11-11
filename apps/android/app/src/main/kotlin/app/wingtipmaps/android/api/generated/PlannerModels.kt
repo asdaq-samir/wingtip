@@ -2407,6 +2407,9 @@ data class DepartureWindowAsk (
     @SerialName("altitude_nearest")
     val altitudeNearest: Boolean? = null,
 
+    @SerialName("altitude_starts")
+    val altitudeStarts: String? = null,
+
     val altitudes: String? = null,
     val checkpoints: Boolean? = null,
 
@@ -3758,6 +3761,9 @@ data class GoNoGoAsk (
 
     @SerialName("altitude_nearest")
     val altitudeNearest: Boolean? = null,
+
+    @SerialName("altitude_starts")
+    val altitudeStarts: String? = null,
 
     val altitudes: String? = null,
     val checkpoints: Boolean? = null,
@@ -6679,7 +6685,8 @@ data class RouteOption (
 
 /**
  * The route's side view (wingtip.profile): its length, the ground under
- * it, and the controlled airspace it passes through.
+ * it, the controlled airspace it passes through and the obstacles near
+ * its line.
  */
 @Serializable
 data class RouteProfile (
@@ -6688,6 +6695,7 @@ data class RouteProfile (
     @SerialName("length_nm")
     val lengthNm: Double,
 
+    val obstacles: List<ProfileObstacle>? = null,
     val terrain: List<ProfileGround>
 )
 
@@ -6715,6 +6723,19 @@ data class ProfileAirspace (
 
     @SerialName("to_nm")
     val toNm: Double
+)
+
+/**
+ * An obstacle of the FAA's DOF near the route's line: where along it,
+ * and its top, feet MSL.
+ */
+@Serializable
+data class ProfileObstacle (
+    @SerialName("along_nm")
+    val alongNm: Double,
+
+    @SerialName("amsl_ft")
+    val amslFt: Double
 )
 
 @Serializable

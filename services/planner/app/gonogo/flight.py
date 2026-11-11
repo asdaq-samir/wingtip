@@ -64,6 +64,7 @@ ROUTE_FIELDS = (
     "rules",
     "alternate",
     "altitudes",
+    "altitude_starts",
     "procedures",
     "runways",
     "crossings",

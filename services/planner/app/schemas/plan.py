@@ -7,6 +7,8 @@ from pydantic import BaseModel, ConfigDict, Field
 from .aircraft_figures import DemonstratedCrosswind, DistanceTable, ShortField  # noqa: F401  (re-exported)
 from .common import AltitudeChoice, FlightRules, Hazard, Loading, SpecialUse, Wind
 
+from .route_profile import ProfileAirspace, ProfileGround, ProfileObstacle, RouteProfile  # noqa: F401  (the side view, its own file)
+
 
 class AirportEnd(BaseModel):
     """A point of the route: an airport, or -- a stop only -- a named fix
@@ -742,38 +744,6 @@ class Plan(BaseModel):
     chart_revision: int = 0
     chart_tiles_base: str | None = None
     chart_layers: list[ChartLayer]
-
-
-class ProfileGround(BaseModel):
-    along_nm: float
-    ground_ft: float
-
-
-class ProfileAirspace(BaseModel):
-    """A Class B, C or D the route passes through: where along it, from
-    its floor to its ceiling (feet MSL; the ceiling None where the FAA's
-    file has none)."""
-
-    name: str
-    class_: str = Field(alias="class")
-    from_nm: float
-    to_nm: float
-    floor_ft: float
-    ceiling_ft: float | None = None
-    # The airport it is drawn round, as a route names it (KDLH); "" where
-    # the FAA's file names none that can be placed (wingtip.profile).
-    ident: str = ""
-
-    model_config = ConfigDict(populate_by_name=True)
-
-
-class RouteProfile(BaseModel):
-    """The route's side view (wingtip.profile): its length, the ground under
-    it, and the controlled airspace it passes through."""
-
-    length_nm: float
-    terrain: list[ProfileGround]
-    airspace: list[ProfileAirspace]
 
 
 class NavLogStage(BaseModel):

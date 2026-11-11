@@ -2590,6 +2590,14 @@ class ProfileGround(BaseModel):
     ground_ft: Annotated[float | None, Field(title='Ground Ft')] = None
 
 
+class ProfileObstacle(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    along_nm: Annotated[float | None, Field(title='Along Nm')] = None
+    amsl_ft: Annotated[float | None, Field(title='Amsl Ft')] = None
+
+
 class ProfilePoint(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -2802,6 +2810,9 @@ class RouteProfile(BaseModel):
     )
     airspace: Annotated[list[ProfileAirspace] | None, Field(title='Airspace')] = None
     length_nm: Annotated[float | None, Field(title='Length Nm')] = None
+    obstacles: Annotated[
+        list[ProfileObstacle] | None, Field(title='Obstacles', validate_default=True)
+    ] = []
     terrain: Annotated[list[ProfileGround] | None, Field(title='Terrain')] = None
 
 
@@ -5103,6 +5114,7 @@ class DepartureWindowAsk(BaseModel):
     ] = 'fastest'
     altitude_ft: Annotated[float | None, Field(title='Altitude Ft')] = None
     altitude_nearest: Annotated[bool | None, Field(title='Altitude Nearest')] = False
+    altitude_starts: Annotated[str | None, Field(title='Altitude Starts')] = ''
     altitudes: Annotated[str | None, Field(title='Altitudes')] = ''
     checkpoints: Annotated[bool | None, Field(title='Checkpoints')] = True
     class_b_clearance: Annotated[bool | None, Field(title='Class B Clearance')] = False
@@ -5199,6 +5211,7 @@ class GoNoGoAsk(BaseModel):
     ] = 'fastest'
     altitude_ft: Annotated[float | None, Field(title='Altitude Ft')] = None
     altitude_nearest: Annotated[bool | None, Field(title='Altitude Nearest')] = False
+    altitude_starts: Annotated[str | None, Field(title='Altitude Starts')] = ''
     altitudes: Annotated[str | None, Field(title='Altitudes')] = ''
     checkpoints: Annotated[bool | None, Field(title='Checkpoints')] = True
     class_b_clearance: Annotated[bool | None, Field(title='Class B Clearance')] = False
