@@ -90,7 +90,7 @@ Android, the address on the web) or `wingtipmaps://plan?open=<id>` from another 
 | `passengers` | Passenger Briefing | -- | yes | yes | The passenger briefing. |
 | `shared` | Shared Flight | yes | yes | yes | A flight another pilot sent: its plan shown first, with Use This Plan and Not Now, the receiver's own plan kept until they choose. Its keys are the plan's (dep, dest, stops, altitude_ft, depart, type, rules, tail) or a saved flight's share. |
 | `about` | About | yes | yes | yes | The build, the data's cycles, the credits and the legal pages. |
-| `search` | Search | yes | yes | yes | The sheet's first page: the one search and its home list (favorites, recents, nearest, saved). |
+| `search` | Search | yes | -- | -- | The sheet's first page: the one search and its home list (favorites, recents, nearest, saved). |
 
 The plan's own keys go beside it, and alone they open what they name:
 

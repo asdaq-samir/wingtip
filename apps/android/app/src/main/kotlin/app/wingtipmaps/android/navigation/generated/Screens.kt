@@ -26,7 +26,6 @@ enum class Screen(
     PASSENGERS("passengers", "Passenger Briefing"),
     SHARED("shared", "Shared Flight"),
     ABOUT("about", "About"),
-    SEARCH("search", "Search"),
     ;
 
     companion object {
