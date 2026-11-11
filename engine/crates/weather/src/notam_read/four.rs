@@ -24,14 +24,6 @@ pub struct Four {
     pub why: Option<String>,
 }
 
-/// The field as the card names it: its ICAO ident ("KORD") where the
-/// caller gave it, else the NOTAM's location.
-fn field(r: &NotamRead, idents: &[String]) -> String {
-    let Some(loc) = r.location.as_deref() else { return idents.first().cloned().unwrap_or_default() };
-    // Another field's NOTAM (an ICAO A) of its own) keeps its own name.
-    idents.iter().find(|i| i.len() == 4 && (i.as_str() == loc || i.strip_prefix('K') == Some(loc))).map_or(loc, String::as_str).to_owned()
-}
-
 /// The condition in our words, in lower case ("closed", "out of service").
 fn cond(words: &[String]) -> Option<String> {
     condition(words).map(str::to_ascii_lowercase)
@@ -108,17 +100,15 @@ fn runway(body: &[String], r: &NotamRead, schedule: Option<&str>) -> Four {
 
 /// A taxiway's NOTAM (TWY): "Taxiway A closed between taxiway B and
 /// taxiway C".
-fn taxiway(body: &[String], r: &NotamRead, f: &str) -> Four {
+fn taxiway(body: &[String], r: &NotamRead) -> Four {
     let Some(title) = r.title.as_deref() else { return Four::default() };
     let n = body.iter().take_while(|w| *w == "AND" || is_taxiway(w)).count();
     let span = between(&body[n..]);
-    let named = title.trim_start_matches("Taxiways ").trim_start_matches("Taxiway ");
-    let kind = if title.starts_with("Taxiways") { "taxiways " } else { "taxiway " };
     let tail = span.as_ref().map_or(String::new(), |(s, _)| [" ", s.as_str()].concat());
-    let place = Some([f, ", ", kind, named, &tail].concat());
     let after = span.as_ref().map_or(n, |(_, end)| n + end);
     let what = (body.get(after..) == Some(&["CLSD".to_owned()][..])).then(|| [title, " closed", &tail].concat());
-    Four { what, place, why: None }
+    // No where: the what says between which, the card is the field's.
+    Four { what, place: None, why: None }
 }
 
 /// A figure with FT as the app writes it: "857.9FT" as "857.9 ft".
@@ -131,7 +121,7 @@ fn feet(w: &str) -> Option<String> {
 /// as it gives them ("1049FT (330FT AGL)": feet are MSL unless AGL is
 /// stated, 4-2-1), its light where that is out, and where it is from the
 /// field ("(1.3NM W ORD)").
-fn obstacle(raw: &[String], r: &NotamRead, f: &str, idents: &[String]) -> Four {
+fn obstacle(raw: &[String], r: &NotamRead, idents: &[String]) -> Four {
     let kind = r.title.as_deref().and_then(|t| t.strip_prefix("Obstacle: "));
     let at = raw.iter().position(|w| feet(w).is_some() && raw.iter().skip(1).any(|n| n == "AGL"));
     let msl = at.and_then(|i| feet(&raw[i]));
@@ -162,7 +152,9 @@ fn obstacle(raw: &[String], r: &NotamRead, f: &str, idents: &[String]) -> Four {
     });
     let place = match (from_field, height) {
         (None, None) => None,
-        (spot, top) => Some([Some(f.to_owned()), spot, top].into_iter().flatten().collect::<Vec<_>>().join(", ")),
+        // Not the field's name: the card is the field's (the owner,
+        // 2026-11-11: "Where is only needed when it's not obvious").
+        (spot, top) => Some([spot, top].into_iter().flatten().collect::<Vec<_>>().join(", ")),
     };
     // Its top MSL, which a pilot's altitude is set against (14 CFR 91.119's
     // clearances are from obstacles); its light out, a plain fact.
@@ -174,7 +166,7 @@ fn obstacle(raw: &[String], r: &NotamRead, f: &str, idents: &[String]) -> Four {
 }
 
 /// An ILS's NOTAM (NAV ILS RWY 09 GP U/S): its parts by name ("GP/LOC").
-fn navaid(body: &[String], r: &NotamRead, f: &str) -> Four {
+fn navaid(body: &[String], r: &NotamRead) -> Four {
     let Some(title) = r.title.as_deref() else { return Four::default() };
     let ils = body.first().is_some_and(|w| w == "ILS") && body.get(1).is_some_and(|w| w == "RWY");
     let c = cond(body);
@@ -182,7 +174,8 @@ fn navaid(body: &[String], r: &NotamRead, f: &str) -> Four {
         return Four { what: c.map(|c| [title, " ", &c].concat()), ..Four::default() };
     }
     let rwy = body.get(2).map_or("", String::as_str);
-    let place = Some([f, ", runway ", rwy].concat());
+    // No where: the what names the runway.
+    let place = None;
     let parts: Vec<&str> = body.get(3).filter(|p| condition(std::slice::from_ref(*p)).is_none()).map_or(vec![], |p| p.split('/').collect());
     let named: Vec<&str> = parts
         .iter()
@@ -223,7 +216,7 @@ fn navaid(body: &[String], r: &NotamRead, f: &str) -> Four {
 
 /// An FDC approach NOTAM (IAP, 7-1-3): not authorized, new minimums, or
 /// amended.
-fn approach(after: &str, r: &NotamRead, f: &str) -> Four {
+fn approach(after: &str, r: &NotamRead) -> Four {
     let Some(title) = r.title.as_deref() else { return Four::default() };
     let words: Vec<&str> = after.split_whitespace().map(|w| w.trim_matches(|c: char| matches!(c, ',' | '.' | ';'))).collect();
     let na = words.windows(2).any(|p| p == ["PROCEDURE", "NA"]);
@@ -237,8 +230,7 @@ fn approach(after: &str, r: &NotamRead, f: &str) -> Four {
     } else {
         ("amended", None)
     };
-    let rwy = title.split_whitespace().skip_while(|w| *w != "RWY").nth(1);
-    Four { what: Some([title, ": ", what].concat()), place: rwy.map(|d| [f, ", runway ", d].concat()), why: why.map(str::to_owned) }
+    Four { what: Some([title, ": ", what].concat()), place: None, why: why.map(str::to_owned) }
 }
 
 /// The fuel's or a facility's NOTAM: "100LL fuel not available".
@@ -270,7 +262,6 @@ pub(super) fn four(text: &str, r: &NotamRead, idents: &[String]) -> Four {
         return Four { why: Some("Read its area, altitudes and times before flying near it.".to_owned()), ..Four::default() };
     }
     let Some((keyword, body, after)) = subject_of(text) else { return Four::default() };
-    let f = field(r, idents);
     let schedule = r.words.split_once("Schedule: ").map(|(_, s)| {
         let s = s.trim_end_matches('.');
         [s[..1].to_ascii_lowercase().as_str(), &s[1..]].concat()
@@ -278,10 +269,10 @@ pub(super) fn four(text: &str, r: &NotamRead, idents: &[String]) -> Four {
     let body = if keyword == "AD" && body.first().is_some_and(|w| w == "AP") { &body[1..] } else { &body[..] };
     match keyword.as_str() {
         "RWY" => runway(body, r, schedule.as_deref()),
-        "TWY" => taxiway(body, r, &f),
-        "OBST" => obstacle(body, r, &f, idents),
-        "NAV" => navaid(body, r, &f),
-        "IAP" => approach(&after, r, &f),
+        "TWY" => taxiway(body, r),
+        "OBST" => obstacle(body, r, idents),
+        "NAV" => navaid(body, r),
+        "IAP" => approach(&after, r),
         "AD" if body.first().is_some_and(|w| w == "RWY") => runway(&body[1..], r, schedule.as_deref()),
         // The field closed: no landing or takeoff there (CLSD, JO 7340.2).
         "AD" if body == ["CLSD"] => Four {

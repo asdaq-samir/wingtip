@@ -31,14 +31,14 @@ fn a_runway_closed_says_what_is_still_allowed_and_no_where() {
     );
     // Closed to some aircraft only: no what of ours, the words stand.
     let (what, place, why) = four("!ORD 10/175 ORD TWY A2 BTN TWY A AND TWY B CLSD TO ACFT WINGSPAN MORE THAN 118FT 2610311030-2611261200");
-    assert_eq!((what, place.as_deref(), why), (None, Some("KORD, taxiway A2 between taxiway A and taxiway B"), None));
+    assert_eq!((what, place.as_deref(), why), (None, None, None));
 }
 
 #[test]
 fn a_taxiway_closed_between_two_others() {
     assert_eq!(
         four("!ORD 11/070 ORD TWY A BTN TWY B AND TWY C CLSD 2611120000-2611202359"),
-        (some("Taxiway A closed between taxiway B and taxiway C"), some("KORD, taxiway A between taxiway B and taxiway C"), None)
+        (some("Taxiway A closed between taxiway B and taxiway C"), None, None)
     );
 }
 
@@ -62,17 +62,13 @@ fn an_ils_part_and_what_it_leaves() {
         four("!ORD 11/055 ORD NAV ILS RWY 09 GP U/S 2611101200-2611202359"),
         (
             some("Glide slope runway 09 out of service"),
-            some("KORD, runway 09"),
+            None,
             some("No vertical guidance: fly it as a localizer approach, to the chart's LOC minimums where it gives them.")
         )
     );
     assert_eq!(
         four("!ORD 11/441 ORD NAV ILS RWY 22R GP/LOC U/S 2611150800-2611151200"),
-        (
-            some("ILS runway 22R glide slope and localizer out of service"),
-            some("KORD, runway 22R"),
-            some("No ILS or localizer approach to runway 22R.")
-        )
+        (some("ILS runway 22R glide slope and localizer out of service"), None, some("No ILS or localizer approach to runway 22R."))
     );
     // The ICAO form, the place before its keyword in E).
     let icao = "A3362/26 NOTAMN Q) KZAU/QICAS////000/999/4158N08754W005 A) KORD B) 2611150300 C) 2611150900 E) ORD NAV ILS RWY 09R U/S";
@@ -88,21 +84,13 @@ fn kords_approach_notams() {
     let na = "!FDC 6/4918 ORD IAP CHICAGO O'HARE INTL, CHICAGO, IL. ILS Z RWY 10R (SA CAT I), ORIG-C ... ILS Z RWY 10R (SA CAT II AND III), ORIG-C ... PROCEDURE NA. TEMPORARY CRANES, UP TO 846 MSL, 1808FT SE OF RWY 10R (2024-AGL-15026 THRU 15039-NRA) 2611031515-2706152355EST";
     assert_eq!(
         four(na),
-        (
-            some("ILS Z RWY 10R (SA CAT I): not authorized"),
-            some("KORD, runway 10R"),
-            some("It cannot be flown while this NOTAM is in force.")
-        )
+        (some("ILS Z RWY 10R (SA CAT I): not authorized"), None, some("It cannot be flown while this NOTAM is in force."))
     );
     // New minimums (AIM 5-1-3: FDC NOTAMs amend published approaches).
     let minimums = "!FDC 6/4920 ORD IAP CHICAGO O'HARE INTL, CHICAGO, IL. ILS Z OR LOC Z RWY 10R, ORIG-C... S-ILS 10R DA 945/HAT 265 ALL CATS. VIS RVR 2000 ALL CATS. TEMPORARY CRANES, UP TO 846 MSL, 1808FT SE OF RWY 10R (2024-AGL-15026 THRU 15039-NRA). 2611031518-2706152355EST";
     assert_eq!(
         four(minimums),
-        (
-            some("ILS Z OR LOC Z RWY 10R: new minimums"),
-            some("KORD, runway 10R"),
-            some("The minimums in this NOTAM apply in place of the chart's.")
-        )
+        (some("ILS Z OR LOC Z RWY 10R: new minimums"), None, some("The minimums in this NOTAM apply in place of the chart's."))
     );
 }
 
@@ -112,7 +100,7 @@ fn an_obstacle_its_height_and_where_it_is() {
         four("!ORD 11/437 ORD OBST CRANE (ASN 2024-AGL-12392-NRA) 415841N0875616W (1.3NM W ORD) 759FT (145FT AGL) FLAGGED AND LGTD 2611111139-2611112300"),
         (
             some("Crane"),
-            some("KORD, 1.3 nm west of the field, 759 ft MSL (145 ft above ground)"),
+            some("1.3 nm west of the field, 759 ft MSL (145 ft above ground)"),
             some("Its top is 759 ft MSL: keep clear of it.")
         )
     );
@@ -121,7 +109,7 @@ fn an_obstacle_its_height_and_where_it_is() {
         "!ORD 10/784 ORD OBST TOWER LGT (ASN 2020-AGL-1577-OE) 415233N0875509W (6.0NM S ORD) 920FT (228FT AGL) U/S 2610211715-2612051715",
     );
     assert_eq!(what.as_deref(), Some("Tower light out of service"));
-    assert_eq!(place.as_deref(), Some("KORD, 6.0 nm south of the field, 920 ft MSL (228 ft above ground)"));
+    assert_eq!(place.as_deref(), Some("6.0 nm south of the field, 920 ft MSL (228 ft above ground)"));
     assert!(why.is_some_and(|w| w.ends_with("hard to see at night.")));
 }
 
