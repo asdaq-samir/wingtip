@@ -54,7 +54,7 @@ from wingtip import (
     water,
     weather,
 )
-from wingtip import airspace_at, congested, cycle_pack, data_cycles
+from wingtip import airspace_at, congested, cycle_pack, data_cycles, traffic as traffic_store
 from wingtip import airports as airport_table
 
 from . import chart_model, chart_refresh, errors, mcp, openapi_document, tracing
@@ -355,12 +355,12 @@ def _warm_reference_data() -> None:
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     threading.Thread(target=_warm_reference_data, name="reference-data-warm-up", daemon=True).start()
-    # The live feeds (the FAA's SWIM radar, NOTAMs and flight plans, and
-    # the followed airplanes' adsb.fi rounds) are read by ingest
-    # (services/ingest) into the stores the planner reads: none here. What
-    # is watched here is whether they, and the weather service's
-    # products, are still coming in (app.feeds): a check a minute.
+    # The live feeds are read by ingest (services/ingest) into the stores
+    # the planner reads: none here. What is watched here is whether they,
+    # and the weather's, still come in (app.feeds), a check a minute; and
+    # the live store is pruned a minute at a time (wingtip.traffic.prune).
     threading.Thread(target=feeds_watch.watch_forever, name="feed-watch", daemon=True).start()
+    threading.Thread(target=traffic_store.prune_forever, name="live-store-prune", daemon=True).start()
     yield
 
 

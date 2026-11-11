@@ -125,7 +125,9 @@ public class AccountService {
         try {
             sessions.findByPrincipalName(name).keySet().forEach(sessions::deleteById);
         } catch (RuntimeException failed) {
-            log.error("Account deleted but its sessions under {} could not all be ended", name, failed);
+            // Not the name: it is the deleted pilot's address or Apple or
+            // Google subject, and the logs outlive the account.
+            log.error("Account deleted but its sessions could not all be ended: {}", failed.getClass().getSimpleName());
         }
     }
 

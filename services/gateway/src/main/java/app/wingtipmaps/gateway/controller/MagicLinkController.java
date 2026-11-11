@@ -208,7 +208,11 @@ public class MagicLinkController {
             // turns "sign in" itself into a 500 for the pilot who asked
             // for the link, the same fail-closed-but-not-loudly
             // philosophy Google's own unconfigured case already has.
-            log.warn("Could not send magic-link email to {}", to, e);
+            // Neither the address nor the exception: the logs are kept 30
+            // days and outlive a deleted account, and a mail exception's
+            // own text names the addresses it failed on
+            // (docs/privacy-inventory.md, "Logs").
+            log.warn("Could not send a magic-link email: {}", e.getClass().getSimpleName());
         }
     }
 

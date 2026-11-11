@@ -25,7 +25,9 @@ def _ground_ft(lat: float, lon: float) -> float | None:
     try:
         return round(elevation.ground_m(lat, lon) * M_TO_FT, -1)
     except (requests.RequestException, OSError, ValueError) as err:
-        log.warning("terrain tile for (%s, %s) not read: %s", lat, lon, err)
+        # No coordinates in the log: the point may be where the pilot is, and
+        # the logs are kept 30 days (docs/privacy-inventory.md).
+        log.warning("terrain tile not read: %s", err)
     try:
         nearest = airports.nearest(lat, lon, limit=1)
     except (OSError, ValueError):
@@ -54,18 +56,18 @@ def airspace_at_point(lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-
         try:
             special_use, special_use_unavailable = areas.result(), False
         except sua.SpecialUseUnavailable as err:
-            log.warning("special-use airspace at (%s, %s): %s", lat, lon, err)
+            log.warning("special-use airspace not read: %s", err)
             special_use, special_use_unavailable = [], True
         try:
             tfrs, tfrs_unavailable = restrictions.result(), False
         except tfr.TfrUnavailable as err:
-            log.warning("TFRs at (%s, %s): %s", lat, lon, err)
+            log.warning("TFRs not read: %s", err)
             tfrs, tfrs_unavailable = [], True
     # The point as a route can have it: off the nearest fix a pilot knows.
     try:
         near = fixes.frd_near(lat, lon)
     except (OSError, ValueError) as err:
-        log.warning("fixes near (%s, %s) not read: %s", lat, lon, err)
+        log.warning("fixes near the point not read: %s", err)
         near = None
     return AirspaceAt(
         lat=lat,
