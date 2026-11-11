@@ -6,9 +6,6 @@ import { TEXT } from "../lib/text";
 
 /** How long the zoom stays said once the map has stopped zooming. */
 const LINGER_MS = 1500;
-/** How soon after a finger, a wheel or a key a zoom is the pilot's own:
- *  a double tap's zoom sets off a few hundred milliseconds after it. */
-const OWN_MS = 800;
 /** The scale bar's longest, in CSS px. */
 const BAR_MOST = 96;
 /** The international nautical mile, exactly, which the US adopted in 1954
@@ -34,8 +31,9 @@ function scaleOf(map: GlMap) {
  * I change zoom"), as Apple Maps shows its scale while a map is zoomed.
  * Only for the pilot's own zooms -- a pinch, a double tap, a wheel, a key
  * -- not the app's (a route fitted, the map brought to own ship on
- * opening). A pinch zooms in fractions (lib/map/pinch.ts, zoomSnap 0), so
- * to a tenth. Written straight into the elements on each of the map's zoom
+ * opening): MapLibre gives a zoom the pilot started its `originalEvent`,
+ * the app's own camera moves none. A pinch zooms in fractions, so to a
+ * tenth. Written straight into the elements on each of the map's zoom
  * events, not through React's state, so a pinch's every frame is not a
  * render; left out for VoiceOver, which would read it at every frame.
  */
@@ -50,27 +48,12 @@ export default function ZoomBanner({ map }: { map: GlMap | null }) {
     if (!map || !el || !text || !bar.current || !miles.current) return;
     const line = bar.current;
     const length = miles.current;
-    const container = map.getContainer();
     let timer: ReturnType<typeof setTimeout> | undefined;
-    // Fingers on the map now, and when the pilot last touched, scrolled
-    // or pressed a key on it: in the capture phase, as the pinch handler
-    // keeps its events to itself.
-    let fingers = 0;
-    let lastInput = 0;
-    const input = () => {
-      lastInput = performance.now();
-    };
-    const down = () => {
-      fingers += 1;
-      input();
-    };
-    const up = () => {
-      fingers = Math.max(0, fingers - 1);
-      input();
-    };
-    const own = () => fingers > 0 || performance.now() - lastInput < OWN_MS;
-    const say = () => {
-      if (!own()) return;
+    // Every frame of a zoom, animated or under the fingers: MapLibre's
+    // `zoom` fires through the animation, with the pilot's input as its
+    // originalEvent where the pilot started it.
+    const onZoom = (e: { originalEvent?: Event }) => {
+      if (!e.originalEvent) return;
       clearTimeout(timer);
       // In the app's levels: MapLibre's zoom is one less (glStyle).
       const shown = String(Math.round((map.getZoom() + 1) * 10) / 10);
@@ -81,9 +64,6 @@ export default function ZoomBanner({ map }: { map: GlMap | null }) {
       line.style.width = `${px}px`;
       el.hidden = false;
     };
-    // Every frame of a zoom, animated or under the fingers: MapLibre's
-    // `zoom` fires through the animation.
-    const onZoom = say;
     const onEnd = () => {
       if (el.hidden) return;
       clearTimeout(timer);
@@ -91,21 +71,10 @@ export default function ZoomBanner({ map }: { map: GlMap | null }) {
         el.hidden = true;
       }, LINGER_MS);
     };
-    const capture = { capture: true, passive: true } as const;
-    container.addEventListener("pointerdown", down, capture);
-    container.addEventListener("pointerup", up, capture);
-    container.addEventListener("pointercancel", up, capture);
-    container.addEventListener("wheel", input, capture);
-    container.addEventListener("keydown", input, capture);
     map.on("zoom", onZoom);
     map.on("zoomend", onEnd);
     return () => {
       clearTimeout(timer);
-      container.removeEventListener("pointerdown", down, capture);
-      container.removeEventListener("pointerup", up, capture);
-      container.removeEventListener("pointercancel", up, capture);
-      container.removeEventListener("wheel", input, capture);
-      container.removeEventListener("keydown", input, capture);
       map.off("zoom", onZoom);
       map.off("zoomend", onEnd);
     };
