@@ -226,13 +226,21 @@ struct WingtipPalette: Sendable {
     let chart3: UIColor
     let chart4: UIColor
     let chart5: UIColor
+    let surfaceContainerLowest: UIColor
+    let surfaceContainerLow: UIColor
+    let surfaceContainer: UIColor
+    let surfaceContainerHigh: UIColor
+    let surfaceContainerHighest: UIColor
+    let surfaceVariant: UIColor
+    let outline: UIColor
+    let outlineVariant: UIColor
+    let materialPrimary: UIColor
+    let materialOnPrimary: UIColor
     let inkMagenta: UIColor
     let inkBrown: UIColor
     let inkField: UIColor
     let primaryContainer: UIColor
     let onPrimaryContainer: UIColor
-    let outline: UIColor
-    let outlineVariant: UIColor
 
     static let light = WingtipPalette(
         airspaceBlueText: rgb(0x2465B8),
@@ -274,13 +282,21 @@ struct WingtipPalette: Sendable {
         chart3: rgb(0x525252),
         chart4: rgb(0x404040),
         chart5: rgb(0x262626),
+        surfaceContainerLowest: rgb(0xFFFFFF),
+        surfaceContainerLow: rgb(0xF8F9FB),
+        surfaceContainer: rgb(0xF1F3F6),
+        surfaceContainerHigh: rgb(0xE8EBF0),
+        surfaceContainerHighest: rgb(0xDFE3E9),
+        surfaceVariant: rgb(0xDFE3E9),
+        outline: rgb(0x737A84),
+        outlineVariant: rgb(0xC3C9D1),
+        materialPrimary: rgb(0x000000, 0),
+        materialOnPrimary: rgb(0x000000, 0),
         inkMagenta: rgb(0x000000, 0),
         inkBrown: rgb(0x000000, 0),
         inkField: rgb(0x000000, 0),
         primaryContainer: rgb(0x000000, 0),
-        onPrimaryContainer: rgb(0x000000, 0),
-        outline: rgb(0x000000, 0),
-        outlineVariant: rgb(0x000000, 0)
+        onPrimaryContainer: rgb(0x000000, 0)
     )
     static let dark = WingtipPalette(
         airspaceBlueText: rgb(0x6FA0E8),
@@ -322,13 +338,21 @@ struct WingtipPalette: Sendable {
         chart3: rgb(0x525252),
         chart4: rgb(0x404040),
         chart5: rgb(0x262626),
+        surfaceContainerLowest: rgb(0x0B1422),
+        surfaceContainerLow: rgb(0x17283A),
+        surfaceContainer: rgb(0x1B2E44),
+        surfaceContainerHigh: rgb(0x263D57),
+        surfaceContainerHighest: rgb(0x2E4866),
+        surfaceVariant: rgb(0x2E4866),
+        outline: rgb(0x7F93AB),
+        outlineVariant: rgb(0x3A5068),
+        materialPrimary: rgb(0x57A8FF),
+        materialOnPrimary: rgb(0x0B1422),
         inkMagenta: rgb(0x000000, 0),
         inkBrown: rgb(0x000000, 0),
         inkField: rgb(0x000000, 0),
         primaryContainer: rgb(0x000000, 0),
-        onPrimaryContainer: rgb(0x000000, 0),
-        outline: rgb(0x000000, 0),
-        outlineVariant: rgb(0x000000, 0)
+        onPrimaryContainer: rgb(0x000000, 0)
     )
     static let sunlight = WingtipPalette(
         airspaceBlueText: rgb(0x1D559C),
@@ -370,13 +394,21 @@ struct WingtipPalette: Sendable {
         chart3: rgb(0x525252),
         chart4: rgb(0x404040),
         chart5: rgb(0x262626),
+        surfaceContainerLowest: rgb(0xFFFFFF),
+        surfaceContainerLow: rgb(0xF8F9FB),
+        surfaceContainer: rgb(0xF1F3F6),
+        surfaceContainerHigh: rgb(0xE8EBF0),
+        surfaceContainerHighest: rgb(0xDFE3E9),
+        surfaceVariant: rgb(0xDFE3E9),
+        outline: rgb(0x737A84),
+        outlineVariant: rgb(0xC3C9D1),
+        materialPrimary: rgb(0x000000, 0),
+        materialOnPrimary: rgb(0x000000, 0),
         inkMagenta: rgb(0x000000, 0),
         inkBrown: rgb(0x000000, 0),
         inkField: rgb(0x000000, 0),
         primaryContainer: rgb(0x000000, 0),
-        onPrimaryContainer: rgb(0x000000, 0),
-        outline: rgb(0x000000, 0),
-        outlineVariant: rgb(0x000000, 0)
+        onPrimaryContainer: rgb(0x000000, 0)
     )
     static let cockpitLight = WingtipPalette(
         airspaceBlueText: rgb(0x2465B8),
@@ -418,13 +450,21 @@ struct WingtipPalette: Sendable {
         chart3: rgb(0x525252),
         chart4: rgb(0x404040),
         chart5: rgb(0x262626),
+        surfaceContainerLowest: rgb(0xFFFFFF),
+        surfaceContainerLow: rgb(0xF8F9FB),
+        surfaceContainer: rgb(0xF1F3F6),
+        surfaceContainerHigh: rgb(0xE8EBF0),
+        surfaceContainerHighest: rgb(0xDFE3E9),
+        surfaceVariant: rgb(0xDFE3E9),
+        outline: rgb(0x737A84),
+        outlineVariant: rgb(0xC3C9D1),
+        materialPrimary: rgb(0x000000, 0),
+        materialOnPrimary: rgb(0x000000, 0),
         inkMagenta: rgb(0x000000, 0),
         inkBrown: rgb(0x000000, 0),
         inkField: rgb(0x000000, 0),
         primaryContainer: rgb(0x000000, 0),
-        onPrimaryContainer: rgb(0x000000, 0),
-        outline: rgb(0x000000, 0),
-        outlineVariant: rgb(0x000000, 0)
+        onPrimaryContainer: rgb(0x000000, 0)
     )
     static let cockpitDark = WingtipPalette(
         airspaceBlueText: rgb(0x6FA0E8),
@@ -466,13 +506,21 @@ struct WingtipPalette: Sendable {
         chart3: rgb(0x525252),
         chart4: rgb(0x404040),
         chart5: rgb(0x262626),
+        surfaceContainerLowest: rgb(0x0B1422),
+        surfaceContainerLow: rgb(0x17283A),
+        surfaceContainer: rgb(0x1B2E44),
+        surfaceContainerHigh: rgb(0x263D57),
+        surfaceContainerHighest: rgb(0x2E4866),
+        surfaceVariant: rgb(0x2E4866),
+        outline: rgb(0x7F93AB),
+        outlineVariant: rgb(0x3A5068),
+        materialPrimary: rgb(0x57A8FF),
+        materialOnPrimary: rgb(0x0B1422),
         inkMagenta: rgb(0x000000, 0),
         inkBrown: rgb(0x000000, 0),
         inkField: rgb(0x000000, 0),
         primaryContainer: rgb(0x000000, 0),
-        onPrimaryContainer: rgb(0x000000, 0),
-        outline: rgb(0x000000, 0),
-        outlineVariant: rgb(0x000000, 0)
+        onPrimaryContainer: rgb(0x000000, 0)
     )
     static let inkLight = WingtipPalette(
         airspaceBlueText: rgb(0x2465B8),
@@ -514,13 +562,21 @@ struct WingtipPalette: Sendable {
         chart3: rgb(0x525252),
         chart4: rgb(0x404040),
         chart5: rgb(0x262626),
+        surfaceContainerLowest: rgb(0xFFFFFF),
+        surfaceContainerLow: rgb(0xF8F9FB),
+        surfaceContainer: rgb(0xF1F3F6),
+        surfaceContainerHigh: rgb(0xE8EBF0),
+        surfaceContainerHighest: rgb(0xDFE3E9),
+        surfaceVariant: rgb(0xDFE3E9),
+        outline: rgb(0x737A84),
+        outlineVariant: rgb(0xC3C9D1),
+        materialPrimary: rgb(0x000000, 0),
+        materialOnPrimary: rgb(0x000000, 0),
         inkMagenta: rgb(0xB3338C),
         inkBrown: rgb(0x8A5A2B),
         inkField: rgb(0x1D7A46),
         primaryContainer: rgb(0xDCEBFF),
-        onPrimaryContainer: rgb(0x003A75),
-        outline: rgb(0x000000, 0),
-        outlineVariant: rgb(0x000000, 0)
+        onPrimaryContainer: rgb(0x003A75)
     )
     static let inkDark = WingtipPalette(
         airspaceBlueText: rgb(0x6FA0E8),
@@ -562,13 +618,21 @@ struct WingtipPalette: Sendable {
         chart3: rgb(0x525252),
         chart4: rgb(0x404040),
         chart5: rgb(0x262626),
+        surfaceContainerLowest: rgb(0x0B1422),
+        surfaceContainerLow: rgb(0x17283A),
+        surfaceContainer: rgb(0x1B2E44),
+        surfaceContainerHigh: rgb(0x263D57),
+        surfaceContainerHighest: rgb(0x2E4866),
+        surfaceVariant: rgb(0x2E4866),
+        outline: rgb(0x3A3F4A),
+        outlineVariant: rgb(0x2E323B),
+        materialPrimary: rgb(0x57A8FF),
+        materialOnPrimary: rgb(0x0B1422),
         inkMagenta: rgb(0xFF5AC8),
         inkBrown: rgb(0x8A5A2B),
         inkField: rgb(0x1D7A46),
         primaryContainer: rgb(0x0F3A52),
-        onPrimaryContainer: rgb(0x5AC8FA),
-        outline: rgb(0x3A3F4A),
-        outlineVariant: rgb(0x2E323B)
+        onPrimaryContainer: rgb(0x5AC8FA)
     )
     static let nativeLight = WingtipPalette(
         airspaceBlueText: rgb(0x2465B8),
@@ -610,13 +674,21 @@ struct WingtipPalette: Sendable {
         chart3: rgb(0x525252),
         chart4: rgb(0x404040),
         chart5: rgb(0x262626),
+        surfaceContainerLowest: rgb(0xFFFFFF),
+        surfaceContainerLow: rgb(0xF8F9FB),
+        surfaceContainer: rgb(0xF1F3F6),
+        surfaceContainerHigh: rgb(0xE8EBF0),
+        surfaceContainerHighest: rgb(0xDFE3E9),
+        surfaceVariant: rgb(0xDFE3E9),
+        outline: rgb(0x737A84),
+        outlineVariant: rgb(0xC3C9D1),
+        materialPrimary: rgb(0x000000, 0),
+        materialOnPrimary: rgb(0x000000, 0),
         inkMagenta: rgb(0x000000, 0),
         inkBrown: rgb(0x000000, 0),
         inkField: rgb(0x000000, 0),
         primaryContainer: rgb(0x000000, 0),
-        onPrimaryContainer: rgb(0x000000, 0),
-        outline: rgb(0x000000, 0),
-        outlineVariant: rgb(0x000000, 0)
+        onPrimaryContainer: rgb(0x000000, 0)
     )
     static let nativeDark = WingtipPalette(
         airspaceBlueText: rgb(0x6FA0E8),
@@ -658,13 +730,21 @@ struct WingtipPalette: Sendable {
         chart3: rgb(0x525252),
         chart4: rgb(0x404040),
         chart5: rgb(0x262626),
+        surfaceContainerLowest: rgb(0x0B1422),
+        surfaceContainerLow: rgb(0x17283A),
+        surfaceContainer: rgb(0x1B2E44),
+        surfaceContainerHigh: rgb(0x263D57),
+        surfaceContainerHighest: rgb(0x2E4866),
+        surfaceVariant: rgb(0x2E4866),
+        outline: rgb(0x7F93AB),
+        outlineVariant: rgb(0x3A5068),
+        materialPrimary: rgb(0x57A8FF),
+        materialOnPrimary: rgb(0x0B1422),
         inkMagenta: rgb(0x000000, 0),
         inkBrown: rgb(0x000000, 0),
         inkField: rgb(0x000000, 0),
         primaryContainer: rgb(0x000000, 0),
-        onPrimaryContainer: rgb(0x000000, 0),
-        outline: rgb(0x000000, 0),
-        outlineVariant: rgb(0x000000, 0)
+        onPrimaryContainer: rgb(0x000000, 0)
     )
 }
 

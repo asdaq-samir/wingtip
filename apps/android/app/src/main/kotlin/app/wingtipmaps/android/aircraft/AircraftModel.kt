@@ -3,6 +3,7 @@ package app.wingtipmaps.android.aircraft
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.addAircraft
 import app.wingtipmaps.android.api.aircraft
 import app.wingtipmaps.android.api.deleteAircraft
@@ -69,7 +70,7 @@ class AircraftModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(loading = false, problem = "Your airplanes could not be fetched: ${words(e)}") }
+                _state.update { it.copy(loading = false, problem = Problems.say("Your airplanes could not be fetched", e)) }
             }
         }
     }
@@ -108,7 +109,7 @@ class AircraftModel(
             } catch (x: CancellationException) {
                 throw x
             } catch (x: Exception) {
-                _state.update { s -> s.copy(editing = s.editing?.copy(saving = false), problem = "The airplane could not be saved: ${words(x)}") }
+                _state.update { s -> s.copy(editing = s.editing?.copy(saving = false), problem = Problems.say("The airplane could not be saved", x)) }
             }
         }
     }
@@ -128,10 +129,8 @@ class AircraftModel(
             } catch (x: CancellationException) {
                 throw x
             } catch (x: Exception) {
-                _state.update { s -> s.copy(editing = s.editing?.copy(saving = false), problem = "The airplane could not be deleted: ${words(x)}") }
+                _state.update { s -> s.copy(editing = s.editing?.copy(saving = false), problem = Problems.say("The airplane could not be deleted", x)) }
             }
         }
     }
-
-    private fun words(e: Exception): String = (e as? Gateway.Refusal)?.let { r -> r.words ?: "The gateway answered ${r.status}." } ?: e.message.orEmpty()
 }

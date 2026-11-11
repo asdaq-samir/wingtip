@@ -11,6 +11,7 @@ import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogMessage
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -256,7 +257,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 // With no connection the plan kept stands, in silence; a
                 // planner's own refusal is said as it is.
                 _state.update {
-                    val said = if (it.legs.isEmpty() || e !is IOException) e.message ?: "The planner could not be reached." else it.problem
+                    val said = if (it.legs.isEmpty() || e !is IOException) Problems.say("The route could not be planned", e) else it.problem
                     it.copy(problem = said, stage = null)
                 }
             }

@@ -6,6 +6,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.AccountExport
 import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.exportAccount
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -48,7 +49,7 @@ class ExportModel(app: Application) : AndroidViewModel(app) {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.value = State(problem = "Your data could not be fetched: ${e.message}")
+                _state.value = State(problem = Problems.say("Your data could not be fetched", e))
             }
         }
     }

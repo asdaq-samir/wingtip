@@ -2,6 +2,7 @@ package app.wingtipmaps.android.logbook
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.LogbookDraft
 import app.wingtipmaps.android.api.generated.LogbookDraftAsk
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
@@ -98,7 +99,7 @@ class LogbookDraftModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(pending = false, draftProblem = "The entry could not be drawn: ${e.message}") }
+                _state.update { it.copy(pending = false, draftProblem = Problems.say("The entry could not be drawn", e)) }
             }
         }
     }
@@ -132,7 +133,7 @@ class LogbookDraftModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(logging = false, logProblem = "It could not be logged: ${e.message}") }
+                _state.update { it.copy(logging = false, logProblem = Problems.say("It could not be logged", e)) }
             }
         }
     }
