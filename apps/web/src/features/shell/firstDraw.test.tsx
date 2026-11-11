@@ -35,8 +35,9 @@ afterEach(async () => {
 
 /** The page at `address`, drawn from a fresh copy of every module: the
  *  engine's not loaded, and nothing answering on the network. */
-async function drawAt(address: string) {
+async function drawAt(address: string, before?: () => Promise<void>) {
   vi.resetModules();
+  await before?.();
   vi.stubGlobal(
     "fetch",
     vi.fn(() => new Promise<Response>(() => {})),
@@ -84,6 +85,16 @@ describe("the planner before the engine is there", () => {
     expect(engine.engineLoaded()).toBe(false);
     expect(await screen.findByText("Where do you want to fly?", undefined, { timeout: 10_000 })).toBeTruthy();
     expect(screen.getByText("Skip to the map")).toBeTruthy();
+  });
+
+  test("draws with location on and a fix in hand", { timeout: 30_000 }, async () => {
+    // Flying mode, the own-ship mark and the Ready to Fly prompt ask
+    // whether the airplane is underway on the first draw.
+    const { screen } = await drawAt("/plan", async () => {
+      const { useOwnShip } = await import("../../lib/map/position/ownShip");
+      useOwnShip.setState({ enabled: true, fix: { lat: 42.1, lon: -87.9, accuracyM: 10, speedKt: 0, headingDeg: null, altitudeFt: null, at: Date.now() } });
+    });
+    expect(await screen.findByText("Where do you want to fly?", undefined, { timeout: 10_000 })).toBeTruthy();
   });
 
   test("says Working out in a card's place, opened from the address", { timeout: 30_000 }, async () => {

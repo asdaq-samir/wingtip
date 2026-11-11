@@ -1,4 +1,4 @@
-import { callEngine } from "../../engine/engine";
+import { callEngine, engineLoaded } from "../../engine/engine";
 import type { Fix } from "./ownShip";
 
 /*
@@ -45,7 +45,13 @@ export function reachesField(
   });
 }
 
-/** Own ship moving at flying speed: in the air, or about to be. */
+/** Own ship moving at flying speed: in the air, or about to be. Not yet
+ *  known, so not underway, until the engine is in: the flying mode, the
+ *  own-ship mark and the Ready to Fly prompt ask it on the page's first
+ *  draw, which no longer waits for the engine, and with location on and a
+ *  fix in hand that threw ("Part of the app didn't load", the owner's
+ *  phone, 2026-11-11). The next fix, a second later, asks again. */
 export function underway(fix: Fix | null): boolean {
+  if (!engineLoaded()) return false;
   return callEngine("underway", { speed_kt: fix?.speedKt ?? null });
 }
