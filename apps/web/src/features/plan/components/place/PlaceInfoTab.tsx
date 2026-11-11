@@ -1,17 +1,13 @@
 import type { ReactNode } from "react";
 import PlaceAge from "./PlaceAge";
 import { Lightbulb, Radio } from "lucide-react";
-import { cn } from "cn";
 import { PillSection } from "../../../../components/Favorites";
 import { FirstFew } from "../../../../components/FirstFew";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { RowBadge } from "../../../../components/RowBadge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
-import type { AirportPlace, AirportServices } from "../../../../lib/api/types";
+import type { AirportPlace } from "../../../../lib/api/types";
 import { ctafOf, frequencyOf, mhzText } from "../../../../lib/frequencies";
 import { BADGE } from "../../../../lib/rowBadges";
-import { fuelNames } from "../../../../lib/stopServices";
-import { TEXT } from "../../../../lib/text";
 import { feet } from "../../../../lib/format";
 import { FrequencyRow } from "../FrequencyRow";
 import { StopServices } from "../StopServices";
@@ -62,24 +58,18 @@ function CardSection({
 
 /**
  * An airport's card's Info tab (PlaceCard): its frequencies first, then
- * its details -- elevation, airspace and radio, the longest runway, fuel
+ * its details -- elevation, airspace and radio, fuel
  * and its remarks, the address -- its lights, and what it offers on the
  * ground.
  */
 export function PlaceInfoTab({
   place,
   where,
-  services,
 }: {
   place: AirportPlace;
   /** Its town and state, for the address where the FAA lists none. */
   where: string | null;
-  /** Its services, asked for with the card (PlaceCard): the fuel is the
-   *  details', the rest the Services' at the tab's foot (StopServices). */
-  services: AirportServices | undefined;
 }) {
-  // The longest runway open, for the details: what a pilot sizes a field by.
-  const longest = place.runways.filter((r) => !r.closed && r.length_ft != null).sort((a, b) => b.length_ft! - a.length_ft!)[0] ?? null;
   return (
     <>
       <PlaceAge ident={place.ident} kind="airports" />
@@ -144,38 +134,6 @@ export function PlaceInfoTab({
               </span>
             }
           />
-          {longest && (
-            <ListRow
-              title="Longest runway"
-              data-testid="place-longest-runway"
-              value={<span className="font-semibold text-foreground">{`${longest.ends ?? "—"} · ${feet(longest.length_ft)}`}</span>}
-            />
-          )}
-          {/* Its fuel from its Chart Supplement entry, and the remarks
-              in plain English as the planner gives them, a row each
-              (wingtip.remarks.service_notes): self-serve, its hours, the FBO's. */}
-          <ListRow
-            title="Fuel"
-            data-testid="services-fuel"
-            value={
-              <span className="font-semibold text-foreground">
-                {services ? (services.fuel_types.length ? fuelNames(services.fuel_types) : "None listed") : "…"}
-              </span>
-            }
-          />
-          {/* Its remarks folded under their own row, so a field's
-              paragraph of them (Duluth's) does not stand between the
-              fuel and the address in A2's Details. shadcn's Collapsible. */}
-          {!!services?.fuel_notes.length && (
-            <Collapsible>
-              <CollapsibleTrigger render={<ListRow title="Fuel remarks" chevron data-testid="services-fuel-remarks" />} />
-              <CollapsibleContent>
-                {services.fuel_notes.map((note) => (
-                  <ListRow key={note} title={<span className={cn("text-muted-foreground", TEXT.detail)}>{note}</span>} />
-                ))}
-              </CollapsibleContent>
-            </Collapsible>
-          )}
           {/* Where it is on the ground, in Maps: an action of the
               card's until the star took its place (A2). */}
           {/* The address written out, the way to it in Maps, at the
@@ -222,8 +180,8 @@ export function PlaceInfoTab({
       )}
       {/* What the field offers on the ground (StopServices), after
           the radio and the lights, at the owner's ask for food, fuel
-          and rest stops: its fuel is the details'. */}
-      <StopServices ident={place.ident} withoutFuel />
+          and rest stops: its fuel first in its On the field. */}
+      <StopServices ident={place.ident} />
     </>
   );
 }

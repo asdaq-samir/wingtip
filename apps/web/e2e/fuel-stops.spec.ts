@@ -163,14 +163,13 @@ test("the airport's Info says its fuel in its details, and what is on the field 
   await page.goto("/app/plan?place=KRPD");
   const card = page.getByTestId("place-card");
   await expect(card).toBeVisible({ timeout: slow(30_000) });
-  const details = card.getByTestId("place-details");
-  await expect(details.getByTestId("services-fuel")).toContainText("100LL, Jet A");
-  // Its remarks folded under their own row, opened by a tap.
-  await expect(details).not.toContainText("24 hour self serve fuel.");
-  await inSheet(page, details.getByTestId("services-fuel-remarks"));
-  await details.getByTestId("services-fuel-remarks").click();
-  await expect(details).toContainText("24 hour self serve fuel.");
+  // Fuel first in On the field (the owner, 2026-11-11), its remarks folded under it.
   const services = card.getByTestId("place-services");
+  await expect(services.getByTestId("services-fuel")).toContainText("100LL, Jet A");
+  await expect(services).not.toContainText("24 hour self serve fuel.");
+  await inSheet(page, services.getByTestId("services-fuel-remarks"));
+  await services.getByTestId("services-fuel-remarks").click();
+  await expect(services).toContainText("24 hour self serve fuel.");
   await expect(services.getByTestId("services-courtesy-car")).toBeVisible();
   await expect(services.getByTestId("services-food")).toContainText(/Runway Diner.*4 min walk/);
   await expect(services.getByTestId("services-food")).toHaveAttribute("href", "tel:+17155550100");

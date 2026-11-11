@@ -24,3 +24,21 @@ test("Add Stop takes a tap for an airport off the route", async ({ page }) => {
   const addStop = sideDrawer(page).getByTestId("place-card").getByTestId("place-add-stop");
   await expect(addStop).toBeEnabled({ timeout: 20_000 });
 });
+
+test("the longest runway carries a badge in the Runways tab, not a row of Details", async ({ page }) => {
+  // The owner, 2026-11-11: "just put a longest badge on the runway in runway tab".
+  await page.goto("/app/plan?place=KOSH");
+  await settle(page);
+  const card = sideDrawer(page).getByTestId("place-card");
+  await card.getByTestId("place-tab-runways").click({ timeout: 20_000 });
+  await expect(card.getByTestId("runway-longest")).toHaveCount(1);
+  await expect(
+    card
+      .getByTestId("place-runways")
+      .locator("li, [role=row], a, div")
+      .filter({ has: page.getByTestId("runway-longest") })
+      .first(),
+  ).toContainText("18/36");
+  await card.getByTestId("place-tab-radio").click();
+  await expect(card.getByTestId("place-longest-runway")).toHaveCount(0);
+});

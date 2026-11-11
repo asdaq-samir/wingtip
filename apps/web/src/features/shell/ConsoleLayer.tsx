@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import type { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
-import { TEXT } from "../../lib/text";
+import { CardHeadRow } from "../../components/CardHead";
 import { Shown } from "../../lib/shown";
 import { CardLayer } from "../../components/sheet/CardLayer";
 
@@ -72,13 +72,19 @@ export default function ConsoleLayer({
         >
           {/* Its name and its close, the way back to the sheet under it, at the
           sheet's top: the page covers the title row and the search, as every
-          page does by the one card rule (the owner, 2026-11-10). Pinned and
-          frosted as a card's head (PinnedHead), and at the sheet's smallest
-          size all of it in sight (data-sheet-head). */}
-          <div className="frost-head sticky top-0 z-20 flex items-center gap-2 px-4 pt-3 pb-1" data-slot="layer-head" data-sheet-head="">
-            <h2 className={cn("flex-1 font-bold", TEXT.title)}>Settings</h2>
-            <CloseButton label="Back to the map" onClick={onClose} data-back="" data-testid="console-close" />
-          </div>
+          page does by the one card rule (the owner, 2026-11-10). Every card's
+          one head row (CardHeadRow: its name at a card's 22 points, pinned and
+          frosted, at the sheet's smallest size all of it in sight), where it
+          drew its own at a drawer's 17 under its pages' 22 (the owner,
+          2026-11-11: "Why is the title smaller, isn't it shared code?"). Its
+          close the shared CloseButton, not CardClose: Settings is no card a
+          device's Back or the tab bar holds (lib/openCards). */}
+          <CardHeadRow
+            name="Settings"
+            slot="layer-head"
+            flush
+            end={<CloseButton label="Back to the map" onClick={onClose} data-back="" data-testid="console-close" />}
+          />
           {/* A page opened straight from the search closes the console by
           its own ✕ (ConsolePages), back to where the pilot came from. */}
           <ConsoleLeave.Provider value={onClose}>{children}</ConsoleLeave.Provider>

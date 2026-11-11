@@ -203,7 +203,7 @@ areas:
       - apps/web/public/support.html
   arch:
     ci: arch
-    check: scripts/ci/file_sizes.py --base origin/main (no new or grown source file over 400 lines), scripts/build/toolchain.sh --check (every version .tool-versions'), scripts/ci/brand_guard.py (no raw style value outside design/tokens.json), then scripts/ci/dead_python.sh (vulture)
+    check: scripts/ci/file_sizes.py --base origin/main (no new or grown source file over 400 lines), scripts/build/toolchain.sh --check (every version .tool-versions'), scripts/ci/brand_guard.py (no raw style value outside design/tokens.json), scripts/ci/shared_parts_guard.py (no card head, section title or close drawn by hand), then scripts/ci/dead_python.sh (vulture)
     paths:
       # Every source file the budget counts, and the budget itself.
       - "**/*.ts"
@@ -220,6 +220,9 @@ areas:
       - scripts/ci/brand_guard.py
       - scripts/ci/brand_guard_allow.txt
       - design/tokens.json
+      # The shared parts guard and its allow-list.
+      - scripts/ci/shared_parts_guard.py
+      - scripts/ci/shared_parts_guard_allow.txt
       - apps/web/src/*.css
       - apps/web/src/**/*.css
       - scripts/ci/dead_python.sh

@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import type { Drawer } from "@base-ui/react/drawer";
 import CloseButton from "./CloseButton";
 import { CardHeadRow } from "./CardHead";
+import { HeadGrid } from "./HeadGrid";
 import { PinnedHead } from "./PinnedHead";
 import { useCardFrame } from "./sheet/useCardFrame";
 import { holdOpenCard, setCardPill, type OpenCard, type PillHead } from "../lib/openCards";
@@ -244,13 +245,11 @@ export function SheetCard({
 }
 
 /** The head row's room for a name its content draws (MapCard's mark and
- *  name), the close at its end as CardHeadRow's. */
+ *  name), centred, the close at its end, as CardHeadRow's (HeadGrid). */
 function CardHeadSlot({ slot, leading, end }: { slot: (node: HTMLDivElement | null) => void; leading?: ReactNode; end?: ReactNode }) {
   return (
     <PinnedHead className="shrink-0">
-      {leading}
-      <div ref={slot} className="flex min-w-0 flex-1 items-center gap-2.5" />
-      {end != null && <div className="-mr-1 flex shrink-0 items-center">{end}</div>}
+      <HeadGrid start={leading} middle={null} middleRef={slot} middleClassName="flex-row justify-center gap-2.5" end={end} />
     </PinnedHead>
   );
 }

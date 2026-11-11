@@ -1,0 +1,11 @@
+# The parts scripts/ci/shared_parts_guard.py lets a file draw itself, as
+# "<path> <count> <why>": each one a part that is rightly its own, not a
+# copy of CardHeadRow, SectionTitle or CloseButton. A file may not pass its
+# count; one that drops below it is said, and its count lowered. Keep this
+# list short.
+apps/web/src/components/AboutPanel.tsx 1 The app's name in About's content, under the page's own head: a content heading, not a page's name.
+apps/web/src/components/ClearButton.tsx 1 A field's clear, iOS's small cross in a grey disc inside the field: a role of its own, not a panel's close.
+apps/web/src/components/PageError.tsx 1 The whole-page error's words, the only thing on the screen, with no card round them.
+apps/web/src/features/plan/components/FirstFlight.tsx 1 A tip floating over the map, not a card in the sheet: no pinned, frosted head row for it to share.
+apps/web/src/features/plan/components/search/FiltersPage.tsx 1 A form sheet's Cancel, title and Done, iOS's own form header.
+apps/web/src/lib/map/cards/MapCard.tsx 1 A map card's mark and name, put in the shared head row's slot (SheetCard's CardHeadSlot), which draws the row round it.
