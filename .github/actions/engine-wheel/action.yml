@@ -19,12 +19,14 @@ runs:
   using: composite
   steps:
     # In the workspace, not the runner's temp: a cache's paths are part of
-    # its key, and the Mac mini's runners each have their own temp.
+    # its key, and the Mac mini's runners each have their own temp. Not a
+    # dot-folder: upload-artifact leaves hidden paths out by default, and a
+    # `.engine-wheel` folder uploaded nothing (run 42929115521).
     - if: inputs.mode == 'build'
       id: cache
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
       with:
-        path: .engine-wheel
+        path: wheel-out
         key: engine-wheel-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/**', 'rust-toolchain.toml', '.tool-versions') }}
     # A Python for maturin, only when there is something to build.
     - if: inputs.mode == 'build' && steps.cache.outputs.cache-hit != 'true'
@@ -50,12 +52,12 @@ runs:
       run: |
         echo "::notice title=Cache miss::engine-wheel"
         pip install -q uv && uv pip install --system maturin==1.16.0
-        maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o .engine-wheel
+        maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o wheel-out
     # Main and the night save; a pull request reads (docs/CI.md, rule 4).
     - if: inputs.mode == 'build' && steps.cache.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
       with:
-        path: .engine-wheel
+        path: wheel-out
         key: ${{ steps.cache.outputs.cache-primary-key }}
     - if: inputs.mode == 'build' && steps.cache.outputs.cache-hit != 'true' && github.event_name != 'pull_request' && steps.cargo.outputs.cache-hit != 'true'
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -69,7 +71,7 @@ runs:
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
       with:
         name: engine-wheel
-        path: .engine-wheel/*.whl
+        path: wheel-out/*.whl
         if-no-files-found: error
         retention-days: 1
     - if: inputs.mode == 'install'
