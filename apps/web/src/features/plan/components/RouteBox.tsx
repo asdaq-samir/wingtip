@@ -612,7 +612,7 @@ export default function RouteBox({
             {/* The pills in one row that slides sideways under a finger when the route is longer than the box (the
                owner, 2026-11-04), as ForeFlight's flight plan box does; the end faded where it runs on, so a point
                past it reads as there. A drag up or down on it is the sheet's (the Drawer's swipe), across is the row's. */}
-            <ScrollArea.Root overflowEdgeThreshold={RUNS_ON_PX} className="min-w-0 flex-1">
+            <ScrollArea.Root overflowEdgeThreshold={RUNS_ON_PX} className="min-w-0 flex-1 basis-24">
               <ScrollArea.Viewport
                 ref={slide}
                 // Out of the tab order; a drag up or down is the sheet's.
