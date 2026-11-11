@@ -2229,6 +2229,13 @@ export interface EngineContract {
     answer: LegalCruisingAltitudesAnswer;
   };
   /**
+   * A field's lighting remarks read for a pilot (the Chart Supplement's, NASR APT_RMK.csv LGT_SKED and BCN_LGT_SKED): each system named, by its code in the Chart Supplement legend (Airport Lighting, Visual Glideslope Indicators) and its name in AIM 2-1 (approach lights 2-1-1, visual glideslope indicators 2-1-2, REIL 2-1-3, runway edge lights by intensity 2-1-4, in-runway lighting 2-1-5, the beacon 2-1-9, taxiway lights 2-1-10), the runways it serves as written, and how it is turned on: keying the mic on the CTAF or a frequency (AIM 2-1-8, Pilot Control of Airport Lighting), when the tower is closed, at a preset intensity a pilot turns up, on a schedule (sunset to sunrise), or on all the time; the contractions written out (JO 7340.2 and the Chart Supplement's Abbreviations). A sentence not read in full is a note, its known contractions written out and every other word kept as written, never guessed. standard_keying where a light is the pilot's and the remarks give no count of clicks of their own: AIM 2-1-8's 7 (highest), 5 (medium or lower) and 3 (lowest) within 5 seconds.
+   */
+  lighting_read: {
+    input: LightingReadInput;
+    answer: LightingReadAnswer;
+  };
+  /**
    * A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them. Air time (not a 61.51(b) column) is this logbook's AirTime, else ForeFlight's TimeOff to TimeOn, else 0 (not known); an entry read from a file is never from a track.
    */
   logbook_csv_read: {
@@ -7478,6 +7485,92 @@ export interface LegalCruisingAltitudesInput {
   magnetic_course_deg: number;
   rule_from_ft?: number | null;
   rules?: "vfr" | "ifr" | null;
+}
+export interface LightingReadInput {
+  /**
+   * The field's lighting remarks as sent (LGT_SKED): "WHEN ATCT CLSD, ACTVT MALSR RWY 36; REIL RWY 18 & 27 - CTAF."
+   */
+  lighting: string[];
+  /**
+   * Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
+   */
+  beacon?: string[];
+}
+export interface LightingReadAnswer {
+  systems: LightingSystem[];
+  /**
+   * The sentences not read as systems, in the remarks' order.
+   */
+  notes: LightingNote[];
+  /**
+   * A light is the pilot's and the remarks give no count of clicks: AIM 2-1-8's 7, 5 and 3 apply.
+   */
+  standard_keying: boolean;
+}
+export interface LightingSystem {
+  /**
+   * The Chart Supplement legend's code (MALSR, REIL, HIRL, PAPI); null where the name says it all (taxiway lights, the rotating beacon).
+   */
+  code: string | null;
+  /**
+   * Its name in words: Approach lights, Runway end identifier lights, Runway edge lights, high intensity, Precision approach path indicator, Taxiway lights, Rotating beacon.
+   */
+  name: string;
+  /**
+   * The runways ("09/27") or runway ends ("36") it serves, as written.
+   */
+  runways: string[];
+  /**
+   * Turned on, or up, by keying the mic (AIM 2-1-8).
+   */
+  pilot_controlled: boolean;
+  /**
+   * What it is keyed on: CTAF, or a frequency as written ("122.8"); null where the remarks do not say.
+   */
+  frequency: string | null;
+  /**
+   * A count of clicks the remarks give of their own.
+   */
+  clicks: number | null;
+  /**
+   * Said of it when the tower is closed (WHEN ATCT CLSD).
+   */
+  tower_closed: boolean;
+  /**
+   * The intensity it is preset at.
+   */
+  preset: "low" | "medium" | "high" | null;
+  /**
+   * A preset light the pilot turns up by keying (TO INCR INTST).
+   */
+  brighter: boolean;
+  /**
+   * When, in words: "sunset to sunrise", "dusk to 0230", "after 0000", times as written.
+   */
+  schedule: string | null;
+  /**
+   * On all the time (OPR CONSLY, H24).
+   */
+  continuous: boolean;
+  /**
+   * NSTD: the legend's 'light system fails to meet FAA standards'.
+   */
+  nonstandard: boolean;
+  /**
+   * How it is turned on in a pilot's words: "Key the mic on CTAF when the tower is closed", "Preset low, sunset to sunrise; key the mic on CTAF for more", "On all the time"; null where the remarks say none.
+   */
+  how: string | null;
+  /**
+   * The sentence of the remark it was read from, as sent.
+   */
+  as_written: string;
+}
+export interface LightingNote {
+  /**
+   * The sentence, its contractions written out, every other word kept.
+   */
+  words: string;
+  as_written: string;
 }
 export interface LogbookCsvReadInput {
   text: string;

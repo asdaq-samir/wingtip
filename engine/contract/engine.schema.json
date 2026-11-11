@@ -14079,6 +14079,184 @@
       ],
       "additionalProperties": false
     },
+    "lighting_read": {
+      "description": "A field's lighting remarks read for a pilot (the Chart Supplement's, NASR APT_RMK.csv LGT_SKED and BCN_LGT_SKED): each system named, by its code in the Chart Supplement legend (Airport Lighting, Visual Glideslope Indicators) and its name in AIM 2-1 (approach lights 2-1-1, visual glideslope indicators 2-1-2, REIL 2-1-3, runway edge lights by intensity 2-1-4, in-runway lighting 2-1-5, the beacon 2-1-9, taxiway lights 2-1-10), the runways it serves as written, and how it is turned on: keying the mic on the CTAF or a frequency (AIM 2-1-8, Pilot Control of Airport Lighting), when the tower is closed, at a preset intensity a pilot turns up, on a schedule (sunset to sunrise), or on all the time; the contractions written out (JO 7340.2 and the Chart Supplement's Abbreviations). A sentence not read in full is a note, its known contractions written out and every other word kept as written, never guessed. standard_keying where a light is the pilot's and the remarks give no count of clicks of their own: AIM 2-1-8's 7 (highest), 5 (medium or lower) and 3 (lowest) within 5 seconds.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "LightingReadInput",
+          "type": "object",
+          "properties": {
+            "lighting": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The field's lighting remarks as sent (LGT_SKED): \"WHEN ATCT CLSD, ACTVT MALSR RWY 36; REIL RWY 18 & 27 - CTAF.\""
+            },
+            "beacon": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: \"DUSK-DAWN.\""
+            }
+          },
+          "required": [
+            "lighting"
+          ]
+        },
+        "answer": {
+          "title": "LightingReadAnswer",
+          "type": "object",
+          "properties": {
+            "systems": {
+              "type": "array",
+              "items": {
+                "title": "LightingSystem",
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "The Chart Supplement legend's code (MALSR, REIL, HIRL, PAPI); null where the name says it all (taxiway lights, the rotating beacon)."
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "Its name in words: Approach lights, Runway end identifier lights, Runway edge lights, high intensity, Precision approach path indicator, Taxiway lights, Rotating beacon."
+                  },
+                  "runways": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "The runways (\"09/27\") or runway ends (\"36\") it serves, as written."
+                  },
+                  "pilot_controlled": {
+                    "type": "boolean",
+                    "description": "Turned on, or up, by keying the mic (AIM 2-1-8)."
+                  },
+                  "frequency": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "What it is keyed on: CTAF, or a frequency as written (\"122.8\"); null where the remarks do not say."
+                  },
+                  "clicks": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "description": "A count of clicks the remarks give of their own."
+                  },
+                  "tower_closed": {
+                    "type": "boolean",
+                    "description": "Said of it when the tower is closed (WHEN ATCT CLSD)."
+                  },
+                  "preset": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "enum": [
+                      "low",
+                      "medium",
+                      "high",
+                      null
+                    ],
+                    "description": "The intensity it is preset at."
+                  },
+                  "brighter": {
+                    "type": "boolean",
+                    "description": "A preset light the pilot turns up by keying (TO INCR INTST)."
+                  },
+                  "schedule": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "When, in words: \"sunset to sunrise\", \"dusk to 0230\", \"after 0000\", times as written."
+                  },
+                  "continuous": {
+                    "type": "boolean",
+                    "description": "On all the time (OPR CONSLY, H24)."
+                  },
+                  "nonstandard": {
+                    "type": "boolean",
+                    "description": "NSTD: the legend's 'light system fails to meet FAA standards'."
+                  },
+                  "how": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "How it is turned on in a pilot's words: \"Key the mic on CTAF when the tower is closed\", \"Preset low, sunset to sunrise; key the mic on CTAF for more\", \"On all the time\"; null where the remarks say none."
+                  },
+                  "as_written": {
+                    "type": "string",
+                    "description": "The sentence of the remark it was read from, as sent."
+                  }
+                },
+                "required": [
+                  "code",
+                  "name",
+                  "runways",
+                  "pilot_controlled",
+                  "frequency",
+                  "clicks",
+                  "tower_closed",
+                  "preset",
+                  "brighter",
+                  "schedule",
+                  "continuous",
+                  "nonstandard",
+                  "how",
+                  "as_written"
+                ]
+              }
+            },
+            "notes": {
+              "type": "array",
+              "items": {
+                "title": "LightingNote",
+                "type": "object",
+                "properties": {
+                  "words": {
+                    "type": "string",
+                    "description": "The sentence, its contractions written out, every other word kept."
+                  },
+                  "as_written": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "words",
+                  "as_written"
+                ]
+              },
+              "description": "The sentences not read as systems, in the remarks' order."
+            },
+            "standard_keying": {
+              "type": "boolean",
+              "description": "A light is the pilot's and the remarks give no count of clicks: AIM 2-1-8's 7, 5 and 3 apply."
+            }
+          },
+          "required": [
+            "systems",
+            "notes",
+            "standard_keying"
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "logbook_csv_read": {
       "description": "A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them. Air time (not a 61.51(b) column) is this logbook's AirTime, else ForeFlight's TimeOff to TimeOn, else 0 (not known); an entry read from a file is never from a track.",
       "type": "object",
@@ -25643,6 +25821,7 @@
     "kneeboard_radio",
     "least_crosswind",
     "legal_cruising_altitudes",
+    "lighting_read",
     "logbook_csv_read",
     "logbook_csv_write",
     "logbook_from_track",

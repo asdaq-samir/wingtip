@@ -8,6 +8,9 @@
 //! - notam_read: a NOTAM as a pilot reads it -- its keyword as a heading,
 //!   its words written out (contractions: the FAA's contractions, the one
 //!   table, which the radio's D-ATIS reads by too) and its window in UTC;
+//! - lighting_read: a field's Chart Supplement lighting remarks as the
+//!   systems they name and how each is turned on (AIM 2-1, 2-1-8), by the
+//!   same table of contractions with the remarks' own;
 //! - notam_rank: which of a flight's NOTAMs matter to it, best first
 //!   (14 CFR 91.103);
 //! - rvr: runway visual range against a visibility minimum (91.175(h));
@@ -22,6 +25,7 @@
 pub mod contractions;
 pub mod cycles;
 pub mod forecast;
+pub mod lighting_read;
 pub mod metar;
 pub mod notam;
 pub mod notam_rank;

@@ -63,6 +63,34 @@ pub fn written(word: &str) -> Option<&'static str> {
     lookup(TABLE, word)
 }
 
+/// The lighting remarks' own contractions (lighting_read), a line each as
+/// TABLE: the Chart Supplement's Abbreviations ("incr increase", "ints
+/// intense, intensity", "med medium", "opr operate", "dalgt daylight",
+/// "ngt night", "sked schedule", "ATCT Airport Traffic Control Tower"),
+/// which defers to JO 7340.2 for the rest, and the NASR remarks' common
+/// forms of them (ACTVT, INTST, CONSLY). A table of its own, read before
+/// TABLE, so that the web's WebAssembly, whose NOTAMs read TABLE and
+/// which has no lighting rule, carries none of it.
+///
+/// ATCTVT is no contraction: it is NASR's own misspelling of ACTVT in
+/// APT_RMK.csv's LGT_SKED (UGN and MLJ, the 2026-10-29 cycle: "ATCTVT
+/// MALSR RWY 23; ... - CTAF"), the remark's first word, before the
+/// systems and the frequency of the legend's "LGT ACTIVATE HIRL Rwy
+/// 07-25 ... - 122.8" form. Read letter by letter it became "Atctvt".
+const LIGHTING: &str = concat!(
+    "ACTVT:activate\n", "ACTVTD:activated\n", "ATCTVT:activate\n", "ACTIVATE:activate\n", "ATCT:the tower\n", "INTST:intensity\n",
+    "INTS:intensity\n", "INCR:increase\n", "DECR:decrease\n", "MED:medium\n", "CONSLY:continuously\n", "OPER:operates\n",
+    "OPRS:operates\n", "LGTG:lighting\n", "DALGT:daylight\n", "NGT:night\n", "SKED:schedule\n", "REQ:request\n", "OT:other times\n",
+    "AFT:after\n", "HRS:hours\n", "ROTG:rotating\n", "RTG:rotating\n", "NSTD:non-standard\n", "TWYS:taxiways\n", "RY:runway\n",
+    "RYS:runways\n", "PRESET:preset\n",
+);
+
+/// A word of a lighting remark written out: its own contractions first,
+/// then the one table's.
+pub fn lighting_written(word: &str) -> Option<&'static str> {
+    lookup(LIGHTING, word).or_else(|| written(word))
+}
+
 /// The codes a pilot reads as written: the navaids and their parts, the
 /// approach lights and approaches by their names on the chart (AIM 2-1,
 /// 5-4-5), the services by their names in the Chart Supplement, and the

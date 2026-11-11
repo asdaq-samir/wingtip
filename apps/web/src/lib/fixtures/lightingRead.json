@@ -1,0 +1,338 @@
+{
+  "_note": "lighting_read: a field's Chart Supplement lighting remarks (NASR APT_RMK.csv, 2026-10-29) read into systems, each how worked by hand from the Chart Supplement legend and AIM 2-1-8 (engine/crates/weather/src/lighting_read).",
+  "cases": [
+    {
+      "about": "KOSH, Oshkosh: keyed on the CTAF when the tower is closed, the HIRL 18/36 preset low sunset to sunrise, the PAPI on all the time",
+      "lighting": [
+        "WHEN ATCT CLSD, ACTVT MALSR RWY 36; REIL RWY 18 & 27; HIRL RWY 09/27 & 18/36 - CTAF. HIRL 18/36 PRESET ON LOW INTST SS-SR, TO INCR INTST & ACTVT - CTAF. PAPI RWY 09, 27, 18 & 36 OPR CONSLY."
+      ],
+      "beacon": [],
+      "answer": {
+        "systems": [
+          {
+            "code": "MALSR",
+            "name": "Approach lights",
+            "runways": [
+              "36"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": true,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Key the mic on CTAF when the tower is closed",
+            "as_written": "WHEN ATCT CLSD, ACTVT MALSR RWY 36; REIL RWY 18 & 27; HIRL RWY 09/27 & 18/36 - CTAF."
+          },
+          {
+            "code": "REIL",
+            "name": "Runway end identifier lights",
+            "runways": [
+              "18",
+              "27"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": true,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Key the mic on CTAF when the tower is closed",
+            "as_written": "WHEN ATCT CLSD, ACTVT MALSR RWY 36; REIL RWY 18 & 27; HIRL RWY 09/27 & 18/36 - CTAF."
+          },
+          {
+            "code": "HIRL",
+            "name": "Runway edge lights, high intensity",
+            "runways": [
+              "09/27",
+              "18/36"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": true,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Key the mic on CTAF when the tower is closed",
+            "as_written": "WHEN ATCT CLSD, ACTVT MALSR RWY 36; REIL RWY 18 & 27; HIRL RWY 09/27 & 18/36 - CTAF."
+          },
+          {
+            "code": "HIRL",
+            "name": "Runway edge lights, high intensity",
+            "runways": [
+              "18/36"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": false,
+            "preset": "low",
+            "brighter": true,
+            "schedule": "sunset to sunrise",
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Preset low, sunset to sunrise; key the mic on CTAF for more",
+            "as_written": "HIRL 18/36 PRESET ON LOW INTST SS-SR, TO INCR INTST & ACTVT - CTAF."
+          },
+          {
+            "code": "PAPI",
+            "name": "Precision approach path indicator",
+            "runways": [
+              "09",
+              "27",
+              "18",
+              "36"
+            ],
+            "pilot_controlled": false,
+            "frequency": null,
+            "clicks": null,
+            "tower_closed": false,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": true,
+            "nonstandard": false,
+            "how": "On all the time",
+            "as_written": "PAPI RWY 09, 27, 18 & 36 OPR CONSLY."
+          }
+        ],
+        "notes": [],
+        "standard_keying": true
+      }
+    },
+    {
+      "about": "KUGN, Waukegan: NASR's ATCTVT read as ACTVT; the sentence naming no light kept as written",
+      "lighting": [
+        "ATCTVT MALSR RWY 23; REIL RWY 05; HIRL RWY 05/23; MIRL RWY 14/32 TWY LGTS - CTAF. WHEN ATCT CLSD TO INCR INTST & ACTVT - CTAF"
+      ],
+      "beacon": [],
+      "answer": {
+        "systems": [
+          {
+            "code": "MALSR",
+            "name": "Approach lights",
+            "runways": [
+              "23"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": false,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Key the mic on CTAF",
+            "as_written": "ATCTVT MALSR RWY 23; REIL RWY 05; HIRL RWY 05/23; MIRL RWY 14/32 TWY LGTS - CTAF."
+          },
+          {
+            "code": "REIL",
+            "name": "Runway end identifier lights",
+            "runways": [
+              "05"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": false,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Key the mic on CTAF",
+            "as_written": "ATCTVT MALSR RWY 23; REIL RWY 05; HIRL RWY 05/23; MIRL RWY 14/32 TWY LGTS - CTAF."
+          },
+          {
+            "code": "HIRL",
+            "name": "Runway edge lights, high intensity",
+            "runways": [
+              "05/23"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": false,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Key the mic on CTAF",
+            "as_written": "ATCTVT MALSR RWY 23; REIL RWY 05; HIRL RWY 05/23; MIRL RWY 14/32 TWY LGTS - CTAF."
+          },
+          {
+            "code": "MIRL",
+            "name": "Runway edge lights, medium intensity",
+            "runways": [
+              "14/32"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": false,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Key the mic on CTAF",
+            "as_written": "ATCTVT MALSR RWY 23; REIL RWY 05; HIRL RWY 05/23; MIRL RWY 14/32 TWY LGTS - CTAF."
+          },
+          {
+            "code": null,
+            "name": "Taxiway lights",
+            "runways": [],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": false,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Key the mic on CTAF",
+            "as_written": "ATCTVT MALSR RWY 23; REIL RWY 05; HIRL RWY 05/23; MIRL RWY 14/32 TWY LGTS - CTAF."
+          }
+        ],
+        "notes": [
+          {
+            "words": "When the tower closed to increase intensity & activate - CTAF.",
+            "as_written": "WHEN ATCT CLSD TO INCR INTST & ACTVT - CTAF."
+          }
+        ],
+        "standard_keying": true
+      }
+    },
+    {
+      "about": "KMSN, Madison: the HIRL 18/36 preset low when the tower is closed, turned up on the CTAF",
+      "lighting": [
+        "ACTVT MALSR RWY 18 & 21;  REIL RWY 03, 14 & 32; HIRL RWY 03/21, 14/32 & 18/36 - CTAF.  WHEN ATCT CLSD HIRL RWY 18/36 PRESET LOW INTST; INCR INTST - CTAF."
+      ],
+      "beacon": [],
+      "answer": {
+        "systems": [
+          {
+            "code": "MALSR",
+            "name": "Approach lights",
+            "runways": [
+              "18",
+              "21"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": false,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Key the mic on CTAF",
+            "as_written": "ACTVT MALSR RWY 18 & 21; REIL RWY 03, 14 & 32; HIRL RWY 03/21, 14/32 & 18/36 - CTAF."
+          },
+          {
+            "code": "REIL",
+            "name": "Runway end identifier lights",
+            "runways": [
+              "03",
+              "14",
+              "32"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": false,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Key the mic on CTAF",
+            "as_written": "ACTVT MALSR RWY 18 & 21; REIL RWY 03, 14 & 32; HIRL RWY 03/21, 14/32 & 18/36 - CTAF."
+          },
+          {
+            "code": "HIRL",
+            "name": "Runway edge lights, high intensity",
+            "runways": [
+              "03/21",
+              "14/32",
+              "18/36"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": false,
+            "preset": null,
+            "brighter": false,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "Key the mic on CTAF",
+            "as_written": "ACTVT MALSR RWY 18 & 21; REIL RWY 03, 14 & 32; HIRL RWY 03/21, 14/32 & 18/36 - CTAF."
+          },
+          {
+            "code": "HIRL",
+            "name": "Runway edge lights, high intensity",
+            "runways": [
+              "18/36"
+            ],
+            "pilot_controlled": true,
+            "frequency": "CTAF",
+            "clicks": null,
+            "tower_closed": true,
+            "preset": "low",
+            "brighter": true,
+            "schedule": null,
+            "continuous": false,
+            "nonstandard": false,
+            "how": "When the tower is closed, preset low; key the mic on CTAF for more",
+            "as_written": "WHEN ATCT CLSD HIRL RWY 18/36 PRESET LOW INTST; INCR INTST - CTAF."
+          }
+        ],
+        "notes": [],
+        "standard_keying": true
+      }
+    },
+    {
+      "about": "A beacon's remark of a schedule alone is the beacon's",
+      "lighting": [],
+      "beacon": [
+        "DUSK-DAWN."
+      ],
+      "answer": {
+        "systems": [
+          {
+            "code": null,
+            "name": "Rotating beacon",
+            "runways": [],
+            "pilot_controlled": false,
+            "frequency": null,
+            "clicks": null,
+            "tower_closed": false,
+            "preset": null,
+            "brighter": false,
+            "schedule": "dusk to dawn",
+            "continuous": false,
+            "nonstandard": false,
+            "how": "On from dusk to dawn",
+            "as_written": "DUSK-DAWN."
+          }
+        ],
+        "notes": [],
+        "standard_keying": false
+      }
+    }
+  ]
+}

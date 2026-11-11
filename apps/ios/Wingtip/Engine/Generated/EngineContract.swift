@@ -5928,6 +5928,86 @@ enum EngineContract {
         var segment: String?
     }
 
+    struct LightingReadAnswer: Codable, Equatable, Sendable {
+        var systems: [EngineContract.LightingReadAnswerSystemsItem]
+        /// The sentences not read as systems, in the remarks' order.
+        var notes: [EngineContract.LightingReadAnswerNotesItem]
+        /// A light is the pilot's and the remarks give no count of clicks: AIM 2-1-8's 7, 5 and 3 apply.
+        var standardKeying: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case systems
+            case notes
+            case standardKeying = "standard_keying"
+        }
+    }
+
+    struct LightingReadAnswerNotesItem: Codable, Equatable, Sendable {
+        /// The sentence, its contractions written out, every other word kept.
+        var words: String
+        var asWritten: String
+
+        enum CodingKeys: String, CodingKey {
+            case words
+            case asWritten = "as_written"
+        }
+    }
+
+    struct LightingReadAnswerSystemsItem: Codable, Equatable, Sendable {
+        /// The Chart Supplement legend's code (MALSR, REIL, HIRL, PAPI); null where the name says it all (taxiway lights, the rotating beacon).
+        var code: String?
+        /// Its name in words: Approach lights, Runway end identifier lights, Runway edge lights, high intensity, Precision approach path indicator, Taxiway lights, Rotating beacon.
+        var name: String
+        /// The runways ("09/27") or runway ends ("36") it serves, as written.
+        var runways: [String]
+        /// Turned on, or up, by keying the mic (AIM 2-1-8).
+        var pilotControlled: Bool
+        /// What it is keyed on: CTAF, or a frequency as written ("122.8"); null where the remarks do not say.
+        var frequency: String?
+        /// A count of clicks the remarks give of their own.
+        var clicks: Int?
+        /// Said of it when the tower is closed (WHEN ATCT CLSD).
+        var towerClosed: Bool
+        /// The intensity it is preset at.
+        var preset: String?
+        /// A preset light the pilot turns up by keying (TO INCR INTST).
+        var brighter: Bool
+        /// When, in words: "sunset to sunrise", "dusk to 0230", "after 0000", times as written.
+        var schedule: String?
+        /// On all the time (OPR CONSLY, H24).
+        var continuous: Bool
+        /// NSTD: the legend's 'light system fails to meet FAA standards'.
+        var nonstandard: Bool
+        /// How it is turned on in a pilot's words: "Key the mic on CTAF when the tower is closed", "Preset low, sunset to sunrise; key the mic on CTAF for more", "On all the time"; null where the remarks say none.
+        var how: String?
+        /// The sentence of the remark it was read from, as sent.
+        var asWritten: String
+
+        enum CodingKeys: String, CodingKey {
+            case code
+            case name
+            case runways
+            case pilotControlled = "pilot_controlled"
+            case frequency
+            case clicks
+            case towerClosed = "tower_closed"
+            case preset
+            case brighter
+            case schedule
+            case continuous
+            case nonstandard
+            case how
+            case asWritten = "as_written"
+        }
+    }
+
+    struct LightingReadInput: Codable, Equatable, Sendable {
+        /// The field's lighting remarks as sent (LGT_SKED): "WHEN ATCT CLSD, ACTVT MALSR RWY 36; REIL RWY 18 & 27 - CTAF."
+        var lighting: [String]
+        /// Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
+        var beacon: [String]?
+    }
+
     struct LogbookCsvReadAnswer: Codable, Equatable, Sendable {
         var entries: [EngineContract.LogbookCsvReadAnswerEntriesItem]
         var skipped: [EngineContract.LogbookCsvReadAnswerSkippedItem]

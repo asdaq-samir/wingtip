@@ -934,6 +934,11 @@ extension Engine {
         try rule("legal_cruising_altitudes", EngineContract.LegalCruisingAltitudesInput(floorFt: floorFt, ceilingFt: ceilingFt, magneticCourseDeg: magneticCourseDeg, ruleFromFt: ruleFromFt, rules: rules))
     }
 
+    /// A field's lighting remarks read for a pilot (the Chart Supplement's, NASR APT_RMK.csv LGT_SKED and BCN_LGT_SKED): each system named, by its code in the Chart Supplement legend (Airport Lighting, Visual Glideslope Indicators) and its name in AIM 2-1 (approach lights 2-1-1, visual glideslope indicators 2-1-2, REIL 2-1-3, runway edge lights by intensity 2-1-4, in-runway lighting 2-1-5, the beacon 2-1-9, taxiway lights 2-1-10), the runways it serves as written, and how it is turned on: keying the mic on the CTAF or a frequency (AIM 2-1-8, Pilot Control of Airport Lighting), when the tower is closed, at a preset intensity a pilot turns up, on a schedule (sunset to sunrise), or on all the time; the contractions written out (JO 7340.2 and the Chart Supplement's Abbreviations). A sentence not read in full is a note, its known contractions written out and every other word kept as written, never guessed. standard_keying where a light is the pilot's and the remarks give no count of clicks of their own: AIM 2-1-8's 7 (highest), 5 (medium or lower) and 3 (lowest) within 5 seconds.
+    static func lightingRead(lighting: [String], beacon: [String]? = nil) throws -> EngineContract.LightingReadAnswer {
+        try rule("lighting_read", EngineContract.LightingReadInput(lighting: lighting, beacon: beacon))
+    }
+
     /// A logbook CSV (ForeFlight's export or this logbook's own) read into the gateway's LogbookEntryRequest entries, camelCase, and the lines skipped with why; landings as 14 CFR 61.57(a) and (b) count them. Air time (not a 61.51(b) column) is this logbook's AirTime, else ForeFlight's TimeOff to TimeOn, else 0 (not known); an entry read from a file is never from a track.
     static func logbookCsvRead(text: String) throws -> EngineContract.LogbookCsvReadAnswer {
         try rule("logbook_csv_read", EngineContract.LogbookCsvReadInput(text: text))

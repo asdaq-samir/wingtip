@@ -5850,6 +5850,105 @@ object EngineContract {
     )
 
     @Serializable
+    data class LightingReadAnswer(
+        val systems: List<EngineContract.LightingReadAnswerSystemsItem>,
+        /**
+         * The sentences not read as systems, in the remarks' order.
+         */
+        val notes: List<EngineContract.LightingReadAnswerNotesItem>,
+        /**
+         * A light is the pilot's and the remarks give no count of clicks: AIM 2-1-8's 7, 5 and 3 apply.
+         */
+        @SerialName("standard_keying")
+        val standardKeying: Boolean,
+    )
+
+    @Serializable
+    data class LightingReadAnswerNotesItem(
+        /**
+         * The sentence, its contractions written out, every other word kept.
+         */
+        val words: String,
+        @SerialName("as_written")
+        val asWritten: String,
+    )
+
+    @Serializable
+    data class LightingReadAnswerSystemsItem(
+        /**
+         * The Chart Supplement legend's code (MALSR, REIL, HIRL, PAPI); null where the name says it all (taxiway lights, the rotating beacon).
+         */
+        val code: String? = null,
+        /**
+         * Its name in words: Approach lights, Runway end identifier lights, Runway edge lights, high intensity, Precision approach path indicator, Taxiway lights, Rotating beacon.
+         */
+        val name: String,
+        /**
+         * The runways ("09/27") or runway ends ("36") it serves, as written.
+         */
+        val runways: List<String>,
+        /**
+         * Turned on, or up, by keying the mic (AIM 2-1-8).
+         */
+        @SerialName("pilot_controlled")
+        val pilotControlled: Boolean,
+        /**
+         * What it is keyed on: CTAF, or a frequency as written ("122.8"); null where the remarks do not say.
+         */
+        val frequency: String? = null,
+        /**
+         * A count of clicks the remarks give of their own.
+         */
+        val clicks: Int? = null,
+        /**
+         * Said of it when the tower is closed (WHEN ATCT CLSD).
+         */
+        @SerialName("tower_closed")
+        val towerClosed: Boolean,
+        /**
+         * The intensity it is preset at.
+         */
+        val preset: String? = null,
+        /**
+         * A preset light the pilot turns up by keying (TO INCR INTST).
+         */
+        val brighter: Boolean,
+        /**
+         * When, in words: "sunset to sunrise", "dusk to 0230", "after 0000", times as written.
+         */
+        val schedule: String? = null,
+        /**
+         * On all the time (OPR CONSLY, H24).
+         */
+        val continuous: Boolean,
+        /**
+         * NSTD: the legend's 'light system fails to meet FAA standards'.
+         */
+        val nonstandard: Boolean,
+        /**
+         * How it is turned on in a pilot's words: "Key the mic on CTAF when the tower is closed", "Preset low, sunset to sunrise; key the mic on CTAF for more", "On all the time"; null where the remarks say none.
+         */
+        val how: String? = null,
+        /**
+         * The sentence of the remark it was read from, as sent.
+         */
+        @SerialName("as_written")
+        val asWritten: String,
+    )
+
+    @Serializable
+    data class LightingReadInput(
+        /**
+         * The field's lighting remarks as sent (LGT_SKED): "WHEN ATCT CLSD, ACTVT MALSR RWY 36; REIL RWY 18 & 27 - CTAF."
+         */
+        val lighting: List<String>,
+        /**
+         * Its beacon's remarks as sent (BCN_LGT_SKED), whose sentence naming no light is the beacon's: "DUSK-DAWN."
+         */
+        val beacon: List<String>? = null,
+    )
+
+    @Serializable
     data class LogbookCsvReadAnswer(
         val entries: List<EngineContract.LogbookCsvReadAnswerEntriesItem>,
         val skipped: List<EngineContract.LogbookCsvReadAnswerSkippedItem>,
