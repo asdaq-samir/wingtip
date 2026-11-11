@@ -293,9 +293,11 @@ run_area() {
       sim=$(newest_iphone)
       [ -n "$sim" ] || { echo "check: no iPhone simulator in this Xcode" >&2; return 1; }
       # The turn's DerivedData and Xcode's compilation cache, shared with
-      # every worktree (scripts/dev/xcodebuild.sh).
+      # every worktree (scripts/dev/xcodebuild.sh). Signed ad hoc, as
+      # native-ios.yml signs it: an unsigned app has no keychain on the
+      # simulator, so the session's Keychain tests could not pass.
       "$here/scripts/dev/xcodebuild.sh" -quiet -project "$here/apps/ios/Wingtip.xcodeproj" -scheme Wingtip -configuration Debug \
-        -destination "platform=iOS Simulator,id=$sim" CODE_SIGNING_ALLOWED=NO test
+        -destination "platform=iOS Simulator,id=$sim" CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= test
       ;;
     android)
       local sdk=$HOME/Library/Android/sdk

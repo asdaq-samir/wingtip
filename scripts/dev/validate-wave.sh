@@ -94,7 +94,7 @@ print(sorted(ds, key=lambda d: d["name"])[-1]["udid"] if ds else "")')
     xcodebuild -quiet -project "$here/apps/ios/Wingtip.xcodeproj" -scheme Wingtip -configuration Debug \
       -destination "platform=iOS Simulator,id=$sim" \
       -derivedDataPath "$HOME/Library/Developer/Xcode/DerivedData/wingtip-check-$(basename "$here")-$(echo "$here" | shasum -a 256 | cut -c1-8)" \
-      CODE_SIGNING_ALLOWED=NO test
+      CODE_SIGN_IDENTITY=- CODE_SIGN_STYLE=Manual DEVELOPMENT_TEAM= PROVISIONING_PROFILE_SPECIFIER= test
 }
 
 # The planner's data, as CI's e2e job lays it out ("The planner's data,
