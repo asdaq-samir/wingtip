@@ -131,7 +131,6 @@ export default function PlanSidebar({
         onClose={closePlace}
         onFlyHere={(to) => void flyHere(to)}
         onExpand={() => setPanel("full")}
-        onLower={() => setPanel("half")}
         onAddStop={suggestedAt ? () => keepFuelStops(suggestedAt.after, [place]) : addStop}
         // Shown but greyed for a point of the route, or past the planner's
         // most stops, with why (the owner, 2026-11-11: "show it but disable it").

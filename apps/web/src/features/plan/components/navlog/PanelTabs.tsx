@@ -59,7 +59,6 @@ export default function PanelTabs({
   notice,
   printing,
   marks,
-  onTap,
   onLegs,
   route,
   overview: Overview,
@@ -79,10 +78,6 @@ export default function PanelTabs({
   /** A tab whose findings (lib/verdict) have something to fix, or to
    *  look at. */
   marks?: Partial<Record<PanelTab, "stop" | "caution">>;
-  /** A tab tapped, the one up too (`again`): the panel all the way up to
-   *  show it, at the pilot's ask -- at half the bar is the panel's last
-   *  line -- and the one up tapped again there, back to half. */
-  onTap?: (again: boolean) => void;
   /** The legs asked for (LEGS): FPL's nav log, under which the fuel is
    *  checked, in place of the Brief. */
   onLegs?: () => void;
@@ -114,7 +109,6 @@ export default function PanelTabs({
   // The tab that was up as a finger or a key pressed one, read at its
   // click, by when Base UI has made the pressed one the tab up: whether
   // the tap was on the tab already up.
-  const upWhenPressed = useRef<PanelTab | null>(null);
   const scrolls = useRef<Partial<Record<PanelTab | "overview", number>>>({});
   // The section a row in another tab asked for (GoToTab), scrolled to
   // once its tab is drawn.
@@ -171,9 +165,8 @@ export default function PanelTabs({
   const openPage = useCallback(
     (next: PanelTab) => {
       goTo(next);
-      onTap?.(false);
     },
-    [goTo, onTap],
+    [goTo],
   );
   // A tab and section asked for from outside the tabs (useTabAsk): heard
   // as it is asked, and once drawn, one asked before the tabs were there.
@@ -223,13 +216,6 @@ export default function PanelTabs({
                 value={t.value}
                 data-testid={`panel-tab-${t.value}`}
                 aria-description={marks?.[t.value] ? (marks[t.value] === "stop" ? "Warning" : "Caution") : undefined}
-                onPointerDown={() => {
-                  upWhenPressed.current = tab;
-                }}
-                onKeyDown={() => {
-                  upWhenPressed.current = tab;
-                }}
-                onClick={() => onTap?.(upWhenPressed.current === t.value)}
                 className="min-w-0"
               >
                 <span className="truncate">{t.label}</span>

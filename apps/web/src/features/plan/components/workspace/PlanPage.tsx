@@ -79,7 +79,6 @@ export default function PlanPage({
     stopsRoute,
     stopsScope,
     stripsDrawn,
-    tabTap,
   } = vm;
   // The search's page up and its field focused (useOneSearch takes the ask).
   const toSearch = () => {
@@ -130,7 +129,6 @@ export default function PlanPage({
           notice={briefNotice}
           marks={marks}
           onClose={closeBrief}
-          onTap={tabTap}
           onLegs={showLegs}
           route={routeKey}
         />
