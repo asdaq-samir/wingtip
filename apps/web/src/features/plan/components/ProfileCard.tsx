@@ -45,11 +45,13 @@ export default function ProfileCard({
   children: ReactNode;
 }) {
   return (
-    // Half way no taller than half's body (MapPanel's --half-body): the
-    // sheet is laid out at its full height and cut off at its edge, so the
-    // graph's max-h-full is the room in sight only with the card held to it.
+    // Half way no taller than what is in sight of the card: its drawer is
+    // laid out at its full height and slid by the Drawer's own snap offset
+    // (--sheet-offset, CardStack; negative from the top), so the graph's
+    // max-h-full is the room in sight only with the card held to the
+    // height less that offset.
     <div
-      className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] in-data-[panel=half]:max-h-(--half-body) print:hidden"
+      className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] in-data-[panel=half]:max-h-[calc(100%-max(var(--sheet-offset,0px),-1*var(--sheet-offset,0px)))] print:hidden"
       data-testid="profile-card"
     >
       <CardHead name={name} line={line} nameTestId="profile-name" onClose={onClose} onShare="profile" closeTestId="profile-close">

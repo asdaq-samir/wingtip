@@ -693,8 +693,8 @@ export async function emulateSafeArea(page: Page, insets: Insets) {
       }
     }
     for (const el of document.querySelectorAll<HTMLElement>("[style*='safe-area-inset']")) patch(el.style);
-    // What reads the insets in script (the map panel's sheet, whose
-    // detents are pixels) reads them again on a resize, which on a phone
+    // What reads the insets in script (the map's room under the status
+    // bar) reads them again on a resize, which on a phone
     // is what turning it fires.
     window.dispatchEvent(new Event("resize"));
   }, insets);

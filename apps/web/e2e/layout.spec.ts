@@ -66,9 +66,13 @@ test.describe("/app/plan", () => {
     await fromRest(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
     // With a route, the one search is still the pill (the one-search
-    // design, 2026-11-09: MapPanel's bar) and the route's figures are pinned
-    // under it (a no-break space between a figure and its unit, so \s).
-    await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
+    // design, 2026-11-09: MapPanel's bar); the route's figures are pinned
+    // under it in the side panel, and on a phone from half (the pill one
+    // row since the fixed snap points, 2026-11-11). A no-break space
+    // between a figure and its unit, so \s.
+    const figures = sideDrawer(page).getByTestId("flight-line");
+    if ((page.viewportSize()?.width ?? 0) < 768) await expect(figures).toBeHidden();
+    else await expect(figures).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
     await expect(firstRow(page)).toBeVisible();
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");

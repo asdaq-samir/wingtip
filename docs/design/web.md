@@ -100,7 +100,21 @@ These hold on every screen below and win over any reference app.
   panel is a side panel the window's height, beside the map. An iPad held
   wide, all touch, keeps the phone's layout.
 - **Phone** (and touch tablets) is the map with one sheet over it, at three
-  detents (pill, half, full), as decision 0018 sets. The sheet is solid at
+  detents (pill, half, full), as decision 0018 sets. They are the stock
+  Drawer's own snap points, fixed values in its own units, the same for
+  the sheet and every card (`components/sheet/insets` `snapsOf`; the owner,
+  2026-11-11, the detents felt buggy as px worked out from the window's
+  height, which Safari's toolbar changes): the pill `"4.75rem"` (the one
+  search's band with the grabber over it; a top sheet's `"5.25rem"`, the
+  band and the grabber's row under it), half `"23rem"`, all the way up `1`.
+  Nothing is computed from the window, the visual viewport, the safe areas
+  or the content: the Drawer measures its viewport, which a bottom sheet's
+  ends over the home indicator (its ground carried on under it), and the
+  popup, kept clear of the status bar in CSS. `snapPoint` is set from the
+  same constants by size and a drag maps back by identity. The pill is one
+  row, so on a phone the route's figures show from half (and are the pill
+  while flying); the map's room is read from the Drawer's own
+  `--drawer-snap-point-offset` (`useSheetCover`). The sheet is solid at
   every size (`GLASS_SHEET`, the look's `--sheet`), not glass; only the
   map's floating buttons are frosted (owner decision 2026-11-10
   (decisions page), the sheet audit's F-L1).
@@ -1228,7 +1242,7 @@ progress (Progress), the dry run's on-or-off buttons (Toggle) and the
 caution boxes (Alert). Code that re-implemented what a stock part does
 went with them: the sheet's frame loop following the Drawer (its parts
 now follow the Drawer's own CSS variables), its measured heights (fixed
-snap points: the pill's parts, 23 rem, the room), its landing timer (the
+snap points in the Drawer's own units: the pill's rem, 23 rem, 1), its landing timer (the
 Drawer's own transition end), its own Escape listener (the Drawer's
 `escape-key`), the head's frosting, the input's own clear and Done on
 Enter, the search's hidden native clear, its first-row and ⌘Enter

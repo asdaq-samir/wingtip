@@ -1,14 +1,14 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * The window's height and its safe-area insets, as numbers for the
- * components that need them in JavaScript -- the map panel's sheet,
- * whose detents are pixels -- where everything else reads
- * them in CSS (`env(safe-area-inset-*)`, `dvh`).
+ * The window's safe-area insets, as numbers for what needs them in
+ * JavaScript -- the map's room under the status bar (MapPanel's insets)
+ * -- where everything else reads them in CSS (`env(safe-area-inset-*)`,
+ * `dvh`).
  *
  * The insets come from a probe: an invisible element padded by
  * `env()`, read back through its computed style, since there is no
- * other way to ask the browser for them. Both are re-read on a resize,
+ * other way to ask the browser for them. They are re-read on a resize,
  * which is also what turning a phone fires.
  */
 /** A reading of the window, taken once and again only when one of its
@@ -67,17 +67,12 @@ function readInsets(): string {
 }
 
 const insets = held(readInsets, onResize);
-const windowHeight = held(() => window.innerHeight, onResize);
 
 export function useSafeArea(): { top: number; bottom: number } {
   const [top = 0, bottom = 0] = useSyncExternalStore(insets.subscribe, insets.get, () => "0px|0px")
     .split("|")
     .map((v) => parseFloat(v) || 0);
   return { top, bottom };
-}
-
-export function useWindowHeight(): number {
-  return useSyncExternalStore(windowHeight.subscribe, windowHeight.get, () => 800);
 }
 
 /** The visual viewport, which shrinks when the on-screen keyboard

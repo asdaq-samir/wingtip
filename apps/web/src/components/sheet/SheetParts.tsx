@@ -17,10 +17,12 @@ function barRowPad(underGrabber: boolean) {
   if (underGrabber) return "h-[4.75rem] pt-6 pb-1.5";
   return cn("h-[4.25rem] pb-3", ROW_PAD);
 }
-/** The home indicator's room, none while the keyboard is up: the
- *  Drawer's --drawer-keyboard-inset is 0 or a keyboard's height, so the
- *  room less a thousand times it is the room or nothing. */
-const offKeyboard = (px: number) => `max(0px, calc(${px}px - var(--drawer-keyboard-inset, 0px) * 1000))`;
+/** Eight points at a bottom sheet's foot where there is no home indicator
+ *  (its viewport ends over the indicator, SheetDrawer), none while the
+ *  keyboard is up: the Drawer's --drawer-keyboard-inset is 0 or a
+ *  keyboard's height, so the room less a thousand times it is the room or
+ *  nothing. */
+const EDGE_ROOM = "max(0px, calc(8px - env(safe-area-inset-bottom) - var(--drawer-keyboard-inset, 0px) * 1000))";
 /** Those rows' heights, for what pins under them (--sheet-head). */
 const BAR_ALONE = "4.75rem";
 const BAR = "4.25rem";
@@ -52,10 +54,7 @@ export interface PartsProps {
   cardsUp: boolean;
   barShown: boolean;
   toEdge: boolean;
-  edgeInset: number;
-  halfChrome: number;
   panelSize: { size: PanelState; to: (size: PanelState) => void; card: boolean };
-  setFoot: (node: HTMLDivElement | null) => void;
   onFootTap: () => void;
   /** The sheet's two pages, Search and FPL, swiped between (SheetPager). */
   pages?: SheetPages;
@@ -92,7 +91,7 @@ export const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--sheet-offset
  * (SheetGrabber) picking them.
  */
 export function SheetParts(p: PartsProps) {
-  const { atPill, fromBottom, size, footShown, cardsUp, setFoot } = p;
+  const { atPill, fromBottom, size, footShown, cardsUp } = p;
   const paged = !!p.pages;
   // Paged, the first page holds the search alone and the second the route's
   // row: no route row under the search.
@@ -288,7 +287,6 @@ export function SheetParts(p: PartsProps) {
       {!!p.foot && (footShown || cardsUp) && (
         // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to open the sheet, and the figures' own buttons stay focusable
         <div
-          ref={setFoot}
           data-testid="panel-foot"
           className={cn(
             // One box at the pill and all the way up, the figures centred
@@ -307,7 +305,7 @@ export function SheetParts(p: PartsProps) {
           style={
             {
               "--sheet-progress": size === "half" && !p.desktop ? "0" : "1",
-              ...(p.toEdge && fromBottom && !pillFoot ? { paddingBottom: `max(10px, ${offKeyboard(p.edgeInset)})` } : {}),
+              ...(p.toEdge && fromBottom && !pillFoot ? { paddingBottom: "10px" } : {}),
             } as CSSProperties
           }
           // In the pill a tap on it opens it half way.
@@ -316,11 +314,10 @@ export function SheetParts(p: PartsProps) {
           {p.foot}
         </div>
       )}
-      {/* The rest of the way to the screen's edge, under the home
-          indicator -- in the body where it runs to the edge (toEdge); none
-          with the keyboard up, the sheet then sitting on it (the Drawer's
-          --drawer-keyboard-inset, which is 0 or a keyboard's height). */}
-      {!p.toEdge && p.edgeInset > 0 && <div className="shrink-0" style={{ height: offKeyboard(p.edgeInset) }} aria-hidden="true" />}
+      {/* A bottom sheet's eight points at its foot where there is no home
+          indicator (in the body where it runs to the edge, toEdge); the
+          indicator's own room is under the Drawer's viewport (SheetDrawer). */}
+      {!p.toEdge && p.onPhone && fromBottom && <div className="shrink-0" style={{ height: EDGE_ROOM }} aria-hidden="true" />}
     </>
   );
 }

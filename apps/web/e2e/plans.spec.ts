@@ -284,9 +284,9 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   await expect(page.locator("[data-problem-banner]")).toHaveCount(0);
   await expect(page.locator("[data-slot=toast]", { hasText: "No legal" })).toHaveCount(0);
-  // The figures in the pill, under its profile, at the pilot's ask: the
-  // book's time, marked "≈".
-  await grabberTo(page, "peek");
+  // The figures at half, under its profile (on a phone the pill is the
+  // one row since the fixed snap points): the book's time, marked "≈".
+  await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("navlog-ete")).toHaveText(/^≈/);
 
   // All the way up: the cruising altitude's chip red, and no line under

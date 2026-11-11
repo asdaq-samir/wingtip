@@ -260,14 +260,17 @@ const CHART_MAX = 160;
 const UNDER_CHART = 8;
 
 /**
- * The graph's height, so that it ends where the half sheet's body does
- * (MapPanel's --half-body: the body's height at half, the route's figures
- * at the panel's foot left out), at the owner's ask: at half, with the tab
- * bar and the figures over and under the card, its time axis was cut off.
- * From where the graph starts in the body, not from guessed heights of
- * what is above it, which change with the text size. Measured by a
- * ResizeObserver, on the body and the card -- never in the middle of a
- * render; null until then, and where the sheet gives no half.
+ * The graph's height, so that it ends where the half sheet's body does, at
+ * the owner's ask: at half, with the tab bar and the figures over and under
+ * the card, its time axis was cut off. The body in sight at half is the
+ * card's body less the Drawer's own snap offset (--sheet-offset, CardStack:
+ * the card is laid out at its full height and slid by it); none from `md`
+ * up, whose side panel has no half. From where the graph starts in the
+ * body, not from guessed heights of what is above it, which change with the
+ * text size; all the way up the room all the way up. Measured by a
+ * ResizeObserver on the body and the card and as the card's size changes
+ * (its data-panel, the offset set with it) -- never in the middle of a
+ * render; null until then.
  */
 function useHalfFit(box: RefObject<HTMLDivElement | null>): number | null {
   const [height, setHeight] = useState<number | null>(null);
@@ -275,17 +278,26 @@ function useHalfFit(box: RefObject<HTMLDivElement | null>): number | null {
     const el = box.current;
     const body = el?.closest<HTMLElement>("[data-panel-body]");
     if (!el || !body) return;
+    const card = el.closest<HTMLElement>("[data-panel]");
     const fit = () => {
-      const half = parseFloat(getComputedStyle(el).getPropertyValue("--half-body"));
+      if (card?.dataset.panel === "peek") return;
+      const offset = Math.abs(parseFloat(getComputedStyle(el).getPropertyValue("--sheet-offset")) || 0);
+      const bodyBox = body.getBoundingClientRect();
+      const half = bodyBox.height - offset;
       if (!(half > 0)) return setHeight(null);
-      const top = el.getBoundingClientRect().top - body.getBoundingClientRect().top + body.scrollTop;
+      const top = el.getBoundingClientRect().top - bodyBox.top + body.scrollTop;
       setHeight(Math.round(Math.min(CHART_MAX, Math.max(CHART_MIN, half - top - UNDER_CHART))));
     };
     const watch = new ResizeObserver(fit);
     watch.observe(body);
-    const card = el.closest("[data-testid='past-flight-card']");
-    if (card) watch.observe(card);
-    return () => watch.disconnect();
+    const flight = el.closest("[data-testid='past-flight-card']");
+    if (flight) watch.observe(flight);
+    const sized = new MutationObserver(fit);
+    if (card) sized.observe(card, { attributes: true, attributeFilter: ["data-panel"] });
+    return () => {
+      watch.disconnect();
+      sized.disconnect();
+    };
   }, [box]);
   return height;
 }

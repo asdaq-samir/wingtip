@@ -1,9 +1,19 @@
-import { useEffect, type ComponentProps, type CSSProperties, type ReactNode } from "react";
+import { useEffect, type ComponentProps, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, usePanelDragging } from "../../lib/mapChrome";
 import { sheetTopRef } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
+
+/** The Drawer's keyboard inset, 0 or a keyboard's height. */
+const KEYBOARD = "var(--drawer-keyboard-inset, 0px)";
+const VIEWPORT_BOTTOM = `max(${KEYBOARD}, env(safe-area-inset-bottom))`;
+/** A bottom sheet's ground carried on under the home indicator, below its
+ *  viewport: all the way up the popup ends at the viewport's foot (lower,
+ *  it hangs past it by its snap offset). Its own colour, so it goes clear
+ *  with it under a card, whose drawer has its own (CardStack). */
+export const UNDER_INDICATOR =
+  "after:pointer-events-none after:absolute after:inset-x-0 after:top-full after:h-[env(safe-area-inset-bottom)] after:bg-inherit";
 
 /**
  * The phone's sheet itself, Base UI's stock Drawer (MapPanel's, the owner
@@ -23,10 +33,10 @@ export function SheetDrawer({
   snapPoints,
   snapPoint,
   snapped,
+  popupRef,
   lower,
   ready,
   popup,
-  style,
   look,
   grabber,
   topSlot,
@@ -34,16 +44,18 @@ export function SheetDrawer({
   children,
 }: {
   fromBottom: boolean;
-  snapPoints: number[];
-  snapPoint: number;
+  /** Fixed values in the Drawer's own units (sheet/insets' snapsOf). */
+  snapPoints: Drawer.Root.SnapPoint[];
+  snapPoint: Drawer.Root.SnapPoint;
   snapped: (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPointChangeEventDetails) => void;
+  /** The popup's element, for what it covers of the map (useSheetCover). */
+  popupRef: (node: HTMLElement | null) => void;
   /** Escape: lowered to the pill with no card over it; whether it took the key. */
   lower: () => boolean;
   /** Eased only once drawn where it rests (useDrawn). */
   ready: boolean;
   /** The popup's marks (data-slot="map-panel", its size, its label). */
   popup: Record<string, string | boolean | undefined>;
-  style: CSSProperties;
   look: string;
   /** The sheet's grabber, at its free edge: outside the clip of its
    *  corners, so its hit area reaches past the sheet's edge (SheetGrabber). */
@@ -74,21 +86,28 @@ export function SheetDrawer({
     >
       <Drawer.VirtualKeyboardProvider>
         <Drawer.Portal>
-          {/* The screen the sheet is held on: on the keyboard while it is up.
-              Not a target itself, so the map under it is the map's. */}
+          {/* The screen the sheet is held on, which the Drawer measures its
+              snap points in: on the keyboard while it is up, and a bottom
+              sheet's over the home indicator, so its pill's row is clear of
+              it (the indicator's room was px added to every snap point). Not
+              a target itself, so the map under it is the map's. */}
           <SheetViewport
             className="pointer-events-none fixed inset-x-0 top-0 z-40 print:static"
-            style={{ bottom: "var(--drawer-keyboard-inset, 0px)" }}
+            style={{ bottom: fromBottom ? VIEWPORT_BOTTOM : KEYBOARD }}
           >
             <Drawer.Popup
               {...popup}
+              ref={popupRef}
               data-sheet=""
               // The Drawer's own word on a finger's drag, its or a card's on it.
               render={(own, state) => <Told swiping={state.swiping || state.nestedDrawerSwiping} {...own} />}
               initialFocus={false}
               finalFocus={false}
               style={{
-                ...style,
+                // All the way up clear of the status bar (a bottom sheet's) or
+                // the home indicator (a top sheet's), and eight: the Drawer's
+                // full snap point (1) is no taller than the popup.
+                height: `calc(100% - env(safe-area-inset-${fromBottom ? "top" : "bottom"}) - 8px)`,
                 borderRadius: fromBottom ? `${PILL_RADIUS}px ${PILL_RADIUS}px 0 0` : `0 0 ${PILL_RADIUS}px ${PILL_RADIUS}px`,
               }}
               className={cn(
@@ -103,7 +122,7 @@ export function SheetDrawer({
                 "[--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)] [--sheet-base:var(--drawer-snap-point-offset)]",
                 ready && "transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)]",
                 "data-swiping:transition-none motion-reduce:transition-none",
-                fromBottom ? "bottom-0" : "top-0",
+                fromBottom ? cn("bottom-0", UNDER_INDICATOR) : "top-0",
                 look,
                 // A card up (Base UI's own data-nested-drawer-open): the card
                 // is the one sheet in sight, as Apple Maps' place card stands

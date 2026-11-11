@@ -133,10 +133,12 @@ test("a flick goes on the way it was thrown: up from the pill, down from all the
   await expect(panel).not.toHaveAttribute("data-panel", "full");
 });
 
-/** The sheet's three heights, from its popup (MapPanel's data-detents). */
-async function detents(page: Page) {
-  const [peek, half, full] = (await sideDrawer(page).getAttribute("data-detents"))!.split(",").map(Number);
-  return { peek, half, full };
+/** How much of the screen the sheet at rest covers, from its foot: the
+ *  Drawer's own snap point (a fixed "4.75rem" at the pill), measured. */
+async function shown(page: Page) {
+  await settled(sideDrawer(page));
+  const box = (await sideDrawer(page).boundingBox())!;
+  return Math.round(page.viewportSize()!.height - box.y);
 }
 
 /** The first row's middle, where a finger takes the sheet. */
@@ -154,7 +156,7 @@ test("a drag from half down past the pill lands on the pill: not closed, not bac
   await settle(page);
   const panel = sideDrawer(page);
   await expect(panel).toHaveAttribute("data-panel", "peek");
-  const pill = (await detents(page)).peek;
+  const pill = await shown(page);
   await grabberTo(page, "half");
   // Down past the pill to the screen's foot: the pill, where the stock
   // sheet's refused close once took it back up to half (the drag probe,
@@ -163,13 +165,9 @@ test("a drag from half down past the pill lands on the pill: not closed, not bac
   await fingerDrag(page, at, page.viewportSize()!.height - at.y - 4);
   await expect(panel).toHaveAttribute("data-panel", "peek");
   await expect(panel).toBeVisible();
-  // The pill measured at rest the same as before: a half's head once
-  // taken for it put in a 236-point pill the sheet stopped at, then
-  // dropped from.
-  await settled(panel);
-  await expect.poll(async () => (await detents(page)).peek).toBe(pill);
-  const box = (await panel.boundingBox())!;
-  expect(Math.abs(page.viewportSize()!.height - box.y - pill)).toBeLessThanOrEqual(2);
+  // The pill at rest the same height as before: a half's head once taken
+  // for it put in a 236-point pill the sheet stopped at, then dropped from.
+  await expect.poll(async () => Math.abs((await shown(page)) - pill)).toBeLessThanOrEqual(2);
 });
 
 test("a touch on the sheet that does not move leaves it where it is", async ({ page }) => {

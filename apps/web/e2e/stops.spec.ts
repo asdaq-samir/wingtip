@@ -117,8 +117,8 @@ test("a stop added in the panel lands the route there: the capsule, the nav log 
   await expect(sideDrawer(page).getByTestId("navlog-to")).toHaveText("KDLH");
   await sideDrawer(page).getByTestId("to-toggle").click();
 
-  // Lowered, the pill's figures under its tabs: the distance among them.
-  await grabberTo(page, "peek");
+  // At half (a phone's pill is one row), the figures: the distance among them.
+  await grabberTo(page, "half");
   await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+/);
 
   // Taken off again from its menu -- a right-click with a mouse, a press

@@ -148,7 +148,9 @@ test("a route made goes to FPL; cleared, the page stays", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expectPage(page, 1);
-  // The figures at the foot are FPL's alone.
+  // The figures at the foot are FPL's alone: at half (at the pill on a
+  // phone the pill is the route's row alone).
+  await grabberTo(page, "half");
   await expect(page.getByTestId("panel-foot")).toBeVisible();
   await bar(page, 0).click();
   await expectPage(page, 0);

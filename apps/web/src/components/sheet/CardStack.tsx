@@ -4,7 +4,8 @@ import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
 import { closeTopCard } from "../../lib/openCards";
 import { cardOpening, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
-import type { Detents } from "./insets";
+import { sizeAt, snapsOf } from "./insets";
+import { UNDER_INDICATOR } from "./SheetDrawer";
 import { sheetTopRef } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
 
@@ -13,7 +14,6 @@ export interface StackProps {
    *  Else the side panel's: each covers the panel, nothing to swipe. */
   onPhone: boolean;
   fromBottom: boolean;
-  detents: Detents;
   /** The sheet's own size under the cards: what a card opened from it covers. */
   sheet: PanelState;
   /** Eased only once the sheet has been drawn where it rests (useDrawn). */
@@ -78,7 +78,9 @@ function CardDrawer({
 }: StackProps & { entry: CardEntry; top: boolean; covers: PanelState; host: HTMLElement }) {
   const { id, frame } = entry;
   const slot = useCallback((node: HTMLElement | null) => setCard(id, { slot: node }), [id]);
-  const { onPhone, fromBottom, detents } = p;
+  const { onPhone, fromBottom } = p;
+  // The sheet's own snap points, the same constant values (sheet/insets).
+  const snaps = snapsOf(fromBottom);
   // Its own snap point, kept in its entry: set as it opens, from then on
   // the pilot's or the card's (useCardSize).
   const at = entry.at ?? cardOpening(entry, covers);
@@ -87,14 +89,11 @@ function CardDrawer({
     if (unset) setCard(id, { at });
   }, [unset, id, at]);
   const ask = useCallback((size: PanelState) => setCard(id, { at: size }), [id]);
-  // A drag let go: the size nearest the snap point the Drawer picked.
+  // A drag let go: the size of the snap point the Drawer picked, one of ours.
   const snapped = (point: Drawer.Root.SnapPoint | null) => {
     if (point === null || !top) return;
-    const px = typeof point === "number" ? point : parseFloat(point);
-    const target = (Object.keys(detents) as PanelState[]).reduce((best, s) =>
-      Math.abs(detents[s] - px) < Math.abs(detents[best] - px) ? s : best,
-    );
-    if (target !== at) ask(target);
+    const target = sizeAt(fromBottom, point);
+    if (target && target !== at) ask(target);
   };
   const topSlot = onPhone && fromBottom && top;
   return (
@@ -102,8 +101,8 @@ function CardDrawer({
       open={entry.shown}
       modal={false}
       swipeDirection={fromBottom ? "down" : "up"}
-      snapPoints={onPhone ? [detents.peek, detents.half, detents.full] : undefined}
-      snapPoint={onPhone ? detents[at] : undefined}
+      snapPoints={onPhone ? snaps.points : undefined}
+      snapPoint={onPhone ? snaps.at[at] : undefined}
       onSnapPointChange={snapped}
       onOpenChange={(open, details) => {
         if (open) return;
@@ -147,6 +146,8 @@ function CardDrawer({
               data-testid={frame.testId}
               data-sheet-card=""
               data-panel={at}
+              // The card in sight, for what it covers of the map (useSheetCover).
+              data-top={top || undefined}
               // The side panel's card does not swipe: no sizes to swipe between.
               data-base-ui-swipe-ignore={onPhone ? undefined : ""}
               // Its corners the sheet's: drawn outside the sheet's clip, so it can stand over it.
@@ -166,6 +167,7 @@ function CardDrawer({
                 onPhone && p.ready && EASE,
                 // A top sheet's card clear of the status bar.
                 onPhone && !fromBottom && "pt-[env(safe-area-inset-top)]",
+                onPhone && fromBottom && UNDER_INDICATOR,
               )}
             >
               {/* The map's buttons ride the top card's top, as the sheet's (OnSheetTop). */}
