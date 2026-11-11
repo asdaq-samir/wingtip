@@ -123,7 +123,7 @@ export function SheetGrabber({
   useEffect(() => {
     if (said.current === page || !pages || !live.current) return;
     said.current = page;
-    live.current.textContent = list.current?.contains(document.activeElement) ? "" : pages.names[page];
+    live.current.textContent = list.current?.contains(document.activeElement) ? "" : (pages.names[page] ?? "");
   }, [page, pages]);
   if (!pages)
     return (
@@ -155,12 +155,7 @@ export function SheetGrabber({
       </span>
       <span ref={live} aria-live="polite" className="sr-only" />
       {/* The page's name, grown out of the bars; the bars already say it. */}
-      <span
-        aria-hidden="true"
-        data-testid="grabber-capsule"
-        style={MOVES}
-        className={cn(CAPSULE, at === "top" ? "top-1" : "bottom-1.25")}
-      >
+      <span aria-hidden="true" data-testid="grabber-capsule" style={MOVES} className={cn(CAPSULE, at === "top" ? "top-1" : "bottom-1.25")}>
         {names[capsule.shown]}
       </span>
       {/* Picked as focused: Left and Right switch the pages at once, as the dots did. */}
