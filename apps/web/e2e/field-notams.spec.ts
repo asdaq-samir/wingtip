@@ -77,7 +77,8 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   await expect(one.getByTestId("place-notam-state")).toHaveText("Active");
   await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway 09/27 closed");
   await expect(one.getByTestId("place-notam-when")).toHaveText(/^11\/1[01] \d\d:\d\d – 11\/12 \d\d:\d\d local$/);
-  await expect(one.getByTestId("place-notam-where")).toHaveText("KDLH, runway 09/27");
+  // No where for a runway's: its what names it (the owner, 2026-11-11).
+  await expect(one.getByTestId("place-notam-where")).toHaveCount(0);
   // Said in our words, its own words are left to its full card.
   await expect(one.getByTestId("place-notam-words")).toHaveCount(0);
   // A tap opens it in full on a card of its own: its window, as sent.
@@ -140,8 +141,11 @@ test("a field's NOTAMs show three, and their title opens every one in place and 
   const rows = section.getByTestId("place-notam");
   await expect(rows.first().getByTestId("place-notam-heading")).toHaveText("Runway 27 PAPI out of service");
   await expect(rows.nth(1).getByTestId("place-notam-heading")).toHaveText("Taxiway A closed between taxiway B and taxiway C");
-  await expect(rows.nth(2).getByTestId("place-notam-heading")).toHaveText("Crane 1,600 ft MSL (210 ft above ground)");
-  await expect(rows.nth(2).getByTestId("place-notam-where")).toHaveText("KDLH, 1.2 nm southeast of the field");
+  // Its height is where it is, not part of its what (the owner, 2026-11-11).
+  await expect(rows.nth(2).getByTestId("place-notam-heading")).toHaveText("Crane");
+  await expect(rows.nth(2).getByTestId("place-notam-where")).toHaveText(
+    "KDLH, 1.2 nm southeast of the field, 1,600 ft MSL (210 ft above ground)",
+  );
   await expect(section).toContainText("5");
 
   const title = section.getByTestId("place-notams-first-more");

@@ -62,12 +62,14 @@ fn between(words: &[String]) -> Option<(String, usize)> {
 }
 
 /// A runway's NOTAM (RWY).
-fn runway(body: &[String], r: &NotamRead, f: &str, schedule: Option<&str>) -> Four {
+fn runway(body: &[String], r: &NotamRead, schedule: Option<&str>) -> Four {
     let (_, used) = designations(body);
     let named: Vec<&str> = body[..used].iter().map(String::as_str).filter(|w| *w != "AND").collect();
     let Some(title) = r.title.as_deref().filter(|_| !named.is_empty()) else { return Four::default() };
     let rwy = named.join(" and ");
-    let place = Some([f, ", runway ", &rwy].concat());
+    // No where: the what names the runway already, and the card is the
+    // field's (the owner, 2026-11-11: "Notam of runway doesn't need a where").
+    let place = None;
     let rest = &body[used..];
     if let Some(lamp) = lamp_of(&rest[..rest.len().min(1)]) {
         let Some(c) = cond(rest).filter(|_| rest.len() == 2) else { return Four { place, ..Four::default() } };
@@ -137,22 +139,31 @@ fn obstacle(raw: &[String], r: &NotamRead, f: &str, idents: &[String]) -> Four {
     // "TOWER LGT (ASR ...) ... U/S": the obstacle's light is what is out.
     let light_out =
         raw.get(1).is_some_and(|w| w == "LGT") && raw.last().is_some_and(|w| condition(std::slice::from_ref(w)) == Some("Out of service"));
-    let what = match (kind, &msl, &agl) {
-        (Some(k), Some(m), Some(a)) => {
-            let k = [k[..1].to_ascii_uppercase().as_str(), &k[1..]].concat();
-            let lit = if light_out { " light out of service," } else { "" };
-            Some([k.as_str(), lit, " ", m, " MSL (", a, " above ground)"].concat())
-        }
+    // The what is the thing and what is wrong with it; how high it stands
+    // is where it is, beside how far from the field (the owner,
+    // 2026-11-11: "Tower light altitude also counts as where, and not what
+    // part of the title").
+    let what = kind.filter(|k| !k.is_empty()).map(|k| {
+        let k = [k[..1].to_ascii_uppercase().as_str(), &k[1..]].concat();
+        [k.as_str(), if light_out { " light out of service" } else { "" }].concat()
+    });
+    let height = match (&msl, &agl) {
+        (Some(m), Some(a)) => Some([m.as_str(), " MSL (", a, " above ground)"].concat()),
+        (Some(m), None) => Some([m.as_str(), " MSL"].concat()),
         _ => None,
     };
     // "(1.3NM W ORD)": a distance, a compass point (3-3-9) and a place.
-    let place = raw.windows(3).find_map(|p| {
+    let from_field = raw.windows(3).find_map(|p| {
         let nm = p[0].strip_suffix("NM").filter(|n| n.parse::<f64>().is_ok())?;
         let dir = compass(&p[1])?;
         let from = &p[2];
         let field_is = r.location.as_deref() == Some(from.as_str()) || idents.iter().any(|i| i == from);
-        Some([f, ", ", nm, " nm ", dir, " of ", if field_is { "the field" } else { from }].concat())
+        Some([nm, " nm ", dir, " of ", if field_is { "the field" } else { from }].concat())
     });
+    let place = match (from_field, height) {
+        (None, None) => None,
+        (spot, top) => Some([Some(f.to_owned()), spot, top].into_iter().flatten().collect::<Vec<_>>().join(", ")),
+    };
     // Its top MSL, which a pilot's altitude is set against (14 CFR 91.119's
     // clearances are from obstacles); its light out, a plain fact.
     let why = msl.map(|m| {
@@ -266,12 +277,12 @@ pub(super) fn four(text: &str, r: &NotamRead, idents: &[String]) -> Four {
     });
     let body = if keyword == "AD" && body.first().is_some_and(|w| w == "AP") { &body[1..] } else { &body[..] };
     match keyword.as_str() {
-        "RWY" => runway(body, r, &f, schedule.as_deref()),
+        "RWY" => runway(body, r, schedule.as_deref()),
         "TWY" => taxiway(body, r, &f),
         "OBST" => obstacle(body, r, &f, idents),
         "NAV" => navaid(body, r, &f),
         "IAP" => approach(&after, r, &f),
-        "AD" if body.first().is_some_and(|w| w == "RWY") => runway(&body[1..], r, &f, schedule.as_deref()),
+        "AD" if body.first().is_some_and(|w| w == "RWY") => runway(&body[1..], r, schedule.as_deref()),
         // The field closed: no landing or takeoff there (CLSD, JO 7340.2).
         "AD" if body == ["CLSD"] => Four {
             what: Some("Aerodrome closed".to_owned()),

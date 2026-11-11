@@ -14,14 +14,10 @@ fn some(s: &str) -> Option<String> {
 }
 
 #[test]
-fn a_runway_closed_says_what_is_still_allowed() {
+fn a_runway_closed_says_what_is_still_allowed_and_no_where() {
     assert_eq!(
         four("!ORD 11/435 ORD RWY 04L/22R CLSD EXC TAX 2611111120-2611121200"),
-        (
-            some("Runway 04L/22R closed except taxiing"),
-            some("KORD, runway 04L/22R"),
-            some("No landing or takeoff on it while it is closed. It may be taxied on.")
-        )
+        (some("Runway 04L/22R closed except taxiing"), None, some("No landing or takeoff on it while it is closed. It may be taxied on."))
     );
     // The ICAO form, another field's, its schedule (D) in the what.
     let icao = "A0917/26 NOTAMN Q) KZFW/QMRLC////000/999/3226N09349W005 A) KSHV B) 2611010000 C) 2611301200 D) DLY SS-SR E) RWY 06/24 CLSD EXC XNG";
@@ -29,7 +25,7 @@ fn a_runway_closed_says_what_is_still_allowed() {
         four(icao),
         (
             some("Runway 06/24 closed except crossing, daily sunset to sunrise"),
-            some("KSHV, runway 06/24"),
+            None,
             some("No landing or takeoff on it while it is closed. It may be crossed.")
         )
     );
@@ -51,7 +47,7 @@ fn a_runway_light_and_what_it_takes_away() {
     // AIM 2-1-2: a PAPI is visual glide path guidance.
     assert_eq!(
         four("!ORD 11/052 ORD RWY 27 PAPI U/S 2611101200-2612012359EST"),
-        (some("Runway 27 PAPI out of service"), some("KORD, runway 27"), some("No visual glide path guidance to runway 27."))
+        (some("Runway 27 PAPI out of service"), None, some("No visual glide path guidance to runway 27."))
     );
     let (what, _, why) = four("!ORD 11/053 ORD RWY 10R ALS U/S 2611101200-2612012359");
     assert_eq!(what.as_deref(), Some("Runway 10R ALS out of service"));
@@ -115,8 +111,8 @@ fn an_obstacle_its_height_and_where_it_is() {
     assert_eq!(
         four("!ORD 11/437 ORD OBST CRANE (ASN 2024-AGL-12392-NRA) 415841N0875616W (1.3NM W ORD) 759FT (145FT AGL) FLAGGED AND LGTD 2611111139-2611112300"),
         (
-            some("Crane 759 ft MSL (145 ft above ground)"),
-            some("KORD, 1.3 nm west of the field"),
+            some("Crane"),
+            some("KORD, 1.3 nm west of the field, 759 ft MSL (145 ft above ground)"),
             some("Its top is 759 ft MSL: keep clear of it.")
         )
     );
@@ -124,8 +120,8 @@ fn an_obstacle_its_height_and_where_it_is() {
     let (what, place, why) = four(
         "!ORD 10/784 ORD OBST TOWER LGT (ASN 2020-AGL-1577-OE) 415233N0875509W (6.0NM S ORD) 920FT (228FT AGL) U/S 2610211715-2612051715",
     );
-    assert_eq!(what.as_deref(), Some("Tower light out of service, 920 ft MSL (228 ft above ground)"));
-    assert_eq!(place.as_deref(), Some("KORD, 6.0 nm south of the field"));
+    assert_eq!(what.as_deref(), Some("Tower light out of service"));
+    assert_eq!(place.as_deref(), Some("KORD, 6.0 nm south of the field, 920 ft MSL (228 ft above ground)"));
     assert!(why.is_some_and(|w| w.ends_with("hard to see at night.")));
 }
 
