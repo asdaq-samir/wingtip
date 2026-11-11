@@ -46,6 +46,8 @@ enum Gateway {
             parts.queryItems = form.map { URLQueryItem(name: $0.key, value: $0.value) }
             request.httpBody = parts.percentEncodedQuery?.data(using: .utf8)
         }
+        // A large body (a logbook imported) given the upload's time.
+        if (request.httpBody?.count ?? 0) > Planner.uploadBytes { request.timeoutInterval = Planner.upload }
         return request
     }
 

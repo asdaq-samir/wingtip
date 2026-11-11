@@ -47,6 +47,23 @@ enum Planner {
     /// whole call is bound by it (load), not only the wait for data.
     static let inFlight: TimeInterval = 5
 
+    /// How long a read the pilot is waiting on -- the plan's course, the
+    /// nav log's stream, a chart tile, the search -- goes with no byte
+    /// before it fails: about ten seconds, not URLSession's sixty, so on
+    /// one bar of signal the kept plan, the kept tiles or "no connection"
+    /// shows in seconds (the offline audit's gap 8). URLRequest's
+    /// timeoutInterval counts time with no data, so a nav log streaming
+    /// its stages is not cut off.
+    static let read: TimeInterval = 10
+
+    /// How long a call that sends a large body (a photo to read, a logbook
+    /// imported) waits: two minutes, as the upload itself takes time on a
+    /// weak link.
+    static let upload: TimeInterval = 120
+
+    /// A body past this many bytes is an upload.
+    static let uploadBytes = 64 * 1024
+
     /// A planner call by its path and query; `timeout` for the calls made
     /// in the air (inFlight), the session's own wait otherwise.
     static func get(_ path: String, _ query: [String: String?] = [:], timeout: TimeInterval? = nil) -> URLRequest {
@@ -74,7 +91,7 @@ enum Planner {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let json { request.httpBody = try snakeEncoder.encode(json) }
         if csrf, let token = Gateway.csrfToken { request.setValue(token, forHTTPHeaderField: "X-XSRF-TOKEN") }
-        if let timeout { request.timeoutInterval = timeout }
+        if let timeout { request.timeoutInterval = timeout } else if (request.httpBody?.count ?? 0) > uploadBytes { request.timeoutInterval = upload }
         return request
     }
 
@@ -189,7 +206,7 @@ enum Planner {
     /// with `fixes`, the named fixes too (VFR and GPS waypoints, `kind`
     /// "fix"), for the one search's Waypoints group.
     static func search(_ q: String, fixes: Bool = false) async throws -> [AirportSuggestion] {
-        return try await fetch(APIAirportSearch.self, "/api/airports/search", ["q": q, "fixes": fixes ? "true" : nil]).airports
+        return try await fetch(APIAirportSearch.self, "/api/airports/search", ["q": q, "fixes": fixes ? "true" : nil], timeout: read).airports
     }
 
     /// A field's card: its weather, runways, frequencies and pattern
@@ -261,6 +278,6 @@ enum Planner {
 
     /// The route as entered, its ends found and its line (/api/course).
     static func course(dep: String, dest: String, stops: [String]) async throws -> Course {
-        try await fetch(Course.self, "/api/course", route(dep, dest, stops))
+        try await fetch(Course.self, "/api/course", route(dep, dest, stops), timeout: read)
     }
 }

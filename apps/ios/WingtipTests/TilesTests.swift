@@ -59,6 +59,17 @@ struct TilesTests {
         try? FileManager.default.removeItem(at: store.keptRoot)
     }
 
+    @Test func readsWaitTenSecondsAndUploadsTwoMinutes() throws {
+        // The reads a pilot waits on: about ten seconds with no byte, not 60.
+        #expect(Planner.read == 10)
+        #expect(Planner.get("/api/navlog", [:], timeout: Planner.read).timeoutInterval == 10)
+        // A large body is an upload: two minutes; a small one, the session's.
+        let big = Gateway.request("POST", "/api/logbook/import", form: ["csv": String(repeating: "x", count: Planner.uploadBytes + 1)])
+        #expect(big.timeoutInterval == Planner.upload)
+        let small = Gateway.request("POST", "/api/logbook", form: ["a": "b"])
+        #expect(small.timeoutInterval == URLRequest(url: URL(string: "https://example.com")!).timeoutInterval)
+    }
+
     @Test func plannerPathsAreRewrittenUnderTheGatewaysProxy() throws {
         #expect(Config.plannerPath("/api/chart") == "/api/planner/chart")
         #expect(Config.plannerPath("/api/airport/KDLH") == "/api/planner/airport/KDLH")
