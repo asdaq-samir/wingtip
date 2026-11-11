@@ -39,7 +39,7 @@ apps/web/src/features/chart-labels/dev/DevPanel.tsx 1097
 apps/web/src/features/chart-labels/hooks/useTraining.test.ts 484
 apps/web/src/features/chart-labels/hooks/useTraining.ts 422
 apps/web/src/features/pilot/AccountPanels.tsx 818
-apps/web/src/features/pilot/FlightPage.tsx 475
+apps/web/src/features/pilot/FlightPage.tsx 474
 apps/web/src/features/pilot/InstructorPage.tsx 566
 apps/web/src/features/plan/PlanWorkspace.tsx 640
 apps/web/src/features/plan/components/AltitudeReasoning.tsx 582
@@ -53,11 +53,11 @@ apps/web/src/features/plan/components/navlog/NavLogView.tsx 952
 apps/web/src/features/plan/components/procedures/FieldStep.tsx 556
 apps/web/src/features/plan/components/procedures/PatternChips.tsx 434
 apps/web/src/features/plan/components/workspace/PlanSidebar.tsx 425
-apps/web/src/features/plan/hooks/useFlightBriefing.ts 571
+apps/web/src/features/plan/hooks/useFlightBriefing.ts 570
 apps/web/src/features/plan/hooks/usePlan.ts 589
-apps/web/src/features/plan/hooks/usePlanWorkspace.ts 1213
+apps/web/src/features/plan/hooks/usePlanWorkspace.ts 1212
 apps/web/src/features/plan/hooks/useProceduresRoute.ts 667
-apps/web/src/features/shell/MapPage.tsx 418
+apps/web/src/features/shell/MapPage.tsx 416
 apps/web/src/lib/api/client.ts 1192
 apps/web/src/lib/audioInput.test.ts 632
 apps/web/src/lib/audioInput.ts 592

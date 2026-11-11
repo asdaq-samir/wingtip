@@ -16,6 +16,13 @@ export function aircraftKey(a: AircraftChoice): string {
  *  a pattern's `test` was. */
 export const N_NUMBER = { test: (text: string): boolean => callEngine("n_number", { text }) };
 
+/** The registration as a pilot types it into a search, the N first, in
+ *  the FAA's capitals, where it is one (N_NUMBER); null where not. */
+export function tailTyped(typed: string): string | null {
+  const t = typed.trim().toUpperCase().replace(/\s+/g, "");
+  return N_NUMBER.test(t) ? (t.startsWith("N") ? t : `N${t}`) : null;
+}
+
 /** The stock profile an airplane the FAA's registry names flies on, by its
  *  maker, model and year, each from its type's handbook (data/aircraft):
  *  any other none, its speed and burn the pilot's to give (Setup's

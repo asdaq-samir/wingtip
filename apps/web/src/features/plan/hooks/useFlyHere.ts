@@ -21,7 +21,13 @@ import { navlogQuery, type PlanParams } from "./usePlan";
 function flyHerePlan(
   from: string,
   to: string,
-  { depart, aircraft, load, showWaypoints, flightRules }: Pick<PlanParams, "depart" | "aircraft" | "load"> & { showWaypoints: boolean; flightRules: "vfr" | "ifr" },
+  {
+    depart,
+    aircraft,
+    load,
+    showWaypoints,
+    flightRules,
+  }: Pick<PlanParams, "depart" | "aircraft" | "load"> & { showWaypoints: boolean; flightRules: "vfr" | "ifr" },
 ): PlanParams {
   return {
     dep: from,

@@ -12,9 +12,9 @@ import {
   stopsOf,
 } from "../../../lib/identSchema";
 import { cruiseTasOf, shortName, taxiFuelOf } from "../../../lib/aircraftChoice";
-import { clockTime } from "../../../lib/format";
+import { clockTime, flightLevel } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
-import { useEngineReady, useEngineWhen } from "../../../lib/engine/useEngineReady";
+import { useEngineWhen } from "../../../lib/engine/useEngineReady";
 import { legsWithoutWind, windsOutOfDate } from "../format";
 import { placeName } from "../lib/radio";
 import { bestStopIndex, distanceNm, type LatLon } from "../../../lib/geo";
@@ -42,11 +42,10 @@ import { useSuggestedStops, withStopsAfter } from "./useSuggestedStops";
 import { navlogQuery, usePlan } from "./usePlan";
 import { useVerdict } from "../../../lib/verdict";
 import { mayUse, useEntitlement } from "../../../lib/subscription";
-import { flightLevel } from "../../../lib/format";
 import type { WorkspaceProps } from "../../shell";
 import { prefetchPilotPanel } from "../routePanelParts";
 import { panelNow } from "./panelNow";
-import { altitudeChoiceOf, departureRunways, landingRunways, routeWas, suggestedStopAt } from "./planAddress";
+import { altitudeChoiceOf, departureRunways, landingRunways, LOCAL_MINUTES, namesRoute, routeWas, suggestedStopAt } from "./planAddress";
 import { briefMarkOf, marksOf, progressWords, tightLegWords } from "./planWords";
 import { drawnOnly, useProcedurePicks } from "./useProcedurePicks";
 import { useAircraftPick } from "./useAircraftPick";
@@ -67,14 +66,6 @@ import { useLegSheet } from "./useLegSheet";
 import { useFieldColours } from "./useFieldColours";
 import { useRouteLine } from "./useRouteLine";
 import { useFlightToSave } from "./useFlightToSave";
-
-/** A local flight's times aloft to choose from, in minutes: a menu, not a
- *  slider. */
-export const LOCAL_MINUTES = [30, 45, 60, 90, 120, 150, 180, 240];
-
-/** The address's keys that name a route or a pick on it, each read by the
- *  engine (lib/identSchema, lib/procedures, lib/routeHolds). */
-const ROUTE_KEYS = ["dep", "dest", "stops", "altitudes", "procs", "cross", "ground", "holds"];
 
 /**
  * The planner's view model (PlanWorkspace, MVVM): the plan read from the
@@ -114,14 +105,9 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     panelNow.current = panel;
   }, [panel]);
   const [searchParams, setSearchParams] = useSearchParamsNow();
-  // A route in the address is read by the shared engine's rules (its
-  // stops' forms, the procedures, holds and altitudes picked), so the
-  // workspace waits for it there, behind MapPage's boot map; with none --
-  // every fresh open (features/shell/freshLoad) -- the search, the sheet
-  // and the chart draw at once, and what asks the engine waits on its own
-  // (useEngineReady below, the parts behind an EngineGate).
-  useEngineWhen(ROUTE_KEYS.some((key) => searchParams.has(key)));
-  const engine = useEngineReady();
+  // A route in the address is read by the engine, so waited for behind
+  // MapPage's boot map; with none (a fresh open) the page draws at once.
+  const engine = useEngineWhen(namesRoute(searchParams));
   // How the route is changed once it has a destination (RouteEdit): its
   // box folded to a line, or the plan's own rows under the route's name.
   const routeEdit = usePreferences((p) => p.routeEdit);

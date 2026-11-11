@@ -27,11 +27,12 @@ export function useEngineReady(): boolean {
  *  boundary until the .wasm is there. For what cannot be drawn at all
  *  without it -- a route in the address is read by the engine's rules
  *  (lib/identSchema) -- where a part that can is drawn at once with
- *  useEngineReady instead. */
-export function useEngineWhen(needed: boolean): void {
+ *  useEngineReady instead. Whether it is there, as useEngineReady says. */
+export function useEngineWhen(needed: boolean): boolean {
   // Asked every render it is needed, loaded or not: React holds a part
   // that suspended on `use` to asking it again as it finishes, and the
   // promise is marked settled once the engine is there (loadEngine), so
   // then it answers at once.
   if (needed) use(engineReady);
+  return useEngineReady();
 }

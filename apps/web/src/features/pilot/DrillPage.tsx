@@ -74,9 +74,7 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
         <ListGroup>
           <ListRow
             title={done ? `${done} card${done === 1 ? "" : "s"} done` : "Nothing due"}
-            description={
-              next ? `The next one is due in ${strictDistance(next, now)}.` : "Every card is new: start whenever you like."
-            }
+            description={next ? `The next one is due in ${strictDistance(next, now)}.` : "Every card is new: start whenever you like."}
           />
           <ListRow
             title="Practice them all"

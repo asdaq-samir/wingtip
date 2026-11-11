@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
-import { aircraftKey, choiceOf, N_NUMBER } from "../../../lib/aircraftChoice";
+import { aircraftKey, choiceOf, tailTyped } from "../../../lib/aircraftChoice";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { useAsk } from "../../../lib/ask/useAsk";
 import { useClaudeOn } from "../../../lib/subscription";
@@ -70,12 +70,6 @@ const OFFERED: ScreenId[] = [
 /** What is typed found in a name, ignoring case. */
 const finds = (typed: string, name: string) => name.toLowerCase().includes(typed.toLowerCase());
 
-/** The registration typed, the N first, in the FAA's capitals. */
-const tailTyped = (typed: string) => {
-  const t = typed.trim().toUpperCase().replace(/\s+/g, "");
-  return N_NUMBER.test(t) ? (t.startsWith("N") ? t : `N${t}`) : null;
-};
-
 /**
  * The one search's view model (the one-search design, 2026-11-09) over the
  * planner's: what is typed (the planner's query, so Home, a Favorite and a
@@ -124,7 +118,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   const mine = usePreferences((p) => p.myAircraft);
   const favoriteAircraft = usePreferences((p) => p.favoriteAircraft);
   const recentAircraft = usePreferences((p) => p.recentAircraft);
-  // An N-number is the engine's to tell (N_NUMBER): none until it is there.
+  // An N-number is the engine's to tell (tailTyped): none until it is there.
   const engine = useEngineReady();
   const tail = direct || !engine ? null : tailTyped(typed);
   const ownTail = !!tail && !!records?.some((r) => r.tailNumber.toUpperCase() === tail);

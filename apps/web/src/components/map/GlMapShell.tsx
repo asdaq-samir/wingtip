@@ -16,7 +16,6 @@ import { SheetCard } from "../SheetCard";
 import { DRAWER_MS, type SheetTurn } from "../sheet/insets";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
-import { EngineGate } from "../../lib/engine/engineGate";
 import { usePreferences } from "../../lib/preferences";
 import { chartQuery, overlayTilesQuery, queryClient } from "../../lib/queryClient";
 import { prefersReducedMotion } from "../../lib/motion";
@@ -226,10 +225,8 @@ interface Props {
   place: { lat: number; lon: number } | null;
   /** Its layers (lib/map/gl/layers), drawn once the map is made. */
   children: ReactNode;
-  /** The map alone, drawn while a route in the address waits for the
-   *  engine (GlBootMap): no buttons, banners or ruler. Taps wait for the
-   *  engine on every map, and the buttons, banners and ruler draw once it
-   *  is there. */
+  /** The map alone, while a route in the address waits for the engine
+   *  (GlBootMap): no buttons, banners or ruler, and no taps until it is. */
   bare?: boolean;
 }
 
@@ -246,9 +243,9 @@ interface Props {
  * what the sheet leaves, clear of the map's buttons.
  *
  * One MapLibre map lives on from one tree to the next: the map the page
- * draws while a route in the address waits for the engine (GlBootMap,
- * MapPage's Suspense fallback) is parked as that tree goes and taken up by the planner's, its
- * chart and overlays kept, rather than a second map drawn from nothing.
+ * draws while a route in the address waits for the engine (GlBootMap) is
+ * parked as that tree goes and taken up by the planner's, its chart and
+ * overlays kept, rather than a second map drawn from nothing.
  */
 export default function GlMapShell({ course, focus, focusZoom, place, children, bare = false }: Props) {
   // Once: a page is on a TV or not for its whole visit.
@@ -656,11 +653,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
         <GlMapContext.Provider value={api}>
           {children}
           {/* Two fingers held on the chart measure it, on every map. */}
-          {!bare && (
-            <EngineGate>
-              <RulerGl />
-            </EngineGate>
-          )}
+          {!bare && <RulerGl />}
         </GlMapContext.Provider>
       )}
       {card && (
@@ -668,14 +661,8 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
           <CardCloseContext.Provider value={closeCard}>{card}</CardCloseContext.Provider>
         </SheetCard>
       )}
-      {/* The banners and the buttons ask the engine as they draw: once it
-          is there, the chart under them drawn at once (MapPage). */}
-      {!bare && (
-        <EngineGate>
-          <MapBanners map={map} />
-          <MapControls />
-        </EngineGate>
-      )}
+      {!bare && <MapBanners map={map} />}
+      {!bare && <MapControls />}
     </div>
   );
 }

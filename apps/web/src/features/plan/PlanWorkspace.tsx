@@ -1,9 +1,10 @@
-import { Suspense, lazy, useCallback, useDeferredValue, useMemo } from "react";
+import { Suspense, useCallback, useDeferredValue, useMemo } from "react";
 import { TEXT } from "../../lib/text";
 import { CommandRoot } from "../../components/ui/command";
 import { MAX_STOPS, routeName } from "../../lib/identSchema";
 import type { WorkspaceProps } from "../shell";
 import { ShareMenu } from "./ShareMenuLazy";
+import PaidPrompt from "../../components/PaidPromptLazy";
 import { RouteShareMenu, type RouteCard } from "../../lib/openCards";
 import { CardHead } from "../../components/PanelCard";
 import type { BriefingPart } from "./components/briefing/sections";
@@ -31,11 +32,6 @@ import { listSearchOf } from "./components/workspace/listSearch";
 import SheetTitle from "./components/search/SheetTitle";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
-
-/** The checkpoint notes' paywall, on a chunk of its own: drawn only for a
- *  pilot past the free notes, and 2.8 KB of the first load for every one
- *  (scripts/first-load.mjs's budget). */
-const PaidPrompt = lazy(() => import("../../components/PaidPrompt"));
 
 /**
  * The planner: two idents in, a charted course with checkpoints and a
@@ -228,9 +224,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
   const descriptionsPaywall = useMemo(
     () =>
       paywalled ? (
-        <Suspense fallback={null}>
-          <PaidPrompt feature="CHECKPOINT_NOTES">A line for each checkpoint on what to look for from the air.</PaidPrompt>
-        </Suspense>
+        <PaidPrompt feature="CHECKPOINT_NOTES">A line for each checkpoint on what to look for from the air.</PaidPrompt>
       ) : undefined,
     [paywalled],
   );

@@ -32,6 +32,7 @@ beforeEach(() => {
   vi.mocked(api.navlog).mockImplementation(async function* (...args: unknown[]) {
     signals.push(args[6] as AbortSignal);
     await new Promise(() => {});
+    yield* [];
   } as typeof api.navlog);
 });
 

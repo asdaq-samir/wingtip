@@ -15,6 +15,20 @@ import type { SuggestedStop } from "../components/StopServices";
  * (planAddress.test.ts).
  */
 
+/** A local flight's times aloft to choose from, in minutes (`local_min`):
+ *  a menu, not a slider. */
+export const LOCAL_MINUTES = [30, 45, 60, 90, 120, 150, 180, 240];
+
+/** The address's keys that name a route or a pick on it, each read by the
+ *  shared engine (lib/identSchema, lib/procedures, lib/routeHolds). */
+const ROUTE_KEYS = ["dep", "dest", "stops", "altitudes", "procs", "cross", "ground", "holds"];
+
+/** Whether the address names a route, which only the engine can read: the
+ *  workspace waits for it then (usePlanWorkspace), and draws at once with
+ *  none -- every fresh open (features/shell/freshLoad) -- the parts that
+ *  ask the engine waiting each on its own (lib/engine/engineGate). */
+export const namesRoute = (params: URLSearchParams) => ROUTE_KEYS.some((key) => params.has(key));
+
 /** The route as the address has it this render: its ends, and the points
  *  it goes by on the way (usePlanWorkspace's `planned`). */
 export interface PlannedRoute {

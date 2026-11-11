@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, type ReactNode, type ComponentProps } from "react";
+import { lazy, useEffect, type ReactNode, type ComponentProps } from "react";
 import { cn } from "cn";
 import { fromChunk } from "../../../../lib/fromChunk";
 import { loadAccountPanels } from "../../../pilot";
@@ -19,20 +19,7 @@ import ProfileCard from "../ProfileCard";
 import { BriefCard, AirspaceCard, FlightCard, PastFlightCard, PlaceCard, StopsCard, DryRunControls } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import ProfileSideView from "./ProfileSideView";
-import { EngineGate, WorkingOut } from "../../../../lib/engine/engineGate";
-
-/** A card or a list in the sheet: its chunk, then the shared engine its
- *  figures are worked out by (lib/engine), each waited for in its place --
- *  the search and the sheet drawn at once round it (MapPage), and
- *  "Working out…" here for the moment a card opened from the address, or
- *  tapped as the page opens, waits for the .wasm. */
-function Waits({ children }: { children: ReactNode }) {
-  return (
-    <Suspense fallback={null}>
-      <EngineGate fallback={<WorkingOut />}>{children}</EngineGate>
-    </Suspense>
-  );
-}
+import Waits from "./Waits";
 
 /** The one search's parts on chunks of their own, out of the first load
  *  (its 1.10 MB budget, scripts/first-load.mjs): its own page, drawn once
@@ -174,15 +161,12 @@ export default function PlanSidebar({
     const later = window.setTimeout(searchHome.prefetch, 1500);
     return () => window.clearTimeout(later);
   }, []);
+  // In the traffic tab's Waits (below), as the rest of that tab is.
   const flightCard =
     flight && past ? (
-      <Waits>
-        <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} />
-      </Waits>
+      <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} />
     ) : flight ? (
-      <Waits>
-        <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={openAirportOverFlight} />
-      </Waits>
+      <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={openAirportOverFlight} />
     ) : null;
   // The airport's card, in the panel's body.
   const placeCard = place && (
@@ -207,7 +191,6 @@ export default function PlanSidebar({
         stop={suggestedAt?.stop}
         // The route's destination: when the flight lands there -- en route and on the ground at its
         // stops (Totals.ground_min) after it leaves, as the figures' ETA -- for its forecast's hour.
-        // Asked of the engine only with a route's totals (none before it is there).
         arrival={
           !s.local && s.totals?.ete_min != null && sameField(place, `${planned.dest}`)
             ? { depart: depart || null, minutes: s.totals.ete_min + (s.totals.ground_min ?? 0) }
@@ -255,42 +238,40 @@ export default function PlanSidebar({
           it, as it was left. */}
       {opened.includes("traffic") && (
         <TabKept away={cardUp || view !== "traffic"}>
-          {flightCard ??
-            (aircraftOpen &&
-              (aircraftFavoritesOpen && !aircraftTyped ? (
-                <TabPage testId="aircraft-favorites">
-                  <Waits>
-                    <AircraftFavoritesList
-                      onBack={closeList}
-                      onOpen={(hex) => selectFlight(hex)}
-                      onChangeMine={() => {
-                        closeList();
-                        addFromPill("mine");
-                      }}
-                      onAdd={() => {
-                        closeList();
-                        addFromPill("airplane");
-                      }}
-                    />
-                  </Waits>
-                </TabPage>
-              ) : aircraftRecentsOpen && !aircraftTyped ? (
-                // Kept open under an airplane's card opened from it, as the
-                // Favorites in full are: its close comes back here.
-                <Waits>
+          <Waits>
+            {flightCard ??
+              (aircraftOpen &&
+                (aircraftFavoritesOpen && !aircraftTyped ? (
+                  <TabPage testId="aircraft-favorites">
+                    <Waits>
+                      <AircraftFavoritesList
+                        onBack={closeList}
+                        onOpen={(hex) => selectFlight(hex)}
+                        onChangeMine={() => {
+                          closeList();
+                          addFromPill("mine");
+                        }}
+                        onAdd={() => {
+                          closeList();
+                          addFromPill("airplane");
+                        }}
+                      />
+                    </Waits>
+                  </TabPage>
+                ) : aircraftRecentsOpen && !aircraftTyped ? (
+                  // Kept open under an airplane's card opened from it, as the
+                  // Favorites in full are: its close comes back here.
                   <AircraftRecentsPage onBack={closeList} onPick={(kept) => pickKeptAircraft(kept, (hex) => selectFlight(hex))} />
-                </Waits>
-              ) : (
-                // The strip once, in the pill or here: at the pill's size the
-                // body is out of sight but for a finger taking it up.
-                <Waits>
+                ) : (
+                  // The strip once, in the pill or here: at the pill's size the
+                  // body is out of sight but for a finger taking it up.
                   <AircraftCard
                     onPick={(plane) => selectFlight(plane.hex, plane)}
                     onPickHex={(hex) => selectFlight(hex)}
                     strip={stripsDrawn ? aircraftStrip : null}
                   />
-                </Waits>
-              )))}
+                )))}
+          </Waits>
         </TabKept>
       )}
       {!cardUp && view === "search" && nearOpen && (
