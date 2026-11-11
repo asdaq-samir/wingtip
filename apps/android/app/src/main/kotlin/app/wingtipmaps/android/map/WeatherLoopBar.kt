@@ -3,7 +3,6 @@ package app.wingtipmaps.android.map
 import android.os.Build
 import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,29 +13,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconToggleButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -56,6 +48,8 @@ import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ui.LocalWingtipPalette
+import app.wingtipmaps.android.ui.MenuSettingRow
+import app.wingtipmaps.android.ui.SettingsGroup
 import kotlinx.coroutines.delay
 import java.time.Duration
 import java.time.Instant
@@ -191,32 +185,13 @@ fun WeatherLoopRows() {
     val context = LocalContext.current
     val loop = remember(context) { WeatherLoop.of(context) }
     val state by loop.state.collectAsStateWithLifecycle()
-    MenuRow(stringResource(R.string.loop_kind), state.kind.label, LoopKind.entries.map { it.label to { loop.pick(it) } })
-    if (state.kind != LoopKind.OFF) {
-        MenuRow(stringResource(R.string.loop_speed), state.speed.label, LoopSpeed.entries.map { it.label to { loop.speed(it) } })
+    // One group, the loop and its speed, as the map's switches below it
+    // are grouped (the sheet audit's B-1).
+    val count = if (state.kind != LoopKind.OFF) 2 else 1
+    SettingsGroup {
+        MenuSettingRow(stringResource(R.string.loop_kind), state.kind.label, LoopKind.entries.map { it.label to { loop.pick(it) } }, index = 0, count = count)
+        if (state.kind != LoopKind.OFF) {
+            MenuSettingRow(stringResource(R.string.loop_speed), state.speed.label, LoopSpeed.entries.map { it.label to { loop.speed(it) } }, index = 1, count = count)
+        }
     }
-}
-
-/** A setting of a few choices as a row with its value, a menu under it. */
-@Composable
-private fun MenuRow(title: String, value: String, choices: List<Pair<String, () -> Unit>>) {
-    var open by remember { mutableStateOf(false) }
-    ListItem(
-        trailingContent = {
-            Box {
-                TextButton(onClick = { open = true }) { Text(value) }
-                DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
-                    for ((label, pick) in choices) {
-                        DropdownMenuItem(text = { Text(label) }, onClick = {
-                            open = false
-                            pick()
-                        })
-                    }
-                }
-            }
-        },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-        modifier = Modifier.fillMaxWidth(),
-        content = { Text(title) },
-    )
 }

@@ -6,6 +6,7 @@ import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.assistant.Context
 import app.wingtipmaps.android.api.generated.assistant.Source
 import app.wingtipmaps.android.api.generated.assistant.TripAsk
@@ -93,7 +94,7 @@ object TripPlan {
         e is ClaudeGate.Off -> e.message.orEmpty()
         e is Planner.Failure && e.status == 401 -> SIGN_IN
         e is Planner.Failure -> e.message ?: UNREACHABLE
-        e is IOException -> "$UNREACHABLE: ${e.message}"
+        e is IOException -> Problems.say(UNREACHABLE, e)
         else -> e.message ?: UNREACHABLE
     }
 }

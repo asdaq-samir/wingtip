@@ -39,9 +39,11 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   await expect(card).toBeVisible();
   await expect(card).toHaveAttribute("data-testid", "map-settings");
   await expect(panel).toHaveAttribute("data-panel", "half");
-  // Nothing floating over the panel, and nothing made modal.
+  // Nothing floating over the panel, and nothing made modal: the one
+  // dialog the sheet itself, the stock Drawer's non-modal popup (MapPanel),
+  // not the card in it, which is a region.
   await expect(page.locator("[data-slot=sheet-content]")).toHaveCount(0);
-  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.locator('[role="dialog"]:not([data-slot="map-panel"]), [aria-modal="true"]')).toHaveCount(0);
   // Its name where a screen reader starts reading it.
   await expect(card.getByRole("heading", { name: "Map", level: 2 })).toBeFocused();
   // Its name and close in its own head, the top of the sheet: the one
@@ -100,19 +102,17 @@ test("the approaches' pull-down is a card in the sheet, and the list it opens ta
   await expect(panel).toHaveAttribute("data-panel", "full");
 });
 
-test("a checkpoint tapped on the chart opens its card in the sheet, ringed on the map; one opened over it closes back to it", async ({
-  page,
-}) => {
+test("a checkpoint tapped on the chart opens its card in the sheet; one opened over it closes back to it", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's card; wider it is the chart's popup");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const panel = sideDrawer(page);
   await settled(panel);
-  const marker = page.locator(".maplibregl-marker", { hasText: /^\d+$/ }).first();
+  // One in sight: a checkpoint whose badge would lie over a higher mark is
+  // left out until the map is closer in (lib/map/gl/declutter), and the
+  // first in the page was one of those on the fitted route.
+  const marker = page.locator(".maplibregl-marker", { hasText: /^\d+$/ }).filter({ visible: true }).first();
   await expect(marker).toBeVisible({ timeout: slow(60000) });
-  // The ring a picked point wears (chart.selected, the brand's Taxiway Yellow).
-  const rings = page.locator('.maplibregl-map path[stroke="#f2b600"]');
-  const before = await rings.count();
   // Its own click, not one at its place: neighbouring checkpoints stack
   // on a phone's fitted route (map.spec).
   await marker.dispatchEvent("click");
@@ -127,8 +127,9 @@ test("a checkpoint tapped on the chart opens its card in the sheet, ringed on th
   await expect(panel).not.toHaveAttribute("data-panel", "peek");
   // Not a popup over the chart.
   await expect(page.locator(".maplibregl-popup:visible")).toHaveCount(0);
-  await expect.poll(() => rings.count()).toBeGreaterThan(before);
-  const ringed = await rings.count();
+  // Its ring on the map is drawn by MapLibre now (PickedGl's picked-ring
+  // layers), not an SVG path a locator can count as Leaflet's was, so it
+  // is left to the map's own tests.
 
   // The Map settings over it: its card on top, the checkpoint's kept
   // under it, and back to it as the top one is closed.
@@ -140,9 +141,7 @@ test("a checkpoint tapped on the chart opens its card in the sheet, ringed on th
   await expect(map).toHaveCount(0);
   await expect(checkpoint).toBeVisible();
 
-  // A tap on the chart puts it away, as it did the popup, and its ring
-  // (the nav log's pick keeps its own).
+  // A tap on the chart puts it away, as it did the popup.
   await tapTheChart(page);
   await expect(checkpoint).toHaveCount(0);
-  await expect.poll(() => rings.count()).toBeLessThan(ringed);
 });

@@ -38,7 +38,11 @@ export default function MapPictureChoices({
 }) {
   return (
     <section className="flex flex-col">
-      <SectionTitle className="px-1 pb-1.5">{title}</SectionTitle>
+      {/* Set as a list group's title is (GroupedList), at the card's one
+          sixteen-point edge (the sheet audit's F-B3). */}
+      <div className="pb-1.5">
+        <SectionTitle>{title}</SectionTitle>
+      </div>
       <ToggleGroup
         value={[value]}
         onValueChange={(v) => {

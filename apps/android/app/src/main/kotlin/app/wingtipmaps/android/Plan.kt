@@ -11,6 +11,7 @@ import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogMessage
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -37,11 +38,10 @@ import java.io.IOException
 
 /**
  * The route being planned and what the planner has said of it so far: the
- * course as soon as its ends are found, then the nav log's lines as they
- * stream. The log before a re-plan stays on the page until the new one is
- * whole, as the web app keeps it (usePlan) and the iOS app's Plan.swift
- * does, so the pilot is never looking at a blank list. One State, changed
- * only here and read by the screens (unidirectional data flow).
+ * course once its ends are found, then the nav log's lines as they stream.
+ * The log before a re-plan stays until the new one is whole (as the web's
+ * usePlan and iOS's Plan.swift keep it), so the list is never blank. One
+ * State, changed only here and read by the screens.
  */
 class Plan(app: Application) : AndroidViewModel(app) {
     data class State(
@@ -256,7 +256,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 // With no connection the plan kept stands, in silence; a
                 // planner's own refusal is said as it is.
                 _state.update {
-                    val said = if (it.legs.isEmpty() || e !is IOException) e.message ?: "The planner could not be reached." else it.problem
+                    val said = if (it.legs.isEmpty() || e !is IOException) Problems.say("The route could not be planned", e) else it.problem
                     it.copy(problem = said, stage = null)
                 }
             }

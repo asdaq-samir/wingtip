@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.LocalNative
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.InkColors
 import app.wingtipmaps.android.ui.LocalInk
@@ -73,9 +74,16 @@ fun InkColors.words(finding: Finding, muted: Color): Color = when (finding) {
 }
 
 /** A card of the strip: 18-point corners, white on the paper, a hair of
- *  shadow (the canvas's boards). */
+ *  shadow (the canvas's boards). In the Native look (LocalNative) it is
+ *  Material's filled card as it comes, its own shape and colours, so the
+ *  dark scheme's card is not the lowest container's pure black on the
+ *  sheet (the sheet audit's L-3). */
 @Composable
 fun StripCard(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, content: @Composable () -> Unit) {
+    if (LocalNative.current) {
+        if (onClick != null) Card(onClick = onClick, modifier = modifier) { content() } else Card(modifier = modifier) { content() }
+        return
+    }
     val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
     val elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     if (onClick != null) {

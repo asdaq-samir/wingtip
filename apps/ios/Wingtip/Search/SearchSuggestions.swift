@@ -23,47 +23,10 @@ struct SearchSuggestions: View {
     let model: OneSearchModel
     let pick: (SearchPick) -> Void
     @Environment(Plan.self) private var plan
-    private var shelf: AirportShelf { .shared }
     private var airplanes: Airplanes { .shared }
 
     var body: some View {
-        if model.query.isEmpty { browse } else { results }
-    }
-
-    // MARK: Nothing typed
-
-    @ViewBuilder private var browse: some View {
-        if plan.routed {
-            Section {
-                Button { pick(.plan) } label: { YourFlightCard() }
-                    .accessibilityIdentifier("search-your-flight")
-            } header: { Text("Your Flight") }
-        }
-        if !shelf.favorites.isEmpty || !airplanes.records.isEmpty {
-            Section {
-                ForEach(shelf.favorites) { field in keptRow(field) }
-                ForEach(airplanes.records, id: \.tailNumber) { airplane in ownRow(airplane) }
-            } header: { Text(Screen.favorites.title) }
-        }
-        if !shelf.recents.isEmpty {
-            Section {
-                ForEach(shelf.recents.prefix(5)) { field in keptRow(field) }
-            } header: { Text("Recents") }
-        }
-        Section {
-            if model.nearest.isEmpty {
-                Text("Waiting for the position").foregroundStyle(.secondary)
-            }
-            ForEach(model.nearest.prefix(5)) { field in
-                Button { pick(.airport(field.ident)) } label: { NearestRow(field: field) }
-                    .foregroundStyle(.primary)
-
-                    .airportPreview(field.ident) { pick(.plan) }
-            }
-            if model.nearest.count > 5 {
-                Button("All Nearest") { pick(.airport(AirportRoute.list(.nearest).text)) }
-            }
-        } header: { Text(Screen.nearest.title) }
+        if model.query.isEmpty { BrowseSections(nearest: model.nearest, pick: pick) } else { results }
     }
 
     // MARK: Typing
@@ -107,7 +70,7 @@ struct SearchSuggestions: View {
         let types = model.matchingTypes
         if !own.isEmpty || tail != nil || !types.isEmpty {
             Section {
-                ForEach(own, id: \.tailNumber) { airplane in ownRow(airplane) }
+                ForEach(own, id: \.tailNumber) { airplane in OwnAirplaneRow(airplane: airplane, pick: pick) }
                 if let tail {
                     Button { pick(.airplane(tail)) } label: {
                         row(tail, model.registered.map(Self.registryLine) ?? "FAA registry", systemImage: WingtipIcon.airplane)
@@ -138,35 +101,9 @@ struct SearchSuggestions: View {
             systemImage: field.kind == "fix" ? WingtipIcon.waypoint : WingtipIcon.departFrom)
     }
 
-    private func keptRow(_ field: KeptAirport) -> some View {
-        Button { pick(.airport(field.ident)) } label: {
-            row(field.ident, [field.name, field.municipality].compactMap { $0 }.joined(separator: " · "), systemImage: WingtipIcon.departFrom)
-        }
-        .foregroundStyle(.primary)
-
-        .airportPreview(field.ident) { pick(.plan) }
-    }
-
-    private func ownRow(_ airplane: OwnAircraftRecord) -> some View {
-        Button { pick(.airplane(airplane.tailNumber)) } label: {
-            row(airplane.tailNumber, plan.tail == airplane.tailNumber ? "\(airplane.typeDesignator) · Flying" : airplane.typeDesignator,
-                systemImage: WingtipIcon.airplane)
-        }
-        .foregroundStyle(.primary)
-        .accessibilityHint("Opens its profile, with Fly This Airplane")
-    }
-
-    /// A result's two lines, its name over what it is, read as one.
+    /// A result's two lines (SearchRowLabel).
     private func row(_ title: String, _ detail: String, systemImage: String) -> some View {
-        Label {
-            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
-                Text(title).font(.headline)
-                if !detail.isEmpty { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
-            }
-        } icon: {
-            Image(systemName: systemImage).foregroundStyle(.tint)
-        }
-        .accessibilityElement(children: .combine)
+        SearchRowLabel(title: title, detail: detail, systemImage: systemImage)
     }
 
     /// The registry's make and model, as the FAA writes them.

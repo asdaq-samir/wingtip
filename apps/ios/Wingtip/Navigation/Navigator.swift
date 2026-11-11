@@ -33,7 +33,7 @@ final class Navigator {
     var cardPath: [SheetPage] = []
     /// The card's height on the iPhone: half way for a thing, as Maps
     /// opens a place, full for a page.
-    var cardDetent: PresentationDetent = .medium
+    var cardDetent: PresentationDetent = .half
 
     /// The page on top: the card's last, else its root, else the sidebar's.
     var top: SheetPage? { cardPath.last ?? card?.page ?? planPath.last }
@@ -53,7 +53,7 @@ final class Navigator {
             return
         }
         cardPath = []
-        cardDetent = page.opensFull ? .large : .medium
+        cardDetent = page.opensFull ? .large : .half
         set(Card(page: page))
     }
 

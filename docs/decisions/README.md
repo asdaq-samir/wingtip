@@ -23,7 +23,7 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0015 | [Close goes back one level; no Back buttons](0015-close-goes-back.md) | 2026-10-22 | Accepted, amended 2026-11-10 |
 | 0016 | [Stock components over hand-rolled ones](0016-stock-components.md) | 2026-10-28 | Accepted, amended 2026-11-10 |
 | 0017 | [Discrete settings are menus or segmented controls, not sliders](0017-menus-not-sliders.md) | 2026-10-15 | Accepted |
-| 0018 | [Panels are Liquid Glass sheets with detents; a throw moves one size](0018-liquid-glass-sheets.md) | 2026-10-15 | Accepted, amended 2026-11-10 |
+| 0018 | [Panels are Liquid Glass sheets with detents; a throw moves one size](0018-liquid-glass-sheets.md) | 2026-10-15 | Accepted, amended 2026-11-10 (the web's sheet solid) |
 | 0019 | [No explanatory footnotes on pilot screens](0019-no-explanatory-footnotes.md) | 2026-10-16 | Accepted |
 | 0020 | [The app says "airplane"](0020-airplane-not-aircraft.md) | 2026-11-06 | Accepted |
 | 0021 | [Labels are Title Case; the FAA's text is sentence case with codes kept](0021-title-case-labels.md) | 2026-10-23 | Accepted |
@@ -41,3 +41,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0033 | [One card rule and one scrolling rule on every platform](0033-one-card-rule-one-scroll-rule.md) | 2026-11-10 | Accepted |
 | 0034 | [CI stays lean, and the guards hold it there](0034-ci-stays-lean.md) | 2026-11-10 | Accepted |
 | 0035 | [The Claude features are off until the subscription is decided](0035-claude-off-until-subscription.md) | 2026-11-10 | Accepted |
+| 0036 | [Wingtip reaches Claude and ChatGPT as the pilot's own connector](0036-mcp-connector.md) | 2026-11-10 | Accepted |

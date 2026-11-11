@@ -397,7 +397,7 @@ public class SecurityConfig {
                     .successHandler((request, response, authentication) -> {
                         keepAppleRefreshToken(pilots, authorizedClients, authentication);
                         response.sendRedirect(pilots.current(authentication)
-                                .map(SignInLanding::after)
+                                .map(pilot -> SignInLanding.after(pilot, request))
                                 .orElse("/app/plan"));
                     })
                     .failureUrl("/app/plan?signin=refused"));

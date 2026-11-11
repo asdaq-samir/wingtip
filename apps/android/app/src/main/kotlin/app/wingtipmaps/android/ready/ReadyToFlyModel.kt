@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.api.generated.NotamsRankedAsk
 import app.wingtipmaps.android.api.notamsRanked
@@ -157,7 +158,7 @@ class ReadyToFlyModel(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.update { it.copy(problem = "The NOTAMs could not be fetched: ${e.message}") }
+                _state.update { it.copy(problem = Problems.say("The NOTAMs could not be fetched", e)) }
                 busy("fetch_notams", false)
                 return@launch
             }

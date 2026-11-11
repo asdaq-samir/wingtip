@@ -125,7 +125,7 @@ class AircraftModelTest {
         val m = AircraftModel(list = { listOf(kept) }, update = { _, _ -> throw Gateway.Refusal(409, "tailNumber already exists") }, rules = fine)
         m.startEditing(kept)
         m.save()
-        assertEquals("The airplane could not be saved: tailNumber already exists", m.state.value.problem)
+        assertEquals("The airplane could not be saved: tailNumber already exists.", m.state.value.problem)
         assertFalse(m.state.value.editing!!.saving)
     }
 

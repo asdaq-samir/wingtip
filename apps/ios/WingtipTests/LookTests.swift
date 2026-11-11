@@ -20,6 +20,23 @@ import UIKit
         #expect(Self.hex(Look.cockpit.tint(dark: false)) == 0x00707E)
     }
 
+    /// A filled button's words pass WCAG 1.4.3's 4.5:1 on the look's tint
+    /// in every brand look by day and at night: white on the deep blues, the
+    /// dark ground on the light tints at night (Glass Cockpit's #46D3E6
+    /// read 1.79:1 under white, the iOS sheet audit of 2026-11-10). Native
+    /// keeps the system's own.
+    @Test func aFilledButtonsWordsPassOnEveryTint() throws {
+        for look in Look.allCases where !look.isStock {
+            for dark in [false, true] {
+                let label = try #require(look.labelOnTint(dark: dark))
+                let ratio = NightPalette.contrast(label, look.tint(dark: dark))
+                #expect(ratio >= 4.5, "\(look.label) \(dark ? "dark" : "light"): \(ratio)")
+            }
+        }
+        #expect(Self.hex(try #require(Look.cockpit.labelOnTint(dark: true))) == 0x0B1422)
+        #expect(Look.native.labelOnTint(dark: true) == nil)
+    }
+
     /// Native is iOS's own (the owner, 2026-11-10): the system's blue, label
     /// and grounds by name, so they follow the appearance and Increase
     /// Contrast; the states stay the theme's, being aviation's.

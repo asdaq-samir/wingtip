@@ -74,12 +74,10 @@ struct AirportCard: View {
                 case .charts: AirportChartsTab(place: place, shown: $shown)
                 }
             } else if let problem {
-                ContentUnavailableView {
-                    Label(notFound ? "No field \(ident)" : "No card for \(ident)", systemImage: "exclamationmark.triangle")
-                } description: {
-                    Text(problem)
-                } actions: {
-                    // A field not found has nothing to ask again.
+                // Said in place (ProblemLine); a field not found has
+                // nothing to ask again.
+                Section {
+                    ProblemLine(notFound ? "No field \(ident). \(problem)" : problem)
                     if !notFound { Button("Try Again") { Task { await load() } } }
                 }
             } else {
@@ -94,8 +92,8 @@ struct AirportCard: View {
         .ignoresSafeArea(.container, edges: expanded && place != nil ? .top : [])
         .navigationTitle(ident)
         .navigationBarTitleDisplayMode(.inline)
-        // The head is the title until it scrolls away; then the bar's.
-        .modifier(PinnedHead(pinned: pinned))
+        // The head is the title until it scrolls away; no head yet, the ident.
+        .modifier(PinnedHead(pinned: pinned || place == nil))
         .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y + $0.contentInsets.top > 180 } action: { _, past in
             if past != pinned { pinned = past }
         }
@@ -138,8 +136,10 @@ struct AirportCard: View {
     }
 
     private func load() async {
+        problem = nil
         do {
-            let fresh = try await KeptForAir.answer(.airports, key: ident) { try await Planner.place(ident) }.value
+            // Fifteen seconds with no answer and the card says so.
+            let fresh = try await KeptForAir.answer(.airports, key: ident) { try await Planner.place(ident, timeout: 15) }.value
             place = fresh; problem = nil
             shelf.opened(KeptAirport(fresh))
         } catch let failure as Planner.Failure where failure.status == 404 {

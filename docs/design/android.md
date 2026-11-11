@@ -1124,7 +1124,8 @@ toolbar (§3.3), and a half-folded phone shows the map above the fold
 The owner's one search (2026-11-09) replaced the sheet's four tabs after
 this page was written. Where §3 speaks of the FPL, Airport, Airplane and
 Setup tabs, read: one search as the sheet's first row with its
-microphone and the account button; the plan as the sheet's main
+microphone and the account's avatar in the bar's trailing slot (owner
+decision 2026-11-10); the plan as the sheet's main
 content; the airport and airplane cards opened from the search; and
 Setup's settings on Settings, the page the account button opens.
 
@@ -1210,6 +1211,17 @@ Settings, the Logbook → Coach, the airplane → a checklist or Your
 Airplanes, Nearest → a field. The strip layout shows the same cards in
 its sheet in place of the strip.
 
+- **Owner decisions 2026-11-10 on the sheet audit** (the six held
+  items): the Wingtip look's surface containers step from lowest to
+  highest, with an outline of 3:1 and more on the sheet
+  (`color.material.wingtip` in `design/tokens.json`), and at night
+  primary is the night tint #57A8FF (L-1, L-2). At half a card's bar is
+  the small `TopAppBar`, title and actions on one row; at full the large
+  flexible bar, collapsing (`LocalSheetFull`, H-1). No logo in the bar
+  (H-2). The mic and the account's avatar sit in the search bar's own
+  trailing slot, mic first, as Google Maps has them (S-2). A page opened
+  inside a card keeps the sheet's height; a card opens at half only from
+  the search or the map (`SheetNav.push`, SC-1).
 - **Back:** closes the top card at once, never just lowers the sheet
   while a card is open (`MapSheet`'s `lowerOnBack`); with none open it
   lowers the sheet, then leaves. The assistant's answer, the dry run and
