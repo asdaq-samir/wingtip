@@ -15,7 +15,9 @@ struct MapSettingsView: View {
 
     var body: some View {
         List {
-            Section("Map") {
+            // No header of its own: the card's large title already says
+            // Map (the iOS sheet audit, 2026-11-10).
+            Section {
                 Toggle("Traffic", isOn: Binding(get: { traffic.on }, set: { traffic.on = $0 }))
                 // The glide ring outside an emergency (the owner's pick
                 // of its place, 2026-11-09); off by default.

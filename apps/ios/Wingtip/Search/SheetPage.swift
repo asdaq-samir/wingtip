@@ -89,7 +89,7 @@ enum SheetPage: Hashable {
             case .airport: "card-airport"
             case .airspace: "card-airspace"
             case .list(.nearest): "card-nearest"
-            case .list, .nearFrom: "card-list"
+            case .list, .nearFrom, .nearby: "card-list"
             }
         case .screen(let screen): "card-\(screen.rawValue)"
         case .leg: "card-leg"

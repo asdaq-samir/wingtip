@@ -220,6 +220,7 @@ export const TAP_TARGET = 44;
 export const SIZE = {
   tapTarget: 44,
   chip: 32,
+  mapButton: 48,
   tabBar: 64,
   panel: 384,
   panelWide: 448,

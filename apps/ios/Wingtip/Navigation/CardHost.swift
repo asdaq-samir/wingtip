@@ -24,10 +24,10 @@ private struct CardHost: ViewModifier {
         content
             .sheet(item: $nav.presented) { card in
                 CardStack(card: card, search: search)
-                    .presentationDetents([.medium, .large], selection: $nav.cardDetent)
+                    .presentationDetents([.half, .large], selection: $nav.cardDetent)
                     // The map usable above a card up to half height; a
                     // question or a form stays modal (the scrolling rule).
-                    .presentationBackgroundInteraction(card.page.modal ? .disabled : .enabled(upThrough: .medium))
+                    .presentationBackgroundInteraction(card.page.modal ? .disabled : .enabled(upThrough: .half))
                     .environment(\.cardExpanded, nav.cardDetent == .large)
                     .modifier(TopHosts(active: true))
             }

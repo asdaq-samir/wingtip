@@ -193,9 +193,10 @@ enum Planner {
     }
 
     /// A field's card: its weather, runways, frequencies and pattern
-    /// (/api/airport/{ident}).
-    static func place(_ ident: String) async throws -> AirportPlace {
-        try await fetch(AirportPlace.self, "/api/airport/\(ident)")
+    /// (/api/airport/{ident}); `timeout`, how long the card waits with no
+    /// answer before it says so.
+    static func place(_ ident: String, timeout: TimeInterval? = nil) async throws -> AirportPlace {
+        try await fetch(AirportPlace.self, "/api/airport/\(ident)", timeout: timeout)
     }
 
     /// The route's checkpoints, the ones picked for the nav log

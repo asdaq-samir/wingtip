@@ -27,7 +27,7 @@ enum RootLayout: Equatable {
     static func inspects(_ route: AirportRoute) -> Bool {
         switch route {
         case .airport, .airspace: true
-        case .list, .nearFrom: false
+        case .list, .nearFrom, .nearby: false
         }
     }
 }
