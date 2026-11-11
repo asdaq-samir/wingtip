@@ -50,13 +50,38 @@ function pagersDrag(target: EventTarget | null, root: HTMLElement): boolean {
   return true;
 }
 
-/** The row under `target` that scrolls sideways itself (Nearest,
- *  Favorites), up to the pager's root; none where it starts elsewhere. */
-function sidewaysRow(target: EventTarget | null, root: HTMLElement): HTMLElement | null {
+/** Where a sideways list stands: at its first item (`start`) or its last
+ *  (`end`). */
+interface Ends {
+  start: () => boolean;
+  end: () => boolean;
+}
+
+/** The sideways list under `target`, up to the pager's root, and how to
+ *  read its ends: a row that scrolls itself (Nearest, Favorites) by its
+ *  scroll, and a carousel of its own (Recents' cards, any Embla row) by
+ *  where its first and last slides sit in its viewport -- the same for
+ *  every list, either way (the owner, 2026-11-11: "Ending scroll should
+ *  swipe applies to all the lists and both directions"). None where the
+ *  touch starts elsewhere. */
+function sidewaysList(target: EventTarget | null, root: HTMLElement): Ends | null {
   for (let el = target instanceof Element ? target : null; el && el !== root; el = el.parentElement) {
+    if (el.getAttribute("aria-roledescription") === "carousel") {
+      const viewport = [...el.children].find((c) => getComputedStyle(c).overflowX !== "visible") ?? el.firstElementChild;
+      const track = viewport?.firstElementChild;
+      if (!viewport || !track?.firstElementChild || !track.lastElementChild) return null;
+      const box = () => viewport.getBoundingClientRect();
+      return {
+        start: () => track.firstElementChild!.getBoundingClientRect().left >= box().left - 1,
+        end: () => track.lastElementChild!.getBoundingClientRect().right <= box().right + 1,
+      };
+    }
     if (el instanceof HTMLElement && el.scrollWidth > el.clientWidth + 1) {
       const x = getComputedStyle(el).overflowX;
-      if (x === "auto" || x === "scroll") return el;
+      if (x === "auto" || x === "scroll") {
+        const row = el;
+        return { start: () => row.scrollLeft <= 0, end: () => row.scrollLeft + row.clientWidth >= row.scrollWidth - 1 };
+      }
     }
   }
   return null;
@@ -100,21 +125,22 @@ export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: num
       still();
     };
   }, [api]);
-  // At a sideways row's end the swipe goes on to the page (the owner,
-  // 2026-11-11: "At the end of the scroll, it should swipe"), as a phone's
-  // nested scrolling hands a drag on: a finger that keeps pulling past the
-  // row's last card (or before its first) turns the page by the stock
+  // At a sideways list's end the swipe goes on to the page (the owner,
+  // 2026-11-11: "At the end of the scroll, it should swipe", for every
+  // list and either way), as a phone's nested scrolling hands a drag on: a
+  // finger that keeps pulling past the list's last item (or before its
+  // first) turns the page by the stock
   // carousel's own scrollNext / scrollPrev, once a touch. Embla has no
   // option for a nested scroller's end, so the touch is watched here.
   useEffect(() => {
     if (!api || !drag) return;
     const root = api.rootNode();
-    let row: HTMLElement | null = null;
+    let row: Ends | null = null;
     let lastX = 0;
     let pull = 0;
     let turned = false;
     const start = (event: TouchEvent) => {
-      row = sidewaysRow(event.target, root);
+      row = sidewaysList(event.target, root);
       lastX = event.touches[0]?.clientX ?? 0;
       pull = 0;
       turned = false;
@@ -124,10 +150,8 @@ export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: num
       if (!row || turned || x === undefined) return;
       const dx = x - lastX;
       lastX = x;
-      const atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 1;
-      const atStart = row.scrollLeft <= 0;
-      if (dx < 0 && atEnd) pull = Math.min(0, pull) + dx;
-      else if (dx > 0 && atStart) pull = Math.max(0, pull) + dx;
+      if (dx < 0 && row.end()) pull = Math.min(0, pull) + dx;
+      else if (dx > 0 && row.start()) pull = Math.max(0, pull) + dx;
       else pull = 0;
       if (pull <= -PULL_PAST_END && api.canScrollNext()) {
         turned = true;
