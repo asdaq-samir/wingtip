@@ -508,9 +508,15 @@ struct GWAircraftRequest: Codable, Equatable, Sendable {
     var usableFuelGal: Double?
 }
 
+// MARK: - GWAppleNonceAnswer
+struct GWAppleNonceAnswer: Codable, Equatable, Sendable {
+    var nonce: String
+}
+
 // MARK: - GWAppleToken
 struct GWAppleToken: Codable, Equatable, Sendable {
     var identityToken: String
+    var nonce: String?
 }
 
 // MARK: - GWApproval
@@ -725,6 +731,11 @@ struct GWLessonProgressRequest: Codable, Equatable, Sendable {
 struct GWQuiz: Codable, Equatable, Sendable {
     var answers: [GWQuizAnswerDto]
     var of: Int
+}
+
+// MARK: - GWLinkAccount
+struct GWLinkAccount: Codable, Equatable, Sendable {
+    var email: String
 }
 
 // MARK: - GWLogbookImportRequest

@@ -209,15 +209,29 @@
         "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "cruisePowerPct", "cruiseTasKt", "equipment", "figures", "fuelBurnGph", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal" ],
         "type" : "object"
       },
+      "AppleNonceAnswer" : {
+        "properties" : {
+          "nonce" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "nonce" ],
+        "type" : "object"
+      },
       "AppleToken" : {
         "properties" : {
           "identityToken" : {
             "maxLength" : 8000,
             "minLength" : 0,
             "type" : "string"
+          },
+          "nonce" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "identityToken" ],
+        "required" : [ "identityToken", "nonce" ],
         "type" : "object"
       },
       "ApproachLessonDto" : {
@@ -1818,6 +1832,15 @@
           }
         },
         "required" : [ "briefed", "flown", "quiz" ],
+        "type" : "object"
+      },
+      "LinkAccount" : {
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "email" ],
         "type" : "object"
       },
       "LogbookEntryDto" : {
@@ -3475,7 +3498,7 @@
     },
     "/api/auth/apple/native" : {
       "post" : {
-        "description" : "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id) and signs the pilot in on this session. 404 where no iOS app is set up.",
+        "description" : "Checks the native sheet's identity token (Apple's keys, issuer, this app's bundle id, and its nonce where one is sent) and signs the pilot in on this session. 404 where no iOS app is set up.",
         "operationId" : "signIn",
         "requestBody" : {
           "content" : {
@@ -3520,6 +3543,26 @@
           }
         },
         "summary" : "Sign in with Apple from the iOS app",
+        "tags" : [ "apple-native-sign-in-controller" ]
+      }
+    },
+    "/api/auth/apple/native/nonce" : {
+      "post" : {
+        "description" : "Kept by this session, used once. Give Apple its SHA-256 as lowercase hex (ASAuthorizationAppleIDRequest.nonce), then send it as `nonce` with the identity token.",
+        "operationId" : "nonce",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AppleNonceAnswer"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "A nonce for Sign in with Apple from the iOS app",
         "tags" : [ "apple-native-sign-in-controller" ]
       }
     },
@@ -3703,6 +3746,61 @@
         },
         "summary" : "Start a magic-link sign-in",
         "tags" : [ "magic-link-controller" ]
+      }
+    },
+    "/api/auth/magic-link/account" : {
+      "post" : {
+        "description" : "The masked address (a•••@icloud.com) a usable magic-link token signs in to, without using it; 404 for a used, expired or unknown token, alike; 429 past the hour's limit.",
+        "operationId" : "account",
+        "requestBody" : {
+          "content" : {
+            "application/x-www-form-urlencoded" : {
+              "schema" : {
+                "properties" : {
+                  "token" : {
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "token" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LinkAccount"
+                }
+              }
+            },
+            "description" : "The link's account, masked"
+          },
+          "404" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LinkAccount"
+                }
+              }
+            },
+            "description" : "No usable link with that token"
+          },
+          "429" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/LinkAccount"
+                }
+              }
+            },
+            "description" : "Too many asks from this address this hour"
+          }
+        },
+        "summary" : "Whose account a sign-in link is for",
+        "tags" : [ "magic-link-account-controller" ]
       }
     },
     "/api/auth/magic-link/verify" : {
