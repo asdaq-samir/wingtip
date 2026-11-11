@@ -16,6 +16,12 @@ class CheckpointNoteSaved(BaseModel):
     note: CheckpointNote
 
 
+class PilotNotes(BaseModel):
+    """A pilot's own notes, for their account's export."""
+
+    notes: list[CheckpointNote]
+
+
 class PilotNotesForgotten(BaseModel):
     """How many of one pilot's own notes went, as their account did."""
 

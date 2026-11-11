@@ -6,12 +6,16 @@ import Foundation
 struct GWAccountExport: Codable, Equatable, Sendable {
     var account: GWPilotDto
     var airplanes: [GWExportedAirplane]
+    var checkpointNotes: [GWPlannerCheckpointNote]?
+    var connectedApps: [GWConnectorGrantDto]
     var currency: GWCurrencyDto
     var exportedAt: String
     var flights: [GWExportedFlight]
     var format: String
     var instructing: GWInstructorDto
     var logbook: [GWLogbookEntryDto]
+    var records: GWAccountRecordsDto
+    var reminders: GWRemindersDto
     var training: GWTrainingDto
 }
 
@@ -224,6 +228,26 @@ struct GWVorCheckDto: Codable, Equatable, Sendable {
     var withinLimit: Bool
 }
 
+// MARK: - GWPlannerCheckpointNote
+struct GWPlannerCheckpointNote: Codable, Equatable, Sendable {
+    var createdAt, description: String
+    var lat, lon: Double
+    var route: String
+
+    enum CodingKeys: String, CodingKey {
+        case createdAt = "created_at"
+        case description, lat, lon, route
+    }
+}
+
+// MARK: - GWConnectorGrantDto
+struct GWConnectorGrantDto: Codable, Equatable, Sendable {
+    var app: String
+    var at: String?
+    var kind: String
+    var scopes, until: String?
+}
+
 // MARK: - GWCurrencyDto
 struct GWCurrencyDto: Codable, Equatable, Sendable {
     /// Approaches logged in the 6 calendar months before this one
@@ -256,7 +280,9 @@ struct GWCurrencyDto: Codable, Equatable, Sendable {
 // MARK: - GWExportedFlight
 struct GWExportedFlight: Codable, Equatable, Sendable {
     var flight: GWFlightDto
-    var track: GWTrackDto
+    var share: GWFlightShareDto?
+    var track: GWTrackDto?
+    var watch: GWFlightWatchDto?
 }
 
 // MARK: - GWFlightDto
@@ -295,6 +321,12 @@ struct GWRiskAssessmentDto: Codable, Equatable, Sendable {
     var score: Int
 }
 
+// MARK: - GWFlightShareDto
+struct GWFlightShareDto: Codable, Equatable, Sendable {
+    var includeTail: Bool
+    var sharedAt, token, url: String
+}
+
 // MARK: - GWTrackDto
 struct GWTrackDto: Codable, Equatable, Sendable {
     var points: [GWTrackPointDto]
@@ -307,6 +339,27 @@ struct GWTrackPointDto: Codable, Equatable, Sendable {
     var lat: Double
     var lon: Double
     var t: Int
+}
+
+// MARK: - GWFlightWatchDto
+struct GWFlightWatchDto: Codable, Equatable, Sendable {
+    var changedAt: String?
+    var changes: [GWBriefingChangeDto]
+    var checkedAt: String?
+    var departAt: String
+    var flightId: Int
+    var sources: [GWBriefingSourceDto]
+}
+
+// MARK: - GWBriefingChangeDto
+struct GWBriefingChangeDto: Codable, Equatable, Sendable {
+    var sources: [String]
+    var text: String
+}
+
+// MARK: - GWBriefingSourceDto
+struct GWBriefingSourceDto: Codable, Equatable, Sendable {
+    var id, label, text: String
 }
 
 // MARK: - GWInstructorDto
@@ -397,12 +450,6 @@ struct GWFlightSummaryDto: Codable, Equatable, Sendable {
     var totalDistanceNm, totalEteMin, totalFuelGal: Double?
 }
 
-// MARK: - GWFlightShareDto
-struct GWFlightShareDto: Codable, Equatable, Sendable {
-    var includeTail: Bool
-    var sharedAt, token, url: String
-}
-
 // MARK: - GWLogbookEntryDto
 struct GWLogbookEntryDto: Codable, Equatable, Sendable {
     var aircraft, aircraftType: String?
@@ -421,6 +468,40 @@ struct GWLogbookEntryDto: Codable, Equatable, Sendable {
     var soloHours, totalHours: Double
     var touchAndGoes, toweredLandings: Int
     var tracking: Bool
+}
+
+// MARK: - GWAccountRecordsDto
+struct GWAccountRecordsDto: Codable, Equatable, Sendable {
+    var featureUses: [GWFeatureUse]
+    var remindersSent: [GWSentReminder]
+    var subscription: GWSubscriptionRow?
+}
+
+/// One paid feature's uses this month (UTC)
+// MARK: - GWFeatureUse
+struct GWFeatureUse: Codable, Equatable, Sendable {
+    /// The month's allowance
+    var cap: Int
+    var feature: String
+    var used: Int
+}
+
+// MARK: - GWSentReminder
+struct GWSentReminder: Codable, Equatable, Sendable {
+    var daysBefore: Int
+    var dueOn, sentAt, what: String
+}
+
+// MARK: - GWSubscriptionRow
+struct GWSubscriptionRow: Codable, Equatable, Sendable {
+    var paidUntil, plan, store, storeRef: String?
+    var trialEndsAt, trialStartedAt: String?
+    var updatedAt: String
+}
+
+// MARK: - GWRemindersDto
+struct GWRemindersDto: Codable, Equatable, Sendable {
+    var on: Bool
 }
 
 // MARK: - GWTrainingDto
@@ -656,27 +737,6 @@ struct GWFlightServiceStatus: Codable, Equatable, Sendable {
     var provider: String
 }
 
-// MARK: - GWFlightWatchDto
-struct GWFlightWatchDto: Codable, Equatable, Sendable {
-    var changedAt: String?
-    var changes: [GWBriefingChangeDto]
-    var checkedAt: String?
-    var departAt: String
-    var flightId: Int
-    var sources: [GWBriefingSourceDto]
-}
-
-// MARK: - GWBriefingChangeDto
-struct GWBriefingChangeDto: Codable, Equatable, Sendable {
-    var sources: [String]
-    var text: String
-}
-
-// MARK: - GWBriefingSourceDto
-struct GWBriefingSourceDto: Codable, Equatable, Sendable {
-    var id, label, text: String
-}
-
 // MARK: - GWFullNameRequest
 struct GWFullNameRequest: Codable, Equatable, Sendable {
     var fullName: String
@@ -801,11 +861,6 @@ struct GWPilotContactRequest: Codable, Equatable, Sendable {
     var phone: String?
 }
 
-// MARK: - GWRemindersDto
-struct GWRemindersDto: Codable, Equatable, Sendable {
-    var on: Bool
-}
-
 // MARK: - GWSaveFlightRequest
 struct GWSaveFlightRequest: Codable, Equatable, Sendable {
     var aircraftId: Int?
@@ -904,15 +959,6 @@ struct GWSubscriptionDto: Codable, Equatable, Sendable {
     var until: String?
     /// This month's uses of each paid feature Claude writes, against its cap
     var uses: [GWFeatureUse]
-}
-
-/// One paid feature's uses this month (UTC)
-// MARK: - GWFeatureUse
-struct GWFeatureUse: Codable, Equatable, Sendable {
-    /// The month's allowance
-    var cap: Int
-    var feature: String
-    var used: Int
 }
 
 // MARK: - GWTokenRequest

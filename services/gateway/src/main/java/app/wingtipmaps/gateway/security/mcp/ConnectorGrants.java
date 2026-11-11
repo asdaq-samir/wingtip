@@ -1,5 +1,10 @@
 package app.wingtipmaps.gateway.security.mcp;
 
+import app.wingtipmaps.gateway.dto.ConnectorGrantDto;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +24,33 @@ public class ConnectorGrants {
 
     public ConnectorGrants(JdbcOperations jdbc) {
         this.jdbc = jdbc;
+    }
+
+    /**
+     * What the pilot granted, for their export: each connection (which
+     * app, the scopes, when its token was first issued and until when it
+     * may be renewed) and each consent (the scopes agreed to). Never a
+     * token or a code.
+     */
+    public List<ConnectorGrantDto> of(long pilotId) {
+        String principal = Long.toString(pilotId);
+        List<ConnectorGrantDto> granted = new ArrayList<>(jdbc.query(
+                "SELECT c.client_name, a.authorized_scopes, a.access_token_issued_at, a.refresh_token_expires_at"
+                        + " FROM oauth2_authorization a JOIN oauth2_registered_client c ON c.id = a.registered_client_id"
+                        + " WHERE a.principal_name = ? ORDER BY a.access_token_issued_at",
+                (r, n) -> new ConnectorGrantDto(
+                        r.getString(1), "connection", r.getString(2), instant(r.getTimestamp(3)), instant(r.getTimestamp(4))),
+                principal));
+        granted.addAll(jdbc.query(
+                "SELECT c.client_name, x.authorities FROM oauth2_authorization_consent x"
+                        + " JOIN oauth2_registered_client c ON c.id = x.registered_client_id WHERE x.principal_name = ?",
+                (r, n) -> new ConnectorGrantDto(r.getString(1), "consent", r.getString(2), null, null),
+                principal));
+        return granted;
+    }
+
+    private static Instant instant(Timestamp at) {
+        return at == null ? null : at.toInstant();
     }
 
     /** Ends every connection the pilot made: their tokens stop working at once. */
