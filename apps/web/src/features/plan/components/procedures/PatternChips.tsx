@@ -15,6 +15,33 @@ import { CHIP } from "../routeListStyle";
  *  with none picked yet: a toggle's value is a string. */
 export const NONE = "none";
 
+/** `chip` brought to the middle of `row` sideways, by the browser's own
+ *  scrollIntoView, the row alone moved: `container: "nearest"` keeps it to
+ *  the row where the browser reads it (Chrome 140); where it does not
+ *  (Safari), "nearest" could still scroll the sheet up or down to bring
+ *  the chip in, so every scroller above the row is put back where it was,
+ *  in the same frame. */
+function centre(chip: HTMLElement, row: HTMLElement) {
+  const kept: [Element, number, number][] = [];
+  for (let el = row.parentElement; el; el = el.parentElement) kept.push([el, el.scrollTop, el.scrollLeft]);
+  let contained = false;
+  const options = {
+    inline: "center",
+    block: "nearest",
+    behavior: "instant",
+    get container() {
+      contained = true;
+      return "nearest";
+    },
+  } as ScrollIntoViewOptions;
+  chip.scrollIntoView(options);
+  if (contained) return;
+  for (const [el, top, left] of kept) {
+    if (el.scrollTop !== top) el.scrollTop = top;
+    if (el.scrollLeft !== left) el.scrollLeft = left;
+  }
+}
+
 /**
  * Choices laid out as chips, as iOS's filters are, one of them picked:
  * shadcn's ToggleGroup (Base UI: a group of toggles to a screen reader,
@@ -66,23 +93,28 @@ export function Chips({
   useEffect(() => {
     const box = row.current;
     if (!box) return;
+    let gone = false;
     const show = () => {
       const on = box.querySelector<HTMLElement>("[data-pressed]");
       if (!on) return;
-      // Where it lies in the line's scroll, by layout: the chips slide in
-      // as the line opens (`enter`), and their place on screen then was
-      // 24 points off the middle (procedures:307). The group moves as one,
-      // so the chip's place in it holds.
-      const group = on.closest<HTMLElement>("[data-slot=toggle-group]") ?? on.parentElement!;
-      const chip = on.getBoundingClientRect(),
-        its = group.getBoundingClientRect();
-      box.scrollLeft = group.offsetLeft + (chip.left - its.left) + chip.width / 2 - box.clientWidth / 2;
+      // The browser's own centring (scrollIntoView). Not while the chips
+      // slide in as the line opens (`enter`): a chip's place on screen
+      // then was 24 points off the middle (procedures:307), so after.
+      const moving = (on.closest<HTMLElement>("[data-slot=toggle-group]") ?? on.parentElement!).getAnimations({ subtree: true });
+      if (moving.length) {
+        void Promise.allSettled(moving.map((a) => a.finished)).then(() => !gone && centre(on, box));
+        return;
+      }
+      centre(on, box);
     };
     show();
     const watch = new ResizeObserver(show);
     watch.observe(box);
     if (box.firstElementChild) watch.observe(box.firstElementChild);
-    return () => watch.disconnect();
+    return () => {
+      gone = true;
+      watch.disconnect();
+    };
   }, [value]);
   return (
     // One line, scrolled sideways where the chips are more than fit, at
