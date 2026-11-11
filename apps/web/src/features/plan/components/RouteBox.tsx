@@ -1,6 +1,7 @@
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from "react";
 import { ArrowRight, Coffee, Fuel, PlaneLanding, PlaneTakeoff, Plus, Route, Trash2, TriangleAlert } from "lucide-react";
 import { mergeProps } from "@base-ui/react/merge-props";
+import { ScrollArea } from "@base-ui/react/scroll-area";
 import { movePoint, usePointDrag } from "./pointDrag";
 import { cn } from "cn";
 import AirportPicker from "../../../components/AirportPicker";
@@ -320,37 +321,13 @@ export default function RouteBox({
   // row, in which ids can slide etc. even when routes have more fixes
   // than the space in the row"): the box keeps one line's height whatever
   // the route, and the pills slide sideways under a finger. Whether they
-  // run on past either end, read as the box or its pills change and as it
-  // is slid, for the fade at each edge that says there is more there.
-  const [runsOn, setRunsOn] = useState({ before: false, after: false });
-  useEffect(() => {
-    const el = slide.current;
-    if (!el) return;
-    // Once a frame, however many pills a change rewrites.
-    let frame = 0;
-    const read = () => {
-      frame = 0;
-      const over = el.scrollWidth - el.clientWidth > RUNS_ON_PX;
-      const before = over && el.scrollLeft > RUNS_ON_PX;
-      const after = over && el.scrollWidth - el.clientWidth - el.scrollLeft > RUNS_ON_PX;
-      setRunsOn((was) => (was.before === before && was.after === after ? was : { before, after }));
-    };
-    const soon = () => {
-      if (!frame) frame = requestAnimationFrame(read);
-    };
-    const sized = new ResizeObserver(soon);
-    sized.observe(el);
-    const changed = new MutationObserver(soon);
-    changed.observe(el, { childList: true, subtree: true });
-    el.addEventListener("scroll", soon, { passive: true });
-    soon();
-    return () => {
-      cancelAnimationFrame(frame);
-      sized.disconnect();
-      changed.disconnect();
-      el.removeEventListener("scroll", soon);
-    };
-  }, []);
+  // run on past either end -- Base UI's ScrollArea says so on its
+  // viewport (data-overflow-x-start / -end), read as the box or its pills
+  // change and as it is slid -- for the fade at each edge that says there
+  // is more there.
+  // The pills' row itself (ScrollArea.Content), whose room types at the
+  // end as the box's does (isRoom).
+  const slideRow = useRef<HTMLDivElement>(null);
   // The field taken, and each point typed into it: the row slid to its
   // end, where the field and the new point are. Not as it opens -- a
   // route arrives a point at a time as it loads, which slid it there --
@@ -360,7 +337,8 @@ export default function RouteBox({
     const el = slide.current;
     if (el && focused && at === null) el.scrollTo({ left: el.scrollWidth, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, [pointCount, focused, at]);
-  const isRoom = (e: MouseEvent<HTMLDivElement>) => e.target === e.currentTarget || e.target === slide.current;
+  const isRoom = (e: MouseEvent<HTMLDivElement>) =>
+    e.target === e.currentTarget || e.target === slide.current || e.target === slideRow.current;
   // A finger's 44 points round each pill, as iOS gives a control: the
   // pills are 28 tall in a row that clips them (it slides sideways), so
   // their own ::after could not reach, and a tap 8 points over or under
@@ -640,128 +618,134 @@ export default function RouteBox({
             {/* The pills in one row that slides sideways under a finger when the route is longer than the box (the
                owner, 2026-11-04), as ForeFlight's flight plan box does; the end faded where it runs on, so a point
                past it reads as there. A drag up or down on it is the sheet's (useSheetDrag), across is the row's. */}
-            <div
-              ref={slide}
-              className={cn(
-                "flex min-w-0 flex-1 flex-nowrap items-center gap-x-px overflow-x-auto overflow-y-hidden overscroll-x-contain py-1 pr-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0",
-                runsOn.before && runsOn.after
-                  ? "[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]"
-                  : runsOn.after
-                    ? "[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]"
-                    : runsOn.before && "[mask-image:linear-gradient(to_right,transparent,black_1.5rem)]",
-              )}
-              data-testid="route-slide"
-            >
-              {/* Each point a pill dragged and dropped on (Pill, pointDrag);
+            <ScrollArea.Root overflowEdgeThreshold={RUNS_ON_PX} className="min-w-0 flex-1">
+              <ScrollArea.Viewport
+                ref={slide}
+                // Kept out of the tab order, as the row was; a drag up or
+                // down the sheet's, the stock viewport's scroll across only.
+                tabIndex={-1}
+                style={{ overflowY: "hidden" }}
+                className={cn(
+                  "overscroll-x-contain",
+                  "data-overflow-x-end:[mask-image:linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]",
+                  "data-overflow-x-start:[mask-image:linear-gradient(to_right,transparent,black_1.5rem)]",
+                  "data-overflow-x-start:data-overflow-x-end:[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]",
+                )}
+                data-testid="route-slide"
+              >
+                <ScrollArea.Content ref={slideRow} className="flex flex-nowrap items-center gap-x-px py-1 pr-2 [&>*]:shrink-0">
+                  {/* Each point a pill dragged and dropped on (Pill, pointDrag);
                   the browser's own drag scrolls the box near its ends. */}
-              {points.map((point, i) => (
-                <Fragment key={ids[i]}>
-                  {/* Before the first point an arrow only with no
+                  {points.map((point, i) => (
+                    <Fragment key={ids[i]}>
+                      {/* Before the first point an arrow only with no
                       departure yet: the departure is typed there. */}
-                  {(i > 0 || !hasDep) && arrow(i)}
-                  {/* Its arrival and approach before it, as they are
+                      {(i > 0 || !hasDep) && arrow(i)}
+                      {/* Its arrival and approach before it, as they are
                       flown into it, at the owner's ask ("I want to show
                       the approach pill before the corresponding airport
                       pill"); its departure after it (below). A tap opens
                       the Procedures they were picked in. Not points of
                       the route: not dragged, not typed. */}
-                  {i === points.findIndex((p) => p === point) &&
-                    procedures
-                      .filter((p) => sameField(p.ident, point) && p.kind !== "departure")
-                      .sort((a, b) => (a.kind === "arrival" ? 0 : 1) - (b.kind === "arrival" ? 0 : 1))
-                      .map((p) => (
-                        <ProcedureChip
-                          key={`${p.kind}-${p.label}`}
-                          procedure={p}
-                          before
-                          onOpen={onProcedures ? () => onProcedures(p) : undefined}
-                        />
-                      ))}
-                  <Pill
-                    onMove={(from) => change(movePoint(points, from, i))}
-                    onStep={(by) => change(movePoint(points, i, i + by))}
-                    last={i === points.length - 1}
-                    ident={point}
-                    waypoint={waypoints.has(point)}
-                    index={i}
-                    airspaceOf={airspaceOf}
-                    metarColourOf={metarColourOf}
-                    role={roleOf(i)}
-                    stopNumber={i + (hasDep ? 0 : 1)}
-                    onChange={(ident) => change(points.map((p, j) => (j === i ? ident : p)))}
-                    altitude={altitudeAt(point, waypoints.has(point))}
-                    onEditAltitude={() =>
-                      setEditing({ ident: point, waypoint: waypoints.has(point), altitude: altitudeAt(point, waypoints.has(point)) })
-                    }
-                    onRemove={() => remove(i)}
-                    unknown={unknownPoint?.ident === point}
-                    onOpen={
-                      onOpenAirport && !waypoints.has(point) && identOf(point) && unknownPoint?.ident !== point
-                        ? () => onOpenAirport(identOf(point))
-                        : undefined
-                    }
-                    // Flown to: a stop or the destination, not where it starts.
-                    direct={directTo !== null && sameField(directTo, point)}
-                    onDirect={
-                      onDirectTo && i > 0 && hasDep
-                        ? () => onDirectTo(directTo !== null && sameField(directTo, point) ? null : point)
-                        : undefined
-                    }
-                  />
-                  {i === points.findIndex((p) => p === point) &&
-                    procedures
-                      .filter((p) => sameField(p.ident, point) && p.kind === "departure")
-                      .map((p) => (
-                        <ProcedureChip
-                          key={`${p.kind}-${p.label}`}
-                          procedure={p}
-                          onOpen={onProcedures ? () => onProcedures(p) : undefined}
-                        />
-                      ))}
-                  {/* The fuel stops suggested for the flight that leaves
+                      {i === points.findIndex((p) => p === point) &&
+                        procedures
+                          .filter((p) => sameField(p.ident, point) && p.kind !== "departure")
+                          .sort((a, b) => (a.kind === "arrival" ? 0 : 1) - (b.kind === "arrival" ? 0 : 1))
+                          .map((p) => (
+                            <ProcedureChip
+                              key={`${p.kind}-${p.label}`}
+                              procedure={p}
+                              before
+                              onOpen={onProcedures ? () => onProcedures(p) : undefined}
+                            />
+                          ))}
+                      <Pill
+                        onMove={(from) => change(movePoint(points, from, i))}
+                        onStep={(by) => change(movePoint(points, i, i + by))}
+                        last={i === points.length - 1}
+                        ident={point}
+                        waypoint={waypoints.has(point)}
+                        index={i}
+                        airspaceOf={airspaceOf}
+                        metarColourOf={metarColourOf}
+                        role={roleOf(i)}
+                        stopNumber={i + (hasDep ? 0 : 1)}
+                        onChange={(ident) => change(points.map((p, j) => (j === i ? ident : p)))}
+                        altitude={altitudeAt(point, waypoints.has(point))}
+                        onEditAltitude={() =>
+                          setEditing({ ident: point, waypoint: waypoints.has(point), altitude: altitudeAt(point, waypoints.has(point)) })
+                        }
+                        onRemove={() => remove(i)}
+                        unknown={unknownPoint?.ident === point}
+                        onOpen={
+                          onOpenAirport && !waypoints.has(point) && identOf(point) && unknownPoint?.ident !== point
+                            ? () => onOpenAirport(identOf(point))
+                            : undefined
+                        }
+                        // Flown to: a stop or the destination, not where it starts.
+                        direct={directTo !== null && sameField(directTo, point)}
+                        onDirect={
+                          onDirectTo && i > 0 && hasDep
+                            ? () => onDirectTo(directTo !== null && sameField(directTo, point) ? null : point)
+                            : undefined
+                        }
+                      />
+                      {i === points.findIndex((p) => p === point) &&
+                        procedures
+                          .filter((p) => sameField(p.ident, point) && p.kind === "departure")
+                          .map((p) => (
+                            <ProcedureChip
+                              key={`${p.kind}-${p.label}`}
+                              procedure={p}
+                              onOpen={onProcedures ? () => onProcedures(p) : undefined}
+                            />
+                          ))}
+                      {/* The fuel stops suggested for the flight that leaves
                       this point, dashed after it as the route goes on
                       to them (FuelStopChip). */}
-                  {i < points.length - 1 &&
-                    i === points.findIndex((p) => p === point) &&
-                    fuelStops
-                      .filter((f) => sameField(f.departure, point))
-                      .slice(0, 1)
-                      .flatMap((f) =>
-                        f.stops.map((stop) => (
-                          <Fragment key={`fuel-${stop.ident}`}>
-                            <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
-                            <FuelStopChip
-                              ident={stop.ident}
-                              reason={f.reason}
-                              onAdd={
-                                onKeepFuelStops
-                                  ? () =>
-                                      onKeepFuelStops(
-                                        point,
-                                        f.stops.map((s) => s.ident),
-                                      )
-                                  : undefined
-                              }
-                              onHide={onHideFuelStop ? () => onHideFuelStop(stop.ident) : undefined}
-                            />
-                          </Fragment>
-                        )),
-                      )}
-                </Fragment>
-              ))}
-              {/* After the last point: the destination typed, or changed.
+                      {i < points.length - 1 &&
+                        i === points.findIndex((p) => p === point) &&
+                        fuelStops
+                          .filter((f) => sameField(f.departure, point))
+                          .slice(0, 1)
+                          .flatMap((f) =>
+                            f.stops.map((stop) => (
+                              <Fragment key={`fuel-${stop.ident}`}>
+                                <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
+                                <FuelStopChip
+                                  ident={stop.ident}
+                                  reason={f.reason}
+                                  onAdd={
+                                    onKeepFuelStops
+                                      ? () =>
+                                          onKeepFuelStops(
+                                            point,
+                                            f.stops.map((s) => s.ident),
+                                          )
+                                      : undefined
+                                  }
+                                  onHide={onHideFuelStop ? () => onHideFuelStop(stop.ident) : undefined}
+                                />
+                              </Fragment>
+                            )),
+                          )}
+                    </Fragment>
+                  ))}
+                  {/* After the last point: the destination typed, or changed.
                   With none yet, an arrow on to it; with one, an arrow on from
                   it while the field is taken, at the pilot's ask -- what is
                   typed there is the new destination, the old one a stop. */}
-              {at === null && (
-                <>
-                  {points.length > 0 && (!hasDest || focused || !!typed) && (
-                    <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" data-testid="route-arrow-on" />
+                  {at === null && (
+                    <>
+                      {points.length > 0 && (!hasDest || focused || !!typed) && (
+                        <ArrowRight className="size-3 shrink-0 text-muted-foreground" aria-hidden="true" data-testid="route-arrow-on" />
+                      )}
+                      {typing}
+                    </>
                   )}
-                  {typing}
-                </>
-              )}
-            </div>
+                </ScrollArea.Content>
+              </ScrollArea.Viewport>
+            </ScrollArea.Root>
             {/* The route is cleared from its ••• menu, not a ✕ here (the
                 owner, 2026-11-11, ShareMenu's Clear route). */}
             {/* Folded again, as iOS's Done ends an edit: the box's first line
