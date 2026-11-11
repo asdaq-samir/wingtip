@@ -19,8 +19,11 @@ The rules over all of it:
 - **On-device first, then Apple's cloud, then Claude.** Apple's
   on-device model and Vision on the phone; Apple's Private Cloud Compute
   where the phone's model cannot answer (the owner, 2026-11-09: "Yes to AI
-  cloud"); the planner's Claude only where a feature has a Claude path and
-  neither of Apple's could; no AI at all is a working state.
+  cloud"); the planner's Claude only where a feature has a Claude path,
+  neither of Apple's could, and the Claude features are on. They are off
+  until the subscription is decided ([decision 0035](decisions/0035-claude-off-until-subscription.md);
+  `API/ServerFeatures.swift`), so today the chain stops at the phone and
+  the engine. No AI at all is a working state.
 
 ## What iOS 27 has (read from the 27.2 SDK, Xcode 27.2, 27B52)
 
@@ -104,8 +107,12 @@ branch (`claude/ios27-ai`). Built in order of value to a pilot.
   `_Vision_FoundationModels` overlay, which the iOS 27.2 device SDK has
   and the simulator SDK does not; the simulator build reads a photo with
   the model alone, and a phone gives it the tool.
-- **Claude where Private Cloud Compute cannot serve.** The order is
-  on-device, then Private Cloud Compute, then Claude. Claude stays for:
+- **Claude where Private Cloud Compute cannot serve, once it is on.** The
+  order is on-device, then Private Cloud Compute, then Claude, and the
+  last step is skipped while the Claude features are off (the default,
+  decision 0035: Ask answers on the phone whatever its picker says, the
+  picker is hidden, and the words come from the phone or not at all).
+  With them on, Claude is used for:
   a photographed page where neither of Apple's models takes images (the
   assistant's reader); Ask under Automatic with a signal, which goes to
   the planner's assistant first because its tools (plan a flight, the

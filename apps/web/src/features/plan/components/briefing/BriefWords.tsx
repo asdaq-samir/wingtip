@@ -6,6 +6,7 @@ import { contextNow } from "../../../../lib/ask/useAsk";
 import type { PanelTab } from "../navlog/panelTab";
 import WordsSection from "../../../../components/WordsSection";
 import { wordsState } from "../../../../lib/wordsState";
+import { useClaudeOn } from "../../../../lib/subscription";
 
 /** The words are asked once for a route and its time, and kept: not on
  *  every render, and not again for ten minutes. */
@@ -22,10 +23,13 @@ type OpenSection = (tab: PanelTab, section: string) => void;
  * words (the NOTAMs that matter are features/notamRanking's). Each is one billed call for a route
  * and its time (react-query, keyed by them), and each title opens the
  * list it was written from: the Risk Assessment and the weather along
- * the route.
+ * the route. Claude writes them, so neither is there while the
+ * deployment keeps Claude off (lib/subscription, the owner's 2026-11-10
+ * decision): the verdict and the glance cards above say the same figures.
  */
 export function RiskWords({ open }: { open: OpenSection }) {
   const plan = useBriefPlan();
+  const on = useClaudeOn();
   const items = useVerdict((v) => v.items);
   // Once every finding is in: the words of a verdict still waiting on the
   // weather would be asked again a moment later.
@@ -43,11 +47,11 @@ export function RiskWords({ open }: { open: OpenSection }) {
         signal,
       );
     },
-    enabled: plan.routed && settled,
+    enabled: on && plan.routed && settled,
     staleTime: KEPT_MS,
     meta: { silent: true },
   });
-  if (!plan.routed) return null;
+  if (!on || !plan.routed) return null;
   return (
     <WordsSection
       title="Risk picture"
@@ -60,6 +64,7 @@ export function RiskWords({ open }: { open: OpenSection }) {
 
 export function WeatherWords({ open }: { open: OpenSection }) {
   const plan = useBriefPlan();
+  const on = useClaudeOn();
   const query = useQuery({
     // With the time en route and the legs once the nav log has them, as
     // the briefing itself is asked again then (usePlan).
@@ -77,11 +82,11 @@ export function WeatherWords({ open }: { open: OpenSection }) {
         },
         signal,
       ),
-    enabled: plan.routed && !!plan.dep && !!plan.dest,
+    enabled: on && plan.routed && !!plan.dep && !!plan.dest,
     staleTime: KEPT_MS,
     meta: { silent: true },
   });
-  if (!plan.routed) return null;
+  if (!on || !plan.routed) return null;
   return (
     <WordsSection
       title="The weather, in words"

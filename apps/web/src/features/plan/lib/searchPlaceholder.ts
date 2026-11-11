@@ -3,8 +3,9 @@ import type { SearchPick } from "../../../lib/oneSearch";
 /** What the one search says in its empty field: what it is asked for --
  *  the airport to fly Direct To, a picker's airport (its label, as each
  *  picker's own field said it), Home or a Favorite to keep -- or else all
- *  it finds. */
-export function placeholderOf(direct: boolean, pick: SearchPick | null, picking: string): string {
+ *  it finds, "or ask" only where the assistant answers (`ask`: Claude
+ *  on, lib/subscription; off by default since 2026-11-10). */
+export function placeholderOf(direct: boolean, pick: SearchPick | null, picking: string, ask: boolean): string {
   if (direct) return "Direct to which airport?";
   if (pick)
     return pick.fixes
@@ -12,23 +13,26 @@ export function placeholderOf(direct: boolean, pick: SearchPick | null, picking:
       : `Search for ${/^[aeiou]/i.test(pick.label) ? "an" : "a"} ${pick.label.toLowerCase()}`;
   if (picking === "home") return "Search for your home airport";
   if (picking === "favorite") return "Search for an airport to keep";
-  return SEARCH_ALL;
+  return ask ? SEARCH_ASK : SEARCH_ALL;
 }
 
-/** The default's whole sentence, said to a screen reader (the field's
+/** The defaults' whole sentences, said to a screen reader (the field's
  *  aria-label). */
-const SEARCH_ALL = "Search airports, airplanes, or ask";
+const SEARCH_ASK = "Search airports, airplanes, or ask";
+const SEARCH_ALL = "Search airports and airplanes";
+/** The field's own words for them, which fit beside the mic and Cancel at
+ *  the owner's larger text sizes (17.88 and 19.65 px; the sheet audit's
+ *  F-S2, 2026-11-10: the whole sentence ran under them). */
+const SHORT: Record<string, string> = { [SEARCH_ASK]: "Search or ask", [SEARCH_ALL]: "Search airports" };
 
-/** What the empty field shows of `placeholderOf`'s words: the default cut
- *  to "Search or ask", which fits beside the mic and Cancel at the
- *  owner's larger text sizes (17.88 and 19.65 px; the sheet audit's F-S2,
- *  2026-11-10: the whole sentence ran under them); the rest as they are. */
+/** What the empty field shows of `placeholderOf`'s words: a default cut
+ *  short, the rest as they are. */
 export function shortPlaceholder(label: string): string {
-  return label === SEARCH_ALL ? "Search or ask" : label;
+  return SHORT[label] ?? label;
 }
 
 /** The one search's words: `placeholder` in the field, `label` its name. */
-export function searchWords(direct: boolean, pick: SearchPick | null, picking: string) {
-  const label = placeholderOf(direct, pick, picking);
+export function searchWords(direct: boolean, pick: SearchPick | null, picking: string, ask: boolean) {
+  const label = placeholderOf(direct, pick, picking, ask);
   return { label, placeholder: shortPlaceholder(label) };
 }

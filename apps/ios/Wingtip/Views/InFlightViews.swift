@@ -21,11 +21,11 @@ struct CheckpointNotesView: View {
 
     var body: some View {
         List {
-            Section {
-                Button(writing ? (count.map { "Writing \(notes.count) of \($0)…" } ?? "Writing…") : "Describe the Checkpoints") { describe() }
-                    .disabled(writing || plan.checkpoints.isEmpty)
-                ProblemLine(problem)
+            // Claude's descriptions have no free path: hidden while the Claude features are off (docs/decisions/0035).
+            if ServerFeatures.shared.claudeOn {
+                Button(writing ? (count.map { "Writing \(notes.count) of \($0)…" } ?? "Writing…") : "Describe the Checkpoints") { describe() }.disabled(writing || plan.checkpoints.isEmpty)
             }
+            ProblemLine(problem)
             Section("Checkpoints") {
                 if plan.checkpoints.isEmpty { Text("The route's checkpoints come with its plan.").foregroundStyle(.secondary) }
                 ForEach(plan.checkpoints) { point in

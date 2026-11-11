@@ -20,6 +20,7 @@ import {
 
 /** One state of the app as a pilot sees it, reached from a fresh page. */
 import { SEARCH_SCREENS } from "./searchScreens";
+import { claudeFeatures } from "../claude";
 
 export type Screen = { name: string; ready: (page: Page) => Promise<void> };
 
@@ -106,9 +107,8 @@ export const SCREENS: Screen[] = [
       await expect(sideDrawer(page).locator('[role="tabpanel"]:not([hidden]):not([inert])').getByTestId(shown).first()).toBeVisible({
         timeout: slow(30000),
       });
-      // And the briefing in: the Brief's Go / No-Go says what it found, and
-      // the mock oral's button is enabled once its question table loads --
-      // measured as it faded in, it read 2:1 on CI's iPad.
+      // And the briefing in: the Brief's Go / No-Go says what it found, and the mock oral's button (where
+      // Claude is on) is enabled once its question table loads -- measured as it faded in, it read 2:1 on CI's iPad.
       if (tab === "Preflight") {
         await expect(sideDrawer(page).getByTestId("verdict-weather")).not.toHaveAttribute("data-finding", "pending", {
           timeout: slow(60000),
@@ -603,9 +603,8 @@ export const SCREENS: Screen[] = [
     },
   },
   {
-    // The Brief's assistant (AskCard) with a question answered -- the
-    // conversation, its source chip, the words sections and the watch's
-    // switch -- the planner's AI routes answered here, so no billed call.
+    // The Brief's assistant (AskCard) answered -- the conversation, its source chip, the words sections and the
+    // watch's switch -- Claude on for the page and its routes answered here, so no billed call (../claude).
     name: "brief ask",
     ready: async (page) => {
       const words = {
@@ -637,6 +636,7 @@ export const SCREENS: Screen[] = [
                 .join("\n") + "\n",
           }),
       );
+      await claudeFeatures(page);
       await page.goto(`/app/plan?${ROUTE}&brief=1`);
       await settle(page);
       await grabberTo(page, "full");

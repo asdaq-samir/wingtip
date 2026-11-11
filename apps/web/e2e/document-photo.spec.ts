@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { test, expect, type Route } from "@playwright/test";
 import { library, openConsole, showTabs } from "./helpers";
+import { claudeFeatures } from "./claude";
 
 /**
  * "Add from a Photo" in the Logbook: a paper logbook page photographed,
@@ -16,6 +17,7 @@ const A_PILOT = { id: 1, email: "pilot@example.com", displayName: "A Pilot", dev
 const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC", "base64");
 
 test("a logbook page's flights are logged only once ticked, each as the engine read it", async ({ page }) => {
+  await claudeFeatures(page); // the read stubbed below (./claude)
   await page.route("**/api/me", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
   const asked: { kind: string; media_type: string }[] = [];
   await page.route(

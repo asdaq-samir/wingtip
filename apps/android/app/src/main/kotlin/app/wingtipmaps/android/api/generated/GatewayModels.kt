@@ -770,8 +770,10 @@ data class Capabilities (
     val access: String,
 
     /**
-     * Where no subscription is sold, who has the features Claude writes: OFF, DEVELOPERS, or
-     * EVERYONE signed in.
+     * Who has the features Claude writes (the assistant, the written briefing, the readings in
+     * words, checkpoint descriptions, the mock oral, a photographed page read): OFF, the
+     * default, for nobody, whatever else is sold or open -- the apps then use only on-device
+     * models and the engine's own words; DEVELOPERS; or EVERYONE signed in.
      */
     val claudeFeatures: String,
 

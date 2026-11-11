@@ -54,9 +54,12 @@ public class SignInCapabilitiesController {
             boolean subscriptions,
 
             @Schema(
-                    description = "Where no subscription is sold, who has the features Claude writes: OFF, "
-                            + "DEVELOPERS, or EVERYONE signed in.",
-                    example = "EVERYONE")
+                    description = "Who has the features Claude writes (the assistant, the written briefing, "
+                            + "the readings in words, checkpoint descriptions, the mock oral, a photographed "
+                            + "page read): OFF, the default, for nobody, whatever else is sold or open -- the "
+                            + "apps then use only on-device models and the engine's own words; DEVELOPERS; "
+                            + "or EVERYONE signed in.",
+                    example = "OFF")
             SubscriptionService.ClaudeFeatures claudeFeatures) {}
 
     private final SignInOptions signIn;
@@ -68,7 +71,7 @@ public class SignInCapabilitiesController {
     public SignInCapabilitiesController(
             SignInOptions signIn,
             @Value("${app.subscription.enabled:false}") boolean sold,
-            @Value("${app.claude-features:EVERYONE}") SubscriptionService.ClaudeFeatures claude) {
+            @Value("${app.claude-features:OFF}") SubscriptionService.ClaudeFeatures claude) {
         this.signIn = signIn;
         this.sold = sold;
         this.claude = claude;

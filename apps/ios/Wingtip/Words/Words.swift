@@ -289,37 +289,50 @@ struct OnDeviceWords: WordsProvider {
 /// in plain language, when neither can (an older iOS, the model not
 /// ready, no signal and no planner). Never a figure of its own: the
 /// figures are on the screen already, and the words rest on them.
+/// While the server's Claude features are off (ServerFeatures, the
+/// owner's decision of 2026-11-10 in docs/decisions) the planner is not
+/// asked: its words are Claude's, and Apple's models answer alone.
 struct WordsFor: Sendable {
     var planner: any WordsProvider = PlannerWords()
     var device: any WordsProvider = OnDeviceWords()
+    var claudeOn: @Sendable () -> Bool = { ServerFeatures.claudeOnNow }
 
-    init(planner: any WordsProvider = PlannerWords(), device: any WordsProvider = OnDeviceWords()) {
+    init(planner: any WordsProvider = PlannerWords(), device: any WordsProvider = OnDeviceWords(),
+         claudeOn: @escaping @Sendable () -> Bool = { ServerFeatures.claudeOnNow }) {
         self.planner = planner
         self.device = device
+        self.claudeOn = claudeOn
     }
 
     func said(_ ask: WordsAsk) async -> SaidWords {
-        do {
-            let words = try await planner.words(ask)
-            // The planner reached but its model not ("The briefer could not
-            // be reached."): no sentences, and a reason to ask this iPhone,
-            // not an answer of no words. Here, not in PlannerWords, so a
-            // provider's own "unavailable" is read in one place.
-            if !(words.sentences.isEmpty && words.unavailable != nil) {
-                return SaidWords(words: words, origin: .planner)
-            }
-            Log.words.notice("the planner's \(ask.kind.rawValue, privacy: .public) words were unavailable")
-        } catch {
-            Log.words.notice("the planner's \(ask.kind.rawValue, privacy: .public) words failed: \(error.localizedDescription, privacy: .public)")
-        }
+        let server = claudeOn()
+        if server { if let words = await fromPlanner(ask) { return SaidWords(words: words, origin: .planner) } }
         do {
             let words = try await device.words(ask)
             return SaidWords(words: words, origin: .apple(words))
         } catch {
             Log.words.notice("the iPhone's \(ask.kind.rawValue, privacy: .public) words failed: \(error.localizedDescription, privacy: .public)")
             let why = (error as? WordsUnavailable)?.why ?? "Apple's on-device model could not write them."
-            return SaidWords(words: .none("none", "No words: the planner cannot be reached, and \(why.prefix(1).lowercased() + why.dropFirst())"), origin: .none)
+            let said = server ? "No words: the planner cannot be reached, and \(why.prefix(1).lowercased() + why.dropFirst())" : "No words: \(why)"
+            return SaidWords(words: .none("none", said), origin: .none)
         }
+    }
+
+    /// The planner's words, or nil where it failed or its model was not
+    /// reached, which is a reason to ask this iPhone.
+    private func fromPlanner(_ ask: WordsAsk) async -> Words? {
+        do {
+            let words = try await planner.words(ask)
+            // The planner reached but its model not ("The briefer could not
+            // be reached."): no sentences, and a reason to ask this iPhone,
+            // not an answer of no words. Here, not in PlannerWords, so a
+            // provider's own "unavailable" is read in one place.
+            if !(words.sentences.isEmpty && words.unavailable != nil) { return words }
+            Log.words.notice("the planner's \(ask.kind.rawValue, privacy: .public) words were unavailable")
+        } catch {
+            Log.words.notice("the planner's \(ask.kind.rawValue, privacy: .public) words failed: \(error.localizedDescription, privacy: .public)")
+        }
+        return nil
     }
 }
 

@@ -3,6 +3,7 @@ package app.wingtipmaps.android.coach
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.coach
@@ -27,6 +28,8 @@ interface CoachSource {
     suspend fun home(): String?
     suspend fun plan(ask: CoachAsk): ProficiencyPlan
     suspend fun words(plan: ProficiencyPlan): CoachWordsAnswer
+    /** Whether the words may be asked for at all: they are Claude's. */
+    fun wordsOffered(): Boolean = true
     /** The saved flights' debriefs (CoachDebriefs); none by default. */
     suspend fun debriefs(): List<CoachDebrief> = emptyList()
 }
@@ -38,6 +41,7 @@ object ServerCoach : CoachSource {
     override suspend fun home() = Gateway.me()?.homeBase
     override suspend fun plan(ask: CoachAsk) = Planner.coach(ask)
     override suspend fun words(plan: ProficiencyPlan) = Planner.coachWords(plan)
+    override fun wordsOffered() = ClaudeGate.on.value
     override suspend fun debriefs() = CoachDebriefs.fetch()
 }
 

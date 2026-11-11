@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { test, expect } from "@playwright/test";
 import { settle, sideDrawer, slow, openTab, openSection } from "./helpers";
+import { claudeFeatures } from "./claude";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -13,6 +14,7 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
 const ORAL = JSON.parse(readFileSync(new URL("./fixtures/oral.json", import.meta.url), "utf8"));
 
 test("a developer is asked about this flight, answers, and is graded against quoted sources", async ({ page }) => {
+  await claudeFeatures(page); // its question and grade stubbed below (./claude)
   const asked: { plan: string; focus: { code: string }[] }[] = [];
   const graded: { answer: string; source_ids: string[] }[] = [];
   await page.route("**/api/planner/oral/question", async (route) => {

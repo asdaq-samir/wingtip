@@ -25,6 +25,8 @@ from wingtip import (
     airspace_primaries,
     altitude,
     faa_data,
+    field_facts,
+    field_forecast,
     fixes,
     fuelstops,
     geo,
@@ -50,7 +52,6 @@ from ..schemas.airports import (
     AirportServices,
     ForecastWind,
     ChartPages,
-    NearestAirports,
     PlacesFound,
     PlateOverlay,
     ProcedureDrawing,
@@ -59,26 +60,12 @@ from ..schemas.airports import (
     WaypointsInView,
 )
 from ..gateway import PUBLIC, SHARED
+from ..field_marks import owners_of as _owners, surface_classes_of as _surface_classes
+from ..schemas.nearest import NearestAirports
 
 log = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-def _owners(places: list[dict]) -> list[tuple]:
-    """Each field's (military, private) from the FAA's airport file
-    (wingtip.faa_data), by either ident (KDLH, C81, KC81). The file's sets are
-    fetched once for all the fields, not once each: with the file missing
-    each fetch retries the download, and a zoomed-out map has hundreds."""
-    owned = faa_data.military_fields(altitude.DEFAULT_FAA_CACHE_DIR)
-    closed = faa_data.private_fields(altitude.DEFAULT_FAA_CACHE_DIR)
-    return [
-        (
-            owned.get(p["ident"].upper()) or owned.get(p.get("source_ident", "").upper()),
-            p["ident"].upper() in closed or p.get("source_ident", "").upper() in closed,
-        )
-        for p in places
-    ]
 
 
 @router.get("/api/airports/in-view", response_model=AirportsInView, openapi_extra=PUBLIC)
@@ -136,17 +123,6 @@ def airports_in_view(
     }
 
 
-def _surface_classes(places: list[dict]) -> list:
-    """Each field's class of airspace at its surface, for its mark on the
-    map (wingtip.airspace.surface_classes, all of them at once); None for each
-    where the FAA's airspace cannot be had, the marks drawn without it."""
-    try:
-        shp_path = airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR)
-        return airspace.surface_classes([(p["lat"], p["lon"]) for p in places], shp_path)
-    except (OSError, RuntimeError):
-        return [None] * len(places)
-
-
 @router.get("/api/places/search", response_model=PlacesFound, openapi_extra=PUBLIC)
 def places_search(q: str = "") -> PlacesFound:
     """Where a place typed is, for Nearest to find the fields near it
@@ -188,13 +164,18 @@ def _inbound_radio(frequencies: list[dict]) -> dict | None:
 
 @router.get("/api/airports/nearest", response_model=NearestAirports, openapi_extra=PUBLIC)
 def nearest_airports(
-    lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180), limit: int = Query(default=10, ge=1, le=25)
+    lat: float = Query(ge=-90, le=90),
+    lon: float = Query(ge=-180, le=180),
+    limit: int = Query(default=10, ge=1, le=25),
+    at: float | None = Query(default=None, description="A time, s since 1970: each field's forecast then (a search's VFR at...)."),
 ) -> NearestAirports:
     """The landing fields nearest a position -- own ship's, for the map's
-    Nearest -- the nearest first: how far and which way, each one's
-    longest open runway, a frequency listed for it, its flight category
-    where it reports, and its class of airspace at the surface, as the
-    map's marks have it."""
+    Nearest, and a search's results -- the nearest first: how far and
+    which way, each one's longest open runway, a frequency listed for it,
+    its flight category where it reports, and its class of airspace at
+    the surface, as the map's marks have it; and what a search filters
+    by: towered, fuel, runway surfaces, an instrument approach, the
+    METAR's wind and visibility, and with `at` the forecast then."""
     found = airports.nearest(lat, lon, limit)
     try:
         metars = weather.metar_for_idents([p["source_ident"] for p in found])
@@ -206,14 +187,22 @@ def nearest_airports(
         frequencies = airports.get_frequencies_for([p["source_ident"] for p in found])
     except (OSError, RuntimeError, ValueError):
         frequencies = {}
+    towers = faa_data.towered_fields(altitude.DEFAULT_FAA_CACHE_DIR)
     out = []
-    for p, cls, (military, private) in zip(found, _surface_classes(found), _owners(found)):
+    for p, cls, (military, private), facts, forecast in zip(
+        found, _surface_classes(found), _owners(found), field_facts.facts_for(found), field_forecast.categories_at(found, at)
+    ):
         lengths = [r["length_ft"] for r in airports.get_runways(p["source_ident"]) if not r["closed"] and r["length_ft"]]
+        metar = metars.get(p["source_ident"]) or {}
         out.append(
             {
                 **p,
+                **facts,
+                **{k: metar.get(k) for k in ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt", "visibility_sm")},
+                "forecast": forecast,
+                "towered": p["ident"].upper() in towers or p.get("source_ident", "").upper() in towers,
                 "longest_runway_ft": max(lengths) if lengths else None,
-                "flight_category": (metars.get(p["source_ident"]) or {}).get("flight_category"),
+                "flight_category": metar.get("flight_category"),
                 "military": military,
                 "private": private,
                 "airspace_class": cls,

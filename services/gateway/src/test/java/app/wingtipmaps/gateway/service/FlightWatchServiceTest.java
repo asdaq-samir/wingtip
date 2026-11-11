@@ -62,6 +62,9 @@ class FlightWatchServiceTest {
     private PlannerClient planner;
 
     @Mock
+    private ChangeLines lines;
+
+    @Mock
     private Mailer mail;
 
     private FlightWatchService service;
@@ -70,7 +73,17 @@ class FlightWatchServiceTest {
 
     @BeforeEach
     void service() {
-        service = new FlightWatchService(watches, flights, pilots, planner, mail, "https://maps.example.com/");
+        // The Claude features on, as most of these are about the words;
+        // the default, off, is its own test below.
+        service = new FlightWatchService(
+                watches,
+                flights,
+                pilots,
+                planner,
+                lines,
+                SubscriptionService.ClaudeFeatures.EVERYONE,
+                mail,
+                "https://maps.example.com/");
     }
 
     private static Pilot pilotWithId(long id) {
@@ -180,6 +193,45 @@ class FlightWatchServiceTest {
         assertThat(watch.getBriefingJson()).isEqualTo(LATER);
         assertThat(watch.getChangedAt()).isEqualTo(NOW);
         assertThat(watch.getCheckedAt()).isEqualTo(later);
+    }
+
+    /** Off, the default (the owner, 2026-11-10): the planner's own line
+     *  for each change is what the pilot is told, and the assistant, which
+     *  would ask Claude, is never asked. */
+    @Test
+    void withTheClaudeFeaturesOffThePlannersOwnLinesAreSentAndClaudeIsNeverAsked() {
+        FlightWatchService off = new FlightWatchService(
+                watches,
+                flights,
+                pilots,
+                planner,
+                lines,
+                SubscriptionService.ClaudeFeatures.OFF,
+                mail,
+                "https://maps.example.com/");
+        FlightWatch watch = new FlightWatch(7L, 1L, DEPART, THEN, NOW.minus(Duration.ofHours(1)));
+        given(watches.due(any(), any(), any(), any())).willReturn(List.of(watch));
+        given(flights.findById(7L)).willReturn(Optional.of(flightWithId(7L, pilot)));
+        given(planner.briefing("C81", "KDLH", List.of("KJVL"), DEPART, 205.0)).willReturn(LATER);
+        AssistantChangesWords planned = new AssistantChangesWords()
+                .changed(true)
+                .sentences(List.of(
+                        new AssistantSentence().text("KDLH METAR, VFR to IFR.").sources(List.of("metar:KDLH"))))
+                .sources(List.of(new AssistantSource()
+                        .id("metar:KDLH")
+                        .label("KDLH METAR, VFR to IFR")
+                        .text("Was: ...")))
+                .model(ChangeLines.WRITER);
+        given(lines.changes("C81", "KDLH", List.of("KJVL"), THEN, LATER)).willReturn(planned);
+        given(pilots.findById(1L)).willReturn(Optional.of(pilot));
+        given(watches.save(any(FlightWatch.class))).willAnswer(call -> call.getArgument(0));
+
+        assertThat(off.check(NOW)).isEqualTo(1);
+
+        verify(planner, never()).changes(any(), any(), any(), any(), any());
+        ArgumentCaptor<SimpleMailMessage> sent = ArgumentCaptor.forClass(SimpleMailMessage.class);
+        verify(mail).send(sent.capture());
+        assertThat(sent.getValue().getText()).startsWith("KDLH METAR, VFR to IFR.\n");
     }
 
     @Test

@@ -60,11 +60,22 @@ struct CoachPlanned: Sendable {
 /// answer them without a server.
 struct CoachCalls: Sendable {
     var plan: @Sendable (CoachAsk) async throws -> CoachPlanned
-    var words: @Sendable (Data) async throws -> CoachWords
+    /// The plan in Claude's words (the assistant's), or nil where the
+    /// server's Claude features are off: the engine's plan then stands
+    /// alone, with nothing said of words to come (ServerFeatures, the
+    /// owner's decision of 2026-11-10 in docs/decisions).
+    var words: (@Sendable (Data) async throws -> CoachWords)?
 
     /// Through the gateway, with the pilot's session and its CSRF token,
-    /// as both are the pilot's own and signed in.
-    static let gateway = CoachCalls(
+    /// as both are the pilot's own and signed in; the words only while
+    /// the server's Claude features are this pilot's.
+    static var gateway: CoachCalls {
+        var calls = server
+        if !ServerFeatures.claudeOnNow { calls.words = nil }
+        return calls
+    }
+
+    private static let server = CoachCalls(
         plan: { ask in
             let raw = try await post("/api/pilot/coach", try ask.body())
             return CoachPlanned(plan: try Planner.snakeCase.decode(ProficiencyPlan.self, from: raw), raw: raw)

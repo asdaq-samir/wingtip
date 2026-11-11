@@ -4,6 +4,7 @@ import { api } from "../../../lib/api/client";
 import { aircraftKey, choiceOf, N_NUMBER } from "../../../lib/aircraftChoice";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { useAsk } from "../../../lib/ask/useAsk";
+import { useClaudeOn } from "../../../lib/subscription";
 import { useRadioActions } from "../../../lib/atcRadio";
 import { SCREENS, type ScreenId } from "../../../lib/navigation/generated/screens";
 import { wantScreen } from "../../../lib/navigation/wanted";
@@ -112,6 +113,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   const [problem, setProblem] = useState<string | null>(null);
   const [focused, setFocused] = useState(false);
   const directTo = useRadioActions((s) => s.directTo);
+  const claude = useClaudeOn(); // Ask only with Claude on (lib/subscription, off by default since 2026-11-10)
 
   // The pilot's own airplanes: their records signed in, and the ones kept
   // on this device (their Airplane, Favorites and Recents, by ICAO address).
@@ -242,10 +244,9 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
       if (!typed && !SCREEN_KEYS[id] && id !== "emergency") continue;
       out.push({ key: `screen-${id}`, label: title, keys: SCREEN_KEYS[id], kind: "screen", run: () => (done(), wantScreen(id)) });
     }
-    // The words typed sent as a search round a place, Apple's "Search
-    // Nearby" row, first of the suggestions.
+    // The words typed sent as a search round a place, Apple's "Search Nearby" row, first.
     if (typed) out.push({ key: "nearby", label: typed, kind: "nearby", run: () => send(typed) });
-    if (typed) out.push({ key: "ask", label: `Ask: “${typed}”`, kind: "ask", run: () => ask(typed) });
+    if (typed && claude) out.push({ key: "ask", label: `Ask: “${typed}”`, kind: "ask", run: () => ask(typed) });
   }
 
   // Sent: round the place it names, else own ship or Nearest's place, else
@@ -372,7 +373,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     sent: !!sent && !focused,
     send,
     // The field's words, shown short and said whole.
-    ...searchWords(direct, pick, picking),
+    ...searchWords(direct, pick, picking, claude),
     answered: search.answered,
     airports,
     waypoints,

@@ -32,6 +32,7 @@ on:
       - design/**
       - scripts/build/engine-contract-apps.*
       - scripts/ci/content-mtimes.py
+      - scripts/build/ios-strings.sh
       - .github/workflows/native-ios.yml
   workflow_dispatch:
     inputs:
@@ -85,7 +86,7 @@ jobs:
           key: engine-ios-${{ hashFiles('engine/facade/**', 'engine/crates/**', 'engine/bindings/ffi/**', 'engine/Cargo.*', 'engine/rust-toolchain.toml') }}
       - name: The engine, for the app
         if: steps.engine.outputs.cache-hit != 'true'
-        run: engine/bindings/ffi/build-xcframework.sh
+        run: echo "::notice title=Cache miss::engine-ios" && engine/bindings/ffi/build-xcframework.sh
       - name: The engine, kept
         if: steps.engine.outputs.cache-hit != 'true'
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -116,6 +117,8 @@ jobs:
           path: ${{ runner.temp }}/derived
           key: ios-derived-v1-${{ hashFiles('.tool-versions', 'apps/ios/project.yml') }}-${{ github.sha }}
           restore-keys: ios-derived-v1-${{ hashFiles('.tool-versions', 'apps/ios/project.yml') }}-
+      - if: steps.derived.outputs.cache-matched-key == ''
+        run: echo "::notice title=Cache miss::ios-derived-data"
       - name: The simulators to test on
         id: sim
         run: |
@@ -164,6 +167,13 @@ jobs:
           grep -nE "error:|error\b|Could not|Test (Case|Suite)|Executed|\*\* (BUILD|TEST)" -A6 "$RUNNER_TEMP/xcodebuild.log" | tail -200 || true
           grep -E "✔ Test|✘ Test|Test run with" "$RUNNER_TEMP/xcodebuild.log" || true
           grep -qE "\*\* TEST SUCCEEDED \*\*" "$RUNNER_TEMP/xcodebuild.log"
+      # The string catalog holds every word the Swift says: the build above
+      # extracted them (SWIFT_EMIT_LOC_STRINGS), and xcodebuild, unlike
+      # Xcode's editor, never writes them back, so a change that adds or
+      # drops a string must commit the catalog scripts/build/ios-strings.sh
+      # syncs. After the build, since it reads the build's .stringsdata.
+      - name: The string catalog is what the Swift says
+        run: scripts/build/ios-strings.sh --check --derived-data "$RUNNER_TEMP/derived"
       - name: DerivedData, kept
         if: always() && steps.derived.outputs.cache-hit != 'true' && (github.event_name == 'schedule' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
         continue-on-error: true

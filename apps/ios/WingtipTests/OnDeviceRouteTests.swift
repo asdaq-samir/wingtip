@@ -28,8 +28,10 @@ struct OnDeviceRouteTests {
         }
     }
 
-    static func router(planner: @escaping @Sendable (AssistantAsk) -> AsyncThrowingStream<AssistantLine, any Error>, online: Bool) -> AskRouter {
-        AskRouter(planner: planner, device: OnDeviceAsk(model: OnDeviceAskTests.FakeModel(unavailableWhy: "No model.")), online: { online })
+    static func router(planner: @escaping @Sendable (AssistantAsk) -> AsyncThrowingStream<AssistantLine, any Error>, online: Bool,
+                       claudeOn: Bool = true) -> AskRouter {
+        AskRouter(planner: planner, device: OnDeviceAsk(model: OnDeviceAskTests.FakeModel(unavailableWhy: "No model.")), online: { online },
+                  claudeOn: { claudeOn })
     }
 
     static let ask = AssistantAsk(context: nil, messages: [AssistantMessage(content: "glide?", role: "user")])

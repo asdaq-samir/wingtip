@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { claudeFeatures } from "./claude";
 import {
   airportSearch,
   consolePage,
@@ -30,6 +31,7 @@ test(
   "the sheet's title row holds the account button over the one search; typed, its results come in groups, and an airport's Depart From sets the plan",
   { tag: "@smoke" },
   async ({ page }) => {
+    await claudeFeatures(page); // the Ask suggestion, which is Claude's (./claude)
     await page.goto("/app/plan?dep=C81&dest=KDLH");
     await settle(page);
     // With a route the plan is the sheet's main content, the one search over

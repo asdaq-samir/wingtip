@@ -95,9 +95,10 @@ object SearchGroups {
      * The Do group for a line: Direct To the first field or fix found where
      * the airplane's position is known, the screens the line names (by the
      * field's own words, FieldCommands, and by each screen's title), and
-     * last, always, the line asked of the assistant.
+     * last the line asked of the assistant -- only where a model can answer
+     * it (`asked`, AiOffered: Gemini Nano here, or the Claude features on).
      */
-    fun actions(query: String, routed: Boolean, hasFix: Boolean, first: String?): List<DoAction> {
+    fun actions(query: String, routed: Boolean, hasFix: Boolean, first: String?, asked: Boolean = true): List<DoAction> {
         val q = query.trim()
         if (q.isEmpty()) return emptyList()
         val out = mutableListOf<DoAction>()
@@ -108,7 +109,7 @@ object SearchGroups {
         Screen.entries.filter { it in DOABLE && (it.title.lowercase().startsWith(lower) || it.title.lowercase().split(' ').any { w -> w.startsWith(lower) }) }
             .forEach(screens::add)
         screens.filter { routed || it !in NEEDS_ROUTE }.take(MAX_GROUP - 1).forEach { out += DoAction.Open(it) }
-        out += DoAction.Ask(q)
+        if (asked) out += DoAction.Ask(q)
         return out
     }
 

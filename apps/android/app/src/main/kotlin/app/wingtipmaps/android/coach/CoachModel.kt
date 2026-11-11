@@ -118,6 +118,12 @@ class CoachModel(
                 _state.update { it.copy(making = false, problem = said(e, "Your plan could not be made")) }
                 return@launch
             }
+            // The words are Claude's: while the Claude features are off
+            // (ClaudeGate) the engine's plan stands alone, nothing promised.
+            if (!source.wordsOffered()) {
+                _state.update { it.copy(making = false, plan = plan) }
+                return@launch
+            }
             _state.update { it.copy(making = false, plan = plan, wording = true) }
             try {
                 val words = source.words(plan)

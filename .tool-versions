@@ -16,6 +16,9 @@ gradle 9.9.1
 maven 3.10.0
 # Below, tools mise and asdf do not install: read by this repo's scripts only.
 xcode 27.2
+# The Android NDK: the app's ndkVersion and engine/bindings/ffi/build-android.sh.
+# One GitHub's ubuntu-26.04 runner image has installed, so CI downloads none.
+android-ndk 30.0.16248370
 # The Debian release every Debian-based image is built on (a -slim tag
 # without one is the current release, trixie, by the same digest).
 debian trixie

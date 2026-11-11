@@ -22,9 +22,12 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
   (`wingtip_jni.c`), and the CMake file that links the engine's static
   library for each ABI. The engine itself is built by
   `engine/bindings/ffi/build-android.sh` into `app/engine/` (not committed; the
-  twin of `build-xcframework.sh`). It finds the newest NDK in the SDK
-  itself when `ANDROID_NDK_HOME` is unset, and rustup's cargo when the
-  shell's PATH lacks it.
+  twin of `build-xcframework.sh`). It uses the NDK `.tool-versions`
+  names (`android-ndk`), the app's `ndkVersion` too: r30, which GitHub's
+  ubuntu-26.04 image has installed, so CI downloads no NDK. On a Mac,
+  install that version once (Android Studio's SDK Manager, SDK Tools, NDK
+  (Side by side), Show Package Details); the script finds it in the SDK,
+  and rustup's cargo when the shell's PATH lacks it.
 - `app/src/main/kotlin/app/wingtipmaps/android`:
   - `engine/Engine.kt`: the engine's one way in, `Engine.call(name,
     input)` (`wt_call`), with `EngineException` for the engine's own

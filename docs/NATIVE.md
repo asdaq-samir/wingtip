@@ -107,9 +107,10 @@ each with the chips of the figures it rests on; a chip opens the report
 as sent. Every figure is the engine's or the planner's; a model only
 writes the sentences, and never a figure of its own:
 
-- `WordsFor` asks the planner first (`PlannerWords`: `POST
-  /api/words/{weather,risk}` through the gateway's proxy, Claude on the
-  planner, app.ai_words), then this iPhone when the planner fails or
+- `WordsFor` asks the planner first while the Claude features are on
+  (`PlannerWords`: `POST /api/words/{weather,risk}` through the gateway's
+  proxy, Claude in the assistant service; off by default, decision 0035,
+  when it asks only this iPhone), then this iPhone when the planner fails or
   cannot be reached (`OnDeviceWords`: Apple's on-device model,
   FoundationModels on iOS 26 with Apple Intelligence on), and says why
   in plain words when neither can (an older iOS, the model still
@@ -258,7 +259,11 @@ owner, 2026-11-03):
   (`SWIFT_TREAT_WARNINGS_AS_ERRORS`).
 - **A string catalog** (`Wingtip/Localizable.xcstrings`,
   `SWIFT_EMIT_LOC_STRINGS`): every `Text` gathered at build, so a second
-  language is a column, not a rewrite.
+  language is a column, not a rewrite. xcodebuild extracts the strings
+  but, unlike Xcode's editor, never writes them back: after a build that
+  adds or drops a string, `scripts/build/ios-strings.sh` syncs the catalog
+  from the build's `.stringsdata` (`xcrun xcstringstool sync`), and CI's
+  iOS job fails with `--check` when the committed one differs.
 - **Scene restoration**: the pages a scene was on come back with it
   (`@SceneStorage` in `RootView`).
 - **A UI smoke test** (`WingtipUITests/LaunchTests`): the app launched

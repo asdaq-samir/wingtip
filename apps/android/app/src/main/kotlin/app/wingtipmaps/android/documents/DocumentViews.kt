@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.ai.rememberAiOffered
 import app.wingtipmaps.android.api.generated.assistant.DocumentFlag
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead
 import app.wingtipmaps.android.design.Loading
@@ -27,9 +28,12 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.ui.LocalInk
 
 /** The row a screen opens "Add from a Photo" with, in its own list: a
- *  row, not a floating control. */
+ *  row, not a floating control. Not there where no model can read the
+ *  page (AiOffered: no Gemini Nano here, and the server's reader is
+ *  Claude's, off by the owner's decision of 2026-11-10). */
 @Composable
 fun AddFromPhotoRow(line: String, title: String = stringResource(R.string.add_from_photo), onOpen: () -> Unit) {
+    if (!rememberAiOffered()) return
     ListItem(
         onClick = onOpen,
         supportingContent = { Text(line, color = MaterialTheme.colorScheme.onSurfaceVariant) },

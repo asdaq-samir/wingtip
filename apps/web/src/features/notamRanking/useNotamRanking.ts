@@ -3,7 +3,8 @@
  * ranking (the planner's notams_ranked: in force while the flight is
  * there, the runway in use, the altitude flown, the airspace on the
  * route) with a line on each from the assistant (POST
- * /api/planner/words/notams/ranked), the top three apart from the rest.
+ * /api/planner/words/notams/ranked) -- or, while Claude is off, the
+ * engine's reasons (engineRanking) -- the top three apart from the rest.
  * Asked once for a route, its time, its altitude and its runways, and
  * kept ten minutes, as the Brief's words are.
  */
@@ -13,6 +14,8 @@ import { keptStore } from "../../lib/storage";
 import type { RankedNotam, RankedNotams } from "../../lib/api/types";
 import { routeKeyOf, useBriefPlan } from "../../lib/briefPlan";
 import { patternsOf } from "../../lib/trafficPattern";
+import { claudeOnNow } from "../../lib/subscription";
+import { engineRanking, type EngineRanked } from "./engineRanking";
 
 const KEPT_MS = 10 * 60_000;
 
@@ -54,19 +57,20 @@ export function notamRankingQuery(plan: ReturnType<typeof useBriefPlan.getState>
   return {
     queryKey: ["notams", "ranked", route, plan.eteMin, plan.altitudeFt, runways],
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
-      const answer = await postJson<RankedNotams>(
-        "/api/planner/words/notams/ranked",
-        {
-          dep: plan.dep,
-          dest: plan.dest,
-          stops: plan.stops,
-          depart: plan.depart || null,
-          ete_min: plan.eteMin,
-          altitude_ft: plan.altitudeFt,
-          runways,
-        },
-        signal,
-      );
+      const ask = {
+        dep: plan.dep,
+        dest: plan.dest,
+        stops: plan.stops,
+        depart: plan.depart || null,
+        ete_min: plan.eteMin,
+        altitude_ft: plan.altitudeFt,
+        runways,
+      };
+      // The assistant's lines where Claude is on; the engine's own ranking
+      // and reasons, asked of the planner, while it is off (engineRanking).
+      const answer = claudeOnNow()
+        ? await postJson<RankedNotams>("/api/planner/words/notams/ranked", ask, signal)
+        : engineRanking(await postJson<EngineRanked>("/api/planner/notams/ranked", ask, signal));
       keptRanking().setState({ value: { route, at: Date.now(), answer } });
       return answer;
     },

@@ -15,6 +15,9 @@ was read from on 2026-11-09. Where a page could not be read, or a detail
 could not be confirmed from the app's own site, this document says so
 rather than describing the app from memory (see "Not verified" at the end).
 
+The card rule, the scrolling rule and their tests, the one search and the
+airport weather marks hold on all three apps: [rules.md](rules.md).
+
 ## What does not change
 
 These hold on every screen below and win over any reference app.
@@ -635,8 +638,8 @@ than its METAR now (`weather_worse`). The weather comes on the map's own
 `/api/airports/in-view` answer (`weather`), the same for every app; the
 shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
 screen reader says each field's category and wind ("KJVL, IFR, wind 220
-at 18 gusting 26"). The Map card's Airport Weather is a menu (Off,
-Halo, Dot, Station) with three switches: the station model when zoomed
+at 18 gusting 26"). The Map card's Airport Weather is a segmented control (Off,
+Halo, Dot, Station; `Segmented`, shadcn's ToggleGroup) with three switches: the station model when zoomed
 in, the wind arrows, and getting worse by arrival, all on to begin with.
 
 ### 8. The emergency assistant
@@ -968,10 +971,10 @@ The owner's rule: a screenshot of another app means ours should show this.
 | A place card scrolled: its title and ✕ stay in sight | `PinnedCardBar`: as a card's head scrolls out, its large title folds away and its name and ✕ come in pinned at the card's top on the sheet's colour, scroll-linked where the browser runs scroll-driven animations (index.css `card-pinned`, `card-title-fold`), else once the head has gone; a line of no height until then, taking no room or tap. Every card with a head has it: `CardTitle` (airport, airplane, Stops), `CardHead` (Brief, Nav Log, Profile, Nearest, airspace, past flight), `SheetCard` (Map card and the cards in the sheet) and the lists in full (`ListPageHead`). The airport card's tabs pin under it, each tab keeping its own place in the scroll (`useTabScroll`) |
 | Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share and ✕, Fly Here (filled), Depart From, Add as Stop, Weather; the pictures as a sliding row |
 | Typing: top hit with inline action pills, suggestion rows, places | `OneSearchResults`: one white group, the top hit with Fly Here and Depart From pills, Search Nearby and Ask as suggestions, the match in bold |
-| One search field (the one card rule, 2026-11-10) | The traffic's airplane and Nearest's place are the one search's field scoped to them (`listSearchOf`, OneSearchField's `list`); the route's points and the traffic's airport ask it for an airport (`askSearchPick`, AirportPicker), its placeholder what they ask for; the developer's page, with no one search, keeps the picker's own |
+| One search field (the one card rule, 2026-11-10) | The traffic's airplane and Nearest's place are the one search's field scoped to them (`listSearchOf`, OneSearchField's `list`); the route's points, the route box's arrow between two points (a stop there, `useStopAsked`) and the traffic's airport ask it for an airport (`askSearchPick`, AirportPicker), its placeholder what they ask for; the developer's page, with no one search, keeps the picker's own |
 | Questions over the page | Ready to Fly's prompt and a source's report as sent are SheetDialog's: from the bottom on a phone with their ✕, centred from `md` up |
 | Typing, scrolled: the title and the field go up with the list, nothing pinned, the keyboard up | `sheet/useScrollAway`: all the way up with the search in use, the head pulled up by as much as the list has scrolled, back at its top; the field never leaves the page, so it keeps its focus |
-| A sent search: ✕ on the title row, chips, rows with thumbnails, Filters page, numbered map marks | The sent search's list, its chips and Filters page on one filter state, and the results as their own clustered MapLibre layer over the chart (the chart's own airport symbols untouched) |
+| A sent search: ✕ on the title row, chips, rows with thumbnails, Filters page, numbered map marks | The sent search's list, its chips and Filters page on one filter state (VFR now and VFR at a time, towered, public, an instrument approach, fuel, runway surface and length, distance: the planner's Nearest with `wingtip.field_facts` and `field_forecast`; no fuel price, which the app has no source for), each row its METAR wind and visibility and what the field has, and the results as their own clustered MapLibre layer over the chart (the chart's own airport symbols untouched) |
 | Map-type button: "Choose Map" card in the sheet, picture tiles | The Map card in the sheet (`MapSettingsButton`), chart picture tiles from committed crops (`public/map-tiles/`), every setting of the old menu under it |
 
 **The one scrolling rule (the owner, 2026-11-10).** Every card, page and

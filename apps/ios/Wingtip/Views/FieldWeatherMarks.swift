@@ -31,7 +31,7 @@ enum FieldWeatherMarks {
         return Report(ident: pin.ident, category: pin.flightCategory, windDirTrueDeg: w?.windDirTrueDeg, windSpeedKt: w?.windSpeedKt,
                       windGustKt: w?.windGustKt, crosswindKt: w?.crosswindKt,
                       visibilityLine: visibilityLine(w?.visibilitySm, wx: w?.wx),
-                      ceilingLine: ceilingLine(w?.ceilingFt, unknown: w?.ceilingUnknown == true))
+                      ceilingLine: ceilingLine(w?.ceilingFt, unknown: w?.ceilingUnknown == true, cover: w?.ceilingCover))
     }
 
     /// The station model's first line as a METAR writes it: "2 SM BR",
@@ -42,15 +42,23 @@ enum FieldWeatherMarks {
         return line.isEmpty ? nil : line
     }
 
-    /// The second: the ceiling in hundreds of feet above the field, as a
-    /// METAR codes a layer's height ("CIG 008" for 800 ft); "CIG ///" where
-    /// the report sent a ceiling with no height (14 CFR 1.1); none with no
-    /// ceiling.
-    static func ceilingLine(_ ft: Double?, unknown: Bool) -> String? {
-        if unknown { return "CIG ///" }
+    /// The second: the ceiling as a METAR codes its layer, the cover the
+    /// planner sends (`ceiling_cover`: BKN, OVC or VV, the layers that make
+    /// a ceiling, 14 CFR 1.1) and its height in hundreds of feet above the
+    /// field ("OVC 008" for 800 ft, AC 00-45H), or "CIG 008" where no cover
+    /// came, as Android writes it (StationLines); "OVC ///" or "CIG ///"
+    /// where the report sent a ceiling with no height; none with no ceiling.
+    static func ceilingLine(_ ft: Double?, unknown: Bool, cover: String? = nil) -> String? {
+        let code = cover?.trimmingCharacters(in: .whitespaces).uppercased()
+        let word = code.flatMap { ceilingCovers.contains($0) ? $0 : nil } ?? "CIG"
+        if unknown { return word + " ///" }
         guard let ft else { return nil }
-        return "CIG " + String(format: "%03d", Int((ft / 100).rounded()))
+        return word + " " + String(format: "%03d", Int((ft / 100).rounded()))
     }
+
+    /// The covers that make a ceiling (14 CFR 1.1: broken, overcast, or an
+    /// obscuration's vertical visibility).
+    private static let ceilingCovers: Set<String> = ["BKN", "OVC", "VV"]
 
     /// A figure with no trailing zeros: 2, 1.5, 0.25.
     private static func number(_ x: Double) -> String {

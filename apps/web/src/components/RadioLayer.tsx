@@ -18,6 +18,7 @@ import { say } from "../lib/speech";
 import { useAnnounce } from "../lib/announce";
 import { TEXT } from "../lib/text";
 import { useAsk } from "../lib/ask/useAsk";
+import { claudeOnNow } from "../lib/subscription";
 import { openEmergency } from "../lib/emergencyStore";
 
 const capital = (words: string) => words.replace(/\b[a-z]/g, (ch) => ch.toUpperCase());
@@ -62,15 +63,14 @@ function CallActions({
   const [problem, setProblem] = useState<string | null>(null);
   /** What a chip brought, kept in the pill: a field's report. */
   const [note, setNote] = useState<string | null>(null);
-  // The question the Ask chip sent, and its answer as it comes (useAsk):
-  // read aloud as it ends, and shown here in the pill meanwhile.
+  // The question the Ask chip sent, and its answer as it comes (useAsk): read aloud as it ends, shown here meanwhile.
   const [askedId, setAskedId] = useState<number | null>(null);
   const asked = useAsk((s) => (askedId === null ? null : (s.turns.find((t) => t.id === askedId) ?? null)));
   const heard = callOf(text, null);
   const { clearance } = heard;
   const commands = useMemo(() => commandsOf(text), [text]);
-  // No command found and no clearance heard: a question for the assistant.
-  const askable = own && !commands.length && !heard.direct && !heardAny(clearance);
+  // No command found and no clearance heard: a question for the assistant, where Claude is on (lib/subscription).
+  const askable = own && !commands.length && !heard.direct && !heardAny(clearance) && claudeOnNow();
   const askIt = () => {
     void useAsk.getState().ask(text, { speak: true });
     setAskedId(useAsk.getState().turns.at(-1)?.id ?? null);
