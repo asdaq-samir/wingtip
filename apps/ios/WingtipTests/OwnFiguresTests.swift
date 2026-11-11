@@ -60,25 +60,25 @@ struct OwnFiguresTests {
         #expect(OwnFigure.taxiFuelGal.question("N123AB") == "How much fuel does N123AB use to start and taxi?")
     }
 
-    @Test func thePlanAsksForWhatItsAirplaneLacks() {
+    @Test func thePlanAsksForWhatItsAirplaneLacks() throws {
         let airplanes = Airplanes()
         let plan = Plan()
         let model = AskFigureModel()
         // No airplane: the picker.
-        #expect(model.ask([.glide], plan: plan, airplanes: airplanes) == .pick)
+        #expect(try model.ask([.glide], plan: plan, airplanes: airplanes) == .pick)
         // An own airplane of no stock type: its cruise first, planned with
         // no airplane until it has one.
         plan.tail = "N123AB"
         plan.aircraft = Plan.ownAirplane
         #expect(plan.plannerAircraft == nil)
-        #expect(model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == .figure(.cruiseTasKt))
+        #expect(try model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == .figure(.cruiseTasKt))
         plan.figures = Figures(cruiseTasKt: 140, fuelBurnGph: 10)
         #expect(plan.plannerAircraft == Plan.ownAirplane)
-        #expect(model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == .figure(.taxiFuelGal))
-        #expect(model.ask([.glide], plan: plan, airplanes: airplanes) == .figure(.glideRatio))
+        #expect(try model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == .figure(.taxiFuelGal))
+        #expect(try model.ask([.glide], plan: plan, airplanes: airplanes) == .figure(.glideRatio))
         // A stock type whose book is not yet in asks nothing it may have.
         plan.aircraft = "c172"
-        #expect(model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == nil)
+        #expect(try model.ask([.fuelTotals], plan: plan, airplanes: airplanes) == nil)
     }
 
     @Test func aTypeTheEngineCannotMatchFliesOnItsOwnFiguresAlone() {

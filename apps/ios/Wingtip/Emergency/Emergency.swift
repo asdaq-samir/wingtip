@@ -101,8 +101,10 @@ final class Emergency {
     /// engine's emergency_guidance, each item with its source (AIM 6-1,
     /// 6-2, 6-3; FAA-H-8083-3C ch. 18); nil with one picked, whose own
     /// checklist shows instead. Never an airplane's checklist or figure.
-    static func guidance(airplaneChosen: Bool) -> [EngineContract.EmergencyGuidanceAnswerItemsItem]? {
-        airplaneChosen ? nil : ((try? Engine.emergencyGuidance().items) ?? [])
+    /// Thrown where the engine cannot answer, said where the guidance goes
+    /// rather than shown as an empty list.
+    static func guidance(airplaneChosen: Bool) throws -> [EngineContract.EmergencyGuidanceAnswerItemsItem]? {
+        airplaneChosen ? nil : try Engine.emergencyGuidance().items
     }
 
     /// Magnetic variation at a point today, east positive (the engine's WMM).
@@ -126,10 +128,10 @@ final class Emergency {
     }
 
     /// The section of the emergency checklist asked, "Engine failure in
-    /// flight" by default (the engine's checklist_section); nil where none.
-    static func section(_ titles: [String], want: String = engineFailure) -> Int? {
-        guard let found = try? Engine.checklistSection(titles: titles, want: want) else { return nil }
-        return Int(found)
+    /// flight" by default (the engine's checklist_section); nil where none;
+    /// thrown where the engine cannot say, which the checklist then says.
+    static func section(_ titles: [String], want: String = engineFailure) throws -> Int? {
+        try Engine.checklistSection(titles: titles, want: want).map { Int($0) }
     }
 
     /// Where the airplane is as a controller gives it, off the nearest

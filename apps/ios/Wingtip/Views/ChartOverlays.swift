@@ -452,12 +452,13 @@ final class VorMarkView: MKAnnotationView {
 /// planner's field answers them), drawn by MapKit's own polygon renderer
 /// (a renderer of the app's own drawing was never asked to draw).
 final class RunwaySurface: MKPolygon {
-    /// Turf, grass, dirt or gravel, drawn in the soft runway's olive.
-    private(set) var soft = false
+    /// Turf, grass, dirt or gravel, drawn in the soft runway's olive; nil
+    /// where the engine could not class the surface.
+    private(set) var soft: Bool? = false
 
     /// The rectangle's corners, each end moved half the width either side
     /// of the centreline in map points (a foot is 0.3048 m exactly).
-    static func between(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D, widthFt: Double, soft: Bool = false) -> RunwaySurface {
+    static func between(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D, widthFt: Double, soft: Bool? = false) -> RunwaySurface {
         let pa = MKMapPoint(a), pb = MKMapPoint(b)
         let length = max(1e-9, hypot(pb.x - pa.x, pb.y - pa.y))
         let half = widthFt * 0.3048 / 2 * MKMapPointsPerMeterAtLatitude((a.latitude + b.latitude) / 2)
@@ -542,34 +543,6 @@ final class RunwayEndView: MKAnnotationView {
     }
 }
 
-/// A field's runways as the map draws them, from its card's answer.
-struct RunwayShape: Equatable, Sendable {
-    struct End: Equatable, Sendable { let ident: String; let lat: Double; let lon: Double; let headingTrueDeg: Double? }
-    let a: End
-    let b: End
-    let widthFt: Double?
-    /// Turf, grass, dirt or gravel by its surface (the planner's field,
-    /// OurAirports' or NASR's code), as the engine reads it for the
-    /// short-field figures (gonogo_soft_surface).
-    var soft = false
-
-    /// The runways with both ends placed; a helipad (no heading) or a
-    /// runway with an end the data does not place is not drawn.
-    static func of(_ runways: [Runway]) -> [RunwayShape] {
-        runways.compactMap { runway in
-            let ends = (runway.runwayEnds ?? []).compactMap { end -> End? in
-                guard let lat = end.lat, let lon = end.lon, end.headingTrueDeg != nil else { return nil }
-                return End(ident: end.ident, lat: lat, lon: lon, headingTrueDeg: end.headingTrueDeg)
-            }
-            guard ends.count == 2 else { return nil }
-            // Drawing only: a surface the engine cannot class is drawn
-            // paved (logged by Engine.rule); the card says the surface.
-            let soft = (try? Engine.gonogoSoftSurface(surface: runway.surface)) ?? false
-            return RunwayShape(a: ends[0], b: ends[1], widthFt: runway.widthFt.map(Double.init), soft: soft)
-        }
-    }
-}
-
 // MARK: - The overlays on the map
 
 /// The airspace, the VORs, the runways and the marks on the map, kept with the view, on the main actor as the map is.
@@ -628,7 +601,10 @@ struct RunwayShape: Equatable, Sendable {
             // ForeFlight's dark grey with a white edge, olive for a soft
             // one (glOverlays' runwayLayers).
             let renderer = MKPolygonRenderer(polygon: surface)
-            renderer.fillColor = (surface.soft ? SectionalInk.softRunway : SectionalInk.runway).withAlphaComponent(0.95)
+            // A surface the engine could not class is drawn in the chart's
+            // unknown grey, neither paved nor soft (RunwayShape).
+            let fill = surface.soft.map { $0 ? SectionalInk.softRunway : SectionalInk.runway } ?? WingtipColor.Chart.fieldUnknown
+            renderer.fillColor = fill.withAlphaComponent(0.95)
             renderer.strokeColor = .white
             renderer.lineWidth = 1
             return renderer

@@ -235,7 +235,7 @@ struct BriefView: View {
         // The hours to go, asked again as the Go / No-Go's question changes.
         .task(id: "\(verdict.key(for: plan))|\(session.signedIn)") {
             guard session.signedIn, plan.routed else { return }
-            await window.refresh(try? DepartureWindow.ask(verdict.ask(for: plan), airplane: plan.airplaneChosen))
+            await window.refresh(asking: Result { try DepartureWindow.ask(verdict.ask(for: plan), airplane: plan.airplaneChosen) })
             // The hour said to Siri with the ask ("tomorrow at 9"), picked.
             if let when = BriefAsk.shared.takeDepart() { window.pick(nearest: when) }
         }

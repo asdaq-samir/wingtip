@@ -20,10 +20,10 @@ struct ClearanceSheet: View {
     /// until the pilot picks one from the log or types.
     @State private var text = ""
     @State private var following = true
-    @State private var words: [String] = []
-    @State private var found: ClearancePlaces?
-    @State private var foundFor: String?
-    @State private var lookupProblem: String?
+    @State private var lookup = ClearanceLookup()
+    private var words: [String] { lookup.words }
+    private var found: ClearancePlaces? { lookup.found }
+    private var foundFor: String? { lookup.foundFor }
     /// The pilot's read back: the first transmission settled after Read
     /// back again was tapped, or typed in the transcript.
     @State private var readback = ""
@@ -104,7 +104,7 @@ struct ClearanceSheet: View {
                 if !clearance.heardAny {
                     heardField
                 }
-                if let problem = listener.problem ?? lookupProblem ?? engineProblem {
+                if let problem = listener.problem ?? lookup.problem ?? lookup.wordsProblem ?? engineProblem {
                     ProblemLine(problem)
                 }
             } header: {
@@ -169,7 +169,7 @@ struct ClearanceSheet: View {
             }
         }
         .task {
-            words = (try? await Planner.clearanceWords(near: near, dep: plan.dep)) ?? []
+            await lookup.loadWords(near: near, dep: plan.dep)
         }
         // A clearance read in full is felt as a success; one with a
         // place the reader is unsure of, as a warning, once each. In
@@ -192,25 +192,7 @@ struct ClearanceSheet: View {
             let heard = text
             try? await Task.sleep(for: .milliseconds(400))
             guard !Task.isCancelled else { return }
-            do {
-                found = try await Planner.clearancePlaces(try Clearance.read(heard).asked(near: near, dep: plan.dep, dest: plan.dest))
-                foundFor = heard
-                lookupProblem = nil
-            } catch {
-                // No signal: found by the engine among the places of
-                // the regions kept for the air, SIDs and STARs left
-                // as said.
-                let packs = CyclePacks.shared.keptPacks()
-                let offline = Engine.hear(heard, tail: nil, packs: packs, near: nearPoints,
-                                          dep: plan.dep, stops: plan.stops, dest: plan.dest)
-                if let offline, !packs.isEmpty {
-                    found = offline.found
-                    foundFor = heard
-                    lookupProblem = "No signal: places found among the regions kept for the air."
-                } else {
-                    lookupProblem = "The places in it could not be looked up; check the connection and try again."
-                }
-            }
+            await lookup.lookUp(heard, near: near, nearPoints: nearPoints, dep: plan.dep, stops: plan.stops, dest: plan.dest)
         }
     }
 

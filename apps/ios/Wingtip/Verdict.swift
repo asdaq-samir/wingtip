@@ -16,6 +16,10 @@ final class Verdict {
     private(set) var ticked: Set<String> = []
     private(set) var answer: GoNoGoAnswer?
     private(set) var problem: String?
+    /// Where the pilot's currency or airplanes' records couldn't be
+    /// fetched: said with the verdict, which is then worked without them,
+    /// and asked again on the next refresh.
+    private(set) var pilotProblem: String?
     private(set) var asking = false
     /// The pilot's currency from their logbook, fetched once signed in.
     private var currency: Currency?
@@ -86,8 +90,10 @@ final class Verdict {
         guard !Task.isCancelled else { return }
         if signedIn, !currencyAsked {
             currencyAsked = true
-            currency = try? await Gateway.currency()
-            records = (try? await Gateway.aircraftRecords()) ?? []
+            var missing: [String] = []
+            do { currency = try await Gateway.currency() } catch { missing.append("your currency"); currencyAsked = false }
+            do { records = try await Gateway.aircraftRecords() } catch { missing.append("your airplanes' records"); currencyAsked = false }
+            pilotProblem = missing.isEmpty ? nil : "The verdict goes without \(missing.joined(separator: " and ")): they couldn't be fetched."
         }
         asking = true
         defer { asking = false }

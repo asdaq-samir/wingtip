@@ -47,7 +47,14 @@ enum ClearanceInFull {
     static func offer(heard: String, said: String) -> Offer? {
         let said = said.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !said.isEmpty, said.lowercased() != heard.lowercased() else { return nil }
-        let given = [heard] + ((try? Engine.tokens(text: heard)) ?? []).compactMap(\.num)
+        // The figures the pilot's words hold, the engine's reading; where it
+        // cannot read them the offer is dropped rather than checked against
+        // fewer figures than were said.
+        guard let tokens = try? Engine.tokens(text: heard) else {
+            Log.words.info("clearance in full dropped: the words could not be read")
+            return nil
+        }
+        let given = [heard] + tokens.compactMap(\.num)
         let invented = NumberGuard.invented(said, given: given)
         guard invented.isEmpty else {
             Log.words.info("clearance in full dropped: \(invented.count) figures of its own")

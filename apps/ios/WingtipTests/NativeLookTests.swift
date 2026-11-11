@@ -59,16 +59,16 @@ struct NativeLookTests {
         let oshkosh = (lat: 43.9844, lon: -88.5570)
         let madison = CourseEnd(airspaceClass: "C", elevationFt: 887, ident: "KMSN", kind: nil, lat: 43.1399, lon: -89.3375, name: "Dane County Regional",
                                 patternAltitudeFt: nil)
-        let fromDeparture = try #require(AirportDistance.of(lat: oshkosh.lat, lon: oshkosh.lon, ident: "KOSH", fix: nil, departure: madison))
+        let fromDeparture = try #require(try AirportDistance.of(lat: oshkosh.lat, lon: oshkosh.lon, ident: "KOSH", fix: nil, departure: madison))
         #expect(fromDeparture.from == "KMSN")
         #expect(fromDeparture.caption == "From KMSN")
         #expect((60...64).contains(fromDeparture.nm))
         let fix = CLLocationCoordinate2D(latitude: 43.9844, longitude: -88.0)
-        let fromHere = try #require(AirportDistance.of(lat: oshkosh.lat, lon: oshkosh.lon, ident: "KOSH", fix: fix, departure: madison))
+        let fromHere = try #require(try AirportDistance.of(lat: oshkosh.lat, lon: oshkosh.lon, ident: "KOSH", fix: fix, departure: madison))
         #expect(fromHere.from == nil)
         #expect(fromHere.caption == "Distance")
         // The departure's own card has no distance from itself.
-        #expect(AirportDistance.of(lat: madison.lat, lon: madison.lon, ident: "KMSN", fix: nil, departure: madison) == nil)
+        #expect(try AirportDistance.of(lat: madison.lat, lon: madison.lon, ident: "KMSN", fix: nil, departure: madison) == nil)
     }
 
     @Test func enduranceIsTheEnginesAfterEachReserveAndNeverAssumed() throws {
