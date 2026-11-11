@@ -5,6 +5,7 @@ import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
 import { REQUEST_ID_HEADER, newRequestId } from "./requestId";
 import { airplaneQuery } from "./airplaneQuery";
+import { useFlying } from "../mapChrome";
 import type { AirportAtis, AirportRvr, CopilotAround, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses } from "./types";
 import type {
   Aircraft,
@@ -207,6 +208,11 @@ const csrfAndFailures: Middleware = {
   onRequest({ request }) {
     for (const [name, value] of Object.entries(csrfHeaders(request.method))) request.headers.set(name, value);
     request.headers.set(REQUEST_ID_HEADER, newRequestId());
+    // In flight, a read waits less on the network before the service
+    // worker answers with what it kept (vite.config.ts, planner-api's
+    // flight rule): a phone at one bar often leaves a request hanging
+    // rather than failing it.
+    if (request.method === "GET" && useFlying.getState().flying) request.headers.set(FLYING_HEADER, "1");
     return request;
   },
   async onResponse({ request, response }) {
@@ -235,7 +241,37 @@ const csrfAndFailures: Middleware = {
  */
 export class GatewayRequest extends Request {
   constructor(input: RequestInfo | URL, init?: RequestInit) {
-    super(typeof input === "string" ? input.replace(/^([a-z]+:\/\/[^/]+)?\/api\//i, "$1/api/planner/") : input, init);
+    super(typeof input === "string" ? input.replace(/^([a-z]+:\/\/[^/]+)?\/api\//i, "$1/api/planner/") : input, timedInFlight(init));
+  }
+}
+
+/** The header that says a read is asked in flight (the worker's shorter
+ *  wait). */
+export const FLYING_HEADER = "X-Wingtip-Flying";
+
+/** How long a request that sends data waits in flight before it fails
+ *  "No answer in time" (describeError): none waited at all, and on a
+ *  weak link a clearance's places or the NOTAMs' ranking hung unseen. */
+export const SEND_IN_FLIGHT_MS = 10_000;
+
+/** A request that sends data, given SEND_IN_FLIGHT_MS in flight -- set as
+ *  the Request is made, so its body stays the JSON string (a second
+ *  Request of the first hands it over as a stream, which Safari cannot
+ *  send; GatewayRequest). */
+export function timedInFlight(init: RequestInit | undefined, flying = useFlying.getState().flying): RequestInit | undefined {
+  const method = (init?.method ?? "GET").toUpperCase();
+  if (!flying || method === "GET" || method === "HEAD") return init;
+  const timeout = AbortSignal.timeout(SEND_IN_FLIGHT_MS);
+  // AbortSignal.any is Safari 17.4's; before it, the caller's own signal.
+  const both = "any" in AbortSignal && init?.signal ? AbortSignal.any([init.signal, timeout]) : null;
+  const signal = both ?? init?.signal ?? timeout;
+  return { ...init, signal };
+}
+
+/** The gateway's own Request, timed in flight as the planner's are. */
+class TimedRequest extends Request {
+  constructor(input: RequestInfo | URL, init?: RequestInit) {
+    super(input, timedInFlight(init));
   }
 }
 
@@ -254,7 +290,7 @@ const assistant = createClient<AssistantPaths>({ baseUrl: "", Request: GatewayRe
 assistant.use(csrfAndFailures);
 
 /** The Spring Boot endpoints, on this same origin. */
-export const gateway = createClient<GatewayPaths>({ baseUrl: "" });
+export const gateway = createClient<GatewayPaths>({ baseUrl: "", Request: TimedRequest });
 gateway.use(csrfAndFailures);
 
 /** A schema's shape as openapi-fetch hands it back: every fixed-length

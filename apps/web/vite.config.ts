@@ -386,6 +386,27 @@ export default defineConfig({
             },
           },
           {
+            // The same in flight (the page's X-Wingtip-Flying, lib/api/client):
+            // four seconds for the network, not fifteen, before the last
+            // answer -- a phone at one bar often leaves a request hanging
+            // rather than failing it, and the pilot waited out the fifteen
+            // for what was kept. On the ground the fifteen stay, for a
+            // nav log the planner is still working out.
+            urlPattern: ({ url, request }) =>
+              request.method === "GET" &&
+              request.headers.get("x-wingtip-flying") === "1" &&
+              url.pathname.startsWith("/api/planner/") &&
+              !url.pathname.includes("/chart-tile/"),
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "planner-api",
+              networkTimeoutSeconds: 4,
+              expiration: { maxEntries: 300, maxAgeSeconds: 30 * 24 * 3600 },
+              cacheableResponse: { statuses: [0, 200] },
+              plugins: [markFromCache],
+            },
+          },
+          {
             // The planner's answers: the network when there is one
             // (the winds change), the last answer when there is not --
             // marked, as planner-now's are, so the page says it is old.
