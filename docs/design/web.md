@@ -170,8 +170,21 @@ close does.
 
 - Sheets and side panels: the stock Drawer's own slide, 0.45 s on
   `cubic-bezier(0.32, 0.72, 0, 1)`, no spring, transform only, one detent
-  per throw (decision 0018; the owner kept the stock sheet's motion,
-  2026-11-10, MapPanel).
+  per throw by the Drawer's own `snapToSequentialPoints` (decision 0018;
+  the owner kept the stock sheet's motion, 2026-11-10, MapPanel).
+- Cards over the sheet are the Drawer's own nested drawers (the owner,
+  2026-11-11; `components/sheet/CardStack`): each with the sheet's three
+  sizes, its grabber and its swipe, the sheet's swipe the card's while one
+  is up, Escape the top card's first. They are put inside the sheet's popup
+  (`Drawer.Portal`'s `container`) and moved by their own drag alone, the
+  sheet carrying them by its snap offset, so a card let go eases with the
+  sheet on the one curve. A card's content stays drawn where its caller is
+  (its providers) and is put in its drawer's scroller (`useCardFrame`);
+  touches on it are handed to its drawer's viewport (`SheetViewport`), as
+  Base UI 1.9 has no prop for touches from a React portal.
+- The keyboard: `Drawer.VirtualKeyboardProvider` on the sheet, each card
+  and each question (`PhoneSheet`), its `--drawer-keyboard-inset` the
+  viewport's bottom, in place of a `visualViewport` reading.
 - Base UI animates with CSS transitions on `[data-starting-style]` and
   `[data-ending-style]`, which can reverse mid-way; `onOpenChangeComplete`
   fires once the animation ends ([Base UI animation][bui-animation]).

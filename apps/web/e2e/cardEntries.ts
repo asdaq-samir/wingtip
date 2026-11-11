@@ -147,14 +147,17 @@ export async function expectBack(page: Page, back: Back) {
 }
 
 /** The scroller of a card: the first element in it that scrolls up and
- *  down (a list of its own, StopsCard's), else the sheet's one scroller it
- *  is laid out in (SheetParts' data-sheet-scroll). */
+ *  down (a list of its own, StopsCard's), else the one scroller it is laid
+ *  out in -- its own drawer's (CardStack's data-sheet-scroll, inside the
+ *  card's popup where the test id is on the popup, a SheetCard's), or the
+ *  sheet's for a page of the plan (SheetParts'). */
 export async function scrollOf(page: Page, card: string, to?: number | "end") {
   return page.getByTestId(card).evaluate((root, y) => {
     const all = [root, ...root.querySelectorAll<HTMLElement>("*")];
     const box =
       all.find((el) => ["auto", "scroll"].includes(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1) ??
-      root.closest<HTMLElement>("[data-sheet-scroll]");
+      root.closest<HTMLElement>("[data-sheet-scroll]") ??
+      root.querySelector<HTMLElement>("[data-sheet-scroll]");
     if (!box) return { top: -1, max: 0 };
     if (y != null) box.scrollTo({ top: y === "end" ? box.scrollHeight : y });
     return { top: box.scrollTop, max: box.scrollHeight - box.clientHeight };
@@ -174,4 +177,30 @@ export async function hittable(page: Page, ids: string[]) {
     }
     return null;
   }, ids);
+}
+
+/** The top of the scroller a card is laid out in (scrollOf's), where its
+ *  pinned head sticks: its own drawer's, or the sheet's. */
+export async function contentTop(page: Page, card: string) {
+  return page
+    .getByTestId(card)
+    .first()
+    .evaluate((root) => {
+      const box = root.closest("[data-sheet-scroll]") ?? root.querySelector("[data-sheet-scroll]");
+      return box ? box.getBoundingClientRect().y : Number.NaN;
+    });
+}
+
+/** Whether a card is a nested drawer over the map's sheet: in a card's
+ *  popup (CardStack's data-sheet-card) inside the sheet's, which Base UI
+ *  marks while a nested drawer is open. */
+export async function nestedOverSheet(page: Page, card: string) {
+  return page
+    .getByTestId(card)
+    .first()
+    .evaluate((root) => {
+      const frame = root.closest("[data-sheet-card]");
+      const sheet = frame?.parentElement?.closest('[data-slot="map-panel"]');
+      return !!frame && !!sheet && sheet.hasAttribute("data-nested-drawer-open");
+    });
 }

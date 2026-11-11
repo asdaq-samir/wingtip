@@ -4,6 +4,7 @@ import PanelTabs from "./navlog/PanelTabs";
 import BriefOverview from "./briefing/BriefOverview";
 import type { PanelTab } from "./navlog/panelTab";
 import RefreshButton from "../../../components/RefreshButton";
+import { CardLayer } from "../../../components/sheet/CardLayer";
 
 /**
  * FPL's Brief, a card over it as an airport's is, at the owner's ask ("we
@@ -44,35 +45,39 @@ export default function BriefCard({
   onLegs: () => void;
   route: string;
 }) {
+  // A card of its own over the sheet, the stock Drawer's nested drawer
+  // (CardLayer, the owner 2026-11-11), as an airport's card is.
   return (
-    <div className="flex min-h-0 flex-1 flex-col print:hidden" data-testid="brief-card">
-      <PanelTabs
-        printing={false}
-        marks={marks}
-        route={route}
-        notice={notice}
-        contents={contents}
-        onTap={onTap}
-        onLegs={onLegs}
-        overview={BriefOverview}
-        before={
-          // Its room over the name the grabber's, which the pinned head's frost reaches up over (PinnedHead).
-          <div className="px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)]">
-            <CardHead
-              name={name}
-              line={line}
-              nameTestId="brief-name"
-              lineTestId="brief-line"
-              onClose={onClose}
-              onShare="brief"
-              closeTestId="brief-close"
-            >
-              {/* The live reports asked again; kept fresh by themselves too. */}
-              <RefreshButton card="brief" label="Refresh the Brief" />
-            </CardHead>
-          </div>
-        }
-      />
-    </div>
+    <CardLayer>
+      <div className="flex min-h-0 flex-1 flex-col print:hidden" data-testid="brief-card">
+        <PanelTabs
+          printing={false}
+          marks={marks}
+          route={route}
+          notice={notice}
+          contents={contents}
+          onTap={onTap}
+          onLegs={onLegs}
+          overview={BriefOverview}
+          before={
+            // Its room over the name the grabber's, which the pinned head's frost reaches up over (PinnedHead).
+            <div className="px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)]">
+              <CardHead
+                name={name}
+                line={line}
+                nameTestId="brief-name"
+                lineTestId="brief-line"
+                onClose={onClose}
+                onShare="brief"
+                closeTestId="brief-close"
+              >
+                {/* The live reports asked again; kept fresh by themselves too. */}
+                <RefreshButton card="brief" label="Refresh the Brief" />
+              </CardHead>
+            </div>
+          }
+        />
+      </div>
+    </CardLayer>
   );
 }

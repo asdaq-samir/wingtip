@@ -26,6 +26,9 @@ import { pickAirplane } from "./startState";
  * design/screens.json. An entry says where its close goes back to
  * (`back`), checked after ✕ and Escape. A check that cannot apply to a card
  * says why in `not`, which the specs print as the skip's reason.
+ *
+ * On a phone each card is the stock Drawer's own nested drawer over the
+ * map's sheet (sheet/CardStack, the owner 2026-11-11), checked by `nested`.
  */
 
 /** Where a card's close goes back to. */
@@ -40,7 +43,7 @@ export interface Entry {
 
 /** The checks a row may be excused from, each with its reason. */
 export type Check =
-  "searchHidden" | "escape" | "scroll" | "dragUp" | "dragDown" | "textSize" | "sideways" | "position" | "desktop" | "pill";
+  "searchHidden" | "escape" | "scroll" | "dragUp" | "dragDown" | "textSize" | "sideways" | "position" | "desktop" | "pill" | "nested";
 
 export interface CardRow {
   name: string;
@@ -181,7 +184,11 @@ export const CARDS: CardRow[] = [
       { name: "the plan", open: async (p) => (await go(p, ROUTE), void (await openNavLog(p))), back: "plan" },
       { name: "link (open=navlog)", open: (p) => go(p, `${ROUTE}&open=navlog`), back: "plan" },
     ],
-    not: { sideways: "its table scrolls sideways on purpose inside the card (nav-log-desk.spec)", position: "nothing opens inside it" },
+    not: {
+      sideways: "its table scrolls sideways on purpose inside the card (nav-log-desk.spec)",
+      position: "nothing opens inside it",
+      nested: "the plan's own nav log with a card's head, the route's figures pinned under it: the sheet's body, not a drawer of its own",
+    },
   },
   {
     name: "Profile",
@@ -195,6 +202,7 @@ export const CARDS: CardRow[] = [
       sideways: "its altitude slider is upright",
       position: "nothing opens inside it",
       scroll: "capped to the sheet at each detent, nothing scrolls",
+      nested: "a page of the plan, the route's figures pinned at the sheet's foot under it: the sheet's body, not a drawer of its own",
     },
   },
   {
@@ -214,7 +222,11 @@ export const CARDS: CardRow[] = [
         back: "search-home",
       },
     ],
-    not: { position: "nothing opens inside it", scroll: "one stubbed field: shorter than the sheet" },
+    not: {
+      position: "nothing opens inside it",
+      scroll: "one stubbed field: shorter than the sheet",
+      nested: "a page of the plan, the route's figures pinned at the sheet's foot under it: the sheet's body, not a drawer of its own",
+    },
   },
   {
     name: "Settings and its About",
@@ -301,6 +313,7 @@ export const CARDS: CardRow[] = [
     ],
     not: {
       searchHidden: "a question is a sheet over the page (SheetDialog), not a card in the map's sheet",
+      nested: "a question is a sheet over the page (SheetDialog), not a card over the map's sheet",
       scroll: "a question is short",
       dragUp: "a question's own sheet, not the map's",
       dragDown: "a question's own sheet, not the map's",

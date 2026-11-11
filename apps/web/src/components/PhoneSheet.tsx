@@ -4,7 +4,6 @@ import { cn } from "cn";
 import { DIM, GLASS_SHEET, SHEET_CORNERS } from "../lib/mapChrome";
 import type { NavEdge } from "../lib/preferences";
 import { TEXT } from "../lib/text";
-import { useKeyboardInset, useVisualHeight } from "../hooks/use-viewport";
 import { keepOpenOn, TOAST } from "./ui/dismiss";
 
 /**
@@ -41,67 +40,69 @@ export const PhoneSheetClose = Drawer.Close;
  *  and over the keyboard while it is up, as an iOS sheet rides up on it:
  *  Safari leaves a fixed sheet where it was, under the keyboard, and the
  *  address to sign in with was typed out of sight (the owner's screen
- *  recording, 2026-10-28). */
+ *  recording, 2026-10-28). The keyboard's inset is the Drawer's own
+ *  (VirtualKeyboardProvider's --drawer-keyboard-inset on the viewport,
+ *  which it also scrolls the field typed into into sight over). */
 export function PhoneSheetContent({ edge, className, style, children, onPointerDown, ...props }: Drawer.Popup.Props & { edge: NavEdge }) {
-  const keyboard = useKeyboardInset();
-  const room = useVisualHeight();
   const bottom = edge === "bottom";
   return (
-    <Drawer.Portal>
-      <Drawer.Backdrop
-        data-slot="sheet-overlay"
-        className={cn(
-          "fixed inset-0 z-50 opacity-[calc(1_-_var(--drawer-swipe-progress,0))] transition-opacity duration-450 ease-[cubic-bezier(0.32,0.72,0,1)]",
-          "data-starting-style:opacity-0 data-ending-style:opacity-0 data-swiping:duration-0 data-closed:pointer-events-none",
-          DIM,
-        )}
-      />
-      <Drawer.Viewport className="pointer-events-none fixed inset-x-0 top-0 z-50" style={{ bottom: keyboard }}>
-        <Drawer.Popup
-          data-slot="sheet-content"
-          data-side={edge}
-          data-floating=""
+    <Drawer.VirtualKeyboardProvider>
+      <Drawer.Portal>
+        <Drawer.Backdrop
+          data-slot="sheet-overlay"
           className={cn(
-            "pointer-events-auto absolute inset-x-2 flex max-h-[calc(85dvh-1rem)] flex-col overflow-hidden text-sm text-foreground outline-none",
-            GLASS_SHEET,
-            SHEET_CORNERS,
-            bottom ? "bottom-2" : "top-[max(0.5rem,env(safe-area-inset-top))]",
-            // The Drawer's own motion, as Base UI's drawer has it: with the
-            // finger as it is swiped, in from and out to its edge on its
-            // curve, out the faster the harder it was thrown.
-            "transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] data-swiping:duration-0 data-swiping:select-none",
-            "data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*400ms)] motion-reduce:transition-none",
-            bottom
-              ? "[transform:translateY(var(--drawer-swipe-movement-y))] data-starting-style:[transform:translateY(calc(100%_+_1rem))] data-ending-style:[transform:translateY(calc(100%_+_1rem))]"
-              : "[transform:translateY(var(--drawer-swipe-movement-y))] data-starting-style:[transform:translateY(calc(-100%_-_1rem_-_env(safe-area-inset-top)))] data-ending-style:[transform:translateY(calc(-100%_-_1rem_-_env(safe-area-inset-top)))]",
-            className,
+            "fixed inset-0 z-50 opacity-[calc(1_-_var(--drawer-swipe-progress,0))] transition-opacity duration-450 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "data-starting-style:opacity-0 data-ending-style:opacity-0 data-swiping:duration-0 data-closed:pointer-events-none",
+            DIM,
           )}
-          style={keyboard > 0 ? { ...style, maxHeight: room - 16 } : style}
-          onPointerDown={(event) => {
-            onPointerDown?.(event);
-            // Its own, not the map's sheet's: a sheet opened from inside the
-            // map's sheet is its child in React's tree though portalled out
-            // of it in the page's, and a press here went on up to the map
-            // sheet, which then took the finger.
-            event.stopPropagation();
-          }}
-          {...props}
-        >
-          {/* iOS's grabber, 36 by 5, five points in from the sheet's far edge. */}
-          <div
-            aria-hidden="true"
-            data-swipe-handle=""
+        />
+        <Drawer.Viewport className="pointer-events-none fixed inset-x-0 top-0 z-50" style={{ bottom: "var(--drawer-keyboard-inset, 0px)" }}>
+          <Drawer.Popup
+            data-slot="sheet-content"
+            data-side={edge}
+            data-floating=""
             className={cn(
-              "absolute inset-x-0 z-10 flex h-4 justify-center",
-              bottom ? "top-0 items-start pt-1.25" : "bottom-0 items-end pb-1.25",
+              "pointer-events-auto absolute inset-x-2 flex max-h-[min(calc(85dvh-1rem),calc(100%-1rem))] flex-col overflow-hidden text-sm text-foreground outline-none",
+              GLASS_SHEET,
+              SHEET_CORNERS,
+              bottom ? "bottom-2" : "top-[max(0.5rem,env(safe-area-inset-top))]",
+              // The Drawer's own motion, as Base UI's drawer has it: with the
+              // finger as it is swiped, in from and out to its edge on its
+              // curve, out the faster the harder it was thrown.
+              "transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] data-swiping:duration-0 data-swiping:select-none",
+              "data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*400ms)] motion-reduce:transition-none",
+              bottom
+                ? "[transform:translateY(var(--drawer-swipe-movement-y))] data-starting-style:[transform:translateY(calc(100%_+_1rem))] data-ending-style:[transform:translateY(calc(100%_+_1rem))]"
+                : "[transform:translateY(var(--drawer-swipe-movement-y))] data-starting-style:[transform:translateY(calc(-100%_-_1rem_-_env(safe-area-inset-top)))] data-ending-style:[transform:translateY(calc(-100%_-_1rem_-_env(safe-area-inset-top)))]",
+              className,
             )}
+            style={style}
+            onPointerDown={(event) => {
+              onPointerDown?.(event);
+              // Its own, not the map's sheet's: a sheet opened from inside the
+              // map's sheet is its child in React's tree though portalled out
+              // of it in the page's, and a press here went on up to the map
+              // sheet, which then took the finger.
+              event.stopPropagation();
+            }}
+            {...props}
           >
-            <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" />
-          </div>
-          {children}
-        </Drawer.Popup>
-      </Drawer.Viewport>
-    </Drawer.Portal>
+            {/* iOS's grabber, 36 by 5, five points in from the sheet's far edge. */}
+            <div
+              aria-hidden="true"
+              data-swipe-handle=""
+              className={cn(
+                "absolute inset-x-0 z-10 flex h-4 justify-center",
+                bottom ? "top-0 items-start pt-1.25" : "bottom-0 items-end pb-1.25",
+              )}
+            >
+              <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" />
+            </div>
+            {children}
+          </Drawer.Popup>
+        </Drawer.Viewport>
+      </Drawer.Portal>
+    </Drawer.VirtualKeyboardProvider>
   );
 }
 

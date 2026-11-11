@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { grabberTo, settled, sideDrawer, slow } from "./helpers";
 import { CARDS, type CardRow, type Check } from "./cardTable";
-import { go, hittable, scrollOf } from "./cardEntries";
+import { contentTop, go, hittable, scrollOf } from "./cardEntries";
 
 /**
  * Scrolling every card, by the one scrolling rule (the owner, 2026-11-10;
@@ -63,8 +63,9 @@ for (const row of CARDS) {
       const pinned = page.getByTestId(row.card).getByTestId("card-head-pinned");
       if (await pinned.isVisible()) {
         const head = (await pinned.boundingBox())!;
-        const body = (await panel(page).locator("[data-sheet-scroll]").boundingBox())!;
-        expect(Math.abs(head.y - body.y), "the pinned head's top against the sheet's content top").toBeLessThanOrEqual(2);
+        // The card's own drawer's scroller (CardStack), or the sheet's for a page of the plan.
+        const top = await contentTop(page, row.card);
+        expect(Math.abs(head.y - top), "the pinned head's top against the card's content top").toBeLessThanOrEqual(2);
         const over = await page.evaluate(
           ([x, y, card]) => {
             const at = document.elementFromPoint(x, y);
@@ -180,8 +181,7 @@ for (const edge of ["bottom", "top"] as const) {
     await expect(pinned).toBeVisible();
     await expect(async () => {
       const head = (await pinned.boundingBox())!;
-      const body = (await panel(page).locator("[data-sheet-scroll]").boundingBox())!;
-      expect(Math.abs(head.y - body.y)).toBeLessThanOrEqual(2);
+      expect(Math.abs(head.y - (await contentTop(page, row.card)))).toBeLessThanOrEqual(2);
     }).toPass({ timeout: slow(5_000) });
     const head = (await pinned.boundingBox())!;
     const over = await page.evaluate(

@@ -9,7 +9,9 @@ import { go, pick } from "./cardEntries";
  * band, a sliver of it over the sheet's top, the airport card's pinned head
  * and tabs part way down the sheet, a card at the pill drawn empty. The
  * sheet's head is sticky in its one scroller now (SheetParts), nothing of
- * it measured; this holds where the browser puts it. One @smoke, run after
+ * it measured, and a card is the stock Drawer's nested drawer over the
+ * sheet with a scroller of its own (CardStack); this holds where the
+ * browser puts them. One @smoke, run after
  * merge on main's push (tier 2: it needs the whole stack, docs/CI.md).
  */
 
@@ -40,7 +42,7 @@ test(
     await go(page, "/app/plan");
     await grabberTo(page, "full");
     await settled(panel(page));
-    const scroller = panel(page).locator("[data-sheet-scroll]");
+    const scroller = panel(page).locator("[data-sheet-scroll]").first();
     await scroller.evaluate((el) => el.scrollTo({ top: 240 }));
     const band = (await panel(page).locator("[data-head-band]").boundingBox())!;
     const width = page.viewportSize()!.width;
@@ -62,17 +64,20 @@ test(
         .toBe(24);
     }
 
-    // The airport card: its pinned head at the scroller's top, its tabs pinned under it.
+    // The airport card, a nested drawer of its own over the sheet: its
+    // pinned head at its own scroller's top, its tabs pinned under it.
     await pick(page, "duluth", "airport");
     const card = page.getByTestId("place-card");
     await expect(card).toBeVisible({ timeout: slow(20_000) });
+    await expect(panel(page)).toHaveAttribute("data-nested-drawer-open", "");
     await grabberTo(page, "full");
     await settled(panel(page));
-    await scroller.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+    const cardScroller = page.locator("[data-sheet-card]").filter({ has: card }).locator("[data-sheet-scroll]");
+    await cardScroller.evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
     const head = card.getByTestId("card-head-pinned");
     const bar = card.getByRole("tablist");
     await expect(async () => {
-      const [h, s, b] = [(await head.boundingBox())!, (await scroller.boundingBox())!, (await bar.boundingBox())!];
+      const [h, s, b] = [(await head.boundingBox())!, (await cardScroller.boundingBox())!, (await bar.boundingBox())!];
       expect(Math.abs(h.y - s.y), "the pinned head at the sheet's content top").toBeLessThanOrEqual(2);
       expect(Math.abs(b.y - (h.y + h.height)), "the tabs pinned under it").toBeLessThanOrEqual(16);
     }).toPass({ timeout: slow(5_000) });

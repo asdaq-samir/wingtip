@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { firstRow, grabberTo, settled, sideDrawer, slow } from "./helpers";
 import { CARDS, type CardRow, type Entry } from "./cardTable";
-import { expectBack, hittable, scrollOf } from "./cardEntries";
+import { expectBack, hittable, nestedOverSheet, scrollOf } from "./cardEntries";
 
 /**
  * Opening and closing every card, by the one card rule (the owner,
@@ -9,6 +9,8 @@ import { expectBack, hittable, scrollOf } from "./cardEntries";
  * is opened, the same component comes, the search goes while it is open
  * (Apple Maps' card covers the search), and ✕ and Escape each close it in
  * one press -- never only lowering the sheet -- back where it came from.
+ * On a phone each is the stock Drawer's nested drawer over the map's sheet
+ * (sheet/CardStack, the owner 2026-11-11), as Apple Maps stacks its cards.
  * The device's Back is the web's Escape (lib/backNavigation's
  * closeTopmost); the browser's history is not the app's, the planner
  * replacing its address at each change, so history back would leave it.
@@ -32,6 +34,11 @@ for (const row of CARDS) {
         if (!row.question) {
           if (row.not?.searchHidden) test.info().annotations.push({ type: "not", description: row.not.searchHidden });
           else await expect(firstRow(page)).toBeHidden();
+        }
+        // On a phone, a nested drawer of its own over the sheet.
+        if (phone(page) && !row.question) {
+          if (row.not?.nested) test.info().annotations.push({ type: "not", description: row.not.nested });
+          else await expect.poll(() => nestedOverSheet(page, row.card), { timeout: slow(5_000) }).toBe(true);
         }
         // Its ✕ on screen and taking the tap.
         await expect.poll(() => hittable(page, [row.close]), { timeout: slow(10_000) }).toBe(row.close);

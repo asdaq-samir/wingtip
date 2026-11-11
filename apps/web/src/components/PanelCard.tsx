@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useContext, type ReactNode } from "react";
 import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
@@ -6,7 +6,7 @@ import { PinnedHead } from "./PinnedHead";
 import RoundButton from "./RoundButton";
 import { closeTopCard, useHeldCard, RouteShareMenu, type CardShare } from "../lib/openCards";
 import { TEXT } from "../lib/text";
-import { useStartAtTop } from "../lib/scrollPlace";
+import { CardLayer } from "./sheet/CardLayer";
 
 /**
  * A card in the map's panel, as a place's is in Maps -- an airport's
@@ -15,16 +15,19 @@ import { useStartAtTop } from "../lib/scrollPlace";
  * under it, scrolling. Its top is the panel's corner's (MapPanel's
  * --corner-inset), so its close is where every panel's top-right button
  * is, at the pilot's ask.
+ *
+ * A card of its own over the sheet, the stock Drawer's nested drawer
+ * (CardLayer, sheet/CardStack; the owner, 2026-11-11), opened anew at its
+ * top in its own scroller.
  */
 export function PanelCard({ testId, children }: { testId: string; children: ReactNode }) {
   // Opened from a marker on the chart with the keys (Enter on it), the
   // focus goes to the card's name, which a screen reader then reads, and
   // back to the marker as the card is put away -- where it stayed on the
   // marker, the card a page away in the tab order and said by nothing.
-  const card = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  // As it is put in its drawer: the focus where it is then is the marker's.
+  const card = useCallback((node: HTMLDivElement | null) => {
     const from = document.activeElement as HTMLElement | null;
-    const node = card.current;
     if (!node || !from?.closest(".maplibregl-map")) return;
     node.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
     return () => {
@@ -32,24 +35,24 @@ export function PanelCard({ testId, children }: { testId: string; children: Reac
       if (from.isConnected && (!at || at === document.body || node.contains(at))) from.focus({ preventScroll: true });
     };
   }, []);
-  // Opened anew, at its top (the one scrolling rule).
-  useStartAtTop(card);
   // There at once as it opens, still while the sheet moves round it, as a
   // tab's own page is (TabPage), at the owner's ask ("Is the airport and
   // aircraft card same style? Can it be common to other sheets where
   // sheet/content is not moving when viewed?"): it came in faded and up
   // into its place over half a second, an airport's, where an airplane's,
-  // a TabPage, was there at once. Laid out whole in the sheet's one
-  // scroller (SheetParts), its room over its first line the grabber's
-  // (--pinned-room), which its pinned head reaches up over.
+  // a TabPage, was there at once. Laid out whole in its drawer's scroller,
+  // its room over its first line the grabber's (--pinned-room), which its
+  // pinned head reaches up over.
   return (
-    <div
-      ref={card}
-      className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
-      data-testid={testId}
-    >
-      {children}
-    </div>
+    <CardLayer>
+      <div
+        ref={card}
+        className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
+        data-testid={testId}
+      >
+        {children}
+      </div>
+    </CardLayer>
   );
 }
 

@@ -100,17 +100,11 @@ const keyboardInset = held(() => {
   const visual = window.visualViewport;
   return visual ? Math.max(0, Math.round(window.innerHeight - visual.height - visual.offsetTop)) : 0;
 }, onVisual);
-const visualHeight = held(() => Math.round(window.visualViewport?.height ?? window.innerHeight), onVisual);
-
 /** How much of the bottom of the window the on-screen keyboard covers:
  *  0 with no keyboard, and where the browser shrinks the window for one
- *  instead (Chrome on Android), since the window's own height says it. */
+ *  instead (Chrome on Android), since the window's own height says it.
+ *  For what is not a sheet (the route's box, the airport search's list):
+ *  the sheets take the stock Drawer's own (VirtualKeyboardProvider). */
 export function useKeyboardInset(): number {
   return useSyncExternalStore(keyboardInset.subscribe, keyboardInset.get, () => 0);
-}
-
-/** How tall the part of the page in sight is: the window's height, less
- *  the on-screen keyboard while it is up. */
-export function useVisualHeight(): number {
-  return useSyncExternalStore(visualHeight.subscribe, visualHeight.get, () => 800);
 }

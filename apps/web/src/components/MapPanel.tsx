@@ -15,16 +15,17 @@ import { useIsMobile } from "../hooks/use-mobile";
 import { useIsDesktop } from "../hooks/use-desktop";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
-import { useKeyboardInset, useSafeArea, useWindowHeight } from "../hooks/use-viewport";
+import { useSafeArea, useWindowHeight } from "../hooks/use-viewport";
 import { GLASS_SHEET, MATERIAL, PILL_RADIUS, SHEET_MARGIN, usePanelDragging, type MapInsets, type PanelState } from "../lib/mapChrome";
-import { raisedFor, useSheetCards } from "../lib/sheetCards";
+import { cardsOpen, raisedFor, useSheetCards } from "../lib/sheetCards";
 import { FLOAT_PX, insetsOf, type Detents, type SheetTurn } from "./sheet/insets";
 import { useSheetDetents } from "./sheet/useSheetDetents";
-import { sheetTopRef } from "./sheet/sheetTopSlot";
 import { prefersReducedMotion } from "../lib/motion";
 import { useSheetLife } from "./sheet/useSheetLife";
 import { useCardRaise } from "./sheet/useCardRaise";
-import { SheetGrabber, SheetParts, SheetViewport, type PartsProps } from "./sheet/SheetParts";
+import { CUT_TOP, FOLLOW, SHEET_BELOW, SheetGrabber, SheetParts, type PartsProps } from "./sheet/SheetParts";
+import { CardStack, type StackProps } from "./sheet/CardStack";
+import { SheetDrawer } from "./sheet/SheetDrawer";
 
 interface Props {
   /** The panel's name -- "Flight Planning", "Model Training" -- for its
@@ -85,8 +86,11 @@ const GRABBER = 16;
  * leaves to its user is a thin layer here: the parts held in sight at its
  * free edge (by the Drawer's own CSS variables, SheetParts), the room over
  * its top where the map's radio button rides it (OnSheetTop), the room it
- * leaves the map (insetsOf, told as it sets off and once it has landed),
- * its fixed heights (useSheetDetents), and the keyboard's inset under it.
+ * leaves the map (insetsOf, told as it sets off and once it has landed)
+ * and its fixed heights (useSheetDetents). The cards over it are its own
+ * nested drawers (CardStack); the keyboard's inset is the Drawer's
+ * (VirtualKeyboardProvider), and a throw moves it one size
+ * (snapToSequentialPoints, the owner's "one size per throw").
  *
  * From `md` up it is a side panel instead, a plain region at the left the
  * window's height while it is out and its head alone at rest, the map
@@ -99,11 +103,11 @@ export default function MapPanel(props: Props) {
   const fromBottom = useNavEdge() === "bottom";
   const safe = useSafeArea();
   const windowHeight = useWindowHeight();
-  // With the keyboard up the sheet sits on it, the field typed into in sight.
-  const keyboard = useKeyboardInset();
   const bottomSheet = onPhone && fromBottom;
   const raised = useSheetCards((s) => raisedFor(s.stack));
-  const cardsUp = raised !== null;
+  const cardsUp = useSheetCards((s) => cardsOpen(s.stack));
+  // Where the cards over it are put: inside its popup (CardStack).
+  const [cardHost, setCardHost] = useState<HTMLElement | null>(null);
   const footShown = !!foot && !cardsUp;
   // A card or a page open (the account page too) is the whole sheet, its own head and ✕ at the top
   // (one card rule, 2026-11-10); closed, the search is back -- kept with the keyboard up, as it is typed in.
@@ -129,12 +133,14 @@ export default function MapPanel(props: Props) {
   // A bottom sheet runs on to the screen's edge, under the home indicator
   // (or eight points where there is none); its pill ends at its row's
   // foot, the home indicator's inset alone kept (the owner, 2026-11-08).
-  const edgeInset = bottomSheet && !keyboard ? Math.max(Math.round(safe.bottom), SHEET_MARGIN) : 0;
-  const pillChrome = bottomSheet ? (keyboard ? 0 : Math.round(safe.bottom)) : GRABBER;
+  // With the keyboard up the sheet sits on it (the Drawer's
+  // --drawer-keyboard-inset), that room given up in CSS (SheetParts).
+  const edgeInset = bottomSheet ? Math.max(Math.round(safe.bottom), SHEET_MARGIN) : 0;
+  const pillChrome = bottomSheet ? Math.round(safe.bottom) : GRABBER;
   const halfChrome = bottomSheet ? edgeInset : GRABBER;
-  const room = onPhone
-    ? windowHeight - keyboard - Math.round(fromBottom ? safe.top : safe.bottom) - SHEET_MARGIN
-    : windowHeight - 2 * FLOAT_PX;
+  // What the sheet leaves at its far edge: the status bar and eight.
+  const reserve = Math.round(fromBottom ? safe.top : safe.bottom) + SHEET_MARGIN;
+  const room = onPhone ? windowHeight - reserve : windowHeight - 2 * FLOAT_PX;
   const sizes = useSheetDetents({
     foot: footNode,
     size,
@@ -247,7 +253,6 @@ export default function MapPanel(props: Props) {
     toEdge,
     edgeInset,
     halfChrome,
-    sizes,
     panelSize,
     setFoot,
     onFootTap: () => ask("half"),
@@ -259,6 +264,10 @@ export default function MapPanel(props: Props) {
     children,
   };
   const grabber = <SheetGrabber label={label} size={size} ask={ask} at={bottomSheet ? "top" : "bottom"} />;
+  // The room at half for a card fitted to it (ProfileCard, PastFlightCard),
+  // for the sheet's body and the cards over it: changed as it sets off and
+  // at rest, never per frame.
+  const halfBody = { "--half-body": `${sizes.halfBody}px` } as CSSProperties;
   // On a phone the light grey of Apple Maps' web sheet (2026-11-10): the look's --sheet, Canvas in Native.
   const look = onPhone
     ? GLASS_SHEET
@@ -271,26 +280,6 @@ export default function MapPanel(props: Props) {
     "data-detents": `${detents.peek},${detents.half},${detents.full}`,
     "aria-label": label,
   };
-
-  if (!onPhone)
-    return (
-      // eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the side panel hears the Escape pressed in it, a keyboard convenience; its controls are its own
-      <section
-        ref={setPanel}
-        {...common}
-        onKeyDown={(event: KeyboardEvent) => {
-          if (event.key === "Escape" && !event.defaultPrevented) lower(event.nativeEvent);
-        }}
-        style={{ top: FLOAT_PX, height: size === "peek" ? undefined : detents.full, borderRadius: PILL_RADIUS }}
-        className={cn(
-          "fixed left-[max(1rem,env(safe-area-inset-left))] z-40 flex flex-col pb-4 overflow-clip text-foreground outline-none print:static",
-          look,
-        )}
-      >
-        <SheetParts {...shared} />
-        {grabber}
-      </section>
-    );
 
   const snapPoints = [detents.peek, detents.half, detents.full];
   // A drag let go at a snap point: the size nearest it. Let go past the
@@ -306,84 +295,68 @@ export default function MapPanel(props: Props) {
     const target = (Object.keys(d) as PanelState[]).reduce((best, s) => (Math.abs(d[s] - px) < Math.abs(d[best] - px) ? s : best));
     if (target !== life.snapRef.current) ask(target);
   };
+
+  // The cards over it, its nested drawers (CardStack), with its sizes.
+  const stackProps: StackProps & { host: HTMLElement | null } = {
+    host: cardHost,
+    onPhone,
+    fromBottom: bottomSheet,
+    detents,
+    size,
+    snap,
+    resting: atPill && !moving,
+    ready: life.ready,
+    snapped,
+    ask,
+    grabber,
+    look: onPhone ? GLASS_SHEET : "bg-background dark:bg-popover",
+    below: SHEET_BELOW,
+    follow: onPhone && !fromBottom ? cn(FOLLOW, CUT_TOP) : undefined,
+  };
+
+  if (!onPhone)
+    return (
+      // eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the side panel hears the Escape pressed in it, a keyboard convenience; its controls are its own
+      <section
+        ref={setPanel}
+        {...common}
+        onKeyDown={(event: KeyboardEvent) => {
+          if (event.key === "Escape" && !event.defaultPrevented) lower(event.nativeEvent);
+        }}
+        className={cn(
+          "fixed left-[max(1rem,env(safe-area-inset-left))] z-40 flex flex-col pb-4 overflow-clip text-foreground outline-none print:static",
+          look,
+        )}
+        style={{ top: FLOAT_PX, height: size === "peek" ? undefined : detents.full, borderRadius: PILL_RADIUS, ...halfBody }}
+      >
+        <SheetParts {...shared} />
+        {!cardsUp && grabber}
+        {/* The cards over it, each covering the panel, its own scroller. */}
+        <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40 rounded-[inherit]" />
+        <CardStack {...stackProps} />
+      </section>
+    );
+
   return (
-    <Drawer.Root
-      open
-      modal={false}
-      disablePointerDismissal
-      swipeDirection={fromBottom ? "down" : "up"}
+    <SheetDrawer
+      fromBottom={fromBottom}
       snapPoints={snapPoints}
       snapPoint={detents[snap]}
-      onSnapPointChange={snapped}
-      // Never closed: Escape lowers it to the pill (lower, above), a
-      // swipe past the pill lands on it. Its Escape let on to the
-      // document, where the Drawer would stop it: Setup's page goes back a
-      // level from there (ConsoleLayer) wherever the focus is in the sheet.
-      onOpenChange={(open, details) => {
-        if (open) return;
-        details.cancel();
-        if (details.reason !== "escape-key") return;
-        details.allowPropagation();
-        lower(details.event);
-      }}
+      snapped={snapped}
+      lower={lower}
+      ready={life.ready}
+      onLanded={life.landed}
+      setPanel={setPanel}
+      popup={common}
+      style={{ height: detents.full, maxHeight: `calc(100% - ${reserve}px)`, ...halfBody }}
+      look={look}
     >
-      <Drawer.Portal>
-        {/* The screen the sheet is held on: on the keyboard while it is up.
-            Not a target itself, so the map under it is the map's. */}
-        <SheetViewport className="pointer-events-none fixed inset-x-0 top-0 z-40 print:static" style={{ bottom: keyboard }}>
-          <Drawer.Popup
-            ref={setPanel}
-            {...common}
-            data-sheet=""
-            // Landed: the Drawer's own slide to its snap point has ended.
-            onTransitionEnd={(event) => {
-              if (event.target === event.currentTarget && event.propertyName === "transform") life.landed();
-            }}
-            initialFocus={false}
-            finalFocus={false}
-            style={
-              {
-                height: detents.full,
-                borderRadius: fromBottom ? `${PILL_RADIUS}px ${PILL_RADIUS}px 0 0` : `0 0 ${PILL_RADIUS}px ${PILL_RADIUS}px`,
-              } as CSSProperties
-            }
-            className={cn(
-              "group/sheet pointer-events-auto absolute inset-x-0 flex flex-col text-foreground outline-none will-change-transform print:static",
-              // Slid by the Drawer's snap offset and the finger's movement,
-              // in a class: the Drawer clears its popup's inline transform
-              // as a swipe starts. Eased on the Drawer's own curve, never
-              // under a finger, and not before its first measure (it would
-              // slide in from its full height as the page opens).
-              "[transform:translateY(calc(var(--drawer-snap-point-offset)_+_var(--drawer-swipe-movement-y)))]",
-              // Copied for what is inside it (SheetParts): Base UI's own do not inherit.
-              "[--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)]",
-              life.ready && "transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)]",
-              "data-swiping:transition-none motion-reduce:transition-none",
-              fromBottom ? "bottom-0" : "top-0",
-              look,
-            )}
-          >
-            {/* Over its top edge, the parts that ride it (OnSheetTop):
-                inside the popup, so they move with it under a finger and on
-                its curve; a finger on them is theirs, not the sheet's. */}
-            {fromBottom && (
-              <div
-                ref={sheetTopRef}
-                data-sheet-top=""
-                data-base-ui-swipe-ignore=""
-                className="pointer-events-none absolute inset-x-0 bottom-full"
-              />
-            )}
-            {/* Clipped to its corners here, not on the popup, which the
-                parts over its top stand outside of. */}
-            <div className="flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]">
-              {fromBottom && grabber}
-              <SheetParts {...shared} />
-              {!fromBottom && grabber}
-            </div>
-          </Drawer.Popup>
-        </SheetViewport>
-      </Drawer.Portal>
-    </Drawer.Root>
+      {fromBottom && !cardsUp && grabber}
+      <SheetParts {...shared} />
+      {!fromBottom && !cardsUp && grabber}
+      {/* The cards over it, inside it: its corners, its place. */}
+      <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40" />
+      <CardStack {...stackProps} />
+    </SheetDrawer>
   );
 }

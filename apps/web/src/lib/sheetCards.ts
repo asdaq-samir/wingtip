@@ -1,31 +1,70 @@
 import type { PillHead } from "./openCards";
+import type { Drawer } from "@base-ui/react/drawer";
 import { createContext } from "react";
 import { create } from "zustand";
 
 /**
- * The cards open in the map's panel from a control or the chart
- * (components/SheetCard): where they are put, and which are open, the last
- * on top -- for the panel to come up for them and keep what is under them
- * (MapPanel).
+ * The cards open over the map's sheet (components/sheet/CardStack), each
+ * its own nested Drawer stacked over the sheet as Apple Maps stacks its
+ * cards (the owner, 2026-11-11): a control's or the chart's (SheetCard),
+ * a place's or a list's (PanelCard), the Brief, Settings. The last opened
+ * on top. A card's content stays drawn where its caller is, in React's
+ * tree, for its providers, and is put into its drawer's scroller (`slot`).
  */
 
-type Entry = {
+/** What a card's drawer is told by its content. */
+export type CardFrame = {
+  /** The test id on the drawer's popup (SheetCard's). */
+  testId?: string;
+  /** Its name for a screen reader, or the id of the heading that names it. */
+  label?: string;
+  labelledBy?: string;
+  /** Escape, a tap outside, a swipe past the pill, as the Drawer tells
+   *  them, the card on top only; none for the frame's own way (CardStack):
+   *  Escape a level back, the rest refused. */
+  dismiss?: (details: Drawer.Root.ChangeEventDetails) => void;
+  initialFocus?: Drawer.Popup.Props["initialFocus"];
+  finalFocus?: Drawer.Popup.Props["finalFocus"];
+};
+
+export type CardEntry = {
   id: string;
   /** Its name. */
   title?: string;
-  /** How far up the panel comes for it: half for a card, all the way up
-   *  for a search, as Maps' does. */
-  raise: "half" | "full";
-  close: () => void;
+  /** How far up the sheet comes for it: half for a card, all the way up
+   *  for a search, as Maps' does; none for a card the page sizes itself
+   *  (a place's, the Brief, Settings). */
+  raise?: "half" | "full";
+  /** Open, or kept closed under a page put away (lib/shown). */
+  shown: boolean;
+  frame: CardFrame;
+  /** The drawer's scroller, where the content is put. */
+  slot: HTMLElement | null;
 };
 
-/** Where the cards are put (the panel's body), and those open, the last
- *  on top. */
-export const useSheetCards = create<{ host: HTMLElement | null; stack: Entry[] }>(() => ({ host: null, stack: [] }));
+/** The cards open, the last on top. */
+export const useSheetCards = create<{ stack: CardEntry[] }>(() => ({ stack: [] }));
 
-/** How far the panel is asked up for the cards open: null with none. */
-export const raisedFor = (stack: Entry[]): "half" | "full" | null =>
-  stack.length === 0 ? null : stack.some((entry) => entry.raise === "full") ? "full" : "half";
+/** How far the sheet is asked up for the cards open: null with none. */
+export const raisedFor = (stack: CardEntry[]): "half" | "full" | null => {
+  const up = stack.filter((entry) => entry.shown && entry.raise);
+  return up.length === 0 ? null : up.some((entry) => entry.raise === "full") ? "full" : "half";
+};
+
+/** Whether a card covers the sheet. */
+export const cardsOpen = (stack: CardEntry[]) => stack.some((entry) => entry.shown);
+
+/** A card's entry changed in place. */
+export function setCard(id: string, change: Partial<CardEntry>) {
+  useSheetCards.setState((s) => {
+    const at = s.stack.findIndex((entry) => entry.id === id);
+    const was = s.stack[at];
+    if (!was || (Object.keys(change) as (keyof CardEntry)[]).every((k) => Object.is(was[k], change[k]))) return s;
+    const stack = [...s.stack];
+    stack[at] = { ...was, ...change };
+    return { stack };
+  });
+}
 
 /** The head's place for a card whose content draws its own name there --
  *  a map card's (MapCard), its mark beside its name -- the id that name

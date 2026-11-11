@@ -1,10 +1,7 @@
 import { useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
-import { SheetCardHost } from "../SheetCard";
 import TabKept from "../TabKept";
-import type { useSheetDetents } from "./useSheetDetents";
-export { SheetViewport } from "./SheetViewport";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
  *  in it four from the edge. */
@@ -19,6 +16,10 @@ function barRowPad(underGrabber: boolean) {
   if (underGrabber) return "h-[4.75rem] pt-6 pb-1.5";
   return cn("h-[4.25rem] pb-3", ROW_PAD);
 }
+/** The home indicator's room, none while the keyboard is up: the
+ *  Drawer's --drawer-keyboard-inset is 0 or a keyboard's height, so the
+ *  room less a thousand times it is the room or nothing. */
+const offKeyboard = (px: number) => `max(0px, calc(${px}px - var(--drawer-keyboard-inset, 0px) * 1000))`;
 /** Those rows' heights, for what pins under them (--sheet-head). */
 const BAR_ALONE = "4.75rem";
 const BAR = "4.25rem";
@@ -27,7 +28,7 @@ const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 /** Under the head, the body and the foot a shade darker than the glass
  *  over them, the grey of notes and the blue of tappable words a step
  *  darker on it for WCAG's 4.5:1 (design/tokens.json's -shade tokens). */
-const SHEET_BELOW = "[--muted-foreground:var(--muted-foreground-shade)] [--tint:var(--tint-shade)] print:bg-transparent";
+export const SHEET_BELOW = "[--muted-foreground:var(--muted-foreground-shade)] [--tint:var(--tint-shade)] print:bg-transparent";
 
 /**
  * iOS's grabber: 36 by 5 in a button a little wider, at the sheet's free
@@ -107,7 +108,6 @@ export interface PartsProps {
   toEdge: boolean;
   edgeInset: number;
   halfChrome: number;
-  sizes: ReturnType<typeof useSheetDetents>;
   panelSize: { size: PanelState; to: (size: PanelState) => void; card: boolean };
   setFoot: (node: HTMLDivElement | null) => void;
   onFootTap: () => void;
@@ -119,12 +119,12 @@ export interface PartsProps {
  *  variables with `inherits: false`, so under the popup they were 0 and
  *  nothing followed -- a top sheet's search rode off the screen at the
  *  pill (consoles.spec, 2026-11-10). */
-const FOLLOW =
+export const FOLLOW =
   "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 /** The body cut off at a bottom sheet's figures, or past a top sheet's
  *  edge, by the same offset. */
 const CUT_BOTTOM = "[clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)))_0)]";
-const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))_0)]";
+export const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))_0)]";
 
 /**
  * What the sheet holds, the same in the Drawer and the side panel: one
@@ -141,7 +141,7 @@ const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--sheet-offset,0px)+v
  * its top (PinnedHead) and its tabs under that.
  */
 export function SheetParts(p: PartsProps) {
-  const { atPill, fromBottom, size, sizes, footShown, cardsUp, setFoot } = p;
+  const { atPill, fromBottom, size, footShown, cardsUp, setFoot } = p;
   const headerShown = !p.flying && !cardsUp && (atPill ? !p.barShown : p.top != null || !p.barShown);
   const headContent = atPill ? p.compact : p.top;
   const keptHere = p.kept != null && headerShown && headContent === p.kept;
@@ -250,14 +250,11 @@ export function SheetParts(p: PartsProps) {
             "flex min-h-0 flex-1 flex-col",
             size !== "peek" && !fromBottom && "pb-4",
             SHEET_BELOW,
-            p.resting && "invisible",
-            p.resting && headAlone && "[&_[data-sheet-head]]:visible",
+            (p.resting || cardsUp) && "invisible",
+            p.resting && headAlone && !cardsUp && "[&_[data-sheet-head]]:visible",
             !p.onPhone && size === "peek" && "hidden",
           )}
-          inert={p.resting && !headAlone}
-          // The room at half for a card fitted to it (ProfileCard,
-          // PastFlightCard): changed as it sets off and at rest, never per frame.
-          style={{ "--half-body": `${sizes.halfBody}px` } as CSSProperties}
+          inert={cardsUp || (p.resting && !headAlone)}
           data-panel-body=""
           // On a phone, Drawer.Content's own mark: a mouse dragged across the
           // body selects its words rather than moving the sheet (a finger
@@ -271,10 +268,12 @@ export function SheetParts(p: PartsProps) {
               : undefined
           }
         >
-          <TabKept away={cardsUp} still={p.layer === "console"}>
+          {/* Not put away under a card (TabKept's `away`): a card's content is
+              drawn in it (PanelCard, the Brief, Settings) and opens while it
+              is in sight (lib/shown). */}
+          <TabKept away={false} still={p.layer === "console"}>
             {p.children}
           </TabKept>
-          <SheetCardHost shown={cardsUp} />
         </div>
       </div>
       {!!p.foot && (footShown || cardsUp) && (
@@ -299,7 +298,7 @@ export function SheetParts(p: PartsProps) {
           style={
             {
               "--sheet-progress": size === "half" && !p.desktop ? "0" : "1",
-              ...(p.toEdge && fromBottom && !pillFoot ? { paddingBottom: Math.max(10, p.edgeInset) } : {}),
+              ...(p.toEdge && fromBottom && !pillFoot ? { paddingBottom: `max(10px, ${offKeyboard(p.edgeInset)})` } : {}),
             } as CSSProperties
           }
           // In the pill a tap on it opens it half way.
@@ -309,8 +308,10 @@ export function SheetParts(p: PartsProps) {
         </div>
       )}
       {/* The rest of the way to the screen's edge, under the home
-          indicator -- in the body where it runs to the edge (toEdge). */}
-      {!p.toEdge && p.edgeInset > 0 && <div className="shrink-0" style={{ height: p.edgeInset }} aria-hidden="true" />}
+          indicator -- in the body where it runs to the edge (toEdge); none
+          with the keyboard up, the sheet then sitting on it (the Drawer's
+          --drawer-keyboard-inset, which is 0 or a keyboard's height). */}
+      {!p.toEdge && p.edgeInset > 0 && <div className="shrink-0" style={{ height: offKeyboard(p.edgeInset) }} aria-hidden="true" />}
     </>
   );
 }
