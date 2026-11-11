@@ -1,5 +1,4 @@
 import { useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, TriangleAlert } from "lucide-react";
 import { cn } from "cn";
 import { PillSection } from "../../../../components/Favorites";
@@ -9,59 +8,10 @@ import { RowBadge } from "../../../../components/RowBadge";
 import { BADGE } from "../../../../lib/rowBadges";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
-import {
-  fieldAlerts,
-  fieldNotamsQuery,
-  localWords,
-  readNotam,
-  useFieldNotams,
-  whenWords,
-  windowOf,
-  type FieldNotam,
-  type FieldNotams,
-} from "./fieldNotams";
+import { headingOf, localWords, readNotam, useFieldNotams, whenWords, windowOf, type FieldNotam, type FieldNotams } from "./fieldNotams";
 
-/** The NOTAMs section's test id, which an alert scrolls to. */
+/** The NOTAMs section's test id. */
 const SECTION = "place-notams";
-
-/**
- * What leads an airport's card, under its actions, as Maps puts its live
- * cards first and the phones' cards do: each NOTAM the engine marks as
- * closing the field or a runway, and each TFR within 5 nm, at most three,
- * in the problem ink, each in the engine's words (notam_read); a tap shows
- * it in the card's NOTAMs. Nothing where there is none, or while the
- * answer is on its way (the card's content waits for the engine).
- */
-export function PlaceAlerts({ ident, onOpen }: { ident: string; onOpen: () => void }) {
-  const { data } = useQuery(fieldNotamsQuery(ident));
-  const alerts = fieldAlerts(data);
-  if (!alerts.length) return null;
-  const show = () => {
-    onOpen();
-    // The Info tab's section, once the tab is drawn.
-    requestAnimationFrame(() => document.querySelector(`[data-testid="${SECTION}"]`)?.scrollIntoView({ block: "start" }));
-  };
-  return (
-    <ul className="flex flex-col gap-2 pt-3" aria-label="Alerts" data-testid="place-alerts">
-      {alerts.map((n) => (
-        <li key={n.id}>
-          <button
-            type="button"
-            onClick={show}
-            className="flex min-h-11 w-full items-start gap-2 rounded-xl bg-destructive/10 px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            data-testid="place-alert"
-          >
-            <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive-ink" aria-hidden="true" />
-            <span className="flex min-w-0 flex-col">
-              <span className={cn("font-semibold text-destructive-ink", TEXT.row)}>{n.kind === "tfr" ? "TFR Nearby" : "Closed"}</span>
-              <span className={cn("line-clamp-2", TEXT.note)}>{readNotam(n, ident).words}</span>
-            </span>
-          </button>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 /**
  * One NOTAM in full, on a card of its own over the list: what it is about
@@ -71,7 +21,7 @@ export function PlaceAlerts({ ident, onOpen }: { ident: string; onOpen: () => vo
  * and its text as sent folded beneath, never rewritten (raw reports as
  * sent).
  */
-function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
+export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
   const read = readNotam(n, ident);
   const when = windowOf(n, read);
   const utc = whenWords(when, read);
@@ -103,11 +53,6 @@ function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
   );
 }
 
-/** A NOTAM's heading: its keyword (the engine's), "TFR" for a TFR. */
-function headingOf(n: FieldNotam, ident: string): string {
-  return n.kind === "tfr" ? "TFR" : (readNotam(n, ident).heading ?? "NOTAM");
-}
-
 /**
  * The rows, as every list on the card has them (the owner, 2026-11-11:
  * "Notams show differently then other sections"): a grouped list, each
@@ -115,7 +60,7 @@ function headingOf(n: FieldNotam, ident: string): string {
  * in full (NotamFull) on a card over this one. Each asks the engine as it
  * draws, which a card's content waits for (SheetCard's one EngineGate).
  */
-function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; ident: string; state: ReactNode }) {
+export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; ident: string; state: ReactNode }) {
   const [open, setOpen] = useState<FieldNotam | null>(null);
   return (
     <>

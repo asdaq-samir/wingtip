@@ -15,7 +15,6 @@ import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../lib/cardTab";
 import { useTabScroll } from "../lib/tabScroll";
 import PlaceActions from "./place/PlaceActions";
-import FitLine from "../../../components/FitLine";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
@@ -42,7 +41,7 @@ import { PlaceChartsTab } from "./place/PlaceChartsTab";
 import { PlaceInfoTab } from "./place/PlaceInfoTab";
 import { PlaceRunwaysTab } from "./place/PlaceRunwaysTab";
 import { PlaceWeatherTab } from "./place/PlaceWeatherTab";
-import { PlaceAlerts } from "./place/PlaceNotams";
+import { PlaceSubtitle } from "./place/PlaceSubtitle";
 import { useShown } from "../../../lib/shown";
 import { Badge } from "../../../components/ui/badge";
 
@@ -442,16 +441,9 @@ export default function PlaceCard({
             // ident and fitted to it, in sight at the card's smallest size
             // too (the owner, 2026-11-11, after Apple Maps' "Buttermilk Cafe /
             // Breakfast and Brunch Restaurant"), "(Private)" after it where
-            // it is (kindOf); nothing under it.
-            // The kind kept whole past the name, which alone shrinks or is cut.
-            sub={
-              name && name !== ident4 ? (
-                <span className="flex min-w-0 justify-center" data-testid="place-full-name">
-                  <FitLine className="min-w-0">{name}</FitLine>
-                  {kind && <span className="shrink-0 whitespace-pre" data-testid="place-kind">{` (${kind})`}</span>}
-                </span>
-              ) : undefined
-            }
+            // it is (kindOf), a NOTAM's badge after it where one closes the
+            // field or a TFR is near (PlaceSubtitle); nothing under it.
+            sub={<PlaceSubtitle ident={ident} place={place} name={name && name !== ident4 ? name : null} kind={kind} />}
             onClose={onClose}
             onShare={share}
             closeTestId="place-close"
@@ -516,8 +508,6 @@ export default function PlaceCard({
               />
             </div>
           )}
-          {/* Closures and TFRs near it first, as Maps' live cards (PlaceNotams). */}
-          <PlaceAlerts ident={ident} onOpen={() => setPicked("radio")} />
           {place && stop && <StopStrip ident={place.ident} stop={stop} />}
         </>
       ) : (

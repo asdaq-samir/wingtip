@@ -7,6 +7,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../..
 import type { AirportPlace } from "../../../../lib/api/types";
 import { BADGE } from "../../../../lib/rowBadges";
 import { TEXT } from "../../../../lib/text";
+import { NotamBadge } from "./NotamBadge";
+import type { NotamMark } from "./notamBadges";
 
 type Light = AirportPlace["lights"][number];
 
@@ -33,29 +35,54 @@ const badge = (
  * the engine could not read, in its words; the first three, the title
  * the way to the rest (FirstFew). Under them the standard keying where it
  * applies, and the remarks as written, folded (the shared Collapsible, as
- * a NOTAM's "As Sent").
+ * a NOTAM's "As Sent"). A light a NOTAM addresses has its badge by its name
+ * ("Out of service"), and a tap on its row opens that NOTAM.
  */
-export function PlaceLights({ place }: { place: AirportPlace }) {
+export function PlaceLights({
+  place,
+  notams,
+  onNotam,
+}: {
+  place: AirportPlace;
+  /** The NOTAMs' badges by the light's index (notamBadges). */
+  notams: Map<number, NotamMark>;
+  onNotam: (mark: NotamMark) => void;
+}) {
   if (!place.lighting.length) return null;
   const rows = [
-    ...place.lights.map((light, i) => (
-      <ListRow
-        key={`${light.code ?? light.name}-${light.runways.join()}-${i}`}
-        media={badge}
-        title={light.code ? `${light.name} (${light.code})` : light.name}
-        description={
-          <>
-            {servesWords(light) && <span className="block">{servesWords(light)}</span>}
-            {light.how && (
-              <span className="block text-foreground" data-testid="place-light-how">
-                {light.how}
+    ...place.lights.map((light, i) => {
+      const mark = notams.get(i);
+      const name = light.code ? `${light.name} (${light.code})` : light.name;
+      return (
+        <ListRow
+          key={`${light.code ?? light.name}-${light.runways.join()}-${i}`}
+          media={badge}
+          title={
+            mark ? (
+              <span className="flex flex-wrap items-center gap-x-2">
+                {name}
+                <NotamBadge mark={mark} kind="light" />
               </span>
-            )}
-          </>
-        }
-        data-testid="place-light"
-      />
-    )),
+            ) : (
+              name
+            )
+          }
+          onClick={mark && (() => onNotam(mark))}
+          chevron={!!mark}
+          description={
+            <>
+              {servesWords(light) && <span className="block">{servesWords(light)}</span>}
+              {light.how && (
+                <span className="block text-foreground" data-testid="place-light-how">
+                  {light.how}
+                </span>
+              )}
+            </>
+          }
+          data-testid="place-light"
+        />
+      );
+    }),
     ...place.light_notes.map((note) => <ListRow key={note.as_written} media={badge} title={note.words} data-testid="place-light-note" />),
   ];
   return (

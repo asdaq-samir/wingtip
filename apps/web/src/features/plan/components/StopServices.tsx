@@ -95,7 +95,15 @@ const placeRows = (places: NearbyPlace[], media: ReactNode, testId: string) =>
  * within five miles, nearest first (wingtip.nearby). A place with a phone is
  * a tap that calls it.
  */
-export function StopServices({ ident }: { ident: string }) {
+export function StopServices({
+  ident,
+  fuelNotam,
+}: {
+  ident: string;
+  /** A NOTAM on the fuel (the card's NotamBadge, "Not available") by its
+   *  name, and the row's tap that opens it. */
+  fuelNotam?: { badge: ReactNode; onClick: () => void };
+}) {
   const asked = useQuery(servicesQuery(ident));
   const s = asked.data;
   // A line while they are fetched, and where they could not be, that they
@@ -128,7 +136,9 @@ export function StopServices({ ident }: { ident: string }) {
           <Fuel />
         </RowBadge>
       }
-      title="Fuel"
+      title={fuelNotam ? <span className="flex items-center gap-2">Fuel{fuelNotam.badge}</span> : "Fuel"}
+      onClick={fuelNotam?.onClick}
+      chevron={!!fuelNotam}
       value={<span className="font-semibold text-foreground">{s.fuel_types.length ? fuelNames(s.fuel_types) : "None listed"}</span>}
       data-testid="services-fuel"
     />,

@@ -6,14 +6,19 @@ import { BADGE } from "../../../../lib/rowBadges";
 import { feet } from "../../../../lib/format";
 import { RvrRows } from "../LiveAirportRows";
 import { RunwayRow } from "../RunwayRow";
+import { NotamBadge, NotamSheet } from "./NotamBadge";
+import { useNotamMarks, useNotamSheet } from "./notamBadges";
 
 /** An airport's card's Runways tab (PlaceCard): its pattern altitude, each
- *  runway, and each runway's RVR now where the field reports it. */
+ *  runway, a NOTAM's badge by its name ("Closed") and a tap on it opening
+ *  that NOTAM, and each runway's RVR now where the field reports it. */
 export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
   // The longest runway open, what a pilot sizes a field by: a badge on its
   // row (it was a row of the Info tab's Details). None where the field has one.
   const open = place.runways.filter((r) => !r.closed && r.length_ft != null);
   const longest = open.length > 1 ? open.reduce((a, b) => (b.length_ft! > a.length_ft! ? b : a)) : null;
+  const marks = useNotamMarks(place.ident, place);
+  const sheet = useNotamSheet();
   return (
     <div data-testid="place-runways">
       <ListGroup>
@@ -32,13 +37,25 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
           />
         )}
         {place.runways.length ? (
-          place.runways.map((r, i) => <RunwayRow key={`${r.ends}-${i}`} runway={r} longest={r === longest} />)
+          place.runways.map((r, i) => {
+            const mark = marks.runway.get(i);
+            return (
+              <RunwayRow
+                key={`${r.ends}-${i}`}
+                runway={r}
+                longest={r === longest}
+                notam={mark && <NotamBadge mark={mark} kind="runway" />}
+                onClick={mark && (() => sheet.show(mark))}
+              />
+            );
+          })
         ) : (
           <ListRow title="None listed" />
         )}
       </ListGroup>
       {/* Each runway's RVR now, where the field reports it. */}
       <RvrRows ident={place.ident} />
+      {sheet.shown && <NotamSheet notams={sheet.shown} ident={place.ident} onClose={sheet.close} />}
     </div>
   );
 }

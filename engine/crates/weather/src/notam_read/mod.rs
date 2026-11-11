@@ -150,7 +150,7 @@ fn said(words: &[&str], keyword: Option<&str>, tfr: bool, cx: &body::Context) ->
 }
 
 /// A word with the stops and brackets around it off.
-fn bare(w: &str) -> &str {
+pub(crate) fn bare(w: &str) -> &str {
     w.trim_matches(|c: char| matches!(c, ',' | '.' | ';' | ':' | '(' | ')'))
 }
 
@@ -205,7 +205,7 @@ fn finished(parts: &[String], stop: bool) -> String {
 }
 
 /// The ICAO form's item `letter` ("A)" to the next item), or None.
-fn item(text: &str, letter: u8) -> Option<&str> {
+pub(crate) fn item(text: &str, letter: u8) -> Option<&str> {
     let b = text.as_bytes();
     let is_item = |i: usize| b"QABCDEFG".contains(&b[i]) && b[i + 1] == b')' && (i == 0 || b[i - 1].is_ascii_whitespace());
     let from = (0..b.len().saturating_sub(1)).find(|&i| b[i] == letter && is_item(i))? + 2;

@@ -80,7 +80,6 @@ flight_category
 frd_read
 frd_write
 frequency_line
-frequency_of
 fuel_estimate
 fuel_in_tanks
 fuel_names
@@ -135,6 +134,7 @@ navaid_hours
 navlog_leg
 navlog_totals
 notam_read
+notam_subject
 our_call
 own_ship_hex
 passenger_briefing

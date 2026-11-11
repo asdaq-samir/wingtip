@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ListRow } from "../../../components/GroupedList";
 import { Badge } from "../../../components/ui/badge";
 import type { Runway } from "../../../lib/api/types";
@@ -34,12 +35,19 @@ function RunwayGlyph({ headingDeg }: { headingDeg: number | null }) {
 export function RunwayRow({
   runway,
   longest = false,
+  notam,
+  onClick,
 }: {
   runway: Runway;
   /** The field's longest runway open, marked with a badge by its name (the
    *  airport card's Runways tab; the owner, 2026-11-11: "just put a longest
    *  badge on the runway in runway tab"). */
   longest?: boolean;
+  /** A NOTAM's badge on it (the airport card's NotamBadge), by its name,
+   *  and the row's tap that opens that NOTAM (the owner, 2026-11-11:
+   *  "tapping the affected thing should show the notam"). */
+  notam?: ReactNode;
+  onClick?: () => void;
 }) {
   // An end flown with right traffic is said, as the sectional's "RP 23"
   // says it: the rest are left, as every pattern is unless the FAA says.
@@ -58,6 +66,9 @@ export function RunwayRow({
   const heading = (runway.runway_ends ?? []).find((e) => e.heading_true_deg != null)?.heading_true_deg ?? null;
   return (
     <ListRow
+      onClick={onClick}
+      chevron={!!onClick}
+      data-testid="runway-row"
       media={<RunwayGlyph headingDeg={heading} />}
       title={
         <span className="flex items-center gap-2">
@@ -67,6 +78,7 @@ export function RunwayRow({
               Longest
             </Badge>
           )}
+          {notam}
         </span>
       }
       description={

@@ -1321,6 +1321,12 @@ fun Engine.notamRead(text: String, idents: List<String>? = null): Result<EngineC
     rule("notam_read", EngineContract.NotamReadInput(text = text, idents = idents))
 
 /**
+ * What one NOTAM addresses on an airport's card, from its text as sent (FAA Order JO 7930.2, the domestic form of 4-2-1 and the ICAO form of chapter 8), matched to the card's own rows: the field (AD AP CLSD), a runway by its designation (RWY, 1-2-1 and 3-3-5; never a runway a taxiway's NOTAM names, 3-3-6), a light on it (PAPI, VASI, REIL, the approach lights, the edge lights, the beacon; AIM 2-1), the approaches an ILS, LOC, LDA or SDF serves (NAV) or the procedure an FDC IAP NOTAM titles (7-1-3), a frequency by its MHz or its facility (COM), the fuel (SVC), and a TFR near the field. Each with its badge's word (Closed, Closed at times, Part closed, Restricted, Out of service, Not available, Not authorized (NA, JO 7340.2), Changed, NOTAM, TFR) and how bad (unusable: closed, or a procedure not authorized; caution: the rest). CLSD EXC XNG or EXC TAX is still closed to landing and takeoff, said in the label. A NOTAM it cannot place answers no badge, never a guess.
+ */
+fun Engine.notamSubject(text: String, tfr: Boolean? = null, idents: List<String>? = null, runways: List<String>? = null, lights: List<EngineContract.NotamSubjectInputLightsItem>? = null, approaches: List<String>? = null, frequencies: List<EngineContract.NotamSubjectInputFrequenciesItem>? = null): Result<EngineContract.NotamSubjectAnswer> =
+    rule("notam_subject", EngineContract.NotamSubjectInput(text = text, tfr = tfr, idents = idents, runways = runways, lights = lights, approaches = approaches, frequencies = frequencies))
+
+/**
  * The NOTAMs of one FAA NOTAM System (FNS) message, AIXM 5.1, as wingtip.notams keeps them: each by its domestic place and number, else its place and ICAO number; `ends` the sooner of its own end and its feature lifetime's. None where the message is not XML.
  */
 fun Engine.notamsFns(text: String): Result<List<EngineContract.NotamsFnsAnswerItem>> =

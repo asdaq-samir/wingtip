@@ -2460,6 +2460,13 @@ export interface EngineContract {
     answer: NotamReadAnswer;
   };
   /**
+   * What one NOTAM addresses on an airport's card, from its text as sent (FAA Order JO 7930.2, the domestic form of 4-2-1 and the ICAO form of chapter 8), matched to the card's own rows: the field (AD AP CLSD), a runway by its designation (RWY, 1-2-1 and 3-3-5; never a runway a taxiway's NOTAM names, 3-3-6), a light on it (PAPI, VASI, REIL, the approach lights, the edge lights, the beacon; AIM 2-1), the approaches an ILS, LOC, LDA or SDF serves (NAV) or the procedure an FDC IAP NOTAM titles (7-1-3), a frequency by its MHz or its facility (COM), the fuel (SVC), and a TFR near the field. Each with its badge's word (Closed, Closed at times, Part closed, Restricted, Out of service, Not available, Not authorized (NA, JO 7340.2), Changed, NOTAM, TFR) and how bad (unusable: closed, or a procedure not authorized; caution: the rest). CLSD EXC XNG or EXC TAX is still closed to landing and takeoff, said in the label. A NOTAM it cannot place answers no badge, never a guess.
+   */
+  notam_subject: {
+    input: NotamSubjectInput;
+    answer: NotamSubjectAnswer;
+  };
+  /**
    * The NOTAMs of one FAA NOTAM System (FNS) message, AIXM 5.1, as wingtip.notams keeps them: each by its domestic place and number, else its place and ICAO number; `ends` the sooner of its own end and its feature lifetime's. None where the message is not XML.
    */
   notams_fns: {
@@ -8565,6 +8572,67 @@ export interface NotamReadAnswer {
    * PERM: the condition is permanent, until published.
    */
   permanent: boolean;
+}
+export interface NotamSubjectInput {
+  /**
+   * The NOTAM as sent, domestic or ICAO form.
+   */
+  text: string;
+  /**
+   * The planner's kind "tfr": a TFR within 5 nm of the field.
+   */
+  tfr?: boolean;
+  /**
+   * The field's idents (DLH, KDLH), kept as written in the label.
+   */
+  idents?: string[];
+  /**
+   * The card's runways as it names them ("09/27", "18L/36R"), in its order.
+   */
+  runways?: string[];
+  /**
+   * The card's lights as lighting_read names them, in its order.
+   */
+  lights?: NotamSubjectLight[];
+  /**
+   * The card's approach charts by their titles ("ILS OR LOC RWY 09"), in its order.
+   */
+  approaches?: string[];
+  /**
+   * The card's frequencies, their type (TWR, ATIS, AWOS) and MHz, in its order.
+   */
+  frequencies?: NotamSubjectFrequency[];
+}
+export interface NotamSubjectLight {
+  code: string | null;
+  name: string;
+  runways: string[];
+}
+export interface NotamSubjectFrequency {
+  type: string | null;
+  mhz: number | null;
+}
+export interface NotamSubjectAnswer {
+  badges: NotamBadge[];
+}
+export interface NotamBadge {
+  /**
+   * What the badge goes next to.
+   */
+  on: "field" | "runway" | "light" | "approach" | "frequency" | "fuel";
+  /**
+   * Its row in the list the card gave (runways, lights, approaches, frequencies); null for the field and the fuel.
+   */
+  index: number | null;
+  /**
+   * The badge's word, in sentence case.
+   */
+  word: string;
+  severity: "unusable" | "caution";
+  /**
+   * What it says, for the badge's label: the NOTAM's words (notam_read), or what a closure leaves open.
+   */
+  label: string;
 }
 export interface NotamsFnsInput {
   text: string;

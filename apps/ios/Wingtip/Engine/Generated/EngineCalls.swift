@@ -1099,6 +1099,11 @@ extension Engine {
         try rule("notam_read", EngineContract.NotamReadInput(text: text, idents: idents))
     }
 
+    /// What one NOTAM addresses on an airport's card, from its text as sent (FAA Order JO 7930.2, the domestic form of 4-2-1 and the ICAO form of chapter 8), matched to the card's own rows: the field (AD AP CLSD), a runway by its designation (RWY, 1-2-1 and 3-3-5; never a runway a taxiway's NOTAM names, 3-3-6), a light on it (PAPI, VASI, REIL, the approach lights, the edge lights, the beacon; AIM 2-1), the approaches an ILS, LOC, LDA or SDF serves (NAV) or the procedure an FDC IAP NOTAM titles (7-1-3), a frequency by its MHz or its facility (COM), the fuel (SVC), and a TFR near the field. Each with its badge's word (Closed, Closed at times, Part closed, Restricted, Out of service, Not available, Not authorized (NA, JO 7340.2), Changed, NOTAM, TFR) and how bad (unusable: closed, or a procedure not authorized; caution: the rest). CLSD EXC XNG or EXC TAX is still closed to landing and takeoff, said in the label. A NOTAM it cannot place answers no badge, never a guess.
+    static func notamSubject(text: String, tfr: Bool? = nil, idents: [String]? = nil, runways: [String]? = nil, lights: [EngineContract.NotamSubjectInputLightsItem]? = nil, approaches: [String]? = nil, frequencies: [EngineContract.NotamSubjectInputFrequenciesItem]? = nil) throws -> EngineContract.NotamSubjectAnswer {
+        try rule("notam_subject", EngineContract.NotamSubjectInput(text: text, tfr: tfr, idents: idents, runways: runways, lights: lights, approaches: approaches, frequencies: frequencies))
+    }
+
     /// The NOTAMs of one FAA NOTAM System (FNS) message, AIXM 5.1, as wingtip.notams keeps them: each by its domestic place and number, else its place and ICAO number; `ends` the sooner of its own end and its feature lifetime's. None where the message is not XML.
     static func notamsFns(text: String) throws -> [EngineContract.NotamsFnsAnswerItem] {
         try rule("notams_fns", EngineContract.NotamsFnsInput(text: text))

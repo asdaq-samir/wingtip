@@ -7459,6 +7459,77 @@ object EngineContract {
     )
 
     @Serializable
+    data class NotamSubjectAnswer(
+        val badges: List<EngineContract.NotamSubjectAnswerBadgesItem>,
+    )
+
+    @Serializable
+    data class NotamSubjectAnswerBadgesItem(
+        /**
+         * What the badge goes next to.
+         */
+        val on: String,
+        /**
+         * Its row in the list the card gave (runways, lights, approaches, frequencies); null for the field and the fuel.
+         */
+        val index: Int? = null,
+        /**
+         * The badge's word, in sentence case.
+         */
+        val word: String,
+        val severity: String,
+        /**
+         * What it says, for the badge's label: the NOTAM's words (notam_read), or what a closure leaves open.
+         */
+        val label: String,
+    )
+
+    @Serializable
+    data class NotamSubjectInput(
+        /**
+         * The NOTAM as sent, domestic or ICAO form.
+         */
+        val text: String,
+        /**
+         * The planner's kind "tfr": a TFR within 5 nm of the field.
+         */
+        val tfr: Boolean? = null,
+        /**
+         * The field's idents (DLH, KDLH), kept as written in the label.
+         */
+        val idents: List<String>? = null,
+        /**
+         * The card's runways as it names them ("09/27", "18L/36R"), in its order.
+         */
+        val runways: List<String>? = null,
+        /**
+         * The card's lights as lighting_read names them, in its order.
+         */
+        val lights: List<EngineContract.NotamSubjectInputLightsItem>? = null,
+        /**
+         * The card's approach charts by their titles ("ILS OR LOC RWY 09"), in its order.
+         */
+        val approaches: List<String>? = null,
+        /**
+         * The card's frequencies, their type (TWR, ATIS, AWOS) and MHz, in its order.
+         */
+        val frequencies: List<EngineContract.NotamSubjectInputFrequenciesItem>? = null,
+    )
+
+    @Serializable
+    data class NotamSubjectInputFrequenciesItem(
+        val type: String? = null,
+        val mhz: Double? = null,
+    )
+
+    @Serializable
+    data class NotamSubjectInputLightsItem(
+        val code: String? = null,
+        val name: String,
+        val runways: List<String>,
+    )
+
+    @Serializable
     data class OurCallInput(
         val text: String,
         val tail: String,

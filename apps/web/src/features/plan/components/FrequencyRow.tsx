@@ -30,17 +30,30 @@ export function FrequencyRow({
   description,
   mhz,
   testId,
+  notam,
 }: {
   type: string | null | undefined;
   description: string | null | undefined;
   mhz: number | null | undefined;
   testId?: string;
+  /** A NOTAM's badge by its name (the airport card's NotamBadge), a
+   *  button of its own: the row's own tap is the frequency's copy. */
+  notam?: ReactNode;
 }) {
   const line = frequencyLine(type, description);
   return (
     <ListRow
       media={<RowBadge colour={BADGE[line.kind]}>{GLYPH[line.kind]}</RowBadge>}
-      title={line.name}
+      title={
+        notam ? (
+          <span className="flex items-center gap-2">
+            {line.name}
+            {notam}
+          </span>
+        ) : (
+          line.name
+        )
+      }
       description={line.detail ?? undefined}
       value={mhz != null ? <Mhz mhz={mhz} name={line.name} /> : "—"}
       data-testid={testId}

@@ -7,6 +7,8 @@ import type { AirportPlace, TerminalChart } from "../../../../lib/api/types";
 import { BADGE } from "../../../../lib/rowBadges";
 import { ChartRow } from "../AirportDiagram";
 import { PublicationRows } from "../PublicationRows";
+import { NotamBadge } from "./NotamBadge";
+import { useNotamMarks, type NotamMark } from "./notamBadges";
 
 /** The field's charts in the d-TPP under the Charts tab, by what they are for:
  *  the FAA's chart codes (wingtip.publications). The airport's own -- its hot
@@ -25,7 +27,7 @@ const GROUPED = new Set(["APD", ...AIRPORT_CHARTS, ...CHART_GROUPS.flatMap((g) =
  *  are here (lib/advisories faaWords): a procedure is named by its fixes
  *  and its navaids, as a code is, and pilots know it by the title on the
  *  plate. Shown in the app, full screen (ChartRow), not on the FAA's site. */
-function TerminalChartRow({ chart, airport }: { chart: TerminalChart; airport: string }) {
+function TerminalChartRow({ chart, airport, notam }: { chart: TerminalChart; airport: string; notam?: NotamMark }) {
   // A procedure's badge says which kind it is, as its group's title does:
   // an approach's a landing airplane, a departure's one taking off, an
   // arrival's a route; the rest a chart's.
@@ -45,7 +47,19 @@ function TerminalChartRow({ chart, airport }: { chart: TerminalChart; airport: s
     ) : (
       <ChartBadge />
     );
-  return <ChartRow media={badge} title={chart.name} url={chart.url} airport={airport} testId="terminal-chart" />;
+  // A NOTAM on the procedure ("Out of service", "Not authorized") by its
+  // title, in the row, whose tap stays the plate's: the NOTAM is the Info
+  // tab's, a badge here cannot be a button inside the row's.
+  return (
+    <ChartRow
+      media={badge}
+      title={chart.name}
+      url={chart.url}
+      airport={airport}
+      testId="terminal-chart"
+      badge={notam && <NotamBadge mark={notam} kind="approach" />}
+    />
+  );
 }
 
 /**
@@ -67,6 +81,7 @@ export function PlaceChartsTab({
   // None from a planner older than the list (a card kept by the worker,
   // a deploy under way), not a page that fails.
   const procedures = place.procedures ?? [];
+  const marks = useNotamMarks(place.ident, place);
   return (
     <div data-testid="place-charts">
       <PillSection title="Airport">
@@ -104,7 +119,7 @@ export function PlaceChartsTab({
                 title={g.title}
                 open={startOn === "approaches" && g.title === "Approaches"}
                 rows={charts.map((c) => (
-                  <TerminalChartRow key={c.url} chart={c} airport={place.ident} />
+                  <TerminalChartRow key={c.url} chart={c} airport={place.ident} notam={marks.approach.get(c.url)} />
                 ))}
               />
             </div>

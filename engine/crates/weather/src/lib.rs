@@ -11,6 +11,9 @@
 //! - lighting_read: a field's Chart Supplement lighting remarks as the
 //!   systems they name and how each is turned on (AIM 2-1, 2-1-8), by the
 //!   same table of contractions with the remarks' own;
+//! - notam_subject: what one NOTAM addresses on an airport's card -- the
+//!   field, a runway, a light, an approach, a frequency, the fuel -- with
+//!   its badge's word (JO 7930.2's keywords and conditions);
 //! - notam_rank: which of a flight's NOTAMs matter to it, best first
 //!   (14 CFR 91.103);
 //! - rvr: runway visual range against a visibility minimum (91.175(h));
@@ -30,6 +33,7 @@ pub mod metar;
 pub mod notam;
 pub mod notam_rank;
 pub mod notam_read;
+pub mod notam_subject;
 pub mod ready;
 pub mod rvr;
 pub mod sky;

@@ -5,12 +5,15 @@ const card = (page: import("@playwright/test").Page) => sideDrawer(page).getByTe
 
 /**
  * An airport card's own NOTAMs (the planner's GET /api/airport/{ident}/notams,
- * as the phones' cards read them): a closure or a TFR near the field leads
- * the card, a tap shows it among the card's NOTAMs, each NOTAM's words
- * first and its text as sent folded beneath. And how far the field is from
- * the departure typed alone, before any route is planned.
+ * as the phones' cards read them): a closed runway has "Closed" by its name
+ * on the Runways tab, no card of alerts leads the card, and a tap on the
+ * runway's row opens that NOTAM in full (the owner, 2026-11-11: "just put
+ * closed badge next to the runway", "tapping the affected thing should show
+ * the notam"); the Info tab's list reads it too, its words first and its
+ * text as sent folded beneath. And how far the field is from the departure
+ * typed alone, before any route is planned.
  */
-test("a field's closure leads its card, and its NOTAMs keep their text as sent", async ({ page }) => {
+test("a field's closed runway has its badge, and its NOTAMs keep their text as sent", async ({ page }) => {
   const raw = "!DLH 11/042 DLH RWY 09/27 CLSD 2611101200-2611121432";
   await page.route(
     (url) => url.pathname === "/api/planner/airport/KDLH/notams",
@@ -49,9 +52,22 @@ test("a field's closure leads its card, and its NOTAMs keep their text as sent",
   await settle(page);
   // Measured from the departure typed alone, no route yet.
   await expect(card(page).getByTestId("place-distance")).toHaveText(/\d+ nm [NESW]+ of C81/);
-  const alert = card(page).getByTestId("place-alert");
-  await expect(alert).toHaveCount(1);
-  await alert.click();
+  // No card of alerts leads the card: the badge is by the runway.
+  await expect(card(page).getByTestId("place-alert")).toHaveCount(0);
+  await card(page).getByRole("tab", { name: "Runways" }).click();
+  const runway = card(page).getByTestId("runway-row").filter({ hasText: "Runway 09/27" });
+  const badge = runway.getByTestId("notam-badge");
+  await expect(badge).toHaveAttribute("data-kind", "runway");
+  await expect(badge).toContainText("Closed");
+  await expect(card(page).getByTestId("notam-badge")).toHaveCount(1);
+  // A tap on the runway's row opens that NOTAM in full.
+  await runway.click();
+  const opened = page.getByTestId("place-notam-full");
+  await expect(opened).toContainText("Runway 09/27 closed.");
+  await page.getByTestId("place-notam-card").getByTestId("sheet-card-close").click();
+  await expect(opened).toHaveCount(0);
+
+  await card(page).getByRole("tab", { name: "Info" }).click();
   const notams = card(page).getByTestId("place-notams");
   await expect(notams).toBeVisible();
   const one = notams.getByTestId("place-notam");
@@ -124,4 +140,35 @@ test("a field's NOTAMs show three, and their title opens every one", async ({ pa
   await expect(all).toBeVisible();
   await expect(all.getByTestId("place-notam")).toHaveCount(5);
   await expect(all.getByTestId("place-notam-words").nth(3)).toHaveText("Airport 100LL fuel not available.");
+});
+
+/**
+ * A taxiway's NOTAM names the runways it runs between (JO 7930.2 3-3-6):
+ * it closes the taxiway, and no runway has a badge (the engine reads its
+ * keyword, TWY, as what it is about; notam_subject).
+ */
+test("a taxiway closed between runways puts no badge on a runway", async ({ page }) => {
+  await page.route(
+    (url) => url.pathname === "/api/planner/airport/KDLH/notams",
+    (route) =>
+      route.fulfill({
+        json: {
+          coverage_since: "2026-11-10T06:00:00Z",
+          top: 1,
+          unchecked: [],
+          notams: [
+            { ...ranked(1, "!DLH 11/150 DLH TWY A BTN RWY 09 AND TWY C CLSD 2611101200-2611202359"), closed: true, runways: ["09"] },
+          ],
+        },
+      }),
+  );
+  await page.goto("/app/plan?place=KDLH");
+  await settle(page);
+  await card(page).getByRole("tab", { name: "Runways" }).click();
+  await expect(card(page).getByTestId("runway-row").first()).toBeVisible();
+  await expect(card(page).getByTestId("notam-badge")).toHaveCount(0);
+  await expect(card(page).getByTestId("place-alert")).toHaveCount(0);
+  // It is still in the Info tab's list.
+  await card(page).getByRole("tab", { name: "Info" }).click();
+  await expect(card(page).getByTestId("place-notams").getByTestId("place-notam-heading").first()).toHaveText("Taxiway");
 });

@@ -86,8 +86,12 @@ export function ChartRow({
   airport,
   media,
   testId,
+  badge,
 }: {
   title: string;
+  /** A NOTAM's badge by its title (the airport card's NotamBadge), drawn
+   *  in the row: the row's tap is the chart's. */
+  badge?: ReactNode;
   /** Its address on aeronav.faa.gov, as the card lists it. */
   url: string;
   /** The field it is for: of a region's booklet, its pages alone. */
@@ -100,7 +104,22 @@ export function ChartRow({
     <>
       {/* A row that goes somewhere, as iOS's: in the text's colour with a
           chevron, as Nearest's rows are -- a link's blue was every chart. */}
-      <ListRow media={media} title={title} onClick={() => setOpen(true)} chevron data-testid={testId} />
+      <ListRow
+        media={media}
+        title={
+          badge ? (
+            <span className="flex flex-wrap items-center gap-x-2">
+              {title}
+              {badge}
+            </span>
+          ) : (
+            title
+          )
+        }
+        onClick={() => setOpen(true)}
+        chevron
+        data-testid={testId}
+      />
       {open && (
         <Suspense fallback={null}>
           <FaaChartViewer title={title} url={url} airport={airport} onClose={() => setOpen(false)} />

@@ -7586,6 +7586,50 @@ enum EngineContract {
         }
     }
 
+    struct NotamSubjectAnswer: Codable, Equatable, Sendable {
+        var badges: [EngineContract.NotamSubjectAnswerBadgesItem]
+    }
+
+    struct NotamSubjectAnswerBadgesItem: Codable, Equatable, Sendable {
+        /// What the badge goes next to.
+        var on: String
+        /// Its row in the list the card gave (runways, lights, approaches, frequencies); null for the field and the fuel.
+        var index: Int?
+        /// The badge's word, in sentence case.
+        var word: String
+        var severity: String
+        /// What it says, for the badge's label: the NOTAM's words (notam_read), or what a closure leaves open.
+        var label: String
+    }
+
+    struct NotamSubjectInput: Codable, Equatable, Sendable {
+        /// The NOTAM as sent, domestic or ICAO form.
+        var text: String
+        /// The planner's kind "tfr": a TFR within 5 nm of the field.
+        var tfr: Bool?
+        /// The field's idents (DLH, KDLH), kept as written in the label.
+        var idents: [String]?
+        /// The card's runways as it names them ("09/27", "18L/36R"), in its order.
+        var runways: [String]?
+        /// The card's lights as lighting_read names them, in its order.
+        var lights: [EngineContract.NotamSubjectInputLightsItem]?
+        /// The card's approach charts by their titles ("ILS OR LOC RWY 09"), in its order.
+        var approaches: [String]?
+        /// The card's frequencies, their type (TWR, ATIS, AWOS) and MHz, in its order.
+        var frequencies: [EngineContract.NotamSubjectInputFrequenciesItem]?
+    }
+
+    struct NotamSubjectInputFrequenciesItem: Codable, Equatable, Sendable {
+        var type: String?
+        var mhz: Double?
+    }
+
+    struct NotamSubjectInputLightsItem: Codable, Equatable, Sendable {
+        var code: String?
+        var name: String
+        var runways: [String]
+    }
+
     struct OurCallInput: Codable, Equatable, Sendable {
         var text: String
         var tail: String

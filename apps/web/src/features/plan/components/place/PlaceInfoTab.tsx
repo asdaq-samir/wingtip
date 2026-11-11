@@ -13,6 +13,8 @@ import { StopServices } from "../StopServices";
 import { mapsLink } from "./mapsLink";
 import { PlaceLights } from "./PlaceLights";
 import { PlaceNotamsSection } from "./PlaceNotams";
+import { NotamBadge, NotamSheet } from "./NotamBadge";
+import { useNotamMarks, useNotamSheet } from "./notamBadges";
 
 /** A section of the Info tab, which has several: its title over its rows
  *  (PillSection), the title the way to its list in full where it has more. */
@@ -41,7 +43,9 @@ function CardSection({
 /**
  * An airport's card's Info tab (PlaceCard): its details first --
  * elevation, airspace, distance, the address -- then its frequencies, its
- * NOTAMs, its lights, and what it offers on the ground.
+ * NOTAMs, its lights, and what it offers on the ground. A frequency, a
+ * light or the fuel a NOTAM addresses has its badge by its name, and a tap
+ * opens that NOTAM over the card (notamBadges).
  */
 export function PlaceInfoTab({
   place,
@@ -54,6 +58,9 @@ export function PlaceInfoTab({
   /** How far it is ("18 nm NE of C81"); null with nothing to measure from. */
   distance: string | null;
 }) {
+  const marks = useNotamMarks(place.ident, place);
+  const sheet = useNotamSheet();
+  const fuel = marks.fuel;
   return (
     <>
       <PlaceAge ident={place.ident} kind="airports" />
@@ -104,15 +111,19 @@ export function PlaceInfoTab({
           testId="place-frequencies"
           rows={
             place.frequencies.length
-              ? place.frequencies.map((f, i) => (
-                  <FrequencyRow
-                    key={`${f.type}-${f.frequency_mhz}-${i}`}
-                    type={f.type}
-                    description={f.description}
-                    mhz={f.frequency_mhz}
-                    testId="place-frequency"
-                  />
-                ))
+              ? place.frequencies.map((f, i) => {
+                  const mark = marks.frequency.get(i);
+                  return (
+                    <FrequencyRow
+                      key={`${f.type}-${f.frequency_mhz}-${i}`}
+                      type={f.type}
+                      description={f.description}
+                      mhz={f.frequency_mhz}
+                      testId="place-frequency"
+                      notam={mark && <NotamBadge mark={mark} kind="frequency" onOpen={() => sheet.show(mark)} />}
+                    />
+                  );
+                })
               : [<ListRow key="none" title="None listed" />]
           }
           // What some fields read out on so many clicks of the mic on
@@ -137,11 +148,15 @@ export function PlaceInfoTab({
 
       {/* The field's lights, after the radio, as it is the mic that
           turns most of them on (PlaceLights). */}
-      <PlaceLights place={place} />
+      <PlaceLights place={place} notams={marks.light} onNotam={sheet.show} />
       {/* What the field offers on the ground (StopServices), after
           the radio and the lights, at the owner's ask for food, fuel
           and rest stops: its fuel first in its On the field. */}
-      <StopServices ident={place.ident} />
+      <StopServices
+        ident={place.ident}
+        fuelNotam={fuel && { badge: <NotamBadge mark={fuel} kind="fuel" />, onClick: () => sheet.show(fuel) }}
+      />
+      {sheet.shown && <NotamSheet notams={sheet.shown} ident={place.ident} onClose={sheet.close} />}
     </>
   );
 }

@@ -24,9 +24,6 @@ export const fieldNotamsQuery = (ident: string) =>
     meta: { silent: true },
   });
 
-/** How many alerts lead the card, as Maps' live cards do (the phones'). */
-const ALERTS = 3;
-
 /** How many NOTAMs the card's section shows, the engine's first three
  *  (its ranking says its top three first, notams_ranked), the title the
  *  way to the rest, as every list on the card shows three (FirstFew). */
@@ -56,7 +53,7 @@ export function useFieldNotams(ident: string) {
 
 /** The field's idents as a NOTAM may write them ("OSH", "KOSH"), kept as
  *  written in its words. */
-function identsOf(ident: string): string[] {
+export function identsOf(ident: string): string[] {
   const bare = ident.length === 4 && ident.startsWith("K") ? ident.slice(1) : ident;
   return [...new Set([ident, bare, `K${bare}`])];
 }
@@ -67,11 +64,9 @@ export function readNotam(n: FieldNotam, ident: string): NotamReading {
   return callEngine("notam_read", { text: n.raw, idents: identsOf(ident) });
 }
 
-/** What leads the card: each NOTAM the engine marks as closing the field
- *  or a runway, and each TFR near it, in the engine's order, at most
- *  three. Nothing is dropped from the list below them. */
-export function fieldAlerts(answer: FieldNotams | undefined): FieldNotam[] {
-  return (answer?.notams ?? []).filter((n) => n.closed || n.kind === "tfr").slice(0, ALERTS);
+/** A NOTAM's heading: its keyword (the engine's), "TFR" for a TFR. */
+export function headingOf(n: FieldNotam, ident: string): string {
+  return n.kind === "tfr" ? "TFR" : (readNotam(n, ident).heading ?? "NOTAM");
 }
 
 /** A feed's time as a date, one with no zone read as UTC; null where it
