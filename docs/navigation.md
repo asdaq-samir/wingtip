@@ -235,7 +235,7 @@ Flights, Share and Undo, which were the bar's, are in the route card's
 | Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
 | Nav Log | the route card's Nav Log; the strip | 2 → **1** / 1 | -- |
 | Brief | the route card's Brief; the search's Do | 2 → **1** | the Brief's one foot bar, Start Flight |
-| Profile | the route card's ••• → Profile; the search's Do | 2 | -- |
+| Profile | the route card's ••• → Profile; the cruise altitude in the route section; a stop's Set Altitude… (on that waypoint's Start At / Cross At popover); the search's Do | 1 / 2 | The vertical altitude slider (Set, Auto in flight); the Altitude Advisor's rows pick the cruise; a waypoint's altitude, typed or stepped |
 | Saved Flights | the route card's ••• → Saved Flights (was the bar's, 1); the search's Do; Settings' Flights row | 1 → **2** (one-row header, owner decision 2026-11-10) | Swipe to delete with an Undo row |
 | Share | the route card's ••• → Share → a way (was the bar's Share, 1 → 2) | 2 → **3** | -- |
 | Undo | the route card's ••• → Undo (was the bar's, 1); shake; ⌘Z | 1 → **2**, shake 0 | -- |
