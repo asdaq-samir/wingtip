@@ -35,11 +35,14 @@ def main():
     data = WASM.read_bytes()
     raw, packed = len(data), len(gzip.compress(data, compresslevel=9, mtime=0))
     print(f"{WASM.relative_to(ROOT)}: {raw:,} bytes, {packed:,} gzipped (budgets {RAW_BUDGET:,} and {GZIP_BUDGET:,})")
-    over = [f"{what} {size:,} over {budget:,}" for what, size, budget in [("raw", raw, RAW_BUDGET), ("gzipped", packed, GZIP_BUDGET)] if size > budget]
+    over = [
+        f"{what} {size:,} over {budget:,}"
+        for what, size, budget in [("raw", raw, RAW_BUDGET), ("gzipped", packed, GZIP_BUDGET)]
+        if size > budget
+    ]
     if over:
         print(
-            f"::error title=Engine WebAssembly over budget::{', '.join(over)} bytes. "
-            "See scripts/ci/wasm_size.py for how to find what grew."
+            f"::error title=Engine WebAssembly over budget::{', '.join(over)} bytes. See scripts/ci/wasm_size.py for how to find what grew."
         )
         return 1
     return 0
