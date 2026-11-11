@@ -3,6 +3,7 @@ import { Tabs } from "@base-ui/react/tabs";
 import { cn } from "cn";
 import type { PanelState } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
+import { DRAWER_MS } from "./insets";
 import { usePageHeading } from "./pageHeading";
 import type { SheetPages } from "./SheetPager";
 
@@ -63,12 +64,13 @@ function useCapsule(at: number) {
   return { open: held || heading !== null, shown: heading ?? at };
 }
 
-// The capsule's moves on the sheet's own time and ease-out, no spring
-// (design/tokens.json motion.sheet; docs/design/rules.md, the sheet's
-// motion). Opening, it shows at the bars' size at once and grows; folding,
-// it shrinks to the bars' size and goes as they come back.
-const GROW = "width var(--motion-sheet) var(--motion-sheet-ease), height var(--motion-sheet) var(--motion-sheet-ease)";
-const MOVES = { "--grow": GROW, "--fold": `${GROW}, opacity 0s var(--motion-sheet)` } as CSSProperties;
+// The capsule moves as the Drawer itself does, on its own time and curve
+// (insets' DRAWER_MS, Base UI's drawer: the owner, 2026-11-11, "Just let the
+// drawer do what it does"). Opening, it shows at its bar's size at once and
+// grows; folding, it shrinks to its bar's size and goes as the bar comes back.
+const DRAWER_MOTION = `${DRAWER_MS}ms cubic-bezier(0.32, 0.72, 0, 1)`;
+const GROW = `width ${DRAWER_MOTION}, height ${DRAWER_MOTION}`;
+const MOVES = { "--grow": GROW, "--fold": `${GROW}, opacity 0s ${DRAWER_MS}ms` } as CSSProperties;
 // Each page's capsule grows out of its own bar, on its own side (the owner,
 // 2026-11-11: "Can the search and fpl animation stay on their sides rather
 // than a shared capsule?"): Search's from the left bar, leftward from the
@@ -159,6 +161,8 @@ export function SheetGrabber({
       value={pages.at}
       onValueChange={(value) => pages.go(Number(value))}
       data-open={capsule.open || undefined}
+      // The bars' own fold back waits out the Drawer's time too.
+      style={{ "--drawer-ms": `${DRAWER_MS}ms` } as CSSProperties}
       className={cn(BOX, edge(at), "group/grab")}
     >
       {/* Read with each bar: what a tap on the page up's bar does. */}
@@ -213,7 +217,7 @@ export function SheetGrabber({
                 className={cn(
                   "h-[5px] w-4 rounded-full bg-muted-foreground/30 group-data-active/bar:bg-muted-foreground",
                   i === capsule.shown &&
-                    "transition-opacity delay-(--motion-sheet) duration-0 group-data-open/grab:opacity-0 group-data-open/grab:delay-0",
+                    "transition-opacity delay-(--drawer-ms) duration-0 group-data-open/grab:opacity-0 group-data-open/grab:delay-0",
                   "motion-reduce:opacity-100!",
                 )}
                 aria-hidden="true"

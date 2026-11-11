@@ -682,5 +682,5 @@ function padOf({ top, bottom, left }: MapInsets): PaddingOptions {
   return { top, bottom, left, right: 0 };
 }
 
-/** The sheet's own ease-out (MapPanel: the owner's "no spring"). */
+/** The map's camera ease-out as it follows the sheet (MapPanel). */
 const easeOut = (t: number) => 1 - (1 - t) ** 3;

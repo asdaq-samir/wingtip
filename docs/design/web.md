@@ -169,9 +169,10 @@ close does.
 ### Motion
 
 - Sheets and side panels: the stock Drawer's own slide, 0.45 s on
-  `cubic-bezier(0.32, 0.72, 0, 1)`, no spring, transform only, one detent
-  per throw by the Drawer's own `snapToSequentialPoints` (decision 0018;
-  the owner kept the stock sheet's motion, 2026-11-10, MapPanel).
+  `cubic-bezier(0.32, 0.72, 0, 1)`, transform only, and its own velocity
+  snap (a hard flick may go from the pill all the way up): the Drawer's
+  behaviour as it comes, nothing set over it (decision 0018; the owner,
+  2026-11-10 and 2026-11-11, "Just let the drawer do what it does").
 - Cards over the sheet are the Drawer's own nested drawers (the owner,
   2026-11-11; `components/sheet/CardStack`): each with the sheet's three
   sizes, its grabber and its swipe, the sheet's swipe the card's while one

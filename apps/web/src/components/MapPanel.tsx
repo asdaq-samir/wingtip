@@ -95,8 +95,8 @@ const GRABBER = 16;
  * leaves the map (insetsOf, told as it sets off and once it has landed)
  * and its fixed heights (useSheetDetents). The cards over it are its own
  * nested drawers (CardStack); the keyboard's inset is the Drawer's
- * (VirtualKeyboardProvider), and a throw moves it one size
- * (snapToSequentialPoints, the owner's "one size per throw").
+ * (VirtualKeyboardProvider), and a throw goes where the Drawer takes it:
+ * its own behaviour, unchanged (the owner, 2026-11-11).
  *
  * From `md` up it is a side panel instead, a plain region at the left the
  * window's height while it is out and its head alone at rest, the map

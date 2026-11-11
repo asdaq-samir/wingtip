@@ -54,8 +54,8 @@ const EASE =
  * and one size for both (useSheetLife): the sheet moves by its snap
  * offset, the card on it by its own finger's drag alone, so a card let go
  * eases with the sheet to the size picked, both on the Drawer's curve.
- * A throw moves one size (`snapToSequentialPoints`, the owner's "one size
- * per throw", decision 0018). The keyboard's inset is the Drawer's own
+ * A throw goes where the Drawer takes it, its own behaviour (the owner,
+ * 2026-11-11). The keyboard's inset is the Drawer's own
  * (VirtualKeyboardProvider, --drawer-keyboard-inset): a field typed into
  * in a card is kept in sight over it.
  */
@@ -77,7 +77,6 @@ function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry;
       swipeDirection={fromBottom ? "down" : "up"}
       snapPoints={onPhone ? [detents.peek, detents.half, detents.full] : undefined}
       snapPoint={onPhone ? detents[p.snap] : undefined}
-      snapToSequentialPoints
       onSnapPointChange={p.snapped}
       onOpenChange={(open, details) => {
         if (open) return;

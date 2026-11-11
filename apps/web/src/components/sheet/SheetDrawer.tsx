@@ -8,8 +8,9 @@ import { SheetViewport } from "./SheetViewport";
 /**
  * The phone's sheet itself, Base UI's stock Drawer (MapPanel's, the owner
  * 2026-11-10): open and non-modal, so the map stays the map's; its snap
- * points the pill, half and all the way up; one size per throw, however
- * hard (`snapToSequentialPoints`, decision 0018); on the keyboard while it
+ * points the pill, half and all the way up, a throw going where the Drawer
+ * takes it (its own behaviour, unchanged: the owner, 2026-11-11, "Just let
+ * the drawer do what it does"); on the keyboard while it
  * is up (`VirtualKeyboardProvider`'s --drawer-keyboard-inset, which also
  * scrolls the field typed into into sight: Safari leaves a fixed sheet
  * under the keyboard). Never closed: Escape lowers it to the pill
@@ -56,7 +57,6 @@ export function SheetDrawer({
       swipeDirection={fromBottom ? "down" : "up"}
       snapPoints={snapPoints}
       snapPoint={snapPoint}
-      snapToSequentialPoints
       onSnapPointChange={snapped}
       // Its Escape let on to the document, where the Drawer would stop it:
       // Setup's page goes back a level from there (ConsoleLayer) wherever

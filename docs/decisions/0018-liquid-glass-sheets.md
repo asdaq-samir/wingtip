@@ -36,7 +36,10 @@ never just lowers the sheet.
 The 2026-11-09 amendment now holds on every platform. The web's phone
 sheet is Base UI's Drawer as it is: its own 450 ms curve, velocity snap
 (a hard flick may go from the pill all the way up) and drag arbitration,
-in place of the no-spring 0.3 s settle and one size per throw. The
+in place of the no-spring 0.3 s settle and one size per throw. (On
+2026-11-11 `snapToSequentialPoints` was set on the sheet and its cards
+in error, from the retired rule, and taken off the same day: the owner,
+"Just let the drawer do what it does, don't modify its behavior".) The
 iPhone's sheet and glass are the system's as they come (plain
 `glassEffect`, the system's Reduce Transparency and scroll-edge
 effect), with no haptic of the app's at a detent. Pill, half and full
