@@ -1,4 +1,3 @@
-import { cn } from "cn";
 import { Badge } from "../../../../components/ui/badge";
 import { SheetCard } from "../../../../components/SheetCard";
 import { headingOf, type FieldNotam } from "./fieldNotams";
@@ -7,42 +6,27 @@ import { NotamFull, NotamRows } from "./PlaceNotams";
 
 /**
  * A NOTAM's badge next to what it addresses (notamBadges): the engine's
- * word, red while it is in force and in the caution's colours while it is
- * still to come (the owner, 2026-11-11: "All the active notam badges should
- * be red. The upcoming ones can be in caution color"), as RunwayRow's "Longest" is the
+ * word in red, as every one is of a NOTAM in force (the owner, 2026-11-11:
+ * "All the active notam badges should be red"; one not yet in force has
+ * none, notamBadges), as RunwayRow's "Longest" is the
  * stock Badge. Its label, for VoiceOver, is the NOTAM's words. With
  * `onOpen` it is a button of its own, its 44-point hit area a
  * pseudo-element round it, the badge no bigger: for a row with a tap of its
  * own (a frequency's copy). Without, the row it sits on is the tap.
  */
 export function NotamBadge({ mark, kind, onOpen }: { mark: NotamMark; kind: string; onOpen?: () => void }) {
-  const caution = !mark.active;
-  const props = {
-    variant: caution ? ("secondary" as const) : ("destructive" as const),
-    "data-testid": "notam-badge",
-    "data-kind": kind,
-    "data-severity": mark.severity,
-    "data-active": mark.active,
-  };
+  const props = { variant: "destructive" as const, "data-testid": "notam-badge", "data-kind": kind, "data-severity": mark.severity };
   const words = (
     <>
       {mark.word}
-      <span className="sr-only">{`${mark.active ? "" : ", upcoming"}: ${mark.label}`}</span>
+      <span className="sr-only">{`: ${mark.label}`}</span>
     </>
   );
-  if (!onOpen)
-    return (
-      <Badge {...props} className={cn(caution && "bg-caution-wash text-caution-ink")}>
-        {words}
-      </Badge>
-    );
+  if (!onOpen) return <Badge {...props}>{words}</Badge>;
   return (
     <Badge
       {...props}
-      className={cn(
-        caution && "bg-caution-wash text-caution-ink",
-        "relative overflow-visible after:absolute after:-inset-3 after:content-['']",
-      )}
+      className="relative overflow-visible after:absolute after:-inset-3 after:content-['']"
       render={<button type="button" onClick={onOpen} />}
     >
       {words}
