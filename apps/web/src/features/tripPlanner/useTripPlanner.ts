@@ -9,7 +9,8 @@
  * (useAsk's applyChange, the planning workspace's while it is up), the
  * same way a chip the assistant proposes does.
  */
-import { useRef, useState } from "react";
+import { experimental_streamedQuery as streamedQuery, isCancelledError, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import type { AssistantChange, Source } from "../../lib/api/assistant";
 import { ApiError, csrfHeaders, describeError, failIfNotOk, ndjson } from "../../lib/api/client";
 import { requestIdHeaders } from "../../lib/api/requestId";
@@ -55,7 +56,9 @@ export function step(state: TripState, event: TripMessage): TripState {
   }
 }
 
-async function planTrip(body: TripAsk, onEvent: (event: TripMessage) => void, signal: AbortSignal): Promise<void> {
+/** The trip planner's stream, one line at a time, ended at its "done" or
+ *  "error" line. */
+async function* planTrip(body: TripAsk, signal: AbortSignal): AsyncGenerator<TripMessage> {
   const res = await fetch("/api/planner/trip-plan", {
     method: "POST",
     signal,
@@ -65,47 +68,71 @@ async function planTrip(body: TripAsk, onEvent: (event: TripMessage) => void, si
   if (res.status === 401) throw new ApiError("Sign in to plan a trip", 401);
   await failIfNotOk(res);
   for await (const event of ndjson<TripMessage>(res.body ?? undefined)) {
-    onEvent(event);
+    yield event;
     if (event.type === "done" || event.type === "error") return;
   }
 }
 
+/** The trip asked, a query of its own (TanStack's streamedQuery folding
+ *  each line in with `step`): a new ask is a new key, which lets the last
+ *  one go and aborts its fetch; Stop cancels it where it is, keeping what
+ *  came; whether it is still coming and its failure are the query's. The
+ *  legs Used stay apart, the pilot's own. */
 export function useTripPlanner() {
-  const [state, setState] = useState<TripState>(START);
-  const inFlight = useRef<AbortController | null>(null);
+  const client = useQueryClient();
+  // Counted on through a Clear, so no ask meets an older one's answer.
+  const [ask, setAsk] = useState<{ body: TripAsk | null; n: number }>({ body: null, n: 0 });
+  const [used, setUsed] = useState<string[]>([]);
   const canUse = useAsk((s) => s.applyChange !== null);
-  const plan = async (text: string) => {
-    const asked = text.trim();
-    if (!asked) return;
-    inFlight.current?.abort();
-    const controller = new AbortController();
-    inFlight.current = controller;
-    setState({ ...START, asked, busy: true, status: "Reading the trip" });
+  const { body } = ask;
+  const queryKey = ["trip-plan", ask.n];
+  const asked = body?.text ?? "";
+  const { data, error, isFetching } = useQuery({
+    queryKey,
+    queryFn: streamedQuery({
+      streamFn: ({ signal }: { signal: AbortSignal }) => planTrip(body!, signal),
+      reducer: (state: TripState, event: TripMessage) => step(state, event),
+      initialValue: { ...START, asked },
+    }),
+    enabled: body !== null,
+    retry: false,
+    staleTime: Infinity,
+    gcTime: 0,
+    // Said in the planner's own words below its ask, not as a problem.
+    meta: { silent: true },
+  });
+  const streamed = data ?? { ...START, asked };
+  const state: TripState = {
+    ...streamed,
+    asked,
+    busy: isFetching,
+    status: isFetching ? (streamed.status ?? (streamed.words || streamed.proposal ? null : "Reading the trip")) : null,
+    error: streamed.error ?? (error && !isCancelledError(error) ? describeError(error, "The trip planner cannot be reached") : null),
+    used,
+  };
+  const plan = (text: string) => {
+    const words = text.trim();
+    if (!words) return;
     // The plan's context as the Ask sends it, in the shape the trip's ask
     // types it: no airplane picked is "", the rules the assistant's own default.
     const now = contextNow();
     const context = { ...now, aircraft: now.aircraft ?? "", rules: "vfr" as const, pilot: now.pilot ? { ...now.pilot } : null };
-    try {
-      await planTrip(
-        { text: asked, context, time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-        (event) => setState((s) => step(s, event)),
-        controller.signal,
-      );
-    } catch (err) {
-      if (!(err instanceof DOMException && err.name === "AbortError")) {
-        setState((s) => ({ ...s, status: null, error: describeError(err, "The trip planner cannot be reached") }));
-      }
-    }
-    setState((s) => ({ ...s, busy: false, status: null }));
+    setUsed([]);
+    setAsk((was) => ({
+      body: { text: words, context, time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
+      n: was.n + 1,
+    }));
   };
   const use = (leg: TripLeg) => {
     useAsk.getState().applyChange?.(changeOf(leg));
-    setState((s) => ({ ...s, used: [...s.used, leg.kind] }));
+    setUsed((u) => [...u, leg.kind]);
   };
-  const stop = () => inFlight.current?.abort();
+  // Not reverted: the words and legs that came stay on the screen.
+  const stop = () => void client.cancelQueries({ queryKey }, { revert: false });
   const clear = () => {
     stop();
-    setState(START);
+    setAsk((was) => ({ body: null, n: was.n + 1 }));
+    setUsed([]);
   };
   return { state, canUse, plan, use, stop, clear };
 }
