@@ -989,7 +989,12 @@ the map works; weight on the first load (on a signed-out first visit the
   [MDN share_target][mdn-share-target], [MDN file_handlers][mdn-file-handlers]).
 
 **What Wingtip's manifest has** (`apps/web/vite.config.ts`): `display:
-standalone`, `theme_color`, the icons and maskable icons. **Proposed,
+standalone`, `theme_color` (the launch token), the icons and maskable
+icons. The page's own `theme-color` is two metas, the launch ground by
+day and the night navy by the device's scheme (`vite-plugins/manifest`
+`themeColor`, from the tokens), then the page's ground once the look and
+Setup's theme are on (`lib/brand` `BrandLook`), so the browser's bar is
+dark at night (2026-11-11). **Proposed,
 generated rather than hand-written:**
 1. `id` set to the app's path, so a later `start_url` change does not
    make a second app.

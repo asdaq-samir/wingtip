@@ -9,7 +9,7 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { IN_FLIGHT_READS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
 import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
-import { MANIFEST } from "./vite-plugins/manifest.ts";
+import { MANIFEST, themeColor } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
 
 // Under docker-compose.yml's web-build watch, VITE_PUBLISH_DIR names the
@@ -117,6 +117,7 @@ export default defineConfig({
     publish,
     tesseractFiles,
     preloadEngine,
+    themeColor,
     react(),
     // The React Compiler, memoising each component and hook as it builds
     // them, at the owner's pick of the audit's recommendation: only its
