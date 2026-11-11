@@ -5,7 +5,6 @@ import RoundButton from "../../../components/RoundButton";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../../components/ResponsivePopover";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -112,7 +111,7 @@ export default function ShareMenu({
   // The plan, to another pilot or an instructor, as a link that opens as
   // a preview (useShareLink): the share sheet where the browser has one
   // (Safari on an iPhone), otherwise copied.
-  const { share, tail, includeTail, setIncludeTail } = useShareLink(planned, altitudeFt);
+  const { share } = useShareLink(planned, altitudeFt);
 
   // The route as the files and ForeFlight's link take it: the departure,
   // each checkpoint, stop and the destination, as the nav log lists them
@@ -223,18 +222,6 @@ export default function ShareMenu({
               <Fuel />
               Show Fuel Stops
             </DropdownMenuItem>
-          )}
-          {routed && tail && (
-            // The N-number is the pilot's: sent only when ticked, the menu
-            // kept open for the Share under it.
-            <DropdownMenuCheckboxItem
-              checked={includeTail}
-              onCheckedChange={(on) => setIncludeTail(on === true)}
-              closeOnClick={false}
-              data-testid="share-include-tail"
-            >
-              Include {tail}
-            </DropdownMenuCheckboxItem>
           )}
           {routed && (
             <DropdownMenuItem onClick={() => void share()} data-testid="share-link">

@@ -120,19 +120,9 @@ function SavedFlightRow({ f, vm }: { f: FlightSummary; vm: SavedFlightsModel }) 
         // Its fields take the focus, as a question does: opened once
         // the menu has closed and let go of it (RowMenu's `asks`).
         { label: "Edit", icon: <Pencil />, asks: true, testId: "saved-flight-edit", onSelect: () => vm.startChange(f.id) },
-        // A link that opens it read-only, until Stop Sharing; the
-        // N-number only where the pilot picks Share with it.
-        { label: "Share", icon: <Share />, testId: "saved-flight-share", onSelect: () => void vm.shareFlight(f, false) },
-        ...(f.aircraftTailNumber
-          ? [
-              {
-                label: `Share with ${f.aircraftTailNumber}`,
-                icon: <Share />,
-                testId: "saved-flight-share-tail",
-                onSelect: () => void vm.shareFlight(f, true),
-              },
-            ]
-          : []),
+        // A link that opens it read-only, until Stop Sharing, with the
+        // airplane's N-number where it has one (the owner, 2026-11-11).
+        { label: "Share", icon: <Share />, testId: "saved-flight-share", onSelect: () => void vm.shareFlight(f) },
         ...(f.share
           ? [{ label: "Stop Sharing", icon: <Link2Off />, testId: "saved-flight-stop-sharing", onSelect: () => void vm.stopSharing(f) }]
           : []),
