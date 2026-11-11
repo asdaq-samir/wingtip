@@ -151,3 +151,12 @@
 2026-11-09 PUT /api/training/name removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
 2026-11-09 POST /api/training/reviews removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
 2026-11-09 DELETE /api/training/reviews/{id} removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-10 POST /api/auth/apple/native added the new required request property `nonce` -- additive in fact: it is @Nullable, and the gateway takes a body without it unless app.apple.require-nonce is set (default false), so an app from before the nonce still signs in; the document lists it required only because OpenApiConfig lists every property so. No app is released yet (#570's line above)
+2026-11-10 GET /api/me/export added `#/components/schemas/TrackDto, subschema #2` to the `flights/items/track` response property `anyOf` list for the response status `200` -- main already wrote null for a flight with no saved track, undeclared; the document now says so (@Nullable). No app decodes it: the web, iOS (DataExport) and Android (exportAccount) save the bytes as a file for the pilot
+2026-11-10 GET /api/me/export added `#/components/schemas/TrackDto, subschema #2` to the `flights/items/track` response property `anyOf` list for the response status `401` -- the same
+2026-11-10 GET /api/me/export the `flights/items/track` response's property `type` changed from `object` to `any` for status `200` -- the same
+2026-11-10 GET /api/me/export the `flights/items/track` response's property `type` changed from `object` to `any` for status `401` -- the same
+2026-11-10 GET /api/me/export removed the required property `flights/items/track/points` from the response with the `200` status -- the same
+2026-11-10 GET /api/me/export removed the required property `flights/items/track/points` from the response with the `401` status -- the same
+2026-11-10 GET /api/me/export removed the required property `flights/items/track/source` from the response with the `200` status -- the same
+2026-11-10 GET /api/me/export removed the required property `flights/items/track/source` from the response with the `401` status -- the same
