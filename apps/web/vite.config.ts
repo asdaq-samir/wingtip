@@ -233,6 +233,24 @@ export default defineConfig({
             },
           },
           {
+            // The map's FAA overlays (lib/map/sources/overlayTiles), one
+            // PMTiles archive a cycle read in byte ranges. Keep for the Air
+            // downloads it whole (features/keptForAir/keepOverlays), and
+            // that one plain answer is kept here; every range the map asks
+            // is then cut from it by Workbox's range-requests plugin, with
+            // no connection. A range answered by the network (206) is never
+            // kept: the Cache API holds no partial answer. Named for its
+            // cycle, so two at most.
+            urlPattern: ({ url }) => url.pathname.startsWith("/api/planner/overlay-tiles/") && url.pathname.endsWith(".pmtiles"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "overlay-archive",
+              rangeRequests: true,
+              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 24 * 3600, purgeOnQuotaError: true },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+          {
             // What a field offers on the ground and its pictures' list: the network when there is one, the last answer
             // when there is not, in a cache of their own so a route's forty
             // fields do not push the plans out of planner-api's 300.
