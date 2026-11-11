@@ -1,31 +1,34 @@
 //! The IFR alternate: whether the destination needs one, and whether an
 //! airport will do as one -- 14 CFR 91.169, moved from the planner's
 //! wingtip.alternates (#482 phase 1), which keeps only the reading: each
-//! field's instrument approaches from the FAA's terminal procedures (the
-//! d-TPP) and the worst its TAF forecasts over the window, TEMPO and PROB
-//! groups included (the engine's taf_window).
+//! field's instrument approach charts by name from the FAA's terminal
+//! procedures (the d-TPP) and the worst its TAF forecasts over the window,
+//! TEMPO and PROB groups included, with whether the TAF covers the whole
+//! window (the engine's taf_window).
 //!
 //! **The destination** (91.169(b)): no alternate is needed where Part 97
-//! publishes an instrument approach to it and the forecast, for at least
-//! an hour before and an hour after the ETA, is a ceiling of at least
-//! 2,000 ft above the field and a visibility of at least 3 sm -- "1-2-3"
-//! (91.169(b)(2)(i)). A TEMPO below either figure asks for an alternate:
-//! the stricter reading, as the rule does not say which. No TAF, or none
-//! covering the window, says nothing about it, and an alternate is then
-//! needed.
+//! publishes an instrument approach to it and the forecast, "for at least
+//! 1 hour before and for 1 hour after the estimated time of arrival", is a
+//! ceiling of at least 2,000 ft above the field and a visibility of at
+//! least 3 sm -- "1-2-3" (91.169(b)(2)(i)). A TEMPO below either figure
+//! asks for an alternate: the stricter reading, as the rule does not say
+//! which. A forecast must "indicate" the figures, so an alternate is
+//! needed where it does not: no TAF, a TAF that ends (or begins) inside
+//! the window, a ceiling of unknown height, or no visibility forecast.
 //!
 //! **The alternate** (91.169(c)(1)): at the ETA there, a forecast at or
 //! above its alternate minimums -- the ones its procedures publish, or
-//! where none are (no "A" on its charts) the standard 600 ft and 2 sm with
-//! a precision approach, 800 ft and 2 sm without (91.169(c)(1)(i)). An ILS
-//! is the precision approach counted, as Part 97 has it; an RNAV approach
-//! to LPV minima is not, so it counts as nonprecision, the stricter. Where
-//! the FAA publishes nonstandard alternate minimums for the field (its
-//! "ALTERNATE MINIMUMS" page in the d-TPP), they may be higher or "NA", so
-//! the field is not called good: the pilot is sent to that page. An
-//! airport with no instrument approach (91.169(c)(2)) is only good with a
-//! descent from the MEA and a landing under basic VFR, which the planner
-//! does not work out: it is not called good.
+//! where none are (no "A" on its charts) the standard 600 ft and 2 sm for
+//! a precision approach procedure (91.169(c)(1)(i)(A)), 800 ft and 2 sm
+//! for a nonprecision one ((c)(1)(i)(B)). Which approaches are precision
+//! is `precision_approach`. Where the FAA publishes nonstandard alternate
+//! minimums for the field (its "ALTERNATE MINIMUMS" page in the d-TPP),
+//! they may be higher or "NA", so the field is not called good: the pilot
+//! is sent to that page. A forecast that does not show the minimums (no
+//! TAF at the ETA, a ceiling of unknown height, no visibility) leaves the
+//! pilot to look. An airport with no instrument approach (91.169(c)(2)) is
+//! only good with a descent from the MEA and a landing under basic VFR,
+//! which the planner does not work out: it is not called good.
 
 use crate::figures::words::grouped;
 use crate::json::{self, Value};
@@ -40,13 +43,28 @@ pub const DESTINATION_VISIBILITY_SM: f64 = 3.0;
 /// seconds either side of the ETA. (A helicopter's, (b)(2)(ii), is the ETA
 /// to an hour after; the app plans airplanes.)
 pub const DESTINATION_WINDOW_S: f64 = 3600.0;
-/// 91.169(c)(1)(i): the standard alternate minimums, ceiling and
-/// visibility, for a precision approach ...
+/// 91.169(c)(1)(i)(A): the standard alternate minimums, ceiling and
+/// visibility, "For a precision approach procedure" ...
 pub const PRECISION_MINIMUMS: (f64, f64) = (600.0, 2.0);
-/// ... and for a nonprecision approach.
+/// ... and (B), "For a nonprecision approach procedure".
 pub const NONPRECISION_MINIMUMS: (f64, f64) = (800.0, 2.0);
 
 type R<T> = Result<T, String>;
+
+/// Whether an instrument approach chart, by its d-TPP name ("ILS OR LOC
+/// RWY 27", "RNAV (GPS) RWY 9", "GLS RWY 4R"), is a precision approach
+/// procedure for 91.169(c)(1)(i)(A)'s 600-2. AIM 5-4-5 a.7(a): "Precision
+/// Approach (PA) ... For example, PAR, ILS, and GLS are precision
+/// approaches." LPV, LNAV/VNAV and an LDA with a glidepath are APV, not
+/// precision (5-4-5 a.7(b)), so they take the nonprecision 800-2, which
+/// is also how AIM 1-1-18 has a WAAS user plan an alternate: "flight
+/// planning must be based on flying the RNAV (GPS) LNAV or circling minima
+/// line ... part 91 non-precision weather requirements must be used for
+/// planning." An "ILS OR LOC" chart carries the ILS, so it counts.
+pub fn precision_approach(name: &str) -> bool {
+    let name = name.trim().to_ascii_uppercase();
+    ["ILS", "GLS", "PAR"].iter().any(|kind| name.starts_with(kind) && !name[kind.len()..].starts_with(|c: char| c.is_ascii_alphanumeric()))
+}
 
 /// A field's instrument approaches as the d-TPP lists them.
 struct Approaches {
@@ -60,6 +78,9 @@ struct Forecast {
     ceiling_ft: Option<f64>,
     ceiling_unknown: bool,
     visibility_sm: Option<f64>,
+    /// Whether the TAF's prevailing periods cover the whole window
+    /// (taf_window's `covers`); missing is taken as not, the safer.
+    covers: bool,
     raw: Option<String>,
 }
 
@@ -72,9 +93,17 @@ fn as_bool(v: &Value) -> Option<bool> {
 
 fn approaches(name: &str, v: &Value) -> R<Approaches> {
     let a = v.get("approaches").ok_or_else(|| format!("{name}: \"approaches\" is missing"))?;
+    let names: Vec<&str> = a
+        .get("names")
+        .and_then(Value::as_array)
+        .ok_or_else(|| format!("{name}: \"approaches.names\" is missing"))?
+        .iter()
+        .filter_map(Value::as_str)
+        .filter(|n| !n.trim().is_empty())
+        .collect();
     Ok(Approaches {
-        any: a.get("any").and_then(as_bool).unwrap_or(false),
-        precision: a.get("precision").and_then(as_bool).unwrap_or(false),
+        any: !names.is_empty(),
+        precision: names.iter().any(|n| precision_approach(n)),
         alternate_minimums_url: a.get("alternate_minimums_url").and_then(Value::as_str).filter(|u| !u.is_empty()).map(str::to_owned),
     })
 }
@@ -85,6 +114,7 @@ fn forecast(v: &Value) -> Option<Forecast> {
         ceiling_ft: f.get("ceiling_ft").and_then(Value::as_f64),
         ceiling_unknown: f.get("ceiling_unknown").and_then(as_bool).unwrap_or(false),
         visibility_sm: f.get("visibility_sm").and_then(Value::as_f64),
+        covers: f.get("covers").and_then(as_bool).unwrap_or(false),
         raw: f.get("raw").and_then(Value::as_str).map(str::to_owned),
     })
 }
@@ -121,6 +151,12 @@ fn destination(ident: &str, procs: &Approaches, forecast: Option<&Forecast>) -> 
     match forecast {
         None => reasons.push(format!("No TAF for {ident} covers an hour either side of the ETA.")),
         Some(f) => {
+            // 91.169(b)(2)(i) asks the forecast to indicate the figures "for
+            // at least 1 hour before and for 1 hour after" the ETA: a TAF
+            // that ends, or begins, inside that window does not.
+            if !f.covers {
+                reasons.push(format!("The TAF for {ident} does not cover the whole hour either side of the ETA (14 CFR 91.169(b)(2)(i))."));
+            }
             if let Some(c) = f.ceiling_ft.filter(|c| *c < DESTINATION_CEILING_FT) {
                 reasons.push(format!("The TAF has a {} ft ceiling within an hour of the ETA: under 2,000 ft.", grouped(c)));
             }
@@ -130,8 +166,14 @@ fn destination(ident: &str, procs: &Approaches, forecast: Option<&Forecast>) -> 
             if f.ceiling_unknown {
                 reasons.push("The TAF has a ceiling of unknown height within an hour of the ETA.".to_owned());
             }
-            if let Some(vis) = f.visibility_sm.filter(|s| *s < DESTINATION_VISIBILITY_SM) {
-                reasons.push(format!("The TAF has {} sm within an hour of the ETA: under 3 sm.", g(vis)));
+            match f.visibility_sm {
+                Some(vis) if vis < DESTINATION_VISIBILITY_SM => {
+                    reasons.push(format!("The TAF has {} sm within an hour of the ETA: under 3 sm.", g(vis)))
+                }
+                Some(_) => {}
+                // No visibility forecast indicates nothing, and the rule
+                // asks the forecast to indicate at least 3 sm.
+                None => reasons.push("The TAF gives no visibility within an hour of the ETA, so it does not show 3 sm.".to_owned()),
             }
         }
     }
@@ -165,6 +207,13 @@ fn alternate(ident: &str, procs: &Approaches, forecast: Option<&Forecast>) -> Va
             reasons.push(format!("No TAF for {ident} covers the ETA there."));
         }
         Some(f) if procs.any => {
+            // 91.169(c): the forecast must indicate the minimums "at the
+            // estimated time of arrival at the alternate airport"; a TAF
+            // not in force then says nothing of it.
+            if !f.covers {
+                good = None;
+                reasons.push(format!("The TAF for {ident} does not cover the ETA there."));
+            }
             if let Some(c) = f.ceiling_ft.filter(|c| *c < minimums.0) {
                 good = Some(false);
                 reasons.push(format!("The TAF has a {} ft ceiling at the ETA: under {} ft.", grouped(c), grouped(minimums.0)));
@@ -175,9 +224,20 @@ fn alternate(ident: &str, procs: &Approaches, forecast: Option<&Forecast>) -> Va
                 good = None;
                 reasons.push("The TAF has a ceiling of unknown height at the ETA.".to_owned());
             }
-            if let Some(vis) = f.visibility_sm.filter(|s| *s < minimums.1) {
-                good = Some(false);
-                reasons.push(format!("The TAF has {} sm at the ETA: under {} sm.", g(vis), g(minimums.1)));
+            match f.visibility_sm {
+                Some(vis) if vis < minimums.1 => {
+                    good = Some(false);
+                    reasons.push(format!("The TAF has {} sm at the ETA: under {} sm.", g(vis), g(minimums.1)));
+                }
+                Some(_) => {}
+                // No visibility forecast is not one at or above the
+                // minimums: the pilot has to look, as with no TAF.
+                None => {
+                    if good == Some(true) {
+                        good = None;
+                    }
+                    reasons.push("The TAF gives no visibility at the ETA.".to_owned());
+                }
             }
         }
         Some(_) => {}
@@ -305,8 +365,20 @@ mod tests {
     #[test]
     fn a_tempo_under_1_2_3_asks_for_an_alternate() {
         let procs = Approaches { any: true, precision: true, alternate_minimums_url: None };
-        let f = Forecast { ceiling_ft: Some(1500.0), ceiling_unknown: false, visibility_sm: Some(6.0), raw: None };
+        let f = Forecast { ceiling_ft: Some(1500.0), ceiling_unknown: false, visibility_sm: Some(6.0), covers: true, raw: None };
         let d = destination("KDST", &procs, Some(&f));
         assert_eq!(d.get("required"), Some(&Value::Bool(true)));
+    }
+
+    #[test]
+    fn precision_is_ils_gls_and_par_by_the_aim() {
+        // AIM 5-4-5 a.7(a): "PAR, ILS, and GLS are precision approaches";
+        // (b): "LDA with glidepath, LNAV/VNAV and LPV are APV approaches".
+        for name in ["ILS OR LOC RWY 27", "ILS RWY 4R (SA CAT I)", "ILS Z RWY 9", "GLS RWY 4R", "PAR RWY 32", "ils rwy 9"] {
+            assert!(precision_approach(name), "{name}");
+        }
+        for name in ["LOC RWY 27", "RNAV (GPS) RWY 9", "LDA/GLIDESLOPE RWY 19", "VOR RWY 3", "ILSX", "LOC BC RWY 9", "NDB OR GPS RWY 6"] {
+            assert!(!precision_approach(name), "{name}");
+        }
     }
 }

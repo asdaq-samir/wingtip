@@ -205,6 +205,12 @@ What only the owner can do (issue #115):
    `aws sso login`), and the
    [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html)
    for a shell on the server.
+4. Only with the map's Google overlay: a Google Maps key restricted to
+   the Map Tiles API alone and to the site's referrer
+   (`https://<the domain>/*`), with daily quotas and a budget alert
+   (docs/GOOGLE-MAPS.md, "What only the owner can do"). The app hands the
+   key to every browser; those restrictions are all that keep it to this
+   site.
 
 ### The stack
 

@@ -13,11 +13,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.alternate.AlternateStopRow
+import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.navigation.ScreenRequests
@@ -73,16 +77,21 @@ fun PlanButtons(routed: Boolean, onBrief: () -> Unit, onNavLog: () -> Unit) {
 
 /**
  * The route's fields in order -- where it departs, its stops, "Add a
- * Stop", where it arrives -- each a tap to its card; an end not yet given
+ * Stop", where it arrives, and under IFR its alternate or "Add
+ * Alternate" (AlternateStopRow) -- each a tap to its card; an end not yet given
  * asks for it ("Where from?", "Where to?") and opens the search. Add a
  * Stop opens the search for a field or fix to land at or pass on the way.
  */
 @Composable
 fun RouteStops(state: Plan.State, onField: (String) -> Unit, onFind: () -> Unit, onAddStop: () -> Unit) {
     val course = state.course
+    // Under IFR, the alternate after the destination (PlanAlternate).
+    val ifr = state.rules == "ifr" && state.routed
+    val filed by PlanAlternate.filed.collectAsStateWithLifecycle()
+    val alternate = PlanAlternate.of(state.rules, state.dest, filed)
     // Material 3 Expressive's segmented list: the route's rows as one
     // rounded group with small gaps between them, no rules.
-    val count = state.stops.size + 3
+    val count = state.stops.size + 3 + (if (ifr) 1 else 0)
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap)) {
         StopRow(state.dep, course?.departure?.name, R.string.route_depart, R.string.where_from, 0, count, onField, onFind)
         state.stops.forEachIndexed { i, stop ->
@@ -91,12 +100,14 @@ fun RouteStops(state: Plan.State, onField: (String) -> Unit, onFind: () -> Unit,
         SegmentedListItem(
             onClick = onAddStop,
             enabled = state.routed,
-            shapes = ListItemDefaults.segmentedShapes(index = count - 2, count = count),
+            shapes = ListItemDefaults.segmentedShapes(index = state.stops.size + 1, count = count),
             leadingContent = { Icon(Icons.Filled.Add, contentDescription = null, tint = MaterialTheme.colorScheme.primary) },
             modifier = Modifier.fillMaxWidth(),
             content = { Text(stringResource(R.string.add_a_stop), color = if (state.routed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) },
         )
-        StopRow(state.dest, course?.destination?.name, R.string.route_arrive, R.string.where_to, count - 1, count, onField, onFind)
+        val arrive = state.stops.size + 2
+        StopRow(state.dest, course?.destination?.name, R.string.route_arrive, R.string.where_to, arrive, count, onField, onFind)
+        if (ifr) AlternateStopRow(alternate, arrive + 1, count, onField)
     }
 }
 

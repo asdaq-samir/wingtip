@@ -6008,6 +6008,14 @@ data class DisplacedPick (
 )
 
 /**
+ * A pilot's own notes, for their account's export.
+ */
+@Serializable
+data class PilotNotes (
+    val notes: List<CheckpointNote>
+)
+
+/**
  * How many of one pilot's own notes went, as their account did.
  */
 @Serializable

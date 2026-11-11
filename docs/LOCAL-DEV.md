@@ -140,9 +140,11 @@ docker compose up -d
   tiles within 10 nm of the course with the course, checkpoints and nav
   log. The briefing and the weather are not kept, since a cached METAR
   could only be shown as if it were current.
-- `DEV_PUBLISH_ADDRESS=0.0.0.0` opens the planner (8084) and Jupyter
-  (8888) too. Neither has a password and Jupyter runs code; the assistant
-  and the database stay on loopback whatever it says.
+- `DEV_PUBLISH_ADDRESS=0.0.0.0` opens Jupyter (8888) too. It has no
+  password and runs code. The planner (8084), the assistant and the
+  database stay on loopback whatever it says: the planner answers without
+  sign-in, and its developer routes are checked by the gateway alone, so
+  another device reaches it through the gateway.
 
 The top of [`docker-compose.yml`](../docker-compose.yml) lists every such
 setting.

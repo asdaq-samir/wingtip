@@ -40,8 +40,11 @@ struct AirportPlaceHead: View {
             }
             titles
             actions
-            AirportFacts(place: place, distance: AirportDistance.of(lat: place.lat, lon: place.lon, ident: place.ident,
-                                                                    fix: ownShip.fix?.coordinate, departure: plan.course?.departure))
+            let distance = Result { try AirportDistance.of(lat: place.lat, lon: place.lon, ident: place.ident,
+                                                           fix: ownShip.fix?.coordinate, departure: plan.course?.departure) }
+            // A failure is said under the facts, so the "—" is not read as no distance.
+            AirportFacts(place: place, distance: try? distance.get())
+            ProblemLine(distance, "The distance").padding(.horizontal, WingtipSpace.lg)
         }
         .padding(.bottom, WingtipSpace.md)
         .padding(.top, expanded ? 0 : WingtipSpace.xl)

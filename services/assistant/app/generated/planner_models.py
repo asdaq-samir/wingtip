@@ -2376,6 +2376,13 @@ class PilotCurrency(BaseModel):
     total_hours: Annotated[float | None, Field(title='Total Hours')] = 0
 
 
+class PilotNotes(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    notes: Annotated[list[CheckpointNote] | None, Field(title='Notes')] = None
+
+
 class PilotNotesForgotten(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,

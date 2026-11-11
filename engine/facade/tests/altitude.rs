@@ -110,6 +110,23 @@ fn the_clouds_cap_a_leg_and_leave_it_its_band_where_they_leave_none() {
 }
 
 #[test]
+fn a_class_b_shelf_floor_is_not_a_cruising_altitude() {
+    // A Class B shelf "from 3,500 feet MSL" upward: 3,500 is inside it, and
+    // 14 CFR 91.131(a)(1) takes no flight in without a clearance. Over a
+    // 2,000 ft floor (91.159 from 4,500) the band is 2,000 to 3,000, never
+    // 3,500; tight() and cautions.rs's "Into Class B" (alt >= shelf) agree.
+    let result = selected(json!({ "airspace_ceilings_ft": [3500, 3500] }));
+    for leg in result["segments"].as_array().unwrap() {
+        let altitudes: Vec<f64> = leg["candidates_ft"].as_array().unwrap().iter().filter_map(Value::as_f64).collect();
+        assert_eq!(altitudes, vec![2000.0, 2500.0, 3000.0], "{leg}");
+    }
+    // A shelf 100 ft above a step keeps the step: 3,600 allows 3,500.
+    let result = selected(json!({ "airspace_ceilings_ft": [3600, 3600] }));
+    let top = result["segments"][0]["candidates_ft"].as_array().unwrap().iter().filter_map(Value::as_f64).fold(0.0, f64::max);
+    assert_eq!(top, 3500.0);
+}
+
+#[test]
 fn icing_where_a_legal_altitude_reaches_the_freezing_level_with_moisture() {
     let dry = selected(json!({ "freezing": { "ft": 8000, "at_or_below": false } }));
     assert_eq!(dry["icing_possible"], json!(false));

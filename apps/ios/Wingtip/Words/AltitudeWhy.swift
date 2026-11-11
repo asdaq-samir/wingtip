@@ -41,17 +41,23 @@ enum AltitudeWhy {
         var r = Reasons(flown: AskFigure(id: "altitude:flown", label: "The altitude flown", said: "The plan flies \(Format.altitude(flownFt)), \(named).",
                                          from: "The planner's altitude plans (the engine's select_cruise_altitude)"))
         // The direction of flight and the altitudes it gives, asked of the
-        // engine on the phone; the planner's own list where it cannot.
+        // engine on the phone; where it cannot answer, the planner's own
+        // answer to the same rules (worked by the same engine on the server),
+        // and where neither has the list, said as not known rather than none.
         let eastbound = (try? Engine.isEastbound(magneticCourseDeg: s.courseMagneticDeg)) ?? s.eastbound
         let legal = (try? Engine.legalCruisingAltitudes(floorFt: s.floorFt, ceilingFt: s.bandCeilingFt ?? s.serviceCeilingFt,
                                                         magneticCourseDeg: s.courseMagneticDeg, ruleFromFt: s.hemisphericRuleFromFt, rules: s.rules))
-            ?? s.candidatesFt ?? []
+            ?? s.candidatesFt
         let rule = ifr ? "14 CFR 91.179(b)(1): below 18,000 ft MSL, odd thousands on a magnetic course of 0° through 179°, even thousands on 180° through 359°"
             : "14 CFR 91.159(a): more than 3,000 ft above the surface, odd thousands plus 500 ft on a magnetic course of 0° through 179°, even thousands plus 500 ft on 180° through 359°"
-        let altitudes = legal.prefix(6).map { Format.altitude($0) }.joined(separator: ", ")
+        let given: String
+        switch legal {
+        case nil: given = "; the cruising altitudes it gives here couldn't be worked out."
+        case let list? where list.isEmpty: given = "; it gives no cruising altitude between the floor and the ceiling here."
+        case let list?: given = "; the cruising altitudes it gives here are \(list.prefix(6).map { Format.altitude($0) }.joined(separator: ", "))."
+        }
         r.rule.append(AskFigure(id: "rule:direction", label: "Direction of flight",
-                                said: "The magnetic course is \(Format.heading(s.courseMagneticDeg)), \(eastbound ? "eastbound" : "westbound")"
-                                    + (altitudes.isEmpty ? "." : "; the cruising altitudes it gives here are \(altitudes)."),
+                                said: "The magnetic course is \(Format.heading(s.courseMagneticDeg)), \(eastbound ? "eastbound" : "westbound")" + given,
                                 from: "\(rule) (the engine's legal_cruising_altitudes)"))
         r.limits.append(AskFigure(id: "limit:floor", label: "The floor", said: "The lowest altitude flown over the terrain and obstacles is \(Format.altitude(s.floorFt))\(s.mountainous == true ? ", over a mountainous area" : "").",
                                   from: ifr ? "14 CFR 91.177(a); Part 95's mountainous areas" : "14 CFR 91.119; Part 95's mountainous areas"))

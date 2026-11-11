@@ -97,34 +97,6 @@ struct CheckpointNotesView: View {
     }
 }
 
-/// FAA Form 7233-4's items as AIM Appendix 4 writes them: the engine's
-/// (`filed_speed`, `filed_level`, `filed_route`, `filed_duration`), the
-/// very ones the web app's lib/flightPlanForm asks. Each throws where the
-/// engine cannot write the item, and nothing is filed then.
-enum FilingForm {
-    /// Item 15's cruising speed, "N0450".
-    static func cruisingSpeed(_ tasKt: Double) throws -> String { try Engine.filedSpeed(tasKt: tasKt) }
-
-    /// Item 15's level: "F350" at and above 18,000 ft, "A080" below it
-    /// (14 CFR 91.121(a)(2)).
-    static func cruisingLevel(_ altitudeFt: Double) throws -> String { try Engine.filedLevel(ft: altitudeFt) }
-
-    /// An airway as a route names one: Victor, T, Jet or Q and its number
-    /// (the web app's identSchema isAirwayToken).
-    static func airwayToken(_ stop: String) -> Bool {
-        stop.range(of: "^[VTJQ][0-9]{1,4}$", options: .regularExpression) != nil
-    }
-
-    /// Item 15's route between the ends ("FLACK DCT IRW", "EIC V18 MEI");
-    /// its procedures are not filed from here yet.
-    static func route(_ stops: [String], isAirway: (String) -> Bool = FilingForm.airwayToken) throws -> String {
-        try Engine.filedRoute(stops: stops, airways: stops.filter(isAirway))
-    }
-
-    /// Hours and minutes in four figures, HHMM (items 16 and 19).
-    static func hhmm(_ minutes: Int) throws -> String { try Engine.filedDuration(minutes: Double(minutes)) }
-}
-
 /// Filing with Flight Service, where the gateway has it connected, as the
 /// web app's Brief files (FlightServiceController): signed in, in the
 /// pilot's name, the form's items from the plan and the rest typed. With
@@ -133,20 +105,16 @@ enum FilingForm {
 struct FlightServiceView: View {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
-    @State private var status: FlightServiceStatus?
+    @State private var model = FlightServiceModel()
     @State private var aircraftId = ""
     @State private var aircraftType = ""
     @State private var departs = Date().addingTimeInterval(3600)
     @State private var endurance = ""
     @State private var persons = ""
-    @State private var reference: String?
-    @State private var briefing: String?
-    @State private var problem: String?
-    @State private var sending = false
 
     var body: some View {
         Form {
-            if let status, status.connected, session.signedIn {
+            if let status = model.status, status.connected, session.signedIn {
                 Section("Flight Plan") {
                     LabeledContent("Rules", value: "VFR")
                     TextField("Aircraft identification", text: $aircraftId).textInputAutocapitalization(.characters).autocorrectionDisabled()
@@ -158,6 +126,7 @@ struct FlightServiceView: View {
                         LabeledContent("Cruising speed", value: request.cruisingSpeed)
                         LabeledContent("Cruising level", value: request.cruisingLevel)
                         LabeledContent("Route", value: request.route)
+                        // Words only: the same minutes said plainly where the engine cannot write HHMM.
                         LabeledContent("Total EET", value: (try? FilingForm.hhmm(request.eetMinutes)) ?? "\(request.eetMinutes) min")
                     }
                     ProblemLine(asked, "The flight plan's items")
@@ -166,17 +135,21 @@ struct FlightServiceView: View {
                     TextField("Persons on board", text: $persons).keyboardType(.numberPad)
                 }
                 Section {
-                    Button(reference.map { "Filed: \($0)" } ?? (sending ? "Filing…" : "File with \(status.provider)")) { Task { await file() } }
-                        .disabled((try? request()) == nil || reference != nil || sending)
-                    Button("Standard Briefing") { Task { await brief() } }
-                        .disabled((try? request()) == nil || sending)
-                    ProblemLine(problem)
+                    Button(model.reference.map { "Filed: \($0)" } ?? (model.sending ? "Filing…" : "File with \(status.provider)")) {
+                        if let request = try? request() { Task { await model.file(request) } }
+                    }
+                    .disabled((try? request()) == nil || model.reference != nil || model.sending)
+                    Button("Standard Briefing") { if let request = try? request() { Task { await model.brief(request) } } }
+                        .disabled((try? request()) == nil || model.sending)
+                    ProblemLine(model.problem)
                 }
-                if let briefing {
+                if let briefing = model.briefing {
                     Section("Standard Briefing") { Text(briefing).font(.footnote.monospaced()).textSelection(.enabled) }
                 }
             }
-            Section(status?.connected == true ? "Or" : "File it with Flight Service") {
+            Section(model.status?.connected == true ? "Or" : "File it with Flight Service") {
+                // Whether filing here is connected, where that couldn't be asked.
+                ProblemLine(model.statusProblem)
                 Link(destination: URL(string: "https://www.1800wxbrief.com")!) {
                     LabeledContent("1800wxbrief.com", value: "Open it as you leave, close it when you land")
                 }
@@ -185,7 +158,7 @@ struct FlightServiceView: View {
         }
         .navigationTitle("File Flight Plan")
         .task {
-            status = try? await Gateway.flightService()
+            await model.load()
             if aircraftId.isEmpty { aircraftId = plan.tail ?? "" }
             if aircraftType.isEmpty, let type = plan.stockType { aircraftType = type }
         }
@@ -201,20 +174,6 @@ struct FlightServiceView: View {
         guard digits.count == 4, let hours = Int(digits.prefix(2)), let minutes = Int(digits.suffix(2)), minutes < 60 else { return nil }
         let pob = Int(persons.filter(\.isNumber)).flatMap { (1...999).contains($0) ? $0 : nil }
         return FlightPlanFilingRequest(aircraftId: aircraftId.uppercased(), aircraftType: aircraftType.uppercased(), cruisingLevel: try FilingForm.cruisingLevel(first.altitudeFt), cruisingSpeed: try FilingForm.cruisingSpeed(tas), departure: plan.dep, departureTime: ISO8601DateFormatter().string(from: departs), destination: plan.dest, eetMinutes: Int(ete.rounded(.up)), enduranceMinutes: hours * 60 + minutes, personsOnBoard: pob, route: try FilingForm.route(plan.stops), rules: "VFR")
-    }
-
-    private func file() async {
-        guard let request = try? request() else { return }
-        sending = true
-        do { reference = try await Gateway.file(request); problem = nil } catch { problem = "Not filed: \(error.localizedDescription)" }
-        sending = false
-    }
-
-    private func brief() async {
-        guard let request = try? request() else { return }
-        sending = true
-        do { briefing = try await Gateway.standardBriefing(request); problem = nil } catch { problem = "No briefing: \(error.localizedDescription)" }
-        sending = false
     }
 }
 
@@ -307,36 +266,6 @@ struct FlownTrackView: View {
                 do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
             }
         }
-    }
-}
-
-/// A track file's points with their times, as the web app's lib/track
-/// reads one (the engine's `read_track`: GPX 1.1's trkpt, its ele in
-/// metres, as feet, or KML's gx:Track; in time order, one a moment, the
-/// unreadable dropped), then thinned to the most a saved track keeps
-/// (`thin_track`). Nil where the file has no track to use.
-enum GPXTrack {
-    /// The engine's points: t in ms since 1970, which it writes as a
-    /// fraction ("1792940400000.0"), so read as one. The contract leaves
-    /// read_track's answer and thin_track's points open, so this shape is
-    /// the app's, read from the engine's JSON.
-    private struct Point: Codable {
-        let t: Double; let lat: Double; let lon: Double; let altFt: Double?
-        enum CodingKeys: String, CodingKey { case t, lat, lon, altFt = "alt_ft" }
-    }
-
-    private struct Read: Decodable {
-        let points: [Point]?
-        let error: String?
-    }
-
-    /// Nil where the file has no track; thrown where the engine refuses.
-    static func points(_ data: Data) throws -> [SavedTrackPoint]? {
-        let text = String(decoding: data, as: UTF8.self)
-        let read: Read = try Engine.recoded(try Engine.readTrack(text: text))
-        guard read.error == nil, let points = read.points else { return nil }
-        let thinned: [Point] = try Engine.thinTrack(points: try points.map { try Engine.recoded($0) }).map { try Engine.recoded($0) }
-        return thinned.map { SavedTrackPoint(altFt: $0.altFt, lat: $0.lat, lon: $0.lon, t: Int($0.t.rounded())) }
     }
 }
 
@@ -445,18 +374,27 @@ struct SpokenAlertsToggle: View {
 struct ForgetNotesButton: View {
     @State private var asking = false
     @State private var said: String?
+    @State private var problem: String?
 
-    var body: some View {
+    @ViewBuilder var body: some View {
         Button(said ?? "Forget My Checkpoint Notes", role: .destructive) { asking = true }
             .confirmationDialog("Forget your checkpoint notes?", isPresented: $asking, titleVisibility: .visible) {
                 Button("Forget Them", role: .destructive) {
                     Task {
-                        if let removed = try? await Planner.forgetNotes() { said = removed == 1 ? "1 note forgotten" : "\(removed) notes forgotten" }
+                        do {
+                            let removed = try await Planner.forgetNotes()
+                            said = removed == 1 ? "1 note forgotten" : "\(removed) notes forgotten"
+                            problem = nil
+                        } catch {
+                            problem = "Your notes couldn't be forgotten: \(error.localizedDescription)"
+                        }
                     }
                 }
             } message: {
                 Text("Every note you wrote on a checkpoint goes; the shared ones stay.")
             }
+        // Said in its own row under the button where they couldn't be forgotten.
+        ProblemLine(problem)
     }
 }
 

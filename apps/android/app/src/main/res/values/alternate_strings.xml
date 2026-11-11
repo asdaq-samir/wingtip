@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The IFR alternate (alternate/): the plan's row, the nav log's leg on
+     to it and the Brief's Alternate, in the web's AlternateSection words. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="alternate">Alternate</string>
+    <string name="add_alternate">Add Alternate</string>
+    <string name="alternate_leg">On to %1$s, the alternate</string>
+    <string name="alternate_leg_still_air">On to %1$s, the alternate, in still air</string>
+    <string name="alternate_waiting">Checked once the nav log has an ETA, with an airplane picked.</string>
+    <string name="alternate_required">An alternate is required</string>
+    <string name="alternate_not_required">No alternate required</string>
+    <string name="alternate_not_required_why">An approach, and 2,000 ft and 3 sm an hour either side of the ETA (14 CFR 91.169(b)).</string>
+    <string name="alternate_destination">Destination</string>
+    <string name="alternate_no_taf">No TAF for the destination</string>
+    <string name="alternate_filed">Filed</string>
+    <!-- 14 CFR 91.169(c), the paragraph, not a copyright sign. -->
+    <string name="alternate_filed_why" tools:ignore="TypographyOther">%1$s nm on; %2$s, its minimums at the ETA there (14 CFR 91.169(c)).</string>
+    <string name="alternate_ils">an ILS</string>
+    <string name="alternate_nonprecision">a nonprecision approach</string>
+    <string name="alternate_minimums">Its Alternate Minimums</string>
+    <string name="alternate_take_off">Take It Off</string>
+    <string name="alternate_will_do">Alternates That Will Do</string>
+    <string name="alternate_none_found">None found</string>
+    <string name="alternate_none_found_why">File one you have checked yourself.</string>
+    <string name="alternate_file">File</string>
+    <string name="alternate_check_file">Check, File</string>
+    <string name="alternate_ils_short">ILS</string>
+    <string name="alternate_nonprecision_short">nonprecision</string>
+</resources>

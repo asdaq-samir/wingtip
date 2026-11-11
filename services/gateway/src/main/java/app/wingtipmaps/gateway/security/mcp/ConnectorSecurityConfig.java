@@ -22,8 +22,9 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
  * <ul>
  *   <li>/mcp and its metadata: anyone. The planner, behind them, refuses
  *       a call without a token of its own issue (McpProxyController).
- *   <li>/internal/mcp: anyone who reaches it, which only the planner's
- *       shared token gets past (InternalRecordsController).
+ *   <li>/internal/mcp: whoever reaches the gateway's internal port, which
+ *       only the compose network does (InternalPortConfig), and then only
+ *       the planner's shared token gets past (InternalRecordsController).
  *   <li>/connect and /connect/continue: anyone, to sign in.
  *   <li>/oauth2/consent: a signed-in pilot.
  * </ul>

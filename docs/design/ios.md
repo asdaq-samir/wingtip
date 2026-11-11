@@ -652,9 +652,10 @@ figures anywhere depend on a default type.
      (owner's rule; positions unchanged).
 2. **The figure strip:** To, Dist, ETE and Fuel, in `type.figure`
    digits, from the engine. The fuel is a dash without an airplane.
-3. **Cruise:** the altitude field in FL-045 form; the Profile's
-   Altitude Advisor is where the cruise is chosen (see
-   [The profile](#the-profile-foreflights-way)).
+3. **Cruise:** the altitude in FL-045 form, a button that opens the
+   Profile: its slider and Altitude Advisor are the one place the cruise
+   is set (see [The profile](#the-profile-foreflights-way)). There is no
+   typed cruise field: one control, one source of truth (2026-11-10).
 4. **Route options**, after Routes: up to four cards (Direct, Fastest,
    Most Filed, Economical). Each shows its time, distance and fuel and
    has its own **Use** button, as Maps' route cards each carry Go.
@@ -676,7 +677,8 @@ figures anywhere depend on a default type.
 navigation verbs in order:
 
 1. Direct To
-2. Set Altitude…
+2. Set Altitude…, which opens the Profile on that waypoint's Start At /
+   Cross At popover (no typed alert of its own)
 3. Hold Here…
 4. Add a Stop After
 5. Remove, last and destructive
@@ -741,8 +743,10 @@ view model (`ProfileModel`), every figure the engine's (`ProfileRules`:
 - **A waypoint.** A tap within 22 pt of one (a 44 pt target) opens a
   `.popover`, kept a popover on the iPhone
   (`presentationCompactAdaptation(.popover)`): the altitude as a menu
-  `Picker`, **Start At** or **Cross At** as a segmented control, Set and
-  Reset. VoiceOver reaches each waypoint as an accessibility action of
+  `Picker`, or typed in feet for an altitude off the engine's steps (a
+  field's elevation), **Start At** or **Cross At** as a segmented
+  control, Set and Reset. A stop's "Set Altitude…" opens the Profile on
+  this popover; it is the only way a point's altitude is set. VoiceOver reaches each waypoint as an accessibility action of
   the chart ("Altitude at KLVK").
 - **The Altitude Advisor.** The cruise is chosen from a `List` section:
   one row per altitude, highest first, with time, fuel and the head or
@@ -813,6 +817,23 @@ nautical miles". Swift Charts gives Audio Graphs ([HIG Charts][hig-charts]).
 ---
 
 ## 5. Brief, Go / No-Go and Ready to Fly
+
+**The alternate, under IFR (2026-11-10, as the web's).** The plan's
+Route section has an **Alternate** row after the destination: the one
+filed (marked "Under minimums" in the problem ink where it is), or "Add
+Alternate" (amber, "Required", where the destination needs one). It
+opens the alternate's page, the same `List` sections the Brief shows
+after its forecast: the destination's check (14 CFR 91.169(b), the
+engine's `ifr_alternate_destination` over the window `ifr_alternate_window`
+gives), the one filed against its minimums at the ETA there (91.169(c),
+`ifr_alternate_check`) with its published minimums' page and Take It
+Off, and the fields that will do, each filed with a tap. All of it is the
+planner's `/api/alternate`, its reasons shown in the engine's words. The
+filed alternate goes to the nav log as `alternate` (the leg on to it,
+`navlog_alternate_leg`, is the nav log's Alternate section and its fuel
+is in the totals, 91.167(a)(2)) and to the Go / No-Go with `rules=ifr`.
+With no airplane the section asks for one (no stock cruise speed), and
+with no nav log yet it says it waits for the ETA.
 
 **Follow:**
 
@@ -1026,7 +1047,9 @@ more, or gusting); it is red only where the field's `least_crosswind` is
 more than the picked airplane's demonstrated crosswind (its POH's, on
 `/api/aircraft-profiles`), and never red with no airplane or no figure. An
 amber ↓ marks a plan's field whose TAF for the pilot's time there is worse
-than its METAR now (`weather_worse`). The weather comes on the map's own
+than its METAR now (`weather_worse`); under IFR the alternates (the one
+filed and those offered) wear it too, their TAF at the ETA there (the
+planner's `/api/alternate`) against the map's own METAR of the field. The weather comes on the map's own
 `/api/airports/in-view` answer (`weather`), the same for every app; the
 shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
 screen reader says each field's category and wind ("KJVL, IFR, wind 220

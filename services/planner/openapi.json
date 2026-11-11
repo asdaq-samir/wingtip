@@ -15542,6 +15542,23 @@
         "title": "PilotCurrency",
         "type": "object"
       },
+      "PilotNotes": {
+        "description": "A pilot's own notes, for their account's export.",
+        "properties": {
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/CheckpointNote"
+            },
+            "title": "Notes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "notes"
+        ],
+        "title": "PilotNotes",
+        "type": "object"
+      },
       "PilotNotesForgotten": {
         "description": "How many of one pilot's own notes went, as their account did.",
         "properties": {
@@ -23762,6 +23779,51 @@
           }
         },
         "summary": "Forget Pilots Notes"
+      },
+      "get": {
+        "description": "A pilot's own notes, every one, for their account's export (the\ngateway's GET /api/me/export). Asked by the gateway alone, as the\ndelete below is: the pilot is named by the header it sets.",
+        "operationId": "pilots_notes_api_checkpoint_notes_mine_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-Pilot-Id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Pilot-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PilotNotes"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Pilots Notes"
       }
     },
     "/api/checkpoint-notes/pending": {

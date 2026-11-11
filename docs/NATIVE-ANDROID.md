@@ -33,7 +33,9 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
     input)` (`wt_call`), with `EngineException` for the engine's own
     words when it refuses;
   - `api/`: the data layer. `Gateway` (the session's cookies, kept by
-    `CookieStore`; the CSRF header; a cache the servers' Cache-Control
+    `CookieStore` on `SealedShelf`, encrypted under an Android Keystore
+    AES-GCM key, since androidx.security's EncryptedSharedPreferences is
+    deprecated; the CSRF header; a cache the servers' Cache-Control
     fills), `Planner` (the planner through the gateway's proxy),
     `Models.kt` (the answers' shapes, in the document's names through
     `@SerialName`: most are typealiases of `api/generated`, which
@@ -272,6 +274,23 @@ the terminal switch as the style is built. The style is built again as
 a download lands. The cycle's update, its expiry at 0901Z on the next
 one's date and the sweep once the update is whole are the iPhone's.
 
+## Signing in from a link: whose account it is
+
+An emailed sign-in link names no account, and anyone can mail a pilot a
+link to their own (the security audit's M1 and L1, 2026-11-10). Before the
+app spends a link's token, it asks the gateway whose it is and shows it on
+its confirmation sheet ("Sign in as a•••@icloud.com?"):
+
+- `POST /api/auth/magic-link/account`, form body `token=<the link's
+  token>`, with the session's CSRF header as for `/verify`.
+- `200 {"email": "a•••@icloud.com"}`: the link can still sign in, to that
+  address (its first letter and its domain). Nothing is spent; the token
+  still signs in once, by `POST /api/auth/magic-link/verify`.
+- `404`, no body: used, expired or unknown, all alike. Say the link has
+  expired and offer a new one; don't offer Sign in.
+- `429`: 30 asks an hour from one address; say so and let the pilot try
+  later.
+
 ## Building
 
 The owner's Mac has no Java, Gradle, Android SDK or cargo, so everything
@@ -286,6 +305,9 @@ runner:
 - a push to `main` or to a `claude/native-*` branch: the same and
   `assembleDebug`, the APK kept with the run (`wingtip-native-debug-apk`:
   it installs on any Android phone with "Install unknown apps" allowed);
+  on `main`'s pushes and the night, `assembleRelease` too, and R8's
+  mapping file kept 90 days (`wingtip-native-release-mapping`), to read a
+  release build's crash reports by (`scripts/ci/android_build.sh`);
 - every night, and by hand: then `:app:connectedDebugAndroidTest` on an
   API 35 x86_64 emulator (reactivecircus/android-emulator-runner), and
   the release build's `ReleaseEngineTest` (below).
@@ -294,6 +316,11 @@ runner:
 
 `WINGTIP_HOST` is the build's host (the repo variable `WINGTIP_URL`'s);
 it is the gateway's address and the App Links domain in the manifest.
+The emailed sign-in link is followed only as `https` on that host
+(`Links.parse`), since any app can send MainActivity a link, and only after
+the pilot's yes in a stock alert naming the address this phone asked a
+link for and the account it would sign out of (`SignInDialog`; the
+security audit's M1, 2026-11-10).
 `ANDROID_NATIVE_APP_ID` would be the package name, once there is a Play
 lane for it.
 

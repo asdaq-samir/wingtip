@@ -617,8 +617,8 @@ struct ChartMap: UIViewRepresentable {
             }
             fetching?.cancel()
             let region = mapView.region
-            let (c, span) = (region.center, region.span) // The miles to the corner the engine's (distance_nm), else the last kept.
-            if let nm = try? Engine.distanceNm(lat1: c.latitude, lon1: c.longitude, lat2: c.latitude + span.latitudeDelta / 2, lon2: c.longitude + span.longitudeDelta / 2) { onRegion?(c, nm) }
+            let (c, span) = (region.center, region.span) // The miles to the corner the engine's (distance_nm), else the last view's kept: a real one, not a guess.
+            if let nm = try? Flight.distanceNm(c, CLLocationCoordinate2D(latitude: c.latitude + span.latitudeDelta / 2, longitude: c.longitude + span.longitudeDelta / 2)) { onRegion?(c, nm) }
             fetching = Task { [weak self, weak mapView] in
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled, let self, let mapView else { return }

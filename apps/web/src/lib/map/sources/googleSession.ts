@@ -5,6 +5,22 @@ import { keptStore } from "../../storage";
 /** Google's Map Tiles API: a session for a kind of map, then its tiles. */
 export const GOOGLE = "https://tile.googleapis.com";
 
+/**
+ * The site's origin, and only that, as the Referer of every request to
+ * Google: the key is restricted to this site's address in Google Cloud
+ * (docs/GOOGLE-MAPS.md), which Google checks against the Referer, and the
+ * page's own policy (no-referrer, SecurityConfig) would send none -- so a
+ * restricted key was refused and only an open one worked (the security
+ * audit's M4, 2026-11-10). Every other request keeps sending none.
+ */
+export const GOOGLE_REFERRER_POLICY: ReferrerPolicy = "strict-origin";
+
+/** MapLibre's transformRequest: Google's tiles with the site's origin as
+ *  their Referer, every other request as it was. */
+export function googleReferrer(url: string): { url: string; referrerPolicy: ReferrerPolicy } | undefined {
+  return url.startsWith(`${GOOGLE}/`) ? { url, referrerPolicy: GOOGLE_REFERRER_POLICY } : undefined;
+}
+
 interface Session {
   session: string;
   expiry: number;
@@ -26,6 +42,7 @@ async function googleSession(key: string, kind: "map" | "satellite"): Promise<Se
   if (held && held.key === key && held.expiry * 1000 - Date.now() > 24 * 3600_000) return held;
   const resp = await fetch(`${GOOGLE}/v1/createSession?key=${encodeURIComponent(key)}`, {
     method: "POST",
+    referrerPolicy: GOOGLE_REFERRER_POLICY,
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(
       kind === "map"

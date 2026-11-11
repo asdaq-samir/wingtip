@@ -53,7 +53,7 @@ object Gateway {
         app = context.applicationContext
     }
 
-    val cookies: CookieStore by lazy { CookieStore(app.getSharedPreferences("cookies", Context.MODE_PRIVATE)) }
+    val cookies: CookieStore by lazy { CookieStore(SealedShelf(app.getSharedPreferences("cookies", Context.MODE_PRIVATE), KeystoreSeal())) }
 
     /** The overlay tiles' archive kept on the phone, for the air
      *  (OverlayStore): in the app's files, not its cache, which the system

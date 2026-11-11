@@ -51,6 +51,7 @@ import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.AskFigures
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
+import app.wingtipmaps.android.alternate.AlternateLegRow
 import app.wingtipmaps.android.altitude.PlanAltitudeSection
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogTotals
@@ -141,6 +142,8 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onLeg: 
                 }
             }
             state.totals?.let { totals ->
+                // Under IFR with an alternate filed, the leg on to it.
+                totals.alternate?.let { alt -> item(key = "alternate-leg") { Column(pad) { AlternateLegRow(alt); HorizontalDivider() } } }
                 item(key = "totals") { Column(pad) { TotalsRows(totals, rememberAirplaneNow(plan)) } }
                 // The route and its nav log in plain words, under the totals.
                 item(key = "ai-route") {
@@ -257,11 +260,11 @@ private fun LegFigures(leg: Leg, modifier: Modifier) {
     }
 }
 
-/** One of a leg's figures, its name over it: the nav log is a table read
- *  down its columns, so the figures are bodyLarge with tabular digits
+/** One of a leg's figures, its name over it (the alternate's leg too,
+ *  AlternateLegRow): the nav log is a table read down its columns, so the figures are bodyLarge with tabular digits
  *  ("tnum") and line up leg under leg, never smaller to fit. */
 @Composable
-private fun RowScope.LegFigure(name: String, value: String) {
+internal fun RowScope.LegFigure(name: String, value: String) {
     Column(Modifier.weight(1f), horizontalAlignment = Alignment.End) {
         Text(name, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"), maxLines = 1)

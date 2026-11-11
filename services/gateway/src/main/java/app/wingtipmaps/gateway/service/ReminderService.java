@@ -102,7 +102,12 @@ public class ReminderService {
             try {
                 sendTo(pilot, today);
             } catch (RuntimeException failed) {
-                log.warn("Reminders for pilot {} not sent; tried again tomorrow", pilot.getId(), failed);
+                // The exception's class only: a mail failure's own text names
+                // the pilot's address (docs/privacy-inventory.md, "Logs").
+                log.warn(
+                        "Reminders for pilot {} not sent; tried again tomorrow: {}",
+                        pilot.getId(),
+                        failed.getClass().getSimpleName());
             }
         }
     }

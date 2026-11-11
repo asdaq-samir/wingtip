@@ -429,7 +429,7 @@ TOOLS: list[dict] = json.loads(r'''
   },
   {
     "name": "ifr_alternate_check",
-    "description": "Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).",
+    "description": "Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility).",
     "input_schema": {
       "type": "object",
       "properties": {
@@ -439,11 +439,12 @@ TOOLS: list[dict] = json.loads(r'''
         "approaches": {
           "type": "object",
           "properties": {
-            "any": {
-              "type": "boolean"
-            },
-            "precision": {
-              "type": "boolean"
+            "names": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The field's instrument approach charts (IAP) by their d-TPP names, \"ILS OR LOC RWY 27\", \"RNAV (GPS) RWY 9\"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a))."
             },
             "alternate_minimums_url": {
               "type": [
@@ -453,10 +454,9 @@ TOOLS: list[dict] = json.loads(r'''
             }
           },
           "required": [
-            "any",
-            "precision"
+            "names"
           ],
-          "description": "The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page."
+          "description": "The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page."
         },
         "forecast": {
           "type": [
@@ -487,9 +487,16 @@ TOOLS: list[dict] = json.loads(r'''
                 "string",
                 "null"
               ]
+            },
+            "covers": {
+              "type": "boolean",
+              "description": "taf_window's worst.covers: whether the TAF covers the whole window. Missing is taken as not."
             }
           },
-          "description": "The worst its TAF forecasts over the window (taf_window), null where no TAF covers it."
+          "description": "The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.",
+          "required": [
+            "covers"
+          ]
         }
       },
       "required": [
@@ -500,7 +507,7 @@ TOOLS: list[dict] = json.loads(r'''
   },
   {
     "name": "ifr_alternate_destination",
-    "description": "Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.",
+    "description": "Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast that does not indicate at least 2,000 ft and 3 sm for an hour either side of the ETA (TEMPO and PROB included; a TAF not covering the whole window, a ceiling of unknown height or no visibility does not); no TAF needs one.",
     "input_schema": {
       "type": "object",
       "properties": {
@@ -510,11 +517,12 @@ TOOLS: list[dict] = json.loads(r'''
         "approaches": {
           "type": "object",
           "properties": {
-            "any": {
-              "type": "boolean"
-            },
-            "precision": {
-              "type": "boolean"
+            "names": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The field's instrument approach charts (IAP) by their d-TPP names, \"ILS OR LOC RWY 27\", \"RNAV (GPS) RWY 9\"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a))."
             },
             "alternate_minimums_url": {
               "type": [
@@ -524,10 +532,9 @@ TOOLS: list[dict] = json.loads(r'''
             }
           },
           "required": [
-            "any",
-            "precision"
+            "names"
           ],
-          "description": "The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page."
+          "description": "The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page."
         },
         "forecast": {
           "type": [
@@ -558,9 +565,16 @@ TOOLS: list[dict] = json.loads(r'''
                 "string",
                 "null"
               ]
+            },
+            "covers": {
+              "type": "boolean",
+              "description": "taf_window's worst.covers: whether the TAF covers the whole window. Missing is taken as not."
             }
           },
-          "description": "The worst its TAF forecasts over the window (taf_window), null where no TAF covers it."
+          "description": "The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.",
+          "required": [
+            "covers"
+          ]
         }
       },
       "required": [

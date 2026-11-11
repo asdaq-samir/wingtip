@@ -122,6 +122,15 @@ def seed_note(route: str, lat: float, lon: float, description: str, path: Path |
     return _append(route, lat, lon, description, "", path or NOTES_PATH, if_absent=True)
 
 
+def pilots_notes(pilot: str, path: Path | None = None) -> list[dict]:
+    """Every note one pilot wrote for themselves, oldest first: their copy
+    of what is kept for them (the gateway's Export My Data). The shared
+    notes are nobody's and are not in it."""
+    if not pilot:
+        raise ValueError("a pilot's id, not the shared notes' empty one")
+    return [n for n in load_notes(path=path) if n["pilot"] == pilot]
+
+
 def forget_pilot(pilot: str, path: Path | None = None) -> int:
     """Every note one pilot wrote for themselves taken out of the file, as
     their account is deleted: what they wrote is theirs, and nobody else

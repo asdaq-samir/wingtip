@@ -25,6 +25,9 @@ struct AirportCard: View {
     /// The field's own NOTAMs and the TFRs over it, for the alert card
     /// and the tile's count; nil until fetched or where they can't be.
     @State private var notams: APINotamsRanked?
+    /// Where the NOTAMs couldn't be had, said where their alerts go: no
+    /// closure shown must not read as none.
+    @State private var notamsProblem: String?
     @State private var tab: CardTab = .info
     @State private var shown: ShownPicture?
     /// Scrolled past the head: its name in the bar and the section picker
@@ -57,6 +60,7 @@ struct AirportCard: View {
                         .listRowSeparator(.hidden)
                 }
                 AirportAlertCard(ident: place.ident, notams: notams)
+                if let notamsProblem { Section { ProblemLine(notamsProblem) } }
                 AirportReadyCard(ident: place.ident)
                 Section {
                     AirportTiles(place: place, photos: photos, shown: $shown, tab: $tab, notams: notams)
@@ -120,11 +124,19 @@ struct AirportCard: View {
         // judged against the pilot's own visibility minimum.
         .task(id: "\(ident)|\(verdict.minimums.visibilitySm ?? -1)") { await live.watch(ident, minimumSm: verdict.minimums.visibilitySm) }
         .task(id: ident) {
+            // The pictures are the card's look, not a figure: none where they can't be had.
             async let pictures = try? Planner.photos(ident)
-            async let notices = try? KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }.value
+            async let notices = Self.notices(ident)
             await load()
             photos = await pictures
-            notams = await notices
+            switch await notices {
+            case .success(let fresh):
+                notams = fresh
+                notamsProblem = nil
+            case .failure(let error):
+                notams = nil
+                notamsProblem = "Its NOTAMs couldn't be had, so closures and TFRs aren't shown: \(error.localizedDescription)"
+            }
             // The weather a report's freshness: asked again every five
             // minutes while the card is open, as the web app's is.
             while !Task.isCancelled {
@@ -133,6 +145,11 @@ struct AirportCard: View {
                 if let fresh = try? await KeptForAir.answer(.airports, key: ident, fetch: { try await Planner.place(ident) }) { place = fresh.value }
             }
         }
+    }
+
+    /// The field's NOTAMs, kept for the air, or why they couldn't be had.
+    private static func notices(_ ident: String) async -> Result<APINotamsRanked, any Error> {
+        do { return .success(try await KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }.value) } catch { return .failure(error) }
     }
 
     private func load() async {
@@ -278,104 +295,6 @@ struct AirportWeatherTab: View {
         CardRow(badge: RowBadge(systemImage: symbol, colour: Badge.weather), title: title) {
             Text(value).fontWeight(.semibold).accessibilityLabel(spoken ?? value)
         }
-    }
-}
-
-/// Charts: the airport diagram and the Chart Supplement, then the field's
-/// approaches, departures, arrivals and minimums in this cycle's d-TPP,
-/// each shown in the app full screen to pinch in on. A procedure's title
-/// as the FAA prints it, as pilots know it from the plate.
-struct AirportChartsTab: View {
-    let place: AirportPlace
-    @Binding var shown: ShownPicture?
-    /// The diagram with the airplane on it (DiagramOwnShipView), open.
-    @State private var ownShipDiagram = false
-
-    /// The groups by the FAA's chart codes (wingtip.publications); the
-    /// airport's own -- hot spots, land and hold short -- go with its
-    /// diagram.
-    static let groups: [(title: String, kinds: [String])] = [
-        ("Approaches", ["IAP"]), ("Departures", ["DP", "ODP"]), ("Arrivals", ["STR"]), ("Minimums", ["MIN"]),
-    ]
-    static let airportCharts = ["HOT", "LAH"]
-
-    struct ChartGroup: Identifiable {
-        let title: String
-        let charts: [TerminalChart]
-        var id: String { title }
-    }
-
-    /// The rest of the charts, in groups, with "Other" for any code the
-    /// groups leave out.
-    static func grouped(_ charts: [TerminalChart]) -> [ChartGroup] {
-        let known = Set(["APD"] + airportCharts + groups.flatMap { $0.kinds })
-        let other = (title: "Other", kinds: Array(Set(charts.map { $0.kind }).subtracting(known)).sorted())
-        return (groups + [other]).compactMap { group in
-            let mine = charts.filter { group.kinds.contains($0.kind) }
-            return mine.isEmpty ? nil : ChartGroup(title: group.title, charts: mine)
-        }
-    }
-
-    /// The sketch full screen, for a field the FAA draws no diagram for.
-    @MainActor
-    static func sketch(_ place: AirportPlace) -> ShownPicture {
-        let renderer = ImageRenderer(content: RunwaySketch(runways: place.runways)
-            .frame(width: 900, height: 900).background(Color.white).environment(\.colorScheme, .light))
-        renderer.scale = 2
-        let image = renderer.uiImage
-        return ShownPicture(title: "\(place.ident) runways") { image.map { [$0] } ?? [] }
-    }
-
-    var body: some View {
-        let charts = place.procedures ?? []
-        let sketched = !RunwaySketch.strips(place.runways).isEmpty
-        Section("Airport") {
-            if let cycle = place.airportDiagramCycle {
-                row("Airport diagram", "map") {
-                    shown = .paths("\(place.ident) airport diagram", [Planner.diagramPath(ident: place.ident, cycle: cycle)])
-                }
-            } else if let url = place.airportDiagramUrl {
-                row("Airport diagram", "map") { shown = .faaChart("\(place.ident) airport diagram", url: url, airport: place.ident) }
-            } else if sketched {
-                row("Airport diagram", "map", detail: "A sketch of the runways: the FAA publishes none") { shown = Self.sketch(place) }
-            } else {
-                Text("The FAA publishes no airport diagram for this field").foregroundStyle(.secondary)
-            }
-            // The FAA's diagram with the airplane on it, by the diagram's
-            // own latitude and longitude marks (#218), under the diagram.
-            if let url = place.airportDiagramUrl {
-                row("Diagram with your position", "location.north.circle") { ownShipDiagram = true }
-                    .fullScreenCover(isPresented: $ownShipDiagram) { DiagramOwnShipView(ident: place.ident, url: url) }
-            }
-            if let supplement = place.chartSupplementUrl {
-                row("Chart Supplement", "book") { shown = .faaChart("\(place.ident) Chart Supplement", url: supplement, airport: place.ident) }
-            }
-            ForEach(charts.filter { Self.airportCharts.contains($0.kind) }) { chart in chartRow(chart) }
-        }
-        ForEach(Self.grouped(charts)) { group in
-            Section(group.title) {
-                ForEach(group.charts) { chart in chartRow(chart) }
-            }
-        }
-    }
-
-    private func chartRow(_ chart: TerminalChart) -> some View {
-        let symbol = chart.kind == "IAP" ? "airplane.arrival" : chart.kind == "DP" || chart.kind == "ODP" ? "airplane.departure"
-            : chart.kind == "STR" ? "point.topleft.down.to.point.bottomright.curvepath" : "doc.richtext"
-        return row(chart.name, symbol, colour: chart.kind == "IAP" || chart.kind == "DP" || chart.kind == "ODP" || chart.kind == "STR" ? Badge.approach : Badge.chart) {
-            shown = .faaChart(chart.name, url: chart.url, airport: place.ident)
-        }
-    }
-
-    private func row(_ title: String, _ symbol: String, detail: String? = nil, colour: Color = Badge.chart, open: @escaping () -> Void) -> some View {
-        Button(action: open) {
-            HStack {
-                CardRow(badge: RowBadge(systemImage: symbol, colour: colour), title: title, detail: detail)
-                Image(systemName: "chevron.right").font(.footnote.weight(.semibold)).foregroundStyle(.tertiary)
-                    .accessibilityHidden(true)
-            }
-        }
-        .foregroundStyle(.primary)
     }
 }
 

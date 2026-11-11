@@ -11,6 +11,7 @@
 
 pub mod awc;
 pub mod calls;
+pub mod covers;
 pub mod field;
 pub mod hours;
 pub mod route;
