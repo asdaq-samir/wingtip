@@ -170,7 +170,12 @@ data class AirportPlace (
     val ident: String,
     val kind: String,
     val lat: Double,
+
+    @SerialName("light_notes")
+    val lightNotes: List<LightingNote>? = null,
+
     val lighting: List<String>? = null,
+    val lights: List<LightingSystem>? = null,
     val lon: Double,
     val metar: Metar? = null,
     val military: String? = null,
@@ -214,6 +219,53 @@ data class Frequency (
     val frequencyMhz: Double? = null,
 
     val type: String? = null
+)
+
+/**
+ * A sentence of the remarks the engine could not read as systems: its
+ * contractions written out, every other word kept (`words`), and as
+ * sent (`as_written`).
+ */
+@Serializable
+data class LightingNote (
+    @SerialName("as_written")
+    val asWritten: String,
+
+    val words: String
+)
+
+/**
+ * One lighting system: its Chart Supplement legend code (None where its
+ * name says it all: taxiway lights, the beacon), its name in AIM 2-1, the
+ * runways or ends it serves as written, and how it is turned on --
+ * keyed on `frequency` (AIM 2-1-8), `clicks` where the remarks give a
+ * count, when the tower is closed, preset and turned up, on a
+ * `schedule`, or on all the time -- with `how` that in a pilot's words
+ * and `as_written` the sentence it was read from.
+ */
+@Serializable
+data class LightingSystem (
+    @SerialName("as_written")
+    val asWritten: String,
+
+    val brighter: Boolean,
+    val clicks: Int? = null,
+    val code: String? = null,
+    val continuous: Boolean,
+    val frequency: String? = null,
+    val how: String? = null,
+    val name: String,
+    val nonstandard: Boolean,
+
+    @SerialName("pilot_controlled")
+    val pilotControlled: Boolean,
+
+    val preset: String? = null,
+    val runways: List<String>,
+    val schedule: String? = null,
+
+    @SerialName("tower_closed")
+    val towerClosed: Boolean
 )
 
 @Serializable

@@ -1340,12 +1340,28 @@
             "title": "Lat",
             "type": "number"
           },
+          "light_notes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/LightingNote"
+            },
+            "title": "Light Notes",
+            "type": "array"
+          },
           "lighting": {
             "default": [],
             "items": {
               "type": "string"
             },
             "title": "Lighting",
+            "type": "array"
+          },
+          "lights": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/LightingSystem"
+            },
+            "title": "Lights",
             "type": "array"
           },
           "lon": {
@@ -11882,6 +11898,154 @@
           "more_gal"
         ],
         "title": "LegProcedure",
+        "type": "object"
+      },
+      "LightingNote": {
+        "description": "A sentence of the remarks the engine could not read as systems: its\ncontractions written out, every other word kept (`words`), and as\nsent (`as_written`).",
+        "properties": {
+          "as_written": {
+            "title": "As Written",
+            "type": "string"
+          },
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "words",
+          "as_written"
+        ],
+        "title": "LightingNote",
+        "type": "object"
+      },
+      "LightingSystem": {
+        "description": "One lighting system: its Chart Supplement legend code (None where its\nname says it all: taxiway lights, the beacon), its name in AIM 2-1, the\nrunways or ends it serves as written, and how it is turned on --\nkeyed on `frequency` (AIM 2-1-8), `clicks` where the remarks give a\ncount, when the tower is closed, preset and turned up, on a\n`schedule`, or on all the time -- with `how` that in a pilot's words\nand `as_written` the sentence it was read from.",
+        "properties": {
+          "as_written": {
+            "title": "As Written",
+            "type": "string"
+          },
+          "brighter": {
+            "title": "Brighter",
+            "type": "boolean"
+          },
+          "clicks": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Clicks"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code"
+          },
+          "continuous": {
+            "title": "Continuous",
+            "type": "boolean"
+          },
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency"
+          },
+          "how": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "How"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "nonstandard": {
+            "title": "Nonstandard",
+            "type": "boolean"
+          },
+          "pilot_controlled": {
+            "title": "Pilot Controlled",
+            "type": "boolean"
+          },
+          "preset": {
+            "anyOf": [
+              {
+                "enum": [
+                  "low",
+                  "medium",
+                  "high"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Preset"
+          },
+          "runways": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Runways",
+            "type": "array"
+          },
+          "schedule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule"
+          },
+          "tower_closed": {
+            "title": "Tower Closed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "name",
+          "runways",
+          "pilot_controlled",
+          "frequency",
+          "clicks",
+          "tower_closed",
+          "preset",
+          "brighter",
+          "schedule",
+          "continuous",
+          "nonstandard",
+          "how",
+          "as_written"
+        ],
+        "title": "LightingSystem",
         "type": "object"
       },
       "LinePoint": {

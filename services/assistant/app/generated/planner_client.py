@@ -337,9 +337,9 @@ def seed_note(*, body: m.SeedNoteRequest | dict[str, Any]) -> m.NoteSeeded:
 _CHECKPOINTS = _Answer(m.Checkpoints)
 
 
-def checkpoints(*, dep: str, dest: str, stops: str | None = None, ahead: bool | None = None) -> m.Checkpoints:
+def checkpoints(*, dep: str, dest: str, stops: str | None = None, ahead: bool | None = None, c: str | None = None) -> m.Checkpoints:
     """GET /api/checkpoints: Checkpoints"""
-    found = _send('GET', '/api/checkpoints', query={'dep': dep, 'dest': dest, 'stops': stops, 'ahead': ahead}, body=None, headers={})
+    found = _send('GET', '/api/checkpoints', query={'dep': dep, 'dest': dest, 'stops': stops, 'ahead': ahead, 'c': c}, body=None, headers={})
     return _CHECKPOINTS.validate_python(found)
 
 
@@ -391,9 +391,9 @@ def copilot_around(*, lat: float, lon: float, dest: str, alternate: str | None =
 _COURSE = _Answer(m.Course)
 
 
-def course(*, dep: str, dest: str, stops: str | None = None) -> m.Course:
+def course(*, dep: str, dest: str, stops: str | None = None, c: str | None = None) -> m.Course:
     """GET /api/course: Course"""
-    found = _send('GET', '/api/course', query={'dep': dep, 'dest': dest, 'stops': stops}, body=None, headers={})
+    found = _send('GET', '/api/course', query={'dep': dep, 'dest': dest, 'stops': stops, 'c': c}, body=None, headers={})
     return _COURSE.validate_python(found)
 
 

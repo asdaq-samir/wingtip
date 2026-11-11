@@ -4,6 +4,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from .airport_lights import LightingNote, LightingSystem
 from .common import Frequency, Metar, Runway, TrafficPattern
 from .plates import ApproachFacts
 
@@ -324,13 +325,16 @@ class AirportPlace(BaseModel):
     #: pilot who taps the R needs to know to ask the owner first.
     private: bool = False
     towered: bool
-    # Its remarks a pilot acts on from the cockpit, in plain English
-    # (wingtip.remarks): the lighting schedule -- lights turned on by keying
-    # the mic -- and the other remarks that count mic clicks, such as the
-    # weather read out on the CTAF. `standard_keying` where the lights
-    # are the pilot's and the remarks do not say how many clicks: AIM
-    # 4-1-9's 7, 5 and 3 apply.
+    # Its remarks a pilot acts on from the cockpit (wingtip.remarks): its
+    # lighting remarks as sent (`lighting`), read by the engine into each
+    # system and how it is turned on (`lights`) and what it could not read
+    # (`light_notes`); the other remarks that count mic clicks, such as the
+    # weather read out on the CTAF, in plain English. `standard_keying`
+    # where the lights are the pilot's and the remarks do not say how many
+    # clicks: AIM 2-1-8's 7, 5 and 3 apply.
     lighting: list[str] = []
+    lights: list[LightingSystem] = []
+    light_notes: list[LightingNote] = []
     radio_notes: list[str] = []
     standard_keying: bool = False
     pattern: TrafficPattern | None = None

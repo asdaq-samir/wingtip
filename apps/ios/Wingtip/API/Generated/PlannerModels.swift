@@ -110,7 +110,9 @@ struct APIAirportPlace: Codable, Equatable, Sendable {
     var frequencies: [APIFrequency]
     var ident, kind: String
     var lat: Double
+    var lightNotes: [APILightingNote]?
     var lighting: [String]?
+    var lights: [APILightingSystem]?
     var lon: Double
     var metar: APIMetar?
     var military: String?
@@ -137,7 +139,9 @@ struct APIAirportPlace: Codable, Equatable, Sendable {
         case airspaceClass
         case chartSupplementUrl
         case elevationFt
-        case frequencies, ident, kind, lat, lighting, lon, metar, military
+        case frequencies, ident, kind, lat
+        case lightNotes
+        case lighting, lights, lon, metar, military
         case modelledWeather
         case municipality, name
         case nearbyMetar
@@ -157,6 +161,37 @@ struct APIFrequency: Codable, Equatable, Sendable {
     var description: String?
     var frequencyMhz: Double?
     var type: String?
+}
+
+/// A sentence of the remarks the engine could not read as systems: its
+/// contractions written out, every other word kept (`words`), and as
+/// sent (`as_written`).
+// MARK: - APILightingNote
+struct APILightingNote: Codable, Equatable, Sendable {
+    var asWritten, words: String
+}
+
+/// One lighting system: its Chart Supplement legend code (None where its
+/// name says it all: taxiway lights, the beacon), its name in AIM 2-1, the
+/// runways or ends it serves as written, and how it is turned on --
+/// keyed on `frequency` (AIM 2-1-8), `clicks` where the remarks give a
+/// count, when the tower is closed, preset and turned up, on a
+/// `schedule`, or on all the time -- with `how` that in a pilot's words
+/// and `as_written` the sentence it was read from.
+// MARK: - APILightingSystem
+struct APILightingSystem: Codable, Equatable, Sendable {
+    var asWritten: String
+    var brighter: Bool
+    var clicks: Int?
+    var code: String?
+    var continuous: Bool
+    var frequency, how: String?
+    var name: String
+    var nonstandard, pilotControlled: Bool
+    var preset: String?
+    var runways: [String]
+    var schedule: String?
+    var towerClosed: Bool
 }
 
 // MARK: - APIMetar

@@ -260,6 +260,27 @@ class AltitudeStep(BaseModel):
     to: Annotated[str | None, Field(title='To')] = None
 
 
+class ApproachCoded(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    code: Annotated[str | None, Field(title='Code')] = None
+    fix: Annotated[str | None, Field(title='Fix')] = None
+    ft: Annotated[int | None, Field(title='Ft')] = None
+
+
+class ApproachRunway(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    ident: Annotated[str | None, Field(title='Ident')] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    tch_ft: Annotated[int | None, Field(title='Tch Ft')] = None
+    tdze_ft: Annotated[float | None, Field(title='Tdze Ft')] = None
+    threshold_ft: Annotated[int | None, Field(title='Threshold Ft')] = None
+
+
 class Candidate(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -1683,6 +1704,36 @@ class LegHold(BaseModel):
     turns: Annotated[int | None, Field(title='Turns')] = None
 
 
+class LightingNote(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    as_written: Annotated[str | None, Field(title='As Written')] = None
+    words: Annotated[str | None, Field(title='Words')] = None
+
+
+class LightingSystem(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    as_written: Annotated[str | None, Field(title='As Written')] = None
+    brighter: Annotated[bool | None, Field(title='Brighter')] = None
+    clicks: Annotated[int | None, Field(title='Clicks')] = None
+    code: Annotated[str | None, Field(title='Code')] = None
+    continuous: Annotated[bool | None, Field(title='Continuous')] = None
+    frequency: Annotated[str | None, Field(title='Frequency')] = None
+    how: Annotated[str | None, Field(title='How')] = None
+    name: Annotated[str | None, Field(title='Name')] = None
+    nonstandard: Annotated[bool | None, Field(title='Nonstandard')] = None
+    pilot_controlled: Annotated[bool | None, Field(title='Pilot Controlled')] = None
+    preset: Annotated[
+        Literal['low', 'medium', 'high'] | None, Field(title='Preset')
+    ] = None
+    runways: Annotated[list[str] | None, Field(title='Runways')] = None
+    schedule: Annotated[str | None, Field(title='Schedule')] = None
+    tower_closed: Annotated[bool | None, Field(title='Tower Closed')] = None
+
+
 class LinePoint(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -2459,18 +2510,24 @@ class PlannedStep(BaseModel):
     to_nm: Annotated[float | None, Field(title='To Nm')] = None
 
 
-class PlateOverlay(BaseModel):
+class PlateCorner(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    circling: Annotated[bool | None, Field(title='Circling')] = None
-    cycle: Annotated[str | None, Field(title='Cycle')] = None
-    east: Annotated[float | None, Field(title='East')] = None
-    fixes: Annotated[list[str] | None, Field(title='Fixes')] = None
-    name: Annotated[str | None, Field(title='Name')] = None
-    north: Annotated[float | None, Field(title='North')] = None
-    south: Annotated[float | None, Field(title='South')] = None
-    west: Annotated[float | None, Field(title='West')] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+
+
+class PlatePage(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    bottom_left: PlateCorner | None = None
+    bottom_right: PlateCorner | None = None
+    height: Annotated[int | None, Field(title='Height')] = None
+    top_left: PlateCorner | None = None
+    top_right: PlateCorner | None = None
+    width: Annotated[int | None, Field(title='Width')] = None
 
 
 class PointOffFix(BaseModel):
@@ -3804,6 +3861,17 @@ class AltitudeOption(BaseModel):
     unflyable_legs: Annotated[int | None, Field(title='Unflyable Legs')] = None
 
 
+class ApproachFacts(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    coded: Annotated[
+        list[ApproachCoded] | None, Field(title='Coded', validate_default=True)
+    ] = []
+    levels: Annotated[list[str] | None, Field(title='Levels')] = []
+    runway: ApproachRunway | None = None
+
+
 class ChartLayer(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -4639,11 +4707,27 @@ class PipelineStatus(BaseModel):
     training: TrainingReadiness | None = None
 
 
+class PlateOverlay(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    circling: Annotated[bool | None, Field(title='Circling')] = None
+    cycle: Annotated[str | None, Field(title='Cycle')] = None
+    east: Annotated[float | None, Field(title='East')] = None
+    fixes: Annotated[list[str] | None, Field(title='Fixes')] = None
+    name: Annotated[str | None, Field(title='Name')] = None
+    north: Annotated[float | None, Field(title='North')] = None
+    page: PlatePage | None = None
+    south: Annotated[float | None, Field(title='South')] = None
+    west: Annotated[float | None, Field(title='West')] = None
+
+
 class ProcedureDrawing(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
     airport: Annotated[str | None, Field(title='Airport')] = None
+    approach: ApproachFacts | None = None
     cycle: Annotated[str | None, Field(title='Cycle')] = None
     final_course_deg: Annotated[int | None, Field(title='Final Course Deg')] = None
     fixes: Annotated[list[ProcedureFix] | None, Field(title='Fixes')] = None
@@ -4869,7 +4953,13 @@ class AirportPlace(BaseModel):
         Literal['large', 'medium', 'small', 'other'] | None, Field(title='Kind')
     ] = None
     lat: Annotated[float | None, Field(title='Lat')] = None
+    light_notes: Annotated[
+        list[LightingNote] | None, Field(title='Light Notes', validate_default=True)
+    ] = []
     lighting: Annotated[list[str] | None, Field(title='Lighting')] = []
+    lights: Annotated[
+        list[LightingSystem] | None, Field(title='Lights', validate_default=True)
+    ] = []
     lon: Annotated[float | None, Field(title='Lon')] = None
     metar: Metar | None = None
     military: Annotated[
