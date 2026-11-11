@@ -192,10 +192,11 @@ close does.
 ### Motion
 
 - Sheets and side panels: the stock Drawer's own slide, 0.45 s on
-  `cubic-bezier(0.32, 0.72, 0, 1)`, transform only, and its own velocity
-  snap (a hard flick may go from the pill all the way up): the Drawer's
+  `cubic-bezier(0.32, 0.72, 0, 1)`, transform only: the Drawer's
   behaviour as it comes, nothing set over it (decision 0018; the owner,
-  2026-11-10 and 2026-11-11, "Just let the drawer do what it does").
+  2026-11-10 and 2026-11-11, "Just let the drawer do what it does"), with
+  one of its own options on: `snapToSequentialPoints`, so a swipe moves
+  one size however fast (the owner, 2026-11-11).
 - What the sheet shows follows its snap point the moment it is set: the
   grabber, the radio's and the map's buttons on its top, the body's layout
   for the size, the pill's row, the figures' compact form, the map's room

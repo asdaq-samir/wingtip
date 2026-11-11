@@ -76,7 +76,7 @@ test("an airport's card has its actions' keys, Alt+F and Alt+S, and the search's
   await page.keyboard.press("s");
   await page.waitForTimeout(300);
   await expect(page).not.toHaveURL(/[?&]stops=KOSH/);
-  // Alt+S, Add as Stop: the field a landing on the way, both ends kept.
+  // Alt+S, Add Stop: the field a landing on the way, both ends kept.
   await page.keyboard.press("Alt+KeyS");
   await expect(page).toHaveURL(/[?&]stops=KOSH/);
   await expect(page).toHaveURL(/[?&]dep=C81/);

@@ -4,7 +4,7 @@ import { shortcutKey } from "../../../lib/shortcutKeys";
 
 /**
  * A card's actions by a letter each on a desktop (the owner, 2026-11-09:
- * the airport card's Alt+F Fly Here and Alt+S Add as Stop, shown on their
+ * the airport card's Alt+F Fly Here and Alt+S Add Stop, shown on their
  * buttons), while `on` and the focus is in no field, menu or
  * dialog. Heard before the page's own letters (useShortcuts' Alt+D,
  * Direct To), in the capture phase, so the card's letter is the one that

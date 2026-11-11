@@ -73,6 +73,8 @@ export function SheetDrawer({
       disablePointerDismissal
       swipeDirection={fromBottom ? "down" : "up"}
       snapPoints={snapPoints}
+      // One size per swipe however fast, the Drawer's own option for it (the owner, 2026-11-11).
+      snapToSequentialPoints
       snapPoint={snapPoint}
       onSnapPointChange={snapped}
       // Never closed. Its Escape, with no card over it (the card's own

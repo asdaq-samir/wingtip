@@ -17,7 +17,7 @@ describe("the airport card's letters on a desktop", () => {
     takeSearchAsk();
   });
 
-  it("F and S run Fly Here and Add as Stop, and D stays the page's Direct To", () => {
+  it("F and S run Fly Here and Add Stop, and D stays the page's Direct To", () => {
     const fly = vi.fn(),
       stop = vi.fn();
     document.addEventListener("keydown", onShortcut);

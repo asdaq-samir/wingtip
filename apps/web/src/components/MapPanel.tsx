@@ -82,9 +82,8 @@ interface Props {
  * leaves the map (insetsOf, read from the Drawer by useSheetCover). The
  * cards over it are its own nested drawers, each with its own snap point
  * (CardStack); the keyboard's inset is the Drawer's
- * (VirtualKeyboardProvider), and a throw goes where the Drawer takes it:
- * its own behaviour, unchanged (the owner, 2026-11-11: "Just let the
- * drawer do what it does"). What it shows -- the grabber, what rides its
+ * (VirtualKeyboardProvider), and a swipe moves one size however fast, by
+ * the Drawer's own snapToSequentialPoints (the owner, 2026-11-11). What it shows -- the grabber, what rides its
  * top, its body's layout, the map's room -- follows its snap point the
  * moment that is set, never held for the slide to end.
  *
