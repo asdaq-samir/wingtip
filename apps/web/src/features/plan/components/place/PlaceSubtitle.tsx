@@ -1,23 +1,24 @@
 import { cn } from "cn";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { TEXT } from "../../../../lib/text";
+import FitLine from "../../../../components/FitLine";
 import { mapsLink } from "./mapsLink";
 
 /**
- * The line under an airport card's ident: its name, then its town as a
- * link in the tint, on one line, as Apple Maps' place card on the web
- * writes "Pier · Streeterville, Chicago" with the place a link (the
- * owner's screenshot, 2026-11-10). The town opens the field in Maps, as
- * the card's Address does (mapsLink); before the card's answer is in, the
+ * The lines under an airport card's ident: its name on a line of its own,
+ * its type set smaller to fit that line rather than wrapping (FitLine),
+ * and its town on the next as a link in the tint (the owner, 2026-11-11:
+ * "Can airport move the city to next line after the name? And fit the
+ * airport name to its line"). The town opens the field in Maps, as the
+ * card's Address does (mapsLink); before the card's answer is in, the
  * town is words alone.
  */
 export default function PlaceSubtitle({ name, where, place }: { name: string; where: string | null; place: AirportPlace | null }) {
   return (
     <>
-      {name}
+      <FitLine testId="place-full-name">{name}</FitLine>
       {where && (
-        <>
-          {" · "}
+        <span className="block truncate">
           {place ? (
             <a
               href={mapsLink(place)}
@@ -31,7 +32,7 @@ export default function PlaceSubtitle({ name, where, place }: { name: string; wh
           ) : (
             <span data-testid="place-town">{where}</span>
           )}
-        </>
+        </span>
       )}
     </>
   );

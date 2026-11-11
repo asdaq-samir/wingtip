@@ -71,7 +71,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-head")).toBeInViewport();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   // The name · the town on one line, the town a link (Apple Maps' place card, 2026-11-10).
-  await expect(card(page).getByTestId("place-where")).toHaveText("Duluth International Airport · Duluth, MN");
+  await expect(card(page).getByTestId(/^place-(full-name|town)$/)).toHaveText(["Duluth International Airport", "Duluth, MN"]);
   await expect(card(page).getByTestId("place-town")).toHaveText("Duluth, MN");
   await expect(card(page).getByTestId("place-ident")).toHaveCount(0);
   // Measured from the route's departure while the pilot's own position is not known.
