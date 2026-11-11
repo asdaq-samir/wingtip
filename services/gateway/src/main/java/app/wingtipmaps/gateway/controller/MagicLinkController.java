@@ -1,9 +1,11 @@
 package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.domain.MagicLink;
+import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.MagicLinkRequest;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import app.wingtipmaps.gateway.security.MagicLinkAuthenticationToken;
+import app.wingtipmaps.gateway.security.ReviewSignIn;
 import app.wingtipmaps.gateway.security.SessionSignIn;
 import app.wingtipmaps.gateway.security.SignInLanding;
 import app.wingtipmaps.gateway.service.Mailer;
@@ -23,8 +25,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -74,6 +78,8 @@ public class MagicLinkController {
     private final int perClientPerHour;
     private final SlidingWindowLimiter recentRequests = new SlidingWindowLimiter(THROTTLE_WINDOW);
     private final SecureRandom random = new SecureRandom();
+    /** The store reviewers' fixed code (ReviewSignIn); off where no bean is. */
+    private ReviewSignIn review = ReviewSignIn.OFF;
 
     public MagicLinkController(
             MagicLinkRepository magicLinks,
@@ -96,6 +102,11 @@ public class MagicLinkController {
             throw new IllegalStateException(
                     "APP_PUBLIC_BASE_URL (app.public-base-url) must be set when MAIL_HOST is: the sign-in link is built from it");
         }
+    }
+
+    @Autowired(required = false)
+    void setReview(ReviewSignIn review) {
+        this.review = review;
     }
 
     @Operation(
@@ -171,6 +182,12 @@ public class MagicLinkController {
     @PostMapping(value = "/verify", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<String> verify(
             @RequestParam String token, HttpServletRequest request, HttpServletResponse response) {
+        // The review account's fixed code, where the owner turned it on for a
+        // store review (ReviewSignIn): that account alone, no link used up.
+        Optional<String> reviewer = review.accountFor(token);
+        if (reviewer.isPresent()) {
+            return signedIn(pilots.fromVerifiedEmail(reviewer.get()), request, response);
+        }
         String tokenHash = hash(token);
         // Atomic consume-if-usable, not find-then-filter-then-save: the
         // old sequence had a window where two requests racing the same
@@ -182,9 +199,12 @@ public class MagicLinkController {
                     .body("This link has expired or was already used. Ask for a new one from the Pilot menu.");
         }
         MagicLink link = magicLinks.findByTokenHash(tokenHash).orElseThrow();
-        var pilot = pilots.fromVerifiedEmail(link.getEmail());
-        Authentication authentication = new MagicLinkAuthenticationToken(pilot.getEmail());
+        return signedIn(pilots.fromVerifiedEmail(link.getEmail()), request, response);
+    }
 
+    private static ResponseEntity<String> signedIn(
+            Pilot pilot, HttpServletRequest request, HttpServletResponse response) {
+        Authentication authentication = new MagicLinkAuthenticationToken(pilot.getEmail());
         SessionSignIn.signIn(authentication, request, response);
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(SignInLanding.after(pilot, request)))

@@ -271,6 +271,16 @@ app:
   magic-link:
     per-address-per-hour: ${APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR:5}
     per-client-per-hour: ${APP_MAGIC_LINK_PER_CLIENT_PER_HOUR:20}
+  # The store reviewers' sign-in (ReviewSignIn, docs/store/listing.md
+  # "Review access"): with it on, the one review account below may sign
+  # in with a fixed code in place of an emailed link, since a reviewer
+  # has no access to its inbox. Off unless REVIEW_SIGN_IN=true; the owner
+  # turns it on while a build is in review and off after. Only that
+  # address, only that code (at least 20 characters), nobody else.
+  review-sign-in:
+    enabled: ${REVIEW_SIGN_IN:false}
+    email: ${REVIEW_SIGN_IN_EMAIL:}
+    code: ${REVIEW_SIGN_IN_CODE:}
   # Where the chart tiles come from when they are published to a CDN
   # (the AWS stack sets this to its CloudFront domain, and the planner
   # tells the browser the same base): the content security policy has
