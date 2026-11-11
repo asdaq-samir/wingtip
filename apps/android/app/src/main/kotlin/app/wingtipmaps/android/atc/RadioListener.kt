@@ -13,6 +13,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.core.content.ContextCompat
+import app.wingtipmaps.android.voice.RecognizerErrors
 import app.wingtipmaps.android.voice.VoiceInput
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -62,6 +63,8 @@ class RadioListener private constructor(private val context: Context) : AtcListe
     private var recognizer: SpeechRecognizer? = null
     private var nextId = 1
     private var waiting: CompletableDeferred<String?>? = null
+    /** Passing recognizer errors in a row, since the last words heard. */
+    private var failures = 0
 
     override fun start() {
         if (_listening.value) return
@@ -104,6 +107,7 @@ class RadioListener private constructor(private val context: Context) : AtcListe
             return false
         }
         _error.value = null
+        failures = 0
         return true
     }
 
@@ -152,6 +156,9 @@ class RadioListener private constructor(private val context: Context) : AtcListe
             current = null
             waiting?.complete(text)
             if (text != null) put(Heard(id, text, System.currentTimeMillis(), final = true))
+            // Heard again: a passing error said before is over.
+            if (failures > 0) _error.value = null
+            failures = 0
             again()
         }
 
@@ -163,8 +170,14 @@ class RadioListener private constructor(private val context: Context) : AtcListe
                 stop()
                 return
             }
-            // A silence, a miss or a busy recognizer: listened to again.
-            again()
+            // A silence or a miss: listened to again, nothing said. Any
+            // other error is said (RecognizerErrors); one that passes is
+            // tried again, up to MAX_IN_A_ROW, and the rest stop the listening.
+            val outcome = RecognizerErrors.of(error)
+            if (outcome.words == null) return again()
+            failures++
+            _error.value = "ATC: ${outcome.words}"
+            if (outcome.again && failures < RecognizerErrors.MAX_IN_A_ROW) again() else stop()
         }
 
         override fun onReadyForSpeech(params: Bundle?) {}

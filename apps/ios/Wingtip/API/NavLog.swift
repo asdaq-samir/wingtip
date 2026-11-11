@@ -143,7 +143,7 @@ enum NavLog {
         // The pilot's own edits of the route (RouteExtras): points'
         // altitudes, holds, crossings, a procedure flown direct.
         query.merge(extra) { _, own in own }
-        let request = Planner.get("/api/navlog", query)
+        let request = Planner.get("/api/navlog", query, timeout: Planner.read)
         return Planner.lines({ request }) { try decode(line: $0) }
     }
 }

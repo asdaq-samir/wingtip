@@ -13,6 +13,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.util.concurrent.TimeUnit
 
 /**
  * Posts a report to the gateway (POST /api/diagnostics), which keeps the
@@ -23,7 +24,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 object DiagnosticsReporter {
     /** The app's one client, without its cookies: the gateway would read
      *  the session's cookie as the pilot's, and a report is no one's. */
-    private val client: OkHttpClient by lazy { Gateway.client.newBuilder().cookieJar(CookieJar.NO_COOKIES).build() }
+    private val client: OkHttpClient by lazy { Gateway.client.newBuilder().cookieJar(CookieJar.NO_COOKIES).callTimeout(Gateway.WRITE_TIMEOUT_S, TimeUnit.SECONDS).build() }
 
     /** Sent and taken (any answer but a server's error: a 400 would come
      *  back the same next time, so its faults are not kept for it). */

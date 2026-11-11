@@ -86,6 +86,10 @@ export function noMicrophone(): string {
 /** Why nothing listens: speech cannot be recognised on this device. */
 const NOT_HERE = "Speech can't be recognised on this device; type the clearance instead.";
 
+/** Why nothing listens: this browser's recognizer is a server's, and
+ *  there is no connection to it. */
+export const NEEDS_CONNECTION = "Speech needs a connection in this browser; type the clearance instead.";
+
 /** The recognizer's refusal or failure in a pilot's words. A refusal is
  *  undone where it was given, in the browser's settings for the site: a
  *  website has no entry of its own in iOS's Settings, and words saying
@@ -96,9 +100,11 @@ function errorWords(code: string): string {
     const safari = /Safari\//.test(ua) && !/Chrome|Chromium|CriOS|FxiOS|EdgiOS|Edg\//.test(ua);
     return `Microphone or speech recognition access was refused; allow it in ${safari ? "Safari's" : "the browser's"} settings for this website.`;
   }
-  // On the device a network failure should not happen; the words say
-  // what is true either way, and never suggest a server.
-  if (code === "network" || code === "language-not-supported") return NOT_HERE;
+  // Safari's recognizer is Apple's server's, not the device's: with no
+  // connection it fails with "network", which was said as the device
+  // being unable to (the offline audit, 2026-11-10). Said as what it is.
+  if (code === "network") return NEEDS_CONNECTION;
+  if (code === "language-not-supported") return NOT_HERE;
   if (code === "audio-capture") return noMicrophone();
   return code;
 }

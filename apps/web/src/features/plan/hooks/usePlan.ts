@@ -20,6 +20,9 @@ import { ownOf } from "../../../lib/airplane/figures";
 import { useCheckpointNotes } from "./useCheckpointNotes";
 import { useNarrative } from "./useNarrative";
 import { briefingLegs } from "./briefingLegs";
+import { useDirectHere } from "./directOnDevice";
+import { useSaved } from "../../../lib/fromCache";
+import { sameRoute, stripType } from "./planMessages";
 
 /**
  * The plan as TanStack Query sees it: one query per stage, keyed on
@@ -366,7 +369,10 @@ export function usePlan({
     enabled: routeKnown && withCheckpoints && !fullIn && (ready === undefined ? slowFor === routeId : !ready),
   });
   const pointToPoint = withCheckpoints && !fullIn && !!asEntered.data?.some((m) => m.type === "leg");
-  const streamed = useMemo(() => (pointToPoint ? asEntered.data : navlog.data) ?? [], [pointToPoint, asEntered.data, navlog.data]);
+  // A Direct To worked out on the device while the planner cannot be had (directOnDevice).
+  const here = useDirectHere(dep, course, navlog, asEntered);
+  const log = here.messages ?? (pointToPoint ? asEntered.data : navlog.data);
+  const streamed = useMemo(() => log ?? [], [log]);
   // The log before an altitude is asked for, kept on the page till the new
   // one is in whole: the pilot commanded the altitude, and is not to wait
   // on it (the owner, 2026-10-20) -- the stream starts over, and the log,
@@ -418,7 +424,7 @@ export function usePlan({
   const navStage = navlog.isFetching && !holding ? ((stages.at(-1) as { detail?: string } | undefined)?.detail ?? null) : null;
 
   // Which stage is outstanding, for the progress toast.
-  const stage: "course" | "checkpoints" | "navlog" | null = course.isLoading
+  const stage: "course" | "checkpoints" | "navlog" | null = here.courseLoading
     ? "course"
     : checkpoints.isLoading
       ? "checkpoints"
@@ -459,9 +465,9 @@ export function usePlan({
   const logLegs = useMemo(
     () =>
       totals && !local && finalLog
-        ? briefingLegs(course.data ?? null, withCheckpoints && !pointToPoint ? (checkpoints.data?.selected ?? NONE) : NONE, legs)
+        ? briefingLegs(here.courseData ?? null, withCheckpoints && !pointToPoint ? (checkpoints.data?.selected ?? NONE) : NONE, legs)
         : null,
-    [totals, local, finalLog, course.data, withCheckpoints, pointToPoint, checkpoints.data, legs],
+    [totals, local, finalLog, here.courseData, withCheckpoints, pointToPoint, checkpoints.data, legs],
   );
   // Asked for with the legs once they have held a moment, and the last
   // ones kept while the same route is planned again: the runway picked into
@@ -504,7 +510,7 @@ export function usePlan({
     // Not on the previous route's placeholder course once the route is
     // closed: asked for two empty idents, it toasted "Airport identifier
     // '' not found".
-    enabled: briefable && !!course.data,
+    enabled: briefable && !!here.courseData,
     staleTime: 5 * 60_000,
     refetchInterval: 5 * 60_000,
     // The answer before kept up only while the route is the same -- a new
@@ -528,20 +534,22 @@ export function usePlan({
 
   // The same object while the briefing is: a new one at every render drew
   // every tab of the panel again with it.
-  const hasCourse = !!course.data;
+  const hasCourse = !!here.courseData;
+  // A kept briefing's time is the network's, not the reload's (lib/fromCache).
+  const briefingSavedAt = useSaved((v) => v.saved["/api/planner/briefing"] ?? NaN);
   const briefingState = useMemo((): BriefingState => {
     if (!briefable || !hasCourse) return { state: "waiting" };
     if (briefing.data) {
       return {
         state: "ready",
         data: briefing.data,
-        fetchedAt: briefing.dataUpdatedAt,
+        fetchedAt: Number.isFinite(briefingSavedAt) ? briefingSavedAt : briefing.dataUpdatedAt,
         refreshError: briefing.error ? describeError(briefing.error, "could not refresh the briefing") : null,
       };
     }
     if (briefing.error) return { state: "failed", detail: describeError(briefing.error, "could not load the briefing") };
     return { state: "loading" };
-  }, [briefable, hasCourse, briefing.data, briefing.dataUpdatedAt, briefing.error]);
+  }, [briefable, hasCourse, briefing.data, briefing.dataUpdatedAt, briefing.error, briefingSavedAt]);
 
   const notes = useCheckpointNotes(dep, dest, stops);
   // Written from the checkpoints' nav log, not the route as entered.
@@ -551,7 +559,7 @@ export function usePlan({
   return {
     // Not the previous route's, kept as a placeholder, once the route is
     // closed (the capsule's X): the map is the chart alone then.
-    course: briefable ? (course.data ?? null) : null,
+    course: briefable ? (here.courseData ?? null) : null,
     candidates: withCheckpoints ? (checkpoints.data?.candidates ?? NONE) : NONE,
     selected: withCheckpoints ? (checkpoints.data?.selected ?? NONE) : NONE,
     // The nav log's own rows' checkpoints: none while it is the route as
@@ -569,21 +577,11 @@ export function usePlan({
     // The nav log on screen is the route as entered, its checkpoints' own
     // still to come in its place.
     pointToPoint,
+    directOnDevice: here.onDevice,
     totals: local ? (localFlight.data ?? null) : totals,
     local,
     briefing: briefingState,
     ...notes,
     ...narrative,
   };
-}
-
-/** Whether a briefing's query key ("briefing", dep, dest, via, …) is for
- *  this route. */
-function sameRoute(key: readonly unknown[], route: [string, string, string]): boolean {
-  return route.every((part, i) => key[i + 1] === part);
-}
-
-function stripType<T extends { type: string }>(message: T): Omit<T, "type"> {
-  const { type: _type, ...rest } = message;
-  return rest;
 }

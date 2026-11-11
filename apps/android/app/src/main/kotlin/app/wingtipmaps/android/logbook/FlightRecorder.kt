@@ -61,6 +61,12 @@ class FlightRecorder(private val file: File, private val nowMs: () -> Long = Sys
         write()
     }
 
+    /** The recording and its file gone: signed out, or the account deleted. */
+    fun wipe() {
+        _recorded.value = Recorded()
+        file.delete()
+    }
+
     override fun forget() {
         _recorded.value = Recorded()
         write()

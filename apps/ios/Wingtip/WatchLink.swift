@@ -6,9 +6,8 @@ import WatchConnectivity
 /// as the application context, which WatchConnectivity keeps and delivers
 /// when the watch wakes, and the watch's questions answered as messages.
 /// The watch links no engine, so the nearest airports it asks for are
-/// fetched here from the planner (Planner.nearest); the phone's cycle
-/// packs answer the airspace at a point only, not the fields near one,
-/// so with no signal the watch is told so. The messages are the structs
+/// fetched here from the planner, or with no signal from the phone's
+/// cycle packs (Planner.nearestOrPacks), without weather. The messages are the structs
 /// in Shared/WatchMessages.swift.
 @MainActor
 final class WatchLink: NSObject, WCSessionDelegate {
@@ -95,7 +94,8 @@ final class WatchLink: NSObject, WCSessionDelegate {
 
     nonisolated static func nearest(_ request: NearestRequest) async -> NearestReply {
         do {
-            let fields = try await Planner.nearest(lat: request.lat, lon: request.lon, limit: request.limit)
+            // With no planner, the phone's packs (PackFields), without weather.
+            let fields = try await Planner.nearestOrPacks(lat: request.lat, lon: request.lon, limit: request.limit).fields
             let airports = fields.map {
                 WatchAirport(ident: $0.ident, name: $0.name, lat: $0.lat, lon: $0.lon,
                              distanceNm: $0.distanceNm, bearingDeg: $0.bearingDeg, flightCategory: $0.flightCategory)

@@ -21,7 +21,7 @@ class AccountExport(val fileName: String, val bytes: ByteArray)
 /** Everything the gateway keeps of the pilot (GET /api/me/export), as one
  *  JSON file named by its Content-Disposition. */
 suspend fun Gateway.exportAccount(): AccountExport =
-    client.newCall(request("GET", "/api/me/export")).await().use { response ->
+    streaming.newCall(request("GET", "/api/me/export")).await().use { response ->
         val bytes = response.body.bytes()
         if (response.code != 200) throw Gateway.Refusal(response.code, words(bytes.decodeToString()))
         AccountExport(exportFileName(response.header("Content-Disposition")), bytes)

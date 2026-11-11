@@ -5,6 +5,7 @@ import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
 import { REQUEST_ID_HEADER, newRequestId } from "./requestId";
 import { airplaneQuery } from "./airplaneQuery";
+import { TimedRequest, markInFlight } from "./inFlight";
 import type { AirportAtis, AirportRvr, CopilotAround, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses } from "./types";
 import type {
   Aircraft,
@@ -201,12 +202,11 @@ export async function failIfNotOk(response: Response): Promise<void> {
   if (!response.ok) throw new ApiError(await detailOf(response), response.status);
 }
 
-/** The two rules above, for an openapi-fetch client, and each call's
- *  request id (./requestId). */
+/** The two rules above, each call's request id (./requestId) and its wait in flight (./inFlight). */
 const csrfAndFailures: Middleware = {
   onRequest({ request }) {
     for (const [name, value] of Object.entries(csrfHeaders(request.method))) request.headers.set(name, value);
-    request.headers.set(REQUEST_ID_HEADER, newRequestId());
+    markInFlight(request).headers.set(REQUEST_ID_HEADER, newRequestId());
     return request;
   },
   async onResponse({ request, response }) {
@@ -233,7 +233,7 @@ const csrfAndFailures: Middleware = {
  * POST to the planner failed before it left: a rating, a note, a build.
  * Made here, the body is the JSON openapi-fetch serialised.
  */
-export class GatewayRequest extends Request {
+export class GatewayRequest extends TimedRequest {
   constructor(input: RequestInfo | URL, init?: RequestInit) {
     super(typeof input === "string" ? input.replace(/^([a-z]+:\/\/[^/]+)?\/api\//i, "$1/api/planner/") : input, init);
   }
@@ -254,7 +254,7 @@ const assistant = createClient<AssistantPaths>({ baseUrl: "", Request: GatewayRe
 assistant.use(csrfAndFailures);
 
 /** The Spring Boot endpoints, on this same origin. */
-export const gateway = createClient<GatewayPaths>({ baseUrl: "" });
+export const gateway = createClient<GatewayPaths>({ baseUrl: "", Request: TimedRequest });
 gateway.use(csrfAndFailures);
 
 /** A schema's shape as openapi-fetch hands it back: every fixed-length

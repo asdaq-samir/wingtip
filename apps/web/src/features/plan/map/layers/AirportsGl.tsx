@@ -1,3 +1,4 @@
+import { useWeatherAgeCredit } from "../../../../lib/map/marks/weatherAge";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { CircleLayerSpecification, MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useRef } from "react";
@@ -56,6 +57,8 @@ const SELECTED_IDENT: SymbolLayerSpecification = {
 };
 /** Ten minutes, as a METAR's colour can change by the hour. */
 const WEATHER_EVERY_MS = 10 * 60_000;
+/** The marks' weather's address, as the worker marks an answer it kept. */
+const IN_VIEW_PATH = "/api/planner/airports/in-view";
 
 type Props = {
   selected: { ident: string; lat: number; lon: number } | null;
@@ -148,7 +151,13 @@ function TileAirports(props: Props) {
     setSelectedAirport(map, selectedIdent);
   }, [map, selectedIdent]);
   const { box, level } = useGlView();
-  const { data: inView } = useQuery({ ...airportsQuery(box, level), refetchInterval: WEATHER_EVERY_MS, placeholderData: keepPreviousData });
+  const { data: inView, dataUpdatedAt } = useQuery({
+    ...airportsQuery(box, level),
+    refetchInterval: WEATHER_EVERY_MS,
+    placeholderData: keepPreviousData,
+  });
+  // Their age in the map's small print once it is old (weatherAge).
+  useWeatherAgeCredit(IN_VIEW_PATH, dataUpdatedAt);
   const alongRoute = useAlongRoute(route);
   const colours = useMemo(() => {
     const out = new Map<string, string>();

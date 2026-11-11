@@ -112,6 +112,14 @@ final class FlightRecorder {
         write()
     }
 
+    /// The track gone from the phone, its file with it: the pilot signed
+    /// out or deleted the account (Session.forgetDevice).
+    func erase() {
+        kept = Kept()
+        endedAt = nil
+        try? FileManager.default.removeItem(at: file)
+    }
+
     private func write() {
         lastWritten = Date()
         try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)

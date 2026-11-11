@@ -5,6 +5,7 @@ import app.wingtipmaps.android.ai.OnPhoneAsk
 import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.diagnostics.Diagnostics
+import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.offline.KeptForAir
 import org.maplibre.android.MapLibre
 import org.maplibre.android.module.http.HttpRequestUtil
@@ -26,6 +27,9 @@ class WingtipApplication : Application() {
         // The answers kept for the air (KeptForAir), where every screen's
         // model can reach them: only a folder's name, nothing read yet.
         KeptForAir.of(this)
+        // The cycle packs' store, for the models that read them with no
+        // planner (PhoneFields): a folder's name, nothing read yet.
+        CyclePacks.of(this)
         // Ask on the phone (Gemini Nano with the app's own tools): only the
         // application kept, nothing asked of AICore until Ask is used.
         OnPhoneAsk.attach(this)

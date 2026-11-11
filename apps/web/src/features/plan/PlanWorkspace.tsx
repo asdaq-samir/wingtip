@@ -29,7 +29,6 @@ import FlightFoot from "./components/workspace/FlightFoot";
 import RouteHead from "./components/workspace/RouteHead";
 import RouteControls from "./components/workspace/RouteControls";
 import { listSearchOf } from "./components/workspace/listSearch";
-import SheetTitle from "./components/search/SheetTitle";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
 
@@ -596,9 +595,6 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // The one search, the panel's first row, and at rest the pill
         // itself (MapPanel), where the tabs were.
         bar: <OneSearchField model={search} inputRef={vm.searchInput} list={listSearchOf(vm)} />,
-        // Over it the app's name and the account (Apple Maps' web title, 2026-11-10).
-        title: <SheetTitle onClose={search.sent ? search.cancel : undefined} />,
-        titleAtFull: search.focused || !!search.typed,
         // The route's figures pinned at FPL's foot at every height, the pill
         // too, at the pilot's ask; FPL's alone, at the owner's ask ("Fpl can
         // show calculations but other tabs should show something else").

@@ -359,8 +359,6 @@ export default function MapPage({ mode }: { mode: Mode }) {
                     toEdge={!!pieces.toEdge}
                     // The first row (the one search), under its title; put away under a card (MapPanel).
                     bar={pieces.bar}
-                    title={pieces.title}
-                    titleAtFull={!!pieces.titleAtFull}
                     layer={consoleLayer ? "console" : pieces.alone ? "card" : "tab"}
                     foot={consoleLayer ? undefined : pieces.foot}
                     cardOver={!!pieces.cardOver}

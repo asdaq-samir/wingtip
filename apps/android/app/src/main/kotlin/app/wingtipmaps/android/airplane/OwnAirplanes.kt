@@ -112,6 +112,17 @@ class OwnAirplanes(private val store: OwnStore, private val remote: OwnRemote = 
         _offer.value = emptyList()
     }
 
+    /** What the phone keeps of the pilot's airplanes gone, and what it
+     *  knew of the account's: signed out, or the account deleted. */
+    fun forget() {
+        store.clear()
+        fetched = emptyList()
+        offered = false
+        _signedIn.value = false
+        _offer.value = emptyList()
+        _records.value = emptyMap()
+    }
+
     private fun account(key: String): AircraftDto? = fetched.firstOrNull { OwnRecord.key(it.tailNumber, it.typeDesignator) == key }
 
     companion object {

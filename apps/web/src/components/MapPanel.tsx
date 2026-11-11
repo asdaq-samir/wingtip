@@ -48,11 +48,6 @@ interface Props {
   /** The planner's one search, the developer's places (DevBar): the
    *  sheet's first row, and at rest the pill itself. */
   bar?: ReactNode;
-  /** Over the first row, the app's name and the account (Apple Maps' web
-   *  title, 2026-11-10): on a phone gone all the way up, unless kept there
-   *  (`titleAtFull`, the search in use); on a desktop always. */
-  title?: ReactNode;
-  titleAtFull?: boolean;
   /** What the panel is showing: the workspace, a card open alone over it,
    *  or the console's layer (the account page). */
   layer?: "tab" | "card" | "console";
@@ -125,7 +120,6 @@ export default function MapPanel(props: Props) {
     return !now.onPhone || !now.ready || prefersReducedMotion() || (!!now.detents && now.detents[target] === now.detents[now.at]);
   });
   const { size, snap, moving } = life;
-  const titleShown = !!props.title && barShown && !(onPhone && size === "full" && !props.titleAtFull);
   const hasPill = !!bar || !!compact;
   const atPill = size === "peek" && hasPill;
 
@@ -148,7 +142,6 @@ export default function MapPanel(props: Props) {
     size,
     moving,
     barInPill: !flying,
-    titleInPill: !!props.title && barShown,
     grabberOver: bottomSheet,
     footShown,
     pillChrome,
@@ -255,7 +248,6 @@ export default function MapPanel(props: Props) {
     footShown,
     cardsUp,
     barShown,
-    titleShown,
     toEdge,
     edgeInset,
     halfChrome,

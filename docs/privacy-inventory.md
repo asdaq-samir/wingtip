@@ -241,26 +241,30 @@ location while flying (`OwnShip.swift`).
 
 ## The iOS app's privacy manifest
 
-`apps/ios/Wingtip/PrivacyInfo.xcprivacy` is to declare, from the first
+`apps/ios/Wingtip/PrivacyInfo.xcprivacy` declares, from the first
 table:
 
 - `NSPrivacyTracking`: false, with no tracking domains;
 - `NSPrivacyCollectedDataTypes`, all for App Functionality and none for
-  tracking: Email Address, Name, Phone Number, User ID and Other User
-  Content, linked; Precise Location twice, linked (a track saved to a
-  flight) and not linked (the live position sent to answer); Crash Data
-  and Performance Data, not linked;
+  tracking: Email Address, Name, Phone Number, User ID, Other User
+  Content and Precise Location, linked; Crash Data and Performance Data,
+  not linked. Precise Location is declared once, linked: App Store
+  Connect takes one answer a data type, and a track saved to a flight is
+  linked, though the live position sent to answer (Nearest, what is
+  ahead) is not kept;
 - `NSPrivacyAccessedAPITypes`: UserDefaults (`CA92.1`, the app's own
   settings, and `1C8F.1`, the App Group the widgets read), File Timestamp
-  (`C617.1`) and Disk Space (`85F4.1`, the free space Downloads shows);
-  the widget extension has a manifest of its own for its UserDefaults.
+  (`C617.1`) and Disk Space (`85F4.1`, the free space Downloads shows,
+  never sent off the phone). Each code checked against Apple's
+  NSPrivacyAccessedAPITypeReasons list on 2026-11-10.
 
-As of 2026-11-10 the file declares Email Address and Other User Content
-(linked), Precise Location (not linked), Crash and Performance Data, and
-UserDefaults (`CA92.1`) and File Timestamp; Name, Phone Number, User ID,
-the linked track, the App Group and Disk Space reasons and the widget's
-manifest come with the iPhone's privacy fixes (the store audit's P3, B1,
-B2). Check the file against this list before each submission.
+The widget extension has its own, `apps/ios/WingtipWidgets/PrivacyInfo.xcprivacy`:
+nothing collected, UserDefaults under `1C8F.1` for the App Group it
+reads. The Watch app's, `apps/ios/WingtipWatch/PrivacyInfo.xcprivacy`,
+declares nothing, as it calls no required-reason API; it is there so a
+reason added later has its place. `WingtipTests/StorePrivacyTests` reads
+the app's bundled manifest and fails where one of these is missing.
+Check the files against this list before each submission.
 
 ## Kept without an account, and for how long
 

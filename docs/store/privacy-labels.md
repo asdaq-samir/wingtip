@@ -64,7 +64,7 @@ Crashlytics, Firebase or analytics kit: a grep of `apps/ios` finds none).
 
 | Apple's type | What | Where |
 |---|---|---|
-| Location: Precise Location | The airplane's position, sent to the planner to answer (Nearest, the copilot's look ahead, `/api/copilot/around`) and not kept | `OwnShip.swift`, `Copilot/Copilot.swift`; `PrivacyInfo.xcprivacy` declares it unlinked |
+| Location: Precise Location | The airplane's position, sent to the planner to answer (Nearest, the copilot's look ahead, `/api/copilot/around`) and not kept | `OwnShip.swift`, `Copilot/Copilot.swift`; `PrivacyInfo.xcprivacy` has one Precise Location entry, linked for the saved track |
 | Diagnostics: Crash Data | MetricKit's crash, hang, CPU and disk-write exception diagnostics (the call stack, the exception or signal), with the app's version, the iOS version and phone or tablet; no account, no cookie, no position or route; kept 30 days | `Diagnostics/DiagnosticsReporter.swift`, `DiagnosticsReport.swift`; the gateway's `diagnostics` |
 | Diagnostics: Performance Data | MetricKit's daily launch and resume times, hang time, scroll hitches, peak memory and the exits the system forced for memory, the same way; kept 400 days | `Diagnostics/DiagnosticsReporter.swift`; the gateway's `speed_samples` |
 
@@ -116,14 +116,15 @@ Not collected, though the app uses them on the device:
 
 ### The privacy manifest
 
-`apps/ios/Wingtip/PrivacyInfo.xcprivacy` must declare the same rows:
+`apps/ios/Wingtip/PrivacyInfo.xcprivacy` declares the same rows:
 Email Address, Name, Phone Number, User ID, Other User Content and
-Precise Location (the saved track), linked; Precise Location (the live
-position), Crash Data and Performance Data, not linked; all for App
-Functionality. privacy-inventory.md, "The iOS app's privacy manifest",
-lists what the file declares today and its required-reason APIs; the
-missing rows come with the iPhone's privacy fixes. Product Interaction
-joins them if the Claude caps ever count on iOS.
+Precise Location, linked (one entry a type, as App Store Connect asks one
+answer a type: the saved track makes it linked, the live position sent to
+answer being kept nowhere); Crash Data and Performance Data, not linked;
+all for App Functionality. Its required-reason APIs and the widget
+extension's own manifest are in privacy-inventory.md, "The iOS app's
+privacy manifest". Product Interaction joins them if the Claude caps ever
+count on iOS.
 
 ## Google Play: Data safety
 
@@ -179,19 +180,21 @@ Permissions Play will see, each with what it is for
 (`apps/android/app/src/main/AndroidManifest.xml`):
 `ACCESS_FINE_LOCATION` and `ACCESS_COARSE_LOCATION` (the airplane on the
 chart, asked in the foreground only; never `ACCESS_BACKGROUND_LOCATION`),
-`FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_LOCATION` (while flying, the
-position keeps being read with the app in the background, for the
-flight recorder and the alerts ahead, shown as a notification,
-`flight/OwnShip.kt`), `RECORD_AUDIO` and `FOREGROUND_SERVICE_MICROPHONE`
-(the ATC copilot, only when turned on), `CHANGE_WIFI_MULTICAST_STATE` and
-`FOREGROUND_SERVICE_CONNECTED_DEVICE` (a cockpit ADS-B receiver),
-`POST_NOTIFICATIONS` and `POST_PROMOTED_NOTIFICATIONS` (the flight's
-notification, promoted as a live update while flying), `INTERNET` and
-`ACCESS_NETWORK_STATE`. Play's foreground-service declaration form wants
-a description, the impact if deferred, a use case and a short video for
-each of the three types (`location`, `microphone`, `connectedDevice`);
-the shot list in preview-video.md covers the copilot and the recorder,
-and the receiver's in-app setup is still to film (launch-checklist.md).
+`FOREGROUND_SERVICE` and `FOREGROUND_SERVICE_LOCATION` (while flying, from
+the pilot's Start Flight until the airplane slows, the position keeps
+being read with the app in the background, for the flight recorder, the
+alerts ahead and the live update, shown as a notification,
+`flight/OwnShip.kt`, `flight/StartFlightAsk.kt`), `RECORD_AUDIO` and
+`FOREGROUND_SERVICE_MICROPHONE` (the ATC copilot, only when turned on),
+`CHANGE_WIFI_MULTICAST_STATE` and `FOREGROUND_SERVICE_CONNECTED_DEVICE`
+(a cockpit ADS-B receiver), `POST_NOTIFICATIONS` and
+`POST_PROMOTED_NOTIFICATIONS` (the flight's notification, promoted as a
+live update while flying), `INTERNET` and `ACCESS_NETWORK_STATE`. Play's
+foreground-service declaration form wants a description, the impact if
+deferred, a use case and a short video for each of the three types
+(`location`, `microphone`, `connectedDevice`): foreground-services.md has
+the text for each, and preview-video.md the shots; the receiver's in-app
+setup is still to film (launch-checklist.md).
 
 ## Account deletion
 

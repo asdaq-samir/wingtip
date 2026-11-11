@@ -274,6 +274,21 @@ the terminal switch as the style is built. The style is built again as
 a download lands. The cycle's update, its expiry at 0901Z on the next
 one's date and the sweep once the update is whole are the iPhone's.
 
+With no signal in the air (the offline audit of 2026-11-10): Emergency
+and Nearest rank the packs' fields on the phone (`emergency/PhoneFields`,
+"From this phone, without weather"); a re-plan that fails puts the last
+whole plan back, saying "Not changed: no connection."
+(`plan/PlanShown`); Keep for the Air also keeps each field's own NOTAMs,
+the route's side view and the radar loop's newest frame over the route
+within 12 MB (`offline/KeptLoopTiles`, answered by the client's
+`LoopTileFallback`); Ask's tools read those copies; a stale airport
+weather mark is greyed with its age said (`map/WeatherAge`); and every
+call through `Gateway.client` ends after 10 s (60 s a write), streams and
+downloads going through `Gateway.streaming`. The location foreground
+service runs only from the pilot's Start Flight
+(`flight/StartFlight`), and sign-out or Delete Account forgets everything
+the phone kept of the pilot (`account/PhoneWipe`).
+
 ## Signing in from a link: whose account it is
 
 An emailed sign-in link names no account, and anyone can mail a pilot a
@@ -305,22 +320,30 @@ runner:
 - a push to `main` or to a `claude/native-*` branch: the same and
   `assembleDebug`, the APK kept with the run (`wingtip-native-debug-apk`:
   it installs on any Android phone with "Install unknown apps" allowed);
-  on `main`'s pushes and the night, `assembleRelease` too, and R8's
-  mapping file kept 90 days (`wingtip-native-release-mapping`), to read a
-  release build's crash reports by (`scripts/ci/android_build.sh`);
+  on `main`'s pushes and the night, `assembleRelease` and `bundleRelease`
+  too, the App Bundle and R8's mapping file kept 90 days
+  (`wingtip-native-release`; the mapping to read a release build's crash
+  reports by), signed with the upload key where the repository has it,
+  and every 64-bit native library checked for 16 KB pages
+  (`scripts/ci/android_build.sh`, `scripts/ci/android_16k.py`; below);
 - every night, and by hand: then `:app:connectedDebugAndroidTest` on an
   API 35 x86_64 emulator (reactivecircus/android-emulator-runner), and
   the release build's `ReleaseEngineTest` (below).
-- No Google Play lane yet: the shell's (android.yml) stays until the
-  gates.
+- No upload to Google Play from CI: the bundle is uploaded by hand
+  (Releasing to Google Play, below).
 
 `WINGTIP_HOST` is the build's host (the repo variable `WINGTIP_URL`'s);
 it is the gateway's address and the App Links domain in the manifest.
 The emailed sign-in link is followed only as `https` on that host
 (`Links.parse`), since any app can send MainActivity a link, and only after
-the pilot's yes in a stock alert naming the address this phone asked a
-link for and the account it would sign out of (`SignInDialog`; the
-security audit's M1, 2026-11-10).
+the pilot's yes in a stock alert naming the account the link is for, as
+the gateway says without spending it (`POST /api/auth/magic-link/account`,
+above: "Sign in as a•••@icloud.com?"), and the account it would sign out
+of (`SignInDialog`, `SignInAsk`; the security audit's M1, 2026-11-10).
+Sign In waits for that answer; a used or expired link (404) offers a new
+link to the address this phone asked for in its place, a 429 says to try
+later, and with the gateway out of reach the alert names the address
+asked for, as before.
 `ANDROID_NATIVE_APP_ID` would be the package name, once there is a Play
 lane for it.
 
@@ -374,8 +397,55 @@ App Bundle sends a phone one ABI's.
   stripped serializer shows as an "engine ... failed" line in the log,
   or a crash. The debug build's `EngineTest` holds the rules themselves
   to the shared fixtures.
-- There is no release signing yet (no Play lane): `assembleRelease`
-  writes an unsigned APK.
+- **Signing.** The release is signed with the upload key when
+  `WINGTIP_UPLOAD_KEYSTORE` (a keystore file) and
+  `WINGTIP_UPLOAD_PASSWORD` are set (`app/build.gradle.kts`, the
+  `upload` signing config; the key's alias `upload` unless
+  `WINGTIP_UPLOAD_ALIAS` says otherwise), and unsigned without them. CI
+  sets them from the repository's secrets on `main`'s pushes and the
+  night only.
+- **16 KB pages.** Google Play: "Starting February 1, 2027, if your app
+  updates don't support 16 KB memory page sizes, you won't be able to
+  release these updates"
+  (developer.android.com/guide/practices/page-sizes). NDK r30 links at
+  16 KB by default and AGP 9.5 stores the libraries uncompressed and 16
+  KB aligned; `scripts/ci/android_16k.py` proves it on every release
+  build, reading each `arm64-v8a` and `x86_64` library's PT_LOAD
+  alignment in the APK and the bundle and each stored library's offset
+  in the APK (what `zipalign -c -P 16` checks). The 32-bit
+  `armeabi-v7a` is outside the rule and only listed.
+
+## Releasing to Google Play
+
+New apps on Play upload an Android App Bundle signed with an upload
+key, and Play signs what it serves with an app-signing key it keeps
+(Play App Signing, support.google.com/googleplay/android-developer/answer/9842756).
+The owner's steps, once:
+
+1. **Make the upload key** (it is not the app-signing key, and can be
+   reset through Play if lost):
+   `keytool -genkeypair -v -keystore upload.jks -alias upload -keyalg RSA -keysize 4096 -validity 10000`,
+   one password for the store and the key.
+2. **Give it to CI:** the repository's secrets `ANDROID_UPLOAD_KEYSTORE`
+   (`base64 -i upload.jks | pbcopy`) and `ANDROID_UPLOAD_PASSWORD`. Keep
+   `upload.jks` and the password outside the repository.
+3. **Create the app in the Play Console** and pick the package name for
+   good (`ANDROID_NATIVE_APP_ID`, `app.wingtipmaps.android.native` by
+   default; docs/store/listing.md): Play never lets it change.
+4. **Upload the first bundle** (`wingtip-native-release` from a `main`
+   run, `app-release.aab`) to internal testing. Play App Signing is on
+   for a new app: let Google generate the app-signing key. A new
+   personal developer account then runs a closed test with at least 12
+   testers for 14 days before production.
+5. **Restrict the Google Maps key** (`GOOGLE_MAPS_ANDROID_KEY`) to the
+   package name and the SHA-256 of Play's app-signing certificate (Play
+   Console › Test and release › App integrity), as well as the upload
+   key's for builds installed outside Play.
+6. **Each release:** raise `ANDROID_VERSION_CODE` above the last
+   upload's (the workflow passes none yet, so set it for the run, or in
+   `app/build.gradle.kts`), take the bundle from that run, and upload it.
+   The foreground-service declarations and the Data safety form are in
+   docs/store (foreground-services.md, privacy-labels.md).
 
 ## The flight pieces, and what is still to come
 

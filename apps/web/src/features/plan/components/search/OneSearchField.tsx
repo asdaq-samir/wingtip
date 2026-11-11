@@ -11,6 +11,7 @@ import { useIsDesktop } from "../../../../hooks/use-desktop";
 import { askSearch, searchKeys, useSearchPick } from "../../../../lib/oneSearch";
 import { TEXT } from "../../../../lib/text";
 import { useVoice, VoiceButton } from "../../../voice";
+import { AccountButton } from "../../../pilot";
 import type { OneSearchModel } from "../../hooks/useOneSearch";
 
 /**
@@ -22,10 +23,12 @@ import type { OneSearchModel } from "../../hooks/useOneSearch";
  * microphone beside it, Ask by voice (features/voice): on-device speech,
  * the words appearing in the field as they are said, as a phone's
  * dictation types them, as the field's own trailing button; and Cancel
- * beside it while the field is in use, as iOS's search fields have it. The
- * account button went to the title row over it (SheetTitle), so the field
- * runs the sheet's width, as Apple Maps' on the web does (the owner's
- * screenshot, 2026-11-10). ⌘K or Ctrl K focuses it from anywhere, its keys
+ * beside it while the field is in use -- a search sent let go with it too,
+ * as Apple Maps' Cancel does -- as iOS's search fields have it. The
+ * account button at the row's end while the field is not in use, as on
+ * iOS and Android: the title row that held it over the field, with the
+ * app's mark and name, went for the map's room (the owner, 2026-11-10);
+ * the name stays the page's heading, for a screen reader alone. ⌘K or Ctrl K focuses it from anywhere, its keys
  * shown in it on a desktop: the command palette it replaced.
  */
 export default function OneSearchField({
@@ -73,6 +76,7 @@ export default function OneSearchField({
   if (list && !model.pick && !model.direct) return <SearchField {...list} />;
   return (
     <div className="flex w-full items-center gap-2" role="search">
+      <h1 className="sr-only">Wingtip Maps</h1>
       {/* 46 tall, a white card on the sheet's grey, its own 44-point hit
           area (the sheet audit's F-P2, 2026-11-10: the title row over it
           the same height). */}
@@ -179,6 +183,7 @@ export default function OneSearchField({
           Cancel
         </button>
       )}
+      {!using && <AccountButton />}
     </div>
   );
 }

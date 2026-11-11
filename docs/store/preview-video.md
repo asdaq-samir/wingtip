@@ -104,6 +104,8 @@ and the script.
 Upload the same 27 s film to YouTube (unlisted is fine), ads off, and
 paste its URL in the Play Console's Promo video field. Play also asks,
 in the foreground-service declaration, for a short video of each
-foreground service in use: the flight recorder (location) and the ATC
-copilot (microphone) on the Android emulator, recorded with
-`adb shell screenrecord`.
+foreground service in use: Start Flight and the flight's position with
+the screen off (location), the ATC copilot (microphone) and the ADS-B
+receiver (connected device) on the Android emulator, recorded with
+`adb shell screenrecord`; the shot for each and the text to paste are in
+[foreground-services.md](foreground-services.md).

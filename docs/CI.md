@@ -313,7 +313,10 @@ once its branch is current again: merge main into it by hand.
 
 A browser test tagged `@flight-critical` runs on main's push too, with
 the smoke set: the journey a pilot cannot be without in the air (plan, nav
-log, emergency, offline), kept to one. Its engine and planner twins run in
+log, emergency, offline), and the same with the connection gone before
+anything is asked (the page loaded again offline where a worker holds it;
+the nav log, Emergency, Nearest and Direct To each answer or say "No
+connection"), kept to those two. Its engine and planner twins run in
 every pull request's `guards`.
 
 A test belongs in the smoke set (`{ tag: "@smoke" }` on the `test(...)`)

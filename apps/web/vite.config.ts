@@ -7,6 +7,7 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { IN_FLIGHT_READS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
 import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
 import { MANIFEST } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
@@ -20,7 +21,7 @@ import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/s
 // then moved into the served directory a file at a time by rename, which
 // a reader sees either before or after, never half done: the hashed
 // chunks first, which nothing yet names, then the service worker, and
-// index.html last. The files of builds replaced within the last hour stay
+// index.html last. The files of builds replaced within the last day stay
 // beside them, for pages already open that have yet to load a lazy chunk
 // (main.tsx reloads a page whose chunk has gone, on vite:preloadError);
 // PUBLISHED lists each build's files and when it was replaced. The service
@@ -30,7 +31,10 @@ const publishDir = process.env.VITE_PUBLISH_DIR;
 
 const STAGING = ".dist-next";
 const PUBLISHED = ".published.json";
-const STALE_MS = 60 * 60 * 1000;
+// A day, not an hour: a page left open overnight on the phone asked for
+// a lazy chunk the next morning that had gone, and fell to "Part of the
+// app didn't load" (the owner's screenshot, 2026-11-10).
+const STALE_MS = 24 * 60 * 60 * 1000;
 type Published = { files: string[]; replacedAt?: number }[];
 
 function filesUnder(dir: string): string[] {
@@ -100,23 +104,6 @@ const tesseractFiles: Plugin = {
     for (const [name, from] of TESSERACT_FILES) {
       this.emitFile({ type: "asset", fileName: `tesseract/${name}`, source: readFileSync(require.resolve(from)) });
     }
-  },
-};
-
-// An answer the service worker gives from its cache rather than the
-// network, marked so the page can say so (lib/fromCache): the header
-// carries when the network gave it, the response's own Date, which the
-// planner and the gateway send on every answer. Only on the NetworkFirst
-// caches below, where the cache answers only when the network has not --
-// the steady ones answer from the cache every time, by design. Written
-// out whole inside the function: Workbox copies it into the generated
-// worker as text, so it can use nothing from this file.
-const markFromCache = {
-  cachedResponseWillBeUsed: async ({ cachedResponse }: { cachedResponse?: Response | null }) => {
-    if (!cachedResponse) return null;
-    const headers = new Headers(cachedResponse.headers);
-    headers.set("X-From-Cache", cachedResponse.headers.get("date") ?? "");
-    return new Response(cachedResponse.body, { status: cachedResponse.status, statusText: cachedResponse.statusText, headers });
   },
 };
 
@@ -232,6 +219,10 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          // The map's overlay archive and the radar's pictures, kept for the
+          // air (vite-plugins/workboxRules).
+          OVERLAY_ARCHIVE,
+          RADAR_FRAMES,
           {
             // What a field offers on the ground and its pictures' list: the network when there is one, the last answer
             // when there is not, in a cache of their own so a route's forty
@@ -352,6 +343,8 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
+          // In flight, a shorter wait on the network (vite-plugins/workboxRules).
+          IN_FLIGHT_READS,
           {
             // The planner's answers: the network when there is one
             // (the winds change), the last answer when there is not --

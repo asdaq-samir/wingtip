@@ -31,6 +31,10 @@ final class Emergency {
     private(set) var ranked: Ranked?
     private(set) var problem: String?
     private(set) var asking = false
+    /// Where the fields came from: the planner's, with their weather,
+    /// runways and frequencies, or this iPhone's cycle packs, without
+    /// (deviceFields), which the list then says.
+    private(set) var from: Planner.FieldsFrom = .planner
     /// The field picked; the engine's first until one is.
     var pickedIdent: String?
     /// The emergency checklist's section picked; checklist_section's until one is.
@@ -65,8 +69,10 @@ final class Emergency {
     /// The fields round the airplane, asked where the key changed, and
     /// ranked by the engine at every fix. The pilot's own glide ratio goes
     /// with the airplane, over its type's (or alone, for an own airplane of
-    /// no stock type).
-    func refresh(fix: OwnShip.Fix?, aircraft: String?, glideRatio: Double? = nil) async {
+    /// no stock type). With no answer from the planner in inFlight's five
+    /// seconds, the fields are the packs' round where the airplane is now
+    /// (deviceFields), never an old list from miles back.
+    func refresh(fix: OwnShip.Fix?, aircraft: String?, glideRatio: Double? = nil, pins: PackFields.Pins = FlightFigures.packPins) async {
         guard open != nil, let fix else { return }
         let key = Self.key(fix, aircraft: aircraft, glideRatio: glideRatio)
         if key != askedKey {
@@ -79,10 +85,24 @@ final class Emergency {
                     "glide_ratio": glideRatio.map { String($0) },
                 ], timeout: Planner.inFlight)
                 askedKey = key
+                from = .planner
                 problem = nil
             } catch {
                 guard !Task.isCancelled else { return }
-                if answer == nil { problem = "The fields couldn't be had: the planner didn't answer. Try again." }
+                do {
+                    if let kept = try Self.deviceFields(fix: fix, aircraft: aircraft, glideRatio: glideRatio, pins: pins) {
+                        answer = kept
+                        from = .device
+                        askedKey = key
+                        problem = nil
+                    } else if answer == nil || from == .device {
+                        answer = nil
+                        ranked = nil
+                        problem = "No fields: the planner didn't answer and no chart data is kept on this iPhone here. Keep the route for the air before you fly."
+                    }
+                } catch {
+                    problem = "The fields couldn't be ranked on this iPhone: \(error.localizedDescription)"
+                }
             }
         }
         rank(fix)
@@ -95,6 +115,31 @@ final class Emergency {
         } catch {
             problem = "The fields couldn't be ranked: \(error.localizedDescription)"
         }
+    }
+
+    /// The fields round the airplane from the cycle packs kept on the phone
+    /// (PackFields), as the planner's answer is read: each one's distance
+    /// and true course the engine's best_fields', and no elevation, runway,
+    /// METAR, frequency or phone, which the packs do not hold. The airplane
+    /// is the pilot's own glide ratio alone (its POH's Section 3, as the
+    /// planner sends an own airplane's), with no best-glide speed or wind,
+    /// so the engine works the reach in still air only where it can; none
+    /// with no airplane picked or no ratio, and the nearest come first.
+    /// Nil where no pack is kept round the airplane.
+    static func deviceFields(fix: OwnShip.Fix, aircraft: String?, glideRatio: Double?, pins: PackFields.Pins) throws -> APIEmergencyFields? {
+        let at = fix.coordinate
+        guard let kept = try PackFields.ranked(lat: at.latitude, lon: at.longitude, altitudeFt: fix.altitudeFt, speedKt: fix.groundspeedKt,
+                                               limit: 12, pins: pins), !kept.pins.isEmpty else { return nil }
+        let byIdent = Dictionary(kept.pins.map { ($0.ident, $0) }, uniquingKeysWith: { a, _ in a })
+        let fields = kept.ranked.fields.map { field in
+            APIEmergencyField(bearingDeg: field.courseDeg, distanceNm: field.distanceNm, elevationFt: nil, frequencies: nil, ident: field.ident,
+                              lat: field.lat, lon: field.lon, metar: nil, military: byIdent[field.ident]?.military != nil, name: field.name,
+                              phone: nil, isPrivate: field.private, runways: [], towered: field.towered)
+        }
+        let airplane = aircraft.flatMap { name in
+            glideRatio.map { APIEmergencyAirplane(glide: APIGlideFigures(ratio: $0, source: "The pilot's own figure, from the airplane's handbook"), name: name) }
+        }
+        return APIEmergencyFields(airplane: airplane, fields: fields, wind: nil)
     }
 
     /// What to do with no airplane picked (the owner, 2026-11-09): the

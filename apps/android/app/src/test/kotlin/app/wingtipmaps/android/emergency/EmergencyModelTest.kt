@@ -111,6 +111,37 @@ class EmergencyModelTest {
     }
 
     @Test
+    fun withNoPlannerTheFieldsAreThePhonesAndSaidSo() {
+        val offline = java.io.IOException("no route to host")
+        val model = EmergencyModel(
+            { _, _, _, _, _ -> throw offline },
+            Rules(),
+            onPhone = { _, _, _, _, _ -> EmergencyFields(fields = listOf(field("C81", 3.4, 45.0))) },
+            work = main.dispatcher,
+        )
+        model.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "")
+        model.took(fix, trackMagDeg = null)
+        val s = model.state.value
+        assertTrue(s.onPhone)
+        assertNull(s.problem)
+        assertEquals("C81", s.picked!!.ident)
+    }
+
+    @Test
+    fun withNeitherThePlannersFailureIsSaidInPlainWords() {
+        val model = EmergencyModel(
+            { _, _, _, _, _ -> throw java.io.IOException("failed to connect to /10.0.2.2") },
+            Rules(),
+            onPhone = { _, _, _, _, _ -> throw PhoneFields.NoPacks() },
+            work = main.dispatcher,
+        )
+        model.start(aircraft = "c172", airplaneName = "C172", callsign = null, checklist = "")
+        model.took(fix, trackMagDeg = null)
+        assertEquals("The fields could not be had: there is no connection to Wingtip.", model.state.value.problem)
+        assertFalse(model.state.value.onPhone)
+    }
+
+    @Test
     fun thePilotsOwnWordsOpenIt() {
         assertTrue(EmergencyOpen.asked("Mayday mayday"))
         assertTrue(EmergencyOpen.asked("engine failure"))

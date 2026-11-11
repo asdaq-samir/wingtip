@@ -102,7 +102,11 @@ class WeatherLoop private constructor(private val context: Context, private val 
                 // Kept as it comes, and the kept list where the network fails
                 // (KeptForAir): its frames' tiles the map's cache may hold.
                 val had = KeptForAir.had(KeptForAir.WEATHER_LOOP, kind.kind, LoopAnswer.serializer()) { fetch(kind) }
-                val answer = had.value
+                // From the kept list, only the frames whose tiles were kept
+                // over the route (KeptLoopTiles), where any were: the others
+                // would play blank.
+                val tiled = if (had.kept) Gateway.loopTiles.frames() else emptySet()
+                val answer = had.value.let { a -> if (tiled.isEmpty()) a else a.copy(frames = a.frames.filter { it.valid in tiled }) }
                 _state.update {
                     val same = it.frames.map(LoopFrame::valid) == answer.frames.map(LoopFrame::valid)
                     it.copy(

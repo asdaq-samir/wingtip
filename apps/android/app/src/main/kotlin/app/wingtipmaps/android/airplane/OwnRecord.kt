@@ -129,5 +129,8 @@ class OwnStore(private val read: () -> String?, private val write: (String) -> U
 
     fun remove(key: String) = save(all() - key)
 
+    /** Every record on the phone gone. */
+    fun clear() = save(emptyMap())
+
     private fun save(records: Map<String, OwnRecord>) = write(Gateway.json.encodeToString(Kept(records)))
 }

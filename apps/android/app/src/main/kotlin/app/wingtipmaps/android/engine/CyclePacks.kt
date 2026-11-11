@@ -152,7 +152,7 @@ class CyclePacks(private val root: File) {
     private suspend fun fetchPack(cycle: String, region: String): ByteArray? {
         val request = Planner.get("/api/cycle-pack/$cycle/$region.pack")
         return runCatching {
-            Gateway.client.newCall(request).await().use { response ->
+            Gateway.streaming.newCall(request).await().use { response ->
                 if (response.code != 200) null else response.body.bytes()
             }
         }.getOrNull()
@@ -201,6 +201,10 @@ class CyclePacks(private val root: File) {
     companion object {
         @Volatile
         private var shared: CyclePacks? = null
+
+        /** The app's store, made at launch (WingtipApplication); none in a
+         *  JVM test, where nothing is kept. */
+        val current: CyclePacks? get() = shared
 
         /** The app's one store of packs, under filesDir/cycle-packs. */
         fun of(context: Context): CyclePacks =

@@ -4,6 +4,7 @@ import type { ChartInfo } from "./api/types";
 import { keptStore } from "./storage";
 import { signedInPilot } from "./pilotCache";
 import { clearProblem, raiseProblem, showError } from "./problems";
+import { whenBack } from "./whenBack";
 
 declare module "@tanstack/react-query" {
   interface Register {
@@ -27,9 +28,17 @@ declare module "@tanstack/react-query" {
  * No retries and no refetch on focus: the planner's calls are chart
  * reads, model inferences and streams of legs, and a pilot switching
  * back to the tab does not want the nav log recomputed under them.
+ *
+ * Asked with no connection too ("offlineFirst"), so the service worker's
+ * kept answers reach the page in the air; TanStack's "online" paused them
+ * unasked (the offline audit's gap 1). What it did not keep fails at once,
+ * "No connection" in place (QueryState); a mutation, into its alert.
  */
 export const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+  defaultOptions: {
+    queries: { retry: false, refetchOnWindowFocus: false, networkMode: "offlineFirst" },
+    mutations: { networkMode: "offlineFirst" },
+  },
   queryCache: new QueryCache({
     onError: (error, query) => {
       const silent = query.meta?.silent;
@@ -94,26 +103,6 @@ const failingWith = new Map<string, string>();
  * fails too.
  */
 const askedAgain = new Set<string>();
-
-export function whenBack(
-  run: () => void,
-  doc: Pick<Document, "visibilityState" | "addEventListener" | "removeEventListener"> = document,
-  afterMs = 1000,
-) {
-  const ready = () => doc.visibilityState === "visible" && globalThis.navigator?.onLine !== false;
-  const done = () => {
-    doc.removeEventListener("visibilitychange", go);
-    globalThis.removeEventListener?.("online", go);
-  };
-  function go() {
-    if (!ready()) return;
-    done();
-    setTimeout(run, afterMs);
-  }
-  doc.addEventListener("visibilitychange", go);
-  globalThis.addEventListener?.("online", go);
-  go();
-}
 
 /** A failure's problem goes once every query it was about answers, or
  *  is no longer asked for: a route changed or closed. With no close of

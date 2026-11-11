@@ -26,7 +26,7 @@
     <string name="voice_radio_busy">The radio is being listened to; stop it to ask by voice.</string>
     <string name="said_clear_search">Clear the search</string>
     <string name="nothing_heard">Nothing was heard.</string>
-    <string name="allow_microphone">Allow the microphone to say it.</string>
+    <string name="allow_microphone">Allow the microphone to ask by voice. What you say is recognised on this phone and never leaves it.</string>
     <string name="your_flight">Your Flight</string>
     <string name="no_flight">No flight yet</string>
     <string name="no_flight_line">Search for where to, or tap to plan one.</string>
@@ -290,6 +290,9 @@
     <string name="about_chart_edition">Chart Edition</string>
     <string name="about_cycle_packs">Cycle Packs</string>
     <string name="about_planning_aid">A Planning Aid</string>
+    <!-- The first launch's notice (about/PlanningAidNotice), the terms' heading. -->
+    <string name="planning_aid_title">A Planning Aid, Not for Navigation</string>
+    <string name="planning_aid_accept">I Understand</string>
     <string name="about_planning_aid_text">Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).</string>
     <string name="about_credits">Credits</string>
     <string name="about_legal">Legal</string>
@@ -500,7 +503,8 @@
     <string name="welcome_rules">VFR or IFR</string>
     <string name="welcome_rules_line">How you usually fly. Change it any time in the plan.</string>
     <string name="welcome_location">Location</string>
-    <string name="welcome_location_line">Wingtip plans from where you are and shows your airplane on the chart.</string>
+    <!-- What location is for, said before Android asks (store audit S1): in flight it goes on with the screen off only after Start Flight. -->
+    <string name="welcome_location_line">Wingtip shows your airplane on the chart and finds the fields near you. In flight, once you tap Start Flight, it keeps following your position with the screen off until you land, for the alerts ahead and the path flown.</string>
     <string name="welcome_notifications">Notifications</string>
     <string name="welcome_notifications_line">Wingtip tells you when something on your route changes: a TFR, the weather turning.</string>
     <string name="welcome_finish">Ready to Fly</string>
@@ -508,9 +512,18 @@
     <string name="welcome_sample">Open Sample Flight</string>
     <string name="welcome_own">Plan My Own</string>
     <string name="welcome_again">Show Welcome Again</string>
+    <!-- Emergency and Nearest worked out from the cycle packs, the planner out of reach (PhoneFields). -->
+    <string name="from_this_phone">From this phone, without weather</string>
+    <!-- Start Flight, at flying speed (flight/StartFlightAsk): the location service only on this tap. -->
+    <string name="start_flight_title">Start Flight?</string>
+    <string name="start_flight_line">You\'re at flying speed. Start Flight keeps your position, the alerts ahead and the path flown going with the screen off until you land, with a notification while it does.</string>
+    <string name="start_flight">Start Flight</string>
+    <!-- The map's grey weather marks, their age in the engine's words (WeatherAge). -->
+    <string name="weather_marks_age">Airport weather: %1$s</string>
     <string name="microphone">Microphone</string>
     <string name="loading">Loading</string>
-    <string name="microphone_line">Wingtip listens to the radio to write down your clearance. Speech is recognised on this phone and never leaves it.</string>
+    <!-- What the microphone is for, both uses named (store audit S1): the radio and voice questions. -->
+    <string name="microphone_line">Wingtip listens to the radio to write down your clearance, and hears the questions you ask it by voice. Speech is recognised on this phone and never leaves it.</string>
     <!-- The trip planner (the web's features/tripPlanner words). -->
     <string name="trip_chip">Plan a trip…</string>
     <string name="trip_title">Plan a Trip</string>

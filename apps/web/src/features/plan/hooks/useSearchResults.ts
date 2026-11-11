@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { create } from "zustand";
 import { api } from "../../../lib/api/client";
 import type { NearestAirport } from "../../../lib/api/types";
-import { placeOf } from "../../../lib/airportIndex";
+import { placeOf, useAirportIndex } from "../../../lib/airportIndex";
+import { nearestOnDevice } from "../../../lib/fieldsOnDevice";
+import { noConnection } from "../../../lib/problems";
 import { NO_FILTERS, filterFields, readQuery, vfrAtTime, type SearchFilters } from "../lib/searchFilters";
 
 /** Where a search sent looks round: a field named, own ship, or the
@@ -72,21 +74,43 @@ const MOST = 25;
 /** The fields a search sent found and its filters keep, nearest first --
  *  the list and the map's marks read the same answer (react-query's cache).
  *  With "VFR at…" on, the planner is asked for each field's forecast then
- *  too (`at`, the top of that hour). */
-export function useSearchResultRows(): { rows: NearestAirport[]; all: number; loading: boolean; failed: boolean } {
+ *  too (`at`, the top of that hour). Where the planner cannot be had --
+ *  no connection, or it failed -- the fields from the airport index the
+ *  browser keeps, ranked by the engine (lib/fieldsOnDevice), said so
+ *  (`onDevice`); `offline`, none to be had for want of a connection. */
+export function useSearchResultRows(): {
+  rows: NearestAirport[];
+  all: number;
+  loading: boolean;
+  failed: boolean;
+  onDevice: boolean;
+  offline: boolean;
+} {
   const sent = useSearchResults((s) => s.sent);
   const filters = useSearchResults((s) => s.filters);
   const round = (n: number) => Math.round(n * 20) / 20;
   const lat = round(sent?.near.lat ?? 0),
     lon = round(sent?.near.lon ?? 0);
   const forecastAt = vfrAtTime(filters.vfrInHours) ?? undefined;
-  const { data, isPending, isError } = useQuery({
+  const asked = useQuery({
     queryKey: ["nearest", lat, lon, MOST, forecastAt ?? null],
     queryFn: () => api.nearestAirports(lat, lon, MOST, forecastAt),
     enabled: !!sent,
     staleTime: 10 * 60_000,
     meta: { silent: true },
   });
+  const index = useAirportIndex(!!sent, !!sent);
+  const unanswered = !asked.data && (asked.isError || noConnection(asked));
+  const onDevice = unanswered && !!index && !!sent;
+  const device = useMemo(() => (onDevice && index && sent ? nearestOnDevice(index, sent.near, MOST) : null), [onDevice, index, sent]);
+  const data = asked.data ?? device;
   const rows = useMemo(() => (data ? filterFields(data, filters) : []), [data, filters]);
-  return { rows, all: data?.length ?? 0, loading: !!sent && isPending, failed: isError };
+  return {
+    rows,
+    all: data?.length ?? 0,
+    loading: !!sent && asked.isPending && !unanswered,
+    failed: unanswered && !device,
+    onDevice: !asked.data && !!device,
+    offline: noConnection(asked),
+  };
 }

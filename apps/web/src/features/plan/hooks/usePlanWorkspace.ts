@@ -278,9 +278,9 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // The runways picked at the route's fields (useRunwayPicks).
   const { pickedPatterns, patternFocus, autoPicked, pickPattern, preselectPattern, pickedTakeoffs, setTakeoff, preselectTakeoff } =
     useRunwayPicks({ searchParams, setSearchParams });
-  // The address's one-change settings (usePlanSetters).
-  const { changeLocalMin, setGround, directToPoint, setHold, directToChartPoint, changeDepart, changeAltitudeChoice } =
-    usePlanSetters(setSearchParams);
+  // The address's one-change settings (usePlanSetters), a Direct To worked out on the device offline.
+  const setters = usePlanSetters(setSearchParams, s);
+  const { changeLocalMin, setGround, directToPoint, setHold, directToChartPoint, changeDepart, changeAltitudeChoice } = setters;
   const { selected } = s;
   // The course with each stop's time on the ground, so every row built
   // from it (navLogRows) is timed from when the airplane leaves again.

@@ -13,7 +13,6 @@ import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogMessage
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -22,6 +21,7 @@ import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.KeptPlan
+import app.wingtipmaps.android.plan.PlanShown
 import app.wingtipmaps.android.route.RouteEdits
 import app.wingtipmaps.android.route.RouteUndo
 import kotlinx.coroutines.CancellationException
@@ -36,7 +36,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.IOException
 
 /**
  * The route being planned and what the planner has said of it so far: the
@@ -97,6 +96,8 @@ class Plan(app: Application) : AndroidViewModel(app) {
 
     private var running: Job? = null
     private var keepingPacks: Job? = null
+    /** The plan last shown whole, put back where a re-plan fails (PlanShown). */
+    private var shown: PlanShown? = null
 
     init {
         restore()
@@ -135,10 +136,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
     }
 
     /** Cancel Direct: the route as it was before it. */
-    fun cancelDirect() {
-        val was = _state.value.was ?: return
-        plan(was.dep, was.dest, was.stops)
-    }
+    fun cancelDirect() = _state.value.was?.let { plan(it.dep, it.dest, it.stops) }
 
     /** A Route Leg's Remove: the stop taken out of the route. */
     fun removeStop(ident: String) = restop(RouteUndo.Kind.REMOVED, ident, RouteEdits.without(_state.value.stops, ident))
@@ -244,6 +242,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                         }
                         is NavLogMessage.Done -> {
                             _state.update { it.copy(legs = fresh.toList(), totals = message.totals, stage = null, plannedAtMs = System.currentTimeMillis(), kept = false) }
+                            shown = PlanShown.of(_state.value)
                             keep()
                             keepForTheAir()
                             holdWhenPlanned()
@@ -254,12 +253,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                // With no connection the plan kept stands, in silence; a
-                // planner's own refusal is said as it is.
-                _state.update {
-                    val said = if (it.legs.isEmpty() || e !is IOException) Problems.say("The route could not be planned", e) else it.problem
-                    it.copy(problem = said, stage = null)
-                }
+                // The plan shown before back whole, never a half-changed one, and why.
+                val (back, reverted) = PlanShown.failed(_state.value, shown, e)
+                _state.value = back
+                if (reverted) undo.take()
             }
             _state.update { it.copy(planning = false) }
         }
@@ -370,12 +367,14 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 course = kept.course, legs = kept.legs, totals = kept.totals, altitudeFt = kept.altitudeFt, depart = kept.depart,
                 plannedAtMs = kept.plannedAtMs, kept = true)
         }
+        shown = PlanShown.of(_state.value)
         plan()
     }
 
     /** The route cleared, and what was kept of it. */
     fun clear() {
         running?.cancel()
+        shown = null
         _state.value = State(aircraft = _state.value.aircraft)
         store.clear()
     }

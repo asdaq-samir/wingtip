@@ -2,16 +2,11 @@ package app.wingtipmaps.android.flight
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.pm.ServiceInfo
 import android.location.Location
-import android.os.Build
-import android.os.IBinder
 import android.os.Looper
-import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.location.LocationCompat
@@ -23,7 +18,6 @@ import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.underway
 import app.wingtipmaps.android.logbook.FlightRecorder
-import app.wingtipmaps.android.notify.Notifications
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationResult
@@ -49,12 +43,18 @@ import kotlinx.coroutines.withContext
  * (/api/airspace/ahead), or the packs on the phone when it cannot be
  * reached (CyclePacks.ahead).
  *
- * Kept going with the screen off or the app put away while the airplane
- * is at flying speed: Android's equivalent of iOS's background location
+ * Kept going with the screen off or the app put away while flying, once
+ * the pilot says so: Android's equivalent of iOS's background location
  * is a foreground service of the location type (OwnShipService), which
  * the system keeps alive, with the persistent notification Android
- * requires for one (Notifications.ownShip). On the ground the reading
- * stops with the app, as any map's does.
+ * requires for one (Notifications.ownShip). It starts only on the pilot's
+ * tap, never by itself: at flying speed the map asks Start Flight
+ * (`offer`, StartFlightAsk), as Google Play's policy for a location
+ * foreground service has it (a use the user starts: Play Console Help,
+ * "Understanding foreground service and full-screen intent
+ * requirements", answer 13392821), and it stops as the airplane slows
+ * below flying speed. On the ground the reading stops with the app, as
+ * any map's does.
  *
  * The permission is the screen's to ask through the system's request,
  * precise and approximate together as Android 12 and later require;
@@ -106,6 +106,12 @@ class OwnShip private constructor(private val context: Context) {
     private var aheadEvery: Ticker.Registration? = null
     private var reading = false
     private var serving = false
+    /** Whether the pilot has said Start Flight, or Not Now, this flight. */
+    private val asked = StartFlight()
+
+    /** At flying speed with the service not started: Start Flight asked. */
+    private val _offer = MutableStateFlow(false)
+    val offer: StateFlow<Boolean> = _offer.asStateFlow()
 
     /** Where the airplane last was, kept across launches so the map opens
      *  on it (the web's useOwnShip lastFix): written at most once a
@@ -121,6 +127,12 @@ class OwnShip private constructor(private val context: Context) {
         } else {
             Double.fromBits(kept.getLong("lat", 0)) to Double.fromBits(kept.getLong("lon", 0))
         }
+
+    /** The last position forgotten: signed out, or the account deleted. */
+    fun forgetLastPosition() {
+        kept.edit { clear() }
+        keptAtMs = 0L
+    }
 
     /** The geoid's conversion, one fix at a time and in order, off the
      *  main thread: its first call reads the model from disk. */
@@ -208,6 +220,10 @@ class OwnShip private constructor(private val context: Context) {
         aheadEvery?.cancel()
         aheadEvery = null
         asking?.cancel()
+        // Own ship turned off ends the flight's service; on again in the
+        // air, Start Flight is asked again.
+        asked.off()
+        _offer.value = false
         serve(false)
     }
 
@@ -227,11 +243,33 @@ class OwnShip private constructor(private val context: Context) {
             }
         }
         // The path flown, and the phone's position kept with the screen
-        // off only while flying: the service is started as the airplane
-        // reaches flying speed and stopped as it slows below it.
-        serve(OwnTrail.of(context).took(fix))
+        // off only while flying and only once the pilot has said Start
+        // Flight: offered as the airplane reaches flying speed, stopped as
+        // it slows below it, when the next flight asks again.
+        flying(OwnTrail.of(context).took(fix))
         // The track the logbook is drawn from, ground and air alike.
         FlightRecorder.of(context).took(fix)
+    }
+
+    private fun flying(now: Boolean) {
+        val (offer, serveNow) = asked.took(now)
+        _offer.value = offer
+        serve(serveNow)
+    }
+
+    /** Start Flight tapped: the service on until the airplane slows below
+     *  flying speed. A tap in the app's own window, so Android 12 and
+     *  later let the service start. */
+    fun startFlight() {
+        asked.start()
+        _offer.value = false
+        if (reading) serve(true)
+    }
+
+    /** Not Now: not asked again until this flight is over. */
+    fun notNow() {
+        asked.notNow()
+        _offer.value = false
     }
 
     /** The foreground service on while flying, off otherwise. Android 12
@@ -327,43 +365,5 @@ class OwnShip private constructor(private val context: Context) {
 
         fun of(context: Context): OwnShip =
             shared ?: synchronized(this) { shared ?: OwnShip(context.applicationContext).also { shared = it } }
-    }
-}
-
-/**
- * The foreground service that keeps the process alive while the airplane
- * is flying, so the fixes go on with the screen off (the manifest's
- * foregroundServiceType="location"). It reads nothing itself: OwnShip's
- * callback runs in this process whether or not an activity is shown, and
- * the service is only Android's reason not to end it. Its notification
- * is the one Android requires, on the low channel.
- */
-class OwnShipService : Service() {
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        running = true
-        val notification = Notifications.ownShip(this)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ServiceCompat.startForeground(this, Notifications.OWN_SHIP_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
-        } else {
-            startForeground(Notifications.OWN_SHIP_ID, notification)
-        }
-        // Not restarted by the system once stopped: a flight the system
-        // ended is not resumed on the ground.
-        return START_NOT_STICKY
-    }
-
-    override fun onDestroy() {
-        running = false
-        super.onDestroy()
-    }
-
-    override fun onBind(intent: Intent?): IBinder? = null
-
-    companion object {
-        /** Whether the service is up, so its notification may be changed
-         *  in place (LiveFlight's Live Update) and is never posted again
-         *  once the service has gone with it. Main thread only. */
-        var running = false
-            private set
     }
 }

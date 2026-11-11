@@ -11,6 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -47,9 +48,11 @@ import app.wingtipmaps.android.flight.GlideRing
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnTrail
 import app.wingtipmaps.android.flight.SpokenAlerts
+import app.wingtipmaps.android.flight.StartFlightAsk
 import app.wingtipmaps.android.flight.Tracking
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.map.AirportWeatherMarks
+import app.wingtipmaps.android.map.AirportWeatherMode
 import app.wingtipmaps.android.map.AirportWeatherStore
 import app.wingtipmaps.android.map.ChartMap
 import app.wingtipmaps.android.map.EmergencyLine
@@ -64,6 +67,8 @@ import app.wingtipmaps.android.map.RouteWorse
 import app.wingtipmaps.android.map.StationLayer
 import app.wingtipmaps.android.map.StationMarks
 import app.wingtipmaps.android.map.TrafficDrawing
+import app.wingtipmaps.android.map.WeatherAge
+import app.wingtipmaps.android.map.WeatherAgeChip
 import app.wingtipmaps.android.map.WeatherLoopBar
 import app.wingtipmaps.android.notify.LiveFlight
 import app.wingtipmaps.android.receiver.Receiver
@@ -72,6 +77,7 @@ import app.wingtipmaps.android.route.RouteLegModel
 import app.wingtipmaps.android.route.RoutePoints
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -115,7 +121,19 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val mapWeather: MapWeather = viewModel()
     val categories by mapWeather.categories.collectAsStateWithLifecycle()
     val airportWeather by remember { AirportWeatherStore.of(context) }.settings.collectAsStateWithLifecycle()
-    val weather = remember(categories, airportWeather.mode) { AirportWeatherMarks.pips(categories, airportWeather.mode) }
+    // Each mark greyed once its METAR is older than the engine's freshness
+    // (WeatherAge), looked at again each minute.
+    val heardAt by mapWeather.heardAtMs.collectAsStateWithLifecycle()
+    var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000L)
+            nowMs = System.currentTimeMillis()
+        }
+    }
+    val freshMin = remember(nowMs / 3_600_000L) { WeatherAge.freshMin(nowMs) }
+    val stale = remember(heardAt, nowMs, freshMin) { WeatherAge.stale(heardAt, nowMs, freshMin) }
+    val weather = remember(categories, airportWeather.mode, stale) { AirportWeatherMarks.pips(categories, airportWeather.mode, stale) }
     val fieldsWx by mapWeather.fields.collectAsStateWithLifecycle()
     val traffic = remember { Traffic.of(context) }
     val trafficOn by traffic.on.collectAsStateWithLifecycle()
@@ -267,6 +285,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
         ) {
             ReceiverChip()
+            if (airportWeather.mode != AirportWeatherMode.OFF) WeatherAgeChip(stale, heardAt, nowMs)
             WeatherLoopBar()
             DryRunBar(rules = state.rules)
         }
@@ -279,6 +298,9 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
                 AtcCopilotHost(plan, flying = inFlight.underway, fix = fix)
             }
         }
+        // At flying speed, the pilot asked before the position is read with
+        // the screen off (the location foreground service, OwnShip).
+        if (ownShip.on && !approximate && !denied) StartFlightAsk(ship)
         if (ownShip.on && (approximate || denied)) {
             // Why the airplane is not on the map, where the pilot looks
             // for it: beside the button that showed it.

@@ -63,7 +63,7 @@ export default function FlightFoot({ vm }: { vm: PlanWorkspaceModel }) {
             Put away in the pill, whose one row is the figures. */}
           {directParam && (
             <div data-pill-hides="">
-              <DirectStrip ident={directParam} onCancel={() => directToPoint(null)} />
+              <DirectStrip ident={directParam} onDevice={s.directOnDevice} onCancel={() => directToPoint(null)} />
             </div>
           )}
           <div data-testid="flight-line">

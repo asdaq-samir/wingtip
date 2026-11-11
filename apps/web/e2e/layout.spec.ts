@@ -95,7 +95,7 @@ test.describe("/app/plan", () => {
     }).toPass({ timeout: 10_000 });
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
-    await expect(sideDrawer(page).getByTestId("sheet-title").getByTestId("account-button")).toBeVisible();
+    await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
     await grabberTo(page, "full");
 
     await page.goto("/app/plan?dep=C81&dest=KDLH");

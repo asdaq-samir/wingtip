@@ -9,6 +9,9 @@ import { holdsOf, holdsParam, type Hold } from "../lib/routeHolds";
 import { patched } from "../../../lib/useSearchParamsNow";
 import { turnaroundMin } from "../components/navlog/rows";
 import { directToPatch, routeWas } from "./planAddress";
+import { useDirectReady, type PlanNow } from "./directOnDevice";
+
+const NO_PLAN: PlanNow = { course: null, legs: [], nav: null, totals: null };
 
 /**
  * The plan's settings that are one change of the address each
@@ -17,7 +20,14 @@ import { directToPatch, routeWas } from "./planAddress";
  * flight's time aloft. Each reads the address as it is when the change
  * is made (setSearchParams' `prev`).
  */
-export function usePlanSetters(setSearchParams: SetURLSearchParams) {
+export function usePlanSetters(
+  setSearchParams: SetURLSearchParams,
+  /** The plan now, for a Direct To worked out on the device with no
+   *  connection (directOnDevice's useDirectReady): where it cannot be, the
+   *  route stays as it is. */
+  plan: PlanNow = NO_PLAN,
+) {
+  const readyDirect = useDirectReady(plan);
   const changeLocalMin = useCallback(
     (minutes: number) => {
       setSearchParams(
@@ -58,10 +68,11 @@ export function usePlanSetters(setSearchParams: SetURLSearchParams) {
     (ident: string | null) => {
       const ship = useOwnShip.getState();
       const fix = ship.enabled ? ship.fix : null;
+      if (ident && !readyDirect(ident, fix)) return;
       if (ident) feel("directTo");
       setSearchParams((prev) => directToPatch(prev, ident, fix), { replace: true });
     },
-    [setSearchParams],
+    [setSearchParams, readyDirect],
   );
   // A hold set at a point, changed, or (null) taken off: one a point.
   const setHold = useCallback(
@@ -85,7 +96,7 @@ export function usePlanSetters(setSearchParams: SetURLSearchParams) {
     (to: { ident: string }) => {
       const ship = useOwnShip.getState();
       const fix = ship.enabled ? ship.fix : null;
-      if (!fix) return;
+      if (!fix || !readyDirect(to.ident, fix)) return;
       feel("directTo");
       setSearchParams(
         (prev) => {
@@ -96,7 +107,7 @@ export function usePlanSetters(setSearchParams: SetURLSearchParams) {
         { replace: true },
       );
     },
-    [setSearchParams],
+    [setSearchParams, readyDirect],
   );
   // A different departure time may mean a different winds forecast:
   // kept in the address like the rest, which is what re-plans.

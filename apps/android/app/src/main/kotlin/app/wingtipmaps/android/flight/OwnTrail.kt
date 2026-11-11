@@ -84,6 +84,13 @@ class OwnTrail(
         return true
     }
 
+    /** The path and its file gone: signed out, or the account deleted. */
+    fun wipe() {
+        _points.value = emptyList()
+        flying = false
+        file.delete()
+    }
+
     /** The path let go: a new flight's starts empty. */
     fun clear() {
         _points.value = emptyList()

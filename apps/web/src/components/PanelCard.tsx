@@ -2,7 +2,7 @@ import { useContext, useEffect, useRef, type ReactNode } from "react";
 import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import { PinnedCardBar } from "./PinnedCardBar";
+import { PinnedHead } from "./PinnedHead";
 import RoundButton from "./RoundButton";
 import { closeTopCard, useHeldCard, RouteShareMenu, type CardShare } from "../lib/openCards";
 import { TEXT } from "../lib/text";
@@ -93,31 +93,27 @@ export function CardHead({
   /** Between the name and the close. */
   children?: ReactNode;
 }) {
-  // Its name folding into a pinned compact head as the card scrolls, with
-  // its close, by the one scrolling rule (PinnedCardBar).
-  const named = useRef<HTMLHeadingElement>(null);
+  // Its name and close one row pinned at the sheet's top, the card
+  // scrolling under it (PinnedHead; the owner, 2026-11-10); the line under
+  // the name scrolls with the card.
   return (
     <>
-      <PinnedCardBar title={name} watched={named} onClose={() => closeTopCard() || onClose()} closeTestId={closeTestId} />
-      <div className="flex items-start gap-2">
-        <div className="min-w-0 flex-1">
-          <h2
-            ref={named}
-            tabIndex={-1}
-            className={cn("card-title-fold font-bold tracking-tight text-foreground outline-none", TEXT.card)}
-            data-testid={nameTestId}
-          >
-            {name}
-          </h2>
-          {line != null && (
-            <p className={cn("text-muted-foreground", TEXT.note, lineClassName)} data-testid={lineTestId}>
-              {line}
-            </p>
-          )}
-        </div>
+      <PinnedHead>
+        <h2
+          tabIndex={-1}
+          className={cn("min-w-0 flex-1 truncate font-bold tracking-tight text-foreground outline-none", TEXT.card)}
+          data-testid={nameTestId}
+        >
+          {name}
+        </h2>
         {children}
         <CardClose onClose={onClose} onShare={onShare} testId={closeTestId} className="-mr-1" />
-      </div>
+      </PinnedHead>
+      {line != null && (
+        <p className={cn("text-muted-foreground", TEXT.note, lineClassName)} data-testid={lineTestId}>
+          {line}
+        </p>
+      )}
     </>
   );
 }

@@ -42,6 +42,9 @@ struct EmergencySheet: View {
                     List {
                         if case .success(let call) = mayday { EmergencyCodeTiles(call: call) }
                         EmergencyFieldsSection(fix: fix, ownShipOff: ownShip.denied) { ident in directTo(ident) }
+                        // A Direct To with no connection is not made: said
+                        // here, the field's heading and distance still above.
+                        if let problem = plan.directProblem { Section { ProblemLine(problem) } }
                         if plan.airplaneChosen {
                             checklistSection
                         } else {

@@ -78,6 +78,8 @@ struct TopHosts: ViewModifier {
     func body(content: Content) -> some View {
         @Bindable var emergency = Emergency.shared
         content
+            // What the app is, once at first launch (PlanningAidNotice).
+            .modifier(PlanningAidAlert(active: active))
             // A figure asked for a point of the route (FlightUI).
             .modifier(PointAlerts(active: active))
             // The airplanes' figures kept on this device, offered to the
@@ -108,7 +110,9 @@ struct CardTriggers: ViewModifier {
             .task {
                 // A moment after launch, once the planner's own sheet is up.
                 try? await Task.sleep(for: .milliseconds(600))
-                WelcomeModel.shared.showIfWanted()
+                // After the planning-aid notice where it is up: its button
+                // brings the welcome then (PlanningAidAlert).
+                if !PlanningAidNotice.wanted() { WelcomeModel.shared.showIfWanted() }
             }
             .onChange(of: WelcomeModel.shared.presented, initial: true) { _, up in follow(.welcome, up) }
             .onChange(of: SharedFlightModel.shared.showing, initial: true) { _, up in follow(.sharedFlight, up) }

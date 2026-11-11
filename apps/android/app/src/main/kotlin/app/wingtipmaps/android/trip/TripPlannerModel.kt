@@ -77,7 +77,7 @@ object TripPlan {
         val builder = Request.Builder().url(Config.gateway + Config.plannerPath("/api/trip-plan"))
             .header("Accept", "application/x-ndjson").post(body)
         Gateway.csrfToken?.let { builder.header("X-XSRF-TOKEN", it) }
-        Gateway.client.newCall(builder.build()).execute().use { response ->
+        Gateway.streaming.newCall(builder.build()).execute().use { response ->
             if (response.code != 200) throw Planner.Failure(response.code, Planner.detail(response.body.string()))
             val source = response.body.source()
             while (true) {

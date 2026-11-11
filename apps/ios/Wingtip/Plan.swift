@@ -73,6 +73,10 @@ final class Plan {
     private(set) var problem: NavLogError?
     private(set) var planning = false
     private var running: Task<Void, Never>?
+    /// The route before a Direct to or diversion still being planned
+    /// (RouteEdits), put back where the planner can't be reached, and why.
+    @ObservationIgnored var directFrom: RouteState?
+    private(set) var directProblem: String?
 
     /// When the plan shown was made; nil while it is being made now.
     private(set) var plannedAt: Date?
@@ -118,6 +122,11 @@ final class Plan {
         course = kept.course; checkpoints = kept.checkpoints; profile = kept.profile; altitude = kept.altitude
         legs = kept.legs; totals = kept.totals; altitudeFt = kept.altitude?.altitudeFt; briefing = kept.briefing; briefedAt = kept.briefedAt
         plannedAt = kept.plannedAt
+        // Said with their age until the planner answers again (brief and
+        // plan clear it), so a briefing kept from yesterday never reads as
+        // today's after a relaunch with no signal.
+        noteKept(kept.briefedAt, .briefing, .weather)
+        noteKept(kept.plannedAt, .plan)
         remembering = false
         plan()
         remembering = true
@@ -187,33 +196,28 @@ final class Plan {
         for kind in kinds { KeptShown.shared.note(kind, key: idents.joined(separator: " "), at: at) }
     }
 
-    /// A way round what stops the route put in: the points to fly by,
-    /// before the stop they are for.
-    func goRound(_ detour: Detour) {
-        let points = (detour.via?.isEmpty == false) ? detour.via! : [detour.ident]
-        stops.insert(contentsOf: points, at: min(detour.stopIndex, stops.count))
-        plan()
+    /// The route's profile fetched where the plan has none (its side fetch
+    /// failed or never ran), and the plan kept with it: Keep for the Air's,
+    /// so the profile is there in the air. True where it was kept.
+    func keepProfile() async -> Bool {
+        guard routed, profile == nil else { return profile != nil }
+        guard let ground = try? await Planner.routeProfile(dep: dep, dest: dest, stops: stops) else { return false }
+        profile = ground
+        sideProblems[.profile] = nil
+        keep()
+        return true
     }
 
-    /// The plan as the gateway saves a flight: the route, its altitude,
-    /// totals and the legs' points as checkpoints (SaveFlightRequest).
-    func saved() -> SaveFlightRequest? {
-        guard routed, let course else { return nil }
-        var along = 0.0
-        let points = legs.enumerated().map { i, leg -> SaveFlightCheckpoint in
-            along += leg.distanceNm
-            let point = checkpoints.first { ($0.name ?? $0.waypoint ?? "").uppercased() == leg.to.uppercased() }
-            return SaveFlightCheckpoint(alongTrackNm: along, altitudeFt: leg.altitudeFt, category: point?.category ?? "point", eteMin: leg.eteMin, fuelGal: leg.fuelGal, groundspeedKt: leg.groundspeedKt, lat: point?.lat ?? course.destination.lat, legDistanceNm: leg.distanceNm, lon: point?.lon ?? course.destination.lon, magneticHeadingDeg: leg.magneticHeadingDeg, name: leg.to, sequenceNo: i + 1, trueCourseDeg: leg.trueCourseDeg)
-        }
-        return SaveFlightRequest(checkpoints: points, cruiseAltitudeFt: altitudeFt.map { Int($0) }, departureIdent: dep, destinationIdent: dest, stops: stops, totalDistanceNm: totals?.distanceNm, totalEteMin: totals?.eteMin, totalFuelGal: totals?.fuelGal)
-    }
-
-    /// A saved flight back on the page: its route, planned again.
-    func open(_ flight: SavedFlight) {
-        dep = flight.departureIdent; dest = flight.destinationIdent; stops = flight.stops
-        ownAltitudeFt = nil; altitudeChoice = nil
-        extras = RouteExtras()
-        plan()
+    /// A Direct to the planner couldn't be asked for: the route as it was
+    /// put back, so the route box, the line and the legs are one route's,
+    /// never the new route's over the old legs (the offline audit).
+    func undoDirect(_ before: RouteState) {
+        let ident = extras.direct
+        directFrom = nil
+        dep = before.dep; dest = before.dest; stops = before.stops; extras = before.extras
+        directProblem = "Not changed: no connection. Direct to \(ident ?? "the point") needs the planner; the route is as it was."
+        remember()
+        noteKept(plannedAt, .plan)
     }
 
     /// A procedure picked for a field, in place of any of its kind there;
@@ -293,6 +297,7 @@ final class Plan {
             return
         }
         self.dep = dep; self.dest = dest; self.stops = stops
+        directFrom = nil; directProblem = nil
         remember()
         // A way picked stands while its stops are the route's; a stop
         // added, taken out or moved makes the route the pilot's own again,
@@ -361,6 +366,7 @@ final class Plan {
                         self.totals = totals
                         self.stage = nil
                         self.plannedAt = Date()
+                        self.directFrom = nil
                         self.noteKept(nil, .plan)
                         self.keep()
                         // The briefing for the flight's own hours, once
@@ -376,7 +382,9 @@ final class Plan {
                     // With no connection the plan kept stands, the planner's
                     // words said with its time; a planner's own refusal is
                     // said as it is.
-                    if self.legs.isEmpty || !(error is URLError) {
+                    if let before = self.directFrom, error is URLError {
+                        self.undoDirect(before)
+                    } else if self.legs.isEmpty || !(error is URLError) {
                         self.problem = NavLogError(advice: nil, brief: nil, detail: error.localizedDescription, reasons: nil)
                     } else { self.noteKept(self.plannedAt, .plan) }
                     self.stage = nil

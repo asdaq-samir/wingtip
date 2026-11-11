@@ -157,7 +157,7 @@ extension Planner {
 
     /// Towns, addresses and airports by what was typed (/api/places/search).
     static func places(_ q: String) async throws -> [PlaceFound] {
-        try await fetch(APIPlacesFound.self, "/api/places/search", ["q": q]).places
+        try await fetch(APIPlacesFound.self, "/api/places/search", ["q": q], timeout: read).places
     }
 
     /// The VFR waypoints in a box (/api/waypoints/in-view).
