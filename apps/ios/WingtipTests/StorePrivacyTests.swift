@@ -70,12 +70,16 @@ struct StorePrivacyTests {
 
     @Test func thePlanningAidNoticeIsShownOnceAndNotUnderTheTests() throws {
         let defaults = try #require(UserDefaults(suiteName: "notice-\(UUID().uuidString)"))
-        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: []))
+        // An app launched as a pilot launches it: no test host around it.
+        let app: [String: String] = [:]
+        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: app))
         // The UI tests' and the store pictures' launches, as the welcome's.
-        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh"]))
-        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh", "-welcome"]))
+        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh"], environment: app))
+        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh", "-welcome"], environment: app))
+        // The app hosting the unit tests shows no alert over their windows.
+        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: ["XCTestConfigurationFilePath": "/x"]))
         defaults.set(true, forKey: PlanningAidNotice.acceptedKey)
-        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: []))
+        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: [], environment: app))
         // The words are About's and the listing's.
         #expect(PlanningAidNotice.message.hasPrefix(PlanningAid.words))
         #expect(PlanningAidNotice.message.contains("Not for navigation"))

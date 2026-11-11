@@ -14,11 +14,16 @@ enum PlanningAidNotice {
     static let notForNavigation = "Not for navigation: the map, your airplane on it, the traffic and the alerts are for awareness, not a replacement for the airplane's instruments and approved navigation equipment."
     static var message: String { PlanningAid.words + "\n\n" + notForNavigation }
 
-    /// Whether it is wanted at launch: not once accepted, and not under
-    /// the UI tests' and the store pictures' launch arguments, as the
-    /// welcome is not (WelcomeModel.wanted); `-welcome` asks for it.
-    static func wanted(defaults: UserDefaults = .standard, arguments: [String] = CommandLine.arguments) -> Bool {
+    /// Whether it is wanted at launch: not once accepted, not under the
+    /// UI tests' and the store pictures' launch arguments, as the welcome
+    /// is not (WelcomeModel.wanted), and not in the app that hosts the
+    /// unit tests, where an alert over the window broke tests that
+    /// present their own (SiriEntitiesTests, run 42963111467);
+    /// `-welcome` asks for it.
+    static func wanted(defaults: UserDefaults = .standard, arguments: [String] = CommandLine.arguments,
+                       environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
         if arguments.contains("-welcome") { return !defaults.bool(forKey: acceptedKey) }
+        if environment["XCTestConfigurationFilePath"] != nil { return false }
         if arguments.contains(where: { ["-screen", "-layout", "-fresh"].contains($0) }) { return false }
         return !defaults.bool(forKey: acceptedKey)
     }
