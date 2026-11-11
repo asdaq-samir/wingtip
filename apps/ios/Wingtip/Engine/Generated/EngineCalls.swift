@@ -1204,7 +1204,7 @@ extension Engine {
         try rule("point_kind", EngineContract.PointKindInput(text: text))
     }
 
-    /// Pressure altitude from a field's elevation and its altimeter setting, a thousand feet an inch from 29.92 (PHAK ch. 4).
+    /// Pressure altitude from a field's elevation and its altimeter setting: the standard atmosphere's height of the setting above 29.92 "Hg, (1 - (setting/29.92)^(1/5.2558797)) x 145,442 ft (ICAO Doc 7488), FAA-H-8083-25C ch. 11 Figure 11-3's conversion factor to within 2 ft (30.10 "Hg: -165).
     static func pressureAltitudeFt(elevationFt: Double, altimeterInhg: Double) throws -> Double {
         try rule("pressure_altitude_ft", EngineContract.PressureAltitudeFtInput(elevationFt: elevationFt, altimeterInhg: altimeterInhg))
     }

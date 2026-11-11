@@ -83,10 +83,11 @@ def on_altimeter(planes: list[dict], lat: float, lon: float) -> list[dict]:
     """The airplanes that send only their pressure altitude (`alt_baro`,
     the FAA's radar's Mode C: 29.92 inHg, 14 CFR 91.217(a)(2)) set on the
     nearest METAR's altimeter setting, as an altimeter there reads them --
-    about 1,000 ft an inch of mercury (the Pilot's Handbook of Aeronautical
-    Knowledge, FAA-H-8083-25C, chapter 8) -- so they compare with own
-    ship's height above sea level: an airplane level with it on a 30.42 day
-    read 500 ft above. Left as sent, and marked so, with no setting near."""
+    about 1,000 ft an inch of mercury (FAA-H-8083-25C ch. 11, Figure 11-3)
+    -- so they compare with own ship's height above sea level: an airplane
+    level with it on a 30.42 day read about 460 ft above. Left as sent, and
+    marked so, with no setting near (the engine's traffic_marks then widens
+    its near band for them)."""
     if not any(p.get("pressure_altitude") and p.get("altitude_ft") is not None for p in planes):
         return planes
     try:
@@ -96,9 +97,9 @@ def on_altimeter(planes: list[dict], lat: float, lon: float) -> list[dict]:
     setting = ((near or {}).get("metar") or {}).get("altimeter_in_hg")
     if not setting:
         return planes
-    # Pressure altitude is the field's height plus a thousand feet an inch
-    # under 29.92 (the engine's pressure_altitude_ft): at a field at sea
-    # level it is the setting's own shift, the other way.
+    # Pressure altitude is the field's height plus the standard atmosphere's
+    # height of 29.92 above the setting (the engine's pressure_altitude_ft):
+    # at a field at sea level it is the setting's own shift, the other way.
     shift = -engine("pressure_altitude_ft", elevation_ft=0.0, altimeter_inhg=setting)
     return [
         {**p, "altitude_ft": round(p["altitude_ft"] + shift), "pressure_altitude": False}

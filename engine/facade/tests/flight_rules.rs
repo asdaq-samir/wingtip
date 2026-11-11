@@ -56,7 +56,10 @@ fn the_atmosphere() {
         assert!((da - f(c, "densityAltitudeFt")).abs() < 1e-6, "{c}");
     }
     for c in all["pressureAltitude"].as_array().unwrap() {
-        assert!((flight::pressure_altitude_ft(f(c, "elevationFt"), f(c, "altimeterInHg")) - f(c, "pressureAltitudeFt")).abs() < 1e-9);
+        // The handbook's table is whole feet off the standard atmosphere
+        // (30.8 "Hg: -803 against the formula's -804.4): within 2 ft.
+        let got = flight::pressure_altitude_ft(f(c, "elevationFt"), f(c, "altimeterInHg"));
+        assert!((got - f(c, "pressureAltitudeFt")).abs() < 2.0, "{c}: {got}");
     }
 }
 

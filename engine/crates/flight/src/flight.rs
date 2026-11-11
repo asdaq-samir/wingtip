@@ -107,7 +107,8 @@ const LAPSE_OVER_T0_PER_FT: f64 = 6.8755856e-6;
 const PRESSURE_EXPONENT: f64 = 5.2558797;
 const LOWEST_FT: f64 = -2000.0;
 const HIGHEST_FT: f64 = 60000.0;
-/// The standard altimeter setting, inches of mercury (PHAK ch. 4).
+/// The standard altimeter setting, inches of mercury: the standard datum
+/// plane (FAA-H-8083-25C ch. 11, "Pressure Altitude").
 pub const STANDARD_INHG: f64 = 29.92;
 
 /// A standard day's temperature at a pressure altitude.
@@ -129,7 +130,13 @@ pub fn density_altitude_ft(sigma: f64) -> f64 {
 }
 
 /// Pressure altitude from a field's elevation and its altimeter setting:
-/// a thousand feet an inch from 29.92 (PHAK ch. 4, "Pressure altitude").
+/// the elevation plus the standard atmosphere's height of the setting's
+/// pressure above 29.92 "Hg, (1 - (setting / 29.92)^(1 / 5.2558797)) x
+/// 145,442 ft (ICAO Doc 7488, the ISA constants above), which is FAA-H-
+/// 8083-25C ch. 11's Figure 11-3 table to within 2 ft (30.10 "Hg -165 ft,
+/// 30.8 -803, 28.0 +1,824). A flat 1,000 ft an inch read 15 to 80 ft low
+/// above 29.92, so pressure and density altitude came out a little low,
+/// the unsafe way.
 pub fn pressure_altitude_ft(elevation_ft: f64, altimeter_inhg: f64) -> f64 {
-    elevation_ft + (STANDARD_INHG - altimeter_inhg) * 1000.0
+    elevation_ft + (1.0 - (altimeter_inhg / STANDARD_INHG).powf(1.0 / PRESSURE_EXPONENT)) / LAPSE_OVER_T0_PER_FT
 }
