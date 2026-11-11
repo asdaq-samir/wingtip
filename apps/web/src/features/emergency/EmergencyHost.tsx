@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect } from "react";
 import { useEmergencyOpen } from "../../lib/emergencyStore";
+import { EngineGate } from "../../lib/engine/engineGate";
 
 /** The sheet's own chunk: nothing of it in the map page's first load (the
  *  web's bundle budget). */
@@ -22,7 +23,10 @@ export default function EmergencyHost() {
   if (!open) return null;
   return (
     <Suspense fallback={null}>
-      <EmergencySheet />
+      {/* Its glide and its fields are the engine's (MapPage draws before it). */}
+      <EngineGate>
+        <EmergencySheet />
+      </EngineGate>
     </Suspense>
   );
 }

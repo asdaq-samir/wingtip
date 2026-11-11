@@ -32,6 +32,17 @@ describe("the engine gate", () => {
     expect(screen.getByText("1.5 min")).toBeTruthy();
   });
 
+  test("draws its children at once where it is not wanted (when false)", async () => {
+    const { EngineGate, render, screen } = await freshEngine();
+    render(
+      <EngineGate fallback={<p>waiting</p>} when={false}>
+        <p>drawn</p>
+      </EngineGate>,
+    );
+    expect(screen.getByText("drawn")).toBeTruthy();
+    expect(screen.queryByText("waiting")).toBeNull();
+  });
+
   test("a call before the engine is there throws its words, naming the gate", async () => {
     const { callEngine, engineLoaded } = await freshEngine();
     expect(engineLoaded()).toBe(false);

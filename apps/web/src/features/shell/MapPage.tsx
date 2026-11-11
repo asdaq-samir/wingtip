@@ -274,17 +274,19 @@ export default function MapPage({ mode }: { mode: Mode }) {
     pieces.alone || consoleLayer ? null : pieces.head !== undefined ? pieces.head : routeRow;
 
   return (
-    // The fallback is the page's own background rather than a spinner:
-    // it is on screen for one request, and a flash of "loading" where
-    // a chart is about to be is worse than a moment of nothing.
-    <Suspense fallback={<div className="h-dvh w-full bg-background" />}>
-      {/* The workspace asks the shared engine while it renders (the
-        planner's first render writes its procedures with it): drawn once
-        the engine is there. Until then the map alone (BootMap: the chart
-        and the overlay tiles, which ask it nothing), so the page paints
-        without waiting for the .wasm (main.tsx); the workspace's map
-        takes that one up as it is, rather than drawing a second. */}
-      <EngineGate fallback={<BootMapPage />}>
+    // The fallback is the map alone (BootMap: the chart and the overlay
+    // tiles, which ask the engine nothing) rather than a spinner: on
+    // screen while a route named in the address waits for the engine to
+    // read it (usePlanWorkspace's useEngineWhen), or the training
+    // workspace's chunk comes; the workspace's map takes that one up as it
+    // is, rather than drawing a second. With no route -- every fresh open --
+    // the workspace draws at once, the search, the sheet and the chart,
+    // while the .wasm comes (main.tsx), and only what asks the engine
+    // waits, each part on its own (lib/engine/engineGate).
+    <Suspense fallback={<BootMapPage />}>
+      {/* The developer's workspace asks the engine as it renders: drawn
+        once it is there, as the whole page once was. */}
+      <EngineGate fallback={<BootMapPage />} when={mode === "dev"}>
         <Workspace dep={dep} dest={dest} panel={panel} setPanel={setPanel}>
           {(pieces) => {
             // The route's row built once a render, the same element as the top

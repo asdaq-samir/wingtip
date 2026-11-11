@@ -133,3 +133,10 @@ describe("a SID or a STAR typed in the route", () => {
     expect(await typedProcedure({ name: "OSHH2", before: null, after: null }, { dep: "KATW", dest: "C81" }, list)).toBeNull();
   });
 });
+
+describe("none picked", () => {
+  it("writes what the engine writes for none, without asking it", async () => {
+    const { callEngine } = await import("./engine/engine");
+    expect(proceduresParam([])).toBe(callEngine("procedures_write", { picks: [] }));
+  });
+});

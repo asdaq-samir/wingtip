@@ -16,6 +16,7 @@ import { SheetCard } from "../SheetCard";
 import { DRAWER_MS, type SheetTurn } from "../sheet/insets";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
+import { EngineGate } from "../../lib/engine/engineGate";
 import { usePreferences } from "../../lib/preferences";
 import { chartQuery, overlayTilesQuery, queryClient } from "../../lib/queryClient";
 import { prefersReducedMotion } from "../../lib/motion";
@@ -225,8 +226,10 @@ interface Props {
   place: { lat: number; lon: number } | null;
   /** Its layers (lib/map/gl/layers), drawn once the map is made. */
   children: ReactNode;
-  /** The map alone, drawn before the engine is there (GlBootMap): no
-   *  buttons, banners or ruler, which ask it, and no taps until it is. */
+  /** The map alone, drawn while a route in the address waits for the
+   *  engine (GlBootMap): no buttons, banners or ruler. Taps wait for the
+   *  engine on every map, and the buttons, banners and ruler draw once it
+   *  is there. */
   bare?: boolean;
 }
 
@@ -243,8 +246,8 @@ interface Props {
  * what the sheet leaves, clear of the map's buttons.
  *
  * One MapLibre map lives on from one tree to the next: the map the page
- * draws before the engine is there (GlBootMap, outside MapPage's engine
- * gate) is parked as that tree goes and taken up by the planner's, its
+ * draws while a route in the address waits for the engine (GlBootMap,
+ * MapPage's Suspense fallback) is parked as that tree goes and taken up by the planner's, its
  * chart and overlays kept, rather than a second map drawn from nothing.
  */
 export default function GlMapShell({ course, focus, focusZoom, place, children, bare = false }: Props) {
@@ -401,7 +404,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     if (!map) return;
     const tap = (e: MapMouseEvent) => {
       // The cards a tap opens ask the engine as they draw: a tap waits for
-      // it, as nothing else on the map does (MapPage's engine gate).
+      // it, as the layers that draw with it do (GlRouteMap's EngineLayers).
       if (!engineLoaded()) return;
       for (const t of [...registry.taps].sort((a, b) => a.rank - b.rank)) {
         const layers = t.layers.filter((l) => map.getLayer(l));
@@ -653,7 +656,11 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
         <GlMapContext.Provider value={api}>
           {children}
           {/* Two fingers held on the chart measure it, on every map. */}
-          {!bare && <RulerGl />}
+          {!bare && (
+            <EngineGate>
+              <RulerGl />
+            </EngineGate>
+          )}
         </GlMapContext.Provider>
       )}
       {card && (
@@ -661,8 +668,14 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
           <CardCloseContext.Provider value={closeCard}>{card}</CardCloseContext.Provider>
         </SheetCard>
       )}
-      {!bare && <MapBanners map={map} />}
-      {!bare && <MapControls />}
+      {/* The banners and the buttons ask the engine as they draw: once it
+          is there, the chart under them drawn at once (MapPage). */}
+      {!bare && (
+        <EngineGate>
+          <MapBanners map={map} />
+          <MapControls />
+        </EngineGate>
+      )}
     </div>
   );
 }

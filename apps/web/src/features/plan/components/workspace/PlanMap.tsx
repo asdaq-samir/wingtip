@@ -10,6 +10,7 @@ import { DRY_RUN, usePastFlight } from "../../map/pastFlight";
 /** An approach the pilot's instructor set them, opened from their
  *  Checkride page (`?lesson=12`): its own chunk, as the lesson's is. */
 import { ReadyToFlyPrompt } from "../../../readyToFly";
+import { EngineGate } from "../../../../lib/engine/engineGate";
 
 const AssignedLesson = lazy(() => import("../AssignedLesson"));
 /** What the first screen does not draw, each its own chunk off the first
@@ -82,8 +83,11 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
           panel's first script, and without one the page's (MapPage)
           held the panel back, blank, until it had. */}
       {/* Ready to fly, once, as a dry run or own ship starts with something
-          to fix (features/readyToFly): a dialog over the map, nothing moved. */}
-      <ReadyToFlyPrompt dryPlaying={dryPlaying} />
+          to fix (features/readyToFly): a dialog over the map, nothing moved.
+          Its findings are the engine's, so once that is there. */}
+      <EngineGate>
+        <ReadyToFlyPrompt dryPlaying={dryPlaying} />
+      </EngineGate>
       <Suspense fallback={null}>
         <RouteMap
           course={course}

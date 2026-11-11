@@ -55,6 +55,17 @@ These hold on every screen below and win over any reference app.
   field loads on its own chunk when first opened. A new library for a
   screen is weighed against that budget before it is added
   (`docs` memory: web bundle budget; the measure-speed skill).
+- **The engine never holds the page** (2026-11-10). The search, the
+  sheet and the map's chart draw at once while the engine's `.wasm`
+  comes (`main.tsx` preloads it). Each part that asks the engine while it
+  draws waits in its place: a card or a list opened from the address shows
+  "Working out…" (`lib/engine/engineGate` `WorkingOut`), and the map's
+  marks, buttons and banners, Ready to Fly and the airplane, emergency and
+  shared-flight sheets come once it is there. A route named in the address
+  is read by the engine, so that page waits on the boot map (the chart
+  alone, `GlBootMap`); a fresh open has none (`features/shell/freshLoad`).
+  `features/shell/firstDraw.test.tsx` draws the page without the engine
+  and fails when a part drawn at once starts asking it.
 - **Panels and controls stay where they are** unless the owner says so in
   the issue (decision 0013). Where this reference differs from today's
   placement it is a proposal for the owner, not an instruction.

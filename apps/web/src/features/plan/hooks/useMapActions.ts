@@ -7,6 +7,7 @@ import { bestStopIndex } from "../../../lib/geo";
 import { MAX_STOPS } from "../../../lib/identSchema";
 import { usePointActions } from "../../../lib/map/cards/pointActions";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
+import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import type { TypedProcedure } from "../../../lib/procedures";
 import type { RouteParts } from "../components/RouteBox";
 import type { PlannedRoute } from "./planAddress";
@@ -77,7 +78,9 @@ export function useMapActions({
   // registration, the one picked or one of the pilot's own; Direct To the
   // place a call said, found near the route, from where the airplane is,
   // and the altitude it gave flown.
-  const callSign = aircraft.tail ?? (N_NUMBER.test(shortName(aircraft.label)) ? shortName(aircraft.label) : null);
+  // The label told an N-number by the engine (N_NUMBER), once it is there.
+  const engine = useEngineReady();
+  const callSign = aircraft.tail ?? (engine && N_NUMBER.test(shortName(aircraft.label)) ? shortName(aircraft.label) : null);
   const nearNow = course
     ? [course.departure, course.destination].map((end) => `${end.lat.toFixed(3)},${end.lon.toFixed(3)}`).join(";")
     : "";

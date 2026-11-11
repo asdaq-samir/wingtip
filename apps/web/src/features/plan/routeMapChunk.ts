@@ -10,8 +10,9 @@ export const { Part: RouteMap, prefetch: prefetchRouteMap } = fromChunk(
   () => import("./components/RouteMap"),
   (m) => m.default,
 );
-/** The map alone, drawn before the engine is there (MapPage's gate), from
- *  the same chunk: the planner's map takes it up as it comes. */
+/** The map alone, drawn while a route named in the address waits for the
+ *  engine to read it (MapPage's Suspense), from the same chunk: the
+ *  planner's map takes it up as it comes. */
 export const { Part: BootMap } = fromChunk(
   () => import("./components/RouteMap"),
   (m) => m.BootMap,

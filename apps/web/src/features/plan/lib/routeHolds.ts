@@ -73,6 +73,9 @@ export function holdText(hold: Hold): string {
 /** The address's holds, each valid one, by its point: an airport, a
  *  fix, or the pilot's own point off one, not a present position. */
 export function holdsOf(value: string | null | undefined): Hold[] {
+  // None in the address, none to read: the engine not asked (the page's
+  // first draw, before it is there).
+  if (!value) return [];
   const read = callEngine("holds_read", { text: value ?? "" });
   return read.flatMap(({ hold }) => (hold ? [fromEngine(hold)] : []));
 }

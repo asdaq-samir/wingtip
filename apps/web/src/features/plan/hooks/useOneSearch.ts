@@ -17,6 +17,7 @@ import type { AirportSearchRow } from "../../../lib/useAirportSearch";
 import { SCREEN_KEYS, DIRECT_KEY } from "../../../hooks/use-shortcuts";
 import { useAirportIndex } from "../../../lib/airportIndex";
 import { readQuery } from "../lib/searchFilters";
+import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import { nearOf, useSearchResults } from "./useSearchResults";
 import type { PlanWorkspaceModel } from "./usePlanWorkspace";
 
@@ -123,7 +124,9 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
   const mine = usePreferences((p) => p.myAircraft);
   const favoriteAircraft = usePreferences((p) => p.favoriteAircraft);
   const recentAircraft = usePreferences((p) => p.recentAircraft);
-  const tail = direct ? null : tailTyped(typed);
+  // An N-number is the engine's to tell (N_NUMBER): none until it is there.
+  const engine = useEngineReady();
+  const tail = direct || !engine ? null : tailTyped(typed);
   const ownTail = !!tail && !!records?.some((r) => r.tailNumber.toUpperCase() === tail);
   // The registry's by the N-number typed, where none of the pilot's: the
   // profile's own lookup (useAirplaneProfile), its answer kept for it.

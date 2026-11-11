@@ -14,6 +14,7 @@ import {
 import { cruiseTasOf, shortName, taxiFuelOf } from "../../../lib/aircraftChoice";
 import { clockTime } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
+import { useEngineReady, useEngineWhen } from "../../../lib/engine/useEngineReady";
 import { legsWithoutWind, windsOutOfDate } from "../format";
 import { placeName } from "../lib/radio";
 import { bestStopIndex, distanceNm, type LatLon } from "../../../lib/geo";
@@ -71,6 +72,10 @@ import { useFlightToSave } from "./useFlightToSave";
  *  slider. */
 export const LOCAL_MINUTES = [30, 45, 60, 90, 120, 150, 180, 240];
 
+/** The address's keys that name a route or a pick on it, each read by the
+ *  engine (lib/identSchema, lib/procedures, lib/routeHolds). */
+const ROUTE_KEYS = ["dep", "dest", "stops", "altitudes", "procs", "cross", "ground", "holds"];
+
 /**
  * The planner's view model (PlanWorkspace, MVVM): the plan read from the
  * address, the queries, the picks and every handler that changes them,
@@ -109,6 +114,14 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     panelNow.current = panel;
   }, [panel]);
   const [searchParams, setSearchParams] = useSearchParamsNow();
+  // A route in the address is read by the shared engine's rules (its
+  // stops' forms, the procedures, holds and altitudes picked), so the
+  // workspace waits for it there, behind MapPage's boot map; with none --
+  // every fresh open (features/shell/freshLoad) -- the search, the sheet
+  // and the chart draw at once, and what asks the engine waits on its own
+  // (useEngineReady below, the parts behind an EngineGate).
+  useEngineWhen(ROUTE_KEYS.some((key) => searchParams.has(key)));
+  const engine = useEngineReady();
   // How the route is changed once it has a destination (RouteEdit): its
   // box folded to a line, or the plan's own rows under the route's name.
   const routeEdit = usePreferences((p) => p.routeEdit);
@@ -695,7 +708,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const profile = profiles?.find((p) => p.name === aircraft.profile);
   const cruiseTasKt = cruiseTasOf(aircraft, profiles);
   const fuelBurnGph = aircraft.fuelBurnGph ?? profile?.fuel_burn_gph ?? null;
-  const taxiFuelGal = taxiFuelOf(aircraft, profiles);
+  const taxiFuelGal = engine ? taxiFuelOf(aircraft, profiles) : null;
   // Before the course comes, at the tap: the great circles between the
   // route's points, placed from the airport index the browser keeps
   // (placeOf) -- the figures at once, where they waited a second or more
