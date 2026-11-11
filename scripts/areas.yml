@@ -9,8 +9,8 @@
 #
 # areas: one per check.sh area, in the order check.sh lists and runs them.
 #   ci:     the CI filter name (ci.yml's `changes` job) the area's paths feed;
-#           areas that share a name (py, jobs and engine run in test-root)
-#           have their paths joined there.
+#           areas that share a name have their paths joined there. Each
+#           test-<leg> name is a leg of ci.yml's test-python matrix.
 #   check:  what the area runs, as CLAUDE.md's table says (check.sh's run_area
 #           is the code).
 #   paths:  globs: `**` any depth, `*` within one directory (as micromatch,
@@ -62,13 +62,11 @@ areas:
       - apps/ios/Wingtip/Engine/Generated/**
       - apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated/**
   py:
-    ci: test-root
+    ci: test-wingtip
     check: ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/ (services/planner)
     paths:
       - services/planner/wingtip/**
       - engine/**
-      - scripts/build/build-engine-wasm.sh
-      - apps/web/src/lib/engine/wingtip-engine.wasm
       - services/planner/tests_wingtip/**
       - services/planner/requirements*.txt
       - ml/requirements-*.txt
@@ -131,7 +129,7 @@ areas:
       - services/planner/pytest_guards.py
       - engine/**
   jobs:
-    ci: test-root
+    ci: test-jobs
     check: the jobs' ruff and pytest (services/jobs/charts/tests), in Docker
     paths:
       - services/jobs/**
@@ -140,11 +138,15 @@ areas:
       - services/planner/pytest_guards.py
       - engine/**
   engine:
-    ci: test-root
-    check: scripts/ci/engine_layers.py, cargo machete, then cargo test --profile ci (ci.yml's line)
+    ci: test-engine
+    check: scripts/ci/engine_layers.py, cargo machete, clippy, then cargo test --profile ci over scripts/ci/engine_affected.py --all
     paths:
       - engine/**
       - scripts/ci/engine_layers.py
+      - scripts/ci/engine_affected.py
+      # the committed WebAssembly, held to what engine/ builds
+      - scripts/build/build-engine-wasm.sh
+      - apps/web/src/lib/engine/wingtip-engine.wasm
       - apps/web/src/lib/fixtures/**
       - services/planner/tests_wingtip/fixtures/native/**
   java:
@@ -259,6 +261,18 @@ ci_only:
     - scripts/areas.py
     # Every language's formatter, its version and how each is run.
     - scripts/dev/format.sh
+  # The dependencies' manifests and locks, for dependency-review.
+  deps:
+    - apps/web/package-lock.json
+    - engine/Cargo.lock
+    - services/*/requirements*.txt
+    - services/jobs/*/requirements.txt
+    - ml/requirements*.txt
+    - services/gateway/pom.xml
+    - apps/android/gradle/libs.versions.toml
+    - apps/ios/project.yml
+    - .github/workflows/*.yml
+    - .github/actions/**
   # The APIs the phones call, for api-compat.
   api:
     - services/planner/openapi.json
@@ -270,7 +284,7 @@ ci_only:
     - infra/cloudformation/**
     - infra/server/**
     - infra/docker-compose.prod.yml
-  # Javadoc and the API reference; each Python suite's job makes its pdoc.
+  # Javadoc, the API reference and wingtip's pdoc (the night's docs job).
   docs:
     - services/gateway/**
     - services/planner/openapi.json

@@ -4,8 +4,9 @@ name: Auto-merge agents
 # claude/ branch's (each Claude session's, and ci-autofix.yml's).
 # Dependabot opens none any more (the owner, 2026-11-09): dependencies are
 # updated in each wave's end pass, and its alerts still flag advisories.
-# Main's ruleset requires the "CI passed" check
-# (ci.yml), so nothing merges red.
+# Main's ruleset requires the "CI passed" check (ci.yml's tier 1, about
+# three minutes; the browser smoke and the images run after the merge,
+# docs/CI.md "The tiers"), so nothing merges red.
 #
 # Claude's have auto-merge turned on as they open (or leave draft), not
 # after Claude's review: the owner decided on 2026-11-06 ("Ok to not
