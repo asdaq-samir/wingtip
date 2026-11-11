@@ -41,7 +41,12 @@ struct RootView: View {
     /// Whether the map has shown (ChartMap's reveal): the loading mark is
     /// over it until then.
     @State private var mapShown = false
-    /// The height the sheet covers at the foot of the screen, as it is now.
+    /// The height the sheet covers at the foot of the screen, until the
+    /// map shows: only the map's opening point and the loading mark over
+    /// it read it (ChartMap.Coordinator.open, MapLoading), and neither
+    /// does once the map is in. Not written after that, so a drag of the
+    /// sheet, a new height each frame, does not run this body and the
+    /// whole map's update again each frame.
     @State private var sheetHeight: CGFloat = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// What Siri or a Shortcut asked for (the App Intents), done here once
@@ -88,8 +93,11 @@ struct RootView: View {
                             }
                         }
                         // How much of the map the sheet covers, for the map's
-                        // opening point and the loading mark over it.
-                        .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { sheetHeight = $0 }
+                        // opening point and the loading mark over it, until
+                        // the map shows (sheetHeight).
+                        .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { height in
+                            if !mapShown { sheetHeight = height }
+                        }
                         .environment(\.sheetAtPill, detent == RootView.pill)
                         .presentationDetents([RootView.pill, .half, .large], selection: $detent)
                         .presentationBackgroundInteraction(.enabled(upThrough: .half))
