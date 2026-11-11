@@ -97,11 +97,11 @@ test("a search sent lists the fields round the place, its chips and Filters narr
   await page.goto("/app/plan");
   await settle(page);
   const list = await sendNear(page);
-  // The field keeps what was typed, let go; the title row's ✕ in the
-  // account button's place.
+  // The field keeps what was typed, let go; Cancel beside it in the
+  // account button's place, as Apple Maps' is.
   await expect(page.getByTestId("search-airports")).toHaveValue("near C81");
   await expect(page.getByTestId("search-airports")).not.toBeFocused();
-  await expect(sideDrawer(page).getByTestId("search-results-close")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("one-search-cancel")).toBeVisible();
   const rows = list.getByTestId("search-result");
   await expect(rows).toHaveCount(3);
   await expect(rows.first()).toContainText("Airport · 0.1 nm");
@@ -139,8 +139,8 @@ test("a search sent lists the fields round the place, its chips and Filters narr
   await expect(list).toBeVisible();
   await expect(page.getByTestId("search-airports")).toHaveValue("near C81");
 
-  // ✕: the search let go, the start again.
-  await sideDrawer(page).getByTestId("search-results-close").click();
+  // Cancel: the search let go, the start again.
+  await sideDrawer(page).getByTestId("one-search-cancel").click();
   await expect(list).toHaveCount(0);
   await expect(page.getByTestId("search-airports")).toHaveValue("");
   await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();

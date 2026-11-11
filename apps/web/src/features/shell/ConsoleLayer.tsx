@@ -72,7 +72,13 @@ export default function ConsoleLayer({
       data-testid={shown ? "console-sheet" : undefined}
       data-detent={detent}
       data-edge={edge}
-      className={cn("min-h-0 flex-1 flex-col print:hidden", shown ? "flex" : "hidden")}
+      // A page open in it (Minimums, Airplanes) heads itself with its own
+      // name and close, back to Settings: this row steps aside, one ✕ in
+      // sight, not two (the owner's testing, 2026-11-10).
+      className={cn(
+        "min-h-0 flex-1 flex-col print:hidden [&:has([data-slot=console-page])>[data-slot=layer-head]]:hidden",
+        shown ? "flex" : "hidden",
+      )}
       // Its pages start under its own title row, not up under the panel's
       // head as a tab's page does (index.css's under-head, by the panel's
       // --head-room): pulled up, the page's scroller lay over this row and
@@ -82,7 +88,7 @@ export default function ConsoleLayer({
       {/* Its name and its close, the way back to the sheet under it, at the
           sheet's top: the page covers the title row and the search, as every
           page does by the one card rule (the owner, 2026-11-10). */}
-      <div className="flex items-center gap-2 px-4 pt-3 pb-1">
+      <div className="flex items-center gap-2 px-4 pt-3 pb-1" data-slot="layer-head">
         <h2 className={cn("flex-1 font-bold", TEXT.title)}>Account and Settings</h2>
         <CloseButton label="Back to the map" onClick={onClose} data-back="" data-testid="console-close" />
       </div>

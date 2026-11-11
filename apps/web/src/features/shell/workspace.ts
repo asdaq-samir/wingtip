@@ -46,10 +46,6 @@ export interface WorkspacePieces {
   /** The sheet's first row, and at rest its pill: the planner's one search
    *  (OneSearchField), the developer's places (MapPanel's `bar`). */
   bar?: ReactNode;
-  /** Over the first row: the app's name and the account button
-   *  (MapPanel's `title`), and whether it stays all the way up. */
-  title?: ReactNode;
-  titleAtFull?: boolean;
   /** What the panel is drawn inside, where its first row and its body are
    *  one control: the one search's Autocomplete root, its field the first
    *  row and its list in the body. */

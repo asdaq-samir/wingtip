@@ -1,10 +1,9 @@
-import { useCallback, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import { useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import { SheetCardHost } from "../SheetCard";
 import TabKept from "../TabKept";
 import type { useSheetDetents } from "./useSheetDetents";
-import { useScrollAway } from "./useScrollAway";
 export { SheetViewport } from "./SheetViewport";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
@@ -12,12 +11,11 @@ export { SheetViewport } from "./SheetViewport";
 const ROW_PAD = "pt-2.5";
 /** The one search's row, its 46-point field (OneSearchField) sixteen in
  *  from either side as everything in the sheet is (the sheet audit's
- *  F-P1, F-P2, 2026-11-10): under the title four over it and eighteen
- *  under, 68 in all (useSheetDetents' BAR_REM); with no title over it on a
- *  bottom sheet, clear of the grabber's 24-point hit area over it, 76
- *  (BAR_ALONE_REM); else ten over it and twelve under, 68. */
-function barRowPad(titled: boolean, underGrabber: boolean) {
-  if (titled) return "h-[4.25rem] pt-1 pb-4.5";
+ *  F-P1, F-P2, 2026-11-10): on a bottom sheet clear of the grabber's
+ *  24-point hit area over it, 76 (BAR_ALONE_REM); else ten over it and
+ *  twelve under, 68 (BAR_REM). The pill is this row alone: the title row
+ *  over it went for the map's room (the owner, 2026-11-10). */
+function barRowPad(underGrabber: boolean) {
   if (underGrabber) return "h-[4.75rem] pt-6 pb-1.5";
   return cn("h-[4.25rem] pb-3", ROW_PAD);
 }
@@ -88,7 +86,6 @@ export interface PartsProps {
   controls?: ReactNode;
   compact?: ReactNode;
   bar?: ReactNode;
-  title?: ReactNode;
   foot?: ReactNode;
   children: ReactNode;
   layer: "tab" | "card" | "console";
@@ -104,8 +101,6 @@ export interface PartsProps {
   footShown: boolean;
   cardsUp: boolean;
   barShown: boolean;
-  /** The title row over the first row (MapPanel's `title`) in sight. */
-  titleShown: boolean;
   toEdge: boolean;
   edgeInset: number;
   halfChrome: number;
@@ -137,19 +132,7 @@ const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--sheet-offset,0px)+v
  */
 export function SheetParts(p: PartsProps) {
   const { atPill, fromBottom, size, sizes, footShown, cardsUp, setHead, setFoot } = p;
-  // The head and the body, for the title and the field scrolling away with
-  // the suggestions (useScrollAway): all the way up on a phone, the title
-  // there, which is the search in use.
-  const [headNode, setHeadNode] = useState<HTMLDivElement | null>(null);
-  const [bodyNode, setBodyNode] = useState<HTMLDivElement | null>(null);
-  useScrollAway(headNode, bodyNode, p.onPhone && size === "full" && p.titleShown);
-  const headRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      setHead(node);
-      setHeadNode(node);
-    },
-    [setHead],
-  );
+  const headRef = setHead;
   const headerShown = !p.flying && !cardsUp && (atPill ? !p.barShown : p.top != null || !p.barShown);
   const headContent = atPill ? p.compact : p.top;
   const keptHere = p.kept != null && headerShown && headContent === p.kept;
@@ -178,20 +161,11 @@ export function SheetParts(p: PartsProps) {
         style={vars}
         className={cn("relative flex shrink-0 flex-col", under && "z-20", topSheet && "pt-[env(safe-area-inset-top)]", topSheet && follows)}
       >
-        {/* The title row, Apple Maps' "Maps" on the web: the app's name
-            and the account button (the owner's screenshot, 2026-11-10),
-            46 tall as the field under it is, ten under the sheet's edge
-            for the grabber (useSheetDetents' TITLE_REM). */}
-        {p.title && p.titleShown && (
-          <div className="mt-2.5 flex h-[2.875rem] shrink-0 items-center gap-2 px-4" data-testid="sheet-title">
-            {p.title}
-          </div>
-        )}
         {p.bar && (
           <div
             className={cn(
               "flex shrink-0 px-4",
-              barRowPad(p.titleShown, p.fromBottom),
+              barRowPad(p.fromBottom),
               !p.barShown && "hidden",
               // All the way up on a phone the search alone is pinned at the
               // top, a hairline under it, as Apple Maps' is.
@@ -260,7 +234,6 @@ export function SheetParts(p: PartsProps) {
             "--panel-head": `${under ? sizes.headHeight : 0}px`,
           } as CSSProperties
         }
-        ref={setBodyNode}
         data-panel-body=""
         // On a phone, Drawer.Content's own mark: a mouse dragged across the
         // body selects its words rather than moving the sheet (a finger
