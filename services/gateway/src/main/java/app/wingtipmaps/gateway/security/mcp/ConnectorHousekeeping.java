@@ -58,6 +58,12 @@ public class ConnectorHousekeeping {
                 "DELETE FROM oauth2_registered_client c WHERE c.client_id_issued_at < ? AND NOT EXISTS"
                         + " (SELECT 1 FROM oauth2_authorization a WHERE a.registered_client_id = c.id)",
                 Timestamp.from(now.minus(unusedClient)));
+        // A spent refresh token past the 30 days it would have lasted, or
+        // whose connection has gone, can be presented to no effect.
+        jdbc.update(
+                "DELETE FROM oauth2_spent_refresh_token s WHERE s.spent_at < ? OR NOT EXISTS"
+                        + " (SELECT 1 FROM oauth2_authorization a WHERE a.id = s.authorization_id)",
+                Timestamp.from(now.minus(ConnectorClients.REFRESH_TOKEN)));
         jdbc.update("DELETE FROM oauth2_authorization_consent n WHERE NOT EXISTS"
                 + " (SELECT 1 FROM oauth2_registered_client c WHERE c.id = n.registered_client_id)");
         if (connections + clients > 0) {

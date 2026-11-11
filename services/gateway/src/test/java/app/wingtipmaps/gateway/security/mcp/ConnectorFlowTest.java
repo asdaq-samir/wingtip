@@ -212,6 +212,14 @@ class ConnectorFlowTest {
                         .param("client_id", clientId))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("invalid_grant"));
+        // That replay revoked the whole connection (L3): the newer refresh
+        // token, the client's or a thief's, is no good either.
+        mvc.perform(post("/oauth2/token")
+                        .param("grant_type", "refresh_token")
+                        .param("refresh_token", (String) JsonPath.read(refreshed, "$.refresh_token"))
+                        .param("client_id", clientId))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("invalid_grant"));
     }
 
     @Test

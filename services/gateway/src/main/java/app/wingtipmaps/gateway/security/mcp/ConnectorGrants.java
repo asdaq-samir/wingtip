@@ -24,6 +24,10 @@ public class ConnectorGrants {
     /** Ends every connection the pilot made: their tokens stop working at once. */
     public void forget(long pilotId) {
         String principal = Long.toString(pilotId);
+        jdbc.update(
+                "DELETE FROM oauth2_spent_refresh_token WHERE authorization_id IN"
+                        + " (SELECT id FROM oauth2_authorization WHERE principal_name = ?)",
+                principal);
         jdbc.update("DELETE FROM oauth2_authorization WHERE principal_name = ?", principal);
         jdbc.update("DELETE FROM oauth2_authorization_consent WHERE principal_name = ?", principal);
     }
