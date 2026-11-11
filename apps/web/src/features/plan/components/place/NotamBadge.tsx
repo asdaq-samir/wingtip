@@ -7,25 +7,27 @@ import { NotamFull, NotamRows } from "./PlaceNotams";
 
 /**
  * A NOTAM's badge next to what it addresses (notamBadges): the engine's
- * word, in the destructive ink where it is closed or not to be used and
- * the caution's where it is one to read, as RunwayRow's "Longest" is the
+ * word, red while it is in force and in the caution's colours while it is
+ * still to come (the owner, 2026-11-11: "All the active notam badges should
+ * be red. The upcoming ones can be in caution color"), as RunwayRow's "Longest" is the
  * stock Badge. Its label, for VoiceOver, is the NOTAM's words. With
  * `onOpen` it is a button of its own, its 44-point hit area a
  * pseudo-element round it, the badge no bigger: for a row with a tap of its
  * own (a frequency's copy). Without, the row it sits on is the tap.
  */
 export function NotamBadge({ mark, kind, onOpen }: { mark: NotamMark; kind: string; onOpen?: () => void }) {
-  const caution = mark.severity === "caution";
+  const caution = !mark.active;
   const props = {
     variant: caution ? ("secondary" as const) : ("destructive" as const),
     "data-testid": "notam-badge",
     "data-kind": kind,
     "data-severity": mark.severity,
+    "data-active": mark.active,
   };
   const words = (
     <>
       {mark.word}
-      <span className="sr-only">{`: ${mark.label}`}</span>
+      <span className="sr-only">{`${mark.active ? "" : ", upcoming"}: ${mark.label}`}</span>
     </>
   );
   if (!onOpen)

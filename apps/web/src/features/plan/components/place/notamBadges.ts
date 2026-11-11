@@ -7,8 +7,9 @@ import { fieldNotamsQuery, identsOf, type FieldNotam } from "./fieldNotams";
 type EngineBadge = EngineAnswer<"notam_subject">["badges"][number];
 
 /** A badge on one of the card's things: the engine's word, how bad and
- *  what it says, and the NOTAMs on it, the worst's first. */
-export type NotamMark = Pick<EngineBadge, "word" | "severity" | "label"> & { notams: FieldNotam[] };
+ *  what it says, whether it is in force now, and the NOTAMs on it, the
+ *  worst's first. */
+export type NotamMark = Pick<EngineBadge, "word" | "severity" | "label"> & { active: boolean; notams: FieldNotam[] };
 
 /** The card's badges, by what they are next to: the field and its fuel,
  *  its runways, lights and frequencies by their index in the place's
@@ -22,14 +23,21 @@ export type NotamMarks = {
   approach: Map<string, NotamMark>;
 };
 
-/** One more NOTAM on a thing: its badge where it is the worse (a closure
- *  over a caution), else the first's, in the engine's order. */
+/** How much a badge outranks another: in force over upcoming, then a
+ *  closure over a caution. */
+const rank = (active: boolean, severity: EngineBadge["severity"]) => (active ? 2 : 0) + (severity === "unusable" ? 1 : 0);
+
+/** One more NOTAM on a thing: its badge where it is the worse (in force
+ *  over upcoming, a closure over a caution), else the first's, in the
+ *  engine's order. */
 function add(prior: NotamMark | undefined, b: EngineBadge, n: FieldNotam): NotamMark {
-  if (!prior) return { word: b.word, severity: b.severity, label: b.label, notams: [n] };
+  // In force unless the planner says it is not yet (in_force false).
+  const active = n.in_force !== false;
+  const mark = { word: b.word, severity: b.severity, label: b.label, active };
+  if (!prior) return { ...mark, notams: [n] };
   const notams = prior.notams.includes(n) ? prior.notams : [...prior.notams, n];
-  const worse = prior.severity === "caution" && b.severity === "unusable";
-  return worse
-    ? { word: b.word, severity: b.severity, label: b.label, notams: [n, ...notams.filter((m) => m !== n)] }
+  return rank(active, b.severity) > rank(prior.active, prior.severity)
+    ? { ...mark, notams: [n, ...notams.filter((m) => m !== n)] }
     : { ...prior, notams };
 }
 
@@ -38,9 +46,9 @@ function add(prior: NotamMark | undefined, b: EngineBadge, n: FieldNotam): Notam
  * reads it (notam_subject: JO 7930.2's keywords and conditions, matched to
  * the card's own runways, lights, approaches and frequencies), as badges
  * by what they go next to. The owner, 2026-11-11: "For anything the notam
- * addresses, just put a badge next to it". A NOTAM the planner says is not
- * yet in force is in the list on the Info tab, not on a badge: a badge says
- * what is so of the field now. Asked inside the card's EngineGate.
+ * addresses, just put a badge next to it". One not yet in force has its
+ * badge too, told apart by its colour (NotamBadge). Asked inside the
+ * card's EngineGate.
  */
 export function notamMarks(notams: FieldNotam[], ident: string, place: AirportPlace | undefined): NotamMarks {
   const approaches = (place?.procedures ?? []).filter((c) => c.kind === "IAP");
@@ -53,7 +61,6 @@ export function notamMarks(notams: FieldNotam[], ident: string, place: AirportPl
   };
   const marks: NotamMarks = { runway: new Map(), light: new Map(), frequency: new Map(), approach: new Map() };
   for (const n of notams) {
-    if (n.in_force === false) continue;
     const { badges } = callEngine("notam_subject", { ...card, text: n.raw, tfr: n.kind === "tfr" });
     for (const b of badges) {
       const i = b.index ?? -1;

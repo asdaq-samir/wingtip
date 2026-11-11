@@ -50,7 +50,7 @@ describe("what a field's NOTAMs address on its card", () => {
     expect(marks.runway.has(1)).toBe(false);
   });
 
-  it("shows the worse of two on one thing, with both behind it, and none for one not yet in force", () => {
+  it("shows the worse of two on one thing, with both behind it, and one not yet in force as upcoming", () => {
     const marks = notamMarks(
       [
         notam("papi", "!DLH 11/052 DLH RWY 27 PAPI U/S 2611101200-2611202359"),
@@ -60,10 +60,24 @@ describe("what a field's NOTAMs address on its card", () => {
       "KDLH",
       place,
     );
-    expect(marks.runway.get(0)).toMatchObject({ word: "Closed", severity: "unusable" });
+    expect(marks.runway.get(0)).toMatchObject({ word: "Closed", severity: "unusable", active: true });
     expect(marks.runway.get(0)?.notams.map((n) => n.id)).toEqual(["closed", "papi"]);
     expect(marks.light.get(0)?.word).toBe("Out of service");
-    expect(marks.runway.has(1)).toBe(false);
+    // Upcoming: its badge in the caution's colours, not the red (NotamBadge).
+    expect(marks.runway.get(1)).toMatchObject({ word: "Closed", active: false });
+  });
+
+  it("puts one in force over one to come on the same thing", () => {
+    const marks = notamMarks(
+      [
+        notam("later", "!DLH 11/043 DLH RWY 09/27 CLSD 2611101200-2611121432", { in_force: false }),
+        notam("papi", "!DLH 11/052 DLH RWY 27 PAPI U/S 2611101200-2611202359"),
+      ],
+      "KDLH",
+      place,
+    );
+    expect(marks.runway.get(0)).toMatchObject({ word: "NOTAM", active: true });
+    expect(marks.runway.get(0)?.notams.map((n) => n.id)).toEqual(["papi", "later"]);
   });
 
   it("badges the field for a TFR near it", () => {
