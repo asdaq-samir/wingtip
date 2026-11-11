@@ -12,8 +12,11 @@ const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 /** The grabber's box: 56 by 24 to a finger, as iOS's grabber takes a drag
  *  well round its bar (the sheet audit's F-SC1: it was 96 by 10), at the
  *  sheet's free edge: the top of a bottom sheet, the foot of a top sheet
- *  or the side panel. */
-const BOX = "absolute inset-x-0 z-30 mx-auto flex h-6 w-14 print:hidden";
+ *  or the side panel. On a layer of its own (transform-gpu): iPhone Safari
+ *  painted a card's frosted head (PinnedHead's backdrop blur) over it while
+ *  the card moved, so it came only once the card had settled (the owner,
+ *  2026-11-11: "The grabber shows up after card settles"). */
+const BOX = "absolute inset-x-0 z-30 mx-auto flex h-6 w-14 transform-gpu print:hidden";
 const edge = (at: "top" | "bottom") => (at === "top" ? "top-0 items-start pt-1" : "bottom-0 items-end pb-1.25");
 const RING = "outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset";
 
