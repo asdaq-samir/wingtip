@@ -1,6 +1,6 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { done } from "../../../lib/doneNote";
-import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, ListOrdered } from "lucide-react";
+import { Ellipsis, FileArchive, FileText, Fuel, Link2, MapPinned, Printer, RotateCw, Send, Share, ListOrdered, Trash2 } from "lucide-react";
 import RoundButton from "../../../components/RoundButton";
 import { ResponsivePopover, ResponsivePopoverAnchor } from "../../../components/ResponsivePopover";
 import {
@@ -73,11 +73,15 @@ export default function ShareMenu({
   planAgain,
   onShowFuel,
   onNavLog,
+  onClear,
 }: {
   /** The suggested fuel stops taken out of the route box, put back. */
   onShowFuel?: () => void;
   /** The route's nav log opened: the route box's, with a course drawn. */
   onNavLog?: () => void;
+  /** The route cleared: the route box's menu's last item (the owner,
+   *  2026-11-11: "Instead of clear button, move that to the …"). */
+  onClear?: () => void;
   align: "start" | "end";
   /** Its button's: the route box's, or the tab bar's over the Brief and
    *  the nav log (TabBar's `routeShare`). */
@@ -329,6 +333,15 @@ export default function ShareMenu({
               <Printer />
               Print the nav log
             </DropdownMenuItem>
+          )}
+          {onClear && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={onClear} data-testid="route-clear">
+                <Trash2 />
+                Clear route
+              </DropdownMenuItem>
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>

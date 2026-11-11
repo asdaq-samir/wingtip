@@ -68,12 +68,12 @@ export async function openPanel(page: Page) {
   await grabberTo(page, "half");
 }
 
-/** The route cleared, by the route box's own ✕ (the menu's Clear went,
- *  the owner, 2026-10-27). */
+/** The route cleared by its ••• menu's Clear route (the owner, 2026-11-11). */
 export async function clearTheRoute(page: Page) {
   await openPanel(page);
   await controlsInSight(page);
-  await sideDrawer(page).getByTestId("route-box-clear").click();
+  await sideDrawer(page).getByTestId("share-route").click();
+  await page.getByTestId("route-clear").click();
 }
 
 const RANK = { peek: 0, half: 1, full: 2 } as const;

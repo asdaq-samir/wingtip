@@ -104,7 +104,6 @@ export default function RouteBox({
   procedures = NO_PROCEDURES,
   onProcedures,
   onOpenAirport,
-  onClear,
   directTo = null,
   onDirectTo,
   fuelStops = NO_FUEL_STOPS,
@@ -149,10 +148,6 @@ export default function RouteBox({
    *  it was (PlanWorkspace's directToPoint): the pill's menu's, as FPL's. */
   directTo?: string | null;
   onDirectTo?: (ident: string | null) => void;
-  /** The whole route cleared, from the box's own clear at its end while it
-   *  holds one, as a field's clears what is typed in it, at the pilot's
-   *  ask. */
-  onClear?: () => void;
   /** The fuel stops the planner suggests for a flight too long for its
    *  tanks (the totals' fuel_stops), dashed after the flight's departure
    *  until added; a tap adds them, as FPL's Add fuel stop does. */
@@ -767,13 +762,8 @@ export default function RouteBox({
                 </>
               )}
             </div>
-            {/* The route cleared, on the box's first line at its end, as a
-                field's clear is (ClearButton) -- not while something is
-                typed, whose own clear is the one to see: two of them read
-                as one too many. */}
-            {points.length > 0 && onClear && !typed && (
-              <ClearButton label="Clear the route" testId="route-box-clear" onClear={onClear} className="mt-2" />
-            )}
+            {/* The route is cleared from its ••• menu, not a ✕ here (the
+                owner, 2026-11-11, ShareMenu's Clear route). */}
             {/* Folded again, as iOS's Done ends an edit: the box's first line
                 at its end. Pressed, the field keeps the focus till it goes. */}
             {onDone && (

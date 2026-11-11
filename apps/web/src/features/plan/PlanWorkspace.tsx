@@ -558,6 +558,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
       planAgain={card === undefined && routed && !s.local ? { stale, onPlan: () => setLoad((n) => n + 1) } : undefined}
       onShowFuel={card === undefined && fuelHidden ? showFuelStops : undefined}
       onNavLog={card === undefined && routed && course ? openNavLogCard : undefined}
+      onClear={card === undefined ? vm.clearRoute : undefined}
     />
   );
 
