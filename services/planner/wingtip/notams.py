@@ -22,6 +22,7 @@ international ones too.
 
 from __future__ import annotations
 
+import html
 import json
 import re
 import sqlite3
@@ -54,7 +55,7 @@ _ICAO_PLACE = re.compile(r"\bA\)\s*([A-Z]{4})\b")
 _DOMESTIC_ID = re.compile(r"^!(\w+)\s+([A-Z]?\d{1,4}/\d{1,4})")
 #: The store's layout: 1 since a NOTAM known only by its ICAO number is
 #: kept by its place and number, not the number alone (_upgrade).
-STORE_VERSION = 1
+STORE_VERSION = 2
 
 _LOCK = threading.Lock()
 _db: sqlite3.Connection | None = None
@@ -88,9 +89,25 @@ def _upgrade(db: sqlite3.Connection) -> None:
     over KAPG's, a row with one's place and the other's words (15 of the
     4,011 kept so on 2026-11-02). Each is kept again by its place and
     number, its place read from its own words where they give one; the
-    NOTAM it was written over is gone until the feed sends it again."""
-    if db.execute("PRAGMA user_version").fetchone()[0] >= STORE_VERSION:
+    NOTAM it was written over is gone until the feed sends it again.
+
+    Before version 2 a NOTAM's text was kept with the HTML entities the
+    FAA's feed puts inside its XML ("O&apos;HARE"), which notam_read took for
+    someone's own words; the engine's reader now decodes them (from_fns),
+    and those kept are decoded here."""
+    version = db.execute("PRAGMA user_version").fetchone()[0]
+    if version >= STORE_VERSION:
         return
+    if version < 1:
+        _keep_by_place(db)
+    for key, raw, text in db.execute("SELECT id, raw, text FROM notams WHERE raw LIKE '%&%' OR text LIKE '%&%'").fetchall():
+        db.execute("UPDATE notams SET raw = ?, text = ? WHERE id = ?", (html.unescape(raw or ""), html.unescape(text or ""), key))
+    db.execute(f"PRAGMA user_version = {STORE_VERSION}")
+    db.commit()
+
+
+def _keep_by_place(db: sqlite3.Connection) -> None:
+    """Version 1: each NOTAM kept by its place and number (_upgrade)."""
     rows = db.execute("SELECT id, location, icao_location, raw FROM notams WHERE id NOT LIKE '% %'").fetchall()
     for old, location, icao_location, raw in rows:
         domestic = _DOMESTIC_ID.match(raw or "")
@@ -110,8 +127,6 @@ def _upgrade(db: sqlite3.Connection) -> None:
             "UPDATE notams SET id = ?, location = COALESCE(?, location), icao_location = COALESCE(?, icao_location) WHERE id = ?",
             (key, fix.get("location"), fix.get("icao_location"), old),
         )
-    db.execute(f"PRAGMA user_version = {STORE_VERSION}")
-    db.commit()
 
 
 def reset() -> None:
