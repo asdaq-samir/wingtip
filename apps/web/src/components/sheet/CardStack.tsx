@@ -199,7 +199,7 @@ function CardScroller({
         data-sheet-scroll=""
         data-panel-body=""
         className={cn(
-          "flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] print:overflow-visible",
+          "flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible",
           below,
           pill && "invisible [&_[data-sheet-head]]:visible",
         )}
