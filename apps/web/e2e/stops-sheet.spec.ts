@@ -219,7 +219,7 @@ test("the one search's Find Nearby tiles open the Stops round the pilot with tha
   await grabberTo(page, "full");
   const nearby = sideDrawer(page).getByTestId("find-nearby");
   await expect(nearby).toBeVisible();
-  await expect(nearby.getByRole("button")).toHaveText(["Food", "Fuel", "Repair", "Flight Training"]);
+  await expect(nearby.getByRole("button")).toHaveText(["Food", "Fuel", "Repair", "Training"]);
   // A finger's 44 points.
   const tile = nearby.getByTestId("find-nearby-repair");
   expect((await tile.boundingBox())!.height).toBeGreaterThanOrEqual(44);
