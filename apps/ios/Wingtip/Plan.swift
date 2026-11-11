@@ -191,6 +191,18 @@ final class Plan {
         for kind in kinds { KeptShown.shared.note(kind, key: idents.joined(separator: " "), at: at) }
     }
 
+    /// The route's profile fetched where the plan has none (its side fetch
+    /// failed or never ran), and the plan kept with it: Keep for the Air's,
+    /// so the profile is there in the air. True where it was kept.
+    func keepProfile() async -> Bool {
+        guard routed, profile == nil else { return profile != nil }
+        guard let ground = try? await Planner.routeProfile(dep: dep, dest: dest, stops: stops) else { return false }
+        profile = ground
+        sideProblems[.profile] = nil
+        keep()
+        return true
+    }
+
     /// A Direct to the planner couldn't be asked for: the route as it was
     /// put back, so the route box, the line and the legs are one route's,
     /// never the new route's over the old legs (the offline audit).

@@ -34,9 +34,16 @@ final class LoopTileOverlay: MKTileOverlay, @unchecked Sendable {
 
     override func loadTile(at path: MKTileOverlayPath, result: @escaping @Sendable (Data?, (any Error)?) -> Void) {
         LoopTiles.shared.began()
+        let address = url(forTilePath: path)
         super.loadTile(at: path) { data, error in
             LoopTiles.shared.ended()
-            result(data, error)
+            // With no signal, the radar's newest frame as Keep for the Air
+            // kept it along the route (KeepRadar), where it was.
+            if data == nil, let kept = KeptForAir.picture(KeepRadar.key(address)) {
+                result(kept, nil)
+            } else {
+                result(data, error)
+            }
         }
     }
 }
