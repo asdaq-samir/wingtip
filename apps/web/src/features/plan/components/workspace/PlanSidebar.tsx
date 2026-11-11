@@ -132,13 +132,15 @@ export default function PlanSidebar({
         onFlyHere={(to) => void flyHere(to)}
         onExpand={() => setPanel("full")}
         onLower={() => setPanel("half")}
-        // None for a point of the route, or past the planner's most stops.
-        onAddStop={
-          routePoints.includes(place) || planned.stops.length >= MAX_STOPS
-            ? undefined
-            : suggestedAt
-              ? () => keepFuelStops(suggestedAt.after, [place])
-              : addStop
+        onAddStop={suggestedAt ? () => keepFuelStops(suggestedAt.after, [place]) : addStop}
+        // Shown but greyed for a point of the route, or past the planner's
+        // most stops, with why (the owner, 2026-11-11: "show it but disable it").
+        addStopOff={
+          routePoints.includes(place)
+            ? "already on the route"
+            : planned.stops.length >= MAX_STOPS
+              ? "the route has its most stops"
+              : undefined
         }
         stop={suggestedAt?.stop}
         // The route's destination: when the flight lands there -- en route and on the ground at its

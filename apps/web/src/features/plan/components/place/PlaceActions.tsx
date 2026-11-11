@@ -31,6 +31,7 @@ export default function PlaceActions({
   flying,
   onFlyHere,
   onAddStop,
+  addStopOff,
 }: {
   place: AirportPlace | null;
   /** Fly Here tapped, the route on its way. */
@@ -38,13 +39,15 @@ export default function PlaceActions({
   onFlyHere: (place: AirportPlace) => void;
   /** None where the field is in the route already. */
   onAddStop?: (place: AirportPlace) => void;
+  /** Why Add Stop is greyed; none where it can be added. */
+  addStopOff?: string;
 }) {
   const desktop = useIsDesktop();
   const shown = useShown();
   const keyed = desktop && shown && !!place;
   // Each letter as the pilot presses it (lib/shortcutKeys), none when off.
   const hint = useKeyHint();
-  useCardKeys(keyed, { F: () => place && onFlyHere(place), S: onAddStop ? () => place && onAddStop(place) : undefined });
+  useCardKeys(keyed, { F: () => place && onFlyHere(place), S: onAddStop && !addStopOff ? () => place && onAddStop(place) : undefined });
   // The card keeps itself fresh as the window or the card comes back into
   // sight, whichever tab is open; its Refresh, in the Weather tab, asks now.
   useLiveRefresh("airport");
@@ -64,7 +67,8 @@ export default function PlaceActions({
         <Action
           icon={<ACTION.addStop.icon />}
           label={ACTION.addStop.label}
-          disabled={!place}
+          disabled={!place || !!addStopOff}
+          spoken={addStopOff ? `${ACTION.addStop.label}: ${addStopOff}` : undefined}
           onClick={() => place && onAddStop(place)}
           testId="place-add-stop"
           keys={keyed ? hint("S") : undefined}

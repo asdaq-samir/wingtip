@@ -136,6 +136,7 @@ export default function PlaceCard({
   onClose,
   onFlyHere,
   onAddStop,
+  addStopOff,
   onExpand,
   onLower,
   startOn,
@@ -153,6 +154,8 @@ export default function PlaceCard({
    *  (or the end a half route lacks, or the first point of a new one);
    *  none where it is in the route already. */
   onAddStop?: (place: AirportPlace) => void;
+  /** Why Add Stop is greyed (on the route already, the route full). */
+  addStopOff?: string;
   /** The panel all the way up, as a tab is picked. */
   onExpand: () => void;
   /** Back down half way: the open tab tapped again with the panel all the
@@ -529,6 +532,7 @@ export default function PlaceCard({
               onFlyHere(p);
             }}
             onAddStop={onAddStop}
+            addStopOff={addStopOff}
           />
           {/* The field from the air, its runways and from the ground, a row
               of large tiles under the actions, as Apple Maps' place card
