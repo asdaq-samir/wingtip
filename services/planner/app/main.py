@@ -37,9 +37,7 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
-from pydantic import TypeAdapter
 from wingtip import (
     airspace,
     altitude,
@@ -59,7 +57,7 @@ from wingtip import (
 from wingtip import airspace_at, congested, cycle_pack, data_cycles
 from wingtip import airports as airport_table
 
-from . import chart_model, chart_refresh, errors, tracing
+from . import chart_model, chart_refresh, errors, mcp, openapi_document, tracing
 from .chart_cycle import check as chart_cycle
 from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
@@ -68,9 +66,7 @@ from wingtip.planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
 from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words
 from .routers import engine as engine_router, forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
-from .schemas.chart import DetectMessage
 from .schemas.common import Index
-from .schemas.plan import NavLogMessage
 from .settings import get_settings
 
 # Nothing else in the process configured logging, so every log.info() in
@@ -444,29 +440,9 @@ for module in (
     notam_rank,
     offline,
     coach,
+    mcp,
 ):
     app.include_router(module.router)
 
 
-# The unions no route returns, published into the OpenAPI components by
-# _openapi so apps/web/ gets a TypeScript type for each stream.
-STREAM_MESSAGES = {"NavLogMessage": NavLogMessage, "DetectMessage": DetectMessage}
-
-
-def _openapi() -> dict:
-    """FastAPI's own document, plus the NDJSON stream message unions. No
-    route returns those, so FastAPI would never publish them, and apps/web/
-    needs them typed as much as any JSON response."""
-    if app.openapi_schema:
-        return app.openapi_schema
-    document = get_openapi(title=app.title, version=app.version, routes=app.routes)
-    components = document.setdefault("components", {}).setdefault("schemas", {})
-    for name, union in STREAM_MESSAGES.items():
-        piece = TypeAdapter(union).json_schema(mode="serialization", ref_template="#/components/schemas/{model}")
-        components.update(piece.pop("$defs", {}))
-        components[name] = piece
-    app.openapi_schema = document
-    return document
-
-
-app.openapi = _openapi
+app.openapi = openapi_document.with_streams(app)

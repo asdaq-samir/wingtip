@@ -49,8 +49,8 @@ public class AircraftController {
     private final AircraftService aircraftService;
     private final SquawkService squawks;
     private final PilotService pilots;
-    private final PlannerClient planner;
     private final DueItemService dueItems;
+    private final AircraftDtos dtos;
 
     public AircraftController(
             AircraftService aircraftService,
@@ -61,8 +61,8 @@ public class AircraftController {
         this.aircraftService = aircraftService;
         this.squawks = squawks;
         this.pilots = pilots;
-        this.planner = planner;
         this.dueItems = dueItems;
+        this.dtos = new AircraftDtos(squawks, planner, dueItems);
     }
 
     @GetMapping
@@ -225,47 +225,7 @@ public class AircraftController {
     }
 
     private AircraftDto toDto(Aircraft a) {
-        PlannerInspections due = dueOf(a);
-        return new AircraftDto(
-                a.getId(),
-                a.getTailNumber(),
-                a.getTypeDesignator(),
-                a.getCruiseTasKt(),
-                a.getFuelBurnGph(),
-                a.getCruisePowerPct(),
-                a.getClimbTasKt(),
-                a.getClimbFuelBurnGph(),
-                a.getUsableFuelGal(),
-                a.getCreatedAt(),
-                vorCheckOf(a, due),
-                inspectionsOf(a, due),
-                a.getId() == null ? List.of() : squawks.open(a.getId()),
-                a.getEquipment(),
-                a.getSurveillance(),
-                a.getColour(),
-                a.getId() == null
-                        ? List.of()
-                        : dueItems.of(a.getId()).stream()
-                                .map(DueItemService::toDto)
-                                .toList(),
-                AircraftService.handbookOf(a),
-                AircraftService.figuresOf(a));
-    }
-
-    /** When the airplane's inspections and checks fall due, and its VOR
-     *  check's standing: the engine's (inspections_due, through the
-     *  planner: 14 CFR 91.409(a), (b), 91.207(d), 91.411(a), 91.413(a),
-     *  91.171). */
-    private PlannerInspections dueOf(Aircraft a) {
-        return planner.inspections(
-                a.getAnnualOn(),
-                a.getEltInspectedOn(),
-                a.getStaticCheckOn(),
-                a.getTransponderCheckOn(),
-                a.getHundredHourAtHours(),
-                a.getVorCheckOn(),
-                a.getVorCheckKind() == null ? null : a.getVorCheckKind().name(),
-                a.getVorCheckErrorDeg());
+        return dtos.of(a);
     }
 
     static AircraftDto.InspectionsDto inspectionsOf(Aircraft a, PlannerInspections due) {

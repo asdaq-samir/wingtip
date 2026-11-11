@@ -41,3 +41,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0033 | [One card rule and one scrolling rule on every platform](0033-one-card-rule-one-scroll-rule.md) | 2026-11-10 | Accepted |
 | 0034 | [CI stays lean, and the guards hold it there](0034-ci-stays-lean.md) | 2026-11-10 | Accepted |
 | 0035 | [The Claude features are off until the subscription is decided](0035-claude-off-until-subscription.md) | 2026-11-10 | Accepted |
+| 0036 | [Wingtip reaches Claude and ChatGPT as the pilot's own connector](0036-mcp-connector.md) | 2026-11-10 | Accepted |

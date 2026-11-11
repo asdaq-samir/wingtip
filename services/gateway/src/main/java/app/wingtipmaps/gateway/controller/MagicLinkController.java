@@ -8,6 +8,7 @@ import app.wingtipmaps.gateway.security.SessionSignIn;
 import app.wingtipmaps.gateway.security.SignInLanding;
 import app.wingtipmaps.gateway.service.Mailer;
 import app.wingtipmaps.gateway.service.PilotService;
+import io.swagger.v3.oas.annotations.Hidden;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -128,6 +129,22 @@ public class MagicLinkController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).build();
     }
 
+    /**
+     * The same request from a plain form: the page that asks a pilot to
+     * sign in before their AI app is connected (/connect), which runs no
+     * script. Answered with that page again, saying the link is on its
+     * way or that too many were asked for. Not in the API's document: the
+     * apps use the JSON form above.
+     */
+    @Hidden
+    @PostMapping(consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+    public ResponseEntity<Void> requestFromForm(@Valid MagicLinkRequest form, HttpServletRequest request) {
+        boolean sent = request(form, request).getStatusCode().is2xxSuccessful();
+        return ResponseEntity.status(HttpStatus.SEE_OTHER)
+                .location(URI.create(sent ? "/connect?sent=1" : "/connect?throttled=1"))
+                .build();
+    }
+
     @Operation(
             summary = "Where a magic link opens",
             description = "Sends the browser to the planner, which asks the pilot to confirm with its own sign-in "
@@ -170,7 +187,7 @@ public class MagicLinkController {
 
         SessionSignIn.signIn(authentication, request, response);
         return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create(SignInLanding.after(pilot)))
+                .location(URI.create(SignInLanding.after(pilot, request)))
                 .build();
     }
 
