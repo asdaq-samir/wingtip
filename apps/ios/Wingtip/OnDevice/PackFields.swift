@@ -80,3 +80,56 @@ extension Planner {
         }
     }
 }
+
+/// The search's airports with no planner: every field in the cycle packs
+/// kept on this iPhone, matched by ident or name as typed. The engine
+/// reads the packs (airports_in_view, at most 300 fields a call, so each
+/// kept region is read in half-degree cells); the matching is the
+/// search's own, no aviation rule.
+enum PackSearch {
+    /// The cell each region is read in: small enough that no cell holds
+    /// the engine's 300 fields a call, even round Los Angeles.
+    static let cellDeg = 0.5
+
+    /// Every field in the regions kept, once per cycle, read off the main
+    /// thread (it reads each region's table some 64 times).
+    static func allKept(packs: CyclePacks = .shared) -> [AirportPin] {
+        guard let index = packs.index else { return [] }
+        var seen = Set<String>()
+        var out: [AirportPin] = []
+        for region in index.regions where FileManager.default.fileExists(atPath: packs.path(cycle: index.cycle, region: region.name).path) {
+            var south = region.south
+            while south < region.north {
+                var west = region.west
+                while west < region.east {
+                    for pin in packs.airportsInView(south: south, west: west, north: south + cellDeg, east: west + cellDeg) ?? [] where seen.insert(pin.ident).inserted {
+                        out.append(pin)
+                    }
+                    west += cellDeg
+                }
+                south += cellDeg
+            }
+        }
+        return out
+    }
+
+    /// The fields matching what was typed, best first: the ident itself
+    /// (KOSH, or OSH for KOSH), an ident starting with it, a name starting
+    /// with it, then a name holding it.
+    static func search(_ q: String, in pins: [AirportPin], limit: Int = 12) -> [AirportSuggestion] {
+        let typed = q.trimmingCharacters(in: .whitespaces).uppercased()
+        guard typed.count >= 2 else { return [] }
+        func rank(_ pin: AirportPin) -> Int? {
+            let ident = pin.ident.uppercased(), name = pin.name.uppercased()
+            if ident == typed || ident == "K" + typed { return 0 }
+            if ident.hasPrefix(typed) { return 1 }
+            if name.hasPrefix(typed) { return 2 }
+            if name.contains(typed) { return 3 }
+            return nil
+        }
+        return pins.compactMap { pin in rank(pin).map { ($0, pin) } }
+            .sorted { ($0.0, $0.1.ident) < ($1.0, $1.1.ident) }
+            .prefix(limit)
+            .map { AirportSuggestion(ident: $0.1.ident, kind: $0.1.kind, name: $0.1.name) }
+    }
+}

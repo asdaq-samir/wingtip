@@ -46,4 +46,18 @@ struct OfflineFieldsTests {
         // A ratio with no airplane picked is not used: never another's.
         #expect(try Emergency.deviceFields(fix: fix, aircraft: nil, glideRatio: 9, pins: pins)?.airplane == nil)
     }
+
+    @Test func theSearchFindsTheKeptAirportsByIdentAndName() {
+        let kept = [AirportPin(ident: "KOSH", kind: "medium", lat: 43.98, lon: -88.56, name: "Wittman Rgnl"),
+                    AirportPin(ident: "KOSU", kind: "small", lat: 40.08, lon: -83.07, name: "Ohio State University"),
+                    AirportPin(ident: "C81", kind: "small", lat: 42.32, lon: -88.07, name: "Campbell")]
+        // OSH is KOSH, before KOSU, which only starts the same.
+        #expect(PackSearch.search("osh", in: kept).map(\.ident) == ["KOSH"])
+        #expect(PackSearch.search("KOS", in: kept).map(\.ident) == ["KOSH", "KOSU"])
+        #expect(PackSearch.search("camp", in: kept).map(\.ident) == ["C81"])
+        #expect(PackSearch.search("state", in: kept).map(\.ident) == ["KOSU"])
+        #expect(PackSearch.search("k", in: kept).isEmpty)
+        // No connection is said as such.
+        #expect(OneSearchModel.failedWords(URLError(.notConnectedToInternet), kept: true).hasPrefix("No connection"))
+    }
 }

@@ -37,6 +37,11 @@ final class OneSearchModel {
     private(set) var nearest: [NearestAirport] = []
     /// The planner did not answer the last search: said in its place.
     private(set) var failed: String?
+    /// The airports shown are this iPhone's packs', the planner not
+    /// answering (PackSearch): said over them.
+    private(set) var fromDevice = false
+    /// The packs' fields, read once the planner first fails to answer.
+    @ObservationIgnored private var keptFields: [AirportPin]?
     @ObservationIgnored private var searching: Task<Void, Never>?
 
     var query: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -90,13 +95,28 @@ final class OneSearchModel {
             case .success(let list):
                 airports = list.filter { $0.kind != "fix" }
                 fixes = list.filter { $0.kind == "fix" }
+                fromDevice = false
             case .failure(let error):
-                airports = []; fixes = []
-                failed = error.localizedDescription
+                // With no planner, the airports kept on this iPhone that
+                // match; the fixes, towns and registry need the planner.
+                if keptFields == nil { keptFields = await Task.detached(priority: .userInitiated) { PackSearch.allKept() }.value }
+                guard !Task.isCancelled else { return }
+                airports = PackSearch.search(q, in: keptFields ?? [])
+                fixes = []
+                fromDevice = !airports.isEmpty
+                failed = Self.failedWords(error, kept: !airports.isEmpty)
             }
             towns = (spots ?? []).filter { $0.kind != "airport" }
             registered = registration
         }
+    }
+
+    /// What a failed search says: no connection said as such, with what
+    /// the iPhone could still find.
+    static func failedWords(_ error: any Error, kept: Bool) -> String {
+        guard error is URLError else { return "The search couldn't be done: \(error.localizedDescription)" }
+        return kept ? "No connection: airports from the chart data on this iPhone only. Waypoints, towns and N-numbers need a connection."
+            : "No connection: the search needs one, and no airport kept on this iPhone matches."
     }
 
     private nonisolated static func fields(_ q: String) async -> Result<[AirportSuggestion], any Error> {
@@ -108,7 +128,7 @@ final class OneSearchModel {
     }
 
     private func clearFound() {
-        airports = []; fixes = []; towns = []; registered = nil
+        airports = []; fixes = []; towns = []; registered = nil; fromDevice = false
     }
 
     /// The planner's airplane types, asked once.
