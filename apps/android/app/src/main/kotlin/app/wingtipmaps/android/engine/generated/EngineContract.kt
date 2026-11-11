@@ -6501,6 +6501,9 @@ object EngineContract {
          * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
          */
         val profile: EngineContract.NavLogProfile? = null,
+        /**
+         * Whether the flight is at night (14 CFR 1.1, after the end of evening civil twilight); null where it has no departure time, which takes the night's 45-minute VFR reserve (91.151(a)(2)).
+         */
         val night: Boolean? = null,
         val rules: String? = null,
         @SerialName("alternate_gal")

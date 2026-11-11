@@ -195,7 +195,10 @@ pub fn totals(legs: &[Obj]) -> R<Value> {
 /// 30 minutes by day and 45 at night under VFR (91.151(a)), 45 under IFR
 /// day or night (91.167(a)(3)) -- and the margin against the usable fuel
 /// where the profile gives it. `night` None is a flight with no departure
-/// time: the day's reserve, and said so. With no airplane (`profile`
+/// time: night cannot be ruled out, so the night's 45 minutes
+/// (91.151(a)(2), "At night, to fly after that for at least 45 minutes"),
+/// the larger, and `night` stays null for the apps to say "night reserve
+/// assumed". With no airplane (`profile`
 /// None) the reserve's minutes alone, which are the rules' (91.151,
 /// 91.167): its gallons, the taxi allowance, the fuel required and the
 /// margin are an airplane's, and null. The start, taxi and takeoff
@@ -204,7 +207,7 @@ pub fn totals(legs: &[Obj]) -> R<Value> {
 /// allowance out, which the apps say beside it -- no stock airplane's
 /// figure fills the gap (the owner, 2026-11-09).
 pub fn fuel_plan(total_fuel_gal: Option<f64>, profile: Option<&Profile>, night: Option<bool>, rules: &str, alternate_gal: f64) -> Value {
-    let reserve_min = flight::reserve_min(rules == "ifr", night.unwrap_or(false));
+    let reserve_min = flight::reserve_min(rules == "ifr", night.unwrap_or(true));
     let reserve_gal = profile.map(|p| py_round(reserve_min / 60.0 * p.airplane.fuel_burn_gph, 2));
     let taxi_gal = profile.and_then(|p| p.taxi_fuel_gal);
     let required = match (total_fuel_gal, reserve_gal) {

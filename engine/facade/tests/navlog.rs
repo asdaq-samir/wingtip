@@ -109,6 +109,10 @@ fn under_ifr_the_reserve_is_45_minutes_by_day_and_by_night() {
     let p = json!({"fuel_burn_gph": 8.0, "taxi_fuel_gal": 1.4});
     assert_eq!(f(&ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": false}))["reserve_min"]), 30.0);
     assert_eq!(f(&ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": true}))["reserve_min"]), 45.0);
+    // No departure time: night is not ruled out, so 91.151(a)(2)'s 45, and
+    // `night` stays null for the apps to say it was assumed.
+    let unknown = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": null}));
+    assert_eq!((f(&unknown["reserve_min"]), &unknown["night"]), (45.0, &Value::Null));
     let day = ask("navlog_fuel_plan", json!({"total_fuel_gal": 20.0, "profile": p, "night": false, "rules": "ifr"}));
     assert_eq!((f(&day["reserve_min"]), f(&day["reserve_gal"]), day["rules"].as_str()), (45.0, 6.0, Some("ifr")));
     assert_eq!(

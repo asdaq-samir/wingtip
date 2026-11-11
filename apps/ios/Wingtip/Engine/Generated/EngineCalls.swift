@@ -1009,7 +1009,7 @@ extension Engine {
         try rule("navlog_candidates", EngineContract.NavlogCandidatesInput(segments: segments, legs: legs, profile: profile))
     }
 
-    /// The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
+    /// The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), and 45 where `night` is null (no departure time: night cannot be ruled out, so the larger is assumed), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
     static func navlogFuelPlan(totalFuelGal: Double? = nil, profile: EngineContract.NavLogProfile? = nil, night: Bool? = nil, rules: String? = nil, alternateGal: Double? = nil) throws -> EngineContract.NavlogFuelPlanAnswer {
         try rule("navlog_fuel_plan", EngineContract.NavlogFuelPlanInput(totalFuelGal: totalFuelGal, profile: profile, night: night, rules: rules, alternateGal: alternateGal))
     }
