@@ -6,11 +6,9 @@ import { permissionState } from "../../../lib/permissions";
 import { NO_AIRPLANE, usePreferences } from "../../../lib/preferences";
 import type { RouteParts } from "../components/RouteBox";
 import { useAircraftPick } from "./useAircraftPick";
+import { SAMPLE_FLIGHT } from "../lib/sampleFlight";
 
-/** The welcome's sample: Madison to Oshkosh, one short leg every app
- *  opens alike (the iPhone's and Android's welcome too), so a new pilot
- *  sees a route, its nav log and its Brief at once. */
-export const SAMPLE_FLIGHT: RouteParts = { dep: "KMSN", stops: [], dest: "KOSH" };
+export { SAMPLE_FLIGHT };
 
 /** "No Airplane" first and the default (docs/decisions/0011), then the
  *  pilot's own airplanes, each by its N-number. */

@@ -158,7 +158,7 @@ the suite prints that reason. What runs when is [docs/CI.md](../CI.md).
 
 ## 4. One search (the owner, 2026-11-09)
 
-The sheet has no tabs. Its first row is one field, "Search airports,
+The sheet has no tabs. Its first page's first row is one field, "Search airports,
 airplanes, or ask", with the on-device microphone and the account button
 beside it; the account button holds settings and the account, where
 Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXzCV>.
@@ -188,6 +188,44 @@ Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXz
 Tests: [`e2e/one-search.spec.ts`](../../apps/web/e2e/one-search.spec.ts)
 (`@smoke`: an airport picked from the search), `WingtipTests/OneSearchTests`,
 Android's `search/SearchControlTest`.
+
+### 4a. The sheet's two pages, Search and FPL (the owner, 2026-11-11)
+
+The owner asked "Can we have a sheet carousel? With search and fpl?" and
+chose swipe and dots, always two pages. This amends "The sheet has no
+tabs. Its first row is one field": the sheet has two pages side by side,
+and the one search is still the only field.
+
+1. **Search** (the first page): the search's row (field, microphone,
+   account button) and its home list (Favorites, Recents, Nearest,
+   Saved, Find Nearby), the traffic and the search's lists in full.
+2. **FPL** (the second page): the route's row (its pills, Routes, Brief,
+   •••), the airplane and the altitude, the plan (the nav log, the
+   Brief, the Profile, the Stops) and the route's figures pinned at the
+   foot, which are FPL's alone. With no route, "Plan a flight" (the
+   platform's empty view) with Search, which goes to the first page with
+   the field focused, and Open Sample Flight. FPL has no field of its
+   own: adding a stop asks the one search.
+
+- **A sideways swipe on the sheet moves a page**; it never moves the
+  sheet up or down, and a drag up or down is still the sheet's (and each
+  page's own scroller's all the way up). Each page keeps its place.
+- **Two page dots under the grabber**, centred, each a 44-point tap
+  that picks its page, said "Page 1 of 2, Search".
+- **A route made or opened** (Fly Here, a link, Saved) goes to FPL;
+  clearing it stays on the page it is on.
+- **Cards** open over both pages as before; ✕ comes back to the page
+  they were opened over.
+- **At the pill** the sheet shows the page's own first row (the search's
+  on Search, the route's on FPL), the dots still in sight.
+- **Links**: `open=search` and `open=fpl` (design/screens.json).
+
+| Web | iPhone | Android |
+|---|---|---|
+| shadcn's Carousel (Embla) with `data-base-ui-swipe-ignore="x"` inside the Drawer, the dots Base UI's Tabs (`components/sheet/SheetPager`; FPL's body `features/plan/components/workspace/PlanPage`) | `TabView` with `.tabViewStyle(.page)` or a paging `ScrollView`, the stock page dots | Compose `HorizontalPager` with a pager indicator |
+
+Tests: [`e2e/sheet-pages.spec.ts`](../../apps/web/e2e/sheet-pages.spec.ts)
+(`@smoke`: Search to FPL and back by a swipe and by the dots).
 
 ## 5. Airport weather marks (the owner, 2026-11-10)
 

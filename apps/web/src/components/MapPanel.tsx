@@ -26,6 +26,7 @@ import { useCardRaise } from "./sheet/useCardRaise";
 import { CUT_TOP, FOLLOW, SHEET_BELOW, SheetGrabber, SheetParts, type PartsProps } from "./sheet/SheetParts";
 import { CardStack, type StackProps } from "./sheet/CardStack";
 import { SheetDrawer } from "./sheet/SheetDrawer";
+import type { SheetPages } from "./sheet/SheetPager";
 
 interface Props {
   /** The panel's name -- "Flight Planning", "Model Training" -- for its
@@ -63,6 +64,10 @@ interface Props {
   /** The airplane flying the route (useFlyingMode): the first row, the top
    *  row and the controls put away, the pill its foot alone. */
   flying?: boolean;
+  /** The sheet's two pages, Search and FPL, side by side and swiped between
+   *  (the owner, 2026-11-11): the first the search and `children`, the
+   *  second the top row and its own body (SheetPager). */
+  pages?: SheetPages;
   state: PanelState;
   onStateChange: (state: PanelState) => void;
   onInsetsChange: (insets: MapInsets) => void;
@@ -146,6 +151,7 @@ export default function MapPanel(props: Props) {
     size,
     moving,
     barInPill: !flying,
+    dots: !!props.pages && !flying,
     grabberOver: bottomSheet,
     footShown,
     pillChrome,

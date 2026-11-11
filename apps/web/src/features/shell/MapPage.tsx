@@ -357,17 +357,16 @@ export default function MapPage({ mode }: { mode: Mode }) {
                     // the search's row.
                     compact={consoleLayer ? undefined : (pieces.compact ?? topRow)}
                     toEdge={!!pieces.toEdge}
-                    // The first row (the one search), under its title; put away under a card (MapPanel).
+                    // The first row (the one search), put away under a card; and the pages, Search and FPL (MapPanel).
                     bar={pieces.bar}
+                    pages={pieces.pages}
                     layer={consoleLayer ? "console" : pieces.alone ? "card" : "tab"}
                     foot={consoleLayer ? undefined : pieces.foot}
                     cardOver={!!pieces.cardOver}
                     flying={!!pieces.flying}
-                    // Kept too where the row holds the workspace's actions: one can
-                    // own a card in the panel (Train's Filter, a ResponsivePopover),
-                    // and the card's own coming up hides the head -- built again,
-                    // the card went with it the moment it opened (dev-page.spec,
-                    // 2026-11-05).
+                    // Kept too where the row holds the workspace's actions: one can own a card in the
+                    // panel (Train's Filter, a ResponsivePopover), and the card's own coming up hides the
+                    // head -- built again, the card went with it as it opened (dev-page.spec, 2026-11-05).
                     top={topRow}
                     kept={pieces.route != null || pieces.actions != null ? routeRow : undefined}
                   >

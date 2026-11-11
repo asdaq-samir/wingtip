@@ -2,6 +2,7 @@ import { useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent,
 import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import TabKept from "../TabKept";
+import { PageDots, SheetPager, type SheetPages } from "./SheetPager";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
  *  in it four from the edge. */
@@ -16,6 +17,12 @@ function barRowPad(underGrabber: boolean) {
   if (underGrabber) return "h-[4.75rem] pt-6 pb-1.5";
   return cn("h-[4.25rem] pb-3", ROW_PAD);
 }
+/** The same row with the sheet's pages (SheetPager): a rem more over it
+ *  for the page dots, under the grabber's room on a bottom sheet (40 over
+ *  the field, 92 in all), else under the ten over the row (26 over it, 84). */
+function pagedBarPad(underGrabber: boolean) {
+  return underGrabber ? "h-[5.75rem] pt-10 pb-1.5" : "h-[5.25rem] pt-6.5 pb-3";
+}
 /** The home indicator's room, none while the keyboard is up: the
  *  Drawer's --drawer-keyboard-inset is 0 or a keyboard's height, so the
  *  room less a thousand times it is the room or nothing. */
@@ -23,6 +30,8 @@ const offKeyboard = (px: number) => `max(0px, calc(${px}px - var(--drawer-keyboa
 /** Those rows' heights, for what pins under them (--sheet-head). */
 const BAR_ALONE = "4.75rem";
 const BAR = "4.25rem";
+const PAGED_BAR_ALONE = "5.75rem";
+const PAGED_BAR = "5.25rem";
 const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 
 /** Under the head, the body and the foot a shade darker than the glass
@@ -111,6 +120,8 @@ export interface PartsProps {
   panelSize: { size: PanelState; to: (size: PanelState) => void; card: boolean };
   setFoot: (node: HTMLDivElement | null) => void;
   onFootTap: () => void;
+  /** The sheet's two pages, Search and FPL, swiped between (SheetPager). */
+  pages?: SheetPages;
 }
 
 /** Back by the Drawer's snap offset and the finger's movement, on its
@@ -138,14 +149,17 @@ export const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--sheet-offset
  * own layout: no height of it measured, no scroller pulled up under it.
  * A card, which has the sheet to itself (no search over it), is its own
  * scroller filling the room under an empty head, its title row sticky at
- * its top (PinnedHead) and its tabs under that.
+ * its top (PinnedHead) and its tabs under that. With the sheet's pages
+ * (SheetPager) each page is such a scroller: Search's head the one search,
+ * FPL's the route's row and the controls, the dots over both.
  */
 export function SheetParts(p: PartsProps) {
   const { atPill, fromBottom, size, footShown, cardsUp, setFoot } = p;
-  const headerShown = !p.flying && !cardsUp && (atPill ? !p.barShown : p.top != null || !p.barShown);
+  const paged = !!p.pages;
+  // Paged, the first page holds the search alone and the second the route's
+  // row: no route row under the search.
+  const headerShown = !paged && !p.flying && !cardsUp && (atPill ? !p.barShown : p.top != null || !p.barShown);
   const headContent = atPill ? p.compact : p.top;
-  const keptHere = p.kept != null && headerShown && headContent === p.kept;
-  const under = !atPill;
   // Where the panel's top-right button sits, one place in every panel.
   const topSheet = p.onPhone && !fromBottom;
   const headPad = topSheet ? "max(0.5rem, env(safe-area-inset-top))" : "0.25rem";
@@ -156,13 +170,8 @@ export function SheetParts(p: PartsProps) {
   } as CSSProperties;
   const pillFoot = size === "peek" && !!(p.bar || p.compact);
   const bandOnly = !!p.bar && p.barShown && !headerShown;
-  const sheetHead = bandOnly ? `calc(${p.fromBottom ? BAR_ALONE : BAR}${topSheet ? " + env(safe-area-inset-top)" : ""})` : "0px";
-  // A card or a page at the pill, with no search and no pill of its own
-  // over it: its one title row (PinnedHead, data-sheet-head) shown in the
-  // pill's room, the rest of it out of sight, a tap on the row raising it
-  // back to half, as Apple Maps' place card at its smallest (the owner,
-  // 2026-11-11: Settings dragged to the smallest size left the sheet empty).
-  const headAlone = atPill && !p.flying && !p.barShown && !(headerShown && headContent != null);
+  const barHeight = paged ? (p.fromBottom ? PAGED_BAR_ALONE : PAGED_BAR) : p.fromBottom ? BAR_ALONE : BAR;
+  const sheetHead = bandOnly ? `calc(${barHeight}${topSheet ? " + env(safe-area-inset-top)" : ""})` : "0px";
   // On a phone, what stays in sight at the sheet's free edge while the
   // popup, laid out at its full height, slides: moved back by the Drawer's
   // own offset and the finger's (its CSS variables), on its curve, and the
@@ -170,112 +179,183 @@ export function SheetParts(p: PartsProps) {
   // sheet's head and body.
   const follows = p.onPhone ? FOLLOW : undefined;
 
-  return (
-    <>
+  const barRow = p.bar && (
+    <div
+      className={cn(
+        "flex shrink-0 px-4",
+        paged ? pagedBarPad(p.fromBottom) : barRowPad(p.fromBottom),
+        !p.barShown && "hidden",
+        // All the way up on a phone the search alone is pinned at the
+        // top, a hairline under it, as Apple Maps' is.
+        p.onPhone && size === "full" && "border-b border-border",
+      )}
+    >
+      <PanelSize.Provider value={p.panelSize}>{p.bar}</PanelSize.Provider>
+    </div>
+  );
+  // The route's row (or a workspace's head) and the controls under it: under
+  // the search, or paged the second page's first row.
+  const headBlock = (shown: boolean, alone: boolean, first: boolean) => {
+    const keptHere = p.kept != null && shown && headContent === p.kept;
+    const firstPad = first ? (p.fromBottom ? "pt-10" : "pt-6.5") : undefined;
+    return (
       <div
-        data-sheet-scroll=""
-        // Where a list's pinned head sticks under the head band (PinnedHead):
-        // the search's row, a fixed height, where that is all the band holds
-        // (a tab's lists); none over a card, which has the sheet to itself.
-        // A row focused or brought into view stops under the search's row,
-        // not behind it (WCAG 2.4.11).
-        style={{ "--sheet-head": sheetHead, scrollPaddingTop: sheetHead } as CSSProperties}
         className={cn(
-          "flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] print:overflow-visible",
-          topSheet && cn(follows, CUT_TOP),
-          p.onPhone && fromBottom && footShown && CUT_BOTTOM,
+          "relative flex flex-col",
+          !first && p.bar && p.barShown && !atPill && SHEET_BELOW,
+          ((!shown && p.kept == null) || alone) && "hidden",
         )}
       >
-        <div
-          data-head-band=""
-          style={vars}
-          // Sticky at the scroller's top, frosted wherever the body runs on
-          // up under it, the grabber's room inside it (the owner's iPhone,
-          // 2026-11-11: clear, the list showed through the band).
-          className={cn("sticky top-0 flex shrink-0 flex-col", under && "frost-head z-20", topSheet && "pt-[env(safe-area-inset-top)]")}
-        >
-          {p.bar && (
-            <div
-              className={cn(
-                "flex shrink-0 px-4",
-                barRowPad(p.fromBottom),
-                !p.barShown && "hidden",
-                // All the way up on a phone the search alone is pinned at the
-                // top, a hairline under it, as Apple Maps' is.
-                p.onPhone && size === "full" && "border-b border-border",
-              )}
-            >
-              <PanelSize.Provider value={p.panelSize}>{p.bar}</PanelSize.Provider>
-            </div>
-          )}
-          <div
-            className={cn(
-              "relative flex flex-col",
-              p.bar && p.barShown && !atPill && SHEET_BELOW,
-              ((!headerShown && p.kept == null) || headAlone) && "hidden",
-            )}
+        {(shown || p.kept != null) && (
+          <header
+            className={
+              !shown
+                ? "contents"
+                : cn(
+                    "@container flex items-center gap-2 print:hidden",
+                    first
+                      ? cn(atPill ? "px-2.25 pb-1.5" : "px-3 pb-1", firstPad)
+                      : atPill
+                        ? cn("px-2.25 pb-3", ROW_PAD)
+                        : p.top == null
+                          ? undefined
+                          : cn("px-3 pb-1", p.barShown ? "pt-1" : ROW_PAD),
+                  )
+            }
           >
-            {(headerShown || p.kept != null) && (
-              <header
-                className={
-                  !headerShown
-                    ? "contents"
-                    : cn(
-                        "@container flex items-center gap-2 print:hidden",
-                        atPill ? cn("px-2.25 pb-3", ROW_PAD) : p.top == null ? undefined : cn("px-3 pb-1", p.barShown ? "pt-1" : ROW_PAD),
-                      )
-                }
-              >
-                {/* The kept row first, in the one place whatever is shown, so
-                    it is never built again; out of sight inert and not laid
-                    out (tab-away). */}
-                {p.kept != null && (
-                  <div className={keptHere ? "contents" : "tab-away pointer-events-none absolute"} inert={!keptHere}>
-                    {p.kept}
-                  </div>
-                )}
-                {headerShown && !keptHere && headContent}
-              </header>
-            )}
-            {headerShown && !atPill && p.controls && (
-              <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-3 px-3 pt-1 print:hidden", topSheet ? "pb-5" : "pb-1.5")}>
-                {p.controls}
+            {/* The kept row first, in the one place whatever is shown, so
+                it is never built again; out of sight inert and not laid
+                out (tab-away). */}
+            {p.kept != null && (
+              <div className={keptHere ? "contents" : "tab-away pointer-events-none absolute"} inert={!keptHere}>
+                {p.kept}
               </div>
             )}
+            {shown && !keptHere && headContent}
+          </header>
+        )}
+        {shown && !atPill && p.controls && (
+          <div className={cn("flex flex-wrap items-center gap-x-2 gap-y-3 px-3 pt-1 print:hidden", topSheet ? "pb-5" : "pb-1.5")}>
+            {p.controls}
           </div>
-        </div>
-        {/* eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to raise the sheet, and the card's own buttons stay focusable */}
-        <div
-          className={cn(
-            "flex min-h-0 flex-1 flex-col",
-            size !== "peek" && !fromBottom && "pb-4",
-            SHEET_BELOW,
-            (p.resting || cardsUp) && "invisible",
-            p.resting && headAlone && !cardsUp && "[&_[data-sheet-head]]:visible",
-            !p.onPhone && size === "peek" && "hidden",
-          )}
-          inert={cardsUp || (p.resting && !headAlone)}
-          data-panel-body=""
-          // On a phone, Drawer.Content's own mark: a mouse dragged across the
-          // body selects its words rather than moving the sheet (a finger
-          // still moves it, where the body's lists are not scrolling).
-          data-drawer-content={p.onPhone ? "" : undefined}
-          onClick={
-            p.resting && headAlone
-              ? (event) => {
-                  if (!(event.target instanceof Element) || !event.target.closest("button, a, input, [role=button]")) p.onFootTap();
-                }
-              : undefined
-          }
-        >
-          {/* Not put away under a card (TabKept's `away`): a card's content is
-              drawn in it (PanelCard, the Brief, Settings) and opens while it
-              is in sight (lib/shown). */}
-          <TabKept away={false} still={p.layer === "console"}>
-            {p.children}
-          </TabKept>
-        </div>
+        )}
       </div>
+    );
+  };
+
+  // One scroller: its head's band sticky at its top and the body under it.
+  // `alone`: a card or a page at the pill, with no search and no pill of its
+  // own over it: its one title row (PinnedHead, data-sheet-head) shown in the
+  // pill's room, the rest of it out of sight, a tap on the row raising it
+  // back to half, as Apple Maps' place card at its smallest (the owner,
+  // 2026-11-11: Settings dragged to the smallest size left the sheet empty).
+  // `off`: a page out of sight beside the one up, its body inert.
+  const scroller = (band: ReactNode, body: ReactNode, alone: boolean, off: boolean, head: string) => (
+    <div
+      data-sheet-scroll=""
+      // Where a list's pinned head sticks under the head band (PinnedHead):
+      // the search's row, a fixed height, where that is all the band holds
+      // (a tab's lists); none over a card, which has the sheet to itself.
+      // A row focused or brought into view stops under the search's row,
+      // not behind it (WCAG 2.4.11).
+      style={{ "--sheet-head": head, scrollPaddingTop: head } as CSSProperties}
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] print:overflow-visible",
+        topSheet && cn(follows, CUT_TOP),
+        p.onPhone && fromBottom && footShown && CUT_BOTTOM,
+      )}
+    >
+      <div
+        data-head-band=""
+        style={vars}
+        // Sticky at the scroller's top, frosted wherever the body runs on
+        // up under it, the grabber's room inside it (the owner's iPhone,
+        // 2026-11-11: clear, the list showed through the band).
+        className={cn("sticky top-0 flex shrink-0 flex-col", !atPill && "frost-head z-20", topSheet && "pt-[env(safe-area-inset-top)]")}
+      >
+        {band}
+      </div>
+      {/* eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to raise the sheet, and the card's own buttons stay focusable */}
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 flex-col",
+          size !== "peek" && !fromBottom && "pb-4",
+          SHEET_BELOW,
+          (p.resting || cardsUp) && "invisible",
+          p.resting && alone && !cardsUp && "[&_[data-sheet-head]]:visible",
+          !p.onPhone && size === "peek" && "hidden",
+        )}
+        inert={off || cardsUp || (p.resting && !alone)}
+        data-panel-body=""
+        // On a phone, Drawer.Content's own mark: a mouse dragged across the
+        // body selects its words rather than moving the sheet (a finger
+        // still moves it, where the body's lists are not scrolling).
+        data-drawer-content={p.onPhone ? "" : undefined}
+        onClick={
+          p.resting && alone
+            ? (event) => {
+                if (!(event.target instanceof Element) || !event.target.closest("button, a, input, [role=button]")) p.onFootTap();
+              }
+            : undefined
+        }
+      >
+        {/* Not put away under a card (TabKept's `away`): a card's content is
+            drawn in it (PanelCard, the Brief, Settings) and opens while it
+            is in sight (lib/shown). */}
+        <TabKept away={false} still={p.layer === "console"}>
+          {body}
+        </TabKept>
+      </div>
+    </div>
+  );
+
+  let content: ReactNode;
+  if (p.pages) {
+    const { at, go, names, second } = p.pages;
+    // The second page's first row: the route's at every size, the pill's
+    // own row at the pill.
+    const routeShown = !p.flying && !cardsUp && (atPill ? p.compact != null : p.top != null);
+    const searchAlone = atPill && !p.flying && !p.barShown;
+    const routeAlone = atPill && !p.flying && !routeShown;
+    const dots = !p.flying && !cardsUp && p.layer === "tab";
+    content = (
+      <>
+        {dots && (
+          <PageDots
+            at={at}
+            go={go}
+            names={names}
+            className={cn(p.fromBottom ? "top-6" : topSheet ? cn("top-[calc(env(safe-area-inset-top)+0.5rem)]", follows) : "top-2")}
+          />
+        )}
+        <SheetPager
+          at={at}
+          go={go}
+          drag={dots}
+          pages={[
+            scroller(barRow, p.children, searchAlone, at !== 0, sheetHead),
+            scroller(headBlock(routeShown, routeAlone, true), second, routeAlone, at !== 1, "0px"),
+          ]}
+        />
+      </>
+    );
+  } else {
+    const headAlone = atPill && !p.flying && !p.barShown && !(headerShown && headContent != null);
+    content = scroller(
+      <>
+        {barRow}
+        {headBlock(headerShown, headAlone, false)}
+      </>,
+      p.children,
+      headAlone,
+      false,
+      sheetHead,
+    );
+  }
+
+  return (
+    <>
+      {content}
       {!!p.foot && (footShown || cardsUp) && (
         // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to open the sheet, and the figures' own buttons stay focusable
         <div

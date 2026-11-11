@@ -18,6 +18,9 @@ const HALF_MOST = 0.85;
 const BAR_REM = 4.25;
 const BAR_ALONE_REM = 4.75;
 const FOOT_REM = 3.875;
+/** The page dots' row over the first row, with the sheet's pages
+ *  (SheetParts' pagedBarPad). */
+const DOTS_REM = 1;
 
 const rootPx = () => parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
 
@@ -28,6 +31,8 @@ interface Of {
   moving: boolean;
   /** The pill's parts: the first row (none while flying) and the figures. */
   barInPill: boolean;
+  /** The page dots over the first row (SheetPager). */
+  dots?: boolean;
   /** A bottom sheet's grabber over the first row. */
   grabberOver?: boolean;
   footShown: boolean;
@@ -53,7 +58,20 @@ interface Of {
  * scrolls passes under it by the browser's own layout.
  */
 export function useSheetDetents(of: Of) {
-  const { foot, size, moving, barInPill, grabberOver = false, footShown, pillChrome, halfChrome, room, sideOut, topInset } = of;
+  const {
+    foot,
+    size,
+    moving,
+    barInPill,
+    dots = false,
+    grabberOver = false,
+    footShown,
+    pillChrome,
+    halfChrome,
+    room,
+    sideOut,
+    topInset,
+  } = of;
   const [footHeights, setFootHeights] = useState<{ half: number | null; other: number | null }>({ half: null, other: null });
   const rest = useRef({ moving, size });
   useLayoutEffect(() => {
@@ -84,13 +102,13 @@ export function useSheetDetents(of: Of) {
   const footHalf = footShown ? (footHeights.half ?? footHeights.other ?? 0) : 0;
   const detents = useMemo<Detents>(() => {
     const rem = rootPx();
-    const alone = grabberOver ? BAR_ALONE_REM : BAR_REM;
+    const alone = (grabberOver ? BAR_ALONE_REM : BAR_REM) + (dots ? DOTS_REM : 0);
     const bar = barInPill || !footShown ? alone : 0;
     const peek = Math.round((bar + (footShown ? FOOT_REM : 0)) * rem) + pillChrome;
     const full = Math.max(peek, room);
     const half = Math.max(peek, Math.min(Math.round(HALF_REM * rem) + halfChrome, Math.round(full * HALF_MOST)));
     return { peek, half: sideOut ? full : half, full };
-  }, [barInPill, grabberOver, footShown, pillChrome, room, halfChrome, sideOut]);
+  }, [barInPill, dots, grabberOver, footShown, pillChrome, room, halfChrome, sideOut]);
 
   return {
     detents,

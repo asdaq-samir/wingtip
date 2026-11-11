@@ -25,12 +25,16 @@ import {
 import { usePlanWorkspace } from "./hooks/usePlanWorkspace";
 import PlanMap from "./components/workspace/PlanMap";
 import PlanSidebar from "./components/workspace/PlanSidebar";
+import PlanPage from "./components/workspace/PlanPage";
 import FlightFoot from "./components/workspace/FlightFoot";
 import RouteHead from "./components/workspace/RouteHead";
 import RouteControls from "./components/workspace/RouteControls";
 import { listSearchOf } from "./components/workspace/listSearch";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
+
+/** The sheet's pages' names (SheetPager), for their dots. */
+const PAGE_NAMES = ["Search", "FPL"] as const;
 
 /**
  * The planner: two idents in, a charted course with checkpoints and a
@@ -142,6 +146,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     stale,
     stopsShown,
     view,
+    pickView,
     tankFigures,
     tightLeg,
     unflyable,
@@ -568,10 +573,14 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // Recents and what answers, or Nearest's list; Aircraft's list. A card --
         // an airport's, the airspace's, an airplane's -- over the tab it was
         // opened from, its close back to it.
-        sidebar: <PlanSidebar vm={vm} model={search} navLog={navLog} briefContents={briefContents} briefNotice={briefNotice} />,
-        // Under the one search: the plan's the route's box (`route`, below);
-        // nothing else, the traffic and Nearest scoping the one field (list).
-        head: view === "plan" ? undefined : null,
+        sidebar: <PlanSidebar vm={vm} model={search} />,
+        // The pages (SheetPager, the owner 2026-11-11): Search over `sidebar`, FPL's `route` over the plan.
+        pages: {
+          at: view === "plan" ? 1 : 0,
+          go: (page) => pickView(page ? "plan" : "search"),
+          names: PAGE_NAMES,
+          second: <PlanPage vm={vm} navLog={navLog} briefContents={briefContents} briefNotice={briefNotice} />,
+        },
         // The one search's Autocomplete round the whole panel, so its field
         // (the first row) and its list (the body) are one combobox.
         around: (panel) => (
@@ -579,25 +588,16 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
             {panel}
           </CommandRoot>
         ),
-        // A card over the tab: its card alone, the tab's head gone while it is
-        // open, at the pilot's ask.
+        // A card over the page: its card alone, the page's head gone while it is open, at the pilot's ask.
         alone: cardOpen || briefShown || navLogShown || profileShown || stopsShown,
-        // An airport's or a point's card over another tab -- a field tapped on
-        // the route from FPL -- its bar the card's kind and Back to the tab, at
-        // the owner's ask ("unless going from another tab ... the back button
-        // should get it back to fpl"); on its own tab, the tabs.
-        // Any card, an airplane's too, its bar its name with Back and the close,
-        // at the owner's ask ("For the airport card it should replace tabs with
-        // a back close button and title as the airport id").
+        // Any card over the page it was opened from, its bar its name with Back and the close, at the
+        // owner's asks ("the back button should get it back to fpl"; "replace tabs with a back close button").
         cardOver: cardOpen || briefShown || navLogShown || profileShown || stopsShown,
         toEdge: !!place,
         flying,
-        // The one search, the panel's first row, and at rest the pill
-        // itself (MapPanel), where the tabs were.
+        // The one search, the first page's first row, and at rest its pill (MapPanel).
         bar: <OneSearchField model={search} inputRef={vm.searchInput} list={listSearchOf(vm)} />,
-        // The route's figures pinned at FPL's foot at every height, the pill
-        // too, at the pilot's ask; FPL's alone, at the owner's ask ("Fpl can
-        // show calculations but other tabs should show something else").
+        // FPL's alone ("Fpl can show calculations but other tabs should show something else").
         // FPL's figures pinned at the sheet's foot at every height, the pill's
         // too, growing as it comes up, at the owner's asks ("While dragging fpl
         // keep the calculations pinned at the bottom"; "Why can't the half card

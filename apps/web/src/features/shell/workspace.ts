@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { PanelState } from "../../lib/mapChrome";
+import type { SheetPages } from "../../components/sheet/SheetPager";
 
 /**
  * What a workspace (the pilot's planner, the developer's training)
@@ -60,6 +61,9 @@ export interface WorkspacePieces {
   /** The airplane flying the route (useFlyingMode): the panel's first
    *  row and top row put away and its foot grown (MapPanel's `flying`). */
   flying?: boolean;
+  /** The sheet's two pages, Search (`bar` over `sidebar`) and FPL (`route`
+   *  over its own body), swiped between (MapPanel's `pages`). */
+  pages?: SheetPages;
 }
 
 export interface WorkspaceProps {

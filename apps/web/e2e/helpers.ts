@@ -1,7 +1,7 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
 export { closeProfile, openProfile, pressDryRunStart } from "./dryRun";
-import { planFromSearch } from "./oneSearch";
+import { planFromSearch, showPage } from "./oneSearch";
 export { emptyPlan, firstRow, searchAirports, showPlan, showSearch, showTraffic } from "./oneSearch";
 
 /**
@@ -705,9 +705,8 @@ export async function consolePage(scope: Page | Locator, name: "Account" | "Guid
   if (name !== "Account") await setup.getByRole("button", { name: new RegExp(`^${name}`) }).click();
 }
 
-/** A strip set to show one of its lists -- the flights' Saved or Recents
- *  (the one search's own page), the traffic's Favorites, Recents or a
- *  question -- from the filter menu at its heading's right (StripSection). */
+/** A strip set to show one of its lists -- the flights' Saved or Recents, the traffic's Favorites,
+ *  Recents or a question -- from the filter menu at its heading's right (StripSection). */
 export async function stripShows(page: Page, menu: "fpl-strip-shows" | "aircraft-question", item: string) {
   await sideDrawer(page).getByTestId(menu).click();
   await page.getByTestId(item).click();
@@ -716,6 +715,7 @@ export async function stripShows(page: Page, menu: "fpl-strip-shows" | "aircraft
 /** The one search, in sight: the sheet's first row, at every height. */
 export async function airportSearch(page: Page) {
   const search = page.getByTestId("search-airports");
+  await showPage(page, 0); // the field is the Search page's (SheetPager)
   if (await search.isVisible()) return search;
   await showTabs(page);
   await expect(search).toBeVisible();

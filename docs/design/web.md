@@ -415,6 +415,25 @@ photo that pushes the actions below the half detent.
 [amaps-newsroom], [amaps-shortcuts], [windy-v49], [skyvector-airport],
 [bui-drawer], [bui-releases], [bui-tabs], [apg-tabs], [bui-preview].
 
+### 2a. The sheet's two pages (the owner, 2026-11-11)
+
+The phone's sheet and the desktop's side panel hold two pages side by
+side, Search and FPL ([rules.md](rules.md) §4a): shadcn's Carousel on
+Embla, already the app's for a card's pictures, inside the Drawer's popup
+(`components/sheet/SheetPager`, laid out by `SheetParts`). Its
+`data-base-ui-swipe-ignore="x"` gives a sideways drag to the pager and
+leaves an up or down one to the Drawer, as the app's sideways rows do.
+Each page is its own scroller with its own sticky head (the search's row,
+or the route's row and the controls), so each keeps its place; the page
+out of sight has an inert body. Its viewport is `overflow: clip`, so a
+field focused on the page out of sight never scrolls it under Embla. The
+dots are Base UI's Tabs under the grabber (`PageDots`), a rem of the
+first row's room given to them (`useSheetDetents`' `dots`). The page up
+is the planner's place (`usePanelView`'s `view`: the plan is FPL, the
+search and the traffic are Search); a swipe or a dot picks it as a
+place is picked, so what each kept open comes back with it. The pill is
+the page's first row; the route's figures sit at the foot on FPL alone.
+
 ### 3. The flight plan and route editing
 
 **Reference.** ForeFlight Web: "Rubberbanding is fully supported on the
