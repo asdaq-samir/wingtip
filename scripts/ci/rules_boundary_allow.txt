@@ -52,6 +52,11 @@ services/planner/wingtip/sua.py 1
 services/planner/wingtip/terrain_view.py 1
 services/planner/wingtip/traffic/flights.py 1
 services/planner/wingtip/weather.py 1
+# How far off each hop's line an obstacle is drawn on the side view
+# (PROFILE_OBSTACLE_NM, a nautical mile): a display width, not a margin.
+# The legal margins over obstacles (14 CFR 91.119, 91.177) are the
+# altitude floors' own, with their wider read (terrain's OBSTACLE_READ_NM).
+services/planner/wingtip/profile.py 1
 # Still to move into the engine (#482): how long a D-ATIS is the
 # airport's, a coded course reversal's turn and an open leg's drawn
 # length (the engine draws the rest of a procedure's legs).
