@@ -5,9 +5,9 @@ import { SearchField, SearchResults } from "./PanelCapsule";
 import { TEXT } from "../lib/text";
 import type { RecentAirport } from "../lib/preferences";
 
-/** One airport to pick, as the first flight's card and the welcome ask
- *  for one: the search bar's field and, while something is typed, the
- *  airports that answer it (PanelCapsule); the one picked shown in the
+/** One airport to pick, as the first flight's card asks for one: the
+ *  search bar's field and, while something is typed, the airports that
+ *  answer it (PanelCapsule); the one picked shown in the
  *  field as "Madison, KMSN", its results put away. */
 export default function AirportField({
   label,

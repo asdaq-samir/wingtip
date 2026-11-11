@@ -144,8 +144,8 @@ export default function PilotGuide() {
   );
 }
 
-/** The welcome (lib/firstRunTips), offered again from the start, the first
- *  flight's card after it (Setup's one home for it): the guide's short
+/** The first flight's card (lib/firstRunTips), offered again (Setup's one
+ *  home for it): the guide's short
  *  version, at its top, at the owner's ask (2026-10-27, "Tips can move to
  *  guide"). The pointing tips it brought back too are gone (2026-11-11). */
 function TipsGroup() {
@@ -159,7 +159,7 @@ function TipsGroup() {
             <Lightbulb />
           </RowBadge>
         }
-        title={asked ? "Welcome Will Show Again" : "Show Welcome Again"}
+        title={asked ? "First Flight Will Show Again" : "Show First Flight Again"}
         disabled={asked}
         onClick={() => {
           reset();

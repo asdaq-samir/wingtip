@@ -13,7 +13,7 @@ export { emptyPlan, firstRow, searchAirports, showPlan, showSearch, showTraffic 
 
 export const PAGES = ["/app/plan", "/app/dev"] as const;
 
-/** The seen-once keys (lib/firstRunTips: the welcome, the first flight) marked seen, every one, in the page's
+/** The seen-once keys (lib/firstRunTips: the first flight, the sunlight banner) marked seen, every one, in the page's
  *  storage: for page.evaluate, or page.addInitScript where a spec starts
  *  with none of the suite's saved session. */
 export function noTips() {

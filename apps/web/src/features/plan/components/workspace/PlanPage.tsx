@@ -37,7 +37,7 @@ const FLIGHT_RULES = [
  * Log, the Profile and the Stops are kept between their openings
  * (CardLayer's `open`), built once. With no route, "Plan a flight" (EmptyState, iOS's
  * ContentUnavailableView), its Search going to the first page with the
- * field focused, its Open Sample Flight the welcome's (useWelcome), and the
+ * field focused, its Open Sample Flight (lib/sampleFlight), and the
  * flights saved and the routes planned last under it.
  */
 export default function PlanPage({

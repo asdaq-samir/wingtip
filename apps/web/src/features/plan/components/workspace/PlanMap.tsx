@@ -14,10 +14,9 @@ import { EngineGate } from "../../../../lib/engine/engineGate";
 const AssignedLesson = lazy(() => import("../AssignedLesson"));
 /** What the first screen does not draw, each its own chunk off the first
  *  load (scripts/first-load.mjs's budget): a fix's card and a leg's, from
- *  their first tap on, and the welcome, shown once to a new pilot. */
+ *  their first tap on. */
 const FixCard = lazy(() => import("../FixCard"));
 const RouteLegCard = lazy(() => import("../RouteLegCard"));
-const Welcome = lazy(() => import("../welcome/Welcome"));
 
 /** The map beside the briefing (PlanWorkspace's `map`), with what floats
  *  over it: the next checkpoint in flight, a fix's card, an assigned
@@ -144,10 +143,6 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
           <AssignedLesson key={lessonOpen} id={lessonOpen} aircraft={fitAircraft} onClose={closeLesson} />
         </Suspense>
       )}
-      {/* The welcome first, once (useWelcome); then the first flight's card. */}
-      <Suspense fallback={null}>
-        <Welcome routed={routed} onPlan={setRoute} onOpened={openNavLogCard} />
-      </Suspense>
       <FirstFlight routed={routed} onPlan={setRoute} onPlanned={openNavLogCard} />
     </div>
   );

@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import { api } from "../../../lib/api/client";
 import { positionNow } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
-import { FIRST_FLIGHT, WELCOME, unseen, useTips } from "../../../lib/firstRunTips";
+import { FIRST_FLIGHT, unseen, useTips } from "../../../lib/firstRunTips";
 import type { RouteParts } from "../components/RouteBox";
 
 /**
@@ -33,9 +33,7 @@ export function useFirstFlight({
   const [needsFrom, setNeedsFrom] = useState(false);
   const [planning, setPlanning] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
-  // After the welcome (features/plan/components/welcome), whose Plan My
-  // Own leads here.
-  const shown = !routed && unseen(seen, FIRST_FLIGHT) && !unseen(seen, WELCOME);
+  const shown = !routed && unseen(seen, FIRST_FLIGHT);
 
   const dismiss = useCallback(() => see(FIRST_FLIGHT), [see]);
 

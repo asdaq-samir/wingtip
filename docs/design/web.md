@@ -1019,8 +1019,8 @@ emailed code (stable since 1.6, [Base UI releases][bui-releases]); shadcn
 Field; Base UI Switch for on/off; Select or Toggle Group for discrete
 choices (decision 0017).
 
-**Primary action.** Per screen; Sign In in the welcome and in the
-Account menu when signed out.
+**Primary action.** Per screen; Sign In in the Account menu when
+signed out.
 
 **Keyboard and hover.** The APG menu button and menu: Enter, Space or Down
 open on the first item, typeahead, Home/End, Escape back to the button
@@ -1036,32 +1036,10 @@ second home for a control that already has one.
 
 ### 14. The welcome
 
-**Reference.** Chrome's richer install dialog shows the app's description
-and screenshots ([web.dev richer install UI][webdev-richer-install]), so a
-welcome need not explain installing. Vercel: every screen offers a next
-step ([Vercel guidelines][vercel-guidelines]).
-
-**Structure, top to bottom.** The map behind; a short card: what Wingtip
-is (one line), Pick Your Airplane (optional, with Skip: no airplane is
-assumed), Plan a Flight (focuses the search), Sign In.
-
-**Stock parts.** A `SheetCard` in the map's sheet over the search, with
-its ✕, on a phone as on a desktop (the one card rule, 2026-11-10; on a
-phone it was a dimmed sheet): non-modal, the map usable, the sheet at half.
-
-**Primary action.** Plan a Flight, filled.
-
-**Keyboard and hover.** Focus on the dialog's title; Escape closes it and
-leaves the map ready ([APG dialog][apg-dialog]).
-
-**Motion.** Fade in once; none under reduced motion.
-
-**Avoid.** A tour of several pages; a welcome that must be finished before
-the map works; weight on the first load (on a signed-out first visit the
-"Before you fly" dialog is open as the page first paints, measured
-2026-10-10).
-
-**Sources.** [webdev-richer-install], [vercel-guidelines], [apg-dialog].
+None, at the owner's word (2026-11-11: "We don't need the welcome"). A new
+pilot lands on the map with FPL's "Plan a flight": its Search and its Open
+Sample Flight, and the flights saved under them (§4). The airplane is
+picked in the Aircraft tab when it is needed, never assumed (decision 0011).
 
 ### 15. Installable web app specifics
 

@@ -1,6 +1,6 @@
 /**
  * The browser's permissions the app asks for, each said plainly before
- * the browser's own question (the welcome's Location, the ATC copilot's
+ * the browser's own question (the ATC copilot's
  * microphone): whether the question is still to come, and asking it.
  */
 

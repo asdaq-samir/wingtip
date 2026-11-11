@@ -99,5 +99,4 @@ tracking.spec.ts
 tv-signin.spec.ts
 tv.spec.ts
 undo.spec.ts
-welcome.spec.ts
 workings.spec.ts

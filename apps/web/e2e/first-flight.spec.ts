@@ -12,8 +12,8 @@ import { settle, slow } from "./helpers";
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     if (!sessionStorage.getItem("first-fresh")) {
-      // The welcome (its own spec) seen, the rest not.
-      localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["welcome"] }, version: 0 }));
+      // None seen.
+      localStorage.removeItem("wingtip.tips");
       sessionStorage.setItem("first-fresh", "1");
     }
     // Own ship on with a fix by Campbell (C81), where the first flight
