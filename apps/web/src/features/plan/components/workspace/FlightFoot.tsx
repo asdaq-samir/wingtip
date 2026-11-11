@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { cn } from "cn";
+import { EngineGate } from "../../../../lib/engine/engineGate";
 import { TEXT } from "../../../../lib/text";
 import FlightLine from "../FlightLine";
 import DirectStrip from "../DirectStrip";
@@ -27,44 +28,51 @@ export default function FlightFoot({ vm }: { vm: PlanWorkspaceModel }) {
       </button>
     </div>
   );
+  // The figures ask the engine as they draw (figures.ts' strip_fuel), and
+  // FPL shows them at the sheet's smallest size from the page's first
+  // paint, before the .wasm is in: they wait for it here (EngineGate), the
+  // rest of the page not (the owner's iPhone, 2026-11-11: "Part of the app
+  // didn't load" on "strip_fuel cannot be worked out").
   return (
-    <div className="flex min-h-0 w-full flex-col">
-      {dryRunning ? (
-        <Suspense fallback={null}>
-          <DryRunFigures
-            run={dryRunning}
-            totals={s.totals}
-            estimate={estimate}
-            destination={`${planned.dest}`}
-            depart={depart}
-            local={s.local}
-            flying={flying}
-          />
-        </Suspense>
-      ) : (
-        <>
-          {/* Flown direct to a point: said over the figures, and Cancel.
-            Put away in the pill, whose one row is the figures. */}
-          {directParam && (
-            <div data-pill-hides="">
-              <DirectStrip ident={directParam} onDevice={s.directOnDevice} onCancel={() => directToPoint(null)} />
-            </div>
-          )}
-          <div data-testid="flight-line">
-            <FlightLine
+    <EngineGate>
+      <div className="flex min-h-0 w-full flex-col">
+        {dryRunning ? (
+          <Suspense fallback={null}>
+            <DryRunFigures
+              run={dryRunning}
               totals={s.totals}
               estimate={estimate}
               destination={`${planned.dest}`}
               depart={depart}
               local={s.local}
-              grow
               flying={flying}
-              fuelStop={firstFuelStop}
             />
-          </div>
-        </>
-      )}
-      {doneFlyingRow}
-    </div>
+          </Suspense>
+        ) : (
+          <>
+            {/* Flown direct to a point: said over the figures, and Cancel.
+            Put away in the pill, whose one row is the figures. */}
+            {directParam && (
+              <div data-pill-hides="">
+                <DirectStrip ident={directParam} onDevice={s.directOnDevice} onCancel={() => directToPoint(null)} />
+              </div>
+            )}
+            <div data-testid="flight-line">
+              <FlightLine
+                totals={s.totals}
+                estimate={estimate}
+                destination={`${planned.dest}`}
+                depart={depart}
+                local={s.local}
+                grow
+                flying={flying}
+                fuelStop={firstFuelStop}
+              />
+            </div>
+          </>
+        )}
+        {doneFlyingRow}
+      </div>
+    </EngineGate>
   );
 }
