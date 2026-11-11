@@ -19,13 +19,6 @@ export type FrequencyKind = EngineAnswer<"frequency_line">["kind"];
 const sent = (frequencies: readonly Frequency[]) =>
   frequencies.map((f) => ({ type: f.type ?? null, description: f.description ?? null, frequency_mhz: f.frequency_mhz ?? null }));
 
-/** A field's frequency of the first of these types it lists one for. */
-export function frequencyOf(frequencies: Frequency[], ...types: string[]): Frequency | null {
-  if (!frequencies.length) return null;
-  const at = callEngine("frequency_of", { frequencies: sent(frequencies), types });
-  return at == null ? null : frequencies[at]!;
-}
-
 /** The CTAF: the one so called, else a UNICOM that is also the CTAF,
  *  else MULTICOM's 122.9 (AC 90-66C 9.6), as the engine answers it: an
  *  index into `frequencies`, or MULTICOM's own. The radio calls and the
