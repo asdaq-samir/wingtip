@@ -77,6 +77,9 @@ integration branch"):
   `~/Developer/wingtip-live`) tidies the Mac, rebuilds and puts it on the
   owner's stack for the phone, before any lengthy test or CI. The owner
   is told what to try.
+- **Enforced (decision 0037):** `.claude/hooks/guard.py` refuses every
+  long test until the live stack runs the current `claude/integration`;
+  a brief never asks an agent to verify before pushing.
 - **Then one validation pass**, `scripts/dev/validate-wave.sh` on
   `claude/integration`, its fixes one commit set; then a few grouped pull
   requests to `main`, which merge by themselves once "CI passed" is green

@@ -42,3 +42,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0034 | [CI stays lean, and the guards hold it there](0034-ci-stays-lean.md) | 2026-11-10 | Accepted |
 | 0035 | [The Claude features are off until the subscription is decided](0035-claude-off-until-subscription.md) | 2026-11-10 | Accepted |
 | 0036 | [Wingtip reaches Claude and ChatGPT as the pilot's own connector](0036-mcp-connector.md) | 2026-11-10 | Accepted |
+| 0037 | [The order of a wave is enforced, not remembered](0037-order-enforced.md) | 2026-11-11 | Accepted |
