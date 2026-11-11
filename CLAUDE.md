@@ -77,6 +77,10 @@ integration branch"):
   `~/Developer/wingtip-live`) tidies the Mac, rebuilds and puts it on the
   owner's stack for the phone, before any lengthy test or CI. The owner
   is told what to try.
+- **Web first (decision 0038):** a change a pilot sees is made on the web
+  as the proof of concept; the iPhone and Android follow only on the
+  owner's word for that piece (the hook refuses phone edits and merges
+  until its topic is in `~/.config/wingtip/phones-approved`).
 - **Enforced (decision 0037):** `.claude/hooks/guard.py` refuses every
   long test until the live stack runs the current `claude/integration`;
   a brief never asks an agent to verify before pushing.
