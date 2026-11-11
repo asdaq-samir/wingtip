@@ -22,6 +22,7 @@ import { useNarrative } from "./useNarrative";
 import { briefingLegs } from "./briefingLegs";
 import { useDeviceDirect } from "./directOnDevice";
 import { noConnection } from "../../../lib/problems";
+import { useSaved } from "../../../lib/fromCache";
 
 /**
  * The plan as TanStack Query sees it: one query per stage, keyed on
@@ -543,19 +544,23 @@ export function usePlan({
   // The same object while the briefing is: a new one at every render drew
   // every tab of the panel again with it.
   const hasCourse = !!course.data;
+  // After a reload with no connection the worker gives the briefing it
+  // kept, and the page's own time for it is the reload's: its age is when
+  // the network gave it (lib/fromCache), as the Brief says.
+  const briefingSavedAt = useSaved((v) => v.saved["/api/planner/briefing"]);
   const briefingState = useMemo((): BriefingState => {
     if (!briefable || !hasCourse) return { state: "waiting" };
     if (briefing.data) {
       return {
         state: "ready",
         data: briefing.data,
-        fetchedAt: briefing.dataUpdatedAt,
+        fetchedAt: briefingSavedAt !== undefined && Number.isFinite(briefingSavedAt) ? briefingSavedAt : briefing.dataUpdatedAt,
         refreshError: briefing.error ? describeError(briefing.error, "could not refresh the briefing") : null,
       };
     }
     if (briefing.error) return { state: "failed", detail: describeError(briefing.error, "could not load the briefing") };
     return { state: "loading" };
-  }, [briefable, hasCourse, briefing.data, briefing.dataUpdatedAt, briefing.error]);
+  }, [briefable, hasCourse, briefing.data, briefing.dataUpdatedAt, briefing.error, briefingSavedAt]);
 
   const notes = useCheckpointNotes(dep, dest, stops);
   // Written from the checkpoints' nav log, not the route as entered.
