@@ -466,6 +466,23 @@ archives in the Origin Private File System, with
 `navigator.storage.persist()` asked first, read by the `pmtiles`
 library the overlays already use.
 
+## Signing in from a link: whose account it is
+
+An emailed sign-in link names no account, and anyone can mail a pilot a
+link to their own (the security audit's M1 and L1, 2026-11-10). Before the
+app spends a link's token, it asks the gateway whose it is and shows it on
+its confirmation sheet ("Sign in as a•••@icloud.com?"):
+
+- `POST /api/auth/magic-link/account`, form body `token=<the link's
+  token>`, with the session's CSRF header as for `/verify`.
+- `200 {"email": "a•••@icloud.com"}`: the link can still sign in, to that
+  address (its first letter and its domain). Nothing is spent; the token
+  still signs in once, by `POST /api/auth/magic-link/verify`.
+- `404`, no body: used, expired or unknown, all alike. Say the link has
+  expired and offer a new one; don't offer Sign in.
+- `429`: 30 asks an hour from one address; say so and let the pilot try
+  later.
+
 ## Building
 
 The Mac mini has Xcode (`.tool-versions`' `xcode`, 27.2 and the iOS 27.2

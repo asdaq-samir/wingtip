@@ -286,6 +286,8 @@ app:
   magic-link:
     per-address-per-hour: ${APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR:5}
     per-client-per-hour: ${APP_MAGIC_LINK_PER_CLIENT_PER_HOUR:20}
+    # Asks of whose account a link is for (MagicLinkAccountController).
+    account-per-client-per-hour: ${APP_MAGIC_LINK_ACCOUNT_PER_CLIENT_PER_HOUR:30}
   # Where the chart tiles come from when they are published to a CDN
   # (the AWS stack sets this to its CloudFront domain, and the planner
   # tells the browser the same base): the content security policy has
