@@ -769,10 +769,16 @@
     "At a Glance" : {
 
     },
+    "Auto" : {
+
+    },
     "Avery B. Student" : {
 
     },
     "Balance" : {
+
+    },
+    "Band" : {
 
     },
     "Based at" : {
@@ -1049,7 +1055,7 @@
     "Cross-country" : {
 
     },
-    "Cruise Altitude" : {
+    "Cruise" : {
 
     },
     "Cruise altitude, hundreds of feet" : {
@@ -2785,6 +2791,12 @@
     "Practice Them All" : {
 
     },
+    "Preview" : {
+
+    },
+    "Previews the airplane's own altitude" : {
+
+    },
     "Privacy Policy" : {
 
     },
@@ -3342,6 +3354,9 @@
     "Support" : {
 
     },
+    "Swipe up or down to preview another altitude; Set flies it." : {
+
+    },
     "TFRs" : {
 
     },
@@ -3447,6 +3462,12 @@
     "The clearance card" : {
 
     },
+    "The climb or descent begins at %@." : {
+
+    },
+    "The climb or descent is done by %@." : {
+
+    },
     "The course is" : {
 
     },
@@ -3511,7 +3532,7 @@
     "The regulation, in its own words" : {
 
     },
-    "The route from the side: the ground, the airspace and the altitude flown" : {
+    "The route from the side" : {
 
     },
     "The route has changed" : {
@@ -3915,9 +3936,6 @@
 
     },
     "Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This can't be undone." : {
-
-    },
-    "Your altitude" : {
 
     },
     "Your endorsements and reviews are kept with your account." : {
