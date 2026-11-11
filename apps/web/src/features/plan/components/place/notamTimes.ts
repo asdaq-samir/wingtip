@@ -6,14 +6,14 @@ export type TimeLine = { label: string; value: string };
 
 const MINUTE = 60_000;
 
-/** How long, as ForeFlight writes it: "5h45m" under a day, "4d16h" under
- *  ten, "18d" past them. */
+/** How long, as ForeFlight writes it: "5m" under an hour, "5h45m" under a
+ *  day, "4d16h" under ten, "18d" past them. */
 export function span(ms: number): string {
   const minutes = Math.max(0, Math.round(ms / MINUTE));
   const [d, h, m] = [Math.floor(minutes / 1440), Math.floor((minutes % 1440) / 60), minutes % 60];
   if (d >= 10) return `${d}d`;
   if (d >= 1) return h ? `${d}d${h}h` : `${d}d`;
-  return `${h}h${String(m).padStart(2, "0")}m`;
+  return h ? `${h}h${String(m).padStart(2, "0")}m` : `${m}m`;
 }
 
 /**

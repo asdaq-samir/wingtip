@@ -6,7 +6,8 @@ const read = { estimated: false, permanent: false, starts: null, ends: null } as
 const NOW = Date.parse("2026-11-11T12:00:00Z");
 
 describe("a NOTAM's times, as ForeFlight's list gives them", () => {
-  it("writes how long as 5h45m, 4d16h and 18d", () => {
+  it("writes how long as 5m, 5h45m, 4d16h and 18d", () => {
+    expect(span(5 * 60_000)).toBe("5m");
     expect(span((5 * 60 + 45) * 60_000)).toBe("5h45m");
     expect(span((4 * 24 + 16) * 3_600_000)).toBe("4d16h");
     expect(span(18 * 24 * 3_600_000 + 7 * 3_600_000)).toBe("18d");
