@@ -1,0 +1,23 @@
+# A starter, written by hand on 2026-11-10 until :baselineprofile is first
+# run on a device (`./gradlew :app:generateBaselineProfile`), which writes
+# this file over with the rules it records. The cold start's own code, from
+# the launcher to the map and the sheet; the libraries' profiles (Compose,
+# Material 3, Navigation, Room) come in with the libraries themselves.
+HSPLapp/wingtipmaps/android/WingtipApplication;->**(**)**
+HSPLapp/wingtipmaps/android/MainActivity;->**(**)**
+HSPLapp/wingtipmaps/android/Session;->**(**)**
+HSPLapp/wingtipmaps/android/Plan;->**(**)**
+HSPLapp/wingtipmaps/android/Plan$**;->**(**)**
+HSPLapp/wingtipmaps/android/Charts;->**(**)**
+HSPLapp/wingtipmaps/android/Charts$**;->**(**)**
+HSPLapp/wingtipmaps/android/ui/RootScreenKt**;->**(**)**
+HSPLapp/wingtipmaps/android/ui/MapPaneKt**;->**(**)**
+HSPLapp/wingtipmaps/android/ui/SheetPagesKt**;->**(**)**
+HSPLapp/wingtipmaps/android/ui/sheet/**;->**(**)**
+HSPLapp/wingtipmaps/android/ui/ThemeKt**;->**(**)**
+HSPLapp/wingtipmaps/android/map/ChartMap**;->**(**)**
+HSPLapp/wingtipmaps/android/map/MapHolder**;->**(**)**
+HSPLapp/wingtipmaps/android/map/MapStyle**;->**(**)**
+HSPLapp/wingtipmaps/android/search/**;->**(**)**
+HSPLapp/wingtipmaps/android/engine/**;->**(**)**
+HSPLapp/wingtipmaps/android/design/**;->**(**)**

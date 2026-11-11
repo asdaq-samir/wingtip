@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The generator's own APK: it instruments the app from outside, so it
+     declares nothing. -->
+<manifest />

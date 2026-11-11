@@ -559,7 +559,11 @@ placement wins, and the difference is noted.
      tapped (48 dp targets at the chart's foot) opens the app's
      `ModalBottomSheet` (`altitude/LegAltitudeSheet`) with Start At or
      Cross At (`ChoiceGroup`), a stock `Slider` and the engine's
-     `altitude_change` line; Cross At goes to the planner as `altitudes`,
+     `altitude_change` line: where the change is flown, and with the
+     picked airplane (the planner's altitude line's `aircraft`, as on the
+     iPhone and the web) its time and fuel from the airplane's figures and
+     the leg's ground speed, burn and air; with no airplane the geometry
+     alone. Cross At goes to the planner as `altitudes`,
      Start At as `altitude_starts`. The planner's side view has no obstacles
      yet, so none are drawn.
   4. Route options (the Routes button): cards in a
@@ -1170,6 +1174,12 @@ swapped:
 - The map's loading mark: the stock `LoadingIndicator`
   (`map/MapLoading`). The Wingtip mark is only on the launch's splash
   screen.
+- "Fully drawn" for the launch: activity-compose's stock `ReportDrawnWhen`
+  and `ReportDrawn`, which call `reportFullyDrawn()` once every part has
+  said so: the map shown or its chart problem with Retry (`ui/MapPane`)
+  and the sheet's first content (`Home` in `ui/SheetPages`). The system's
+  and Macrobenchmark's time to full display is measured to that moment
+  (NATIVE-ANDROID.md, "Release build").
 - Rows built from `Modifier.clickable`, `toggleable` or `selectable`: the
   stock `ListItem` overloads (`onClick`, `checked`/`onCheckedChange`,
   `selected`/`onClick`), `Surface(onClick)`, `TextButton`, or Compose's

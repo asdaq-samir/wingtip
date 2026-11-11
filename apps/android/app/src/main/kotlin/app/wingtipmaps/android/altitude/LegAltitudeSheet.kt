@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.api.generated.AircraftProfile
 import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.generated.WingtipHaptic
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -39,14 +40,16 @@ import kotlin.math.roundToInt
  * ForeFlight's profile sets one -- **Start At**, the climb or descent
  * begins at the waypoint, or **Cross At**, it is done by the waypoint --
  * on a stock Slider through the route's altitudes. The climb and descent
- * themselves are the planner's and the engine's, from the airplane's
- * figures; with no airplane there are no times or fuel, only the line.
+ * themselves are the engine's, from the picked airplane's figures and
+ * the leg's ground speed, burn and air (AltitudeEngine.change); with no
+ * airplane there are no times or fuel, only the line.
  * Any altitude may be set: one the rules would not pick is planned and
  * warned of, never refused (the owner's warn, never limit).
  */
 @Composable
 fun LegAltitudeSheet(
     waypoint: ProfileModel.Waypoint,
+    airplane: AircraftProfile?,
     steps: List<Double>,
     set: PlanAltitudes.Point?,
     onSet: (PlanAltitudes.Point) -> Unit,
@@ -69,7 +72,7 @@ fun LegAltitudeSheet(
             ) { how = it }
             Text(Format.cruiseAltitude(ft), style = MaterialTheme.typography.headlineSmall)
             // Where the engine flies the change (altitude_change), or why not.
-            val change = remember(ft, how) { AltitudeEngine.change(waypoint, ft, how) }
+            val change = remember(ft, how, airplane) { AltitudeEngine.change(waypoint, ft, how, airplane) }
             change.fold(
                 { c -> if (c.kind != "level") Text(changeWords(c), style = MaterialTheme.typography.bodyMedium) },
                 { why -> ProblemLine(why.message) },

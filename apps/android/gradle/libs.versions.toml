@@ -73,6 +73,14 @@ genaiPrompt = "1.0.0-beta5"
 # ML Kit text recognition through Play services (no model in the app): a
 # photographed page read on the phone before Nano reads its figures.
 mlkitTextRecognition = "19.0.2"
+# The release build's start (docs/NATIVE-ANDROID.md, "Release build"):
+# the Baseline Profile Gradle plugin and Macrobenchmark, one release
+# train, 1.5.0 the newest stable on Google Maven on 2026-11-10; UiAutomator
+# for the generator's taps (2.4.1, the same day); ProfileInstaller, which
+# installs the profile on a phone that did not get it from Play (1.4.1).
+benchmark = "1.5.0"
+uiautomator = "2.4.1"
+profileinstaller = "1.4.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -151,9 +159,14 @@ androidx-navigation-compose = { group = "androidx.navigation", name = "navigatio
 androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 androidx-glance-material3 = { group = "androidx.glance", name = "glance-material3", version.ref = "glance" }
+androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "benchmark" }
+androidx-test-uiautomator = { group = "androidx.test.uiautomator", name = "uiautomator", version.ref = "uiautomator" }
+androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+android-test = { id = "com.android.test", version.ref = "agp" }
+androidx-baselineprofile = { id = "androidx.baselineprofile", version.ref = "benchmark" }

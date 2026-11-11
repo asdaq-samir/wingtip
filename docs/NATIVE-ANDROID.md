@@ -286,8 +286,9 @@ runner:
 - a push to `main` or to a `claude/native-*` branch: the same and
   `assembleDebug`, the APK kept with the run (`wingtip-native-debug-apk`:
   it installs on any Android phone with "Install unknown apps" allowed);
-- every night, and by hand: then `connectedDebugAndroidTest` on an API 35
-  x86_64 emulator (reactivecircus/android-emulator-runner).
+- every night, and by hand: then `:app:connectedDebugAndroidTest` on an
+  API 35 x86_64 emulator (reactivecircus/android-emulator-runner), and
+  the release build's `ReleaseEngineTest` (below).
 - No Google Play lane yet: the shell's (android.yml) stays until the
   gates.
 
@@ -295,6 +296,59 @@ runner:
 it is the gateway's address and the App Links domain in the manifest.
 `ANDROID_NATIVE_APP_ID` would be the package name, once there is a Play
 lane for it.
+
+## Release build
+
+The release build is shrunk by R8, code and resources
+(`isMinifyEnabled`, `isShrinkResources`, `proguard-android-optimize.txt`).
+The unsigned release APK went from **74.8 MB to 53.4 MB** (2026-11-10,
+`./gradlew assembleRelease`, the three ABIs): the dex from about 80 MB to
+8.4 MB uncompressed. What is left is mostly the native libraries,
+MapLibre's (9.6 to 13.6 MB an ABI) and the engine's (2.5 to 4.1 MB), kept
+uncompressed so the phone maps them in place; Play's per-ABI split of an
+App Bundle sends a phone one ABI's.
+
+- **Keep rules.** Each library brings its own (kotlinx.serialization's
+  in its jar, Room 3, AppFunctions, MapLibre, OkHttp, WorkManager, ML
+  Kit), and the stock file keeps every class with a native method under
+  its name with those methods, which is how JNI finds `Engine.callNative`
+  and the `Packs` functions. `app/proguard-rules.pro` adds the one thing
+  only this app knows: the shim throws `EngineException` by its class
+  name through its `String` constructor.
+- **Baseline Profile.** The stock `androidx.baselineprofile` plugin, with
+  a generator module, `:baselineprofile` (Google's template: a
+  `com.android.test` module driving the app's `benchmarkRelease` build
+  with UiAutomator). `BaselineProfileGenerator` records a cold start to
+  the map and the sheet. Recording needs a phone or an emulator, Android
+  13 or later: `./gradlew :app:generateBaselineProfile` with one attached
+  writes `app/src/main/generated/baselineProfiles/baseline-prof.txt`,
+  which is committed. Until it is first run there, that file is a
+  hand-written starter (wildcard rules for the start's own packages:
+  the activity, the plan, the map, the sheet, the search, the engine's
+  bridge, the design tokens), which the first recording writes over. The
+  libraries' own profiles (Compose, Material 3, Navigation, Room) come in
+  with them, and `profileinstaller` installs the result on a phone Play
+  did not install it on.
+- **Cold start.** MainActivity reports itself fully drawn
+  (`reportFullyDrawn()`, through activity-compose's `ReportDrawnWhen`)
+  when the map is shown, or its chart problem with Retry, and the
+  sheet's first content is on screen. `StartupBenchmark` measures the
+  time to initial and to full display, with no compilation and with the
+  profile, ten cold starts each, on a phone:
+  `./gradlew :baselineprofile:connectedBenchmarkReleaseAndroidTest
+  -Pandroid.testInstrumentationRunnerArguments.class=app.wingtipmaps.android.baselineprofile.StartupBenchmark`.
+  Not yet measured: it needs a phone, and an emulator's timings are no
+  pilot's.
+- **The engine in the release build.** `ReleaseEngineTest`, on CI's
+  nightly emulator, starts the `benchmarkRelease` build (R8 and the
+  release's rules, signed with the debug key) and lets the map settle:
+  its first rest asks the engine `distance_nm` through the JNI shim, so a
+  renamed native method, a dropped `EngineException` constructor or a
+  stripped serializer shows as an "engine ... failed" line in the log,
+  or a crash. The debug build's `EngineTest` holds the rules themselves
+  to the shared fixtures.
+- There is no release signing yet (no Play lane): `assembleRelease`
+  writes an unsigned APK.
 
 ## The flight pieces, and what is still to come
 
