@@ -15,6 +15,7 @@ import { MapInsetsContext, SHEET_SECONDS, type MapInsets } from "../../lib/mapCh
 import { SheetCard } from "../SheetCard";
 import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
+import { watchMapErrors } from "./mapErrors";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { usePreferences } from "../../lib/preferences";
@@ -140,9 +141,8 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
   if (onTv) m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
   m.touchZoomRotate.disableRotation();
   m.setPadding(padOf(insets));
-  // A terminal sheet's tile where it has none is a 404, left blank: not
-  // an error to say.
-  m.on("error", () => {});
+  // A tile 404 left blank; any other failure said and reported (mapErrors).
+  watchMapErrors(m);
   // Whether it is moving, on its element, for the browser tests to wait
   // on a still map (e2e helpers' mapStill).
   const el = holder;
