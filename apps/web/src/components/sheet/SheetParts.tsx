@@ -159,7 +159,16 @@ export function SheetParts(p: PartsProps) {
         ref={headRef}
         data-head-band=""
         style={vars}
-        className={cn("relative flex shrink-0 flex-col", under && "z-20", topSheet && "pt-[env(safe-area-inset-top)]", topSheet && follows)}
+        // Frosted wherever the body runs on up under it (--head-room), the
+        // grabber's room too: clear, the list scrolled up showed through
+        // the whole band round the search field (the owner's iPhone,
+        // 2026-11-11, "Favorites" over the field).
+        className={cn(
+          "relative flex shrink-0 flex-col",
+          under && "frost-head z-20",
+          topSheet && "pt-[env(safe-area-inset-top)]",
+          topSheet && follows,
+        )}
       >
         {p.bar && (
           <div
