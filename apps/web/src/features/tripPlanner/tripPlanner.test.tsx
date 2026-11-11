@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import type { TripLeg, TripMessage, TripProposal } from "../../lib/api/types";
 import { useAsk } from "../../lib/ask/useAsk";
@@ -76,9 +77,11 @@ describe("the trip planner", () => {
     const applyChange = vi.fn();
     useAsk.setState({ applyChange });
     render(
-      <TooltipProvider>
-        <TripPlanner onClose={() => {}} />
-      </TooltipProvider>,
+      <QueryClientProvider client={new QueryClient()}>
+        <TooltipProvider>
+          <TripPlanner onClose={() => {}} />
+        </TooltipProvider>
+      </QueryClientProvider>,
     );
     fireEvent.change(screen.getByTestId("trip-field"), { target: { value: "VFR to Oshkosh Saturday morning, back by 5" } });
     fireEvent.click(screen.getByTestId("trip-send"));
