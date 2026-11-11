@@ -76,6 +76,7 @@ PLACES = [
     (["services/*/requirements-dev*.txt"], r"^ruff(\S*)$", "ruff", "pin", None),
     (["scripts/dev/format.sh"], r'^SWIFTFORMAT_SUM="(\S+) ', "swiftformat", "exact", "set SWIFTFORMAT_SUM to {v} and its release's sha256"),
     (["scripts/dev/format.sh"], r'^KTLINT_SUM="(\S+) ', "ktlint", "exact", "set KTLINT_SUM to {v} and its release's sha256"),
+    (["scripts/build/shared-cache.sh"], r'^SCCACHE_SUMS="(\S+) ', "sccache", "exact", "set SCCACHE_SUMS to {v} and its releases' sha256s"),
     (["apps/web/package.json"], r'"prettier": "([^"]+)"', "prettier", "exact", "npm install -D -E prettier@{v}, in apps/web"),
     ([".devcontainer/devcontainer.json"], r'features/node:1": \{ "version": "([^"]+)"', "nodejs", "exact", None),
     ([".devcontainer/devcontainer.json"], r'features/python:1": \{ "version": "([^"]+)"', "python", "exact", None),

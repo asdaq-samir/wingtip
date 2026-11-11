@@ -201,4 +201,11 @@ while ! { short=""; first_in_line && short=$(memory_short) && [ -z "$short" ] &&
 done
 rm -f "$ticket"
 export ONE_AT_A_TIME_HELD="$label"
+# Which turn it is, 1 to ONE_AT_A_TIME_SLOTS (1 for --alone, which holds
+# them all): a build keeps state of its own per turn, as
+# scripts/dev/xcodebuild.sh keeps one DerivedData per turn, that no two
+# builds can then share at once. A nested call passes it on unchanged.
+slot_of() { local i; for i in $(seq 1 "$slots"); do [ "$(slot "$i")" = "$1" ] && echo "$i"; done; }
+ONE_AT_A_TIME_SLOT=$(slot_of "${held[0]}")
+export ONE_AT_A_TIME_SLOT
 "$@"

@@ -23,6 +23,9 @@ android-ndk 30.0.16248370
 # without one is the current release, trixie, by the same digest).
 debian trixie
 rust-edition 2024
+# Cargo's compile cache, shared by every worktree on the Mac
+# (scripts/build/shared-cache.sh fetches its release, checked by sum).
+sccache 0.19.0
 # The formatters (scripts/dev/format.sh); Prettier is apps/web's package,
 # pinned with its lockfile there, and only checked against this line.
 ruff 0.17.4

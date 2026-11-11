@@ -8,6 +8,9 @@
 # by the name): a running agent may still be at work. Nothing is pushed or deleted on
 # GitHub.
 #
+# Last, scripts/dev/tidy-build-caches.sh: the build caches of the worktrees
+# it removed, and the shared ones past their caps.
+#
 # First it removes the sessions' worktrees, ~/Developer/wingtip-<topic>
 # (`git worktree add ../wingtip-<topic>`, CLAUDE.md), whose commit is on
 # origin/claude/integration or origin/main and which have nothing
@@ -109,3 +112,6 @@ while IFS= read -r branch; do
 done < <(git for-each-ref --format='%(refname:short)' "refs/heads/$pattern")
 
 echo "tidy-branches: ${dry:+would remove }$wt_removed merged worktree(s); ${dry:+would delete }$deleted merged branch(es), kept $kept"
+# The removed worktrees' DerivedData and Cargo targets, and the shared
+# caches past their caps.
+"$(dirname "$0")/tidy-build-caches.sh" ${dry:+--dry-run}

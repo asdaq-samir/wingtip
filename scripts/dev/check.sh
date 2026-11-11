@@ -20,20 +20,23 @@
 #   ESLint all find by walking up from /repo/apps/web. Built when the lock
 #   changes; npm's downloads in BuildKit's cache (id wingtip-npm).
 # - wingtip-check-py-<requirements-dev file>:<hash>: python with that file's
-#   requirements and the wingtip_native wheel built from this engine/
-#   (CI's `ci` profile). Built when either changes; uv's downloads and the
-#   wheel's Rust in BuildKit's caches.
+#   requirements and the wingtip_native wheel for this engine/ (CI's `ci`
+#   profile), the wheel from the shared engine store (below). Built when
+#   either changes; uv's downloads in BuildKit's cache.
+# - The engine store and sccache (scripts/build/shared-cache.sh,
+#   docs/LOCAL-DEV.md "Shared build caches"): each engine build for an app
+#   kept once per engine hash in ~/Library/Caches/wingtip/engine, and Rust's
+#   compiles in sccache, in Docker one cache volume per turn of
+#   one-at-a-time.sh (wingtip-sccache-turn-<n>), since it allows one server.
 # - Volumes: wingtip-cargo-registry and wingtip-cargo-git (Cargo's
 #   downloads), wingtip-cargo-target-tests-<rust>-<arch>-<hash of the worktree's path>
-#   (the engine tests' build, one per worktree; tidy-local.sh removes those
-#   of worktrees that are gone), wingtip-cargo-tools (cargo-machete),
+#   (the engine tests' build, one per worktree; tidy-build-caches.sh removes
+#   those of worktrees that are gone), wingtip-cargo-tools (cargo-machete),
 #   wingtip-check-raw (the FAA files the Python tests fetch into
 #   data/raw, as CI's cache keeps them), fp-m2 (Maven's repository).
-# The test build is never scripts/build/build-engine-wasm.sh's: that one stays a
-# clean, reproducible build in its pinned image. Each worktree is mounted at
-# its own path in the engine's container, so Cargo keys its own crates by
-# worktree (another worktree's older files can never pass for built) and
-# shares only the third-party ones.
+# Every worktree is mounted at /w in the engine's container, so sccache
+# shares the engine's own crates between worktrees by their content; the
+# target stays the worktree's own, since Cargo's freshness is by mtime.
 # CHECK_NO_CACHE=1 builds the images again without BuildKit's layer cache
 # (its cache mounts stay), for an image whose key missed a change.
 # Each image keeps its newest tag alone; `docker volume rm` any of the
@@ -49,6 +52,9 @@ RUST=$(tool rust) PYTHON=$(tool python) JAVA=$(tool java) MAVEN=$(tool maven) NO
 RUST_IMAGE=rust:$RUST-slim-$(tool debian)
 # CI's (ci.yml's test job).
 CARGO_MACHETE=0.9.2
+# The engine store and sccache every worktree shares (sccache_docker_args).
+# shellcheck source=scripts/build/shared-cache.sh
+. "$here/scripts/build/shared-cache.sh"
 
 # The areas and the paths that belong to each are scripts/areas.yml's, the
 # one table the pre-push hook and CI's changes filter read too.
@@ -112,6 +118,50 @@ requirements_of() {
   done
 }
 
+# The engine's wheel (wingtip_native, CI's `ci` profile) for Docker's
+# machine, into <dest>: from the shared engine store when any worktree has
+# built this engine, else built and put there (scripts/build/shared-cache.sh).
+# Built at one path, /engine, through sccache in a BuildKit cache that one
+# build holds at a time (sharing=locked: sccache's disk cache wants a single
+# server), so a changed file recompiles its crate and those above it; the
+# target is the build's own and goes with it.
+engine_wheel() {
+  local dest=$1 kind ctx wrapper=""
+  kind=py-wheel-linux-$(docker version -f '{{.Server.Arch}}')
+  engine_store_restore "$kind" "$dest" scripts/dev/check.sh && return 0
+  ctx=$(mktemp -d)
+  (cd "$here" && git ls-files -z -co --exclude-standard -- engine | xargs -0 tar cf - 2>/dev/null) | tar xf - -C "$ctx"
+  mkdir -p "$ctx/bin"
+  if shared_cache_on && cp "$(sccache_bin "$(sccache_linux_triple)")" "$ctx/bin/sccache" 2>/dev/null; then
+    wrapper=/bin-sccache/sccache
+  fi
+  cat > "$ctx/Dockerfile" <<WHEEL
+FROM python:$PYTHON-slim AS native
+COPY --from=$RUST_IMAGE /usr/local/cargo /usr/local/cargo
+COPY --from=$RUST_IMAGE /usr/local/rustup /usr/local/rustup
+ENV PATH=/usr/local/cargo/bin:\$PATH CARGO_HOME=/usr/local/cargo RUSTUP_HOME=/usr/local/rustup
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \\
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \\
+    rm -f /etc/apt/apt.conf.d/docker-clean \\
+    && apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
+RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv pip install -q uv && uv pip install --system -q maturin==1.16.0
+COPY bin /bin-sccache
+COPY engine /engine
+RUN --mount=type=cache,id=wingtip-cargo-registry,target=/usr/local/cargo/registry \\
+    --mount=type=cache,id=wingtip-sccache-buildkit,target=/sccache,sharing=locked \\
+    export SCCACHE_DIR=/sccache SCCACHE_CACHE_SIZE=$SCCACHE_CACHE_SIZE CARGO_INCREMENTAL=0 RUSTC_WRAPPER=$wrapper \\
+    && CARGO_TARGET_DIR=/tmp/target maturin build --profile ci --compatibility linux -m /engine/bindings/py/Cargo.toml -o /wheels \\
+    && { [ -z "$wrapper" ] || $wrapper --stop-server >/dev/null; }
+
+FROM scratch
+COPY --from=native /wheels /
+WHEEL
+  echo "check: building the engine's wheel (engine/ changed)" >&2
+  rm -rf "$dest" && docker build -q -o "type=local,dest=$dest" "$ctx" >/dev/null
+  rm -rf "$ctx"
+  engine_store_publish "$kind" "$dest" scripts/dev/check.sh
+}
+
 # python for that directory with one of its requirements-dev files and the
 # native wheel.
 py_image() {
@@ -126,26 +176,8 @@ py_image() {
     mkdir -p "$ctx/reqs/$(dirname "$req")"
     cp "$here/$req" "$ctx/reqs/$req"
   done
-  (cd "$here" && git ls-files -z -co --exclude-standard -- engine | xargs -0 tar cf - 2>/dev/null) | tar xf - -C "$ctx"
+  engine_wheel "$ctx/wheels"
   cat > "$ctx/Dockerfile" <<EOF
-# The wheel's stage: the same for every directory, so BuildKit builds it once.
-FROM python:$PYTHON-slim AS native
-COPY --from=$RUST_IMAGE /usr/local/cargo /usr/local/cargo
-COPY --from=$RUST_IMAGE /usr/local/rustup /usr/local/rustup
-ENV PATH=/usr/local/cargo/bin:\$PATH CARGO_HOME=/usr/local/cargo RUSTUP_HOME=/usr/local/rustup
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \\
-    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \\
-    rm -f /etc/apt/apt.conf.d/docker-clean \\
-    && apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
-RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv pip install -q uv && uv pip install --system -q maturin==1.16.0
-COPY engine /engine
-# The target is this worktree's own (the id carries its path's hash): Cargo
-# fingerprints by mtime, so a target shared with another worktree took its
-# older build of a crate for this one's and served stale code (2026-11-08).
-RUN --mount=type=cache,id=wingtip-cargo-registry,target=/usr/local/cargo/registry \\
-    --mount=type=cache,id=wingtip-check-wheel-target-$(worktree_hash),target=/target,sharing=locked \\
-    CARGO_TARGET_DIR=/target maturin build --profile ci --compatibility linux -m /engine/bindings/py/Cargo.toml -o /wheels
-
 FROM python:$py-slim
 ENV PYTHONDONTWRITEBYTECODE=1
 # rasterio's wheel links libexpat, which GitHub's runner has and slim lacks.
@@ -158,7 +190,7 @@ COPY reqs /reqs
 RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv \\
     ${extra:+uv pip install --system -q $extra &&} uv pip install --system -q -r /reqs/$dir/$dev
 RUN --mount=type=cache,id=wingtip-uv,target=/root/.cache/uv \\
-    --mount=type=bind,from=native,source=/wheels,target=/wheels \\
+    --mount=type=bind,source=wheels,target=/wheels \\
     uv pip install --system -q /wheels/*.whl
 EOF
   tag=$name:$( (cd "$ctx" && find . -type f | LC_ALL=C sort | xargs shasum -a 256) | sha)
@@ -171,9 +203,8 @@ EOF
   echo "$tag"
 }
 
-# The worktree's own path in the engine's container (see the top).
+# The key of the worktree's own Cargo target volume (see the top).
 worktree_hash() { echo "$here" | sha | cut -c1-8; }
-worktree_key() { echo "$(basename "$here")-$(echo "$here" | sha | cut -c1-8)"; }
 
 run_py() {
   local dir=$1 dev=$2 py=$3 lint=$4 tests=$5 extra=${6:-} tag
@@ -191,24 +222,8 @@ ds = [d for r, ds in json.load(sys.stdin)["devices"].items() if "iOS" in r for d
 print(sorted(ds, key=lambda d: d["name"])[-1]["udid"] if ds else "")'
 }
 
-# The engine built for a phone, kept by the engine's files under
-# ~/Library/Caches/wingtip-checks, as CI's caches keep it: a worktree with
-# the same engine copies it instead of compiling three targets again.
-phone_engine() {
-  local kind=$1 out=$2 script=$3 key cache
-  key=$(cd "$here" && git ls-files -z -co --exclude-standard -- engine/facade engine/crates engine/bindings/ffi 'engine/Cargo.*' engine/rust-toolchain.toml \
-    | xargs -0 shasum -a 256 | sha)
-  cache=$HOME/Library/Caches/wingtip-checks/engine-$kind-$key
-  if [ ! -d "$cache" ]; then
-    "$here/$script"
-    mkdir -p "$(dirname "$cache")"
-    rm -rf "$cache.tmp" && cp -R "$here/$out" "$cache.tmp" && mv "$cache.tmp" "$cache"
-  fi
-  rm -rf "${here:?}/$out" && mkdir -p "$(dirname "$here/$out")" && cp -R "$cache" "$here/$out"
-}
-
 run_area() {
-  local tag key
+  local tag
   case "$1" in
     web)
       tag=$(web_image)
@@ -238,17 +253,24 @@ run_area() {
       # tested there.
       local cmd
       cmd=$(grep -oE 'cargo test --profile ci [^#]*' "$here/.github/workflows/ci.yml" | head -1)
-      key=$(worktree_key)
-      # The target is a volume of this worktree's own, labelled with its path
-      # so tidy-local.sh can remove it when the worktree is gone.
-      local tvol
+      # Every worktree at one path, /w, so sccache (Cargo's RUSTC_WRAPPER,
+      # with this turn's cache, scripts/build/shared-cache.sh) finds a crate another worktree built
+      # from the same files: its key is the files' content and the compile's
+      # directory. The target stays the worktree's own, a volume labelled
+      # with its path (tidy-local.sh removes it with the worktree): Cargo
+      # judges a crate fresh by mtime, and a target shared with another
+      # worktree served its older build of a crate for this one's
+      # (2026-11-08); the cache sccache keeps is by content, so it cannot.
+      # Clippy runs without it: a check's metadata is not what sccache keeps.
+      local tvol cache_args=() arg
       tvol=wingtip-cargo-target-tests-$RUST-$(docker version -f '{{.Server.Arch}}')-$(worktree_hash)
       docker volume inspect "$tvol" >/dev/null 2>&1 || docker volume create --label "wingtip.worktree=$here" "$tvol" >/dev/null
-      docker run --rm -v "$here:/w/$key" \
+      while IFS= read -r arg; do [ -n "$arg" ] && cache_args+=("$arg"); done < <(sccache_docker_args)
+      docker run --rm -v "$here:/w" \
         -v wingtip-cargo-registry:/usr/local/cargo/registry -v wingtip-cargo-git:/usr/local/cargo/git \
-        -v "$tvol":/target \
-        -e CARGO_TARGET_DIR=/target -w "/w/$key" "$RUST_IMAGE" sh -c \
-        "rustup component add clippy 2>/dev/null && cargo clippy -q --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings && $cmd"
+        -v "$tvol":/target "${cache_args[@]+"${cache_args[@]}"}" \
+        -e CARGO_TARGET_DIR=/target -w /w "$RUST_IMAGE" sh -c \
+        "rustup component add clippy 2>/dev/null && RUSTC_WRAPPER= cargo clippy -q --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings && $cmd"
       ;;
     java)
       # services/, not the gateway alone: the pom generates the assistant's
@@ -261,14 +283,16 @@ run_area() {
       local sim
       # .tool-versions' Xcode, as CI's (scripts/ci/select-xcode.sh).
       DEVELOPER_DIR=$("$here/scripts/ci/select-xcode.sh") && export DEVELOPER_DIR
-      phone_engine ios apps/ios/Frameworks/WingtipEngine.xcframework engine/bindings/ffi/build-xcframework.sh
+      # The engine from the shared store when this engine was built before
+      # (scripts/build/shared-cache.sh).
+      "$here/engine/bindings/ffi/build-xcframework.sh"
       xcodegen generate --spec "$here/apps/ios/project.yml" --project "$here/apps/ios" --quiet
       sim=$(newest_iphone)
       [ -n "$sim" ] || { echo "check: no iPhone simulator in this Xcode" >&2; return 1; }
-      xcodebuild -quiet -project "$here/apps/ios/Wingtip.xcodeproj" -scheme Wingtip -configuration Debug \
-        -destination "platform=iOS Simulator,id=$sim" \
-        -derivedDataPath "$HOME/Library/Developer/Xcode/DerivedData/wingtip-check-$(worktree_key)" \
-        CODE_SIGNING_ALLOWED=NO test
+      # The turn's DerivedData and Xcode's compilation cache, shared with
+      # every worktree (scripts/dev/xcodebuild.sh).
+      "$here/scripts/dev/xcodebuild.sh" -quiet -project "$here/apps/ios/Wingtip.xcodeproj" -scheme Wingtip -configuration Debug \
+        -destination "platform=iOS Simulator,id=$sim" CODE_SIGNING_ALLOWED=NO test
       ;;
     android)
       local sdk=$HOME/Library/Android/sdk
@@ -280,7 +304,7 @@ run_area() {
       # build-android.sh looks in the SDK for it whatever this says.
       ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$(tool android-ndk)
       export ANDROID_NDK_HOME
-      phone_engine android apps/android/app/engine engine/bindings/ffi/build-android.sh
+      "$here/engine/bindings/ffi/build-android.sh"
       (cd "$here/apps/android" && ./gradlew --quiet testDebugUnitTest lintDebug assembleDebug)
       ;;
     site)

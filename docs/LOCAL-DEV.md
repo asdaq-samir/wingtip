@@ -258,7 +258,7 @@ All in `scripts/dev/`, each with its usage at its top.
 | `go-live.sh [branch]` | A branch on the owner's stack for the phone (above) |
 | `tidy-local.sh [--dry-run]` | Removes merged, clean worktrees and branches and stopped scratch containers; never volumes, never a running agent's worktree |
 | `tidy-branches.sh [--dry-run]` | Removes the `~/Developer/wingtip-*` worktrees whose commit is on `origin/claude/integration` or `origin/main`, with nothing uncommitted and untouched for six hours (never `wingtip`, `wingtip-live` or a locked one), then deletes local `worktree-agent-*` branches already on `origin/main` |
-| `docker-tidy.sh [--dry-run]` | Reclaims Docker disk: images no container uses (`docker image prune -a`), build cache unused for 24 hours, and volumes no container uses except the named caches (`wingtip-cargo-*`, `wingtip-npm*`, `wingtip-format-npm`, `wingtip-m2`, `fp-m2`, `wingtip-check-raw`) and the stacks' own (`wingtip_*`, `fpam_*`, the database among them); never a container; prints the space freed |
+| `docker-tidy.sh [--dry-run]` | Reclaims Docker disk: images no container uses (`docker image prune -a`), build cache unused for 24 hours, and volumes no container uses except the named caches (`wingtip-cargo-*`, `wingtip-sccache*`, `wingtip-npm*`, `wingtip-format-npm`, `wingtip-m2`, `fp-m2`, `wingtip-check-raw`) and the stacks' own (`wingtip_*`, `fpam_*`, the database among them); never a container; prints the space freed; then `tidy-build-caches.sh` (Shared build caches, below) |
 | `backup-db.sh`, `install-backup.sh` | The nightly database dump (below) |
 | `install-hooks.sh` | Installs the pre-push hook (tsc and ESLint, ruff, `cargo check`, the formatters, and the generated-file and budget checks CI runs -- `screens.sh --check`, `design-tokens.sh --check`, `toolchain.sh --check`, `file_sizes.py`, `brand_guard.py` -- each for what a push changes) |
 | `rename-local.sh` | Once, on a Mac that ran the stack before the rename to Wingtip |
@@ -272,6 +272,70 @@ whole, the newest 14 kept, hand-named dumps (`db-before-*.sql.gz`) never
 touched. Its log is `~/Library/Logs/wingtip-db-backup.log`;
 `install-backup.sh --now` runs one at once and `--remove` takes it out.
 The server's backups are in [README-AWS.md](README-AWS.md#backups-and-restore).
+
+## Shared build caches
+
+Many agents work at once on the Mac, each in its own worktree, each
+building the same apps. What is the same across worktrees is built once
+and shared (the owner, 2026-11-10: "make it all efficient and share
+resources"), so a worktree that changed ten files compiles about ten
+files. Every cache is keyed by content, so two builds at once (the turns
+`one-at-a-time.sh` hands out) can share it safely; CI keeps none of them
+(`CI` is set there) and `WINGTIP_SHARED_CACHE=0` turns them off on the Mac.
+
+| What | Where | Shared how | Pruned |
+|---|---|---|---|
+| The engine for each app: the web's `.wasm`, the iPhone's XCFramework, Android's libraries, the planner's wheel | `~/Library/Caches/wingtip/engine/<hash>/<kind>` | `build-engine-wasm.sh`, `build-xcframework.sh`, `build-android.sh` and `check.sh` copy it (an APFS clone) when the hash of `engine/**`, `.tool-versions` and the build script matches; otherwise they build and publish it with one atomic rename | the newest 5 engines kept |
+| Rust in Docker (`check.sh engine`, the `.wasm` built in a turn) | volume `wingtip-sccache-turn-<n>`, one per turn of `one-at-a-time.sh`: sccache's disk cache allows one server at a time, and a turn is one build | every worktree is mounted at the same path, so the engine's own crates hit too | sccache's own 10 GB cap per turn |
+| Rust in BuildKit (`check.sh`'s wheel) | cache mount `wingtip-sccache-buildkit`, one build at a time (`sharing=locked`) | as above, at `/engine` | 10 GB cap, and BuildKit's prune |
+| Xcode | `~/Library/Developer/Xcode/DerivedData/CompilationCache.noindex`, and one DerivedData per turn (`wingtip-turn-<n>`) | `scripts/dev/xcodebuild.sh` (which `check.sh ios` uses): compilation caching with the checkout's and DerivedData's paths mapped out of the keys, in the turn's DerivedData | over 25 GB; DerivedData of removed worktrees removed |
+| Gradle | `~/.gradle/caches/build-cache-1`, the daemons and the JDKs in `~/.gradle` | `org.gradle.caching=true` (tasks come `FROM-CACHE`), configuration cache | Gradle's own (7 days) |
+| npm, uv, Maven | BuildKit cache mounts `wingtip-npm`, `wingtip-uv`; volumes `fp-m2`, `wingtip-cargo-registry` | by id or name, whatever the worktree | `docker-tidy.sh` keeps them |
+| The check images | `wingtip-check-web:<lock hash>` (web's `node_modules` at `/node_modules`), `wingtip-check-py-*:<hash>` | one tag per lockfile, whatever the worktree | the newest tag of each kept |
+| Playwright's browsers | the Playwright image (`mcr.microsoft.com/playwright`) | one image, pulled once | `docker-tidy.sh` while no container uses it |
+| The stacks' images | BuildKit's layer cache and cache mounts | by content: a worktree's stack (`wingtip-<topic>`) tags its own names on the same layers | `docker-tidy.sh` |
+
+Build the iOS app with `scripts/dev/xcodebuild.sh` and the arguments
+you would give xcodebuild: it takes a turn and builds in that turn's
+DerivedData with the shared compilation cache, so the same commit in a
+second worktree builds from the cache. A changed Swift file compiles its
+module again (Swift's cache key is the whole module), the rest is
+replayed. Plain `xcodebuild`, Xcode itself and CI are unchanged.
+
+What stays a worktree's own, on purpose: Cargo's target directory (Cargo
+judges a crate fresh by its files' mtimes, so a target shared between
+worktrees served one worktree's older build of a crate to another,
+2026-11-08; sccache's key is the content, so it cannot), and TypeScript's
+`tsBuildInfo` and Vite's cache (seconds, not worth a shared cache that
+could go stale). Cargo's own content-based freshness
+(`-Zchecksum-freshness`) is still unstable in Rust 1.99.
+
+No sccache for the phones' engine on the Mac: Rust's cache key holds the
+compile's directory and output paths, which are each worktree's own, and
+a second worktree's build of a changed engine had no hits at all. The
+engine store spares it whenever the engine is one another worktree built.
+
+Measured 2026-11-10 on the Mac mini, in one `one-at-a-time.sh --alone`
+turn, seconds (before: a worktree of `claude/integration`, the same in a
+second one; after: this setup, cold, then a second worktree of the same
+commit, then one with a Swift and a Kotlin file changed, then one with an
+engine file changed):
+
+| Build | Before (1st, 2nd worktree) | After, cold | 2nd worktree | One app file changed | One engine file changed |
+|---|---|---|---|---|---|
+| Phones' engine (iOS or Android, three targets) | 53, 53 | 53 | 0 | 0 | 53 |
+| iOS `build-for-testing` | 32, 30 | 36 | 8 | 28 | 6 |
+| Android `assembleDebug` | 25, 27 | 27 | 4 | 22 | 5 |
+| Engine `.wasm` | 27, 24 | 26 | 0 | 0 | 23 |
+| `cargo test -p wingtip-engine` (Docker) | 19, 20 | 21 | 9 | 9 | 10 |
+
+A changed Swift or Kotlin file still compiles its whole module (the
+app's), since that is the unit both compilers cache by.
+
+`scripts/dev/tidy-build-caches.sh [--dry-run]` (run by `docker-tidy.sh` and
+`tidy-branches.sh`) keeps them within bounds: the engine store's newest
+five engines, the DerivedData and Cargo target volumes of worktrees that
+are gone, and anything over 25 GB.
 
 ## Gotchas
 

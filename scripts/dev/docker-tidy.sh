@@ -10,12 +10,17 @@
 # - BuildKit's cache unused for 24 hours. A day's builds stay warm.
 # - Volumes no container uses, except the caches the scripts name and every
 #   compose project's: wingtip-cargo-* (Cargo's downloads and the engine
-#   tests' builds), wingtip-npm*, wingtip-format-npm, wingtip-m2, fp-m2
+#   tests' builds), wingtip-sccache* (the shared Rust compile cache),
+#   wingtip-npm*, wingtip-format-npm, wingtip-m2, fp-m2
 #   (Maven's), wingtip-check-raw (the FAA files the tests fetch), and
 #   wingtip_* and fpam_* (the stacks' own, pgdata_pg18's rows among them,
 #   kept even while the stack is down), and any compose project's that
 #   still has a container (another session's scratch stack). What goes is
 #   anonymous volumes and the one-off scratch ones an agent made by hand.
+#
+# Then the shared build caches (scripts/dev/tidy-build-caches.sh): the
+# engine store's older engines, and the DerivedData and Cargo targets of
+# worktrees that are gone.
 #
 # No container is removed or stopped (tidy-local.sh removes the scratch
 # stacks' stopped ones). Never `docker system prune --volumes`: it would
@@ -35,7 +40,7 @@ case "${1:-}" in
 esac
 
 # The volumes kept whether or not a container uses them (shell patterns).
-KEEP=(wingtip-cargo-* wingtip-npm* wingtip-format-npm wingtip-m2 fp-m2 wingtip-check-raw "wingtip_*" "fpam_*")
+KEEP=(wingtip-cargo-* "wingtip-sccache*" wingtip-npm* wingtip-format-npm wingtip-m2 fp-m2 wingtip-check-raw "wingtip_*" "fpam_*")
 kept() {
   local p
   for p in "${KEEP[@]}"; do
@@ -79,6 +84,7 @@ if [ -n "$dry" ]; then
     | while read -r id name size; do grep -qxF "$id" <<<"$used" || echo "    $name ($size)"; done
   echo "  build cache unused for 24 hours"
   echo "  volumes no container uses, not a kept cache: ${volumes[*]:-(none)}"
+  "$(dirname "$0")/tidy-build-caches.sh" --dry-run
   docker system df
   exit 0
 fi
@@ -97,6 +103,8 @@ if [ ${#volumes[@]} -gt 0 ]; then
 else
   echo "none"
 fi
+echo "== the shared build caches =="
+"$(dirname "$0")/tidy-build-caches.sh"
 after=$(total_bytes)
 
 echo

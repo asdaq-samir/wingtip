@@ -131,6 +131,9 @@ table is the end-of-wave validation, and no test holds up a code change.
 all-changed` every area the branch and its uncommitted files touch. It
 runs in Docker (the phones on the host), each area in its own turn of
 `scripts/dev/one-at-a-time.sh`, warm from shared images and caches.
+Every worktree's builds share what is the same: the engine built once per
+engine hash, sccache, Xcode's compilation cache and Gradle's build cache
+(docs/LOCAL-DEV.md, "Shared build caches"; `WINGTIP_SHARED_CACHE=0` is off).
 `scripts/areas.yml` is the one table of areas, their paths and their
 checks, read by check.sh, the pre-push hook and CI. A change to
 `services/planner/wingtip` or `engine/` also checks ingest, weather and
@@ -145,7 +148,7 @@ without it).
 | `ingest`, `weather`, `assistant`, `jobs` | each service's ruff and pytest; the assistant's `python -m app.openapi` after a route change | all |
 | `engine` | `scripts/ci/engine_layers.py`, `cargo machete`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo test --profile ci` | all |
 | `java` (`services/gateway/`) | `mvn -B test` (Docker, for Testcontainers) | all |
-| `ios` (`apps/ios/`) | `xcodegen`, then `xcodebuild test` on the newest iPhone simulator (docs/NATIVE.md) | unit tests and `CardSmokeTests` on the iPhone / the full suites on the iPhone, iPad and iPhone Duo |
+| `ios` (`apps/ios/`) | `xcodegen`, then `scripts/dev/xcodebuild.sh test` (xcodebuild with the shared caches) on the newest iPhone simulator (docs/NATIVE.md) | unit tests and `CardSmokeTests` on the iPhone / the full suites on the iPhone, iPad and iPhone Duo |
 | `android` (`apps/android/`) | `engine/bindings/ffi/build-android.sh`, then `./gradlew testDebugUnitTest lintDebug assembleDebug` (docs/NATIVE-ANDROID.md) | unit tests and lint / plus the instrumented tests on an emulator |
 | `site` (`apps/site/`) | `python3 apps/site/build.py && python3 apps/site/check.py` | all |
 | `arch` (any source file) | `scripts/ci/file_sizes.py --base origin/main` (no new or grown file over 400 lines), `scripts/build/toolchain.sh --check`, `scripts/ci/brand_guard.py` (no raw style value outside `design/tokens.json`), `scripts/ci/dead_python.sh`; CI adds `scripts/ci/rules_boundary.py` (no aviation figure outside the engine) | all |
