@@ -45,6 +45,20 @@ fn main() {
     each.sort();
     dirs.extend(each);
 
+    // The web's WebAssembly, the one build for wasm32 (bindings/wasm): only
+    // the rules the web asks, as scripts/build/web_rules.py lists them from
+    // its code. By the target, not a cargo feature: a feature would be
+    // unified into every build of the workspace that has bindings/wasm in
+    // it (`cargo test --workspace`), and the planner's wheel and the phones
+    // build every rule.
+    let wasm = std::env::var("CARGO_CFG_TARGET_ARCH").is_ok_and(|a| a == "wasm32");
+    let web: Option<Vec<String>> = wasm.then(|| {
+        let list = here.join("web-rules.txt");
+        println!("cargo:rerun-if-changed={}", list.display());
+        let text = fs::read_to_string(&list).unwrap_or_else(|e| panic!("{}: {e}", list.display()));
+        text.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')).map(str::to_owned).collect()
+    });
+
     let mut rules: Vec<(String, String)> = Vec::new();
     for dir in dirs {
         for path in json_files(&dir) {
@@ -66,6 +80,12 @@ fn main() {
             assert!(!rules.iter().any(|(n, _)| *n == name), "{name}: two contract files");
             rules.push((name, call));
         }
+    }
+    if let Some(web) = &web {
+        for name in web {
+            assert!(rules.iter().any(|(n, _)| n == name), "web-rules.txt: the web asks {name}, which this build has not");
+        }
+        rules.retain(|(n, _)| web.contains(n));
     }
     rules.sort();
 

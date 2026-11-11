@@ -5,13 +5,17 @@ apps/web/src/lib/engine/wingtip-engine.wasm is downloaded by every phone
 before the planner's first draw (index.html preloads it, main.tsx waits
 for it). It went from 143 KB on 2026-11-03 to 1.41 MB on 2026-11-10 before
 anyone measured it; one shared sort (wingtip_core::sort) took it back to
-1.27 MB, 552 KB gzipped. This fails the committed module over a budget
-about 10% above that, raw and gzipped (level 9, as a server sends it at
-its smallest), so it cannot creep back unnoticed.
+1.27 MB, and building only the rules the web asks (facade/build.rs for
+wasm32, scripts/build/web_rules.py) to 1.08 MB, 470 KB gzipped. This
+fails the committed module over a budget about 10% above that, raw and
+gzipped (level 9, as a server sends it at its smallest), so it cannot
+creep back unnoticed.
 
 A module over the budget: find what grew with `twiggy top` and `twiggy
 monos` on an unstripped build (CARGO_PROFILE_WASM_STRIP=none, the
-measure-speed skill), and raise the budget here only with the reason.
+measure-speed skill): a rule the web newly asks can bring in a whole
+crate's handler (navlog_with_descents alone brought 77 KB of the nav log).
+Raise the budget here only with the reason.
 
 The standard library only.
 
@@ -25,10 +29,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 WASM = ROOT / "apps/web/src/lib/engine/wingtip-engine.wasm"
 
-# 2026-11-10: 1,273,117 bytes raw and 551,705 gzipped after the shared
-# sort, before Start At descents; each budget about 10% above.
-RAW_BUDGET = 1_400_000
-GZIP_BUDGET = 607_000
+# 2026-11-10: 1,079,896 bytes raw and 469,617 gzipped with the shared sort
+# and the web's 192 rules; each budget about 10% above.
+RAW_BUDGET = 1_188_000
+GZIP_BUDGET = 517_000
 
 
 def main():

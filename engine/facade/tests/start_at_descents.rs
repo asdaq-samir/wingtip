@@ -1,7 +1,7 @@
 //! A pilot's Start At descent in the nav log (navlog_with_descents, a leg
 //! marked start_at), held to the shared fixture
-//! apps/web/src/lib/fixtures/startAtDescents.json, which the web's
-//! startAtDescents test reads as well. The figures are worked from three
+//! apps/web/src/lib/fixtures/startAtDescents.json, with the other shared
+//! fixtures (the planner's nav log asks this rule; the web does not). The figures are worked from three
 //! to one (333 ft a nm, AIM 2-1-2's 3 degree glide path) by hand, not
 //! from the code.
 

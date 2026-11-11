@@ -7,7 +7,8 @@
 #   always   the paths filter is scripts/areas.yml's, no aviation rule
 #            outside the engine, the legal pages, every test in one tier
 #            (and CI's tiers in shape), warnings fatal, the workflows'
-#            rules, the Markdown's links, ruff over every Python suite
+#            rules, the Markdown's links, the web's engine rules
+#            (scripts/build/web_rules.py), ruff over every Python suite
 #            and the Python's layout
 #   ARCH     no new or grown source file over 400 lines, one version of
 #            each toolchain, no raw style value outside the tokens, no
@@ -142,6 +143,7 @@ start "Test tiers" python3 scripts/ci/test_tiers.py
 start "Warnings fatal" python3 scripts/ci/warnings_fatal.py
 start "Workflow rules" python3 scripts/ci/workflow_rules.py
 start "Doc links" python3 scripts/ci/check_links.py
+start "Web engine rules" python3 scripts/build/web_rules.py --check
 start "Python lint" ruff_check
 start "Python layout" scripts/dev/format.sh --check python
 if on ARCH; then

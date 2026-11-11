@@ -10,6 +10,8 @@ public
 index.html
 # The engine's contract types (npm run types) and its WebAssembly.
 src/lib/engine/contract.ts
+# The rules the web asks (scripts/build/web_rules.py).
+src/lib/engine/webRules.ts
 src/lib/engine/pkg
 src/lib/api/*.d.ts
 # The design tokens (scripts/build/design-tokens.sh).

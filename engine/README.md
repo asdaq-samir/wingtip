@@ -181,7 +181,9 @@ A rule goes in this way, each step in the same pull request:
    what they write.
 4. A test against the shared fixtures in `apps/web/src/lib/fixtures`, so the
    web, the phones and the planner are held to the same examples.
-5. `scripts/build/build-engine-wasm.sh`, and the `.wasm` committed; the
+5. Where the web asks it, `python3 scripts/build/web_rules.py` (the web's
+   module is built with only the rules the web asks, below), then
+   `scripts/build/build-engine-wasm.sh`, and the `.wasm` committed; the
    planner's image rebuilt for the Python side.
 
 Then the callers switch to the name and the old copy is deleted.
@@ -335,6 +337,19 @@ Then the callers switch to the name and the old copy is deleted.
   (the facade's `route-options`), on for the planner and the phones and
   off in the web's WebAssembly, which never asks them: they were 150 KB of
   the module.
+- The web's WebAssembly is built with only the rules the web asks
+  (`facade/build.rs`, wherever the facade is built for wasm32, which only
+  `bindings/wasm` is; the planner's wheel and the phones build every rule,
+  and a cargo feature would have leaked into `cargo test --workspace`). The list is
+  `facade/web-rules.txt`, which `scripts/build/web_rules.py` writes from
+  every `callEngine("<rule>"` in `apps/web/src`, with
+  `apps/web/src/lib/engine/webRules.ts` beside it: `callEngine` takes only
+  those names, so a rule the web starts to ask is a type error until the
+  script is run again and the module rebuilt, and asked past the types it
+  throws, naming the rule. The guards' "Web engine rules" runs the script
+  with `--check`, and `engine.test.ts` asks every listed rule of the
+  module. The 143 rules left out were 194 KB (2026-11-10); the module's
+  size is held to a budget (`scripts/ci/wasm_size.py`).
 - The planner's own copies are going (#482 phase 0): the airspace column
   and the Mode C veil (`airspace_column`, `mode_c_veil`), an FNS message's
   NOTAMs (`notams_fns`), a report's ceiling and category (`ceiling_ft`,

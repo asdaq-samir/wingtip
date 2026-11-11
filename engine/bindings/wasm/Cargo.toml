@@ -14,7 +14,10 @@ crate-type = ["cdylib"]
 # few lines of apps/web/src/lib/engine/engine.ts.
 #
 # Route options are left out (the facade's route-options feature): the web
-# never asks them, and they were 153 KB of the module.
+# never asks them, and they were 153 KB of the module. And only the rules
+# the web asks are built in, wherever the facade is built for wasm32
+# (facade/build.rs, facade/web-rules.txt): the other 143 were 194 KB
+# (2026-11-10).
 [dependencies]
 wingtip-engine = { path = "../../facade", default-features = false }
 
