@@ -20,9 +20,7 @@ import org.springframework.security.web.savedrequest.NullRequestCache;
  * (ConnectorSecurityConfig). The forms carry the cookie-held CSRF token the
  * app's other forms do. The confirm page's address holds the link's
  * token, so no Referer is sent from it; the pages run no script, load
- * nothing but their icon and are never framed. Its headers, no-store
- * among them, are written as the request comes in, as every chain's are
- * (ConnectorSecurityConfig.headersFirst).
+ * nothing but their icon and are never framed.
  */
 @Configuration
 public class DeleteAccountSecurityConfig {
@@ -40,6 +38,7 @@ public class DeleteAccountSecurityConfig {
                         .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; img-src 'self'; "
                                 + "style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; "
                                 + "frame-ancestors 'none'")));
+        // Written as the request comes in, as SecurityConfig has them (CacheHeadersTest).
         return ConnectorSecurityConfig.headersFirst(http.build());
     }
 }
