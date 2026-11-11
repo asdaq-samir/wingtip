@@ -11,15 +11,25 @@ struct SearchBarItems: ToolbarContent {
     let hear: (() -> Void)?
     /// A page of the sheet's stack: Settings, the account button's.
     let open: (SheetPage) -> Void
+    /// The bar's Undo; in the one-row header it is the route card's •••'s
+    /// (RouteCard), shake and the Edit menu.
+    var undo = true
 
     var body: some ToolbarContent {
-        UndoToolbarItem()
-        ToolbarItemGroup(placement: .topBarTrailing) {
-            if let hear {
+        if undo { UndoToolbarItem() }
+        if let hear {
+            ToolbarItem(placement: .topBarTrailing) {
                 MicButton(listening: VoiceInput.shared.listening, busy: model.busy, action: hear)
             }
-            AccountButton(open: open)
         }
+        // The account its own round glass, apart from the microphone's, as
+        // Maps' avatar is (the owner's decision, 2026-11-10;
+        // docs/design/ios.md §1): the system's fixed spacer splits the
+        // bar's glass between them on iOS 26.
+        if #available(iOS 26.0, *) {
+            ToolbarSpacer(.fixed, placement: .topBarTrailing)
+        }
+        ToolbarItem(placement: .topBarTrailing) { AccountButton(open: open) }
     }
 }
 
@@ -67,11 +77,16 @@ struct AccountButton: View {
 
     var body: some View {
         Button { open(.screen(.setup)) } label: {
-            if initials.isEmpty {
-                Image(systemName: WingtipIcon.account)
-            } else {
-                Text(initials).font(WingtipType.detail.weight(.semibold))
+            Group {
+                if initials.isEmpty {
+                    Image(systemName: WingtipIcon.account)
+                } else {
+                    Text(initials).font(WingtipType.detail.weight(.semibold))
+                }
             }
+            // 44 by 44, Maps' avatar's size (the owner, 2026-11-10), where
+            // it drew 40 by 36 in the microphone's capsule.
+            .frame(width: WingtipSize.tapTarget, height: WingtipSize.tapTarget)
         }
         .accessibilityLabel(session.pilot.map { "\($0.displayName), account and settings" } ?? "Account and Settings")
         .accessibilityIdentifier("account-button")
