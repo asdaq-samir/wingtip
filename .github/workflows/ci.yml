@@ -71,9 +71,11 @@ jobs:
       - name: The crates this change touches
         id: affected
         run: python3 scripts/ci/engine_affected.py ${{ github.event_name == 'pull_request' && '--base HEAD^1' || '--all' }} --github
-      - run: cargo test --profile ci --manifest-path engine/Cargo.toml ${{ steps.affected.outputs.packages }}
+      # Before the rest: a pre-push hook or check.sh older than
+      # engine_affected.py reads the first such line's crates.
       - if: steps.affected.outputs.contract == 'true'
         run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine --test contract
+      - run: cargo test --profile ci --manifest-path engine/Cargo.toml ${{ steps.affected.outputs.packages }}
       # The committed WebAssembly must be what engine/ builds, or the browser
       # runs other rules than the planner and the phones.
       - name: The engine's WebAssembly is the committed one
