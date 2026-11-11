@@ -122,6 +122,11 @@ final class Plan {
         course = kept.course; checkpoints = kept.checkpoints; profile = kept.profile; altitude = kept.altitude
         legs = kept.legs; totals = kept.totals; altitudeFt = kept.altitude?.altitudeFt; briefing = kept.briefing; briefedAt = kept.briefedAt
         plannedAt = kept.plannedAt
+        // Said with their age until the planner answers again (brief and
+        // plan clear it), so a briefing kept from yesterday never reads as
+        // today's after a relaunch with no signal.
+        noteKept(kept.briefedAt, .briefing, .weather)
+        noteKept(kept.plannedAt, .plan)
         remembering = false
         plan()
         remembering = true

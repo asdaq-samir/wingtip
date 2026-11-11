@@ -34,6 +34,8 @@ final class FieldWeatherState {
     private var marks: [String: FieldWeatherMark] = [:]
     /// The alternates in view worse by the ETA there.
     private var alternatesWorse: Set<String> = []
+    /// When the marks were last made again (remake).
+    private var madeAt = Date.distantPast
 
     /// The mark for a field, as an annotation takes it: made from its
     /// report once and kept until the report or the plan's part changes,
@@ -41,7 +43,8 @@ final class FieldWeatherState {
     func mark(_ ident: String) -> FieldWeatherMark? {
         if let kept = marks[ident] { return kept }
         guard let pin = feed.reports[ident] else { return nil }
-        let made = FieldWeatherMarks.mark(FieldWeatherMarks.report(pin), demonstratedKt: input.demonstratedKt, worse: input.worse.contains(ident) || alternatesWorse.contains(ident))
+        let fresh = FieldWeatherMarks.mark(FieldWeatherMarks.report(pin), demonstratedKt: input.demonstratedKt, worse: input.worse.contains(ident) || alternatesWorse.contains(ident))
+        let made = FieldWeatherMarks.aged(fresh, heardAt: feed.heardAt[ident])
         marks[ident] = made
         return made
     }
@@ -63,6 +66,9 @@ final class FieldWeatherState {
 
     /// The map at rest: the weather about it asked where it is not in hand.
     func rested(_ map: MKMapView) {
+        // The marks made again now and then, so a report goes grey with
+        // its age as the map is used with no signal, not only when heard.
+        if Date().timeIntervalSince(madeAt) > 60 { remake(map) }
         feed.view(ViewBox(map.region)) { [weak self, weak map] in
             guard let self, let map else { return }
             self.remake(map)
@@ -73,6 +79,7 @@ final class FieldWeatherState {
     /// put on the fields drawn whose mark changed.
     private func remake(_ map: MKMapView) {
         marks = [:]
+        madeAt = Date()
         alternatesWorse = input.alternates.isEmpty ? [] : FieldWeatherMarks.worse(alternates: input.alternates, reports: feed.reports)
         for case let field as AirportAnnotation in map.annotations {
             let fresh = mark(field.ident)
