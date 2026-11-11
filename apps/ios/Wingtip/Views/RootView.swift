@@ -101,6 +101,9 @@ struct RootView: View {
                         // the map shows (sheetHeight).
                         .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { height in
                             if !mapShown { sheetHeight = height }
+                            // The map's buttons ride its top (MapButtonsDock),
+                            // read there alone, so this body is not run again.
+                            SheetEdge.shared.plan = height
                         }
                         .environment(\.sheetAtPill, detent == RootView.pill)
                         .presentationDetents([RootView.pill, .half, .large], selection: $detent)
@@ -242,10 +245,12 @@ struct RootView: View {
                 }
             }
             .overlay(alignment: .topTrailing) {
-                // In the strip the field is the way to the assistant, so the
-                // sparkle is not drawn.
-                MapButtons(following: $following, routeAway: routeAway && plan.course != nil, fitRoute: { fitRequest += 1 },
-                           ask: layoutName == "strip" ? nil : { ask(nil) })
+                // Over the sheet's top on the iPhone, at the top right beside
+                // the iPad's sidebar. In the strip the field is the way to the
+                // assistant, so the sparkle is not drawn.
+                MapButtonsDock(overSheet: layout == .sheet, following: $following,
+                               routeAway: routeAway && plan.course != nil, fitRoute: { fitRequest += 1 },
+                               ask: layoutName == "strip" ? nil : { ask(nil) })
             }
             .overlay(alignment: .top) {
                 VStack(spacing: WingtipSpace.sm) {
@@ -259,8 +264,11 @@ struct RootView: View {
                     // The radar or satellite loop's bar while one is on.
                     WeatherLoopBar()
                 }
-                // Clear of the map's buttons down the right: a button and the gutters round it.
-                .padding(.trailing, WingtipSize.tapTarget + WingtipSpace.lg + WingtipSpace.xs)
+                // Clear of the map's buttons down the right where they stand
+                // at the top (the iPad's): a button and the gutters round it.
+                // Over the iPhone's sheet they ride its top, so the banners
+                // have the width.
+                .padding(.trailing, layout == .split ? WingtipSize.mapButton + WingtipSpace.md * 2 : 0)
             }
             .overlay(alignment: .topLeading) {
                 VStack(alignment: .leading, spacing: WingtipSpace.sm) {
