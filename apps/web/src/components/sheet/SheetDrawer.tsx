@@ -27,6 +27,7 @@ export function SheetDrawer({
   popup,
   style,
   look,
+  grabber,
   children,
 }: {
   fromBottom: boolean;
@@ -42,6 +43,9 @@ export function SheetDrawer({
   popup: Record<string, string | boolean | undefined>;
   style: CSSProperties;
   look: string;
+  /** The sheet's grabber, at its free edge: outside the clip of its
+   *  corners, so its hit area reaches past the sheet's edge (SheetGrabber). */
+  grabber?: ReactNode;
   children: ReactNode;
 }) {
   return (
@@ -114,6 +118,7 @@ export function SheetDrawer({
                   className="pointer-events-none absolute inset-x-0 bottom-full"
                 />
               )}
+              {grabber}
               {/* Clipped to its corners here, not on the popup, which the
                   parts over its top stand outside of; the cards over it
                   positioned in it. */}

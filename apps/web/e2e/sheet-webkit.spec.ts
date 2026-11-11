@@ -24,7 +24,9 @@ const at = (page: Page, x: number, y: number) =>
     ([px, py]) => {
       const hit = document.elementFromPoint(px, py);
       return {
-        inPanel: !!hit?.closest('[data-slot="map-panel"]'),
+        // The split grabber's bars take a finger a little over the sheet's
+        // top (SheetGrabber's 44-point hit areas): theirs, not the sheet's drawing.
+        inPanel: !!hit?.closest('[data-slot="map-panel"]') && !hit?.closest("[data-page-bar]"),
         inBand: !!hit?.closest("[data-head-band]"),
         inBody: !!hit?.closest("[data-panel-body]"),
         inHead: !!hit?.closest("[data-sheet-head]"),

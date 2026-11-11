@@ -1,8 +1,8 @@
-import { useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import TabKept from "../TabKept";
-import { PageDots, SheetPager, type SheetPages } from "./SheetPager";
+import { SheetPager, type SheetPages } from "./SheetPager";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
  *  in it four from the edge. */
@@ -17,12 +17,6 @@ function barRowPad(underGrabber: boolean) {
   if (underGrabber) return "h-[4.75rem] pt-6 pb-1.5";
   return cn("h-[4.25rem] pb-3", ROW_PAD);
 }
-/** The same row with the sheet's pages (SheetPager): a rem more over it
- *  for the page dots, under the grabber's room on a bottom sheet (40 over
- *  the field, 92 in all), else under the ten over the row (26 over it, 84). */
-function pagedBarPad(underGrabber: boolean) {
-  return underGrabber ? "h-[5.75rem] pt-10 pb-1.5" : "h-[5.25rem] pt-6.5 pb-3";
-}
 /** The home indicator's room, none while the keyboard is up: the
  *  Drawer's --drawer-keyboard-inset is 0 or a keyboard's height, so the
  *  room less a thousand times it is the room or nothing. */
@@ -30,68 +24,11 @@ const offKeyboard = (px: number) => `max(0px, calc(${px}px - var(--drawer-keyboa
 /** Those rows' heights, for what pins under them (--sheet-head). */
 const BAR_ALONE = "4.75rem";
 const BAR = "4.25rem";
-const PAGED_BAR_ALONE = "5.75rem";
-const PAGED_BAR = "5.25rem";
-const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
 
 /** Under the head, the body and the foot a shade darker than the glass
  *  over them, the grey of notes and the blue of tappable words a step
  *  darker on it for WCAG's 4.5:1 (design/tokens.json's -shade tokens). */
 export const SHEET_BELOW = "[--muted-foreground:var(--muted-foreground-shade)] [--tint:var(--tint-shade)] print:bg-transparent";
-
-/**
- * iOS's grabber: 36 by 5 in a button a little wider, at the sheet's free
- * edge: the top of a bottom sheet, the foot of a top sheet or the side
- * panel. A finger drags the sheet from it (the Drawer's own swipe); tapped
- * it cycles the heights, small to big and back, and the arrow keys step
- * them, for a keyboard and VoiceOver.
- */
-export function SheetGrabber({
-  label,
-  size,
-  ask,
-  at,
-}: {
-  label: string;
-  size: PanelState;
-  ask: (s: PanelState) => void;
-  at: "top" | "bottom";
-}) {
-  const [was, setWas] = useState(size);
-  const [rising, setRising] = useState(true);
-  if (size !== was) {
-    setWas(size);
-    setRising(RANK[size] > RANK[was]);
-  }
-  const cycle = () => ask(size === "peek" || size === "full" ? "half" : rising ? "full" : "peek");
-  const arrows = (event: ReactKeyboardEvent) => {
-    if (event.key === "ArrowUp" && size !== "full") ask(size === "peek" ? "half" : "full");
-    else if (event.key === "ArrowDown" && size !== "peek") ask(size === "full" ? "half" : "peek");
-    else return;
-    event.preventDefault();
-  };
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      aria-expanded={size !== "peek"}
-      data-testid="sidebar-trigger-button"
-      onClick={cycle}
-      onKeyDown={arrows}
-      // 56 by 24 to a finger, as iOS's grabber takes a drag well round its
-      // bar (the sheet audit's F-SC1: it was 96 by 10), its own box that
-      // size and its hit area no more than it, so what is under it -- the
-      // title row's ends, the field all the way up -- is clear of it.
-      className={cn(
-        "absolute inset-x-0 z-30 mx-auto flex h-6 w-14 justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset print:hidden",
-        "after:inset-x-0! after:top-0! after:bottom-0!",
-        at === "top" ? "top-0 items-start pt-1" : "bottom-0 items-end pb-1.25",
-      )}
-    >
-      <span className="h-[5px] w-9 rounded-full bg-muted-foreground/40" aria-hidden="true" />
-    </button>
-  );
-}
 
 export interface PartsProps {
   top: ReactNode;
@@ -151,7 +88,8 @@ export const CUT_TOP = "[clip-path:inset(0_0_max(0px,calc(-1*(var(--sheet-offset
  * scroller filling the room under an empty head, its title row sticky at
  * its top (PinnedHead) and its tabs under that. With the sheet's pages
  * (SheetPager) each page is such a scroller: Search's head the one search,
- * FPL's the route's row and the controls, the dots over both.
+ * FPL's the route's row and the controls, the split grabber over both
+ * (SheetGrabber) picking them.
  */
 export function SheetParts(p: PartsProps) {
   const { atPill, fromBottom, size, footShown, cardsUp, setFoot } = p;
@@ -170,7 +108,7 @@ export function SheetParts(p: PartsProps) {
   } as CSSProperties;
   const pillFoot = size === "peek" && !!(p.bar || p.compact);
   const bandOnly = !!p.bar && p.barShown && !headerShown;
-  const barHeight = paged ? (p.fromBottom ? PAGED_BAR_ALONE : PAGED_BAR) : p.fromBottom ? BAR_ALONE : BAR;
+  const barHeight = p.fromBottom ? BAR_ALONE : BAR;
   const sheetHead = bandOnly ? `calc(${barHeight}${topSheet ? " + env(safe-area-inset-top)" : ""})` : "0px";
   // On a phone, what stays in sight at the sheet's free edge while the
   // popup, laid out at its full height, slides: moved back by the Drawer's
@@ -183,7 +121,7 @@ export function SheetParts(p: PartsProps) {
     <div
       className={cn(
         "flex shrink-0 px-4",
-        paged ? pagedBarPad(p.fromBottom) : barRowPad(p.fromBottom),
+        barRowPad(p.fromBottom),
         !p.barShown && "hidden",
         // All the way up on a phone the search alone is pinned at the
         // top, a hairline under it, as Apple Maps' is.
@@ -197,7 +135,7 @@ export function SheetParts(p: PartsProps) {
   // the search, or paged the second page's first row.
   const headBlock = (shown: boolean, alone: boolean, first: boolean) => {
     const keptHere = p.kept != null && shown && headContent === p.kept;
-    const firstPad = first ? (p.fromBottom ? "pt-10" : "pt-6.5") : undefined;
+    const firstPad = first ? (p.fromBottom ? "pt-6" : ROW_PAD) : undefined;
     return (
       <div
         className={cn(
@@ -311,33 +249,24 @@ export function SheetParts(p: PartsProps) {
 
   let content: ReactNode;
   if (p.pages) {
-    const { at, go, names, second } = p.pages;
+    const { at, go, second } = p.pages;
     // The second page's first row: the route's at every size, the pill's
     // own row at the pill.
     const routeShown = !p.flying && !cardsUp && (atPill ? p.compact != null : p.top != null);
     const searchAlone = atPill && !p.flying && !p.barShown;
     const routeAlone = atPill && !p.flying && !routeShown;
-    const dots = !p.flying && !cardsUp && p.layer === "tab";
+    // Swiped between in the workspace alone: not flying, no card over it.
+    const swiped = !p.flying && !cardsUp && p.layer === "tab";
     content = (
-      <>
-        {dots && (
-          <PageDots
-            at={at}
-            go={go}
-            names={names}
-            className={cn(p.fromBottom ? "top-6" : topSheet ? cn("top-[calc(env(safe-area-inset-top)+0.5rem)]", follows) : "top-2")}
-          />
-        )}
-        <SheetPager
-          at={at}
-          go={go}
-          drag={dots}
-          pages={[
-            scroller(barRow, p.children, searchAlone, at !== 0, sheetHead),
-            scroller(headBlock(routeShown, routeAlone, true), second, routeAlone, at !== 1, "0px"),
-          ]}
-        />
-      </>
+      <SheetPager
+        at={at}
+        go={go}
+        drag={swiped}
+        pages={[
+          scroller(barRow, p.children, searchAlone, at !== 0, sheetHead),
+          scroller(headBlock(routeShown, routeAlone, true), second, routeAlone, at !== 1, "0px"),
+        ]}
+      />
     );
   } else {
     const headAlone = atPill && !p.flying && !p.barShown && !(headerShown && headContent != null);

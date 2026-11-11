@@ -427,10 +427,16 @@ Each page is its own scroller with its own sticky head (the search's row,
 or the route's row and the controls), so each keeps its place; the page
 out of sight has an inert body. Its viewport is `overflow: clip`, so a
 field focused on the page out of sight never scrolls it under Embla. The
-dots are Base UI's Tabs under the grabber (`PageDots`), a rem of the
-first row's room given to them (`useSheetDetents`' `dots`). The page up
+grabber is the page control, split in two (`SheetGrabber` with `pages`,
+the owner 2026-11-11): Base UI's Tabs, one Tab a bar, Left and Right
+picking pages as they are focused, a tap on the page up's bar and Up and
+Down sizing the sheet as the plain grabber does. It sits in the Drawer's
+popup outside the clip of its corners (`SheetDrawer`'s `grabber`), so
+each bar's 44-point hit area reaches over the sheet's edge rather than
+over the field; the first row keeps its room from before the pages. A
+card's grabber stays the plain one. The page up
 is the planner's place (`usePanelView`'s `view`: the plan is FPL, the
-search and the traffic are Search); a swipe or a dot picks it as a
+search and the traffic are Search); a swipe or a bar picks it as a
 place is picked, so what each kept open comes back with it. The pill is
 the page's first row; the route's figures sit at the foot on FPL alone.
 
