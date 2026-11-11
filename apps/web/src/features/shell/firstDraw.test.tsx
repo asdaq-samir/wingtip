@@ -20,9 +20,15 @@ vi.mock("../../lib/map/gl/worker", () => ({}));
 const wasm = join(dirname(fileURLToPath(import.meta.url)), "../../lib/engine/wingtip-engine.wasm");
 let unmount: (() => void) | null = null;
 
-afterEach(() => {
+afterEach(async () => {
   unmount?.();
   unmount = null;
+  // The page asks for the route's panel chunk once it has painted
+  // (routePanelParts' loadRoutePanel), and a test can end before it is in:
+  // the last one's import then landed after the environment was torn down,
+  // failing the run with every test passed. Each test waits here for the
+  // imports its page started.
+  await vi.dynamicImportSettled();
 });
 
 /** The page at `address`, drawn from a fresh copy of every module: the
