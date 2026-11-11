@@ -78,7 +78,7 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
     <div className="flex flex-col gap-1 pb-6" data-testid="place-notam-full">
       <NotamState n={n} />
       <p className={cn("font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")} data-testid="place-notam-what">
-        <NotamWhat what={whatOf(n, ident)} clamp={false} />
+        <NotamWhat what={whatOf(n, ident)} />
       </p>
       <p className={TEXT.prose}>
         <NotamLines n={n} read={read} clamp={false} />
@@ -131,8 +131,8 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
               // line's end; its when and where a line each under it (NotamLines).
               wide
               title={
-                <span>
-                  <NotamWhat what={whatOf(n, ident)} clamp={!read.what} />
+                <span className={cn(!read.what && "line-clamp-3")}>
+                  <NotamWhat what={whatOf(n, ident)} />
                   {/* Its number, as a briefer reads it, muted after it. */}
                   <span className="text-muted-foreground" data-testid="place-notam-number">{` ${numberOf(n, ident)}`}</span>
                 </span>
@@ -167,9 +167,9 @@ const RED = /(\bclosed\b|\bout of service\b)/i;
 
 /** Its first line, "closed" and "out of service" in red where they are in
  *  it, the rest in the text's colour. */
-function NotamWhat({ what, clamp }: { what: string; clamp: boolean }) {
+function NotamWhat({ what }: { what: string }) {
   return (
-    <span className={cn(clamp && "line-clamp-3")} data-testid="place-notam-heading">
+    <span data-testid="place-notam-heading">
       {what.split(RED).map((part, i) =>
         // split with a group: every odd part is a match.
         i % 2 ? (
