@@ -4,9 +4,6 @@ import { cn } from "cn";
 import { PillSection } from "../../../../components/Favorites";
 import { SheetCard } from "../../../../components/SheetCard";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import { TriangleAlert } from "lucide-react";
-import { RowBadge } from "../../../../components/RowBadge";
-import { BADGE } from "../../../../lib/rowBadges";
 import { Badge } from "../../../../components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
@@ -22,7 +19,7 @@ import {
   type NotamReading,
   type FieldNotams,
 } from "./fieldNotams";
-import { timeLines, type TimeLine } from "./notamTimes";
+import { timeLines } from "./notamTimes";
 
 /** The NOTAMs section's test id. */
 const SECTION = "place-notams";
@@ -35,9 +32,6 @@ const SECTION = "place-notams";
  * is not needed"). Where the engine has no what, the NOTAM's words written
  * out stand first.
  */
-/** Its start's line, which its Active or Inactive badge labels. */
-const starting = (t: TimeLine) => t.label === "Since" || t.label === "Starts";
-
 function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; clamp: boolean }) {
   const times = timeLines(n, read);
   return (
@@ -47,24 +41,17 @@ function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; cla
           {read.words}
         </span>
       )}
-      {/* Labelled, as ForeFlight's list gives them (notamTimes), its start
-          labelled by its Active or Inactive badge, not "Since" or "Starts",
-          the title the line's whole width (the owner, 2026-11-11: "Instead
-          of saying since just say active in the red badge so you have more
-          space for the title"). */}
-      <span className="grid grid-cols-[auto_1fr] items-center gap-x-2 tabular-nums" data-testid="place-notam-when">
-        {!times.some(starting) && (
-          <span className="col-span-2">
-            <NotamState n={n} />
-          </span>
-        )}
-        {times.map((t) => (
-          <span key={t.label} className="contents">
-            {starting(t) ? <NotamState n={n} /> : <span className="text-muted-foreground">{t.label}</span>}
-            <span>{t.value}</span>
-          </span>
-        ))}
-      </span>
+      {times.length > 0 && (
+        // Labelled, as ForeFlight's list gives them (notamTimes).
+        <span className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums" data-testid="place-notam-when">
+          {times.map((t) => (
+            <span key={t.label} className="contents">
+              <span className="text-muted-foreground">{t.label}</span>
+              <span>{t.value}</span>
+            </span>
+          ))}
+        </span>
+      )}
       {read.where && (
         <span className="text-muted-foreground" data-testid="place-notam-where">
           {read.where}
@@ -89,6 +76,7 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
   const ours = !!read.what && n.kind !== "tfr";
   return (
     <div className="flex flex-col gap-1 pb-6" data-testid="place-notam-full">
+      <NotamState n={n} />
       <p className={cn("font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")} data-testid="place-notam-what">
         <NotamWhat what={whatOf(n, ident)} clamp={false} />
       </p>
@@ -134,13 +122,11 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
           return (
             <ListRow
               key={n.id}
-              // One symbol for every NOTAM, the warning triangle (the owner,
-              // 2026-11-11: "For notam just use the same symbol as you did before").
-              media={
-                <RowBadge colour={BADGE.hazard}>
-                  <TriangleAlert />
-                </RowBadge>
-              }
+              // Its Active or Inactive badge where a row's symbol is, the
+              // title the line's whole width (the owner, 2026-11-11: "No
+              // actually replace the notam symbol with active/inactive badge
+              // instead").
+              media={<NotamState n={n} />}
               // Its what first, by its symbol, whether it is in force at the
               // line's end; its when and where a line each under it (NotamLines).
               wide
