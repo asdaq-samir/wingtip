@@ -251,7 +251,8 @@ close does.
   [shadcn React Aria][shadcn-aria], [shadcn Drawer][shadcn-drawer],
   [shadcn Toast][shadcn-toast]). Wingtip's toasts are Base UI's
   (`components/ui/toast.tsx`, `lib/toast.ts`): progress, Undo, and the
-  anchored confirmations.
+  anchored confirmations, on Base UI's own 5 seconds, held under a
+  touch or the pointer and swiped away (2026-11-11).
 - **React Aria Components 1.22** adds a swipeable Sheet and positions
   overlays round the virtual keyboard ([React Aria 1.22][ra-122]). Its drag
   and drop works by keyboard (Enter to start, Tab between targets, arrows,

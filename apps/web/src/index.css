@@ -375,30 +375,15 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
   }
 }
 /* The toast stack sits over the chart, and the chart is the thing a
-   pilot is panning and zooming: a band of toasts that took the pointer
-   swallowed wheel and drag events meant for the map (a Playwright run
-   caught a zoom step going missing). So the stack is transparent to the
-   pointer; a toast has no control of its own, and goes by itself. */
-[data-slot="toast-viewport"],
-[data-slot="toast"] {
+   pilot is panning and zooming: the stack's band, wider than its
+   toasts, took wheel and drag events meant for the map (a Playwright
+   run caught a zoom step going missing), so the band is transparent to
+   the pointer. A toast itself takes it, as Base UI's own does: a touch
+   or the pointer on it holds it, and a swipe puts it away. */
+[data-slot="toast-viewport"] {
   pointer-events: none;
 }
-/* Except while a drawer or a dialog is open: the toasts are anchored to
-   the viewport, not the map, so an open drawer sits under them, and a tap
-   on a toast transparent to the pointer landed on whatever the drawer had
-   there (an accordion trigger, which opened a briefing section nobody
-   touched). The panel out is <body>'s data-map-panel (MapPanel); a
-   dialog, menu or popover open marks what is outside it
-   data-base-ui-inert (Base UI's marker), rather than a :has() looking for
-   either, which restyled the whole page at every state change (measured
-   2026-10-07). */
-body[data-map-panel="full"] [data-slot="toast"],
-[data-base-ui-inert] [data-slot="toast"],
-[data-slot="toast-viewport"][data-base-ui-inert] [data-slot="toast"] {
-  pointer-events: auto;
-}
-/* A toast with an Undo is one to tap, wherever it is. */
-[data-slot="toast"][data-action] {
+[data-slot="toast"] {
   pointer-events: auto;
 }
 
