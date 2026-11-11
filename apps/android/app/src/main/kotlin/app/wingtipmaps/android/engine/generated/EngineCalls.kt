@@ -1921,7 +1921,7 @@ fun Engine.weatherInForce(product: String, now: Double, observed: Double? = null
     rule("weather_in_force", EngineContract.WeatherInForceInput(product = product, now = now, observed = observed, lastRoutine = lastRoutine, validFrom = validFrom, validTo = validTo))
 
 /**
- * What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there. A caution, never a limit; each change keyed so an app tells it once.
+ * What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there; and either with a ceiling of unknown height now (OVC///) where it had a known one, a ceiling not known to be high enough (14 CFR 1.1). A caution, never a limit; each change keyed so an app tells it once.
  */
 fun Engine.weatherWorse(then: EngineContract.WeatherReading, now: EngineContract.WeatherReading): Result<EngineContract.WeatherWorseAnswer> =
     rule("weather_worse", EngineContract.WeatherWorseInput(then = then, now = now))

@@ -10715,7 +10715,7 @@ enum EngineContract {
 
     /// One way the weather got worse.
     struct WeatherWorseItem: Codable, Equatable, Sendable {
-        /// The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR"): an app tells a key once.
+        /// The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR", "metar:KMSN:ceiling-unknown"): an app tells a key once.
         var key: String
         var kind: String
         var ident: String?

@@ -5,7 +5,7 @@
   "properties": {
     "key": {
       "type": "string",
-      "description": "The change and its new state (\"metar:KMSN:IFR\", \"advisory:<key>\", \"taf:KDLH:MVFR\"): an app tells a key once."
+      "description": "The change and its new state (\"metar:KMSN:IFR\", \"advisory:<key>\", \"taf:KDLH:MVFR\", \"metar:KMSN:ceiling-unknown\"): an app tells a key once."
     },
     "kind": {
       "type": "string",

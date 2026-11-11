@@ -10540,7 +10540,7 @@ object EngineContract {
     @Serializable
     data class WeatherWorseItem(
         /**
-         * The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR"): an app tells a key once.
+         * The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR", "metar:KMSN:ceiling-unknown"): an app tells a key once.
          */
         val key: String,
         val kind: String,

@@ -16,6 +16,11 @@
 //!   or is near and not on the route, does not.
 //! - A TAF where the flight lands forecasting a worse flight category for
 //!   the flight's time there than it did, and worse than VFR (AIM 7-1-7).
+//! - Either of those with a ceiling of unknown height now ("OVC///") that
+//!   had none before: it has no category, yet it is a ceiling not known to
+//!   be high enough (14 CFR 1.1 "ceiling"), so it is no longer VFR for
+//!   sure -- the engine's forecast reading calls it "VFR not recommended"
+//!   too (forecast/route.rs, AIM 7-1-5).
 //!
 //! Each change has a key that names it and its new state ("metar:KMSN:IFR"),
 //! so an app tells a change once: the same field going IFR again is the
@@ -29,6 +34,7 @@ type R<T> = Result<T, String>;
 
 const CATEGORY_SOURCE: &str = "AIM 7-1-7 (flight categories)";
 const ADVISORY_SOURCE: &str = "AIM 7-1-6 (SIGMETs, AIRMETs and G-AIRMETs)";
+const CEILING_SOURCE: &str = "AIM 7-1-7 (flight categories); 14 CFR 1.1 (ceiling)";
 
 /// One way the weather got worse.
 #[derive(Clone, Debug, PartialEq)]
@@ -47,6 +53,7 @@ pub struct Worse {
 struct Field {
     ident: String,
     category: Option<&'static str>,
+    ceiling_unknown: bool,
     arrival: bool,
 }
 
@@ -87,7 +94,7 @@ fn fields(name: &str, reading: &Value, key: &str) -> R<Vec<Field>> {
         .map(|f| {
             let category =
                 flight_category_of(opt_num(name, f, "ceiling_ft")?, flag(f, "ceiling_unknown"), opt_num(name, f, "visibility_sm")?);
-            Ok(Field { ident: text(name, f, "ident")?, category, arrival: flag(f, "arrival") })
+            Ok(Field { ident: text(name, f, "ident")?, category, ceiling_unknown: flag(f, "ceiling_unknown"), arrival: flag(f, "arrival") })
         })
         .collect()
 }
@@ -112,6 +119,25 @@ fn worse_category(was: Option<&str>, now: Option<&str>) -> bool {
     rank(now) > rank(was) && rank(now) >= rank(Some("MVFR"))
 }
 
+/// Worse too: a ceiling of unknown height now where there was none, and
+/// not already told as a worse category.
+fn newly_unknown(was: Option<&Field>, now: &Field) -> bool {
+    now.ceiling_unknown && !was.is_some_and(|w| w.ceiling_unknown) && !worse_category(was.and_then(|w| w.category), now.category)
+}
+
+/// The change for a field whose ceiling's height is not known now.
+fn unknown_ceiling(kind: &'static str, f: &Field, was: Option<&'static str>, what: &str) -> Worse {
+    Worse {
+        key: format!("{kind}:{}:ceiling-unknown", f.ident),
+        kind,
+        line: format!("{what} has a ceiling of unknown height now; {}", was_words(was)),
+        ident: Some(f.ident.clone()),
+        was: was.map(str::to_owned),
+        now: f.category.map(str::to_owned),
+        source: CEILING_SOURCE,
+    }
+}
+
 fn was_words(was: Option<&str>) -> String {
     was.map_or_else(|| "it had no category at the briefing".to_owned(), |w| format!("it was {w} at the briefing"))
 }
@@ -122,7 +148,12 @@ pub fn worse(name: &str, then: &Value, now: &Value) -> R<Vec<Worse>> {
     let mut out = Vec::new();
     let before = fields(name, then, "metars")?;
     for f in fields(name, now, "metars")? {
-        let was = before.iter().find(|b| b.ident == f.ident).and_then(|b| b.category);
+        let had = before.iter().find(|b| b.ident == f.ident);
+        let was = had.and_then(|b| b.category);
+        if newly_unknown(had, &f) {
+            out.push(unknown_ceiling("metar", &f, was, &f.ident));
+            continue;
+        }
         if worse_category(was, f.category) {
             let now = f.category.unwrap_or_default();
             out.push(Worse {
@@ -157,6 +188,10 @@ pub fn worse(name: &str, then: &Value, now: &Value) -> R<Vec<Worse>> {
         // Only a TAF read both times is compared: a station new to the
         // briefing has no forecast the pilot was told of to be worse than.
         let Some(b) = forecast.iter().find(|b| b.ident == f.ident) else { continue };
+        if newly_unknown(Some(b), &f) {
+            out.push(unknown_ceiling("taf", &f, b.category, &format!("{}'s TAF for your arrival", f.ident)));
+            continue;
+        }
         if worse_category(b.category, f.category) {
             let now = f.category.unwrap_or_default();
             out.push(Worse {
