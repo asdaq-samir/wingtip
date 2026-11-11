@@ -129,7 +129,8 @@ def test_the_radar_reaches_the_planners_map_through_the_store(monkeypatch):
     traffic.looked_at(41.98, -87.9, 20)
     swim.WANTED[0] = traffic.radar_wanted()
     try:
-        assert swim.WANTED[0] == ([(41.98, -87.9, 20)], set())
+        # The region's middle and a radius holding the view (looked_at), never the view's own middle.
+        assert swim.WANTED[0] == ([(42.0, -88.0, 42)], set())
         assert swim._radar(MESSAGE) == 1
     finally:
         swim.WANTED[0] = ([], set())

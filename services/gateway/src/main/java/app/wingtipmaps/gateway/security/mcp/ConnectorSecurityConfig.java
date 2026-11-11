@@ -71,7 +71,7 @@ public class ConnectorSecurityConfig {
      *  SecurityConfig has them and for its reason: /mcp's answer is piped
      *  on a thread of its own (StreamingProxy), and two threads must not
      *  write headers at once. */
-    static SecurityFilterChain headersFirst(SecurityFilterChain chain) {
+    public static SecurityFilterChain headersFirst(SecurityFilterChain chain) {
         for (Filter filter : chain.getFilters()) {
             if (filter instanceof HeaderWriterFilter writer) {
                 writer.setShouldWriteHeadersEagerly(true);

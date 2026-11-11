@@ -70,7 +70,8 @@ class MapParityTest {
         assertEquals("d#b3261e", AirportWeatherMarks.pipOf("IFR", AirportWeatherMode.DOT))
         assertEquals("", AirportWeatherMarks.pipOf("IFR", AirportWeatherMode.OFF))
         assertEquals("", AirportWeatherMarks.pipOf(null, halo))
-        assertEquals(9, AirportWeatherMarks.PIPS.size)
+        // None, then a ring and a dot for each of the four categories and the stale grey.
+        assertEquals(11, AirportWeatherMarks.PIPS.size)
         assertTrue(AirportWeatherMarks.isDot("d#b3261e"))
         assertEquals("#b3261e", AirportWeatherMarks.inkOf("h#b3261e"))
         assertEquals(emptyMap<String, String>(), AirportWeatherMarks.pips(mapOf("KORD" to "VFR"), AirportWeatherMode.OFF))

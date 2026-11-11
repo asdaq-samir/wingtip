@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.security;
 
+import app.wingtipmaps.gateway.security.mcp.ConnectorSecurityConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -37,6 +38,7 @@ public class DeleteAccountSecurityConfig {
                         .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; img-src 'self'; "
                                 + "style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; "
                                 + "frame-ancestors 'none'")));
-        return http.build();
+        // Written as the request comes in, as SecurityConfig has them (CacheHeadersTest).
+        return ConnectorSecurityConfig.headersFirst(http.build());
     }
 }
