@@ -73,6 +73,8 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   const one = notams.getByTestId("place-notam");
   // The engine's reading: its keyword as a heading, its words written out.
   await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway");
+  // Its start and end at the row's top right, in UTC as the NOTAM gives them.
+  await expect(one.getByTestId("place-notam-window")).toHaveText("Nov 10 1200Z– Nov 12 1432Z");
   await expect(one.getByTestId("place-notam-words")).toHaveText("Runway 09/27 closed.");
   // A tap opens it in full on a card of its own: its window, as sent.
   await one.click();

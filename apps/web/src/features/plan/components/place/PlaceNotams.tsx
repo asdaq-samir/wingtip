@@ -8,7 +8,17 @@ import { RowBadge } from "../../../../components/RowBadge";
 import { BADGE } from "../../../../lib/rowBadges";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
-import { headingOf, localWords, readNotam, useFieldNotams, whenWords, windowOf, type FieldNotam, type FieldNotams } from "./fieldNotams";
+import {
+  cornerOf,
+  headingOf,
+  localWords,
+  readNotam,
+  useFieldNotams,
+  whenWords,
+  windowOf,
+  type FieldNotam,
+  type FieldNotams,
+} from "./fieldNotams";
 
 /** The NOTAMs section's test id. */
 const SECTION = "place-notams";
@@ -68,6 +78,8 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
         {state}
         {notams.map((n) => {
           const out = n.in_force === false;
+          const read = readNotam(n, ident);
+          const { from, until } = cornerOf(n, read);
           return (
             <ListRow
               key={n.id}
@@ -76,10 +88,27 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
                   <TriangleAlert />
                 </RowBadge>
               }
-              title={<span data-testid="place-notam-heading">{headingOf(n, ident)}</span>}
+              // Its start and end at the top right, under each other (the
+              // owner, 2026-11-11: "For each notam, we should put the start
+              // and end on top right corner").
+              wide
+              title={
+                <span className="flex items-start justify-between gap-2">
+                  <span data-testid="place-notam-heading">{headingOf(n, ident)}</span>
+                  {(from || until) && (
+                    <span
+                      className={cn("shrink-0 text-right text-muted-foreground tabular-nums", TEXT.note)}
+                      data-testid="place-notam-window"
+                    >
+                      {from && <span className="block">{from}</span>}
+                      {until && <span className="block">{from ? `– ${until}` : `Until ${until}`}</span>}
+                    </span>
+                  )}
+                </span>
+              }
               description={
                 <span className={cn("line-clamp-2", out && "text-muted-foreground")} data-testid="place-notam-words">
-                  {readNotam(n, ident).words}
+                  {read.words}
                 </span>
               }
               chevron

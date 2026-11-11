@@ -107,6 +107,16 @@ export function windowOf(n: FieldNotam, read: NotamReading): Pick<FieldNotam, "i
   return { in_force: n.in_force, starts: n.starts ?? read.starts, ends: n.ends ?? read.ends };
 }
 
+/** Its start and end for a row's corner, each in UTC as the NOTAM gives
+ *  it ("Nov 10 1200Z", "Nov 12 1432Z"): the end an estimate with "EST",
+ *  "PERM" where it is permanent (JO 7930.2 4-2-1), null where none is
+ *  given. */
+export function cornerOf(n: FieldNotam, read: NotamReading): { from: string | null; until: string | null } {
+  const { starts, ends } = windowOf(n, read);
+  const until = ends ? `${zulu(ends)}${read.estimated ? " EST" : ""}` : read.permanent ? "PERM" : null;
+  return { from: starts ? zulu(starts) : null, until };
+}
+
 const LOCAL = new Intl.DateTimeFormat(undefined, {
   month: "short",
   day: "numeric",
