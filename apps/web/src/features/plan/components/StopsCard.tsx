@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { cn } from "cn";
-import { CardClose } from "../../../components/PanelCard";
+import { CardClose } from "../../../components/CardHead";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import QueryState from "../../../components/QueryState";
 import { ADD_CAPSULE } from "../../../lib/mapChrome";

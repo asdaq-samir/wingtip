@@ -1,9 +1,9 @@
-import { useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
 import RoundButton from "./RoundButton";
-import { PinnedHead } from "./PinnedHead";
+import { CardHeadRow } from "./CardHead";
 import { closeTopCard, useHeldCard, type PillHead } from "../lib/openCards";
 import { TEXT } from "../lib/text";
 
@@ -51,31 +51,27 @@ export function CardTitle({
   twoLines?: boolean;
 }) {
   useHeldCard(onClose, onShare, true, pill);
-  const name = useRef<HTMLHeadingElement>(null);
   const close = () => {
     if (!closeTopCard()) onClose();
   };
   return (
     <>
-      <PinnedHead testId={testId}>
-        <h2
-          ref={name}
-          tabIndex={-1}
-          className={cn("min-w-0 flex-1 truncate font-bold tracking-tight text-foreground outline-none", TEXT.card)}
-          data-testid={titleTestId}
-        >
-          {title}
-        </h2>
-        <div className="flex shrink-0 gap-2.5">
-          {onShare && (
-            <RoundButton label={`Share ${title}`} onClick={onShare} data-testid={shareTestId}>
-              <Share className="size-5" strokeWidth={2} />
-            </RoundButton>
-          )}
-          {beside}
-          <CloseButton onClick={close} data-back="" data-testid={closeTestId} />
-        </div>
-      </PinnedHead>
+      <CardHeadRow
+        name={title}
+        nameTestId={titleTestId}
+        testId={testId}
+        end={
+          <>
+            {onShare && (
+              <RoundButton label={`Share ${title}`} onClick={onShare} data-testid={shareTestId}>
+                <Share className="size-5" strokeWidth={2} />
+              </RoundButton>
+            )}
+            {beside}
+            <CloseButton onClick={close} data-back="" data-testid={closeTestId} />
+          </>
+        }
+      />
       {(subtitle != null || line != null) && (
         <div className="min-w-0 pt-1">
           {subtitle != null && (

@@ -5,7 +5,7 @@ import { LocateFixed, MapPin, Navigation2 } from "lucide-react";
 import { cn } from "cn";
 import { Badge } from "../../../components/ui/badge";
 import { ListPageHead } from "../../../components/Favorites";
-import { PanelCard } from "../../../components/PanelCard";
+import { SheetCard } from "../../../components/SheetCard";
 import { closeTopCard } from "../../../lib/openCards";
 import { useCardSize } from "../../../lib/sheetCards";
 import QueryState from "../../../components/QueryState";
@@ -292,7 +292,7 @@ export default function NearestCard({
   return (
     // At half as it opens, as every card does; a tap on the chart lowers
     // its own drawer to the pill, the list kept (lowerOnMap).
-    <PanelCard testId="nearest-card" cardId={cardId} dismiss={lowerOnMap}>
+    <SheetCard head={false} testId="nearest-card" cardId={cardId} dismiss={lowerOnMap}>
       <ListPageHead title="Nearest" backLabel="Back to the search" onBack={onBack} testId="nearest-page" />
       <NearAnswers from={from} onFrom={onFrom} />
       <div className="pt-1">
@@ -341,6 +341,6 @@ export default function NearestCard({
             place, the fields listed nearest first meanwhile (AskFigure). */}
         {!from && ratio == null && underway(fix) && <AskFigure figure="glide" what="The glide" testId="nearest-glide-ask" />}
       </div>
-    </PanelCard>
+    </SheetCard>
   );
 }

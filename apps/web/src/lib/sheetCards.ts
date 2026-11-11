@@ -8,7 +8,7 @@ import { create } from "zustand";
  * The cards open over the map's sheet (components/sheet/CardStack), each
  * its own nested Drawer stacked over the sheet as Apple Maps stacks its
  * cards (the owner, 2026-11-11): a control's or the chart's (SheetCard),
- * a place's or a list's (PanelCard), the Brief, Settings. The last opened
+ * a place's or a list's (SheetCard too), the Brief, Settings. The last opened
  * on top. A card's content stays drawn where its caller is, in React's
  * tree, for its providers, and is put into its drawer's scroller (`slot`).
  */
@@ -87,7 +87,7 @@ export const CardId = createContext<string | null>(null);
 /** A card's own drawer's size, read and set as Base UI's controlled
  *  `snapPoint` and `onSnapPointChange` are: the snap point of the card it
  *  is called in, or of the card `id` names (a card's own component, which
- *  draws the PanelCard and is outside it). Null outside a card. Only that
+ *  draws the SheetCard and is outside it). Null outside a card. Only that
  *  card's drawer moves; the sheet under it stays where it is. */
 export function useCardSize(id?: string): { size: PanelState; setSize: (size: PanelState) => void } | null {
   const inCard = useContext(CardId);

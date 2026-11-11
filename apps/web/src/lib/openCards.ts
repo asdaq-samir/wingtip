@@ -143,5 +143,5 @@ export function useHeldCard(onClose: () => void, onShare?: CardShare, picture = 
 
 /** The route's Share menu for one of its cards -- the Brief, the nav
  *  log, the profile -- given by the planner (PlanWorkspace), for the head's
- *  Share where a card's share is the route's (PanelCard's CardClose). */
+ *  Share where a card's share is the route's (CardHead's CardClose). */
 export const RouteShareMenu = createContext<((card: RouteCard) => ReactNode) | null>(null);

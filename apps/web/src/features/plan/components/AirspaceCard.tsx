@@ -11,7 +11,8 @@ import { degreesMinutes, minimumsLine, shortAirspaceName } from "../../../lib/ai
 import type { LatLon } from "../../../lib/geo";
 import { altFt } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
-import { CardHead, PanelCard } from "../../../components/PanelCard";
+import { CardHead } from "../../../components/CardHead";
+import { SheetCard } from "../../../components/SheetCard";
 import { useCardSize } from "../../../lib/sheetCards";
 import { CardAction } from "../../../components/CardAction";
 import { RowBadge } from "../../../components/RowBadge";
@@ -150,7 +151,7 @@ export default function AirspaceCard({
     : [];
   return (
     // Half way as a point held on the chart opens it (the card rule's 2).
-    <PanelCard testId="airspace-card" cardId={cardId}>
+    <SheetCard head={false} testId="airspace-card" cardId={cardId}>
       <CardHead
         // The point itself as the card's name, its name off the nearest
         // fix where it has one: the sheet's own title already says
@@ -306,6 +307,6 @@ export default function AirspaceCard({
           )}
         </div>
       )}
-    </PanelCard>
+    </SheetCard>
   );
 }

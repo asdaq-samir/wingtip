@@ -18,7 +18,7 @@ export const TAB_PAGE_GAP = "gap-6";
  * (Setup's), its first section where the search bar starts -- and one gap
  * between its sections (TAB_PAGE_GAP), each a labelled one (PillSection)
  * whose heading is the same on every tab. There at once as its tab is
- * picked: a card that comes in over a tab is PanelCard.
+ * picked: a card that comes in over a tab is SheetCard.
  *
  * It does not scroll on its own: it is laid out whole in the sheet's one
  * scroller (SheetParts), under the sheet's head, which stays pinned as it

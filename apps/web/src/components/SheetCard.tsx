@@ -1,19 +1,22 @@
 import { isValidElement, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode, useEffectEvent } from "react";
 import { createPortal } from "react-dom";
 import type { Drawer } from "@base-ui/react/drawer";
-import { cn } from "cn";
 import CloseButton from "./CloseButton";
+import { CardHeadRow } from "./CardHead";
 import { PinnedHead } from "./PinnedHead";
 import { useCardFrame } from "./sheet/useCardFrame";
 import { holdOpenCard, setCardPill, type OpenCard, type PillHead } from "../lib/openCards";
-import { CardId, SheetCardHead } from "../lib/sheetCards";
-import { TEXT } from "../lib/text";
+import { CardId, SheetCardHead, type CardFrame } from "../lib/sheetCards";
 
 /**
- * A card over the map's sheet on a phone, opened from anywhere on the page:
- * a control's (ResponsivePopover's -- the Map settings, the approaches, an
- * airplane's form) or a thing tapped on the chart (the map's openCard -- a
- * checkpoint, a VFR waypoint, a TFR). Each was a sheet floating over the
+ * The app's one card (the card rule's 8; the owner, 2026-11-11: "Are we
+ * using two different cards?" -- PanelCard is merged into it): a card over
+ * the map's sheet, opened from anywhere on the page: a control's
+ * (ResponsivePopover's -- the Map settings, the approaches, an airplane's
+ * form), a thing tapped on the chart (the map's openCard -- a checkpoint, a
+ * VFR waypoint, a TFR), or a place's or a list's whose content draws its
+ * own head with the same head row (`head={false}`: an airport, an
+ * airspace, traffic, a past flight, Nearest; CardHead, CardTitle). Each was a sheet floating over the
  * panel, or a popup over the chart, two more surfaces over the one
  * the pilot already had; at the owner's ask ("Yes to all, let's have
  * consistency and common code", 2026-10-27) they are cards over the
@@ -29,6 +32,8 @@ import { TEXT } from "../lib/text";
  */
 
 export function SheetCard({
+  head = true,
+  dismiss: ownDismiss,
   title,
   titleHidden = false,
   description,
@@ -44,6 +49,14 @@ export function SheetCard({
   finalFocus,
   children,
 }: {
+  /** Its head row drawn here from its name, Cancel, Save and close; false
+   *  where its content draws the same row itself (CardHead, CardTitle),
+   *  which holds its close for Back, and a tap on the chart is the
+   *  chart's to decide (it opens what was tapped). */
+  head?: boolean;
+  /** What its drawer tells it, in place of its own way: Nearest lowering
+   *  itself on a tap on the chart. */
+  dismiss?: CardFrame["dismiss"];
   /** Its name, at a card's size at the head's left. None where the
    *  content draws it in the head itself (SheetCardHead). */
   title?: string;
@@ -62,7 +75,8 @@ export function SheetCard({
    *  there (`action`, `leading`). False where the content's own Done is
    *  the way out. */
   closeButton?: boolean;
-  onClose: () => void;
+  /** Its close; none where its content's own head closes it (`head`). */
+  onClose?: () => void;
   /** Emergency, the one card all the way up as it opens (the card rule's 4);
    *  every other card opens at half. */
   fullScreen?: boolean;
@@ -99,12 +113,14 @@ export function SheetCard({
   // closes over the arrivals).
   const back = isValidElement<{ onClick?: () => void }>(action) && action.type === CloseButton ? action.props.onClick : undefined;
   // The caller's latest, for what is set up once as it opens.
-  const backNow = useEffectEvent(() => (back ?? onClose)());
+  const backNow = useEffectEvent(() => (back ?? onClose)?.());
 
   // The top of what the bar's close, a swipe back and a device's Back take
   // away (lib/openCards), as every card's close is: back one, a page of the
   // card's first where it has one (`back`).
   useEffect(() => {
+    // Its content's head holds it where it draws one (CardHead, CardTitle).
+    if (!head) return;
     const entry: OpenCard = { close: () => backNow(), pill: pillGiven.current };
     held.current = entry;
     const release = holdOpenCard(entry);
@@ -112,7 +128,7 @@ export function SheetCard({
       held.current = null;
       release();
     };
-  }, []);
+  }, [head]);
 
   // The Drawer's word on Escape, a tap on the chart, ... as it was the
   // dialog's: the card on top alone hears it (CardStack).
@@ -135,7 +151,7 @@ export function SheetCard({
       back();
       return;
     }
-    onClose();
+    onClose?.();
   };
   // The focus to its name as it opens, which a screen reader then reads --
   // once its name is drawn, the content put in its drawer a moment after
@@ -161,56 +177,97 @@ export function SheetCard({
     return opener?.isConnected && free ? opener : false;
   };
   const target = useCardFrame(
-    { fullScreen, title, testId, labelledBy: headingId, dismiss, initialFocus: initialFocus ?? toName, finalFocus: finalFocus ?? toOpener },
+    head
+      ? {
+          fullScreen,
+          title,
+          testId,
+          labelledBy: headingId,
+          dismiss,
+          initialFocus: initialFocus ?? toName,
+          finalFocus: finalFocus ?? toOpener,
+        }
+      : // Its content's head names it; the focus left where it is unless
+        // it came from the chart (fromMarker), the drawer's own Escape.
+        { fullScreen, title, dismiss: ownDismiss, initialFocus, finalFocus },
     id,
   );
+  const fromMarker = useFromMarker();
 
   // The name in its own head row, where the content draws it (a map
   // card's, MapCard).
-  const head = useMemo(() => (title === undefined ? { slot, headingId, setPill } : null), [title, slot, headingId, setPill]);
+  const headSlot = useMemo(() => (title === undefined ? { slot, headingId, setPill } : null), [title, slot, headingId, setPill]);
   if (!target) return null;
-  // Its own close at its head's end, the tabs over it being the page's,
-  // not the card's (TabBar); or the caller's action in its place.
+  if (!head)
+    return createPortal(
+      // Laid out whole in its drawer's scroller, its room over its first
+      // line the grabber's (--pinned-room), which its pinned head reaches
+      // up over; there at once as it opens, still while the sheet moves
+      // round it (the owner: "Is the airport and aircraft card same
+      // style?").
+      <div
+        ref={fromMarker}
+        className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
+        data-testid={testId}
+      >
+        <CardId.Provider value={id}>{children}</CardId.Provider>
+      </div>,
+      target,
+    );
+  // Its own close at its head's end; or the caller's action in its place.
   const end =
     (closeButton ?? (action === undefined && !leading)) ? (
-      <CloseButton onClick={onClose} data-back="" data-testid="sheet-card-close" />
+      <CloseButton onClick={() => onClose?.()} data-back="" data-testid="sheet-card-close" />
     ) : (
       action
     );
   return createPortal(
-    // Laid out whole in its drawer's scroller, as PanelCard is, from the
-    // sheet's corner (its close where every card's is).
+    // Laid out whole in its drawer's scroller, from the sheet's corner (its
+    // close where every card's is).
     <div className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden">
-      {/* Its name at the left at a card's size and the close at the right
-          end of its row, as CardHead sets a place's; a form's Cancel and
-          Save at the two ends, the name between them: one row pinned at the
-          card's top, the card scrolling under it (PinnedHead; the owner,
-          2026-11-10). */}
-      <HeadRow hidden={titleHidden}>
-        {leading}
-        {title === undefined ? (
-          <div ref={setSlot} className="flex min-w-0 flex-1 items-center gap-2.5" />
-        ) : (
-          <div className={cn("min-w-0 flex-1", leading && "text-center")}>
-            <h2 id={headingId} tabIndex={-1} className={cn("font-bold tracking-tight break-words text-foreground outline-none", TEXT.card)}>
-              {title}
-            </h2>
-            {description && <p className={cn("text-muted-foreground", TEXT.note)}>{description}</p>}
-          </div>
-        )}
-        {end != null && <div className="-mr-1 flex shrink-0 items-center">{end}</div>}
-      </HeadRow>
+      {/* The one head row (CardHeadRow): its name at the left at a card's
+          size and the close at the right end; a form's Cancel and Save at
+          the two ends, the name between them; pinned at the card's top,
+          the card scrolling under it (the owner, 2026-11-10). Where the
+          content draws its name (a map card's, MapCard), its slot. */}
+      {title === undefined ? (
+        <CardHeadSlot slot={setSlot} leading={leading} end={end} />
+      ) : (
+        <CardHeadRow name={title} sub={description} nameId={headingId} leading={leading} wrap end={end} hidden={titleHidden} />
+      )}
       <CardId.Provider value={id}>
-        <SheetCardHead.Provider value={head}>{children}</SheetCardHead.Provider>
+        <SheetCardHead.Provider value={headSlot}>{children}</SheetCardHead.Provider>
       </CardId.Provider>
     </div>,
     target,
   );
 }
 
-/** The card's head row: pinned and frosted (PinnedHead), or for a screen
- *  reader alone where the card draws its own (`titleHidden`). */
-function HeadRow({ hidden, children }: { hidden: boolean; children: ReactNode }) {
-  if (hidden) return <div className="sr-only flex shrink-0 items-center gap-2">{children}</div>;
-  return <PinnedHead className="shrink-0">{children}</PinnedHead>;
+/** The head row's room for a name its content draws (MapCard's mark and
+ *  name), the close at its end as CardHeadRow's. */
+function CardHeadSlot({ slot, leading, end }: { slot: (node: HTMLDivElement | null) => void; leading?: ReactNode; end?: ReactNode }) {
+  return (
+    <PinnedHead className="shrink-0">
+      {leading}
+      <div ref={slot} className="flex min-w-0 flex-1 items-center gap-2.5" />
+      {end != null && <div className="-mr-1 flex shrink-0 items-center">{end}</div>}
+    </PinnedHead>
+  );
+}
+
+/** Opened from a marker on the chart with the keys (Enter on it), the
+ *  focus to the card's name, which a screen reader then reads, and back to
+ *  the marker as the card is put away -- where it stayed on the marker,
+ *  the card a page away in the tab order and said by nothing. As it is put
+ *  in its drawer: the focus where it is then is the marker's. */
+function useFromMarker() {
+  return useCallback((node: HTMLDivElement | null) => {
+    const from = document.activeElement as HTMLElement | null;
+    if (!node || !from?.closest(".maplibregl-map")) return;
+    node.querySelector<HTMLElement>("h2")?.focus({ preventScroll: true });
+    return () => {
+      const at = document.activeElement;
+      if (from.isConnected && (!at || at === document.body || node.contains(at))) from.focus({ preventScroll: true });
+    };
+  }, []);
 }

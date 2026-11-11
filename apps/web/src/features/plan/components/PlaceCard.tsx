@@ -4,7 +4,8 @@ import { cn } from "cn";
 import { useKeptAirport } from "../../../lib/preferences";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { shareOrCopy } from "../../../lib/share";
-import { CardHead, PanelCard } from "../../../components/PanelCard";
+import { CardHead } from "../../../components/CardHead";
+import { SheetCard } from "../../../components/SheetCard";
 import { useCardSize } from "../../../lib/sheetCards";
 import { PINNED_BELOW } from "../../../components/PinnedHead";
 import { CardTitle } from "../../../components/CardTitle";
@@ -452,7 +453,7 @@ export default function PlaceCard({
   return (
     // Half way as it opens, from the map, the search or a list alike (the
     // card rule's 2); its own drawer, sized from here (useCardSize).
-    <PanelCard testId="place-card" cardId={cardId}>
+    <SheetCard head={false} testId="place-card" cardId={cardId}>
       {place || !error ? (
         <>
           {/* The head and the actions from the first frame, live once the
@@ -614,6 +615,6 @@ export default function PlaceCard({
           </ListGroup>
         </div>
       )}
-    </PanelCard>
+    </SheetCard>
   );
 }

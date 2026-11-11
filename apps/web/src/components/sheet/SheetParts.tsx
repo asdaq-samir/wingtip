@@ -242,7 +242,7 @@ export function SheetParts(p: PartsProps) {
         }
       >
         {/* Not put away under a card (TabKept's `away`): a card's content is
-            drawn in it (PanelCard, the Brief, Settings) and opens while it
+            drawn in it (SheetCard, the Brief, Settings) and opens while it
             is in sight (lib/shown). */}
         <TabKept away={false} still={p.layer === "console"}>
           {body}

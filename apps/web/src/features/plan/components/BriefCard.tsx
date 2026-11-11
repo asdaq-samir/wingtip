@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { CardHead } from "../../../components/PanelCard";
+import { CardHead } from "../../../components/CardHead";
 import PanelTabs from "./navlog/PanelTabs";
 import BriefOverview from "./briefing/BriefOverview";
 import type { PanelTab } from "./navlog/panelTab";

@@ -1,5 +1,5 @@
 import { Suspense, useMemo, type ReactNode } from "react";
-import { CardHead } from "../../../../components/PanelCard";
+import { CardHead } from "../../../../components/CardHead";
 import PaidPrompt from "../../../../components/PaidPromptLazy";
 import type { BriefingPart } from "../briefing/sections";
 import { BriefingNotices, FlightBriefingView, NavLogView } from "../../routePanelParts";

@@ -151,7 +151,7 @@ export const CARDS: CardRow[] = [
     ],
     not: {
       sideways: "the stub gives it no photo, so no row slides",
-      position: "checked on the airport's card, the same CardTitle and PanelCard",
+      position: "checked on the airport's card, the same CardTitle and SheetCard",
       searchHidden: "opened over the traffic's own scope of the one search, which a card hides as any other (checked on the airport)",
     },
   },

@@ -4,7 +4,8 @@ import { useInfiniteQuery, useQueryClient, type InfiniteData } from "@tanstack/r
 import { Gauge, MoveVertical, Pause, Play, PlaneLanding, PlaneTakeoff, Route, Square, Timer } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
-import { CardHead, PanelCard } from "../../../components/PanelCard";
+import { CardHead } from "../../../components/CardHead";
+import { SheetCard } from "../../../components/SheetCard";
 import RoundButton from "../../../components/RoundButton";
 import { RowBadge } from "../../../components/RowBadge";
 import Segmented from "../../../components/Segmented";
@@ -47,7 +48,7 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
   const off = when(flight?.off ?? id);
   return (
     // At half as it opens, as every card does (the owner, 2026-11-11).
-    <PanelCard testId="past-flight-card">
+    <SheetCard head={false} testId="past-flight-card">
       <CardHead
         name={flight ? legOf(flight) : "Flight"}
         nameTestId="past-flight-name"
@@ -64,7 +65,7 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
         {flight?.destination && points.length > 1 && <ApproachRow ident={flight.destination.ident} points={points} />}
         {points.length > 1 && <TrackLog points={points} />}
       </div>
-    </PanelCard>
+    </SheetCard>
   );
 }
 

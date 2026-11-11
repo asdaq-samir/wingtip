@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { cn } from "cn";
-import { CardHead } from "../../../components/PanelCard";
+import { CardHead } from "../../../components/CardHead";
 import { TEXT } from "../../../lib/text";
 
 /**

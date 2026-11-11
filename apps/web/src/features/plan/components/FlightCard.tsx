@@ -4,7 +4,7 @@ import { BadgeCheck, ChartLine, Crosshair, Fan, IdCard, Plane, Route, Star, User
 import { cn } from "cn";
 import { Badge } from "../../../components/ui/badge";
 import { Progress } from "../../../components/ui/progress";
-import { PanelCard } from "../../../components/PanelCard";
+import { SheetCard } from "../../../components/SheetCard";
 import { CardTitle } from "../../../components/CardTitle";
 import { CardPictures, type CardSlide } from "../../../components/CardPictures";
 import { PhotoSlide } from "../../../components/PictureSlides";
@@ -505,7 +505,7 @@ export default function FlightCard({
   const { data: tower } = useQuery(departuresQuery(plane?.callsign ?? registration));
   const towerLine = departureLine(tower?.events[0]);
   return (
-    <PanelCard testId="flight-card">
+    <SheetCard head={false} testId="flight-card">
       <CardTitle
         title={name}
         testId="flight-head"
@@ -685,7 +685,7 @@ export default function FlightCard({
         )}
         {detail?.faa && <FaaRegistration faa={detail.faa} />}
       </div>
-    </PanelCard>
+    </SheetCard>
   );
 }
 
