@@ -40,6 +40,13 @@ if [ -z "$ndk" ]; then
   exit 1
 fi
 echo "build-android.sh: using the NDK at $ndk" >&2
+# Built once per engine on this Mac: a worktree whose engine another has
+# built already copies it from the shared store (scripts/build/shared-cache.sh,
+# docs/LOCAL-DEV.md); 53 s of three targets saved each time (2026-11-10).
+# The NDK is .tool-versions', part of the store's key.
+# shellcheck source=scripts/build/shared-cache.sh
+. "$engine/../scripts/build/shared-cache.sh"
+if engine_store_restore android-libs "$out"; then exit 0; fi
 # The NDK's prebuilt clang for the machine building, and the API level
 # the app's minSdk names (apps/android/app/build.gradle.kts): the engine is
 # linked against the same Android libc the app runs on.
@@ -73,4 +80,5 @@ for entry in "${targets[@]}"; do
 done
 mkdir -p "$out/include"
 cp "$here/include/wingtip_engine.h" "$out/include/wingtip_engine.h"
+engine_store_publish android-libs "$out"
 echo "built $out"

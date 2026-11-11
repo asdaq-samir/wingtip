@@ -11,6 +11,12 @@ out="$engine/../apps/ios/Frameworks/WingtipEngine.xcframework"
 # rustup's cargo, where a shell that has not read ~/.cargo/env (an agent's,
 # a launchd job's) has no Rust on its PATH.
 command -v cargo >/dev/null || PATH=$PATH:$HOME/.cargo/bin
+# Built once per engine on this Mac: a worktree whose engine another has
+# built already copies it from the shared store (scripts/build/shared-cache.sh,
+# docs/LOCAL-DEV.md); 53 s of three targets saved each time (2026-11-10).
+# shellcheck source=scripts/build/shared-cache.sh
+. "$engine/../scripts/build/shared-cache.sh"
+if engine_store_restore ios-xcframework "$out"; then exit 0; fi
 targets=(aarch64-apple-ios aarch64-apple-ios-sim x86_64-apple-ios)
 rustup target add "${targets[@]}"
 for target in "${targets[@]}"; do
@@ -25,4 +31,5 @@ xcodebuild -create-xcframework \
   -library "$engine/target/aarch64-apple-ios/release/$lib" -headers "$here/include" \
   -library "$sim/$lib" -headers "$here/include" \
   -output "$out"
+engine_store_publish ios-xcframework "$out"
 echo "built $out"

@@ -32,6 +32,21 @@ binaryen=version_133
 binaryen_sha256=2dc9c7813f5375db93d96ead4b78222fcc3e2677bbb832297af4797782a37489
 out=apps/web/src/lib/engine/wingtip-engine.wasm
 
+# Built once per engine on this Mac: a worktree whose engine another has
+# built already copies the module from the shared store, and a build's
+# crates go through sccache, every worktree's at the same /src path, so
+# one changed file recompiles its crate and the crates above it
+# (scripts/build/shared-cache.sh, docs/LOCAL-DEV.md). Both are off in CI,
+# whose build stays the clean one the committed file is checked against.
+# shellcheck source=scripts/build/shared-cache.sh
+. "$here/scripts/build/shared-cache.sh"
+if engine_store_restore web-wasm "$here/$out" scripts/build/build-engine-wasm.sh; then
+  echo "$out: $(wc -c < "$here/$out" | tr -d ' ') bytes"
+  exit 0
+fi
+cache_args=()
+while IFS= read -r arg; do [ -n "$arg" ] && cache_args+=("$arg"); done < <(sccache_docker_args x86_64-unknown-linux-musl)
+
 # Fetched here, as the image has neither curl nor wget; checked inside it.
 tools=$(mktemp -d)
 trap 'rm -rf "$tools"' EXIT
@@ -42,6 +57,7 @@ docker run --rm --platform linux/amd64 -m 3g \
   -v "$here/engine:/src/engine" \
   -v "$here/apps/web/src/lib/engine:/out" \
   -v "$tools:/tools:ro" \
+  "${cache_args[@]+"${cache_args[@]}"}" \
   -e CARGO_TARGET_DIR=/tmp/target \
   -e CARGO_INCREMENTAL=0 \
   -e SOURCE_DATE_EPOCH=0 \
@@ -58,4 +74,5 @@ docker run --rm --platform linux/amd64 -m 3g \
       --enable-bulk-memory --enable-nontrapping-float-to-int \
       /tmp/target/wasm32-unknown-unknown/wasm/wingtip_wasm.wasm -o /out/wingtip-engine.wasm
   '
+engine_store_publish web-wasm "$here/$out" scripts/build/build-engine-wasm.sh
 echo "$out: $(wc -c < "$here/$out" | tr -d ' ') bytes"
