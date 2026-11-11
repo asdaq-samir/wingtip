@@ -265,7 +265,7 @@ export function FieldStep({
         open={opened}
         onOpenChange={(next) => toggleField(key, a.ident, next)}
         render={
-          <li
+          <div
             className={cn("relative", asCards && cn(POINT_CARD, "isolate"), asCards && !last && CARD_GAP)}
             data-testid="route-field"
             data-ident={a.ident}

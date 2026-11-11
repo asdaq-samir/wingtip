@@ -2,9 +2,10 @@ import { test, expect, type Locator, type Page } from "@playwright/test";
 import { openPanel, settle, sideDrawer } from "./helpers";
 
 /**
- * The route's points moved, by a mouse, the keyboard or a finger's menu
- * (React Aria's drag and drop, and Move Up and Move Down for a pilot who
- * cannot drag, WCAG 2.5.7): split from stops.spec at its size budget.
+ * The route's points moved, by a mouse or the keyboard in FPL's list
+ * (React Aria's GridList drag and drop), or a pill's menu (Move Up and
+ * Move Down, for a pilot who cannot drag, WCAG 2.5.7): split from
+ * stops.spec at its size budget.
  */
 
 // A finger, as Chromium takes one from a touch screen: put down on one
@@ -52,12 +53,15 @@ async function touchHold(page: Page, from: Locator, to: Locator) {
   };
 }
 
-// A pill dragged is the browser's own drag (React Aria's useDrag and
-// useDrop, pointDrag): a mouse's drag here, as Chromium starts none from a
-// touch screen's events sent by the test. The keyboard's is React Aria's:
-// Enter on the pill picks it up, Tab goes from one pill to the next, Enter
-// puts it down there.
-test("any point dragged anywhere, by a mouse or the keyboard, the ends too: before the departure it is the departure, after the destination the destination", async ({
+// FPL's list is React Aria's GridList with its drag and drop (RouteGrid,
+// the stock audit's W3): a point's grip dragged by a mouse, the browser's
+// own drag, and let go at the top of another point's row puts it before
+// that point, the stock line between the rows showing where. The
+// keyboard's is React Aria's: Enter on the grip picks it up, the arrow
+// keys go from one place between the points to the next, Enter puts it
+// down there. The route box's pills are not dragged (their menu moves
+// them, below).
+test("a point's grip in FPL's list moves it anywhere, by a mouse or the keyboard, the ends too: before the departure it is the departure", async ({
   page,
 }) => {
   await page.route(
@@ -67,24 +71,30 @@ test("any point dragged anywhere, by a mouse or the keyboard, the ends too: befo
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
   await settle(page);
   await openPanel(page);
-  const lines = sideDrawer(page).getByTestId("route-slide");
-  const stopsAre = (list: string) => new RegExp(`[?&]stops=(${list.replaceAll(",", "%2C")}|${list})(&|$)`);
+  const list = sideDrawer(page).getByTestId("procedures");
+  const row = (ident: string) =>
+    list
+      .getByRole("row")
+      .filter({ has: page.locator(`[data-ident="${ident}"]`) })
+      .first();
+  const grip = (ident: string) => list.locator(`[data-testid=route-grip][data-ident="${ident}"]`);
+  const stopsAre = (stops: string) => new RegExp(`[?&]stops=(${stops.replaceAll(",", "%2C")}|${stops})(&|$)`);
 
-  await lines.getByTestId("route-dest").dragTo(lines.getByTestId("route-dep"));
+  // KDLH's grip let go at the top of C81's row: before it, the departure.
+  await grip("KDLH").scrollIntoViewIfNeeded();
+  const target = (await row("C81").boundingBox())!;
+  await grip("KDLH").dragTo(row("C81"), { targetPosition: { x: target.width / 2, y: 4 } });
   await expect(page).toHaveURL(/[?&]dep=KDLH(&|$)/);
   await expect(page).toHaveURL(/[?&]dest=KMSN(&|$)/);
   await expect(page).toHaveURL(stopsAre("C81,KRYV"));
 
-  // KDLH, the departure now, picked up and put down on the destination.
-  const departure = lines.getByTestId("route-dep");
-  const destination = lines.getByTestId("route-dest");
-  await departure.focus();
+  // KDLH, the departure now, picked up by the keyboard and put down after
+  // the destination, KMSN.
+  await grip("KDLH").focus();
   await page.keyboard.press("Enter");
-  for (let i = 0; i < 6; i++) {
-    if (await destination.evaluate((el) => el === document.activeElement)) break;
-    await page.keyboard.press("Tab");
-  }
-  await expect(destination).toBeFocused();
+  const at = () => page.evaluate(() => document.activeElement?.getAttribute("aria-label") ?? "");
+  for (let i = 0; i < 12 && !/after .*KMSN/i.test(await at()); i++) await page.keyboard.press("ArrowDown");
+  expect(await at()).toMatch(/after .*KMSN/i);
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/[?&]dep=C81(&|$)/);
   await expect(page).toHaveURL(/[?&]dest=KDLH(&|$)/);

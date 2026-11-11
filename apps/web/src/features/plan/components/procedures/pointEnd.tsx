@@ -6,7 +6,7 @@ import { isFixIdent } from "../../../../lib/identSchema";
 import { PointFigures, PointMenu } from "../PointControls";
 import { legOf, type NavLogRow } from "../navlog/rows";
 import type { ProceduresRouteModel } from "../../hooks/useProceduresRoute";
-import { PointGrip } from "./RouteRows";
+import { PointGrip } from "./RouteGrid";
 
 // The end of a point's row, at the owner's picks ("keep the format of
 // altitude (elev/published/cruising) and eta to the right side of each
@@ -109,6 +109,6 @@ export function pointEnd(
     ),
     // Its grip, where the list changes the route: by its place among the
     // typed points.
-    grip: edit && at.index !== undefined ? <PointGrip ident={ident} index={at.index} /> : null,
+    grip: edit && at.index !== undefined ? <PointGrip ident={ident} /> : null,
   };
 }

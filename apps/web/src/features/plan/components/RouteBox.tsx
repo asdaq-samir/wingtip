@@ -10,9 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { ArrowRight, Coffee, Fuel, PlaneLanding, PlaneTakeoff, Plus, Route, Trash2, TriangleAlert } from "lucide-react";
-import { mergeProps } from "@base-ui/react/merge-props";
 import { ScrollArea } from "@base-ui/react/scroll-area";
-import { movePoint, usePointDrag } from "./pointDrag";
 import { cn } from "cn";
 import AirportPicker from "../../../components/AirportPicker";
 import AirportResults, { AirportRow, PickerGroup } from "../../../components/AirportResults";
@@ -660,8 +658,8 @@ export default function RouteBox({
                 data-testid="route-slide"
               >
                 <ScrollArea.Content ref={slideRow} className="flex flex-nowrap items-center gap-x-px py-1 pr-2 [&>*]:shrink-0">
-                  {/* Each point a pill dragged and dropped on (Pill, pointDrag);
-                  the browser's own drag scrolls the box near its ends. */}
+                  {/* Each point a pill, tapped or held for its menu (Pill); moved
+                  by its menu's Move Up and Down, or dragged in FPL's list. */}
                   {points.map((point, i) => (
                     <Fragment key={ids[i]}>
                       {/* Before the first point an arrow only with no
@@ -686,8 +684,8 @@ export default function RouteBox({
                             />
                           ))}
                       <Pill
-                        onMove={(from) => change(movePoint(points, from, i))}
-                        onStep={(by) => change(movePoint(points, i, i + by))}
+                        // A place earlier or later: the two neighbours swapped.
+                        onStep={(by) => change(points.map((p, j) => (j === i ? points[i + by]! : j === i + by ? point : p)))}
                         last={i === points.length - 1}
                         ident={point}
                         waypoint={waypoints.has(point)}
@@ -1007,7 +1005,6 @@ function ProcedureChip({
  *  pill was a row of targets crowded between them, at the pilot's ask. Any
  *  of them, the ends too (RouteBox's `remove`). */
 function Pill({
-  onMove,
   onStep,
   last,
   ident,
@@ -1026,8 +1023,6 @@ function Pill({
   onDirect,
   unknown = false,
 }: {
-  /** The point at `from` put down at this one's place (pointDrag). */
-  onMove: (from: number) => void;
   /** It, a place earlier (-1) or later (1): its menu's Move Up and Down. */
   onStep: (by: -1 | 1) => void;
   last: boolean;
@@ -1055,20 +1050,8 @@ function Pill({
   const [changing, setChanging] = useState(false);
   const { later, finalFocus } = useAfterMenu();
   // A finger's hold opens its menu by the stock ContextMenu's own long
-  // press, as a right click does; held and moved, React Aria's drag, which
-  // closes it (the menu's `open`, controlled).
-  const [menuOpen, setMenuOpen] = useState(false);
-  const self = useRef<HTMLSpanElement>(null);
-  // React Aria's drag and drop (pointDrag): pressed and moved, or Enter on
-  // the pill for the keyboard's drag, Tab to another pill and Enter there.
-  const move = usePointDrag({
-    kind: "application/x-wingtip-route-pill",
-    index,
-    name: pointName(ident),
-    dropRef: self,
-    onMove,
-    onDragStart: () => setMenuOpen(false),
-  });
+  // press, as a right click does. Not dragged: its place changes by the
+  // menu's Move Up and Down here, or by a drag in FPL's list (RouteGrid).
   // An airport as the sectional draws its airspace, as its Favorites tile
   // is (lib/useAirspace): Class B and C solid blue and magenta, D and E
   // dashed; G, and one not known yet, the sheet's own pill. A waypoint in
@@ -1106,26 +1089,18 @@ function Pill({
   const pill = (
     // A group, not a button: the picker inside it is the button, and a
     // button in a button is nothing a reader can use (axe's
-    // nested-interactive). Still focusable, for the keyboard's drag
-    // (Enter) and its Delete; held and moved, its drag not the sheet's.
+    // nested-interactive). Still focusable, for its Delete and its menu.
     <span
-      ref={self}
-      // Focusable for the keyboard's drag (a group, so in the spread).
-      {...mergeProps<"span">(move.dragProps, move.dropProps, { tabIndex: 0 })}
+      // eslint-disable-next-line jsx-a11y-x/no-noninteractive-tabindex -- a group round the pill's picker, focused for its Delete and its menu's key
+      tabIndex={0}
       role="group"
       aria-label={`${label} ${ident}`}
       aria-keyshortcuts="Delete"
       data-point={index}
-      data-dragging={move.isDragging ? "" : undefined}
-      data-over={move.isDropTarget ? "" : undefined}
       data-base-ui-swipe-ignore="x"
-      className={cn(
-        // Up or down scrolls the lines or moves the sheet (swipe-ignore "x", the one scrolling
-        // rule); a hold, then a move, drags; a hold alone, its menu. No iOS callout over the hold.
-        "inline-flex shrink-0 items-center rounded-full touch-pan-y select-none [-webkit-touch-callout:none]",
-        move.isDragging && "opacity-40",
-        move.isDropTarget && "bg-background ring-2 ring-tint",
-      )}
+      // Up or down scrolls the lines or moves the sheet (swipe-ignore "x", the one scrolling
+      // rule); a hold, its menu. No iOS callout over the hold.
+      className="inline-flex shrink-0 items-center rounded-full touch-pan-y select-none [-webkit-touch-callout:none]"
       data-testid={role === "stop" ? "stop" : `route-${role}`}
     >
       {mark}
@@ -1153,7 +1128,7 @@ function Pill({
     </span>
   );
   return (
-    <ContextMenu open={menuOpen} onOpenChange={setMenuOpen}>
+    <ContextMenu>
       <ContextMenuTrigger render={pill} />
       {/* FPL's "⋯"'s items, in its words and order (PointMenuItems), at
           the audit's finding: the altitude there after Set altitude…, a

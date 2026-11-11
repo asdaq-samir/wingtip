@@ -1,9 +1,6 @@
-import { createContext, useContext, useRef, useState, type PointerEvent, type ReactNode } from "react";
-import { mergeProps } from "@base-ui/react/merge-props";
-import { createPortal } from "react-dom";
-import { ChevronRight, GripVertical } from "lucide-react";
+import type { ReactNode } from "react";
+import { ChevronRight } from "lucide-react";
 import { cn } from "cn";
-import { useDraggingKind, usePointDrag } from "../pointDrag";
 import CardIdent from "../CardIdent";
 import { CardMark, CardThread, EmptyMark } from "../routeCard";
 import { CARD_GAP, POINT_CARD, ROUTE_LINE } from "../routeListStyle";
@@ -12,9 +9,9 @@ import type { Detour, LegHold } from "../../../../lib/api/types";
 import { holdWords, type Hold } from "../../lib/routeHolds";
 import { pointName } from "../../../../lib/identSchema";
 
-// The rows down FPL's route list (ProceduresRoute) other than a field's
-// block (FieldStep): a point flown over, a hold, a stop being added, and
-// the drag that moves the typed points.
+// The rows down FPL's route list (ProceduresRoute, each a row of its
+// RouteGrid) other than a field's block (FieldStep): a point flown over, a
+// hold, a stop being added.
 
 /**
  * A stop being added, In the Plan: an empty card at its place, its text
@@ -32,7 +29,7 @@ export function NewStopCard({
   onCancel: () => void;
 }) {
   return (
-    <li className={cn("relative", POINT_CARD, "isolate", CARD_GAP)} data-testid="route-new-stop">
+    <div className={cn("relative", POINT_CARD, "isolate", CARD_GAP)} data-testid="route-new-stop">
       <CardThread first={false} last={false} />
       <div className="flex items-center gap-2.5">
         <span className="grid w-7 shrink-0 place-items-center" aria-hidden="true">
@@ -86,7 +83,7 @@ export function NewStopCard({
           ))}
         </ul>
       )}
-    </li>
+    </div>
   );
 }
 
@@ -98,7 +95,7 @@ export function NewStopCard({
  */
 export function HoldRow({ hold, flown, last, onOpen }: { hold: Hold; flown: LegHold | null; last: boolean; onOpen: () => void }) {
   return (
-    <li className="relative flex gap-2.5" data-testid="route-hold" data-fix={hold.fix}>
+    <div className="relative flex gap-2.5" data-testid="route-hold" data-fix={hold.fix}>
       {!last && <span aria-hidden="true" className="absolute top-0 bottom-0 left-[calc(0.875rem-1px)] w-0.5" style={ROUTE_LINE} />}
       <div className="relative flex w-7 shrink-0 justify-center pt-1.5" aria-hidden="true">
         <svg viewBox="0 0 28 16" className="h-4 w-7 rounded-full bg-background">
@@ -121,87 +118,7 @@ export function HoldRow({ hold, flown, last, onOpen }: { hold: Hold; flown: LegH
         {flown && <span className={cn("shrink-0 font-semibold tabular-nums", TEXT.detail)}>+{Math.round(flown.minutes)} min</span>}
         <ChevronRight className="size-5 shrink-0 text-tint" aria-hidden="true" />
       </button>
-    </li>
-  );
-}
-
-/** The move the list's grips make (RouteListDrag), from one typed
- *  point's place to another's. */
-const RouteMove = createContext<((from: number, to: number) => void) | undefined>(undefined);
-
-/**
- * The list's drag, by the points' grips (PointGrip): a grip let go over
- * another point's row moves its point there, as the route box's pills are
- * dragged (pointDrag, React Aria's drag and drop). Only the grips are
- * dragged and only the points' rows are dropped on, as the list between
- * them holds the legs' rows, the holds and the runways, none of them points
- * to move: the reason this is not a GridList, whose rows would all be
- * items. Nothing to drag, the list as it was.
- */
-export function RouteListDrag({ on, children }: { on?: (from: number, to: number) => void; children: ReactNode }) {
-  return <RouteMove.Provider value={on}>{children}</RouteMove.Provider>;
-}
-
-const ROW = "application/x-wingtip-route-row";
-
-/** A typed point's grip, at its row's end, as iOS's reorder control is:
- *  dragged by a mouse or a finger, or picked up by Enter for the keyboard's
- *  and VoiceOver's drag (Tab to a place, Enter to put it down, Escape to
- *  let it go). A 32-point glyph with its 44-point area (index.css). What is
- *  dropped on is the point's whole row, its card where the list is cards:
- *  a cover laid over the row only while a point is out, so a drop anywhere
- *  on another counts and the row's own controls keep the pointer the rest
- *  of the time. */
-export function PointGrip({ ident, index }: { ident: string; index: number }) {
-  const on = useContext(RouteMove);
-  const name = pointName(ident);
-  const [row, setRow] = useState<HTMLElement | null>(null);
-  const cover = useRef<HTMLSpanElement>(null);
-  const out = useDraggingKind(ROW);
-  const move = usePointDrag({ kind: ROW, index, name, dropRef: cover, onMove: on && row ? (from) => on(from, index) : undefined });
-  // Its own presses, not the sheet's drag. The browser's own drag image.
-  const own = { onPointerDown: (event: PointerEvent<HTMLElement>) => event.stopPropagation() };
-  return (
-    <>
-      <span
-        {...mergeProps<"span">(move.dragProps, own)}
-        ref={(node) => setRow(node?.closest("li") ?? null)}
-        role="button"
-        tabIndex={0}
-        aria-label={`Move ${name}`}
-        data-testid="route-grip"
-        // Its drag the row's, not the stock sheet's.
-        data-base-ui-swipe-ignore=""
-        data-ident={ident}
-        data-dragging={move.isDragging ? "" : undefined}
-        className={cn(
-          "relative grid size-8 shrink-0 cursor-grab touch-none place-items-center rounded-full text-muted-foreground outline-none select-none after:absolute after:-inset-1.5 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-          move.isDragging && "opacity-30",
-          move.isDropTarget && "bg-tint/12 text-tint",
-        )}
-      >
-        <GripVertical className="size-5" aria-hidden />
-      </span>
-      {row &&
-        createPortal(
-          <span
-            {...move.dropProps}
-            ref={cover}
-            tabIndex={-1}
-            role={out && !move.isDragging ? "group" : undefined}
-            aria-label={out && !move.isDragging ? `To ${name}'s place` : undefined}
-            data-testid="route-drop"
-            data-ident={ident}
-            data-over={move.isDropTarget ? "" : undefined}
-            className={cn(
-              "absolute inset-0 z-20 rounded-2xl outline-none",
-              out && !move.isDragging ? "pointer-events-auto" : "pointer-events-none",
-              move.isDropTarget && "ring-2 ring-tint",
-            )}
-          />,
-          row,
-        )}
-    </>
+    </div>
   );
 }
 
@@ -239,7 +156,7 @@ export function Step({
   /** Its time over its altitude (PointFigures). */
   figures: ReactNode;
   menu?: (face: ReactNode) => ReactNode;
-  /** Its grip, where the list changes the route (PointGrip). */
+  /** Its grip, where the list changes the route (RouteGrid's PointGrip). */
   grip?: ReactNode;
   /** A card of its own, as the fields' are where the list is cards. */
   card?: boolean;
@@ -251,7 +168,7 @@ export function Step({
 }) {
   const Name = field ? "h3" : "span";
   return (
-    <li className={cn("relative flex gap-2.5", card && cn(POINT_CARD, "isolate"), card && !last && CARD_GAP)} data-testid={testId}>
+    <div className={cn("relative flex gap-2.5", card && cn(POINT_CARD, "isolate"), card && !last && CARD_GAP)} data-testid={testId}>
       {!last && !card && <span aria-hidden="true" className="absolute top-3 bottom-0 left-[calc(0.875rem-1px)] w-0.5" style={ROUTE_LINE} />}
       {card && <CardThread first={first} last={last} />}
       <div className="relative flex w-7 shrink-0 justify-center pt-0.5">
@@ -277,6 +194,6 @@ export function Step({
         </div>
         {children}
       </section>
-    </li>
+    </div>
   );
 }
