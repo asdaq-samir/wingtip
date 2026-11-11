@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * A shared flight's link (`/app/plan?open=shared&...`, design/screens.json)
+ * A shared flight's link ({@code /app/plan?open=shared&...}, design/screens.json)
  * as Messages, Slack and the like preview it: the web app's own page, its
  * Open Graph title the route ("KMSN → KOSH · 3,500 ft"), its line the
  * departure time and airplane, and for a saved flight's share the route
