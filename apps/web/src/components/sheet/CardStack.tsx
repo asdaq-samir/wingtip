@@ -31,6 +31,27 @@ const EASE =
   "transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] data-swiping:transition-none motion-reduce:transition-none";
 
 /**
+ * A card rises from the screen's foot as it opens and slides back down as
+ * it closes, as Base UI's own Snap points demo does: its popup off the
+ * screen while the Drawer marks it starting or ending. Base UI writes
+ * --drawer-snap-point-offset as 0 until it has measured, so with no
+ * starting place a new card was drawn all the way up and slid down to half
+ * (the owner, 2026-11-11: "a new card is always transition from full to
+ * half when opening it"), and with no ending place it went in one frame.
+ * Off the screen is the card's own height below where it is drawn, less the
+ * sheet's offset it is drawn in (--sheet-base, SheetDrawer), past the home
+ * indicator (a top sheet's: above it, past the status bar). The close's
+ * time is the demo's: 400 ms at a still finger, shorter after a throw
+ * (--drawer-swipe-strength).
+ */
+const SLIDE = {
+  bottom:
+    "data-starting-style:[transform:translateY(calc(100%_-_var(--sheet-base,0px)_+_env(safe-area-inset-bottom)_+_2px))] data-ending-style:[transform:translateY(calc(100%_-_var(--sheet-base,0px)_+_env(safe-area-inset-bottom)_+_2px))] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)]",
+  // A top sheet's card comes down from the screen's top and goes back up.
+  top: "data-starting-style:[transform:translateY(calc(0px_-_100%_-_var(--sheet-base,0px)_-_env(safe-area-inset-top)_-_2px))] data-ending-style:[transform:translateY(calc(0px_-_100%_-_var(--sheet-base,0px)_-_env(safe-area-inset-top)_-_2px))] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)]",
+};
+
+/**
  * The cards over the map's sheet, each Base UI's own nested Drawer (the
  * owner, 2026-11-11: "Yes", the stock Drawer's nested drawers in place of
  * the hand-built card stack), stacked over the sheet as Apple Maps stacks
@@ -148,6 +169,7 @@ function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry;
                 onPhone &&
                   "[transform:translateY(calc(var(--drawer-snap-point-offset)-var(--sheet-base,0px)+var(--drawer-swipe-movement-y)))] [--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)]",
                 onPhone && p.ready && EASE,
+                onPhone && SLIDE[fromBottom ? "bottom" : "top"],
                 // A top sheet's card clear of the status bar.
                 onPhone && !fromBottom && "pt-[env(safe-area-inset-top)]",
                 onPhone && fromBottom && UNDER_INDICATOR,
