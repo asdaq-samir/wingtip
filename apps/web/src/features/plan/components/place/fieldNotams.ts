@@ -112,26 +112,35 @@ export function windowOf(n: FieldNotam, read: NotamReading): Pick<FieldNotam, "i
   return { in_force: n.in_force, starts: n.starts ?? read.starts, ends: n.ends ?? read.ends };
 }
 
-const CORNER = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-const CORNER_ZONE = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
+const CORNER = new Intl.DateTimeFormat("en-US", {
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
   minute: "2-digit",
+  hourCycle: "h23",
   timeZoneName: "short",
 });
 
-/** Its start and end for a row's corner in the device's own time, the
- *  zone named once on the last ("Nov 10, 6:00 AM", "Nov 12, 8:32 AM
- *  CST"; the owner, 2026-11-11: "Instead of Zulu time make it local
- *  time"; its full card keeps the UTC the NOTAM gives): the end an
- *  estimate with "(est.)", "Permanent" where it is PERM (JO 7930.2
- *  4-2-1), null where none is given. */
+/** "11/10 06:00", with " CST" where `zone`: month/day and the 24-hour
+ *  clock in the device's own time, as a pilot writes it on a kneeboard. */
+function corner(at: Date, zone: boolean): string {
+  const part = Object.fromEntries(CORNER.formatToParts(at).map((p) => [p.type, p.value]));
+  return `${part.month}/${part.day} ${part.hour}:${part.minute}${zone ? ` ${part.timeZoneName}` : ""}`;
+}
+
+/** Its start and end for a row's corner in the device's own time, month/day
+ *  and 24 hours, the zone named once on the last ("11/10 06:00" over
+ *  "11/12 08:32 CST"; the owner, 2026-11-11: "Instead of Zulu time make it
+ *  local time", then the numeric 24-hour form for "How can we make the
+ *  notam date time more compact"; its full card keeps the UTC the NOTAM
+ *  gives): the end an estimate with "(est.)", not EST beside a zone,
+ *  "Permanent" where it is PERM
+ *  (JO 7930.2 4-2-1), null where none is given. */
 export function cornerOf(n: FieldNotam, read: NotamReading): { from: string | null; until: string | null } {
   const window = windowOf(n, read);
   const [starts, ends] = [dateOf(window.starts), dateOf(window.ends)];
-  const until = ends ? `${CORNER_ZONE.format(ends)}${read.estimated ? " (est.)" : ""}` : read.permanent ? "Permanent" : null;
-  return { from: starts ? (until && ends ? CORNER : CORNER_ZONE).format(starts) : null, until };
+  const until = ends ? `${corner(ends, true)}${read.estimated ? " (est.)" : ""}` : read.permanent ? "Permanent" : null;
+  return { from: starts ? corner(starts, !ends) : null, until };
 }
 
 const LOCAL = new Intl.DateTimeFormat(undefined, {
