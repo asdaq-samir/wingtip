@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { localDay } from "../../lib/format";
 import { api } from "../../lib/api/client";
 import type { DepartureWindowAsk, WindowHour } from "../../lib/api/types";
 import { routeKeyOf, useBriefPlan } from "../../lib/briefPlan";
@@ -62,7 +62,7 @@ export function useDepartureWindow() {
     ticked: [],
     hours: 48,
     // The pilot's own day, which the logbook's dates are read on.
-    day: format(new Date(), "yyyy-MM-dd"),
+    day: localDay(),
     minimums: {
       ceiling_ft: minimums.ceilingFt,
       visibility_sm: minimums.visibilitySm,

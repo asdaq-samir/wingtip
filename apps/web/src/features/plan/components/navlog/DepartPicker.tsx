@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState } from "react";
-import { format } from "date-fns";
+import { clockTime, localDay, monthSlashDay, weekdayShort } from "../../../../lib/format";
 import { CalendarIcon, ChevronDown } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
 
@@ -56,9 +56,9 @@ function shortWhen(date: Date): string {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const days = Math.round((new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() - today.getTime()) / 86_400_000);
-  const time = format(date, "HH:mm");
+  const time = clockTime(date);
   if (days === 0) return time;
-  return `${days > 0 && days < 7 ? format(date, "EEE") : format(date, "M/d")} ${time}`;
+  return `${days > 0 && days < 7 ? weekdayShort(date) : monthSlashDay(date)} ${time}`;
 }
 
 /**
@@ -92,7 +92,7 @@ export default function DepartPicker({
   };
   const parsed = value ? new Date(value) : undefined;
   const date = parsed && !Number.isNaN(parsed.getTime()) ? parsed : undefined;
-  const time = date ? format(date, "HH:mm") : "";
+  const time = date ? clockTime(date) : "";
   return (
     <ResponsivePopover open={open} onOpenChange={setOpen}>
       <ResponsivePopoverTrigger asChild>
@@ -134,10 +134,10 @@ export default function DepartPicker({
           <Suspense fallback={<div className="h-[21rem] w-[17rem]" />}>
             <DayCalendar
               aria-label={label}
-              value={date ? format(date, "yyyy-MM-dd") : null}
+              value={date ? localDay(date) : null}
               captionLayout="dropdown"
-              min={earliest != null ? format(earliest, "yyyy-MM-dd") : undefined}
-              max={latest != null ? format(latest, "yyyy-MM-dd") : undefined}
+              min={earliest != null ? localDay(new Date(earliest)) : undefined}
+              max={latest != null ? localDay(new Date(latest)) : undefined}
               onChange={(day) => onChange(instantAt(new Date(`${day}T00:00`), time || nextHour()))}
             />
           </Suspense>
@@ -182,7 +182,7 @@ export default function DepartPicker({
           </div>
           {held && earliest != null && latest != null && (
             <p className={cn("px-3 text-caution-ink", TEXT.note)} role="status" data-testid="depart-range">
-              From landing, {format(new Date(earliest), "HH:mm")}, to a day after.
+              From landing, {clockTime(new Date(earliest))}, to a day after.
             </p>
           )}
         </div>

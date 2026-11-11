@@ -1,6 +1,6 @@
 import { lazy, memo, Suspense, useEffect, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { localDay } from "../../../lib/format";
 import { ArrowRight, RotateCw } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
@@ -23,7 +23,7 @@ const ARCHIVE_DAYS = 42;
 /** A day, ISO (the planner's `until`): the calendar's day as it shows it,
  *  where an ISO string of its local midnight was the day before east of
  *  Greenwich. */
-const isoDay = (d: Date) => format(d, "yyyy-MM-dd");
+const isoDay = (d: Date) => localDay(d);
 
 /**
  * An airplane's past flights on its card, at the pilot's ask ("can we

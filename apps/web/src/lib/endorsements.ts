@@ -1,11 +1,11 @@
-import { format, parseISO } from "date-fns";
+import { dayMonthYear, fromIso, usFormDay } from "./format/days";
 import type { CrossCountryReview, Instructor, SignedEndorsement } from "./api/types";
 import { callEngine } from "./engine/engine";
 
 /** A day as the pages say one: "13 Oct 2026". */
-export const said = (iso: string) => format(parseISO(iso), "d MMM yyyy");
+export const said = (iso: string) => dayMonthYear(fromIso(iso));
 /** A day as AC 61-65K's samples write one: "10-13-2026". */
-export const acDay = (iso: string) => format(parseISO(iso), "MM-dd-yyyy");
+export const acDay = (iso: string) => usFormDay(fromIso(iso));
 
 /** The latest of each kind signed in the app and not voided, by its code:
  *  the record comes newest first. Picked by the shared engine

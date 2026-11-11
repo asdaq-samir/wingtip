@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { dayMonthYear } from "./format/days";
 import type { DataCycle } from "./api/types";
 
 /**
@@ -17,7 +17,7 @@ export function dayWords(day: string | null | undefined): string {
   if (!day) return "—";
   const [year, month, date] = day.split("-").map(Number);
   const at = new Date(year!, (month ?? 1) - 1, date);
-  return Number.isNaN(at.getTime()) ? day : format(at, "d MMM yyyy");
+  return Number.isNaN(at.getTime()) ? day : dayMonthYear(at);
 }
 
 /** The data sets past their cycle. */

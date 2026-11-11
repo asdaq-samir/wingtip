@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { formatDistanceStrict } from "date-fns";
+import { strictDistance } from "../../lib/format";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
@@ -75,7 +75,7 @@ export default function DrillPage({ deck: key }: { deck: DeckKey }) {
           <ListRow
             title={done ? `${done} card${done === 1 ? "" : "s"} done` : "Nothing due"}
             description={
-              next ? `The next one is due in ${formatDistanceStrict(next, now)}.` : "Every card is new: start whenever you like."
+              next ? `The next one is due in ${strictDistance(next, now)}.` : "Every card is new: start whenever you like."
             }
           />
           <ListRow
