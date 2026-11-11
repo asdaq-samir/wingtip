@@ -64,7 +64,7 @@ from .router_basics import PROCESSED_DIR
 from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
-from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words
+from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words, plates
 from .routers import engine as engine_router, forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
 from .schemas.common import Index
 from .settings import get_settings
@@ -441,8 +441,8 @@ for module in (
     offline,
     coach,
     mcp,
+    plates,
 ):
     app.include_router(module.router)
-
 
 app.openapi = openapi_document.with_streams(app)

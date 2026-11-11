@@ -27,6 +27,8 @@ import app.wingtipmaps.android.coach.CoachScreen
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.logbook.LogbookScreen
 import app.wingtipmaps.android.offline.DownloadsScreen
+import app.wingtipmaps.android.plates.PlateCard
+import app.wingtipmaps.android.plates.PlatePick
 import app.wingtipmaps.android.route.RouteLegCard
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
@@ -76,6 +78,7 @@ private fun Card(
         is SheetPage.Airplane -> AirplaneCard(page.at, plan, exit, onFlown = showPlan, onOpen = sheet::push)
         is SheetPage.Thing -> ThingCard(page.pick, plan, exit)
         is SheetPage.Leg -> RouteLegCard(page.index, plan, ownShipOn, exit)
+        is SheetPage.Plate -> PlateCard(PlatePick(page.ident, page.procedure), exit)
         SheetPage.MapSettings -> Page(stringResource(R.string.map_settings), exit) { MapSettingsRows() }
         SheetPage.Brief -> BriefPage(plan, session, exit, onSetRoute = showPlan)
         SheetPage.Nearest -> NearestPage(ownShip, plan, exit, onOpen = { sheet.push(SheetPage.Airport(it)) })

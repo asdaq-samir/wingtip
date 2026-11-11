@@ -921,6 +921,57 @@ object EngineContract {
         val angleDeg: Double,
     )
 
+    /**
+     * What the CIFP says of an approach besides its legs (wingtip.approach_facts): its runway, the altitudes coded beside a fix's limits, and the levels of service authorised.
+     */
+    @Serializable
+    data class ApproachFacts(
+        val runway: EngineContract.ApproachFactsRunway? = null,
+        val coded: List<EngineContract.ApproachFactsCodedItem>? = null,
+        /**
+         * The levels of service the CIFP authorises (ARINC 424-19 5.275, 5.276): "LPV", "LNAV/VNAV", "LNAV", ...
+         */
+        val levels: List<String>? = null,
+    )
+
+    @Serializable
+    data class ApproachFactsCodedItem(
+        val fix: String,
+        /**
+         * The fix's altitude description (ARINC 424-18 5.29): "G" or "H" the glide slope's altitude at the FAF, "I" or "J" its intercept altitude at the FACF, "V" the vertical path's at a step-down fix.
+         */
+        val code: String,
+        /**
+         * That altitude, ft MSL: the record's second altitude.
+         */
+        val ft: Double,
+    )
+
+    @Serializable
+    data class ApproachFactsRunway(
+        /**
+         * The CIFP's runway ident, "RW36".
+         */
+        val ident: String,
+        val lat: Double,
+        val lon: Double,
+        /**
+         * The landing threshold's elevation, ft MSL (the CIFP's runway record, ARINC 424-18 5.68).
+         */
+        @SerialName("threshold_ft")
+        val thresholdFt: Double,
+        /**
+         * The threshold crossing height, ft (ARINC 424-18 5.67).
+         */
+        @SerialName("tch_ft")
+        val tchFt: Double,
+        /**
+         * The touchdown zone elevation, ft MSL, to a tenth (NASR APT_RWY_END TDZ_ELEV).
+         */
+        @SerialName("tdze_ft")
+        val tdzeFt: Double? = null,
+    )
+
     @Serializable
     data class ApproachFinding(
         val tone: String,
@@ -938,6 +989,96 @@ object EngineContract {
         val picked: String? = null,
         @SerialName("minimums_ft")
         val minimumsFt: Double? = null,
+    )
+
+    /**
+     * One fix's tag on the map with its approach's plate.
+     */
+    @Serializable
+    data class ApproachFixTag(
+        val ident: String,
+        val lat: Double,
+        val lon: Double,
+        /**
+         * "IAF", "IF", "FACF", "FAF", "MAP", "hold".
+         */
+        val roles: List<String>,
+        /**
+         * On the missed approach alone.
+         */
+        val missed: Boolean,
+        /**
+         * How the fix is crossed (ARINC 424-18 5.29): at min_ft (= max_ft), at or above min_ft, at or below max_ft, or between them; the FAA charts at or above underlined, at or below overlined.
+         */
+        val altitude: EngineContract.ApproachFixTagAltitude? = null,
+        /**
+         * At the final approach fix of an ILS, or of an RNAV approach with LPV or LNAV/VNAV minimums.
+         */
+        val vertical: EngineContract.ApproachFixTagVertical? = null,
+        /**
+         * At a missed approach point that is the runway: its threshold elevation, threshold crossing height and touchdown zone elevation. No DA or MDA: those are the plate's alone.
+         */
+        val runway: EngineContract.ApproachFixTagRunway? = null,
+    )
+
+    @Serializable
+    data class ApproachFixTagAltitude(
+        val sense: String,
+        @SerialName("min_ft")
+        val minFt: Double? = null,
+        @SerialName("max_ft")
+        val maxFt: Double? = null,
+    )
+
+    @Serializable
+    data class ApproachFixTagRunway(
+        @SerialName("threshold_ft")
+        val thresholdFt: Double,
+        @SerialName("tch_ft")
+        val tchFt: Double,
+        /**
+         * Whole feet, as the plate prints it.
+         */
+        @SerialName("tdze_ft")
+        val tdzeFt: Double? = null,
+    )
+
+    @Serializable
+    data class ApproachFixTagsAnswer(
+        val tags: List<EngineContract.ApproachFixTag>,
+        /**
+         * The final approach segment, from the FAF to the MAP, for the map to mark.
+         */
+        val final: EngineContract.ApproachFixTagsAnswerFinal? = null,
+    )
+
+    @Serializable
+    data class ApproachFixTagsAnswerFinal(
+        val from: String,
+        val to: String,
+        val points: List<List<JsonElement>>,
+    )
+
+    @Serializable
+    data class ApproachFixTagsInput(
+        val drawing: EngineContract.ProcedureDrawing,
+    )
+
+    @Serializable
+    data class ApproachFixTagVertical(
+        /**
+         * An ILS's electronic glide slope ("GS") or an RNAV approach's glidepath ("GP").
+         */
+        val kind: String,
+        /**
+         * Its altitude at the FAF, ft MSL.
+         */
+        val ft: Double,
+        val deg: Double? = null,
+        /**
+         * "cifp" the CIFP's own (ARINC 424-18 5.29 "G"/"H"); "computed" from the angle, threshold and TCH by FAA Order 8260.3G formula 2-6-4.
+         */
+        val source: String,
     )
 
     @Serializable
@@ -7684,6 +7825,7 @@ object EngineContract {
         val missedLegs: List<EngineContract.ApproachMissedLeg>? = null,
         @SerialName("runway_path")
         val runwayPath: EngineContract.ApproachRunwayPath? = null,
+        val approach: EngineContract.ApproachFacts? = null,
     )
 
     @Serializable

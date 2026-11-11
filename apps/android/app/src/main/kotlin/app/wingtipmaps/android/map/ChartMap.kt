@@ -27,8 +27,6 @@ import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.route.RouteLegs
 import app.wingtipmaps.android.route.RoutePoint
 import app.wingtipmaps.android.tiles.TileTemplate
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import org.maplibre.android.camera.CameraPosition
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.geometry.LatLng
@@ -47,7 +45,6 @@ import org.maplibre.android.style.sources.RasterSource
 import org.maplibre.android.style.sources.TileSet
 import org.maplibre.android.style.sources.VectorSource
 import org.maplibre.geojson.Feature
-import org.maplibre.geojson.Point
 
 /** The map's view where it came to rest: its box and its zoom, MapLibre's. */
 data class MapRest(val south: Double, val west: Double, val north: Double, val east: Double, val zoom: Double)
@@ -72,6 +69,7 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  *   engine's glide_ring), its outline as latitude and longitude pairs,
  *   drawn dashed; empty for none.
  * @param selectedField the field whose card is open, ringed (SelectedAirportLayer).
+ * @param plates the approach plates laid on the chart and their tags (PlateLayer).
  * @param emergency the emergency assistant's line to the field picked
  *   (EmergencyLayer); null while it is shut.
  * @param follow whether the map keeps the airplane in the middle; a
@@ -120,6 +118,7 @@ fun ChartMap(
     glide: List<List<Double>> = emptyList(),
     emergency: EmergencyLine? = null,
     selectedField: String? = null,
+    plates: PlatesShown = PlatesShown(),
     follow: Boolean = false,
     onDragged: () -> Unit = {},
     onRevealed: () -> Unit = {},
@@ -167,6 +166,7 @@ fun ChartMap(
     LaunchedEffect(holder, glide) { holder.glide(glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
     LaunchedEffect(holder, selectedField) { holder.selectField(selectedField) }
+    LaunchedEffect(holder, plates) { holder.plates(plates) }
 
     AndroidView(factory = { holder.view }, modifier = modifier)
 }
@@ -223,6 +223,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private var lastGlide: List<List<Double>> = emptyList()
     private var lastPoints: List<RoutePoint> = emptyList()
     private var lastLeg: Int? = null
+    val plates = PlateLayer(density)
 
     fun on(event: Lifecycle.Event) {
         if (destroyed) return
@@ -276,6 +277,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
                 GlideLayer.draw(style, lastGlide, GLIDE, ROUTE)
                 SelectedAirportLayer.draw(style, lastSelected)
                 ownShip(map, style, lastFix, lastFollow)
+                plates.draw(style)
                 EmergencyLayer.draw(style, lastEmergency, below = OWN_SHIP)
                 drawTraffic()
             }
@@ -494,7 +496,18 @@ private class MapHolder(val view: MapView, private val density: Float) {
     /** The ring round the field whose card is open (SelectedAirportLayer). */
     fun selectField(ident: String?) {
         lastSelected = ident
-        if (!destroyed) view.getMapAsync { map -> map.getStyle { style -> SelectedAirportLayer.draw(style, ident) } }
+        redraw { style -> SelectedAirportLayer.draw(style, ident) }
+    }
+
+    /** The plates drawn, and the map brought to one newly put on it. */
+    fun plates(shown: PlatesShown) {
+        val new = plates.set(shown)
+        if (!destroyed && new != null) view.getMapAsync { it.animateCamera(PlateLayer.fit(new, density), FOLLOW_MS) }
+        redraw(plates::draw)
+    }
+
+    private fun redraw(draw: (Style) -> Unit) {
+        if (!destroyed) view.getMapAsync { map -> map.getStyle(draw) }
     }
 
     /** The map opened on the airplane's last position at a region's
@@ -559,7 +572,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         } ?: near(TAP_LINE, ROUTE)?.let { f ->
             // A leg of the route, before the airspace under it.
             f.getNumberProperty(RouteLegs.LEG)?.toInt()?.let { MapPick.RouteLeg(it) }
-        } ?: near(TAP_LINE, *MapStyle.AIRSPACE_LINES.toTypedArray())?.let { f ->
+        } ?: plates.at(at.latitude, at.longitude) ?: near(TAP_LINE, *MapStyle.AIRSPACE_LINES.toTypedArray())?.let { f ->
             MapPick.airspace(properties(f), at.latitude, at.longitude)
         }
         if (picked != null) onPick(picked)
@@ -715,25 +728,5 @@ private class MapHolder(val view: MapView, private val density: Float) {
         const val LEAFLET_MIN_ZOOM = 3.0
         /** The middle of the lower 48 (the web's COUNTRY). */
         val COUNTRY = LatLng(39.5, -98.35)
-
-        /** A point feature's place, latitude first. */
-        fun pointOf(f: Feature): Pair<Double, Double>? = (f.geometry() as? Point)?.let { it.latitude() to it.longitude() }
-
-        /** A feature's fields as plain values (MapPick reads them): a
-         *  whole number as a Long, so an id reads as the tiles wrote it. */
-        fun properties(f: Feature): Map<String, Any?> {
-            val props: JsonObject = f.properties() ?: return emptyMap()
-            return props.entrySet().associate { (k, v) -> k to value(v) }
-        }
-
-        private fun value(v: JsonElement?): Any? {
-            if (v == null || v.isJsonNull || !v.isJsonPrimitive) return null
-            val p = v.asJsonPrimitive
-            return when {
-                p.isBoolean -> p.asBoolean
-                p.isNumber -> p.asDouble.let { d -> if (d == Math.floor(d) && !d.isInfinite() && kotlin.math.abs(d) < 1e15) d.toLong() else d }
-                else -> p.asString
-            }
-        }
     }
 }

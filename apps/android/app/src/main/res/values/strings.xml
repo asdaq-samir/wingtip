@@ -259,6 +259,7 @@
     <string name="layer_tac">Terminal Area Charts</string>
     <string name="layer_private">Private Fields</string>
     <string name="layer_military">Military Fields</string>
+    <string name="layer_plates">Approach Plates</string>
     <string name="airport_weather">Airport Weather</string>
     <string name="airport_weather_off">Off</string>
     <string name="airport_weather_halo">Halo</string>
@@ -565,4 +566,15 @@
     <string name="share_route">Share the Route</string>
     <string name="share_include_tail">Include N-number %1$s</string>
     <string name="share_send">Share the flight</string>
+    <!-- An approach plate on the map and its card (plates/PlateCard). -->
+    <string name="plate_hide">Hide Plate</string>
+    <string name="plate_full_screen">View Full Screen</string>
+    <string name="plate_annotations">Show Annotations</string>
+    <string name="plate_invert">Invert Plate Colors</string>
+    <string name="plate_opacity">Plate transparency</string>
+    <string name="plate_clear">Clear</string>
+    <string name="plate_solid">Solid</string>
+    <string name="plate_no_page">The FAA\'s page for this plate could not be had.</string>
+    <string name="plate_show_on_map">Show on Map</string>
+    <string name="plate_not_placed">This plate can\'t be placed on the map.</string>
 </resources>

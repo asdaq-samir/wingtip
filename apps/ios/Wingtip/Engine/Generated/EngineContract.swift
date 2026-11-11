@@ -973,6 +973,44 @@ enum EngineContract {
         }
     }
 
+    /// What the CIFP says of an approach besides its legs (wingtip.approach_facts): its runway, the altitudes coded beside a fix's limits, and the levels of service authorised.
+    struct ApproachFacts: Codable, Equatable, Sendable {
+        var runway: EngineContract.ApproachFactsRunway?
+        var coded: [EngineContract.ApproachFactsCodedItem]?
+        /// The levels of service the CIFP authorises (ARINC 424-19 5.275, 5.276): "LPV", "LNAV/VNAV", "LNAV", ...
+        var levels: [String]?
+    }
+
+    struct ApproachFactsCodedItem: Codable, Equatable, Sendable {
+        var fix: String
+        /// The fix's altitude description (ARINC 424-18 5.29): "G" or "H" the glide slope's altitude at the FAF, "I" or "J" its intercept altitude at the FACF, "V" the vertical path's at a step-down fix.
+        var code: String
+        /// That altitude, ft MSL: the record's second altitude.
+        var ft: Double
+    }
+
+    struct ApproachFactsRunway: Codable, Equatable, Sendable {
+        /// The CIFP's runway ident, "RW36".
+        var ident: String
+        var lat: Double
+        var lon: Double
+        /// The landing threshold's elevation, ft MSL (the CIFP's runway record, ARINC 424-18 5.68).
+        var thresholdFt: Double
+        /// The threshold crossing height, ft (ARINC 424-18 5.67).
+        var tchFt: Double
+        /// The touchdown zone elevation, ft MSL, to a tenth (NASR APT_RWY_END TDZ_ELEV).
+        var tdzeFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case ident
+            case lat
+            case lon
+            case thresholdFt = "threshold_ft"
+            case tchFt = "tch_ft"
+            case tdzeFt = "tdze_ft"
+        }
+    }
+
     struct ApproachFinding: Codable, Equatable, Sendable {
         var tone: String
         var text: String
@@ -992,6 +1030,74 @@ enum EngineContract {
             case picked
             case minimumsFt = "minimums_ft"
         }
+    }
+
+    /// One fix's tag on the map with its approach's plate.
+    struct ApproachFixTag: Codable, Equatable, Sendable {
+        var ident: String
+        var lat: Double
+        var lon: Double
+        /// "IAF", "IF", "FACF", "FAF", "MAP", "hold".
+        var roles: [String]
+        /// On the missed approach alone.
+        var missed: Bool
+        /// How the fix is crossed (ARINC 424-18 5.29): at min_ft (= max_ft), at or above min_ft, at or below max_ft, or between them; the FAA charts at or above underlined, at or below overlined.
+        var altitude: EngineContract.ApproachFixTagAltitude?
+        /// At the final approach fix of an ILS, or of an RNAV approach with LPV or LNAV/VNAV minimums.
+        var vertical: EngineContract.ApproachFixTagVertical?
+        /// At a missed approach point that is the runway: its threshold elevation, threshold crossing height and touchdown zone elevation. No DA or MDA: those are the plate's alone.
+        var runway: EngineContract.ApproachFixTagRunway?
+    }
+
+    struct ApproachFixTagAltitude: Codable, Equatable, Sendable {
+        var sense: String
+        var minFt: Double?
+        var maxFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case sense
+            case minFt = "min_ft"
+            case maxFt = "max_ft"
+        }
+    }
+
+    struct ApproachFixTagRunway: Codable, Equatable, Sendable {
+        var thresholdFt: Double
+        var tchFt: Double
+        /// Whole feet, as the plate prints it.
+        var tdzeFt: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case thresholdFt = "threshold_ft"
+            case tchFt = "tch_ft"
+            case tdzeFt = "tdze_ft"
+        }
+    }
+
+    struct ApproachFixTagsAnswer: Codable, Equatable, Sendable {
+        var tags: [EngineContract.ApproachFixTag]
+        /// The final approach segment, from the FAF to the MAP, for the map to mark.
+        var final: EngineContract.ApproachFixTagsAnswerFinal?
+    }
+
+    struct ApproachFixTagsAnswerFinal: Codable, Equatable, Sendable {
+        var from: String
+        var to: String
+        var points: [[JSONValue]]
+    }
+
+    struct ApproachFixTagsInput: Codable, Equatable, Sendable {
+        var drawing: EngineContract.ProcedureDrawing
+    }
+
+    struct ApproachFixTagVertical: Codable, Equatable, Sendable {
+        /// An ILS's electronic glide slope ("GS") or an RNAV approach's glidepath ("GP").
+        var kind: String
+        /// Its altitude at the FAF, ft MSL.
+        var ft: Double
+        var deg: Double?
+        /// "cifp" the CIFP's own (ARINC 424-18 5.29 "G"/"H"); "computed" from the angle, threshold and TCH by FAA Order 8260.3G formula 2-6-4.
+        var source: String
     }
 
     struct ApproachGuidanceInput: Codable, Equatable, Sendable {
@@ -7837,6 +7943,7 @@ enum EngineContract {
         var fixes: [EngineContract.ProcedureDrawingFixesItem]?
         var missedLegs: [EngineContract.ApproachMissedLeg]?
         var runwayPath: EngineContract.ApproachRunwayPath?
+        var approach: EngineContract.ApproachFacts?
 
         enum CodingKeys: String, CodingKey {
             case airport
@@ -7852,6 +7959,7 @@ enum EngineContract {
             case fixes
             case missedLegs = "missed_legs"
             case runwayPath = "runway_path"
+            case approach
         }
     }
 

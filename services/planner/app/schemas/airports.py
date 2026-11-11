@@ -5,6 +5,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from .common import Frequency, Metar, Runway, TrafficPattern
+from .plates import ApproachFacts
 
 
 class ForecastWind(BaseModel):
@@ -275,25 +276,9 @@ class ProcedureDrawing(BaseModel):
     #: (the approach debrief); None where the missed approach point is not
     #: a runway's.
     runway_path: ProcedureRunwayPath | None = None
-
-
-class PlateOverlay(BaseModel):
-    """An approach's plate's plan view placed on the map (wingtip.plates): the
-    FAA's plate of `name` in d-TPP cycle `cycle`, its picture at
-    /api/approach-plate/{cycle}/{ident}/{procedure}.png, black on clear,
-    north up between these latitudes and longitudes, as the plate's own
-    georeference places it; `fixes` the approach's fixes inside it;
-    `circling` whether the plate publishes circling minimums, so a pilot
-    flying the approach may circle to land on another runway."""
-
-    cycle: str
-    name: str
-    south: float
-    west: float
-    north: float
-    east: float
-    fixes: list[str]
-    circling: bool
+    #: An approach's own figures beside its legs, for the tags its fixes
+    #: carry (the engine's approach_fix_tags); None for another procedure.
+    approach: ApproachFacts | None = None
 
 
 class ChartPage(BaseModel):

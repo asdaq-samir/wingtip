@@ -64,6 +64,7 @@ fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit) {
         // A field's and a leg's cards are their own (SheetPage.of).
         is MapPick.Airport -> pick.ident
         is MapPick.RouteLeg -> stringResource(R.string.route_leg)
+        is MapPick.Plate -> pick.ident
     }
     val actions = rememberRouteActions(plan)
     // An action that changes the route closes the card, so the route is
@@ -99,7 +100,7 @@ fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit) {
                         HereCard(pick.lat, pick.lon)
                         SpecialUseRows(pick.lat, pick.lon)
                     }
-                    is MapPick.Airport, is MapPick.RouteLeg -> {}
+                    is MapPick.Airport, is MapPick.RouteLeg, is MapPick.Plate -> {}
                 }
             }
         }

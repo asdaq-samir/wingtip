@@ -6193,7 +6193,9 @@ data class Leg (
  * north up between these latitudes and longitudes, as the plate's own
  * georeference places it; `fixes` the approach's fixes inside it;
  * `circling` whether the plate publishes circling minimums, so a pilot
- * flying the approach may circle to land on another runway.
+ * flying the approach may circle to land on another runway; `page` the
+ * whole page placed (PlatePage), None where its page is turned in the
+ * PDF and so not placed.
  */
 @Serializable
 data class PlateOverlay (
@@ -6203,8 +6205,47 @@ data class PlateOverlay (
     val fixes: List<String>,
     val name: String,
     val north: Double,
+    val page: PlatePage? = null,
     val south: Double,
     val west: Double
+)
+
+/**
+ * An approach plate's whole page placed on the map (wingtip.plate_page):
+ * its picture at /api/approach-plate-page/{cycle}/{ident}/{procedure}.png,
+ * greyscale on white, `width` by `height` pixels, drawn between its four
+ * corners on the ground, which put its plan view where the plate's own
+ * georeference does; the rest of the page goes round it at the same scale
+ * and turn, as ForeFlight lays a plate on its chart. The page may turn a
+ * little from north up (the plate's Lambert projection's meridians lean),
+ * so it is drawn between the four corners, not in a box.
+ */
+@Serializable
+data class PlatePage (
+    @SerialName("bottom_left")
+    val bottomLeft: PlateCorner,
+
+    @SerialName("bottom_right")
+    val bottomRight: PlateCorner,
+
+    val height: Int,
+
+    @SerialName("top_left")
+    val topLeft: PlateCorner,
+
+    @SerialName("top_right")
+    val topRight: PlateCorner,
+
+    val width: Int
+)
+
+/**
+ * A corner of a plate's page on the ground.
+ */
+@Serializable
+data class PlateCorner (
+    val lat: Double,
+    val lon: Double
 )
 
 /**
@@ -6214,6 +6255,7 @@ data class PlateOverlay (
 @Serializable
 data class ProcedureDrawing (
     val airport: String,
+    val approach: ApproachFacts? = null,
     val cycle: String,
 
     @SerialName("final_course_deg")
@@ -6239,6 +6281,56 @@ data class ProcedureDrawing (
 
     val stale: Boolean? = null,
     val transition: String? = null
+)
+
+/**
+ * What the CIFP says of an approach besides its legs
+ * (wingtip.approach_facts): its runway, the altitudes coded beside its
+ * fixes' limits, and the levels of service it authorises (ARINC 424-19
+ * 5.275, 5.276: "LPV", "LNAV/VNAV", "LNAV", ...). No decision altitude or
+ * MDA: those are the plate's minimums alone.
+ */
+@Serializable
+data class ApproachFacts (
+    val coded: List<ApproachCoded>? = null,
+    val levels: List<String>? = null,
+    val runway: ApproachRunway? = null
+)
+
+/**
+ * An altitude a final codes beside a fix's limits (ARINC 424-18 5.29,
+ * its second altitude): `code` "G" or "H" the glide slope's at the final
+ * approach fix, "I" or "J" the glide slope's intercept at the final
+ * approach course fix, "V" the vertical path's at a step-down fix.
+ */
+@Serializable
+data class ApproachCoded (
+    val code: String,
+    val fix: String,
+    val ft: Int
+)
+
+/**
+ * The approach's runway as the CIFP's runway record gives it: its
+ * threshold (`ident` "RW36"), the threshold's elevation (ARINC 424-18
+ * 5.68) and the threshold crossing height (5.67), ft; and its touchdown
+ * zone elevation, ft MSL to a tenth, from NASR (APT_RWY_END's TDZ_ELEV),
+ * None where NASR has none.
+ */
+@Serializable
+data class ApproachRunway (
+    val ident: String,
+    val lat: Double,
+    val lon: Double,
+
+    @SerialName("tch_ft")
+    val tchFt: Int,
+
+    @SerialName("tdze_ft")
+    val tdzeFt: Double? = null,
+
+    @SerialName("threshold_ft")
+    val thresholdFt: Int
 )
 
 /**

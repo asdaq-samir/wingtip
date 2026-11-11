@@ -1,0 +1,149 @@
+{
+  "title": "ApproachFixTag",
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "roles": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "\"IAF\", \"IF\", \"FACF\", \"FAF\", \"MAP\", \"hold\"."
+    },
+    "missed": {
+      "type": "boolean",
+      "description": "On the missed approach alone."
+    },
+    "altitude": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "sense": {
+              "enum": [
+                "at",
+                "at_or_above",
+                "at_or_below",
+                "between"
+              ]
+            },
+            "min_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "max_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "sense",
+            "min_ft",
+            "max_ft"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "How the fix is crossed (ARINC 424-18 5.29): at min_ft (= max_ft), at or above min_ft, at or below max_ft, or between them; the FAA charts at or above underlined, at or below overlined."
+    },
+    "vertical": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "enum": [
+                "glideslope",
+                "glidepath"
+              ],
+              "description": "An ILS's electronic glide slope (\"GS\") or an RNAV approach's glidepath (\"GP\")."
+            },
+            "ft": {
+              "type": "number",
+              "description": "Its altitude at the FAF, ft MSL."
+            },
+            "deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "source": {
+              "enum": [
+                "cifp",
+                "computed"
+              ],
+              "description": "\"cifp\" the CIFP's own (ARINC 424-18 5.29 \"G\"/\"H\"); \"computed\" from the angle, threshold and TCH by FAA Order 8260.3G formula 2-6-4."
+            }
+          },
+          "required": [
+            "kind",
+            "ft",
+            "deg",
+            "source"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "At the final approach fix of an ILS, or of an RNAV approach with LPV or LNAV/VNAV minimums."
+    },
+    "runway": {
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "threshold_ft": {
+              "type": "number"
+            },
+            "tch_ft": {
+              "type": "number"
+            },
+            "tdze_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Whole feet, as the plate prints it."
+            }
+          },
+          "required": [
+            "threshold_ft",
+            "tch_ft",
+            "tdze_ft"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "At a missed approach point that is the runway: its threshold elevation, threshold crossing height and touchdown zone elevation. No DA or MDA: those are the plate's alone."
+    }
+  },
+  "required": [
+    "ident",
+    "lat",
+    "lon",
+    "roles",
+    "missed",
+    "altitude",
+    "vertical",
+    "runway"
+  ],
+  "description": "One fix's tag on the map with its approach's plate."
+}

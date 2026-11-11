@@ -63,6 +63,7 @@ import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapRest
 import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.MapWeather
+import app.wingtipmaps.android.map.PlatesShown
 import app.wingtipmaps.android.map.RouteWorse
 import app.wingtipmaps.android.map.StationLayer
 import app.wingtipmaps.android.map.StationMarks
@@ -71,6 +72,9 @@ import app.wingtipmaps.android.map.WeatherAge
 import app.wingtipmaps.android.map.WeatherAgeChip
 import app.wingtipmaps.android.map.WeatherLoopBar
 import app.wingtipmaps.android.notify.LiveFlight
+import app.wingtipmaps.android.plates.PlateLookStore
+import app.wingtipmaps.android.plates.PlateTagsModel
+import app.wingtipmaps.android.plates.PlatesOnMap
 import app.wingtipmaps.android.receiver.Receiver
 import app.wingtipmaps.android.receiver.ReceiverChip
 import app.wingtipmaps.android.route.RouteLegModel
@@ -227,6 +231,14 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val emergency by viewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
     // The dry run's airplane, drawn as own ship while a run is open (DryRun).
     val dryRun by viewModel<DryRun>().state.collectAsStateWithLifecycle()
+    // The approach plates on the chart, drawn as their card sets them, and
+    // their fixes' tags, each approach's asked of the engine once.
+    val plateState by PlatesOnMap.shared.state.collectAsStateWithLifecycle()
+    val plateLook by remember { PlateLookStore.of(context) }.look.collectAsStateWithLifecycle()
+    val plateTags by PlateTagsModel.shared.tags.collectAsStateWithLifecycle()
+    val drawnPlates = remember(plateState, plateLook) { plateState.drawn(plateLook) }
+    LaunchedEffect(drawnPlates) { PlateTagsModel.shared.want(drawnPlates.map { it.pick }) }
+    val plates = remember(drawnPlates, plateLook, plateTags) { PlatesShown(drawnPlates, plateLook, PlateTagsModel.shared.drawing(drawnPlates, plateLook)) }
 
     val mapSaid = if (fieldsInView.isEmpty()) stringResource(R.string.said_map) else pluralStringResource(R.plurals.said_map_fields, fieldsInView.size, fieldsInView.size)
     val fieldActions = fieldsInView.map { pin ->
@@ -263,6 +275,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             glide = if (ownShip.on && GlideRing.shown(ringKept == true, emergencyFrom != null)) inFlight.glide?.ring.orEmpty() else emptyList(),
             emergency = if (emergencyFrom != null && ownShip.on) EmergencyLine.of(emergency) else null,
             selectedField = openField,
+            plates = plates,
             follow = ownShip.following,
             onDragged = { ownShip.following = false },
             onRevealed = { revealed = true },
