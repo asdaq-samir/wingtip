@@ -262,19 +262,21 @@ rating: Everyone / PEGI 3 / USK 0.
 - Ads: none.
 - News app: no. Government app: no (it reads FAA and NOAA data, and says
   so; it is not the FAA's).
-- Account deletion URL (Play requires one for apps with accounts): the
-  Android app has no Delete Account of its own yet (only iOS and the web
-  do: `apps/ios/Wingtip/Views/AccountViews.swift`, the web's Setup); give
-  `https://wingtipmaps.app/support` until it has, and say there that the
-  web app's Setup deletes the account. Adding the button to Android's
-  Setup is the better answer before the first release.
+- Account deletion URL (Play requires one for apps with accounts, where
+  a user can ask "without reinstalling the app"):
+  `https://wingtipmaps.app/delete-account` (`DeleteAccountController`):
+  the address, an emailed link, Delete Account, deleting what Setup's
+  Delete Account does. The app has its own too (Setup, Delete Account,
+  `account/AccountActions.kt`), with Export My Data beside it, and the
+  support page names both.
 
 ## Platform differences found
 
 | | iOS | Android | Web |
 |---|---|---|---|
 | Sign-in | Apple, emailed link | emailed link | Apple, Google, emailed link |
-| Delete account in the app | yes | no (see above) | yes |
+| Delete account in the app | yes | yes | yes |
+| Delete account without the app | `/delete-account` | `/delete-account` | `/delete-account` |
 | Lock Screen / widgets | Live Activity, widgets | none | n/a |
 | Watch | yes | no | n/a |
 | Pilot's view / 3D terrain | no (`isPitchEnabled = false`) | no | yes (`features/plan/map/terrain`) |
