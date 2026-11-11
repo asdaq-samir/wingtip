@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.OwnAirplanes
 import app.wingtipmaps.android.airplane.OwnRecord
+import app.wingtipmaps.android.altitude.PlanAltitudes
 import app.wingtipmaps.android.api.Course
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogMessage
@@ -231,10 +232,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 val course = Planner.course(asked.dep, asked.dest, asked.stops)
                 _state.update { it.copy(course = course) }
                 val fresh = mutableListOf<Leg>()
-                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart).collect { message ->
+                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart, PlanAltitudes.query(listOf(asked.dep) + asked.stops + asked.dest)).collect { message ->
                     when (message) {
                         is NavLogMessage.Stage -> _state.update { it.copy(stage = message.detail) }
-                        is NavLogMessage.Altitude -> {}
+                        is NavLogMessage.Altitude -> PlanAltitudes.heard(message.line)
                         is NavLogMessage.OneLeg -> {
                             fresh += message.leg
                             // Each leg as it comes, once the first is in: the
@@ -384,8 +385,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
          *  in epoch milliseconds; null where there is none or it is not one. */
         fun departMs(iso: String?): Long? =
             iso?.let { runCatching { java.time.OffsetDateTime.parse(it).toInstant().toEpochMilli() }.getOrNull() }
-        /** A hold's length where the pilot sets none: two turns, as the
-         *  web's and the iPhone's hold sheets begin. */
+        /** A hold's length where the pilot sets none: two turns, as the web's and iPhone's begin. */
         private const val HOLD_TURNS = 2.0
 
         /** The airplane's position as the planner reads a place for a

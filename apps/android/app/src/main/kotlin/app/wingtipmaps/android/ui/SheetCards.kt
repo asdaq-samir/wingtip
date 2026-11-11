@@ -17,6 +17,7 @@ import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.about.AboutScreen
 import app.wingtipmaps.android.aircraft.YourAirplanesPage
 import app.wingtipmaps.android.airplane.AirplaneCard
+import app.wingtipmaps.android.altitude.ProfileCard
 import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.briefing.PassengerScreen
 import app.wingtipmaps.android.checklist.ChecklistKind
@@ -90,6 +91,7 @@ private fun Card(
             ClearancePage(plan, fix, exit, onEntered = showPlan)
         }
         SheetPage.YourAirplanes -> YourAirplanesPage(exit)
+        SheetPage.Profile -> ProfileCard(plan, exit)
         is SheetPage.Checklist -> {
             val kind = ChecklistKind.entries.firstOrNull { it.name == page.kind } ?: ChecklistKind.NORMAL
             Page(stringResource(R.string.checklists_of, page.airplane.uppercase()), exit) { ChecklistScreen(airplane = page.airplane, kind = kind) }

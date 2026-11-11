@@ -211,7 +211,7 @@ airport weather marks hold on all three apps: [rules.md](rules.md).
   | `direct-to` (Direct To / Fly Here taken) | `CONFIRM` | `Confirm` | keep |
   | `warning` (a rule warns) | `REJECT` | `Reject` | keep; a warning never blocks (decision 0008) |
   | `detent` (the sheet settles a size) | `CONTEXT_CLICK` | none: the stock sheet has no haptic of its own, and the owner had stock behaviour win (2026-11-09) | not used on Android |
-  | `altitude` (a wheel's step) | `SEGMENT_FREQUENT_TICK` (API 34+), `CLOCK_TICK` below | the same | the owner's pick, 2026-11-09 (`ui/AltitudeRow`) |
+  | `altitude` (a wheel's step) | `SEGMENT_FREQUENT_TICK` (API 34+), `CLOCK_TICK` below | the same | the owner's pick, 2026-11-09 (`altitude/AltitudeSlider`, `altitude/AltitudeAdvisor`) |
   | a switch | none | `ToggleOn` / `ToggleOff` | the stock `Switch` |
 
 - No haptics for scrolling, loading or arriving data.
@@ -540,9 +540,28 @@ placement wins, and the difference is noted.
        route-box rule say. Routes and Brief are `FilledTonalButton`s,
        and ••• is an `IconButton` opening a `DropdownMenu` of grouped
        items (`DropdownMenuGroup`) with share, print, nav log and ✕.
-  3. The altitude row: `[altitude | profile]`, with the wheel of legal
-     altitudes. The legal altitudes are the engine's answer, and the
-     cruise is written FL-045 (0009).
+  3. The altitude (the owner's ForeFlight-style spec, 2026-11-10;
+     `altitude/`): a **Profile** `ListItem` that opens the Profile card,
+     then the **Altitude Advisor**, one `ListItem` per altitude with its
+     time, fuel and head or tail wind, Fastest and Most Economical
+     marked, the one flown on a `RadioButton`, a row outside the legal
+     altitudes kept with its warning (warn, never limit), and All
+     Altitudes for the wheel's every row. The rows are the engine's
+     `altitude_advisor`; the cruise is written FL-045 (0009). The
+     Profile card (`altitude/ProfileCard`) draws the route from the side
+     with Compose's `Canvas` -- the ground, Class B, C and D, the plan's
+     line from `plan_profile` -- beside Material's stock `VerticalSlider`
+     (1.5.0-rc01) through the legal altitudes. Scrubbing previews the
+     clearance (`profile_clearance`: red within 100 ft, amber within
+     1,000 ft, ForeFlight's display defaults) and says it in words, which
+     TalkBack reads as the slider's state; **Set** flies it, **Auto** (in
+     flight) brings the preview to the airplane's altitude. A waypoint
+     tapped (48 dp targets at the chart's foot) opens the app's
+     `ModalBottomSheet` (`altitude/LegAltitudeSheet`) with Start At or
+     Cross At (`ChoiceGroup`), a stock `Slider` and the engine's
+     `altitude_change` line; Cross At goes to the planner as `altitudes`,
+     Start At as `altitude_starts`. The planner's side view has no obstacles
+     yet, so none are drawn.
   4. Route options (the Routes button): cards in a
      `HorizontalMultiBrowseCarousel`, each a route with the engine's
      figures. On the map, the chosen route is in the course's magenta
@@ -566,7 +585,7 @@ placement wins, and the difference is noted.
   row lifts by elevation and settles with the standard scheme.
 - **Haptics**:
   - `GestureThresholdActivate` when a long press picks a row up
-  - `SegmentFrequentTick` on the altitude wheel's steps
+  - `SegmentFrequentTick` on the altitude slider's and the Advisor's steps
   - `Confirm` when the route changes from a card
 - **Warn, never limit**: an altitude over the ceiling, into a
   restricted area or above oxygen altitude is accepted. A `Reject`
@@ -1114,7 +1133,7 @@ each on a current phone, or a Google page, before matching it.
 
 The owner settled the four recommendations that were left for him on
 2026-11-09: the sheet is Material's stock sheet with its springs (§1.5),
-the altitude menu ticks with `SEGMENT_FREQUENT_TICK` and the sheet has
+the altitude's steps tick with `SEGMENT_FREQUENT_TICK` and the sheet has
 no haptic of its own (§1.6), wide windows get the floating route
 toolbar (§3.3), and a half-folded phone shows the map above the fold
 (§3.17).
@@ -1166,9 +1185,10 @@ Kept, each still a thin wrapper over stock parts:
   opt-in kept to that one file, TalkBack's "Loading", and held still
   under Remove animations (the stock one still steps through its shapes
   when the animator scale is 0).
-- The altitude: the stock exposed dropdown menu (`ui/AltitudeRow`),
-  stepping through the engine's legal altitudes. No profile chart is
-  drawn on Android.
+- The altitude: Material's `VerticalSlider` and `Slider`, `ListItem`s
+  for the Altitude Advisor and the app's `ModalBottomSheet` for a
+  waypoint's altitude (`altitude/`). The profile itself is drawn with
+  `Canvas` (below), as no stock chart exists.
 
 Left hand-built, with no stock equivalent:
 
@@ -1177,6 +1197,9 @@ Left hand-built, with no stock equivalent:
   airport diagram, and the course's magenta ribbon of the strip layout
   (`strip/StripRibbon`'s `RibbonLine`, `strip/StripList`'s timeline).
   These are chart graphics, not controls.
+- The Profile's side view (`altitude/ProfileChart`): Compose's `Canvas`
+  over the planner's ground and airspace and the engine's line and
+  bands. Material has no chart component.
 - The forecast run's legs (`dryrun/ForecastStrip`): segments as wide as
   each leg's time, in its flight category's colour. A proportional
   timeline is a chart; Material has no component for it.

@@ -80,6 +80,10 @@ sealed interface SheetPage {
     @Serializable
     data object Clearance : SheetPage
 
+    /** The route from the side, its altitude slider and each waypoint's altitude. */
+    @Serializable
+    data object Profile : SheetPage
+
     @Serializable
     data object YourAirplanes : SheetPage
 
