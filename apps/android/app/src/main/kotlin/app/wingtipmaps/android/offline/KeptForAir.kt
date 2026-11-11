@@ -11,7 +11,8 @@ import java.io.File
  * The last good answer of each thing a flight needs in the air, kept on
  * the phone with when the network gave it: the Brief's Go / No-Go, the
  * route's airport cards (their METAR and TAF, frequencies and runways)
- * and diagrams, the ranked NOTAMs and the weather loop's frames (the plan
+ * and diagrams, the ranked NOTAMs and each field's own, the route's side
+ * view and the weather loop's frames (the plan
  * and its nav log are KeptPlan's). A screen's model writes one as it
  * comes and reads it back when the network fails, said with its age
  * (KeptAgeLine); Keep for the Air fetches them all for the route at once
@@ -85,6 +86,15 @@ class KeptForAir(private val dir: File) {
         const val NOTAMS = "notams"
         const val PLAN = "plan"
         const val WEATHER_LOOP = "weather_loop"
+
+        /** The route's side view (/api/route-profile): the ground and the
+         *  obstacles under it, a cycle's data, so said with no age. Not one
+         *  of the engine's kinds: ready_to_fly does not count it. */
+        const val ROUTE_PROFILE = "route_profile"
+
+        /** The key a field's own NOTAMs are kept under, the one the airport
+         *  card reads (AirportModel) and Keep for the Air writes. */
+        fun fieldNotams(ident: String): String = "$ident|field"
 
         /** The planner's own coder's settings: a member not modelled is
          *  passed over, so an answer kept by an older build still reads. */

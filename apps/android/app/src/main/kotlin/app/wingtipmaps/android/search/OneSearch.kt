@@ -166,7 +166,8 @@ fun OneSearch(
             }
             textFieldState.clearText()
             val words = speech.hear()
-            if (!words.isNullOrBlank()) submit(words) else onProblem(nothingHeard)
+            // Nothing heard: why, where the recognizer said (RecognizerErrors).
+            if (!words.isNullOrBlank()) submit(words) else onProblem(speech.problem.value ?: nothingHeard)
         }
     }
     // The microphone asked for from the tap, as Android's guidance has it.

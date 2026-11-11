@@ -793,6 +793,13 @@ at 18 gusting 26"). The Map Settings card has Airport
 Weather (Off, Halo, Dot, Station; a `ChoiceGroup`) and three switches,
 all on, kept in DataStore (`AirportWeatherStore`).
 
+A mark whose METAR was heard longer ago than the engine's freshness for a
+METAR (`kept_age`'s "weather", AIM 7-1-28's hourly report) wears the
+chart's grey for a field not known in place of its category's colour, and
+a Material `Badge` at the top of the map, beside the receiver's, says
+"Airport weather: Fetched 1 h 12 min ago" in the caution colour
+(`map/WeatherAge`, the offline audit's gap 7).
+
 ### 3.8 The emergency assistant
 
 - **Follow**: no Google consumer app is a fair model. Use Material's
@@ -813,6 +820,11 @@ all on, kept in DataStore (`AirportWeatherStore`).
        call.
   - The bottom bar is a `FlexibleBottomAppBar` holding one
     full-width filled **Direct To** to the top field.
+- **With no planner** the fields come from the cycle packs on the phone
+  (`emergency/PhoneFields`), ranked by the same `best_fields`, with
+  "From this phone, without weather" under the title: no METAR, runway or
+  frequency is made up, and a field's height is the packs' terrain under
+  it, so the reach errs short. Nearest does the same.
 - **Primary action**: Direct To in the bottom bar, the same place every
   time.
 - **Type**: `headlineMediumEmphasized` for the top field. Nothing
@@ -974,7 +986,12 @@ all on, kept in DataStore (`AirportWeatherStore`).
   3. At the foot, one full-width filled button ("Continue", then "Start
      Planning"), with "Skip" as a `TextButton`.
   4. Location is asked for on the page that explains why, through the
-     system dialog.
+     system dialog; its line says that in flight the position is
+     followed with the screen off only after Start Flight. The
+     microphone's line names both its uses, the radio and questions
+     asked by voice.
+  5. Before the welcome, once, the planning aid's words in a stock
+     `AlertDialog` with I Understand (`about/PlanningAidNotice`).
 - **No airplane is picked by default** (0011). The last page offers
   "Add Your Airplane" as a tonal button.
 - **Primary action**: the button at the foot.
@@ -1105,6 +1122,31 @@ Ask is not on the screen list, but it sits under every brief.
   - https://developer.android.com/about/versions/16/behavior-changes-16
 
 ---
+
+### 3.18 Offline in the air, and flying with the screen off (2026-11-10)
+
+From the offline and store audits of 2026-11-10:
+
+- **Start Flight.** At flying speed the map asks "Start Flight?" in the
+  stock `AlertDialog` (`flight/StartFlightAsk`); only its yes starts the
+  location foreground service, which stops as the airplane slows below
+  flying speed. Not Now holds for that flight. Never started by itself
+  (Google Play's foreground-service rule; docs/store/foreground-services.md).
+- **A re-plan that fails** puts the plan shown before back whole, with
+  "Not changed: no connection." under the route (`plan/PlanShown`); the
+  page never shows a new route over old legs.
+- **Kept for the air** besides the cards, NOTAMs and Brief: each field's
+  own NOTAMs (the card's key), the route's side view, which also comes
+  back after a relaunch, and the loop's newest frame over the route
+  within 12 MB (`offline/KeptLoopTiles`).
+- **Ask's tools** read the kept copies and the packs' fields when the
+  planner cannot be reached (`ai/functions/WingtipActions`).
+- **The speech recognizer's errors** are said, not looped through in
+  silence (`voice/RecognizerErrors`).
+- **Every call** through the app's client ends after 10 s, a write after
+  60 s; streams and downloads use `Gateway.streaming`.
+- **Sign-out and Delete Account** forget everything the phone kept of the
+  pilot (`account/PhoneWipe`).
 
 ## 4. Not verified
 

@@ -30,15 +30,21 @@ object AirportWeatherMarks {
     private const val HALO = "h"
     private const val DOT = "d"
 
+    /** A mark whose METAR was heard longer ago than the engine's freshness
+     *  for a METAR (kept_age's "weather", the routine report's hour, AIM
+     *  7-1-28): the chart's grey for a field not known, in place of its
+     *  category's colour, so an old category is never read as now's. */
+    const val STALE = WingtipColors.Chart.FIELD_UNKNOWN_HEX
+
     /** Every pip a symbol can wear, for its pictures: none, and each
-     *  category's ring and dot. */
-    val PIPS: List<String> = listOf("") + CATEGORY_COLOURS.values.flatMap { listOf(HALO + it, DOT + it) }
+     *  category's ring and dot, and the stale grey's. */
+    val PIPS: List<String> = listOf("") + (CATEGORY_COLOURS.values + STALE).flatMap { listOf(HALO + it, DOT + it) }
 
     /** A field's pip by its METAR's category and the setting; none where
      *  the weather is off, it has no report, or a category the map has
      *  no colour for. */
-    fun pipOf(category: String?, mode: AirportWeatherMode): String {
-        val colour = category?.let { CATEGORY_COLOURS[it] } ?: return ""
+    fun pipOf(category: String?, mode: AirportWeatherMode, stale: Boolean = false): String {
+        val colour = category?.let { CATEGORY_COLOURS[it] }?.let { if (stale) STALE else it } ?: return ""
         return when (mode) {
             AirportWeatherMode.OFF -> ""
             AirportWeatherMode.HALO, AirportWeatherMode.STATION -> HALO + colour
@@ -46,9 +52,10 @@ object AirportWeatherMarks {
         }
     }
 
-    /** Each field's pip by ident, from each field's category by ident. */
-    fun pips(categories: Map<String, String>, mode: AirportWeatherMode): Map<String, String> =
-        if (mode == AirportWeatherMode.OFF) emptyMap() else categories.mapValues { pipOf(it.value, mode) }.filterValues { it.isNotEmpty() }
+    /** Each field's pip by ident, from each field's category by ident; a
+     *  field in `stale` greyed. */
+    fun pips(categories: Map<String, String>, mode: AirportWeatherMode, stale: Set<String> = emptySet()): Map<String, String> =
+        if (mode == AirportWeatherMode.OFF) emptyMap() else categories.mapValues { pipOf(it.value, mode, it.key in stale) }.filterValues { it.isNotEmpty() }
 
     /** A pip's colour, "#rrggbb"; null for none. */
     fun inkOf(pip: String): String? = pip.drop(1).takeIf { it.startsWith("#") }

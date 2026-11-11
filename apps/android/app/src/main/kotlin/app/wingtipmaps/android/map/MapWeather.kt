@@ -21,7 +21,7 @@ import kotlin.math.floor
  * the tile airports as each one's weather mark (AirportWeatherMarks). Asked as the map comes to rest
  * on a new box, and again every ten minutes, as a METAR's category can
  * change by the hour; what was heard is kept, so a pan back, or a pan
- * with no signal, keeps its pips.
+ * with no signal, keeps its pips, greyed once old (WeatherAge).
  */
 class MapWeather : ViewModel() {
     private val _categories = MutableStateFlow<Map<String, String>>(emptyMap())
@@ -32,6 +32,11 @@ class MapWeather : ViewModel() {
      *  categories are. */
     private val _fields = MutableStateFlow<Map<String, FieldWx>>(emptyMap())
     val fields: StateFlow<Map<String, FieldWx>> = _fields.asStateFlow()
+
+    /** When each field's weather was last heard (epoch ms), by ident, so a
+     *  mark kept from long ago is greyed and its age said (WeatherAge). */
+    private val _heardAtMs = MutableStateFlow<Map<String, Long>>(emptyMap())
+    val heardAtMs: StateFlow<Map<String, Long>> = _heardAtMs.asStateFlow()
 
     private var asked: Box? = null
     private var askedAtMs = 0L
@@ -74,6 +79,8 @@ class MapWeather : ViewModel() {
                 val fields = Planner.reportingInView(next.south, next.west, next.north, next.east)
                 _categories.value = merged(_categories.value, fields.associate { it.ident to it.flightCategory.orEmpty() })
                 _fields.value = merged(_fields.value, fields.associate { it.ident to StationLines.fieldOf(it) }) { true }
+                val heard = System.currentTimeMillis()
+                _heardAtMs.value = merged(_heardAtMs.value, fields.associate { it.ident to heard }) { true }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

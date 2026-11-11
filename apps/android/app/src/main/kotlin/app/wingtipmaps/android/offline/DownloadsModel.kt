@@ -102,7 +102,7 @@ class DownloadsModel(app: Application) : AndroidViewModel(app) {
                 CyclePacks.of(getApplication()).keep(entry.packs.toSet())
                 _catalog.value?.overlay?.let { overlay ->
                     val url = (Config.gateway + Config.plannerPath("/api/overlay-tiles/${overlay.name}.pmtiles")).toHttpUrl()
-                    runCatching { Gateway.overlayStore.download(Gateway.client, url, overlay.name, overlay.bytes) }
+                    runCatching { Gateway.overlayStore.download(Gateway.streaming, url, overlay.name, overlay.bytes) }
                 }
                 _problem.value = null
             } catch (e: Exception) {

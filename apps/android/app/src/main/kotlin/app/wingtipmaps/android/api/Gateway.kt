@@ -3,10 +3,13 @@ package app.wingtipmaps.android.api
 import android.annotation.SuppressLint
 import android.content.Context
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.api.generated.gateway.LinkAccount
 import app.wingtipmaps.android.api.generated.gateway.MagicLinkRequest
 import app.wingtipmaps.android.map.CloseMap
 import app.wingtipmaps.android.map.OverlayCache
 import app.wingtipmaps.android.map.OverlayStore
+import app.wingtipmaps.android.offline.KeptLoopTiles
+import app.wingtipmaps.android.offline.LoopTileFallback
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -25,6 +28,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -60,12 +64,18 @@ object Gateway {
      *  may empty before a flight. */
     val overlayStore: OverlayStore by lazy { OverlayStore(File(app.filesDir, "overlay-tiles")) }
 
+    /** The weather loop's newest frame kept over the route (Keep for the
+     *  Air), beside the other answers kept for the air. */
+    val loopTiles: KeptLoopTiles by lazy { KeptLoopTiles(File(app.filesDir, "kept-air/loop-tiles")) }
+
     val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .cookieJar(cookies)
             // The archive's byte ranges answered from the phone where kept,
             // and kept as they come: OkHttp's cache keeps no 206.
             .addInterceptor(OverlayCache(overlayStore))
+            // The loop's kept tiles answered from the phone with no network.
+            .addInterceptor(LoopTileFallback(loopTiles))
             // The app named to Google's Map Tiles API (CloseMap).
             .addInterceptor(CloseMap.signer(app))
             // A cache of the answers the gateway and the planner say may be
@@ -78,8 +88,25 @@ object Gateway {
             // the protocol's own policy, so an answer marked no-store is
             // never kept.
             .cache(Cache(File(app.cacheDir, "answers"), 256L shl 20))
+            // A whole call's limit (the offline audit's gap 8): on the one
+            // bar of a weak link in the air a read fails in seconds into
+            // what is kept, not OkHttp's no limit at all. A write gets
+            // WRITE_TIMEOUT_S (`call`); a stream or a download `streaming`.
+            .callTimeout(READ_TIMEOUT_S, TimeUnit.SECONDS)
             .build()
     }
+
+    /** The client for what takes as long as it takes -- the nav log's and
+     *  the assistant's streams, the packs', charts' and overlays' downloads,
+     *  the account's export -- with no whole-call limit; OkHttp's 10 s
+     *  between bytes still ends one on a dead link. The same pool, cache
+     *  and interceptors as `client`. */
+    val streaming: OkHttpClient by lazy { client.newBuilder().callTimeout(0, TimeUnit.SECONDS).build() }
+
+    /** The whole-call limits: a read, and a write, which may carry a
+     *  scanned page or a track. */
+    const val READ_TIMEOUT_S = 10L
+    const val WRITE_TIMEOUT_S = 60L
 
     /** The gateway's own words for a refusal (ErrorResponse), where it
      *  sent any: "Invalid request" with each field's, or the instructor's
@@ -110,7 +137,9 @@ object Gateway {
      *  Every gateway call goes through here, and is refused through `send`
      *  or `read` in the gateway's own words. */
     suspend fun call(method: String, path: String, json: String? = null, form: Map<String, String>? = null): Pair<String, Int> =
-        client.newCall(request(method, path, json, form)).await().use { response ->
+        client.newCall(request(method, path, json, form)).also { call ->
+            if (method != "GET") call.timeout().timeout(WRITE_TIMEOUT_S, TimeUnit.SECONDS)
+        }.await().use { response ->
             response.body.string() to response.code
         }
 
@@ -153,6 +182,16 @@ object Gateway {
     /** The link's one-time token, posted as the website's page posts it;
      *  the gateway answers with the session cookie and a redirect, which
      *  the client follows. */
+    /** Whose a sign-in link is, without spending it: the address masked
+     *  ("a•••@icloud.com"), or null where it is used, expired or unknown
+     *  (the gateway's 404); refused in its words otherwise (a 429). */
+    suspend fun magicLinkAccount(token: String): LinkAccount? {
+        val (body, status) = call("POST", "/api/auth/magic-link/account", form = mapOf("token" to token))
+        if (status == 404) return null
+        if (status != 200) throw Refusal(status, words(body))
+        return json.decodeFromString<LinkAccount>(body)
+    }
+
     suspend fun verifyMagicLink(token: String) {
         send("POST", "/api/auth/magic-link/verify", form = mapOf("token" to token), ok = 200..399)
     }

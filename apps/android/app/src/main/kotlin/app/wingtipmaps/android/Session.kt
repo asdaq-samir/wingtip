@@ -6,13 +6,12 @@ import android.net.Uri
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.account.PhoneWipe
 import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.deleteAccount
-import app.wingtipmaps.android.checklist.ChecklistStore
-import app.wingtipmaps.android.plan.KeptPlan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -104,7 +103,37 @@ class Session(app: Application) : AndroidViewModel(app) {
      *  screens' (Links, MainActivity). */
     fun open(uri: Uri) {
         val link = Links.parse(uri.toString()) as? Links.SignIn ?: return
-        _signInAsk.value = SignInAsk(link.token, asked.getString(ASKED, null), _pilot.value?.email)
+        _signInAsk.value = SignInAsk(link.token, asked.getString(ASKED, null), _pilot.value?.email, checking = true)
+        // Whose link it is, asked of the gateway without spending it; where
+        // it cannot be reached, the question names the address asked for.
+        viewModelScope.launch {
+            val checked = checkLink(link.token)
+            _signInAsk.value = _signInAsk.value?.takeIf { it.token == link.token }?.let(checked)
+        }
+    }
+
+    /** The gateway's word on a link, as the change it makes to the ask. */
+    private suspend fun checkLink(token: String): (SignInAsk) -> SignInAsk {
+        try {
+            val account = Gateway.magicLinkAccount(token)
+            return { a -> if (account == null) a.copy(checking = false, expired = true) else a.copy(checking = false, account = account.email) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Gateway.Refusal) {
+            val said = if (e.status == 429) "Too many sign-in links were checked from here. Try this one again later." else Problems.say("The sign-in link could not be checked", e)
+            return { a -> a.copy(checking = false, refused = said) }
+        } catch (e: Exception) {
+            Problems.say("The sign-in link could not be checked", e)
+            return { a -> a.copy(checking = false) }
+        }
+    }
+
+    /** An expired link's offer: a new one sent to the address this phone
+     *  asked for. */
+    fun askAgain() {
+        val address = _signInAsk.value?.address ?: return
+        _signInAsk.value = null
+        requestMagicLink(address)
     }
 
     /** The link not followed: nothing changes. */
@@ -118,13 +147,11 @@ class Session(app: Application) : AndroidViewModel(app) {
     fun signIn(context: Context) {
         val ask = _signInAsk.value ?: return
         _signInAsk.value = null
-        val checklists = ChecklistStore.of(context.applicationContext)
-        val plan = KeptPlan(context.applicationContext as Application)
+        val wipe = PhoneWipe.of(context)
         viewModelScope.launch {
             if (ask.current != null) {
                 runCatching { Gateway.signOut() }
-                forget(checklists)
-                plan.clear()
+                forget(wipe)
             }
             try {
                 Gateway.verifyMagicLink(ask.token)
@@ -139,19 +166,17 @@ class Session(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Signing out ends the session on the gateway and forgets what the
-     *  phone kept of the pilot's, their airplanes' checklists and their
-     *  plan kept for the next launch (the owner's pick: sign-out clears, as
-     *  the web app's useLogout does). The public aviation data kept for the
-     *  air -- the fields' cards, the NOTAMs, the weather (KeptForAir) -- is
-     *  not the pilot's, and stays. */
+    /** Signing out ends the session on the gateway and forgets everything
+     *  the phone kept of the pilot's (PhoneWipe: records, tracks, last
+     *  position, checklists, plan, cookies and the rest; the owner's pick:
+     *  sign-out clears, as the web app's useLogout does). The public
+     *  aviation data kept for the air -- the fields' cards, the NOTAMs, the
+     *  weather (KeptForAir) -- is not the pilot's, and stays. */
     fun signOut(context: Context) {
-        val checklists = ChecklistStore.of(context.applicationContext)
-        val plan = KeptPlan(context.applicationContext as Application)
+        val wipe = PhoneWipe.of(context)
         viewModelScope.launch {
             runCatching { Gateway.signOut() }
-            forget(checklists)
-            plan.clear()
+            forget(wipe)
             ClaudeGate.refresh(developer = false)
         }
     }
@@ -165,15 +190,13 @@ class Session(app: Application) : AndroidViewModel(app) {
      *  gateway refuses (nothing deleted), the pilot stays signed in and
      *  its words are the problem shown under the account. */
     fun deleteAccount(context: Context) {
-        val checklists = ChecklistStore.of(context.applicationContext)
-        val plan = KeptPlan(context.applicationContext as Application)
+        val wipe = PhoneWipe.of(context)
         viewModelScope.launch {
             _deleting.value = true
             try {
                 Gateway.deleteAccount()
                 _problem.value = null
-                forget(checklists)
-                plan.clear()
+                forget(wipe)
                 ClaudeGate.refresh(developer = false)
             } catch (e: CancellationException) {
                 throw e
@@ -189,9 +212,9 @@ class Session(app: Application) : AndroidViewModel(app) {
         const val ASKED = "asked"
     }
 
-    private fun forget(checklists: ChecklistStore) {
+    private suspend fun forget(wipe: PhoneWipe) {
         _pilot.value = null
         _linkSent.value = false
-        checklists.forgetAll()
+        wipe.run()
     }
 }

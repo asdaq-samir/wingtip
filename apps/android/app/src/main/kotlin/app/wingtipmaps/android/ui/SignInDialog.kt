@@ -26,7 +26,14 @@ fun SignInDialog(session: Session) {
         onDismissRequest = session::declineSignIn,
         title = { Text(stringResource(R.string.sign_in_link_title)) },
         text = { Text(shown.question()) },
-        confirmButton = { TextButton(onClick = { session.signIn(context) }) { Text(stringResource(R.string.sign_in_link_yes)) } },
+        confirmButton = {
+            when {
+                shown.canSignIn -> TextButton(onClick = { session.signIn(context) }) { Text(stringResource(R.string.sign_in_link_yes)) }
+                // Used or expired: a new link to the address asked for, where there is one.
+                shown.expired && shown.address != null -> TextButton(onClick = session::askAgain) { Text(stringResource(R.string.email_sign_in_link)) }
+                else -> TextButton(onClick = {}, enabled = false) { Text(stringResource(R.string.sign_in_link_yes)) }
+            }
+        },
         dismissButton = { TextButton(onClick = session::declineSignIn) { Text(stringResource(R.string.cancel)) } },
     )
 }

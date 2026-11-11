@@ -70,6 +70,12 @@ class MinimumsStore(private val prefs: SharedPreferences) {
         _minimums.value = _minimums.value.with(kind, value)
     }
 
+    /** The pilot's minimums gone: signed out, or the account deleted. */
+    fun forget() {
+        prefs.edit { clear() }
+        _minimums.value = Minimums()
+    }
+
     private fun read(): Minimums = Minimums.Kind.entries.fold(Minimums()) { m, kind ->
         m.with(kind, if (prefs.contains(kind.name)) prefs.getFloat(kind.name, 0f).toDouble() else null)
     }
