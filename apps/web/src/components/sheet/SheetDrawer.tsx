@@ -18,14 +18,16 @@ export const UNDER_INDICATOR =
 /**
  * What the sheet holds under a card, as Base UI's nested drawers demo has
  * its content: faded out while a nested drawer is open
- * (data-nested-drawer-open) and back while a finger drags it
- * (data-nested-drawer-swiping), on the demo's 300 ms and curve. Hidden
+ * (data-nested-drawer-open), on the demo's 300 ms and curve -- and kept
+ * out while a finger drags the card, where the demo brings it back (the
+ * owner, 2026-11-11: "When drag kosh down, that's when I see the second
+ * sheet"): the card is the one sheet in sight, as Apple Maps'. Hidden
  * too once faded, so it is out of a finger's, the keyboard's and a screen
  * reader's way: visibility holds visible to a transition's end and turns
  * visible at its start, so it never cuts the fade.
  */
 const GIVE_WAY =
-  "transition-[opacity,visibility] duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] motion-reduce:transition-none group-data-nested-drawer-open/sheet:invisible group-data-nested-drawer-open/sheet:opacity-0 group-data-nested-drawer-swiping/sheet:visible group-data-nested-drawer-swiping/sheet:opacity-100";
+  "transition-[opacity,visibility] duration-300 ease-[cubic-bezier(0.45,1.005,0,1.005)] motion-reduce:transition-none group-data-nested-drawer-open/sheet:invisible group-data-nested-drawer-open/sheet:opacity-0";
 
 /**
  * The phone's sheet itself, Base UI's stock Drawer (MapPanel's, the owner
@@ -145,9 +147,8 @@ export function SheetDrawer({
                 // in for its search, so this one's ground, edge and shadow
                 // fade away; the card, drawn inside it, stays (the owner's
                 // iPhone, 2026-11-11: an empty grey sheet over a card at its
-                // pill). Back while a finger drags the card
-                // (data-nested-drawer-swiping), as in Base UI's nested drawers.
-                "data-nested-drawer-open:not-data-nested-drawer-swiping:bg-transparent data-nested-drawer-open:not-data-nested-drawer-swiping:shadow-none data-nested-drawer-open:not-data-nested-drawer-swiping:ring-0 data-nested-drawer-open:not-data-nested-drawer-swiping:backdrop-blur-none",
+                // pill), and while a finger drags the card too.
+                "data-nested-drawer-open:bg-transparent data-nested-drawer-open:shadow-none data-nested-drawer-open:ring-0 data-nested-drawer-open:backdrop-blur-none",
               )}
             >
               {/* Over its top edge, the parts that ride it (OnSheetTop):
