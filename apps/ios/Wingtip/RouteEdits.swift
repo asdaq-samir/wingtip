@@ -87,6 +87,9 @@ struct RouteExtras: Equatable, Sendable {
     /// Feet MSL by point: a waypoint's is flown to it, an airport's is
     /// what a flight landing there comes down to.
     var altitudes: [String: Int] = [:]
+    /// The points whose altitude change begins there (Start At); the rest
+    /// are done by the point (Cross At), as a waypoint's altitude always was.
+    var starts: Set<String> = []
     var holds: [Hold] = []
     /// Feet MSL ATC gave to cross a procedure's fix at.
     var crossings: [String: Int] = [:]
@@ -109,6 +112,8 @@ struct RouteExtras: Equatable, Sendable {
         var query: [String: String?] = [:]
         if let altitudes = Self.pairs(altitudes) { query["altitudes"] = altitudes }
         if let crossings = Self.pairs(crossings) { query["crossings"] = crossings }
+        let started = starts.filter { altitudes[$0] != nil }.sorted()
+        if !started.isEmpty { query["altitude_starts"] = started.joined(separator: ",") }
         if !holds.isEmpty { query["holds"] = try holds.map { try $0.text() }.joined(separator: ",") }
         if !procedureDirect.isEmpty, !procedures.isEmpty {
             query["procedures"] = try ProcedurePick.text(procedures, direct: procedureDirect)
@@ -209,9 +214,12 @@ extension Plan {
 
     func hold(at fix: String) -> Hold? { extras.holds.first { $0.fix.uppercased() == fix.uppercased() } }
 
-    /// A point's own altitude, or (nil) the plan's again.
-    func setAltitude(at ident: String, feet: Int?) {
-        extras.altitudes[ident.uppercased()] = feet
+    /// A point's own altitude, or (nil) the plan's again, its climb or
+    /// descent begun at the point (Start At) or done by it (Cross At).
+    func setAltitude(at ident: String, feet: Int?, mode: LegAltitudeMode = .crossAt) {
+        let key = ident.uppercased()
+        extras.altitudes[key] = feet
+        if feet != nil, mode == .startAt { extras.starts.insert(key) } else { extras.starts.remove(key) }
         plan()
     }
 
