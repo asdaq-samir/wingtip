@@ -1,4 +1,4 @@
-import { useEffect, useState, type ComponentProps, type TouchEvent as ReactTouchEvent } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type HTMLAttributes, type TouchEvent as ReactTouchEvent } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 
 /** Set on a touch the viewport's own handlers have been given. */
@@ -45,11 +45,25 @@ function synthetic(event: TouchEvent, viewport: HTMLElement) {
  * handlers did not see is given to them once React is done with it, with
  * its own target, so the Drawer arbitrates it with the card's scroller as
  * it does any other; its moves the Drawer reads from the page itself.
- * The handlers are read from the viewport's element as React keeps them
- * (its props), the Drawer's own merged with this one's.
+ * The handlers are the ones Base UI gives the viewport's element: its
+ * documented `render` function receives them, the Drawer's own merged
+ * with this one's, and draws the same <div> with them.
+ *
+ * An explicit forward, the third way the speed brief allowed (2026-11-10):
+ * Base UI 1.9's Drawer has no prop for touches from a React portal drawn
+ * into its viewport -- a swipe area (Drawer.SwipeArea) only opens a closed
+ * drawer, and data-base-ui-swipe-ignore only takes touches away -- and
+ * drawing the cards in the Drawer's own tree would cost them their callers'
+ * providers (the map's, a card's close). No Base UI issue for it was
+ * found (a web search, 2026-11-10); one is to be filed at
+ * github.com/mui/base-ui/issues, and this goes once the Drawer takes them. It reads nothing of React's own: it
+ * stood on the element's internal props key (__reactProps$…), which a
+ * React update could rename.
  */
 export function SheetViewport(props: ComponentProps<typeof Drawer.Viewport>) {
   const [viewport, setViewport] = useState<HTMLDivElement | null>(null);
+  // The touch handlers Base UI gave the viewport at its last render.
+  const given = useRef<HTMLAttributes<HTMLDivElement>>({});
   useEffect(() => {
     if (!viewport) return;
     const doc = viewport.ownerDocument;
@@ -58,10 +72,8 @@ export function SheetViewport(props: ComponentProps<typeof Drawer.Viewport>) {
       if (marks[SEEN]) return;
       const at = event.target;
       if (!(at instanceof Element) || !viewport.contains(at) || !at.closest("[data-sheet-cards]")) return;
-      const key = Object.keys(viewport).find((k) => k.startsWith("__reactProps$"));
-      const own = key ? (viewport as unknown as Record<string, Record<string, unknown>>)[key] : undefined;
-      const handler = own?.[HANDLERS[event.type as keyof typeof HANDLERS]];
-      if (typeof handler === "function") handler(synthetic(event, viewport));
+      const handler = given.current[HANDLERS[event.type as keyof typeof HANDLERS]] as ((event: unknown) => void) | undefined;
+      handler?.(synthetic(event, viewport));
     };
     const types = Object.keys(HANDLERS);
     for (const type of types) doc.addEventListener(type, hand as EventListener, { passive: true });
@@ -69,5 +81,17 @@ export function SheetViewport(props: ComponentProps<typeof Drawer.Viewport>) {
       for (const type of types) doc.removeEventListener(type, hand as EventListener);
     };
   }, [viewport]);
-  return <Drawer.Viewport {...props} ref={setViewport} onTouchStart={seen} onTouchEnd={seen} onTouchCancel={seen} />;
+  return (
+    <Drawer.Viewport
+      {...props}
+      ref={setViewport}
+      onTouchStart={seen}
+      onTouchEnd={seen}
+      onTouchCancel={seen}
+      render={(own) => {
+        given.current = own;
+        return <div {...own} />;
+      }}
+    />
+  );
 }
