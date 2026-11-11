@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeNavLog, grabberTo, navLogSheet, settle, settled, sideDrawer, slow, tapTheChart } from "./helpers";
+import { closeNavLog, frontSheet, grabberTo, navLogSheet, settle, settled, sideDrawer, slow, tapTheChart } from "./helpers";
 
 /**
  * The sheet keeps the size the pilot left it at, as Apple Maps' does (the
@@ -16,14 +16,16 @@ test.beforeEach(({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's sheet and its three sizes");
 });
 
-test("the nav log opened from the pill raises the sheet to half, and put away leaves it there", async ({ page }) => {
+test("the Nav Log, a card of its own, opens at half from the pill and leaves the sheet where it was", async ({ page }) => {
   await page.goto(`${ROUTE}&open=navlog`);
   await settle(page);
   await expect(navLogSheet(page)).toBeVisible({ timeout: slow(30_000) });
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+  // Its own drawer at half (the card rule's 2); the sheet under it still at its pill.
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
+  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
   await closeNavLog(page);
   await settled(sideDrawer(page));
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
 });
 
 test("the nav log opened all the way up stays all the way up, and so does the sheet once it is put away", async ({ page }) => {
@@ -35,6 +37,7 @@ test("the nav log opened all the way up stays all the way up, and so does the sh
     .click({ timeout: slow(60_000) });
   await page.getByTestId("route-navlog").click();
   await expect(navLogSheet(page)).toBeVisible();
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   await closeNavLog(page);
   await settled(sideDrawer(page));

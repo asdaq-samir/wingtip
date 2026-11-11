@@ -112,8 +112,9 @@ These hold on every screen below and win over any reference app.
   ends over the home indicator (its ground carried on under it), and the
   popup, kept clear of the status bar in CSS. `snapPoint` is set from the
   same constants by size and a drag maps back by identity. The pill is one
-  row, so on a phone the route's figures show from half (and are the pill
-  while flying); the map's room is read from the Drawer's own
+  row: on FPL the route's figures (and while flying), the route's row from
+  half up (SheetParts' `figuresPill`, 3.25 rem under the grabber's room);
+  on Search the search; the map's room is read from the Drawer's own
   `--drawer-snap-point-offset` (`useSheetCover`). The sheet is solid at
   every size (`GLASS_SHEET`, the look's `--sheet`), not glass; only the
   map's floating buttons are frosted (owner decision 2026-11-10
@@ -499,7 +500,12 @@ keeps its size and fades on `--motion-fade`. The page up
 is the planner's place (`usePanelView`'s `view`: the plan is FPL, the
 search and the traffic are Search); a swipe or a bar picks it as a
 place is picked, so what each kept open comes back with it. The pill is
-the page's first row; the route's figures sit at the foot on FPL alone.
+the page's one row (the route's figures on FPL); the route's figures sit
+at the foot on FPL alone. The Brief, the Nav Log, the Profile and the
+Stops are cards over FPL (`PlanPage`, `CardLayer`), the last three kept
+between their openings: built at the first, their drawers closed and
+skipped by `content-visibility` after (index.css's kept cards), as a tab
+put away is, so the Nav Log is not built again (0.6 s).
 
 ### 3. The flight plan and route editing
 

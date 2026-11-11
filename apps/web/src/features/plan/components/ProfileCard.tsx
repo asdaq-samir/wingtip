@@ -5,17 +5,17 @@ import { CardHead } from "../../../components/PanelCard";
 import { TEXT } from "../../../lib/text";
 
 /**
- * The route from the side, a card over FPL as the Brief and the nav log
- * are, opened from its button beside the nav log's, at the owner's ask
+ * The route from the side, a card of its own over FPL as the Brief and the
+ * Nav Log are (CardLayer, PlanPage), opened from its button beside the nav log's, at the owner's ask
  * ("profile view can move next to the navlog button and open like brief
  * and navlog opens instead of the swipe"): the side view (MiniProfile) the
- * card's height, its Dry run at its top right, the route's figures under
- * it at the sheet's foot. Its bar's Share where Back was, the route's
+ * card's height, its Dry run at its top right. Its bar's Share where Back was, the route's
  * Share menu, as the Brief's and the nav log's are, at the owner's ask
  * ("Profile needs the share instead of the back button like brief").
  */
 export default function ProfileCard({
   name,
+  sub,
   line,
   corner,
   cautions = [],
@@ -26,6 +26,9 @@ export default function ProfileCard({
    *  from and to, the airplane, the altitude and when -- the tab bar over
    *  it says "Profile" already (the owner's "titles appear twice"). */
   name: ReactNode;
+  /** Under its name at every size, the smallest too: the cruise and the
+   *  clearance's verdict (ProfileLine). */
+  sub?: ReactNode;
   line: ReactNode;
   /** At the head's top right: the flight rules, VFR or IFR, with no label
    *  of its own, at the owner's ask ("Vfr switch can be on the top right
@@ -54,7 +57,7 @@ export default function ProfileCard({
       className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] in-data-[panel=half]:max-h-[calc(100%-max(var(--sheet-offset,0px),-1*var(--sheet-offset,0px)))] print:hidden"
       data-testid="profile-card"
     >
-      <CardHead name={name} line={line} nameTestId="profile-name" onClose={onClose} onShare="profile" closeTestId="profile-close">
+      <CardHead name={name} sub={sub} line={line} nameTestId="profile-name" onClose={onClose} onShare="profile" closeTestId="profile-close">
         {corner}
       </CardHead>
       {cautions.length > 0 && (

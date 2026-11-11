@@ -10,20 +10,7 @@ import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
  *  dry run's while it plays, else a Direct to's strip and the flight's
  *  line, and in flight Done flying. */
 export default function FlightFoot({ vm }: { vm: PlanWorkspaceModel }) {
-  const {
-    depart,
-    directParam,
-    directToPoint,
-    doneFlying,
-    dryRunning,
-    estimate,
-    firstFuelStop,
-    flying,
-    navLogShown,
-    planned,
-    profileShown,
-    s,
-  } = vm;
+  const { depart, directParam, directToPoint, doneFlying, dryRunning, estimate, firstFuelStop, flying, planned, s } = vm;
   // In flight, the one way out of flying mode (useFlyingMode): a small
   // Done flying at the figures' foot, as the canvas has the line there;
   // the tabs come back on the ground by themselves.
@@ -41,10 +28,7 @@ export default function FlightFoot({ vm }: { vm: PlanWorkspaceModel }) {
     </div>
   );
   return (
-    // Its own 16 at the sides under the nav log's card, whose foot
-    // MapPanel leaves bare for a card's summary to set (cardInPill): the
-    // side view's figures sat 8 from the edge there (the iOS audit's P18).
-    <div className={cn("flex min-h-0 w-full flex-col", (navLogShown || profileShown) && "px-4")}>
+    <div className="flex min-h-0 w-full flex-col">
       {dryRunning ? (
         <Suspense fallback={null}>
           <DryRunFigures

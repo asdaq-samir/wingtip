@@ -23,6 +23,9 @@ function barRowPad(underGrabber: boolean) {
  *  keyboard's height, so the room less a thousand times it is the room or
  *  nothing. */
 const EDGE_ROOM = "max(0px, calc(8px - env(safe-area-inset-bottom) - var(--drawer-keyboard-inset, 0px) * 1000))";
+/** A bottom sheet's pill under its grabber's 1.5 rem room: the 4.75 rem
+ *  snap point's rest (sheet/insets), where the figures sit at the pill. */
+const PILL_BELOW_GRABBER = "3.25rem";
 /** Those rows' heights, for what pins under them (--sheet-head). */
 const BAR_ALONE = "4.75rem";
 const BAR = "4.25rem";
@@ -106,6 +109,8 @@ export function SheetParts(p: PartsProps) {
     "--corner-inset": `calc(${headPad} - ${bodyPad} + (2.875rem - 36px) / 2)`,
   } as CSSProperties;
   const pillFoot = size === "peek" && !!(p.bar || p.compact);
+  // The route's figures the pill's one row on a phone's bottom sheet.
+  const figuresPill = pillFoot && footShown && p.onPhone && fromBottom && !p.flying;
   const bandOnly = !!p.bar && p.barShown && !headerShown;
   const barHeight = p.fromBottom ? BAR_ALONE : BAR;
   const sheetHead = bandOnly ? `calc(${barHeight}${topSheet ? " + env(safe-area-inset-top)" : ""})` : "0px";
@@ -249,11 +254,12 @@ export function SheetParts(p: PartsProps) {
   let content: ReactNode;
   if (p.pages) {
     const { at, go, second } = p.pages;
-    // The second page's first row: the route's at every size, the pill's
-    // own row at the pill.
-    const routeShown = !p.flying && !cardsUp && (atPill ? p.compact != null : p.top != null);
+    // The second page's first row: the route's from half up; at the pill
+    // the route's figures in its place where there are some (the foot,
+    // MapPanel's footShown), else the pill's own row.
+    const routeShown = !p.flying && !cardsUp && (atPill ? p.compact != null && !footShown : p.top != null);
     const searchAlone = atPill && !p.flying && !p.barShown;
-    const routeAlone = atPill && !p.flying && !routeShown;
+    const routeAlone = atPill && !p.flying && !routeShown && !footShown;
     // Swiped between in the workspace alone: not flying, no card over it.
     const swiped = !p.flying && !cardsUp && p.layer === "tab";
     content = (
@@ -295,9 +301,13 @@ export function SheetParts(p: PartsProps) {
             // pill (data-pill-hides) is put away there.
             "relative z-10 flex shrink-0 flex-col justify-center border-t print:hidden",
             fromBottom && follows,
-            fromBottom || size !== "half" ? "pb-1" : "pb-4",
-            size === "half" ? "min-h-0" : "min-h-[3.875rem]",
-            ROW_PAD,
+            // The figures as the pill's one row (FPL's, not flying): under
+            // the grabber's 1.5 rem room, the rest of the pill's 4.75 rem
+            // (sheet/insets) less the foot's edge room, the figures' 2.6875
+            // rem (a name's 18-point line over a value's 25) centred in it.
+            figuresPill
+              ? "pt-0 pb-0"
+              : cn(fromBottom || size !== "half" ? "pb-1" : "pb-4", size === "half" ? "min-h-0" : "min-h-[3.875rem]", ROW_PAD),
             p.layer === "card" ? "px-0" : "px-4",
             !footShown && "hidden",
             pillFoot ? "border-transparent [&_[data-pill-hides]]:hidden [&>*]:flex-none" : cn("border-border/60", SHEET_BELOW),
@@ -306,6 +316,7 @@ export function SheetParts(p: PartsProps) {
             {
               "--sheet-progress": size === "half" && !p.desktop ? "0" : "1",
               ...(p.toEdge && fromBottom && !pillFoot ? { paddingBottom: "10px" } : {}),
+              ...(figuresPill ? { height: `calc(${PILL_BELOW_GRABBER} - ${EDGE_ROOM})` } : {}),
             } as CSSProperties
           }
           // In the pill a tap on it opens it half way.

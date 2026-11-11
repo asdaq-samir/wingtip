@@ -58,6 +58,9 @@ export interface CardRow {
   fullHeight?: boolean;
   /** A row in it that slides sideways (photos, chips, pills). */
   sideways?: string;
+  /** The short line under its name in its title row, in sight at the pill
+   *  too (the owner, 2026-11-11: the pages that became cards). */
+  pillLine?: RegExp;
   /** Something opened inside it, and the way back to it. */
   inside?: { open: (page: Page) => Promise<void>; back: (page: Page) => Promise<void> };
   not?: Partial<Record<Check, string>>;
@@ -180,20 +183,20 @@ export const CARDS: CardRow[] = [
     name: "Nav Log",
     card: "navlog-sheet",
     close: "navlog-close",
+    // Its totals: "65.3 nm · 35m · 9.0 gal".
+    pillLine: /nm · .+ · .*gal/,
     entries: [
       { name: "the plan", open: async (p) => (await go(p, ROUTE), void (await openNavLog(p))), back: "plan" },
       { name: "link (open=navlog)", open: (p) => go(p, `${ROUTE}&open=navlog`), back: "plan" },
     ],
-    not: {
-      sideways: "its table scrolls sideways on purpose inside the card (nav-log-desk.spec)",
-      position: "nothing opens inside it",
-      nested: "the plan's own nav log with a card's head, the route's figures pinned under it: the sheet's body, not a drawer of its own",
-    },
+    not: { sideways: "its table scrolls sideways on purpose inside the card (nav-log-desk.spec)", position: "nothing opens inside it" },
   },
   {
     name: "Profile",
     card: "profile-card",
     close: "profile-close",
+    // "Cruise FL-055 · clear of terrain".
+    pillLine: /^Cruise FL-\d{3}/,
     entries: [
       { name: "the plan", open: async (p) => (await go(p, ROUTE), void (await openProfile(p))), back: "plan" },
       { name: "link (open=profile)", open: (p) => go(p, `${ROUTE}&open=profile`), back: "plan" },
@@ -202,13 +205,14 @@ export const CARDS: CardRow[] = [
       sideways: "its altitude slider is upright",
       position: "nothing opens inside it",
       scroll: "capped to the sheet at each detent, nothing scrolls",
-      nested: "a page of the plan, the route's figures pinned at the sheet's foot under it: the sheet's body, not a drawer of its own",
     },
   },
   {
     name: "Stops",
     card: "stops-card",
     close: "stops-close",
+    // "2 stops", or "None within 25 nm".
+    pillLine: /^(\d+ stops?|None (on the route|within \d+ nm))$/,
     entries: [
       {
         name: "list row (Find Nearby)",
@@ -222,11 +226,7 @@ export const CARDS: CardRow[] = [
         back: "search-home",
       },
     ],
-    not: {
-      position: "nothing opens inside it",
-      scroll: "one stubbed field: shorter than the sheet",
-      nested: "a page of the plan, the route's figures pinned at the sheet's foot under it: the sheet's body, not a drawer of its own",
-    },
+    not: { position: "nothing opens inside it", scroll: "one stubbed field: shorter than the sheet" },
   },
   {
     name: "Settings and its About",

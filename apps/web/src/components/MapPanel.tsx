@@ -103,10 +103,12 @@ export default function MapPanel(props: Props) {
   const cardsUp = !!topEntry;
   // Where the cards over it are put: inside its popup (CardStack).
   const [cardHost, setCardHost] = useState<HTMLElement | null>(null);
-  // The route's figures at half and all the way up; at the pill only where
-  // they are the pill (flying), the search's or the route's row being it
-  // otherwise: the pill is one fixed row's height (sheet/insets).
-  const footShown = !!foot && !cardsUp && (!onPhone || props.state !== "peek" || flying);
+  // The route's figures at half and all the way up; at the pill where they
+  // are the pill -- flying, and FPL's page (the owner, 2026-11-11, the
+  // canvas's b: To, Dist, ETE and Fuel at a glance, the route's row from
+  // half up) -- the search's row being it on Search. The pill is one fixed
+  // height for every page and card (sheet/insets), which the figures fit.
+  const footShown = !!foot && !cardsUp && (!onPhone || props.state !== "peek" || flying || props.pages?.at === 1);
   // A card or a page open (the account page too) is the whole sheet, its own head and ✕ at the top
   // (one card rule, 2026-11-10); closed, the search is back -- kept with the keyboard up, as it is typed in.
   const barShown = !!bar && !flying && !cardsUp && layer === "tab";

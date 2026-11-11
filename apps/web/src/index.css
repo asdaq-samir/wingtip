@@ -1,3 +1,7 @@
+/* The first layer, before Tailwind's own (its preflight's [hidden] rule is
+   !important in its base layer, and an !important in an earlier layer
+   wins): a card kept between its openings (index.css, below). */
+@layer kept-cards;
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -447,6 +451,28 @@ html[data-tv] .maplibregl-canvas:focus {
   .tab-away,
   .tab-page[data-hidden] {
     display: none;
+  }
+}
+
+/* A card's drawer kept closed (sheet/CardStack: Drawer.Portal keepMounted;
+   CardLayer's `open`, the Nav Log, the Profile, the Stops): Base UI marks
+   its popup `hidden`, which is display: none, and a card shown again was
+   laid out from nothing -- the Nav Log 0.6 s. Skipped instead, as a tab put
+   away is (tab-away above): its layout kept for its next opening, nothing
+   of it painted or hit, and out of VoiceOver's reach. */
+@layer kept-cards {
+  [data-sheet-card][hidden] {
+    display: flex !important;
+    visibility: hidden;
+    pointer-events: none !important;
+    content-visibility: hidden;
+  }
+}
+@supports not (content-visibility: hidden) {
+  @layer kept-cards {
+    [data-sheet-card][hidden] {
+      display: none !important;
+    }
   }
 }
 

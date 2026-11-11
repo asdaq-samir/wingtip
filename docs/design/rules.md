@@ -40,7 +40,11 @@ Compose. Nothing here is built by hand where a stock part does it.
 3. **Pages are cards too.** Brief, Nav Log, Profile, Stops, Nearest, Ask,
    Settings and its pages, the Logbook, Checklists and Saved Flights
    cover the search the same way: ✕ closes, Back steps through the levels
-   inside.
+   inside. The Nav Log, the Profile and the Stops are cards of their own,
+   not pages of the sheet's body (the owner, 2026-11-11): each its own
+   size, grabber, ✕ and Back, kept built between its openings so opening
+   it again is at once. The route's figures that sat at the sheet's foot
+   under them are the Nav Log's own totals under its name.
 4. **Only Emergency is full screen**, its close where the platform puts
    a full-screen page's close, and it does not dim the map where the map
    is meant to stay usable.
@@ -65,28 +69,35 @@ Compose. Nothing here is built by hand where a stock part does it.
     card at the pill shows its one title row -- its name, Share where it
     has one, and ✕ -- in the pill's room, and nothing else of it; a tap on
     the row or a drag up raises the sheet back to half with the card as it
-    was; ✕ there closes the card and the pill then shows the search. With
-    no card open the pill is the search, as before.
+    was; ✕ there closes the card and the pill then shows the search. A
+    card with a short line under its name keeps it there too: the Nav Log
+    its totals ("65.3 nm · 35m · 9.0 gal"), the Profile its cruise and the
+    clearance's verdict ("Cruise FL-055 · clear of terrain"), the Stops how
+    many ("2 stops", "None on the route"). With no card open the pill is
+    the page's own: the search on Search, the route's figures on FPL.
+    **The smallest size is one fixed height for every page and card**,
+    never one a page: the web's `"4.75rem"` (sheet/insets), which the
+    search's row, a card's title row with its line, and FPL's figures
+    (2.6875 rem under the grabber's 1.5) all fit.
 11. **The sheet keeps the size the pilot left it at** (the owner,
     2026-11-11: "I like the stock behavior"). The one size the app gives
     the main sheet is Apple Maps' rule: something new opened while the
     sheet is at its smallest size, the pill, rises to half so it can be
     seen. Nothing lowers the sheet (a card closed, Cancel, a tap on the
     chart, a flight starting), nothing takes it all the way up (a list,
-    Saved, Favorites, a link), and a page put away (the Nav Log, the
-    Profile, the Stops) leaves it where it is. Cards keep their own
+    Saved, Favorites, a link), and a card put away leaves it where it is. Cards keep their own
     opening sizes (2, and the Detents row below): each card's drawer is
     its own, the sheet under it untouched.
 
 | | Web | iPhone (Apple Maps' way) | Android (Google Maps' way) |
 |---|---|---|---|
-| A card | Base UI's own nested Drawer over the map's sheet, one per card, the last opened on top (`components/sheet/CardStack`; the owner, 2026-11-11): every `SheetCard`, every `PanelCard` (airport, airspace, traffic, a past flight, Nearest), the Brief and Settings (`CardLayer`), with the sheet's sizes, its grabber and its swipe; it covers the search and the title row, the sheet under it kept as it was; ✕ goes back to the search with its query kept (`lib/openCards`). The Nav Log, Profile and Stops stay pages of the sheet's own body, the route's figures pinned at its foot under them | One card over the plan's sheet, the same view (`SheetPageView`) from every way in, presented through one `.sheet(item:)` (`Navigation/CardHost`); the search is out of sight while it is up | The search bar becomes "← KOSH", the card's name with ←, its actions and ✕ at the end (`ui/sheet/CardPage`); the card fills the sheet, on the sheet's own NavHost (`ui/SheetNav`, `ui/SheetPages`) |
+| A card | Base UI's own nested Drawer over the map's sheet, one per card, the last opened on top (`components/sheet/CardStack`; the owner, 2026-11-11): every `SheetCard`, every `PanelCard` (airport, airspace, traffic, a past flight, Nearest), the Brief, the Nav Log, the Profile, the Stops and Settings (`CardLayer`), with the sheet's sizes, its grabber and its swipe; it covers the search and the title row, the sheet under it kept as it was; ✕ goes back to the search with its query kept (`lib/openCards`). The Nav Log, the Profile and the Stops are kept between their openings (`CardLayer`'s `open`, their drawers closed but laid out: index.css's kept cards) | One card over the plan's sheet, the same view (`SheetPageView`) from every way in, presented through one `.sheet(item:)` (`Navigation/CardHost`); the search is out of sight while it is up | The search bar becomes "← KOSH", the card's name with ←, its actions and ✕ at the end (`ui/sheet/CardPage`); the card fills the sheet, on the sheet's own NavHost (`ui/SheetNav`, `ui/SheetPages`) |
 | Inside a card | Its own stack in the sheet; ✕ goes back one level | Pushed in the card's `NavigationStack` with the system's Back and edge swipe (`Navigator.push`) | `SheetNav.push`; ← and system Back go back one level, ✕ closes every card |
 | Back, Escape | Escape is the top card's own nested drawer's, closing it (CardStack); with no card up the sheet's own Escape lowers it to the pill. A device's Back closes the top card the same way (`lib/backNavigation` `closeTopmost`): Android's through the browser's stock CloseWatcher, held only while something is open (`useBackCloses`), a TV remote's by its key; where there is no CloseWatcher (Safari) the browser's Back is left as it is. The browser's history is not the app's, as the planner replaces its address | The stack's Back; the card's close at the right of its bar | System Back closes the top card at once (`MapSheet`'s `lowerOnBack` only with none open); the dry run, the ATC card and the assistant's answer close on Back too |
 | Questions | `SheetDialog`: a bottom sheet on a phone with ✕ or Cancel, centred from `md` up | `.alert` and `.confirmationDialog`, hung on the top of the stack (`TopHosts`) so they always show | `AlertDialog` (`ui/SourceDialog` for a source report) |
 | Emergency | The one full-height card, ✕ at the top right, the map not dimmed | `fullScreenCover`, its close at the top right | Material's full-screen dialog, ✕ at the start of its app bar |
 | One search | The traffic's airplane and Nearest's place are the search scoped to them (`listSearchOf`); the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field | Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
-| At the pill | The card's pinned head (`data-sheet-head`: `PinnedHead`, Settings' title row, a console page's head) is all of the card left in sight there (CardStack's scroller; SheetParts' `headAlone` for a page of the sheet's body); a tap on the row raises the sheet to half | The system sheet's smallest detent shows the card's bar | The sheet's peek shows the card's bar |
+| At the pill | The card's pinned head (`data-sheet-head`: `PinnedHead`, Settings' title row, a console page's head) is all of the card left in sight there (CardStack's scroller), with its short line under its name (`CardHead`'s `sub`); a tap on the row raises the card to half | The system sheet's smallest detent shows the card's bar | The sheet's peek shows the card's bar |
 | By name | `useOpenScreen` through `lib/navigation/wanted` | `RootView.openScreen`, which opens the card by `Navigator.open` | `OpenScreen` through `ScreenRequests` |
 
 Each "by name" path is a `switch` or `when` over the generated list of
@@ -218,9 +229,9 @@ and the one search is still the only field.
    account button) and its home list (Favorites, Recents, Nearest,
    Saved, Find Nearby), the traffic and the search's lists in full.
 2. **FPL** (the second page): the route's row (its pills, Routes, Brief,
-   •••), the airplane and the altitude, the plan (the nav log, the
-   Brief, the Profile, the Stops) and the route's figures pinned at the
-   foot, which are FPL's alone. With no route, "Plan a flight" (the
+   •••), the airplane and the altitude, the route in order, and the
+   route's figures pinned at the foot, which are FPL's alone; the Brief,
+   the Nav Log, the Profile and the Stops are cards over it. With no route, "Plan a flight" (the
    platform's empty view) with Search, which goes to the first page with
    the field focused, and Open Sample Flight. FPL has no field of its
    own: adding a stop asks the one search.
@@ -256,10 +267,12 @@ and the one search is still the only field.
   clearing it stays on the page it is on.
 - **Cards** open over both pages as before; ✕ comes back to the page
   they were opened over.
-- **At the pill** the sheet shows the page's own first row (the search's
-  on Search, the route's on FPL), the split grabber over it, and nothing
-  else: the pill is one fixed row's height (the web's `"4.75rem"` snap
-  point, 2026-11-11), the route's figures shown from half.
+- **At the pill** the sheet shows the page's own one row, the split
+  grabber over it, and nothing else: on Search the search's row, on FPL
+  the route's figures -- To, Dist, ETE, Fuel -- (the owner, 2026-11-11,
+  the canvas's b, as ForeFlight and Garmin Pilot keep them), the route's
+  row from half up; with no route, FPL's own row. The pill is one fixed
+  height for both (the web's `"4.75rem"` snap point).
 - **Links**: `open=search` and `open=fpl` (design/screens.json).
 
 | Web | iPhone | Android |

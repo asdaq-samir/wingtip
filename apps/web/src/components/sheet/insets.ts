@@ -18,8 +18,13 @@ export const DRAWER_MS = 450;
  * - The pill: the one search's band with the grabber over it, 4.75 rem on
  *   a bottom sheet (SheetParts' barRowPad: the grabber's 24-point room, the
  *   46-point field, six under); on a top sheet the band's 4.25 rem and the
- *   grabber's own 1 rem row under it, 5.25 rem. The route's row at the
- *   pill (the FPL page's) has the same band.
+ *   grabber's own 1 rem row under it, 5.25 rem. One value for every page
+ *   and card, never one a page: FPL's pill is the route's figures (the
+ *   owner, 2026-11-11), a name's 18-point line over a value's 25, 2.6875
+ *   rem, which under the grabber's 1.5 rem and over the sheet's 8-point
+ *   edge (where there is no home indicator) is 4.6875 rem: it fits, so the
+ *   pill stays the search's 4.75; a card's pill is its title row with its
+ *   short line under the name (PinnedHead), as tall.
  * - Half: 23 rem, the owner's ("Let's make the half card this tall", their
  *   iPhone's sheet 368 points tall: the route's box, its chips, the side
  *   view and the figures).

@@ -148,10 +148,18 @@ test("a route made goes to FPL; cleared, the page stays", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await expectPage(page, 1);
-  // The figures at the foot are FPL's alone: at half (at the pill on a
-  // phone the pill is the route's row alone).
+  // The figures at the foot are FPL's alone: at half, and at the pill on a
+  // phone, where they are the pill in the route's row's place (the owner,
+  // 2026-11-11, the canvas's b).
   await grabberTo(page, "half");
   await expect(page.getByTestId("panel-foot")).toBeVisible();
+  await grabberTo(page, "peek");
+  await expect(page.getByTestId("panel-foot")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeHidden();
+  // Half way up, the route's row is back over the list.
+  await grabberTo(page, "half");
+  await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeVisible();
   await bar(page, 0).click();
   await expectPage(page, 0);
   await expect(page.getByTestId("panel-foot")).toBeHidden();

@@ -14,10 +14,13 @@ import type { PanelState } from "../../lib/mapChrome";
  * in the same frame as the tap, never an empty card for a frame.
  */
 export function useCardFrame(
-  frame: CardFrame & { raise?: "half" | "full"; opens?: PanelState; title?: string },
+  frame: CardFrame & { raise?: "half" | "full"; opens?: PanelState; title?: string; open?: boolean },
   id: string,
 ): HTMLElement | null {
-  const shown = useShown();
+  // A card kept between its openings (`open`, CardLayer's) is shown only
+  // while it is open; one drawn only while open is open while drawn.
+  const open = frame.open ?? true;
+  const shown = useShown() && open;
   const slot = useSheetCards((s) => s.stack.find((entry) => entry.id === id)?.slot ?? null);
   // The caller's latest, read as the Drawer tells it something.
   const latest = useRef(frame);
@@ -44,6 +47,12 @@ export function useCardFrame(
     return () => useSheetCards.setState((s) => ({ stack: s.stack.filter((e) => e.id !== id) }));
   }, [id]);
   useLayoutEffect(() => setCard(id, { shown }), [id, shown]);
+  // Opened again by the pilot, it opens by the card rule's 2 as a new card
+  // does (CardStack's cardOpening), not at the size it was put away at;
+  // kept closed under a card over it, it comes back as it was.
+  useLayoutEffect(() => {
+    if (open) setCard(id, { at: undefined });
+  }, [id, open]);
   useLayoutEffect(() => setCard(id, { title }), [id, title]);
   useLayoutEffect(() => {
     const was = useSheetCards.getState().stack.find((e) => e.id === id)?.frame;

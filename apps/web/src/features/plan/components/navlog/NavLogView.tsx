@@ -129,9 +129,8 @@ interface Props {
   marks?: Partial<Record<PanelTab, "stop" | "caution">>;
   /** The briefing's warnings, over its pages on paper. */
   notice?: ReactNode;
-  /** The nav log as a card over FPL, its head (CardHead) over the log, at
-   *  the owner's ask ("make Navlog open like brief does instead of a
-   *  separate card"): the log in the route list's place. */
+  /** The Nav Log card's view (PlanPage's; the owner 2026-11-11), its head
+   *  over the legs: on screen only, FPL's view is the paper (`paper`). */
   cardHead?: ReactNode;
   /** A local flight, one airport to itself: no legs, so the section is
    *  "Local Flight" -- the time aloft, the time back and the fuel, and
@@ -159,8 +158,8 @@ interface Props {
   dryRun: DryRun | null;
   /** FPL's own list in the nav log's place on screen: the route in order
    *  (ProceduresRoute), at the owner's ask ("I want to replace navlog with
-   *  procedures", 2026-10-18). The nav log is then a card of its own in
-   *  the main sheet, this view drawn again without the route. */
+   *  procedures", 2026-10-18). The legs are the Nav Log card's, this view
+   *  drawn again there without the route (`cardHead`). */
   route?: ReactNode;
 }
 
@@ -870,9 +869,10 @@ export default function NavLogView({
     dest,
     ends?.stops?.map((s) => s.ident),
   );
+  const paper = printing && !cardHead;
   return (
     <>
-      {printing ? (
+      {paper ? (
         // On paper the whole briefing, as it always printed: every page in
         // turn, the legs first in En route's, under the briefing's title.
         <PanelTabs
@@ -931,7 +931,7 @@ export default function NavLogView({
               app; laid out whole in the sheet's one scroller (SheetParts). */}
           <div
             className="@container pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))]"
-            data-testid="navlog-scroller"
+            data-testid={cardHead ? "navlog-card-scroller" : "navlog-scroller"}
           >
             {cardHead && <div className="pt-[var(--corner-inset,0.75rem)] pb-2">{cardHead}</div>}
             <section

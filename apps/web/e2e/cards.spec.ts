@@ -43,7 +43,8 @@ for (const row of CARDS) {
         // Its ✕ on screen and taking the tap.
         await expect.poll(() => hittable(page, [row.close]), { timeout: slow(10_000) }).toBe(row.close);
         await page.getByTestId(row.close).filter({ visible: true }).first().click();
-        await expect(page.getByTestId(row.card)).toHaveCount(0);
+        // Gone, or kept closed between its openings (the Nav Log, the Profile, the Stops).
+        await expect(page.getByTestId(row.card)).toBeHidden();
         await expectBack(page, entry.back);
       });
 
@@ -52,7 +53,8 @@ for (const row of CARDS) {
         await open(page, row, entry);
         // Gone after one press: had the key only lowered the sheet, the card would still be there.
         await page.keyboard.press("Escape");
-        await expect(page.getByTestId(row.card)).toHaveCount(0);
+        // Gone, or kept closed between its openings (the Nav Log, the Profile, the Stops).
+        await expect(page.getByTestId(row.card)).toBeHidden();
         await expectBack(page, entry.back);
       });
     }
@@ -75,6 +77,9 @@ for (const row of CARDS) {
         await expect.poll(() => hittable(page, [row.close]), { timeout: slow(10_000) }).toBe(row.close);
         const close = (await page.getByTestId(row.close).filter({ visible: true }).first().boundingBox())!;
         expect(close.y - sheetTop, "its ✕ at the sheet's top").toBeLessThan(80);
+        // Its short line under its name, in the pill's room too (the owner, 2026-11-11).
+        if (row.pillLine)
+          await expect(page.locator("[data-sheet-head]").getByTestId("card-sub").filter({ visible: true })).toHaveText(row.pillLine);
         // Only the title row of the card is drawn: under it, nothing of the card takes a point.
         const below = await page.evaluate(
           ([y, card]) => {
@@ -104,7 +109,7 @@ for (const row of CARDS) {
         await open(page, row, entry);
         const url = page.url();
         await page.getByTestId(row.close).click();
-        await expect(page.getByTestId(row.card)).toHaveCount(0);
+        await expect(page.getByTestId(row.card)).toBeHidden();
         expect(page.url()).toBe(url);
       });
 
@@ -145,7 +150,7 @@ test(
     await expect.poll(() => hittable(page, [`${row.close}-pinned`, row.close]), { timeout: slow(10_000) }).not.toBeNull();
     const id = (await hittable(page, [`${row.close}-pinned`, row.close]))!;
     await page.getByTestId(id).click();
-    await expect(page.getByTestId(row.card)).toHaveCount(0);
+    await expect(page.getByTestId(row.card)).toBeHidden();
     await expect(page.getByTestId("search-airports")).toHaveValue("duluth");
   },
 );

@@ -9,6 +9,7 @@ import { sameField } from "../../../lib/procedures";
 import { stopsAlongQuery, stopsNearQuery } from "../../../lib/queryClient";
 import { kindsOf, type StopKind } from "../../../lib/stopKinds";
 import { useStopsAlong } from "../lib/stopsAlong";
+import { setCard, useSheetCards } from "../../../lib/sheetCards";
 import { patched } from "../../../lib/useSearchParamsNow";
 import type { ProceduresAt } from "../components/ProceduresRoute";
 import { riseToSee } from "./panelNow";
@@ -16,14 +17,18 @@ import type { PlannedRoute } from "./planAddress";
 import type { PanelView } from "./usePanelView";
 import { useOpenScreen } from "./useOpenScreen";
 
+/** The Stops card's id among the cards (CardLayer), for its pins' taps. */
+export const STOPS_CARD = "stops";
+
 /**
  * The cards over FPL and the lists in full (usePlanWorkspace): the Brief,
- * a card sizing its own drawer (CardStack); the nav log, the side view and
- * the map's Stops, pages of the sheet's own body; Saved, Nearest and an
- * instructor's lesson. Each opened from the pill raises the sheet to half
- * so it is seen, and nothing else sizes the sheet: it keeps the size the
- * pilot left it at, opening or closing (riseToSee; the owner, 2026-11-11). With the Stops' own questions and
- * pins, and the microphone's commands that open them.
+ * the Nav Log, the Profile and the map's Stops, each a card sizing its own
+ * drawer (CardStack; the owner, 2026-11-11: pages are cards), opening by
+ * the card rule; Saved, Nearest and an instructor's lesson. A list opened
+ * from the pill raises the sheet to half so it is seen, and nothing else
+ * sizes the sheet: it keeps the size the pilot left it at, opening or
+ * closing (riseToSee; the owner, 2026-11-11). With the Stops' own
+ * questions and pins, and the microphone's commands that open them.
  */
 export function useFplCards({
   view,
@@ -57,13 +62,13 @@ export function useFplCards({
   setSearchParams: SetURLSearchParams;
   setProceduresShown: (at: ProceduresAt) => void;
 }) {
-  // The nav log's own sheet, from the route's box's Nav log button, where
-  // FPL shows the route in order (NavLogView's `route`).
+  // The Nav Log's card, from the route's menu, where FPL shows the route in
+  // order (NavLogView's `route`).
   const [navLogOpen, setNavLogOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   // The Brief in sight: FPL's, over a route.
   const briefShown = briefOpen && view === "plan" && routed;
-  // The nav log, a card over FPL as the Brief is (NavLogView's cardHead).
+  // The Nav Log, a card over FPL as the Brief is (PlanPage).
   const navLogShown = navLogOpen && view === "plan" && routed && !briefShown;
   // The side view, a card over FPL as the nav log is (ProfileCard).
   const profileShown = profileOpen && view === "plan" && routed && !briefShown && !navLogShown;
@@ -76,8 +81,6 @@ export function useFplCards({
   const stopsShown = stopsOpen && view === "plan" && !briefShown && !navLogShown && !profileShown;
   // The same whatever the tab: what FPL keeps under the others (TabKept).
   const briefHere = briefOpen && routed;
-  const profileHere = profileOpen && routed && !briefHere && !(navLogOpen && routed);
-  const stopsHere = stopsOpen && !briefHere && !(navLogOpen && routed) && !profileHere;
   // Where the Stops are looked for: along the course while one is drawn
   // (the owner, 2026-10-26), else round own ship (StopsCard).
   const stopsRoute = useMemo(
@@ -172,15 +175,13 @@ export function useFplCards({
       { replace: true },
     );
   }, [setSearchParams]);
-  // The nav log from the route box's button, a page over FPL as the Brief
-  // is, at the height FPL is at (half from the pill), the sheet left there
-  // as it is put away.
+  // The Nav Log from the route's menu, a card over FPL as the Brief is,
+  // opening by the card rule (CardStack), the sheet under it left as it is.
   const openNavLogCard = useCallback(() => {
     setStopsOpen(false);
     setNavLogOpen(true);
     setProfileOpen(false);
-    riseToSee(setPanel);
-  }, [setPanel, setStopsOpen]);
+  }, [setStopsOpen]);
   const closeNavLogCard = useCallback(() => setNavLogOpen(false), []);
   // The side view the same way, from its button beside the nav log's, at
   // the owner's ask ("profile view can move next to the navlog button and
@@ -189,14 +190,12 @@ export function useFplCards({
     setStopsOpen(false);
     setProfileOpen(true);
     setNavLogOpen(false);
-    riseToSee(setPanel);
-  }, [setPanel, setStopsOpen]);
+  }, [setStopsOpen]);
   const closeProfileCard = useCallback(() => setProfileOpen(false), []);
   // The map's Stops put away, the sheet where it is.
   const closeStops = useCallback(() => setStopsOpen(false), [setStopsOpen]);
-  // Opened: FPL in sight with it, the other cards over FPL and an
-  // airport's put away, half way up from the pill, as the Profile opens
-  // from its button.
+  // Opened: FPL in sight under it, the other cards over FPL and an
+  // airport's put away; the card opens by the card rule, as the Profile's.
   const openStops = useCallback(() => {
     setStopsOpen(true);
     setViewPick("plan");
@@ -205,8 +204,7 @@ export function useFplCards({
     setSearchParams((prev) => (prev.get("brief") || prev.get("place") ? patched(prev, { brief: null, place: null }) : prev), {
       replace: true,
     });
-    riseToSee(setPanel);
-  }, [setStopsOpen, setViewPick, setSearchParams, setPanel]);
+  }, [setStopsOpen, setViewPick, setSearchParams]);
   // Find Nearby's tile (the Airport tab): the Stops round the pilot, that
   // kind picked.
   const setStopKind = usePreferences((p) => p.setStopKind);
@@ -220,17 +218,19 @@ export function useFplCards({
   );
   // Put away with the planner.
   useEffect(() => () => setStopsOpen(false), [setStopsOpen]);
-  // A field's pin tapped on the chart: its row picked in the sheet, the
-  // sheet half way up from the pill so the row is in sight, where the tap
-  // opened the field's card (the owner, 2026-10-28: the card is a tap on
-  // the row's ident away).
+  // A field's pin tapped on the chart: its row picked in the Stops card,
+  // the card half way up from its pill so the row is in sight (its own
+  // drawer's snap point, as useCardSize sets it), where the tap opened the
+  // field's card (the owner, 2026-10-28: the card is a tap on the row's
+  // ident away).
   const setStopPicked = useStopsAlong((st) => st.setPicked);
   const pickStopField = useCallback(
     (ident: string) => {
       setStopPicked(ident);
-      riseToSee(setPanel);
+      const stops = useSheetCards.getState().stack.find((entry) => entry.id === STOPS_CARD);
+      if (stops?.at === "peek") setCard(STOPS_CARD, { at: "half" });
     },
-    [setStopPicked, setPanel],
+    [setStopPicked],
   );
   // The legs asked for from the Brief: FPL in its place, the sheet at the
   // size the pilot left it (half from the pill).
@@ -290,8 +290,6 @@ export function useFplCards({
     profileShown,
     stopsShown,
     briefHere,
-    profileHere,
-    stopsHere,
     stopsRoute,
     stopsAt,
     stopsScope,

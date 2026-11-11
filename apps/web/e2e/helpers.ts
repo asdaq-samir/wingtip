@@ -443,9 +443,9 @@ export async function openTab(page: Page, name: keyof typeof PHASE_OF | PhaseTab
   await expect(tab).toHaveAttribute("aria-selected", "true");
 }
 
-/** The nav log, in its own sheet from the route's ••• menu (NavLogView),
- *  FPL all the way up under it: FPL lists the route in order in its place
- *  (ProceduresRoute), at the owner's ask. */
+/** The Nav Log, its own card from the route's ••• menu (PlanPage), FPL all
+ *  the way up under it: FPL lists the route in order (ProceduresRoute), at
+ *  the owner's ask. */
 export async function openNavLog(page: Page) {
   await openTab(page, "Nav Log");
   const sheet = navLogSheet(page);
@@ -464,11 +464,7 @@ export async function openNavLog(page: Page) {
 /** The nav log's card over FPL (the owner's "make Navlog open like brief
  *  does"), and what scrolls in it. */
 export const navLogSheet = (page: Page) => page.getByTestId("navlog-sheet");
-export const navLogScroller = (page: Page) =>
-  page
-    .getByTestId("navlog-scroller")
-    .filter({ has: navLogSheet(page) })
-    .last();
+export const navLogScroller = (page: Page) => page.getByTestId("navlog-card-scroller");
 
 /** The nav log's card put away, FPL under it again: its close, kept for a
  *  keyboard and a screen reader (CardClose), the tab bar's Back's twin. */
@@ -477,7 +473,8 @@ export async function closeNavLog(page: Page) {
     await page.getByTestId("navlog-close").focus();
     await page.keyboard.press("Enter");
   }
-  await expect(navLogSheet(page)).toHaveCount(0);
+  // Kept between its openings, closed (CardLayer's `open`).
+  await expect(navLogSheet(page)).toBeHidden();
 }
 
 /** The planning panel's own tabs. */

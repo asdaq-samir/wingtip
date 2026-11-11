@@ -139,7 +139,8 @@ function StopFieldCard({
 }
 
 /**
- * The map's Stops, one sheet near the pilot and along a route (the
+ * The map's Stops, one card (CardLayer, PlanPage; the owner, 2026-11-11)
+ * near the pilot and along a route (the
  * owner's pick of the Stops canvas, H1 and H2, 2026-10-27), where Fly-in
  * Food was: its title, beside it how far to look -- Along Route, where
  * there is a route, or Within 10, 25, 50 or 100 nm round the pilot --
@@ -194,9 +195,22 @@ export default function StopsCard({
     <div className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] print:hidden" data-testid="stops-card">
       {/* Its title row, all of the card in sight at the sheet's smallest size (data-sheet-head). */}
       <div className="flex items-center gap-3" data-sheet-head="">
-        <h2 className={cn("font-bold tracking-tight", TEXT.card)} data-testid="stops-name">
-          Stops
-        </h2>
+        {/* Its name, and under it at every size, the smallest too, how many
+            it found (the owner, 2026-11-11: "None on the route", "2 stops"). */}
+        <div className="flex min-w-0 flex-col">
+          <h2 className={cn("font-bold tracking-tight", TEXT.card)} data-testid="stops-name">
+            Stops
+          </h2>
+          {data && pending === 0 && (
+            <p className={cn("truncate text-muted-foreground tabular-nums", TEXT.note)} data-testid="card-sub">
+              {fields.length === 0
+                ? along
+                  ? "None on the route"
+                  : `None within ${radius} nm`
+                : `${fields.length} ${fields.length === 1 ? "stop" : "stops"}`}
+            </p>
+          )}
+        </div>
         <PullDown
           label="Where to look"
           value={along ? "route" : `${radius}`}

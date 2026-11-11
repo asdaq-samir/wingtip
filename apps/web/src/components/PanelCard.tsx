@@ -81,6 +81,7 @@ export function PanelCard({
  */
 export function CardHead({
   name,
+  sub,
   line,
   nameTestId,
   lineClassName,
@@ -91,6 +92,10 @@ export function CardHead({
   children,
 }: {
   name: ReactNode;
+  /** A short line under the name in its pinned row, in sight at every size,
+   *  the smallest too (the owner, 2026-11-11: the Nav Log's totals, the
+   *  Profile's cruise and clearance, the Stops' count). */
+  sub?: ReactNode;
   /** Under the name; none where the caller sets it out itself (an
    *  airport's card, beside its diagram's thumbnail). */
   line?: ReactNode;
@@ -110,13 +115,20 @@ export function CardHead({
   return (
     <>
       <PinnedHead>
-        <h2
-          tabIndex={-1}
-          className={cn("min-w-0 flex-1 truncate font-bold tracking-tight text-foreground outline-none", TEXT.card)}
-          data-testid={nameTestId}
-        >
-          {name}
-        </h2>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <h2
+            tabIndex={-1}
+            className={cn("truncate font-bold tracking-tight text-foreground outline-none", TEXT.card)}
+            data-testid={nameTestId}
+          >
+            {name}
+          </h2>
+          {sub != null && sub !== "" && (
+            <p className={cn("truncate text-muted-foreground tabular-nums", TEXT.note)} data-testid="card-sub">
+              {sub}
+            </p>
+          )}
+        </div>
         {children}
         <CardClose onClose={onClose} onShare={onShare} testId={closeTestId} className="-mr-1" />
       </PinnedHead>

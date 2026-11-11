@@ -23,7 +23,8 @@ export async function openProfile(page: Page) {
 export async function closeProfile(page: Page) {
   await page.getByTestId("profile-close").focus();
   await page.keyboard.press("Enter");
-  await expect(page.getByTestId("profile-card")).toHaveCount(0);
+  // Kept between its openings, closed (CardLayer's `open`).
+  await expect(page.getByTestId("profile-card")).toBeHidden();
 }
 
 /** A dry run started from its button, and Ready to fly's prompt, which

@@ -65,15 +65,20 @@ test.describe("/app/plan", () => {
     await settle(page);
     await fromRest(page);
     await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
-    // With a route, the one search is still the pill (the one-search
-    // design, 2026-11-09: MapPanel's bar); the route's figures are pinned
-    // under it in the side panel, and on a phone from half (the pill one
-    // row since the fixed snap points, 2026-11-11). A no-break space
-    // between a figure and its unit, so \s.
+    // With a route the sheet opens on FPL, whose pill on a phone is the
+    // route's figures, To, Dist, ETE and Fuel (the owner, 2026-11-11, the
+    // canvas's b; the pill's one fixed height, sheet/insets), the route's
+    // row from half up; in the side panel they are pinned under the one
+    // search. A no-break space between a figure and its unit, so \s.
     const figures = sideDrawer(page).getByTestId("flight-line");
-    if ((page.viewportSize()?.width ?? 0) < 768) await expect(figures).toBeHidden();
-    else await expect(figures).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
-    await expect(firstRow(page)).toBeVisible();
+    await expect(figures).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
+    if ((page.viewportSize()?.width ?? 0) < 768) {
+      await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeHidden();
+      // The pill no taller for them: the search's own 4.75 rem.
+      const pill = await sideDrawer(page).evaluate((el) => el.getBoundingClientRect().top);
+      const rem = await page.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize));
+      expect((page.viewportSize()?.height ?? 0) - pill).toBeLessThanOrEqual(4.75 * rem + 40);
+    } else await expect(firstRow(page)).toBeVisible();
     await page.getByTestId("sidebar-trigger-button").click();
     await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
     // The plan, the sheet's main content with a route.

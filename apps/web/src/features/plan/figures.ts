@@ -179,3 +179,14 @@ function guess({ distanceNm, cruiseTasKt, fuelBurnGph, taxiFuelGal }: NonNullabl
   // one rounded its minutes on their own, and 119.6 read "1h 60m".
   return { minutes, distanceNm, required, time: minutes == null ? "—" : duration(minutes) };
 }
+
+/** The strip's distance, time and fuel on one line, as the Nav Log card's
+ *  head says them under its name at every size ("65.3 nm · 35m · 9.0 gal",
+ *  the owner's pick, 2026-11-11): the same figures, exact, the To left to
+ *  the strip. */
+export function figuresLine(input: TripInput): string {
+  return tripFigures(input, false)
+    .filter((f) => f.name !== "To")
+    .map((f) => (f.unit ? `${f.value} ${f.unit}` : f.value))
+    .join(" · ");
+}
