@@ -112,28 +112,23 @@ export function windowOf(n: FieldNotam, read: NotamReading): Pick<FieldNotam, "i
   return { in_force: n.in_force, starts: n.starts ?? read.starts, ends: n.ends ?? read.ends };
 }
 
-const CORNER = new Intl.DateTimeFormat("en-US", {
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  hourCycle: "h23",
-  timeZoneName: "short",
-});
+const CORNER = new Intl.DateTimeFormat("en-US", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
 
-/** "11/10 06:00", with " CST" where `zone`: month/day and the 24-hour
- *  clock in the device's own time, as a pilot writes it on a kneeboard. */
-function corner(at: Date, zone: boolean): string {
+/** "11/10 06:00", with " local" where `local`: month/day and the 24-hour
+ *  clock in the device's own time, as a pilot writes it on a kneeboard,
+ *  the zone not named (the owner, 2026-11-11: "No need to mention time
+ *  zone, just say local"). */
+function corner(at: Date, local: boolean): string {
   const part = Object.fromEntries(CORNER.formatToParts(at).map((p) => [p.type, p.value]));
-  return `${part.month}/${part.day} ${part.hour}:${part.minute}${zone ? ` ${part.timeZoneName}` : ""}`;
+  return `${part.month}/${part.day} ${part.hour}:${part.minute}${local ? " local" : ""}`;
 }
 
 /** Its start and end for a row's corner in the device's own time, month/day
- *  and 24 hours, the zone named once on the last ("11/10 06:00" over
- *  "11/12 08:32 CST"; the owner, 2026-11-11: "Instead of Zulu time make it
+ *  and 24 hours, "local" once on the last ("11/10 06:00" over
+ *  "11/12 08:32 local"; the owner, 2026-11-11: "Instead of Zulu time make it
  *  local time", then the numeric 24-hour form for "How can we make the
  *  notam date time more compact"; its full card keeps the UTC the NOTAM
- *  gives): the end an estimate with "(est.)", not EST beside a zone,
+ *  gives): the end an estimate with "(est.)", not EST (Eastern time),
  *  "Permanent" where it is PERM
  *  (JO 7930.2 4-2-1), null where none is given. */
 export function cornerOf(n: FieldNotam, read: NotamReading): { from: string | null; until: string | null } {
@@ -143,19 +138,13 @@ export function cornerOf(n: FieldNotam, read: NotamReading): { from: string | nu
   return { from: starts ? corner(starts, !ends) : null, until };
 }
 
-const LOCAL = new Intl.DateTimeFormat(undefined, {
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-  timeZoneName: "short",
-});
+const LOCAL = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 
-/** The window in the device's own time, its zone named ("Nov 12, 3:00 –
- *  11:00 AM CST"), beside the UTC the NOTAM gives (JO 7930.2 3-3-2). */
+/** The window in the device's own time, said to be local, its zone not
+ *  named ("Nov 12, 3:00 – 11:00 AM local"), beside the UTC the NOTAM gives (JO 7930.2 3-3-2). */
 export function localWords(starts: string | null | undefined, ends: string | null | undefined): string | null {
   const [from, until] = [dateOf(starts), dateOf(ends)];
-  if (from && until) return LOCAL.formatRange(from, until);
-  if (from) return `From ${LOCAL.format(from)}`;
-  return until ? `Until ${LOCAL.format(until)}` : null;
+  if (from && until) return `${LOCAL.formatRange(from, until)} local`;
+  if (from) return `From ${LOCAL.format(from)} local`;
+  return until ? `Until ${LOCAL.format(until)} local` : null;
 }

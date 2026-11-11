@@ -74,7 +74,7 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   // The engine's reading: its title, the runway it names, and its words written out.
   await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway 09/27");
   // Its start and end at the row's top right, in the device's own time.
-  await expect(one.getByTestId("place-notam-window")).toHaveText(/^11\/1[01] \d\d:\d\d– 11\/12 \d\d:\d\d \S+$/);
+  await expect(one.getByTestId("place-notam-window")).toHaveText(/^11\/1[01] \d\d:\d\d– 11\/12 \d\d:\d\d local$/);
   await expect(one.getByTestId("place-notam-words")).toHaveText("Runway 09/27 closed.");
   // A tap opens it in full on a card of its own: its window, as sent.
   await one.click();
