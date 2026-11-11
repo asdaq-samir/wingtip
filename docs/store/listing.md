@@ -16,15 +16,27 @@ quote marks and with each bullet on one line.
 
 The stores' text says what the app itself says, in its words: the web's
 `apps/web/src/components/planningAid.ts` and the terms
-(`apps/web/public/terms.html#a-planning-aid-not-for-navigation`), and the native kneeboards'
-footer (`apps/ios/Wingtip/Views/Kneeboard.swift`: "a planning aid: check
-the charts, NOTAMs and an official briefing before flight"). The
-description's last paragraph is that sentence, word for word:
+(`docs/legal/terms.md`, "A planning aid, not for navigation", served at
+`/terms`), and the native kneeboards' footer
+(`apps/ios/Wingtip/Views/Kneeboard.swift`: "a planning aid: check the
+charts, NOTAMs and an official briefing before flight"). Both
+descriptions end with that sentence, word for word, and then the terms'
+heading said for the moving map: not for navigation. Apple's guideline
+5.1.5 says location services "shouldn't be used to provide emergency
+services or autonomous control over vehicles, aircraft, and other
+devices"; so the listing never sells the app as emergency help, and the
+nearest-fields line says it is a reference and not an emergency service
+(121.5 MHz is the aeronautical emergency frequency, AIM 6-3-1). The
+paragraphs, as both listings use them:
 
 > Wingtip Maps is a planning aid for VFR and IFR flight. It does not
 > replace an official weather briefing (1800wxbrief.com or
 > 1-800-WX-BRIEF), current FAA charts and publications, or the pilot in
 > command's judgement and final authority (14 CFR 91.3, 91.103).
+>
+> Not for navigation: the map, your airplane on it, the traffic and the
+> alerts are for awareness, not a replacement for the airplane's
+> instruments and approved navigation equipment.
 
 ## URLs
 
@@ -68,7 +80,7 @@ sectional,flight planner,pilot,METAR,TAF,airspace,TFR,ADS-B,logbook,EFB,student 
 Stores count keywords without the spaces after commas; there are none
 here, and the spaces inside a phrase ("flight planner") count.
 
-**Description** (2,170 / 4,000):
+**Description** (2,481 / 4,000):
 
 > Wingtip Maps is the FAA chart on a map that works like Maps on your
 > iPhone, and everything a VFR or IFR flight needs on top of it.
@@ -102,7 +114,9 @@ here, and the spaces inside a phrase ("flight planner") count.
 >   are heard on your iPhone where it can.
 > - Charts, airports and terrain downloaded by sectional, state or a
 >   box you draw, for flying with no signal.
-> - Emergency help: the nearest fields you can reach, and what to do.
+> - Nearest fields: the airports within reach of where you are, as a
+>   reference for planning a diversion. It is not an emergency service:
+>   in an emergency, fly the airplane and talk to ATC (121.5 MHz).
 >
 > AFTER
 > - The flight logged with no typing: when you land, the logbook entry
@@ -118,6 +132,10 @@ here, and the spaces inside a phrase ("flight planner") count.
 > replace an official weather briefing (1800wxbrief.com or
 > 1-800-WX-BRIEF), current FAA charts and publications, or the pilot in
 > command's judgement and final authority (14 CFR 91.3, 91.103).
+>
+> Not for navigation: the map, your airplane on it, the traffic and the
+> alerts are for awareness, not a replacement for the airplane's
+> instruments and approved navigation equipment.
 
 Where each line comes from, for the next check:
 
@@ -133,7 +151,7 @@ Where each line comes from, for the next check:
 | ADS-B receiver | `Receiver/Receiver.swift` |
 | ATC copilot | `Atc/AtcCopilot.swift`, `ClearanceListener.swift` (on-device recognition where supported) |
 | Downloads | `Offline/DownloadsView.swift` |
-| Emergency | `Emergency/`, `Views/EmergencySheet.swift` |
+| Nearest fields (the emergency sheet) | `Emergency/`, `Views/EmergencySheet.swift` |
 | Logbook auto-draft | `Logbook/AutoLogbook.swift`, `Views/FlightLoggedSheet.swift` |
 | Sign-in, iCloud | `Session.swift`, `Records/Records.swift` |
 | Watch | `apps/ios/WingtipWatch` |
@@ -260,7 +278,7 @@ after:
 | Website | `https://wingtipmaps.app/` | |
 | Privacy policy | `https://wingtipmaps.app/privacy` | |
 
-**Full description** (1,818 / 4,000). The App Store's text with what the
+**Full description** (2,129 / 4,000). The App Store's text with what the
 Android app does not have taken out (Sign in with Apple, iCloud, the
 Lock Screen activity, the watch) and the emailed link as the one way
 in (`Session.kt`):
@@ -294,7 +312,9 @@ in (`Session.kt`):
 >   shows a call to you as a card, and checks your readback.
 > - Charts, airports and terrain downloaded by sectional, state or a
 >   box you draw, for flying with no signal.
-> - Emergency help: the nearest fields you can reach, and what to do.
+> - Nearest fields: the airports within reach of where you are, as a
+>   reference for planning a diversion. It is not an emergency service:
+>   in an emergency, fly the airplane and talk to ATC (121.5 MHz).
 >
 > AFTER
 > - The flight logged with no typing: when you land, the logbook entry
@@ -306,6 +326,10 @@ in (`Session.kt`):
 > replace an official weather briefing (1800wxbrief.com or
 > 1-800-WX-BRIEF), current FAA charts and publications, or the pilot in
 > command's judgement and final authority (14 CFR 91.3, 91.103).
+>
+> Not for navigation: the map, your airplane on it, the traffic and the
+> alerts are for awareness, not a replacement for the airplane's
+> instruments and approved navigation equipment.
 
 Android sources for the lines that differ: `ui/AirportScreen.kt` and
 `live/LiveAirportModel.kt` (D-ATIS, RVR), `atc/` (copilot,
