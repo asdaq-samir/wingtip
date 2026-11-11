@@ -105,6 +105,13 @@ export function SheetDrawer({
                 "data-swiping:transition-none motion-reduce:transition-none",
                 fromBottom ? "bottom-0" : "top-0",
                 look,
+                // A card up (Base UI's own data-nested-drawer-open): the card
+                // is the one sheet in sight, as Apple Maps' place card stands
+                // in for its search, so this one's ground, edge and shadow
+                // give way; the card, drawn inside it, stays (the owner's
+                // iPhone, 2026-11-11: an empty grey sheet over a card at its
+                // pill).
+                "data-nested-drawer-open:bg-transparent data-nested-drawer-open:shadow-none data-nested-drawer-open:ring-0 data-nested-drawer-open:backdrop-blur-none",
               )}
             >
               {/* Over its top edge, the parts that ride it (OnSheetTop):
@@ -118,10 +125,13 @@ export function SheetDrawer({
                   className="pointer-events-none absolute inset-x-0 bottom-full"
                 />
               )}
-              {grabber}
+              {/* Its grabber and body out of sight under a card, the card's own in their place. */}
+              <div className="contents group-data-nested-drawer-open/sheet:invisible">{grabber}</div>
               {/* Clipped to its corners here, not on the popup, which the
                   parts over its top stand outside of. */}
-              <div className="relative flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]">{children}</div>
+              <div className="relative flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit] group-data-nested-drawer-open/sheet:invisible">
+                {children}
+              </div>
               {cards}
             </Drawer.Popup>
           </SheetViewport>
