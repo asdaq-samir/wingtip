@@ -1,4 +1,5 @@
 import type { PillHead } from "./openCards";
+import type { PanelState } from "./mapChrome";
 import type { Drawer } from "@base-ui/react/drawer";
 import { createContext } from "react";
 import { create } from "zustand";
@@ -31,10 +32,11 @@ export type CardEntry = {
   id: string;
   /** Its name. */
   title?: string;
-  /** How far up the sheet comes for it: half for a card, all the way up
-   *  for a search, as Maps' does; none for a card the page sizes itself
-   *  (a place's, the Brief, Settings). */
+  /** The least it opens at: half for a card, all the way up for a search,
+   *  as Maps' does (CardStack); half where none is said. */
   raise?: "half" | "full";
+  /** Its own drawer's size, kept while a card is over it (MapPanel). */
+  at?: PanelState;
   /** Open, or kept closed under a page put away (lib/shown). */
   shown: boolean;
   frame: CardFrame;
@@ -45,14 +47,8 @@ export type CardEntry = {
 /** The cards open, the last on top. */
 export const useSheetCards = create<{ stack: CardEntry[] }>(() => ({ stack: [] }));
 
-/** How far the sheet is asked up for the cards open: null with none. */
-export const raisedFor = (stack: CardEntry[]): "half" | "full" | null => {
-  const up = stack.filter((entry) => entry.shown && entry.raise);
-  return up.length === 0 ? null : up.some((entry) => entry.raise === "full") ? "full" : "half";
-};
-
-/** Whether a card covers the sheet. */
-export const cardsOpen = (stack: CardEntry[]) => stack.some((entry) => entry.shown);
+/** The top card, the frontmost sheet: null with none open. */
+export const topCard = (stack: CardEntry[]): CardEntry | null => [...stack].reverse().find((entry) => entry.shown) ?? null;
 
 /** A card's entry changed in place. */
 export function setCard(id: string, change: Partial<CardEntry>) {

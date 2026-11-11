@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { createPortal } from "react-dom";
+import type { CardFrame } from "../../lib/sheetCards";
 import { useCardFrame } from "./useCardFrame";
 
 /**
@@ -7,10 +8,11 @@ import { useCardFrame } from "./useCardFrame";
  * (PanelCard), the Brief, Settings (ConsoleLayer) -- a nested Drawer
  * (CardStack) with the sheet's sizes, its grabber and its swipe; drawn
  * here, for the caller's providers, and put in the drawer's scroller.
- * Escape goes back a level (the top card's close, use-shortcuts' backOne);
- * a tap on the map leaves it open, the map's own tap deciding.
+ * Escape is its drawer's: the top card closed (lib/openCards), or the
+ * caller's own `dismiss`; a tap on the map leaves it open, the map's own
+ * tap deciding.
  */
-export function CardLayer({ label, children }: { label?: string; children: ReactNode }) {
-  const slot = useCardFrame({ label });
+export function CardLayer({ label, dismiss, children }: { label?: string; dismiss?: CardFrame["dismiss"]; children: ReactNode }) {
+  const slot = useCardFrame({ label, dismiss });
   return slot ? createPortal(children, slot) : null;
 }

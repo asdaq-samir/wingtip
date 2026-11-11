@@ -45,9 +45,3 @@ export function insetsOf(s: PanelState, d: Detents, onPhone: boolean, fromBottom
     ? { top: safeTop, bottom: strip, left: 0, out: s !== "peek", up }
     : { top: strip, bottom: 0, left: 0, out: s !== "peek", up };
 }
-
-/** What a phone's sheet says as it sets off for another size, on its
- *  "sheetturn" event: the room it will leave the map (GlMapShell). */
-export interface SheetTurn {
-  insets: MapInsets;
-}

@@ -173,16 +173,27 @@ close does.
   snap (a hard flick may go from the pill all the way up): the Drawer's
   behaviour as it comes, nothing set over it (decision 0018; the owner,
   2026-11-10 and 2026-11-11, "Just let the drawer do what it does").
+- What the sheet shows follows its snap point the moment it is set: the
+  grabber, the radio's and the map's buttons on its top, the body's layout
+  for the size, the pill's row, the figures' compact form, the map's room
+  (MapPanel). Nothing is held until the slide ends, nothing laid out ahead
+  in a transition, nothing raises the sheet on a focus; the keyboard's
+  inset and a focused field's scroll are `VirtualKeyboardProvider`'s.
 - Cards over the sheet are the Drawer's own nested drawers (the owner,
-  2026-11-11; `components/sheet/CardStack`): each with the sheet's three
-  sizes, its grabber and its swipe, the sheet's swipe the card's while one
-  is up, Escape the top card's first. They are put inside the sheet's popup
-  (`Drawer.Portal`'s `container`) and moved by their own drag alone, the
-  sheet carrying them by its snap offset, so a card let go eases with the
-  sheet on the one curve. A card's content stays drawn where its caller is
-  (its providers) and is put in its drawer's scroller (`useCardFrame`);
-  touches on it are handed to its drawer's viewport (`SheetViewport`), as
-  Base UI 1.9 has no prop for touches from a React portal.
+  2026-11-11; `components/sheet/CardStack`): each with its own snap point
+  among the sheet's three sizes, its grabber and its swipe, the sheet's
+  swipe the card's while one is up, and its own Escape closing it. A card
+  opens at half at the least (all the way up for a search) or as high as
+  what it covers, then is where the pilot puts it; the sheet under it
+  stays where it was, and the page's size is the frontmost sheet's
+  (MapPanel's `useSheetLayers`). They are put inside the sheet's popup
+  (`Drawer.Portal`'s `container`), outside its corners' clip, placed from
+  the sheet's snap offset to their own. A card's content stays drawn where
+  its caller is (its providers) and is put in its drawer's scroller
+  (`useCardFrame`); touches on it are handed to its drawer's viewport
+  (`SheetViewport`): Base UI 1.9 gives the viewport its touchstart,
+  touchend and pointerdown as React props, and React sends a portal's
+  events to its React parents, not to the viewport it sits in on the page.
 - The keyboard: `Drawer.VirtualKeyboardProvider` on the sheet, each card
   and each question (`PhoneSheet`), its `--drawer-keyboard-inset` the
   viewport's bottom, in place of a `visualViewport` reading.
@@ -1095,9 +1106,9 @@ sheet scrolls one way on a phone:
   scroll, and lets the sheet have it only toward its closing edge, so
   below full the body's scrollers are made no scrollers (`overflow-y:
   hidden`, which its arbitration skips; index.css). A script, the keyboard
-  and a row brought into view still scroll them, and a row focused under
-  the sheet's edge raises the sheet (MapPanel). Nothing sits below the
-  screen to be scrolled to at half.
+  and a row brought into view still scroll them; the sheet stays at the
+  size the pilot left it. Nothing sits below the screen to be scrolled to
+  at half.
 - Sideways rows scroll sideways only: the Embla carousels (`CardPictures`,
   `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`
   (an up or down drag the sheet's), and every native sideways row
@@ -1215,7 +1226,9 @@ its reason:
   on an inner box, not the popup, which they stand outside of. Base UI has
   no prop for parts riding a drawer; this uses only its popup's own box.
 - **The side panel's Escape** (MapPanel, from `md` up): a plain region,
-  not a Drawer, so no stock component hears the key for it.
+  not a Drawer, so no stock component hears the key for it. On a phone
+  each card's own drawer closes it on Escape, and the sheet's own
+  `escape-key`, with no card up, lowers it to the pill.
 - **The departure hours' semantics:** Base UI's ToggleGroup gives pressed
   buttons in a group with arrow-key focus, not `role="radio"`; the stock
   behaviour is kept rather than overriding its ARIA.

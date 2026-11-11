@@ -41,15 +41,15 @@ export async function settle(page: Page) {
 }
 
 /** The panel over the map (MapPanel): a sheet up from the bottom of a
- *  phone, a card over the chart otherwise. Out or not is its
- *  `data-panel`: peek at rest, half or full when it is out. */
+ *  phone, a card over the chart otherwise. Out or not is its `data-panel`
+ *  (the frontmost sheet's): peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
+/** The frontmost sheet: the top card's own drawer (sheet/CardStack), else the map's. */
+export const frontSheet = (page: Page) => page.locator('[data-slot="map-panel"], [data-sheet-card][data-open]').last();
 
-/** The first row in sight: the sheet's, static over a card, at the pill
- *  too. */
+/** The first row in sight: the sheet's, static over a card, at the pill too. */
 export async function showTabs(page: Page) {
-  // From the sheet at rest (settling to the pill it keeps the half's layout until it lands, MapPanel). The
-  // first row: the one search, scoped to the traffic or Nearest where one is up; or the developer's places.
+  // From the sheet at rest. The first row: the one search, scoped to the traffic or Nearest where one is up; or the developer's places.
   await settled(sideDrawer(page));
   const first = page.getByTestId("search-airports").or(page.getByTestId("aircraft-search")).or(page.getByTestId("nearest-from"));
   if (!(await first.or(page.getByTestId("dev-tabs")).first().isVisible())) await grabberTo(page, "half");
@@ -78,11 +78,11 @@ export async function clearTheRoute(page: Page) {
 
 const RANK = { peek: 0, half: 1, full: 2 } as const;
 
-/** The panel to a height by its grabber (MapPanel): the pill, half and all
- *  the way up, a step at a time by the grabber's arrow keys, as a keyboard
- *  and VoiceOver move it. Each step waited on. */
+/** The frontmost sheet to a height by its grabber (MapPanel's, a card's):
+ *  the pill, half and all the way up, a step at a time by its arrow keys,
+ *  as a keyboard and VoiceOver move it. Each step waited on. */
 export async function grabberTo(page: Page, state: "peek" | "half" | "full") {
-  const panel = sideDrawer(page);
+  const panel = frontSheet(page);
   await panel.waitFor();
   const grabber = page.getByTestId("sidebar-trigger-button");
   const size = async () => (await panel.getAttribute("data-panel")) as keyof typeof RANK;

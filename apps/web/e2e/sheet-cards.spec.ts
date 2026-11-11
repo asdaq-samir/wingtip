@@ -19,10 +19,11 @@ import {
  * the chart opens (MapPopup) is a card in the map's one sheet, as Maps
  * opens everything in its sheet, at the owner's ask ("Yes to all, let's
  * have consistency and common code", 2026-10-27): not a sheet floating
- * over it, nor a popup over the chart (SheetCard). The panel comes up
- * half way for it at the least; its close, Escape and a device's Back
- * put it away, back to what was under it and the panel
- * where it was.
+ * over it, nor a popup over the chart (SheetCard). The card is its own
+ * nested drawer with its own snap point, half way at the least, the panel
+ * under it left where it was (the owner, 2026-11-11: "Just let the drawer
+ * do what it does"); its close, Escape and a device's Back put it away,
+ * back to what was under it.
  */
 
 test("the Map settings open as a card in the map's sheet, and its close goes back to what was under it", async ({ page }) => {
@@ -33,12 +34,13 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   await settled(panel);
   await expect(panel).toHaveAttribute("data-panel", "peek");
 
-  // From the pill: the panel up half way for it, the card its body.
+  // From the pill: the card half way up over it, the panel left at the pill.
   await openMapSettings(page);
   const card = panel.getByRole("region", { name: "Map", exact: true });
   await expect(card).toBeVisible();
   await expect(card).toHaveAttribute("data-testid", "map-settings");
-  await expect(panel).toHaveAttribute("data-panel", "half");
+  await expect(card).toHaveAttribute("data-panel", "half");
+  await expect(panel).toHaveAttribute("data-sheet-at", "peek");
   // Nothing floating over the panel, and nothing made modal: the one
   // dialog the sheet itself, the stock Drawer's non-modal popup (MapPanel),
   // not the card in it, which is a region.
@@ -48,7 +50,7 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   await expect(card.getByRole("heading", { name: "Map", level: 2 })).toBeFocused();
   // Its name and close in its own head, the top of the sheet: the one
   // search put away under a card, as Apple Maps' is (the owner, 2026-11-10);
-  // the panel back to the pill as it closes.
+  // the panel still at the pill as it closes.
   await expect(card.getByRole("heading", { name: "Map", level: 2 })).toBeVisible();
   await expect(firstRow(page)).toBeHidden();
   await expect(panelTabs(page)).toHaveCount(0);
@@ -124,7 +126,7 @@ test("a checkpoint tapped on the chart opens its card in the sheet; one opened o
   await expect(name).toBeVisible();
   const checkpoint = panel.getByRole("region", { name: (await name.innerText()).trim(), exact: true });
   await expect(checkpoint).toBeVisible();
-  await expect(panel).not.toHaveAttribute("data-panel", "peek");
+  await expect(head).not.toHaveAttribute("data-panel", "peek");
   // Not a popup over the chart.
   await expect(page.locator(".maplibregl-popup:visible")).toHaveCount(0);
   // Its ring on the map is drawn by MapLibre now (PickedGl's picked-ring

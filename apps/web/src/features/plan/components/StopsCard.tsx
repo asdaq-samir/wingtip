@@ -188,13 +188,6 @@ export default function StopsCard({
     const row = list.current?.querySelector(`[data-ident="${picked}"]`)?.closest('[data-testid="stops-field"]');
     if (!row) return;
     row.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" });
-    // Half way the list is cut off at the sheet's edge, not scrolled: the
-    // sheet comes up if the row is under it (MapPanel's sheetreveal). A
-    // frame on: a pin's tap sends the sheet up from the pill in MapPanel's
-    // own effect, which runs after this one, and the sheet must know where
-    // it is going before it hears of the row.
-    const frame = requestAnimationFrame(() => row.dispatchEvent(new Event("sheetreveal", { bubbles: true })));
-    return () => cancelAnimationFrame(frame);
   }, [picked, pickedShown]);
   return (
     // From the panel's corner, as every card is; its list scrolls under its head.

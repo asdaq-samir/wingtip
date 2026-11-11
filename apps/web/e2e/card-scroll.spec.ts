@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settled, sideDrawer, slow } from "./helpers";
+import { frontSheet, grabberTo, settled, slow } from "./helpers";
 import { CARDS, type CardRow, type Check } from "./cardTable";
 import { contentTop, go, hittable, scrollOf } from "./cardEntries";
 
@@ -12,10 +12,12 @@ import { contentTop, go, hittable, scrollOf } from "./cardEntries";
  * last row is still reached; a sideways row slides without moving the
  * sheet; and its place is kept going back to it. A phone's sheet: the
  * desktop's side panel has no detents to drag between. A check a card is
- * excused from says why (cardTable's `not`).
+ * excused from says why (cardTable's `not`). The sheet dragged is the
+ * card's own nested drawer, its own snap point (CardStack), or the map's
+ * sheet for a page of the plan (frontSheet).
  */
 
-const panel = (page: Page) => sideDrawer(page);
+const panel = (page: Page) => frontSheet(page);
 
 async function open(page: Page, row: CardRow) {
   await row.entries[0]!.open(page);

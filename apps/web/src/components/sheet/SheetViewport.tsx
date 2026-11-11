@@ -48,12 +48,18 @@ function synthetic(event: TouchEvent, viewport: HTMLElement) {
  * documented `render` function receives them, the Drawer's own merged
  * with this one's, and draws the same <div> with them.
  *
- * An explicit forward, the third way the speed brief allowed (2026-11-10):
- * Base UI 1.9's Drawer has no prop for touches from a React portal drawn
- * into its viewport -- a swipe area (Drawer.SwipeArea) only opens a closed
- * drawer, and data-base-ui-swipe-ignore only takes touches away -- and
- * drawing the cards in the Drawer's own tree would cost them their callers'
- * providers (the map's, a card's close). No Base UI issue for it was
+ * Why it is still needed (checked again 2026-11-11, the owner's "don't
+ * modify its behavior"): the content is in the card's popup on the page,
+ * but Base UI 1.9 gives the viewport its touchstart, touchend and
+ * pointerdown as React props (DrawerViewport.js's onTouchStart,
+ * onTouchEnd, onPointerDown), only its touchmove as a listener on the
+ * document; React sends an event from a portal's content up the portal's
+ * React parents (the card's caller), never to the viewport it sits in on
+ * the page, so without this the Drawer never hears a swipe start there.
+ * It has no prop for such touches -- a swipe area (Drawer.SwipeArea) only
+ * opens a closed drawer, and data-base-ui-swipe-ignore only takes touches
+ * away -- and drawing the cards' content in the Drawer's own tree would
+ * cost them their callers' providers (the map's, a card's close). No Base UI issue for it was
  * found (a web search, 2026-11-10); one is to be filed at
  * github.com/mui/base-ui/issues, and this goes once the Drawer takes them. It reads nothing of React's own: it
  * stood on the element's internal props key (__reactProps$…), which a

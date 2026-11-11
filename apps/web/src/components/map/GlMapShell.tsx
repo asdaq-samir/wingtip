@@ -13,7 +13,7 @@ import MapBanners from "../MapBanners";
 import MapLoading from "../MapLoading";
 import { MapInsetsContext, SHEET_SECONDS, type MapInsets } from "../../lib/mapChrome";
 import { SheetCard } from "../SheetCard";
-import { DRAWER_MS, type SheetTurn } from "../sheet/insets";
+import { DRAWER_MS } from "../sheet/insets";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { usePreferences } from "../../lib/preferences";
@@ -239,7 +239,7 @@ interface Props {
  *
  * The map follows the sheet with MapLibre's own padding: the middle of
  * what the sheet leaves stays the middle, eased in the sheet's own time
- * from the sheet's turn (MapPanel's sheetturn), and a route is fitted to
+ * as the sheet's snap point is set (MapPanel's insets), and a route is fitted to
  * what the sheet leaves, clear of the map's buttons.
  *
  * One MapLibre map lives on from one tree to the next: the map the page
@@ -516,8 +516,8 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
 
   // The map follows the sheet: MapLibre's padding is what the panel
   // covers, eased in the sheet's own time, so what was in the middle of
-  // the room left stays in the middle -- from the sheet's turn as it sets
-  // off (MapPanel's sheetturn), not only once the page hears it landed.
+  // the room left stays in the middle -- told as the sheet sets off, its
+  // snap point set (MapPanel's insets).
   const follow = useCallback(
     (to: MapInsets) => {
       const was = insetsRef.current;
@@ -586,16 +586,6 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   useEffect(() => {
     follow(insets);
   }, [insets, follow]);
-  useEffect(() => {
-    if (!map) return;
-    const doc = map.getContainer().ownerDocument;
-    const turned = (event: Event) => {
-      const going = (event as CustomEvent<SheetTurn | null>).detail?.insets;
-      if (going) follow(going);
-    };
-    doc.addEventListener("sheetturn", turned, true);
-    return () => doc.removeEventListener("sheetturn", turned, true);
-  }, [map, follow]);
 
   // A point picked -- a checkpoint, an airport's card -- flown to, in
   // close enough, as FocusOn; own ship stops pulling the map back.

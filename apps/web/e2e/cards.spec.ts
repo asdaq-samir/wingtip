@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { firstRow, grabberTo, settled, sideDrawer, slow } from "./helpers";
+import { firstRow, frontSheet, grabberTo, settled, slow } from "./helpers";
 import { CARDS, type CardRow, type Entry } from "./cardTable";
 import { expectBack, hittable, nestedOverSheet, scrollOf } from "./cardEntries";
 
@@ -67,10 +67,11 @@ for (const row of CARDS) {
         test.skip(!phone(page), "a phone's sheet");
         test.skip(!!row.not?.pill, row.not?.pill ?? "");
         await open(page, row, row.entries[0]!);
-        await settled(sideDrawer(page));
+        await settled(frontSheet(page));
         await grabberTo(page, "peek");
-        await settled(sideDrawer(page));
-        const sheetTop = (await sideDrawer(page).boundingBox())!.y;
+        await settled(frontSheet(page));
+        // The card's own drawer's top: it has its own size over the sheet (CardStack).
+        const sheetTop = (await frontSheet(page).boundingBox())!.y;
         await expect.poll(() => hittable(page, [row.close]), { timeout: slow(10_000) }).toBe(row.close);
         const close = (await page.getByTestId(row.close).filter({ visible: true }).first().boundingBox())!;
         expect(close.y - sheetTop, "its ✕ at the sheet's top").toBeLessThan(80);
@@ -87,11 +88,12 @@ for (const row of CARDS) {
           [close.y + close.height + 8, row.card] as const,
         );
         expect(below, "the card's body in sight under its title row at the pill").toEqual([]);
-        // A tap on the row, beside its buttons, raises it back to half.
+        // A tap on the row, beside its buttons, raises it back to half: the
+        // card's own drawer (CardStack), the sheet under it where it was.
         const head = page.locator("[data-sheet-head]").filter({ visible: true }).first();
         const box = (await head.boundingBox())!;
         await page.mouse.click(box.x + 24, box.y + box.height - 6);
-        await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+        await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
         await expect(page.getByTestId(row.card)).toBeVisible();
       });
 
@@ -109,11 +111,11 @@ for (const row of CARDS) {
     if (row.fullHeight)
       test("it is the one full-height card, its ✕ at the top right, the map not dimmed", async ({ page }) => {
         await open(page, row, row.entries[0]!);
-        if (phone(page)) await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+        if (phone(page)) await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
         const close = (await page.getByTestId(row.close).filter({ visible: true }).first().boundingBox())!;
-        // The sheet's box, not the card's: the card runs on under its pinned
-        // head, its own top scrolled above the sheet's (the one scrolling rule).
-        const sheet = (await sideDrawer(page).boundingBox())!;
+        // The card's drawer's box, not its content's: the content runs on under
+        // its pinned head, its own top scrolled above the drawer's (the one scrolling rule).
+        const sheet = (await frontSheet(page).boundingBox())!;
         expect(close.x + close.width / 2).toBeGreaterThan(sheet.x + sheet.width / 2);
         expect(close.y).toBeLessThan(Math.max(sheet.y, 0) + 120);
         // Not modal: no dimming over the map, no dialog taking the page.

@@ -111,13 +111,13 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(tower).toBeInViewport();
 
   // Put away: the address forgets it, and the route is the panel again,
-  // the layer under the card, at the height the sheet had before the card
-  // opened -- here the pill's, where the page opened -- not all the way up
-  // where the card was left, as Apple Maps does (the owner's pick).
+  // the layer under the card, where the sheet was under it -- here half,
+  // the size the page opened at -- not all the way up where the card was
+  // left (the owner, 2026-11-11: "Just let the drawer do what it does").
   await closeCard(page, "place-close");
   await expect(card(page)).toHaveCount(0);
   await expect(page).not.toHaveURL(/[?&]place=/);
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
 });
 
 /** A TAF for KDLH issued this hour, for a day: fair until an FM group in

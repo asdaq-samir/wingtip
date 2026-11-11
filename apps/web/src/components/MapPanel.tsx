@@ -1,14 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useLayoutEffect, useMemo, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -16,18 +6,17 @@ import { useIsDesktop } from "../hooks/use-desktop";
 import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea, useWindowHeight } from "../hooks/use-viewport";
-import { GLASS_SHEET, MATERIAL, PILL_RADIUS, SHEET_MARGIN, usePanelDragging, type MapInsets, type PanelState } from "../lib/mapChrome";
-import { cardsOpen, raisedFor, useSheetCards } from "../lib/sheetCards";
-import { FLOAT_PX, insetsOf, type Detents, type SheetTurn } from "./sheet/insets";
+import { GLASS_SHEET, MATERIAL, PILL_RADIUS, SHEET_MARGIN, type MapInsets, type PanelState } from "../lib/mapChrome";
+import { setCard, topCard, useSheetCards } from "../lib/sheetCards";
+import { FLOAT_PX, insetsOf } from "./sheet/insets";
 import { useSheetDetents } from "./sheet/useSheetDetents";
-import { prefersReducedMotion } from "../lib/motion";
-import { useSheetLife } from "./sheet/useSheetLife";
-import { useCardRaise } from "./sheet/useCardRaise";
+import { useDrawn } from "./sheet/useDrawn";
 import { CUT_TOP, FOLLOW, SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
 import { SheetGrabber } from "./sheet/SheetGrabber";
 import { CardStack, type StackProps } from "./sheet/CardStack";
 import { SheetDrawer } from "./sheet/SheetDrawer";
 import type { SheetPages } from "./sheet/SheetPager";
+import type { CardEntry } from "../lib/sheetCards";
 
 interface Props {
   /** The panel's name -- "Flight Planning", "Model Training" -- for its
@@ -77,6 +66,8 @@ interface Props {
 /** The grabber's row at the far edge of a top sheet or the side panel. */
 const GRABBER = 16;
 
+const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
+
 /**
  * The page's one panel over the map, the way Maps on an iPhone has one:
  * the one search first, the route and the workspace's actions under it,
@@ -92,11 +83,14 @@ const GRABBER = 16;
  * leaves to its user is a thin layer here: the parts held in sight at its
  * free edge (by the Drawer's own CSS variables, SheetParts), the room over
  * its top where the radio's and the map's buttons ride it (OnSheetTop), the room it
- * leaves the map (insetsOf, told as it sets off and once it has landed)
- * and its fixed heights (useSheetDetents). The cards over it are its own
- * nested drawers (CardStack); the keyboard's inset is the Drawer's
+ * leaves the map (insetsOf) and its fixed heights (useSheetDetents). The
+ * cards over it are its own nested drawers, each with its own snap point
+ * (CardStack); the keyboard's inset is the Drawer's
  * (VirtualKeyboardProvider), and a throw goes where the Drawer takes it:
- * its own behaviour, unchanged (the owner, 2026-11-11).
+ * its own behaviour, unchanged (the owner, 2026-11-11: "Just let the
+ * drawer do what it does"). What it shows -- the grabber, what rides its
+ * top, its body's layout, the map's room -- follows its snap point the
+ * moment that is set, never held for the slide to end.
  *
  * From `md` up it is a side panel instead, a plain region at the left the
  * window's height while it is out and its head alone at rest, the map
@@ -110,8 +104,8 @@ export default function MapPanel(props: Props) {
   const safe = useSafeArea();
   const windowHeight = useWindowHeight();
   const bottomSheet = onPhone && fromBottom;
-  const raised = useSheetCards((s) => raisedFor(s.stack));
-  const cardsUp = useSheetCards((s) => cardsOpen(s.stack));
+  const topEntry = useSheetCards((s) => topCard(s.stack));
+  const cardsUp = !!topEntry;
   // Where the cards over it are put: inside its popup (CardStack).
   const [cardHost, setCardHost] = useState<HTMLElement | null>(null);
   const footShown = !!foot && !cardsUp;
@@ -120,20 +114,18 @@ export default function MapPanel(props: Props) {
   const barShown = !!bar && !flying && !cardsUp && layer === "tab";
   const toEdge = layer !== "console" && !!props.toEdge && !cardsUp;
 
-  // Where the Drawer is going (its snap point) and the size laid out for:
-  // the same, but going down to the pill the half's layout kept until it
-  // lands. Landed at once where nothing slides (side panel, Reduce Motion,
-  // before the first frame, the same height).
-  const still = useRef({ onPhone, ready: false, detents: null as Detents | null, at: props.state as PanelState });
-  const life = useSheetLife(props.state, props.onStateChange, (target) => {
-    const now = still.current;
-    return !now.onPhone || !now.ready || prefersReducedMotion() || (!!now.detents && now.detents[target] === now.detents[now.at]);
-  });
-  const { size, snap, moving } = life;
+  // The page's size is the frontmost sheet's snap point -- the top card's,
+  // else the sheet's -- and what is drawn for it at once; a size asked for
+  // here is the page's to set (useSheetLayers).
+  const ask = props.onStateChange;
+  const layers = useSheetLayers(props.state, ask, topEntry);
+  const front = layers.front;
+  // The sheet's own size under the cards; the side panel is one layer, its cards covering it.
+  const size = onPhone ? layers.size : front;
+  const ready = useDrawn();
   const hasPill = !!bar || !!compact;
   const atPill = size === "peek" && hasPill;
 
-  const [panel, setPanel] = useState<HTMLElement | null>(null);
   const [footNode, setFoot] = useState<HTMLDivElement | null>(null);
 
   // A bottom sheet runs on to the screen's edge, under the home indicator
@@ -150,7 +142,6 @@ export default function MapPanel(props: Props) {
   const sizes = useSheetDetents({
     foot: footNode,
     size,
-    moving,
     barInPill: !flying,
     grabberOver: bottomSheet,
     footShown,
@@ -162,81 +153,30 @@ export default function MapPanel(props: Props) {
   });
   const { detents } = sizes;
 
-  // The room it leaves the map: told to the map as it sets off (sheetturn,
-  // GlMapShell eases with it) and to the page once it has landed.
-  const insetsFor = useCallback(
-    (s: PanelState, d: Detents) => insetsOf(s, d, onPhone, fromBottom, safe.top, desktop),
-    [onPhone, fromBottom, safe.top, desktop],
-  );
-  const detentsRef = useRef(detents);
-  useLayoutEffect(() => {
-    detentsRef.current = detents;
-    still.current = { onPhone, ready: life.ready, detents, at: life.snapRef.current };
-  });
-  const go = life.go;
-  const ask = useCallback((target: PanelState) => go(target, true), [go]);
-  // The map told as the sheet sets off for another size, whatever sent it
-  // (a finger, the grabber, the page), so it eases with the sheet.
-  const turned = useRef(snap);
-  useEffect(() => {
-    if (turned.current === snap) return;
-    turned.current = snap;
-    panel?.dispatchEvent(
-      new CustomEvent("sheetturn", { bubbles: true, detail: { insets: insetsFor(snap, detentsRef.current) } satisfies SheetTurn }),
-    );
-  }, [snap, panel, insetsFor]);
+  // The room the frontmost sheet leaves the map, told as its snap point is
+  // set: the map eases with the sheet (GlMapShell, in the Drawer's time).
   const tellInsets = props.onInsetsChange;
-  const insetsNow = useMemo(() => insetsFor(size, detents), [insetsFor, size, detents]);
-  useEffect(() => {
-    if (!moving) tellInsets(insetsNow);
-  }, [moving, insetsNow, tellInsets]);
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => usePanelDragging.setState({ dragging: moving }));
-    return () => cancelAnimationFrame(frame);
-  }, [moving]);
+  const insetsNow = useMemo(
+    () => insetsOf(front, detents, onPhone, fromBottom, safe.top, desktop),
+    [front, detents, onPhone, fromBottom, safe.top, desktop],
+  );
+  useEffect(() => tellInsets(insetsNow), [insetsNow, tellInsets]);
 
-  // Escape, once nothing else took it (a menu, Setup's page): the top card
-  // or page closed first, a level back (backOne), on a phone too by the one
-  // card rule (the owner, 2026-11-10); with none open, the sheet lowered.
-  const lower = (event: Event) => {
-    setTimeout(() => {
-      if (event.defaultPrevented) return;
-      if (panel && backOne(panel.ownerDocument)) return;
-      if (life.sizeRef.current !== "peek") ask("peek");
-    });
+  // Escape with no card over it (a card's own drawer takes it) lowers the
+  // sheet to the pill; whether it took the key.
+  const lower = () => {
+    if (cardsUp || front === "peek") return false;
+    ask("peek");
+    return true;
   };
 
-  // Half way the body is cut off at the sheet's edge, as Apple Maps' is: a
-  // row focused there (the keyboard, VoiceOver) or asked for (sheetreveal,
-  // a pin's row in the Stops) brings the sheet all the way up.
-  const halfEdge = detents.half - (footShown ? sizes.footHalf : 0);
-  useEffect(() => {
-    if (!panel) return;
-    const reveal = (event: Event) => {
-      if (life.sizeRef.current !== "half" || !onPhone) return;
-      if (!(event.target instanceof Element) || !event.target.closest("[data-panel-body]")) return;
-      const row = event.target.getBoundingClientRect().bottom;
-      const below = fromBottom ? row - panel.getBoundingClientRect().top : row;
-      if (below > halfEdge + 1) ask("full");
-    };
-    panel.addEventListener("focusin", reveal);
-    panel.addEventListener("sheetreveal", reveal);
-    return () => {
-      panel.removeEventListener("focusin", reveal);
-      panel.removeEventListener("sheetreveal", reveal);
-    };
-  }, [panel, fromBottom, ask, halfEdge, onPhone, life.sizeRef]);
-
-  // A card opened comes up half way at the least, all the way for a search (useCardRaise).
-  useCardRaise(raised, ask, life.snapRef);
-
-  // The panel's size on <body>, for index.css's rules over the map.
+  // The frontmost sheet's size on <body>, for index.css's rules over the map.
   useLayoutEffect(() => {
-    document.body.dataset.mapPanel = size;
+    document.body.dataset.mapPanel = front;
     return () => {
       delete document.body.dataset.mapPanel;
     };
-  }, [size]);
+  }, [front]);
   useLayoutEffect(() => {
     document.body.toggleAttribute("data-map-sheet", onPhone);
     return () => document.body.removeAttribute("data-map-sheet");
@@ -249,7 +189,7 @@ export default function MapPanel(props: Props) {
     flying,
     size,
     atPill,
-    resting: atPill && !moving,
+    resting: atPill,
     fromBottom: bottomSheet,
     onPhone,
     desktop,
@@ -269,15 +209,11 @@ export default function MapPanel(props: Props) {
     bar,
     children,
   };
-  // A card's own grabber is the plain one; the sheet's, with its pages and
-  // not flying, the split one that picks them (SheetGrabber).
-  const grabber = <SheetGrabber label={label} size={size} ask={ask} at={bottomSheet ? "top" : "bottom"} />;
+  // A card's own grabber is the plain one, for its own size; the sheet's,
+  // with its pages and not flying, the split one that picks them (SheetGrabber).
+  const grabberAt = bottomSheet ? "top" : "bottom";
   const pages = props.pages && !flying && layer === "tab" ? props.pages : undefined;
-  const sheetGrabber = pages ? (
-    <SheetGrabber label={label} size={size} ask={ask} at={bottomSheet ? "top" : "bottom"} pages={pages} />
-  ) : (
-    grabber
-  );
+  const sheetGrabber = <SheetGrabber label={label} size={size} ask={ask} at={grabberAt} pages={pages} />;
   // The room at half for a card fitted to it (ProfileCard, PastFlightCard),
   // for the sheet's body and the cards over it: changed as it sets off and
   // at rest, never per frame.
@@ -288,8 +224,11 @@ export default function MapPanel(props: Props) {
     : cn(MATERIAL, "w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-inset ring-black/5 shadow-float dark:ring-white/10");
   const common = {
     "data-slot": "map-panel",
-    "data-panel": size,
-    "data-capsule": (atPill && !moving) || undefined,
+    // The size the pilot sees, the frontmost sheet's (the page's), and the
+    // sheet's own under the cards.
+    "data-panel": front,
+    "data-sheet-at": size,
+    "data-capsule": atPill || undefined,
     // Its three heights, for a probe or a test to read.
     "data-detents": `${detents.peek},${detents.half},${detents.full}`,
     "aria-label": label,
@@ -299,15 +238,18 @@ export default function MapPanel(props: Props) {
   // A drag let go at a snap point: the size nearest it. Let go past the
   // pill, the Drawer reads a close, which is refused for the pill.
   const snapped = (point: Drawer.Root.SnapPoint | null, details: Drawer.Root.SnapPointChangeEventDetails) => {
+    // A card's drag is its own drawer's (CardStack).
+    if (cardsUp) return;
     if (point === null) {
       details.cancel();
-      if (life.sizeRef.current !== "peek") ask("peek");
+      if (size !== "peek") ask("peek");
       return;
     }
     const px = typeof point === "number" ? point : parseFloat(point);
-    const d = detentsRef.current;
-    const target = (Object.keys(d) as PanelState[]).reduce((best, s) => (Math.abs(d[s] - px) < Math.abs(d[best] - px) ? s : best));
-    if (target !== life.snapRef.current) ask(target);
+    const target = (Object.keys(detents) as PanelState[]).reduce((best, s) =>
+      Math.abs(detents[s] - px) < Math.abs(detents[best] - px) ? s : best,
+    );
+    if (target !== size) ask(target);
   };
 
   // The cards over it, its nested drawers (CardStack), with its sizes.
@@ -316,13 +258,10 @@ export default function MapPanel(props: Props) {
     onPhone,
     fromBottom: bottomSheet,
     detents,
-    size,
-    snap,
-    resting: atPill && !moving,
-    ready: life.ready,
-    snapped,
+    front,
     ask,
-    grabber,
+    ready,
+    grabber: <SheetGrabber label={label} size={front} ask={ask} at={grabberAt} />,
     look: onPhone ? GLASS_SHEET : "bg-background dark:bg-popover",
     below: SHEET_BELOW,
     follow: onPhone && !fromBottom ? cn(FOLLOW, CUT_TOP) : undefined,
@@ -332,10 +271,13 @@ export default function MapPanel(props: Props) {
     return (
       // eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the side panel hears the Escape pressed in it, a keyboard convenience; its controls are its own
       <section
-        ref={setPanel}
         {...common}
+        // Escape a level back first, a page's close in it (use-shortcuts'
+        // backOne), then the panel lowered; taken, so the shortcuts' own
+        // Escape on the document does not go back a second level.
         onKeyDown={(event: KeyboardEvent) => {
-          if (event.key === "Escape" && !event.defaultPrevented) lower(event.nativeEvent);
+          if (event.key !== "Escape" || event.defaultPrevented) return;
+          if (backOne(event.currentTarget.ownerDocument) || lower()) event.preventDefault();
         }}
         className={cn(
           "fixed left-[max(1rem,env(safe-area-inset-left))] z-40 flex flex-col pb-4 overflow-clip text-foreground outline-none print:static",
@@ -355,21 +297,57 @@ export default function MapPanel(props: Props) {
     <SheetDrawer
       fromBottom={fromBottom}
       snapPoints={snapPoints}
-      snapPoint={detents[snap]}
+      snapPoint={detents[size]}
       snapped={snapped}
       lower={lower}
-      ready={life.ready}
-      onLanded={life.landed}
-      setPanel={setPanel}
+      ready={ready}
       popup={common}
       style={{ height: detents.full, maxHeight: `calc(100% - ${reserve}px)`, ...halfBody }}
       look={look}
       grabber={!cardsUp && sheetGrabber}
+      topSlot={!cardsUp}
+      cards={
+        // The cards over it, inside its popup: its place.
+        <>
+          <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40" />
+          <CardStack {...stackProps} />
+        </>
+      }
     >
       <SheetParts {...shared} />
-      {/* The cards over it, inside it: its corners, its place. */}
-      <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40" />
-      <CardStack {...stackProps} />
     </SheetDrawer>
   );
+}
+
+/**
+ * The sheet and the cards over it as layers, each with its own snap point
+ * (the owner, 2026-11-11: "Just let the drawer do what it does"): the
+ * page's size is the frontmost's -- the top card's, else the sheet's --
+ * and the sheet under a card stays where it was. As the top changes, the
+ * page is asked for the new top's size: a card opened at half at the
+ * least (all the way for a search) or as high as what it covers (the card
+ * rule's 2), one uncovered at the size it was left at, the sheet at its
+ * own. Until the page has it, that size is what is drawn (`front`).
+ */
+function useSheetLayers(page: PanelState, ask: (size: PanelState) => void, top: CardEntry | null) {
+  const topId = top?.id ?? null;
+  const [layer, setLayer] = useState(topId);
+  const [sheet, setSheet] = useState(page);
+  const [asked, setAsked] = useState<PanelState | null>(null);
+  if (layer !== topId) {
+    setLayer(topId);
+    const least = top?.raise ?? "half";
+    const target = !top ? sheet : (top.at ?? (RANK[page] > RANK[least] ? page : least));
+    setAsked(target === page ? null : target);
+  } else if (asked !== null && asked === page) setAsked(null);
+  else if (!top && asked === null && sheet !== page) setSheet(page);
+  useEffect(() => {
+    if (asked !== null) ask(asked);
+  }, [asked, ask]);
+  // The top card's size kept with it, for when it is uncovered.
+  const front = asked ?? page;
+  useEffect(() => {
+    if (topId) setCard(topId, { at: front });
+  }, [topId, front]);
+  return { front, size: top || asked !== null ? sheet : page };
 }

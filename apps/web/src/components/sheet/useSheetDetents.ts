@@ -23,9 +23,8 @@ const rootPx = () => parseFloat(getComputedStyle(document.documentElement).fontS
 
 interface Of {
   foot: HTMLElement | null;
-  /** The size laid out, and whether the sheet is on its way to one. */
+  /** The size laid out: the Drawer's snap point. */
   size: PanelState;
-  moving: boolean;
   /** The pill's parts: the first row (none while flying) and the figures. */
   barInPill: boolean;
   /** A bottom sheet's grabber over the first row. */
@@ -53,27 +52,26 @@ interface Of {
  * scrolls passes under it by the browser's own layout.
  */
 export function useSheetDetents(of: Of) {
-  const { foot, size, moving, barInPill, grabberOver = false, footShown, pillChrome, halfChrome, room, sideOut, topInset } = of;
+  const { foot, size, barInPill, grabberOver = false, footShown, pillChrome, halfChrome, room, sideOut, topInset } = of;
   const [footHeights, setFootHeights] = useState<{ half: number | null; other: number | null }>({ half: null, other: null });
-  const rest = useRef({ moving, size });
+  const rest = useRef(size);
   useLayoutEffect(() => {
-    rest.current = { moving, size };
+    rest.current = size;
   });
 
   useEffect(() => {
-    if (moving || !foot) return;
+    if (!foot) return;
     const at = size === "half" ? "half" : "other";
     const id = requestAnimationFrame(() => {
       const h = Math.ceil(foot.getBoundingClientRect().height);
       setFootHeights((was) => (was[at] === h ? was : { ...was, [at]: h }));
     });
     return () => cancelAnimationFrame(id);
-  }, [moving, foot, size]);
+  }, [foot, size]);
   useEffect(() => {
     if (!foot) return;
     const watch = new ResizeObserver(() => {
-      if (rest.current.moving) return;
-      const at = rest.current.size === "half" ? "half" : "other";
+      const at = rest.current === "half" ? "half" : "other";
       const h = Math.ceil(foot.getBoundingClientRect().height);
       setFootHeights((was) => (was[at] === h ? was : { ...was, [at]: h }));
     });

@@ -1,5 +1,6 @@
 import { ConsoleLeave } from "../../components/consoleLeave";
-import { useEffect, useEffectEvent, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import type { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
 import { TEXT } from "../../lib/text";
@@ -13,13 +14,9 @@ const OPEN_POPUP_TRIGGER = '[aria-expanded="true"]:is([aria-haspopup="menu"], [a
  * Setup's page in the map's panel, a tab's body as the others' are: named
  * for the console it is (a region, no longer a dialog: the focus stays on
  * the tab picked, as it does for the others), hidden while another tab is
- * up, and Escape going back to the tab before it -- heard here, inside
- * the panel, before the panel hears it and lowers itself, and wherever
- * the focus has gone while it is up; not when a menu open in it took the
- * key first.
- *
- * A card of its own over the sheet, the stock Drawer's nested drawer
- * (CardLayer; the owner, 2026-11-11), kept, closed, while it is put away.
+ * up. A card of its own over the sheet, the stock Drawer's nested drawer
+ * (CardLayer; the owner, 2026-11-11), kept, closed, while it is put away;
+ * its drawer's own Escape goes back to the tab before it.
  */
 export default function ConsoleLayer({
   label,
@@ -37,45 +34,25 @@ export default function ConsoleLayer({
   shown: boolean;
   children: ReactNode;
 }) {
-  const layer = useRef<HTMLElement>(null);
-  // The caller's close at the key, not the one it opened with.
-  const close = useEffectEvent(onClose);
-  useEffect(() => {
-    const node = layer.current;
-    if (!node || !shown) return;
-    const onKey = (event: globalThis.KeyboardEvent) => {
-      // A card over it (SheetCard) is put away first, by its own Escape,
-      // which prevents the default.
-      if (event.key !== "Escape" || event.defaultPrevented) return;
-      // A menu or a list just opened from a control in the layer, the focus
-      // still on its trigger: the popup takes the focus a moment after it
-      // opens, and until then the trigger's own Escape, which closes it and
-      // prevents the default, is heard by React only after this listener on
-      // the layer has. The key is the menu's, as it is once the focus is in
-      // it; the console stays (consoles.spec's role menu, run 42867578624).
-      if (event.target instanceof Element && event.target.closest(OPEN_POPUP_TRIGGER)) return;
-      event.preventDefault();
-      close();
-    };
-    // On the layer first, ahead of the panel's own Escape; on the document
-    // too, for when a tap on the map or on the panel's bare parts has
-    // taken the focus out (the layer is no modal), where the key would
-    // otherwise be lost or lower the panel. A menu's own Escape has
-    // already prevented the default by the time either hears it.
-    node.addEventListener("keydown", onKey);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      node.removeEventListener("keydown", onKey);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [shown]);
+  // Its drawer's Escape, the card on top (CardStack): back to the map --
+  // not while a menu or a list just opened from a control in it still has
+  // the focus on its trigger, the popup taking the focus a moment after it
+  // opens: the key is the menu's (consoles.spec's role menu, run
+  // 42867578624). The rest the Drawer tells it is refused: it is no modal.
+  const dismiss = (details: Drawer.Root.ChangeEventDetails) => {
+    details.cancel();
+    if (details.reason !== "escape-key" || details.event.defaultPrevented) return;
+    const at = details.event.target;
+    if (at instanceof Element && at.closest(OPEN_POPUP_TRIGGER)) return;
+    details.event.preventDefault();
+    onClose();
+  };
   return (
     // Its drawer open while it is up (CardLayer reads lib/shown): the
     // sheet's body round it is at rest under Setup (MapPanel's `still`).
     <Shown.Provider value={shown}>
-      <CardLayer>
+      <CardLayer dismiss={dismiss}>
         <section
-          ref={layer}
           aria-label={label}
           // Named for the suite only while it is up: put away it is there,
           // hidden, for the next tap on Setup.
