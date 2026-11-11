@@ -128,6 +128,12 @@ class OwnShip private constructor(private val context: Context) {
             Double.fromBits(kept.getLong("lat", 0)) to Double.fromBits(kept.getLong("lon", 0))
         }
 
+    /** The last position forgotten: signed out, or the account deleted. */
+    fun forgetLastPosition() {
+        kept.edit { clear() }
+        keptAtMs = 0L
+    }
+
     /** The geoid's conversion, one fix at a time and in order, off the
      *  main thread: its first call reads the model from disk. */
     private val converting = Dispatchers.Default.limitedParallelism(1)

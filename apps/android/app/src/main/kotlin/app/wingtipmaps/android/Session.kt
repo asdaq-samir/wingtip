@@ -6,13 +6,12 @@ import android.net.Uri
 import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.account.PhoneWipe
 import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.deleteAccount
-import app.wingtipmaps.android.checklist.ChecklistStore
-import app.wingtipmaps.android.plan.KeptPlan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -118,13 +117,11 @@ class Session(app: Application) : AndroidViewModel(app) {
     fun signIn(context: Context) {
         val ask = _signInAsk.value ?: return
         _signInAsk.value = null
-        val checklists = ChecklistStore.of(context.applicationContext)
-        val plan = KeptPlan(context.applicationContext as Application)
+        val wipe = PhoneWipe.of(context)
         viewModelScope.launch {
             if (ask.current != null) {
                 runCatching { Gateway.signOut() }
-                forget(checklists)
-                plan.clear()
+                forget(wipe)
             }
             try {
                 Gateway.verifyMagicLink(ask.token)
@@ -139,19 +136,17 @@ class Session(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    /** Signing out ends the session on the gateway and forgets what the
-     *  phone kept of the pilot's, their airplanes' checklists and their
-     *  plan kept for the next launch (the owner's pick: sign-out clears, as
-     *  the web app's useLogout does). The public aviation data kept for the
-     *  air -- the fields' cards, the NOTAMs, the weather (KeptForAir) -- is
-     *  not the pilot's, and stays. */
+    /** Signing out ends the session on the gateway and forgets everything
+     *  the phone kept of the pilot's (PhoneWipe: records, tracks, last
+     *  position, checklists, plan, cookies and the rest; the owner's pick:
+     *  sign-out clears, as the web app's useLogout does). The public
+     *  aviation data kept for the air -- the fields' cards, the NOTAMs, the
+     *  weather (KeptForAir) -- is not the pilot's, and stays. */
     fun signOut(context: Context) {
-        val checklists = ChecklistStore.of(context.applicationContext)
-        val plan = KeptPlan(context.applicationContext as Application)
+        val wipe = PhoneWipe.of(context)
         viewModelScope.launch {
             runCatching { Gateway.signOut() }
-            forget(checklists)
-            plan.clear()
+            forget(wipe)
             ClaudeGate.refresh(developer = false)
         }
     }
@@ -165,15 +160,13 @@ class Session(app: Application) : AndroidViewModel(app) {
      *  gateway refuses (nothing deleted), the pilot stays signed in and
      *  its words are the problem shown under the account. */
     fun deleteAccount(context: Context) {
-        val checklists = ChecklistStore.of(context.applicationContext)
-        val plan = KeptPlan(context.applicationContext as Application)
+        val wipe = PhoneWipe.of(context)
         viewModelScope.launch {
             _deleting.value = true
             try {
                 Gateway.deleteAccount()
                 _problem.value = null
-                forget(checklists)
-                plan.clear()
+                forget(wipe)
                 ClaudeGate.refresh(developer = false)
             } catch (e: CancellationException) {
                 throw e
@@ -189,9 +182,9 @@ class Session(app: Application) : AndroidViewModel(app) {
         const val ASKED = "asked"
     }
 
-    private fun forget(checklists: ChecklistStore) {
+    private suspend fun forget(wipe: PhoneWipe) {
         _pilot.value = null
         _linkSent.value = false
-        checklists.forgetAll()
+        wipe.run()
     }
 }
