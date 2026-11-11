@@ -124,7 +124,7 @@ class AirportModel : ViewModel() {
      */
     private suspend fun loadNotams(ident: String) {
         try {
-            val had = KeptForAir.had(KeptForAir.NOTAMS, "$ident|field", NotamsRanked.serializer()) { Planner.airportNotams(ident) }
+            val had = KeptForAir.had(KeptForAir.NOTAMS, KeptForAir.fieldNotams(ident), NotamsRanked.serializer()) { Planner.airportNotams(ident) }
             _state.update { if (it.place?.ident == ident) it.copy(notams = had.value, notamsProblem = null) else it }
         } catch (e: CancellationException) {
             throw e

@@ -7,6 +7,8 @@ import app.wingtipmaps.android.api.generated.gateway.MagicLinkRequest
 import app.wingtipmaps.android.map.CloseMap
 import app.wingtipmaps.android.map.OverlayCache
 import app.wingtipmaps.android.map.OverlayStore
+import app.wingtipmaps.android.offline.KeptLoopTiles
+import app.wingtipmaps.android.offline.LoopTileFallback
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -60,12 +62,18 @@ object Gateway {
      *  may empty before a flight. */
     val overlayStore: OverlayStore by lazy { OverlayStore(File(app.filesDir, "overlay-tiles")) }
 
+    /** The weather loop's newest frame kept over the route (Keep for the
+     *  Air), beside the other answers kept for the air. */
+    val loopTiles: KeptLoopTiles by lazy { KeptLoopTiles(File(app.filesDir, "kept-air/loop-tiles")) }
+
     val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .cookieJar(cookies)
             // The archive's byte ranges answered from the phone where kept,
             // and kept as they come: OkHttp's cache keeps no 206.
             .addInterceptor(OverlayCache(overlayStore))
+            // The loop's kept tiles answered from the phone with no network.
+            .addInterceptor(LoopTileFallback(loopTiles))
             // The app named to Google's Map Tiles API (CloseMap).
             .addInterceptor(CloseMap.signer(app))
             // A cache of the answers the gateway and the planner say may be
