@@ -46,7 +46,10 @@ struct NavLogPage: View {
                     totals.listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
                 }
                 Section("Profile") {
-                    ProfileChart(profile: plan.profile, legs: plan.legs, altitudeFt: plan.altitudeFt, selection: plan.altitude?.altitudeSelection)
+                    // Read only, the ground coloured against the altitude flown
+                    // as the Profile card colours it (`profile_clearance`).
+                    ProfileChart(profile: plan.profile, legs: plan.legs, previewFt: nil,
+                                 clearance: plan.altitudeFt.flatMap { ft in plan.profile.flatMap { try? ProfileRules.clearance(altitudeFt: ft, profile: $0, legs: plan.legs) } })
                         .frame(height: 180)
                         .listRowInsets(EdgeInsets())
                 }

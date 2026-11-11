@@ -206,8 +206,9 @@ view without dismissing the sheet").
     UIKit's one presenter would never show them.
   - Footers are the system's bar (`glassFoot`, `safeAreaBar`); a card's
     own toolbar (the airport card's) is the stock bottom bar.
-  - No control in a card takes the sheet's drag: the altitudes are a
-    menu picker, the flown track's chart moves the replay on a tap.
+  - No control in a card takes the sheet's drag: the Profile opens at
+    full height, so its altitude slider never fights the drag, and the
+    flown track's chart moves the replay on a tap.
 - **Other sheets.**
   - A separate modal sheet (an edit form, Ask, the share sheet) uses
     `[.medium, .large]`.
@@ -651,12 +652,9 @@ figures anywhere depend on a default type.
      (owner's rule; positions unchanged).
 2. **The figure strip:** To, Dist, ETE and Fuel, in `type.figure`
    digits, from the engine. The fuel is a dash without an airplane.
-3. **Cruise:** the altitude field in FL-045 form, opening the legal
-   altitudes in the Profile card's menu `Picker` (a wheel in the card's
-   list fought the sheet's drag: the owner's scrolling rule, 2026-11-10).
-   - HIG Pickers: "Consider using a picker to offer medium-to-long
-     lists", and "Avoid switching views to show a picker"
-     ([HIG Pickers][hig-pickers]).
+3. **Cruise:** the altitude field in FL-045 form; the Profile's
+   Altitude Advisor is where the cruise is chosen (see
+   [The profile](#the-profile-foreflights-way)).
 4. **Route options**, after Routes: up to four cards (Direct, Fastest,
    Most Filed, Economical). Each shows its time, distance and fuel and
    has its own **Use** button, as Maps' route cards each carry Go.
@@ -716,6 +714,45 @@ card holds Add Stop and End Route.
 [HIG Lists][hig-lists]; [HIG Menus][hig-menus];
 [HIG Context menus][hig-contextmenus]; [HIG Pickers][hig-pickers];
 [HIG Alerts][hig-alerts]; [WWDC26 269][wwdc-269] (reorderable containers).
+
+### The profile, ForeFlight's way
+
+The owner's spec of 2026-11-10, after ForeFlight's profile view; the
+same on the web and Android. Code: `apps/ios/Wingtip/Profile/`, one
+view model (`ProfileModel`), every figure the engine's (`ProfileRules`:
+`profile_clearance`, `altitude_advisor`).
+
+- **Full height.** The Profile opens at the large detent from every way
+  in (the strip, a card, Ready to Fly's fix), so the slider's drag is
+  never the sheet's.
+- **The slider.** The system `Slider`, turned a quarter beside the
+  chart: the iOS 27.2 SDK's `SwiftUI` swiftinterface has no vertical
+  orientation, so no control is drawn by hand. It steps through the
+  engine's altitudes (`altitude_wheel`'s rows) and only previews: a
+  dashed rule at the altitude, and the ground coloured live, Chart
+  Warning red within 100 ft (or above it) and Chart Caution amber within
+  1,000 ft. These are ForeFlight's display defaults, not 14 CFR; the
+  legal floors (91.119, 91.177) are the legal altitudes' own.
+  - **Set** (the one prominent button) flies the preview; nothing
+    changes before it.
+  - **Auto**, in flight only (`InFlight.underway`), a button-style
+    `Toggle`: the preview follows the GPS altitude.
+  - The slider is 44 pt across, its stock size kept.
+- **A waypoint.** A tap within 22 pt of one (a 44 pt target) opens a
+  `.popover`, kept a popover on the iPhone
+  (`presentationCompactAdaptation(.popover)`): the altitude as a menu
+  `Picker`, **Start At** or **Cross At** as a segmented control, Set and
+  Reset. VoiceOver reaches each waypoint as an accessibility action of
+  the chart ("Altitude at KLVK").
+- **The Altitude Advisor.** The cruise is chosen from a `List` section:
+  one row per altitude, highest first, with time, fuel and the head or
+  tail wind, **Fastest** and **Most Economical** marked and the flown
+  row ticked. A row outside the legal altitudes stays a tap, its warning
+  under it (warn, never limit). With no airplane, time and fuel are a
+  dash.
+- **VoiceOver.** The slider is the stock adjustable element: a swipe up
+  or down steps one altitude, and its value is the engine's words, "3,500
+  ft, terrain within 500 ft near KXYZ". The chart's value says the same.
 
 ---
 
@@ -1581,10 +1618,11 @@ behaviour; only the content, its order and the brand tokens are ours.
 | Haptics off under Reduce Motion | The system's haptics switch alone decides; a tap is not motion |
 | `SaveLabel`'s drawn-on checkmark | The button's own words ("Saving…"), the saved flight showing in the list |
 
-The altitude stays a read-only Swift Charts profile with the system's
-menu `Picker` of the engine's altitudes beside it (on an iPad or a wide
-window; under it on an iPhone). The menu opens on the planner's pick; any row can be flown, and one outside
-the legal altitudes is said under it.
+The altitude is picked in the profile, ForeFlight's way (see
+[The profile](#the-profile-foreflights-way)): the system `Slider` turned
+upright beside the chart, the system `.popover` on a waypoint, and a
+`List` of the Altitude Advisor's rows. The wheel and the menu `Picker`
+are gone.
 
 **Left hand-built, and why.**
 

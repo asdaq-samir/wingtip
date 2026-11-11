@@ -68,7 +68,7 @@ struct ReadyToFlyRows: View {
 
     /// The fixes that ask the pilot open the pages that already ask it, in
     /// this card's stack with Back (Navigator.push): the Airplane page,
-    /// the profile's altitude wheel; the route's fields are the plan's
+    /// the profile's Altitude Advisor; the route's fields are the plan's
     /// (back to it). The rest the model does in place.
     private func run(_ fix: String) {
         switch fix {
