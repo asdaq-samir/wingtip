@@ -71,17 +71,21 @@ function useCapsule(at: number) {
 const DRAWER_MOTION = `${DRAWER_MS}ms var(--motion-drawer-ease)`;
 const GROW = `width ${DRAWER_MOTION}, height ${DRAWER_MOTION}`;
 const MOVES = { "--grow": GROW, "--fold": `${GROW}, opacity 0s ${DRAWER_MS}ms` } as CSSProperties;
-// Each page's capsule grows out of its own bar, on its own side (the owner,
-// 2026-11-11: "Can the search and fpl animation stay on their sides rather
-// than a shared capsule?"): Search's from the left bar, leftward from the
-// grabber's middle; FPL's from the right bar, rightward. The other bar stays.
+// Each page has its own capsule, which grows out of its own bar on its own
+// side and folds back into it (the owner, 2026-11-11: "Can the search and
+// fpl animation stay on their sides rather than a shared capsule?"):
+// Search's from the left bar, leftward from the grabber's middle; FPL's
+// from the right bar, rightward. Two, not one moved between the sides: one
+// capsule open on Search's side that was turned to FPL's jumped across the
+// grabber mid-way (the owner: "Carousel capsule animation jumps"); now
+// Search's folds back where it is while FPL's grows where it is.
 const CAPSULE = cn(
   "pointer-events-none absolute flex items-center justify-center overflow-hidden rounded-full bg-muted-foreground",
   TEXT.caption,
   "font-semibold whitespace-nowrap text-background",
   // Its bar's 16 by 5 folded; open about 20 tall, wide enough for its name at any text size.
   "h-[5px] w-4 opacity-0 [transition:var(--fold)]",
-  "group-data-open/grab:h-[1.8em] group-data-open/grab:opacity-100 group-data-open/grab:[transition:var(--grow)]",
+  "data-open:h-[1.8em] data-open:opacity-100 data-open:[transition:var(--grow)]",
   // Reduce Motion: the name fades in and out at its size, nothing grows
   // (over index.css's stilled transitions, for this fade alone).
   "motion-reduce:h-[1.8em]! motion-reduce:[transition:opacity_var(--motion-fade)]!",
@@ -90,8 +94,8 @@ const CAPSULE = cn(
  *  ends at the grabber's middle (less the bars' 2-point gap each side), the
  *  right bar's starts there. */
 const SIDE = [
-  "right-[calc(50%+2px)] group-data-open/grab:w-[4.5em] motion-reduce:w-[4.5em]!",
-  "left-[calc(50%+2px)] group-data-open/grab:w-[3.25em] motion-reduce:w-[3.25em]!",
+  "right-[calc(50%+2px)] data-open:w-[4.5em] motion-reduce:w-[4.5em]!",
+  "left-[calc(50%+2px)] data-open:w-[3.25em] motion-reduce:w-[3.25em]!",
 ];
 
 /**
@@ -156,6 +160,8 @@ export function SheetGrabber({
       </button>
     );
   const { names } = pages;
+  // The page whose capsule is open, if one is.
+  const opened = capsule.open ? capsule.shown : null;
   // Whether the pressed bar was the page up before the press: the Tabs
   // pick a bar as it takes the focus, which a press gives it before its
   // click, so by the click the other page's bar was up too and sized the
@@ -171,26 +177,29 @@ export function SheetGrabber({
     <Tabs.Root
       value={pages.at}
       onValueChange={(value) => pages.go(Number(value))}
-      data-open={capsule.open || undefined}
       // The bars' own fold back waits out the Drawer's time too.
       style={{ "--drawer-ms": `${DRAWER_MS}ms` } as CSSProperties}
-      className={cn(BOX, edge(at), "group/grab")}
+      className={cn(BOX, edge(at))}
     >
       {/* Read with each bar: what a tap on the page up's bar does. */}
       <span id={hint} className="sr-only">
         {`${label}. The page up's bar sizes the sheet; Up and Down arrows too.`}
       </span>
       <span ref={live} aria-live="polite" className="sr-only" />
-      {/* The page's name, grown out of the bars; the bars already say it. */}
-      <span
-        aria-hidden="true"
-        data-testid="grabber-capsule"
-        data-side={capsule.shown}
-        style={MOVES}
-        className={cn(CAPSULE, SIDE[capsule.shown] ?? SIDE[0], at === "top" ? "top-1" : "bottom-1.25")}
-      >
-        {names[capsule.shown]}
-      </span>
+      {/* Each page's name, grown out of its bar; the bars already say it. */}
+      {names.map((name, i) => (
+        <span
+          key={name}
+          aria-hidden="true"
+          data-testid="grabber-capsule"
+          data-side={i}
+          data-open={opened === i || undefined}
+          style={MOVES}
+          className={cn(CAPSULE, SIDE[i] ?? SIDE[0], at === "top" ? "top-1" : "bottom-1.25")}
+        >
+          {name}
+        </span>
+      ))}
       {/* Picked as focused: Left and Right switch the pages at once, as the dots did. */}
       <Tabs.List ref={list} aria-label={`${label} pages`} activateOnFocus className="flex h-full w-full">
         {names.map((name, i) => {
@@ -204,6 +213,8 @@ export function SheetGrabber({
               aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight"
               aria-expanded={up ? size !== "peek" : undefined}
               data-page-bar={i}
+              // Its capsule out, which its bar gives way to.
+              data-capsule={opened === i || undefined}
               // The page up's bar is the grabber the specs and a drag hold.
               data-testid={up ? "sidebar-trigger-button" : undefined}
               onPointerDown={() => (pressedUp.current = up)}
@@ -231,8 +242,7 @@ export function SheetGrabber({
                 // in over it).
                 className={cn(
                   "h-[5px] w-4 rounded-full bg-muted-foreground/30 group-data-active/bar:bg-muted-foreground",
-                  i === capsule.shown &&
-                    "transition-opacity delay-(--drawer-ms) duration-0 group-data-open/grab:opacity-0 group-data-open/grab:delay-0",
+                  "transition-opacity delay-(--drawer-ms) duration-0 group-data-capsule/bar:opacity-0 group-data-capsule/bar:delay-0",
                   "motion-reduce:opacity-100!",
                 )}
                 aria-hidden="true"

@@ -82,15 +82,19 @@ test("a swipe shows the page's name in the grabber's capsule, then it folds back
   await page.goto("/app/plan");
   await settle(page);
   await grabberTo(page, "half");
-  const capsule = page.getByTestId("grabber-capsule");
+  // Each page's own capsule, on its own side (SheetGrabber).
+  const capsuleOf = (side: 0 | 1) => page.locator(`[data-testid="grabber-capsule"][data-side="${side}"]`);
+  const capsule = capsuleOf(1);
   // Nothing on the first draw: only a change opens it.
+  await expect(capsuleOf(0)).toHaveCSS("opacity", "0");
   await expect(capsule).toHaveCSS("opacity", "0");
   await swipe(page, "left");
   await expectPage(page, 1);
   await expect(capsule).toHaveText("FPL");
   await expect(capsule).toHaveCSS("opacity", "1");
+  await expect(capsule).toHaveAttribute("data-open", "");
+  await expect(capsuleOf(0)).not.toHaveAttribute("data-open");
   // On FPL's own side: it starts at the right bar, and Search's bar stays.
-  await expect(capsule).toHaveAttribute("data-side", "1");
   const [cap, left] = [(await capsule.boundingBox())!, (await bar(page, 0).locator("span").boundingBox())!];
   expect(cap.x, "FPL's capsule starts right of Search's bar").toBeGreaterThanOrEqual(left.x + left.width);
   await expect(bar(page, 0).locator("span")).toHaveCSS("opacity", "1");
@@ -100,10 +104,12 @@ test("a swipe shows the page's name in the grabber's capsule, then it folds back
   // About a second later it has folded and gone, the bars back.
   await expect(capsule).toHaveCSS("opacity", "0", { timeout: 3000 });
   await expect(bar(page, 1).locator("span")).toHaveCSS("opacity", "1");
+  // Back to Search: Search's own capsule, from its own bar; FPL's stays folded.
   await swipe(page, "right");
-  await expect(capsule).toHaveText("Search");
-  await expect(capsule).toHaveAttribute("data-side", "0");
-  await expect(capsule).toHaveCSS("opacity", "0", { timeout: 3000 });
+  await expect(capsuleOf(0)).toHaveText("Search");
+  await expect(capsuleOf(0)).toHaveAttribute("data-open", "");
+  await expect(capsule).not.toHaveAttribute("data-open");
+  await expect(capsuleOf(0)).toHaveCSS("opacity", "0", { timeout: 3000 });
 });
 
 test("the grabber's bars are 44 points tall to a finger and meet in the middle, the bars the grabber's width", async ({ page }) => {
