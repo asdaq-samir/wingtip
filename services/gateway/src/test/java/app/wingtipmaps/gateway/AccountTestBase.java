@@ -310,7 +310,9 @@ abstract class AccountTestBase {
                 jdbc.queryForObject("SELECT count(*) FROM flight_watch WHERE pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject("SELECT count(*) FROM reminders_sent WHERE pilot_id = ?", Integer.class, id),
                 jdbc.queryForObject(
-                        "SELECT count(*) FROM oauth2_authorization WHERE principal_name = ?", Integer.class, id.toString()),
+                        "SELECT count(*) FROM oauth2_authorization WHERE principal_name = ?",
+                        Integer.class,
+                        id.toString()),
                 jdbc.queryForObject(
                         "SELECT count(*) FROM oauth2_authorization_consent WHERE principal_name = ?",
                         Integer.class,

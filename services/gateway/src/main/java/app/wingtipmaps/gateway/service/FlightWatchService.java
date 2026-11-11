@@ -264,7 +264,10 @@ public class FlightWatchService {
             mail.send(message(pilot, flight, answer, publicBaseUrl));
         } catch (RuntimeException failed) {
             // The flight's id, not the pilot's address (docs/privacy-inventory.md, "Logs").
-            log.warn("Flight {}'s changes not emailed: {}", flight.getId(), failed.getClass().getSimpleName());
+            log.warn(
+                    "Flight {}'s changes not emailed: {}",
+                    flight.getId(),
+                    failed.getClass().getSimpleName());
         }
     }
 

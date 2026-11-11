@@ -117,7 +117,8 @@ class AccountDeletionByEmailTest extends AccountTestBase {
                 .andExpect(status().isBadRequest());
         // A good sign-in link for the same address cannot delete either.
         String signIn = "sign-in-" + System.nanoTime();
-        magicLinks.save(new MagicLink(pilot.getEmail(), sha256(signIn), Instant.now().plusSeconds(600)));
+        magicLinks.save(
+                new MagicLink(pilot.getEmail(), sha256(signIn), Instant.now().plusSeconds(600)));
         mockMvc.perform(post("/delete-account/confirm")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_FORM_URLENCODED)

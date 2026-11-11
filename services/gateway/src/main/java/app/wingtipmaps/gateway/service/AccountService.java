@@ -127,7 +127,9 @@ public class AccountService {
         } catch (RuntimeException failed) {
             // Not the name: it is the deleted pilot's address or Apple or
             // Google subject, and the logs outlive the account.
-            log.error("Account deleted but its sessions could not all be ended: {}", failed.getClass().getSimpleName());
+            log.error(
+                    "Account deleted but its sessions could not all be ended: {}",
+                    failed.getClass().getSimpleName());
         }
     }
 

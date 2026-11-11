@@ -528,7 +528,7 @@ public class InstructorService {
         try {
             mail.send(message);
         } catch (RuntimeException failed) {
-            log.warn("An instructor email not sent (no address logged): {}", failed.getClass().getSimpleName());
+            log.warn("Instructor email not sent: {}", failed.getClass().getSimpleName());
         }
     }
 }

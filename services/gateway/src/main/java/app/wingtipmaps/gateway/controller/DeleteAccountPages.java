@@ -25,7 +25,9 @@ final class DeleteAccountPages {
                 .append(" open it and press Delete Account. You don't need the app.</p>")
                 .append(WHAT_GOES);
         if (!notice.isEmpty()) {
-            body.append("<p class=\"muted\" role=\"status\">").append(htmlEscape(notice)).append("</p>");
+            body.append("<p class=\"muted\" role=\"status\">")
+                    .append(htmlEscape(notice))
+                    .append("</p>");
         }
         return body.append("<form method=\"post\" action=\"/delete-account\">")
                 .append(hidden(csrfName, csrfToken))

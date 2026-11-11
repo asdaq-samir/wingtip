@@ -83,4 +83,3 @@ def _recorded(hex_id: str) -> list[dict]:
 def _last_recorded(hex_id: str) -> dict | None:
     key = _key(hex_id)
     return store.last_point(key) if key is not None else None
-

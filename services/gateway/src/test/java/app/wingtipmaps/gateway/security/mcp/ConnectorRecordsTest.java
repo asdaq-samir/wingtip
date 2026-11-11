@@ -216,8 +216,9 @@ class ConnectorRecordsTest {
                         + " now() - interval '40 days', now() - interval '10 days'),"
                         + " ('live', 'claude', '8', 'authorization_code', now() - interval '20 days',"
                         + " now() - interval '20 days', now() + interval '10 days')");
-        jdbc.update("INSERT INTO oauth2_authorization (id, registered_client_id, principal_name, authorization_grant_type)"
-                + " VALUES ('pending', 'claude', '9', 'authorization_code')");
+        jdbc.update(
+                "INSERT INTO oauth2_authorization (id, registered_client_id, principal_name, authorization_grant_type)"
+                        + " VALUES ('pending', 'claude', '9', 'authorization_code')");
         assertThat(grants.purgeExpired()).isEqualTo(1);
         assertThat(jdbc.queryForList("SELECT id FROM oauth2_authorization ORDER BY id", String.class))
                 .containsExactly("live", "pending");

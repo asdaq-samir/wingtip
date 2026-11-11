@@ -40,7 +40,11 @@ public class ConnectorGrants {
                         + " FROM oauth2_authorization a JOIN oauth2_registered_client c ON c.id = a.registered_client_id"
                         + " WHERE a.principal_name = ? ORDER BY a.access_token_issued_at",
                 (r, n) -> new ConnectorGrantDto(
-                        r.getString(1), "connection", r.getString(2), instant(r.getTimestamp(3)), instant(r.getTimestamp(4))),
+                        r.getString(1),
+                        "connection",
+                        r.getString(2),
+                        instant(r.getTimestamp(3)),
+                        instant(r.getTimestamp(4))),
                 principal));
         granted.addAll(jdbc.query(
                 "SELECT c.client_name, x.authorities FROM oauth2_authorization_consent x"

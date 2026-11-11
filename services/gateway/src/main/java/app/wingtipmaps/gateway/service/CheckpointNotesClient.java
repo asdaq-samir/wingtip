@@ -57,13 +57,15 @@ public class CheckpointNotesClient {
                 .timeout(Duration.ofSeconds(15))
                 .build();
         try {
-            HttpResponse<String> response = http.send(
-                    traceHeaders.traced(request), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            HttpResponse<String> response =
+                    http.send(traceHeaders.traced(request), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
             if (response.statusCode() != 200) {
-                throw new PlannerUnavailableException("the planner answered " + response.statusCode() + " to the notes");
+                throw new PlannerUnavailableException(
+                        "the planner answered " + response.statusCode() + " to the notes");
             }
-            List<PlannerCheckpointNote> notes =
-                    PlannerClient.JSON.readValue(response.body(), PlannerPilotNotes.class).getNotes();
+            List<PlannerCheckpointNote> notes = PlannerClient.JSON
+                    .readValue(response.body(), PlannerPilotNotes.class)
+                    .getNotes();
             return notes == null ? List.of() : notes;
         } catch (JacksonException notItsAnswer) {
             throw new PlannerUnavailableException("the planner's answer to the notes was not its answer", notItsAnswer);

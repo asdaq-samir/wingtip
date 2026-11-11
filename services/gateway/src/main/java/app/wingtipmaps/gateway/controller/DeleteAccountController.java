@@ -111,7 +111,8 @@ public class DeleteAccountController {
         if (pilot.isPresent()) {
             links.deleteExpiredBefore(now.minus(Duration.ofDays(1)));
             String token = token();
-            links.save(new MagicLink(pilot.get().getEmail(), MagicLinkController.hash(PURPOSE + token), now.plus(LIFETIME)));
+            links.save(new MagicLink(
+                    pilot.get().getEmail(), MagicLinkController.hash(PURPOSE + token), now.plus(LIFETIME)));
             send(pilot.get().getEmail(), base(request) + "/delete-account/confirm?token=" + token);
         }
         return seeOther("/delete-account?sent=1");
@@ -144,7 +145,10 @@ public class DeleteAccountController {
             try {
                 accounts.delete(pilot.get());
             } catch (AccountNotDeletedException failed) {
-                log.warn("account {} not deleted from the web page: {}", pilot.get().getId(), failed.getMessage());
+                log.warn(
+                        "account {} not deleted from the web page: {}",
+                        pilot.get().getId(),
+                        failed.getMessage());
                 return ConnectPages.page("Delete Account", DeleteAccountPages.notDeleted());
             }
         }
@@ -161,7 +165,9 @@ public class DeleteAccountController {
         try {
             mailer.send(message);
         } catch (RuntimeException failed) {
-            log.warn("A deletion link not sent (no address logged): {}", failed.getClass().getSimpleName());
+            log.warn(
+                    "A deletion link not sent (no address logged): {}",
+                    failed.getClass().getSimpleName());
         }
     }
 
@@ -183,6 +189,8 @@ public class DeleteAccountController {
     }
 
     private static ResponseEntity<Void> seeOther(String where) {
-        return ResponseEntity.status(HttpStatus.SEE_OTHER).location(URI.create(where)).build();
+        return ResponseEntity.status(HttpStatus.SEE_OTHER)
+                .location(URI.create(where))
+                .build();
     }
 }
