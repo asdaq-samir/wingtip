@@ -46,7 +46,8 @@ export default function PastFlightCard({ hex, id, onClose }: { hex: string; id: 
   const points = usePastFlight((s) => s.points);
   const off = when(flight?.off ?? id);
   return (
-    <PanelCard testId="past-flight-card">
+    // All the way up as it opens: its track and log.
+    <PanelCard testId="past-flight-card" opens="full">
       <CardHead
         name={flight ? legOf(flight) : "Flight"}
         nameTestId="past-flight-name"

@@ -16,6 +16,7 @@ import {
   sideDrawer,
   slow,
   stripShows,
+  frontSheet,
 } from "../helpers";
 
 /** One state of the app as a pilot sees it, reached from a fresh page. */
@@ -27,9 +28,8 @@ export type Screen = { name: string; ready: (page: Page) => Promise<void> };
 const ROUTE = "dep=C81&dest=KDLH";
 
 /**
- * The screens the iOS audit measures: the planner's map, its panel and
- * the nav log with a leg open, the one search's places, an airport's card, the training drawer with a waypoint open,
- * both consoles and the settings. Nothing is written: a row is selected,
+ * The screens the iOS audit measures: the planner's map, its panel and the nav log with a leg open, the one search's places,
+ * an airport's card, the training drawer with a waypoint open, both consoles and the settings. Nothing is written: a row is selected,
  * never rated, and no note is typed.
  */
 export const SCREENS: Screen[] = [
@@ -133,7 +133,7 @@ export const SCREENS: Screen[] = [
       }
       if (part === ", its Weather tab") {
         await sideDrawer(page).getByTestId("place-tab-weather").click();
-        await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+        await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
         await expect(sideDrawer(page).getByTestId("place-weather-summary")).toBeVisible();
       }
     },

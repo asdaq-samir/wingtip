@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo } from "react";
 import type { SetURLSearchParams } from "react-router";
-import type { PanelState } from "../../../lib/mapChrome";
 import type { AircraftChoice } from "../../../lib/api/types";
 import { NO_PLAN, useBriefPlan } from "../../../lib/briefPlan";
 import { picksOf } from "../../../lib/flightLink";
@@ -34,7 +33,6 @@ export function useFlightToSave({
   localMin,
   searchParams,
   setSearchParams,
-  setPanel,
   setRoute,
   flyAltitude,
   changeDepart,
@@ -51,7 +49,6 @@ export function useFlightToSave({
   localMin: number;
   searchParams: URLSearchParams;
   setSearchParams: SetURLSearchParams;
-  setPanel: (state: PanelState) => void;
   setRoute: RouteEdits["setRoute"];
   flyAltitude: RouteEdits["flyAltitude"];
   changeDepart: (iso: string) => void;
@@ -63,9 +60,9 @@ export function useFlightToSave({
   const fileable = !!identOf(planned.dep) && !!s.totals;
   const fileFlightPlan = useCallback(() => {
     setSearchParams((prev) => patched(prev, { brief: "1" }), { replace: true });
-    setPanel("full");
-    useTabAsk.getState().go("preflight", "Flight Plan");
-  }, [setSearchParams, setPanel]);
+    // The Brief's own card all the way up for the form (PanelTabs).
+    useTabAsk.getState().go("preflight", "Flight Plan", true);
+  }, [setSearchParams]);
 
   // The plan as a flight to save: Save's, and the solo cross-country
   // review's, which saves it as it asks.

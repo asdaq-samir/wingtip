@@ -14,6 +14,7 @@ import {
   showTabs,
   sideDrawer,
   slow,
+  frontSheet,
 } from "./helpers";
 import { fromRest } from "./startState";
 
@@ -70,7 +71,7 @@ test.describe("/app/plan", () => {
     await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
     await expect(firstRow(page)).toBeVisible();
     await page.getByTestId("sidebar-trigger-button").click();
-    await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+    await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
     // The plan, the sheet's main content with a route.
     await expect(sideDrawer(page).getByTestId("route-box").or(sideDrawer(page).getByTestId("route-line")).first()).toBeVisible();
     await expect(sideDrawer(page).getByTestId("flight-line")).toContainText(/\d+\s*nm/, { timeout: slow(30000) });
@@ -95,7 +96,7 @@ test.describe("/app/plan", () => {
       else expect(Math.abs(grabber.y + grabber.height - (panelBox.y + panelBox.height))).toBeLessThan(2);
     }).toPass({ timeout: 10_000 });
     await page.getByTestId("sidebar-trigger-button").click();
-    await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+    await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
     await expect(sideDrawer(page).getByTestId("account-button")).toBeVisible();
     await grabberTo(page, "full");
 
@@ -136,7 +137,7 @@ test.describe("/app/plan", () => {
     await openBrief(page);
     await grabberTo(page, "full");
     await page.getByTestId("brief-glance-enroute").click();
-    await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+    await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
     await expect(page.getByTestId("panel-tab-enroute")).toHaveAttribute("aria-selected", "true");
   });
 });
@@ -257,7 +258,7 @@ test.describe("/app/plan", () => {
     // Taps cycle it: on up from half, then back down to the pill.
     for (const height of ["full", "half", "peek"]) {
       await page.getByTestId("sidebar-trigger-button").click();
-      await expect(sideDrawer(page)).toHaveAttribute("data-panel", height);
+      await expect(frontSheet(page)).toHaveAttribute("data-panel", height);
     }
     await expectDrawerClosed(page);
   });

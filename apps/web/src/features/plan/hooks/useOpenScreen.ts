@@ -78,8 +78,8 @@ export function useOpenScreen({
     const pages = SETUP_PAGES[screen];
     useConsoleOpen.getState().setOpen(!!pages);
     if (pages) {
+      // Settings' own card all the way up (ConsoleLayer's `opens`).
       if (pages.length) useWantedPage.getState().want(pages);
-      setPanel("full");
       return;
     }
     switch (screen) {

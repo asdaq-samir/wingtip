@@ -40,7 +40,7 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   await expect(card).toBeVisible();
   await expect(card).toHaveAttribute("data-testid", "map-settings");
   await expect(card).toHaveAttribute("data-panel", "half");
-  await expect(panel).toHaveAttribute("data-sheet-at", "peek");
+  await expect(panel).toHaveAttribute("data-panel", "peek");
   // Nothing floating over the panel, and nothing made modal: the one
   // dialog the sheet itself, the stock Drawer's non-modal popup (MapPanel),
   // not the card in it, which is a region.

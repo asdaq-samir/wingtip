@@ -64,7 +64,6 @@ export default function PlanSidebar({
     approachesOf,
     askFor,
     cardUp,
-    closeCard,
     closeFlight,
     closeList,
     closeNearest,
@@ -84,7 +83,6 @@ export default function PlanSidebar({
     moveFavoriteAirport,
     nearFrom,
     nearOpen,
-    openAirportOverFlight,
     openList,
     opened,
     past,
@@ -103,7 +101,6 @@ export default function PlanSidebar({
     setApproachesOf,
     setHomeAirport,
     setNearFrom,
-    setPanel,
     stripsDrawn,
     suggestedAt,
     view,
@@ -119,7 +116,7 @@ export default function PlanSidebar({
     flight && past ? (
       <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} />
     ) : flight ? (
-      <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={openAirportOverFlight} />
+      <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={selectPlace} />
     ) : null;
   // The airport's card, in the panel's body.
   const placeCard = place && (
@@ -130,7 +127,6 @@ export default function PlanSidebar({
         from={measuredFrom}
         onClose={closePlace}
         onFlyHere={(to) => void flyHere(to)}
-        onExpand={() => setPanel("full")}
         onAddStop={suggestedAt ? () => keepFuelStops(suggestedAt.after, [place]) : addStop}
         // Shown but greyed for a point of the route, or past the planner's
         // most stops, with why (the owner, 2026-11-11: "show it but disable it").
@@ -176,7 +172,7 @@ export default function PlanSidebar({
           <AirspaceCard
             key={`${heldPoint.lat},${heldPoint.lon}`}
             point={heldPoint}
-            onClose={() => closeCard(() => selectPlace(null))}
+            onClose={() => selectPlace(null)}
             {...(routed && course && planned.stops.length < MAX_STOPS
               ? {
                   onAdd: (ident: string, at: LatLon) => dropIntoRoute(ident, at, "add"),

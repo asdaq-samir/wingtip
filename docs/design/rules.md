@@ -34,7 +34,9 @@ Compose. Nothing here is built by hand where a stock part does it.
    It keeps the sheet's height: a card opens at half only from the search
    or the map, and a page opened inside a card stays at the height the
    sheet is at (owner decision 2026-11-10, on the Android sheet audit's
-   SC-1).
+   SC-1). Each card sizes its own sheet (the owner, 2026-11-11): on the
+   web its own nested drawer's snap point, asked through `useCardSize`,
+   the sheet under it left at its own size.
 3. **Pages are cards too.** Brief, Nav Log, Profile, Stops, Nearest, Ask,
    Settings and its pages, the Logbook, Checklists and Saved Flights
    cover the search the same way: ✕ closes, Back steps through the levels
@@ -118,10 +120,14 @@ there fails each app's build until that app opens it.
 The keyboard never hides the search row being typed in: on the web the
 search row is the sheet's head alone (no title row over it since
 2026-11-10), pinned at the top while the list scrolls under it, and the
-field keeps its focus. The sheet, each card and each question sit on the
-keyboard by Base UI's own `Drawer.VirtualKeyboardProvider`
-(`--drawer-keyboard-inset` on the viewport), which also scrolls the field
-typed into into sight over it.
+field keeps its focus. A field's focus or what is typed in it never
+changes the sheet's size (the owner, 2026-11-11: "Whenever I try to type
+on search bar it takes the card to full screen"): the sheet stays where
+the pilot put it, and the keyboard sits over the page as the Drawer
+places it. The sheet, each card and each question sit on the keyboard by
+Base UI's own `Drawer.VirtualKeyboardProvider` (`--drawer-keyboard-inset`
+on the viewport), which also scrolls the field typed into into sight
+over it.
 
 ## 3. The tests that hold the card and scrolling rules
 

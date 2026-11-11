@@ -1,5 +1,5 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { grabberTo, inSheet, settle, showSearch, sideDrawer, slow } from "./helpers";
+import { grabberTo, inSheet, settle, showSearch, sideDrawer, slow, frontSheet } from "./helpers";
 
 const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;
 
@@ -168,7 +168,7 @@ test("with a course drawn, the Stops along it, each with a line for each kind it
   // (the owner, 2026-11-11: "Just let the drawer do what it does").
   await grabberTo(page, "peek");
   await page.getByTitle("KBBB: Fuel").click();
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", /^(half|full)$/);
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", /^(half|full)$/);
   await expect(rows.nth(1)).toHaveAttribute("aria-current", "true");
   await expect(rows.nth(0)).not.toHaveAttribute("aria-current", "true");
   await expect(rows.nth(1)).toBeInViewport();

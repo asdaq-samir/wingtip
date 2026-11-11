@@ -133,7 +133,7 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
       setSearchParams(
         (prev) => {
           // An airplane's card half way, wherever it is opened from, as an
-          // airport's is (the owner's ask).
+          // airport's is (the owner's ask; FlightCard's `opens`).
           return patched(prev, {
             flight: hex ?? null,
             place: null,
@@ -147,9 +147,8 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
         },
         { replace: true },
       );
-      if (hex) setPanel("half");
     },
-    [setSearchParams, setPanel],
+    [setSearchParams],
   );
   const selectPast = useCallback(
     (id: number | null) => {
@@ -159,10 +158,9 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
         },
         { replace: true },
       );
-      // A past flight: its card all the way up.
-      setPanel("full");
+      // A past flight: its card all the way up (PastFlightCard's `opens`).
     },
-    [setSearchParams, setPanel],
+    [setSearchParams],
   );
   // The address's flight and list into the tracking the map draws from
   // (lib/map/position/tracking), and the map's tap on an airplane back to here.

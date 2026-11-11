@@ -257,11 +257,14 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
       {/* The grips' move round the list where it changes the route
         (RouteListDrag), handed down to each point's grip. */}
       <RouteListDrag on={edit?.onMove}>
+        {/* On a phone its card opens at half whatever it covers, the
+            procedure on the map over it in sight. */}
         <ResponsivePopover
           open={!!at}
           onOpenChange={(open) => {
             if (!open) close();
           }}
+          phoneOpens="half"
         >
           <ResponsivePopoverAnchor asChild>
             <ol className="pt-2 pb-1" aria-label="The route" data-testid="procedures">

@@ -1,10 +1,11 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, useEffectEvent } from "react";
+import { lazy, Suspense, useEffect, useId, useMemo, useRef, useState, useEffectEvent } from "react";
 import { usePrefetchQuery, useQuery, useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { cn } from "cn";
 import { useKeptAirport } from "../../../lib/preferences";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { shareOrCopy } from "../../../lib/share";
 import { CardHead, PanelCard } from "../../../components/PanelCard";
+import { useCardSize } from "../../../lib/sheetCards";
 import { PINNED_BELOW } from "../../../components/PinnedHead";
 import { CardTitle } from "../../../components/CardTitle";
 import { CardPictures, type CardSlide } from "../../../components/CardPictures";
@@ -137,7 +138,6 @@ export default function PlaceCard({
   onFlyHere,
   onAddStop,
   addStopOff,
-  onExpand,
   startOn,
   onStarted,
   stop,
@@ -155,8 +155,6 @@ export default function PlaceCard({
   onAddStop?: (place: AirportPlace) => void;
   /** Why Add Stop is greyed (on the route already, the route full). */
   addStopOff?: string;
-  /** The panel all the way up: opened on its approaches (startOn). */
-  onExpand: () => void;
   /** Opened on a part of a tab: the route's Approaches opens the
    *  destination's on its approaches. `onStarted` once it has. */
   startOn?: "approaches";
@@ -200,13 +198,14 @@ export default function PlaceCard({
   // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the card opens on its approaches; each tab its own place in the scroll (useTabScroll).
   const [tab, setPicked] = useCardTab<CardTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
   useTabScroll(tabsRef, tab);
-  // Opened on its approaches (the route's Approaches): the panel all the
-  // way up and, once the answer is in and the panel has risen, Charts open
-  // on the approaches.
-  // The callbacks the page's, made again at each of its draws: effect
-  // events, so the panel rising draws nothing that restarts this.
+  // Opened on its approaches (the route's Approaches): its own drawer all
+  // the way up and, once the answer is in and it has risen, Charts open
+  // on the approaches. The callbacks effect events, so the card rising
+  // draws nothing that restarts this.
   const placeIn = !!place;
-  const expand = useEffectEvent(() => onExpand());
+  const cardId = useId();
+  const card = useCardSize(cardId);
+  const expand = useEffectEvent(() => card?.setSize("full"));
   const started = useEffectEvent(() => onStarted?.());
   useEffect(() => {
     if (startOn !== "approaches" || !placeIn) return;
@@ -448,7 +447,9 @@ export default function PlaceCard({
   const share = () =>
     void shareOrCopy({ title: place?.name ?? ident, url: `${location.origin}/app/plan?place=${place?.ident ?? ident}` }).catch(() => {});
   return (
-    <PanelCard testId="place-card">
+    // Half way as it opens, from the map, the search or a list alike (the
+    // card rule's 2); its own drawer, sized from here (useCardSize).
+    <PanelCard testId="place-card" opens="half" cardId={cardId}>
       {place || !error ? (
         <>
           {/* The head and the actions from the first frame, live once the

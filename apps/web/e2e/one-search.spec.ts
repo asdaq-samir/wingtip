@@ -158,18 +158,27 @@ test("the top hit's Fly Here plans the route to it from the result, with no card
   await expect(sideDrawer(page).getByTestId("place-card")).toHaveCount(0);
 });
 
-test("typed, the suggestions scroll under the search row, which stays at the sheet's top, the field kept focused", async ({ page }) => {
+test("focused and typed in, the search leaves the sheet at its size; the suggestions scroll under the search row, the field kept focused", async ({
+  page,
+}) => {
   // No title row to scroll away any more (the owner, 2026-11-10): the
-  // search alone at the top, the list under it.
+  // search alone at the top, the list under it. Neither the focus nor
+  // what is typed moves the sheet (the owner, 2026-11-11: "Whenever I try
+  // to type on search bar it takes the card to full screen"): the
+  // keyboard sits over the page as the Drawer places it.
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
   await showTabs(page);
+  const size = await sideDrawer(page).getAttribute("data-panel");
+  expect(size).not.toBe("full");
   const search = await airportSearch(page);
   await search.click();
+  await expect(sideDrawer(page)).toHaveAttribute("data-panel", size!);
   await search.fill("a");
   await expect(searchAirports(page).first()).toBeVisible({ timeout: slow(10_000) });
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+  await expect(sideDrawer(page)).toHaveAttribute("data-panel", size!);
+  await grabberTo(page, "full");
   const scroll = (top: number) =>
     page.getByTestId("one-search-results").evaluate((el, y) => {
       let at: HTMLElement | null = el;

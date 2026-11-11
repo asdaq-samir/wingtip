@@ -36,7 +36,7 @@ export function SearchField({
 }: {
   value: string;
   onChange: (value: string) => void;
-  onFocus: () => void;
+  onFocus?: () => void;
   onCancel: () => void;
   onSubmit: () => void;
   /** What it asks for: an airport to open, or the one to keep as Home. */

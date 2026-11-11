@@ -7,7 +7,7 @@ import { backOne } from "../hooks/use-shortcuts";
 import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea, useWindowHeight } from "../hooks/use-viewport";
 import { GLASS_SHEET, MATERIAL, PILL_RADIUS, SHEET_MARGIN, type MapInsets, type PanelState } from "../lib/mapChrome";
-import { setCard, topCard, useSheetCards } from "../lib/sheetCards";
+import { topCard, useSheetCards } from "../lib/sheetCards";
 import { FLOAT_PX, insetsOf } from "./sheet/insets";
 import { useSheetDetents } from "./sheet/useSheetDetents";
 import { useDrawn } from "./sheet/useDrawn";
@@ -16,7 +16,6 @@ import { SheetGrabber } from "./sheet/SheetGrabber";
 import { CardStack, type StackProps } from "./sheet/CardStack";
 import { SheetDrawer } from "./sheet/SheetDrawer";
 import type { SheetPages } from "./sheet/SheetPager";
-import type { CardEntry } from "../lib/sheetCards";
 
 interface Props {
   /** The panel's name -- "Flight Planning", "Model Training" -- for its
@@ -66,8 +65,6 @@ interface Props {
 /** The grabber's row at the far edge of a top sheet or the side panel. */
 const GRABBER = 16;
 
-const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
-
 /**
  * The page's one panel over the map, the way Maps on an iPhone has one:
  * the one search first, the route and the workspace's actions under it,
@@ -114,14 +111,13 @@ export default function MapPanel(props: Props) {
   const barShown = !!bar && !flying && !cardsUp && layer === "tab";
   const toEdge = layer !== "console" && !!props.toEdge && !cardsUp;
 
-  // The page's size is the frontmost sheet's snap point -- the top card's,
-  // else the sheet's -- and what is drawn for it at once; a size asked for
-  // here is the page's to set (useSheetLayers).
+  // The sheet's own size is the page's (MapPanel's state, its setPanel); a
+  // card over it sizes its own drawer (CardStack, useCardSize). What is in
+  // sight is the top card's, else the sheet's: read for the map's room and
+  // the rules over the map, and for the side panel, which a card covers.
   const ask = props.onStateChange;
-  const layers = useSheetLayers(props.state, ask, topEntry);
-  const front = layers.front;
-  // The sheet's own size under the cards; the side panel is one layer, its cards covering it.
-  const size = onPhone ? layers.size : front;
+  const front: PanelState = topEntry ? (topEntry.at ?? "half") : props.state;
+  const size = onPhone ? props.state : front;
   const ready = useDrawn();
   const hasPill = !!bar || !!compact;
   const atPill = size === "peek" && hasPill;
@@ -153,8 +149,9 @@ export default function MapPanel(props: Props) {
   });
   const { detents } = sizes;
 
-  // The room the frontmost sheet leaves the map, told as its snap point is
-  // set: the map eases with the sheet (GlMapShell, in the Drawer's time).
+  // The room the sheet in sight (the top card, else the sheet) leaves the
+  // map, told as its snap point is set: the map eases with the sheet
+  // (GlMapShell, in the Drawer's time).
   const tellInsets = props.onInsetsChange;
   const insetsNow = useMemo(
     () => insetsOf(front, detents, onPhone, fromBottom, safe.top, desktop),
@@ -165,12 +162,13 @@ export default function MapPanel(props: Props) {
   // Escape with no card over it (a card's own drawer takes it) lowers the
   // sheet to the pill; whether it took the key.
   const lower = () => {
-    if (cardsUp || front === "peek") return false;
+    if (cardsUp || size === "peek") return false;
     ask("peek");
     return true;
   };
 
-  // The frontmost sheet's size on <body>, for index.css's rules over the map.
+  // The size in sight on <body> (the top card's, else the sheet's), for
+  // index.css's rules over the map.
   useLayoutEffect(() => {
     document.body.dataset.mapPanel = front;
     return () => {
@@ -224,10 +222,9 @@ export default function MapPanel(props: Props) {
     : cn(MATERIAL, "w-(--size-panel) lg:w-(--size-panel-wide) ring-1 ring-inset ring-black/5 shadow-float dark:ring-white/10");
   const common = {
     "data-slot": "map-panel",
-    // The size the pilot sees, the frontmost sheet's (the page's), and the
-    // sheet's own under the cards.
-    "data-panel": front,
-    "data-sheet-at": size,
+    // The sheet's own size, under a card too; a card's is on its own
+    // drawer (CardStack's data-panel).
+    "data-panel": size,
     "data-capsule": atPill || undefined,
     // Its three heights, for a probe or a test to read.
     "data-detents": `${detents.peek},${detents.half},${detents.full}`,
@@ -258,10 +255,9 @@ export default function MapPanel(props: Props) {
     onPhone,
     fromBottom: bottomSheet,
     detents,
-    front,
-    ask,
+    sheet: props.state,
     ready,
-    grabber: <SheetGrabber label={label} size={front} ask={ask} at={grabberAt} />,
+    grabber: (cardSize, cardAsk) => <SheetGrabber label={label} size={cardSize} ask={cardAsk} at={grabberAt} />,
     look: onPhone ? GLASS_SHEET : "bg-background dark:bg-popover",
     below: SHEET_BELOW,
     follow: onPhone && !fromBottom ? cn(FOLLOW, CUT_TOP) : undefined,
@@ -317,37 +313,4 @@ export default function MapPanel(props: Props) {
       <SheetParts {...shared} />
     </SheetDrawer>
   );
-}
-
-/**
- * The sheet and the cards over it as layers, each with its own snap point
- * (the owner, 2026-11-11: "Just let the drawer do what it does"): the
- * page's size is the frontmost's -- the top card's, else the sheet's --
- * and the sheet under a card stays where it was. As the top changes, the
- * page is asked for the new top's size: a card opened at half at the
- * least (all the way for a search) or as high as what it covers (the card
- * rule's 2), one uncovered at the size it was left at, the sheet at its
- * own. Until the page has it, that size is what is drawn (`front`).
- */
-function useSheetLayers(page: PanelState, ask: (size: PanelState) => void, top: CardEntry | null) {
-  const topId = top?.id ?? null;
-  const [layer, setLayer] = useState(topId);
-  const [sheet, setSheet] = useState(page);
-  const [asked, setAsked] = useState<PanelState | null>(null);
-  if (layer !== topId) {
-    setLayer(topId);
-    const least = top?.raise ?? "half";
-    const target = !top ? sheet : (top.at ?? (RANK[page] > RANK[least] ? page : least));
-    setAsked(target === page ? null : target);
-  } else if (asked !== null && asked === page) setAsked(null);
-  else if (!top && asked === null && sheet !== page) setSheet(page);
-  useEffect(() => {
-    if (asked !== null) ask(asked);
-  }, [asked, ask]);
-  // The top card's size kept with it, for when it is uncovered.
-  const front = asked ?? page;
-  useEffect(() => {
-    if (topId) setCard(topId, { at: front });
-  }, [topId, front]);
-  return { front, size: top || asked !== null ? sheet : page };
 }

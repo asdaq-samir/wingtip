@@ -182,11 +182,20 @@ close does.
 - Cards over the sheet are the Drawer's own nested drawers (the owner,
   2026-11-11; `components/sheet/CardStack`): each with its own snap point
   among the sheet's three sizes, its grabber and its swipe, the sheet's
-  swipe the card's while one is up, and its own Escape closing it. A card
-  opens at half at the least (all the way up for a search) or as high as
-  what it covers, then is where the pilot puts it; the sheet under it
-  stays where it was, and the page's size is the frontmost sheet's
-  (MapPanel's `useSheetLayers`). They are put inside the sheet's popup
+  swipe the card's while one is up, and its own Escape closing it. Each
+  card sizes its own drawer (the owner, 2026-11-11): its snap point is its
+  entry's `at` in `lib/sheetCards`, set as it opens -- the size its opener
+  says (`opens` on `PanelCard`, `SheetCard`, `CardLayer`: half for an
+  airport, an airplane or a held point, all the way up for Nearest, a past
+  flight or Settings), else as high as what it covers, `raise` (half) at
+  the least -- then where the pilot drags it or the card asks through
+  `useCardSize()` (the stock controlled `snapPoint` and its change, from
+  the card's context or by the `cardId` its own component gives it). The
+  page's `setPanel` sizes the main sheet alone, its `data-panel` the
+  sheet's own under a card too, each card's `data-panel` on its own
+  drawer; what is in sight (the top card's, else the sheet's) is read for
+  `<body>`'s `data-map-panel` and the map's room. No field's focus or
+  typing sizes either. They are put inside the sheet's popup
   (`Drawer.Portal`'s `container`), outside its corners' clip, placed from
   the sheet's snap offset to their own. A card's content stays drawn where
   its caller is (its providers) and is put in its drawer's scroller

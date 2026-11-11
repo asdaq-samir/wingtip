@@ -15,12 +15,13 @@ export const GoToTab = createContext<(tab: PanelTab, section?: string) => void>(
 /** A tab and a section of it asked for from outside the tabs -- Share's
  *  File flight plan, the Brief's Flight Plan -- heard once by the tabs
  *  (PanelTabs), which then forget it: drawn later, as the route's panel
- *  comes in, they still hear one asked before they were there. */
+ *  comes in, they still hear one asked before they were there. `full`:
+ *  the Brief's card all the way up for it (a form's room). */
 export const useTabAsk = create<{
-  ask: { tab: PanelTab; section?: string } | null;
-  go: (tab: PanelTab, section?: string) => void;
+  ask: { tab: PanelTab; section?: string; full?: boolean } | null;
+  go: (tab: PanelTab, section?: string, full?: boolean) => void;
   heard: () => void;
-}>((set) => ({ ask: null, go: (tab, section) => set({ ask: { tab, section } }), heard: () => set({ ask: null }) }));
+}>((set) => ({ ask: null, go: (tab, section, full) => set({ ask: { tab, section, full } }), heard: () => set({ ask: null }) }));
 
 /** En route's legs -- its totals, its table and its notes -- its first
  *  section, before its profile and its altitude's reasoning: up as a

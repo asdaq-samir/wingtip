@@ -15,6 +15,7 @@ import { cn } from "cn";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs";
 import { SectionsOpen } from "../../../../components/sectionLayout";
 import { GoToTab, LEGS, useTabAsk, type PanelTab } from "./panelTab";
+import { useCardSize } from "../../../../lib/sheetCards";
 import { holdOpenCard } from "../../../../lib/openCards";
 import { sheetScroller } from "../../../../lib/scrollPlace";
 import { useTipAnchor } from "../../../../lib/tipAnchors";
@@ -172,17 +173,21 @@ export default function PanelTabs({
     [goTo],
   );
   // A tab and section asked for from outside the tabs (useTabAsk): heard
-  // as it is asked, and once drawn, one asked before the tabs were there.
+  // as it is asked, and once drawn, one asked before the tabs were there;
+  // the card they are in all the way up where it asks (its own drawer).
+  const card = useCardSize();
+  const raise = card?.setSize;
   useEffect(() => {
     const hear = () => {
       const { ask, heard } = useTabAsk.getState();
       if (!ask) return;
       heard();
+      if (ask.full) raise?.("full");
       goTo(ask.tab, ask.section);
     };
     queueMicrotask(hear);
     return useTabAsk.subscribe(hear);
-  }, [goTo]);
+  }, [goTo, raise]);
   return (
     // print:h-auto print:overflow-visible: on screen this fills a fixed
     // viewport height and clips to it, deliberately -- on paper there
