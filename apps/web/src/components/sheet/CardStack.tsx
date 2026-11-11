@@ -3,7 +3,7 @@ import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
 import { closeTopCard } from "../../lib/openCards";
-import { setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
+import { cardOpening, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import type { Detents } from "./insets";
 import { sheetTopRef } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
@@ -69,16 +69,6 @@ export function CardStack(p: StackProps & { host: HTMLElement | null }) {
   ));
 }
 
-const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
-
-/** The size a card opens at: its opener's, else as high as what it
- *  covers, `raise` (half) at the least. */
-const opening = (entry: CardEntry, covers: PanelState): PanelState => {
-  if (entry.opens) return entry.opens;
-  const least = entry.raise ?? "half";
-  return RANK[covers] > RANK[least] ? covers : least;
-};
-
 function CardDrawer({
   entry,
   top,
@@ -91,7 +81,7 @@ function CardDrawer({
   const { onPhone, fromBottom, detents } = p;
   // Its own snap point, kept in its entry: set as it opens, from then on
   // the pilot's or the card's (useCardSize).
-  const at = entry.at ?? opening(entry, covers);
+  const at = entry.at ?? cardOpening(entry, covers);
   const unset = entry.at === undefined && entry.shown;
   useLayoutEffect(() => {
     if (unset) setCard(id, { at });

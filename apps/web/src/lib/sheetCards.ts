@@ -55,6 +55,17 @@ export const useSheetCards = create<{ stack: CardEntry[] }>(() => ({ stack: [] }
 /** The top card: null with none open. */
 export const topCard = (stack: CardEntry[]): CardEntry | null => [...stack].reverse().find((entry) => entry.shown) ?? null;
 
+const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
+
+/** The size a card opens at (CardStack): its opener's (`opens`), else as
+ *  high as what it covers -- the card under it, else the sheet -- with
+ *  `raise` (half) at the least (the card rule's 2). */
+export function cardOpening(entry: Pick<CardEntry, "opens" | "raise">, covers: PanelState): PanelState {
+  if (entry.opens) return entry.opens;
+  const least = entry.raise ?? "half";
+  return RANK[covers] > RANK[least] ? covers : least;
+}
+
 /** A card's entry changed in place. */
 export function setCard(id: string, change: Partial<CardEntry>) {
   useSheetCards.setState((s) => {
