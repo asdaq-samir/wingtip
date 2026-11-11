@@ -107,6 +107,11 @@ export default function ShareMenu({
   planAgain?: { stale: string[]; onPlan: () => void };
 }) {
   const [askingReview, setAskingReview] = useState(false);
+  // What an item does once the menu has gone, at Base UI's own word that
+  // its close has finished (onOpenChangeComplete), not after a guessed
+  // 150 ms a slow phone ran past: printed, the menu was on the paper.
+  const [afterClose, setAfterClose] = useState<{ then: () => void } | null>(null);
+  const afterMenu = (then: () => void) => () => setAfterClose({ then });
 
   // The plan, to another pilot or an instructor, as a link that opens as
   // a preview (useShareLink): the share sheet where the browser has one
@@ -170,7 +175,7 @@ export default function ShareMenu({
 
   return (
     // The review's sheet, from the menu's item, placed by the Share
-    // button: the menu has gone by the time it opens (as Print waits).
+    // button: opened once the menu has gone (afterClose), as Print is.
     <ResponsivePopover
       open={askingReview}
       onOpenChange={(open, details) => {
@@ -182,7 +187,13 @@ export default function ShareMenu({
         setAskingReview(open);
       }}
     >
-      <DropdownMenu>
+      <DropdownMenu
+        onOpenChangeComplete={(open) => {
+          if (open || !afterClose) return;
+          setAfterClose(null);
+          afterClose.then();
+        }}
+      >
         <ResponsivePopoverAnchor asChild>
           <DropdownMenuTrigger
             render={
@@ -287,7 +298,7 @@ export default function ShareMenu({
                   <DropdownMenuSeparator />
                 </>
               )}
-              {saving(() => setTimeout(() => setAskingReview(true), 150))}
+              {saving(afterMenu(() => setAskingReview(true)))}
               <DropdownMenuItem disabled={!fileable} onClick={onFile} data-testid="file-flight-plan">
                 <FileText />
                 File flight plan
@@ -306,7 +317,7 @@ export default function ShareMenu({
               kneeboard card -- the nav log, radio and patterns on one
               half-letter page to fly with. */}
           {card === "brief" && (
-            <DropdownMenuItem disabled={!routed} onClick={() => setTimeout(() => window.print(), 150)} data-testid="print-briefing">
+            <DropdownMenuItem disabled={!routed} onClick={afterMenu(() => window.print())} data-testid="print-briefing">
               <Printer />
               Print the briefing
             </DropdownMenuItem>
@@ -315,7 +326,7 @@ export default function ShareMenu({
             <DropdownMenuItem
               disabled={!routed}
               data-testid="print-kneeboard"
-              onClick={() => setTimeout(() => void import("../lib/printKneeboard").then((m) => m.printKneeboard()), 150)}
+              onClick={afterMenu(() => void import("../lib/printKneeboard").then((m) => m.printKneeboard()))}
             >
               <Printer />
               Print the nav log
