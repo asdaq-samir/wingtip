@@ -5,8 +5,8 @@ import type { Leg, ProcedureDrawing } from "../../../api/types";
 import { bearingDeg, type LatLon } from "../../../geo";
 import { pointName } from "../../../identSchema";
 import { prefersReducedMotion } from "../../../motion";
-import { useAirplaneChosen, usePreferences } from "../../../preferences";
-import { airportQuery, plateQuery } from "../../../queryClient";
+import { useAirplaneChosen } from "../../../preferences";
+import { airportQuery } from "../../../queryClient";
 import { STOP_KINDS, type StopKind } from "../../../stopKinds";
 import type { TrafficPattern } from "../../../trafficPattern";
 import { altFt } from "../../../format";
@@ -171,56 +171,6 @@ export function ProceduresGl({
     [drawings, words, crossings, directs, onFix],
   );
   useGlMarks(marks);
-  return null;
-}
-
-/** Each approach's plate under its lines where it could be placed:
- *  an image source on its four corners over a white sheet. */
-export function PlatesGl({ drawings }: { drawings: ProcedureDrawing[] }) {
-  const shown = usePreferences((s) => s.plates);
-  const approaches = shown ? drawings.filter((d) => d.kind === "approach") : [];
-  const plates = useQueries({ queries: approaches.map((d) => plateQuery(d.airport, d.id)) });
-  return (
-    <>
-      {plates.map((q, i) => {
-        const p = q.data,
-          d = approaches[i]!;
-        if (!p || ![p.south, p.west, p.north, p.east].every(Number.isFinite)) return null;
-        const url = `/api/planner/approach-plate/${encodeURIComponent(p.cycle)}/${encodeURIComponent(d.airport)}/${encodeURIComponent(d.id)}.png`;
-        return (
-          <Plate
-            key={`${d.airport}-${d.id}`}
-            id={`plate-${d.airport}-${d.id}`}
-            url={`${window.location.origin}${url}`}
-            box={[p.west, p.south, p.east, p.north]}
-          />
-        );
-      })}
-    </>
-  );
-}
-
-function Plate({ id, url, box: [w, s, e, n] }: { id: string; url: string; box: [number, number, number, number] }) {
-  const coordinates: [[number, number], [number, number], [number, number], [number, number]] = [
-    [w, n],
-    [e, n],
-    [e, s],
-    [w, s],
-  ];
-  useGlLayer(
-    "areas",
-    {
-      [`${id}-sheet`]: {
-        type: "geojson",
-        data: { type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates: [[...coordinates, coordinates[0]]] } },
-      },
-      [id]: { type: "image", url, coordinates },
-    },
-    [
-      { id: `${id}-sheet`, type: "fill", source: `${id}-sheet`, paint: { "fill-color": CHART.casing, "fill-opacity": 0.8 } },
-      { id, type: "raster", source: id, paint: { "raster-fade-duration": 0 } },
-    ],
-  );
   return null;
 }
 
