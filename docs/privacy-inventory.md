@@ -29,11 +29,15 @@ longer than it takes to answer the request.
 
 ## Data that leaves the device but is not collected
 
-- **Position for Nearest, the map and the airspace at a point.** The
-  device's position goes to the planner to answer and is not kept: the
-  planner writes no access log in production (`infra/docker-compose.prod.yml`),
-  and nothing stores it (the gateway's log of a planner outage names the path only). The position itself is read on the device, with
-  the permission the browser, iOS or Android asks for.
+- **Position for Nearest, the map, traffic and the airspace at a point.**
+  The device's position goes to the planner to answer and is not kept:
+  the planner writes no access log in production
+  (`infra/docker-compose.prod.yml`), no log line carries a point's
+  coordinates (the airspace router's and the geocoder's failures name the
+  error only), and the traffic view keeps only its half-degree region for
+  a minute ("Kept without an account" below). The gateway's log of a
+  planner outage names the path only. The position itself is read on the
+  device, with the permission the browser, iOS or Android asks for.
 - **What a pilot's own AI app asks the connector.** A pilot who connects Wingtip to their own Claude or ChatGPT (the MCP connector, `services/planner/app/mcp`) has that app call Wingtip's tools: the airports, weather, NOTAMs, a route's nav log and briefing, and their own airplanes and saved flights. Each answer goes only to the app the pilot connected, only when the pilot's conversation asks for it, and is then under that app's own terms (Anthropic's or OpenAI's): Wingtip neither chooses nor pays for the model. Nothing of the call is kept beyond the rate limit's count of calls per pilot, in the planner's memory for a day (`app.mcp.calls`). The tools never return the pilot's name, address or logbook. Saving a flight from there (`save_flight`) is a saved flight as above, confirmed in the AI app first.
 - **A cockpit receiver's traffic and FIS-B weather** (the iOS and Android
   apps, with ADS-B Receiver on Auto): heard on the cockpit's Wi-Fi, read
@@ -216,6 +220,37 @@ When the iOS project exists (#102), `PrivacyInfo.xcprivacy` declares:
 - `NSPrivacyAccessedAPITypes`: the required-reason APIs the native shell
   and its plugins use, at least `NSPrivacyAccessedAPICategoryUserDefaults`
   (reason `CA92.1`, the app's own settings).
+
+## Kept without an account, and for how long
+
+The planner's live store (`wingtip.traffic.store`, a SQLite file the
+planner and ingest share) holds nothing that names a pilot or an account,
+and the planner prunes it every minute (`wingtip.traffic.prune_forever`,
+started in `app.main`), whether or not ingest runs:
+
+- **Where the map asks for traffic** (`looked`): the region adsb.lol is
+  asked about for the view, the 0.5 degree cell (2 degrees zoomed out)
+  with a radius that holds the view, never the view's own middle, which is
+  the pilot's position while the map follows the airplane. Dropped a
+  minute after the last ask (`LOOKED_S`), so ingest reads the FAA's radar
+  only where someone is looking.
+- **Followed airplanes** (`followed`): an airplane whose card any pilot
+  opens is followed, its ICAO address and when its card was last opened;
+  dropped 30 days after that (`FOLLOW_KEEP_S`). Opening its card again
+  starts the 30 days again.
+- **Other airplanes' tracks** (`points`): a followed airplane's public
+  ADS-B and radar positions, recorded from adsb.lol, ADS-B Exchange,
+  adsb.fi and the FAA's radar card open or not, so its card can show its
+  recent flights; each point kept 30 days (`RECORD_KEEP_S`), whether or
+  not the airplane is heard again. No pilot or account is stored with
+  them; a pilot who opens their own airplane's card has its public
+  flights recorded the same way.
+
+In the gateway, a connection an AI app holds (`oauth2_authorization`)
+whose every code and token has run out is purged the night after
+(`ConnectorGrants.purgeExpired`, 03:30 UTC); the consent stays until the
+pilot deletes their account. Fault reports go after 30 days, speed
+figures after 400, sign-in links a day after they expire.
 
 ## Kept after an account is deleted
 

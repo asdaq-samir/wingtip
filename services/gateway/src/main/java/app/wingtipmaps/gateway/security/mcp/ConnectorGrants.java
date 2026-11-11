@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
@@ -51,6 +52,24 @@ public class ConnectorGrants {
 
     private static Instant instant(Timestamp at) {
         return at == null ? null : at.toInstant();
+    }
+
+    /**
+     * The connections whose every code and token has run out, a day after
+     * the last did, each night: a connection unused past its 30-day refresh
+     * token (ConnectorClients) is over, and the privacy policy keeps
+     * nothing past its use (docs/privacy-inventory.md). A row that has not
+     * yet had a code issued is an authorization in progress, and stays.
+     * The consents stay: they are the pilot's standing answer, gone with
+     * the account. How many went.
+     */
+    @Scheduled(cron = "${app.mcp.purge-cron:0 30 3 * * *}", zone = "UTC")
+    public int purgeExpired() {
+        return jdbc.update("DELETE FROM oauth2_authorization"
+                + " WHERE (authorization_code_issued_at IS NOT NULL OR access_token_issued_at IS NOT NULL)"
+                + " AND greatest(coalesce(authorization_code_expires_at, '-infinity'),"
+                + " coalesce(access_token_expires_at, '-infinity'), coalesce(refresh_token_expires_at, '-infinity'))"
+                + " < now() - interval '1 day'");
     }
 
     /** Ends every connection the pilot made: their tokens stop working at once. */

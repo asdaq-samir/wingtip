@@ -203,4 +203,24 @@ class ConnectorRecordsTest {
         assertThat(jdbc.queryForList("SELECT principal_name FROM oauth2_authorization_consent", String.class))
                 .containsExactly("42");
     }
+
+    /** A connection whose every token ran out over a day ago goes in the
+     *  nightly purge; a live one, and one still being authorized, stay. */
+    @Test
+    void expiredConnectionsArePurgedAndLiveOnesKept() {
+        jdbc.update("DELETE FROM oauth2_authorization");
+        jdbc.update(
+                "INSERT INTO oauth2_authorization (id, registered_client_id, principal_name, authorization_grant_type,"
+                        + " access_token_issued_at, access_token_expires_at, refresh_token_expires_at) VALUES"
+                        + " ('gone', 'claude', '7', 'authorization_code', now() - interval '40 days',"
+                        + " now() - interval '40 days', now() - interval '10 days'),"
+                        + " ('live', 'claude', '8', 'authorization_code', now() - interval '20 days',"
+                        + " now() - interval '20 days', now() + interval '10 days')");
+        jdbc.update("INSERT INTO oauth2_authorization (id, registered_client_id, principal_name, authorization_grant_type)"
+                + " VALUES ('pending', 'claude', '9', 'authorization_code')");
+        assertThat(grants.purgeExpired()).isEqualTo(1);
+        assertThat(jdbc.queryForList("SELECT id FROM oauth2_authorization ORDER BY id", String.class))
+                .containsExactly("live", "pending");
+        jdbc.update("DELETE FROM oauth2_authorization");
+    }
 }

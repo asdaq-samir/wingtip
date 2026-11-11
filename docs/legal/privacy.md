@@ -37,7 +37,7 @@ The app asks your device for your position only after you turn on the location a
 
 Your position is used on your device to draw your airplane and measure from it. It leaves your device when a feature needs it to answer:
 
-- **to our planner,** to find the nearest airports, the airspace and alerts around and ahead of you, nearby traffic and emergency fields. The planner answers and does not keep it. It does keep, for 60 seconds and without anything that says whose it is, the area of the map in view (rounded to about 6 nautical miles), to fetch traffic there.
+- **to our planner,** to find the nearest airports, the airspace and alerts around and ahead of you, nearby traffic and emergency fields. The planner answers and does not keep it, and writes no position to its logs. For traffic it keeps, for one minute and without anything that says whose it is, only the half-degree square of the map (about 30 nautical miles across) the view is in, to fetch the radar there.
 - **to Claude,** when you use Ask while your position is known, and only while the features Claude writes are on; they are off now (see below).
 
 Your position is stored with your account only as a track you choose to save to a flight.
@@ -102,6 +102,10 @@ Each report carries the app's version, the system's version and whether the devi
 The web app also sends, when you leave a page, how fast it was on your device (Google's Core Web Vitals and how long the browser was busy), with the page's name, the kind of device and the app's version, nothing else. Speed figures from all three apps are kept 400 days, to see whether the app is getting faster or slower.
 
 There is no analytics or advertising kit in any of the apps, and no third party receives these reports.
+
+## Other airplanes' tracks
+
+When anyone opens an airplane's card on the traffic map, our planner follows that airplane for 30 days from the last time its card was opened, and records its positions from the public ADS-B networks and the FAA's radar, so its card can show where it has flown. Each position is kept 30 days. Nothing about who opened the card is kept with it. If you open your own airplane's card, its flights are recorded the same way, as any airplane's are.
 
 ## Who else receives anything
 
