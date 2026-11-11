@@ -9,6 +9,7 @@ import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 import { airportQuery } from "../../lib/queryClient";
 import { notamRankingQuery } from "../notamRanking";
 import { keptRecordStore, keptRoute, type KeptRecord } from "./keptRecord";
+import { keepProfile, keepRadar } from "./keepFlightPath";
 
 /**
  * The route's answers kept for the air, in one go with its charts (Keep for
@@ -16,7 +17,8 @@ import { keptRecordStore, keptRoute, type KeptRecord } from "./keptRecord";
  * which keeps the planner's answers as they pass (vite.config.ts:
  * planner-now for the briefing, planner-api for the nav log, the airport
  * cards and the weather loop, airport-diagrams for the plates' pages), and
- * the NOTAMs, a POST it cannot keep, in this browser's storage
+ * the route's side view and the loop's newest radar over it
+ * (keepFlightPath), the NOTAMs, a POST it cannot keep, in this browser's storage
  * (notamRanking). In the air each is shown from there with its age
  * (lib/kept). What fails is named missing, never in the way of the rest.
  */
@@ -84,6 +86,9 @@ export async function keepRouteAnswers(
   // The nav log the page planned: the worker kept its answer as it came.
   const planned = latestAnswer(client, ["navlog", dep, dest]);
   mark("plan", !!planned);
+  // And the route from the side, which the side view and the printed log
+  // draw (keepFlightPath); each draws the route without it where it fails.
+  await keepProfile(client, course);
 
   const plan = useBriefPlan.getState();
   if (plan.routed) {
@@ -123,9 +128,14 @@ export async function keepRouteAnswers(
 
   // The weather loop's newest frame list, of the pick in the Map menu.
   const loop = useWeatherLayers.getState().loop;
+  // With its newest radar picture over the route (keepFlightPath), so the
+  // loop kept is not a list of frames over a blank map.
   try {
-    bytes += bytesOf(await api.weatherLoop(loop === "off" ? "radar" : loop));
-    mark("weather_loop", true);
+    const frames = await api.weatherLoop(loop === "off" ? "radar" : loop);
+    bytes += bytesOf(frames);
+    const radar = await keepRadar(frames, course, signal);
+    bytes += radar.bytes;
+    mark("weather_loop", radar.kept || !frames.frames.some((f) => f.radar_tiles));
   } catch {
     mark("weather_loop", false);
   }

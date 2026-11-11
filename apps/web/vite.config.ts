@@ -205,6 +205,21 @@ export default defineConfig({
             },
           },
           {
+            // The radar loop's pictures (WeatherLoopGl), straight from the
+            // Iowa Environmental Mesonet: each address names its five-minute
+            // mosaic, so what is kept is that picture for good, cache first.
+            // Keep for the Air fetches the newest over the route
+            // (features/keptForAir/keepFlightPath); kept a day, older
+            // weather being no use in the air.
+            urlPattern: ({ url }) => url.hostname === "mesonet.agron.iastate.edu" && url.pathname.includes("/tile.py/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "radar-frames",
+              expiration: { maxEntries: 1500, maxAgeSeconds: 24 * 3600, purgeOnQuotaError: true },
+              cacheableResponse: { statuses: [200] },
+            },
+          },
+          {
             // The airport diagrams' pictures, cache first as the tiles
             // are: an address names its 28-day d-TPP cycle, so what is
             // kept is right for the whole of it, and a card opened again
