@@ -35,7 +35,7 @@ function RulerGlDrawn() {
     const el = map.getContainer();
     let hold: { ids: [number, number]; from: XY[]; zoom: number; timer: number } | null = null;
     let held: XY[] = [];
-    let ruling: { ids: [number, number]; at: XY[]; box: DOMRect } | null = null;
+    let ruling: { ids: [number, number]; at: XY[]; box: DOMRect; pitch: boolean } | null = null;
     const pointOf = (t: Touch, box?: DOMRect): XY => ({ x: t.clientX - (box?.left ?? 0), y: t.clientY - (box?.top ?? 0) });
     const find = (list: TouchList, id: number) => Array.from(list).find((t) => t.identifier === id);
     const cancelHold = () => {
@@ -50,16 +50,22 @@ function RulerGlDrawn() {
       hold = null;
       const box = el.getBoundingClientRect();
       const from = held.map((p) => ({ x: p.x - box.left, y: p.y - box.top }));
-      ruling = { ids, at: from, box };
+      // Two fingers moved together tilt the map in 3D (TerrainGl): held
+      // still under the ruler as the pinch and the pan are, and given back
+      // only where they were on.
+      ruling = { ids, at: from, box, pitch: map.touchPitch.isEnabled() };
       map.touchZoomRotate.disable();
+      map.touchPitch.disable();
       map.dragPan.disable();
       const first = [from[0]!, from[1]!] as const;
       setEnds({ first, now: first });
     };
     const end = () => {
       if (!ruling) return;
+      // enable() keeps the rotation as it was: off on the flat chart, on in
+      // 3D (TerrainGl). Turning it off here left 3D unable to twist.
       map.touchZoomRotate.enable();
-      map.touchZoomRotate.disableRotation();
+      if (ruling.pitch) map.touchPitch.enable();
       map.dragPan.enable();
       ruling = null;
       setEnds(null);
