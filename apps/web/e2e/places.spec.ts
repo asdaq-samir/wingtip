@@ -1097,7 +1097,7 @@ test("an airport's card says which lights a pilot turns on with the mic, and the
   await expect(card(page)).toContainText("Weather advisory - CTAF 5 clicks");
 });
 
-test("a military field's card shows 'permission required' whole in its line, not cut at an ellipsis", async ({ page }) => {
+test("a military field's card says so in brackets after its name, whole, not cut at an ellipsis", async ({ page }) => {
   await page.route(
     (url) => url.pathname.endsWith("/api/planner/airport/KORD"),
     async (route) => {
@@ -1106,11 +1106,10 @@ test("a military field's card shows 'permission required' whole in its line, not
     },
   );
   await page.goto("/app/plan?place=KORD");
-  const line = card(page).getByTestId("place-line");
-  await expect(line).toContainText("Military, permission required", { timeout: slow(15000) });
-  // Whole: nothing of it is past the line's box (a clamp of two lines
-  // wraps it where one line would cut it).
-  await expect(line).toHaveJSProperty("scrollHeight", await line.evaluate((el) => el.clientHeight));
+  const kind = card(page).getByTestId("place-kind");
+  await expect(kind).toHaveText(" (Military)", { timeout: slow(15000) });
+  // Whole: nothing of it past its box, the name alone shrunk or cut.
+  await expect(kind).toHaveJSProperty("scrollWidth", await kind.evaluate((el) => el.clientWidth));
 });
 
 /**

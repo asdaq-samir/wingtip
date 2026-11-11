@@ -66,20 +66,14 @@ function distanceOf(place: AirportPlace, from: { point: LatLon; name: string | n
   return from.name ? `${away(from.point, place)} of ${from.name}` : away(from.point, place);
 }
 
-/** The line under the head where the field may not be landed at without
- *  asking: one the armed services own (the FAA's airport file, NASR
- *  APT_BASE), or a civil airport sharing it, or a private one -- not a
- *  description, a field to keep out of. The town, the distance and the
- *  elevation went from the head (the owner, 2026-11-11): the elevation and
- *  the distance are the Details' rows, the town its Address. */
-function permissionOf(place: AirportPlace): string | null {
-  return place.military === "military"
-    ? "Military, permission required"
-    : place.military === "joint"
-      ? "Joint use"
-      : place.private
-        ? "Private, permission required"
-        : null;
+/** What the field is, beside its name in brackets where it is not a
+ *  public-use one (the owner, 2026-11-11: "For private airport, just say
+ *  private in () next to airport name instead of a second line"): one the
+ *  armed services own, or a civil airport sharing it (NASR APT_BASE), or
+ *  a private one -- not a description, a field to keep out of. */
+function kindOf(place: AirportPlace | undefined): string | null {
+  if (!place) return null;
+  return place.military === "military" ? "Military" : place.military === "joint" ? "Joint use" : place.private ? "Private" : null;
 }
 
 /** How old a report is, "14m ago", for the weather's line. */
@@ -243,13 +237,8 @@ export default function PlaceCard({
   // The state as the FAA writes it ("MN"), not ISO's region ("US-MN").
   const where = place ? [place.municipality, place.region?.replace(/^US-/, "")].filter(Boolean).join(", ") : null;
   const name = place?.name ?? known?.name ?? kept?.name ?? null;
-  const line = place
-    ? permissionOf(place)
-    : error
-      ? error instanceof ApiError && error.status === 404
-        ? "Not found"
-        : "Could not be looked up"
-      : "…";
+  const kind = kindOf(place);
+  const line = place ? null : error ? (error instanceof ApiError && error.status === 404 ? "Not found" : "Could not be looked up") : "…";
   const metar = place?.metar ?? null;
   const weather = place
     ? { status: place.weather_unavailable ? "unavailable" : metar ? "reported" : "no-report", category: metar?.flight_category ?? null }
@@ -452,14 +441,15 @@ export default function PlaceCard({
             // Its full name the head row's second line, centred under the
             // ident and fitted to it, in sight at the card's smallest size
             // too (the owner, 2026-11-11, after Apple Maps' "Buttermilk Cafe /
-            // Breakfast and Brunch Restaurant"); under it only whether it may
-            // be landed at without asking (permissionOf).
-            sub={name && name !== ident4 ? <FitLine testId="place-full-name">{name}</FitLine> : undefined}
-            line={
-              line ? (
-                <p className={cn("line-clamp-2 pt-1 text-muted-foreground", TEXT.note)} data-testid="place-line">
-                  {line}
-                </p>
+            // Breakfast and Brunch Restaurant"), "(Private)" after it where
+            // it is (kindOf); nothing under it.
+            // The kind kept whole past the name, which alone shrinks or is cut.
+            sub={
+              name && name !== ident4 ? (
+                <span className="flex min-w-0 justify-center" data-testid="place-full-name">
+                  <FitLine className="min-w-0">{name}</FitLine>
+                  {kind && <span className="shrink-0 whitespace-pre" data-testid="place-kind">{` (${kind})`}</span>}
+                </span>
               ) : undefined
             }
             onClose={onClose}
