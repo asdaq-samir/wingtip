@@ -16,6 +16,10 @@ enum AssistantLine: Equatable, Sendable {
     /// Who is answering, for the caption over the answer ("From the
     /// planner", "On this iPhone"; OnDevice/AskRoute).
     case origin(String)
+    /// What came of this answer is withdrawn: the phone's model streamed
+    /// sentences, then failed, and the engine's words take their place
+    /// (StreamedWords).
+    case retract
 }
 
 /// A raw thing an answer rests on (a METAR, a NOTAM), shown to the pilot
@@ -157,6 +161,9 @@ struct AssistantConversation: Equatable, Sendable {
             answering = false
         case .origin(let caption):
             turns[last].origin = caption
+        case .retract:
+            turns[last].content = ""
+            turns[last].sources = []
         }
     }
 
