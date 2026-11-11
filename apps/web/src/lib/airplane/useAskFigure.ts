@@ -41,7 +41,8 @@ export function useAskFigure(figure: NeedsFigure, tables?: Record<string, unknow
   );
   const figures = missing.filter(isFigureKey);
   const asked = figures.find((k) => !tail || !isPutOff(notNow, tail, k)) ?? null;
-  const [typed, setTyped] = useState("");
+  // The figure as typed (React Aria's NumberField, in the pilot's locale).
+  const [typed, setTyped] = useState<number | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const submit = async () => {
@@ -55,7 +56,7 @@ export function useAskFigure(figure: NeedsFigure, tables?: Record<string, unknow
     setProblem(null);
     try {
       await save(tail, { [asked]: read.value });
-      setTyped("");
+      setTyped(null);
     } catch (err) {
       setProblem(err instanceof Error ? err.message : `${tail}'s figure could not be saved.`);
     } finally {

@@ -4,7 +4,9 @@ import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { Calendar } from "./calendar";
 import { DateField, TimeField } from "./date-field";
 import { NumberField } from "./number-field";
+import { THREE_FIGURES } from "./numberFormats";
 import { parseDate } from "@internationalized/date";
+import { I18nProvider } from "react-aria-components";
 
 afterEach(cleanup);
 
@@ -53,6 +55,49 @@ describe("the React Aria fields", () => {
     fireEvent.change(field, { target: { value: "" } });
     act(() => field.blur());
     expect(changed).toHaveBeenLastCalledWith(null);
+  });
+
+  // The stock audit's W1 (2026-11-11): a hand filter of the text read a
+  // comma-decimal phone's "12,5" as 125. React Aria reads it in the locale.
+  it("reads a comma decimal as a decimal where the locale writes one", () => {
+    const changed = vi.fn();
+    const typed = vi.fn();
+    render(
+      <I18nProvider locale="de-DE">
+        <NumberField aria-label="Fuel burn" defaultValue={null} onChange={changed} onTyped={typed} data-testid="n" />
+      </I18nProvider>,
+    );
+    const field = screen.getByTestId<HTMLInputElement>("n");
+    act(() => field.focus());
+    fireEvent.change(field, { target: { value: "12,5" } });
+    expect(typed).toHaveBeenLastCalledWith(12.5);
+    act(() => field.blur());
+    expect(changed).toHaveBeenLastCalledWith(12.5);
+    expect(field.value).toBe("12,5");
+  });
+
+  it("reads a point decimal in a point locale, and gives each figure as it is typed", () => {
+    const typed = vi.fn();
+    render(
+      <I18nProvider locale="en-US">
+        <NumberField aria-label="Distance" defaultValue={null} onTyped={typed} data-testid="n" />
+      </I18nProvider>,
+    );
+    const field = screen.getByTestId<HTMLInputElement>("n");
+    act(() => field.focus());
+    fireEvent.change(field, { target: { value: "12.5" } });
+    expect(typed).toHaveBeenLastCalledWith(12.5);
+    fireEvent.change(field, { target: { value: "" } });
+    expect(typed).toHaveBeenLastCalledWith(null);
+  });
+
+  it("writes a course in three figures", () => {
+    render(
+      <I18nProvider locale="en-US">
+        <NumberField aria-label="Course" defaultValue={90} formatOptions={THREE_FIGURES} data-testid="n" />
+      </I18nProvider>,
+    );
+    expect(screen.getByTestId<HTMLInputElement>("n").value).toBe("090");
   });
 
   it("a calendar marks each day by its ISO date and picks one", () => {

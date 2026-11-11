@@ -6,7 +6,7 @@ import { cn } from "cn";
 import { ListChoices, ListGroup, ListRow } from "../../../../components/GroupedList";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../../components/ResponsivePopover";
 import { Button } from "../../../../components/ui/button";
-import { Input } from "../../../../components/ui/input";
+import { NumberField } from "../../../../components/ui/number-field";
 import type { Leg } from "../../../../lib/api/types";
 import { useClock } from "../../../../lib/useMinuteClock";
 import { ALLOWANCES, divert, reasonable, stopwatch, type Diversion, type EstimateKey } from "../../../../lib/diversion";
@@ -14,7 +14,7 @@ import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../format";
 import { bearing, grouped, windCorrection } from "../../../../lib/format";
 import { FINDING_TONE } from "../../../../lib/findings";
-import { typedNumber, written } from "./workings";
+import { written } from "./workings";
 import { nearestQuery } from "../../../../lib/queryClient";
 import { AskFigure } from "../../../../components/airplane/AskFigure";
 
@@ -53,7 +53,8 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
 
   const [stopped, setStopped] = useState<number | null>(null);
   const [field, setField] = useState<string | null>(null);
-  const [typed, setTyped] = useState<Partial<Record<EstimateKey, string>>>({});
+  // The estimates as typed (React Aria's NumberField, in the pilot's locale).
+  const [typed, setTyped] = useState<Partial<Record<EstimateKey, number | null>>>({});
   // The fields nearest, as Nearest asks for them (nearestQuery), one
   // answer for both where they were asked under two keys.
   const nearest = useQuery({ ...nearestQuery(at.lat, at.lon), enabled: started != null });
@@ -65,7 +66,7 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
   const chosen = fields.find((f) => f.ident === field) ?? null;
   const exact = chosen ? divert(leg, chosen.bearing_deg, chosen.distance_nm) : null;
   const checked = stopped != null;
-  const number = (key: EstimateKey) => typedNumber(typed[key]);
+  const number = (key: EstimateKey) => typed[key] ?? null;
   const start = () => {
     const t = Date.now();
     setStarted(t);
@@ -170,14 +171,14 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
                           ) : (
                             <X className={cn("size-4", FINDING_TONE.stop)} aria-label="Not reasonable" />
                           ))}
-                        <Input
+                        <NumberField
                           id={`${id}-${a.key}`}
-                          inputMode="decimal"
-                          className="h-8 w-20 text-right tabular-nums"
-                          value={typed[a.key] ?? ""}
-                          disabled={checked}
+                          className="h-8 w-20"
+                          inputClassName="text-right"
+                          value={typed[a.key] ?? null}
+                          isDisabled={checked}
                           data-testid={`diversion-${a.key}-input`}
-                          onChange={(e) => setTyped({ ...typed, [a.key]: e.target.value })}
+                          onChange={(v) => setTyped({ ...typed, [a.key]: v })}
                         />
                         <span className={cn("w-7 text-muted-foreground", TEXT.detail)}>{a.unit}</span>
                       </span>

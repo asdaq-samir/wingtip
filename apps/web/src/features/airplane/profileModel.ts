@@ -69,9 +69,11 @@ export function typeWords(
   return bookType ?? null;
 }
 
-/** A figure as its field shows it: to a tenth, a glide ratio to one place ("9.0"). */
-export function figureText(key: FigureKey, value: number | null): string {
-  if (value == null) return "";
-  if (key === "glide_ratio") return value.toFixed(1);
-  return String(Math.round(value * 10) / 10);
+const TENTH: Intl.NumberFormatOptions = { useGrouping: false, maximumFractionDigits: 1 };
+const RATIO: Intl.NumberFormatOptions = { useGrouping: false, minimumFractionDigits: 1, maximumFractionDigits: 1 };
+
+/** How a figure's field writes it (React Aria's NumberField, in the
+ *  pilot's locale): to a tenth, a glide ratio to one place ("9.0"). */
+export function figureFormat(key: FigureKey): Intl.NumberFormatOptions {
+  return key === "glide_ratio" ? RATIO : TENTH;
 }

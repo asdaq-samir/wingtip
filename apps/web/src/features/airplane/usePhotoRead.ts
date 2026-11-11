@@ -15,13 +15,13 @@ const BY_FIELD = Object.fromEntries(Object.entries(FIGURE_FIELDS).map(([key, fie
  * page's own words, shown with them, before anything is kept. Part of the
  * profile's view model (useAirplaneProfile).
  */
-export function usePhotoRead(fill: (typed: Partial<Record<FigureKey, string>>) => void) {
+export function usePhotoRead(fill: (typed: Partial<Record<FigureKey, number>>) => void) {
   const [state, setState] = useState<{ busy: boolean; words: string[]; problem: string | null }>({ busy: false, words: [], problem: null });
   const read = async (file: File) => {
     setState({ busy: true, words: [], problem: null });
     try {
       const found = Object.entries(figuresOfPage(await readPhoto(file))).filter(([field]) => field in BY_FIELD);
-      fill(Object.fromEntries(found.map(([field, f]) => [BY_FIELD[field], String(f.value)])));
+      fill(Object.fromEntries(found.map(([field, f]) => [BY_FIELD[field], f.value])));
       setState({
         busy: false,
         words: [...new Set(found.map(([, f]) => f.words))],

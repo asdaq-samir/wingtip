@@ -4,7 +4,7 @@ import { cn } from "cn";
 import FieldHit from "../../components/FieldHit";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import Segmented from "../../components/Segmented";
-import { Input } from "../../components/ui/input";
+import { NumberField } from "../../components/ui/number-field";
 import { approachRelative, entrySteps, holdingEntry, holdingWind, type Entry, type Turns } from "../../lib/holdEntry";
 import { bearing } from "../../lib/format";
 import { TEXT } from "../../lib/text";
@@ -144,12 +144,15 @@ function NumberRow({
     <ListRow id={id} title={title}>
       <span className="flex items-center gap-1.5">
         <FieldHit htmlFor={id}>
-          <Input
+          {/* Read in the pilot's locale (React Aria's NumberField), the
+              entry and the wind worked out again as it is typed. */}
+          <NumberField
             id={id}
-            inputMode="numeric"
-            className="h-8 w-20 text-right tabular-nums"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
+            className="h-8 w-20"
+            inputClassName="text-right"
+            defaultValue={value.trim() === "" ? null : Number(value)}
+            onTyped={(v) => onChange(v == null ? "" : String(v))}
+            minValue={0}
             data-testid={testId}
           />
         </FieldHit>

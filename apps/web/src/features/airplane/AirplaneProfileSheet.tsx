@@ -4,10 +4,10 @@ import { SheetCard } from "../../components/SheetCard";
 import { LINK } from "../../components/airplane/link";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import { Button } from "../../components/ui/button";
-import { Input } from "../../components/ui/input";
+import { NumberField } from "../../components/ui/number-field";
 import { FIGURE_WORDS } from "../../lib/airplane/figureWords";
 import { TEXT } from "../../lib/text";
-import { figureText, sourceWords } from "./profileModel";
+import { figureFormat, sourceWords } from "./profileModel";
 import { EnduranceSection } from "./EnduranceSection";
 import { useAirplaneProfile, type AirplaneProfileModel } from "./useAirplaneProfile";
 
@@ -16,7 +16,7 @@ import { useAirplaneProfile, type AirplaneProfileModel } from "./useAirplaneProf
  *  the pilot's or the photographed page's stands over the book's. */
 function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfileModel["rows"][number] }) {
   const words = FIGURE_WORDS[row.key];
-  const typed = vm.drafts[row.key] ?? figureText(row.key, row.value);
+  const shown = row.key in vm.drafts ? (vm.drafts[row.key] ?? null) : row.value;
   const problem = vm.problems[row.key];
   return (
     <div data-figure={row.key}>
@@ -44,20 +44,19 @@ function FigureRow({ vm, row }: { vm: AirplaneProfileModel; row: AirplaneProfile
         }
       >
         <span className="flex items-center gap-1.5">
-          <Input
-            type="text"
-            inputMode="decimal"
-            value={typed}
+          {/* React Aria's number field, read in the pilot's locale (a comma
+              decimal is a decimal), taken as it is left. */}
+          <NumberField
+            value={shown}
             placeholder="—"
-            onChange={(e) => vm.setDraft(row.key, e.target.value.replace(/[^0-9.,]/g, ""))}
-            onBlur={() => vm.commit(row.key)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-            }}
-            disabled={vm.busy === row.key}
+            formatOptions={figureFormat(row.key)}
+            minValue={0}
+            onChange={(value) => vm.change(row.key, value)}
+            isDisabled={vm.busy === row.key}
             aria-label={`${words.label}, ${words.unit.replace(/^: /, "to ")}`}
-            aria-invalid={!!problem}
-            className={cn("h-8 w-24 text-right tabular-nums", TEXT.row)}
+            isInvalid={!!problem}
+            className="h-8 w-24"
+            inputClassName={cn("text-right", TEXT.row)}
             data-testid={`figure-${row.key}`}
           />
           <span className="w-10 text-muted-foreground">{words.unit}</span>

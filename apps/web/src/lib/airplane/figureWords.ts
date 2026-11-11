@@ -60,11 +60,13 @@ export const FIGURE_WORDS: Record<FigureKey, FigureWords> = {
   },
 };
 
-/** A figure typed, as a number within its bounds; else what is wrong with it. */
-export function readFigure(key: FigureKey, typed: string): { value: number } | { problem: string } {
+/** A figure typed, within its bounds; else what is wrong with it. The
+ *  field (React Aria's NumberField) has read the text in the pilot's
+ *  locale, so "12,5" on a comma-decimal phone is 12.5 here, where a
+ *  hand-parse of the text took it for 125. */
+export function readFigure(key: FigureKey, n: number | null): { value: number } | { problem: string } {
   const words = FIGURE_WORDS[key];
-  const n = Number(typed.trim().replace(/,/g, ""));
-  if (!typed.trim() || !Number.isFinite(n)) return { problem: `Type the ${words.label.toLowerCase()} as a number.` };
+  if (n == null || !Number.isFinite(n)) return { problem: `Type the ${words.label.toLowerCase()} as a number.` };
   const low = words.minExcluded ? n <= words.min : n < words.min;
   if (low || n > words.max) {
     const unit = words.unit.startsWith(":") ? "" : ` ${words.unit}`;

@@ -33,11 +33,6 @@ export function written(key: AnswerKey, value: number): string {
   return `${Math.round(value)} ${key === "gs" ? "kt" : "min"}`;
 }
 
-/** A figure the student typed, as a number; null with nothing typed. */
-export function typedNumber(value: string | undefined): number | null {
-  return value === undefined || value.trim() === "" ? null : Number(value);
-}
-
 export interface Workings {
   /** The steps in order, each a name, its sum and its result. */
   steps: { name: string; sum: string; result: string }[];

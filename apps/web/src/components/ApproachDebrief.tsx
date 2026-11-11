@@ -3,7 +3,8 @@ import { useQueries } from "@tanstack/react-query";
 import { Check, TriangleAlert, X } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "./GroupedList";
-import { Input } from "./ui/input";
+import { NumberField } from "./ui/number-field";
+import { WHOLE } from "./ui/numberFormats";
 import { api } from "../lib/api/client";
 import type { ProcedureDrawing, ProcedureList } from "../lib/api/types";
 import { findApproaches, withMinimums, withTransition, type ApproachDebrief as Debriefed, type Tone } from "./approachDebriefModel";
@@ -152,7 +153,6 @@ function ApproachSection({
   minimumsFt: number | null;
   onMinimums: (ft: number | null) => void;
 }) {
-  const [typed, setTyped] = useState(minimumsFt != null ? String(minimumsFt) : "");
   // The findings again with the minimums typed: the CIFP has none, and
   // the lowest before the MAP is only measured without them.
   const d = useMemo(() => withMinimums(given, minimumsFt), [given, minimumsFt]);
@@ -175,19 +175,20 @@ function ApproachSection({
         <PlanView d={d} />
         {d.hasAltitude && <ProfileView d={d} />}
         <ListRow title={<label htmlFor={`mins-${d.fafAt}`}>Your minimums</label>} description="The DA or MDA you flew to, from the plate">
-          <Input
+          {/* Read in the pilot's locale (React Aria's NumberField), the
+              findings again as it is typed. */}
+          <NumberField
             id={`mins-${d.fafAt}`}
-            value={typed}
-            inputMode="numeric"
+            defaultValue={minimumsFt}
+            onTyped={onMinimums}
+            formatOptions={WHOLE}
+            minValue={0}
+            maxValue={99999}
             placeholder="ft"
             aria-label="Your minimums, feet MSL"
-            className="h-9 w-20 text-right tabular-nums"
+            className="h-9 w-20"
+            inputClassName="text-right"
             data-testid="approach-minimums"
-            onChange={(e) => {
-              const next = e.target.value.replace(/\D/g, "").slice(0, 5);
-              setTyped(next);
-              onMinimums(next ? Number(next) : null);
-            }}
           />
         </ListRow>
       </ListGroup>

@@ -6,6 +6,8 @@ import FieldHit from "../../components/FieldHit";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import Segmented from "../../components/Segmented";
 import { Input } from "../../components/ui/input";
+import { NumberField } from "../../components/ui/number-field";
+import { WHOLE } from "../../components/ui/numberFormats";
 import TogglePill from "../../components/TogglePill";
 import { leaveLimit, lostCommsWords, segmentAltitudes, type RouteKey, type Segment } from "./lostComms";
 import { TEXT } from "../../lib/text";
@@ -30,7 +32,10 @@ const feet = (v: string) => (v.trim() === "" || !Number.isFinite(Number(v)) ? nu
 export default function LostCommsPage() {
   const id = useId();
   const [route, setRoute] = useState<RouteKey>("assigned");
-  const [segments, setSegments] = useState(EXAMPLE.map((s) => ({ name: s.name, minimum: String(s.minimumFt) })));
+  // Each segment with a key of its own, so its minimum's field (React
+  // Aria's NumberField, holding what is typed) stays with it when one
+  // before it is taken away.
+  const [segments, setSegments] = useState(EXAMPLE.map((s, n) => ({ n, name: s.name, minimum: String(s.minimumFt) })));
   const [assigned, setAssigned] = useState("4000");
   const [expected, setExpected] = useState("6000");
   const [expectedFrom, setExpectedFrom] = useState(1);
@@ -66,24 +71,28 @@ export default function LostCommsPage() {
       <ListGroup title="The clearance">
         <ListRow id={`${id}-assigned`} title="Assigned">
           <FieldHit htmlFor={`${id}-assigned`}>
-            <Input
+            <NumberField
               id={`${id}-assigned`}
-              inputMode="numeric"
-              className="h-8 w-24 text-right tabular-nums"
-              value={assigned}
-              onChange={(e) => setAssigned(e.target.value)}
+              className="h-8 w-24"
+              inputClassName="text-right"
+              defaultValue={feet(assigned)}
+              onTyped={(v) => setAssigned(v == null ? "" : String(v))}
+              formatOptions={WHOLE}
+              minValue={0}
               data-testid="lost-assigned"
             />
           </FieldHit>
         </ListRow>
         <ListRow id={`${id}-expected`} title="Expect" description={`From ${segments[expectedFrom]?.name || "the segment chosen below"} on`}>
           <FieldHit htmlFor={`${id}-expected`}>
-            <Input
+            <NumberField
               id={`${id}-expected`}
-              inputMode="numeric"
-              className="h-8 w-24 text-right tabular-nums"
-              value={expected}
-              onChange={(e) => setExpected(e.target.value)}
+              className="h-8 w-24"
+              inputClassName="text-right"
+              defaultValue={feet(expected)}
+              onTyped={(v) => setExpected(v == null ? "" : String(v))}
+              formatOptions={WHOLE}
+              minValue={0}
               data-testid="lost-expected"
             />
           </FieldHit>
@@ -101,7 +110,7 @@ export default function LostCommsPage() {
           const f = flown[i]!;
           return [
             <ListRow
-              key={`seg-${i}`}
+              key={`seg-${s.n}`}
               // The app's one minus (RemoveMinus), where this was a hollow one of
               // its own; a segment of a form, taken away at its tap. The last
               // segment keeps no minus: a route has one at least.
@@ -130,18 +139,20 @@ export default function LostCommsPage() {
               data-testid="lost-segment"
             >
               <FieldHit htmlFor={`${id}-min${i}`}>
-                <Input
+                <NumberField
                   id={`${id}-min${i}`}
                   aria-label={`${s.name || "Segment"}'s minimum altitude`}
-                  inputMode="numeric"
-                  className="h-8 w-20 text-right tabular-nums"
-                  value={s.minimum}
-                  onChange={(e) => edit(i, { minimum: e.target.value })}
+                  className="h-8 w-20"
+                  inputClassName="text-right"
+                  defaultValue={feet(s.minimum)}
+                  onTyped={(v) => edit(i, { minimum: v == null ? "" : String(v) })}
+                  formatOptions={WHOLE}
+                  minValue={0}
                 />
               </FieldHit>
             </ListRow>,
             <ListRow
-              key={`fly-${i}`}
+              key={`fly-${s.n}`}
               title={<span className={i >= expectedFrom ? "text-foreground" : "text-tint"}>{f.words}</span>}
               onClick={() => setExpectedFrom(i)}
               data-testid="lost-segment-fly"
@@ -151,7 +162,7 @@ export default function LostCommsPage() {
         <ListRow
           title="Add a segment"
           media={<Plus className="size-5" aria-hidden />}
-          onClick={() => setSegments((list) => [...list, { name: "", minimum: "" }])}
+          onClick={() => setSegments((list) => [...list, { n: Math.max(-1, ...list.map((s) => s.n)) + 1, name: "", minimum: "" }])}
           data-testid="lost-add"
         />
       </ListGroup>
