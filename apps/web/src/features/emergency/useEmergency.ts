@@ -5,13 +5,20 @@ import { plannerAircraft } from "../../lib/api/airplaneQuery";
 import { aircraftKey, shortName } from "../../lib/aircraftChoice";
 import { checklistOf } from "../../lib/checklist";
 import { checklistText, useChecklists } from "../../lib/checklists";
-import { bestFields, checklistSection, emergencyGuidance, maydayCall, positionWords, variationAt } from "./emergency";
+import { bestFields, bestFieldsOnDevice, checklistSection, emergencyGuidance, maydayCall, positionWords, variationAt } from "./emergency";
 import { useEmergencyLine } from "../../lib/map/marks/emergencyLine";
 import { usePointActions } from "../../lib/map/cards/pointActions";
 import { useOwnFix, useOwnShip } from "../../lib/map/position/ownShip";
 import { magneticOf } from "../../lib/magnetic";
 import { usePreferences } from "../../lib/preferences";
 import { closeEmergency, useEmergencyOpen } from "../../lib/emergencyStore";
+import { useAirportIndex } from "../../lib/airportIndex";
+import { fieldsNear } from "../../lib/fieldsOnDevice";
+import { noConnection } from "../../lib/problems";
+import type { EmergencyFields } from "../../lib/api/types";
+
+/** As many fields as the planner sends (app.routers.emergency's limit). */
+const FIELDS = 12;
 
 /** How far own ship moves before the fields are asked for again: a
  *  hundredth of a degree, about half a mile, as a light single glides in
@@ -22,7 +29,9 @@ const at = (deg: number) => Math.round(deg / STEP_DEG) * STEP_DEG;
 /**
  * The emergency assistant's one view model (MVVM): the fields within a
  * glide ranked (features/emergency/emergency's bestFields, the engine's best_fields) from
- * the planner's /api/emergency/fields, the field picked and its line on
+ * the planner's /api/emergency/fields -- or, where it cannot be asked,
+ * from the airport index the browser keeps (lib/fieldsOnDevice), said
+ * so (`onDevice`) -- the field picked and its line on
  * the map (lib/map/marks/emergencyLine), the airplane's own emergency checklist
  * opened at the emergency asked (checklistSection), and the MAYDAY filled
  * from all of it (maydayCall). The views only draw what this gives.
@@ -52,7 +61,25 @@ export function useEmergency() {
     meta: { silent: true },
   });
   const data = asked.data;
-  const ranked = useMemo(() => (data && fix ? bestFields(data, fix, variationAt(fix)) : null), [data, fix]);
+  // The airplane's figures as the planner last sent them, for the glide
+  // worked out on the device: the same airplane's only.
+  const airplaneKey = JSON.stringify([profile, glideRatio]);
+  const [lastAirplane, keepAirplane] = useState<{ key: string; airplane: EmergencyFields["airplane"] | null } | null>(null);
+  if (data && (lastAirplane?.key !== airplaneKey || lastAirplane.airplane !== (data.airplane ?? null))) {
+    keepAirplane({ key: airplaneKey, airplane: data.airplane ?? null });
+  }
+  const keptAirplane = lastAirplane?.key === airplaneKey ? lastAirplane.airplane : null;
+  // The planner not to be had -- no connection, or it failed -- the fields
+  // from the index the browser keeps, read as Emergency opens.
+  const index = useAirportIndex(!!open, !!open);
+  const unanswered = !data && (asked.isError || noConnection(asked));
+  const onDevice = unanswered && !!index && !!fix;
+  const ranked = useMemo(() => {
+    if (!fix) return null;
+    if (data) return bestFields(data, fix, variationAt(fix));
+    if (onDevice && index) return bestFieldsOnDevice(fieldsNear(index, fix, FIELDS), keptAirplane, fix, variationAt(fix));
+    return null;
+  }, [data, fix, onDevice, index, keptAirplane]);
 
   const [pickedIdent, pick] = useState<string | null>(null);
   const picked = ranked?.fields.find((f) => f.ident === pickedIdent) ?? ranked?.fields[0] ?? null;
@@ -82,7 +109,7 @@ export function useEmergency() {
           nature,
           weather: null,
           intentions: picked ? `Landing at ${picked.name}, ${picked.ident}` : null,
-          position: fix ? positionWords(fix, stations, data?.fields[0]) : null,
+          position: fix ? positionWords(fix, stations, data?.fields[0] ?? nearestOf(ranked)) : null,
           // The airplane's own heading now, as the GPS tracks it, magnetic.
           heading_mag_deg: fix?.headingDeg != null ? magneticOf(fix.headingDeg, variationAt(fix)) : null,
           altitude_ft: fix?.altitudeFt != null ? Math.round(fix.altitudeFt / 100) * 100 : null,
@@ -91,7 +118,7 @@ export function useEmergency() {
         },
         data,
       ),
-    [aircraft, data, nature, picked, fix, stations, fuelMin, souls],
+    [aircraft, data, nature, picked, fix, stations, fuelMin, souls, ranked],
   );
 
   // The ring and the line to the field picked, on the map while open.
@@ -117,6 +144,7 @@ export function useEmergency() {
     showPosition: () => showPosition(true),
     asked,
     ranked,
+    onDevice: !data && onDevice,
     picked,
     pick,
     phone: pickedData?.phone ?? null,
@@ -135,3 +163,13 @@ export function useEmergency() {
 }
 
 export type EmergencyModel = ReturnType<typeof useEmergency>;
+
+/** The nearest field ranked, as positionWords takes it: its true course
+ *  from own ship is the bearing to it. */
+function nearestOf(ranked: ReturnType<typeof bestFields> | null) {
+  const nearest = ranked?.fields.reduce<(typeof ranked.fields)[number] | null>(
+    (best, f) => (!best || f.distance_nm < best.distance_nm ? f : best),
+    null,
+  );
+  return nearest ? { name: nearest.name, distance_nm: nearest.distance_nm, bearing_deg: nearest.course_deg } : undefined;
+}

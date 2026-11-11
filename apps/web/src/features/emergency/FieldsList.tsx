@@ -63,6 +63,14 @@ export default function FieldsList({ vm }: { vm: EmergencyModel }) {
   return (
     <div className="flex flex-col gap-3">
       <ListGroup title={title}>
+        {vm.onDevice && (
+          <ListRow
+            muted
+            title="From this device, without weather"
+            description="No connection: the fields from the chart data kept here, with no runways, elevations or wind aloft"
+            data-testid="emergency-on-device"
+          />
+        )}
         {ranked?.needs_airplane && (
           <ListRow
             muted

@@ -18,6 +18,7 @@
  * sent into what the engine reads.
  */
 import type { EmergencyFields } from "../../lib/api/types";
+import type { DeviceField } from "../../lib/fieldsOnDevice";
 import { compassPoint } from "../../lib/compass";
 import { callEngine, type EngineAnswer, type EngineInput } from "../../lib/engine/engine";
 import type { LatLon } from "../../lib/geo";
@@ -38,35 +39,64 @@ export function bestFields(
   fix: Pick<Fix, "lat" | "lon" | "altitudeFt" | "speedKt">,
   variationDeg: number | null,
 ): BestFields {
+  const fields = data.fields.map((f) => ({
+    ident: f.ident,
+    name: f.name,
+    lat: f.lat,
+    lon: f.lon,
+    elevation_ft: f.elevation_ft ?? null,
+    runways: f.runways,
+    metar: f.metar ?? null,
+    towered: f.towered,
+    private: f.private,
+    military: f.military,
+  }));
+  return ranked(fields, data.airplane ?? null, data.wind ?? null, fix, variationDeg);
+}
+
+/** The same from the fields the browser keeps (lib/fieldsOnDevice), when
+ *  the planner cannot be asked: no runway, elevation or weather, and no
+ *  wind aloft; the airplane's figures the planner last sent, if any. */
+export function bestFieldsOnDevice(
+  fields: readonly DeviceField[],
+  airplane: EmergencyFields["airplane"] | null,
+  fix: Pick<Fix, "lat" | "lon" | "altitudeFt" | "speedKt">,
+  variationDeg: number | null,
+): BestFields {
+  return ranked(
+    fields.map(({ town: _town, size: _size, ...f }) => f),
+    airplane,
+    null,
+    fix,
+    variationDeg,
+  );
+}
+
+function ranked(
+  fields: EngineInput<"best_fields">["fields"],
+  airplane: EmergencyFields["airplane"] | null,
+  wind: EmergencyFields["wind"] | null,
+  fix: Pick<Fix, "lat" | "lon" | "altitudeFt" | "speedKt">,
+  variationDeg: number | null,
+): BestFields {
   const input: EngineInput<"best_fields"> = {
     mode: "glide",
     at: { lat: fix.lat, lon: fix.lon },
     altitude_ft: fix.altitudeFt,
     speed_kt: fix.speedKt,
-    wind: data.wind ?? null,
+    wind,
     variation_deg: variationDeg,
-    airplane: data.airplane
+    airplane: airplane
       ? {
           // An own airplane's ratio with no best glide speed is passed too:
           // the engine works its still-air reach (with a wind aloft, none).
-          glide: data.airplane.glide ?? null,
-          landing: data.airplane.landing ?? null,
-          crosswind: data.airplane.crosswind ?? null,
-          cruise_tas_kt: data.airplane.cruise_tas_kt ?? null,
+          glide: airplane.glide ?? null,
+          landing: airplane.landing ?? null,
+          crosswind: airplane.crosswind ?? null,
+          cruise_tas_kt: airplane.cruise_tas_kt ?? null,
         }
       : null,
-    fields: data.fields.map((f) => ({
-      ident: f.ident,
-      name: f.name,
-      lat: f.lat,
-      lon: f.lon,
-      elevation_ft: f.elevation_ft ?? null,
-      runways: f.runways,
-      metar: f.metar ?? null,
-      towered: f.towered,
-      private: f.private,
-      military: f.military,
-    })),
+    fields,
   };
   return callEngine("best_fields", input);
 }
