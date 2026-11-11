@@ -1,9 +1,10 @@
-import { useCallback, useEffect, type Dispatch, type SetStateAction } from "react";
+import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import { flushSync } from "react-dom";
 import type { SetURLSearchParams } from "react-router";
 import type { PanelState } from "../../../lib/mapChrome";
 import type { AircraftChoice, AirportPlace } from "../../../lib/api/types";
-import { positionIdent } from "../../../lib/identSchema";
+import { api } from "../../../lib/api/client";
+import { isPosition, positionIdent } from "../../../lib/identSchema";
 import { feel } from "../../../lib/haptics";
 import { positionNow, useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
@@ -11,7 +12,34 @@ import { checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryCl
 import { loadRoutePanel } from "../routePanelParts";
 import { panelNow } from "./panelNow";
 import type { PlannedRoute } from "./planAddress";
-import { navlogQuery } from "./usePlan";
+import { navlogQuery, type PlanParams } from "./usePlan";
+
+/** Fly Here's plan from `from` to the card's airport, as the page will ask
+ *  for it once the route is in: from the card, with the plan's own
+ *  altitude, stops and Class B left behind, and Load's count the one the
+ *  tap makes (setLoad). The card's read-ahead and the tap ask for the same. */
+function flyHerePlan(
+  from: string,
+  to: string,
+  { depart, aircraft, load, showWaypoints, flightRules }: Pick<PlanParams, "depart" | "aircraft" | "load"> & { showWaypoints: boolean; flightRules: "vfr" | "ifr" },
+): PlanParams {
+  return {
+    dep: from,
+    dest: to,
+    stops: [],
+    altitudeFt: "",
+    altitudeChoice: "fastest",
+    depart,
+    aircraft,
+    load: load + 1,
+    // Through Class B unless avoided, as the page plans it (class_b):
+    // left out, the read-ahead was another key, the page's own log
+    // asked for again at the tap.
+    classBClearance: true,
+    checkpoints: showWaypoints,
+    rules: flightRules,
+  };
+}
 
 /**
  * Fly Here, as an EFB's Direct-To (usePlanWorkspace): an airport's card's
@@ -88,30 +116,65 @@ export function useFlyHere({
     });
     return () => cancel(handle);
   }, []);
+  // The airport Fly Here was tapped for: its card goes as the route comes,
+  // and what was read ahead for it is then the page's to wait on, not to
+  // be let go (below).
+  const flownTo = useRef<string | null>(null);
   // Fly Here read ahead, as an airport's card opens, at the pilot's ask
   // for a fast route to nav log: its course asked for now from where it
   // would go from, so the tap lands on it answered -- and the planner,
   // asked for the course, starts on the chart's read and the ground under
-  // the route (app.prefetch), the two slow parts of a nav log, while the
-  // pilot reads the card. Not the checkpoints themselves: that request
-  // waits on the read, holding one of the planner's request threads for
-  // seconds for a route that may never be flown.
+  // the route (app.prefetch) -- and from a field, the checkpoints and the
+  // nav log Fly Here's route will ask for, as reads ahead (?ahead=true):
+  // the planner queues their chart reads behind any the pilot waits on
+  // and puts one first once the pilot does (app.chart_model._reading), so
+  // they hold none of its readers from a route being planned, and the tap's
+  // own requests join them where they are. They were 1.2 to 1.4 s after
+  // the tap (the speed audit, 2026-11-10). Kept out of the page's cache,
+  // as the Recents planned ahead are (usePlanAhead): the route then draws
+  // as it comes. Not from a present position, which has moved by the
+  // tap; and let go if the card closes without Fly Here.
   useEffect(() => {
     if (!place) return;
+    flownTo.current = null;
     let gone = false;
+    const asked: (readonly unknown[])[] = [];
     void (async () => {
       const ship = useOwnShip.getState();
       const from = await fromFor(place, ship.enabled ? ship.fix : null);
       if (gone || !from) return;
       void queryClient.prefetchQuery(courseQuery(from, place));
+      // Not on a connection the pilot asked to spare.
+      if (isPosition(from) || (navigator as { connection?: { saveData?: boolean } }).connection?.saveData) return;
+      const ahead = (query: { queryKey: readonly unknown[]; queryFn?: unknown }) => {
+        if (queryClient.getQueryState(query.queryKey)) return;
+        asked.push(query.queryKey);
+        void queryClient.prefetchQuery({ ...query, meta: { silent: true } } as Parameters<typeof queryClient.prefetchQuery>[0]);
+      };
+      if (showWaypoints) {
+        ahead({
+          // usePlanAhead's key for the same read ahead.
+          queryKey: ["checkpoints-ahead", from, place, ""],
+          queryFn: ({ signal }: { signal: AbortSignal }) => api.checkpoints(from, place, [], signal, true),
+        });
+      }
+      ahead(navlogQuery(flyHerePlan(from, place, { depart, aircraft, load, showWaypoints, flightRules }), showWaypoints, true));
     })();
     return () => {
       gone = true;
+      if (flownTo.current === place) return;
+      // The card closed without Fly Here: its requests stopped (each query
+      // aborts its fetch, `signal`) and their answers let go.
+      for (const queryKey of asked) {
+        void queryClient.cancelQueries({ queryKey, exact: true });
+        queryClient.removeQueries({ queryKey, exact: true });
+      }
     };
-  }, [place, fromFor]);
+  }, [place, fromFor, depart, aircraft, load, showWaypoints, flightRules]);
   const flyHere = useCallback(
     async (to: Pick<AirportPlace, "ident">) => {
       feel("directTo");
+      flownTo.current = to.ident;
       const from = await fromFor(to.ident, await positionNow());
       const next: Record<string, string> = { dest: to.ident };
       if (from) next.dep = from;
@@ -127,22 +190,7 @@ export function useFlyHere({
       // card, with the plan's own altitude, stops and Class B left behind, and
       // Load's count the one it is about to be (setLoad, below).
       if (from) {
-        const plan = {
-          dep: from,
-          dest: to.ident,
-          stops: [],
-          altitudeFt: "",
-          altitudeChoice: "fastest" as const,
-          depart,
-          aircraft,
-          load: load + 1,
-          // Through Class B unless avoided, as the page plans it (class_b):
-          // left out, the read-ahead was another key, the page's own log
-          // asked for again at the tap.
-          classBClearance: true,
-          checkpoints: showWaypoints,
-          rules: flightRules,
-        };
+        const plan = flyHerePlan(from, to.ident, { depart, aircraft, load, showWaypoints, flightRules });
         void queryClient.prefetchQuery(courseQuery(from, to.ident));
         if (showWaypoints) void queryClient.prefetchQuery(checkpointsQuery(from, to.ident));
         void queryClient.prefetchQuery(navlogQuery(plan, showWaypoints));

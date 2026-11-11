@@ -371,7 +371,11 @@ mark: Base UI Preview Card, desktop only.
 
 **Primary action.** Fly Here, first and filled, in the actions row under
 the head; it stays in sight while the card scrolls on desktop (the head
-is sticky).
+is sticky). As the card opens, the route Fly Here would make is asked
+for ahead: its course, and from a field its checkpoints and nav log as
+the planner's reads ahead (`?ahead=true`, behind any read the pilot waits
+on), so the tap finds the planner already on them; closing the card
+without Fly Here stops those requests (`useFlyHere`).
 
 **Keyboard and hover.** Tab reaches the actions, then the tabs (one tab
 stop, arrows between tabs, Home/End), then the panel
