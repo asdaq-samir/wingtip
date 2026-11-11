@@ -2411,7 +2411,7 @@ export interface EngineContract {
     answer: NavLogWithClimbsAnswer;
   };
   /**
-   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude at a step down; the times and fuel unchanged.
+   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged.
    */
   navlog_with_descents: {
     input: NavLogWithDescentsInput;
@@ -3629,14 +3629,41 @@ export interface AltitudeAnywayInput {
   selection: {};
 }
 export interface AltitudeChangeInput {
+  /**
+   * The picked airplane's profile, the same one the nav log takes (NavLogProfile: its cruise_tas_kt, fuel_burn_gph and service_ceiling_ft, and for a climb climb_tas_kt, climb_rate_fpm_sea_level and climb_fuel_burn_gph, wingtip_flight::performance). A climb's ground, minutes and gallons come from its climb figures; with none of them (no climb_tas_kt) the climb is drawn as a step. Null or left out where no airplane is picked: nothing is assumed (the owner, 2026-11-09), a descent keeps its geometry and has no time or fuel.
+   */
   profile?: NavLogProfile | null;
+  /**
+   * Where the waypoint is along the route, nautical miles from the departure.
+   */
   along_nm: number;
+  /**
+   * The altitude flown into the waypoint, feet MSL.
+   */
   from_ft: number;
+  /**
+   * The waypoint's own altitude, feet MSL.
+   */
   to_ft: number;
+  /**
+   * start_at: the change begins at the waypoint and runs on from it; cross_at: it is done by the waypoint.
+   */
   mode: "start_at" | "cross_at";
+  /**
+   * The leg's ground speed, knots: a descent's minutes, and with tas_kt the wind a climb's ground speed is scaled by. Null where the leg has none.
+   */
   groundspeed_kt?: number | null;
+  /**
+   * The leg's cruise true airspeed, knots, for the wind's share of the ground speed.
+   */
   tas_kt?: number | null;
+  /**
+   * The leg's cruise burn, gallons an hour: a descent's gallons.
+   */
   fuel_burn_gph?: number | null;
+  /**
+   * The forecast temperature at to_ft, degrees C: the climb is flown that far from a standard day (ISA, PHAK ch. 4). Null for a standard day.
+   */
   oat_c?: number | null;
 }
 /**
@@ -7934,6 +7961,10 @@ export interface NavLogLeg {
   climb_min?: number | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;
+  /**
+   * A pilot's Start At at the fix the leg starts from (wingtip.own_altitude): a descent to the leg's lower altitude begins at that fix and runs on from it at three to one, rather than being done by it (navlog_with_descents).
+   */
+  start_at?: boolean | null;
   [k: string]: unknown;
 }
 /**
@@ -7983,6 +8014,10 @@ export interface NavLogLeg1 {
   climb_min?: number | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;
+  /**
+   * A pilot's Start At at the fix the leg starts from (wingtip.own_altitude): a descent to the leg's lower altitude begins at that fix and runs on from it at three to one, rather than being done by it (navlog_with_descents).
+   */
+  start_at?: boolean | null;
   [k: string]: unknown;
 }
 export interface NavLogJoinFiguresInput {
@@ -8090,6 +8125,10 @@ export interface NavLogLeg2 {
   climb_min?: number | null;
   toc?: NavLogTop | null;
   tod?: NavLogTop | null;
+  /**
+   * A pilot's Start At at the fix the leg starts from (wingtip.own_altitude): a descent to the leg's lower altitude begins at that fix and runs on from it at three to one, rather than being done by it (navlog_with_descents).
+   */
+  start_at?: boolean | null;
   [k: string]: unknown;
 }
 export interface NavLogLegsInput {

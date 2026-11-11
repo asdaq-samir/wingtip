@@ -1279,7 +1279,7 @@ fun Engine.navlogWithClimbs(legs: List<EngineContract.NavLogLeg>, startAltitudeF
     rule("navlog_with_climbs", EngineContract.NavlogWithClimbsInput(legs = legs, startAltitudeFt = startAltitudeFt, profile = profile))
 
 /**
- * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude at a step down; the times and fuel unchanged.
+ * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged.
  */
 fun Engine.navlogWithDescents(legs: List<EngineContract.NavLogLeg>, fixes: List<EngineContract.NavLogFix>, endAltitudeFt: Double? = null, endBeforeNm: Double? = null, endFix: String? = null): Result<List<EngineContract.NavLogLeg>> =
     rule("navlog_with_descents", EngineContract.NavlogWithDescentsInput(legs = legs, fixes = fixes, endAltitudeFt = endAltitudeFt, endBeforeNm = endBeforeNm, endFix = endFix))
