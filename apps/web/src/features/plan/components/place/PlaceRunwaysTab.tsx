@@ -6,6 +6,7 @@ import { BADGE } from "../../../../lib/rowBadges";
 import { feet } from "../../../../lib/format";
 import { RvrRows } from "../LiveAirportRows";
 import { RunwayRow } from "../RunwayRow";
+import { runwayInUse } from "../../lib/pattern";
 import { NotamBadge, NotamSheet } from "./NotamBadge";
 import { useNotamMarks, useNotamSheet } from "./notamBadges";
 
@@ -17,6 +18,11 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
   // row (it was a row of the Info tab's Details). None where the field has one.
   const open = place.runways.filter((r) => !r.closed && r.length_ft != null);
   const longest = open.length > 1 ? open.reduce((a, b) => (b.length_ft! > a.length_ft! ? b : a)) : null;
+  // The runway most nearly into the reported wind (AC 90-66C 11.5, the
+  // engine's gonogo_runway_in_use over each runway's wind on the end it
+  // favours): only where the wind chose it, not a calm field's most used.
+  const inUse = runwayInUse(place.runways);
+  const bestWind = inUse?.byWind ? inUse.runway : null;
   const marks = useNotamMarks(place.ident, place);
   const sheet = useNotamSheet();
   return (
@@ -44,6 +50,7 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
                 key={`${r.ends}-${i}`}
                 runway={r}
                 longest={r === longest}
+                bestWind={r === bestWind}
                 notam={mark && <NotamBadge mark={mark} kind="runway" />}
                 onClick={mark && (() => sheet.show(mark))}
               />

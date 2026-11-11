@@ -35,6 +35,7 @@ export function RunwayGlyph({ headingDeg }: { headingDeg: number | null }) {
 export function RunwayRow({
   runway,
   longest = false,
+  bestWind = false,
   notam,
   onClick,
 }: {
@@ -43,6 +44,10 @@ export function RunwayRow({
    *  airport card's Runways tab; the owner, 2026-11-11: "just put a longest
    *  badge on the runway in runway tab"). */
   longest?: boolean;
+  /** The runway most nearly into the reported wind, marked by its name
+   *  (the airport card's Runways tab; the owner, 2026-11-11: "best wind
+   *  runways should get the best wind badge"). */
+  bestWind?: boolean;
   /** A NOTAM's badge on it (the airport card's NotamBadge), by its name,
    *  and the row's tap that opens that NOTAM (the owner, 2026-11-11:
    *  "tapping the affected thing should show the notam"). */
@@ -73,6 +78,11 @@ export function RunwayRow({
       title={
         <span className="flex items-center gap-2">
           {`Runway ${runway.ends ?? "—"}`}
+          {bestWind && (
+            <Badge variant="secondary" data-testid="runway-best-wind">
+              Best Wind
+            </Badge>
+          )}
           {longest && (
             <Badge variant="secondary" data-testid="runway-longest">
               Longest
