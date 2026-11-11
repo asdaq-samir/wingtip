@@ -11,6 +11,7 @@ and held a day, since the areas change on the chart cycle.
 TFRs are NOTAMs, which this project has no source for; the briefing
 already says so and links to a real briefing service.
 """
+
 from __future__ import annotations
 
 import logging
@@ -27,9 +28,7 @@ from shapely.geometry import LineString, Point, shape
 
 from .geo import along_track_distance_nm, corridor_bbox
 
-FEATURE_SERVICE = (
-    "https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/Special_Use_Airspace/FeatureServer/0/query"
-)
+FEATURE_SERVICE = "https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/Special_Use_Airspace/FeatureServer/0/query"
 
 #: The feature service's TYPE_CODE, in words.
 TYPES = {
@@ -97,8 +96,7 @@ _CACHE_LOCK = threading.Lock()
 _FETCH_LOCK = threading.Lock()
 #: The service's most features an answer, paged past.
 PAGE = 2000
-_FIELDS = ("NAME,TYPE_CODE,UPPER_VAL,UPPER_UOM,UPPER_CODE,LOWER_VAL,LOWER_UOM,LOWER_CODE,"
-           "TIMESOFUSE,GMTOFFSET,DST_CODE,CONT_AGENT")
+_FIELDS = "NAME,TYPE_CODE,UPPER_VAL,UPPER_UOM,UPPER_CODE,LOWER_VAL,LOWER_UOM,LOWER_CODE,TIMESOFUSE,GMTOFFSET,DST_CODE,CONT_AGENT"
 
 
 class SpecialUseUnavailable(RuntimeError):
@@ -166,8 +164,13 @@ def _download() -> list:
     features, offset = [], 0
     while True:
         params = {
-            "where": "1=1", "outSR": "4326", "outFields": _FIELDS, "returnGeometry": "true", "f": "geojson",
-            "resultOffset": offset, "resultRecordCount": PAGE,
+            "where": "1=1",
+            "outSR": "4326",
+            "outFields": _FIELDS,
+            "returnGeometry": "true",
+            "f": "geojson",
+            "resultOffset": offset,
+            "resultRecordCount": PAGE,
         }
         try:
             resp = requests.get(FEATURE_SERVICE, params=params, timeout=90)
@@ -209,7 +212,7 @@ class _InPack:
 @lru_cache(maxsize=512)
 def _read_in_pack(pack, index: int):
     offsets = pack.offsets("sua")
-    return shapely.from_wkb(bytes(pack.section("sua.wkb")[offsets[index]:offsets[index + 1]]))
+    return shapely.from_wkb(bytes(pack.section("sua.wkb")[offsets[index] : offsets[index + 1]]))
 
 
 def _shape(geometry):
@@ -230,8 +233,10 @@ def _read_disk(max_age_s: float = HOLD_S) -> tuple[float, list] | None:
         fetched_at = packed.meta.get("sua_fetched_at") or 0.0
         newer = _DISK.exists() and _DISK.stat().st_mtime > packed.built_at
         if 0 <= time.time() - fetched_at < max_age_s and not newer:
-            return fetched_at, [({"properties": p}, _InPack(packed, i), tuple(float(v) for v in b))
-                                for i, (p, b) in enumerate(zip(packed.attrs("sua"), packed.boxes("sua")))]
+            return fetched_at, [
+                ({"properties": p}, _InPack(packed, i), tuple(float(v) for v in b))
+                for i, (p, b) in enumerate(zip(packed.attrs("sua"), packed.boxes("sua")))
+            ]
     try:
         with _DISK.open("rb") as f:
             fetched_at, properties, wkb, bounds = pickle.load(f)
@@ -244,8 +249,7 @@ def _read_disk(max_age_s: float = HOLD_S) -> tuple[float, list] | None:
 
 
 def _write_disk(fetched_at: float, held: list) -> None:
-    payload = (fetched_at, [f.get("properties") for f, _, _ in held], shapely.to_wkb([g for _, g, _ in held]),
-               [b for _, _, b in held])
+    payload = (fetched_at, [f.get("properties") for f, _, _ in held], shapely.to_wkb([g for _, g, _ in held]), [b for _, _, b in held])
     part = _DISK.with_suffix(".part")
     try:
         _DISK.parent.mkdir(parents=True, exist_ok=True)
@@ -266,7 +270,8 @@ def _shapes_in(bbox: tuple) -> list:
     max_lon), [(feature, shape)]."""
     min_lat, min_lon, max_lat, max_lon = bbox
     return [
-        (feature, _shape(geometry)) for feature, geometry, (w, s, e, n) in _everything()
+        (feature, _shape(geometry))
+        for feature, geometry, (w, s, e, n) in _everything()
         if w <= max_lon and e >= min_lon and s <= max_lat and n >= min_lat
     ]
 
@@ -281,7 +286,7 @@ def along_route(route_start: tuple, route_end: tuple, fixes: list | None = None)
     """Special-use airspace the route's legs pass laterally through, in
     along-route order: {"name", "type", "kind", "floor_ft", "ceiling_ft",
     "times_of_use", "time_zone", "controlling_agency", "along_track_nm",
-    "legs"}, where
+    "lat", "lon" (where the route meets it), "legs"}, where
     `legs` are the indices of the legs (between consecutive fixes) that
     cross it. One entry per named area, however many polygons it is drawn
     as."""
@@ -308,6 +313,9 @@ def along_route(route_start: tuple, route_end: tuple, fixes: list | None = None)
             found[name] = {
                 **_area(props),
                 "along_track_nm": along,
+                # Where the route meets it, for the copilot's "ahead".
+                "lat": round(point.y, 5),
+                "lon": round(point.x, 5),
                 "legs": sorted(set(crossed) | set(entry["legs"] if entry else [])),
             }
     return sorted(found.values(), key=lambda a: a["along_track_nm"])
@@ -334,8 +342,10 @@ def time_zone(gmt_offset, dst_code) -> str | None:
     """The IANA zone an area's times of use are read in (TIME_ZONES), from
     the data set's GMTOFFSET and DST_CODE; None where it gives none, or a
     pair no zone here keeps."""
+
     def text(value) -> str:
         return str(value).strip().lstrip("+") if value is not None else ""
+
     return TIME_ZONES.get((text(gmt_offset), text(dst_code)))
 
 
@@ -355,18 +365,3 @@ def at_point(lat: float, lon: float) -> list:
         if geometry.contains(point):
             found.setdefault(area["name"], area)
     return sorted(found.values(), key=lambda a: (a["floor_ft"] is None, a["floor_ft"] or 0))
-
-
-def blocked(altitude_ft: float, areas: list) -> bool:
-    """Whether a cruising altitude would enter a prohibited area the
-    route crosses: between its floor and ceiling. Cautious where the
-    numbers are not MSL: an AGL floor is taken as that many feet MSL
-    (lower than it is), and an AGL or missing ceiling as unlimited."""
-    for area in areas:
-        if area["type"] != "P":
-            continue
-        floor = area["floor_ft"] if area["floor_ft"] is not None else 0.0
-        ceiling = area["ceiling_ft"] if area["ceiling_ft"] is not None and area.get("ceiling_ref") != "AGL" else float("inf")
-        if floor <= altitude_ft <= ceiling:
-            return True
-    return False

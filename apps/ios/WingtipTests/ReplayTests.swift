@@ -31,7 +31,7 @@ struct ReplayTests {
         #expect(Replay.position(Self.points, at: 1100)?.lon == -70.0)
     }
 
-    @Test func aHeightNotSentIsTheEarlierOnes() {
+    @Test func aHeightNotSentIsTheEarlierOnes() throws {
         let points = [Replay.Point(t: 0, lat: 0, lon: 0, altFt: 2000), Replay.Point(t: 10, lat: 0, lon: 1, altFt: nil),
                       Replay.Point(t: 20, lat: 0, lon: 2, altFt: 4000)]
         #expect(Replay.position(points, at: 5)?.altFt == 2000)
@@ -42,30 +42,30 @@ struct ReplayTests {
         #expect(Replay.position(many, at: 505)?.lon == 50.5)
     }
 
-    @Test func itPlaysAtItsSpeedStopsAtTheEndAndPlaysAgainFromTheStart() {
+    @Test func itPlaysAtItsSpeedStopsAtTheEndAndPlaysAgainFromTheStart() throws {
         let replay = Replay()
         replay.load(Self.points, key: "a")
         replay.speed = 10
         #expect(replay.at == nil && replay.fix == nil)
         replay.play()
         #expect(replay.at == 1000 && replay.playing)
-        replay.step(5)                              // 5 s at 10 times: 50 s of the flight
+        replay.step(5) // 5 s at 10 times: 50 s of the flight
         #expect(replay.at == 1050)
         #expect(replay.fix?.altitudeFt == 2000 && replay.fix?.groundspeedKt == 90)
         replay.pause()
         replay.step(5)
         #expect(replay.at == 1050)
         replay.play()
-        #expect(replay.at == 1050)                  // from where it was left
+        #expect(replay.at == 1050) // from where it was left
         replay.step(60)
         #expect(replay.at == 1100 && !replay.playing)
         replay.play()
-        #expect(replay.at == 1000)                  // ended: from the start
+        #expect(replay.at == 1000) // ended: from the start
         replay.stop()
         #expect(replay.at == nil && !replay.playing && replay.fix == nil)
     }
 
-    @Test func theScrubberStaysInsideTheFlightAndALoadedFlightKeepsItsMoment() {
+    @Test func theScrubberStaysInsideTheFlightAndALoadedFlightKeepsItsMoment() throws {
         let replay = Replay()
         replay.load(Self.points, key: "a")
         replay.scrub(to: 900)
@@ -75,17 +75,17 @@ struct ReplayTests {
         replay.scrub(to: 1040)
         replay.load(Self.points, key: "a")
         #expect(replay.at == 1040)
-        replay.clear("b")                           // another card's: left alone
+        replay.clear("b") // another card's: left alone
         #expect(replay.at == 1040)
         replay.clear("a")
         #expect(replay.at == nil && replay.points.isEmpty)
     }
 
-    @Test func aGPXTracksSpeedAndTrackAreFromItsFixes() {
+    @Test func aGPXTracksSpeedAndTrackAreFromItsFixes() throws {
         // Along the equator, a thirtieth of a degree east a minute: 2 nm a
         // minute, 120 kt, on 090.
-        let saved = [SavedTrackPoint(t: 0, lat: 0, lon: 0, altFt: 1000), SavedTrackPoint(t: 60_000, lat: 0, lon: 1.0 / 30, altFt: 1500),
-                     SavedTrackPoint(t: 120_000, lat: 0, lon: 2.0 / 30, altFt: nil)]
+        let saved = [SavedTrackPoint(altFt: 1000, lat: 0, lon: 0, t: 0), SavedTrackPoint(altFt: 1500, lat: 0, lon: 1.0 / 30, t: 60_000),
+                     SavedTrackPoint(altFt: nil, lat: 0, lon: 2.0 / 30, t: 120_000)]
         let points = Replay.points(saved)
         #expect(points.count == 3 && points[1].t == 60)
         for point in points {
@@ -95,12 +95,12 @@ struct ReplayTests {
         #expect(points[2].altFt == nil)
     }
 
-    @Test func aTrackedAirplanesReportsAreTakenAsSent() {
-        let sent = [PastFlightPoint(t: 1, lat: 2, lon: 3, altFt: 800, gsKt: 60, trackDeg: 270, vrateFpm: 500)]
+    @Test func aTrackedAirplanesReportsAreTakenAsSent() throws {
+        let sent = [PastFlightPoint(altFt: 800, gsKt: 60, lat: 2, lon: 3, t: 1, trackDeg: 270, vrateFpm: 500)]
         #expect(Replay.points(sent) == [Replay.Point(t: 1, lat: 2, lon: 3, altFt: 800, gsKt: 60, trackDeg: 270)])
     }
 
-    @Test func theCursorSaysTheMomentsFigures() {
+    @Test func theCursorSaysTheMomentsFigures() throws {
         #expect(ReplaySection.figures(Replay.Point(t: 0, lat: 0, lon: 0, altFt: 3040, gsKt: 107.6, trackDeg: 44)) == "3,000 ft · 108 kt · NE")
         #expect(ReplaySection.figures(Replay.Point(t: 0, lat: 0, lon: 0)) == "— · —")
     }
@@ -110,30 +110,18 @@ struct ReplayTests {
 /// with the inspector on an iPad of the regular width.
 @MainActor
 struct RootLayoutTests {
-    @Test func theIPadAtFullWidthSplitsEverythingElseKeepsTheSheet() {
-        #expect(RootLayout.of(.regular, .regular) == .split)        // an iPad, or iPhone Duo open
-        #expect(RootLayout.of(.compact, .regular) == .sheet)        // an iPhone, iPhone Duo closed, an iPad in a narrow Split View
-        #expect(RootLayout.of(.regular, .compact) == .sheet)        // an iPhone Max held sideways
-        #expect(RootLayout.of(.compact, .compact) == .sheet)        // an iPhone held sideways
+    @Test func theIPadAtFullWidthSplitsEverythingElseKeepsTheSheet() throws {
+        #expect(RootLayout.of(.regular, .regular) == .split) // an iPad, or iPhone Duo open
+        #expect(RootLayout.of(.compact, .regular) == .sheet) // an iPhone, iPhone Duo closed, an iPad in a narrow Split View
+        #expect(RootLayout.of(.regular, .compact) == .sheet) // an iPhone Max held sideways
+        #expect(RootLayout.of(.compact, .compact) == .sheet) // an iPhone held sideways
         #expect(RootLayout.of(nil, .regular) == .sheet)
     }
 
-    @Test func aFieldAndAPointOpenInTheInspectorTheListsStayInTheSidebar() {
+    @Test func aFieldAndAPointOpenInTheInspectorTheListsStayInTheSidebar() throws {
         #expect(RootLayout.inspects(AirportRoute("KDAW")))
         #expect(RootLayout.inspects(AirportRoute(AirportRoute.airspace(lat: 43.1, lon: -70.9).text)))
         #expect(!RootLayout.inspects(.list(.favorites)))
         #expect(!RootLayout.inspects(AirportRoute(AirportRoute.nearFrom(lat: 43.1, lon: -70.9, label: "Dover, NH").text)))
-    }
-
-    @Test func aCardsLinkIsFPLsOwnPageOnTheIPhone() {
-        #expect(CardLink<EmptyView>.page(.profile) == "profile")
-        #expect(CardLink<EmptyView>.page(.brief) == "brief")
-        #expect(CardLink<EmptyView>.page(.flights) == "flights")
-    }
-
-    @Test func theSidebarsBarIsTitledForItsTab() {
-        #expect(SplitLayout<EmptyView>.title(.fpl) == "Flight plan")
-        #expect(SplitLayout<EmptyView>.title(.airport) == "Airport")
-        #expect(RootView.Tabs(rawValue: "airport") == .airport)
     }
 }

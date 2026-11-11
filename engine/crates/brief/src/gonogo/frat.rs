@@ -57,7 +57,14 @@ pub const SELF_CHECKS: [SelfCheck; 9] = [
     check("illness", "You", "Ill, or not over it yet", "IMSAFE: illness", 5),
     check("medication", "You", "On a medication that could impair you", "61.53, IMSAFE: medication", 5),
     check("stress", "You", "Under stress: work, home or money", "IMSAFE: stress", 3),
-    SelfCheck { key: "alcohol", group: "You", label: "Alcohol in the last 8 hours, or still feeling it", why: "91.17", points: 0, stop: true },
+    SelfCheck {
+        key: "alcohol",
+        group: "You",
+        label: "Alcohol in the last 8 hours, or still feeling it",
+        why: "91.17",
+        points: 0,
+        stop: true,
+    },
     check("fatigue", "You", "Under 8 hours' sleep, or a long day already", "IMSAFE: fatigue", 4),
     check("eating", "You", "Hungry or thirsty", "IMSAFE: eating", 1),
     check("pressure", "The day", "Somewhere to be by a time, or people counting on it", "PAVE: external pressures", 3),
@@ -128,21 +135,28 @@ pub fn inspection_factors(i: &Inspections, day: &str, ifr: bool) -> Vec<Factor> 
     }
     // The battery is to be replaced by the date marked: on it, it is due.
     if given(&i.elt_battery_due_on).is_some_and(|d| d <= day) {
-        factors.push(factor("eltBattery", "The ELT's battery is past its replacement date", "91.207(c), but for 91.207(f)'s exceptions", 0,
-                            true));
+        factors.push(factor(
+            "eltBattery", "The ELT's battery is past its replacement date", "91.207(c), but for 91.207(f)'s exceptions", 0, true,
+        ));
     }
     if ifr && past(&i.static_check_good_through) {
         factors.push(factor("static", "The altimeter and static test is past due: no IFR in controlled airspace", "91.411(a)", 0, true));
     }
     if past(&i.transponder_check_good_through) {
-        factors.push(factor("transponder", "The transponder test is past due: stay out of the airspace that needs one",
-                            "91.413(a), 91.215(b)", 3, false));
+        factors.push(factor(
+            "transponder", "The transponder test is past due: stay out of the airspace that needs one", "91.413(a), 91.215(b)", 3, false,
+        ));
     }
-    if let (Some(due), Some(now)) = (i.hundred_hour_due_at_hours, i.hours_now) {
-        if now >= due {
-            factors.push(factor("hundredHour", "The 100-hour inspection is due",
-                                "91.409(b): carrying anyone for hire, or flight instruction for hire in an airplane you provide", 2, false));
-        }
+    if let (Some(due), Some(now)) = (i.hundred_hour_due_at_hours, i.hours_now)
+        && now >= due
+    {
+        factors.push(factor(
+            "hundredHour",
+            "The 100-hour inspection is due",
+            "91.409(b): carrying anyone for hire, or flight instruction for hire in an airplane you provide",
+            2,
+            false,
+        ));
     }
     factors
 }
@@ -173,18 +187,27 @@ pub struct Squawk {
 /// 91.205 does not ask by day it may at night or under IFR); the others
 /// are a caution to read before flight (91.7(b)).
 pub fn squawk_factors(open: &[Squawk], night: bool, ifr: bool) -> Vec<Factor> {
-    let needs = if ifr { 2 } else if night { 1 } else { 0 };
+    let needs = if ifr {
+        2
+    } else if night {
+        1
+    } else {
+        0
+    };
     // A reach the web's REACH does not have compares as undefined: never
     // less, so that squawk is not one that grounds.
-    let grounding: Vec<&Squawk> = open
-        .iter()
-        .filter(|s| s.inoperative && s.deferred_for.as_deref().map_or(true, |d| reach(d).is_some_and(|r| r < needs)))
-        .collect();
+    let grounding: Vec<&Squawk> =
+        open.iter().filter(|s| s.inoperative && s.deferred_for.as_deref().is_none_or(|d| reach(d).is_some_and(|r| r < needs))).collect();
     let mut factors = Vec::new();
     if !grounding.is_empty() {
         let texts: Vec<&str> = grounding.iter().map(|s| s.text.as_str()).collect();
-        factors.push(factor("inoperative", format!("Inoperative and not deferred for this flight: {}", texts.join("; ")), "91.213(d)", 0,
-                            true));
+        factors.push(factor(
+            "inoperative",
+            format!("Inoperative and not deferred for this flight: {}", texts.join("; ")),
+            "91.213(d)",
+            0,
+            true,
+        ));
     }
     let others = open.len() - grounding.len();
     if others > 0 {
@@ -203,6 +226,9 @@ pub struct Currency {
     pub day_passengers_until: Option<String>,
     pub night_passengers_until: Option<String>,
     pub instrument_current_until: Option<String>,
+    /// The first day of an instrument currency not begun yet (approaches
+    /// flown this month count from next month, 61.57(c)(1)).
+    pub instrument_current_from: Option<String>,
     pub ipc_needed_after: Option<String>,
     pub flight_review_until: Option<String>,
     pub medical_expires_on: Option<String>,
@@ -217,7 +243,10 @@ pub enum VorCheck {
     #[default]
     Absent,
     None,
-    Checked { good_through: String, within_limit: bool },
+    Checked {
+        good_through: String,
+        within_limit: bool,
+    },
 }
 
 /// The web's FratInput.
@@ -229,6 +258,11 @@ pub struct Input {
     /// SIGMETs and G-AIRMETs along the route during the flight.
     pub hazards: i64,
     pub night: bool,
+    /// Whether any of the flight is in 61.57(b)'s night-passenger period,
+    /// an hour after sunset to an hour before sunrise (flight::sun's
+    /// passenger_night_on_the_way); None where the caller did not work it
+    /// out, when `night` stands for it.
+    pub night_passengers: Option<bool>,
     /// The nav log's fuel margin, gallons; below zero the tanks do not
     /// hold the fuel and its reserve.
     pub fuel_margin_gal: Option<f64>,
@@ -258,8 +292,13 @@ fn found(f: &Input) -> Vec<Factor> {
     }
     if f.hazards > 0 {
         let s = if f.hazards == 1 { "" } else { "s" };
-        factors.push(factor("hazards", format!("{} SIGMET or G-AIRMET{s} along the route", f.hazards), "Adverse conditions",
-                            (2 * f.hazards).min(6), false));
+        factors.push(factor(
+            "hazards",
+            format!("{} SIGMET or G-AIRMET{s} along the route", f.hazards),
+            "Adverse conditions",
+            (2 * f.hazards).min(6),
+            false,
+        ));
     }
     if f.night {
         factors.push(factor("night", "At night", "PAVE: environment", 3, false));
@@ -296,7 +335,9 @@ fn found(f: &Input) -> Vec<Factor> {
         }
         // Under IFR: instrument currency (61.57(c)), or after six months
         // more lapsed only a proficiency check (61.57(d)).
-        if f.ifr && lapsed(&c.instrument_current_until) {
+        // Not current yet where the currency begins after the flight's day.
+        let not_yet = given(&c.instrument_current_from).is_some_and(|d| d > day);
+        if f.ifr && (lapsed(&c.instrument_current_until) || not_yet) {
             let ipc = before(&c.ipc_needed_after);
             factors.push(if ipc {
                 factor("instrument", "Instrument currency lapsed: a proficiency check is needed", "61.57(d)", 0, true)
@@ -305,16 +346,21 @@ fn found(f: &Input) -> Vec<Factor> {
             });
         }
         if lapsed(&c.day_passengers_until) {
-            factors.push(factor("recent", "Not three takeoffs and landings in the last 90 days",
-                                "61.57(a)(1): same category and class; no passengers, and rusty", 3, false));
+            factors.push(factor(
+                "recent", "Not three takeoffs and landings in the last 90 days",
+                "61.57(a)(1): same category and class; no passengers, and rusty", 3, false,
+            ));
         }
-        if f.night && lapsed(&c.night_passengers_until) {
-            // `night` is 14 CFR 1.1's, from the end of civil twilight;
+        if f.night_passengers.unwrap_or(f.night) && lapsed(&c.night_passengers_until) {
             // 61.57(b) binds from an hour after sunset to an hour before
-            // sunrise, a little later, so this errs toward the caution and
-            // says the window.
-            factors.push(factor("recent-night", "Not three night takeoffs and landings to a full stop in the last 90 days",
-                                "61.57(b): needed from 1 h after sunset to 1 h before sunrise", 3, false));
+            // sunrise, its own window (`night_passengers`), not 14 CFR
+            // 1.1's night: where civil twilight lasts all night (Alaska in
+            // summer) there is no 1.1 night but there is this period.
+            // Without the window worked out, 1.1's night stands for it.
+            factors.push(factor(
+                "recent-night", "Not three night takeoffs and landings to a full stop in the last 90 days",
+                "61.57(b): needed from 1 h after sunset to 1 h before sunrise", 3, false,
+            ));
         }
         if c.total_hours < 100.0 {
             factors.push(factor("low-time", "Under 100 hours in your logbook", "PAVE: pilot", 2, false));
@@ -338,7 +384,12 @@ pub fn assess(f: &Input) -> Assessment {
     let mut factors = found(f);
     for c in SELF_CHECKS.iter().filter(|c| f.ticked.iter().any(|t| t == c.key)) {
         factors.push(Factor {
-            key: c.key.into(), label: c.label.into(), why: Some(c.why.into()), points: c.points, stop: c.stop, group: Some(c.group.into()),
+            key: c.key.into(),
+            label: c.label.into(),
+            why: Some(c.why.into()),
+            points: c.points,
+            stop: c.stop,
+            group: Some(c.group.into()),
         });
     }
     let score = factors.iter().map(|x| x.points).sum();
@@ -418,8 +469,14 @@ pub fn assessment_json(a: &Assessment) -> String {
 pub fn self_checks_json() -> String {
     let checks: Vec<Factor> = SELF_CHECKS
         .iter()
-        .map(|c| Factor { key: c.key.into(), label: c.label.into(), why: Some(c.why.into()), points: c.points, stop: c.stop,
-                          group: Some(c.group.into()) })
+        .map(|c| Factor {
+            key: c.key.into(),
+            label: c.label.into(),
+            why: Some(c.why.into()),
+            points: c.points,
+            stop: c.stop,
+            group: Some(c.group.into()),
+        })
         .collect();
     factors_json(&checks)
 }

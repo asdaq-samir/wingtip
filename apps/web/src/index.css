@@ -2,8 +2,52 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
+/* The design tokens: every colour, the corners, the motion, by theme and
+   look, generated from design/tokens.json (scripts/build/design-tokens.sh). */
+@import "./styles/tokens.css";
+/* How it feels: type, states, depth and the small motions (feel.css). */
+@import "./styles/feel.css";
 
 @custom-variant dark (&:is(.dark *));
+/* Reduce Transparency, or Increase Contrast, asked for on the device
+   (Safari reports iOS's Increase Contrast as prefers-contrast: more; Chrome
+   reports Reduce Transparency): every frosted surface solid, as iOS's own
+   materials go solid then (Apple's HIG, Materials). `solid:` on the
+   classes that frost; the glass utility below does it for itself. */
+@custom-variant solid {
+  @media (prefers-reduced-transparency: reduce) {
+    @slot;
+  }
+  @media (prefers-contrast: more) {
+    @slot;
+  }
+  /* And in the Native look (lib/brand), whose stock popover and drawer
+     are solid, with no frost (the owner, 2026-11-10: "Native means how
+     they come out of the box"). */
+  &:where([data-brand="native"] *) {
+    @slot;
+  }
+}
+/* The Native look alone (lib/brand): a class here puts a component back
+   to shadcn's stock where Wingtip's own is unconditional (menuLook, the
+   buttons' words, the label role), the brand looks unchanged. */
+@custom-variant native (&:where([data-brand="native"] *));
+/* What Wingtip adds to the stock components and the Native look leaves
+   out, as shadcn ships them: a press's give, a hover's lift, the motions
+   a figure or a banner comes in with (feel.css). */
+@custom-variant branded (&:where(:root:not([data-brand="native"]) *));
+/* A touch screen's own sizes -- iOS's 17-point rows, 44-point controls
+   grown to a finger, a press's fade -- are Wingtip's: Tailwind's own
+   pointer-coarse, but not in the Native look, where every stock component
+   keeps the one size shadcn gives it. The 44-point hit areas stay there
+   (the pseudo-elements below), as they change nothing that is seen. */
+@custom-variant pointer-coarse {
+  @media (pointer: coarse) {
+    &:where(:root:not([data-brand="native"]) *) {
+      @slot;
+    }
+  }
+}
 /* The header at the bottom of the screen (useNavEdge): the page's root
    says data-nav="bottom" once that edge has been picked, or "auto",
    which is the bottom on a phone -- decided here, from the first frame,
@@ -48,7 +92,9 @@ body {
   -webkit-touch-callout: none;
   user-select: none;
 }
-input, select, textarea {
+input,
+select,
+textarea {
   -webkit-touch-callout: default;
   user-select: text;
 }
@@ -65,6 +111,22 @@ input, select, textarea {
   margin-bottom: 0;
 }
 
+/* The credits' row (lib/map/gl/MapCredits) as Apple Maps on the web sets
+   its Privacy | Terms | Legal | Imagery: small words (the owner's
+   screenshot, 2026-11-10), in the text's colour on the page's, not grey,
+   so they keep 4.5:1 in every look, Glass Cockpit at night too (a11y.spec). */
+.maplibregl-map .maplibregl-ctrl-attrib {
+  background-color: var(--background);
+  border-radius: 0.375rem 0 0 0;
+  color: var(--foreground);
+  font-size: 0.6875rem;
+  line-height: 1rem;
+  padding: 0.125rem 0.5rem;
+}
+.maplibregl-map .maplibregl-ctrl-attrib a {
+  color: var(--foreground);
+}
+
 /* Clear of the map panel (MapPanel): its edge's corner controls sit
    past what the panel covers at rest (MapPage sets the insets), and past
    the home indicator, moving in the sheet's time (mapChrome's
@@ -72,7 +134,7 @@ input, select, textarea {
 .maplibregl-map .maplibregl-ctrl-bottom-left,
 .maplibregl-map .maplibregl-ctrl-bottom-right {
   bottom: max(var(--map-inset-bottom, 0px), env(safe-area-inset-bottom));
-  transition: bottom 0.3s cubic-bezier(0, 0, 0.58, 1);
+  transition: bottom var(--motion-sheet) var(--motion-sheet-ease);
 }
 /* On a phone the credits ride on the sheet's top, as the map's buttons
    do (--sheet-cover, eased with the sheet): kept on the inset, which
@@ -87,7 +149,7 @@ body[data-map-sheet] .maplibregl-map .maplibregl-ctrl-bottom-right {
 .maplibregl-map .maplibregl-ctrl-top-left,
 .maplibregl-map .maplibregl-ctrl-top-right {
   top: max(var(--map-inset-top, 0px), env(safe-area-inset-top));
-  transition: top 0.3s cubic-bezier(0, 0, 0.58, 1);
+  transition: top var(--motion-sheet) var(--motion-sheet-ease);
 }
 
 /* With the phone's sheet all the way up, the map's buttons give way,
@@ -96,10 +158,20 @@ body[data-map-sheet] .maplibregl-map .maplibregl-ctrl-bottom-right {
    whole page at every change of the attributes it named. */
 /* Their foot rides on the sheet's top (MapPanel's --sheet-cover), eased
    with the sheet's own curve as it settles (--sheet-cover-ease). */
-[data-map-controls], [data-map-food] {
-  transition: opacity 0.2s, bottom var(--sheet-cover-ease, 0s);
+[data-map-controls],
+[data-map-food] {
+  transition:
+    opacity var(--motion-fade),
+    bottom var(--sheet-cover-ease, 0s);
 }
 body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-food]) {
+  opacity: 0;
+  pointer-events: none;
+}
+/* And the map's credits with them: riding on a sheet all the way up they
+   sat under the status bar, a line of small print over the clock (the
+   UI audit, 2026-11-09). They show again with the map. */
+body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl-bottom-left, .maplibregl-ctrl-bottom-right) {
   opacity: 0;
   pointer-events: none;
 }
@@ -110,18 +182,9 @@ body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-f
    17-point row 24.3 and a 15-point line 21.4. Every text-* class reads
    its line height from these, so a touch size set beside one (lib/text.ts,
    the stock controls) takes its leading with it. An explicit leading-*
-   still wins. */
+   still wins. Not in the Native look, which keeps Tailwind's own. */
 @media (pointer: coarse) {
-  :root {
-  /* The glass of every button (mapChrome's GLASS_BUTTON): one shape,
-     lit along its top edge, a half-point edge and a soft shade, as iOS's glass is; only these colours are the
-     theme's (the owner's "shouldn't it be common code between light and
-     dark?"). */
-  --glass-sheen: rgb(255 255 255 / 0.75);
-  --glass-light: rgb(255 255 255 / 0.95);
-  --glass-edge: rgb(0 0 0 / 0.08);
-  --glass-shade: rgb(0 0 0 / 0.10);
-  --glass-pressed: rgb(255 255 255 / 0.3);
+  :root:not([data-brand="native"]) {
     --text-xs--line-height: calc(1em + 5px);
     --text-sm--line-height: calc(1em + 5px);
     --text-base--line-height: calc(1em + 5px);
@@ -187,7 +250,7 @@ body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-f
 @theme inline {
   --font-heading: var(--font-sans);
   /* The look's own face (lib/brand, --brand-font below), Inter otherwise. */
-  --font-sans: var(--brand-font, 'Inter Variable'), sans-serif;
+  --font-sans: var(--brand-font, "Inter Variable"), sans-serif;
   /* The display face (--display below): the Chart ink look's Barlow
      Condensed for a figure's label, an ident and a word button
      (lib/text's label and word), the body's own face in the other looks. */
@@ -238,271 +301,6 @@ body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-f
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  /* The side views' airspace names, in the sectional's colours: on a dark
-     card those read 2.8:1 (B's blue) and 3.2:1 (C's magenta), so dark
-     lightens them to WCAG's 4.5:1 (the iOS audit's P15). */
-  --airspace-blue-text: #2465b8;
-  --airspace-magenta-text: #c0309f;
-  /* The course line's magenta where the stylesheet reaches it off the
-     map -- the nav log's tags (PointMark), FPL's route line
-     (ProceduresRoute) -- chartColors' COURSE_MAGENTA, which Leaflet and a
-     canvas take as a value; the Chart ink look's own magenta in it. */
-  --course: #e600e6;
-  /* The display face (the font-display utility): the body's own, but in
-     the Chart ink look, whose is Barlow Condensed. */
-  --display: var(--font-sans);
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  /* The tint: what can be tapped, in one colour, as iOS draws it -- a
-     filled button's fill (primary, with white words on it) and the
-     words and glyphs of every other (tint): text and toolbar buttons,
-     links, a row that does something, a checkmark. Plain text is never
-     in it. It was near-black, the colour of the text, and a button read
-     as one more line. iOS's blue, a step deeper (#0066CC): its own
-     #007AFF is 4:1 on white, this is 5.6:1, and 5.6:1 under white. */
-  --primary: oklch(0.522 0.177 255.8);
-  --primary-foreground: oklch(0.985 0 0);
-  --tint: oklch(0.522 0.177 255.8);
-  /* The tint on the sheet's shade under its glass (MapPanel's SHEET_BELOW),
-     a step deeper to keep 4.5:1 there. */
-  --tint-shade: oklch(0.48 0.18 256);
-  /* The sheet's own ground, opaque, as Apple's Maps on the web draws its
-     sheet: iOS's grouped grey, white cards on it (the style audit of
-     2026-10-26: glass over the busy chart read washed out on the web). */
-  --sheet: #f2f2f7;
-  /* The words of a dashed Class D or E pill (useAirspace): the
-     sectional's blue and magenta a shade darker, 4.5:1 on their wash. */
-  --airspace-blue-ink: #1d559c;
-  --airspace-magenta-ink: #962568;
-  /* The map's airspace altitudes along their lines (AirspaceLayer's
-     EdgeLabels): the lines' own ForeFlight hues (airspaceMarks), a shade
-     darker to read 5.1:1 on their halo, the map's white ground, where
-     the lines' #4b9df8 and #c43fc0 are 2.8 and 4.4:1 (WCAG wants 4.5). */
-  --airspace-edge-blue: #086bd8;
-  --airspace-edge-magenta: #b337b0;
-  --airspace-halo: #ffffff;
-  /* A procedure's indigo off the map, where a card draws its fixes and
-     its pill: the map's own (rowBadges BADGE.approach, ProcedureLayer),
-     a shade lighter in dark to stand off the card. */
-  --procedure: #5b5bd6;
-  /* Caution, the one amber: words that say it on the panel (FINDING_TONE,
-     4.5:1 and more), and a box of cautions, its words a shade deeper on
-     its wash. Tailwind's amber-700, -800 and -500 at 12%. */
-  --caution: oklch(0.555 0.163 48.998);
-  --caution-ink: oklch(0.473 0.137 46.201);
-  --caution-wash: oklch(0.769 0.188 70.08 / 12%);
-  /* Go, the one green: a check passed, a flight landed or in the air.
-     Tailwind's green-600 for marks and -800 for words: -700 came to 4.43:1
-     on the Brief's glass in the nightly audit (P15 wants 4.5:1). */
-  --go: oklch(0.627 0.194 149.214);
-  --go-ink: oklch(0.448 0.119 151.328);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  /* Red words on the pale red of a destructive button at 5.4:1, where
-     the destructive red itself was 4:1 on it -- the reset confirmation's
-     "Reset all ratings". Tailwind's red-700; the dark theme's own
-     destructive red is already past 4.5 on its tint. */
-  --destructive-ink: oklch(0.505 0.213 27.518);
-  --border: oklch(0.922 0 0);
-  /* Darker than shadcn's: a field's own edge at 3:1 on the background
-     (WCAG 1.4.11) rather than 1.3:1, and the focus ring at 4.7:1
-     rather than 2.6:1. Table rules and dividers keep --border. */
-  --input: oklch(0.65 0 0);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-}
-
-/* Night: the cockpit's navy rather than a neutral grey, from the dark
-   palette the owner picked (2026-10-26) -- #0B1422 ground, #17283A
-   surface -- so the sheets sit with a dimmed chart and the panel lights,
-   not as grey slabs over it. Every word on every surface here is 4.5:1
-   and more (WCAG 1.4.3, the iOS audit's P15); lib/contrast.test.ts reads
-   this block and holds it to that. */
-.dark {
-  --glass-sheen: rgb(255 255 255 / 0.2);
-  --glass-light: rgb(255 255 255 / 0.24);
-  --glass-edge: rgb(0 0 0 / 0.5);
-  --glass-shade: rgb(0 0 0 / 0.55);
-  --glass-pressed: rgb(255 255 255 / 0.08);
-  --airspace-blue-text: #6fa0e8;
-  /* A shade lighter than the sectional's, 5.2:1 on the raised muted. */
-  --airspace-magenta-text: #e884d1;
-  --background: #0b1422;
-  --foreground: #eef3f9;
-  --card: #17283a;
-  --card-foreground: #eef3f9;
-  /* A step above the card and the sheets (which are card), so a menu or
-     popover opened over one stands off it: shadows barely show on dark. */
-  --popover: #1b2e44;
-  --popover-foreground: #eef3f9;
-  /* The dark theme's tint in two shades: a fill the near-white words
-     read on at 4.7:1 (#006DDE; #0071E3 was 4.497:1, a hair under), and for words and glyphs on the navy surfaces a
-     lighter iOS blue (#57A8FF): 5:1 and more on every one here, the
-     raised muted's included, where the grey theme's #409CFF-like blue
-     was 4.2:1 on the navy muted. */
-  --primary: oklch(0.55 0.193 256.2);
-  --primary-foreground: oklch(0.985 0 0);
-  --tint: oklch(0.72 0.15 252);
-  /* A step lighter than the tint on the night's sheet, which no longer
-     has the shade band under it (the iOS audit's P15: 4.3:1 at 0.7). */
-  --tint-shade: oklch(0.76 0.14 252);
-  --sheet: var(--background);
-  --airspace-blue-ink: #8cb8f2;
-  --airspace-magenta-ink: #f0a0cf;
-  /* The sheet's dark at night, where a white halo was the brightest
-     thing over the dimmed chart: the line's blue itself reads 5.7:1 on
-     it, its magenta a shade lighter 5.1:1 (3.7 as it is). */
-  --airspace-edge-blue: #4b9df8;
-  --airspace-edge-magenta: #d16bce;
-  --airspace-halo: #172234;
-  --procedure: #9d9df0;
-  /* The palette's caution amber (#F5B85E) for words and marks, and a
-     paler one for words on its wash. */
-  --caution: #f5b85e;
-  --caution-ink: #f9cd8c;
-  /* The palette's positive green (#75D7A3), and a paler one for words. */
-  --go: #75d7a3;
-  --go-ink: #9be3bd;
-  --secondary: #20354c;
-  --secondary-foreground: #eef3f9;
-  --muted: #20354c;
-  --muted-foreground: #a9b8ca;
-  --accent: #20354c;
-  --accent-foreground: #eef3f9;
-  /* A shade lighter than the grey theme's red: 4.9:1 on the muted. */
-  --destructive: oklch(0.74 0.17 22);
-  --destructive-ink: var(--destructive);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  /* Focus rings at full strength (the components' ring-ring), 3:1 and
-     more on every dark surface, the raised popover's included. */
-  --ring: #a9b8ca;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-}
-
-/* The app's looks (Settings' Look, lib/brand): the Glass Cockpit and
-   Chart ink, the two the owner kept (2026-11-04). The tokens above are
-   the ground both build on; the cockpit changes only what can be tapped (primary, tint), the
-   typeface and the corners, in each theme, so every word stays at 4.5:1
-   and more on its surface (WCAG 1.4.3): light tints 4.8:1 and more on
-   white and the muted grey, dark ones 6:1 and more on the night's card, and white on each
-   primary 4.6:1 and more. Caution, go, red and the chart's own inks stay
-   as they are: they are the FAA's and the cockpit's, not the brand's.
-   :not(.dark) and .dark each, so a look's light tokens never win over
-   the night's (an attribute is as specific as a class). */
-:root[data-brand="cockpit"] {
-  --brand-font: 'Barlow';
-  --radius: 0.5rem;
-}
-:root[data-brand="cockpit"]:not(.dark) {
-  /* The cockpit's cyan, deepened to read on white (#00707E, 5.6:1). */
-  --primary: #00707e;
-  --tint: #00707e;
-  --tint-shade: #00707e;
-}
-:root.dark[data-brand="cockpit"] {
-  /* The panel's cyan for words (#46D3E6, 8.4:1 on the card), a deep teal
-     for fills under white words (#0B6E7A, 5.3:1). */
-  --primary: #0b6e7a;
-  --tint: #46d3e6;
-  --tint-shade: #46d3e6;
-}
-
-/* Chart ink (the owner's ink canvas, 2026-11-04: "let's try it"): the
-   app in the FAA sectional's own ink. Barlow for text and Barlow
-   Condensed for a figure's label, an ident and a word button (--display;
-   lib/brand loads both, lib/text's label, figure and word set them); a
-   paper ground -- the sheet and the pages -- under white cards with no
-   edge, 18-point corners and a soft shade (the rule after the Sunlight
-   block); the chart's magenta for the course and an ident at a head, its
-   brown for the checkpoints' marks, its green for a field (--ink-*, the
-   tokens and the ink-* colour utilities; chartColors'
-   checkpointColour for what Leaflet and a canvas take as a value). What
-   can be tapped stays the app's own blue by day: the canvas's #0a84ff
-   reads 3.7:1 on white, under WCAG's 4.5 (the iOS audit's P15), and so
-   do its amber (#ff9f0a, 2.1:1) and its go green (#34c759, 2.2:1) as
-   words, so caution and go stay as they are by day too. Every word here
-   is 4.5:1 and more on its surface: the muted brown 7.9:1 on a card,
-   7.0:1 on the paper and 6.4:1 on the muted; the tint 5.0:1 on the paper
-   and 4.6:1 on the muted; the magenta 5.0:1, the brown 5.3:1 and the
-   green 4.8:1 on the paper. Not in sunlight, whose own tokens win (the
-   :not), the typeface and the corners aside, as with the other looks. */
-:root[data-brand="ink"] {
-  --brand-font: 'Barlow';
-  --display: 'Barlow Condensed', 'Barlow', sans-serif;
-  /* 12: a card's 18 is its own (the rule after the Sunlight block), a
-     button's 10 and a chip's 7 come from this. */
-  --radius: 0.75rem;
-  --ink-magenta: #b3338c;
-  --ink-brown: #8a5a2b;
-  --ink-field: #1d7a46;
-  --course: var(--ink-magenta);
-}
-:root[data-brand="ink"]:not(.dark):not([data-chart-light="bright"]) {
-  --background: #f7f2e7;
-  --sheet: #f7f2e7;
-  --foreground: #1f1a14;
-  --card: #ffffff;
-  --card-foreground: #1f1a14;
-  --popover: #ffffff;
-  --popover-foreground: #1f1a14;
-  --muted: #efe8da;
-  --muted-foreground: #5a5048;
-  --secondary: #efe8da;
-  --secondary-foreground: #1f1a14;
-  --accent: #efe8da;
-  --accent-foreground: #1f1a14;
-  /* The paper a shade deeper: a hairline between a list's rows (1.4:1 on
-     a card), and no edge round a card (the rule after the Sunlight block). */
-  --border: #e2d8c4;
-}
-/* Its night: the canvas's charcoal ground and cards, its light teal for
-   what can be tapped -- as words (10.4:1 on the ground, 8.2:1 on the
-   muted) and as a fill under the ground's own dark words (10.4:1), where
-   white words on it would read 1.9:1 -- its go green (8.1:1 on a card)
-   and a lighter magenta (5.9:1 on a card). The brown and the green of
-   the marks stay the day's: they sit on the chart, not on a card. */
-:root.dark[data-brand="ink"]:not([data-chart-light="bright"]) {
-  --background: #14161c;
-  --sheet: #14161c;
-  --foreground: #eef1f5;
-  --card: #1d2027;
-  --card-foreground: #eef1f5;
-  --popover: #262a33;
-  --popover-foreground: #eef1f5;
-  --muted: #262a33;
-  --muted-foreground: #a9aeb8;
-  --secondary: #262a33;
-  --secondary-foreground: #eef1f5;
-  --accent: #262a33;
-  --accent-foreground: #eef1f5;
-  --primary: #5ac8fa;
-  --primary-foreground: #14161c;
-  --tint: #5ac8fa;
-  --tint-shade: #5ac8fa;
-  --go: #35d07f;
-  --ink-magenta: #ff5ac8;
-}
-
 /* The chart at night (Settings' "Chart at night", lib/preferences
    chartNight): its tiles alone are dimmed, by the map's own raster paint
    (lib/map/gl/glStyle chartPaint, the brightness and contrast these tiles
@@ -520,30 +318,8 @@ body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-f
    more colour (the map's raster paint, glStyle chartPaint); and no
    glass -- every sheet, button and figure strip solid white with black figures and a deep blue tint,
    AA-large on white. */
-:root[data-chart-light="bright"],
-:root.dark[data-chart-light="bright"] {
-  --background: #ffffff;
-  --foreground: #000000;
-  --card: #ffffff;
-  --card-foreground: #000000;
-  --popover: #ffffff;
-  --popover-foreground: #000000;
-  --sheet: #ffffff;
-  --muted: #eeeeee;
-  --muted-foreground: #333333;
-  --border: #000000;
-  --primary: #0040c0;
-  --primary-foreground: #ffffff;
-  --tint: #0040c0;
-  --tint-shade: #0040c0;
-  --glass-sheen: #ffffff;
-  --glass-light: #ffffff;
-  --glass-edge: #000000;
-  --glass-shade: transparent;
-  --glass-pressed: #dddddd;
-}
 html[data-chart-light="bright"] .liquid-glass {
-  background-color: #ffffff !important;
+  background-color: var(--card) !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
@@ -551,33 +327,29 @@ html[data-chart-light="bright"] .liquid-glass {
    them, where a shadow alone is lost in the sun. */
 html[data-chart-light="bright"] [data-slot="map-panel"],
 html[data-chart-light="bright"] [data-map-controls] button {
-  box-shadow: inset 0 0 0 2px #000;
+  box-shadow: inset 0 0 0 2px var(--border);
 }
 html[data-chart-light="bright"] [data-slot="section-summary"] {
-  background-color: #ffffff;
-  color: #000000;
+  background-color: var(--card);
+  color: var(--foreground);
 }
 
-/* The Chart ink look on the map and on its cards, after the night's and
-   the sun's rules: it outranks the dimmed chart's course (the same
-   weight, later) and yields to sunlight (the :not). The course, a hold's
-   racetrack and the route options' ways (course-ink, on a path's options)
-   in the look's magenta, the day's deep one and the night's light one
-   (--ink-magenta), cased in white as they are, the dimmed chart's navy
-   casing kept at night. A card -- a grouped list's box (ListGroup), the
+/* The Chart ink look on its cards, after the sun's rules, yielding to
+   sunlight (the :not). A card -- a grouped list's box (ListGroup), the
    stock Card -- white with no edge, 18-point corners and the canvas's
    soft shade, in one rule rather than on each. */
 html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], [data-slot="item-group"][role="group"]) {
   border-color: transparent;
-  border-radius: 1.125rem;
-  box-shadow: 0 1px 4px rgb(0 0 0 / 0.08);
+  border-radius: var(--radius-card);
+  box-shadow: var(--depth-card);
 }
 
 @layer base {
   /* One weight for emphasis: <b> and <strong> at 600, as every
      font-semibold heading, figure and name is, rather than the
      browser's 700 beside them. */
-  b, strong {
+  b,
+  strong {
     font-weight: var(--font-weight-semibold);
   }
 
@@ -585,12 +357,30 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
      over Favorites' tiles: Tailwind 4 leaves a button the arrow, and only
      the stock Button asked for the hand, so a plain button -- a tile, a
      heading's link, a list row -- showed the arrow. Not while disabled. */
-  button:not(:disabled), [role="button"]:not([aria-disabled="true"]), summary {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
     cursor: pointer;
   }
 
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring;
+  }
+  /* The Native look's outline as shadcn's base layer sets it: the ring
+     at half strength, and no outline of ours on what has none. */
+  :where([data-brand="native"]) * {
+    @apply outline-ring/50;
+  }
+  /* A keyboard's focus seen on everything, in the ring token at full
+     strength (3:1 or more on every surface in every look,
+     looksContrast.test.ts; WCAG 2.4.7, 1.4.11): what has no ring of its
+     own -- a plain button, a link, a list row -- gets this outline; what
+     draws its own ring (the stock components' focus-visible:ring) sets
+     outline-none over it. At half strength the ring was 2:1 on white.
+     Not in the Native look: the browser's own focus ring there, as stock. */
+  :root:not([data-brand="native"]) :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
   body {
     @apply bg-background text-foreground;
@@ -600,75 +390,31 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
   }
 }
 /* The toast stack sits over the chart, and the chart is the thing a
-   pilot is panning and zooming. Sonner gives its container -- and each
-   card -- `pointer-events: auto`, so the whole band they occupy
-   swallows wheel and drag events meant for the map. Widening the toasts
-   made that band wide enough to matter: a scroll aimed at the chart
-   with a toast showing is simply lost, which a Playwright run caught as
-   a zoom step going missing.
-
-   So the stack is transparent to the pointer and only its controls --
-   an action's button -- take events back. The cost is sonner's
-   swipe-to-dismiss, which needs the card itself; a toast goes by itself.
-   The chart underneath stays fully draggable and zoomable, toast or
-   no toast. */
-[data-sonner-toaster],
-[data-sonner-toast] {
+   pilot is panning and zooming: a band of toasts that took the pointer
+   swallowed wheel and drag events meant for the map (a Playwright run
+   caught a zoom step going missing). So the stack is transparent to the
+   pointer; a toast has no control of its own, and goes by itself. */
+[data-slot="toast-viewport"],
+[data-slot="toast"] {
   pointer-events: none;
 }
-[data-sonner-toast] button {
+/* Except while a drawer or a dialog is open: the toasts are anchored to
+   the viewport, not the map, so an open drawer sits under them, and a tap
+   on a toast transparent to the pointer landed on whatever the drawer had
+   there (an accordion trigger, which opened a briefing section nobody
+   touched). The panel out is <body>'s data-map-panel (MapPanel); a
+   dialog, menu or popover open marks what is outside it
+   data-base-ui-inert (Base UI's marker), rather than a :has() looking for
+   either, which restyled the whole page at every state change (measured
+   2026-10-07). */
+body[data-map-panel="full"] [data-slot="toast"],
+[data-base-ui-inert] [data-slot="toast"],
+[data-slot="toast-viewport"][data-base-ui-inert] [data-slot="toast"] {
   pointer-events: auto;
 }
-/* Except while a drawer or a dialog is open. The toasts are anchored to
-   the viewport, not the map, so an open drawer (the whole screen on a
-   phone, the right edge on a narrow desktop) sits under them -- and a
-   tap on a card that is transparent to the pointer lands on whatever
-   the drawer has there: an accordion trigger, which opened a briefing
-   section nobody touched. While one is open the cards take their own
-   taps back; the chart loses the wheel under a toast for that long.
-   The panel out is <body>'s data-map-panel (MapPanel), and a dialog open
-   its data-scroll-locked, which the stock dialogs' scroll lock sets
-   (react-remove-scroll-bar), rather than a :has() looking for either: at
-   the top of the page it restyled all of it at every data-state changed
-   anywhere, a quarter of a second of a phone's each time a tab was
-   picked (measured 2026-10-07). */
-body:is([data-map-panel="full"], [data-scroll-locked]) [data-sonner-toast] {
+/* A toast with an Undo is one to tap, wherever it is. */
+[data-slot="toast"][data-action] {
   pointer-events: auto;
-}
-/* The scroll lock's own variable kept on <body>: the lock sets it there
-   as a stock dialog, menu or select opens (react-remove-scroll-bar), and
-   inherited, every element under it had its style worked out again,
-   opening and closing. An override of 0px on #root (2026-10-08) stopped
-   it only while the lock's value differed: a phone has no scroll bar,
-   the lock's value is 0px too, and Chrome then shares the body's
-   variables with #root, so the page restyled all the same -- 1,012
-   elements, 220-460 ms of a phone's (CPU 4x slower) each way, set to 0px;
-   none with 15px (traced 2026-10-13). Registered as not inherited, it is
-   the body's alone, whatever its value: 5-20 ms. Nothing reads it; the
-   page under the body never scrolls, so has no scroll bar to make room
-   for. */
-@property --removed-body-scroll-bar-size {
-  syntax: "*";
-  inherits: false;
-}
-/* The same for the page's taps. A stock menu, select or dialog keeps
-   them from the page under it by setting <body>'s pointer-events to none
-   as it opens (Radix's DismissableLayer), and that being inherited too,
-   every element of the page had its style worked out again opening and
-   closing: 100 ms of a phone's each way, the most of what opening the
-   Share menu cost (measured 2026-10-11). Here the body keeps its own,
-   and a sheet over the whole screen under the open layer, behind the
-   scroll lock's attribute that layer sets, takes the taps instead: one
-   element restyled, not the page. A tap on it is outside the layer, so
-   it closes the layer as before, and reaches nothing under it. */
-body {
-  pointer-events: auto !important;
-}
-body[data-scroll-locked]::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 50;
 }
 
 /* Touch targets. Apple asks for 44 points on both sides of anything a
@@ -696,7 +442,8 @@ body[data-scroll-locked]::before {
    still wins. */
 @layer base {
   @media (pointer: coarse) {
-    button, a[data-slot="button"] {
+    button,
+    a[data-slot="button"] {
       position: relative;
     }
   }
@@ -749,88 +496,60 @@ html[data-tv] .maplibregl-canvas:focus {
    on and off, alternating is red then green. Still, with its words, where
    the reader has asked for less motion. */
 @keyframes light-flash {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0.12; }
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0.12;
+  }
 }
 @keyframes light-alternate {
-  0%, 49% { background-color: var(--light-a); }
-  50%, 100% { background-color: var(--light-b); }
+  0%,
+  49% {
+    background-color: var(--light-a);
+  }
+  50%,
+  100% {
+    background-color: var(--light-b);
+  }
 }
 
 /* The microphone's pill while it listens (RadioLayer's Waveform): its
    bars rising and falling, as Siri's waveform does; still, low, where
    the reader has asked for less motion (motion-safe). */
 @keyframes wave {
-  0%, 100% { transform: scaleY(0.4); }
-  50% { transform: scaleY(1); }
-}
-
-/* The toasts in the app's typeface: sonner sets its own system stack,
-   so on an iPhone they read in San Francisco beside an app in Inter.
-   The html selector outranks sonner's, which is injected after this. */
-html [data-sonner-toaster] {
-  font-family: inherit;
-}
-
-/* A toast's words to a finger at 15 on iOS's 20, as iOS's banners set
-   theirs and the app sets what is read (lib/text.ts), over sonner's 13
-   on 19.5. The toaster's attribute and the styled one as well: sonner's
-   own rules, injected after this sheet, outranked the toaster's alone,
-   and the toasts stayed 13. */
-@media (pointer: coarse) {
-  [data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
-    font-size: 0.9375rem;
+  0%,
+  100% {
+    transform: scaleY(0.4);
   }
-  [data-sonner-toaster] [data-sonner-toast][data-styled="true"] :is([data-title], [data-description]) {
-    line-height: 1.25rem;
-  }
-}
-
-/* A phone's toasts as wide as the offsets leave them (AppToaster's
-   mobileOffset), the right one included: sonner's own sizes a toast
-   from the left offset twice, and ran it across the map's buttons the
-   right offset was there to keep clear. */
-@media (max-width: 600px) {
-  html [data-sonner-toaster] [data-sonner-toast] {
-    width: calc(100vw - var(--mobile-offset-left) - var(--mobile-offset-right));
+  50% {
+    transform: scaleY(1);
   }
 }
 
 /* Every toast Apple Maps' banner (the toast rewrite, 2026-10-27): on
    Liquid Glass, as the panel's capsule and the map's buttons are, a
    capsule round one line, its title semibold and a second line, where
-   there is one, in the secondary grey. It was a black slab over the chart
-   for as long as a long route took to plan, and a success a green card. */
-html [data-sonner-toaster] [data-sonner-toast][data-styled="true"] {
+   there is one, in the secondary grey (components/ui/toast). Its words to
+   a finger at 15 on iOS's 20, as iOS's banners set theirs. */
+[data-slot="toast"] {
   @apply liquid-glass;
-  border-color: transparent;
-  /* A capsule, as Apple Maps' banner is: 48 at the least and 24 round, so
-     one line is a full capsule and two keep the same corners (the iOS
-     audit reads a toast as a capsule, min(24, half its height)). */
-  border-radius: 1.5rem;
-  min-height: 3rem;
-  padding: 0.625rem 1rem;
-  gap: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
-html [data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-title] {
-  font-weight: 600;
-}
-html [data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-description] {
-  color: var(--muted-foreground);
-}
-html [data-sonner-toaster] [data-sonner-toast][data-styled="true"] [data-button] {
-  margin-left: auto;
-  background: transparent;
-  color: var(--tint);
-  font-weight: 600;
-  padding-inline: 0.25rem;
+@media (pointer: coarse) {
+  [data-slot="toast"] {
+    font-size: 0.9375rem;
+  }
 }
 
 /* With the phone's sheet all the way up, the progress line gives way as
    the map's buttons do: at the top of the screen it lay over the sheet's
    tabs (the style audit, 2026-10-26), and the sheet shows the plan coming
    in itself. */
-body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loading"] {
+body[data-map-sheet][data-map-panel="full"] [data-slot="toast"][data-type="loading"] {
   opacity: 0;
   pointer-events: none;
 }
@@ -840,11 +559,74 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
    The durations are near zero rather than none, so the events the
    stock components wait on to unmount still fire. */
 @media (prefers-reduced-motion: reduce) {
-  *, ::before, ::after {
+  *,
+  ::before,
+  ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/* A page giving way to the next (lib/viewTransition): React's
+   <ViewTransition> round a page (the Brief's, the welcome's) names it for
+   a typed page step alone, its class page-step forward and page-back
+   back, a short shared-axis slide and fade over motion.page on the
+   sheet's ease-out. The
+   rest of the screen, the map under it, is not captured as the page's
+   root would be. The Native look takes the browser's own cross-fade. */
+:root {
+  view-transition-name: none;
+}
+html:not([data-brand="native"])::view-transition-group(.page-step),
+html:not([data-brand="native"])::view-transition-group(.page-back) {
+  animation-duration: var(--motion-page);
+  animation-timing-function: var(--motion-sheet-ease);
+}
+html:not([data-brand="native"])::view-transition-old(.page-step) {
+  animation: var(--motion-page) var(--motion-sheet-ease) both page-out;
+}
+html:not([data-brand="native"])::view-transition-new(.page-step) {
+  animation: var(--motion-page) var(--motion-sheet-ease) both page-in;
+}
+html:not([data-brand="native"])::view-transition-old(.page-back) {
+  animation: var(--motion-page) var(--motion-sheet-ease) both page-back-out;
+}
+html:not([data-brand="native"])::view-transition-new(.page-back) {
+  animation: var(--motion-page) var(--motion-sheet-ease) both page-back-in;
+}
+@keyframes page-out {
+  to {
+    opacity: 0;
+    transform: translateX(-1.5rem);
+  }
+}
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+}
+@keyframes page-back-out {
+  to {
+    opacity: 0;
+    transform: translateX(1.5rem);
+  }
+}
+@keyframes page-back-in {
+  from {
+    opacity: 0;
+    transform: translateX(-1.5rem);
+  }
+}
+/* Reduce Motion: no transition moves; the change is made where it is
+   (the * rule above does not reach the transition's pseudo-elements). */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }
 
@@ -889,20 +671,82 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
   scroll-padding-bottom: var(--foot-room, 0px);
 }
 
-/* The map panel's head frosted with the sheet's own colour, a line under
-   it, while content is scrolled under it (MapPanel's data-under); a card's
-   own head under it -- the Brief's title and pages (PanelTabs) -- frosted
-   with it, the line under that one alone ("local"). Plain glass at rest. */
-[data-head-band], [data-under-band] {
-  transition: background-color 150ms, box-shadow 150ms;
+/* The one scrolling rule (the owner, 2026-11-10), as Apple Maps' cards
+   scroll. A card's large title folds into its pinned compact head
+   (PinnedCardBar) as the card scrolls: where the browser runs
+   scroll-driven animations, the title fades and shrinks and the bar comes
+   in with the scroll itself; elsewhere the bar shows once the title has
+   gone (data-shown, from an IntersectionObserver). Hidden, the bar is
+   neither seen nor hit nor read. */
+.card-pinned {
+  visibility: hidden;
+  opacity: 0;
 }
-[data-head-band][data-under],
-[data-head-band][data-under] ~ [data-panel-body] [data-under-band] {
-  background-color: var(--sheet);
-  box-shadow: 0 1px 0 var(--color-border);
+[data-shown] > .card-pinned {
+  visibility: visible;
+  opacity: 1;
 }
-[data-head-band][data-under="local"] {
-  box-shadow: none;
+@supports (animation-timeline: scroll()) {
+  .card-pinned {
+    animation: card-pinned linear both;
+    animation-timeline: scroll(nearest block);
+    animation-range: 0 8rem;
+  }
+  .card-title-fold {
+    transform-origin: left center;
+    animation: card-title-fold linear both;
+    animation-timeline: scroll(nearest block);
+    animation-range: 0 6rem;
+  }
+}
+@keyframes card-pinned {
+  0%,
+  80% {
+    visibility: hidden;
+    opacity: 0;
+  }
+  100% {
+    visibility: visible;
+    opacity: 1;
+  }
+}
+@keyframes card-title-fold {
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .card-title-fold {
+    animation: none;
+  }
+}
+
+/* At the pill and half way a phone's sheet body does not scroll: a drag
+   up on it is the Drawer's, which raises the sheet, and only all the way
+   up does the content scroll, a drag down from its top lowering it again
+   (the one scrolling rule). Base UI's Drawer gives a drag to a scroller
+   under the finger whenever there is one to scroll, and lets the sheet
+   have it only toward its closing edge, so the scrollers are no scrollers
+   there (overflow hidden, which its arbitration skips); a script, the
+   keyboard and a row brought into view still scroll them, and a row
+   focused under the sheet's edge brings it all the way up (MapPanel). */
+body[data-map-sheet]:is([data-map-panel="peek"], [data-map-panel="half"]) [data-panel-body] :is(.overflow-y-auto, .overflow-auto) {
+  overflow-y: hidden;
+}
+
+/* And a sideways row only scrolls sideways (the one scrolling rule, at
+   every height): `overflow-x: auto` alone makes the browser compute
+   `overflow-y: auto` too, and a row whose chips' 44-point hit areas or
+   padding reach past it is then a vertical scroller by a few points.
+   Base UI's Drawer gave a drag up that started on one -- an airplane's
+   pill strip, the field's hours, the Brief's departure window -- to that
+   row, and at half the sheet stayed where it was (card-scroll.spec, the
+   airport card, traffic and the Brief, 2026-11-10). Clipped as before;
+   the Drawer's own arbitration now passes it by, a vertical drag moving
+   the sheet and a tap still a tap. */
+[data-panel-body] :is(.overflow-x-auto, .overflow-x-scroll):not(.overflow-y-auto, .overflow-y-scroll, .overflow-auto) {
+  overflow-y: hidden;
 }
 
 /* What floats over the chart -- the map's buttons, its banners, the
@@ -912,13 +756,27 @@ body[data-map-sheet][data-map-panel="full"] [data-sonner-toast][data-type="loadi
    Glass read dirty over the FAA chart's linework; the native app keeps
    iOS's real one). */
 @utility liquid-glass {
-  background-color: color-mix(in oklab, var(--background) var(--glass-fill, 80%), transparent);
-  -webkit-backdrop-filter: blur(15px);
-  backdrop-filter: blur(15px);
-  box-shadow: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 2px 12px rgb(0 0 0 / 0.12);
+  background-color: color-mix(in oklab, var(--background) var(--glass-fill, var(--glass-fill-light)), transparent);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  /* A hairline, a contact shade and a soft one (feel.css's float),
+     deeper at night. */
+  box-shadow: var(--depth-float);
   &:is(.dark *) {
-    background-color: color-mix(in oklab, var(--popover) var(--glass-fill, 85%), transparent);
-    box-shadow: 0 0 0 0.5px rgb(255 255 255 / 0.08), 0 2px 12px rgb(0 0 0 / 0.45);
+    background-color: color-mix(in oklab, var(--popover) var(--glass-fill, var(--glass-fill-dark)), transparent);
+  }
+  /* Solid under Reduce Transparency or Increase Contrast (the solid
+     variant above): the page's own ground, nothing of the chart through
+     it, and a hairline that can be seen in place of the frost's edge. */
+  @variant solid {
+    background-color: var(--background) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    box-shadow:
+      0 0 0 1px var(--border),
+      var(--depth-float);
+    &:is(.dark *) {
+      background-color: var(--popover) !important;
+    }
   }
 }
-

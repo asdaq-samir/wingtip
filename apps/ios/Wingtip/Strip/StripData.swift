@@ -96,34 +96,14 @@ enum StripData {
     }
 
     /// Where the airplane is along the strip, for the ribbon: the leg it is
-    /// on (0 the first) and how far along it, 0 to 1. The nearest point of
-    /// the route is found, and the airplane put on the leg before or after
-    /// it by which of the two it is closer to going on to -- a glance, not
-    /// navigation: the next checkpoint's own figures are the nav log's.
-    /// Points with no position (a checkpoint the chart read has not
-    /// placed) are left out of the measuring.
-    static func positionAlong(_ points: [StripPoint], fix: CLLocationCoordinate2D?) -> (leg: Int, along: Double)? {
-        let placed = points.enumerated().compactMap { i, p in p.coordinate.map { (index: i, at: $0) } }
-        guard let fix, placed.count >= 2 else { return nil }
-        var nearest = 0
-        var least = Double.infinity
-        for (k, p) in placed.enumerated() {
-            let d = Flight.nm(from: fix, to: p.at)
-            if d < least { least = d; nearest = k }
-        }
-        let next = nearest + 1 < placed.count ? placed[nearest + 1] : nil
-        let before = nearest > 0 ? placed[nearest - 1] : nil
-        // Past the nearest point, on the way to the next: along that leg;
-        // else still on the way to it from the one before.
-        if let next, before == nil || Flight.nm(from: fix, to: next.at) < Flight.nm(from: placed[nearest].at, to: next.at) {
-            let legNm = Flight.nm(from: placed[nearest].at, to: next.at)
-            return (placed[nearest].index, legNm > 0 ? min(1, least / legNm) : 0)
-        }
-        if let before {
-            let legNm = Flight.nm(from: before.at, to: placed[nearest].at)
-            return (before.index, legNm > 0 ? max(0, 1 - least / legNm) : 1)
-        }
-        return (0, 0)
+    /// on (0 the first) and how far along it, 0 to 1, the engine's
+    /// `route_position` over the strip's points -- a glance, not navigation:
+    /// the next checkpoint's own figures are the nav log's. Points with no
+    /// position (a checkpoint the chart read has not placed) are left out
+    /// of the measuring.
+    static func positionAlong(_ points: [StripPoint], fix: CLLocationCoordinate2D?) throws -> (leg: Int, along: Double)? {
+        guard let fix, let at = try Flight.position(fix, points: points.map(\.coordinate)) else { return nil }
+        return (Int(at.leg), at.legFraction)
     }
 
     /// The next point ahead of the airplane: the end of the leg it is on.
@@ -145,17 +125,6 @@ enum StripData {
         return address?.first.map { String($0).uppercased() } ?? ""
     }
 
-    /// A duration as the web app writes every one, "1h 5m", "45m", "3h",
-    /// and "0m" for none (lib/clock duration, Intl's narrow style): the
-    /// minutes rounded first, so 119.6 is "2h", not "1h 60m".
-    static func duration(_ minutes: Double) -> String {
-        let whole = Int(minutes.rounded())
-        let h = whole / 60, m = whole % 60
-        if h > 0 && m > 0 { return "\(h)h \(m)m" }
-        if h > 0 { return "\(h)h" }
-        return "\(m)m"
-    }
-
     /// A route's name as the capsule and a saved flight name it, "C81 →
     /// KMSN → KDLH"; one field to itself with no stop, "KDLH local".
     static func routeName(dep: String, dest: String, stops: [String]) -> String {
@@ -169,15 +138,31 @@ enum StripData {
     static func headLine(dep: String, dest: String, stops: [String], airplane: String, cruiseFt: Double?, departAt: Date?) -> String {
         var parts = [routeName(dep: dep, dest: dest, stops: stops)]
         if !airplane.isEmpty { parts.append(airplane) }
-        if let cruiseFt { parts.append(flightLevel(cruiseFt)) }
-        parts.append(departAt.map { "leaving \(Formats.time($0))" } ?? "leaving now")
+        if let cruiseFt { parts.append(Format.cruiseAltitude(cruiseFt)) }
+        parts.append(departAt.map { "leaving \(Format.time($0))" } ?? "leaving now")
         return parts.joined(separator: " · ")
+    }
+
+    /// The same line as VoiceOver says it: the arrows as "to", the
+    /// altitude in words ("FL-045" would be read as letters).
+    static func spokenHeadLine(dep: String, dest: String, stops: [String], airplane: String, cruiseFt: Double?, departAt: Date?) -> String {
+        var parts = [routeName(dep: dep, dest: dest, stops: stops).replacingOccurrences(of: " → ", with: " to ")]
+        if !airplane.isEmpty { parts.append(airplane) }
+        if let cruiseFt { parts.append(Format.spokenAltitude(cruiseFt)) }
+        parts.append(departAt.map { "leaving \(Format.time($0))" } ?? "leaving now")
+        return parts.joined(separator: ", ")
     }
 
     /// The ribbon's figures at the right: the time and the fuel, "2h 45m ·
     /// 29.1 gal"; "" with neither.
     static func figures(eteMin: Double?, fuelGal: Double?) -> String {
-        [eteMin.map(duration), fuelGal.map { Formats.gal($0) }].compactMap { $0 }.joined(separator: " · ")
+        [eteMin.map(Format.duration), fuelGal.map { Format.fuel($0) }].compactMap { $0 }.joined(separator: " · ")
+    }
+
+    /// The same figures as VoiceOver says them: "one hour five minutes,
+    /// twelve gallons", where "1h 5m" would be read as letters.
+    static func spokenFigures(eteMin: Double?, fuelGal: Double?) -> String {
+        [eteMin.map(Format.spokenDuration), fuelGal.map(Format.spokenFuel)].compactMap { $0 }.joined(separator: ", ")
     }
 
     /// The verdict's tag, as the ribbon wears it; nil for a finding with
@@ -189,16 +174,6 @@ enum StripData {
         case "stop": return "No-go"
         default: return nil
         }
-    }
-
-    /// The screens the field's chips offer, each handled as typed: how a
-    /// pilot finds the rest without tabs (the web's stripSuggestions).
-    static func suggestions(routed: Bool, dest: String) -> [String] {
-        if routed {
-            return ["Brief me", "Weather at \(dest)", "Nav log", "Routes", "Altitude", "Procedures", "Stops", "Nearest fuel",
-                    "File flight plan", "Dry run", "Clearance", "My airplane", "Saved flights"]
-        }
-        return ["Nearest fuel", "Nearest airports", "Saved flights", "Favorites", "Recents", "My airplane", "Logbook", "Settings"]
     }
 
     /// A chip on a field's card: its label in capitals and the words it

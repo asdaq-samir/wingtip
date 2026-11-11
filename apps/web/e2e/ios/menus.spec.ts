@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { grabberTo, settle, showTabs, sideDrawer } from "../helpers";
+import { grabberTo, settle, showSearch, sideDrawer } from "../helpers";
 
 /**
  * A menu's rows to a finger, as iOS's own menus' are: 44 points each, the
@@ -10,13 +10,14 @@ import { grabberTo, settle, showTabs, sideDrawer } from "../helpers";
 test("a menu's rows are 44 points tall to a finger", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
-  await showTabs(page);
-  await page.getByTestId("tab-airport").click();
-  await grabberTo(page, "half");
-  await sideDrawer(page).getByTestId("airport-strip-shows").click();
+  // The flights' strip's filter on the one search's own page: Saved or
+  // Recents.
+  await showSearch(page);
+  await grabberTo(page, "full");
+  await sideDrawer(page).getByTestId("fpl-strip-shows").click();
   const items = page.getByRole("menuitemradio");
-  await expect(items).toHaveCount(3);
+  await expect(items).toHaveCount(2);
   // Each row's own height, as laid out: the menu scales in as it opens,
   // and its box measured mid-way was 43.8.
-  for (const item of await items.all()) expect(await item.evaluate(el => (el as HTMLElement).offsetHeight)).toBeGreaterThanOrEqual(44);
+  for (const item of await items.all()) expect(await item.evaluate((el) => (el as HTMLElement).offsetHeight)).toBeGreaterThanOrEqual(44);
 });

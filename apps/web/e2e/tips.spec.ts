@@ -10,7 +10,8 @@ import { consolePage, controlsInSight, openSetup, settle, slow } from "./helpers
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     if (sessionStorage.getItem("tips-fresh")) return;
-    localStorage.removeItem("wingtip.tips");
+    // The welcome (its own spec) seen, the rest not.
+    localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["welcome"] }, version: 0 }));
     sessionStorage.setItem("tips-fresh", "1");
   });
 });
@@ -28,7 +29,7 @@ test("a new pilot is shown what to look for, a tip at a time, each once", async 
   await page.getByTestId("tip-close").click();
   await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(60000) });
   await expect(tip).toHaveAttribute("aria-label", /The quick numbers|Why this altitude/, { timeout: slow(15000) });
-  const quickFirst = await tip.getAttribute("aria-label") === "The quick numbers";
+  const quickFirst = (await tip.getAttribute("aria-label")) === "The quick numbers";
   if (quickFirst) {
     await page.getByTestId("tip-close").click();
     await expect(tip).toContainText("Why this altitude", { timeout: slow(15000) });
@@ -39,7 +40,7 @@ test("a new pilot is shown what to look for, a tip at a time, each once", async 
   await expect(tip.filter({ hasText: "Why this altitude" })).toHaveCount(0);
   // The figures' own, where it was not first: offered once they are in
   // sight (on a desktop's column the next tip can come before it).
-  if (!quickFirst && await tip.filter({ hasText: "The quick numbers" }).isVisible()) await page.getByTestId("tip-close").click();
+  if (!quickFirst && (await tip.filter({ hasText: "The quick numbers" }).isVisible())) await page.getByTestId("tip-close").click();
 
   // Seen, not offered again on this device.
   await page.reload();
@@ -54,7 +55,7 @@ test("a new pilot is shown what to look for, a tip at a time, each once", async 
   await openSetup(page);
   await consolePage(page.getByTestId("console-sheet"), "Guide");
   await page.getByTestId("tips-reset").click();
-  await expect(page.getByTestId("tips-reset")).toContainText("Tips Will Show Again");
+  await expect(page.getByTestId("tips-reset")).toContainText("Welcome and Tips Will Show Again");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await controlsInSight(page);

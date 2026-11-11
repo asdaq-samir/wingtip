@@ -1,7 +1,10 @@
-"""wingtip.alerts: what is ahead of own ship, with the airspace, special-use
-areas, TFRs, ground and obstacles stubbed. Own ship is at 42 N 88 W
-going east at 120 kt -- two miles a minute, 0.0224 degrees of longitude
-a mile there."""
+"""wingtip.alerts, the data the engine's alerts_ahead reads, and the
+engine's answer over it: what is ahead of own ship, with the airspace,
+special-use areas, TFRs, ground and obstacles stubbed. Own ship is at 42 N
+88 W going east at 120 kt -- two miles a minute, 0.0224 degrees of
+longitude a mile there. The engine's own cases are the shared fixture
+apps/web/src/lib/fixtures/ahead.json (engine/facade/tests/ahead.rs)."""
+
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
@@ -23,14 +26,32 @@ def _east(from_nm: float, to_nm: float, half_width_nm: float = 2.0):
 
 
 def _volume(name, klass, geometry, floor=0.0, ceiling=5000.0):
-    return {"name": name, "class": klass, "ident": "", "floor_ft_msl": floor, "ceiling_ft_msl": ceiling,
-            "geometry": geometry, "bbox": geometry.bounds}
+    return {
+        "name": name,
+        "class": klass,
+        "ident": "",
+        "floor_ft_msl": floor,
+        "ceiling_ft_msl": ceiling,
+        "geometry": geometry,
+        "bbox": geometry.bounds,
+    }
 
 
 def _area(name, type_code, geometry, floor=0.0, floor_ref="SFC", ceiling=18000.0, ceiling_ref="MSL"):
-    return ({"name": name, "type": type_code, "kind": sua.TYPES.get(type_code), "floor_ft": floor, "floor_ref": floor_ref,
-             "ceiling_ft": ceiling, "ceiling_ref": ceiling_ref, "times_of_use": "0700-2200 MON-FRI",
-             "controlling_agency": "ZAU"}, geometry)
+    return (
+        {
+            "name": name,
+            "type": type_code,
+            "kind": sua.TYPES.get(type_code),
+            "floor_ft": floor,
+            "floor_ref": floor_ref,
+            "ceiling_ft": ceiling,
+            "ceiling_ref": ceiling_ref,
+            "times_of_use": "0700-2200 MON-FRI",
+            "controlling_agency": "ZAU",
+        },
+        geometry,
+    )
 
 
 def _obstacles(rows=()):
@@ -40,16 +61,26 @@ def _obstacles(rows=()):
 @pytest.fixture
 def ahead(monkeypatch):
     """alerts.ahead over what each test puts in `world`."""
-    world = {"volumes": [], "areas": [], "tfrs": [], "ground_ft": lambda lat, lon: 800.0,
-             "obstacles": _obstacles(), "nearest_nm": 20.0, "field_ft": 800.0}
+    world = {
+        "volumes": [],
+        "areas": [],
+        "tfrs": [],
+        "ground_ft": lambda lat, lon: 800.0,
+        "obstacles": _obstacles(),
+        "nearest_nm": 20.0,
+        "field_ft": 800.0,
+    }
     monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp, bbox: world["volumes"])
     monkeypatch.setattr(sua, "areas_in", lambda bbox: world["areas"])
     monkeypatch.setattr(tfr, "all_tfrs", lambda: world["tfrs"])
     monkeypatch.setattr(elevation, "ground_m", lambda lat, lon: world["ground_ft"](lat, lon) / 3.28084)
     monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda name, cache_dir: "DOF.DAT")
     monkeypatch.setattr(faa_data, "load_obstacles", lambda path, bbox, min_agl_ft=0: world["obstacles"])
-    monkeypatch.setattr(airports, "nearest", lambda lat, lon, limit=1: [
-        {"ident": "C81", "distance_nm": world["nearest_nm"], "elevation_ft": world["field_ft"]}])
+    monkeypatch.setattr(
+        airports,
+        "nearest",
+        lambda lat, lon, limit=1: [{"ident": "C81", "distance_nm": world["nearest_nm"], "elevation_ft": world["field_ft"]}],
+    )
 
     def run(alt=3000.0, vs=0.0, gs=120.0, track=90.0):
         return alerts.ahead(LAT, LON, track, gs, alt, vs, shp_path="Class_Airspace.shp", faa_cache_dir="faa", now=NOW)
@@ -111,14 +142,45 @@ def test_special_use_areas_ahead_and_the_one_the_airplane_is_in(ahead):
     assert found["VOLK EAST MOA"]["level"] == "caution" and "AIM 3-4-5" in found["VOLK EAST MOA"]["need"]
     # An AGL floor over the ground under the airplane: 500 over 800 ft.
     assert found["VOLK EAST MOA"]["floor_ft"] == 1300.0
+    # SFDPS has said nothing of them: no status.
+    assert "sfdps_active" not in found["R-6901A"]
+
+
+def test_a_special_use_alert_carries_sfdps_status_now_and_keeps_its_level(ahead, tmp_path, monkeypatch):
+    from wingtip import live_reports, saa
+
+    monkeypatch.setattr(live_reports, "STORE", tmp_path / "reports.sqlite")
+    live_reports.reset()
+    try:
+        ahead.world["areas"] = [_area("R-6901A", "R", _east(-1, 1))]
+        cold = (
+            '<Airspace><AirspaceTimeSlice><designator>R6901A</designator><activation><AirspaceActivation><status>INACTIVE'
+            '</status></AirspaceActivation></activation></AirspaceTimeSlice></Airspace>'
+        )
+        assert saa.heard(cold) == 1
+        [alert] = ahead()["alerts"]
+        assert (alert["sfdps_active"], alert["sfdps_until"]) == (False, None)
+        # The engine's level, not lowered by the FAA's word.
+        assert alert["level"] in ("warning", "caution")
+    finally:
+        live_reports.reset()
 
 
 def test_a_tfr_in_force_ahead_is_a_warning_and_one_not_in_force_is_not_said(ahead):
     def restriction(notam, effective, expires):
-        return {"notam_id": notam, "title": "Stadium", "kind": "Security", "rule": "special security instructions (99.7)",
-                "effective": effective.isoformat(), "expires": expires.isoformat(),
-                "geometry": _east(3, 5).__geo_interface__, "floor_ft": 0.0, "floor_ref": "AGL",
-                "ceiling_ft": 3000.0, "ceiling_ref": "AGL"}
+        return {
+            "notam_id": notam,
+            "title": "Stadium",
+            "kind": "Security",
+            "rule": "special security instructions (99.7)",
+            "effective": effective.isoformat(),
+            "expires": expires.isoformat(),
+            "geometry": _east(3, 5).__geo_interface__,
+            "floor_ft": 0.0,
+            "floor_ref": "AGL",
+            "ceiling_ft": 3000.0,
+            "ceiling_ref": "AGL",
+        }
 
     ahead.world["tfrs"] = [
         restriction("6/1111", NOW - timedelta(hours=1), NOW + timedelta(hours=2)),
@@ -142,7 +204,8 @@ def test_rising_ground_within_500_ft_in_the_next_minute_is_a_caution(ahead):
 def test_ground_at_the_airplanes_altitude_within_half_a_minute_is_a_warning(ahead):
     ahead.world["ground_ft"] = lambda lat, lon: 2950.0 if lon > LON + 0.6 * MILE else 800.0
     (alert,) = ahead()["alerts"]
-    assert alert["level"] == "warning" and alert["seconds"] <= alerts.TERRAIN_WARNING_S
+    # Within the engine's half a minute (ahead.rs TERRAIN_WARNING_S).
+    assert alert["level"] == "warning" and alert["seconds"] <= 30
 
 
 def test_descending_into_the_ground_is_seen_before_it_is_reached(ahead):
@@ -187,10 +250,12 @@ def test_without_an_altitude_the_ground_is_said_not_read(ahead):
 
 
 def test_an_obstacle_off_the_track_or_well_below_is_not_said(ahead):
-    ahead.world["obstacles"] = _obstacles([
-        (LAT + 0.5 / 60, LON + 1.0 * MILE, "X", "TOWER", 1900.0, 2700.0, True),   # half a mile north
-        (LAT, LON + 1.0 * MILE, "X", "STACK", 400.0, 1200.0, True),                # 1,800 ft below
-    ])
+    ahead.world["obstacles"] = _obstacles(
+        [
+            (LAT + 0.5 / 60, LON + 1.0 * MILE, "X", "TOWER", 1900.0, 2700.0, True),  # half a mile north
+            (LAT, LON + 1.0 * MILE, "X", "STACK", 400.0, 1200.0, True),  # 1,800 ft below
+        ]
+    )
     assert ahead()["alerts"] == []
 
 

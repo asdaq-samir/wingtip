@@ -8,6 +8,139 @@ import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.*
 
 /**
+ * Where airplanes are based (wingtip.traffic.based): the field their last
+ * flights keep to, or None where none; those still being looked up are
+ * pending, given on a later ask.
+ */
+@Serializable
+data class AircraftBases (
+    val based: Map<String, PastFlightField?>,
+    val pending: List<String>
+)
+
+/**
+ * A landing field a past flight took off from or landed at.
+ */
+@Serializable
+data class PastFlightField (
+    val city: String? = null,
+    val ident: String,
+    val name: String? = null,
+    val region: String? = null
+)
+
+@Serializable
+data class AircraftProfiles (
+    val profiles: List<AircraftProfileSummary>
+)
+
+/**
+ * One of data/aircraft/\*.json, for the nav log's aircraft picker.
+ */
+@Serializable
+data class AircraftProfileSummary (
+    val crosswind: DemonstratedCrosswind? = null,
+
+    @SerialName("cruise_tas_kt")
+    val cruiseTasKt: Double,
+
+    @SerialName("fuel_burn_gph")
+    val fuelBurnGph: Double,
+
+    val glide: GlideFigures? = null,
+    val name: String,
+
+    @SerialName("service_ceiling_ft")
+    val serviceCeilingFt: Double,
+
+    @SerialName("taxi_fuel_gal")
+    val taxiFuelGal: Double? = null,
+
+    val type: String
+)
+
+/**
+ * The strongest crosswind the POH says the aeroplane was shown to
+ * take off and land in: not a limitation, but past it the pilot is
+ * beyond what was tested.
+ */
+@Serializable
+data class DemonstratedCrosswind (
+    @SerialName("demonstrated_kt")
+    val demonstratedKt: Double,
+
+    val source: String
+)
+
+/**
+ * The POH's best-glide speed and glide ratio (Section 3). A pilot's
+ * own airplane of no stock type has its glide ratio alone, as its pilot
+ * gave it: no best-glide speed (none is taken from another airplane) and
+ * its source the pilot.
+ */
+@Serializable
+data class GlideFigures (
+    @SerialName("best_glide_kias")
+    val bestGlideKias: Double? = null,
+
+    val ratio: Double,
+    val source: String? = null
+)
+
+@Serializable
+data class AirportAtis (
+    val airport: String,
+    val broadcasts: List<DigitalAtis>
+)
+
+/**
+ * One D-ATIS broadcast (wingtip.datis): `which` arrival, departure or
+ * None for the airport's one broadcast; its letter, issue time (ddhhmm
+ * Z), its words as sent, and the engine's reading of them (read_datis,
+ * read_atis's figures).
+ */
+@Serializable
+data class DigitalAtis (
+    val airport: String,
+    val heard: Double,
+    val issued: String? = null,
+    val letter: String? = null,
+    val reading: JsonObject,
+    val text: String,
+    val which: String? = null
+)
+
+/**
+ * The pictures an airport's card swipes through behind its diagram:
+ * its aerial from the USGS, every field's, and a photo from the ground
+ * where there is a free one.
+ */
+@Serializable
+data class AirportPhotos (
+    @SerialName("aerial_url")
+    val aerialUrl: String,
+
+    val photo: GroundPhoto? = null
+)
+
+/**
+ * A field's photo from the ground, from its Wikipedia article's lead
+ * image on Wikimedia Commons (wingtip.airport_photos), with its credit.
+ */
+@Serializable
+data class GroundPhoto (
+    val credit: String,
+    val height: Int? = null,
+    val license: String? = null,
+
+    @SerialName("source_url")
+    val sourceUrl: String? = null,
+
+    val url: String,
+    val width: Int? = null
+)
+
+/**
  * One airport the way the map's card shows it: its name and place,
  * the class of the airspace over it, whether it has a tower, its
  * runways and radio, and the weather there now. `metar` is None for a
@@ -271,6 +404,65 @@ data class RunwayWind (
 )
 
 /**
+ * An airport's runway ends' RVR heard in the last ten minutes; none
+ * where it has no RVR system on SWIM, or none was heard.
+ */
+@Serializable
+data class AirportRvr (
+    val airport: String,
+    val runways: List<RunwayRvr>
+)
+
+/**
+ * A runway end's RVR now (wingtip.rvr), ft: each reading None where it
+ * is not reported, `*_more` where it is the system's most (6,000 ft or
+ * more, AIM 7-1-13); heard at `heard` (UNIX s).
+ */
+@Serializable
+data class RunwayRvr (
+    val airport: String,
+
+    @SerialName("edge_lights")
+    val edgeLights: String? = null,
+
+    val heard: Double,
+
+    @SerialName("midpoint_ft")
+    val midpointFt: Int? = null,
+
+    @SerialName("midpoint_more")
+    val midpointMore: Boolean? = null,
+
+    @SerialName("midpoint_trend")
+    val midpointTrend: String? = null,
+
+    @SerialName("rollout_ft")
+    val rolloutFt: Int? = null,
+
+    @SerialName("rollout_more")
+    val rolloutMore: Boolean? = null,
+
+    @SerialName("rollout_trend")
+    val rolloutTrend: String? = null,
+
+    val runway: String,
+
+    @SerialName("touchdown_ft")
+    val touchdownFt: Int? = null,
+
+    @SerialName("touchdown_more")
+    val touchdownMore: Boolean? = null,
+
+    @SerialName("touchdown_trend")
+    val touchdownTrend: String? = null
+)
+
+@Serializable
+data class AirportSearch (
+    val airports: List<AirportSuggestion>
+)
+
+/**
  * An airport the search answers -- or, asked with `fixes`, a named
  * fix (`kind` "fix": a VFR waypoint, a GPS waypoint), its `name` the
  * kind of fix and its `region` the state it is in.
@@ -285,23 +477,91 @@ data class AirportSuggestion (
 )
 
 /**
- * A field near a position: how far and which way (true), its town,
- * elevation and longest open runway, and a frequency listed for it
- * (None where OurAirports lists none).
+ * What a field offers a pilot who lands there: from its Chart
+ * Supplement entry (NASR's APT_BASE and its remarks) the fuel, fees,
+ * parking, repair and oxygen, and from Overture Maps (wingtip.nearby) the
+ * places to eat, sleep and hire a car within five miles.
+ * `nearby_unavailable` where Overture could not be read: not the same
+ * as nothing near.
  */
 @Serializable
-data class NearestAirport (
+data class AirportServices (
+    @SerialName("airframe_repair")
+    val airframeRepair: String? = null,
+
+    val cars: List<NearbyPlace>? = null,
+
+    @SerialName("courtesy_car")
+    val courtesyCar: Boolean? = null,
+
+    val food: List<NearbyPlace>? = null,
+
+    @SerialName("fuel_notes")
+    val fuelNotes: List<String>? = null,
+
+    @SerialName("fuel_types")
+    val fuelTypes: List<String>? = null,
+
+    @SerialName("ground_notes")
+    val groundNotes: List<String>? = null,
+
+    val hangar: Boolean? = null,
+    val ident: String,
+
+    @SerialName("landing_fee")
+    val landingFee: Boolean? = null,
+
+    val lodging: List<NearbyPlace>? = null,
+
+    @SerialName("nearby_unavailable")
+    val nearbyUnavailable: Boolean? = null,
+
+    val oxygen: Boolean? = null,
+
+    @SerialName("powerplant_repair")
+    val powerplantRepair: String? = null,
+
+    @SerialName("tie_down")
+    val tieDown: Boolean? = null
+)
+
+/**
+ * A place near a field from Overture Maps' places (wingtip.nearby).
+ */
+@Serializable
+data class NearbyPlace (
+    @SerialName("distance_m")
+    val distanceM: Int,
+
+    val kind: String,
+    val lat: Double,
+    val lon: Double,
+    val name: String,
+
+    @SerialName("on_field")
+    val onField: Boolean? = null,
+
+    val phone: String? = null,
+
+    @SerialName("walk_min")
+    val walkMin: Int? = null,
+
+    val website: String? = null
+)
+
+@Serializable
+data class AirportsInView (
+    val airports: List<AirportInView>
+)
+
+/**
+ * A field on the map's own list (/api/airports/in-view): a pin, and
+ * its METAR as the map's marks read it, None where it has no report.
+ */
+@Serializable
+data class AirportInView (
     @SerialName("airspace_class")
     val airspaceClass: String? = null,
-
-    @SerialName("bearing_deg")
-    val bearingDeg: Double,
-
-    @SerialName("distance_nm")
-    val distanceNm: Double,
-
-    @SerialName("elevation_ft")
-    val elevationFt: Double? = null,
 
     @SerialName("flight_category")
     val flightCategory: String? = null,
@@ -310,12 +570,7 @@ data class NearestAirport (
     val kind: String,
     val lat: Double,
     val lon: Double,
-
-    @SerialName("longest_runway_ft")
-    val longestRunwayFt: Int? = null,
-
     val military: String? = null,
-    val municipality: String? = null,
     val name: String,
 
     @SerialName("primary_of")
@@ -324,74 +579,389 @@ data class NearestAirport (
     @SerialName("private")
 
     val isPrivate: Boolean? = null,
-    val radio: InboundRadio? = null,
-    val towered: Boolean? = null
+    val towered: Boolean? = null,
+    val weather: PinWeather? = null
 )
 
 /**
- * The frequency a pilot calls a field on, inbound: `kind` "TWR",
- * "CTAF" or "UNICOM", and the frequency in MHz.
+ * A field's METAR as the map's station model and wind arrow read it
+ * (wingtip.map_weather): the wind (true, knots; no direction for a
+ * variable one), the visibility in statute miles and the weather with it
+ * as reported ("BR", "-TSRA"), the ceiling in feet AGL -- not known where
+ * `ceiling_unknown` (14 CFR 1.1) -- and `crosswind_kt`, the least
+ * crosswind on the field's runways, steady or gust (the engine's
+ * least_crosswind), there only where the wind earns an arrow (the
+ * engine's wind_arrow) and a runway end has a heading.
  */
 @Serializable
-data class InboundRadio (
-    val kind: String,
-    val mhz: Double
+data class PinWeather (
+    @SerialName("ceiling_cover")
+    val ceilingCover: String? = null,
+
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("ceiling_unknown")
+    val ceilingUnknown: Boolean? = null,
+
+    @SerialName("crosswind_kt")
+    val crosswindKt: Double? = null,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null,
+
+    @SerialName("wind_dir_true_deg")
+    val windDirTrueDeg: Double? = null,
+
+    @SerialName("wind_gust_kt")
+    val windGustKt: Double? = null,
+
+    @SerialName("wind_speed_kt")
+    val windSpeedKt: Double? = null,
+
+    val wx: String? = null
 )
 
 /**
- * The airplanes ADS-B receivers hear near a point, from adsb.lol's
- * open data, under the Open Database License 1.0, which asks that the
- * map say so where it draws them.
+ * The airspace over a point on the chart, from the ground up: the
+ * classes in bands, the Mode C veil, the special-use areas and the
+ * TFRs there. `ground_ft` is the ground's height the AGL floors were
+ * placed from (Terrain Tiles); None where it could not be read, and
+ * the bands are then measured from sea level. Either source of areas
+ * out is said so rather than shown as none.
  */
 @Serializable
-data class Traffic (
-    @SerialName("age_s")
-    val ageS: Double? = null,
+data class AirspaceAt (
+    val bands: List<AirspaceBand>,
 
-    val aircraft: List<TrafficAircraft>,
-    val license: String? = null,
-    val source: String? = null
-)
+    @SerialName("ground_ft")
+    val groundFt: Double? = null,
 
-/**
- * One airplane in the air near the point (wingtip.traffic): who, where,
- * how high -- the GNSS height where it sends one, else its pressure
- * altitude set on the nearest METAR's altimeter (wingtip.traffic.on_altimeter),
- * or as sent where none is near (`pressure_altitude`) -- its track, speed
- * and climb, and how many seconds old its position is.
- */
-@Serializable
-data class TrafficAircraft (
-    @SerialName("altitude_ft")
-    val altitudeFt: Double? = null,
-
-    val callsign: String? = null,
-    val category: String? = null,
-    val emergency: String? = null,
-    val hex: String,
     val lat: Double,
     val lon: Double,
 
-    @SerialName("pressure_altitude")
-    val pressureAltitude: Boolean? = null,
+    @SerialName("mode_c_veil")
+    val modeCVeil: ModeCVeil? = null,
 
-    val registration: String? = null,
+    val point: PointOffFix? = null,
 
-    @SerialName("seen_s")
-    val seenS: Double? = null,
+    @SerialName("special_use")
+    val specialUse: List<SpecialUse>? = null,
+
+    @SerialName("special_use_unavailable")
+    val specialUseUnavailable: Boolean? = null,
+
+    val tfrs: List<TfrHere>? = null,
+
+    @SerialName("tfrs_unavailable")
+    val tfrsUnavailable: Boolean? = null
+)
+
+/**
+ * One class of airspace over a point, from `floor_ft` to
+ * `ceiling_ft` MSL (wingtip.airspace_at): its name where it is a B, C or
+ * D; the VFR minimums in it (None in A); what it takes to go in; the
+ * equipment it asks for; and the 91.117 speed limit there.
+ */
+@Serializable
+data class AirspaceBand (
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double,
+
+    @SerialName("class")
+    val airspaceClass: String,
+
+    val entry: String,
+    val equipment: String? = null,
+
+    @SerialName("floor_ft")
+    val floorFt: Double,
+
+    val minimums: DayNightMinimums? = null,
+    val name: String? = null,
 
     @SerialName("speed_kt")
-    val speedKt: Double? = null,
+    val speedKt: Int? = null
+)
 
-    val squawk: String? = null,
+@Serializable
+data class DayNightMinimums (
+    val day: VfrMinimums,
+    val night: VfrMinimums
+)
 
-    @SerialName("track_deg")
-    val trackDeg: Double? = null,
+/**
+ * 14 CFR 91.155(a)'s basic VFR weather minimums: the flight
+ * visibility, and the distance from clouds -- clear of them, or so far
+ * below, above and to the side (5,280 ft is a statute mile).
+ */
+@Serializable
+data class VfrMinimums (
+    @SerialName("above_ft")
+    val aboveFt: Double? = null,
 
-    val type: String? = null,
+    @SerialName("below_ft")
+    val belowFt: Double? = null,
 
-    @SerialName("vertical_fpm")
-    val verticalFpm: Double? = null
+    @SerialName("clear_of_clouds")
+    val clearOfClouds: Boolean,
+
+    @SerialName("horizontal_ft")
+    val horizontalFt: Double? = null,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double
+)
+
+/**
+ * The Class B primary airport whose 30 nm Mode C veil the point is in.
+ */
+@Serializable
+data class ModeCVeil (
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    val ident: String,
+    val name: String? = null
+)
+
+/**
+ * A point named as the pilot's own point off the nearest fix a pilot
+ * knows (wingtip.fixes.frd_near): "VPBNG/095/14.2", its fix, its magnetic
+ * course from it (a VOR's radial where `radial`), its distance, and its
+ * name, "14.2 nm on 095° from VPBNG".
+ */
+@Serializable
+data class PointOffFix (
+    val base: String,
+
+    @SerialName("course_deg")
+    val courseDeg: Int,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    val ident: String,
+    val name: String,
+    val radial: Boolean
+)
+
+/**
+ * One special-use area, as the FAA publishes it.
+ */
+@Serializable
+data class SpecialUse (
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("ceiling_ref")
+    val ceilingRef: String? = null,
+
+    @SerialName("controlling_agency")
+    val controllingAgency: String? = null,
+
+    @SerialName("floor_ft")
+    val floorFt: Double? = null,
+
+    @SerialName("floor_ref")
+    val floorRef: String? = null,
+
+    val kind: String,
+    val name: String,
+
+    @SerialName("time_zone")
+    val timeZone: String? = null,
+
+    @SerialName("times_of_use")
+    val timesOfUse: String? = null,
+
+    val type: String
+)
+
+/**
+ * A TFR over the point, and whether it is in force now.
+ */
+@Serializable
+data class TfrHere (
+    @SerialName("active_now")
+    val activeNow: Boolean,
+
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("ceiling_ref")
+    val ceilingRef: String? = null,
+
+    val effective: String? = null,
+    val expires: String? = null,
+
+    @SerialName("floor_ft")
+    val floorFt: Double? = null,
+
+    @SerialName("floor_ref")
+    val floorRef: String? = null,
+
+    val kind: String? = null,
+
+    @SerialName("notam_id")
+    val notamId: String,
+
+    val purpose: String? = null,
+    val rule: String? = null,
+    val state: String? = null,
+    val title: String? = null
+)
+
+/**
+ * What is ahead of the airplane, warnings first, then the soonest;
+ * `unavailable` names what could not be read (special-use airspace,
+ * TFRs, terrain, obstacles), said rather than shown as nothing there.
+ */
+@Serializable
+data class AlertsAhead (
+    val alerts: List<AheadAlert>,
+    val unavailable: List<String>? = null
+)
+
+/**
+ * One thing ahead of the airplane (wingtip.alerts): airspace, a special-
+ * use area or a TFR its track goes into in the next five minutes, or the
+ * ground or an obstacle it comes within 500 ft of in the next minute.
+ * `seconds` and `distance_nm` are how long and how far until it at the
+ * ground speed, 0 where it is now; `lat`/`lon` where the track meets it
+ * (the obstacle itself, the ground's highest point).
+ */
+@Serializable
+data class AheadAlert (
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("class")
+    val airspaceClass: String? = null,
+
+    @SerialName("clearance_ft")
+    val clearanceFt: Double? = null,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    @SerialName("floor_ft")
+    val floorFt: Double? = null,
+
+    val id: String,
+    val inside: Boolean? = null,
+    val kind: String,
+    val lat: Double,
+    val level: String,
+    val lon: Double,
+    val name: String,
+    val need: String,
+
+    @SerialName("notam_id")
+    val notamId: String? = null,
+
+    val seconds: Double,
+
+    @SerialName("sfdps_active")
+    val sfdpsActive: Boolean? = null,
+
+    @SerialName("sfdps_until")
+    val sfdpsUntil: Double? = null,
+
+    @SerialName("times_of_use")
+    val timesOfUse: String? = null,
+
+    @SerialName("top_ft")
+    val topFt: Double? = null
+)
+
+/**
+ * GET /api/alternate: the destination's check, the pilot's alternate's
+ * and the nearest fields that will do.
+ */
+@Serializable
+data class Alternates (
+    val alternate: AlternateCheck? = null,
+    val destination: DestinationCheck,
+    val suggestions: List<AlternateCheck>? = null
+)
+
+/**
+ * A field as the IFR alternate (14 CFR 91.169(c)): its forecast at the
+ * ETA there against its minimums -- 600 and 2 with a precision approach,
+ * 800 and 2 without -- `good` True or False, or None where the pilot has
+ * to look (its own published alternate minimums, no approach, no TAF).
+ */
+@Serializable
+data class AlternateCheck (
+    @SerialName("alternate_minimums_url")
+    val alternateMinimumsUrl: String? = null,
+
+    val approach: Boolean,
+
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double? = null,
+
+    val good: Boolean? = null,
+    val ident: String,
+
+    @SerialName("meets_standard")
+    val meetsStandard: Boolean? = null,
+
+    val minimums: AlternateMinimums? = null,
+    val precision: Boolean,
+    val reasons: List<String>? = null,
+    val taf: String? = null,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null
+)
+
+@Serializable
+data class AlternateMinimums (
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double
+)
+
+/**
+ * The destination against 14 CFR 91.169(b)'s "1-2-3": an instrument
+ * approach published, and its TAF an hour either side of the ETA a
+ * ceiling of 2,000 ft or more and 3 sm or more -- else an alternate is
+ * `required`, `reasons` saying why (wingtip.alternates).
+ */
+@Serializable
+data class DestinationCheck (
+    val approach: Boolean,
+
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    val ident: String,
+    val reasons: List<String>? = null,
+    val required: Boolean,
+    val taf: String? = null,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null
+)
+
+/**
+ * A briefing read twice, as GET /api/briefing answered it then and
+ * now.
+ */
+@Serializable
+data class ChangesAsk (
+    val dep: String,
+    val dest: String,
+    val now: Briefing,
+    val stops: List<String>? = null,
+    val then: Briefing
 )
 
 /**
@@ -694,6 +1264,5294 @@ data class RouteTfr (
 )
 
 /**
+ * Which chart the map draws and where its tiles are: the map with no
+ * route on it yet asks for this alone (/api/chart), and a Course
+ * carries it as well.
+ */
+@Serializable
+data class ChartInfo (
+    @SerialName("chart_cycle")
+    val chartCycle: String,
+
+    @SerialName("chart_layers")
+    val chartLayers: List<ChartLayer>,
+
+    @SerialName("chart_revision")
+    val chartRevision: Int? = null,
+
+    @SerialName("chart_tiles_base")
+    val chartTilesBase: String? = null,
+
+    @SerialName("max_zoom")
+    val maxZoom: Int,
+
+    @SerialName("min_zoom")
+    val minZoom: Int
+)
+
+/**
+ * One kind of FAA chart the map can draw and the zooms it has
+ * tiles for: the sectional and the IFR enroute charts as base layers
+ * (`base`), the terminal area chart as an overlay.
+ */
+@Serializable
+data class ChartLayer (
+    val base: Boolean,
+    val cycle: String? = null,
+    val kind: String,
+    val label: String,
+
+    @SerialName("max_zoom")
+    val maxZoom: Int,
+
+    @SerialName("min_zoom")
+    val minZoom: Int,
+
+    val over: List<String>? = null,
+    val revision: Int? = null,
+    val scales: List<Int>? = null,
+    val sheets: List<ChartSheet>? = null
+)
+
+/**
+ * One sheet of an overlay chart kind and where it is: the map
+ * offers to pin the terminal area chart when the view is over one.
+ */
+@Serializable
+data class ChartSheet (
+    val east: Double,
+    val label: String,
+    val name: String,
+    val north: Double,
+    val south: Double,
+    val west: Double
+)
+
+/**
+ * The pages of an FAA chart the app shows, in order: every page of a
+ * chart of its own, a booklet's pages for the field, a Chart Supplement
+ * entry's pages (wingtip.publications.chart_pages).
+ */
+@Serializable
+data class ChartPages (
+    val pages: List<ChartPage>
+)
+
+/**
+ * One page of one of the FAA's charts, to show in the app: its
+ * picture is /api/faa-chart/page/{source}/{edition}/{pdf}/{page}.png,
+ * `width` by `height` pixels (wingtip.publications.chart_page_png).
+ */
+@Serializable
+data class ChartPage (
+    val edition: String,
+    val height: Int,
+    val page: Int,
+    val pdf: String,
+    val source: String,
+    val width: Int
+)
+
+@Serializable
+data class ChartRefreshStarted (
+    @SerialName("current_cycle")
+    val currentCycle: String,
+
+    val started: Boolean
+)
+
+@Serializable
+data class CheckpointNoteRequest (
+    @SerialName("departure_ident")
+    val departureIdent: String,
+
+    val description: String,
+
+    @SerialName("destination_ident")
+    val destinationIdent: String,
+
+    val lat: Double,
+    val lon: Double,
+    val stops: List<String>? = null
+)
+
+@Serializable
+data class CheckpointNoteSaved (
+    val note: CheckpointNote,
+    val ok: Boolean
+)
+
+@Serializable
+data class CheckpointNote (
+    @SerialName("created_at")
+    val createdAt: String,
+
+    val description: String,
+    val lat: Double,
+    val lon: Double,
+    val route: String
+)
+
+/**
+ * Every hop's candidates and selected checkpoints in order along the
+ * whole route (app.checkpoint_scoring.route_checkpoints), its along-track
+ * distances running on through each stop.
+ */
+@Serializable
+data class Checkpoints (
+    val candidates: List<Candidate>,
+    val departure: AirportEnd,
+    val destination: AirportEnd,
+    val selected: List<Candidate>,
+    val stops: List<AirportEnd>? = null
+)
+
+/**
+ * A scored detection off the chart (app.checkpoint_scoring): `id` its kind and
+ * place, `name` the FAA's for an airport and the kind of thing for
+ * the rest. `selected` is set by the server's greedy pass.
+ */
+@Serializable
+data class Candidate (
+    @SerialName("along_track_nm")
+    val alongTrackNm: Double,
+
+    val category: String,
+    val hop: Int? = null,
+    val id: String,
+    val lat: Double,
+    val lon: Double,
+    val name: String? = null,
+
+    @SerialName("predicted_score")
+    val predictedScore: Double,
+
+    val selected: Boolean,
+    val waypoint: String? = null
+)
+
+/**
+ * A point of the route: an airport, or -- a stop only -- a named fix
+ * flown through (`kind` "fix": a VFR or GPS waypoint, its `name` the
+ * kind of fix it is, no elevation).
+ */
+@Serializable
+data class AirportEnd (
+    @SerialName("airspace_class")
+    val airspaceClass: String? = null,
+
+    @SerialName("elevation_ft")
+    val elevationFt: Double? = null,
+
+    val ident: String,
+    val kind: String? = null,
+    val lat: Double,
+    val lon: Double,
+    val name: String,
+
+    @SerialName("pattern_altitude_ft")
+    val patternAltitudeFt: Double? = null
+)
+
+/**
+ * Every Class B airport in one answer -- see the router for why it
+ * is one call rather than one per marker.
+ */
+@Serializable
+data class ClassBResponse (
+    val airports: List<ClassBAirport>
+)
+
+/**
+ * One Class B airport: where it is, and what the weather is doing
+ * there.
+ *
+ * Every weather field is optional and often absent. A field with no
+ * current report has no flight category; a field with no TAF issued
+ * has no forecast. Absent is the honest answer -- a pilot must not
+ * read "no data" as "nothing to worry about", so the UI shows the gap
+ * rather than a default.
+ */
+@Serializable
+data class ClassBAirport (
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("flight_category")
+    val flightCategory: String? = null,
+
+    @SerialName("floor_ft_msl")
+    val floorFtMsl: Double? = null,
+
+    val ident: String,
+    val lat: Double,
+    val lon: Double,
+    val metar: String? = null,
+    val name: String,
+    val shelves: Int,
+    val taf: String? = null,
+
+    @SerialName("taf_ceiling_ft")
+    val tafCeilingFt: Double? = null,
+
+    @SerialName("taf_visibility_sm")
+    val tafVisibilitySm: Double? = null,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null,
+
+    @SerialName("wind_dir_true_deg")
+    val windDirTrueDeg: Double? = null,
+
+    @SerialName("wind_speed_kt")
+    val windSpeedKt: Double? = null
+)
+
+/**
+ * What the chart draws at one point; None where it has no coverage.
+ */
+@Serializable
+data class Classification (
+    val category: String? = null,
+    val reason: String? = null
+)
+
+/**
+ * POST /api/clearance/places: the places a clearance heard named, in
+ * the words the recognizer wrote (web lib/clearance), for the planner to
+ * find as idents near `near`, the route's points as "lat,lon;lat,lon".
+ * `dep` and `dest`, the fields whose SID and STAR were said.
+ */
+@Serializable
+data class ClearanceAsk (
+    val arrival: SpokenProcedureAsk? = null,
+    val dep: String? = null,
+    val departure: SpokenProcedureAsk? = null,
+    val dest: String? = null,
+    val limit: String? = null,
+    val near: String? = null,
+    val route: List<String>? = null
+)
+
+/**
+ * A SID or STAR as a clearance said it: "Bunyan" "1", its
+ * transition's words where one was said ("Duluth").
+ */
+@Serializable
+data class SpokenProcedureAsk (
+    val name: String,
+    val number: String,
+    val transition: String? = null
+)
+
+/**
+ * The places a clearance named, as idents: its limit, each phrase of
+ * its route as the places in it in order, its SID and STAR.
+ */
+@Serializable
+data class ClearancePlaces (
+    val arrival: SpokenProcedure? = null,
+    val departure: SpokenProcedure? = null,
+    val limit: SpokenPlace? = null,
+    val route: List<List<SpokenPlace>>? = null
+)
+
+/**
+ * A SID or STAR said, as found among its field's: its coded
+ * identifier ("BUNYN1") and the transition said, if one was.
+ */
+@Serializable
+data class SpokenProcedure (
+    val id: String,
+    val sure: Boolean? = null,
+    val transition: String? = null
+)
+
+/**
+ * A place a clearance said, as found (wingtip.spoken): `ident` None where
+ * nothing near was like it, `sure` false where it was found by its sound
+ * alone, for the pilot to check.
+ */
+@Serializable
+data class SpokenPlace (
+    val ident: String? = null,
+    val kind: String? = null,
+    val lat: Double? = null,
+    val lon: Double? = null,
+    val name: String? = null,
+    val said: String,
+    val sure: Boolean? = null
+)
+
+/**
+ * GET /api/clearance/words: the names a clearance near the route is
+ * likely to say -- its navaids', its fixes' and its fields' SIDs' -- for
+ * the phone's recognizer to listen for (iOS's contextualStrings,
+ * Android's biasing strings).
+ */
+@Serializable
+data class ClearanceWords (
+    val words: List<String>
+)
+
+/**
+ * What the app holds of the pilot: the logbook and the dates from the
+ * gateway, the ratings the pilot gives, a student's endorsements, the
+ * debriefs of their recent flights, their home field and their day.
+ */
+@Serializable
+data class CoachAsk (
+    val debriefs: List<CoachDebrief>? = null,
+    val entries: List<CoachLogbookEntry>,
+    val flightReviewOn: String? = null,
+    val held: List<CoachEndorsement>? = null,
+
+    /**
+     * The pilot's home field, where the sessions' fields are looked for round.
+     */
+    val home: String? = null,
+
+    val ipcOn: String? = null,
+    val medicalExpiresOn: String? = null,
+    val ratings: List<String>? = null,
+    val remindDays: Int? = null,
+    val today: String
+)
+
+/**
+ * One of the pilot's own debriefed flights, trimmed (the engine's
+ * CoachDebrief): an approach's profile and findings, or a flight's legs
+ * and pattern entries.
+ */
+@Serializable
+data class CoachDebrief (
+    /**
+     * The field's, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4).
+     */
+    @SerialName("elevation_ft")
+    val elevationFt: Double? = null,
+
+    val findings: List<CoachFinding>? = null,
+
+    @SerialName("flown_on")
+    val flownOn: String,
+
+    val kind: String,
+    val legs: List<CoachLeg>? = null,
+    val patterns: List<CoachPattern>? = null,
+    val place: String? = null,
+
+    /**
+     * An approach's procedure as the chart names it ("ILS Y RWY 08").
+     */
+    val procedure: String? = null,
+
+    val profile: List<CoachProfilePoint>? = null
+)
+
+@Serializable
+data class CoachFinding (
+    val text: String,
+    val tone: String
+)
+
+@Serializable
+data class CoachLeg (
+    @SerialName("altitude_within")
+    val altitudeWithin: Double? = null,
+
+    @SerialName("course_within")
+    val courseWithin: Double? = null,
+
+    val from: String,
+    val ok: Boolean,
+    val to: String
+)
+
+@Serializable
+data class CoachPattern (
+    val ident: String,
+
+    @SerialName("off_ft")
+    val offFt: Double,
+
+    val ok: Boolean
+)
+
+@Serializable
+data class CoachProfilePoint (
+    @SerialName("alt_ft")
+    val altFt: Double,
+
+    val off: Boolean,
+
+    @SerialName("to_go_nm")
+    val toGoNm: Double? = null
+)
+
+/**
+ * One logbook entry, the columns the currency rules read; a column
+ * missing is none of it.
+ */
+@Serializable
+data class CoachLogbookEntry (
+    val approaches: Int? = null,
+    val crossCountryHours: Double? = null,
+
+    /**
+     * Every landing, by day or at night (14 CFR 61.57(a)).
+     */
+    val dayLandings: Int? = null,
+
+    val dualHours: Double? = null,
+    val flownOn: String,
+    val holding: Boolean? = null,
+    val instrumentHours: Double? = null,
+    val nightHours: Double? = null,
+
+    /**
+     * Landings to a full stop at night (61.57(b)).
+     */
+    val nightLandings: Int? = null,
+
+    val soloHours: Double? = null,
+    val totalHours: Double? = null,
+    val tracking: Boolean? = null
+)
+
+/**
+ * An endorsement a student holds: AC 61-65K's code and its day.
+ */
+@Serializable
+data class CoachEndorsement (
+    val code: String,
+    val on: String
+)
+
+/**
+ * What the copilot reads now; `unavailable` names a source ("tfr",
+ * "sua") that could not be read, `at` when this was gathered.
+ */
+@Serializable
+data class CopilotAround (
+    val areas: List<CopilotArea>,
+    val at: Double,
+    val fields: List<CopilotField>,
+    val itws: List<CopilotItws>,
+    val unavailable: List<String>
+)
+
+/**
+ * A TFR, a special-use area SFDPS has spoken of, or a convective
+ * SIGMET on the rest of the route, at a point the route meets it (a
+ * SIGMET's, inside its area): whether it is in force now, when it
+ * starts and ends (UNIX s).
+ */
+@Serializable
+data class CopilotArea (
+    val active: Boolean? = null,
+    val id: String? = null,
+    val kind: String,
+    val lat: Double,
+    val lon: Double,
+    val name: String? = null,
+
+    @SerialName("starts_s")
+    val startsS: Double? = null,
+
+    @SerialName("until_s")
+    val untilS: Double? = null
+)
+
+/**
+ * A landing field as the engine's best_fields reads it (the emergency
+ * assistant's), with whether NASR lists fuel sold there.
+ */
+@Serializable
+data class CopilotField (
+    @SerialName("bearing_deg")
+    val bearingDeg: Double,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    @SerialName("elevation_ft")
+    val elevationFt: Double? = null,
+
+    val frequencies: List<EmergencyFrequency>? = null,
+    val fuel: Boolean? = null,
+    val ident: String,
+    val lat: Double,
+    val lon: Double,
+    val metar: EmergencyMetar? = null,
+    val military: Boolean? = null,
+    val name: String,
+    val phone: String? = null,
+    @SerialName("private")
+    val isPrivate: Boolean? = null,
+    val runways: List<EmergencyRunway>,
+    val towered: Boolean? = null
+)
+
+/**
+ * An approach, departure, tower, CTAF or UNICOM frequency, as the
+ * FAA (else OurAirports) lists it for the field.
+ */
+@Serializable
+data class EmergencyFrequency (
+    val description: String? = null,
+    val kind: String,
+    val mhz: Double
+)
+
+/**
+ * What the ranking reads of a field's METAR, and the report as sent.
+ */
+@Serializable
+data class EmergencyMetar (
+    @SerialName("altimeter_in_hg")
+    val altimeterInHg: Double? = null,
+
+    @SerialName("dir_true_deg")
+    val dirTrueDeg: Double? = null,
+
+    @SerialName("flight_category")
+    val flightCategory: String? = null,
+
+    @SerialName("gust_kt")
+    val gustKt: Double? = null,
+
+    val raw: String? = null,
+
+    @SerialName("speed_kt")
+    val speedKt: Double? = null,
+
+    @SerialName("temp_c")
+    val tempC: Double? = null
+)
+
+/**
+ * An open runway (OurAirports' runways.csv).
+ */
+@Serializable
+data class EmergencyRunway (
+    val closed: Boolean? = null,
+
+    @SerialName("length_ft")
+    val lengthFt: Double? = null,
+
+    @SerialName("runway_ends")
+    val runwayEnds: List<EmergencyRunwayEnd>,
+
+    val surface: String? = null
+)
+
+@Serializable
+data class EmergencyRunwayEnd (
+    @SerialName("heading_true_deg")
+    val headingTrueDeg: Double? = null,
+
+    val ident: String
+)
+
+/**
+ * An ITWS alert at the destination or the alternate (AIM 4-3-7).
+ */
+@Serializable
+data class CopilotItws (
+    val airport: String,
+    val alert: String,
+    val words: String
+)
+
+/**
+ * The course: the departure, the stops it lands at on the way (in
+ * order; none for a route flown straight), the destination, the whole
+ * distance stop by stop, the bearing out of the departure, and the line
+ * through every stop.
+ */
+@Serializable
+data class Course (
+    @SerialName("bearing_deg")
+    val bearingDeg: Double,
+
+    @SerialName("chart_cycle")
+    val chartCycle: String,
+
+    @SerialName("chart_layers")
+    val chartLayers: List<ChartLayer>,
+
+    @SerialName("chart_revision")
+    val chartRevision: Int? = null,
+
+    @SerialName("chart_tiles_base")
+    val chartTilesBase: String? = null,
+
+    @SerialName("checkpoints_ready")
+    val checkpointsReady: Boolean? = null,
+
+    @SerialName("course_line")
+    val courseLine: List<List<Double>>,
+
+    val departure: AirportEnd,
+    val destination: AirportEnd,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    @SerialName("max_zoom")
+    val maxZoom: Int,
+
+    @SerialName("min_zoom")
+    val minZoom: Int,
+
+    val stops: List<AirportEnd>? = null
+)
+
+/**
+ * Where the pilot stands (the engine's pilot_currency): each date
+ * null where it cannot be had.
+ */
+@Serializable
+data class Currency (
+    /**
+     * Approaches logged in the 6 calendar months before this one (61.57(c)(1)(i)).
+     */
+    val approachesInWindow: Int,
+
+    val crossCountryHours: Double,
+
+    /**
+     * 90 days after the third most recent landing (14 CFR 61.57(a)).
+     */
+    val dayPassengersUntil: String? = null,
+
+    val flightReviewOn: String? = null,
+
+    /**
+     * The end of the 24th calendar month after the flight review's (61.56(c)).
+     */
+    val flightReviewUntil: String? = null,
+
+    val flights: Int,
+    val holdingInWindow: Boolean,
+
+    /**
+     * The first day of an instrument currency not begun yet: approaches flown this month count
+     * from the first of next month (61.57(c)(1)), and until then the pilot is not current. Null
+     * when current now.
+     */
+    val instrumentCurrentFrom: String? = null,
+
+    /**
+     * The last day of instrument currency (61.57(c)(1), or 61.57(d)'s check); in the past where
+     * it has lapsed.
+     */
+    val instrumentCurrentUntil: String? = null,
+
+    /**
+     * The day after which only an instrument proficiency check restores it (61.57(d)).
+     */
+    val ipcNeededAfter: String? = null,
+
+    val ipcOn: String? = null,
+    val landings: Int,
+    val medicalExpiresOn: String? = null,
+    val nightHours: Double,
+
+    /**
+     * 90 days after the third most recent night full-stop landing (61.57(b)).
+     */
+    val nightPassengersUntil: String? = null,
+
+    val totalHours: Double,
+    val trackingInWindow: Boolean
+)
+
+/**
+ * The logbook, the dates the pilot gives and the day it is asked for
+ * (the pilot's own calendar's).
+ */
+@Serializable
+data class CurrencyAsk (
+    val entries: List<LogbookEntry>,
+    val flightReviewOn: String? = null,
+    val ipcOn: String? = null,
+    val medicalExpiresOn: String? = null,
+    val today: String
+)
+
+/**
+ * One logbook entry, the columns the rules read; a column missing is
+ * none of it.
+ */
+@Serializable
+data class LogbookEntry (
+    val approaches: Int? = null,
+    val crossCountryHours: Double? = null,
+
+    /**
+     * Every landing, by day or at night (14 CFR 61.57(a)).
+     */
+    val dayLandings: Int? = null,
+
+    val distanceNm: Double? = null,
+    val dualHours: Double? = null,
+    val flownOn: String,
+    val holding: Boolean? = null,
+    val instrumentHours: Double? = null,
+    val longestLegNm: Double? = null,
+    val nightHours: Double? = null,
+
+    /**
+     * Landings to a full stop at night (61.57(b)).
+     */
+    val nightLandings: Int? = null,
+
+    val soloHours: Double? = null,
+    val totalHours: Double? = null,
+    val toweredLandings: Int? = null,
+    val tracking: Boolean? = null
+)
+
+/**
+ * The phones' packs of the FAA cycle the planner holds: the regions
+ * there are, each fetched at /api/cycle-pack/{cycle}/{name}.pack; how
+ * far the packs' lines may stray from the FAA's (degrees, and the worst
+ * in nm); and how big a region is (degrees).
+ */
+@Serializable
+data class CyclePacks (
+    @SerialName("built_at")
+    val builtAt: Double,
+
+    val cycle: String,
+
+    @SerialName("region_deg")
+    val regionDeg: Int,
+
+    val regions: List<CyclePackRegion>,
+
+    @SerialName("tolerance_deg")
+    val toleranceDeg: Double,
+
+    @SerialName("worst_nm")
+    val worstNm: Double
+)
+
+/**
+ * One region's phone pack (wingtip.cycle_pack's write_phone): its bounds in
+ * degrees, its size in bytes and its CRC-32 (zlib's), for the phone to
+ * check it whole.
+ */
+@Serializable
+data class CyclePackRegion (
+    val bytes: Long,
+    val crc32: Long,
+    val east: Double,
+    val name: String,
+    val north: Double,
+    val south: Double,
+    val west: Double
+)
+
+/**
+ * The debrief, or None where the track never flew faster than taxiing.
+ */
+@Serializable
+data class DebriefAnswer (
+    val debrief: Debrief? = null,
+    val tolerances: DebriefTolerances
+)
+
+/**
+ * The flight debriefed: its takeoff and landing (ms since 1970), its
+ * time in the air and the plan's, leg by leg, the checkpoints and the
+ * patterns, the profile flown and planned, the line for the map, and
+ * notes on what does not fit.
+ */
+@Serializable
+data class Debrief (
+    @SerialName("flown_min")
+    val flownMin: Double,
+
+    @SerialName("has_altitude")
+    val hasAltitude: Boolean,
+
+    val landing: Double,
+    val legs: List<LegGrade>,
+    val line: List<LinePoint>,
+    val notes: List<String>,
+    val passes: List<CheckpointPass>,
+    val patterns: List<PatternEntry>,
+    val planned: List<PlannedStep>,
+
+    @SerialName("planned_min")
+    val plannedMin: Double? = null,
+
+    val profile: List<ProfilePoint>,
+    val takeoff: Double
+)
+
+/**
+ * A leg graded: the share of its cruise within the altitude tolerance
+ * and of its way within the course tolerance (0 to 1, None where none was
+ * graded), its furthest off each (altitude + high, distance + right), and
+ * `ok`, neither past its tolerance.
+ */
+@Serializable
+data class LegGrade (
+    @SerialName("altitude_within")
+    val altitudeWithin: Double? = null,
+
+    @SerialName("course_deg")
+    val courseDeg: Double? = null,
+
+    @SerialName("course_within")
+    val courseWithin: Double? = null,
+
+    val from: String,
+    val ok: Boolean,
+
+    @SerialName("planned_alt_ft")
+    val plannedAltFt: Double? = null,
+
+    val to: String,
+
+    @SerialName("worst_alt_ft")
+    val worstAltFt: Double? = null,
+
+    @SerialName("worst_off_nm")
+    val worstOffNm: Double? = null
+)
+
+/**
+ * The flight as flown, for the map: `off` where it was outside a
+ * tolerance there.
+ */
+@Serializable
+data class LinePoint (
+    val lat: Double,
+    val lon: Double,
+    val off: Boolean
+)
+
+/**
+ * A checkpoint: minutes from the takeoff it was due and was passed (or
+ * landed at), None where the plan had no time or the track never got
+ * there; its closest, nm; how late (+) or early, and `ok`, within the
+ * tolerance (None where either time is not known).
+ */
+@Serializable
+data class CheckpointPass (
+    val category: String,
+
+    @SerialName("closest_nm")
+    val closestNm: Double? = null,
+
+    @SerialName("due_min")
+    val dueMin: Double? = null,
+
+    val landed: Boolean,
+
+    @SerialName("late_min")
+    val lateMin: Double? = null,
+
+    val name: String,
+    val ok: Boolean? = null,
+
+    @SerialName("passed_min")
+    val passedMin: Double? = null
+)
+
+/**
+ * The altitude PATTERN_NM from a field landed at, against its pattern
+ * altitude, ft MSL.
+ */
+@Serializable
+data class PatternEntry (
+    @SerialName("alt_ft")
+    val altFt: Double,
+
+    val ident: String,
+
+    @SerialName("off_ft")
+    val offFt: Double,
+
+    val ok: Boolean,
+
+    @SerialName("pattern_ft")
+    val patternFt: Double
+)
+
+@Serializable
+data class PlannedStep (
+    @SerialName("alt_ft")
+    val altFt: Double? = null,
+
+    @SerialName("from_nm")
+    val fromNm: Double,
+
+    @SerialName("to_nm")
+    val toNm: Double
+)
+
+@Serializable
+data class ProfilePoint (
+    @SerialName("along_nm")
+    val alongNm: Double,
+
+    @SerialName("alt_ft")
+    val altFt: Double
+)
+
+/**
+ * ACS PA.VI.A's and PA.III.B's tolerances the debrief holds the flight
+ * to, for the page's headings.
+ */
+@Serializable
+data class DebriefTolerances (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    @SerialName("course_deg")
+    val courseDeg: Double,
+
+    @SerialName("eta_min")
+    val etaMin: Double,
+
+    @SerialName("off_route_nm")
+    val offRouteNm: Double,
+
+    @SerialName("pattern_ft")
+    val patternFt: Double,
+
+    @SerialName("pattern_nm")
+    val patternNm: Double
+)
+
+/**
+ * The saved flight's checkpoints and its track's points in time order,
+ * as many as the gateway keeps (TrackDto: 2 to 5,000).
+ */
+@Serializable
+data class DebriefAsk (
+    val checkpoints: List<DebriefCheckpoint>,
+    val points: List<DebriefPoint>
+)
+
+/**
+ * A saved flight's checkpoint, as the gateway keeps it
+ * (FlightCheckpointDto): its place and the plan's figures into it.
+ */
+@Serializable
+data class DebriefCheckpoint (
+    @SerialName("along_track_nm")
+    val alongTrackNm: Double,
+
+    @SerialName("altitude_ft")
+    val altitudeFt: Double? = null,
+
+    val category: String,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    val lat: Double,
+    val lon: Double,
+    val name: String,
+
+    @SerialName("sequence_no")
+    val sequenceNo: Int,
+
+    @SerialName("true_course_deg")
+    val trueCourseDeg: Double? = null
+)
+
+/**
+ * A point of the flown track (TrackDto): when, ms since 1970; GPS
+ * altitude, feet above sea level, where the file has one.
+ */
+@Serializable
+data class DebriefPoint (
+    @SerialName("alt_ft")
+    val altFt: Double? = null,
+
+    val lat: Double,
+    val lon: Double,
+    val t: Double
+)
+
+/**
+ * The debrief as POST /api/debrief answered it (the debrief and the
+ * tolerances), or as the web app's own twin keeps it (lib/debrief: the
+ * figures alone, their keys camel-cased, without the flown line and the
+ * profile, thousands of points a sentence cannot use): `debrief_of`
+ * reads either.
+ */
+@Serializable
+data class DebriefWordsAsk (
+    val debrief: JsonObject
+)
+
+@Serializable
+data class DepartureEvents (
+    val events: List<DepartureEvent>
+)
+
+/**
+ * A tower departure event (wingtip.departures): the flight, its
+ * airports and gate, and the event's times by name (`times`, UNIX s:
+ * clearance_delivery, the departure clearance's delivery, is what the
+ * feed has been seen to send).
+ */
+@Serializable
+data class DepartureEvent (
+    val beacon: String? = null,
+    val departure: String? = null,
+    val destination: String? = null,
+
+    @SerialName("event_at")
+    val eventAt: Double? = null,
+
+    @SerialName("flight_id")
+    val flightId: String? = null,
+
+    val gate: String? = null,
+    val heard: Double,
+    val ident: String,
+    val times: Map<String, Double>? = null,
+    val type: String? = null
+)
+
+@Serializable
+data class DepartureWindow (
+    val airplane: Boolean,
+
+    @SerialName("forecast_until")
+    val forecastUntil: String? = null,
+
+    val hours: List<WindowHour>,
+    val windows: List<Window>
+)
+
+/**
+ * One departure hour: go, caution, no-go or not known, the findings
+ * that decide it, and its time and fuel with an airplane.
+ */
+@Serializable
+data class WindowHour (
+    val depart: String,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double? = null,
+
+    val margin: Double? = null,
+    val night: Boolean,
+
+    @SerialName("night_passengers")
+    val nightPassengers: Boolean,
+
+    val reasons: List<VerdictItem>,
+    val verdict: String
+)
+
+/**
+ * One tab's finding: what it is, what was found in a line, and where
+ * it is shown in full (a tab of the Brief and a section by its title).
+ */
+@Serializable
+data class VerdictItem (
+    val detail: String,
+    val finding: String,
+    val key: String,
+    val label: String,
+    val section: String? = null,
+    val tab: String
+)
+
+/**
+ * A run of go hours: its first and last departure hour, how many, its
+ * least margin and its shortest ETE, and the hour that has it.
+ */
+@Serializable
+data class Window (
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    val hours: Int,
+    val last: String,
+    val margin: Double? = null,
+    val quickest: String,
+    val start: String
+)
+
+/**
+ * The Go / No-Go's ask, its `depart` unused: each hour is a departure.
+ */
+@Serializable
+data class DepartureWindowAsk (
+    val aircraft: String? = null,
+    val airplane: Boolean? = null,
+    val alternate: String? = null,
+
+    @SerialName("altitude_choice")
+    val altitudeChoice: String? = null,
+
+    @SerialName("altitude_ft")
+    val altitudeFt: Double? = null,
+
+    @SerialName("altitude_nearest")
+    val altitudeNearest: Boolean? = null,
+
+    @SerialName("altitude_starts")
+    val altitudeStarts: String? = null,
+
+    val altitudes: String? = null,
+    val checkpoints: Boolean? = null,
+
+    @SerialName("class_b_clearance")
+    val classBClearance: Boolean? = null,
+
+    @SerialName("climb_fuel_burn_gph")
+    val climbFuelBurnGph: Double? = null,
+
+    @SerialName("climb_rate_fpm")
+    val climbRateFpm: Double? = null,
+
+    @SerialName("climb_tas_kt")
+    val climbTasKt: Double? = null,
+
+    val crossings: String? = null,
+
+    @SerialName("cruise_power_pct")
+    val cruisePowerPct: Double? = null,
+
+    @SerialName("cruise_tas_kt")
+    val cruiseTasKt: Double? = null,
+
+    val currency: PilotCurrency? = null,
+    val day: String? = null,
+    val dep: String,
+    val depart: String? = null,
+    val dest: String,
+
+    @SerialName("fuel_burn_gph")
+    val fuelBurnGph: Double? = null,
+
+    @SerialName("glide_ratio")
+    val glideRatio: Double? = null,
+
+    val ground: String? = null,
+    val holds: String? = null,
+    val hours: Int? = null,
+    val load: AirplaneLoad? = null,
+    val minimums: PersonalMinimums? = null,
+
+    @SerialName("own_airplane")
+    val ownAirplane: OwnAirplane? = null,
+
+    val procedures: String? = null,
+    val rules: String? = null,
+
+    @SerialName("runway_picks")
+    val runwayPicks: RunwayPicks? = null,
+
+    val runways: String? = null,
+
+    @SerialName("service_ceiling_ft")
+    val serviceCeilingFt: Double? = null,
+
+    val start: String? = null,
+    val stops: String? = null,
+
+    @SerialName("taxi_fuel_gal")
+    val taxiFuelGal: Double? = null,
+
+    val ticked: List<String>? = null,
+
+    @SerialName("usable_fuel_gal")
+    val usableFuelGal: Double? = null
+)
+
+/**
+ * The pilot's currency from their logbook, as the gateway's
+ * /api/logbook/currency gives it (in snake case): the dates are the
+ * last days each holds, "yyyy-mm-dd".
+ */
+@Serializable
+data class PilotCurrency (
+    @SerialName("day_passengers_until")
+    val dayPassengersUntil: String? = null,
+
+    @SerialName("flight_review_until")
+    val flightReviewUntil: String? = null,
+
+    val flights: Int? = null,
+
+    @SerialName("instrument_current_from")
+    val instrumentCurrentFrom: String? = null,
+
+    @SerialName("instrument_current_until")
+    val instrumentCurrentUntil: String? = null,
+
+    @SerialName("ipc_needed_after")
+    val ipcNeededAfter: String? = null,
+
+    @SerialName("medical_expires_on")
+    val medicalExpiresOn: String? = null,
+
+    @SerialName("night_passengers_until")
+    val nightPassengersUntil: String? = null,
+
+    @SerialName("total_hours")
+    val totalHours: Double? = null
+)
+
+/**
+ * What the pilot loads (lib/weightBalance Load): the airplane's own
+ * empty weight and arm, each station's pounds in the loading's order,
+ * and the fuel at the start, gallons.
+ */
+@Serializable
+data class AirplaneLoad (
+    @SerialName("empty_arm_in")
+    val emptyArmIn: Double,
+
+    @SerialName("empty_weight_lb")
+    val emptyWeightLb: Double,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double,
+
+    @SerialName("stations_lb")
+    val stationsLb: List<Double>
+)
+
+/**
+ * The weather the pilot will not take off or land in, each off (None)
+ * until set (lib/minimums): the lowest ceiling, feet above the field;
+ * the least visibility, statute miles; the most crosswind on the best
+ * runway and the most surface wind, gusts included, knots.
+ */
+@Serializable
+data class PersonalMinimums (
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("crosswind_kt")
+    val crosswindKt: Double? = null,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null,
+
+    @SerialName("wind_kt")
+    val windKt: Double? = null
+)
+
+/**
+ * The pilot's own airplane being flown, its records from the gateway;
+ * left out for a stock profile, which has none.
+ */
+@Serializable
+data class OwnAirplane (
+    val inspections: AirplaneInspections? = null,
+    val squawks: List<OpenSquawk>? = null,
+
+    @SerialName("vor_check")
+    val vorCheck: VorCheckClass? = null
+)
+
+/**
+ * The pilot's own airplane's inspections and tests as its owner
+ * recorded them on the gateway: each its last good day, "yyyy-mm-dd".
+ */
+@Serializable
+data class AirplaneInspections (
+    @SerialName("annual_good_through")
+    val annualGoodThrough: String? = null,
+
+    @SerialName("elt_battery_due_on")
+    val eltBatteryDueOn: String? = null,
+
+    @SerialName("elt_inspection_good_through")
+    val eltInspectionGoodThrough: String? = null,
+
+    @SerialName("hours_now")
+    val hoursNow: Double? = null,
+
+    @SerialName("hundred_hour_due_at_hours")
+    val hundredHourDueAtHours: Double? = null,
+
+    @SerialName("static_check_good_through")
+    val staticCheckGoodThrough: String? = null,
+
+    @SerialName("transponder_check_good_through")
+    val transponderCheckGoodThrough: String? = null
+)
+
+/**
+ * A squawk not yet fixed, and how far its 14 CFR 91.213(d)
+ * determination reaches, where one was made.
+ */
+@Serializable
+data class OpenSquawk (
+    @SerialName("deferred_for")
+    val deferredFor: String? = null,
+
+    val inoperative: Boolean? = null,
+    val text: String
+)
+
+/**
+ * The airplane's last VOR check (14 CFR 91.171): its last good day and
+ * whether its error was within limits.
+ */
+@Serializable
+data class VorCheckClass (
+    @SerialName("good_through")
+    val goodThrough: String,
+
+    @SerialName("within_limit")
+    val withinLimit: Boolean
+)
+
+/**
+ * The runway ends the pilot picked, by field: `pattern` the
+ * departure's runway out and every other field's runway in, `takeoff` a
+ * stop's runway out ("24", as painted).
+ */
+@Serializable
+data class RunwayPicks (
+    val pattern: Map<String, String>? = null,
+    val takeoff: Map<String, String>? = null
+)
+
+@Serializable
+data class DetectBlock (
+    val block: Int,
+    val blocks: Int,
+    val detections: List<Detection>,
+    val missing: Int? = null,
+    val tiles: Int? = null,
+    val type: String? = null
+)
+
+/**
+ * A point the chart-vision detector found. `rating`/`role` are None
+ * until a pick claims it; `rated` is derived from the rating, as a
+ * Pick's is, rather than set beside it. `score` is the palette's
+ * constant for its kind; `predicted_score` the chart model's rating
+ * for it (wingtip.chartmodel), None while none is promoted or the corridor
+ * is still being read for the first time.
+ */
+@Serializable
+data class Detection (
+    @SerialName("along_track_nm")
+    val alongTrackNm: Double,
+
+    @SerialName("area_m2")
+    val areaM2: Double,
+
+    val category: String,
+
+    @SerialName("cross_track_nm")
+    val crossTrackNm: Double,
+
+    val lat: Double,
+    val lon: Double,
+
+    @SerialName("predicted_score")
+    val predictedScore: Double? = null,
+
+    val rated: Boolean,
+    val rating: Int? = null,
+    val role: String? = null,
+    val score: Double
+)
+
+@Serializable
+data class DetectDone (
+    val added: List<Pick>,
+    val summary: PickSummary,
+    val total: Int,
+    val type: String? = null
+)
+
+/**
+ * A pilot's own mark on the chart. `rated` is derived from the
+ * rating, so a rated point can never describe itself as unrated.
+ */
+@Serializable
+data class Pick (
+    @SerialName("along_track_nm")
+    val alongTrackNm: Double,
+
+    @SerialName("area_m2")
+    val areaM2: Double? = null,
+
+    val category: String,
+
+    @SerialName("created_at")
+    val createdAt: String? = null,
+
+    @SerialName("cross_track_nm")
+    val crossTrackNm: Double,
+
+    val lat: Double,
+    val lon: Double,
+    val note: String? = null,
+    val rated: Boolean,
+    val rating: Int? = null,
+    val role: String? = null,
+    val route: String? = null,
+    val source: String
+)
+
+@Serializable
+data class PickSummary (
+    val accepted: Int,
+    val added: Int,
+
+    @SerialName("added_categories")
+    val addedCategories: List<String>? = null,
+
+    @SerialName("by_rating")
+    val byRating: Map<String, Long>,
+
+    @SerialName("by_role")
+    val byRole: Map<String, Long>,
+
+    val rejected: Int,
+    val total: Int
+)
+
+/**
+ * The corridor read failed after the stream had started; always the
+ * last line.
+ */
+@Serializable
+data class DetectError (
+    val detail: String,
+    val type: String? = null
+)
+
+/**
+ * The corridor read failed after the stream had started; always the
+ * last line.
+ */
+@Serializable
+data class DetectMessage (
+    val route: String? = null,
+    val type: String? = null,
+    val block: Int? = null,
+    val blocks: Int? = null,
+    val detections: List<Detection>? = null,
+    val missing: Int? = null,
+    val tiles: Int? = null,
+    val added: List<Pick>? = null,
+    val summary: PickSummary? = null,
+    val total: Int? = null,
+    val detail: String? = null
+)
+
+@Serializable
+data class DetectStart (
+    val route: String,
+    val type: String? = null
+)
+
+/**
+ * `started` is false when there was nothing to do, which is the
+ * common case: the console asks on every click so the link always
+ * works.
+ */
+@Serializable
+data class DevServiceStarted (
+    val service: String,
+    val started: Boolean,
+    val state: String
+)
+
+/**
+ * `available` is false where there is no Docker socket, which is
+ * every deployment that is not the local development stack. The
+ * console stops offering to start anything rather than offering a
+ * button that cannot work.
+ */
+@Serializable
+data class DevServices (
+    val available: Boolean,
+    val services: List<DevService>
+)
+
+/**
+ * One service the developer console links to, and whether it is up.
+ *
+ * `state` is Docker's own word for it -- running, exited, created --
+ * or "absent" where compose has never created the container at all,
+ * which needs `docker compose up -d <service>` once rather than a
+ * start.
+ */
+@Serializable
+data class DevService (
+    val label: String,
+    val name: String,
+    val state: String
+)
+
+/**
+ * To a field from a point, in the planner's air there: the field, the
+ * air it is flown in (`wind` None where no forecast was near: worked
+ * with none), the solution and its steps in words, or `problem` where no
+ * heading holds; and each estimate given, checked.
+ */
+@Serializable
+data class Diversion (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    val checks: List<EstimateCheck>,
+
+    @SerialName("fuel_burn_gph")
+    val fuelBurnGph: Double,
+
+    @SerialName("magnetic_variation_deg")
+    val magneticVariationDeg: Double,
+
+    val name: String,
+    val problem: String? = null,
+    val solved: DiversionSolved? = null,
+    val steps: List<Step>,
+
+    @SerialName("tas_kt")
+    val tasKt: Double,
+
+    val to: String,
+    val wind: Wind? = null
+)
+
+/**
+ * A student's estimate against the exact figure: reasonable within its
+ * allowance, and the figure written as the drill writes it.
+ */
+@Serializable
+data class EstimateCheck (
+    val allowance: Double,
+    val exact: Double? = null,
+    val key: String,
+    val label: String,
+    val reasonable: Boolean? = null,
+    val typed: Double? = null,
+    val unit: String,
+    val written: String? = null
+)
+
+/**
+ * The diversion worked out: true course and distance, the correction
+ * (+ right), true and magnetic heading, ground speed, minutes and gallons.
+ */
+@Serializable
+data class DiversionSolved (
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    val ete: Double,
+    val fuel: Double,
+    val gs: Double,
+    val mh: Double,
+    val tc: Double,
+    val th: Double,
+    val wca: Double
+)
+
+@Serializable
+data class Step (
+    val name: String,
+    val value: String
+)
+
+@Serializable
+data class Wind (
+    @SerialName("wind_dir_true_deg")
+    val windDirTrueDeg: Double,
+
+    @SerialName("wind_speed_kt")
+    val windSpeedKt: Double
+)
+
+@Serializable
+data class EmergencyFields (
+    val airplane: EmergencyAirplane? = null,
+    val fields: List<EmergencyField>,
+    val wind: WindAloft? = null
+)
+
+/**
+ * The stock profile's figures the ranking uses (data/aircraft); each
+ * None where the profile has none: no glide, and the glide is not
+ * guessed.
+ */
+@Serializable
+data class EmergencyAirplane (
+    val crosswind: DemonstratedCrosswind? = null,
+
+    @SerialName("cruise_tas_kt")
+    val cruiseTasKt: Double? = null,
+
+    val glide: GlideFigures? = null,
+    val landing: ShortField? = null,
+    val name: String,
+    val type: String? = null
+)
+
+/**
+ * A POH's short-field takeoff or landing distances: a table per
+ * weight, and how much a dry grass runway adds to the ground roll.
+ */
+@Serializable
+data class ShortField (
+    @SerialName("grass_ground_roll_pct")
+    val grassGroundRollPct: Double,
+
+    @SerialName("headwind_kt_per_10pct")
+    val headwindKtPer10Pct: Double? = null,
+
+    @SerialName("pressure_altitudes_ft")
+    val pressureAltitudesFt: List<Double>,
+
+    val source: String,
+    val tables: List<DistanceTable>,
+
+    @SerialName("tailwind_kt_per_10pct")
+    val tailwindKtPer10Pct: Double? = null,
+
+    @SerialName("tailwind_max_kt")
+    val tailwindMaxKt: Double? = null,
+
+    @SerialName("temperatures_c")
+    val temperaturesC: List<Double>,
+
+    @SerialName("weights_lb")
+    val weightsLb: List<Double>,
+
+    @SerialName("wind_source")
+    val windSource: String? = null
+)
+
+/**
+ * One weight's distances, by pressure altitude (rows) and
+ * temperature (columns).
+ */
+@Serializable
+data class DistanceTable (
+    @SerialName("ground_roll_ft")
+    val groundRollFt: List<List<Double>>,
+
+    @SerialName("total_50ft_ft")
+    val total50FtFt: List<List<Double>>
+)
+
+@Serializable
+data class EmergencyField (
+    @SerialName("bearing_deg")
+    val bearingDeg: Double,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    @SerialName("elevation_ft")
+    val elevationFt: Double? = null,
+
+    val frequencies: List<EmergencyFrequency>? = null,
+    val ident: String,
+    val lat: Double,
+    val lon: Double,
+    val metar: EmergencyMetar? = null,
+    val military: Boolean? = null,
+    val name: String,
+    val phone: String? = null,
+    @SerialName("private")
+    val isPrivate: Boolean? = null,
+    val runways: List<EmergencyRunway>,
+    val towered: Boolean? = null
+)
+
+/**
+ * The modelled wind (GFS) at the altitude asked, true.
+ */
+@Serializable
+data class WindAloft (
+    @SerialName("from_deg")
+    val fromDeg: Double,
+
+    val kt: Double
+)
+
+/**
+ * An endorsement to sign: its code, the student's name as on their
+ * certificate, and the fields the instructor gave.
+ */
+@Serializable
+data class EndorsementFillAsk (
+    val code: String,
+    val fields: Map<String, String>? = null,
+    val student: String? = null
+)
+
+/**
+ * The endorsement made ready to sign (the engine's endorsement_fill).
+ */
+@Serializable
+data class EndorsementFilled (
+    /**
+     * Each field it takes, tidied to single spaces, "" where not given.
+     */
+    val fields: Map<String, String>,
+
+    /**
+     * The labels of the required fields still empty.
+     */
+    val missing: List<String>,
+
+    /**
+     * Its words with the student and the fields in, as they are signed.
+     */
+    val text: String
+)
+
+/**
+ * One of the student endorsements (the engine's endorsement_kinds):
+ * its code, AC 61-65K's paragraph, the 14 CFR section it answers, its
+ * name, and the sample's words with the blanks the instructor fills.
+ */
+@Serializable
+data class EndorsementKind (
+    val code: String,
+    val fields: List<EndorsementField>,
+    val label: String,
+
+    /**
+     * AC 61-65K's paragraph, "A.10".
+     */
+    val paragraph: String,
+
+    /**
+     * The 14 CFR section it answers, "61.93(c)(3)".
+     */
+    val rule: String,
+
+    /**
+     * The sample's words, {student} and each field's {key} in them.
+     */
+    val template: String
+)
+
+/**
+ * A blank in an endorsement's words, as the instructor's sheet asks for it.
+ */
+@Serializable
+data class EndorsementField (
+    val example: String,
+    val key: String,
+    val label: String,
+    val required: Boolean
+)
+
+/**
+ * What the endorsements say (the engine's endorsement_records).
+ */
+@Serializable
+data class Endorsements (
+    /**
+     * 61.93(d)(4) and (5) for the solo cross-country on flightOn; none without.
+     */
+    val checks: List<ReviewCheck>,
+
+    /**
+     * The last day of the latest solo endorsement (61.87(n), (p)).
+     */
+    val soloUntil: String? = null,
+
+    /**
+     * Each held endorsement's last good day, in order: 90 days on for a solo (14 CFR 61.87(n),
+     * (o), (p)) or Class B one (61.95); null for one that does not run out.
+     */
+    val until: List<String?>
+)
+
+/**
+ * One of 14 CFR 61.93(d)'s determinations, as far as the record
+ * answers it (the gateway's ReviewCheckDto).
+ */
+@Serializable
+data class ReviewCheck (
+    val detail: String,
+    val label: String,
+    val met: Boolean,
+    val rule: String
+)
+
+/**
+ * The endorsements held, voided ones left out by the gateway where it
+ * asks the solo endorsement's day and the review's checks, and the day of
+ * a solo cross-country to check them for.
+ */
+@Serializable
+data class EndorsementsAsk (
+    val flightOn: String? = null,
+    val held: List<HeldEndorsement>
+)
+
+/**
+ * An endorsement the student holds: its code (AC 61-65K's, as the
+ * engine's endorsement_kinds names it), the day it was given, and the make
+ * and model it names where it says.
+ */
+@Serializable
+data class HeldEndorsement (
+    val code: String,
+    val makeModel: String? = null,
+    val on: String
+)
+
+/**
+ * The student's logbook and the day it is asked for.
+ */
+@Serializable
+data class ExperienceAsk (
+    val entries: List<LogbookEntry>,
+    val today: String
+)
+
+/**
+ * One of 14 CFR 61.109(a)'s requirements: how much of it the logbook
+ * shows of how much, and whether that is met.
+ */
+@Serializable
+data class ExperienceItem (
+    val have: Double,
+    val key: String,
+    val label: String,
+    val met: Boolean,
+    val need: Double,
+    val rule: String,
+    val unit: String
+)
+
+/**
+ * An airplane and its flight today (wingtip.traffic.flight): what it is,
+ * who flies it, where it took off from where its track shows that, and
+ * its track since, from adsb.lol's open data (ODbL 1.0); and a US
+ * airplane's FAA registration.
+ */
+@Serializable
+data class FlightDetail (
+    val departed: FlightDeparted? = null,
+    val description: String? = null,
+    val faa: AircraftRegistration? = null,
+    val hex: String,
+    val operator: String? = null,
+    val registration: String? = null,
+    val trail: List<TrailPoint>? = null,
+    val type: String? = null,
+    val year: String? = null
+)
+
+/**
+ * The field a flight took off from, and when (Unix seconds).
+ */
+@Serializable
+data class FlightDeparted (
+    val at: Double,
+    val ident: String,
+    val name: String? = null
+)
+
+/**
+ * A US airplane's record in the FAA's aircraft registry (wingtip.registry,
+ * the Releasable Aircraft Database): who it is registered to and where,
+ * what it is, its engine, and its registration's and airworthiness
+ * certificates. The owner's town, never the street; an owner who asked
+ * the FAA to withhold their name (49 U.S.C. 44114(b)) is not in it.
+ */
+@Serializable
+data class AircraftRegistration (
+    @SerialName("aircraft_type")
+    val aircraftType: String? = null,
+
+    val airworthiness: String? = null,
+
+    @SerialName("airworthiness_date")
+    val airworthinessDate: String? = null,
+
+    @SerialName("certificate_issued")
+    val certificateIssued: String? = null,
+
+    val city: String? = null,
+
+    @SerialName("co_owners")
+    val coOwners: Int? = null,
+
+    val country: String? = null,
+    val engine: String? = null,
+
+    @SerialName("engine_type")
+    val engineType: String? = null,
+
+    val engines: Int? = null,
+    val expires: String? = null,
+    val fractional: Boolean? = null,
+    val horsepower: Int? = null,
+    val kit: String? = null,
+    val manufacturer: String? = null,
+
+    @SerialName("mode_s_hex")
+    val modeSHex: String? = null,
+
+    val model: String? = null,
+
+    @SerialName("n_number")
+    val nNumber: String,
+
+    val owner: String? = null,
+
+    @SerialName("owner_type")
+    val ownerType: String? = null,
+
+    val seats: Int? = null,
+    val serial: String? = null,
+    val standing: String? = null,
+    val state: String? = null,
+    val status: String? = null,
+
+    @SerialName("thrust_lb")
+    val thrustLb: Int? = null,
+
+    val year: Int? = null
+)
+
+/**
+ * Where an airplane was: Unix seconds, its position, its height (None
+ * on the ground).
+ */
+@Serializable
+data class TrailPoint (
+    @SerialName("alt_ft")
+    val altFt: Double? = null,
+
+    val lat: Double,
+    val lon: Double,
+    val t: Double
+)
+
+/**
+ * The route a flight number is scheduled to fly (wingtip.traffic.route),
+ * from Virtual Radar Server's route database (CC0): the airports in
+ * order, and whether the airplane is on or near it now. Not the flight
+ * plan filed for today's flight.
+ */
+@Serializable
+data class FlightRoute (
+    val airports: List<RouteAirport>,
+    val plausible: Boolean? = null
+)
+
+@Serializable
+data class RouteAirport (
+    val ident: String,
+    val location: String? = null,
+    val name: String? = null
+)
+
+/**
+ * An airplane's state now, for the alerts a pilot sets on it
+ * (wingtip.traffic.status): how long since it was heard, whether it is in
+ * the air -- and where, as the map draws it -- the field it took off
+ * from, and, not in the air, the field it has landed at; from adsb.lol's
+ * open data (ODbL 1.0).
+ */
+@Serializable
+data class FlightStatus (
+    val airborne: Boolean? = null,
+    val aircraft: TrafficAircraft? = null,
+    val arrived: FlightArrival? = null,
+    val departed: PastFlightField? = null,
+
+    @SerialName("heard_s")
+    val heardS: Double? = null,
+
+    val hex: String
+)
+
+/**
+ * One airplane in the air near the point (wingtip.traffic): who, where,
+ * how high -- the GNSS height where it sends one, else its pressure
+ * altitude set on the nearest METAR's altimeter (wingtip.traffic.on_altimeter),
+ * or as sent where none is near (`pressure_altitude`) -- its track, speed
+ * and climb, and how many seconds old its position is.
+ */
+@Serializable
+data class TrafficAircraft (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double? = null,
+
+    val callsign: String? = null,
+    val category: String? = null,
+    val emergency: String? = null,
+    val hex: String,
+    val lat: Double,
+    val lon: Double,
+
+    @SerialName("pressure_altitude")
+    val pressureAltitude: Boolean? = null,
+
+    val registration: String? = null,
+
+    @SerialName("seen_s")
+    val seenS: Double? = null,
+
+    @SerialName("speed_kt")
+    val speedKt: Double? = null,
+
+    val squawk: String? = null,
+
+    @SerialName("track_deg")
+    val trackDeg: Double? = null,
+
+    val type: String? = null,
+
+    @SerialName("vertical_fpm")
+    val verticalFpm: Double? = null
+)
+
+/**
+ * The field an airplane has landed at, and when it was last heard (Unix seconds).
+ */
+@Serializable
+data class FlightArrival (
+    val at: Double,
+    val city: String? = null,
+    val ident: String,
+    val name: String? = null,
+    val region: String? = null
+)
+
+/**
+ * The programs and restrictions in force or to come at the airports
+ * asked for.
+ */
+@Serializable
+data class FlowAtAirports (
+    val programs: List<FlowProgram>
+)
+
+/**
+ * A traffic management program or restriction at an airport
+ * (wingtip.flow): a program (`program`: ground stop, ground delay program,
+ * airspace flow program) from a Command Center advisory, with its delays
+ * in minutes and its words as sent; or a restriction (`restriction`
+ * true: miles or minutes in trail, `kind` ARRIVAL or DEPARTURE). Times
+ * are UNIX s.
+ */
+@Serializable
+data class FlowProgram (
+    val airport: String,
+
+    @SerialName("average_delay_min")
+    val averageDelayMin: Int? = null,
+
+    val category: String? = null,
+    val condition: String? = null,
+    val element: String? = null,
+    val ends: Double? = null,
+    val facility: String? = null,
+    val heard: Double,
+    val kind: String? = null,
+
+    @SerialName("maximum_delay_min")
+    val maximumDelayMin: Int? = null,
+
+    val number: String? = null,
+    val program: String? = null,
+    val reason: String? = null,
+    val restriction: Boolean? = null,
+    val starts: Double? = null,
+    val text: String? = null,
+    val title: String? = null,
+    val value: String? = null
+)
+
+/**
+ * The dry run against the forecast, and the products that could not be had.
+ */
+@Serializable
+data class ForecastRun (
+    val alerts: List<RunAlert>,
+    val areas: List<RunArea>,
+    val fields: List<RunFieldForecast>,
+    val legs: List<RunLeg>,
+    val samples: List<RunSample>,
+    val unavailable: List<String>
+)
+
+/**
+ * What the run is warned of, when and where, its rule and product cited.
+ */
+@Serializable
+data class RunAlert (
+    val kind: String,
+    val lat: Double,
+    val lon: Double,
+    val source: String,
+    val t: Double,
+    val words: String
+)
+
+/**
+ * An advisory area the run is in at some time: in words, cited, its
+ * altitudes (ft MSL), when in force, and its outline ([lat, lon]).
+ */
+@Serializable
+data class RunArea (
+    val coords: List<List<Double>>,
+
+    @SerialName("high_ft")
+    val highFt: Double? = null,
+
+    val kind: String,
+
+    @SerialName("low_ft")
+    val lowFt: Double? = null,
+
+    val source: String,
+
+    @SerialName("valid_from")
+    val validFrom: Double? = null,
+
+    @SerialName("valid_to")
+    val validTo: Double? = null,
+
+    val words: String
+)
+
+/**
+ * A field's TAF at the run's time there.
+ */
+@Serializable
+data class RunFieldForecast (
+    val category: String? = null,
+
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("ceiling_unknown")
+    val ceilingUnknown: Boolean,
+
+    val ident: String,
+    val role: String,
+    val source: String? = null,
+    val t: Double,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null
+)
+
+/**
+ * A leg as flown: its nav log row, when, and its worst forecast category.
+ */
+@Serializable
+data class RunLeg (
+    val category: String? = null,
+
+    @SerialName("from_t")
+    val fromT: Double,
+
+    val row: Int,
+
+    @SerialName("to_t")
+    val toT: Double,
+
+    @SerialName("worst_t")
+    val worstT: Double? = null
+)
+
+/**
+ * What the airplane meets at a point: the forecast ceiling (ft above
+ * the ground) and visibility then and its flight category (AIM 7-1-7),
+ * whose forecast it is, the wind aloft at its altitude, and the areas
+ * (indexes into `areas`) it is in.
+ */
+@Serializable
+data class RunSample (
+    val areas: List<Int>,
+    val category: String? = null,
+
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("ceiling_unknown")
+    val ceilingUnknown: Boolean,
+
+    val lat: Double,
+    val lon: Double,
+    val source: String? = null,
+    val t: Double,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null,
+
+    @SerialName("wind_dir_true_deg")
+    val windDirTrueDeg: Double? = null,
+
+    @SerialName("wind_speed_kt")
+    val windSpeedKt: Double? = null
+)
+
+/**
+ * The dry run to play against the forecast.
+ */
+@Serializable
+data class ForecastRunAsk (
+    val fields: List<RunField>? = null,
+    val minimums: RunMinimums? = null,
+    val rules: String? = null,
+    val track: List<RunPoint>
+)
+
+/**
+ * A field the run takes off from or lands at, and when.
+ */
+@Serializable
+data class RunField (
+    val ident: String,
+    val lat: Double,
+    val lon: Double,
+    val role: String,
+    val t: Double
+)
+
+/**
+ * The pilot's personal minimums, each None until set.
+ */
+@Serializable
+data class RunMinimums (
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null
+)
+
+/**
+ * A point of the dry run: when (s since 1970), where, how high (ft
+ * MSL, None on the ground or not known) and the nav log's row it flies to.
+ */
+@Serializable
+data class RunPoint (
+    @SerialName("alt_ft")
+    val altFt: Double? = null,
+
+    val lat: Double,
+    val lon: Double,
+    val row: Int,
+    val t: Double
+)
+
+/**
+ * The wind a TAF forecasts at a field for a time (wingtip.weather.
+ * forecast_wind): its own TAF's, else the nearest station's within 30
+ * nm (`ident`, `distance_nm`). From true north; `dir_true_deg` None for
+ * a variable wind. `valid_from` and `valid_to`, the period's, s since
+ * 1970.
+ */
+@Serializable
+data class ForecastWind (
+    @SerialName("dir_true_deg")
+    val dirTrueDeg: Double? = null,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    @SerialName("gust_kt")
+    val gustKt: Double? = null,
+
+    val ident: String,
+
+    @SerialName("speed_kt")
+    val speedKt: Double,
+
+    @SerialName("valid_from")
+    val validFrom: Double,
+
+    @SerialName("valid_to")
+    val validTo: Double
+)
+
+@Serializable
+data class GenerateNotesRequest (
+    @SerialName("departure_ident")
+    val departureIdent: String,
+
+    @SerialName("destination_ident")
+    val destinationIdent: String,
+
+    val stops: List<String>? = null
+)
+
+/**
+ * POST /api/go-no-go: the line over the findings and each finding,
+ * with what the Brief's Risk and Loading pages show beside them.
+ */
+@Serializable
+data class GoNoGo (
+    val balance: LoadBalance? = null,
+    val items: List<VerdictItem>,
+    val line: VerdictLine,
+    val loading: Loading? = null,
+    val risk: RiskAssessment? = null,
+
+    @SerialName("self_checks")
+    val selfChecks: List<RiskCheck>
+)
+
+/**
+ * The weight and balance for the load used: the pilot's, or the
+ * POH's sample airplane where none was sent.
+ */
+@Serializable
+data class LoadBalance (
+    val landing: LoadCondition,
+    val load: AirplaneLoad,
+    val problems: List<String>,
+    val takeoff: LoadCondition
+)
+
+@Serializable
+data class LoadCondition (
+    @SerialName("arm_in")
+    val armIn: Double,
+
+    @SerialName("weight_lb")
+    val weightLb: Double
+)
+
+@Serializable
+data class VerdictLine (
+    val finding: String,
+    val words: String
+)
+
+/**
+ * How the aeroplane is loaded (its POH's weight and balance): the
+ * weight limits, a sample empty weight and moment (each aeroplane's own
+ * is on its weight and balance record), the stations and their arms,
+ * the fuel's, and the centre-of-gravity envelope as (arm, weight)
+ * corners.
+ */
+@Serializable
+data class Loading (
+    @SerialName("baggage_combined_max_lb")
+    val baggageCombinedMaxLb: Double? = null,
+
+    val envelope: List<List<Double>>,
+
+    @SerialName("fuel_arm_in")
+    val fuelArmIn: Double,
+
+    @SerialName("fuel_lb_per_gal")
+    val fuelLbPerGal: Double? = null,
+
+    @SerialName("fuel_max_gal")
+    val fuelMaxGal: Double,
+
+    @SerialName("max_landing_lb")
+    val maxLandingLb: Double,
+
+    @SerialName("max_ramp_lb")
+    val maxRampLb: Double,
+
+    @SerialName("max_takeoff_lb")
+    val maxTakeoffLb: Double,
+
+    @SerialName("sample_empty_moment_lb_in")
+    val sampleEmptyMomentLbIn: Double,
+
+    @SerialName("sample_empty_weight_lb")
+    val sampleEmptyWeightLb: Double,
+
+    val source: String,
+
+    @SerialName("start_taxi_fuel_lb")
+    val startTaxiFuelLb: Double? = null,
+
+    val stations: List<LoadingStation>
+)
+
+@Serializable
+data class LoadingStation (
+    @SerialName("arm_in")
+    val armIn: Double,
+
+    @SerialName("max_lb")
+    val maxLb: Double? = null,
+
+    val name: String
+)
+
+/**
+ * The risk assessment: its points, its level and its line ("Raised ·
+ * 8 points"), what to do at that level, and every factor counted.
+ */
+@Serializable
+data class RiskAssessment (
+    val factors: List<RiskFactor>,
+    val level: String,
+    val line: String,
+    val score: Int,
+    val words: String
+)
+
+/**
+ * What raises the risk (lib/frat): why it counts, its points, and
+ * whether it makes the flight unlawful as planned (`stop`).
+ */
+@Serializable
+data class RiskFactor (
+    val finding: String? = null,
+    val group: String? = null,
+    val key: String,
+    val label: String,
+    val points: Int,
+    val stop: Boolean? = null,
+    val why: String? = null
+)
+
+/**
+ * One of the checks only the pilot can answer, in its group.
+ */
+@Serializable
+data class RiskCheck (
+    val finding: String? = null,
+    val group: String,
+    val key: String,
+    val label: String,
+    val points: Int,
+    val stop: Boolean? = null,
+    val why: String? = null
+)
+
+/**
+ * The route, as /api/navlog is asked it (PlanQuery's fields), and what
+ * only the pilot knows.
+ */
+@Serializable
+data class GoNoGoAsk (
+    val aircraft: String? = null,
+    val alternate: String? = null,
+
+    @SerialName("altitude_choice")
+    val altitudeChoice: String? = null,
+
+    @SerialName("altitude_ft")
+    val altitudeFt: Double? = null,
+
+    @SerialName("altitude_nearest")
+    val altitudeNearest: Boolean? = null,
+
+    @SerialName("altitude_starts")
+    val altitudeStarts: String? = null,
+
+    val altitudes: String? = null,
+    val checkpoints: Boolean? = null,
+
+    @SerialName("class_b_clearance")
+    val classBClearance: Boolean? = null,
+
+    @SerialName("climb_fuel_burn_gph")
+    val climbFuelBurnGph: Double? = null,
+
+    @SerialName("climb_rate_fpm")
+    val climbRateFpm: Double? = null,
+
+    @SerialName("climb_tas_kt")
+    val climbTasKt: Double? = null,
+
+    val crossings: String? = null,
+
+    @SerialName("cruise_power_pct")
+    val cruisePowerPct: Double? = null,
+
+    @SerialName("cruise_tas_kt")
+    val cruiseTasKt: Double? = null,
+
+    val currency: PilotCurrency? = null,
+    val day: String? = null,
+    val dep: String,
+    val depart: String? = null,
+    val dest: String,
+
+    @SerialName("fuel_burn_gph")
+    val fuelBurnGph: Double? = null,
+
+    @SerialName("glide_ratio")
+    val glideRatio: Double? = null,
+
+    val ground: String? = null,
+    val holds: String? = null,
+    val load: AirplaneLoad? = null,
+    val minimums: PersonalMinimums? = null,
+
+    @SerialName("own_airplane")
+    val ownAirplane: OwnAirplane? = null,
+
+    val procedures: String? = null,
+    val rules: String? = null,
+
+    @SerialName("runway_picks")
+    val runwayPicks: RunwayPicks? = null,
+
+    val runways: String? = null,
+
+    @SerialName("service_ceiling_ft")
+    val serviceCeilingFt: Double? = null,
+
+    val stops: String? = null,
+
+    @SerialName("taxi_fuel_gal")
+    val taxiFuelGal: Double? = null,
+
+    val ticked: List<String>? = null,
+
+    @SerialName("usable_fuel_gal")
+    val usableFuelGal: Double? = null
+)
+
+/**
+ * The browser key for Google's Map Tiles API (routers/basemaps).
+ */
+@Serializable
+data class GoogleMaps (
+    val key: String
+)
+
+@Serializable
+data class HTTPValidationError (
+    val detail: List<ValidationError>? = null
+)
+
+@Serializable
+data class ValidationError (
+    val ctx: JsonObject? = null,
+    val input: JsonElement? = null,
+    val loc: List<Location>,
+    val msg: String,
+    val type: String
+)
+
+@Serializable
+sealed class Location {
+    class IntegerValue(val value: Long)  : Location()
+    class StringValue(val value: String) : Location()
+}
+
+/**
+ * A hold's entry by AIM 5-3-8 and its steps in words, the other entry
+ * within 5 degrees of a sector's edge, where the airplane comes from
+ * round the fix (for drawing), and the legs in the wind where one was
+ * given -- or `wind_problem` where it is stronger than the airplane.
+ */
+@Serializable
+data class Holding (
+    @SerialName("approach_relative")
+    val approachRelative: Double,
+
+    val either: String? = null,
+
+    @SerialName("either_name")
+    val eitherName: String? = null,
+
+    val entry: String,
+
+    @SerialName("entry_name")
+    val entryName: String,
+
+    val steps: String,
+    val wind: HoldingWind? = null,
+
+    @SerialName("wind_problem")
+    val windProblem: String? = null
+)
+
+/**
+ * The legs in the wind: the inbound leg's minutes, each leg's heading,
+ * correction and ground speed, the outbound time by the speeds and by the
+ * rule of a second a knot, seconds, and each row's line in words.
+ */
+@Serializable
+data class HoldingWind (
+    val inbound: HoldLeg,
+
+    @SerialName("inbound_words")
+    val inboundWords: String,
+
+    @SerialName("leg_min")
+    val legMin: Double,
+
+    val outbound: HoldLeg,
+
+    @SerialName("outbound_sec")
+    val outboundSec: Double,
+
+    @SerialName("outbound_words")
+    val outboundWords: String,
+
+    @SerialName("rule_sec")
+    val ruleSec: Double,
+
+    @SerialName("time_words")
+    val timeWords: String
+)
+
+@Serializable
+data class HoldLeg (
+    val gs: Double,
+    val heading: Double,
+    val wca: Double
+)
+
+/**
+ * GET /api/icing/route: the AWC's forecast icing (its GFA's, from CIP
+ * and FIP; AIM 7-1-4) on each leg at the altitude flown, the worst of it
+ * and the Go / No-Go's line (the engine's icing_forecast_route); the
+ * legs it had no forecast for; the hour the forecast was issued.
+ */
+@Serializable
+data class IcingForecast (
+    val issued: String,
+    val legs: List<IcingForecastLeg>,
+    val line: String? = null,
+    val unchecked: List<Int>,
+    val worst: IcingForecastWorst? = null
+)
+
+/**
+ * One leg's forecast icing (wingtip.icing_forecast): the worst
+ * severity at the altitude flown, null where the AWC had no forecast for
+ * it; the share of the leg in icing there; the layer icing is in over
+ * the leg at any level; and the time it was read for, the leg's middle.
+ */
+@Serializable
+data class IcingForecastLeg (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    val index: Int,
+    val layer: IcingLayer? = null,
+    val severity: String? = null,
+    val share: Double? = null,
+
+    @SerialName("valid_s")
+    val validS: Double? = null
+)
+
+/**
+ * The levels icing is forecast between over a leg, ft MSL.
+ */
+@Serializable
+data class IcingLayer (
+    @SerialName("bottom_ft")
+    val bottomFt: Double,
+
+    @SerialName("top_ft")
+    val topFt: Double
+)
+
+@Serializable
+data class IcingForecastWorst (
+    @SerialName("altitudes_ft")
+    val altitudesFt: List<Double>,
+
+    val legs: List<Int>,
+    val severity: String
+)
+
+@Serializable
+data class Index (
+    val service: String,
+    val ui: String,
+    val warm: Boolean? = null
+)
+
+/**
+ * When each falls due (the engine's inspections_due), null where it was not recorded.
+ */
+@Serializable
+data class Inspections (
+    /**
+     * The end of the 12th calendar month after (14 CFR 91.409(a)).
+     */
+    val annualUntil: String? = null,
+
+    /**
+     * The end of the 12th calendar month after (91.207(d)).
+     */
+    val eltUntil: String? = null,
+
+    /**
+     * 100 hours of time in service after the last (91.409(b)).
+     */
+    val hundredHourDueAtHours: Double? = null,
+
+    /**
+     * The end of the 24th calendar month after (91.411(a)).
+     */
+    val staticCheckUntil: String? = null,
+
+    /**
+     * The end of the 24th calendar month after (91.413(a)).
+     */
+    val transponderCheckUntil: String? = null,
+
+    val vorCheck: VorCheck? = null
+)
+
+@Serializable
+data class VorCheck (
+    /**
+     * The largest bearing error 91.171(b) or (c) allows for this kind of check.
+     */
+    val limitDeg: Double,
+
+    /**
+     * 30 days on (91.171(a)(2)).
+     */
+    val until: String,
+
+    val within: Boolean
+)
+
+/**
+ * The days the airplane's inspections and checks were done, and the
+ * hours of its last 100-hour; each left out where not recorded.
+ */
+@Serializable
+data class InspectionsAsk (
+    val annualOn: String? = null,
+    val eltOn: String? = null,
+    val hundredHourAtHours: Double? = null,
+    val staticCheckOn: String? = null,
+    val transponderCheckOn: String? = null,
+    val vorCheck: VorCheckAsk? = null
+)
+
+/**
+ * A VOR check recorded (14 CFR 91.171(d)): the day, its kind by the
+ * gateway's VorCheck names, and the bearing error found.
+ */
+@Serializable
+data class VorCheckAsk (
+    val errorDeg: Double,
+    val kind: String,
+    val on: String
+)
+
+/**
+ * The ITWS alerts in force at the airports asked for: none where no
+ * ITWS site alerts for them (most airports have no ITWS).
+ */
+@Serializable
+data class ItwsAlerts (
+    val alerts: List<ItwsProduct>
+)
+
+/**
+ * One ITWS product's alerts for one airport, until it expires
+ * (`expires`, UNIX s), heard at `heard`.
+ */
+@Serializable
+data class ItwsProduct (
+    val airport: String,
+    val alerts: List<ItwsAlert>,
+    val expires: Double? = null,
+    val heard: Double,
+    val name: String,
+    val product: String
+)
+
+/**
+ * One ITWS alert (wingtip.itws): what (`alert`: microburst, wind
+ * shear, gust front, tornado, storm cell) and its words as a pilot is
+ * told them ("Runway 27L arrival microburst alert 40 kt, runway to 3
+ * mile final", AIM 4-3-7); a runway alert's runway, direction, code,
+ * value in knots and span.
+ */
+@Serializable
+data class ItwsAlert (
+    val alert: String,
+    val code: String? = null,
+    val direction: String? = null,
+    val lat: Double? = null,
+    val lon: Double? = null,
+    val minutes: Double? = null,
+    val runway: String? = null,
+
+    @SerialName("value_kt")
+    val valueKt: Double? = null,
+
+    val words: String
+)
+
+/**
+ * The draft: the entry, 61.57(c)'s items apart, what the track
+ * showed, and a reason for each figure.
+ */
+@Serializable
+data class LogbookDraft (
+    val approaches: List<DraftApproach>,
+    val block: DraftBlock,
+
+    @SerialName("cross_country")
+    val crossCountry: DraftCrossCountry,
+
+    @SerialName("ends_airborne")
+    val endsAirborne: Boolean,
+
+    val entry: DraftEntry,
+    val holds: List<DraftHold>,
+    val instrument: DraftInstrument,
+    val landings: List<DraftLanding>,
+    val reasons: List<DraftReason>,
+    val takeoffs: List<DraftTakeoff>
+)
+
+@Serializable
+data class DraftApproach (
+    val airport: String,
+
+    @SerialName("also_fits")
+    val alsoFits: List<String>,
+
+    /**
+     * When it crossed the final approach fix inbound, ms.
+     */
+    @SerialName("faf_at")
+    val fafAt: Double,
+
+    val id: String,
+    val name: String,
+    val outcome: String
+)
+
+@Serializable
+data class DraftBlock (
+    val from: Double? = null,
+    val to: Double? = null
+)
+
+@Serializable
+data class DraftCrossCountry (
+    @SerialName("farthest_nm")
+    val farthestNm: Double,
+
+    /**
+     * A landing elsewhere: 61.1(b)(i).
+     */
+    @SerialName("landed_elsewhere")
+    val landedElsewhere: Boolean,
+
+    /**
+     * A landing more than 50 nm from the departure: 61.1(b)(ii).
+     */
+    @SerialName("over_50_nm")
+    val over50_Nm: Boolean
+)
+
+/**
+ * The entry as the gateway's form takes it (LogbookEntryRequest).
+ */
+@Serializable
+data class DraftEntry (
+    val aircraft: String? = null,
+    val aircraftType: String? = null,
+
+    /**
+     * Takeoff roll to landing roll.
+     */
+    val airHours: Double,
+
+    val approaches: Int,
+
+    /**
+     * Where a landing was more than 50 nm from the departure (61.1(b)(ii)).
+     */
+    val crossCountryHours: Double,
+
+    /**
+     * Every landing not counted at night (61.57(a)).
+     */
+    val dayLandings: Int,
+
+    val distanceNm: Double,
+    val flownOn: String,
+    val holding: Boolean,
+    val longestLegNm: Double,
+
+    /**
+     * Of the flight time, in 1.1's night.
+     */
+    val nightHours: Double,
+
+    /**
+     * To a full stop in 61.57(b)'s period.
+     */
+    val nightLandings: Int,
+
+    val remarks: String,
+    val route: String,
+
+    /**
+     * 14 CFR 1.1's flight time, to the tenth.
+     */
+    val totalHours: Double,
+
+    /**
+     * Of the day landings, the touch-and-goes.
+     */
+    val touchAndGoes: Int,
+
+    val toweredLandings: Int,
+    val tracking: Boolean
+)
+
+@Serializable
+data class DraftHold (
+    val fix: String? = null,
+    val from: Double,
+    val lat: Double,
+    val lon: Double,
+    val racetracks: Int,
+    val to: Double
+)
+
+/**
+ * 61.57(c)(1)'s items the track shows, added to the entry only where
+ * the pilot says it was flown by instruments (61.51(g)(1)).
+ */
+@Serializable
+data class DraftInstrument (
+    val approaches: Int,
+    val holding: Boolean,
+    val tracking: Boolean
+)
+
+@Serializable
+data class DraftLanding (
+    /**
+     * To a full stop in 61.57(b)'s period.
+     */
+    @SerialName("counts_night")
+    val countsNight: Boolean,
+
+    val field: String? = null,
+    val kind: String,
+    val lat: Double,
+    val lon: Double,
+
+    /**
+     * 1.1's night there and then.
+     */
+    val night: Boolean,
+
+    /**
+     * 61.57(b)'s period: from 1 hour after sunset to 1 hour before sunrise.
+     */
+    @SerialName("passenger_night")
+    val passengerNight: Boolean,
+
+    val t: Double,
+    val towered: Boolean
+)
+
+@Serializable
+data class DraftReason (
+    val item: String,
+    val says: String,
+    val source: String
+)
+
+@Serializable
+data class DraftTakeoff (
+    val field: String? = null,
+    val lat: Double,
+    val lon: Double,
+
+    /**
+     * 1.1's night there and then.
+     */
+    val night: Boolean,
+
+    /**
+     * 61.57(b)'s period: from 1 hour after sunset to 1 hour before sunrise.
+     */
+    @SerialName("passenger_night")
+    val passengerNight: Boolean,
+
+    val t: Double,
+    val towered: Boolean
+)
+
+/**
+ * The track (as many points as the gateway keeps of one, thinned by
+ * the app) and what the app knows besides: the airplane, the pilot's
+ * clock and the approach picked for the flight.
+ */
+@Serializable
+data class LogbookDraftAsk (
+    /**
+     * The airplane's N-number.
+     */
+    val aircraft: String? = null,
+
+    val aircraftType: String? = null,
+
+    /**
+     * The approach picked for the flight, its CIFP id.
+     */
+    val picked: String? = null,
+
+    val points: List<DraftTrackPoint>,
+
+    /**
+     * The pilot's clock against UTC, minutes.
+     */
+    val utcOffsetMin: Double? = null
+)
+
+/**
+ * A point of the app's recorded track: when, ms since 1970; GPS
+ * altitude, ft MSL, where the phone gave one.
+ */
+@Serializable
+data class DraftTrackPoint (
+    @SerialName("alt_ft")
+    val altFt: Double? = null,
+
+    val lat: Double,
+    val lon: Double,
+    val t: Double
+)
+
+/**
+ * 91.185: VFR's words, the routes in the rule's order, each segment's
+ * altitude and why, and when to leave the clearance limit.
+ */
+@Serializable
+data class LostComms (
+    /**
+     * 91.185(c)(2), the altitude rule, in words.
+     */
+    val altitude: String,
+
+    val leave: String,
+    val routes: List<LostCommsRoute>,
+    val segments: List<FlownSegment>,
+    val vfr: String
+)
+
+@Serializable
+data class LostCommsRoute (
+    val key: String,
+    val label: String,
+    val rule: String
+)
+
+@Serializable
+data class FlownSegment (
+    val because: String? = null,
+    val fly: Double? = null,
+    val name: String,
+    val words: String
+)
+
+/**
+ * The clearance and the route's segments: the altitude assigned, the
+ * one to expect and from which segment on, each segment's minimum for
+ * IFR operations, and for leaving the limit whether it is a fix an
+ * approach begins from, the EFC and the ETA as the pilot writes them.
+ */
+@Serializable
+data class LostCommsAsk (
+    @SerialName("approach_fix")
+    val approachFix: Boolean? = null,
+
+    @SerialName("assigned_ft")
+    val assignedFt: Double? = null,
+
+    val efc: String? = null,
+    val eta: String? = null,
+
+    @SerialName("expected_from")
+    val expectedFrom: Int? = null,
+
+    @SerialName("expected_ft")
+    val expectedFt: Double? = null,
+
+    val segments: List<LostCommsSegment>
+)
+
+@Serializable
+data class LostCommsSegment (
+    @SerialName("minimum_ft")
+    val minimumFt: Double? = null,
+
+    val name: String? = null
+)
+
+/**
+ * When the planner fetched what the map's weather layers are drawn
+ * from (ISO 8601 UTC; None before the first fetch): the METARs the
+ * airports' flight categories come from, and the TFRs; and every source
+ * it keeps, for the Status page.
+ */
+@Serializable
+data class MapLayerAges (
+    @SerialName("data_cycles")
+    val dataCycles: List<DataCycle>? = null,
+
+    @SerialName("metars_at")
+    val metarsAt: String? = null,
+
+    val sources: List<DataSource>? = null,
+
+    @SerialName("tfrs_at")
+    val tfrsAt: String? = null
+)
+
+/**
+ * One FAA data set the planner uses and whether its edition is still
+ * in its cycle (wingtip.data_cycles, the engine's `data_cycle`): NASR
+ * and the CIFP on AIRAC's 28 days, the charts and the obstacle file on
+ * 56. Days are YYYY-MM-DD, UTC. An edition past its cycle is still used,
+ * and said to be out of date (warn, never limit).
+ */
+@Serializable
+data class DataCycle (
+    val behind: Int? = null,
+    val current: String,
+    val edition: String? = null,
+    val effective: String? = null,
+    val expires: String? = null,
+    val key: String,
+    val kind: String,
+    val name: String,
+    val state: String
+)
+
+/**
+ * One source the planner downloads and keeps, for the pilot's Status
+ * page: its name in a pilot's words, when the copy it holds was fetched,
+ * to when that copy may still be served by the product's own validity
+ * (None: no limit, or none held), and whether the source is failing,
+ * the held copy then served on (ISO 8601 UTC); and whether it has
+ * stopped updating past its usual cadence, as the minute's feed watch
+ * found it (app.feeds.status_rows), for the page to say so.
+ */
+@Serializable
+data class DataSource (
+    val failing: Boolean? = null,
+
+    @SerialName("fetched_at")
+    val fetchedAt: String? = null,
+
+    @SerialName("kept_until")
+    val keptUntil: String? = null,
+
+    val name: String,
+    val stale: Boolean? = null
+)
+
+@Serializable
+data class ModelComparison (
+    val models: List<ModelComparisonEntry>,
+
+    @SerialName("n_labeled")
+    val nLabeled: Int? = null,
+
+    @SerialName("trained_at")
+    val trainedAt: String? = null
+)
+
+/**
+ * One of the scikit-learn models retrain() compared; `score` is its
+ * 5-fold CV MAE, lower is better.
+ */
+@Serializable
+data class ModelComparisonEntry (
+    val name: String,
+    val promoted: Boolean,
+    val score: Double? = null
+)
+
+/**
+ * Which altitudes the legs that follow fly. `flown` is the planner's
+ * plan of that name, or "custom" for a pilot's own altitude; None when
+ * the winds the legs need could not be read, so no leg follows -- the
+ * stream's next line is the error. `altitude_ft` is the first leg's (a
+ * plan may step), and None exactly when `flown` is. `options` are the
+ * four plans, offered beside a pilot's own as well; empty only when the
+ * winds failed before they could be made.
+ *
+ * It used to say all of that with `choice: null` and an empty `options`,
+ * which a winds outage produced too: the page showed "0 ft · yours",
+ * with Custom pressed, for an altitude nobody typed.
+ */
+@Serializable
+data class NavLogAltitude (
+    val aircraft: AircraftProfile? = null,
+
+    @SerialName("altitude_figures")
+    val altitudeFigures: List<AltitudeFigure>? = null,
+
+    @SerialName("altitude_ft")
+    val altitudeFt: Double? = null,
+
+    @SerialName("altitude_selection")
+    val altitudeSelection: AltitudeBreakdown,
+
+    val cautions: List<AltitudeCaution>? = null,
+
+    @SerialName("class_b_detours")
+    val classBDetours: List<Detour>? = null,
+
+    val flown: String? = null,
+    val options: List<AltitudeOption>? = null,
+    val type: String? = null
+)
+
+/**
+ * The aircraft's name plus its performance profile -- every field a
+ * data/aircraft/\*.json file carries, declared, so a page reads them as
+ * fields rather than guessing at a dict. The three figures after the
+ * name are required when a stock profile is loaded (REQUIRED_FIELDS in
+ * wingtip.aircraft); a pilot's own airplane of no stock type ("own",
+ * wingtip.aircraft.OWN_AIRPLANE) has its record's alone, and no service
+ * ceiling where the record gives none. A figure left out is missing,
+ * and each rule that needs it says so. `extra="allow"` keeps a field a
+ * newer profile adds on its way through.
+ */
+@Serializable
+data class AircraftProfile (
+    @SerialName("climb_fuel_burn_gph")
+    val climbFuelBurnGph: Double? = null,
+
+    @SerialName("climb_rate_fpm_sea_level")
+    val climbRateFpmSeaLevel: Double? = null,
+
+    @SerialName("climb_tas_kt")
+    val climbTasKt: Double? = null,
+
+    val crosswind: DemonstratedCrosswind? = null,
+
+    @SerialName("cruise_power_pct")
+    val cruisePowerPct: Double? = null,
+
+    @SerialName("cruise_tas_kt")
+    val cruiseTasKt: Double,
+
+    val designator: String? = null,
+
+    @SerialName("fuel_burn_gph")
+    val fuelBurnGph: Double,
+
+    val landing: ShortField? = null,
+    val loading: Loading? = null,
+    val name: String,
+    val pressurized: Boolean? = null,
+
+    @SerialName("service_ceiling_ft")
+    val serviceCeilingFt: Double? = null,
+
+    @SerialName("supplemental_oxygen")
+    val supplementalOxygen: Boolean? = null,
+
+    val takeoff: ShortField? = null,
+
+    @SerialName("taxi_fuel_gal")
+    val taxiFuelGal: Double? = null,
+
+    val type: String? = null,
+
+    @SerialName("usable_fuel_gal")
+    val usableFuelGal: Double? = null
+)
+
+/**
+ * The route flown at one altitude, for the altitude wheel (the owner's
+ * pick, 2026-10-20): each leg at it where it is legal there, else at the
+ * leg's nearest legal altitude (`everywhere` false then); the times and
+ * fuel with the climbs, the wind along the legs, positive helping.
+ */
+@Serializable
+data class AltitudeFigure (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    val everywhere: Boolean,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double? = null,
+
+    @SerialName("tailwind_kt")
+    val tailwindKt: Double? = null
+)
+
+/**
+ * The full reasoning behind one recommended cruise altitude.
+ * `low_ceiling_or_visibility` is None, not False, when the forecast
+ * call itself failed: unknown must not read as confirmed fine.
+ * `candidates_ft` are every legal altitude for the whole route;
+ * `segments` the same leg by leg, present when the nav log's fixes
+ * were known.
+ */
+@Serializable
+data class AltitudeBreakdown (
+    @SerialName("airspace_ceiling_ft")
+    val airspaceCeilingFt: Double? = null,
+
+    @SerialName("airspace_transits")
+    val airspaceTransits: List<AirspaceTransit>,
+
+    @SerialName("band_ceiling_ft")
+    val bandCeilingFt: Double? = null,
+
+    @SerialName("candidates_ft")
+    val candidatesFt: List<Double>? = null,
+
+    @SerialName("class_b_cleared")
+    val classBCleared: Boolean? = null,
+
+    @SerialName("cloud_base_ft")
+    val cloudBaseFt: Double? = null,
+
+    @SerialName("cloud_ceiling_ft")
+    val cloudCeilingFt: Double? = null,
+
+    @SerialName("cloud_clearance_kept")
+    val cloudClearanceKept: Boolean? = null,
+
+    @SerialName("cloud_station")
+    val cloudStation: String? = null,
+
+    @SerialName("course_magnetic_deg")
+    val courseMagneticDeg: Double,
+
+    val eastbound: Boolean,
+
+    @SerialName("floor_ft")
+    val floorFt: Double,
+
+    @SerialName("freezing_level_at_or_below")
+    val freezingLevelAtOrBelow: Boolean? = null,
+
+    @SerialName("freezing_level_ft")
+    val freezingLevelFt: Double? = null,
+
+    val hazards: List<Hazard>,
+
+    @SerialName("hemispheric_rule_from_ft")
+    val hemisphericRuleFromFt: Double? = null,
+
+    @SerialName("icing_possible")
+    val icingPossible: Boolean? = null,
+
+    @SerialName("low_ceiling_or_visibility")
+    val lowCeilingOrVisibility: Boolean? = null,
+
+    @SerialName("min_ceiling_ft")
+    val minCeilingFt: Double? = null,
+
+    @SerialName("min_visibility_sm")
+    val minVisibilitySm: Double? = null,
+
+    val mountainous: Boolean? = null,
+
+    @SerialName("recommended_ft")
+    val recommendedFt: Double? = null,
+
+    val rules: String? = null,
+    val segments: List<AltitudeSegment>? = null,
+
+    @SerialName("service_ceiling_ft")
+    val serviceCeilingFt: Double? = null,
+
+    @SerialName("special_use")
+    val specialUse: List<SpecialUseArea>? = null,
+
+    @SerialName("weather_unavailable")
+    val weatherUnavailable: List<String>? = null
+)
+
+/**
+ * Controlled airspace the route passes through: a radio call to
+ * make, not a ceiling constraint.
+ */
+@Serializable
+data class AirspaceTransit (
+    @SerialName("along_track_nm")
+    val alongTrackNm: Double,
+
+    @SerialName("class")
+    val airspaceClass: String,
+
+    @SerialName("floor_ft_msl")
+    val floorFtMsl: Double? = null,
+
+    val name: String,
+    val requires: String
+)
+
+/**
+ * One leg's own band: its floor, the shelf and the clouds over it
+ * alone, and the legal cruising altitudes between -- what lets a plan
+ * step down under a Class B shelf and climb again past it.
+ */
+@Serializable
+data class AltitudeSegment (
+    @SerialName("airspace_ceiling_ft")
+    val airspaceCeilingFt: Double? = null,
+
+    val airway: AirwayAltitudes? = null,
+
+    @SerialName("band_ceiling_ft")
+    val bandCeilingFt: Double? = null,
+
+    @SerialName("candidates_ft")
+    val candidatesFt: List<Double>,
+
+    @SerialName("cloud_base_ft")
+    val cloudBaseFt: Double? = null,
+
+    @SerialName("cloud_ceiling_ft")
+    val cloudCeilingFt: Double? = null,
+
+    @SerialName("cloud_clearance_kept")
+    val cloudClearanceKept: Boolean? = null,
+
+    @SerialName("cloud_station")
+    val cloudStation: String? = null,
+
+    val congested: Boolean? = null,
+
+    @SerialName("course_magnetic_deg")
+    val courseMagneticDeg: Double? = null,
+
+    val eastbound: Boolean? = null,
+
+    @SerialName("floor_ft")
+    val floorFt: Double,
+
+    @SerialName("from_nm")
+    val fromNm: Double,
+
+    @SerialName("hemispheric_rule_from_ft")
+    val hemisphericRuleFromFt: Double? = null,
+
+    @SerialName("highest_ft")
+    val highestFt: Double? = null,
+
+    @SerialName("highest_is_obstacle")
+    val highestIsObstacle: Boolean? = null,
+
+    val mountainous: Boolean? = null,
+
+    @SerialName("obstacle_clearance_ft")
+    val obstacleClearanceFt: Double? = null,
+
+    @SerialName("obstacle_type")
+    val obstacleType: String? = null,
+
+    @SerialName("service_ceiling_ft")
+    val serviceCeilingFt: Double? = null,
+
+    val tight: Boolean? = null,
+
+    @SerialName("to_nm")
+    val toNm: Double
+)
+
+/**
+ * An airway segment's published altitudes, feet MSL (NASR AWY_SEG_ALT):
+ * the MEA, the GNSS MEA, the MOCA and the MAA; `from_` the fix it starts
+ * at.
+ */
+@Serializable
+data class AirwayAltitudes (
+    val from: String,
+
+    @SerialName("gnss_mea_ft")
+    val gnssMeaFt: Double? = null,
+
+    val id: String,
+
+    @SerialName("maa_ft")
+    val maaFt: Double? = null,
+
+    @SerialName("mea_ft")
+    val meaFt: Double? = null,
+
+    @SerialName("moca_ft")
+    val mocaFt: Double? = null
+)
+
+/**
+ * One special-use area the route crosses.
+ */
+@Serializable
+data class SpecialUseArea (
+    @SerialName("along_track_nm")
+    val alongTrackNm: Double,
+
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("ceiling_ref")
+    val ceilingRef: String? = null,
+
+    @SerialName("controlling_agency")
+    val controllingAgency: String? = null,
+
+    @SerialName("floor_ft")
+    val floorFt: Double? = null,
+
+    @SerialName("floor_ref")
+    val floorRef: String? = null,
+
+    val kind: String,
+    val legs: List<Int>? = null,
+    val name: String,
+
+    @SerialName("time_zone")
+    val timeZone: String? = null,
+
+    @SerialName("times_of_use")
+    val timesOfUse: String? = null,
+
+    val type: String
+)
+
+/**
+ * An altitude the pilot set for a hop (`from_ident` to `to_ident`) and
+ * what is wrong with it against the planner's band there
+ * (wingtip.planning.own_altitude_caution): a warning, not a refusal.
+ */
+@Serializable
+data class AltitudeCaution (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    @SerialName("from_ident")
+    val fromIdent: String,
+
+    val reasons: List<String>,
+
+    @SerialName("to_ident")
+    val toIdent: String
+)
+
+/**
+ * A named fix that keeps a route out of the Class B airspace it is
+ * stopped by (wingtip.airspace.detour_waypoint), and where it goes in the
+ * stops: before the stop at `stop_index`, so on the hop it is for.
+ */
+@Serializable
+data class Detour (
+    @SerialName("added_nm")
+    val addedNm: Double,
+
+    val description: String? = null,
+    val ident: String,
+    val kind: String,
+
+    @SerialName("stop_index")
+    val stopIndex: Int,
+
+    val via: List<String>? = null
+)
+
+/**
+ * One of the four plans -- lowest, highest, fastest, economical --
+ * as its steps and what it costs. `ete_min` is the flying time with every climb
+ * flown (`climb_penalty_min` is how many of those minutes are climb),
+ * the figure the plans are compared on; `tailwind_kt` the
+ * distance-weighted wind component along the course, positive helping,
+ * over the legs that had wind data. With no airplane, the lowest and
+ * highest alone, their times, fuel, climb and wind None.
+ */
+@Serializable
+data class AltitudeOption (
+    @SerialName("climb_penalty_min")
+    val climbPenaltyMin: Double? = null,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double? = null,
+
+    val kind: String,
+
+    @SerialName("legs_without_wind")
+    val legsWithoutWind: Int,
+
+    @SerialName("needs_oxygen")
+    val needsOxygen: Boolean,
+
+    val steps: List<AltitudeStep>,
+
+    @SerialName("tailwind_kt")
+    val tailwindKt: Double? = null,
+
+    @SerialName("unflyable_legs")
+    val unflyableLegs: Int
+)
+
+/**
+ * Consecutive legs flown at one altitude.
+ */
+@Serializable
+data class AltitudeStep (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    val from: String,
+    val to: String
+)
+
+@Serializable
+data class NavLogDone (
+    val totals: Totals,
+    val type: String? = null
+)
+
+/**
+ * The trip's sums, and the fuel check: the legs' fuel plus the VFR
+ * reserve (30 minutes by day, 45 at night -- `night` is None when no
+ * departure time said which) against the aeroplane's usable fuel,
+ * when it has one. `fuel_margin_gal` below zero is a flight the tanks
+ * do not hold.
+ */
+@Serializable
+data class Totals (
+    val alternate: AlternateLeg? = null,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double? = null,
+
+    @SerialName("fuel_margin_gal")
+    val fuelMarginGal: Double? = null,
+
+    @SerialName("fuel_required_gal")
+    val fuelRequiredGal: Double? = null,
+
+    @SerialName("fuel_stops")
+    val fuelStops: List<FuelStopSuggestion>? = null,
+
+    @SerialName("ground_min")
+    val groundMin: Double? = null,
+
+    val hops: List<HopTotals>? = null,
+
+    @SerialName("legs_without_wind")
+    val legsWithoutWind: Int,
+
+    val night: Boolean? = null,
+
+    @SerialName("night_passengers")
+    val nightPassengers: Boolean? = null,
+
+    @SerialName("planned_at")
+    val plannedAt: String? = null,
+
+    @SerialName("procedure_nm")
+    val procedureNm: Double? = null,
+
+    @SerialName("reserve_gal")
+    val reserveGal: Double? = null,
+
+    @SerialName("reserve_min")
+    val reserveMin: Double? = null,
+
+    val rules: String? = null,
+
+    @SerialName("taxi_gal")
+    val taxiGal: Double? = null,
+
+    @SerialName("unflyable_legs")
+    val unflyableLegs: Int,
+
+    @SerialName("usable_fuel_gal")
+    val usableFuelGal: Double? = null,
+
+    val winds: WindsPeriod? = null
+)
+
+/**
+ * One flight between two landings of a route with stops.
+ */
+@Serializable
+data class HopTotals (
+    val departure: String,
+    val destination: String,
+    val totals: Totals
+)
+
+/**
+ * The leg from the destination on to the IFR alternate: flown at the
+ * route's last altitude in its winds, or in still air where they could
+ * not be read (`still_air`). With no airplane, its miles alone: the
+ * time and fuel None.
+ */
+@Serializable
+data class AlternateLeg (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double? = null,
+
+    val ident: String,
+
+    @SerialName("still_air")
+    val stillAir: Boolean? = null
+)
+
+/**
+ * The stops that take one flight short of fuel to its destination with
+ * the reserve left at every landing, the tanks filled at each, and other
+ * fields the first could be. `reason` is "fuel": breaks for a meal or a
+ * rest are the pilot's to pick from the map's Stops.
+ */
+@Serializable
+data class FuelStopSuggestion (
+    val choices: List<FuelStop>? = null,
+    val departure: String,
+    val destination: String,
+    val reason: String? = null,
+    val stops: List<FuelStop>,
+
+    @SerialName("usable_gal")
+    val usableGal: Double
+)
+
+/**
+ * A field with the airplane's fuel a flight can land at for it, with
+ * its reserve left (wingtip.fuelstops).
+ */
+@Serializable
+data class FuelStop (
+    @SerialName("added_nm")
+    val addedNm: Double,
+
+    val city: String,
+
+    @SerialName("elevation_ft")
+    val elevationFt: Double? = null,
+
+    @SerialName("from_nm")
+    val fromNm: Double,
+
+    @SerialName("fuel_types")
+    val fuelTypes: String,
+
+    val ident: String,
+
+    @SerialName("lands_with_gal")
+    val landsWithGal: Double,
+
+    val lat: Double,
+    val lon: Double,
+    val minutes: Double,
+    val name: String,
+
+    @SerialName("runway_ft")
+    val runwayFt: Int
+)
+
+/**
+ * The period of the winds and temperatures aloft a plan flies: the
+ * GFS model's (fetched by services/weather, read from wingtip.weather_store), since the FB
+ * ended with the NAM (NWS
+ * Service Change Notice 26-47). Valid at `valid_at`, for use from
+ * `use_from` to `use_to` (FAA Order JO 7110.10 TBL 9-3-1's windows round
+ * the forecast hour), ISO UTC; `run` the GFS run and `forecast_hour` the
+ * hour of it read; `modelled` always true now.
+ */
+@Serializable
+data class WindsPeriod (
+    @SerialName("forecast_hour")
+    val forecastHour: Int? = null,
+
+    val modelled: Boolean? = null,
+    val run: String? = null,
+
+    @SerialName("use_from")
+    val useFrom: String,
+
+    @SerialName("use_to")
+    val useTo: String,
+
+    @SerialName("valid_at")
+    val validAt: String
+)
+
+/**
+ * The stream's failure. `retry` False where asking again gets the
+ * same answer -- a route with no legal altitude -- so the page offers
+ * no Try again for it. For that one `detail` is the headline, and
+ * `reasons` and `advice` say why and what to do: the page lists them in
+ * the nav log (wingtip.planning.no_altitude).
+ */
+@Serializable
+data class NavLogError (
+    val advice: String? = null,
+    val brief: String? = null,
+
+    @SerialName("class_b")
+    val classB: Boolean? = null,
+
+    val detail: String,
+    val detours: List<Detour>? = null,
+    val reasons: List<String>? = null,
+    val retry: Boolean? = null,
+    val type: String? = null
+)
+
+@Serializable
+data class NavLogLeg (
+    val airway: AirwayAltitudes? = null,
+
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    @SerialName("climb_min")
+    val climbMin: Double? = null,
+
+    @SerialName("density_altitude_ft")
+    val densityAltitudeFt: Double? = null,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    val from: String,
+
+    @SerialName("fuel_burn_gph")
+    val fuelBurnGph: Double? = null,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double? = null,
+
+    @SerialName("ground_min")
+    val groundMin: Double? = null,
+
+    @SerialName("groundspeed_kt")
+    val groundspeedKt: Double? = null,
+
+    val hold: LegHold? = null,
+
+    @SerialName("magnetic_course_deg")
+    val magneticCourseDeg: Double,
+
+    @SerialName("magnetic_heading_deg")
+    val magneticHeadingDeg: Double? = null,
+
+    @SerialName("magnetic_variation_deg")
+    val magneticVariationDeg: Double,
+
+    @SerialName("oat_c")
+    val oatC: Double? = null,
+
+    @SerialName("power_pct")
+    val powerPct: Double? = null,
+
+    val procedure: LegProcedure? = null,
+
+    @SerialName("tas_kt")
+    val tasKt: Double? = null,
+
+    val to: String,
+    val toc: TopOfClimb? = null,
+    val tod: TopOfDescent? = null,
+
+    @SerialName("true_course_deg")
+    val trueCourseDeg: Double,
+
+    @SerialName("true_heading_deg")
+    val trueHeadingDeg: Double? = null,
+
+    val type: String? = null,
+
+    @SerialName("wca_deg")
+    val wcaDeg: Double? = null,
+
+    val wind: Wind? = null
+)
+
+/**
+ * A hold the pilot put at a point of the route (wingtip.holds), on the
+ * leg that leaves it -- `at_end`, the leg into the destination it is
+ * held at: its inbound course (magnetic), its turns, its legs by time or
+ * distance, how long (turns, or minutes), the minutes and fuel it takes,
+ * already in the leg's `ete_min` and `fuel_gal` (plan.with_holds), one
+ * turn round its racetrack's minutes, the entry from the course flown to
+ * it (AIM 5-3-8), and that one turn as [lat, lon] pairs from the point.
+ */
+@Serializable
+data class LegHold (
+    @SerialName("at_end")
+    val atEnd: Boolean? = null,
+
+    val entry: String,
+    val fix: String,
+    val gal: Double,
+
+    @SerialName("inbound_deg")
+    val inboundDeg: Int,
+
+    @SerialName("lap_min")
+    val lapMin: Double,
+
+    @SerialName("leg_min")
+    val legMin: Double? = null,
+
+    @SerialName("leg_nm")
+    val legNm: Double? = null,
+
+    val minutes: Double,
+    val path: List<List<Double>>,
+    val right: Boolean,
+    val turns: Int? = null
+)
+
+/**
+ * A leg flown by the procedures picked -- out by a departure, in by an
+ * arrival and an approach (wingtip.procedure_paths.flown) -- rather than as
+ * the route goes: its path from the leg's start, [lat, lon] pairs; the
+ * altitude the chart sets at each point (None where it sets none); its
+ * length; whether it comes down to a runway; where its final starts, the
+ * index in `path` of its final approach fix; where its missed approach
+ * point is, the index in `path` the missed approach is flown from (short
+ * of the runway's threshold, where the path ends, on a VOR's or a LOC's
+ * approach); and the approach's missed approach. The miles it is more than the leg's own,
+ * and the time and
+ * fuel they take at the leg's ground speed and cruise burn, are in the
+ * leg's `ete_min` and `fuel_gal` (wingtip.flight_plan.with_procedures);
+ * with no airplane, the time and fuel None.
+ */
+@Serializable
+data class LegProcedure (
+    @SerialName("final_at")
+    val finalAt: Int? = null,
+
+    val ft: List<Double?>,
+    val landing: Boolean,
+
+    @SerialName("map_at")
+    val mapAt: Int? = null,
+
+    val missed: MissedApproachPath? = null,
+
+    @SerialName("more_gal")
+    val moreGal: Double? = null,
+
+    @SerialName("more_min")
+    val moreMin: Double? = null,
+
+    @SerialName("more_nm")
+    val moreNm: Double,
+
+    val nm: Double,
+    val path: List<List<Double>>
+)
+
+/**
+ * An approach's missed approach as it is flown, from its missed
+ * approach point and round its hold once (wingtip.procedure_paths.missed_path),
+ * and the altitude it climbs to: the highest its fixes set.
+ */
+@Serializable
+data class MissedApproachPath (
+    val ft: Double? = null,
+    val path: List<List<Double>>
+)
+
+/**
+ * Where a climb tops out (TOC), and the climb's true airspeed and
+ * ground speed on the way up to it (wingtip.navlog.with_climbs).
+ */
+@Serializable
+data class TopOfClimb (
+    @SerialName("along_nm")
+    val alongNm: Double,
+
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    @SerialName("ete_min")
+    val eteMin: Double,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double? = null,
+
+    @SerialName("groundspeed_kt")
+    val groundspeedKt: Double,
+
+    val lat: Double,
+    val lon: Double,
+
+    @SerialName("tas_kt")
+    val tasKt: Double
+)
+
+/**
+ * Where a descent starts (TOD): down from `altitude_ft` to `to_ft` --
+ * the pattern altitude of the field landed at, the altitude an
+ * approach's first fix is crossed at, or the next leg's lower level --
+ * at `fpm`, three to one at the leg's ground speed, or steeper where
+ * the climb before it left less room (wingtip.navlog.with_descents).
+ */
+@Serializable
+data class TopOfDescent (
+    @SerialName("along_nm")
+    val alongNm: Double,
+
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    @SerialName("ete_min")
+    val eteMin: Double,
+
+    val fix: String? = null,
+    val fpm: Double,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double? = null,
+
+    val lat: Double,
+    val lon: Double,
+    val pattern: Boolean,
+
+    @SerialName("to_ft")
+    val toFt: Double
+)
+
+/**
+ * The stream's failure. `retry` False where asking again gets the
+ * same answer -- a route with no legal altitude -- so the page offers
+ * no Try again for it. For that one `detail` is the headline, and
+ * `reasons` and `advice` say why and what to do: the page lists them in
+ * the nav log (wingtip.planning.no_altitude).
+ *
+ * Which altitudes the legs that follow fly. `flown` is the planner's
+ * plan of that name, or "custom" for a pilot's own altitude; None when
+ * the winds the legs need could not be read, so no leg follows -- the
+ * stream's next line is the error. `altitude_ft` is the first leg's (a
+ * plan may step), and None exactly when `flown` is. `options` are the
+ * four plans, offered beside a pilot's own as well; empty only when the
+ * winds failed before they could be made.
+ *
+ * It used to say all of that with `choice: null` and an empty `options`,
+ * which a winds outage produced too: the page showed "0 ft · yours",
+ * with Custom pressed, for an altitude nobody typed.
+ */
+@Serializable
+data class NavLogMessage (
+    val detail: String? = null,
+    val type: String? = null,
+    val advice: String? = null,
+    val brief: String? = null,
+
+    @SerialName("class_b")
+    val classB: Boolean? = null,
+
+    val detours: List<Detour>? = null,
+    val reasons: List<String>? = null,
+    val retry: Boolean? = null,
+    val aircraft: AircraftProfile? = null,
+
+    @SerialName("altitude_figures")
+    val altitudeFigures: List<AltitudeFigure>? = null,
+
+    @SerialName("altitude_ft")
+    val altitudeFt: Double? = null,
+
+    @SerialName("altitude_selection")
+    val altitudeSelection: AltitudeBreakdown? = null,
+
+    val cautions: List<AltitudeCaution>? = null,
+
+    @SerialName("class_b_detours")
+    val classBDetours: List<Detour>? = null,
+
+    val flown: String? = null,
+    val options: List<AltitudeOption>? = null,
+    val airway: AirwayAltitudes? = null,
+
+    @SerialName("climb_min")
+    val climbMin: Double? = null,
+
+    @SerialName("density_altitude_ft")
+    val densityAltitudeFt: Double? = null,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double? = null,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    val from: String? = null,
+
+    @SerialName("fuel_burn_gph")
+    val fuelBurnGph: Double? = null,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double? = null,
+
+    @SerialName("ground_min")
+    val groundMin: Double? = null,
+
+    @SerialName("groundspeed_kt")
+    val groundspeedKt: Double? = null,
+
+    val hold: LegHold? = null,
+
+    @SerialName("magnetic_course_deg")
+    val magneticCourseDeg: Double? = null,
+
+    @SerialName("magnetic_heading_deg")
+    val magneticHeadingDeg: Double? = null,
+
+    @SerialName("magnetic_variation_deg")
+    val magneticVariationDeg: Double? = null,
+
+    @SerialName("oat_c")
+    val oatC: Double? = null,
+
+    @SerialName("power_pct")
+    val powerPct: Double? = null,
+
+    val procedure: LegProcedure? = null,
+
+    @SerialName("tas_kt")
+    val tasKt: Double? = null,
+
+    val to: String? = null,
+    val toc: TopOfClimb? = null,
+    val tod: TopOfDescent? = null,
+
+    @SerialName("true_course_deg")
+    val trueCourseDeg: Double? = null,
+
+    @SerialName("true_heading_deg")
+    val trueHeadingDeg: Double? = null,
+
+    @SerialName("wca_deg")
+    val wcaDeg: Double? = null,
+
+    val wind: Wind? = null,
+    val totals: Totals? = null
+)
+
+@Serializable
+data class NavLogStage (
+    val detail: String,
+    val type: String? = null
+)
+
+@Serializable
+data class NearestAirports (
+    val airports: List<NearestAirport>
+)
+
+/**
+ * A field near a position: how far and which way (true), its town,
+ * elevation and longest open runway, and a frequency listed for it
+ * (None where OurAirports lists none); and what a search's filters read
+ * of it (wingtip.field_facts): its fuel, its runways' surfaces, an
+ * instrument approach, its METAR's wind and visibility, and its
+ * forecast at the time asked.
+ */
+@Serializable
+data class NearestAirport (
+    @SerialName("airspace_class")
+    val airspaceClass: String? = null,
+
+    @SerialName("bearing_deg")
+    val bearingDeg: Double,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    @SerialName("elevation_ft")
+    val elevationFt: Double? = null,
+
+    @SerialName("flight_category")
+    val flightCategory: String? = null,
+
+    val forecast: FieldForecast? = null,
+    val fuel: List<String>? = null,
+    val ident: String,
+
+    @SerialName("instrument_approach")
+    val instrumentApproach: Boolean? = null,
+
+    val kind: String,
+    val lat: Double,
+    val lon: Double,
+
+    @SerialName("longest_runway_ft")
+    val longestRunwayFt: Int? = null,
+
+    val military: String? = null,
+    val municipality: String? = null,
+    val name: String,
+
+    @SerialName("primary_of")
+    val primaryOf: String? = null,
+
+    @SerialName("private")
+
+    val isPrivate: Boolean? = null,
+    val radio: InboundRadio? = null,
+
+    @SerialName("runway_surfaces")
+    val runwaySurfaces: List<String>? = null,
+
+    val towered: Boolean? = null,
+
+    @SerialName("visibility_sm")
+    val visibilitySm: Double? = null,
+
+    @SerialName("wind_dir_true_deg")
+    val windDirTrueDeg: Double? = null,
+
+    @SerialName("wind_gust_kt")
+    val windGustKt: Double? = null,
+
+    @SerialName("wind_speed_kt")
+    val windSpeedKt: Double? = null
+)
+
+/**
+ * What the TAF that speaks for a field forecasts at a time asked
+ * (wingtip.field_forecast): the flight category of the worst it forecasts
+ * then, TEMPO and PROB included (AIM 7-1-7; None where it does not settle
+ * it or does not cover the time), the station and how far it is (None
+ * for the field's own).
+ */
+@Serializable
+data class FieldForecast (
+    val at: Double,
+    val category: String? = null,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double? = null,
+
+    val station: String
+)
+
+/**
+ * The frequency a pilot calls a field on, inbound: `kind` "TWR",
+ * "CTAF" or "UNICOM", and the frequency in MHz.
+ */
+@Serializable
+data class InboundRadio (
+    val kind: String,
+    val mhz: Double
+)
+
+/**
+ * The flight's NOTAMs best first, every one heard (`notams`), how many
+ * are said first (`top`), the day the NOTAM feed was first heard
+ * (`coverage_since`: earlier NOTAMs never changed since are not held) and
+ * what could not be checked ("tfrs").
+ */
+@Serializable
+data class NotamsRanked (
+    @SerialName("coverage_since")
+    val coverageSince: String? = null,
+
+    val notams: List<RankedNotam>,
+    val top: Int,
+    val unchecked: List<String>? = null
+)
+
+/**
+ * One NOTAM or TFR, ranked: its place in the list and score, whether it
+ * is one of the top three said first, whether its score is shared
+ * (`tied`), what was read of it, and its text as sent (`raw`).
+ */
+@Serializable
+data class RankedNotam (
+    val closed: Boolean,
+    val ends: String? = null,
+    val field: String? = null,
+
+    @SerialName("high_ft")
+    val highFt: Double? = null,
+
+    val id: String,
+
+    @SerialName("in_force")
+    val inForce: Boolean? = null,
+
+    val keyword: String? = null,
+    val kind: String,
+
+    @SerialName("low_ft")
+    val lowFt: Double? = null,
+
+    val rank: Int,
+    val raw: String,
+    val reasons: List<NotamReason>,
+    val role: String? = null,
+    val runways: List<String>,
+    val score: Int,
+    val starts: String? = null,
+    val tied: Boolean,
+    val top: Boolean
+)
+
+/**
+ * Why it bears on the flight, or does not, in the engine's words.
+ */
+@Serializable
+data class NotamReason (
+    val key: String,
+    val words: String
+)
+
+/**
+ * The flight as the Brief has it: its route, when it leaves (UTC when
+ * naive; now when not given), how long it is (two hours when not given),
+ * its cruise altitude and the runway in use at each field the pilot's
+ * plan has picked ({"KOSH": "36"}).
+ */
+@Serializable
+data class NotamsRankedAsk (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double? = null,
+
+    val dep: String,
+    val depart: String? = null,
+    val dest: String,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    val runways: Map<String, String>? = null,
+    val stops: List<String>? = null
+)
+
+/**
+ * A generated note offered as the shared one: kept (`written`), or
+ * the shared one saved meanwhile, which stays (`description` is it).
+ */
+@Serializable
+data class NoteSeeded (
+    val description: String,
+    val written: Boolean
+)
+
+/**
+ * A route's checkpoints in along-track order, for their notes.
+ */
+@Serializable
+data class NotesToWrite (
+    val checkpoints: List<NoteToWrite>,
+
+    @SerialName("departure_ident")
+    val departureIdent: String
+)
+
+/**
+ * A route's checkpoint as the assistant writes its note
+ * (POST /api/checkpoint-notes/pending): where it is, what it is, the
+ * hop its note is kept under, and the note already kept for it -- the
+ * pilot's own, else the shared one -- or None, for the assistant to
+ * write and seed.
+ */
+@Serializable
+data class NoteToWrite (
+    @SerialName("along_track_nm")
+    val alongTrackNm: Double,
+
+    val category: String,
+
+    @SerialName("hop_key")
+    val hopKey: String,
+
+    val id: String,
+    val lat: Double,
+    val lon: Double,
+    val name: String? = null,
+    val saved: String? = null
+)
+
+/**
+ * The obstacles in a box, tallest first; `more` where some were left
+ * out past the most a map is given at once.
+ */
+@Serializable
+data class Obstacles (
+    val more: Boolean,
+    val obstacles: List<Obstacle>
+)
+
+/**
+ * One obstacle of the FAA's Digital Obstacle File (DOF.DAT): where it
+ * stands, its height above the ground and its top above the sea in feet,
+ * the FAA's word for what it is (TOWER, BLDG, WINDMILL ...) and whether
+ * it is lit.
+ */
+@Serializable
+data class Obstacle (
+    @SerialName("agl_ft")
+    val aglFt: Int,
+
+    @SerialName("amsl_ft")
+    val amslFt: Int,
+
+    val lat: Double,
+    val lit: Boolean,
+    val lon: Double,
+    val type: String
+)
+
+/**
+ * A box drawn on the map as a region id, snapped outward to the half
+ * degree (wingtip.offline_regions.box_id).
+ */
+@Serializable
+data class OfflineBox (
+    val id: String
+)
+
+/**
+ * What can be kept: the cycle the map draws, the day it is replaced,
+ * the next cycle where it is here ahead of its date, the archives each
+ * cycle has (a kind and a density: "sec", "sec@2x"), the overlays and
+ * the regions.
+ */
+@Serializable
+data class OfflineCatalog (
+    val archives: List<String>,
+    val cycle: String,
+    val expires: String? = null,
+
+    @SerialName("next_cycle")
+    val nextCycle: String? = null,
+
+    @SerialName("next_effective")
+    val nextEffective: String? = null,
+
+    val overlay: OfflineOverlay? = null,
+    val regions: List<OfflineRegion>
+)
+
+/**
+ * The map's overlays of the cycle, the whole country in one archive
+ * (/api/overlay-tiles/{name}.pmtiles), kept with any region.
+ */
+@Serializable
+data class OfflineOverlay (
+    val bytes: Long,
+    val name: String
+)
+
+/**
+ * A place to keep: a sectional sheet's coverage, a state, or a box
+ * drawn on the map. `sizes` are the bytes of each of its archives
+ * already worked out ("sec", "sec@2x", "tac" ...); the rest come with
+ * the region's own answer.
+ */
+@Serializable
+data class OfflineRegion (
+    val boxes: List<List<Double>>,
+    val group: String,
+    val id: String,
+    val name: String,
+    val sizes: Map<String, Long>
+)
+
+/**
+ * Everything a phone fetches to keep a region of a cycle: an archive
+ * per kind and density with tiles there, and the cycle packs it touches.
+ */
+@Serializable
+data class OfflineRegionFiles (
+    val archives: List<OfflineArchive>,
+    val cycle: String,
+    val expires: String? = null,
+    val packs: List<OfflinePack>,
+    val region: OfflineRegion
+)
+
+/**
+ * One archive of a region: its kind and density, how many tiles and
+ * bytes it holds (`exact` once cut, else from the directory, within a
+ * few KB), and its address under the planner.
+ */
+@Serializable
+data class OfflineArchive (
+    val archive: String,
+    val bytes: Long,
+    val exact: Boolean,
+    val kind: String,
+    val scale: Int,
+    val tiles: Int,
+    val url: String
+)
+
+/**
+ * A cycle pack the region touches (/api/cycle-pack/{cycle}/{name}.pack).
+ */
+@Serializable
+data class OfflinePack (
+    val bytes: Long,
+    val name: String,
+    val url: String
+)
+
+/**
+ * The map's FAA overlays as vector tiles (wingtip.vector_tiles): one
+ * PMTiles archive of the cycle, fetched in byte ranges at
+ * /api/overlay-tiles/{name}.pmtiles; its zooms, and how far its lines
+ * may stray from the FAA's (metres on the ground).
+ */
+@Serializable
+data class OverlayTiles (
+    @SerialName("built_at")
+    val builtAt: Double,
+
+    val bytes: Long,
+    val cycle: String,
+    val layers: List<OverlayTilesLayer>,
+
+    @SerialName("max_zoom")
+    val maxZoom: Int,
+
+    @SerialName("min_zoom")
+    val minZoom: Int,
+
+    val name: String,
+
+    @SerialName("tolerance_m")
+    val toleranceM: Double,
+
+    val version: Int
+)
+
+/**
+ * One layer of the overlay tiles (wingtip.vector_tiles.LAYERS) and how
+ * many features it holds.
+ */
+@Serializable
+data class OverlayTilesLayer (
+    val features: Int,
+    val name: String
+)
+
+/**
+ * One past flight's reports, for its track log and its replay.
+ */
+@Serializable
+data class PastFlight (
+    val id: Int,
+    val points: List<PastFlightPoint>
+)
+
+/**
+ * A report of a past flight: when (s since 1970), where, its height
+ * (GNSS where sent, ft; None on the ground), ground speed (kt), track
+ * (degrees true) and climb (ft/min).
+ */
+@Serializable
+data class PastFlightPoint (
+    @SerialName("alt_ft")
+    val altFt: Double? = null,
+
+    @SerialName("gs_kt")
+    val gsKt: Double? = null,
+
+    val lat: Double,
+    val lon: Double,
+    val t: Double,
+
+    @SerialName("track_deg")
+    val trackDeg: Double? = null,
+
+    @SerialName("vrate_fpm")
+    val vrateFpm: Double? = null
+)
+
+/**
+ * An airplane's last flights found, ten at most, newest first, from
+ * adsb.lol's traces (Open Database License 1.0).
+ */
+@Serializable
+data class PastFlights (
+    val flights: List<PastFlightSummary>,
+    val hex: String,
+
+    @SerialName("next_until")
+    val nextUntil: String? = null,
+
+    val registration: String? = null,
+    val type: String? = null,
+
+    @SerialName("unread_days")
+    val unreadDays: Int? = null
+)
+
+/**
+ * One of an airplane's flights of the last days (wingtip.traffic.history):
+ * where it went from and to, where the receivers heard that, and when.
+ */
+@Serializable
+data class PastFlightSummary (
+    val destination: PastFlightField? = null,
+    val id: Int,
+
+    @SerialName("in_air")
+    val inAir: Boolean,
+
+    val landed: Boolean,
+
+    @SerialName("max_alt_ft")
+    val maxAltFt: Double,
+
+    val off: Double,
+    val on: Double,
+    val origin: PastFlightField? = null
+)
+
+@Serializable
+data class PickDeleted (
+    val ok: Boolean,
+    val summary: PickSummary
+)
+
+@Serializable
+data class PickRequest (
+    @SerialName("area_m2")
+    val areaM2: Double? = null,
+
+    val category: String? = null,
+
+    @SerialName("departure_ident")
+    val departureIdent: String,
+
+    @SerialName("destination_ident")
+    val destinationIdent: String,
+
+    val lat: Double,
+    val lon: Double,
+    val note: String? = null,
+    val rating: Int? = null,
+    val role: String? = null,
+    val source: String? = null
+)
+
+@Serializable
+data class PickSaved (
+    val displaced: List<DisplacedPick>? = null,
+    val ok: Boolean,
+    val pick: Pick,
+    val summary: PickSummary
+)
+
+/**
+ * A pick on another point that a save took the place of: the store
+ * keeps one pick per place (wingtip.routecsv.SAME_PLACE_NM), whatever each
+ * point is.
+ */
+@Serializable
+data class DisplacedPick (
+    val category: String,
+    val lat: Double,
+    val lon: Double
+)
+
+/**
+ * How many of one pilot's own notes went, as their account did.
+ */
+@Serializable
+data class PilotNotesForgotten (
+    val removed: Int
+)
+
+@Serializable
+data class PlacesFound (
+    val places: List<PlaceFound>
+)
+
+/**
+ * A place a pilot typed for Nearest to find the fields near: an
+ * airport, a town, a street address (wingtip.geocode), and where it is.
+ */
+@Serializable
+data class PlaceFound (
+    val kind: String,
+    val label: String,
+    val lat: Double,
+    val lon: Double
+)
+
+@Serializable
+data class Plan (
+    val aircraft: AircraftProfile? = null,
+
+    @SerialName("altitude_cautions")
+    val altitudeCautions: List<AltitudeCaution>? = null,
+
+    @SerialName("altitude_choice")
+    val altitudeChoice: String? = null,
+
+    @SerialName("altitude_figures")
+    val altitudeFigures: List<AltitudeFigure>? = null,
+
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    @SerialName("altitude_options")
+    val altitudeOptions: List<AltitudeOption>? = null,
+
+    @SerialName("altitude_selection")
+    val altitudeSelection: AltitudeBreakdown? = null,
+
+    val candidates: List<Candidate>,
+
+    @SerialName("chart_cycle")
+    val chartCycle: String,
+
+    @SerialName("chart_layers")
+    val chartLayers: List<ChartLayer>,
+
+    @SerialName("chart_revision")
+    val chartRevision: Int? = null,
+
+    @SerialName("chart_tiles_base")
+    val chartTilesBase: String? = null,
+
+    @SerialName("class_b_detours")
+    val classBDetours: List<Detour>? = null,
+
+    @SerialName("course_line")
+    val courseLine: List<List<Double>>,
+
+    val departure: AirportEnd,
+    val destination: AirportEnd,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    val legs: List<Leg>,
+
+    @SerialName("max_zoom")
+    val maxZoom: Int,
+
+    @SerialName("min_zoom")
+    val minZoom: Int,
+
+    val selected: List<Candidate>,
+    val stops: List<AirportEnd>? = null,
+    val totals: Totals
+)
+
+/**
+ * One dead-reckoning leg. `wind` is None when no winds-aloft station
+ * is near enough, which is not the same as calm: groundspeed then falls
+ * back to true airspeed. groundspeed/ETE/fuel are None when the wind
+ * exceeds true airspeed, i.e. the leg cannot be flown.
+ *
+ * The true airspeed and fuel flow are the aeroplane's in the leg's own
+ * air (wingtip.performance): its cruise figures are at a reference
+ * altitude on a standard day, and the forecast temperature at this
+ * altitude gives the density altitude they are flown at, at the power
+ * it allows -- the cruise power, or less where full throttle cannot
+ * make it. `oat_c` is None where no forecast temperature was near: a
+ * standard day is assumed there.
+ */
+@Serializable
+data class Leg (
+    val airway: AirwayAltitudes? = null,
+
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
+
+    @SerialName("climb_min")
+    val climbMin: Double? = null,
+
+    @SerialName("density_altitude_ft")
+    val densityAltitudeFt: Double? = null,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
+
+    val from: String,
+
+    @SerialName("fuel_burn_gph")
+    val fuelBurnGph: Double? = null,
+
+    @SerialName("fuel_gal")
+    val fuelGal: Double? = null,
+
+    @SerialName("ground_min")
+    val groundMin: Double? = null,
+
+    @SerialName("groundspeed_kt")
+    val groundspeedKt: Double? = null,
+
+    val hold: LegHold? = null,
+
+    @SerialName("magnetic_course_deg")
+    val magneticCourseDeg: Double,
+
+    @SerialName("magnetic_heading_deg")
+    val magneticHeadingDeg: Double? = null,
+
+    @SerialName("magnetic_variation_deg")
+    val magneticVariationDeg: Double,
+
+    @SerialName("oat_c")
+    val oatC: Double? = null,
+
+    @SerialName("power_pct")
+    val powerPct: Double? = null,
+
+    val procedure: LegProcedure? = null,
+
+    @SerialName("tas_kt")
+    val tasKt: Double? = null,
+
+    val to: String,
+    val toc: TopOfClimb? = null,
+    val tod: TopOfDescent? = null,
+
+    @SerialName("true_course_deg")
+    val trueCourseDeg: Double,
+
+    @SerialName("true_heading_deg")
+    val trueHeadingDeg: Double? = null,
+
+    @SerialName("wca_deg")
+    val wcaDeg: Double? = null,
+
+    val wind: Wind? = null
+)
+
+/**
+ * An approach's plate's plan view placed on the map (wingtip.plates): the
+ * FAA's plate of `name` in d-TPP cycle `cycle`, its picture at
+ * /api/approach-plate/{cycle}/{ident}/{procedure}.png, black on clear,
+ * north up between these latitudes and longitudes, as the plate's own
+ * georeference places it; `fixes` the approach's fixes inside it;
+ * `circling` whether the plate publishes circling minimums, so a pilot
+ * flying the approach may circle to land on another runway.
+ */
+@Serializable
+data class PlateOverlay (
+    val circling: Boolean,
+    val cycle: String,
+    val east: Double,
+    val fixes: List<String>,
+    val name: String,
+    val north: Double,
+    val south: Double,
+    val west: Double
+)
+
+/**
+ * One procedure drawn with the transition picked (wingtip.procedures):
+ * its lines, holds and fixes, from the CIFP of `cycle`.
+ */
+@Serializable
+data class ProcedureDrawing (
+    val airport: String,
+    val cycle: String,
+
+    @SerialName("final_course_deg")
+    val finalCourseDeg: Int? = null,
+
+    val fixes: List<ProcedureFix>,
+
+    @SerialName("glidepath_deg")
+    val glidepathDeg: Double? = null,
+
+    val holds: List<ProcedureHold>,
+    val id: String,
+    val kind: String,
+    val lines: List<ProcedureLine>,
+
+    @SerialName("missed_legs")
+    val missedLegs: List<ProcedureMissedLeg>? = null,
+
+    val name: String,
+
+    @SerialName("runway_path")
+    val runwayPath: ProcedureRunwayPath? = null,
+
+    val stale: Boolean? = null,
+    val transition: String? = null
+)
+
+/**
+ * A fix of a drawn procedure: its `roles` on an approach (IAF, IF,
+ * FAF, MAP, hold), the altitudes it is crossed at -- at or above
+ * `min_ft`, at or below `max_ft`, at both where they are one -- and the
+ * speed it is crossed at, `speed_limit` saying whether that is the
+ * speed ("at"), a minimum ("min") or a maximum ("max"; ARINC 424-18
+ * 5.261). `missed` where it is on the missed
+ * approach alone.
+ */
+@Serializable
+data class ProcedureFix (
+    val ident: String,
+    val lat: Double,
+    val lon: Double,
+
+    @SerialName("max_ft")
+    val maxFt: Int? = null,
+
+    @SerialName("min_ft")
+    val minFt: Int? = null,
+
+    val missed: Boolean,
+    val roles: List<String>,
+
+    @SerialName("speed_kt")
+    val speedKt: Int? = null,
+
+    @SerialName("speed_limit")
+    val speedLimit: String? = null,
+
+    @SerialName("vertical_angle_deg")
+    val verticalAngleDeg: Double? = null
+)
+
+/**
+ * A holding pattern of a drawn procedure, or its procedure turn: at `fix`, its inbound
+ * course `inbound_deg` true, its turns right or left (`turn`), drawn to
+ * a light airplane's size (the engine's paths.rs, HOLD_SPEED_KT).
+ */
+@Serializable
+data class ProcedureHold (
+    val fix: String,
+
+    @SerialName("inbound_deg")
+    val inboundDeg: Int,
+
+    val kind: String? = null,
+    val missed: Boolean,
+    val points: List<List<Double>>,
+    val turn: String
+)
+
+/**
+ * A line of a drawn procedure, its points latitude and longitude:
+ * an approach's `transition`, its `final` and its `missed` approach; an
+ * arrival's or departure's enroute `transition`, `common` route, or a
+ * `runway` transition, `name` the transition's ("RW08").
+ */
+@Serializable
+data class ProcedureLine (
+    val name: String? = null,
+    val points: List<List<Double>>,
+    val role: String
+)
+
+/**
+ * A leg of an approach's missed approach, in the order flown, as its
+ * words are made: `path` its ARINC 424-18 path and terminator (5.21: CA
+ * a course to an altitude, VA a heading to one, VI a heading to an
+ * intercept, CF and TF to a fix, DF direct to one, HM, HA and HF a
+ * hold), `fix` the fix it goes to, `course_deg` its course or heading
+ * magnetic, `turn` which way it turns, and the altitudes it climbs to
+ * (at or above `min_ft`, at or below `max_ft`).
+ */
+@Serializable
+data class ProcedureMissedLeg (
+    @SerialName("course_deg")
+    val courseDeg: Int? = null,
+
+    val fix: String? = null,
+
+    @SerialName("max_ft")
+    val maxFt: Int? = null,
+
+    @SerialName("min_ft")
+    val minFt: Int? = null,
+
+    val path: String,
+    val turn: String? = null
+)
+
+/**
+ * The path an approach's final comes down, placed (wingtip.procedures):
+ * `deg` below level, into `fix`, its runway's threshold at `lat`/`lon`,
+ * crossed at `ft` MSL -- the threshold's elevation and its crossing
+ * height (ARINC 424-18 5.70).
+ */
+@Serializable
+data class ProcedureRunwayPath (
+    val deg: Double,
+    val fix: String,
+    val ft: Int,
+    val lat: Double,
+    val lon: Double
+)
+
+/**
+ * A field's instrument procedures, approaches first, from the CIFP
+ * of the AIRAC cycle that took effect on `cycle` (YYMMDD); none for a
+ * field with none.
+ */
+@Serializable
+data class ProcedureList (
+    val airport: String,
+    val cycle: String,
+    val procedures: List<ProcedureSummary>,
+    val stale: Boolean? = null
+)
+
+/**
+ * One of a field's instrument procedures in the FAA's CIFP
+ * (wingtip.procedures): `id` its coded identifier ("I08-Y"), `name` its
+ * chart's title ("ILS Y RWY 08"), `runway` an approach's, and the
+ * transitions a pilot picks from -- an approach's, an arrival's or a
+ * departure's enroute ones -- and an arrival's or departure's runway
+ * transitions, which are drawn with it.
+ */
+@Serializable
+data class ProcedureSummary (
+    val id: String,
+    val kind: String,
+    val name: String,
+    val runway: String? = null,
+
+    @SerialName("runway_transitions")
+    val runwayTransitions: List<String>,
+
+    val transitions: List<String>
+)
+
+/**
+ * The engine's proficiency_plan answer.
+ */
+@Serializable
+data class ProficiencyPlan (
+    val due: List<CoachDue>,
+    val evidence: List<CoachEvidence>,
+    val reminders: List<CoachReminder>,
+    val sessions: List<CoachSession>,
+    val today: String,
+
+    @SerialName("weak_areas")
+    val weakAreas: List<CoachWeakArea>
+)
+
+@Serializable
+data class CoachDue (
+    @SerialName("days_left")
+    val daysLeft: Int? = null,
+
+    val detail: String,
+    val from: String? = null,
+    val id: String,
+    val key: String,
+    val label: String,
+    val rule: String,
+    val status: String,
+    val until: String? = null
+)
+
+@Serializable
+data class CoachEvidence (
+    val area: String,
+
+    @SerialName("flown_on")
+    val flownOn: String,
+
+    val id: String,
+    val place: String,
+
+    /**
+     * The approach procedure flown ("ILS Y RWY 08"), where the line is an approach's.
+     */
+    val procedure: String? = null,
+
+    val text: String
+)
+
+@Serializable
+data class CoachReminder (
+    @SerialName("days_left")
+    val daysLeft: Int,
+
+    val key: String,
+    val text: String,
+    val until: String? = null
+)
+
+@Serializable
+data class CoachSession (
+    val id: String,
+    val instructor: Boolean,
+    val key: String,
+    val minutes: Int,
+    val place: CoachPlace? = null,
+    val practise: String,
+    val why: List<String>,
+
+    /**
+     * Where it may count toward a WINGS flight activity; never that it does.
+     */
+    val wings: CoachWings? = null
+)
+
+@Serializable
+data class CoachPlace (
+    val approach: String? = null,
+
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    val ident: String,
+    val name: String
+)
+
+@Serializable
+data class CoachWings (
+    val acs: String,
+
+    /**
+     * The accident causal factor's area (AC 61-91K 6).
+     */
+    val area: String,
+
+    val note: String
+)
+
+@Serializable
+data class CoachWeakArea (
+    val acs: List<String>,
+    val evidence: List<String>,
+    val key: String,
+    val label: String
+)
+
+/**
+ * The training run's container as the sidecar left it: `started`
+ * false when it was running already.
+ */
+@Serializable
+data class RetrainStarted (
+    val started: Boolean,
+    val state: String? = null
+)
+
+/**
+ * The Go / No-Go as the client has it (RiskVerdict), and the pilot's
+ * own record as the client keeps it -- personal minimums, currency,
+ * recency, whatever it has, by its own keys -- given to the model as one
+ * source the words can cite.
+ */
+@Serializable
+data class RiskAsk (
+    val pilot: JsonObject? = null,
+    val verdict: RiskVerdict
+)
+
+/**
+ * The Go / No-Go as POST /api/go-no-go answers it (its line, its
+ * items, its risk assessment), or as the web app's own twin keeps it
+ * (lib/verdict: the line's finding and words on the object itself, its
+ * items, no risk assessment): either reads here, the extras dropped.
+ */
+@Serializable
+data class RiskVerdict (
+    val finding: String? = null,
+    val items: List<VerdictItemLoose>? = null,
+    val line: VerdictLineLoose? = null,
+    val risk: RiskAssessment? = null,
+    val words: String? = null
+)
+
+@Serializable
+data class VerdictItemLoose (
+    val detail: String? = null,
+    val finding: String,
+    val key: String,
+    val label: String
+)
+
+@Serializable
+data class VerdictLineLoose (
+    val finding: String,
+    val words: String? = null
+)
+
+/**
+ * A route as the words are asked for it: its ends, the stops landed
+ * at between them in order (app.router_basics.load_route) and when it leaves
+ * (UTC when naive; now when not given).
+ */
+@Serializable
+data class RouteAsk (
+    val dep: String,
+    val depart: String? = null,
+    val dest: String,
+    val stops: List<String>? = null
+)
+
+/**
+ * A route that would plan (GET /api/route-check): its stops as the
+ * planner reads them.
+ */
+@Serializable
+data class RouteChecked (
+    val stops: List<String>
+)
+
+/**
  * The ways to fly a route, the fastest first; what the straight line
  * crosses (`direct`), what is at its ends (`ends`) and what the pilot's
  * own route crosses and passes (`current`, `current_marginal`), by index
@@ -758,7 +6616,7 @@ data class RouteAlong (
 )
 
 /**
- * A run of the weather a way meets (wingtip.route_options._along): VFR,
+ * A run of the weather a way meets (the engine's route_options): VFR,
  * marginal (MVFR), IFR or a thunderstorm, and how many minutes of the
  * flight it lasts, in the order flown.
  */
@@ -789,7 +6647,7 @@ data class RouteHazard (
 @Serializable
 data class RouteOption (
     @SerialName("air_min")
-    val airMin: Double,
+    val airMin: Double? = null,
 
     val bands: List<RouteBand>? = null,
     val crosses: List<Int>,
@@ -804,7 +6662,7 @@ data class RouteOption (
     val fuel: List<String>,
 
     @SerialName("fuel_gal")
-    val fuelGal: Double,
+    val fuelGal: Double? = null,
 
     @SerialName("ground_min")
     val groundMin: Double,
@@ -827,7 +6685,8 @@ data class RouteOption (
 
 /**
  * The route's side view (wingtip.profile): its length, the ground under
- * it, and the controlled airspace it passes through.
+ * it, the controlled airspace it passes through and the obstacles near
+ * its line.
  */
 @Serializable
 data class RouteProfile (
@@ -836,6 +6695,7 @@ data class RouteProfile (
     @SerialName("length_nm")
     val lengthNm: Double,
 
+    val obstacles: List<ProfileObstacle>? = null,
     val terrain: List<ProfileGround>
 )
 
@@ -865,6 +6725,19 @@ data class ProfileAirspace (
     val toNm: Double
 )
 
+/**
+ * An obstacle of the FAA's DOF near the route's line: where along it,
+ * and its top, feet MSL.
+ */
+@Serializable
+data class ProfileObstacle (
+    @SerialName("along_nm")
+    val alongNm: Double,
+
+    @SerialName("amsl_ft")
+    val amslFt: Double
+)
+
 @Serializable
 data class ProfileGround (
     @SerialName("along_nm")
@@ -875,385 +6748,756 @@ data class ProfileGround (
 )
 
 /**
- * The course: the departure, the stops it lands at on the way (in
- * order; none for a route flown straight), the destination, the whole
- * distance stop by stop, the bearing out of the departure, and the line
- * through every stop.
+ * Each area asked for that SFDPS has spoken of, by the designator it
+ * was asked by ("R-4401A"); one it never has is left out: its chart
+ * times of use are all there is.
  */
 @Serializable
-data class Course (
+data class SaaStatuses (
+    val areas: Map<String, SaaStatus>
+)
+
+/**
+ * A special activity airspace's status from SFDPS (wingtip.saa):
+ * `active` True (in use now), False (cold now) or None (no word of now);
+ * `until` when the status in force ends and `next` when the next
+ * activation starts (UNIX s); `heard` when SFDPS last spoke of it.
+ */
+@Serializable
+data class SaaStatus (
+    val active: Boolean? = null,
+    val designator: String,
+    val heard: Double,
+    val next: Double? = null,
+    val status: String? = null,
+    val until: Double? = null
+)
+
+@Serializable
+data class SeedNoteRequest (
+    val description: String,
+
+    @SerialName("hop_key")
+    val hopKey: String,
+
+    val lat: Double,
+    val lon: Double
+)
+
+@Serializable
+data class Status (
+    val charts: ChartsStatus,
+
+    @SerialName("checked_at")
+    val checkedAt: String,
+
+    val corridors: List<CorridorStatus>,
+
+    @SerialName("data_cycles")
+    val dataCycles: List<DataCycle>? = null,
+
+    @SerialName("faa_files")
+    val faaFiles: List<DataFile>,
+
+    val feeds: FeedHealth? = null,
+    val model: ModelRegistry,
+    val pipeline: PipelineStatus,
+
+    @SerialName("recent_errors")
+    val recentErrors: List<RecentError>? = null,
+
+    val services: Services,
+    val weather: List<WeatherDataset>
+)
+
+/**
+ * `cycle` is the edition the map draws; `current_cycle` the one
+ * the FAA is on. They differ while a newer cycle is being fetched
+ * and rendered (`building`, `refresh_running`); the map switches
+ * once every tile of the new one is there.
+ */
+@Serializable
+data class ChartsStatus (
+    val building: Map<String, PyramidProgress>? = null,
+
+    @SerialName("current_cycle")
+    val currentCycle: String,
+
+    val cycle: String,
+    val next: NextCycle? = null,
+    val prepared: Map<String, Long>,
+    val pyramid: Map<String, PyramidProgress>? = null,
+
+    @SerialName("refresh_running")
+    val refreshRunning: Boolean? = null,
+
+    @SerialName("refresh_window")
+    val refreshWindow: String? = null,
+
+    @SerialName("refresh_workers")
+    val refreshWorkers: Int? = null,
+
+    @SerialName("tiles_cached")
+    val tilesCached: Int
+)
+
+/**
+ * One kind of chart's tile pyramid for a cycle. What finished passes
+ * have left -- the sheets rendered, when the last finished, the tiles
+ * written -- and the pass under way, if any. `complete` is every sheet
+ * the FAA publishes of the kind rendered; `missing` names the rest.
+ */
+@Serializable
+data class PyramidProgress (
+    val complete: Boolean,
+
+    @SerialName("current_pass")
+    val currentPass: PyramidPass? = null,
+
+    @SerialName("finished_at")
+    val finishedAt: String? = null,
+
+    val kind: String,
+    val missing: List<String>? = null,
+    val sheets: List<String>,
+    val tiles: Int,
+    val zooms: List<Int>
+)
+
+/**
+ * A pass of the charts job's `pyramid` under way: sheets done of
+ * the sheets it set out to render, and the one it is on.
+ */
+@Serializable
+data class PyramidPass (
+    val current: String? = null,
+    val done: Int,
+
+    @SerialName("started_at")
+    val startedAt: String,
+
+    val total: Int
+)
+
+/**
+ * The FAA's next chart cycle, staged ahead of its date by the charts
+ * job's `next` run (wingtip.chart_next): its folder name and effective
+ * date, the day staging may start (`lead_days` before), whether the
+ * planner starts it (CHARTS_CYCLE_AUTO), and what the job last said --
+ * `state` one of waiting, not_published, no_turn, staging, staged,
+ * failed, swapped -- with when, and how far its pyramid has got.
+ */
+@Serializable
+data class NextCycle (
+    val auto: Boolean,
+    val cycle: String,
+    val detail: String? = null,
+    val effective: String,
+
+    @SerialName("lead_days")
+    val leadDays: Int,
+
+    val progress: Map<String, PyramidProgress>? = null,
+
+    @SerialName("stage_from")
+    val stageFrom: String,
+
+    val state: String,
+
+    @SerialName("updated_at")
+    val updatedAt: String? = null
+)
+
+@Serializable
+data class CorridorStatus (
+    val candidates: Int? = null,
+
+    @SerialName("departure_ident")
+    val departureIdent: String,
+
+    @SerialName("destination_ident")
+    val destinationIdent: String,
+
+    @SerialName("features_built_at")
+    val featuresBuiltAt: String? = null,
+
+    val labels: PickSummary,
+    val notes: Int
+)
+
+@Serializable
+data class DataFile (
+    @SerialName("downloaded_at")
+    val downloadedAt: String? = null,
+
+    val name: String
+)
+
+/**
+ * Every live feed as last checked (each minute), and after how many
+ * minutes stale a feed is an alert; `webhook` whether alerts are POSTed
+ * anywhere (FEED_ALERT_WEBHOOK).
+ */
+@Serializable
+data class FeedHealth (
+    @SerialName("alert_after_min")
+    val alertAfterMin: Int,
+
+    @SerialName("checked_at")
+    val checkedAt: String? = null,
+
+    val feeds: List<FeedState>? = null,
+    val webhook: Boolean? = null
+)
+
+/**
+ * One live feed (wingtip.feed_health): a SWIM feed ingest reads
+ * ("swim") or a weather product ("weather"); its state -- "ok", "stale"
+ * or "off" (not set up) -- and why, its last message or fetch, since when
+ * it has been stale, and whether that is long enough to be an alert.
+ */
+@Serializable
+data class FeedState (
+    val alerting: Boolean? = null,
+    val detail: String? = null,
+    val kind: String,
+
+    @SerialName("last_at")
+    val lastAt: String? = null,
+
+    val messages: Int? = null,
+    val name: String,
+
+    @SerialName("stale_since")
+    val staleSince: String? = null,
+
+    val state: String,
+    val what: String
+)
+
+@Serializable
+data class ModelRegistry (
+    val chart: ChartModelSnapshot? = null,
+    val current: ModelSnapshot? = null,
+    val versions: List<ModelVersion>
+)
+
+/**
+ * The promoted chart model (wingtip.chartmodel), against what it has to
+ * beat on the ratings it held out: the palette's constants
+ * (`palette_held_out_mae`) and the training ratings' mean. The
+ * planner's checkpoints move onto the chart once it beats the
+ * palette.
+ */
+@Serializable
+data class ChartModelSnapshot (
+    @SerialName("dummy_held_out_mae")
+    val dummyHeldOutMae: Double? = null,
+
+    @SerialName("held_out_mae")
+    val heldOutMae: Double? = null,
+
+    @SerialName("model_type")
+    val modelType: String? = null,
+
+    @SerialName("n_labeled")
+    val nLabeled: Int? = null,
+
+    @SerialName("n_test")
+    val nTest: Int? = null,
+
+    @SerialName("palette_held_out_mae")
+    val paletteHeldOutMae: Double? = null,
+
+    @SerialName("trained_at")
+    val trainedAt: String? = null
+)
+
+@Serializable
+data class ModelSnapshot (
+    @SerialName("cv_mae")
+    val cvMae: Double? = null,
+
+    @SerialName("held_out_mae")
+    val heldOutMae: Double? = null,
+
+    @SerialName("model_type")
+    val modelType: String? = null,
+
+    @SerialName("n_features")
+    val nFeatures: Int,
+
+    @SerialName("n_labeled")
+    val nLabeled: Int? = null,
+
+    @SerialName("trained_at")
+    val trainedAt: String? = null
+)
+
+@Serializable
+data class ModelVersion (
+    @SerialName("cv_mae")
+    val cvMae: Double? = null,
+
+    @SerialName("model_type")
+    val modelType: String? = null,
+
+    val name: String,
+
+    @SerialName("trained_at")
+    val trainedAt: String? = null
+)
+
+/**
+ * startable: this planner can start a training run -- the compose
+ * stack's dev-services sidecar answered and the run's container exists
+ * (`detail` says why not). `training`: whether the ratings are enough
+ * to retrain on, None where it could not be worked out.
+ */
+@Serializable
+data class PipelineStatus (
+    val detail: String? = null,
+
+    @SerialName("last_run")
+    val lastRun: PipelineRun? = null,
+
+    val startable: Boolean,
+    val training: TrainingReadiness? = null
+)
+
+/**
+ * The last training run, as it wrote itself down
+ * (model_registry.RUN_STATUS_PATH): "running", "success" or "failed",
+ * the stage under way, every stage, and for one that failed the first
+ * stage's error ("collect: RuntimeError: ...").
+ */
+@Serializable
+data class PipelineRun (
+    val error: String? = null,
+
+    @SerialName("finished_at")
+    val finishedAt: String? = null,
+
+    @SerialName("run_id")
+    val runId: String? = null,
+
+    val stage: String? = null,
+    val stages: List<PipelineStage>? = null,
+
+    @SerialName("started_at")
+    val startedAt: String? = null,
+
+    val state: String? = null
+)
+
+/**
+ * One stage of a training run (wingtip.pipeline.run): its name, as
+ * "chart_retrain", and "pending", "running", "success", "skipped" or
+ * "failed", with what it came to or why in `detail`.
+ */
+@Serializable
+data class PipelineStage (
+    val detail: String? = null,
+    val name: String,
+    val state: String
+)
+
+/**
+ * Whether a retrain has enough to train the chart model on, asked
+ * before one is started (app.chart_model.readiness): the ratings on a
+ * detection the trainer would get (`usable`) against what it needs, how
+ * many of the `rated` are on a point the chart reader no longer finds
+ * (`off_detection`), and the routes whose chart is still being read,
+ * which cannot be counted yet. `message` says it in a sentence.
+ */
+@Serializable
+data class TrainingReadiness (
+    val message: String,
+    val needed: Int,
+
+    @SerialName("off_detection")
+    val offDetection: Int,
+
+    val rated: Int,
+    val reading: List<String>,
+    val ready: Boolean,
+    val usable: Int
+)
+
+/**
+ * A failure the planner answered lately (app.errors): when (UNIX
+ * seconds), the call, its status and its words.
+ */
+@Serializable
+data class RecentError (
+    val at: Double,
+    val detail: String,
+    val method: String,
+    val path: String,
+    val status: Int
+)
+
+/**
+ * The gateway and its database, probed from here -- its liveness and
+ * its readiness group, which includes the database -- rather than by
+ * the browser: a phone's probes queued behind its chart
+ * tiles on one HTTP/1.1 connection pool and timed out, and the
+ * console read "no answer" for a gateway that had just served it.
+ */
+@Serializable
+data class Services (
+    val db: ServiceStatus? = null,
+    val gateway: ServiceStatus? = null
+)
+
+@Serializable
+data class ServiceStatus (
+    val detail: String? = null,
+    val up: Boolean
+)
+
+@Serializable
+data class WeatherDataset (
+    @SerialName("fetched_at")
+    val fetchedAt: String? = null,
+
+    val name: String
+)
+
+/**
+ * The map's Stops: the fields with fuel, food, repair or a flight
+ * school, nearest first round the pilot or in route order along it, and
+ * how many fields still have their places to be read (`pending`): asked
+ * again until none.
+ */
+@Serializable
+data class StopFields (
+    val fields: List<StopField>,
+    val pending: Int? = null
+)
+
+/**
+ * A field for the map's Stops, near the pilot or along a route: what
+ * it has of the four kinds -- the fuel it sells and its airframe and
+ * engine repair from its Chart Supplement entry (NASR's APT_BASE), its
+ * places to eat on the field and its flight schools from Overture
+ * (wingtip.nearby) -- and its phone (NASR's APT_CON).
+ */
+@Serializable
+data class StopField (
+    @SerialName("added_nm")
+    val addedNm: Double? = null,
+
+    @SerialName("airframe_repair")
+    val airframeRepair: String? = null,
+
     @SerialName("bearing_deg")
-    val bearingDeg: Double,
+    val bearingDeg: Int,
 
-    @SerialName("chart_cycle")
-    val chartCycle: String,
-
-    @SerialName("chart_layers")
-    val chartLayers: List<ChartLayer>,
-
-    @SerialName("chart_revision")
-    val chartRevision: Int? = null,
-
-    @SerialName("chart_tiles_base")
-    val chartTilesBase: String? = null,
-
-    @SerialName("checkpoints_ready")
-    val checkpointsReady: Boolean? = null,
-
-    @SerialName("course_line")
-    val courseLine: List<List<Double>>,
-
-    val departure: AirportEnd,
-    val destination: AirportEnd,
+    val city: String? = null,
+    val departure: String? = null,
 
     @SerialName("distance_nm")
     val distanceNm: Double,
 
-    @SerialName("max_zoom")
-    val maxZoom: Int,
+    val food: List<NearbyPlace>? = null,
 
-    @SerialName("min_zoom")
-    val minZoom: Int,
-
-    val stops: List<AirportEnd>? = null
-)
-
-/**
- * One kind of FAA chart the map can draw and the zooms it has
- * tiles for: the sectional and the IFR enroute charts as base layers
- * (`base`), the terminal area chart as an overlay.
- */
-@Serializable
-data class ChartLayer (
-    val base: Boolean,
-    val cycle: String? = null,
-    val kind: String,
-    val label: String,
-
-    @SerialName("max_zoom")
-    val maxZoom: Int,
-
-    @SerialName("min_zoom")
-    val minZoom: Int,
-
-    val over: List<String>? = null,
-    val revision: Int? = null,
-    val scales: List<Int>? = null,
-    val sheets: List<ChartSheet>? = null
-)
-
-/**
- * One sheet of an overlay chart kind and where it is: the map
- * offers to pin the terminal area chart when the view is over one.
- */
-@Serializable
-data class ChartSheet (
-    val east: Double,
-    val label: String,
-    val name: String,
-    val north: Double,
-    val south: Double,
-    val west: Double
-)
-
-/**
- * A point of the route: an airport, or -- a stop only -- a named fix
- * flown through (`kind` "fix": a VFR or GPS waypoint, its `name` the
- * kind of fix it is, no elevation).
- */
-@Serializable
-data class AirportEnd (
-    @SerialName("airspace_class")
-    val airspaceClass: String? = null,
-
-    @SerialName("elevation_ft")
-    val elevationFt: Double? = null,
+    @SerialName("fuel_types")
+    val fuelTypes: List<String>? = null,
 
     val ident: String,
+    val lat: Double,
+    val lon: Double,
+    val name: String,
+
+    @SerialName("off_nm")
+    val offNm: Double? = null,
+
+    val phone: String? = null,
+
+    @SerialName("places_known")
+    val placesKnown: Boolean? = null,
+
+    @SerialName("powerplant_repair")
+    val powerplantRepair: String? = null,
+
+    val training: List<NearbyPlace>? = null
+)
+
+@Serializable
+data class Tfrs (
+    val tfrs: List<Tfr>
+)
+
+/**
+ * A TFR with its areas, for the map: a GeoJSON MultiPolygon.
+ */
+@Serializable
+data class Tfr (
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("ceiling_ref")
+    val ceilingRef: String? = null,
+
+    val effective: String? = null,
+    val expires: String? = null,
+
+    @SerialName("floor_ft")
+    val floorFt: Double? = null,
+
+    @SerialName("floor_ref")
+    val floorRef: String? = null,
+
+    val geometry: JsonObject,
     val kind: String? = null,
+
+    @SerialName("notam_id")
+    val notamId: String,
+
+    val purpose: String? = null,
+    val rule: String? = null,
+    val state: String? = null,
+    val title: String? = null
+)
+
+/**
+ * The airplanes ADS-B receivers hear near a point, from adsb.lol's
+ * open data, under the Open Database License 1.0, which asks that the
+ * map say so where it draws them.
+ */
+@Serializable
+data class Traffic (
+    @SerialName("age_s")
+    val ageS: Double? = null,
+
+    val aircraft: List<TrafficAircraft>,
+    val license: String? = null,
+    val source: String? = null
+)
+
+/**
+ * The airplanes in the air a pilot named by callsign, registration
+ * or ICAO address (wingtip.traffic.find); and, where none is in the air or
+ * heard now, the FAA's record of the one named (wingtip.traffic.registered),
+ * to open its card all the same.
+ */
+@Serializable
+data class TrafficFound (
+    val aircraft: List<TrafficAircraft>,
+    val checked: Boolean? = null,
+    val license: String? = null,
+    val registered: AircraftRegistration? = null,
+    val source: String? = null
+)
+
+@Serializable
+data class WaypointsInView (
+    val waypoints: List<WaypointPin>
+)
+
+/**
+ * A VFR waypoint on the sectional (VPBNG), for the map's diamond: a
+ * tap names it, and with a route open puts it in the stops.
+ */
+@Serializable
+data class WaypointPin (
+    val description: String? = null,
+    val ident: String,
     val lat: Double,
-    val lon: Double,
-    val name: String,
-
-    @SerialName("pattern_altitude_ft")
-    val patternAltitudeFt: Double? = null
+    val lon: Double
 )
 
 /**
- * A scored detection off the chart (app.checkpoint_scoring): `id` its kind and
- * place, `name` the FAA's for an airport and the kind of thing for
- * the rest. `selected` is set by the server's greedy pass.
+ * The briefing's own parameters besides the route (GET /api/briefing):
+ * the flight's minutes, and the nav log's fixes ("lat,lon;lat,lon") and
+ * each leg's minutes where the page has them, for each hazard to be
+ * placed where the flight meets it.
  */
 @Serializable
-data class Candidate (
-    @SerialName("along_track_nm")
-    val alongTrackNm: Double,
+data class WeatherAsk (
+    val dep: String,
+    val depart: String? = null,
+    val dest: String,
 
-    val category: String,
-    val hop: Int? = null,
-    val id: String,
-    val lat: Double,
-    val lon: Double,
-    val name: String? = null,
+    @SerialName("ete_min")
+    val eteMin: Double? = null,
 
-    @SerialName("predicted_score")
-    val predictedScore: Double,
+    val fixes: String? = null,
 
-    val selected: Boolean,
-    val waypoint: String? = null
+    @SerialName("leg_min")
+    val legMin: String? = null,
+
+    val stops: List<String>? = null
 )
 
 /**
- * Which chart the map draws and where its tiles are: the map with no
- * route on it yet asks for this alone (/api/chart), and a Course
- * carries it as well.
+ * The radar or satellite loop the map plays, oldest frame first, the
+ * step between frames, how old the newest may be before the apps label
+ * it old, and the sources' credit.
  */
 @Serializable
-data class ChartInfo (
-    @SerialName("chart_cycle")
-    val chartCycle: String,
+data class WeatherLoop (
+    val credit: String,
+    val frames: List<LoopFrame>,
+    val kind: String,
 
-    @SerialName("chart_layers")
-    val chartLayers: List<ChartLayer>,
+    @SerialName("old_after_s")
+    val oldAfterS: Double,
 
-    @SerialName("chart_revision")
-    val chartRevision: Int? = null,
-
-    @SerialName("chart_tiles_base")
-    val chartTilesBase: String? = null,
-
-    @SerialName("max_zoom")
-    val maxZoom: Int,
-
-    @SerialName("min_zoom")
-    val minZoom: Int
+    @SerialName("step_s")
+    val stepS: Double
 )
 
 /**
- * The map's FAA overlays as vector tiles (wingtip.vector_tiles): one
- * PMTiles archive of the cycle, fetched in byte ranges at
- * /api/overlay-tiles/{name}.pmtiles; its zooms, and how far its lines
- * may stray from the FAA's (metres on the ground).
+ * One frame of the loop (wingtip.weather_loop): when it was made, ISO
+ * UTC -- the older of its layers' times -- and each layer's XYZ tile
+ * template, None where the frame does not draw it. The satellite's
+ * carries `{bbox-epsg-3857}`, the tile's box in web Mercator metres.
  */
 @Serializable
-data class OverlayTiles (
-    @SerialName("built_at")
-    val builtAt: Double,
+data class LoopFrame (
+    @SerialName("radar_tiles")
+    val radarTiles: String? = null,
 
-    val bytes: Long,
-    val cycle: String,
-    val layers: List<OverlayTilesLayer>,
+    @SerialName("satellite_tiles")
+    val satelliteTiles: String? = null,
 
-    @SerialName("max_zoom")
-    val maxZoom: Int,
-
-    @SerialName("min_zoom")
-    val minZoom: Int,
-
-    val name: String,
-
-    @SerialName("tolerance_m")
-    val toleranceM: Double,
-
-    val version: Int
+    val valid: String
 )
 
 /**
- * One layer of the overlay tiles (wingtip.vector_tiles.LAYERS) and how
- * many features it holds.
+ * The weather the map draws in the part of it in sight, for `at`
+ * (UNIX seconds): areas, pilot reports, the winds aloft where an altitude
+ * was asked for, and when the radar mosaic was made (ISO UTC).
  */
 @Serializable
-data class OverlayTilesLayer (
-    val features: Int,
-    val name: String
+data class WeatherMap (
+    val advisories: List<WeatherArea>? = null,
+    val at: Double,
+    val pireps: List<MapPirep>? = null,
+
+    @SerialName("radar_valid")
+    val radarValid: String? = null,
+
+    val winds: MapWinds? = null
 )
 
 /**
- * A field's instrument procedures, approaches first, from the CIFP
- * of the AIRAC cycle that took effect on `cycle` (YYMMDD); none for a
- * field with none.
+ * An area of weather on the map (wingtip.weather_map.advisories_in): a
+ * SIGMET, a convective SIGMET or a G-AIRMET snapshot; its hazard, its
+ * severity where one is given, its altitudes (feet MSL; `low_ft` None
+ * from the surface, or from the freezing level where
+ * `from_freezing_level`), when it is valid (a G-AIRMET at `valid_from`,
+ * a snapshot), its text (a SIGMET's raw report, a G-AIRMET's cause), and
+ * its outline, [lat, lon] pairs.
  */
 @Serializable
-data class ProcedureList (
-    val airport: String,
-    val cycle: String,
-    val procedures: List<ProcedureSummary>,
-    val stale: Boolean? = null
-)
+data class WeatherArea (
+    val coords: List<List<Double>>,
 
-/**
- * One of a field's instrument procedures in the FAA's CIFP
- * (wingtip.procedures): `id` its coded identifier ("I08-Y"), `name` its
- * chart's title ("ILS Y RWY 08"), `runway` an approach's, and the
- * transitions a pilot picks from -- an approach's, an arrival's or a
- * departure's enroute ones -- and an arrival's or departure's runway
- * transitions, which are drawn with it.
- */
-@Serializable
-data class ProcedureSummary (
+    @SerialName("from_freezing_level")
+    val fromFreezingLevel: Boolean? = null,
+
+    val hazard: String? = null,
+
+    @SerialName("high_ft")
+    val highFt: Double? = null,
+
     val id: String,
     val kind: String,
-    val name: String,
-    val runway: String? = null,
 
-    @SerialName("runway_transitions")
-    val runwayTransitions: List<String>,
+    @SerialName("low_ft")
+    val lowFt: Double? = null,
 
-    val transitions: List<String>
+    val raw: String? = null,
+    val severity: String? = null,
+
+    @SerialName("valid_from")
+    val validFrom: Double? = null,
+
+    @SerialName("valid_to")
+    val validTo: Double? = null
 )
 
 /**
- * The aircraft's name plus its performance profile -- every field a
- * data/aircraft/\*.json file carries, declared, so a page reads them as
- * fields rather than guessing at a dict. The three figures after the
- * name are required when a profile is loaded (REQUIRED_FIELDS in
- * wingtip.aircraft); the rest fall back to defaults in wingtip.navlog when a
- * profile leaves them out. `extra="allow"` keeps a field a newer
- * profile adds on its way through.
+ * A pilot report on the map, where it was made (wingtip.weather).
  */
 @Serializable
-data class AircraftProfile (
-    @SerialName("climb_fuel_burn_gph")
-    val climbFuelBurnGph: Double? = null,
+data class MapPirep (
+    val aircraft: String? = null,
 
-    @SerialName("climb_rate_fpm_sea_level")
-    val climbRateFpmSeaLevel: Double? = null,
+    @SerialName("altitude_ft")
+    val altitudeFt: Double? = null,
 
-    @SerialName("climb_tas_kt")
-    val climbTasKt: Double? = null,
+    val icing: String? = null,
+    val lat: Double,
+    val lon: Double,
 
-    val crosswind: DemonstratedCrosswind? = null,
+    @SerialName("observed_at")
+    val observedAt: String? = null,
 
-    @SerialName("cruise_power_pct")
-    val cruisePowerPct: Double? = null,
+    val raw: String? = null,
+    val turbulence: String? = null,
+    val urgent: Boolean? = null
+)
 
-    @SerialName("cruise_tas_kt")
-    val cruiseTasKt: Double,
+@Serializable
+data class MapWinds (
+    @SerialName("altitude_ft")
+    val altitudeFt: Double,
 
-    val designator: String? = null,
-
-    @SerialName("fuel_burn_gph")
-    val fuelBurnGph: Double,
-
-    val landing: ShortField? = null,
-    val loading: Loading? = null,
-    val name: String,
-    val pressurized: Boolean? = null,
-
-    @SerialName("service_ceiling_ft")
-    val serviceCeilingFt: Double,
-
-    @SerialName("supplemental_oxygen")
-    val supplementalOxygen: Boolean? = null,
-
-    val takeoff: ShortField? = null,
-    val type: String? = null,
-
-    @SerialName("usable_fuel_gal")
-    val usableFuelGal: Double? = null
+    val period: JsonObject? = null,
+    val stations: List<StationWind>
 )
 
 /**
- * The strongest crosswind the POH says the aeroplane was shown to
- * take off and land in: not a limitation, but past it the pilot is
- * beyond what was tested.
+ * An FD station's forecast wind (true) and temperature at the map's
+ * altitude.
  */
 @Serializable
-data class DemonstratedCrosswind (
-    @SerialName("demonstrated_kt")
-    val demonstratedKt: Double,
+data class StationWind (
+    @SerialName("dir_true_deg")
+    val dirTrueDeg: Double,
 
-    val source: String
+    val ident: String,
+    val lat: Double,
+    val lon: Double,
+
+    @SerialName("speed_kt")
+    val speedKt: Double,
+
+    @SerialName("temp_c")
+    val tempC: Double? = null
 )
 
 /**
- * A POH's short-field takeoff or landing distances: a table per
- * weight, and how much a dry grass runway adds to the ground roll.
+ * A reading's sources, in the order they bear on the flight; for the
+ * NOTAMs, the day the NOTAM feed was first heard (`coverage_since`, ISO
+ * date) and what could not be checked ("tfrs"). The feed (SWIM's FNS)
+ * sends what is issued or changed once it is heard, so NOTAMs issued
+ * before that day and never changed are not in the store: the list is
+ * what was heard since, not every NOTAM in force (the owner, 2026-11-09,
+ * chose the feed alone over the FAA NOTAM API's full load).
  */
 @Serializable
-data class ShortField (
-    @SerialName("grass_ground_roll_pct")
-    val grassGroundRollPct: Double,
+data class WordsSources (
+    @SerialName("coverage_since")
+    val coverageSince: String? = null,
 
-    @SerialName("pressure_altitudes_ft")
-    val pressureAltitudesFt: List<Double>,
-
-    val source: String,
-    val tables: List<DistanceTable>,
-
-    @SerialName("temperatures_c")
-    val temperaturesC: List<Double>,
-
-    @SerialName("weights_lb")
-    val weightsLb: List<Double>
+    val sources: List<WordsSource>,
+    val unchecked: List<String>? = null
 )
 
 /**
- * One weight's distances, by pressure altitude (rows) and
- * temperature (columns).
+ * The raw thing a sentence can rest on, as the pilot can read it: a
+ * METAR or a NOTAM as sent, a TAF line, a hazard's words, a finding's
+ * line, a debrief figure's line. `id` is what a sentence cites
+ * ("metar:KDLH", "finding:fuel"); `label` is its heading on screen.
  */
 @Serializable
-data class DistanceTable (
-    @SerialName("ground_roll_ft")
-    val groundRollFt: List<List<Double>>,
-
-    @SerialName("total_50ft_ft")
-    val total50FtFt: List<List<Double>>
-)
-
-/**
- * How the aeroplane is loaded (its POH's weight and balance): the
- * weight limits, a sample empty weight and moment (each aeroplane's own
- * is on its weight and balance record), the stations and their arms,
- * the fuel's, and the centre-of-gravity envelope as (arm, weight)
- * corners.
- */
-@Serializable
-data class Loading (
-    @SerialName("baggage_combined_max_lb")
-    val baggageCombinedMaxLb: Double? = null,
-
-    val envelope: List<List<Double>>,
-
-    @SerialName("fuel_arm_in")
-    val fuelArmIn: Double,
-
-    @SerialName("fuel_lb_per_gal")
-    val fuelLbPerGal: Double? = null,
-
-    @SerialName("fuel_max_gal")
-    val fuelMaxGal: Double,
-
-    @SerialName("max_landing_lb")
-    val maxLandingLb: Double,
-
-    @SerialName("max_ramp_lb")
-    val maxRampLb: Double,
-
-    @SerialName("max_takeoff_lb")
-    val maxTakeoffLb: Double,
-
-    @SerialName("sample_empty_moment_lb_in")
-    val sampleEmptyMomentLbIn: Double,
-
-    @SerialName("sample_empty_weight_lb")
-    val sampleEmptyWeightLb: Double,
-
-    val source: String,
-
-    @SerialName("start_taxi_fuel_lb")
-    val startTaxiFuelLb: Double? = null,
-
-    val stations: List<LoadingStation>
-)
-
-@Serializable
-data class LoadingStation (
-    @SerialName("arm_in")
-    val armIn: Double,
-
-    @SerialName("max_lb")
-    val maxLb: Double? = null,
-
-    val name: String
+data class WordsSource (
+    val id: String,
+    val label: String,
+    val text: String
 )

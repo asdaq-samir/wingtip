@@ -1,0 +1,13 @@
+# Clippy's settings for the engine (ci.yml's engine job,
+# `cargo clippy --workspace --all-targets -- -D warnings`).
+#
+# The slices' own sorts compile a copy of driftsort per call site, some
+# 130 KB of the web app's WebAssembly when the engine had seventy of them
+# (2026-11-10). wingtip_core::sort's StableSort gives the same stable order
+# through one shared copy.
+disallowed-methods = [
+    { path = "slice::sort", reason = "wingtip_core::sort::StableSort::stable_sort: one shared copy of the sort in the WebAssembly" },
+    { path = "slice::sort_by", reason = "wingtip_core::sort::StableSort::stable_sort_by: one shared copy of the sort in the WebAssembly" },
+    { path = "slice::sort_by_key", reason = "wingtip_core::sort::StableSort::stable_sort_by_key: one shared copy of the sort in the WebAssembly" },
+    { path = "slice::sort_by_cached_key", reason = "wingtip_core::sort::StableSort::stable_sort_by_key: one shared copy of the sort in the WebAssembly" },
+]

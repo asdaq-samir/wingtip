@@ -8,7 +8,7 @@ import { closeTopmost } from "./backNavigation";
  * so the platform is kept for the visit; a TV's own browser is known by
  * its agent.
  */
-export type TvPlatform = "tizen" | "webos";
+type TvPlatform = "tizen" | "webos";
 
 const KEY = "wingtip.tv";
 
@@ -38,10 +38,9 @@ export const isBack = (event: KeyboardEvent) =>
  *  PageDown; Samsung's ChannelUp and ChannelDown are 427 and 428). */
 export const zoomInKey = (event: KeyboardEvent) =>
   event.key === "Enter" || event.key === "PageUp" || event.key === "ChannelUp" || event.keyCode === 427;
-export const zoomOutKey = (event: KeyboardEvent) =>
-  event.key === "PageDown" || event.key === "ChannelDown" || event.keyCode === 428;
+export const zoomOutKey = (event: KeyboardEvent) => event.key === "PageDown" || event.key === "ChannelDown" || event.keyCode === 428;
 
-/** Whether the remote is on the map: focus on Leaflet's container or
+/** Whether the remote is on the map: focus on MapLibre's container or
  *  anything in it (its zoom buttons, a marker). */
 function onMap(): boolean {
   const active = document.activeElement;
@@ -49,7 +48,10 @@ function onMap(): boolean {
 }
 
 const DIRECTIONS: Record<string, "left" | "up" | "right" | "down"> = {
-  ArrowLeft: "left", ArrowUp: "up", ArrowRight: "right", ArrowDown: "down",
+  ArrowLeft: "left",
+  ArrowUp: "up",
+  ArrowRight: "right",
+  ArrowDown: "down",
 };
 
 /** An arrow moving the focus, as the polyfill's own handler does: not
@@ -102,7 +104,7 @@ function registerChannelKeys(platform: TvPlatform) {
  * the screen (the W3C's spatial navigation, by its polyfill); its Back
  * closing what is open, as Escape does (lib/backNavigation), then leaving the app.
  * On the map the arrows pan it and OK and a channel up and down zoom it
- * (MapShell, TvMapKeys), and Back takes the remote off it.
+ * (GlMapShell), and Back takes the remote off it.
  */
 export function startTv(platform: TvPlatform) {
   document.documentElement.dataset.tv = platform;
@@ -129,17 +131,21 @@ export function startTv(platform: TvPlatform) {
     } else if (Date.now() - started > 15_000) window.clearInterval(timer);
   }, 250);
   // Capture: ahead of the page's own Escape handling, which a Back is not.
-  window.addEventListener("keydown", event => {
-    if (!isBack(event)) return;
-    event.preventDefault();
-    // Off the map first, to the panel's first control (or the page's), so
-    // the arrows move between controls again.
-    if (onMap()) {
-      const next = document.querySelector<HTMLElement>('[data-slot="map-panel"] button, [data-slot="map-panel"] input');
-      const outside = [...document.querySelectorAll<HTMLElement>("button")].find(button => !button.closest(".maplibregl-map"));
-      (next ?? outside ?? document.body).focus();
-      return;
-    }
-    if (!closeTopmost()) leave(platform);
-  }, true);
+  window.addEventListener(
+    "keydown",
+    (event) => {
+      if (!isBack(event)) return;
+      event.preventDefault();
+      // Off the map first, to the panel's first control (or the page's), so
+      // the arrows move between controls again.
+      if (onMap()) {
+        const next = document.querySelector<HTMLElement>('[data-slot="map-panel"] button, [data-slot="map-panel"] input');
+        const outside = [...document.querySelectorAll<HTMLElement>("button")].find((button) => !button.closest(".maplibregl-map"));
+        (next ?? outside ?? document.body).focus();
+        return;
+      }
+      if (!closeTopmost()) leave(platform);
+    },
+    true,
+  );
 }

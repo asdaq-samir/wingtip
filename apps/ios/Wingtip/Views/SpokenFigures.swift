@@ -8,58 +8,38 @@ import UIKit
 /// which VoiceOver would read letter by letter or as a telephone number.
 /// The screen's own text is untouched; these go in accessibility labels.
 enum SpokenFigures {
-    private static let words: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .spellOut
-        return f
-    }()
-
     /// A number in words: 4,500 as "four thousand five hundred", 12.3 as
-    /// "twelve point three".
-    static func number(_ x: Double, decimals: Int = 0) -> String {
-        let rounded = (x * pow(10, Double(decimals))).rounded() / pow(10, Double(decimals))
-        return words.string(from: NSNumber(value: rounded)) ?? String(rounded)
-    }
+    /// "twelve point three". Format's own words, written by hand rather
+    /// than by NumberFormatter's spellOut, whose words change with the OS,
+    /// so a figure is said alike on every iPhone and as the web says it.
+    static func number(_ x: Double, decimals: Int = 0) -> String { Format.words(x, decimals: decimals) }
 
     /// A number and its unit, the unit singular for one.
     private static func measure(_ x: Double, decimals: Int, _ one: String, _ many: String) -> String {
-        let rounded = (x * pow(10, Double(decimals))).rounded() / pow(10, Double(decimals))
-        return "\(number(rounded, decimals: decimals)) \(rounded == 1 ? one : many)"
+        let said = number(x, decimals: decimals)
+        return "\(said) \(said == "one" ? one : many)"
     }
 
+    /// A length or a height that is not an altitude (a runway, a tower, a
+    /// ceiling) in plain words; an altitude flown or assigned is said as
+    /// ATC says it, with Format.spokenAltitude.
     static func feet(_ ft: Double) -> String { measure(ft, decimals: 0, "foot", "feet") }
-    static func knots(_ kt: Double) -> String { measure(kt, decimals: 0, "knot", "knots") }
-    static func nauticalMiles(_ nm: Double) -> String { measure(nm, decimals: 1, "nautical mile", "nautical miles") }
+    static func knots(_ kt: Double) -> String { Format.spokenSpeed(kt) }
+    static func nauticalMiles(_ nm: Double) -> String { Format.spokenDistance(nm) }
     static func statuteMiles(_ sm: Double) -> String { measure(sm, decimals: 1, "statute mile", "statute miles") }
-    static func gallons(_ gal: Double) -> String { measure(gal, decimals: 1, "gallon", "gallons") }
+    static func gallons(_ gal: Double) -> String { Format.spokenFuel(gal) }
     static func feetPerMinute(_ fpm: Double) -> String { "\(number(fpm)) feet per minute" }
 
     /// Minutes as "one hour two minutes", "forty minutes".
-    static func minutes(_ minutes: Double) -> String {
-        let whole = Int(minutes.rounded())
-        let h = whole / 60, m = whole % 60
-        var parts: [String] = []
-        if h > 0 { parts.append("\(number(Double(h))) \(h == 1 ? "hour" : "hours")") }
-        if m > 0 || h == 0 { parts.append("\(number(Double(m))) \(m == 1 ? "minute" : "minutes")") }
-        return parts.joined(separator: " ")
-    }
-
-    private static let digitWords = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
+    static func minutes(_ minutes: Double) -> String { Format.spokenDuration(minutes) }
 
     /// Each figure said on its own, as a radio frequency, a heading or a
     /// transponder code is: "118.1" as "one one eight point one".
-    static func digits(_ text: String) -> String {
-        text.compactMap { c -> String? in
-            if let d = c.wholeNumberValue, (0...9).contains(d) { return digitWords[d] }
-            if c == "." { return "point" }
-            return nil
-        }.joined(separator: " ")
-    }
+    static func digits(_ text: String) -> String { Format.digits(text) }
 
-    /// A heading or course of three figures: "090" as "zero nine zero degrees".
-    static func degrees(_ deg: Double) -> String {
-        "\(digits(String(format: "%03.0f", deg))) degrees"
-    }
+    /// A heading or course of three figures, north as 360 as the screen
+    /// writes it: "090" as "zero nine zero degrees".
+    static func degrees(_ deg: Double) -> String { Format.spokenHeading(deg) }
 
     /// A radio frequency, as AirportWords.mhz writes it, figure by figure.
     static func frequency(_ mhz: Double) -> String { digits(AirportWords.mhz(mhz)) }
@@ -84,5 +64,21 @@ enum SpokenFigures {
 /// a pan or a zoom steps to its end instead (the UIKit side of SwiftUI's
 /// accessibilityReduceMotion, read where MapKit is driven).
 enum MapMotion {
-    static var animated: Bool { !UIAccessibility.isReduceMotionEnabled }
+    @MainActor static var animated: Bool { !UIAccessibility.isReduceMotionEnabled }
+}
+
+/// A live alert said by VoiceOver as it comes, where a sighted pilot sees
+/// it come in (the copilot's message, a call from ATC, the best field in
+/// an emergency): a banner appearing is otherwise silent to VoiceOver.
+/// Each caller posts once per new alert. An urgent one is said at once,
+/// over what VoiceOver is reading; the others wait their turn.
+enum Announce {
+    @MainActor
+    static func alert(_ words: String, urgent: Bool = false) {
+        let said = NSAttributedString(string: words, attributes: [
+            .accessibilitySpeechAnnouncementPriority: urgent ? UIAccessibilityPriority.high : UIAccessibilityPriority.default,
+            .accessibilitySpeechQueueAnnouncement: !urgent,
+        ])
+        UIAccessibility.post(notification: .announcement, argument: said)
+    }
 }

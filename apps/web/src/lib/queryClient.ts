@@ -1,5 +1,5 @@
 import { MutationCache, QueryCache, QueryClient, queryOptions } from "@tanstack/react-query";
-import { ApiError, api, describeError, isDropped } from "./api/client";
+import { ApiError, api, describeError, isDropped, isUnknownPlace } from "./api/client";
 import type { ChartInfo } from "./api/types";
 import { keptStore } from "./storage";
 import { clearProblem, raiseProblem, showError } from "./problems";
@@ -45,7 +45,11 @@ export const queryClient = new QueryClient({
       if (isDropped(error) || globalThis.navigator?.onLine === false) {
         const again = askedAgain.has(query.queryHash);
         askedAgain.add(query.queryHash);
-        whenBack(() => void queryClient.refetchQueries({ predicate: q => q.queryHash === query.queryHash }), document, again ? 30_000 : 1000);
+        whenBack(
+          () => void queryClient.refetchQueries({ predicate: (q) => q.queryHash === query.queryHash }),
+          document,
+          again ? 30_000 : 1000,
+        );
         return;
       }
       failingWith.set(query.queryHash, failed(describeError(error), retryable(error)));
@@ -90,7 +94,11 @@ const failingWith = new Map<string, string>();
  */
 const askedAgain = new Set<string>();
 
-export function whenBack(run: () => void, doc: Pick<Document, "visibilityState" | "addEventListener" | "removeEventListener"> = document, afterMs = 1000) {
+export function whenBack(
+  run: () => void,
+  doc: Pick<Document, "visibilityState" | "addEventListener" | "removeEventListener"> = document,
+  afterMs = 1000,
+) {
   const ready = () => doc.visibilityState === "visible" && globalThis.navigator?.onLine !== false;
   const done = () => {
     doc.removeEventListener("visibilitychange", go);
@@ -115,7 +123,7 @@ function forget(hash: string) {
   failingWith.delete(hash);
   if (id !== undefined && ![...failingWith.values()].includes(id)) clearProblem(id);
 }
-queryClient.getQueryCache().subscribe(event => {
+queryClient.getQueryCache().subscribe((event) => {
   if (event.type === "removed" || (event.type === "observerRemoved" && event.query.getObserversCount() === 0)) {
     forget(event.query.queryHash);
   }
@@ -124,8 +132,9 @@ queryClient.getQueryCache().subscribe(event => {
 function failed(message: string, retry: boolean): string {
   const id = `failed:${message}`;
   raiseProblem({
-    id, title: message,
-    retry: retry ? () => void queryClient.refetchQueries({ predicate: query => query.state.status === "error" }) : undefined,
+    id,
+    title: message,
+    retry: retry ? () => void queryClient.refetchQueries({ predicate: (query) => query.state.status === "error" }) : undefined,
   });
   return id;
 }
@@ -161,25 +170,31 @@ export const pilotQuery = queryOptions({ queryKey: ["pilot"], queryFn: () => api
  *  one poll's interval: opening the console within it shows the
  *  snapshot already here, where it used to ask again on every open and
  *  draw the console twice. */
-export const statusQuery = queryOptions({
-  queryKey: ["status"], queryFn: () => api.status(), staleTime: 30_000, refetchInterval: 30_000,
-});
+export const statusQuery = queryOptions({ queryKey: ["status"], queryFn: () => api.status(), staleTime: 30_000, refetchInterval: 30_000 });
 
 /** How this deployment is reached (SIGN_IN, OPEN or CLOSED) and which
  *  sign-ins it offers: asked once, and quiet on failure -- whoever reads
  *  it treats no answer as "not offered". */
 export const capabilitiesQuery = queryOptions({
-  queryKey: ["signInCapabilities"], queryFn: () => api.capabilities(), retry: false,
-  staleTime: Infinity, meta: { silent: true },
+  queryKey: ["signInCapabilities"],
+  queryFn: () => api.capabilities(),
+  retry: false,
+  staleTime: Infinity,
+  meta: { silent: true },
 });
 
 /** A route's course: its airports, any stops among them, and the line
- *  through them, the same answer for as long as the page is open. No
- *  `meta` -- a course that fails is the page's first news that the
- *  planner is down. */
-export const courseQuery = (dep: string, dest: string, stops: string[] = []) => queryOptions({
-  queryKey: ["course", dep, dest, stops.join(",")], queryFn: ({ signal }) => api.course(dep, dest, stops, signal), staleTime: Infinity,
-});
+ *  through them, the same answer for as long as the page is open. A
+ *  course that fails is the page's first news that the planner is down;
+ *  but a point the planner does not know is said on its pill in the
+ *  route box (usePlan's `unknownPlace`), not as a system problem. */
+export const courseQuery = (dep: string, dest: string, stops: string[] = []) =>
+  queryOptions({
+    queryKey: ["course", dep, dest, stops.join(",")],
+    queryFn: ({ signal }) => api.course(dep, dest, stops, signal),
+    staleTime: Infinity,
+    meta: { silent: isUnknownPlace },
+  });
 
 /** A route's checkpoints off the chart: the planner's, kept until the
  *  chart or the model changes (app.checkpoint_scoring), so never stale here. Asked
@@ -190,19 +205,26 @@ export const courseQuery = (dep: string, dest: string, stops: string[] = []) => 
  *  HTTP/1.1 a browser's six connections to the page filled with them --
  *  a card, the next route's course and the tiles waited behind
  *  (2026-10-07). The planner's read goes on and is kept either way. */
-export const checkpointsQuery = (dep: string, dest: string, stops: string[] = []) => queryOptions({
-  queryKey: ["checkpoints", dep, dest, stops.join(",")],
-  queryFn: ({ signal }) => api.checkpoints(dep, dest, stops, signal), staleTime: Infinity,
-});
+export const checkpointsQuery = (dep: string, dest: string, stops: string[] = []) =>
+  queryOptions({
+    queryKey: ["checkpoints", dep, dest, stops.join(",")],
+    queryFn: ({ signal }) => api.checkpoints(dep, dest, stops, signal),
+    staleTime: Infinity,
+    // A point not known, the course's to say (courseQuery).
+    meta: { silent: isUnknownPlace },
+  });
 
 /** The route from the side -- the ground under it and the Class B, C and
  *  D it passes through -- for FPL's side view, a dry run's chart and the
  *  nav log's printed Profile alike, one answer for all three (its key).
  *  Quiet: each draws the route without it where it fails. */
-export const routeProfileQuery = (dep: string, dest: string, stops: string[] = []) => queryOptions({
-  queryKey: ["route-profile", dep, ...stops, dest],
-  queryFn: () => api.routeProfile(dep, dest, stops), staleTime: Infinity, meta: { silent: true },
-});
+export const routeProfileQuery = (dep: string, dest: string, stops: string[] = []) =>
+  queryOptions({
+    queryKey: ["route-profile", dep, ...stops, dest],
+    queryFn: () => api.routeProfile(dep, dest, stops),
+    staleTime: Infinity,
+    meta: { silent: true },
+  });
 
 /** The Class B airports and their weather. The airspace never moves and
  *  the planner holds the weather for minutes, so refetching per pan
@@ -237,7 +259,10 @@ export const chartQuery = queryOptions({
  *  them every few. Not silent: a sky drawn with none when the FAA's site
  *  is down must say so. */
 export const tfrsQuery = queryOptions({
-  queryKey: ["tfrs"], queryFn: () => api.tfrs(), staleTime: 5 * 60_000, refetchInterval: 10 * 60_000,
+  queryKey: ["tfrs"],
+  queryFn: () => api.tfrs(),
+  staleTime: 5 * 60_000,
+  refetchInterval: 10 * 60_000,
 });
 
 /** The fields nearest a position, asked again only when it has moved a
@@ -245,7 +270,9 @@ export const tfrsQuery = queryOptions({
 export const nearestQuery = (lat: number, lon: number) => {
   const at = (n: number) => Math.round(n * 20) / 20;
   return queryOptions({
-    queryKey: ["nearest", at(lat), at(lon)], queryFn: () => api.nearestAirports(at(lat), at(lon)), staleTime: 10 * 60_000,
+    queryKey: ["nearest", at(lat), at(lon)],
+    queryFn: () => api.nearestAirports(at(lat), at(lon)),
+    staleTime: 10 * 60_000,
     meta: { silent: true },
   });
 };
@@ -253,36 +280,53 @@ export const nearestQuery = (lat: number, lon: number) => {
 /** A tracked flight's airplane, where it took off and its path today
  *  (wingtip.traffic.flight): read again every minute while it is tracked, by
  *  its card and the map's path alike. Quiet: the card says what it has. */
-export const flightQuery = (hex: string) => queryOptions({
-  queryKey: ["flight", hex], queryFn: () => api.trafficFlight(hex), staleTime: 60_000, refetchInterval: 60_000,
-  meta: { silent: true },
-});
+export const flightQuery = (hex: string) =>
+  queryOptions({
+    queryKey: ["flight", hex],
+    queryFn: () => api.trafficFlight(hex),
+    staleTime: 60_000,
+    refetchInterval: 60_000,
+    meta: { silent: true },
+  });
 
 /** An airplane's state now, for the alerts a pilot set on it
  *  (AircraftAlerts): asked every fifteen seconds while the app is open and
  *  an alert waits on it -- the planner reads adsb.lol's recent trace, a
  *  static file, no turn of its API -- and not while the page is hidden.
  *  Quiet: a missed answer is the next one's to make up. */
-export const flightStatusQuery = (hex: string) => queryOptions({
-  queryKey: ["flight-status", hex], queryFn: () => api.trafficStatus(hex), staleTime: 10_000, refetchInterval: 15_000,
-  retry: false, meta: { silent: true },
-});
+export const flightStatusQuery = (hex: string) =>
+  queryOptions({
+    queryKey: ["flight-status", hex],
+    queryFn: () => api.trafficStatus(hex),
+    staleTime: 10_000,
+    refetchInterval: 15_000,
+    retry: false,
+    meta: { silent: true },
+  });
 
 /** The route a tracked flight's number is scheduled to fly, asked once a
  *  callsign (wingtip.traffic.route; the planner keeps it six hours): where the
  *  airplane is says whether it is on it, so the position, to a degree, is
  *  in the key and a diversion or a reused callsign is asked again. Quiet,
  *  as the flight's. */
-export const routeQuery = (callsign: string | null, at: { lat: number; lon: number } | null) => queryOptions({
-  queryKey: ["route", callsign, at ? Math.round(at.lat) : null, at ? Math.round(at.lon) : null], queryFn: () => api.trafficRoute({ callsign: callsign!, ...at }),
-  enabled: !!callsign, staleTime: 30 * 60_000, meta: { silent: true },
-});
+export const routeQuery = (callsign: string | null, at: { lat: number; lon: number } | null) =>
+  queryOptions({
+    queryKey: ["route", callsign, at ? Math.round(at.lat) : null, at ? Math.round(at.lon) : null],
+    queryFn: () => api.trafficRoute({ callsign: callsign!, ...at }),
+    enabled: !!callsign,
+    staleTime: 30 * 60_000,
+    meta: { silent: true },
+  });
 
 /** The deployment's key for Google's map tiles (routers/basemaps), asked
  *  once a visit; an error, quiet, where it has none and the map offers
  *  no Google overlay (OverlayTiles, MapSettings). */
 export const googleMapsQuery = queryOptions({
-  queryKey: ["googleMaps"], queryFn: () => api.googleMaps(), staleTime: Infinity, retry: false, meta: { silent: true },
+  queryKey: ["googleMaps"],
+  queryFn: () => api.googleMaps(),
+  staleTime: Infinity,
+  retry: false,
+  meta: { silent: true },
 });
 
 /** The cycle's overlay tiles' archive (wingtip.vector_tiles): its name and
@@ -290,11 +334,18 @@ export const googleMapsQuery = queryOptions({
  *  map's first tile from it goes straight out; a 404, quiet, until the
  *  planner has built one. */
 export const overlayTilesQuery = queryOptions({
-  queryKey: ["overlayTiles"], queryFn: () => api.overlayTiles(), staleTime: 60 * 60_000, retry: false, meta: { silent: true },
+  queryKey: ["overlayTiles"],
+  queryFn: () => api.overlayTiles(),
+  staleTime: 60 * 60_000,
+  retry: false,
+  meta: { silent: true },
 });
 
 export const classBQuery = queryOptions({
-  queryKey: ["classB"], queryFn: () => api.classB(), staleTime: 5 * 60_000, meta: { silent: true },
+  queryKey: ["classB"],
+  queryFn: () => api.classB(),
+  staleTime: 5 * 60_000,
+  meta: { silent: true },
 });
 
 /** An airport's card's data -- its weather, frequencies, runways, pattern
@@ -305,9 +356,8 @@ export const classBQuery = queryOptions({
  *  whether a failed lookup showed depended on which had mounted last (the
  *  commonality audit's N-13). Five minutes, a report's freshness; quiet,
  *  the card saying in place what it could not have (PlaceCard). */
-export const airportQuery = (ident: string) => queryOptions({
-  queryKey: ["airport", ident], queryFn: () => api.airport(ident), staleTime: 5 * 60_000, meta: { silent: true },
-});
+export const airportQuery = (ident: string) =>
+  queryOptions({ queryKey: ["airport", ident], queryFn: () => api.airport(ident), staleTime: 5 * 60_000, meta: { silent: true } });
 
 /** A procedure picked, drawn as the planner draws it (wingtip.procedures):
  *  one query for the map's drawing, the planner's descent and the approach
@@ -323,16 +373,24 @@ export const procedureQuery = (p: { ident: string; id: string; transition: strin
  *  card's and a suggested stop's row's. The FAA's cycle and Overture's
  *  monthly release change it, so it is good for the page's life; quiet,
  *  the card saying in place what it could not have. */
-export const servicesQuery = (ident: string) => queryOptions({
-  queryKey: ["airport-services", ident], queryFn: () => api.airportServices(ident), staleTime: Infinity, meta: { silent: true },
-});
+export const servicesQuery = (ident: string) =>
+  queryOptions({
+    queryKey: ["airport-services", ident],
+    queryFn: () => api.airportServices(ident),
+    staleTime: Infinity,
+    meta: { silent: true },
+  });
 
 /** An airport's pictures (api.airportPhotos), behind its card's diagram:
  *  the imagery and the article change in years, so good for the page's
  *  life; quiet, the card showing the diagram alone without them. */
-export const photosQuery = (ident: string) => queryOptions({
-  queryKey: ["airport-photos", ident], queryFn: () => api.airportPhotos(ident), staleTime: Infinity, meta: { silent: true },
-});
+export const photosQuery = (ident: string) =>
+  queryOptions({
+    queryKey: ["airport-photos", ident],
+    queryFn: () => api.airportPhotos(ident),
+    staleTime: Infinity,
+    meta: { silent: true },
+  });
 
 /** The map's Stops round a position (api.stopsNear): by the position to
  *  a twentieth of a degree, asked again every two seconds while the
@@ -340,40 +398,52 @@ export const photosQuery = (ident: string) => queryOptions({
 export const stopsNearQuery = (lat: number, lon: number, nm: number) => {
   const at = (n: number) => Math.round(n * 20) / 20;
   return queryOptions({
-    queryKey: ["stops-near", at(lat), at(lon), nm], queryFn: () => api.stopsNear(at(lat), at(lon), nm),
-    staleTime: 30 * 60_000, meta: { silent: true },
-    refetchInterval: query => (query.state.data?.pending ? 2000 : false),
+    queryKey: ["stops-near", at(lat), at(lon), nm],
+    queryFn: () => api.stopsNear(at(lat), at(lon), nm),
+    staleTime: 30 * 60_000,
+    meta: { silent: true },
+    refetchInterval: (query) => (query.state.data?.pending ? 2000 : false),
   });
 };
 
 /** The map's Stops along a route (api.stopsAlong), asked again while some
  *  are still to be read, as those round the pilot are. */
-export const stopsAlongQuery = (dep: string, dest: string, stops: string) => queryOptions({
-  queryKey: ["stops-along", dep, dest, stops], queryFn: () => api.stopsAlong(dep, dest, stops),
-  staleTime: 30 * 60_000, meta: { silent: true },
-  refetchInterval: query => (query.state.data?.pending ? 2000 : false),
-});
+export const stopsAlongQuery = (dep: string, dest: string, stops: string) =>
+  queryOptions({
+    queryKey: ["stops-along", dep, dest, stops],
+    queryFn: () => api.stopsAlong(dep, dest, stops),
+    staleTime: 30 * 60_000,
+    meta: { silent: true },
+    refetchInterval: (query) => (query.state.data?.pending ? 2000 : false),
+  });
 
 /** The ways to fly a route (api.routeOptions), for FPL's Routes: the
  *  planner's read of the TAFs and METARs is ten minutes old at most, so
  *  that long; quiet, FPL saying nothing of them where they are not had. */
-export const routeOptionsQuery = (...args: Parameters<typeof api.routeOptions>) => queryOptions({
-  queryKey: ["route-options", ...args], queryFn: () => api.routeOptions(...args), staleTime: 10 * 60_000, meta: { silent: true },
-});
+export const routeOptionsQuery = (...args: Parameters<typeof api.routeOptions>) =>
+  queryOptions({
+    queryKey: ["route-options", ...args],
+    queryFn: () => api.routeOptions(...args),
+    staleTime: 10 * 60_000,
+    meta: { silent: true },
+  });
 
 /** An approach's plate placed on the map, and whether it publishes
- *  circling minimums (wingtip.plates): the map's (PlateLayer) and the route's
+ *  circling minimums (wingtip.plates): the map's (PlatesGl) and the route's
  *  runway chips' (ProceduresRoute). A plate placed stays good for its
  *  cycle's 28 days; none placed is said by none drawn, not a retry. */
-export const plateQuery = (airport: string, id: string) => queryOptions({
-  queryKey: ["plate", airport, id], queryFn: () => api.plate(airport, id), staleTime: 6 * 60 * 60_000, retry: false, meta: { silent: true },
-});
+export const plateQuery = (airport: string, id: string) =>
+  queryOptions({
+    queryKey: ["plate", airport, id],
+    queryFn: () => api.plate(airport, id),
+    staleTime: 6 * 60 * 60_000,
+    retry: false,
+    meta: { silent: true },
+  });
 
 /** The pilot's saved flights, for FPL's Saved and its list in full: quiet,
  *  each saying in place what it could not fetch (QueryState). */
-export const flightsQuery = queryOptions({
-  queryKey: ["flights"], queryFn: () => api.flights.list(), meta: { silent: true },
-});
+export const flightsQuery = queryOptions({ queryKey: ["flights"], queryFn: () => api.flights.list(), meta: { silent: true } });
 
 /** The pilot's training record: the logbook's, the checkride's, the
  *  Brief's mock oral and solo review's, a flight's page's. */
@@ -381,17 +451,19 @@ export const trainingQuery = queryOptions({ queryKey: ["training"], queryFn: () 
 
 /** The pilot's own airplanes, for the aircraft chips, the Brief and
  *  Setup's Aircraft: fresh for a minute. */
-export const aircraftListQuery = queryOptions({
-  queryKey: ["aircraft"], queryFn: () => api.aircraft.list(), staleTime: 60_000,
-});
+export const aircraftListQuery = queryOptions({ queryKey: ["aircraft"], queryFn: () => api.aircraft.list(), staleTime: 60_000 });
 
 /** The airplanes' book figures the planner flies: the same while the page
  *  is open. */
 export const aircraftProfilesQuery = queryOptions({
-  queryKey: ["aircraftProfiles"], queryFn: () => api.aircraftProfiles(), staleTime: Infinity,
+  queryKey: ["aircraftProfiles"],
+  queryFn: () => api.aircraftProfiles(),
+  staleTime: Infinity,
 });
 
 /** The pilot's currency from the logbook: fresh for a minute. */
-export const currencyQuery = queryOptions({
-  queryKey: ["currency"], queryFn: () => api.logbook.currency(), staleTime: 60_000,
-});
+export const currencyQuery = queryOptions({ queryKey: ["currency"], queryFn: () => api.logbook.currency(), staleTime: 60_000 });
+
+/** What falls due for the pilot and their airplanes (the Logbook's Coming
+ *  up): fresh for a minute. */
+export const paperworkQuery = queryOptions({ queryKey: ["paperwork"], queryFn: () => api.paperwork(), staleTime: 60_000 });

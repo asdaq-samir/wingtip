@@ -1,0 +1,26 @@
+# Left as their generators write them (each one's --check compares the
+# committed file byte for byte), or as data, as its source writes it.
+# Prettier also leaves out what .gitignore does.
+dist
+node_modules
+package-lock.json
+# The legal pages (scripts/build/legal_pages.py), and index.html, whose
+# icons scripts/build/app_icons.py writes.
+public
+index.html
+# The engine's contract types (npm run types) and its WebAssembly.
+src/lib/engine/contract.ts
+# The rules the web asks (scripts/build/web_rules.py).
+src/lib/engine/webRules.ts
+src/lib/engine/pkg
+src/lib/api/*.d.ts
+# The design tokens (scripts/build/design-tokens.sh).
+src/lib/tokens.ts
+src/styles/tokens.css
+src/lib/fixtures/formats.json
+# The screens a link opens (scripts/build/screens.sh).
+src/lib/navigation/generated
+# The engine's shared fixtures and the tests' recorded answers: data.
+src/lib/fixtures
+src/lib/acs.json
+e2e/fixtures

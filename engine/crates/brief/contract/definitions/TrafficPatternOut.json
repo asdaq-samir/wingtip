@@ -1,0 +1,93 @@
+{
+  "title": "TrafficPatternOut",
+  "anyOf": [
+    {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "arrival",
+            "departure"
+          ]
+        },
+        "ident": {
+          "type": "string"
+        },
+        "runway": {
+          "type": "string"
+        },
+        "traffic": {
+          "type": "string"
+        },
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "legs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "enum": [
+                  "Upwind",
+                  "Crosswind",
+                  "Downwind",
+                  "Base",
+                  "Final"
+                ]
+              },
+              "from": {
+                "$ref": "#/definitions/PatternLegPoint"
+              },
+              "to": {
+                "$ref": "#/definitions/PatternLegPoint"
+              }
+            },
+            "required": [
+              "name",
+              "from",
+              "to"
+            ]
+          }
+        },
+        "entry": {
+          "type": "object",
+          "properties": {
+            "from": {
+              "$ref": "#/definitions/PatternLegPoint"
+            },
+            "to": {
+              "$ref": "#/definitions/PatternLegPoint"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "from",
+            "to",
+            "name"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "ident",
+        "runway",
+        "traffic",
+        "altitude_ft",
+        "legs",
+        "entry"
+      ]
+    },
+    {
+      "type": "null"
+    }
+  ],
+  "description": "lib/trafficPattern's TrafficPattern in snake_case, or null where it cannot be drawn."
+}

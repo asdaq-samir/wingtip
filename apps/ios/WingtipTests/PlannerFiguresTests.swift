@@ -33,11 +33,12 @@ struct PlannerFiguresTests {
 
     @Test func theDebriefIsAskedWithTheFlightsCheckpointsAndTheTrackInSnakeCase() throws {
         let flight = try JSONDecoder().decode(SavedFlightDetail.self, from: Data(#"""
-        {"id":7,"departureIdent":"A","destinationIdent":"B","checkpoints":[
+        {"id":7,"departureIdent":"A","destinationIdent":"B","createdAt":"2026-10-25T08:00:00Z","stops":[],"checkpoints":[
          {"sequenceNo":0,"name":"A","category":"departure","lat":42,"lon":-88,"alongTrackNm":0,"legDistanceNm":null,"trueCourseDeg":null,"eteMin":null,"altitudeFt":null},
          {"sequenceNo":1,"name":"B","category":"destination","lat":43,"lon":-88,"alongTrackNm":60,"trueCourseDeg":0,"eteMin":36,"altitudeFt":3500}]}
         """#.utf8))
-        let ask = DebriefAsk(checkpoints: flight.checkpoints, points: [SavedTrackPoint(t: 1791990120000, lat: 42, lon: -88, altFt: 700)])
+        let ask = DebriefAsk(checkpoints: try flight.checkpoints.map { try Engine.recoded($0) },
+                             points: [try Engine.recoded(SavedTrackPoint(altFt: 700, lat: 42, lon: -88, t: 1791990120000))])
         let sent = try #require(try JSONSerialization.jsonObject(with: Planner.snakeEncoder.encode(ask)) as? [String: Any])
         let first = try #require((sent["checkpoints"] as? [[String: Any]])?.last)
         #expect(first["sequence_no"] as? Int == 1 && first["along_track_nm"] as? Double == 60 && first["true_course_deg"] as? Double == 0)
@@ -67,7 +68,7 @@ struct PlannerFiguresTests {
     }
 
     @Test func theHoldReadsWithItsEntryAndWind() throws {
-        let answer = try Planner.snakeCase.decode(HoldingAnswer.self, from: Data(#"""
+        let answer = try Engine.decoder.decode(HoldingAnswer.self, from: Data(#"""
         {"entry":"parallel","entry_name":"Parallel","steps":"At the fix, turn to 180°…","either":null,"either_name":null,"approach_relative":40,
          "wind":{"leg_min":1,"inbound":{"heading":360,"wca":0,"gs":80},"outbound":{"heading":180,"wca":0,"gs":120},"outbound_sec":40,"rule_sec":40,
           "inbound_words":"0° for the wind, 80 kt over the ground","outbound_words":"Three times the inbound correction, 0°, the turns' drift taken up too",
@@ -78,13 +79,14 @@ struct PlannerFiguresTests {
     }
 
     @Test func lostCommsIsAskedInSnakeCaseAndReadsEachSegment() throws {
-        let ask = LostCommsAsk(segments: [LostCommsSegmentAsk(name: "SWEDE to RAYMO", minimumFt: 5000)], assignedFt: 4000, expectedFt: 6000,
-                               expectedFrom: 0, approachFix: false, efc: "", eta: "1435Z")
-        let sent = try #require(try JSONSerialization.jsonObject(with: Planner.snakeEncoder.encode(ask)) as? [String: Any])
+        let ask = EngineContract.LostCommsInput(segments: [.init(name: "SWEDE to RAYMO", minimumFt: 5000)], assignedFt: 4000, expectedFt: 6000,
+                                                expectedFrom: 0, approachFix: false, efc: "", eta: "1435Z")
+        let sent = try #require(try JSONSerialization.jsonObject(with: Engine.encoder.encode(ask)) as? [String: Any])
         #expect(sent["assigned_ft"] as? Double == 4000 && sent["expected_from"] as? Int == 0 && sent["approach_fix"] as? Bool == false)
         #expect((sent["segments"] as? [[String: Any]])?.first?["minimum_ft"] as? Double == 5000)
-        let answer = try Planner.snakeCase.decode(LostCommsAnswer.self, from: Data(#"""
+        let answer = try Engine.decoder.decode(LostCommsAnswer.self, from: Data(#"""
         {"vfr":"In VFR conditions…","routes":[{"key":"assigned","label":"Assigned","rule":"The route assigned in the last ATC clearance received."}],
+         "altitude":"The highest of the assigned, the minimum and the expected altitude, segment by segment.",
          "segments":[{"name":"SWEDE to RAYMO","fly":6000,"because":"expected","words":"Fly 6,000 ft: expected"},{"name":"x","fly":null,"because":null,"words":"No altitude known"}],
          "leave":"Leave the clearance limit on arriving over it, proceed to a fix an approach begins from, and begin the descent or the approach as close as possible to your estimated time of arrival, 1435Z."}
         """#.utf8))
@@ -100,10 +102,9 @@ struct PlannerFiguresTests {
         #expect(hold.entry == "teardrop" && hold.either == "direct" && hold.wind == nil)
         let windy = try Engine.holding(inbound: 360, heading: 220, turns: "right", tasKt: 100, windFrom: 300, windKt: 15, altitudeFt: 5000)
         #expect(windy.wind?.legMin == 1)
-        let lost = try Engine.lostComms(LostCommsAsk(segments: [LostCommsSegmentAsk(name: "SWEDE to RAYMO", minimumFt: 5000)],
-                                                     assignedFt: 4000, expectedFt: 6000, expectedFrom: 0, approachFix: false, efc: "",
-                                                     eta: "1435Z"))
-        #expect(lost.segments.map(\.fly) == [6000])
+        let lost = try Engine.lostComms(segments: [.init(name: "SWEDE to RAYMO", minimumFt: 5000)],
+                                        assignedFt: 4000, expectedFt: 6000, expectedFrom: 0, approachFix: false, efc: "", eta: "1435Z")
+        #expect(lost.segments.map { $0.fly } == [6000])
         #expect(lost.leave.contains("1435Z"))
         // A shape the rule cannot read is the engine's words, thrown.
         #expect(throws: Engine.Refused.self) {
@@ -111,14 +112,14 @@ struct PlannerFiguresTests {
         }
     }
 
-    @Test func thePlannersFiguresAreWrittenAsAPilotWritesThem() {
-        #expect(AirportWords.bearing(0) == "360°")
-        #expect(AirportWords.bearing(4.6) == "005°")
-        #expect(AirportWords.bearing(352.52) == "353°")
+    @Test func thePlannersFiguresAreWrittenAsAPilotWritesThem() throws {
+        #expect(Format.heading(0) == "360°")
+        #expect(Format.heading(4.6) == "005°")
+        #expect(Format.heading(352.52) == "353°")
         #expect(FigureWords.signed(300, " ft") == "+300 ft")
         #expect(FigureWords.signed(-2.4, " min") == "−2 min")
         #expect(FigureWords.signed(0, " ft") == "0 ft")
-        #expect(AirportWords.tenths(1.5) == "1.5" && AirportWords.tenths(200) == "200")
+        #expect(Format.tenths(1.5) == "1.5" && Format.tenths(200) == "200")
         #expect(FigureWords.percent(0.856) == "86%")
     }
 }

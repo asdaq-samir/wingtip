@@ -1,111 +1,59 @@
-"""Hand-derived headwind/tailwind/crosswind cases -- the sanity checks
-worked through by hand while building wingtip.navlog, formalized as
-regression tests -- and the flyability and fuel rules built on them.
-"""
-import math
+"""The nav log as the planner asks the engine for it: the air each leg is
+looked up in (wingtip.navlog's edge) and the engine's leg made of it. The
+leg's own figures -- the wind triangle, the airplane in the leg's air,
+the fuel plan -- are the engine's and tested there
+(engine/facade/tests/navlog.rs); the winds' interpolation is the
+planner's (wingtip.weather)."""
 
 import pytest
 
-from wingtip.navlog import groundspeed_kt, wind_correction_angle_deg
-from wingtip.weather import _interp_circular_deg
-
-
-def test_direct_headwind_no_wca_reduces_groundspeed():
-    tc, wind_dir, wind_speed, tas = 90, 90, 20, 110
-    wca = wind_correction_angle_deg(tc, wind_dir, wind_speed, tas)
-    gs = groundspeed_kt(tc, wind_dir, wind_speed, tas, wca)
-    assert wca == pytest.approx(0, abs=1e-9)
-    assert gs == pytest.approx(90, abs=1e-9)
-
-
-def test_direct_tailwind_no_wca_increases_groundspeed():
-    tc, wind_dir, wind_speed, tas = 90, 270, 20, 110
-    wca = wind_correction_angle_deg(tc, wind_dir, wind_speed, tas)
-    gs = groundspeed_kt(tc, wind_dir, wind_speed, tas, wca)
-    assert wca == pytest.approx(0, abs=1e-9)
-    assert gs == pytest.approx(130, abs=1e-9)
-
-
-def test_direct_crosswind_matches_hand_derivation():
-    tc, wind_dir, wind_speed, tas = 90, 180, 20, 110
-    wca = wind_correction_angle_deg(tc, wind_dir, wind_speed, tas)
-    gs = groundspeed_kt(tc, wind_dir, wind_speed, tas, wca)
-    expected_wca = math.degrees(math.asin(wind_speed / tas))
-    assert wca == pytest.approx(expected_wca, rel=1e-9)
-    assert wca > 0  # crab to the right for a wind from the south on an eastbound course
-    assert gs == pytest.approx(tas * math.cos(math.radians(expected_wca)), rel=1e-9)
+from wingtip.weather import wind_in_levels
 
 
 def test_circular_interpolation_across_the_360_wrap():
-    assert _interp_circular_deg(350, 10, 0.5) == pytest.approx(0.0, abs=1e-9)
-    assert _interp_circular_deg(10, 350, 0.5) == pytest.approx(0.0, abs=1e-9)
+    # Halfway between two levels, the engine's (winds.rs) short way round.
+    def between(d1, d2, frac):
+        levels = {3000: {"wind_dir_true_deg": d1, "wind_speed_kt": 10}, 7000: {"wind_dir_true_deg": d2, "wind_speed_kt": 10}}
+        return wind_in_levels(levels, 3000 + 4000 * frac)["wind_dir_true_deg"] % 360
+
+    assert min(between(350, 10, 0.5), 360 - between(350, 10, 0.5)) == pytest.approx(0.0, abs=1e-9)
+    assert min(between(10, 350, 0.5), 360 - between(10, 350, 0.5)) == pytest.approx(0.0, abs=1e-9)
 
 
 def test_circular_interpolation_normal_case():
-    assert _interp_circular_deg(100, 200, 0.25) == pytest.approx(125.0, abs=1e-9)
+    levels = {3000: {"wind_dir_true_deg": 100, "wind_speed_kt": 10}, 7000: {"wind_dir_true_deg": 200, "wind_speed_kt": 10}}
+    assert wind_in_levels(levels, 4000)["wind_dir_true_deg"] == pytest.approx(125.0, abs=1e-9)
 
 
 def _leg_with_wind(monkeypatch, wind_dir, wind_speed, tas=100.0, oat_c=None, altitude_ft=6000.0):
     from wingtip import navlog
-    monkeypatch.setattr(navlog, "wind_at_altitude", lambda lat, lon, alt, fcst_hr="06": {
-        "wind_dir_true_deg": wind_dir, "wind_speed_kt": wind_speed})
+
+    asked = []
+
+    def wind(lat, lon, alt, fcst_hr="06"):
+        asked.append((round(lat, 6), round(lon, 6), alt, fcst_hr))
+        return {"wind_dir_true_deg": wind_dir, "wind_speed_kt": wind_speed}
+
+    monkeypatch.setattr(navlog, "wind_at_altitude", wind)
     monkeypatch.setattr(navlog, "temperature_at_altitude", lambda lat, lon, alt, fcst_hr="06": oat_c)
     monkeypatch.setattr(navlog, "magnetic_variation_deg", lambda lat, lon: 0.0)
     a = {"name": "A", "category": "departure", "lat": 45.0, "lon": -90.0}
-    b = {"name": "B", "category": "destination", "lat": 45.0, "lon": -89.0}   # due east, 090
-    return navlog.leg_between(a, b, altitude_ft, {"cruise_tas_kt": tas, "fuel_burn_gph": 8.5})
+    b = {"name": "B", "category": "destination", "lat": 45.0, "lon": -89.0}  # due east, 090
+    leg = navlog.legs([a, b], altitude_ft, {"cruise_tas_kt": tas, "fuel_burn_gph": 8.5}, "12")[0]
+    # Looked up once, at the leg's midpoint, for the forecast period asked.
+    assert asked == [(45.0, -89.5, altitude_ft, "12")]
+    return leg
 
 
 def test_a_crosswind_stronger_than_tas_is_unflyable(monkeypatch):
-    """150 kt from 190 on an eastbound course, for a 100 kt aeroplane:
-    no heading holds the course, though the clamped wind correction angle
-    and the wind's tail component used to give a positive ground speed."""
     leg = _leg_with_wind(monkeypatch, 190, 150)
     assert leg["ete_min"] is None and leg["groundspeed_kt"] is None and leg["fuel_gal"] is None
 
 
-def test_an_unflyable_headwind_has_no_ground_speed_either(monkeypatch):
-    """Flyability is decided once: no ETE means no ground speed or fuel,
-    not a negative ground speed beside an empty ETE."""
-    leg = _leg_with_wind(monkeypatch, 90, 120)
-    assert leg["ete_min"] is None and leg["groundspeed_kt"] is None and leg["fuel_gal"] is None
-
-
-def test_a_strong_but_holdable_crosswind_still_flies(monkeypatch):
-    leg = _leg_with_wind(monkeypatch, 180, 60)
-    assert leg["ete_min"] is not None and leg["groundspeed_kt"] > 0
-
-
 def test_a_leg_flies_the_aeroplanes_figures_in_its_own_air(monkeypatch):
-    """At the reference altitude on a standard day, the profile's own
-    figures; 15 degC warmer there, a higher density altitude and a
-    faster TAS for the same power and burn -- and the ground speed and
-    fuel follow the leg's own TAS and burn."""
     standard = _leg_with_wind(monkeypatch, 270, 20)
-    assert standard["tas_kt"] == pytest.approx(100.0) and standard["fuel_burn_gph"] == pytest.approx(8.5)
-    assert standard["density_altitude_ft"] == 6000 and standard["oat_c"] is None
+    assert standard["from"] == "A" and standard["to"] == "B"
+    assert standard["tas_kt"] == pytest.approx(100.0) and standard["oat_c"] is None
     assert standard["groundspeed_kt"] == pytest.approx(120.0, abs=0.01)
-
     warm = _leg_with_wind(monkeypatch, 270, 20, oat_c=18.0)
-    assert warm["density_altitude_ft"] > 7500 and warm["tas_kt"] > 101.0
-    assert warm["groundspeed_kt"] == pytest.approx(warm["tas_kt"] + 20, abs=0.01)
-    assert warm["fuel_gal"] == pytest.approx(warm["ete_min"] / 60 * warm["fuel_burn_gph"])
-
-
-def test_the_fuel_required_includes_start_taxi_and_takeoff():
-    from wingtip import navlog
-    plan = navlog.fuel_plan(20.0, {"fuel_burn_gph": 8.0, "usable_fuel_gal": 40}, night=False)
-    assert plan["taxi_gal"] == navlog.DEFAULT_TAXI_FUEL_GAL
-    assert plan["fuel_required_gal"] == round(20.0 + navlog.DEFAULT_TAXI_FUEL_GAL + 4.0, 1)
-    assert navlog.fuel_plan(20.0, {"fuel_burn_gph": 8.0, "taxi_fuel_gal": 2.0}, night=False)["fuel_required_gal"] == 26.0
-
-
-def test_under_ifr_the_reserve_is_45_minutes_by_day_and_by_night():
-    """14 CFR 91.167(a)(3): 45 minutes at normal cruise after the
-    destination (or its alternate), where VFR's is 30 by day (91.151)."""
-    from wingtip import navlog
-    profile = {"fuel_burn_gph": 8.0}
-    assert navlog.fuel_plan(20.0, profile, night=False)["reserve_min"] == 30.0
-    day = navlog.fuel_plan(20.0, profile, night=False, rules="ifr")
-    assert day["reserve_min"] == 45.0 and day["reserve_gal"] == 6.0 and day["rules"] == "ifr"
-    assert navlog.fuel_plan(20.0, profile, night=None, rules="ifr")["reserve_min"] == 45.0
+    assert warm["density_altitude_ft"] > 7500 and warm["oat_c"] == 18.0

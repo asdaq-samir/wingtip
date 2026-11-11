@@ -3,11 +3,12 @@ the destination's "1-2-3" an hour either side of the ETA (2,000 ft and 3
 sm, an instrument approach published), and an alternate's minimums at
 its ETA (600-2 with an ILS, 800-2 without, its own where it publishes
 them). The TAFs and charts are made here; the figures are the rule's."""
+
 import pytest
 
 from wingtip import alternates, publications, weather
 
-ETA = 1_800_000_000.0   # an hour boundary
+ETA = 1_800_000_000.0  # an hour boundary
 HOUR = 3600.0
 
 ILS = {"kind": "IAP", "name": "ILS OR LOC RWY 27", "url": "u"}
@@ -16,8 +17,15 @@ ALT_MINS = {"kind": "MIN", "name": "ALTERNATE MINIMUMS", "url": "https://aeronav
 
 
 def _period(start, end, ceiling=None, visibility=6.0, change=""):
-    clouds = [{"cover": "OVC", "base": ceiling}] if ceiling is not None else [{"cover": "SCT", "base": 3000}]
-    return {"timeFrom": start, "timeTo": end, "change": change, "clouds": clouds, "visib": str(visibility), "vert_vis": None}
+    # A period as the weather store keeps it, read by the engine (awc_tafs_read).
+    return {
+        "timeFrom": start,
+        "timeTo": end,
+        "change": change,
+        "ceiling_ft": ceiling,
+        "ceiling_unknown": False,
+        "visibility_sm": visibility,
+    }
 
 
 @pytest.fixture
@@ -25,9 +33,14 @@ def world(monkeypatch):
     """Fields with TAFs and charts a test sets: {ident: [periods]}, {ident: [charts]}."""
     tafs, charts = {}, {}
     places = {"KDST": (45.0, -90.0), "KALT": (45.5, -90.0), "KFAR": (46.5, -90.0), "KNOA": (45.2, -90.0)}
-    monkeypatch.setattr(weather, "_dataset", lambda name: [
-        {"icaoId": ident, "lat": places[ident][0], "lon": places[ident][1], "raw": f"TAF {ident}", "fcsts": fcsts}
-        for ident, fcsts in tafs.items()])
+    monkeypatch.setattr(
+        weather,
+        "_dataset",
+        lambda name: [
+            {"icaoId": ident, "lat": places[ident][0], "lon": places[ident][1], "raw": f"TAF {ident}", "fcsts": fcsts}
+            for ident, fcsts in tafs.items()
+        ],
+    )
     monkeypatch.setattr(publications, "terminal_charts", lambda ident: charts.get(ident, []))
     return tafs, charts
 
@@ -44,8 +57,10 @@ def test_123_holds_with_an_approach_and_2000_and_3_an_hour_either_side(world):
 def test_a_tempo_under_2000_within_the_hour_after_asks_for_an_alternate(world):
     tafs, charts = world
     charts["KDST"] = [ILS]
-    tafs["KDST"] = [_period(ETA - 6 * HOUR, ETA + 6 * HOUR, ceiling=3000),
-                    _period(ETA + 0.5 * HOUR, ETA + 2 * HOUR, ceiling=1900, change="TEMPO")]
+    tafs["KDST"] = [
+        _period(ETA - 6 * HOUR, ETA + 6 * HOUR, ceiling=3000),
+        _period(ETA + 0.5 * HOUR, ETA + 2 * HOUR, ceiling=1900, change="TEMPO"),
+    ]
     check = alternates.destination("KDST", ETA)
     assert check["required"] is True
     assert check["reasons"] == ["The TAF has a 1,900 ft ceiling within an hour of the ETA: under 2,000 ft."]
@@ -54,17 +69,17 @@ def test_a_tempo_under_2000_within_the_hour_after_asks_for_an_alternate(world):
 def test_a_tempo_more_than_an_hour_after_the_eta_does_not(world):
     tafs, charts = world
     charts["KDST"] = [ILS]
-    tafs["KDST"] = [_period(ETA - 6 * HOUR, ETA + 6 * HOUR, ceiling=3000),
-                    _period(ETA + 1.5 * HOUR, ETA + 3 * HOUR, ceiling=500, change="TEMPO")]
+    tafs["KDST"] = [
+        _period(ETA - 6 * HOUR, ETA + 6 * HOUR, ceiling=3000),
+        _period(ETA + 1.5 * HOUR, ETA + 3 * HOUR, ceiling=500, change="TEMPO"),
+    ]
     assert alternates.destination("KDST", ETA)["required"] is False
 
 
 def test_no_approach_or_no_taf_asks_for_an_alternate_whatever_the_weather(world):
     tafs, charts = world
     tafs["KDST"] = [_period(ETA - 6 * HOUR, ETA + 6 * HOUR)]
-    assert alternates.destination("KDST", ETA)["reasons"] == [
-        "KDST has no instrument approach published (14 CFR 91.169(b)(1)).",
-    ]
+    assert alternates.destination("KDST", ETA)["reasons"] == ["KDST has no instrument approach published (14 CFR 91.169(b)(1))."]
     charts["KDST"] = [ILS]
     assert alternates.destination("KNOA", ETA)["reasons"][-1] == "No TAF for KNOA covers an hour either side of the ETA."
 
@@ -119,8 +134,14 @@ def test_a_ceiling_of_unknown_height_is_not_taken_as_good(world):
     alternate and the field is one for the pilot to look at."""
     tafs, charts = world
     charts["KDST"], charts["KALT"] = [ILS], [ILS]
-    unknown = {"timeFrom": ETA - 6 * HOUR, "timeTo": ETA + 6 * HOUR, "change": "",
-               "clouds": [{"cover": "OVC", "base": None}], "visib": "6", "vert_vis": None}
+    unknown = {
+        "timeFrom": ETA - 6 * HOUR,
+        "timeTo": ETA + 6 * HOUR,
+        "change": "",
+        "ceiling_ft": None,
+        "ceiling_unknown": True,
+        "visibility_sm": 6.0,
+    }
     tafs["KDST"], tafs["KALT"] = [unknown], [unknown]
     check = alternates.destination("KDST", ETA)
     assert check["required"] is True and "unknown height" in check["reasons"][0]

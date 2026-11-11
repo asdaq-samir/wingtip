@@ -1,5 +1,5 @@
 {
-  "about": "Traffic's label under an airplane on the map, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft (the VFR cruising altitudes' spacing, 14 CFR 91.159). The hundreds cut toward own ship, never away (the owner's conservative pick, 2026-10-28). Web: lib/map/traffic.ts. iOS: Traffic.label and Traffic.near.",
+  "about": "Traffic's label under an airplane on the map, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft (the VFR cruising altitudes' spacing, 14 CFR 91.159). The hundreds cut toward own ship, never away (the owner's conservative pick, 2026-10-28). Web: features/plan/map/traffic.ts. iOS: Traffic.label and Traffic.near. notice: with own ship's place and the airplane's, how far off it is, its true bearing and tell, near in height and within 5 nm (the phones' notification; a design choice). fresh: whether a position seen_s old in an answer age_s old is within 30 s (wingtip.traffic's STALE_S). iOS and Android: Traffic.",
   "cases": [
     {
       "plane": {
@@ -240,6 +240,154 @@
       "ownFt": 4500,
       "label": "+02",
       "near": true
+    }
+  ],
+  "notice": [
+    {
+      "own": {
+        "lat": 42.0,
+        "lon": -88.0
+      },
+      "ownFt": 3000,
+      "plane": {
+        "lat": 42.05,
+        "lon": -88.0,
+        "altitude_ft": 3500
+      },
+      "nm": 3.0020230366309564,
+      "bearing_deg": 0.0,
+      "near": true,
+      "tell": true
+    },
+    {
+      "own": {
+        "lat": 42.0,
+        "lon": -88.0
+      },
+      "ownFt": 3000,
+      "plane": {
+        "lat": 42.1,
+        "lon": -88.0,
+        "altitude_ft": 3500
+      },
+      "nm": 6.00404607326166,
+      "bearing_deg": 0.0,
+      "near": true,
+      "tell": false
+    },
+    {
+      "own": {
+        "lat": 42.0,
+        "lon": -88.0
+      },
+      "ownFt": 3000,
+      "plane": {
+        "lat": 42.0,
+        "lon": -88.05,
+        "altitude_ft": 4100
+      },
+      "nm": 2.2309378539409392,
+      "bearing_deg": 270.0167282657474,
+      "near": false,
+      "tell": false
+    },
+    {
+      "own": {
+        "lat": 42.0,
+        "lon": -88.0
+      },
+      "ownFt": 3000,
+      "plane": {
+        "lat": 42.0,
+        "lon": -88.05,
+        "altitude_ft": 3990
+      },
+      "nm": 2.2309378539409392,
+      "bearing_deg": 270.0167282657474,
+      "near": true,
+      "tell": true
+    },
+    {
+      "own": {
+        "lat": 42.0,
+        "lon": -88.0
+      },
+      "ownFt": 3000,
+      "plane": {
+        "lat": 42.05,
+        "lon": -88.0,
+        "altitude_ft": null
+      },
+      "nm": 3.0020230366309564,
+      "bearing_deg": 0.0,
+      "near": false,
+      "tell": false
+    },
+    {
+      "own": {
+        "lat": 42.0,
+        "lon": -88.0
+      },
+      "ownFt": null,
+      "plane": {
+        "lat": 42.05,
+        "lon": -88.0,
+        "altitude_ft": 3500
+      },
+      "nm": 3.0020230366309564,
+      "bearing_deg": 0.0,
+      "near": false,
+      "tell": false
+    },
+    {
+      "own": null,
+      "ownFt": 3000,
+      "plane": {
+        "lat": 42.05,
+        "lon": -88.0,
+        "altitude_ft": 3500
+      },
+      "nm": null,
+      "bearing_deg": null,
+      "near": true,
+      "tell": false
+    }
+  ],
+  "fresh": [
+    {
+      "age_s": 0,
+      "seen_s": 0,
+      "fresh": true
+    },
+    {
+      "age_s": 10,
+      "seen_s": 20,
+      "fresh": true
+    },
+    {
+      "age_s": 10,
+      "seen_s": 20.5,
+      "fresh": false
+    },
+    {
+      "age_s": null,
+      "seen_s": 30,
+      "fresh": true
+    },
+    {
+      "age_s": null,
+      "seen_s": 31,
+      "fresh": false
+    },
+    {
+      "age_s": 5,
+      "seen_s": null,
+      "fresh": true
+    },
+    {
+      "age_s": 40,
+      "seen_s": null,
+      "fresh": false
     }
   ]
 }

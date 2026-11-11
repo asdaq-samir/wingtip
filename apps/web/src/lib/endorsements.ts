@@ -1,17 +1,17 @@
-import { format, parseISO } from "date-fns";
+import { dayMonthYear, fromIso, usFormDay } from "./format/days";
 import type { CrossCountryReview, Instructor, SignedEndorsement } from "./api/types";
 import { callEngine } from "./engine/engine";
 
 /** A day as the pages say one: "13 Oct 2026". */
-export const said = (iso: string) => format(parseISO(iso), "d MMM yyyy");
+export const said = (iso: string) => dayMonthYear(fromIso(iso));
 /** A day as AC 61-65K's samples write one: "10-13-2026". */
-export const acDay = (iso: string) => format(parseISO(iso), "MM-dd-yyyy");
+export const acDay = (iso: string) => usFormDay(fromIso(iso));
 
 /** The latest of each kind signed in the app and not voided, by its code:
  *  the record comes newest first. Picked by the shared engine
  *  (engine/crates/pilot/src/pilot/endorsements.rs), as the iPhone app picks. */
 export function inForce(signed: SignedEndorsement[]): Map<string, SignedEndorsement> {
-  const picked = callEngine("endorsements_in_force", { signed: signed.map(e => ({ code: e.code, voided: e.voided })) });
+  const picked = callEngine("endorsements_in_force", { signed: signed.map((e) => ({ code: e.code, voided: e.voided })) });
   return new Map(picked.map(([code, at]) => [code, signed[at]!]));
 }
 
@@ -33,12 +33,15 @@ export function signatureLine(instructor: Instructor, signedOn: string): string 
  *  under 61.199 (61.197(e)). The shared engine words it
  *  (engine/crates/pilot/src/pilot/endorsements.rs), as the iPhone app does. */
 export function lapseWarning(instructor: Instructor, signedOn: string): string | null {
-  return callEngine("endorsement_lapse", { until: instructor.until ?? null, until_kind: instructor.untilKind ?? null, signed_on: signedOn });
+  return callEngine("endorsement_lapse", {
+    until: instructor.until ?? null,
+    until_kind: instructor.untilKind ?? null,
+    signed_on: signedOn,
+  });
 }
 
 /** A solo cross-country's airports in order: "KUGN KRFD KUGN". */
-export const reviewRoute = (r: CrossCountryReview) =>
-  [r.flight.departureIdent, ...r.flight.stops, r.flight.destinationIdent].join(" ");
+export const reviewRoute = (r: CrossCountryReview) => [r.flight.departureIdent, ...r.flight.stops, r.flight.destinationIdent].join(" ");
 
 /** Where a solo cross-country put to an instructor stands. */
 export function reviewState(r: CrossCountryReview): string {

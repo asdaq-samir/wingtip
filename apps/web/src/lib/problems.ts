@@ -15,12 +15,12 @@ import { create } from "zustand";
  *   save -- is iOS's alert (ErrorAlert, `showError`), with OK.
  *
  * Brief news that goes by itself -- the progress line, "Link Copied" --
- * stays sonner's toast. Errors and warnings were sonner toasts drawn by
+ * stays a toast (lib/toast). Errors and warnings were toasts drawn by
  * hand, folded to lines that the panel had to stop short of.
  */
 
 /** A system problem: the line's words, and how to ask again where it can. */
-export interface SystemProblem {
+interface SystemProblem {
   id: string;
   title: string;
   retry?: () => void;
@@ -30,20 +30,20 @@ export const useSystemProblems = create<{ problems: SystemProblem[] }>(() => ({ 
 
 /** Said, or said again in its place: one id is one problem. */
 export function raiseProblem(problem: SystemProblem) {
-  useSystemProblems.setState(s => ({
-    problems: s.problems.some(p => p.id === problem.id)
-      ? s.problems.map(p => (p.id === problem.id ? problem : p))
+  useSystemProblems.setState((s) => ({
+    problems: s.problems.some((p) => p.id === problem.id)
+      ? s.problems.map((p) => (p.id === problem.id ? problem : p))
       : [...s.problems, problem],
   }));
 }
 
 /** What caused it has gone. */
 export function clearProblem(id: string) {
-  useSystemProblems.setState(s => ({ problems: s.problems.filter(p => p.id !== id) }));
+  useSystemProblems.setState((s) => ({ problems: s.problems.filter((p) => p.id !== id) }));
 }
 
 /** A one-off failure, for the alert: one at a time, the latest. */
-export interface FailedAction {
+interface FailedAction {
   title: string;
   description?: string | null;
 }

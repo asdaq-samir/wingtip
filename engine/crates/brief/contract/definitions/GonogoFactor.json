@@ -1,0 +1,51 @@
+{
+  "title": "GonogoFactor",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "why": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "The rule or the reason it counts."
+    },
+    "points": {
+      "type": "integer"
+    },
+    "stop": {
+      "type": "boolean",
+      "description": "Makes the flight unlawful as planned: high, whatever the points."
+    },
+    "group": {
+      "type": "string",
+      "description": "A self check's group; left out for the others."
+    },
+    "finding": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "stop",
+        "caution",
+        null
+      ],
+      "description": "Its mark; null for a self check."
+    }
+  },
+  "required": [
+    "key",
+    "label",
+    "why",
+    "points",
+    "stop",
+    "finding"
+  ],
+  "description": "One risk factor."
+}

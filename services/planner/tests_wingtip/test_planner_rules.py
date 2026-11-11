@@ -2,13 +2,16 @@
 through wingtip's own functions, held to the answers its Python gave
 before the move: the shared fixture apps/web/src/lib/fixtures/plannerRules.json,
 which engine/facade/tests/planner_rules.rs holds the engine to by name."""
+
 import json
 from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
+import wingtip_native
 
-from wingtip import airspace_at, navlog, notams, tfr, weather
+from wingtip import airspace_at, notams, tfr, weather
+from wingtip.engine import ask as engine
 
 FIXTURE = json.loads((Path(__file__).parents[3] / "apps/web/src/lib/fixtures/plannerRules.json").read_text())
 
@@ -30,9 +33,10 @@ def test_an_fns_messages_notams(case):
 
 @pytest.mark.parametrize("case", FIXTURE["ceiling"])
 def test_a_reports_ceiling(case):
-    period = {"clouds": [{"cover": layer["cover"], "base": layer["base_ft"]} for layer in case["layers"]],
-              "vert_vis": case["vert_vis_ft"]}
-    assert weather._ceiling_ft(period) == case["ceiling_ft"]
+    # The weather store keeps the engine's reading (awc_tafs_read), its
+    # ceiling the engine's ceiling_ft.
+    asked = {"layers": case["layers"], "vert_vis_ft": case["vert_vis_ft"]}
+    assert json.loads(wingtip_native.call("ceiling_ft", json.dumps(asked))) == case["ceiling_ft"]
 
 
 def test_a_tfr_is_in_force_when_its_window_meets_the_span():
@@ -48,14 +52,16 @@ def test_a_tfr_is_in_force_when_its_window_meets_the_span():
     assert tfr.in_force({"effective": "2026-11-06T14:00:00Z"}, at(20), at(21))
 
 
-def test_the_reserve_and_the_descent_are_the_engines():
+def test_the_reserve_is_the_engines():
     profile = {"fuel_burn_gph": 8.0}
     # 91.151(a): 30 minutes by day, 45 at night; 91.167(a)(3): 45 under IFR.
-    assert [navlog.fuel_plan(10.0, profile, night, rules)["reserve_gal"]
-            for rules, night in (("vfr", False), ("vfr", None), ("vfr", True), ("ifr", False))] == [4.0, 4.0, 6.0, 6.0]
-    assert navlog.DESCENT_FT_PER_NM == pytest.approx(1000 / 3)
+    assert [
+        engine("navlog_fuel_plan", total_fuel_gal=10.0, profile=profile, night=night, rules=rules)["reserve_gal"]
+        for rules, night in (("vfr", False), ("vfr", None), ("vfr", True), ("ifr", False))
+    ] == [4.0, 4.0, 6.0, 6.0]
 
 
 def test_the_basic_vfr_minimums_are_the_engines():
     # 14 CFR 91.155(c), (d).
-    assert (weather.VFR_MIN_CEILING_FT, weather.VFR_MIN_VISIBILITY_SM) == (1000, 3)
+    assert engine("vfr_basic_minimums") == {"ceiling_ft": 1000, "visibility_sm": 3}
+    assert weather.below_vfr_minimums(999, 3) and not weather.below_vfr_minimums(1000, 3)

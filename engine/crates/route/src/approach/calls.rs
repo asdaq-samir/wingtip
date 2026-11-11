@@ -5,34 +5,9 @@
 
 use super::debrief::{self, Attempt, Debrief, Finding, Outcome, Tone};
 use super::lesson::{self, Focus, Frequency};
-use super::{list, missed_legs, num, opt_num, opt_str, Drawing, RunwayPath};
+use super::{list, num, opt_num, opt_str, Drawing};
 use crate::figures::debrief::Point;
 use crate::json::{self, Value};
-
-/// The names this module answers.
-pub const NAMES: [&str; 21] = [
-    "approach_guidance",
-    "glidepath_ft",
-    "approach_attempts",
-    "approach_debrief",
-    "approach_find",
-    "approach_transition",
-    "approach_minimums",
-    "approach_descent_fpm",
-    "approach_rounded_fpm",
-    "approach_category",
-    "approach_minimums_kind",
-    "approach_fix_name",
-    "approach_missed_words",
-    "approach_brief_frequencies",
-    "approach_lesson_path",
-    "approach_path_between",
-    "approach_along_nm",
-    "approach_brief",
-    "approach_coaching",
-    "approach_quiz",
-    "approach_profile",
-];
 
 type R<T> = Result<T, String>;
 
@@ -47,7 +22,9 @@ fn drawings(name: &str, v: &Value) -> R<Vec<Drawing>> {
 fn points(name: &str, v: &Value) -> R<Vec<Point>> {
     list(name, v, "points")?
         .iter()
-        .map(|p| Ok(Point { t: num(name, p, "t")?, lat: num(name, p, "lat")?, lon: num(name, p, "lon")?, alt_ft: opt_num(name, p, "alt_ft")? }))
+        .map(|p| {
+            Ok(Point { t: num(name, p, "t")?, lat: num(name, p, "lat")?, lon: num(name, p, "lon")?, alt_ft: opt_num(name, p, "alt_ft")? })
+        })
         .collect()
 }
 
@@ -72,7 +49,13 @@ fn path(name: &str, v: &Value) -> R<Vec<(f64, f64)>> {
 fn frequencies(name: &str, v: &Value) -> R<Vec<Frequency>> {
     list(name, v, "frequencies")?
         .iter()
-        .map(|f| Ok(Frequency { kind: opt_str(name, f, "type")?, description: opt_str(name, f, "description")?, mhz: opt_num(name, f, "frequency_mhz")? }))
+        .map(|f| {
+            Ok(Frequency {
+                kind: opt_str(name, f, "type")?,
+                description: opt_str(name, f, "description")?,
+                mhz: opt_num(name, f, "frequency_mhz")?,
+            })
+        })
         .collect()
 }
 
@@ -148,14 +131,10 @@ fn number_json(n: f64) -> String {
 pub fn call(name: &str, v: &Value) -> R<String> {
     match name {
         "approach_guidance" => Ok(opt_string_json(Some(debrief::guidance_of(&opt_str(name, v, "id")?.unwrap_or_default()).key()))),
-        "glidepath_ft" => {
-            let gp = v.get("runway_path").ok_or_else(|| format!("{name}: \"runway_path\" is missing"))?;
-            let gp = RunwayPath { lat: num(name, gp, "lat")?, lon: num(name, gp, "lon")?, ft: num(name, gp, "ft")?, deg: num(name, gp, "deg")? };
-            Ok(number_json(debrief::glidepath_ft(&gp, num(name, v, "nm_out")?)))
-        }
         "approach_attempts" => {
             let attempts = debrief::attempts_at(&drawing(name, v)?, &points(name, v)?);
-            let parts: Vec<String> = attempts.iter().map(|a| format!("{{\"faf\":{},\"from\":{},\"to\":{}}}", a.faf, a.from, a.to)).collect();
+            let parts: Vec<String> =
+                attempts.iter().map(|a| format!("{{\"faf\":{},\"from\":{},\"to\":{}}}", a.faf, a.from, a.to)).collect();
             Ok(format!("[{}]", parts.join(",")))
         }
         "approach_debrief" => {
@@ -172,7 +151,8 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         }
         "approach_find" => {
             let picked = opt_str(name, v, "picked")?;
-            let found = debrief::find_approaches(&drawings(name, v)?, &points(name, v)?, picked.as_deref(), opt_num(name, v, "minimums_ft")?);
+            let found =
+                debrief::find_approaches(&drawings(name, v)?, &points(name, v)?, picked.as_deref(), opt_num(name, v, "minimums_ft")?);
             let parts: Vec<String> = found.iter().map(|d| debrief_json(Some(d))).collect();
             Ok(format!("[{}]", parts.join(",")))
         }
@@ -190,8 +170,14 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             let findings = list(name, v, "findings")?
                 .iter()
                 .map(|f| {
-                    let tone = opt_str(name, f, "tone")?.and_then(|t| Tone::read(&t)).ok_or_else(|| format!("{name}: a finding's tone is not one"))?;
-                    Ok(Finding { tone, text: opt_str(name, f, "text")?.unwrap_or_default(), minimums: matches!(f.get("minimums"), Some(Value::Bool(true))) })
+                    let tone = opt_str(name, f, "tone")?
+                        .and_then(|t| Tone::read(&t))
+                        .ok_or_else(|| format!("{name}: a finding's tone is not one"))?;
+                    Ok(Finding {
+                        tone,
+                        text: opt_str(name, f, "text")?.unwrap_or_default(),
+                        minimums: matches!(f.get("minimums"), Some(Value::Bool(true))),
+                    })
                 })
                 .collect::<R<Vec<_>>>()?;
             let outcome = opt_str(name, v, "outcome")?
@@ -203,27 +189,19 @@ pub fn call(name: &str, v: &Value) -> R<String> {
             Ok(out)
         }
         "approach_descent_fpm" => Ok(number_json(lesson::descent_fpm(num(name, v, "gs_kt")?, num(name, v, "angle_deg")?))),
-        "approach_rounded_fpm" => Ok(number_json(lesson::rounded_fpm(num(name, v, "fpm")?))),
         "approach_category" => Ok(opt_string_json(lesson::approach_category(opt_num(name, v, "vref_kt")?, opt_num(name, v, "vso_kt")?))),
-        "approach_minimums_kind" => Ok(opt_string_json(Some(lesson::minimums_kind(&opt_str(name, v, "name")?.unwrap_or_default()).key()))),
-        "approach_fix_name" => Ok(opt_string_json(Some(&lesson::fix_name(&opt_str(name, v, "ident")?.unwrap_or_default())))),
-        "approach_missed_words" => {
-            let legs = missed_legs(name, list(name, v, "legs")?)?;
-            Ok(opt_string_json(lesson::missed_words(&legs).as_deref()))
-        }
-        "approach_brief_frequencies" => {
-            let mut out = String::new();
-            strings_json(&mut out, &lesson::brief_frequencies(&frequencies(name, v)?));
-            Ok(out)
-        }
         "approach_lesson_path" => Ok(places_json(&lesson::lesson_path(&drawing(name, v)?))),
         "approach_path_between" => {
             Ok(places_json(&lesson::path_between(&path(name, v)?, place(name, v.get("a"))?, place(name, v.get("b"))?)))
         }
         "approach_along_nm" => Ok(number_json(lesson::along_nm(&path(name, v)?, place(name, v.get("at"))?))),
         "approach_brief" => {
-            let items =
-                lesson::approach_brief(&drawing(name, v)?, &frequencies(name, v)?, opt_num(name, v, "vref_kt")?, opt_num(name, v, "vso_kt")?);
+            let items = lesson::approach_brief(
+                &drawing(name, v)?,
+                &frequencies(name, v)?,
+                opt_num(name, v, "vref_kt")?,
+                opt_num(name, v, "vso_kt")?,
+            );
             let mut out = String::from("[");
             for (i, item) in items.iter().enumerate() {
                 if i > 0 {

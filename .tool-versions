@@ -1,0 +1,35 @@
+# The one version of each toolchain, for the Mac, the Docker images and CI
+# alike (the owner, 2026-11-09: "make it all consistent"). asdf's format,
+# because CI's setup-python, setup-java and setup-node read it as their
+# *-version-file, and mise or asdf on a Mac read it as it is. The rest
+# reads it through scripts/build/toolchain.sh (`get <name>`), and what
+# cannot read a file at all (a Dockerfile's FROM, the pom, the Gradle
+# files, rust-toolchain.toml, .nvmrc) is written from it by
+# `scripts/build/toolchain.sh`; `--check`, in CI's architecture job, fails
+# on any place that differs. Bump a version here, run the script, commit
+# what it changed.
+java temurin-25
+python 3.15.2
+rust 1.99.1
+nodejs 26
+gradle 9.9.1
+maven 3.10.0
+# Below, tools mise and asdf do not install: read by this repo's scripts only.
+xcode 27.2
+# The Android NDK: the app's ndkVersion and engine/bindings/ffi/build-android.sh.
+# One GitHub's ubuntu-26.04 runner image has installed, so CI downloads none.
+android-ndk 30.0.16248370
+# The Debian release every Debian-based image is built on (a -slim tag
+# without one is the current release, trixie, by the same digest).
+debian trixie
+rust-edition 2024
+# Cargo's compile cache, shared by every worktree on the Mac
+# (scripts/build/shared-cache.sh fetches its release, checked by sum).
+sccache 0.19.0
+# The formatters (scripts/dev/format.sh); Prettier is apps/web's package,
+# pinned with its lockfile there, and only checked against this line.
+ruff 0.17.4
+swiftformat 0.64.6
+ktlint 1.8.0
+palantir-java-format 2.103.0
+prettier 3.9.10

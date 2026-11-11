@@ -1,0 +1,17 @@
+[package]
+name = "wingtip-receiver"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "A portable ADS-B receiver's GDL 90 stream read: its frames, own ship, the traffic it hears and the FIS-B weather it is sent"
+
+[lib]
+name = "wingtip_receiver"
+
+# Only the engine's own crates, below this one (engine/README.md):
+# plain Rust, so the phones carry it as it is.
+[dependencies]
+wingtip-core = { path = "../core" }
+
+[lints]
+workspace = true

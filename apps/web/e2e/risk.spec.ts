@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { settle, sideDrawer, slow, openTab, openSection, controlsInSight } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The briefing's Risk Assessment (lib/frat): what the briefing raises
@@ -9,30 +11,47 @@ import { settle, sideDrawer, slow, openTab, openSection, controlsInSight } from 
  * real.
  */
 test("a quiet day is low, what the pilot ticks raises it, and Save files it with the flight", async ({ page }) => {
-  await page.route("**/api/planner/briefing?*", async route => {
+  await page.route("**/api/planner/briefing?*", async (route) => {
     const response = await route.fetch();
     const json = await response.json();
     Object.assign(json, { hazards: [], gairmets: [], tfrs: [], vfr_not_recommended: [] });
     await route.fulfill({ response, json });
   });
-  await page.route("**/api/planner/navlog?*", async route => {
+  await page.route("**/api/planner/navlog?*", async (route) => {
     const response = await route.fetch();
-    const body = (await response.text()).split("\n").map(line => {
-      if (!line.trim()) return line;
-      const message = JSON.parse(line);
-      if (message.type === "done") message.totals.night = false;
-      return JSON.stringify(message);
-    }).join("\n");
+    const body = (await response.text())
+      .split("\n")
+      .map((line) => {
+        if (!line.trim()) return line;
+        const message = JSON.parse(line);
+        if (message.type === "done") message.totals.night = false;
+        return JSON.stringify(message);
+      })
+      .join("\n");
     await route.fulfill({ response, body });
   });
   let filed: { risk?: { score: number; level: string; factors: string[] } } | null = null;
-  await page.route("**/api/flights", async route => {
+  await page.route("**/api/flights", async (route) => {
     if (route.request().method() !== "POST") return route.fallback();
     filed = route.request().postDataJSON();
     await route.fulfill({
-      status: 200, contentType: "application/json",
-      body: JSON.stringify({ id: 1, departureIdent: "C81", destinationIdent: "KDLH", stops: [], aircraftTailNumber: null, cruiseAltitudeFt: null,
-        totalDistanceNm: null, totalEteMin: null, totalFuelGal: null, plannedFor: null, createdAt: new Date().toISOString(), risk: null, checkpoints: [] }),
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: 1,
+        departureIdent: "C81",
+        destinationIdent: "KDLH",
+        stops: [],
+        aircraftTailNumber: null,
+        cruiseAltitudeFt: null,
+        totalDistanceNm: null,
+        totalEteMin: null,
+        totalFuelGal: null,
+        plannedFor: null,
+        createdAt: new Date().toISOString(),
+        risk: null,
+        checkpoints: [],
+      }),
     });
   });
 
@@ -57,9 +76,9 @@ test("a quiet day is low, what the pilot ticks raises it, and Save files it with
   await drawer.getByTestId("share-route").click();
   await page.getByTestId("save-flight-button").click();
   await expect.poll(() => filed?.risk?.level).toBe("high");
-  expect(filed!.risk!.factors).toEqual(expect.arrayContaining([
-    "Somewhere to be by a time, or people counting on it", "Alcohol in the last 8 hours, or still feeling it",
-  ]));
+  expect(filed!.risk!.factors).toEqual(
+    expect.arrayContaining(["Somewhere to be by a time, or people counting on it", "Alcohol in the last 8 hours, or still feeling it"]),
+  );
   // About the pilot today, not the route: put back for the next test,
   // in the Brief's Preflight where the risk is.
   await openSection(page, "Risk Assessment");

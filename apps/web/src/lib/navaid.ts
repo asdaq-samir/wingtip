@@ -1,5 +1,5 @@
 import { callEngine } from "./engine/engine";
-import { normalizeDeg, type LatLon } from "./geo";
+import type { LatLon } from "./geo";
 
 /**
  * What a VOR's and a fix's cards say a pilot does with them: the radial
@@ -16,13 +16,6 @@ export type Station = LatLon & { ident: string; mag_var?: number | null };
 
 const sentStation = (s: Station) => ({ ident: s.ident, lat: s.lat, lon: s.lon, mag_var: s.mag_var ?? null });
 
-/** Degrees as a VOR's radial or a course is said: three figures, 360 for
- *  north ("the 360 radial"), never 000. */
-export function threeFigures(deg: number): string {
-  const whole = Math.round(normalizeDeg(deg)) % 360;
-  return String(whole === 0 ? 360 : whole).padStart(3, "0");
-}
-
 /**
  * The radial of `station` that `at` is on, and how far: the magnetic
  * bearing from the station as its radials are laid out, to the station's
@@ -32,9 +25,7 @@ export function threeFigures(deg: number): string {
  * reciprocal. Null where the station has no declination filed.
  */
 export function radialOf(station: Station, at: LatLon): { radial: number; toCourse: number; nm: number } | null {
-  const off = callEngine("radial_of", {
-    station: sentStation(station), at: { lat: at.lat, lon: at.lon },
-  });
+  const off = callEngine("radial_of", { station: sentStation(station), at: { lat: at.lat, lon: at.lon } });
   return off && { radial: off.radial, toCourse: off.to_course, nm: off.nm };
 }
 

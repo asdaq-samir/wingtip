@@ -3,7 +3,7 @@ import { ChartMark, PillStrip, SmallTile, TileChartMark } from "../../../compone
 import type { NearestAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
 import { nmAway } from "../../../lib/useAway";
-import { useOwnShip } from "../../../lib/map/ownShip";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { TEXT } from "../../../lib/text";
 
 // Apart from Nearest's list in full (NearestCard), which is loaded when it
@@ -20,34 +20,53 @@ const STRIP_FIELDS = 8;
  * of the list does. With no position yet, the way to show it. The list in
  * full is the tab's, half way up.
  */
-export function NearestStrip({ fields, located, onOpen }: {
+export function NearestStrip({
+  fields,
+  located,
+  onOpen,
+}: {
   fields: NearestAirport[] | undefined;
   /** Whether there is a position (or a place typed) to be near. */
   located: boolean;
   onOpen: (ident: string) => void;
 }) {
-  const setEnabled = useOwnShip(s => s.setEnabled);
+  const setEnabled = useOwnShip((s) => s.setEnabled);
   if (!located) {
     return (
       <button
-        type="button" onClick={() => setEnabled(true)} data-testid="nearest-strip-position"
-        className={cn("relative mx-auto block px-2 py-1 text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+        type="button"
+        onClick={() => setEnabled(true)}
+        data-testid="nearest-strip-position"
+        // At the left where the tiles start, as every strip's words are (F-L2).
+        className={cn("relative block self-start py-1 text-left text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
       >
         Show my position
       </button>
     );
   }
-  if (!fields) return <p className={cn("py-1 text-center text-foreground/65", TEXT.note)} role="status">Fetching the nearest fields…</p>;
+  if (!fields)
+    return (
+      <p className={cn("py-1 text-center text-foreground/65", TEXT.note)} role="status">
+        Fetching the nearest fields…
+      </p>
+    );
   return (
     <PillStrip testId="nearest-strip">
-      {fields.slice(0, STRIP_FIELDS).map(field => {
+      {fields.slice(0, STRIP_FIELDS).map((field) => {
         const use = field.military === "military" ? "military" : field.private ? "private" : null;
         return (
           <SmallTile
-            key={field.ident} onClick={() => onOpen(field.ident)} testId="nearest-strip-field"
+            key={field.ident}
+            onClick={() => onOpen(field.ident)}
+            testId="nearest-strip-field"
             label={`${field.ident}, ${field.name}, ${nmAway(field.distance_nm)} ${compassPoint(field.bearing_deg)}`}
-            mark={<TileChartMark><ChartMark space={field.airspace_class ?? null} category={field.flight_category} use={use} size={44} /></TileChartMark>}
-            title={field.ident} detail={nmAway(field.distance_nm)}
+            mark={
+              <TileChartMark>
+                <ChartMark space={field.airspace_class ?? null} category={field.flight_category} use={use} size={44} />
+              </TileChartMark>
+            }
+            title={field.ident}
+            detail={nmAway(field.distance_nm)}
           />
         );
       })}

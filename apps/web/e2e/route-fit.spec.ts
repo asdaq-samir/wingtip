@@ -1,5 +1,20 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
-import { airportMark, closeSidebarWithTheStockKey, expectDrawerClosed, grabberTo, mapStill, openPanel, settle, settled, sideDrawer, slow, airportSearch } from "./helpers";
+import {
+  airportMark,
+  airportSearch,
+  closeSidebarWithTheStockKey,
+  expectDrawerClosed,
+  grabberTo,
+  mapStill,
+  openPanel,
+  searchAirports,
+  settle,
+  settled,
+  sideDrawer,
+  slow,
+} from "./helpers";
+import { fromRest } from "./startState";
+import { courseBox } from "./mapProbes";
 
 /**
  * The map and the sheet move together, as in Maps: opened fresh, the map
@@ -7,18 +22,13 @@ import { airportMark, closeSidebarWithTheStockKey, expectDrawerClosed, grabberTo
  * and kept there as the sheet goes down and up; a route entered is flown
  * to and fitted above the sheet; lowered to its capsule, the route stays
  * where it is, as under Apple Maps' sheet, and raised, it is still above
- * it -- slid at its zoom where it would be under the sheet, and fitted
- * again where even slid it would be, while any of it is in sight. With
- * neither the route nor the position in sight, the map stays put.
+ * it -- slid at its zoom where it would be under the sheet, and fitted again where even slid it would be, while any of it is in sight; with
+ * neither in sight, the map stays put.
  */
 
 // Geolocation is a secure origin's only: the suite's address must be one
-// (CI's is localhost; from the test container, the local stack is reached
-// on a localhost port forwarded to it).
+// (CI's is localhost; locally, a localhost port forwarded to the stack).
 const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;
-
-/** The course line's core, on screen. */
-const courseBox = async (page: Page) => (await page.locator('path[stroke="#e600e6"]').first().boundingBox())!;
 
 /** Nothing of `a` under `b`. */
 const apart = (a: { x: number; y: number; width: number; height: number }, b: { x: number; y: number; width: number; height: number }) =>
@@ -34,14 +44,15 @@ async function fittedClearOf(page: Page, panel: Locator) {
     expect(apart(line, sheet), `route ${JSON.stringify(line)} under the panel ${JSON.stringify(sheet)}`).toBe(true);
     expect(line.y).toBeGreaterThanOrEqual(0);
     expect(line.y + line.height).toBeLessThanOrEqual(viewport.height);
-    // What the panel leaves: above a phone's sheet; beside a desktop's
-    // card out, under it at rest.
+    // What the panel leaves: above a phone's sheet; beside a desktop's card out, under it at rest.
     const out = (await panel.getAttribute("data-panel")) !== "peek";
-    const free = viewport.width < 768
-      ? { w: viewport.width, h: viewport.height - sheet.height }
-      : out ? { w: viewport.width - sheet.x - sheet.width, h: viewport.height } : { w: viewport.width, h: viewport.height - sheet.y - sheet.height };
-    // Fitted, not lost in the room: at the capsule the route keeps the
-    // size it had above the half sheet, a little under half the screen.
+    const free =
+      viewport.width < 768
+        ? { w: viewport.width, h: viewport.height - sheet.height }
+        : out
+          ? { w: viewport.width - sheet.x - sheet.width, h: viewport.height }
+          : { w: viewport.width, h: viewport.height - sheet.y - sheet.height };
+    // Fitted, not lost in the room: at the capsule the route keeps the size it had above the half sheet, a little under half the screen.
     expect(Math.max(line.width / free.w, line.height / free.h)).toBeGreaterThan(0.35);
   }).toPass({ timeout: slow(10_000) });
   return courseBox(page);
@@ -49,7 +60,11 @@ async function fittedClearOf(page: Page, panel: Locator) {
 
 /** Own ship's marker, on screen. */
 const shipAt = async (page: Page) => {
-  const box = (await page.locator(".maplibregl-marker").filter({ has: page.locator("[data-own-ship]") }).last().boundingBox())!;
+  const box = (await page
+    .locator(".maplibregl-marker")
+    .filter({ has: page.locator("[data-own-ship]") })
+    .last()
+    .boundingBox())!;
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 };
 
@@ -68,7 +83,8 @@ async function middleOfMap(page: Page) {
  *  marker's own size. */
 async function shipInTheMiddle(page: Page) {
   await expect(async () => {
-    const at = await shipAt(page), middle = await middleOfMap(page);
+    const at = await shipAt(page),
+      middle = await middleOfMap(page);
     expect(Math.abs(at.x - middle.x)).toBeLessThan(40);
     expect(Math.abs(at.y - middle.y)).toBeLessThan(40);
   }).toPass({ timeout: slow(15_000) });
@@ -78,21 +94,21 @@ async function shipInTheMiddle(page: Page) {
  *  only then. */
 /** Where the map's pane and the sheet's top are, for a turn of the sheet
  *  to be checked against (slidWithSheet). */
-const paneAndSheet = (page: Page) => page.evaluate(() => ({
-  pane: Number(document.querySelector<HTMLElement>("[data-testid=gl-map]")!.dataset.offset!.split(",")[1]),
-  top: document.querySelector('[data-slot="map-panel"]')!.getBoundingClientRect().top,
-}));
+const paneAndSheet = (page: Page) =>
+  page.evaluate(() => ({
+    pane: Number(document.querySelector<HTMLElement>("[data-testid=gl-map]")!.dataset.offset!.split(",")[1]),
+    top: document.querySelector('[data-slot="map-panel"]')!.getBoundingClientRect().top,
+  }));
 
 /** On a phone the map slid with the sheet, what was in the middle of the
  *  room above it still in the middle (half the sheet's move, within the
  *  difference between the sheet's edge and the strip it reports to the
- *  map), as Apple Maps' does; from `md` up, where the card comes out at
- *  the side, left where it was. */
+ *  map), as Apple Maps' does; from `md` up, where the card comes out at the side, left where it was. */
 async function slidWithSheet(page: Page, before: { pane: number; top: number }) {
   await mapStill(page);
   const after = await paneAndSheet(page);
   if (page.viewportSize()!.width >= 768) expect(after.pane).toBeCloseTo(before.pane, 0);
-  else expect(Math.abs((after.pane - before.pane) - (after.top - before.top) / 2)).toBeLessThan(20);
+  else expect(Math.abs(after.pane - before.pane - (after.top - before.top) / 2)).toBeLessThan(20);
 }
 
 const mapAt = (page: Page) => page.getByTestId("gl-map").getAttribute("data-offset");
@@ -117,21 +133,23 @@ async function drag(page: Page, dx: number, dy: number) {
   }).toPass({ timeout: 5_000 });
 }
 
-test("opened fresh, the map is on the pilot's position in the middle of what the half sheet leaves, kept there as the sheet goes down, and left alone once panned off it", async ({ page, context }) => {
+test("opened fresh, the map is on the pilot's position in the middle of what the half sheet leaves, kept there as the sheet goes down, and left alone once panned off it", async ({
+  page,
+  context,
+}) => {
   await context.grantPermissions(["geolocation"], { origin });
   await context.setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
   await page.goto("/app/plan");
   await settle(page);
-  // Opened as the tabs alone (the owner's ask).
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  // Opened as the one search alone on a phone (the owner's ask); a desktop's side panel put away to start from the same rest.
+  await fromRest(page);
   await expect(page.getByTestId("my-position-button")).toHaveAttribute("aria-pressed", "true");
   await shipInTheMiddle(page);
   await closeSidebarWithTheStockKey(page);
   await expectDrawerClosed(page);
   await shipInTheMiddle(page);
 
-  // Panned until the position is off the screen: the sheet raised, the
-  // map slides with it on a phone, at the zoom the pilot put it.
+  // Panned until the position is off the screen: the sheet raised, the map slides with it on a phone, at the zoom the pilot put it.
   const viewport = page.viewportSize()!;
   for (let i = 0; i < 3; i++) await drag(page, -viewport.width * 0.45, -60);
   const before = await paneAndSheet(page);
@@ -140,8 +158,7 @@ test("opened fresh, the map is on the pilot's position in the middle of what the
   await settled(sideDrawer(page));
   await slidWithSheet(page, before);
 
-  // Turned off from the location arrow: the dot stays at its last place,
-  // grey, as Maps' does.
+  // Turned off from the location arrow: the dot stays at its last place, grey, as Maps' does.
   await closeSidebarWithTheStockKey(page);
   await expectDrawerClosed(page);
   const arrow = page.locator("[data-map-controls]").getByTestId("my-position-button");
@@ -154,24 +171,33 @@ test("opened fresh, the map is on the pilot's position in the middle of what the
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(0);
 });
 
-test("reloaded where it was, the map opens on the position in the middle of what the pill leaves, and does not slide there as the first fix comes", async ({ page, context }) => {
+test("reloaded where it was, the map opens on the position in the middle of what the pill leaves, and does not slide there as the first fix comes", async ({
+  page,
+  context,
+}) => {
+  // The pill's: a desktop's side panel opens out (the one-search design's Desktop, 2026-11-09), and route-fit's first test has it.
+  test.skip(page.viewportSize()!.width >= 1024, "a phone's pill; a desktop opens with its side panel out");
   // The owner's notice: "On a reload why is there animation in the maps
   // and the pill? It seems they are settling to their desired position".
   await context.grantPermissions(["geolocation"], { origin });
   await context.setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
-  // Where the position last was, as an earlier visit keeps it (ownShip's
-  // lastFix): the page opens on it.
-  await page.addInitScript(() => localStorage.setItem("wingtip.ownship",
-    JSON.stringify({ state: { enabled: true, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 })));
-  // Every place the map's pane is put, from the page's first frame: it
-  // moves when the map does, and only then.
+  // Where the position last was, as an earlier visit keeps it (ownShip's lastFix): the page opens on it.
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "wingtip.ownship",
+      JSON.stringify({ state: { enabled: true, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 }),
+    ),
+  );
+  // Every place the map's pane is put from the frame it is shown (its loading mark lifted, GlMapShell's data-revealed): it moves when the
+  // map does, and only then. Before that the pilot sees the mark, not the map, as it takes the sheet's room.
   await page.addInitScript(() => {
     const seen: string[] = [];
     (window as unknown as { __panes: string[] }).__panes = seen;
     const look = () => {
-      const at = document.querySelector<HTMLElement>("[data-testid=gl-map]")?.dataset.offset;
+      const map = document.querySelector<HTMLElement>("[data-testid=gl-map]");
+      const at = map?.dataset.revealed !== undefined ? map?.dataset.offset : undefined;
       if (at && at !== seen[seen.length - 1]) seen.push(at);
-      if (performance.now() < 6000) requestAnimationFrame(look);
+      if (performance.now() < 20_000) requestAnimationFrame(look);
     };
     requestAnimationFrame(look);
   });
@@ -180,8 +206,16 @@ test("reloaded where it was, the map opens on the position in the middle of what
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
   await shipInTheMiddle(page);
   await page.waitForTimeout(1500);
-  // Made there, and never moved: the first fix was put, not panned to.
-  expect(await page.evaluate(() => (window as unknown as { __panes: string[] }).__panes)).toHaveLength(1);
+  // Made there, and never moved: the first fix was put, not panned to. The
+  // fix a few metres from the kept one may set the map a fraction of a
+  // point over (MapLibre's offset to a tenth), which no eye sees as a slide.
+  const panes = await page.evaluate(() => (window as unknown as { __panes: string[] }).__panes);
+  expect(panes.length, "the map shown").toBeGreaterThan(0);
+  const [x0, y0] = panes[0]!.split(",").map(Number);
+  for (const pane of panes) {
+    const [x, y] = pane.split(",").map(Number);
+    expect(Math.hypot(x! - x0!, y! - y0!), `the map moved: ${panes.join(" → ")}`).toBeLessThan(1);
+  }
 });
 
 /** Counts the page's asks for the position, on window.__asks. */
@@ -204,36 +238,42 @@ test("opened fresh on a first visit, the position is asked for as the page opens
   const asks = await countAsks(page);
   await page.goto("/app/plan");
   await settle(page);
-  // The map opens on the pilot's position by default (ownShip's
-  // locateOnOpen, the owner's ask, 2026-11-04), so a first visit is asked
+  // The map opens on the pilot's position by default (ownShip's locateOnOpen, the owner's ask, 2026-11-04), so a first visit is asked
   // as it opens; a refusal leaves no error over the map.
   await expect.poll(asks, { timeout: slow(10_000) }).toBe(1);
   await expect(page.getByTestId("error-alert")).toHaveCount(0);
 });
 
 test("opened on the whole country, land and water lie under the charts where they end, not the page's grey", async ({ page }) => {
-  // The design review, 2026-10-28: grey bands over and under the
-  // sectionals on a phone. The USGS's tiles answered here, a pixel each.
+  // The design review, 2026-10-28: grey bands over and under the sectionals on a phone. The USGS's tiles answered here, a pixel each.
   const asked: string[] = [];
-  await page.route(url => url.hostname === "basemap.nationalmap.gov", route => {
-    asked.push(route.request().url());
-    return route.fulfill({ body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==", "base64"), contentType: "image/png" });
-  });
+  await page.route(
+    (url) => url.hostname === "basemap.nationalmap.gov",
+    (route) => {
+      asked.push(route.request().url());
+      return route.fulfill({
+        body: Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==", "base64"),
+        contentType: "image/png",
+      });
+    },
+  );
   await page.goto("/app/plan");
   await settle(page);
-  await expect.poll(() => asked.filter(u => u.includes("/USGSHydroCached/")).length, { timeout: slow(10_000) }).toBeGreaterThan(0);
-  // Under every chart layer, the sectional's included.
-  // The map's layers bottom to top (GlMapShell's data-layers).
+  await expect.poll(() => asked.filter((u) => u.includes("/USGSHydroCached/")).length, { timeout: slow(10_000) }).toBeGreaterThan(0);
+  // Under every chart layer, the sectional's included. The map's layers bottom to top (GlMapShell's data-layers).
   await expect.poll(async () => (await page.getByTestId("gl-map").getAttribute("data-layers")) ?? "").toContain("land-water");
   const order = ((await page.getByTestId("gl-map").getAttribute("data-layers")) ?? "").split(" ");
   expect(order.indexOf("land-water")).toBeLessThan(order.indexOf("chart"));
 });
 
 test("opened fresh where the position was given before, it is asked for again as the page opens", async ({ page }) => {
-  // A fix kept from an earlier visit, as Safari, which asks again on a
-  // later day, leaves the permission at "prompt".
-  await page.addInitScript(() => localStorage.setItem("wingtip.ownship",
-    JSON.stringify({ state: { enabled: false, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 })));
+  // A fix kept from an earlier visit, as Safari, which asks again on a later day, leaves the permission at "prompt".
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "wingtip.ownship",
+      JSON.stringify({ state: { enabled: false, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 }),
+    ),
+  );
   const asks = await countAsks(page);
   await page.goto("/app/plan");
   await settle(page);
@@ -247,7 +287,7 @@ test("a route entered is fitted above the half sheet, to the whole screen at the
   const search = await airportSearch(page);
   await search.click();
   await search.fill("KDLH");
-  await page.getByTestId("search-result").filter({ hasText: "KDLH" }).first().click();
+  await searchAirports(page).filter({ hasText: "KDLH" }).first().click();
   await page.getByTestId("place-card").getByTestId("fly-here").click();
   await expect(page).toHaveURL(/dep=C81.*dest=KDLH|dest=KDLH.*dep=C81/);
   // The route at the height the card was: half, as every card opens.
@@ -259,8 +299,7 @@ test("a route entered is fitted above the half sheet, to the whole screen at the
   await fittedClearOf(page, sideDrawer(page));
   // No smaller on a phone, once it has got there -- clear of the capsule
   // it already was. It was bigger by a sixth: the half sheet then covered
-  // half the screen, and now a phone's ends at the flight's line (exact
-  // half), where a route like this one is as wide as the screen either
+  // half the screen, and now a phone's ends at the flight's line (exact half), where a route like this one is as wide as the screen either
   // way and its width, not the sheet, sets its size.
   if (page.viewportSize()!.width < 768) {
     await expect.poll(async () => (await courseBox(page)).height, { timeout: slow(10_000) }).toBeGreaterThanOrEqual(half.height - 1);
@@ -270,7 +309,9 @@ test("a route entered is fitted above the half sheet, to the whole screen at the
   await fittedClearOf(page, sideDrawer(page));
 });
 
-test("a route the pilot has moved is slid with a phone's sheet as it goes up and down, fitted again beside a wider screen's card while any of it is in sight, and left alone once it is not", async ({ page }) => {
+test("a route the pilot has moved is slid with a phone's sheet as it goes up and down, fitted again beside a wider screen's card while any of it is in sight, and left alone once it is not", async ({
+  page,
+}) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await fittedClearOf(page, sideDrawer(page));
@@ -301,8 +342,7 @@ test("a route the pilot has moved is slid with a phone's sheet as it goes up and
 });
 
 test("panned off the route, the location arrow turns to the route, and a tap fits the course again", async ({ page }) => {
-  // The owner's ask: "When the route is entered, and map is panned away
-  // from the route, have the locator icon change to fit the course".
+  // The owner's ask: "When the route is entered, and map is panned away from the route, have the locator icon change to fit the course".
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await closeSidebarWithTheStockKey(page);
@@ -323,8 +363,7 @@ test("panned off the route, the location arrow turns to the route, and a tap fit
 });
 
 test("with a route drawn, the location arrow goes only between the position and the whole route", async ({ page, context }) => {
-  // The owner's ask: "when the route is drawn then only toggle between
-  // the current location and the fit route".
+  // The owner's ask: "when the route is drawn then only toggle between the current location and the fit route".
   await context.grantPermissions(["geolocation"], { origin });
   await context.setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -344,21 +383,25 @@ test("with a route drawn, the location arrow goes only between the position and 
 
 /** The field's mark on the screen and not under the card: in the map's
  *  box is not enough, the card covers part of it. The chart's fields are
- *  drawn on a canvas (AirportCanvas), each said on its hook, its dot 12
- *  points across. */
+ *  drawn on a canvas (AirportCanvas), each said on its hook, its dot 12 points across. */
 async function fieldClearOfCard(page: Page, ident: string) {
   const viewport = page.viewportSize()!;
   await expect(async () => {
     const drawn = await airportMark(page, ident);
     expect(drawn, `${ident} drawn`).not.toBeNull();
     const mark = { x: drawn!.x - 6, y: drawn!.y - 6, width: 12, height: 12 };
-    expect(mark.x >= 0 && mark.y >= 0 && mark.x + 12 <= viewport.width && mark.y + 12 <= viewport.height, `${ident} on the screen`).toBe(true);
+    expect(mark.x >= 0 && mark.y >= 0 && mark.x + 12 <= viewport.width && mark.y + 12 <= viewport.height, `${ident} on the screen`).toBe(
+      true,
+    );
     const sheet = (await sideDrawer(page).boundingBox())!;
     expect(apart(mark, sheet), `field ${JSON.stringify(mark)} under the card ${JSON.stringify(sheet)}`).toBe(true);
   }).toPass({ timeout: slow(10_000) });
 }
 
-test("an airport's card keeps its field in sight: the next position the GPS gives does not take the map back to own ship", async ({ page, context }) => {
+test("an airport's card keeps its field in sight: the next position the GPS gives does not take the map back to own ship", async ({
+  page,
+  context,
+}) => {
   await context.grantPermissions(["geolocation"], { origin });
   await context.setGeolocation({ latitude: 42.3247, longitude: -88.0742 });
   await page.goto("/app/plan");
@@ -370,20 +413,33 @@ test("an airport's card keeps its field in sight: the next position the GPS give
   const search = await airportSearch(page);
   await search.click();
   await search.fill("KDLH");
-  await page.getByTestId("search-result").filter({ hasText: "KDLH" }).first().click();
+  await searchAirports(page).filter({ hasText: "KDLH" }).first().click();
   await expect(sideDrawer(page).getByTestId("place-card")).toBeVisible();
   await fieldClearOfCard(page, "KDLH");
 
-  // The GPS moves on: the map stays on the field, as Maps' does once a
-  // place is picked, until the location arrow is tapped.
+  // The GPS moves on: the map stays on the field, as Maps' does once a place is picked, until the location arrow is tapped.
   await context.setGeolocation({ latitude: 42.33, longitude: -88.08 });
   await page.waitForTimeout(2000);
   await fieldClearOfCard(page, "KDLH");
 });
 
+test("a route fitted at the pill and untouched is fitted again above the half sheet as it settles there", async ({ page }) => {
+  // The FPL audit's A13 (2026-11-08): KUGN to KOSH fitted at the pill, the sheet up to half slid the map half the sheet's move, and KOSH
+  // ended 94 points off the top. The owner's rule: the route in sight at its fitted size is fitted again to what the sheet leaves.
+  test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
+  await page.goto("/app/plan?dep=KUGN&dest=KOSH");
+  await settle(page);
+  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  await fittedClearOf(page, sideDrawer(page));
+  await grabberTo(page, "half");
+  await settled(sideDrawer(page));
+  await mapStill(page);
+  await fittedClearOf(page, sideDrawer(page));
+  await fieldClearOfCard(page, "KOSH");
+});
+
 test("from half way to all the way up and back, the map stays exactly where it is", async ({ page }) => {
-  // The owner's ask: "when going from half card to full card, map should
-  // not move or zoom" -- only the pill to half and back moves it.
+  // The owner's ask: "when going from half card to full card, map should not move or zoom" -- only the pill to half and back moves it.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);

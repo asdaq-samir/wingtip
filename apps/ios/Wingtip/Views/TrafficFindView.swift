@@ -7,6 +7,7 @@ import SwiftUI
 /// and tracks it.
 struct TrafficFindView: View {
     @Environment(Traffic.self) private var traffic
+    @Environment(OwnShip.self) private var ownShip
     @State private var typed = ""
     @State private var found: TrafficFound?
     @State private var asked = ""
@@ -54,11 +55,11 @@ struct TrafficFindView: View {
                         Button {
                             if let hex = record.modeSHex { open(hex.lowercased(), plane: nil) }
                         } label: {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(record.nNumber).font(.headline)
                                 Text([[record.manufacturer, record.model].compactMap { $0 }.joined(separator: " ").nonEmpty,
                                       found?.checked == false ? "not yet known whether it is flying" : "not in the air now"]
-                                    .compactMap { $0 }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
+                                        .compactMap { $0 }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
                             }
                         }
                         .foregroundStyle(.primary)
@@ -70,9 +71,15 @@ struct TrafficFindView: View {
                         Text("adsb.lol is busy; asking again…").font(.footnote).foregroundStyle(.secondary)
                     }
                     if failed, asked == wanted {
-                        Text("Couldn't search. Try again in a moment.").font(.footnote).foregroundStyle(.red)
+                        Text("Couldn't search. Try again in a moment.").font(.footnote).foregroundStyle(WingtipInk.problem)
                     } else if asked != wanted || found == nil, listed.isEmpty {
-                        Text("Fetching \(wanted)…").font(.footnote).foregroundStyle(.secondary)
+                        ForEach(0..<2, id: \.self) { _ in
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                                Text("N-number").font(.headline)
+                                Text("Maker and model · in the air or not").font(.footnote).foregroundStyle(.secondary)
+                            }
+                            .loading("Fetching \(wanted)")
+                        }
                     }
                 } header: {
                     Text("Found")
@@ -102,7 +109,6 @@ struct TrafficFindView: View {
             }
         }
         .navigationTitle("Find an airplane")
-        .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $typed, prompt: "Callsign, N-number or address")
         .textInputAutocapitalization(.characters)
         .autocorrectionDisabled()
@@ -110,6 +116,12 @@ struct TrafficFindView: View {
             if let first = listed.first { open(first.hex, plane: first) } else { ask(wanted, now: true) }
         }
         .onChange(of: wanted) { _, next in ask(next, now: false) }
+        // Pulled down: the traffic round the airplane asked now, and the
+        // search asked again, the airplanes being live.
+        .refreshable {
+            ask(wanted, now: true)
+            await traffic.ask(near: ownShip.fix)
+        }
     }
 
     /// Asked once the typing pauses, half a second: each search is a
@@ -141,7 +153,7 @@ struct TrafficFindView: View {
 
     private func open(_ hex: String, plane: TrafficAircraft?) {
         tracking.track(hex, plane: plane)
-        FlightUI.shared.card = .airplane(hex.lowercased())
+        Navigator.shared.open(.traffic(hex.lowercased()))
     }
 }
 
@@ -151,7 +163,7 @@ struct KeptRow: View {
     var body: some View {
         HStack {
             Image(systemName: "airplane").foregroundStyle(.tint).accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(kept.name).font(.headline)
                 if let type = kept.type { Text(type).font(.footnote).foregroundStyle(.secondary) }
             }
@@ -163,6 +175,7 @@ struct KeptRow: View {
 #Preview("TrafficFindView") {
     NavigationStack { TrafficFindView() }
         .environment(Traffic())
+        .environment(OwnShip())
 }
 
 #Preview("KeptRow") {

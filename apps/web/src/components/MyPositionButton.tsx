@@ -3,13 +3,13 @@ import { Navigation, Route } from "lucide-react";
 import { showError } from "../lib/problems";
 import { cn } from "cn";
 import IconButton from "./IconButton";
-import { APPROXIMATE_M, ownShipAvailable, useOwnShip } from "../lib/map/ownShip";
+import { APPROXIMATE_M, ownShipAvailable, useOwnShip } from "../lib/map/position/ownShip";
 
 /**
  * My position, among the map's buttons, as Maps and every map app has
  * it: the location arrow. A tap shows where the phone is, flies the map
  * there closing in on it, and keeps the map on it; once the map is
- * panned away (OwnShipLayer stops following) a tap brings it back the
+ * panned away (OwnShipGl stops following) a tap brings it back the
  * same way; a tap while it is following puts the position away. The
  * arrow is iOS's, drawn fine: filled while the map follows, an outline
  * otherwise, and pulsing while the GPS has nothing yet. It was two switches at the
@@ -21,25 +21,27 @@ import { APPROXIMATE_M, ownShipAvailable, useOwnShip } from "../lib/map/ownShip"
  * browser's own prompt is said once, as it happens.
  */
 export default function MyPositionButton() {
-  const enabled = useOwnShip(s => s.enabled);
-  const follow = useOwnShip(s => s.follow);
+  const enabled = useOwnShip((s) => s.enabled);
+  const follow = useOwnShip((s) => s.follow);
   // Whether there is a fix, not the fix: drawn again once, not at each
   // second's new one in the air.
-  const fixed = useOwnShip(s => s.fix !== null);
-  const error = useOwnShip(s => s.error);
-  const setEnabled = useOwnShip(s => s.setEnabled);
-  const recentre = useOwnShip(s => s.recentre);
+  const fixed = useOwnShip((s) => s.fix !== null);
+  const error = useOwnShip((s) => s.error);
+  const setEnabled = useOwnShip((s) => s.setEnabled);
+  const recentre = useOwnShip((s) => s.recentre);
   useEffect(() => {
     // Said once, as it happens: a refusal of the browser's prompt.
     if (error) showError("No position", error);
   }, [error]);
   // Precise Location off: said once as the position comes in that way,
   // since everything drawn from it may be a mile or more out.
-  const approximate = useOwnShip(s => s.fix !== null && s.fix.accuracyM >= APPROXIMATE_M);
+  const approximate = useOwnShip((s) => s.fix !== null && s.fix.accuracyM >= APPROXIMATE_M);
   useEffect(() => {
     if (approximate) {
-      showError("Approximate position",
-        "Precise Location is off for Wingtip Maps, so your position, the glide ring and what is ahead may be a mile or more out. Turn it on in the phone's Settings, under Privacy and Location Services.");
+      showError(
+        "Approximate position",
+        "Precise Location is off for Wingtip Maps, so your position, the glide ring and what is ahead may be a mile or more out. Turn it on in the phone's Settings, under Privacy and Location Services.",
+      );
     }
   }, [approximate]);
   const following = enabled && follow;
@@ -47,20 +49,20 @@ export default function MyPositionButton() {
   // face: the whole route, at the owner's ask ("Can the locator button
   // change to fit line during dry run when plane is centered on the
   // screen"). Tapped, the map fits the route and the arrow comes back,
-  // to bring the map back in on the airplane (OwnShipLayer, DRY_RUN_ZOOM).
-  const simulated = useOwnShip(s => s.simulated);
-  const showRoute = useOwnShip(s => s.showRoute);
+  // to bring the map back in on the airplane (OwnShipGl, DRY_RUN_ZOOM).
+  const simulated = useOwnShip((s) => s.simulated);
+  const showRoute = useOwnShip((s) => s.showRoute);
   // And with a route entered and the map panned or zoomed off it, own
   // ship not followed, at the owner's ask ("When the route is entered,
   // and map is panned away from the route, have the locator icon change
   // to fit the course"): tapped, the course fitted again, and the arrow
   // back to go to the position from there.
-  const routeAway = useOwnShip(s => s.routeOutOfView);
+  const routeAway = useOwnShip((s) => s.routeOutOfView);
   // With a route drawn the arrow only goes between the two, at the
   // owner's ask ("when the route is drawn then only toggle between the
   // current location and the fit route", 2026-10-27): on the position,
   // the route; on the route, the position. Never the position put away.
-  const routeDrawn = useOwnShip(s => s.routeDrawn);
+  const routeDrawn = useOwnShip((s) => s.routeDrawn);
   const routeFace = (simulated && following) || (routeDrawn ? following || routeAway : false);
   const tap = () => {
     if (routeFace) {
@@ -78,15 +80,31 @@ export default function MyPositionButton() {
   };
   return (
     <IconButton
-      label={routeFace ? "Show the whole route" : simulated ? "Follow the airplane" : !enabled ? "Show my position" : follow ? "Hide my position" : "Follow my position"}
-      onClick={tap} aria-pressed={routeFace ? undefined : enabled} data-testid="my-position-button" data-face={routeFace ? "route" : "position"}
+      label={
+        routeFace
+          ? "Show the whole route"
+          : simulated
+            ? "Follow the airplane"
+            : !enabled
+              ? "Show my position"
+              : follow
+                ? "Hide my position"
+                : "Follow my position"
+      }
+      onClick={tap}
+      aria-pressed={routeFace ? undefined : enabled}
+      data-testid="my-position-button"
+      data-face={routeFace ? "route" : "position"}
       className="text-tint"
     >
       {/* Fine and sharp-cornered, as iOS's own arrow is: lucide's is
           drawn with round joins at 2, a heavier mark than any around it. */}
-      {routeFace ? <Route strokeWidth={1.5} className="size-5" /> : (
+      {routeFace ? (
+        <Route strokeWidth={1.5} className="size-5" />
+      ) : (
         <Navigation
-          strokeWidth={1.5} strokeLinejoin="miter"
+          strokeWidth={1.5}
+          strokeLinejoin="miter"
           className={cn("size-5", following && "fill-current", enabled && !fixed && "animate-pulse")}
         />
       )}

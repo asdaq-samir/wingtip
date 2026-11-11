@@ -1,5 +1,17 @@
 import { test, expect, type Page } from "@playwright/test";
-import { consoleSheet, openBriefing, openConsole, openSection, openTab, settle, showTabs, slow, consolePage, openNavLog, navLogSheet } from "./helpers";
+import {
+  consoleSheet,
+  openBriefing,
+  openConsole,
+  openSection,
+  openTab,
+  settle,
+  showTabs,
+  slow,
+  consolePage,
+  openNavLog,
+  navLogSheet,
+} from "./helpers";
 
 /**
  * The subscription to the paid features (lib/subscription, PaidPrompt):
@@ -13,8 +25,13 @@ import { consoleSheet, openBriefing, openConsole, openSection, openTab, settle, 
 type Standing = "FREE" | "TRIAL";
 
 const subscription = (state: Standing, over: Record<string, unknown> = {}) => ({
-  state, entitled: state !== "FREE", until: state === "TRIAL" ? "2026-11-10T12:00:00Z" : null,
-  trialAvailable: state === "FREE", trialDays: 30, plan: null, store: null,
+  state,
+  entitled: state !== "FREE",
+  until: state === "TRIAL" ? "2026-11-10T12:00:00Z" : null,
+  trialAvailable: state === "FREE",
+  trialDays: 30,
+  plan: null,
+  store: null,
   uses: [
     { feature: "NARRATIVE", used: 1, cap: 60 },
     { feature: "CHECKPOINT_NOTES", used: 0, cap: 60 },
@@ -31,14 +48,19 @@ async function stubSubscription(page: Page, state: Standing, over: Record<string
   // A deployment that sells it: the stack's own, the proof of concept,
   // sells none (app.subscription.enabled).
   await sold(page, { subscriptions: true });
-  await page.route(url => url.pathname === "/api/subscription", route =>
-    route.fulfill({ json: subscription(now, over) }));
-  await page.route(url => url.pathname === "/api/subscription/trial", route => {
-    asked.push("trial");
-    now = "TRIAL";
-    return route.fulfill({ json: subscription("TRIAL") });
-  });
-  page.on("request", r => {
+  await page.route(
+    (url) => url.pathname === "/api/subscription",
+    (route) => route.fulfill({ json: subscription(now, over) }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/subscription/trial",
+    (route) => {
+      asked.push("trial");
+      now = "TRIAL";
+      return route.fulfill({ json: subscription("TRIAL") });
+    },
+  );
+  page.on("request", (r) => {
     const path = new URL(r.url()).pathname;
     if (path.endsWith("/api/planner/briefing/narrative") || path.endsWith("/checkpoint-notes/generate")) asked.push(path);
   });
@@ -47,10 +69,14 @@ async function stubSubscription(page: Page, state: Standing, over: Record<string
 
 /** The deployment's capabilities as the stack answers them, changed. */
 async function sold(page: Page, change: Record<string, unknown>) {
-  await page.route(url => url.pathname === "/api/auth/capabilities", async route => {
-    const real = await (await route.fetch()).json();
-    await route.fulfill({ json: { ...real, ...change } });
-  });
+  await page.route(
+    (url) => url.pathname === "/api/auth/capabilities",
+    async (route) => {
+      const real = await (await route.fetch()).json();
+      // Claude on unless a test says otherwise: it is off by default (./claude).
+      await route.fulfill({ json: { ...real, claudeFeatures: "EVERYONE", ...change } });
+    },
+  );
 }
 
 test.afterEach(async ({ page }) => {
@@ -77,7 +103,7 @@ test("without the subscription the Brief's narrative says it comes with it, and 
   await expect(narrative).toContainText("A test narrative.", { timeout: slow(60000) });
   await expect(prompt).toHaveCount(0);
   expect(asked[0]).toBe("trial");
-  expect(asked.filter(a => a.endsWith("/api/planner/briefing/narrative"))).toHaveLength(1);
+  expect(asked.filter((a) => a.endsWith("/api/planner/briefing/narrative"))).toHaveLength(1);
   // What is left of the month, under the text.
   await expect(narrative).toContainText("left this month");
 });

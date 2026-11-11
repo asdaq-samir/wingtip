@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.flight
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -20,6 +21,8 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.ahead
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.underway
+import app.wingtipmaps.android.logbook.FlightRecorder
 import app.wingtipmaps.android.notify.Notifications
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -91,6 +94,11 @@ class OwnShip private constructor(private val context: Context) {
      *  the packs. */
     private val _ahead = MutableStateFlow<List<AheadAlert>>(emptyList())
     val ahead: StateFlow<List<AheadAlert>> = _ahead.asStateFlow()
+
+    /** The ground under the airplane from the packs kept on the phone,
+     *  asked with what is ahead: the glide ring's ground (InFlight). */
+    private val _groundFt = MutableStateFlow<Double?>(null)
+    val groundFt: StateFlow<Double?> = _groundFt.asStateFlow()
 
     private val provider: FusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(context)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -222,6 +230,8 @@ class OwnShip private constructor(private val context: Context) {
         // off only while flying: the service is started as the airplane
         // reaches flying speed and stopped as it slows below it.
         serve(OwnTrail.of(context).took(fix))
+        // The track the logbook is drawn from, ground and air alike.
+        FlightRecorder.of(context).took(fix)
     }
 
     /** The foreground service on while flying, off otherwise. Android 12
@@ -255,9 +265,15 @@ class OwnShip private constructor(private val context: Context) {
         val fix = _fix.value ?: return
         val track = fix.trackDeg ?: return
         val gs = fix.groundspeedKt ?: return
-        if (!underway(gs)) return
+        // Where the engine cannot say, what is ahead is asked anyway: an
+        // alert asked for nothing costs less than one missed.
+        if (!underway(gs).getOrDefault(true)) return
         asking?.cancel()
         asking = scope.launch {
+            // The packs' answer is asked either way, for the ground under
+            // the airplane the glide ring stands on, network or none.
+            val offline = CyclePacks.of(context).ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt)
+            _groundFt.value = offline?.groundFt
             val alerts = try {
                 Planner.ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt)
             } catch (e: CancellationException) {
@@ -265,7 +281,7 @@ class OwnShip private constructor(private val context: Context) {
             } catch (e: Exception) {
                 // No planner in the air: the same alerts from the packs
                 // kept for the route (CyclePacks.ahead).
-                CyclePacks.of(context).ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt)?.alerts ?: return@launch
+                offline?.alerts ?: return@launch
             }
             _ahead.value = alerts
         }
@@ -300,11 +316,12 @@ class OwnShip private constructor(private val context: Context) {
          *  `underway` (motion/glide.rs, AIRBORNE_KT), which the trail and
          *  the strip go by too. Below it nothing ahead is asked: taxiing,
          *  or a fix wandering while parked. */
-        fun underway(speedKt: Double?): Boolean =
-            Engine.call<OwnTrail.Speed, Boolean>("underway", OwnTrail.Speed(speedKt))
+        fun underway(speedKt: Double?): Result<Boolean> = Engine.underway(speedKt)
         const val FT_PER_M = 3.28084
         const val KT_PER_MPS = 1.943844
 
+        // The application's context alone (of), which lives as long as the process.
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var shared: OwnShip? = null
 
@@ -323,6 +340,7 @@ class OwnShip private constructor(private val context: Context) {
  */
 class OwnShipService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        running = true
         val notification = Notifications.ownShip(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             ServiceCompat.startForeground(this, Notifications.OWN_SHIP_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
@@ -334,5 +352,18 @@ class OwnShipService : Service() {
         return START_NOT_STICKY
     }
 
+    override fun onDestroy() {
+        running = false
+        super.onDestroy()
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
+
+    companion object {
+        /** Whether the service is up, so its notification may be changed
+         *  in place (LiveFlight's Live Update) and is never posted again
+         *  once the service has gone with it. Main thread only. */
+        var running = false
+            private set
+    }
 }

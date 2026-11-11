@@ -17,6 +17,10 @@ struct BriefView: View {
     /// iPhone's; written again as the briefing changes.
     @State private var weatherWords: SaidWords?
     @State private var writingWords = false
+    /// The AWC's forecast icing on each leg (ForecastIcing).
+    @State private var icing = ForecastIcing()
+    /// "When should I go?" (DepartureWindow).
+    @State private var window = DepartureWindow()
 
     /// The first of the weather's parts the Brief has, where the weather's
     /// finding opens: VFR not recommended, the hazards, the G-AIRMETs, else
@@ -37,36 +41,45 @@ struct BriefView: View {
     var body: some View {
         ScrollViewReader { reader in
             List {
+                // The verdict first, as Weather gives its takeaway before
+                // the detail (docs/design/ios.md §5).
+                if plan.routed { BriefVerdictHead() }
+                // What the phone holds for the flight before the signal
+                // goes, first (the engine's ready_to_fly).
+                ReadyToFlySection()
                 if plan.routed {
                     // A finding scrolls the Brief to its part; a jump, not
                     // a scroll, with Reduce Motion on.
                     GoNoGoSection { anchor in
                         if reduceMotion { reader.scrollTo(anchor, anchor: .top) } else { withAnimation { reader.scrollTo(anchor, anchor: .top) } }
                     }
+                    DepartureWindowSection(model: window, signedIn: session.signedIn, airplane: plan.airplaneChosen)
                 }
                 if let briefing = plan.briefing {
                     let weatherAt = weatherPart(briefing)
+                    // The briefing kept, shown with no signal, with its age.
+                    KeptAgeLine(kind: .briefing, key: ReadyToFly.flightKey(plan))
                     WordsSection(title: "The weather in words", said: weatherWords, writing: writingWords)
                     if let notRecommended = briefing.vfrNotRecommended, !notRecommended.isEmpty {
                         Section {
                             ForEach(Array(notRecommended.enumerated()), id: \.offset) { i, reason in
-                                Label(reason, systemImage: "xmark.octagon.fill").foregroundStyle(.red)
+                                Label(reason, systemImage: "xmark.octagon.fill").foregroundStyle(WingtipInk.problem)
                                     .id(rowId("vnr", i, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor))
                             }
-                        } header: { Text("VFR flight not recommended") }
+                        } header: { Text("VFR Flight Not Recommended") }
                     }
                     if !briefing.weatherUnavailable.isEmpty {
-                        Section("Not available") {
+                        Section("Not Available") {
                             ForEach(briefing.weatherUnavailable, id: \.self) { Text($0).foregroundStyle(.secondary) }
                         }
                     }
                     if !briefing.hazards.isEmpty {
                         Section("Hazards") {
                             ForEach(Array(briefing.hazards.enumerated()), id: \.offset) { i, hazard in
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text([hazard.type, hazard.hazard].compactMap { $0 }.joined(separator: " · ")).font(.headline)
                                     if let low = hazard.altitudeLowFt, let high = hazard.altitudeHighFt {
-                                        Text("\(Int(low).formatted()) to \(Int(high).formatted()) ft").font(.footnote).foregroundStyle(.secondary)
+                                        Text(Format.altitudeRange(low, high)).font(.footnote).foregroundStyle(.secondary)
                                     }
                                     if let raw = hazard.raw { Text(raw).font(.footnote.monospaced()).foregroundStyle(.secondary) }
                                 }
@@ -79,10 +92,10 @@ struct BriefView: View {
                     if let gairmets = briefing.gairmets, !gairmets.isEmpty {
                         Section("G-AIRMETs") {
                             ForEach(Array(gairmets.enumerated()), id: \.offset) { i, g in
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text([g.hazard, g.severity].compactMap { $0 }.joined(separator: " · ")).font(.headline)
-                                    HStack(spacing: 8) {
-                                        if let low = g.altitudeLowFt, let high = g.altitudeHighFt { Text("\(Int(low).formatted()) to \(Int(high).formatted()) ft") }
+                                    HStack(spacing: WingtipSpace.sm) {
+                                        if let low = g.altitudeLowFt, let high = g.altitudeHighFt { Text(Format.altitudeRange(low, high)) }
                                         if let due = g.dueTo { Text(due) }
                                         if let at = g.validAt { Text(at) }
                                     }
@@ -94,17 +107,17 @@ struct BriefView: View {
                         }
                     }
                     if let tfrs = briefing.tfrs, !tfrs.isEmpty {
-                        Section("TFRs on the way") {
+                        Section("TFRs on the Way") {
                             ForEach(Array(tfrs.enumerated()), id: \.offset) { i, tfr in
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     HStack {
                                         Text(tfr.title ?? tfr.notamId).font(.headline)
-                                        if tfr.crosses { Text("crosses").foregroundStyle(.red).font(.footnote.weight(.semibold)) }
-                                        if tfr.activeNow { Text("active now").foregroundStyle(.red).font(.footnote.weight(.semibold)) }
+                                        if tfr.crosses { Text("crosses").foregroundStyle(WingtipInk.problem).font(.footnote.weight(.semibold)) }
+                                        if tfr.activeNow { Text("active now").foregroundStyle(WingtipInk.problem).font(.footnote.weight(.semibold)) }
                                     }
-                                    HStack(spacing: 8) {
-                                        Text("\(Formats.nm(tfr.alongTrackNm, decimals: 0)) along")
-                                        if let floor = tfr.floorFt, let ceiling = tfr.ceilingFt { Text("\(Int(floor).formatted()) to \(Int(ceiling).formatted()) ft") }
+                                    HStack(spacing: WingtipSpace.sm) {
+                                        Text("\(Format.distance(tfr.alongTrackNm, decimals: 0)) along")
+                                        if let floor = tfr.floorFt, let ceiling = tfr.ceilingFt { Text(Format.altitudeRange(floor, ceiling)) }
                                         if let effective = tfr.effective { Text("from \(effective)") }
                                     }
                                     .font(.footnote).foregroundStyle(.secondary)
@@ -115,14 +128,14 @@ struct BriefView: View {
                         }
                     }
                     if let pireps = briefing.pireps, !pireps.isEmpty {
-                        Section("Pilot reports") {
+                        Section("Pilot Reports") {
                             ForEach(Array(pireps.enumerated()), id: \.offset) { i, p in
-                                VStack(alignment: .leading, spacing: 2) {
-                                    HStack(spacing: 8) {
-                                        Text("\(Formats.nm(p.alongTrackNm, decimals: 0)) along").font(.headline)
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                                    HStack(spacing: WingtipSpace.sm) {
+                                        Text("\(Format.distance(p.alongTrackNm, decimals: 0)) along").font(.headline)
                                         if let turbulence = p.turbulence { Text("turbulence \(turbulence)") }
                                         if let icing = p.icing { Text("icing \(icing)") }
-                                        if p.urgent == true { Text("URGENT").foregroundStyle(.red).bold() }
+                                        if p.urgent == true { Text("URGENT").foregroundStyle(WingtipInk.problem).bold() }
                                     }
                                     if let raw = p.raw { Text(raw).font(.footnote.monospaced()).foregroundStyle(.secondary) }
                                 }
@@ -131,13 +144,14 @@ struct BriefView: View {
                         }
                     }
                     FieldsBelowVfrSection(fields: briefing.fieldsBelowVfr ?? [])
-                    Section("Forecast along the route") {
-                        LabeledContent("Lowest ceiling", value: briefing.forecast.minCeilingFt.map { "\(Int($0).formatted()) ft" } ?? "—")
+                    ForecastIcingSection(model: icing, legs: plan.legs)
+                    Section("Forecast Along the Route") {
+                        LabeledContent("Lowest ceiling", value: Format.altitude(briefing.forecast.minCeilingFt))
                             .id(rowId("forecast", 0, anchorAt: weatherAt, anchor: VerdictTarget.weatherAnchor))
                         LabeledContent("Lowest visibility", value: briefing.forecast.minVisibilitySm.map { String(format: "%g SM", $0) } ?? "—")
                         ForEach(Array(briefing.forecast.stations.enumerated()), id: \.offset) { _, station in
                             if let raw = station.raw {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text(station.icaoId).font(.headline)
                                     Text(raw).font(.footnote.monospaced()).foregroundStyle(.secondary)
                                 }
@@ -147,8 +161,9 @@ struct BriefView: View {
                     let stations = briefing.metars.keys.sorted()
                     if !stations.isEmpty {
                         Section("METARs") {
+                            KeptAgeLine(kind: .weather, key: ReadyToFly.flightKey(plan))
                             ForEach(stations, id: \.self) { ident in
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     HStack {
                                         Text(ident).font(.headline)
                                         if let category = briefing.metars[ident]??.flightCategory { Text(category).font(.footnote.weight(.semibold)).foregroundStyle(.secondary) }
@@ -164,22 +179,66 @@ struct BriefView: View {
                     }
                 } else if let problem = plan.briefingProblem {
                     ContentUnavailableView("No briefing", systemImage: "exclamationmark.triangle", description: Text(problem))
-                } else {
-                    ProgressView("Fetching the briefing…")
+                } else if plan.routed {
+                    // Only a route has a briefing to fetch.
+                    Section("METARs") {
+                        ForEach(0..<4, id: \.self) { _ in
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                                Text("Station").font(.headline)
+                                Text("The station's report as the weather service sends it").font(.footnote.monospaced()).foregroundStyle(.secondary)
+                            }
+                            .loading("Fetching the briefing")
+                        }
+                    }
+                }
+                // The route's NOTAMs, fetched for Ready to fly (91.103, AIM 5-1-3).
+                if plan.routed { NotamsSection() }
+                // The passengers' briefing (91.107, the SAFETY briefing) and
+                // the flight to send them, after the weather.
+                if plan.routed {
+                    Section {
+                        NavigationLink {
+                            PassengerBriefingView(flight: PassengerBriefingModel.flight(idents: plan.idents))
+                        } label: {
+                            Label("Passenger Briefing", systemImage: "person.2")
+                        }
+                    }
                 }
             }
         }
+        .siriSees(SiriSaw.flight(plan))
         .navigationTitle("Brief")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarMinimizesOnScroll()
+        // The flight started from the Brief's foot (its Live Activity).
+        .glassFoot { if plan.routed { StartFlightBar() } }
         // The UI tests' sign the Brief is up (WingtipUITests/FlowTests).
         .accessibilityIdentifier("brief")
+        // Pulled down: the briefing and the Go / No-Go asked afresh, the
+        // weather being live; the reports stay on the page meanwhile.
+        .refreshable {
+            guard plan.routed else { return }
+            await plan.brief(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin)
+            await verdict.refresh(plan: plan, signedIn: session.signedIn)
+        }
         .task {
             if plan.briefing == nil, plan.routed {
                 await plan.brief(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin)
             }
+            // The route's weather is watched from the Brief on (WeatherWatch):
+            // notifications asked for here, where the pilot sees why.
+            if plan.routed { await Notifications.allow() }
         }
+        // The forecast icing, asked once the briefing has the nav log's legs.
+        .task(id: ForecastIcing.query(briefing: plan.briefing, legs: plan.legs)) { await icing.refresh(briefing: plan.briefing, legs: plan.legs) }
         // Asked again whenever the plan or what the pilot set changes.
         .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
+        // The hours to go, asked again as the Go / No-Go's question changes.
+        .task(id: "\(verdict.key(for: plan))|\(session.signedIn)") {
+            guard session.signedIn, plan.routed else { return }
+            await window.refresh(try? DepartureWindow.ask(verdict.ask(for: plan), airplane: plan.airplaneChosen))
+            // The hour said to Siri with the ask ("tomorrow at 9"), picked.
+            if let when = BriefAsk.shared.takeDepart() { window.pick(nearest: when) }
+        }
         // The words for the briefing on the page, written again when it
         // changes; the figures stay as they are while they are written.
         .task(id: plan.briefing) {
@@ -189,7 +248,7 @@ struct BriefView: View {
             let legs = BriefLegs.query(course: plan.course, checkpoints: plan.checkpoints, legs: plan.legs)
             let eteMin = plan.totals?.eteMin
             let figures = WordsFigures.weather(briefing, dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: eteMin)
-            let body = WeatherWordsAsk(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: eteMin, fixes: legs?.fixes ?? "", legMin: legs?.legMin ?? "")
+            let body = WeatherWordsAsk(dep: plan.dep, dest: plan.dest, eteMin: eteMin, fixes: legs?.fixes ?? "", legMin: legs?.legMin ?? "", stops: plan.stops)
             guard let ask = try? WordsAsk(kind: .weather, body: body, figures: figures) else { return }
             let said = await WordsFor().said(ask)
             guard !Task.isCancelled else { return }

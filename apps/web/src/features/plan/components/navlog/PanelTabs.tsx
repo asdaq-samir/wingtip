@@ -1,4 +1,16 @@
-import { useCallback, useDeferredValue, useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+  useEffectEvent,
+  ViewTransition,
+} from "react";
+import { PAGE_STEP, pageStep } from "../../../../lib/viewTransition";
 import { cn } from "cn";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components/ui/tabs";
 import { SectionsOpen } from "../../../../components/sectionLayout";
@@ -17,8 +29,10 @@ const TABS: { value: PanelTab; label: string }[] = [
   { value: "enroute", label: "En route" },
   { value: "arrive", label: "Arrive" },
 ];
+/** The pages' order, the overview first, for a step's direction. */
+const PAGE_ORDER: (PanelTab | null)[] = [null, ...TABS.map((t) => t.value)];
 /** On paper every tab, one after another, in the same order. */
-const PRINTED: PanelTab[] = TABS.map(t => t.value);
+const PRINTED: PanelTab[] = TABS.map((t) => t.value);
 
 /**
  * The Brief's pages and what is under them (BriefCard's, and the printed
@@ -38,7 +52,17 @@ const PRINTED: PanelTab[] = TABS.map(t => t.value);
  * for among them -- the Go / No-Go's fuel, under the legs -- is
  * `onLegs`'s.
  */
-export default function PanelTabs({ before, contents, notice, printing, marks, onTap, onLegs, route, overview: Overview }: {
+export default function PanelTabs({
+  before,
+  contents,
+  notice,
+  printing,
+  marks,
+  onTap,
+  onLegs,
+  route,
+  overview: Overview,
+}: {
   /** What shows before any page, its cards each opening one (`open`):
    *  the Brief's glance (BriefGlance), at the owner's pick of the redesign
    *  (D′). A page opened from it goes back to it by the close, a swipe to
@@ -85,8 +109,7 @@ export default function PanelTabs({ before, contents, notice, printing, marks, o
   // at the owner's ask ("look at this for the see-through under the top
   // bar"): the scroller reaches up by both heads (--head-room on the
   // tabs' root, the panel's own head --panel-head and this one's foot in
-  // the panel's body), and the head is frosted with the panel's while
-  // anything is under them (index.css, data-under-band).
+  // the panel's body).
   const [localHead, setLocalHead] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
     const root = localHead?.parentElement;
@@ -99,37 +122,47 @@ export default function PanelTabs({ before, contents, notice, printing, marks, o
     measure();
     const watch = new ResizeObserver(measure);
     watch.observe(localHead);
-    return () => { watch.disconnect(); root.style.removeProperty("--head-room"); };
+    return () => {
+      watch.disconnect();
+      root.style.removeProperty("--head-room");
+    };
   }, [localHead]);
-  // The tab that was up as a finger or a key pressed one, before Radix
-  // makes the pressed one the tab up (on its mouse down or key down, ahead
-  // of the click): whether the tap was on the tab already up.
+  // The tab that was up as a finger or a key pressed one, read at its
+  // click, by when Base UI has made the pressed one the tab up: whether
+  // the tap was on the tab already up.
   const upWhenPressed = useRef<PanelTab | null>(null);
   const scrolls = useRef<Partial<Record<PanelTab | "overview", number>>>({});
   // The section a row in another tab asked for (GoToTab), scrolled to
   // once its tab is drawn.
   const wanted = useRef<string | null>(null);
   const [asked, setAsked] = useState(0);
-  const choose = useCallback((next: string | null) => {
-    if (scroller.current) scrolls.current[tab ?? "overview"] = scroller.current.scrollTop;
-    setTab(next as PanelTab | null);
-  }, [tab]);
+  const choose = useCallback(
+    (next: string | null) => {
+      if (scroller.current) scrolls.current[tab ?? "overview"] = scroller.current.scrollTop;
+      // Slid in as a page of a stack, forward to a later page or from the
+      // overview, back to an earlier one (lib/viewTransition).
+      pageStep(PAGE_ORDER.indexOf(next as PanelTab | null) >= PAGE_ORDER.indexOf(tab), () => setTab(next as PanelTab | null));
+    },
+    [tab],
+  );
   // A page opened from the overview is what the close, a swipe back and a
   // device's Back take away first, back to the overview.
   const paged = !!Overview && tab !== null;
-  const back = useRef(() => choose(null));
-  useEffect(() => { back.current = () => choose(null); });
-  useEffect(() => (paged ? holdOpenCard({ close: () => back.current(), inBar: false }) : undefined), [paged]);
-  const goTo = useCallback((next: PanelTab, section?: string) => {
-    if (section === LEGS) {
-      onLegs?.();
-      return;
-    }
-    wanted.current = section ?? null;
-    if (section) scrolls.current[next] = 0;
-    choose(next);
-    setAsked(n => n + 1);
-  }, [choose, onLegs]);
+  const back = useEffectEvent(() => choose(null));
+  useEffect(() => (paged ? holdOpenCard({ close: () => back(), inBar: false }) : undefined), [paged]);
+  const goTo = useCallback(
+    (next: PanelTab, section?: string) => {
+      if (section === LEGS) {
+        onLegs?.();
+        return;
+      }
+      wanted.current = section ?? null;
+      if (section) scrolls.current[next] = 0;
+      choose(next);
+      setAsked((n) => n + 1);
+    },
+    [choose, onLegs],
+  );
   useLayoutEffect(() => {
     const box = scroller.current;
     if (!box) return;
@@ -143,17 +176,22 @@ export default function PanelTabs({ before, contents, notice, printing, marks, o
     const to = () => {
       const target = box.querySelector(`[data-tab="${tab}"] [data-title="${CSS.escape(section)}"]`);
       // Under the heads it runs on up under (its scroll padding), not under them.
-      if (target) box.scrollTop += target.getBoundingClientRect().top - box.getBoundingClientRect().top - (parseFloat(getComputedStyle(box).scrollPaddingTop) || 0);
+      if (target)
+        box.scrollTop +=
+          target.getBoundingClientRect().top - box.getBoundingClientRect().top - (parseFloat(getComputedStyle(box).scrollPaddingTop) || 0);
     };
     to();
     const frame = requestAnimationFrame(to);
     return () => cancelAnimationFrame(frame);
   }, [tab, asked]);
   // A page opened from the overview's card, the panel all the way up.
-  const openPage = useCallback((next: PanelTab) => {
-    goTo(next);
-    onTap?.(false);
-  }, [goTo, onTap]);
+  const openPage = useCallback(
+    (next: PanelTab) => {
+      goTo(next);
+      onTap?.(false);
+    },
+    [goTo, onTap],
+  );
   // A tab and section asked for from outside the tabs (useTabAsk): heard
   // as it is asked, and once drawn, one asked before the tabs were there.
   useEffect(() => {
@@ -175,9 +213,9 @@ export default function PanelTabs({ before, contents, notice, printing, marks, o
     // Not clipped: its scroller runs on up under the heads over it
     // (under-head), and clips what it holds itself.
     <Tabs value={tab ?? ""} onValueChange={choose} className="flex min-h-0 flex-1 flex-col gap-0 print:h-auto">
-      <div ref={setLocalHead} data-under-band="" className="relative z-10 flex shrink-0 flex-col">
-      {before}
-      {/* The stock line tabs, as the consoles' (ConsoleTabs), over the
+      <div ref={setLocalHead} className="relative z-10 flex shrink-0 flex-col">
+        {before}
+        {/* The stock line tabs, as the consoles' (ConsoleTabs), over the
           scroller so they stay as it scrolls: an icon over its word, at a
           fixed size (it does not grow with the text, as iOS's tab bar's
           does not), so the five share the line evenly -- a 24-point glyph
@@ -187,64 +225,85 @@ export default function PanelTabs({ before, contents, notice, printing, marks, o
           tab whose findings (lib/verdict) have something to fix carries a
           red mark, something to look at an amber one, as its sections'
           titles do. */}
-      {/* The route's pages as the same segmented control an airport's
+        {/* The route's pages as the same segmented control an airport's
           card's are (CardTabBar), at the owner's pick of the redesign:
           words, the glyphs gone, a page with something to fix or look at
           marked by a dot after its word as before. */}
-      {tab !== null && <TabsList
-        data-tip="tabs"
-        className="mx-4 my-2 w-auto shrink-0 group-data-[orientation=horizontal]/tabs:h-9 pointer-coarse:group-data-[orientation=horizontal]/tabs:h-11 print:hidden"
-      >
-        {TABS.map(t => (
-          <TabsTrigger
-            key={t.value} value={t.value} data-testid={`panel-tab-${t.value}`}
-            aria-description={marks?.[t.value] ? (marks[t.value] === "stop" ? "Warning" : "Caution") : undefined}
-            onPointerDown={() => { upWhenPressed.current = tab; }} onKeyDown={() => { upWhenPressed.current = tab; }}
-            onClick={() => onTap?.(upWhenPressed.current === t.value)}
-            className="min-w-0"
+        {tab !== null && (
+          <TabsList
+            data-tip="tabs"
+            className="mx-4 my-2 w-auto shrink-0 group-data-[orientation=horizontal]/tabs:h-9 pointer-coarse:group-data-[orientation=horizontal]/tabs:h-11 print:hidden"
           >
-            <span className="truncate">{t.label}</span>
-            {marks?.[t.value] && (
-              <span
-                aria-hidden="true"
-                className={cn("size-2 shrink-0 rounded-full", marks[t.value] === "stop" ? "bg-destructive" : "bg-caution")}
-                data-testid={`panel-tab-mark-${t.value}`} data-finding={marks[t.value]}
-              />
-            )}
-          </TabsTrigger>
-        ))}
-      </TabsList>}
+            {TABS.map((t) => (
+              <TabsTrigger
+                key={t.value}
+                value={t.value}
+                data-testid={`panel-tab-${t.value}`}
+                aria-description={marks?.[t.value] ? (marks[t.value] === "stop" ? "Warning" : "Caution") : undefined}
+                onPointerDown={() => {
+                  upWhenPressed.current = tab;
+                }}
+                onKeyDown={() => {
+                  upWhenPressed.current = tab;
+                }}
+                onClick={() => onTap?.(upWhenPressed.current === t.value)}
+                className="min-w-0"
+              >
+                <span className="truncate">{t.label}</span>
+                {marks?.[t.value] && (
+                  <span
+                    aria-hidden="true"
+                    className={cn("size-2 shrink-0 rounded-full", marks[t.value] === "stop" ? "bg-destructive" : "bg-caution")}
+                    data-testid={`panel-tab-mark-${t.value}`}
+                    data-finding={marks[t.value]}
+                  />
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        )}
       </div>
-      <div
-        ref={scroller} data-local-head=""
-        // The bottom inset clears the home indicator on an installed
-        // app, so the last section's content is not under it.
-        // `flight-briefing`: index.css's print rules lay every tab out on
-        // paper.
-        className="flight-briefing @container under-head min-h-0 flex-1 overflow-auto pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))] print:h-auto print:overflow-visible print:pb-0"
-        data-testid="brief-scroller"
-      >
-        {notice}
-        {tab === null && !printing && Overview && <Overview onOpen={openPage} />}
-        <SectionsOpen.Provider value>
-          <GoToTab.Provider value={goTo}>
-            {/* Every page's sections one under another, each under its
+      <ViewTransition update={PAGE_STEP} enter="none" exit="none" default="none">
+        <div
+          ref={scroller}
+          // The bottom inset clears the home indicator on an installed
+          // app, so the last section's content is not under it.
+          // `flight-briefing`: index.css's print rules lay every tab out on
+          // paper.
+          className="flight-briefing @container under-head min-h-0 flex-1 overflow-auto pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))] print:h-auto print:overflow-visible print:pb-0"
+          data-testid="brief-scroller"
+        >
+          {notice}
+          {tab === null && !printing && Overview && <Overview onOpen={openPage} />}
+          <SectionsOpen.Provider value>
+            <GoToTab.Provider value={goTo}>
+              {/* Every page's sections one under another, each under its
                 title, not pills to pick one by, at the owner's ask ("Make
                 the subtabs into sections Legs, Profile"). */}
-            {drawn && (printing ? PRINTED : TABS.map(t => t.value).filter(t => opened.includes(t))).map(t => {
-              const away = !printing && t !== tab;
-              return (
-                <TabsContent
-                  key={t} value={t} forceMount data-testid={`panel-${t}`} data-tab={t}
-                  inert={away} className={cn("mt-0", away && "tab-away")}
-                >
-                  {contents[t]}
-                </TabsContent>
-              );
-            })}
-          </GoToTab.Provider>
-        </SectionsOpen.Provider>
-      </div>
+              {drawn &&
+                (printing ? PRINTED : TABS.map((t) => t.value).filter((t) => opened.includes(t))).map((t) => {
+                  const away = !printing && t !== tab;
+                  return (
+                    <TabsContent
+                      key={t}
+                      value={t}
+                      // Kept, and laid out where Base UI would hide it:
+                      // tab-away keeps a page's layout for its return.
+                      keepMounted
+                      hidden={false}
+                      data-testid={`panel-${t}`}
+                      data-tab={t}
+                      inert={away}
+                      className={cn("mt-0", away && "tab-away")}
+                    >
+                      {contents[t]}
+                    </TabsContent>
+                  );
+                })}
+            </GoToTab.Provider>
+          </SectionsOpen.Provider>
+        </div>
+      </ViewTransition>
     </Tabs>
   );
 }

@@ -15,7 +15,16 @@
 //!   by its procedures and holds, going missed when asked
 //!   (navlog/dryRun);
 //! - track: a flown track read from a GPX or KML file, and thinned for
-//!   keeping (lib/track).
+//!   keeping (lib/track);
+//! - along: where a real airplane is along the route, whether it is on
+//!   it, and the fuel the plan has burnt by there (the phones' strips);
+//! - instruments: a flight under way against its route -- the next
+//!   waypoint and the destination, the desired track, the fuel left --
+//!   with the vertical speed and the glide ring (#218);
+//! - diagram: own ship on the FAA's airport diagram, by its own latitude
+//!   and longitude labels (#218);
+//! - terrain_view: the pilot's-eye view's amber and red bands of the
+//!   ground under the airplane (lib/map/gl/terrain).
 //!
 //! What runs every frame stays in each app -- where a replay's airplane is
 //! between two reports, a report carried on along its track, the dry run's
@@ -27,9 +36,13 @@
 //! answer (14 ms for 554 against the web's 0.2).
 
 pub mod alerts;
+pub mod along;
+pub mod diagram;
 pub mod dry_run;
 pub mod glide;
+pub mod instruments;
 pub mod profile;
+pub mod terrain_view;
 pub mod track;
 pub mod traffic;
 
@@ -71,11 +84,12 @@ pub(crate) fn present(v: &Value, key: &str) -> bool {
     !matches!(v.get(key), None | Some(Value::Null) | Some(Value::Bool(false)))
 }
 
-/// The rules of this module by name (crate::call), None for a name not
-/// one of them.
-pub fn call(name: &str, v: &Value) -> Option<Result<String, String>> {
-    Some(match name {
+/// The rules of this module by name, as their contract files
+/// (crates/route/contract) name it to the dispatcher.
+pub fn call(name: &str, v: &Value) -> Result<String, String> {
+    match name {
         "traffic_marks" => traffic::marks_rule(v),
+        "traffic_fresh" => traffic::fresh_rule(v),
         "own_ship_hex" => traffic::own_ship_hex_rule(v),
         "closest_approach" => traffic::closest_approach_rule(v),
         "airborne_now" => alerts::airborne_now_rule(v),
@@ -84,10 +98,18 @@ pub fn call(name: &str, v: &Value) -> Option<Result<String, String>> {
         "glide_reaches" => glide::reaches_rule(v),
         "underway" => glide::underway_rule(v),
         "plan_profile" => profile::profile_rule(v),
-        "descent_altitude" => profile::descent_altitude_rule(v),
         "dry_run" => dry_run::dry_run_rule(v),
         "read_track" => track::read_rule(v),
         "thin_track" => track::thin_rule(v),
-        _ => return None,
-    })
+        "route_position" => along::position_rule(v),
+        "in_flight" => instruments::in_flight_rule(v),
+        "vertical_speed" => instruments::vertical_speed_rule(v),
+        "glide_ring" => instruments::glide_ring_rule(v),
+        "diagram_labels" => diagram::labels_rule(v),
+        "diagram_graticule" => diagram::graticule_rule(v),
+        "diagram_point" => diagram::point_rule(v),
+        "diagram_fix_usable" => diagram::fix_usable_rule(v),
+        "terrain_view_bands" => terrain_view::bands_rule(v),
+        _ => Err(format!("the engine has no rule called {name:?}")),
+    }
 }

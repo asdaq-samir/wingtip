@@ -1,6 +1,49 @@
 {
   "components" : {
     "schemas" : {
+      "AccountExport" : {
+        "properties" : {
+          "account" : {
+            "$ref" : "#/components/schemas/PilotDto"
+          },
+          "airplanes" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ExportedAirplane"
+            },
+            "type" : "array"
+          },
+          "currency" : {
+            "$ref" : "#/components/schemas/CurrencyDto"
+          },
+          "exportedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "flights" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ExportedFlight"
+            },
+            "type" : "array"
+          },
+          "format" : {
+            "type" : "string"
+          },
+          "instructing" : {
+            "$ref" : "#/components/schemas/InstructorDto"
+          },
+          "logbook" : {
+            "items" : {
+              "$ref" : "#/components/schemas/LogbookEntryDto"
+            },
+            "type" : "array"
+          },
+          "training" : {
+            "$ref" : "#/components/schemas/TrainingDto"
+          }
+        },
+        "required" : [ "account", "airplanes", "currency", "exportedAt", "flights", "format", "instructing", "logbook", "training" ],
+        "type" : "object"
+      },
       "AircraftDto" : {
         "properties" : {
           "climbFuelBurnGph" : {
@@ -28,14 +71,33 @@
             "format" : "double",
             "type" : "number"
           },
+          "dueItems" : {
+            "description" : "What else falls due on it as its owner keeps it: ADs (14 CFR 91.417(a)(2)(v)) and other items",
+            "items" : {
+              "$ref" : "#/components/schemas/DueItemDto"
+            },
+            "type" : "array"
+          },
           "equipment" : {
             "description" : "Its flight plan's item 10a, its navigation, communication and approach equipment (AIM Appendix 4, TBL 4-2)",
             "example" : "SDFGRY",
             "type" : [ "string", "null" ]
           },
+          "figures" : {
+            "$ref" : "#/components/schemas/OwnFigures",
+            "description" : "Its own handbook figures as its pilot gave them; each null where not given"
+          },
           "fuelBurnGph" : {
             "format" : "double",
             "type" : "number"
+          },
+          "handbook" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/HandbookFigures"
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "Its handbook figures as its pilot confirmed them from a photographed page: the engine contract's HandbookFigures, in the app's units; null until then"
           },
           "id" : {
             "format" : "int64",
@@ -76,16 +138,18 @@
             "description" : "Its last VOR check for IFR (14 CFR 91.171): when, how, where, the bearing error, and the last day it is good for -- 30 days on, if the error was within the check's limit"
           }
         },
-        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "equipment", "fuelBurnGph", "id", "inspections", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
+        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "createdAt", "cruisePowerPct", "cruiseTasKt", "dueItems", "equipment", "figures", "fuelBurnGph", "handbook", "id", "inspections", "openSquawks", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal", "vorCheck" ],
         "type" : "object"
       },
       "AircraftRequest" : {
         "properties" : {
           "climbFuelBurnGph" : {
+            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : [ "number", "null" ]
           },
           "climbTasKt" : {
+            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : [ "number", "null" ]
           },
@@ -101,6 +165,7 @@
             "type" : [ "number", "null" ]
           },
           "cruiseTasKt" : {
+            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : "number"
           },
@@ -108,7 +173,16 @@
             "pattern" : "\\s*[A-Za-z0-9]{0,40}\\s*",
             "type" : [ "string", "null" ]
           },
+          "figures" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/OwnFigures"
+            }, {
+              "type" : "null"
+            } ],
+            "description" : "Its own handbook figures, all at once (null in it clears one); left out, they stay as they were"
+          },
           "fuelBurnGph" : {
+            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : "number"
           },
@@ -127,11 +201,12 @@
             "type" : "string"
           },
           "usableFuelGal" : {
+            "exclusiveMinimum" : 0,
             "format" : "double",
             "type" : [ "number", "null" ]
           }
         },
-        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "cruisePowerPct", "cruiseTasKt", "equipment", "fuelBurnGph", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal" ],
+        "required" : [ "climbFuelBurnGph", "climbTasKt", "colour", "cruisePowerPct", "cruiseTasKt", "equipment", "figures", "fuelBurnGph", "surveillance", "tailNumber", "typeDesignator", "usableFuelGal" ],
         "type" : "object"
       },
       "AppleToken" : {
@@ -240,6 +315,7 @@
       "AskInstructorRequest" : {
         "properties" : {
           "email" : {
+            "format" : "email",
             "maxLength" : 320,
             "minLength" : 0,
             "type" : "string"
@@ -350,9 +426,9 @@
             "type" : "string"
           },
           "claudeFeatures" : {
-            "description" : "Where no subscription is sold, who has the features Claude writes: OFF, DEVELOPERS, or EVERYONE signed in.",
+            "description" : "Who has the features Claude writes (the assistant, the written briefing, the readings in words, checkpoint descriptions, the mock oral, a photographed page read): OFF, the default, for nobody, whatever else is sold or open -- the apps then use only on-device models and the engine's own words; DEVELOPERS; or EVERYONE signed in.",
             "enum" : [ "OFF", "DEVELOPERS", "EVERYONE" ],
-            "example" : "EVERYONE",
+            "example" : "OFF",
             "type" : "string"
           },
           "providers" : {
@@ -372,85 +448,19 @@
         "required" : [ "access", "claudeFeatures", "providers", "subscriptions" ],
         "type" : "object"
       },
-      "ChecklistDto" : {
-        "description" : "An airplane's checklist, as its owner writes it from its flight manual",
+      "Corner" : {
+        "description" : "A corner of the CG envelope: arm aft of the datum and weight",
         "properties" : {
-          "sections" : {
-            "items" : {
-              "$ref" : "#/components/schemas/ChecklistSection"
-            },
-            "maxItems" : 20,
-            "minItems" : 0,
-            "type" : "array"
+          "arm_in" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "weight_lb" : {
+            "format" : "double",
+            "type" : "number"
           }
         },
-        "required" : [ "sections" ],
-        "type" : "object"
-      },
-      "ChecklistEntry" : {
-        "properties" : {
-          "challenge" : {
-            "maxLength" : 80,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "response" : {
-            "maxLength" : 80,
-            "minLength" : 0,
-            "type" : [ "string", "null" ]
-          }
-        },
-        "required" : [ "challenge", "response" ],
-        "type" : "object"
-      },
-      "ChecklistSection" : {
-        "properties" : {
-          "items" : {
-            "items" : {
-              "$ref" : "#/components/schemas/ChecklistEntry"
-            },
-            "maxItems" : 80,
-            "minItems" : 0,
-            "type" : "array"
-          },
-          "title" : {
-            "maxLength" : 40,
-            "minLength" : 0,
-            "type" : "string"
-          }
-        },
-        "required" : [ "items", "title" ],
-        "type" : "object"
-      },
-      "ClientError" : {
-        "properties" : {
-          "kind" : {
-            "maxLength" : 40,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "message" : {
-            "maxLength" : 500,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "page" : {
-            "maxLength" : 300,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "stack" : {
-            "maxLength" : 4000,
-            "minLength" : 0,
-            "type" : "string"
-          },
-          "userAgent" : {
-            "maxLength" : 300,
-            "minLength" : 0,
-            "type" : "string"
-          }
-        },
-        "required" : [ "kind", "message", "page", "stack", "userAgent" ],
+        "required" : [ "arm_in", "weight_lb" ],
         "type" : "object"
       },
       "CrossCountryReviewDto" : {
@@ -510,6 +520,33 @@
         "required" : [ "answeredAt", "askedAt", "checks", "declinedNote", "endorsement", "flight", "flightOn", "id", "instructorName", "makeModel", "note", "studentId", "studentName" ],
         "type" : "object"
       },
+      "Cruise" : {
+        "description" : "A cruise performance table's row: pressure altitude, power, RPM, true airspeed, fuel burn",
+        "properties" : {
+          "altitude_ft" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "burn_gph" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "power_pct" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "rpm" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "tas_kt" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "required" : [ "altitude_ft", "burn_gph", "power_pct", "rpm", "tas_kt" ],
+        "type" : "object"
+      },
       "CurrencyDatesRequest" : {
         "properties" : {
           "flightReviewOn" : {
@@ -559,6 +596,11 @@
             "description" : "Holding logged in them",
             "type" : "boolean"
           },
+          "instrumentCurrentFrom" : {
+            "description" : "The first day of an instrument currency not begun yet: approaches flown this month count from the first of next month (14 CFR 61.57(c)(1)), and until then the pilot is not current; null when current now",
+            "format" : "date",
+            "type" : [ "string", "null" ]
+          },
           "instrumentCurrentUntil" : {
             "description" : "The last day of instrument currency (14 CFR 61.57(c)(1), or 61.57(d)'s check); in the past where it has lapsed, null where none is logged",
             "format" : "date",
@@ -599,7 +641,7 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "approachesInWindow", "crossCountryHours", "dayPassengersUntil", "flightReviewOn", "flightReviewUntil", "flights", "holdingInWindow", "instrumentCurrentUntil", "ipcNeededAfter", "ipcOn", "landings", "medicalExpiresOn", "nightHours", "nightPassengersUntil", "totalHours", "trackingInWindow" ],
+        "required" : [ "approachesInWindow", "crossCountryHours", "dayPassengersUntil", "flightReviewOn", "flightReviewUntil", "flights", "holdingInWindow", "instrumentCurrentFrom", "instrumentCurrentUntil", "ipcNeededAfter", "ipcOn", "landings", "medicalExpiresOn", "nightHours", "nightPassengersUntil", "totalHours", "trackingInWindow" ],
         "type" : "object"
       },
       "DeclineRequest" : {
@@ -634,6 +676,230 @@
           }
         },
         "required" : [ "deviceCode", "expiresIn", "interval", "userCode", "verificationPath" ],
+        "type" : "object"
+      },
+      "DiagnosticDto" : {
+        "properties" : {
+          "detail" : {
+            "type" : "string"
+          },
+          "device" : {
+            "type" : "string"
+          },
+          "kind" : {
+            "type" : "string"
+          },
+          "occurredAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "os" : {
+            "type" : "string"
+          },
+          "platform" : {
+            "type" : "string"
+          },
+          "receivedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "signature" : {
+            "type" : "string"
+          },
+          "version" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "detail", "device", "kind", "occurredAt", "os", "platform", "receivedAt", "signature", "version" ],
+        "type" : "object"
+      },
+      "DiagnosticsReport" : {
+        "properties" : {
+          "device" : {
+            "pattern" : "phone|tablet|desktop",
+            "type" : "string"
+          },
+          "faults" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FaultReport"
+            },
+            "maxItems" : 20,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "metrics" : {
+            "additionalProperties" : {
+              "format" : "double",
+              "type" : "number"
+            },
+            "type" : "object"
+          },
+          "os" : {
+            "maxLength" : 40,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "page" : {
+            "pattern" : "[a-z][a-z0-9-]{0,39}",
+            "type" : "string"
+          },
+          "platform" : {
+            "pattern" : "web|ios|android",
+            "type" : "string"
+          },
+          "version" : {
+            "pattern" : "[A-Za-z0-9._ ()+-]{1,40}",
+            "type" : "string"
+          }
+        },
+        "required" : [ "device", "faults", "metrics", "os", "page", "platform", "version" ],
+        "type" : "object"
+      },
+      "Distance" : {
+        "description" : "A takeoff or landing distance table's row: ground roll and total over a 50 ft obstacle",
+        "properties" : {
+          "ground_roll_ft" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "over_obstacle_ft" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "pressure_altitude_ft" : {
+            "format" : "double",
+            "type" : "number"
+          },
+          "temp_c" : {
+            "format" : "double",
+            "type" : "number"
+          }
+        },
+        "required" : [ "ground_roll_ft", "over_obstacle_ft", "pressure_altitude_ft", "temp_c" ],
+        "type" : "object"
+      },
+      "DueDto" : {
+        "description" : "One thing that falls due: the pilot's currency, an airplane's inspection, or an item its owner keeps",
+        "properties" : {
+          "aircraftId" : {
+            "description" : "The airplane's, for an airplane's",
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
+          "daysLeft" : {
+            "description" : "Days from today to dueOn: 0 today, below 0 past",
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
+          "dueAtHours" : {
+            "description" : "The time in service it is due at",
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "dueOn" : {
+            "description" : "The last day it is good for, or the day it is due",
+            "format" : "date",
+            "type" : [ "string", "null" ]
+          },
+          "hoursLeft" : {
+            "description" : "Hours from the time in service now, where the owner gave it",
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "itemId" : {
+            "description" : "The due item's, for an owner's item",
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
+          "rule" : {
+            "description" : "The rule that asks for it, or an AD's number",
+            "example" : "14 CFR 91.409(a)",
+            "type" : [ "string", "null" ]
+          },
+          "tailNumber" : {
+            "type" : [ "string", "null" ]
+          },
+          "title" : {
+            "example" : "Annual inspection",
+            "type" : "string"
+          },
+          "what" : {
+            "description" : "What it is, as a key: flight-review, medical, day-passengers, night-passengers, instrument; annual, hundred-hour, elt, elt-battery, static, transponder, vor-check; item",
+            "example" : "annual",
+            "type" : "string"
+          }
+        },
+        "required" : [ "aircraftId", "daysLeft", "dueAtHours", "dueOn", "hoursLeft", "itemId", "rule", "tailNumber", "title", "what" ],
+        "type" : "object"
+      },
+      "DueItemDto" : {
+        "properties" : {
+          "dueAtHours" : {
+            "description" : "The time in service the next action is required at, if by hours",
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "dueOn" : {
+            "description" : "The day the next action is required, if by day",
+            "format" : "date",
+            "type" : [ "string", "null" ]
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "kind" : {
+            "enum" : [ "AD", "OTHER" ],
+            "type" : "string"
+          },
+          "method" : {
+            "description" : "The method of compliance (91.417(a)(2)(v))",
+            "type" : [ "string", "null" ]
+          },
+          "reference" : {
+            "description" : "An AD's number and revision date, or the item's own reference",
+            "example" : "AD 2011-10-09",
+            "type" : [ "string", "null" ]
+          },
+          "title" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "dueAtHours", "dueOn", "id", "kind", "method", "reference", "title" ],
+        "type" : "object"
+      },
+      "DueItemRequest" : {
+        "properties" : {
+          "dueAtHours" : {
+            "format" : "double",
+            "minimum" : 0,
+            "type" : [ "number", "null" ]
+          },
+          "dueOn" : {
+            "format" : "date",
+            "type" : [ "string", "null" ]
+          },
+          "kind" : {
+            "enum" : [ "AD", "OTHER" ],
+            "type" : "string"
+          },
+          "method" : {
+            "maxLength" : 200,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
+          "reference" : {
+            "maxLength" : 60,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
+          "title" : {
+            "maxLength" : 120,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "dueAtHours", "dueOn", "kind", "method", "reference", "title" ],
         "type" : "object"
       },
       "EndorsementDto" : {
@@ -693,13 +959,9 @@
           },
           "template" : {
             "type" : "string"
-          },
-          "validDays" : {
-            "format" : "int32",
-            "type" : [ "integer", "null" ]
           }
         },
-        "required" : [ "code", "fields", "label", "paragraph", "rule", "template", "validDays" ],
+        "required" : [ "code", "fields", "label", "paragraph", "rule", "template" ],
         "type" : "object"
       },
       "EndorsementRequest" : {
@@ -739,6 +1001,57 @@
           }
         },
         "required" : [ "have", "key", "label", "met", "need", "rule", "unit" ],
+        "type" : "object"
+      },
+      "ExportedAirplane" : {
+        "properties" : {
+          "airplane" : {
+            "$ref" : "#/components/schemas/AircraftDto"
+          },
+          "squawks" : {
+            "items" : {
+              "$ref" : "#/components/schemas/SquawkDto"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "airplane", "squawks" ],
+        "type" : "object"
+      },
+      "ExportedFlight" : {
+        "properties" : {
+          "flight" : {
+            "$ref" : "#/components/schemas/FlightDto"
+          },
+          "track" : {
+            "$ref" : "#/components/schemas/TrackDto"
+          }
+        },
+        "required" : [ "flight", "track" ],
+        "type" : "object"
+      },
+      "FaultReport" : {
+        "properties" : {
+          "at" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "detail" : {
+            "maxLength" : 64000,
+            "minLength" : 0,
+            "type" : "string"
+          },
+          "kind" : {
+            "pattern" : "crash|hang|exit|error|exception|cpu|disk",
+            "type" : "string"
+          },
+          "signature" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : "string"
+          }
+        },
+        "required" : [ "at", "detail", "kind", "signature" ],
         "type" : "object"
       },
       "FeatureUse" : {
@@ -877,6 +1190,12 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "name" : {
+            "type" : [ "string", "null" ]
+          },
+          "notes" : {
+            "type" : [ "string", "null" ]
+          },
           "picks" : {
             "type" : [ "string", "null" ]
           },
@@ -910,7 +1229,7 @@
             "type" : [ "number", "null" ]
           }
         },
-        "required" : [ "aircraftTailNumber", "altitudes", "checkpoints", "createdAt", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "id", "picks", "plannedFor", "risk", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
+        "required" : [ "aircraftTailNumber", "altitudes", "checkpoints", "createdAt", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "id", "name", "notes", "picks", "plannedFor", "risk", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
         "type" : "object"
       },
       "FlightPlanFiled" : {
@@ -1012,6 +1331,25 @@
         "required" : [ "connected", "provider" ],
         "type" : "object"
       },
+      "FlightShareDto" : {
+        "properties" : {
+          "includeTail" : {
+            "type" : "boolean"
+          },
+          "sharedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "token" : {
+            "type" : "string"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "includeTail", "sharedAt", "token", "url" ],
+        "type" : "object"
+      },
       "FlightSummaryDto" : {
         "properties" : {
           "aircraftTailNumber" : {
@@ -1038,6 +1376,12 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "name" : {
+            "type" : [ "string", "null" ]
+          },
+          "notes" : {
+            "type" : [ "string", "null" ]
+          },
           "picks" : {
             "type" : [ "string", "null" ]
           },
@@ -1048,6 +1392,13 @@
           "risk" : {
             "anyOf" : [ {
               "$ref" : "#/components/schemas/RiskAssessmentDto"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "share" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/FlightShareDto"
             }, {
               "type" : "null"
             } ]
@@ -1071,7 +1422,7 @@
             "type" : [ "number", "null" ]
           }
         },
-        "required" : [ "aircraftTailNumber", "altitudes", "createdAt", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "id", "picks", "plannedFor", "risk", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
+        "required" : [ "aircraftTailNumber", "altitudes", "createdAt", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "id", "name", "notes", "picks", "plannedFor", "risk", "share", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
         "type" : "object"
       },
       "FlightWatchDto" : {
@@ -1119,6 +1470,98 @@
         "required" : [ "fullName" ],
         "type" : "object"
       },
+      "HandbookFigures" : {
+        "description" : "An airplane's handbook figures in the app's units (the engine contract's HandbookFigures)",
+        "properties" : {
+          "climb_burn_gph" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "climb_rate_fpm" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "climb_speed_kias" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "cruise" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Cruise"
+            },
+            "maxItems" : 60,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "empty_arm_in" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "empty_weight_lb" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "envelope" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Corner"
+            },
+            "maxItems" : 30,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "fuel_total_gal" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "glide_ratio" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "glide_speed_kias" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "landing" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Distance"
+            },
+            "maxItems" : 60,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "max_takeoff_weight_lb" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "takeoff" : {
+            "items" : {
+              "$ref" : "#/components/schemas/Distance"
+            },
+            "maxItems" : 60,
+            "minItems" : 0,
+            "type" : "array"
+          },
+          "usable_fuel_gal" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          }
+        },
+        "required" : [ "climb_burn_gph", "climb_rate_fpm", "climb_speed_kias", "cruise", "empty_arm_in", "empty_weight_lb", "envelope", "fuel_total_gal", "glide_ratio", "glide_speed_kias", "landing", "max_takeoff_weight_lb", "takeoff", "usable_fuel_gal" ],
+        "type" : "object"
+      },
+      "HandbookRequest" : {
+        "properties" : {
+          "figures" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/HandbookFigures"
+            }, {
+              "type" : "null"
+            } ]
+          }
+        },
+        "required" : [ "figures" ],
+        "type" : "object"
+      },
       "InspectionsDto" : {
         "description" : "An airplane's inspections and tests as recorded, each with the last day it is good for: the annual to the end of the 12th calendar month after (14 CFR 91.409(a)), the altimeter and static test and the transponder test to the end of the 24th (91.411(a), 91.413(a)), the ELT's inspection to the end of the 12th (91.207(d)); the 100-hour due at 100 hours of time in service after the last (91.409(b)). Null where not recorded",
         "properties" : {
@@ -1142,6 +1585,10 @@
           "eltInspectionGoodThrough" : {
             "format" : "date",
             "type" : [ "string", "null" ]
+          },
+          "forHire" : {
+            "description" : "Whether it carries people or is given for flight instruction for hire, when the 100-hour inspection applies (91.409(b))",
+            "type" : "boolean"
           },
           "hoursNow" : {
             "format" : "double",
@@ -1172,7 +1619,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "annualGoodThrough", "annualOn", "eltBatteryDueOn", "eltInspectedOn", "eltInspectionGoodThrough", "hoursNow", "hundredHourAtHours", "hundredHourDueAtHours", "staticCheckGoodThrough", "staticCheckOn", "transponderCheckGoodThrough", "transponderCheckOn" ],
+        "required" : [ "annualGoodThrough", "annualOn", "eltBatteryDueOn", "eltInspectedOn", "eltInspectionGoodThrough", "forHire", "hoursNow", "hundredHourAtHours", "hundredHourDueAtHours", "staticCheckGoodThrough", "staticCheckOn", "transponderCheckGoodThrough", "transponderCheckOn" ],
         "type" : "object"
       },
       "InspectionsRequest" : {
@@ -1189,12 +1636,17 @@
             "format" : "date",
             "type" : [ "string", "null" ]
           },
+          "forHire" : {
+            "type" : [ "boolean", "null" ]
+          },
           "hoursNow" : {
             "format" : "double",
+            "minimum" : 0,
             "type" : [ "number", "null" ]
           },
           "hundredHourAtHours" : {
             "format" : "double",
+            "minimum" : 0,
             "type" : [ "number", "null" ]
           },
           "staticCheckOn" : {
@@ -1206,7 +1658,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "annualOn", "eltBatteryDueOn", "eltInspectedOn", "hoursNow", "hundredHourAtHours", "staticCheckOn", "transponderCheckOn" ],
+        "required" : [ "annualOn", "eltBatteryDueOn", "eltInspectedOn", "forHire", "hoursNow", "hundredHourAtHours", "staticCheckOn", "transponderCheckOn" ],
         "type" : "object"
       },
       "InstructorDto" : {
@@ -1370,6 +1822,10 @@
       },
       "LogbookEntryDto" : {
         "properties" : {
+          "airHours" : {
+            "format" : "double",
+            "type" : "number"
+          },
           "aircraft" : {
             "type" : [ "string", "null" ]
           },
@@ -1396,9 +1852,16 @@
             "format" : "double",
             "type" : "number"
           },
+          "flightId" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
           "flownOn" : {
             "format" : "date",
             "type" : "string"
+          },
+          "fromTrack" : {
+            "type" : "boolean"
           },
           "holding" : {
             "type" : "boolean"
@@ -1437,6 +1900,10 @@
             "format" : "double",
             "type" : "number"
           },
+          "touchAndGoes" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
           "toweredLandings" : {
             "format" : "int32",
             "type" : "integer"
@@ -1445,11 +1912,16 @@
             "type" : "boolean"
           }
         },
-        "required" : [ "aircraft", "aircraftType", "approaches", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flownOn", "holding", "id", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "totalHours", "toweredLandings", "tracking" ],
+        "required" : [ "airHours", "aircraft", "aircraftType", "approaches", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flightId", "flownOn", "fromTrack", "holding", "id", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "totalHours", "touchAndGoes", "toweredLandings", "tracking" ],
         "type" : "object"
       },
       "LogbookEntryRequest" : {
         "properties" : {
+          "airHours" : {
+            "format" : "double",
+            "minimum" : 0,
+            "type" : "number"
+          },
           "aircraft" : {
             "maxLength" : 16,
             "minLength" : 0,
@@ -1462,45 +1934,61 @@
           },
           "approaches" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           },
           "crossCountryHours" : {
             "format" : "double",
+            "minimum" : 0,
             "type" : "number"
           },
           "dayLandings" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           },
           "distanceNm" : {
             "format" : "double",
+            "minimum" : 0,
             "type" : "number"
           },
           "dualHours" : {
             "format" : "double",
+            "minimum" : 0,
             "type" : "number"
+          },
+          "flightId" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
           },
           "flownOn" : {
             "format" : "date",
             "type" : "string"
+          },
+          "fromTrack" : {
+            "type" : "boolean"
           },
           "holding" : {
             "type" : "boolean"
           },
           "instrumentHours" : {
             "format" : "double",
+            "minimum" : 0,
             "type" : "number"
           },
           "longestLegNm" : {
             "format" : "double",
+            "minimum" : 0,
             "type" : "number"
           },
           "nightHours" : {
             "format" : "double",
+            "minimum" : 0,
             "type" : "number"
           },
           "nightLandings" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           },
           "remarks" : {
@@ -1515,22 +2003,30 @@
           },
           "soloHours" : {
             "format" : "double",
+            "minimum" : 0,
             "type" : "number"
           },
           "totalHours" : {
             "format" : "double",
             "maximum" : 24,
+            "minimum" : 0,
             "type" : "number"
+          },
+          "touchAndGoes" : {
+            "format" : "int32",
+            "minimum" : 0,
+            "type" : "integer"
           },
           "toweredLandings" : {
             "format" : "int32",
+            "minimum" : 0,
             "type" : "integer"
           },
           "tracking" : {
             "type" : "boolean"
           }
         },
-        "required" : [ "aircraft", "aircraftType", "approaches", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flownOn", "holding", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "totalHours", "toweredLandings", "tracking" ],
+        "required" : [ "airHours", "aircraft", "aircraftType", "approaches", "crossCountryHours", "dayLandings", "distanceNm", "dualHours", "flightId", "flownOn", "fromTrack", "holding", "instrumentHours", "longestLegNm", "nightHours", "nightLandings", "remarks", "route", "soloHours", "totalHours", "touchAndGoes", "toweredLandings", "tracking" ],
         "type" : "object"
       },
       "LogbookImportRequest" : {
@@ -1564,12 +2060,78 @@
       "MagicLinkRequest" : {
         "properties" : {
           "email" : {
+            "format" : "email",
             "maxLength" : 320,
             "minLength" : 0,
             "type" : "string"
           }
         },
         "required" : [ "email" ],
+        "type" : "object"
+      },
+      "OwnFigures" : {
+        "description" : "An airplane's own performance figures from its handbook; each null where not given",
+        "properties" : {
+          "climbRateFpm" : {
+            "description" : "Its best rate of climb at sea level, fpm",
+            "exclusiveMinimum" : 0,
+            "format" : "double",
+            "maximum" : 5000,
+            "type" : [ "number", "null" ]
+          },
+          "emptyMomentLbIn" : {
+            "description" : "Its basic empty moment, lb-in, from its weight and balance record",
+            "exclusiveMinimum" : 0,
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "emptyWeightLb" : {
+            "description" : "Its basic empty weight, lb, from its weight and balance record",
+            "exclusiveMinimum" : 0,
+            "format" : "double",
+            "maximum" : 20000,
+            "type" : [ "number", "null" ]
+          },
+          "glideRatio" : {
+            "description" : "Its still-air glide ratio, propeller windmilling, flaps up (its handbook's Section 3)",
+            "exclusiveMinimum" : 1,
+            "format" : "double",
+            "maximum" : 80,
+            "type" : [ "number", "null" ]
+          },
+          "serviceCeilingFt" : {
+            "description" : "Its service ceiling, ft (the altitude where its best climb is 100 fpm)",
+            "format" : "double",
+            "maximum" : 30000,
+            "minimum" : 1000,
+            "type" : [ "number", "null" ]
+          },
+          "taxiFuelGal" : {
+            "description" : "Its fuel for engine start, taxi and takeoff, gal",
+            "format" : "double",
+            "maximum" : 50,
+            "minimum" : 0,
+            "type" : [ "number", "null" ]
+          }
+        },
+        "required" : [ "climbRateFpm", "emptyMomentLbIn", "emptyWeightLb", "glideRatio", "serviceCeilingFt", "taxiFuelGal" ],
+        "type" : "object"
+      },
+      "PaperworkDto" : {
+        "properties" : {
+          "items" : {
+            "items" : {
+              "$ref" : "#/components/schemas/DueDto"
+            },
+            "type" : "array"
+          },
+          "today" : {
+            "description" : "The day the days left are counted from",
+            "format" : "date",
+            "type" : "string"
+          }
+        },
+        "required" : [ "items", "today" ],
         "type" : "object"
       },
       "PilotContactRequest" : {
@@ -1834,7 +2396,7 @@
           "stops" : {
             "items" : {
               "pattern" : "(?:[A-Za-z0-9]{2,5}(?:/[0-9]{3}/[0-9]{1,3}(?:\\.[0-9])?)?|[A-Za-z]{2,5}[0-9]{6})",
-              "type" : [ "string", "null" ]
+              "type" : "string"
             },
             "maxItems" : 8,
             "minItems" : 0,
@@ -1854,6 +2416,75 @@
           }
         },
         "required" : [ "aircraftId", "altitudes", "checkpoints", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "picks", "plannedFor", "risk", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
+        "type" : "object"
+      },
+      "ShareFlightRequest" : {
+        "properties" : {
+          "includeTail" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "includeTail" ],
+        "type" : "object"
+      },
+      "SharedFlightDto" : {
+        "properties" : {
+          "aircraftTailNumber" : {
+            "type" : [ "string", "null" ]
+          },
+          "aircraftType" : {
+            "type" : [ "string", "null" ]
+          },
+          "altitudes" : {
+            "type" : [ "string", "null" ]
+          },
+          "checkpoints" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FlightCheckpointDto"
+            },
+            "type" : "array"
+          },
+          "cruiseAltitudeFt" : {
+            "format" : "int32",
+            "type" : [ "integer", "null" ]
+          },
+          "departureIdent" : {
+            "type" : "string"
+          },
+          "destinationIdent" : {
+            "type" : "string"
+          },
+          "picks" : {
+            "type" : [ "string", "null" ]
+          },
+          "plannedFor" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "sharedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "stops" : {
+            "items" : {
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "totalDistanceNm" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "totalEteMin" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          },
+          "totalFuelGal" : {
+            "format" : "double",
+            "type" : [ "number", "null" ]
+          }
+        },
+        "required" : [ "aircraftTailNumber", "aircraftType", "altitudes", "checkpoints", "cruiseAltitudeFt", "departureIdent", "destinationIdent", "picks", "plannedFor", "sharedAt", "stops", "totalDistanceNm", "totalEteMin", "totalFuelGal" ],
         "type" : "object"
       },
       "SignRequest" : {
@@ -2031,9 +2662,7 @@
         "required" : [ "deferredFor", "fixNote", "fixedOn", "inoperative", "reportedOn", "text" ],
         "type" : "object"
       },
-      "StreamingResponseBody" : {
-        "type" : "object"
-      },
+      "StreamingResponseBody" : { },
       "StudentDto" : {
         "properties" : {
           "accepted" : {
@@ -2241,6 +2870,22 @@
         "required" : [ "endorsements", "experience", "fullName", "instructors", "kinds", "knowledgeTestCodes", "lessons", "reviews", "signed" ],
         "type" : "object"
       },
+      "UpdateFlightRequest" : {
+        "properties" : {
+          "name" : {
+            "maxLength" : 80,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          },
+          "notes" : {
+            "maxLength" : 2000,
+            "minLength" : 0,
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "name", "notes" ],
+        "type" : "object"
+      },
       "VorCheckDto" : {
         "description" : "A VOR check for IFR (14 CFR 91.171)",
         "properties" : {
@@ -2436,34 +3081,9 @@
         "tags" : [ "aircraft-controller" ]
       }
     },
-    "/api/aircraft/{id}/checklist" : {
-      "get" : {
-        "operationId" : "checklist",
-        "parameters" : [ {
-          "in" : "path",
-          "name" : "id",
-          "required" : true,
-          "schema" : {
-            "format" : "int64",
-            "type" : "integer"
-          }
-        } ],
-        "responses" : {
-          "200" : {
-            "content" : {
-              "*/*" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/ChecklistDto"
-                }
-              }
-            },
-            "description" : "OK"
-          }
-        },
-        "tags" : [ "aircraft-controller" ]
-      },
-      "put" : {
-        "operationId" : "saveChecklist",
+    "/api/aircraft/{id}/due-items" : {
+      "post" : {
+        "operationId" : "addDueItem",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -2477,7 +3097,7 @@
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/ChecklistDto"
+                "$ref" : "#/components/schemas/DueItemRequest"
               }
             }
           },
@@ -2488,7 +3108,152 @@
             "content" : {
               "*/*" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ChecklistDto"
+                  "$ref" : "#/components/schemas/DueItemDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "aircraft-controller" ]
+      }
+    },
+    "/api/aircraft/{id}/due-items/{itemId}" : {
+      "delete" : {
+        "operationId" : "deleteDueItem",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "itemId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "aircraft-controller" ]
+      },
+      "put" : {
+        "operationId" : "updateDueItem",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "itemId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DueItemRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/DueItemDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "aircraft-controller" ]
+      }
+    },
+    "/api/aircraft/{id}/figures" : {
+      "put" : {
+        "operationId" : "figures",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/OwnFigures"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AircraftDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "aircraft-controller" ]
+      }
+    },
+    "/api/aircraft/{id}/handbook" : {
+      "put" : {
+        "operationId" : "handbook",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/HandbookRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AircraftDto"
                 }
               }
             },
@@ -2967,7 +3732,13 @@
           "content" : {
             "application/x-www-form-urlencoded" : {
               "schema" : {
-                "type" : "string"
+                "properties" : {
+                  "token" : {
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "token" ],
+                "type" : "object"
               }
             }
           }
@@ -2988,15 +3759,46 @@
         "tags" : [ "magic-link-controller" ]
       }
     },
-    "/api/client-errors" : {
+    "/api/diagnostics" : {
+      "get" : {
+        "description" : "At most 200, newest first, from the last few days; the developer's.",
+        "operationId" : "recent",
+        "parameters" : [ {
+          "in" : "query",
+          "name" : "days",
+          "required" : false,
+          "schema" : {
+            "default" : 7,
+            "format" : "int32",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/DiagnosticDto"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "summary" : "The newest faults from pilots' devices",
+        "tags" : [ "Diagnostics" ]
+      },
       "post" : {
-        "description" : "Logged for the owner, without the page's query string; 30 an hour per caller, the rest dropped.",
+        "description" : "Kept without the pilot's session, address or anything they typed; 30 an hour per caller, the rest dropped.",
         "operationId" : "report",
         "requestBody" : {
           "content" : {
             "application/json" : {
               "schema" : {
-                "$ref" : "#/components/schemas/ClientError"
+                "$ref" : "#/components/schemas/DiagnosticsReport"
               }
             }
           },
@@ -3004,14 +3806,14 @@
         },
         "responses" : {
           "204" : {
-            "description" : "Logged, or dropped past the hour's allowance"
+            "description" : "Kept, or dropped past the hour's allowance"
           },
           "400" : {
-            "description" : "Not an error report"
+            "description" : "Not a diagnostics report"
           }
         },
-        "summary" : "Report an error on a pilot's device",
-        "tags" : [ "Client errors" ]
+        "summary" : "Report faults and speed from a pilot's device",
+        "tags" : [ "Diagnostics" ]
       }
     },
     "/api/flight-service" : {
@@ -3137,7 +3939,7 @@
     },
     "/api/flights/{id}" : {
       "delete" : {
-        "operationId" : "delete_4",
+        "operationId" : "delete_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3155,7 +3957,7 @@
         "tags" : [ "flight-controller" ]
       },
       "get" : {
-        "operationId" : "get_5",
+        "operationId" : "get_3",
         "parameters" : [ {
           "in" : "path",
           "name" : "id",
@@ -3178,6 +3980,95 @@
           }
         },
         "tags" : [ "flight-controller" ]
+      },
+      "patch" : {
+        "operationId" : "update_2",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/UpdateFlightRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FlightSummaryDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "flight-controller" ]
+      }
+    },
+    "/api/flights/{id}/share" : {
+      "delete" : {
+        "operationId" : "stop_1",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "flight-share-controller" ]
+      },
+      "post" : {
+        "operationId" : "share",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ShareFlightRequest"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/FlightShareDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "flight-share-controller" ]
       }
     },
     "/api/flights/{id}/track" : {
@@ -3903,7 +4794,7 @@
     "/api/me" : {
       "delete" : {
         "description" : "The pilot and everything that was theirs -- aircraft, flights with their nav logs and tracks, logbook, endorsements, their own checkpoint notes, the sign-in links sent to them -- and every session they hold. Nothing is deleted when the planner cannot take the notes (502).",
-        "operationId" : "delete_3",
+        "operationId" : "delete_4",
         "responses" : {
           "204" : {
             "content" : {
@@ -4018,6 +4909,54 @@
         "tags" : [ "pilot-controller" ]
       }
     },
+    "/api/me/export" : {
+      "get" : {
+        "description" : "The account, airplanes and squawks, flights with nav logs and tracks, logbook, currency, training and instructing, each as its own endpoint answers it; sent as a download.",
+        "operationId" : "export",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountExport"
+                }
+              }
+            },
+            "description" : "The file"
+          },
+          "401" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AccountExport"
+                }
+              }
+            },
+            "description" : "No session"
+          }
+        },
+        "summary" : "Everything kept for the signed-in pilot, as one JSON file",
+        "tags" : [ "Pilot" ]
+      }
+    },
+    "/api/paperwork" : {
+      "get" : {
+        "operationId" : "due",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PaperworkDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "paperwork-controller" ]
+      }
+    },
     "/api/planner/**" : {
       "delete" : {
         "description" : "picks",
@@ -4081,6 +5020,32 @@
         },
         "summary" : "Any planner POST",
         "tags" : [ "Planner" ]
+      }
+    },
+    "/api/shared-flights/{token}" : {
+      "get" : {
+        "operationId" : "shared",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "token",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "*/*" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/SharedFlightDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "flight-share-controller" ]
       }
     },
     "/api/speed" : {
@@ -4181,7 +5146,7 @@
     },
     "/api/subscription" : {
       "get" : {
-        "operationId" : "get_4",
+        "operationId" : "get_5",
         "responses" : {
           "200" : {
             "content" : {
@@ -4220,7 +5185,7 @@
     },
     "/api/training" : {
       "get" : {
-        "operationId" : "get_3",
+        "operationId" : "get_4",
         "responses" : {
           "200" : {
             "content" : {
@@ -4505,11 +5470,11 @@
     "url" : "/"
   } ],
   "tags" : [ {
+    "description" : "Faults and speed from pilots' devices, kept without anything of the pilot's",
+    "name" : "Diagnostics"
+  }, {
     "description" : "What signing in can do in this deployment",
     "name" : "Auth"
-  }, {
-    "description" : "Errors on pilots' devices, logged for the owner",
-    "name" : "Client errors"
   }, {
     "description" : "The web app's speed over time, from pilots' browsers and the nightly lab run",
     "name" : "Speed"
@@ -4519,5 +5484,8 @@
   }, {
     "description" : "The paid features: the free month, and what is paid for",
     "name" : "Subscription"
+  }, {
+    "description" : "The signed-in pilot",
+    "name" : "Pilot"
   } ]
 }

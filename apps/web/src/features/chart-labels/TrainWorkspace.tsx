@@ -1,33 +1,28 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router";
 import { identOf, routeOf } from "../../lib/identSchema";
 import { statusQuery } from "../../lib/queryClient";
 import { useProgressToast } from "../../lib/useProgressToast";
-import type { WorkspaceProps } from "../shell/workspace";
-import { ChartColumn, GraduationCap } from "lucide-react";
-import TabBar, { type BarTab } from "../../components/TabBar";
-import { fromLucide } from "../../components/fromLucide";
-import { useDevTab, type DevTab } from "./devTab";
+import type { WorkspaceProps } from "../shell";
+import { loadPilotPanel } from "../pilot";
+import DevBar from "./DevBar";
+import { useDevTab } from "./devTab";
+import type { PilotPanelPart } from "./dev/DevPanel";
 import ChartMap from "./components/ChartMap";
 import WaypointPanel, { WaypointActions } from "./components/WaypointPanel";
 import RatingCard from "./components/RatingCard";
 import FigureStrip, { type StripFigure } from "../../components/FigureStrip";
 import PointPopup from "./components/PointPopup";
 import { isEndpoint, type Point, type Rating } from "../../lib/api/types";
-import {
-  filterCounts, forwardIsLeft, hasRating, orderedPoints,
-} from "./logic";
+import { filterCounts, forwardIsLeft, hasRating, orderedPoints } from "./logic";
 import { useTraining } from "./hooks/useTraining";
 
 const FOCUS_ZOOM = 12;
 
-/** The developer's places (TabBar), at their ask: the ratings, and how
- *  good the models are; Settings, the console, the bar's own last. */
-const DEV_TABS: BarTab<DevTab>[] = [
-  { value: "train", label: "Train", icon: fromLucide(GraduationCap) },
-  { value: "perf", label: "Perf", icon: fromLucide(ChartColumn) },
-];
+/** The dev console's chunk, with the pilot console it is drawn in: both
+ *  asked for together, so the console draws at once when opened. */
+type DevChunk = typeof import("./dev/DevPanel") & { PilotPanel: PilotPanelPart };
 
 /**
  * the developer's training workspace on the page (MapPage): the
@@ -41,24 +36,18 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   // The address is the route the labels are for -- what the queries
   // read, and what a load writes; the header's form is a draft until
   // then. The default corridor when it names none.
-  const planned = {
-    dep: identOf(searchParams.get("dep")) || "C81",
-    dest: identOf(searchParams.get("dest")) || "KDLH",
-  };
+  const planned = { dep: identOf(searchParams.get("dep")) || "C81", dest: identOf(searchParams.get("dest")) || "KDLH" };
   const store = useTraining(planned.dep, planned.dest);
   // Named, not read as `store.x` inside the hooks below: each hook then
   // lists exactly what it reads, and the actions are stable (useTraining
   // reads its own latest state through a ref) so listing them costs
   // nothing.
-  const {
-    selected: point, course,
-    select, rate, setCategory, removeSelected, addPick,
-  } = store;
+  const { selected: point, course, select, rate, setCategory, removeSelected, addPick } = store;
   // Where the map is brought to, a new object each time it is asked: the
   // map flies there (GlMapShell's focus), in to FOCUS_ZOOM at least.
   const [flyTo, setFlyTo] = useState<{ lat: number; lon: number } | null>(null);
-  const devTab = useDevTab(s => s.tab);
-  const pickDevTab = useDevTab(s => s.pick);
+  const devTab = useDevTab((s) => s.tab);
+  const pickDevTab = useDevTab((s) => s.pick);
 
   // The console, its own chunk -- recharts and the model tables, split
   // out so a pilot never downloads them -- fetched the moment this
@@ -75,9 +64,11 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   // the console sat empty for that long with everything it needed
   // already here.
   const queryClient = useQueryClient();
-  const [devPanel, setDevPanel] = useState<typeof import("../dev/DevPanel") | null>(null);
+  const [devPanel, setDevPanel] = useState<DevChunk | null>(null);
   useEffect(() => {
-    void import("../dev/DevPanel").then(setDevPanel);
+    void Promise.all([import("./dev/DevPanel"), loadPilotPanel()]).then(([dev, pilot]) =>
+      setDevPanel({ ...dev, PilotPanel: pilot.PilotPanel }),
+    );
     void queryClient.prefetchQuery(statusQuery);
   }, [queryClient]);
 
@@ -85,26 +76,14 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   // kept in step by hand, which is what makes the old class of bug --
   // two counts over different sets -- unrepresentable.
   const walk = useMemo(
-    () => orderedPoints(
-      { endpoints: store.endpoints, detections: store.detections, added: store.added },
-      store.filters,
-    ),
+    () => orderedPoints({ endpoints: store.endpoints, detections: store.detections, added: store.added }, store.filters),
     [store.endpoints, store.detections, store.added, store.filters],
   );
-  const waypoints = useMemo(() => walk.filter(e => !isEndpoint(e.point)), [walk]);
-  const counts = useMemo(
-    () => filterCounts([...store.detections, ...store.added]),
-    [store.detections, store.added],
-  );
-  const picks = useMemo(
-    () => [...store.detections, ...store.added].filter(hasRating),
-    [store.detections, store.added],
-  );
+  const waypoints = useMemo(() => walk.filter((e) => !isEndpoint(e.point)), [walk]);
+  const counts = useMemo(() => filterCounts([...store.detections, ...store.added]), [store.detections, store.added]);
+  const picks = useMemo(() => [...store.detections, ...store.added].filter(hasRating), [store.detections, store.added]);
 
-  const positionOf = useCallback(
-    (p: Point) => waypoints.findIndex(e => e.point === p),
-    [waypoints],
-  );
+  const positionOf = useCallback((p: Point) => waypoints.findIndex((e) => e.point === p), [waypoints]);
 
   /** Where the selected point sits in the walk, for the popup's own line. */
   const place = useMemo(() => {
@@ -113,10 +92,13 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
     return at >= 0 ? `${at + 1} of ${waypoints.length}` : "";
   }, [point, positionOf, waypoints.length]);
 
-  const focus = useCallback((entry: (typeof walk)[number]) => {
-    setFlyTo({ lat: entry.point.lat, lon: entry.point.lon });
-    select(entry.point);
-  }, [select]);
+  const focus = useCallback(
+    (entry: (typeof walk)[number]) => {
+      setFlyTo({ lat: entry.point.lat, lon: entry.point.lon });
+      select(entry.point);
+    },
+    [select],
+  );
 
   /** Walks the waypoint list and brings the map to whatever it lands
    *  on, the same as clicking that row would. The list is the walk
@@ -124,25 +106,29 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
    *  popup's arrows, the drawer's rows and the keys all move by the
    *  same step. There were two copies of this, identical, with a
    *  comment on one claiming it walked a different order. */
-  const step = useCallback((delta: number) => {
-    if (!walk.length) return;
-    const at = point ? walk.findIndex(e => e.point === point) : -1;
-    const next = at < 0 ? 0 : at + delta;
-    const entry = walk[Math.max(0, Math.min(walk.length - 1, next))];
-    if (entry) focus(entry);
-  }, [walk, point, focus]);
+  const step = useCallback(
+    (delta: number) => {
+      if (!walk.length) return;
+      const at = point ? walk.findIndex((e) => e.point === point) : -1;
+      const next = at < 0 ? 0 : at + delta;
+      const entry = walk[Math.max(0, Math.min(walk.length - 1, next))];
+      if (entry) focus(entry);
+    },
+    [walk, point, focus],
+  );
 
-  const walkIndex = point ? walk.findIndex(e => e.point === point) : -1;
+  const walkIndex = point ? walk.findIndex((e) => e.point === point) : -1;
 
   // The point to rate, in the pill and under the route all the way up
   // (RatingCard), at the owner's pick of the dev page's redesign: the one
   // picked, or a way to the first not yet rated. A rating moves on to the
   // next, as the digit keys do.
-  const firstUnrated = useMemo(() => waypoints.find(e => !hasRating(e.point)), [waypoints]);
+  const firstUnrated = useMemo(() => waypoints.find((e) => !hasRating(e.point)), [waypoints]);
   const ratingCard = (
     <RatingCard
-      point={point} number={point ? positionOf(point) + 1 || null : null}
-      onRate={r => void rate(r).then(() => step(1))}
+      point={point}
+      number={point ? positionOf(point) + 1 || null : null}
+      onRate={(r) => void rate(r).then(() => step(1))}
       onStart={firstUnrated ? () => focus(firstUnrated) : undefined}
     />
   );
@@ -154,17 +140,25 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   const error = current?.cv_mae == null ? "—" : current.cv_mae.toFixed(2);
   const total = store.detections.length + store.added.length;
   const score = (point as { predicted_score?: number | null } | null)?.predicted_score;
-  const figures: StripFigure[] = devTab === "perf" ? [
-    { name: "Ratings", value: current?.n_labeled == null ? "—" : String(current.n_labeled) },
-    { name: "MAE", value: error },
-    { name: "Routes", value: status ? String(status.corridors.length) : "—" },
-    { name: "Trained", value: current?.trained_at ? new Date(current.trained_at).toLocaleDateString(undefined, { month: "numeric", day: "numeric" }) : "—" },
-  ] : [
-    { name: "Rated", value: String(picks.length), testId: "rated-count" },
-    { name: "Left", value: String(Math.max(0, total - picks.length)) },
-    { name: "Model", value: score == null ? "—" : score.toFixed(1) },
-    { name: "MAE", value: error },
-  ];
+  const figures: StripFigure[] =
+    devTab === "perf"
+      ? [
+          { name: "Ratings", value: current?.n_labeled == null ? "—" : String(current.n_labeled) },
+          { name: "MAE", value: error },
+          { name: "Routes", value: status ? String(status.corridors.length) : "—" },
+          {
+            name: "Trained",
+            value: current?.trained_at
+              ? new Date(current.trained_at).toLocaleDateString(undefined, { month: "numeric", day: "numeric" })
+              : "—",
+          },
+        ]
+      : [
+          { name: "Rated", value: String(picks.length), testId: "rated-count" },
+          { name: "Left", value: String(Math.max(0, total - picks.length)) },
+          { name: "Model", value: score == null ? "—" : score.toFixed(1) },
+          { name: "MAE", value: error },
+        ];
 
   // Memoized deliberately: without it, this is a new element on every
   // render -- including one for each block of a streaming detection --
@@ -173,7 +167,7 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   const selectedContent = useMemo(() => {
     // Not with the panel all the way up over the map: the rating card is
     // the panel's then (RatingCard), the list over it what is walked. On a
-    // phone the point's card in the panel (MapPopup) covered the list and
+    // phone the point's card in the panel (SheetCard) covered the list and
     // its rating card, a row picked taking the list away (dev-page:67).
     if (!point || panel === "full") return null;
     // Same idea as the arrow keys: which screen side is "forward" (step
@@ -190,8 +184,8 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
         place={place}
         bearingDeg={bearing}
         departureIdent={course?.departure.ident ?? ""}
-        onRate={r => void rate(r)}
-        onCategoryChange={c => void setCategory(c)}
+        onRate={(r) => void rate(r)}
+        onCategoryChange={(c) => void setCategory(c)}
         onRemove={() => void removeSelected()}
         onLeft={() => step(leftIsForward ? 1 : -1)}
         onRight={() => step(leftIsForward ? -1 : 1)}
@@ -199,11 +193,7 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
         canRight={leftIsForward ? canPrev : canNext}
       />
     );
-  }, [
-    point, place, course?.bearing_deg, course?.departure.ident,
-    rate, setCategory, removeSelected, step, walkIndex, walk.length, panel,
-  ]);
-
+  }, [point, place, course?.bearing_deg, course?.departure.ident, rate, setCategory, removeSelected, step, walkIndex, walk.length, panel]);
 
   // Two keys, and only two: Up and Down walk the points in flight
   // order, and a digit rates the one you are on and moves to the next.
@@ -212,7 +202,7 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   // stepping the way the course runs rather than the way the list does
   // -- has a button of its own, on the map or in this drawer, and each
   // was a letter or a key that had to be kept out of the way of typing.
-  // Skipped while a field has focus, and for a press a Radix layer
+  // Skipped while a field has focus, and for a press a stock layer
   // already used (its own list walks with the same arrows), which it
   // marks by preventing the default or keeping focus inside itself.
   useEffect(() => {
@@ -249,15 +239,23 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   // keys does (`focus` above) and the same as a tap on a marker does on
   // the planner's map. It used to select without moving, which made the
   // same gesture mean two different things on two maps.
-  /** Leaflet closing the card -- a tap on the chart -- has to clear the
-   *  selection too, or React would open it straight back up. */
+  /** The card put away -- its close, Escape, a tap on the chart -- has
+   *  to clear the selection too, or React would open it straight back up. */
   const deselect = useCallback(() => select(null), [select]);
 
-  const onSelect = useCallback((picked: Point) => {
-    select(picked);
-    setFlyTo({ lat: picked.lat, lon: picked.lon });
-  }, [select]);
-  const onAddAt = useCallback((lat: number, lon: number) => { void addPick(lat, lon); }, [addPick]);
+  const onSelect = useCallback(
+    (picked: Point) => {
+      select(picked);
+      setFlyTo({ lat: picked.lat, lon: picked.lon });
+    },
+    [select],
+  );
+  const onAddAt = useCallback(
+    (lat: number, lon: number) => {
+      void addPick(lat, lon);
+    },
+    [addPick],
+  );
 
   // The chart read's progress; its failures are the query client's to
   // report (queryClient.ts).
@@ -277,7 +275,8 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
           onDeselect={deselect}
           onSelect={onSelect}
           onAddAt={onAddAt}
-          flyTo={flyTo} flyZoom={FOCUS_ZOOM}
+          flyTo={flyTo}
+          flyZoom={FOCUS_ZOOM}
         />
       </div>
     ),
@@ -285,35 +284,59 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
     // has got and the drawer's actions in a header (the filters in a
     // popover from it), and the walk as one list under it. Rating from the
     // selected row moves on to the next one, the way the digit keys do.
-    sidebar: devTab === "perf" ? (
-      devPanel ? <devPanel.PerformancePanel /> : <div className="h-40" />
-    ) : (
-      <WaypointPanel
-        entries={walk} selected={point} onFocus={focus}
-        departureIdent={store.course?.departure.ident ?? ""}
-        destinationIdent={store.course?.destination.ident ?? ""}
-      />
-    ),
+    sidebar:
+      devTab === "perf" ? (
+        devPanel ? (
+          <devPanel.PerformancePanel />
+        ) : (
+          <div className="h-40" />
+        )
+      ) : (
+        <WaypointPanel
+          entries={walk}
+          selected={point}
+          onFocus={focus}
+          departureIdent={store.course?.departure.ident ?? ""}
+          destinationIdent={store.course?.destination.ident ?? ""}
+        />
+      ),
     // Perf's head the model serving and Retrain (PerfHead), the route's
     // form being Train's.
-    head: devTab === "perf" ? (devPanel ? <devPanel.PerfHead /> : <div className="h-24 w-full" />) : undefined,
-    foot: <div className="w-full"><FigureStrip figures={figures} testId={`${devTab}-figures`} /></div>,
+    head: devTab === "perf" ? devPanel ? <devPanel.PerfHead /> : <div className="h-24 w-full" /> : undefined,
+    foot: (
+      <div className="w-full">
+        <FigureStrip figures={figures} testId={`${devTab}-figures`} />
+      </div>
+    ),
     // Filter, Undo and More, beside the route.
-    actions: devTab === "perf" ? undefined : (
-      <WaypointActions
-        rated={picks.length}
-        filters={store.filters} counts={counts} onFilterChange={store.setFilter}
-        canUndo={store.canUndo} onUndo={() => void store.undo()} onResetAll={() => void store.resetAll()}
+    actions:
+      devTab === "perf" ? undefined : (
+        <WaypointActions
+          rated={picks.length}
+          filters={store.filters}
+          counts={counts}
+          onFilterChange={store.setFilter}
+          canUndo={store.canUndo}
+          onUndo={() => void store.undo()}
+          onResetAll={() => void store.resetAll()}
+        />
+      ),
+    // The developer's places, Train and Perf, and the account button,
+    // the panel's first row and at rest the pill itself, as the planner's
+    // search (MapPanel): the place up tapped opens it.
+    bar: (
+      <DevBar
+        tab={devTab}
+        onPick={pickDevTab}
+        onUp={() => {
+          if (panel === "peek") setPanel("half");
+        }}
       />
     ),
-    // The developer's tabs, at their ask -- Train, Perf and Settings --
-    // the panel's first row and at rest the pill itself, as the planner's
-    // (MapPanel): the tab up tapped opens it.
-    bar: <TabBar tabs={DEV_TABS} tab={devTab} onPick={pickDevTab} onUp={() => { if (panel === "peek") setPanel("half"); }} />,
     // The point to rate, under the route all the way up, where the pill
     // has it.
     controls: devTab === "perf" ? undefined : ratingCard,
-    console: devPanel ? <devPanel.DevPanel /> : <div className="h-40" />,
+    console: devPanel ? <devPanel.DevPanel pilotPanel={devPanel.PilotPanel} /> : <div className="h-40" />,
     submit,
     loading: store.loading,
   });

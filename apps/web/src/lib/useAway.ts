@@ -1,6 +1,6 @@
 import { compassPoint } from "./compass";
 import { bearingDeg, distanceNm, type LatLon } from "./geo";
-import { useOwnFix } from "./map/ownShip";
+import { useOwnFix } from "./map/position/ownShip";
 import type { RecentAirport } from "./preferences";
 
 /** How far, as a figure: to a tenth under 10 nm, where a few tenths are
@@ -33,7 +33,6 @@ export function useAwayWords(lat: number, lon: number): string | undefined {
  *  own: the town in one, nothing or Home's ident in another. */
 export function useAway(): (airport: RecentAirport) => string {
   const from = useOwnFix();
-  return a => (from && a.lat !== undefined && a.lon !== undefined
-    ? nmAway(distanceNm(from, { lat: a.lat, lon: a.lon }))
-    : a.municipality || a.name);
+  return (a) =>
+    from && a.lat !== undefined && a.lon !== undefined ? nmAway(distanceNm(from, { lat: a.lat, lon: a.lon })) : a.municipality || a.name;
 }

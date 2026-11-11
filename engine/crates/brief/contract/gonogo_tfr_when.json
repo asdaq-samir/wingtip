@@ -1,0 +1,46 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "A TFR's window against the pass time, widened by a margin.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoTfrWhenInput",
+      "type": "object",
+      "properties": {
+        "at_us": {
+          "type": "number",
+          "description": "Microseconds since 1970."
+        },
+        "effective_us": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "expires_us": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "at_us"
+      ]
+    },
+    "answer": {
+      "title": "GonogoTfrWhenAnswer",
+      "type": "string",
+      "enum": [
+        "before",
+        "after",
+        "in-force"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

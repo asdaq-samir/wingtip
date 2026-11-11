@@ -26,9 +26,10 @@
  */
 import wasmUrl from "./wingtip-engine.wasm?url";
 import type { EngineContract } from "./contract";
+import { WEB_RULES, type WebRule } from "./webRules";
 
 /** A rule's name, as call.rs dispatches it. */
-export type EngineName = keyof EngineContract;
+type EngineName = keyof EngineContract;
 /** What the rule `N` takes. */
 export type EngineInput<N extends EngineName> = EngineContract[N]["input"];
 /** What the rule `N` answers. */
@@ -47,7 +48,9 @@ let loading: Promise<void> | null = null;
 let ready!: () => void;
 
 /** Settles once the engine is loaded (by `loadEngine`). */
-export const engineReady: Promise<void> = new Promise(resolve => { ready = resolve; });
+export const engineReady: Promise<void> = new Promise((resolve) => {
+  ready = resolve;
+});
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -78,6 +81,10 @@ export function loadEngine(bytes?: BufferSource): Promise<void> {
   loading ??= (async () => {
     const instance = bytes ? (await WebAssembly.instantiate(bytes, {})).instance : await fromNetwork(wasmUrl);
     engine = instance.exports as unknown as Exports;
+    // Marked settled as React's `use` reads a promise (its status and
+    // value), so a part that waits on it (useEngineWhen) reads it at once
+    // from now on, rather than suspending a moment to find out.
+    Object.assign(engineReady, { status: "fulfilled", value: undefined });
     ready();
   })();
   return loading;
@@ -88,17 +95,32 @@ export function engineLoaded(): boolean {
   return engine != null;
 }
 
+/** The rules the module is built with (webRules.ts, scripts/build/web_rules.py). */
+const built: ReadonlySet<string> = new Set(WEB_RULES);
+
 /**
  * The engine's rule `name` worked on `input` (sent as JSON), its answer
  * parsed. Synchronous: it throws where the engine is not loaded yet
- * (a part not behind lib/engine/engineGate), and where the engine
- * refuses the input, with its words.
+ * (a part not behind lib/engine/engineGate), where the rule is not built
+ * into the web's module, and where the engine refuses the input, with its
+ * words. Only the rules the web asks are built in (`WebRule`, from the
+ * web's own callEngine calls): a new one is a type error here until
+ * scripts/build/web_rules.py is run and the module rebuilt.
  */
-export function callEngine<N extends EngineName>(name: N, input: EngineInput<N>): EngineAnswer<N> {
+export function callEngine<N extends WebRule>(name: N, input: EngineInput<N>): EngineAnswer<N> {
+  // A rule the module was built without, asked past the types: said by
+  // name and with the fix, not as a vague failure.
+  if (!built.has(name))
+    throw new Error(
+      `The engine rule ${name} is not built into the web's WebAssembly: run scripts/build/web_rules.py and scripts/build/build-engine-wasm.sh.`,
+    );
   const e = engine;
   // Asked before it is there: a part drawn outside its engine gate
   // (lib/engine/engineGate). Said plainly, so the stack names the caller.
-  if (!e) throw new Error(`The engine is not loaded yet, so ${name} cannot be worked out: draw the part that asks it inside an EngineGate (lib/engine/engineGate).`);
+  if (!e)
+    throw new Error(
+      `The engine is not loaded yet, so ${name} cannot be worked out: draw the part that asks it inside an EngineGate (lib/engine/engineGate).`,
+    );
   const nameBytes = encoder.encode(name);
   const inputBytes = encoder.encode(JSON.stringify(input));
   const namePtr = e.wt_alloc(nameBytes.length);
@@ -111,7 +133,8 @@ export function callEngine<N extends EngineName>(name: N, input: EngineInput<N>)
     new Uint8Array(e.memory.buffer, inputPtr, inputBytes.length).set(inputBytes);
     out = e.wt_call(namePtr, nameBytes.length, inputPtr, inputBytes.length);
     const head = new DataView(e.memory.buffer, out, 8);
-    const status = head.getUint32(0, true), len = head.getUint32(4, true);
+    const status = head.getUint32(0, true),
+      len = head.getUint32(4, true);
     const text = decoder.decode(new Uint8Array(e.memory.buffer, out + 8, len));
     if (status !== 0) throw new Error(`The engine's ${name}: ${text}`);
     return JSON.parse(text) as EngineAnswer<N>;

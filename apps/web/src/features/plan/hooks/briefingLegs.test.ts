@@ -4,7 +4,11 @@ import { briefingLegs } from "./briefingLegs";
 
 const airport = (ident: string, lat: number, lon: number): Airport =>
   ({ ident, name: `${ident} field`, lat, lon, elevation_ft: 900 }) as Airport;
-const course = { departure: airport("C81", 42.1, -88.1), destination: airport("KDLH", 46.8, -92.2), stops: [airport("KMSN", 43.1, -89.3)] } as Course;
+const course = {
+  departure: airport("C81", 42.1, -88.1),
+  destination: airport("KDLH", 46.8, -92.2),
+  stops: [airport("KMSN", 43.1, -89.3)],
+} as Course;
 const cp = (lat: number, lon: number, hop: number): Candidate => ({ lat, lon, name: "", category: "lake_or_pond", hop }) as Candidate;
 const leg = (ete: number | null, ground: number | null = null): Leg => ({ distance_nm: 30, ete_min: ete, ground_min: ground }) as Leg;
 

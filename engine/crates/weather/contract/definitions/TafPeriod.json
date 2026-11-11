@@ -1,0 +1,71 @@
+{
+  "title": "TafPeriod",
+  "description": "One period of a TAF as the weather store keeps it (awc_tafs_read): Unix seconds, the change group (\"\", FM, BECMG, TEMPO, PROB), the wind from true north, and the ceiling (14 CFR 1.1) and visibility (statute miles).",
+  "type": "object",
+  "properties": {
+    "timeFrom": {
+      "type": "number"
+    },
+    "timeTo": {
+      "type": "number"
+    },
+    "change": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "probability": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "wind_dir_true_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "wind_speed_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "wind_gust_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "visibility_sm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ceiling_unknown": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "wx": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "timeFrom",
+    "timeTo"
+  ]
+}

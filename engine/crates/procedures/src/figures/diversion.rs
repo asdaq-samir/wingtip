@@ -21,12 +21,8 @@ use crate::json;
 
 /// The figures a student estimates, and how far off is still reasonable:
 /// key, label, unit and allowance.
-pub const ALLOWANCES: [(&str, &str, &str, f64); 4] = [
-    ("mh", "Magnetic heading", "°", 10.0),
-    ("gs", "Ground speed", "kt", 10.0),
-    ("ete", "Time", "min", 3.0),
-    ("fuel", "Fuel", "gal", 1.0),
-];
+pub const ALLOWANCES: [(&str, &str, &str, f64); 4] =
+    [("mh", "Magnetic heading", "°", 10.0), ("gs", "Ground speed", "kt", 10.0), ("ete", "Time", "min", 3.0), ("fuel", "Fuel", "gal", 1.0)];
 
 /// The leg's air the diversion is flown in.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -111,6 +107,23 @@ pub fn reasonable(key: &str, typed: f64, exact: f64) -> Option<bool> {
     Some(off <= allowance + 1e-9)
 }
 
+/// A leg's workings checked on the ground (the web's lib/workings, ACS
+/// PA.I.D, cross-country flight planning): how far a student's own figure
+/// may be from the nav log's and still be the right answer, about an E6B's
+/// accuracy -- its scales read to a degree or two, a couple of knots, a
+/// minute and a few tenths of a gallon. The ACS gives no figures; these
+/// are the drill's own. Key and tolerance.
+pub const WORKINGS_TOLERANCES: [(&str, f64); 6] = [("wca", 2.0), ("th", 2.0), ("mh", 2.0), ("gs", 3.0), ("ete", 1.0), ("fuel", 0.3)];
+
+/// Whether a figure worked on the ground is right within its tolerance, a
+/// heading round the compass (359 is 1 from 000). None for a key not
+/// worked.
+pub fn workings_right(key: &str, typed: f64, answer: f64) -> Option<bool> {
+    let tolerance = WORKINGS_TOLERANCES.iter().find(|t| t.0 == key)?.1;
+    let off = if key == "th" || key == "mh" { angle_between(typed, answer) } else { (typed - answer).abs() };
+    Some(off <= tolerance + 1e-9)
+}
+
 /// A figure as the student would write it (the web's DiversionDrill
 /// `written`).
 pub fn written(key: &str, value: f64) -> String {
@@ -147,8 +160,16 @@ pub fn diversion_json(air: &Air, tc_deg: f64, distance_nm: f64, to: &str, typed:
     match &solved {
         None => out.push_str("null"),
         Some(d) => {
-            let figures = [("tc", d.tc), ("distance_nm", d.distance_nm), ("wca", d.wca), ("th", d.th), ("mh", d.mh),
-                           ("gs", d.gs), ("ete", d.ete), ("fuel", d.fuel)];
+            let figures = [
+                ("tc", d.tc),
+                ("distance_nm", d.distance_nm),
+                ("wca", d.wca),
+                ("th", d.th),
+                ("mh", d.mh),
+                ("gs", d.gs),
+                ("ete", d.ete),
+                ("fuel", d.fuel),
+            ];
             for (i, (key, v)) in figures.iter().enumerate() {
                 out.push_str(if i == 0 { "{\"" } else { ",\"" });
                 out.push_str(key);

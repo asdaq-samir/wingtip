@@ -6,9 +6,11 @@ import pytest
 
 from wingtip import filed_routes
 
-NS = ('xmlns:ds="urn:us:gov:dot:faa:atm:tfm:tfmdataservice" xmlns:fdm="urn:us:gov:dot:faa:atm:tfm:flightdata" '
-      'xmlns:nxce="urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements" '
-      'xmlns:nxcm="urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages"')
+NS = (
+    'xmlns:ds="urn:us:gov:dot:faa:atm:tfm:tfmdataservice" xmlns:fdm="urn:us:gov:dot:faa:atm:tfm:flightdata" '
+    'xmlns:nxce="urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements" '
+    'xmlns:nxcm="urn:us:gov:dot:faa:atm:tfm:flightdatacommonmessages"'
+)
 
 
 def message(gufi, dep, dest, route, aircraft="C172", kind="flightPlanAmendmentInformation"):
@@ -29,6 +31,7 @@ def service(*messages):
 @pytest.fixture
 def store(tmp_path, monkeypatch):
     monkeypatch.setattr(filed_routes, "STORE", tmp_path / "filed.sqlite")
+    monkeypatch.setattr(filed_routes, "FORMER", tmp_path / "former" / "filed.sqlite")
     filed_routes.reset()
     yield
     filed_routes.reset()
@@ -57,21 +60,28 @@ def test_a_tfmdata_message_gives_each_flight_with_a_route():
         message("KW1", "KIAD", "KCVG", "KIAD.RNLDI4.OTTTO..COLNS.GAVNN4.KCVG/2348", "E45X"),
         # A track update carries no route: nothing.
         '<fdm:fltdMessage msgType="trackInformation"><fdm:trackInformation><nxcm:qualifiedAircraftId>'
-        '<nxce:gufi>KN2</nxce:gufi></nxcm:qualifiedAircraftId></fdm:trackInformation></fdm:fltdMessage>')
-    assert filed_routes.filings(xml) == [{"gufi": "KW1", "dep": "KIAD", "dest": "KCVG",
-                                          "route": "KIAD.RNLDI4.OTTTO..COLNS.GAVNN4.KCVG/2348", "aircraft": "E45X"}]
+        '<nxce:gufi>KN2</nxce:gufi></nxcm:qualifiedAircraftId></fdm:trackInformation></fdm:fltdMessage>',
+    )
+    assert filed_routes.filings(xml) == [
+        {"gufi": "KW1", "dep": "KIAD", "dest": "KCVG", "route": "KIAD.RNLDI4.OTTTO..COLNS.GAVNN4.KCVG/2348", "aircraft": "E45X"}
+    ]
     assert filed_routes.filings("<x>no routes here</x>") == []
     assert filed_routes.filings("routeOfFlight but not xml <") == []
 
 
 def test_the_most_filed_route_is_the_one_most_flights_last_had(store):
     now = 1_800_000_000.0
-    filed_routes.record(filed_routes.filings(service(
-        message("A", "C81", "LWD", "C81..BAE.V100.OBH..LWD"),
-        message("B", "C81", "KLWD", "C81..BAE.V100.OBH..LWD"),
-        message("C", "C81", "LWD", "C81..JVL..LWD"),
-        message("D", "C81", "LWD", "C81..JVL..LWD"),
-    )), now=now)
+    filed_routes.record(
+        filed_routes.filings(
+            service(
+                message("A", "C81", "LWD", "C81..BAE.V100.OBH..LWD"),
+                message("B", "C81", "KLWD", "C81..BAE.V100.OBH..LWD"),
+                message("C", "C81", "LWD", "C81..JVL..LWD"),
+                message("D", "C81", "LWD", "C81..JVL..LWD"),
+            )
+        ),
+        now=now,
+    )
     # D amended onto the airway: it counts once, by its last route.
     filed_routes.record(filed_routes.filings(service(message("D", "C81", "LWD", "C81..BAE.V100.OBH..LWD"))), now=now)
     assert filed_routes.most_filed("C81", "KLWD", now=now) == [{"stops": ["BAE", "V100", "OBH"], "flights": 3}]
@@ -83,9 +93,26 @@ def test_the_most_filed_route_is_the_one_most_flights_last_had(store):
 
 def test_no_store_yet_is_no_route(tmp_path, monkeypatch):
     monkeypatch.setattr(filed_routes, "STORE", tmp_path / "none" / "filed.sqlite")
+    monkeypatch.setattr(filed_routes, "FORMER", tmp_path / "former" / "filed.sqlite")
     filed_routes.reset()
     assert filed_routes.most_filed("C81", "LWD") == []
     assert not (tmp_path / "none").exists()
+
+
+def test_a_store_moved_to_the_live_volume_takes_the_routes_kept_at_its_old_path(tmp_path, monkeypatch):
+    """FILED_STORE set to /live: the year of routes on the data folder is
+    copied there the first time, not started again from none."""
+    monkeypatch.setattr(filed_routes, "STORE", tmp_path / "data" / "filed.sqlite")
+    filed_routes.reset()
+    now = 1792500000.0
+    plan = {"gufi": "G1", "dep": "C81", "dest": "KLWD", "route": "C81..BAE..LWD", "aircraft": "C172"}
+    filed_routes.record([plan, {**plan, "gufi": "G2"}], now=now)
+    filed_routes.reset()
+    monkeypatch.setattr(filed_routes, "FORMER", tmp_path / "data" / "filed.sqlite")
+    monkeypatch.setattr(filed_routes, "STORE", tmp_path / "live" / "filed.sqlite")
+    assert filed_routes.most_filed("C81", "LWD", now=now) == [{"stops": ["BAE"], "flights": 2}]
+    assert (tmp_path / "live" / "filed.sqlite").exists()
+    filed_routes.reset()
 
 
 def test_a_message_with_no_route_is_not_decoded_and_one_with_a_route_is_kept(store):

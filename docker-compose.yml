@@ -26,14 +26,25 @@ x-python-healthcheck: &python-healthcheck
 # put an Anthropic key in front of the map, the planner and the chart
 # tiles, none of which call an LLM at all. The planner's Claude features
 # (the narrative, checkpoint notes, the assistant, the words) answer
-# without one by saying the model cannot be reached.
+# without one by saying the model cannot be reached. They are off unless
+# APP_CLAUDE_FEATURES says otherwise and the claude profile starts the
+# assistant (the owner, 2026-11-10, docs/decisions/0035).
 x-anthropic-api-key: &anthropic-api-key ${ANTHROPIC_API_KEY:-}
+
+# The gateway's public address, said once: where its emailed links point,
+# and the issuer of the connector's tokens that the planner checks
+# (docs/design/mcp-connector.md). The gateway's environment below says why
+# it is worked out this way.
+x-public-base-url: &public-base-url ${PHONE_BASE_URL:-${PUBLISH_ADDRESS:+${PHONE_BASE_URL:?set PHONE_BASE_URL=https://<this Mac's LAN address>:8443 in .env}}${APP_PUBLIC_BASE_URL:-http://localhost:8080}}
+# The secret the planner's connector shows the gateway's /internal/mcp
+# records with: this machine's own, and a real one in production.
+x-mcp-internal-token: &mcp-internal-token ${MCP_INTERNAL_TOKEN:-local-connector-secret}
 
 # Every long-running service below restarts with Docker (restart:
 # unless-stopped): after a reboot, Docker Desktop brings back whatever
 # was running -- the phone's ports included, since it is the same
 # container -- and a service someone stopped stays stopped. The
-# pipeline jobs are one-shot and have none.
+# jobs are one-shot and have none.
 #
 # One file for every way the stack runs on a machine of one's own; the
 # phone, the LAN and front-end work used to be overlays of their own
@@ -58,7 +69,9 @@ x-anthropic-api-key: &anthropic-api-key ${ANTHROPIC_API_KEY:-}
 #                                 (8888), which answer without
 #                                 authentication -- Jupyter runs code --
 #                                 so a network you control, for as long as
-#                                 you need it. The database is never
+#                                 you need it. The database and the
+#                                 assistant (8085, which holds the Claude
+#                                 key and has no sign-in) are never
 #                                 published beyond loopback.
 #   Front-end work without rebuilding the image:
 #     COMPOSE_PROFILES=web-dev    starts web-build (vite --watch into
@@ -110,59 +123,87 @@ services:
     volumes:
       - .:/workspace
 
-  # One-shot jobs, not services: behind the `pipeline` profile so a plain
-  # `docker compose up` never starts them. It used to start both -- and
-  # the training image's default command is a full all-core retrain,
-  # which then overwrote the candidate model the registry compares next.
-  # Naming one still works as before: `docker compose run --rm
-  # pipeline-training retrain`, or the whole training run, every stage in
-  # order: `docker compose run --rm pipeline-training run`.
-  pipeline-processing:
-    build:
-      context: .
-      dockerfile: ml/Dockerfile.processing
-      additional_contexts:
-        wingtip-base: service:base
-    profiles: ["pipeline"]
-    volumes:
-      - .:/workspace
-
-  pipeline-training:
-    build:
-      context: .
-      dockerfile: ml/Dockerfile.training
-      additional_contexts:
-        wingtip-base: service:base
-    profiles: ["pipeline"]
-    volumes:
-      - .:/workspace
-
+  # The jobs (services/jobs): one-off work, not services. Behind the
+  # `jobs` profile and with no restart, so a plain `docker compose up`
+  # never starts one -- it used to start the training image, whose
+  # default is a full all-core retrain that then overwrote the candidate
+  # model the registry compares next. Each runs this checkout's code (the
+  # project mounted at /workspace, as the planner's is). The developer
+  # console starts them through dev-services, which can start a container
+  # but never create one: `docker compose create retrain charts
+  # charts-overlays charts-next` makes them once. services/jobs/README.md has the rest.
+  #
   # The training run (`python -m wingtip.pipeline run`: both models'
-  # stages in order, each promoted only if it beats the one serving), as
-  # a container the developer console's Retrain starts through
-  # dev-services -- which can start a container but never create one, so
-  # `docker compose create retrain` makes it once. Behind the `pipeline`
-  # profile and with no restart, so `docker compose up` never starts a
-  # run; started again, it runs again. It replaced Airflow (the owner,
-  # 2026-11-06): a scheduler, a web server and a metadata database for
-  # a DAG that had no schedule and was only ever started from here.
+  # stages in order, each promoted only if it beats the one serving), the
+  # console's Retrain; a stage by name: `docker compose run --rm retrain
+  # collect`. It replaced Airflow (the owner, 2026-11-06): a scheduler, a
+  # web server and a metadata database for a DAG that had no schedule
+  # and was only ever started from here.
   retrain:
     build:
       context: .
-      dockerfile: ml/Dockerfile.training
+      dockerfile: services/jobs/retrain/Dockerfile
       additional_contexts:
         wingtip-base: service:base
-    profiles: ["pipeline"]
+    profiles: ["jobs"]
     command: ["run"]
     volumes:
       - .:/workspace
 
+  # The charts job: a new FAA chart cycle fetched, rendered and packed
+  # into one archive per kind and density, then the map's overlay tiles
+  # where the planner's cycle pack has none (`python -m charts run`).
+  # The planner starts it (app.chart_refresh) when a cycle is due and the
+  # night's window is open, and from the console's "refresh now"; by
+  # hand: `docker compose run --rm charts` (or a command of its own,
+  # `docker compose run --rm charts pack`). The planner only serves what
+  # it writes.
+  charts: &charts-job
+    build:
+      context: .
+      dockerfile: services/jobs/charts/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    profiles: ["jobs"]
+    command: ["run", "--workers", "${CHARTS_REFRESH_WORKERS:-1}"]
+    volumes:
+      - .:/workspace
+
+  # The overlay tiles alone, a minute or two of tippecanoe: what the
+  # planner starts when it writes a new cycle pack, at any hour.
+  charts-overlays:
+    <<: *charts-job
+    command: ["overlays"]
+
+  # The FAA's next chart cycle, staged before its date (`python -m charts
+  # next`, wingtip.chart_next): from CHARTS_CYCLE_LEAD_DAYS (7) before it,
+  # its sheets fetched, rendered with as many workers as the memory left
+  # holds, and packed into its own folder, which the map takes at 0901Z
+  # on its date; after that, the cycles before it deleted. The planner
+  # starts it hourly inside CHARTS_REFRESH_WINDOW where CHARTS_CYCLE_AUTO
+  # is on (app.chart_refresh). It takes a turn among the Mac's heavy work
+  # as scripts/dev/one-at-a-time.sh gives them out, through that script's
+  # lock directories in the Mac's /tmp (charts/turn.py): it waits for a
+  # turn rather than render beside a test suite or an image build.
+  charts-next:
+    <<: *charts-job
+    command: ["next"]
+    environment:
+      CHARTS_CYCLE_LEAD_DAYS: ${CHARTS_CYCLE_LEAD_DAYS:-7}
+      ONE_AT_A_TIME_LOCK: /host-tmp/flight-plan-heavy.lock
+      ONE_AT_A_TIME_SLOTS: ${ONE_AT_A_TIME_SLOTS:-2}
+    volumes:
+      - .:/workspace
+      - /tmp:/host-tmp
+
   db:
     restart: unless-stopped
     # Plain Postgres: the pgvector image was for the removed briefing
-    # agent's memory. Bookworm, as pgvector:pg18 was built on, so glibc
-    # (2.36) and with it the text collations of an existing volume match.
-    image: postgres:18-bookworm@sha256:f1ea2a1a4fb7b68d4836be1fdcb8a6466a89b072158bf9d97663600538c294c5
+    # agent's memory. Trixie, the Debian every image here is built on
+    # (2026-11-09). A volume made under bookworm (glibc 2.36) needs its
+    # collation version refreshed once for 2.41:
+    # scripts/dev/pg-refresh-collation.sh, which go-live.sh runs.
+    image: postgres:18-trixie@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
     environment:
       POSTGRES_DB: wingtip
       POSTGRES_USER: wingtip
@@ -204,7 +245,7 @@ services:
       context: .
       dockerfile: infra/dev-services/Dockerfile
     environment:
-      DEV_SERVICES: ml,retrain
+      DEV_SERVICES: ml,retrain,charts,charts-overlays,charts-next
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks: [docker-control]
@@ -232,28 +273,97 @@ services:
     networks: [default, docker-control]
     volumes:
       - .:/workspace
+      # The stores ingest writes (the live store, the NOTAMs, the filed
+      # routes; wingtip/stores.py) on a Docker volume, not the Mac's
+      # shared folder: SQLite's write-ahead log needs shared memory
+      # between the planner and ingest, which the Mac's file sharing into
+      # Docker does not give, and ingest's writes hung (2026-11-08).
+      - live-store:/live
     environment:
+      # The stores ingest writes, on the volume above (wingtip/stores.py);
+      # each takes the file it had on data/raw the first time.
+      LIVE_STORE: /live/live.sqlite
+      NOTAM_STORE: /live/notams.sqlite
+      FILED_STORE: /live/filed.sqlite
+      REPORTS_STORE: /live/reports.sqlite
       PYTHONPATH: /workspace/services/planner
       # Not the host's Docker socket -- the dev-services sidecar above,
-      # which routers/devservices.py asks which services are up and to
-      # start one, the training run (retrain) among them.
+      # which app/dev_services.py asks which services are up and to
+      # start one, the jobs (retrain, charts) among them.
       DEV_SERVICES_URL: http://dev-services:8000
-      # The clock the chart refresh's night-time window (see
-      # services/planner/app/main.py) is read against: the desk this
-      # runs on, not UTC.
+      # The clock the charts job's night-time window (see
+      # services/planner/app/chart_refresh.py) is read against: the desk
+      # this runs on, not UTC.
       TZ: ${TZ:-America/Chicago}
-      # The planner's Claude calls: /api/checkpoint-notes (one per
-      # checkpoint with no saved note yet), the briefing's narrative
-      # (/api/briefing/narrative), the assistant and the words.
-      ANTHROPIC_API_KEY: *anthropic-api-key
+      # How many render processes the charts job is given (its command
+      # above), for the console to show.
+      CHARTS_REFRESH_WORKERS: ${CHARTS_REFRESH_WORKERS:-1}
+      # The next chart cycle staged before its date by charts-next
+      # (app.chart_refresh, wingtip.chart_next): on here, 0 to stop it;
+      # how many days ahead it starts.
+      CHARTS_CYCLE_AUTO: ${CHARTS_CYCLE_AUTO:-1}
+      CHARTS_CYCLE_LEAD_DAYS: ${CHARTS_CYCLE_LEAD_DAYS:-7}
+      # The live feeds watched (app.feed_health): a feed stale this many
+      # minutes is an alert in the log and the console, and POSTed to
+      # FEED_ALERT_WEBHOOK where one is set. The weather service's
+      # freshness is asked at WEATHER_URL (http://weather:8000 by default).
+      FEED_ALERT_AFTER_MIN: ${FEED_ALERT_AFTER_MIN:-15}
+      FEED_ALERT_WEBHOOK: ${FEED_ALERT_WEBHOOK:-}
+      # The connector (app.mcp): /mcp, its tokens issued by the gateway at
+      # its public address, the pilot's records asked of it with this secret.
+      MCP_ISSUER: *public-base-url
+      MCP_INTERNAL_TOKEN: *mcp-internal-token
       # The map's Google overlay (routers/basemaps): a browser key for
       # Google's Map Tiles API, none by default.
       GOOGLE_MAPS_API_KEY: ${GOOGLE_MAPS_API_KEY:-}
       # ADS-B Exchange through RapidAPI, the traffic's fallback where
       # adsb.lol turns the planner away (wingtip.traffic): off without it.
       ADSBX_RAPIDAPI_KEY: ${ADSBX_RAPIDAPI_KEY:-}
-      # The FAA's SWIM feeds (app.swim): STDDS's terminal radar tracks; off
-      # without them. The owner's SCDS subscription's login and queue.
+      # Traces to Jaeger, with the tracing profile up and TRACING=1 (see
+      # the jaeger service below); unset, the planner sends none and loads
+      # none of OpenTelemetry (app.tracing, wingtip.tracing).
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      TRACING: ${TRACING:-}
+      OTEL_SERVICE_NAME: planner
+    healthcheck:
+      <<: *python-healthcheck
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+
+  # The live feeds, read always (services/ingest): the FAA's SWIM feeds
+  # (STDDS's terminal radar, FNS's NOTAMs, TFMS's flight plans) and the
+  # followed airplanes' adsb.fi rounds, written into the SQLite stores
+  # under data/raw that the planner reads (the live store, wingtip.traffic.store;
+  # the NOTAM and filed-route stores). No port: nothing calls it. The
+  # project mounted as the planner's is, so both see one data folder and
+  # ingest runs this checkout's code.
+  ingest:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: services/ingest/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    volumes:
+      - .:/workspace
+      # The stores ingest writes (the live store, the NOTAMs, the filed
+      # routes; wingtip/stores.py) on a Docker volume, not the Mac's
+      # shared folder: SQLite's write-ahead log needs shared memory
+      # between the planner and ingest, which the Mac's file sharing into
+      # Docker does not give, and ingest's writes hung (2026-11-08).
+      - live-store:/live
+    # Production is one 4 GB server: ingest is a few threads and a SQLite
+    # connection, 186 MB with wingtip's imports (docker stats, 2026-11-08),
+    # so it is held to twice that, well below what would crowd the planner.
+    mem_limit: 384m
+    environment:
+      # The stores it writes, on the volume above, as the planner reads them.
+      LIVE_STORE: /live/live.sqlite
+      NOTAM_STORE: /live/notams.sqlite
+      FILED_STORE: /live/filed.sqlite
+      REPORTS_STORE: /live/reports.sqlite
+      PYTHONPATH: /workspace/services/ingest:/workspace/services/planner
+      # The FAA's SWIM feeds (ingest.swim); each off without its own. The
+      # owner's SCDS subscriptions' login and queues.
       SWIM_HOST: ${SWIM_HOST:-}
       SWIM_USERNAME: ${SWIM_USERNAME:-}
       SWIM_PASSWORD: ${SWIM_PASSWORD:-}
@@ -264,10 +374,105 @@ services:
       SWIM_HOST_TFMS: ${SWIM_HOST_TFMS:-}
       SWIM_VPN_TFMS: ${SWIM_VPN_TFMS:-}
       SWIM_QUEUE_TFMS: ${SWIM_QUEUE_TFMS:-}
-      # Traces to Jaeger, with the tracing profile up and TRACING=1 (see
-      # the jaeger service below); unset, the planner sends none.
+      # ITWS's alerts and SFDPS's airspace, on SWIM_HOST's broker.
+      SWIM_VPN_ITWS: ${SWIM_VPN_ITWS:-}
+      SWIM_QUEUE_ITWS: ${SWIM_QUEUE_ITWS:-}
+      SWIM_VPN_SFDPS: ${SWIM_VPN_SFDPS:-}
+      SWIM_QUEUE_SFDPS: ${SWIM_QUEUE_SFDPS:-}
+      # Traces to Jaeger with TRACING=1 (the jaeger service below); unset,
+      # it sends none and loads none of OpenTelemetry (wingtip.tracing).
       OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
-      OTEL_SERVICE_NAME: planner
+      TRACING: ${TRACING:-}
+      OTEL_SERVICE_NAME: ingest
+    healthcheck:
+      <<: *python-healthcheck
+      # Its beat in the live store, written every ten seconds (ingest.health),
+      # so looked at every thirty, as the image's own HEALTHCHECK does: each
+      # check is a Python started afresh.
+      interval: 30s
+      test: ["CMD", "python", "-m", "ingest.health"]
+
+  # Every Claude call the app makes (services/assistant, issue #535): the
+  # pilot's assistant, the Brief's narrative, the readings in words, the
+  # checkpoint notes and the mock oral. It holds the Anthropic key and
+  # the model settings, and asks the planner for every figure; the
+  # browser reaches it only through gateway's /api/planner/* proxy, at
+  # the same addresses as before. Mounts the project for its code, as the
+  # planner does, and for data/raw/references, the regulations and the
+  # AIM the mock oral quotes. A few HTTP calls at a time and no data of
+  # its own in memory: 256 MB is room and to spare.
+  #
+  # Off by default (the owner, 2026-11-10: "To keep the cost low, we only
+  # add the claude feature later when we decide about subscription model.
+  # For now just the free siri and gemini."; docs/decisions/0035): it is
+  # started only with the claude profile, and asked only where the
+  # gateway's APP_CLAUDE_FEATURES is DEVELOPERS or EVERYONE --
+  # COMPOSE_PROFILES=claude and APP_CLAUDE_FEATURES=EVERYONE in .env.
+  assistant:
+    profiles: ["claude"]
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: services/assistant/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    ports:
+      # Loopback only, whatever DEV_PUBLISH_ADDRESS says: the assistant
+      # holds the Claude key and has no session, subscription or allowance
+      # of its own (those are the gateway's), which reaches it over the
+      # compose network.
+      - "127.0.0.1:8085:8000"
+    mem_limit: 256m
+    volumes:
+      - .:/workspace
+    environment:
+      PYTHONPATH: /workspace/services/assistant
+      PLANNER_URL: http://planner:8000
+      ANTHROPIC_API_KEY: *anthropic-api-key
+      # The models, each by its own name, as services/assistant/app/settings.py
+      # declares them; unset, its defaults.
+      ASSISTANT_MODEL: ${ASSISTANT_MODEL:-claude-opus-5-5}
+      ASSISTANT_FALLBACKS: ${ASSISTANT_FALLBACKS:-0}
+      # Traces to Jaeger with TRACING=1 (the jaeger service below); unset,
+      # it sends none and loads none of OpenTelemetry (app.tracing).
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      TRACING: ${TRACING:-}
+      OTEL_SERVICE_NAME: assistant
+    healthcheck:
+      <<: *python-healthcheck
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
+
+  # The weather the planner reads, fetched on a schedule (services/weather):
+  # METARs, TAFs, SIGMETs, PIREPs and G-AIRMETs from aviationweather.gov,
+  # the GFS's winds aloft and GLMP from NOMADS, TFRs from tfr.faa.gov and
+  # the radar's time from IEM, each written to the weather store on the
+  # data folder the planner mounts (data/raw/weather, wingtip.weather_store),
+  # so no pilot's request waits on a live fetch (#535). Fast while the
+  # planner is being used, slow otherwise. Its health check at :8000 says
+  # how fresh each product is (`docker compose exec weather python3 -c
+  # "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/').read().decode())"`).
+  # Mounts the project as the planner does, so its code is the checkout's.
+  weather:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: services/weather/Dockerfile
+      additional_contexts:
+        wingtip-base: service:base
+    volumes:
+      - .:/workspace
+    environment:
+      # Its own code first, then the planner's folder for wingtip.
+      PYTHONPATH: /workspace/services/weather:/workspace/services/planner
+      # Traces to Jaeger with TRACING=1 (the jaeger service below); unset,
+      # it sends none and loads none of OpenTelemetry (wingtip.tracing).
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${TRACING:+http://jaeger:4318}
+      TRACING: ${TRACING:-}
+      OTEL_SERVICE_NAME: weather
+    # Python, the engine, and a GLMP issue's two grids at their largest
+    # while it reads them: well under this, which keeps it from crowding
+    # the planner (infra/docker-compose.prod.yml has the same).
+    mem_limit: 384m
     healthcheck:
       <<: *python-healthcheck
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/')"]
@@ -282,10 +487,14 @@ services:
   # Set MAIL_HOST and the rest in .env to send real mail instead.
   mailpit:
     restart: unless-stopped
-    image: axllent/mailpit:v1.31.3@sha256:ed9b00c609e77e99c79b93f1178255ebc271868920f2c69a8d166bd5634ed10d
+    image: axllent/mailpit:v1.33.1@sha256:aef2aacc11f075ec0fb6874275ee4a421e688e11a96ebb296134d1735c7761ce
     ports:
       - "${PUBLISH_ADDRESS:-127.0.0.1}:8025:8025"
     environment:
+      # The names the inbox answers to (Mailpit warns at start without a list:
+      # a page elsewhere could reach it by DNS rebinding). An address such
+      # as the phone's Wi-Fi one is always let through.
+      MP_ALLOWED_HOSTS: localhost,mailpit
       # The inbox's password, required once PUBLISH_ADDRESS opens it to
       # the network (the inner :? is read only then); none on loopback.
       MP_UI_AUTH: ${PUBLISH_ADDRESS:+${MAILPIT_UI_AUTH:?set MAILPIT_UI_AUTH=<user>:<password> in .env -- the inbox holds sign-in links}}
@@ -342,6 +551,12 @@ services:
         condition: service_healthy
       planner:
         condition: service_healthy
+      # Started with it, not waited for: nothing in the gateway's start
+      # asks the assistant. Not required: it runs only with the claude
+      # profile, and the gateway asks it only with the Claude features on.
+      assistant:
+        condition: service_started
+        required: false
       mailpit:
         condition: service_started
     # Ready means Spring's readiness group (the app and its database)
@@ -369,11 +584,22 @@ services:
       SPRING_DATASOURCE_USERNAME: wingtip
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-wingtip}
       PLANNER_SERVICE_URL: http://planner:8000
+      ASSISTANT_SERVICE_URL: http://assistant:8000
+      # Who has the Claude features (SubscriptionService): OFF, the
+      # default, asks Anthropic nothing (docs/decisions/0035).
+      APP_CLAUDE_FEATURES: ${APP_CLAUDE_FEATURES:-OFF}
+      # The monitor's minute check (UptimeWatch, docs/OPERATIONS.md): the
+      # weather service watched beside the planner and the assistant, and
+      # its alerts mailed to an address of their own in the local inbox,
+      # where the e2e suite's sign-in links never meet them; APP_ALERT_EMAILS
+      # in .env sends them to yours.
+      WEATHER_SERVICE_URL: http://weather:8000
+      APP_ALERT_EMAILS: ${APP_ALERT_EMAILS:-alerts@example.com}
       # Traces to Jaeger with TRACING=1, the planner's calls under the
       # gateway's (see the jaeger service); off otherwise.
-      MANAGEMENT_TRACING_ENABLED: ${TRACING:-false}
+      MANAGEMENT_TRACING_EXPORT_ENABLED: ${TRACING:-false}
       MANAGEMENT_TRACING_SAMPLING_PROBABILITY: "1.0"
-      MANAGEMENT_OTLP_TRACING_ENDPOINT: http://jaeger:4318/v1/traces
+      MANAGEMENT_OPENTELEMETRY_TRACING_EXPORT_OTLP_ENDPOINT: http://jaeger:4318/v1/traces
       # Local start-up time, not a production setting. The class-data
       # archive (kept on the gateway-cds volume, see the Dockerfile) lets
       # a restart of the same jar skip the class loading and
@@ -404,7 +630,7 @@ services:
       MAIL_PORT: ${MAIL_PORT:-1025}
       MAIL_USERNAME: ${MAIL_USERNAME:-local}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-local}
-      MAIL_FROM: ${MAIL_FROM:-no-reply@northflyers.com}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@wingtipmaps.app}
       # Where the emailed sign-in link points. Required once a mail host
       # is set -- the gateway will not start without it -- because a link
       # built from the request's own Host header points wherever the
@@ -412,7 +638,12 @@ services:
       # so the link opens on the phone, and is required once
       # PUBLISH_ADDRESS publishes the gateway (the :? inside is read
       # only then).
-      APP_PUBLIC_BASE_URL: ${PHONE_BASE_URL:-${PUBLISH_ADDRESS:+${PHONE_BASE_URL:?set PHONE_BASE_URL=https://<this Mac's LAN address>:8443 in .env}}${APP_PUBLIC_BASE_URL:-http://localhost:8080}}
+      APP_PUBLIC_BASE_URL: *public-base-url
+      # The connector's authorization server (security/mcp): the secret its
+      # internal records ask for, and its signing key (blank: one made at
+      # start, so a restart signs Claude and ChatGPT out until they refresh).
+      MCP_INTERNAL_TOKEN: *mcp-internal-token
+      MCP_SIGNING_KEY: ${MCP_SIGNING_KEY:-}
       # Whose pilot is a developer: the address the e2e suite signs in
       # as (apps/web/e2e/auth.setup.ts), and whichever APP_DEVELOPER_EMAILS in
       # .env adds -- yours, comma-separated.
@@ -471,16 +702,20 @@ services:
     command: ["npx", "--no-install", "vite", "build", "--watch"]
     restart: unless-stopped
 
-  # Traces of a request from the gateway down through the planner to every
-  # source it asks (aviationweather.gov, the FAA, the USGS),
-  # in Jaeger's UI on http://localhost:16686:
+  # Traces of a request from the page's call through the gateway, the
+  # planner (each engine rule, each weather product read, each source
+  # asked) and the assistant (each Claude call, with its model and
+  # tokens), and of the weather service's fetches and ingest's rounds, in
+  # Jaeger's UI on http://localhost:16686 (docs/LOCAL-DEV.md, "Tracing"):
   #
-  #   TRACING=true docker compose --profile tracing up -d jaeger gateway planner
+  #   TRACING=1 docker compose --profile tracing up -d
   #
-  # Without TRACING neither service sends a span.
+  # Without TRACING no service makes a span or sends one. The services
+  # send OTLP over HTTP to jaeger:4318 on the compose network; only the
+  # UI is published, on loopback.
   jaeger:
     profiles: ["tracing"]
-    image: jaegertracing/jaeger:2.11.0@sha256:b585df1b6299bbbd16bf7c679da30389349736e4b6bc8f4f500142a75bf26ca8
+    image: jaegertracing/jaeger:2.23.0@sha256:3823829974ccfc2485d2e48b165579091f32295022ae80ca49704e2f4834116e
     ports:
       - "127.0.0.1:16686:16686"
     restart: unless-stopped
@@ -492,6 +727,8 @@ networks:
     internal: true
 
 volumes:
+  # The planner's and ingest's shared live store (see their mounts).
+  live-store:
   pgdata_pg18:
   # gateway's JVM class-data archive -- see JAVA_TOOL_OPTIONS on gateway.
   gateway-cds:

@@ -24,7 +24,7 @@ struct CyclePackIndex: Codable, Equatable, Sendable {
 
 /// The cycle packs kept on the phone, a region each (wingtip.cycle_pack's
 /// write_phone), so the airspace over a point is answered with no
-/// connection: kept along a route with its chart (Plan.keepForTheAir),
+/// connection: kept along a route with its chart (KeepForAir),
 /// and fetched again for the regions kept when the FAA's cycle turns.
 /// Under Application Support, not Caches: iOS may not clear them when
 /// space is short, as it may the chart's tiles, and they are small.
@@ -53,10 +53,11 @@ final class CyclePacks: @unchecked Sendable {
 
     /// The regions a route's corridor crosses: the region of each point
     /// along it, two nm apart, and of points a tenth of a degree (6 nm)
-    /// either side, as its chart is kept five nm either side.
-    static func regions(along line: [CLLocationCoordinate2D]) -> Set<String> {
+    /// either side, as its chart is kept five nm either side. Thrown where
+    /// the engine cannot say the route's miles (KeepRoute.samples).
+    static func regions(along line: [CLLocationCoordinate2D]) throws -> Set<String> {
         var names = Set<String>()
-        for p in KeepRoute.samples(of: line, everyNm: 2) {
+        for p in try KeepRoute.samples(of: line, everyNm: 2) {
             for dlat in [-0.1, 0, 0.1] {
                 for dlon in [-0.1, 0, 0.1] {
                     names.insert(Engine.region(lat: p.latitude + dlat, lon: p.longitude + dlon))

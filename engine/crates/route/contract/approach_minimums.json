@@ -1,0 +1,81 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The findings held to the pilot's minimums (14 CFR 91.175(c), (e)).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachMinimumsInput",
+      "type": "object",
+      "properties": {
+        "findings": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "tone": {
+                "enum": [
+                  "stop",
+                  "caution",
+                  "ok",
+                  "info"
+                ]
+              },
+              "text": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "minimums": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "tone"
+            ]
+          }
+        },
+        "lowest_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "outcome": {
+          "enum": [
+            "landed",
+            "missed",
+            "unknown"
+          ]
+        },
+        "minimums_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "outcome"
+      ]
+    },
+    "answer": {
+      "title": "ApproachMinimumsAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ApproachFinding"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

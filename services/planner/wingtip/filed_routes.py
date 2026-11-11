@@ -10,6 +10,7 @@ The flight plans are IFR's: TFMS has the NAS's flight plans, and a VFR
 flight plan stays with Flight Service. Those are the routes ATC clears and
 pilots fly, the "most flown" the owner asked for.
 """
+
 from __future__ import annotations
 
 import re
@@ -18,9 +19,13 @@ import threading
 import time
 import xml.etree.ElementTree as ET
 
-from .config import get_settings
+from . import stores
+from .config import Settings, get_settings
 
 STORE = get_settings().filed_store
+#: Where the store was kept before FILED_STORE moved it (the data
+#: folder's default), taken the first time the new path is opened.
+FORMER = Settings.model_fields["filed_store"].default
 #: How long a flight's route counts, s: a year, so a route a season favours
 #: and the airways and fixes of every chart cycle in it are all counted.
 KEEP_S = 365 * 24 * 3600
@@ -48,8 +53,7 @@ _pruned_at = 0.0
 def _connection() -> sqlite3.Connection:
     global _db
     if _db is None:
-        STORE.parent.mkdir(parents=True, exist_ok=True)
-        _db = sqlite3.connect(STORE, check_same_thread=False)
+        _db = stores.connect(STORE, former=FORMER)
         _db.executescript("""
             CREATE TABLE IF NOT EXISTS filings (
                 gufi TEXT PRIMARY KEY, dep TEXT, dest TEXT, stops TEXT, aircraft TEXT, heard REAL);
@@ -150,10 +154,13 @@ def record(found: list[dict], now: float | None = None) -> int:
         db = _connection()
         if rows:
             # The aircraft kept where an update doesn't repeat it.
-            db.executemany("""
+            db.executemany(
+                """
                 INSERT INTO filings (gufi, dep, dest, stops, aircraft, heard) VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT (gufi) DO UPDATE SET dep = excluded.dep, dest = excluded.dest, stops = excluded.stops,
-                    aircraft = COALESCE(excluded.aircraft, filings.aircraft), heard = excluded.heard""", rows)
+                    aircraft = COALESCE(excluded.aircraft, filings.aircraft), heard = excluded.heard""",
+                rows,
+            )
         if now - _pruned_at > 3600:
             db.execute("DELETE FROM filings WHERE heard < ?", (now - KEEP_S,))
             _pruned_at = now
@@ -162,7 +169,7 @@ def record(found: list[dict], now: float | None = None) -> int:
 
 
 def heard(xml: str | bytes) -> int:
-    """A TFMData message's routes kept: app.swim's handler for the feed.
+    """A TFMData message's routes kept: ingest's handler for the feed (services/ingest).
     Most of the feed is tracks with no route, looked for in the bytes as
     they come, not decoded or parsed: the whole country's flights a second
     or more, decoded first, kept the planner's CPU busy with nothing asked
@@ -179,11 +186,17 @@ def most_filed(dep: str, dest: str, *, limit: int = 3, now: float | None = None)
     first, each {"stops": [...], "flights": n} with AT_LEAST flights or
     more. Empty where the store has none (or there's no store yet)."""
     now = time.time() if now is None else now
-    if _db is None and not STORE.exists():
+    if _db is None and not STORE.exists() and not FORMER.exists():
         return []
     with _LOCK:
-        rows = _connection().execute("""
+        rows = (
+            _connection()
+            .execute(
+                """
             SELECT stops, COUNT(*) AS n FROM filings WHERE dep = ? AND dest = ? AND heard >= ?
             GROUP BY stops HAVING n >= ? ORDER BY n DESC, stops LIMIT ?""",
-            (same(dep), same(dest), now - KEEP_S, AT_LEAST, limit)).fetchall()
+                (same(dep), same(dest), now - KEEP_S, AT_LEAST, limit),
+            )
+            .fetchall()
+        )
     return [{"stops": stops.split() if stops else [], "flights": n} for stops, n in rows]

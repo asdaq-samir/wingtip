@@ -1,0 +1,121 @@
+/* Page-level type and scrolling for the web app, the layout kept as it is.
+   No component's own states or shadows are drawn over here: the stock
+   Base UI and shadcn components show theirs (the owner, 2026-11-10: no
+   look or behaviour on top of stock components), styled by the brand's
+   colour, type, radius and spacing tokens alone. */
+
+@theme inline {
+  /* The shadow under what floats over the chart -- the liquid glass, the
+     desktop's panel, the assistant's cards -- and an own card laid over
+     the map (design/tokens.json's feel.float and feel.overlay, deeper at
+     night). */
+  --shadow-float: var(--depth-float);
+  --shadow-overlay: var(--depth-overlay);
+}
+
+/* The browser's own parts -- a field's caret and date picker, a scroll
+   bar, autofill -- in the theme's scheme, where they were always the
+   day's on the night's navy. */
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+@layer base {
+  /* Type set as a reader's app sets it: grey-scale smoothing on a Mac's
+     screen, a face's optical sizes where it has them (Inter's), and
+     headings balanced over their lines and prose without a lone last
+     word. */
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-optical-sizing: auto;
+    text-rendering: optimizeLegibility;
+  }
+  :where(h1, h2, h3, h4, [data-slot$="-title"]) {
+    text-wrap: balance;
+  }
+  :where(p, li, [data-slot$="-description"]) {
+    text-wrap: pretty;
+  }
+  /* Figures a pilot compares down a column or as they change -- a table's
+     (the nav log's), a time, a field typed in numbers -- in tabular
+     digits, each the width of the next, so a column lines up and a count
+     does not jitter. */
+  :where(table, time, output, input[inputmode="numeric"], input[inputmode="decimal"]) {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A scroller's bar thin and in the words' grey where the platform
+     draws one (a desktop's), and the page's edge never pulled: a map app
+     has no page to pull, and Chrome's pull to reload took the map with it. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklch, var(--muted-foreground) 45%, transparent) transparent;
+  }
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+}
+
+/* A sheet's, a dialog's and a popover's scroll stays theirs: scrolled
+   to its end, it does not carry on into the map or the page under it.
+   And a desktop's popover keeps its bar's room whether or not it scrolls,
+   so its rows do not jump sideways as a list grows past its height. */
+:where(
+    [data-slot="map-panel"],
+    [data-slot="dialog-content"],
+    [data-slot="sheet-content"],
+    [data-slot="popover-content"],
+    [data-slot="command-list"]
+  )
+  :where(.overflow-y-auto, .overflow-auto, .under-head),
+:where([data-slot="popover-content"], [data-slot="command-list"], [data-slot="dropdown-menu-content"]) {
+  overscroll-behavior: contain;
+}
+:where([data-slot="popover-content"], [data-slot="command-list"]) {
+  scrollbar-gutter: stable;
+}
+
+/* What comes into a page as it is -- a banner, a problem's line, an
+   Undo row, a palette's results -- fading up from a little under where
+   it lands (@starting-style: no script, no keyframes, and nothing to
+   undo as it goes). Still with Reduce Motion, and in the Native look. */
+@utility appear {
+  @media (prefers-reduced-motion: no-preference) {
+    @variant branded {
+      transition:
+        opacity var(--motion-fade) var(--motion-sheet-ease),
+        translate var(--motion-fade) var(--motion-sheet-ease);
+      @starting-style {
+        opacity: 0;
+        translate: 0 0.25rem;
+      }
+    }
+  }
+}
+
+/* A figure that changes in place -- the route's distance, time and fuel
+   as a plan comes in or a dry run flies -- brings its new digits into
+   focus, rising into place where it is a button's (an inline figure
+   cannot move, and stays inline so a long one still ends in an
+   ellipsis), rather than blinking: the element is keyed on its value, so
+   each new value is a new one, as iOS's numeric content transition
+   rolls its digits. Still with Reduce Motion, and in the Native look. */
+@utility figure-roll {
+  @media (prefers-reduced-motion: no-preference) {
+    @variant branded {
+      animation: figure-roll var(--motion-page) var(--motion-sheet-ease);
+    }
+  }
+}
+@keyframes figure-roll {
+  from {
+    opacity: 0;
+    translate: 0 0.35em;
+    filter: blur(2px);
+  }
+}

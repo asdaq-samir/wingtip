@@ -1,0 +1,28 @@
+{
+  "title": "MetarWindIn",
+  "type": [
+    "object",
+    "null"
+  ],
+  "properties": {
+    "wind_dir_true_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "wind_speed_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "wind_gust_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "description": "A METAR's wind; null, missing or empty for none."
+}

@@ -1,5 +1,28 @@
 import { test, expect } from "@playwright/test";
-import { slow, settle, tapTheChart, settled, closeCard, sideDrawer, expectDrawerClosed, expectDrawerOpen, closeSidebarWithTheStockKey, openedDrawerBox, openBrief, openBriefing, openTab, openSection, panelTabs, grabberTo, controlsInSight, openNavLog, closeNavLog, navLogSheet, briefPage } from "./helpers";
+import { claudeFeatures } from "./claude";
+import {
+  slow,
+  settle,
+  tapTheChart,
+  settled,
+  closeCard,
+  sideDrawer,
+  expectDrawerClosed,
+  expectDrawerOpen,
+  closeSidebarWithTheStockKey,
+  openedDrawerBox,
+  openBrief,
+  openBriefing,
+  openTab,
+  openSection,
+  panelTabs,
+  grabberTo,
+  controlsInSight,
+  openNavLog,
+  closeNavLog,
+  navLogSheet,
+  briefPage,
+} from "./helpers";
 
 /**
  * The flight planning panel: how it opens -- from its grabber, a pasted
@@ -7,7 +30,10 @@ import { slow, settle, tapTheChart, settled, closeCard, sideDrawer, expectDrawer
  * holds, and how the briefing in it ends.
  */
 
-test("plan page: the flight planning drawer opens the way the Model Training drawer does, the same panel beside the map, with the two inputs and the narrative and Print in its header and the totals and the descriptions button in the nav log's own section", async ({ page }) => {
+test("plan page: the flight planning drawer opens the way the Model Training drawer does, the same panel beside the map, with the two inputs and the narrative and Print in its header and the totals and the descriptions button in the nav log's own section", async ({
+  page,
+}) => {
+  await claudeFeatures(page); // the narrative and the wand in their places (./claude)
   const viewport = page.viewportSize();
   if (!viewport) throw new Error("no viewport configured");
 
@@ -84,19 +110,25 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await expect(drawer.getByRole("table", { name: /Navigation log from/i })).toHaveCount(0);
 
   // Back on FPL all the way up, the route's box over its chips and side
-  // view, where the pill has them, the figures pinned at the foot;
-  // Settings a tab, not a gear in the head.
+  // view, where the pill has them, the figures pinned at the foot; the
+  // account button beside the search, not a gear in the head.
   await openTab(page, "Nav Log");
   await expect(drawer.getByTestId("flight-line")).toBeVisible();
-  expect(await page.locator("header").getByLabel("Departure", { exact: true }).count()).toBe(1);
-  expect(await page.locator("header").getByTestId("setup-button").count()).toBe(0);
+  expect(
+    await page
+      .locator("header")
+      .getByLabel(/^(\S+, )?Departure$/)
+      .count(),
+  ).toBe(1);
+  expect(await page.locator("header").getByTestId("account-button").count()).toBe(0);
 
   // The route's buttons, the Brief (where the Nav log was) and Share, at
   // the end of the airplane's, the altitude's and the time's line, at the
   // pilot's ask; Save, filing the flight plan and the route's close in
   // Share -- printing in the Brief's and the nav log's own (below).
-  const [approachesBox, shareBox] = await Promise.all(["route-brief", "share-route"]
-    .map(async id => (await drawer.getByTestId(id).boundingBox())!));
+  const [approachesBox, shareBox] = await Promise.all(
+    ["route-brief", "share-route"].map(async (id) => (await drawer.getByTestId(id).boundingBox())!),
+  );
   expect(approachesBox.x).toBeLessThan(shareBox.x);
   expect(Math.abs(approachesBox.y - shareBox.y)).toBeLessThan(2);
   // The departure's time on its step in the route's list, not in this
@@ -114,7 +146,9 @@ test("plan page: the flight planning drawer opens the way the Model Training dra
   await page.keyboard.press("Escape");
 });
 
-test("each card's Share is its own: the Brief's prints the briefing, the nav log's the nav log, and neither has the route's", async ({ page }) => {
+test("each card's Share is its own: the Brief's prints the briefing, the nav log's the nav log, and neither has the route's", async ({
+  page,
+}) => {
   // The owner's asks ("every share button needs to be specific to that
   // card. So printing briefing should only be in brief card"; "printing
   // navlog should be in navlog").
@@ -124,7 +158,7 @@ test("each card's Share is its own: the Brief's prints the briefing, the nav log
   const drawer = sideDrawer(page);
   const menu = page.getByRole("menu");
   await openBrief(page);
-  await page.getByTestId("tab-share").click();
+  await page.getByTestId("card-share").click();
   await expect(menu.getByTestId("print-briefing")).toBeVisible();
   await expect(menu.getByTestId("print-kneeboard")).toHaveCount(0);
   await expect(menu.getByTestId("route-clear")).toHaveCount(0);
@@ -134,7 +168,7 @@ test("each card's Share is its own: the Brief's prints the briefing, the nav log
   await closeCard(page, "brief-close");
   await expect(drawer.getByTestId("brief-card")).toHaveCount(0);
   await openNavLog(page);
-  await page.getByTestId("tab-share").click();
+  await page.getByTestId("card-share").click();
   await expect(menu.getByTestId("print-kneeboard")).toHaveText("Print the nav log");
   await expect(menu.getByTestId("print-briefing")).toHaveCount(0);
   await expect(menu.getByTestId("route-clear")).toHaveCount(0);
@@ -149,7 +183,7 @@ test("plan page: the nav log and the summary on screen, the 'planning aid only' 
   // In Settings' About now, at the pilot's ask, not at the foot of the
   // tabs; never a toast, which covered the nav log's last rows.
   await expect(sideDrawer(page).getByTestId("planning-aid-note")).toHaveCount(0);
-  await expect(page.locator("[data-sonner-toast]", { hasText: "planning aid for VFR and IFR flight" })).toHaveCount(0);
+  await expect(page.locator("[data-slot=toast]", { hasText: "planning aid for VFR and IFR flight" })).toHaveCount(0);
 
   // FPL's route in order, the nav log a sheet of its own, and the briefing
   // in the Brief's pages. No "Flight Plan Summary": the line at the foot
@@ -173,6 +207,7 @@ test("plan page: the nav log and the summary on screen, the 'planning aid only' 
 });
 
 test("plan page: the Brief is a tab after the Nav Log, its narrative written by Claude only when asked", async ({ page }) => {
+  await claudeFeatures(page); // the narrative answered by openTab's stub (./claude)
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
 
@@ -182,7 +217,9 @@ test("plan page: the Brief is a tab after the Nav Log, its narrative written by 
   // billed Claude call -- answered here by a line of the test's own
   // (openTab), nothing billed.
   const asked: string[] = [];
-  page.on("request", r => { if (r.url().includes("/api/planner/briefing/narrative")) asked.push(r.method()); });
+  page.on("request", (r) => {
+    if (r.url().includes("/api/planner/briefing/narrative")) asked.push(r.method());
+  });
   // The Brief's cards as it opens, and nothing asked for until a tap:
   // each is billed, and the Brief is opened for every route looked at.
   await openBrief(page);
@@ -204,7 +241,7 @@ test("plan page: the Brief is a tab after the Nav Log, its narrative written by 
 test("plan page: the drawer closes the way the stock components close, and nothing else", async ({ page }) => {
   // This app binds no key of its own to the drawer. A hand-written
   // Escape listener used to, and it is gone: a phone's drawer is a
-  // Radix Sheet and closes on Escape by itself, a desktop's is
+  // stock Sheet and closes on Escape by itself, a desktop's is
   // shadcn's panel and toggles on Cmd/Ctrl+B. Whatever those do is
   // what this does.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -259,7 +296,9 @@ test("plan page: a pasted briefing link opens the panel, and its grabber closes 
 
 // A tap on the grabber steps the three sizes up from the pill and back
 // down again, as the October 11 panel the owner picked back did.
-test("plan page: the panel's grabber cycles it up and back down, a tap on the map beside it leaves it out, and Escape lowers it", async ({ page }) => {
+test("plan page: the panel's grabber cycles it up and back down, a tap on the map beside it leaves it out, and Escape lowers it", async ({
+  page,
+}) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const viewport = page.viewportSize();

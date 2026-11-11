@@ -16,10 +16,7 @@ ELSEWHERE = Point(-94.70, 41.40)
 def _airspace(floor_ft, around):
     """A square of airspace centred on `around`, with the given floor."""
     x, y = around.x, around.y
-    return {
-        "floor_ft_msl": floor_ft,
-        "geometry": Polygon([(x - .2, y - .2), (x + .2, y - .2), (x + .2, y + .2), (x - .2, y + .2)]),
-    }
+    return {"floor_ft_msl": floor_ft, "geometry": Polygon([(x - 0.2, y - 0.2), (x + 0.2, y - 0.2), (x + 0.2, y + 0.2), (x - 0.2, y + 0.2)])}
 
 
 def test_surface_area_around_departure_is_the_airports_own():
@@ -98,7 +95,12 @@ def test_absent_file_is_rejected(tmp_path):
 # --- the hemispheric cruising-altitude rule ---
 
 from wingtip.airspace import CLEARANCE_CLASSES  # noqa: E402
-from wingtip.altitude import lowest_vfr_cruising_altitude  # noqa: E402
+from wingtip.engine import ask as engine  # noqa: E402
+
+
+def lowest_vfr_cruising_altitude(floor_ft, course):
+    return engine("lowest_vfr_cruising_altitude", floor_ft=floor_ft, magnetic_course_deg=course)
+
 
 EAST, WEST = 90.0, 270.0
 
@@ -106,12 +108,12 @@ EAST, WEST = 90.0, 270.0
 @pytest.mark.parametrize(
     "floor_ft, bearing, expected",
     [
-        (3000, WEST, 4500),   # KDSM->KOMA: the case that used to give 12,500
+        (3000, WEST, 4500),  # KDSM->KOMA: the case that used to give 12,500
         (2200, WEST, 2500),
         (3000, EAST, 3500),
-        (2200, EAST, 3500),   # 2,500 is a westbound altitude, so climb to 3,500
-        (4500, WEST, 4500),   # already legal and eastbound-correct: unchanged
-        (4600, WEST, 6500),   # just above one, so the next in the same band
+        (2200, EAST, 3500),  # 2,500 is a westbound altitude, so climb to 3,500
+        (4500, WEST, 4500),  # already legal and eastbound-correct: unchanged
+        (4600, WEST, 6500),  # just above one, so the next in the same band
     ],
 )
 def test_lowest_legal_altitude_above_the_floor(floor_ft, bearing, expected):
@@ -234,10 +236,11 @@ def test_an_airports_own_class_is_the_most_restrictive_reaching_the_surface_ther
 # reaches the ground. The detour is the named fix whose two legs keep
 # out of it, adding the least distance, a VFR waypoint before a GPS fix.
 
-from wingtip.airspace import DETOUR_CHOICES, _detour_through  # noqa: E402
-
 # A square of Class B, a tenth of a degree across, on the line from
-# (0, 0) north to (1, 0) -- lon/lat, as the shapefile's.
+# (0, 0) north to (1, 0) -- lon/lat, as the shapefile's. The choice itself
+# is the engine's (class_b_detours, route/options/classb.rs, whose tests
+# hold the margin, the VFR waypoint's preference and the handful); here,
+# that the planner's shelves and fixes reach it.
 _CORE = Polygon([(-0.1, 0.4), (0.1, 0.4), (0.1, 0.6), (-0.1, 0.6)])
 
 
@@ -245,44 +248,40 @@ def _fix(ident, lat, lon, vfr=True):
     return {"ident": ident, "lat": lat, "lon": lon, "vfr": vfr, "kind": "VFR waypoint" if vfr else "GPS waypoint"}
 
 
-def test_the_detour_is_the_shortest_way_round_out_of_the_class_b():
+def test_the_detour_is_the_shortest_way_round_out_of_the_class_b(monkeypatch):
+    from wingtip import fixes
+
     near, far = _fix("VPNEAR", 0.5, -0.2), _fix("VPFAR", 0.5, -0.6)
     through = _fix("VPMID", 0.5, 0.0)  # inside it: no way round at all
+    monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp_path, bbox: [_piece("CHICAGO CLASS B", 0, 10000)])
+    monkeypatch.setattr(airspace, "own_class_b", lambda polygons, start, end: set())
+    monkeypatch.setattr(fixes, "within", lambda south, west, north, east: [far, through, near])
+    airspace._DETOURS.clear()
 
-    ways = _detour_through((0.0, 0.0), (1.0, 0.0), [_CORE], [far, through, near])
+    ways = airspace.detour_waypoints((0.0, 0.0), (1.0, 0.0), "x.shp", 4500)
 
     assert [w["ident"] for w in ways] == ["VPNEAR", "VPFAR"]
     assert ways[0]["kind"] == "VFR waypoint"
     assert 0 < ways[0]["added_nm"] < 5
-
-
-def test_a_leg_skimming_its_edge_is_not_a_way_round():
-    # A mile's margin: a fix just outside the edge has its legs within it.
-    assert _detour_through((0.0, 0.0), (1.0, 0.0), [_CORE], [_fix("VPEDGE", 0.5, -0.105)]) == []
-
-
-def test_a_vfr_waypoint_comes_before_a_gps_fix_that_saves_less_than_ten_miles():
-    gps = _fix("GPSNR", 0.5, -0.15, vfr=False)
-    vfr = _fix("VPOUT", 0.5, -0.25)
-
-    assert [w["ident"] for w in _detour_through((0.0, 0.0), (1.0, 0.0), [_CORE], [gps, vfr])] == ["VPOUT", "GPSNR"]
-
-
-def test_no_fix_within_reach_is_no_detour():
-    assert _detour_through((0.0, 0.0), (1.0, 0.0), [_CORE], [_fix("VPGONE", 0.5, -3.0)]) == []
-
-
-def test_a_handful_to_choose_from_at_most():
-    many = [_fix(f"VP{i:03d}", 0.5, -0.2 - i * 0.01) for i in range(DETOUR_CHOICES + 3)]
-
-    assert len(_detour_through((0.0, 0.0), (1.0, 0.0), [_CORE], many)) == DETOUR_CHOICES
+    # A shelf over the lowest altitude there is passed under.
+    monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp_path, bbox: [_piece("CHICAGO CLASS B", 6000, 10000)])
+    airspace._DETOURS.clear()
+    assert airspace.detour_waypoints((0.0, 0.0), (1.0, 0.0), "y.shp", 4500) == []
 
 
 # --- Whether a leg enters Class B at its altitude --------------------------
 
+
 def _piece(name, floor, ceiling, geometry=_CORE):
-    return {"name": name, "class": "B", "floor_ft_msl": floor, "ceiling_ft_msl": ceiling, "geometry": geometry,
-            "ident": "ORD", "bbox": geometry.bounds}
+    return {
+        "name": name,
+        "class": "B",
+        "floor_ft_msl": floor,
+        "ceiling_ft_msl": ceiling,
+        "geometry": geometry,
+        "ident": "ORD",
+        "bbox": geometry.bounds,
+    }
 
 
 def test_a_leg_enters_class_b_only_between_its_floor_and_ceiling(monkeypatch):

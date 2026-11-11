@@ -10,7 +10,9 @@ import { closeConsole, library, noTips, openConsole, openAccount, roleMenu, show
  * is mocked -- the link is read from the local inbox (emailSignIn.ts).
  */
 test.use({ storageState: { cookies: [], origins: [] } });
-test.beforeEach(async ({ page }) => { await page.addInitScript(noTips); });
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(noTips);
+});
 
 const consoleSheet = (page: Page) => page.getByTestId("console-sheet");
 
@@ -31,18 +33,20 @@ test("signed out, the planner opens on the map, and the sign-in is in the pilot 
   // over the map a pilot came to look at. It opens when asked.
   await page.goto("/app/plan");
   await showTabs(page);
-  await expect(page.getByTestId("setup-button")).toBeVisible();
-  await page.waitForTimeout(500);   // a moment for a console that was coming down by itself
+  await expect(page.getByTestId("account-button")).toBeVisible();
+  await page.waitForTimeout(500); // a moment for a console that was coming down by itself
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
   await closeConsole(page);
 
   await showTabs(page);
   await openConsole(page);
-  await expect(consoleSheet(page).getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(consoleSheet(page).getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
 });
 
-test("signed out, Personal says once what signing in keeps, its minimums need none, and the dialog offers only the providers registered", { tag: "@smoke" }, async ({ page }) => {
+test("signed out, Personal says once what signing in keeps, its minimums need none, and the dialog offers only the providers registered", async ({
+  page,
+}) => {
   await page.goto("/app/plan");
   await showTabs(page);
   await openConsole(page);
@@ -50,31 +54,31 @@ test("signed out, Personal says once what signing in keeps, its minimums need no
   await consolePage(sheet, "Account");
   // Signed out: Sign in at the Account's heading, no line saying so (the
   // owner's "no need to show Not Signed in").
-  await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   // The minimums are kept on the device: no sign-in for them; the
   // account's three wait for one.
   await expect(sheet.getByTestId("library-section").getByRole("button", { name: "Airplanes" })).toBeDisabled();
   await library(sheet, "Minimums");
   await expect(sheet.getByTestId("minimum-ceilingFt")).toBeVisible();
-  await sheet.getByRole("button", { name: "Back to Account", exact: true }).click();
+  await sheet.getByRole("button", { name: "Back to Setup", exact: true }).click();
   // Signed out: Sign in at the Account's heading, no line saying so (the
   // owner's "no need to show Not Signed in").
-  await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   // This stack registers neither Google nor Apple: their buttons opened a blank 401.
-  await sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in" }).click();
+  await sheet.getByTestId("setup-page").getByRole("button", { name: "Sign in", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Sign in to Wingtip Maps" });
   await expect(dialog.getByLabel("Email address")).toBeVisible();
   await expect(dialog.getByRole("link", { name: /Continue with/ })).toHaveCount(0);
   await page.keyboard.press("Escape");
 
   // Where Google is registered, Google alone.
-  await page.route("**/api/auth/capabilities", route => route.fulfill({
-    status: 200, contentType: "application/json", body: JSON.stringify({ access: "SIGN_IN", providers: ["google"] }),
-  }));
+  await page.route("**/api/auth/capabilities", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ access: "SIGN_IN", providers: ["google"] }) }),
+  );
   await page.reload();
   await showTabs(page);
   await openConsole(page);
-  await consoleSheet(page).getByTestId("setup-page").getByRole("button", { name: "Sign in" }).click();
+  await consoleSheet(page).getByTestId("setup-page").getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(dialog.getByRole("link", { name: "Continue with Google" })).toBeVisible();
   await expect(dialog.getByRole("link", { name: "Continue with Apple" })).toHaveCount(0);
 });
@@ -83,7 +87,7 @@ test("signed out, the dev page sends you to the planner", async ({ page }) => {
   await page.goto("/app/dev");
   await page.waitForURL(/\/app\/plan/);
   await showTabs(page);
-  await expect(page.getByTestId("setup-button")).toBeVisible();
+  await expect(page.getByTestId("account-button")).toBeVisible();
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
   await closeConsole(page);
 });
@@ -101,13 +105,13 @@ test("the emailed link opens the app's own sign-in dialog, over the planner, and
   // into the address, which is why it is not looked for here: the
   // dialog has the token by then, and checking the address for it was
   // a race the test lost once the page got quicker.)
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in" })).toBeVisible();
-  // The planner under it, its tab bar there.
-  await expect(page.getByTestId("tab-bar")).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  // The planner under it, its one search there.
+  await expect(page.getByTestId("search-airports")).toBeVisible();
   expect(new URL(page.url()).search).not.toContain("signin");
 
-  await page.getByRole("dialog").getByRole("button", { name: "Sign in" }).click();
-  await page.waitForURL(url => url.pathname === "/app/plan" && url.hash === "");
+  await page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.waitForURL((url) => url.pathname === "/app/plan" && url.hash === "");
   await showTabs(page);
   await openConsole(page);
   await openAccount(page);
@@ -118,7 +122,7 @@ test("the emailed link opens the app's own sign-in dialog, over the planner, and
   await expect(page.getByRole("menu")).toHaveCount(0);
 
   await page.goto(link);
-  await page.getByRole("dialog").getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("dialog").getByRole("alert")).toContainText("expired or was already used");
 });
 
@@ -128,9 +132,9 @@ test("a pilot's link lands on the planner, with no dev switch, and the pilot con
   await signInByEmail(page, address);
 
   await page.waitForURL("**/app/plan**");
-  // The planner as a fresh load opens, the tabs alone.
-  await expect(sideDrawer(page).getByTestId("tab-bar")).toBeVisible();
-  await page.waitForTimeout(500);   // a moment for a console that was coming down by itself
+  // The planner as a fresh load opens, the one search alone.
+  await expect(sideDrawer(page).getByTestId("search-airports")).toBeVisible();
+  await page.waitForTimeout(500); // a moment for a console that was coming down by itself
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
   await closeConsole(page);
@@ -146,13 +150,13 @@ test("a pilot's link lands on the planner, with no dev switch, and the pilot con
   await expect(page.getByRole("menu")).toHaveCount(0);
   await consoleSheet(page).getByTestId("role-menu").click();
   await page.getByRole("menuitem", { name: "Sign out" }).click();
-  await expect(consoleSheet(page).getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(consoleSheet(page).getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   await expect(consoleSheet(page).getByTestId("role-menu")).toHaveCount(0);
   await page.reload();
   await expect(consoleSheet(page)).toHaveCount(0);
   await showTabs(page);
   await openConsole(page);
-  await expect(consoleSheet(page).getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(consoleSheet(page).getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
 });
 
 test("a developer's link lands in dev mode, and the dev console logs out to the planner", async ({ page }, testInfo) => {
@@ -184,7 +188,7 @@ test("a developer's link lands in dev mode, and the dev console logs out to the 
   // title was tapped as it went.
   await expect(page.getByRole("button", { name: /^Train/ })).toHaveCount(0);
   await showTabs(page);
-  await expect(page.getByTestId("setup-button")).toBeVisible();
+  await expect(page.getByTestId("account-button")).toBeVisible();
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(await devSwitchInSettings(page)).toHaveCount(0);
   await closeConsole(page);

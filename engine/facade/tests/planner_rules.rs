@@ -43,7 +43,12 @@ fn check(section: &str, name: &str, input: impl Fn(&Value) -> Value, answer: &st
 
 #[test]
 fn the_airspace_over_a_point() {
-    check("airspaceColumn", "airspace_column", |c| json!({ "ground_ft": c["ground_ft"], "volumes": c["volumes"], "in_veil": c["in_veil"] }), "bands");
+    check(
+        "airspaceColumn",
+        "airspace_column",
+        |c| json!({ "ground_ft": c["ground_ft"], "volumes": c["volumes"], "in_veil": c["in_veil"] }),
+        "bands",
+    );
     check("modeCVeil", "mode_c_veil", |c| json!({ "lat": c["lat"], "lon": c["lon"], "airports": c["airports"] }), "veil");
 }
 
@@ -65,13 +70,6 @@ fn a_hazards_window() {
 #[test]
 fn a_reports_ceiling_and_category() {
     check("ceiling", "ceiling_ft", |c| json!({ "layers": c["layers"], "vert_vis_ft": c["vert_vis_ft"] }), "ceiling_ft");
-    check("reportCategory", "report_flight_category", |c| json!({ "ceiling_ft": c["ceiling_ft"], "visibility_sm": c["visibility_sm"] }), "category");
-    // sky_ceiling finds the same ceiling, and calls none of these unknown:
-    // the cases' lowest broken or overcast layer has a height.
-    for case in fixture()["ceiling"].as_array().unwrap() {
-        let got = ask("sky_ceiling", json!({ "layers": case["layers"], "vert_vis_ft": case["vert_vis_ft"] }));
-        assert!(same(&got["ceiling_ft"], &case["ceiling_ft"]), "{case}\ngot {got}");
-    }
 }
 
 /// The AWC's data API sends a layer whose height a station could not
@@ -81,24 +79,18 @@ fn a_reports_ceiling_and_category() {
 /// it known (layers come lowest first, FMH-1 ch. 9).
 #[test]
 fn a_ceiling_sent_with_no_height() {
-    let sky = |layers: Value, vv: Value| ask("sky_ceiling", json!({ "layers": layers, "vert_vis_ft": vv }));
-    let unknown = json!({ "ceiling_ft": null, "ceiling_unknown": true });
-    assert_eq!(sky(json!([{ "cover": "OVC", "base_ft": null }]), Value::Null), unknown);
-    assert_eq!(sky(json!([{ "cover": "OVX" }]), Value::Null), unknown);
-    assert_eq!(sky(json!([{ "cover": "FEW", "base_ft": 800 }, { "cover": "BKN", "base_ft": null }, { "cover": "OVC", "base_ft": 2500 }]), Value::Null), unknown);
     assert_eq!(ask("ceiling_ft", json!({ "layers": [{ "cover": "BKN", "base_ft": null }] })), Value::Null);
     // Under a measured layer, a layer with no height is above it.
     assert_eq!(
-        sky(json!([{ "cover": "BKN", "base_ft": 1200 }, { "cover": "OVC", "base_ft": null }]), Value::Null),
-        json!({ "ceiling_ft": 1200.0, "ceiling_unknown": false })
+        ask("ceiling_ft", json!({ "layers": [{ "cover": "BKN", "base_ft": 1200 }, { "cover": "OVC", "base_ft": null }] })),
+        json!(1200.0)
     );
     // A vertical visibility is the obscuration from the surface, under all.
-    assert_eq!(sky(json!([{ "cover": "OVX", "base_ft": null }]), json!(200)), json!({ "ceiling_ft": 200.0, "ceiling_unknown": false }));
-    assert_eq!(sky(json!([{ "cover": "SCT", "base_ft": 3000 }]), Value::Null), json!({ "ceiling_ft": null, "ceiling_unknown": false }));
-    let category = |vis: f64| ask("report_flight_category", json!({ "ceiling_ft": null, "ceiling_unknown": true, "visibility_sm": vis }));
-    assert_eq!(category(10.0), Value::Null);
-    assert_eq!(category(0.5), json!("LIFR"));
-    assert_eq!(ask("report_flight_category", json!({ "ceiling_ft": null, "visibility_sm": 10 })), json!("VFR"));
+    assert_eq!(ask("ceiling_ft", json!({ "layers": [{ "cover": "OVX", "base_ft": null }], "vert_vis_ft": 200 })), json!(200.0));
+    // A missing visibility settles only a ceiling under 500 ft (AIM 7-1-7).
+    for (ceiling, want) in [(json!(5000), Value::Null), (json!(2000), Value::Null), (json!(400), json!("LIFR"))] {
+        assert_eq!(ask("flight_category", json!({ "ceiling_ft": ceiling, "visibility_sm": null })), want);
+    }
 }
 
 #[test]
@@ -121,5 +113,53 @@ fn a_figure_in_the_webs_words() {
             let got = ask(name, input.clone());
             assert!(same(&got, expected), "{name} {input}: got {got}, want {expected}");
         }
+    }
+}
+
+/// Two answers the same to a part in 10^9: the fixture's straight line was
+/// worked on wingtip.geo's sphere by a haversine, the engine's by atan2.
+fn close(a: &Value, b: &Value) -> bool {
+    match (a, b) {
+        (Value::Number(x), Value::Number(y)) => {
+            let (x, y) = (x.as_f64().unwrap(), y.as_f64().unwrap());
+            (x - y).abs() <= 1e-9 * x.abs().max(y.abs()).max(1.0)
+        }
+        (Value::Object(x), Value::Object(y)) => x.len() == y.len() && x.iter().all(|(k, v)| y.get(k).is_some_and(|w| close(v, w))),
+        _ => a == b,
+    }
+}
+
+#[test]
+fn a_flights_fuel_stop_figures() {
+    // The planner's routers.plan worst_burn_per_nm and fuel_stops_of's
+    // arithmetic before the move: the worst stretch's burn, the detour,
+    // and 91.151(a)(2)'s night reserve where the trip runs into the dark.
+    let all = fixture();
+    for c in all["worstBurnPerNm"].as_array().unwrap() {
+        let legs = c["legs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|l| (l["distance_nm"].as_f64().unwrap_or(0.0), l["fuel_gal"].as_f64()))
+            .collect::<Vec<_>>();
+        let got = wingtip_engine::navlog::fuel_stop::worst_burn_per_nm(&legs, c["over_nm"].as_f64().unwrap());
+        let want = c["worst"].as_f64();
+        assert!(got.zip(want).map_or(got.is_none() && want.is_none(), |(g, w)| (g - w).abs() < 1e-12), "{c}: got {got:?}");
+    }
+    let cases = all["fuelStopNeed"].as_array().unwrap();
+    assert!(cases.iter().any(|c| c["need"].is_null()) && cases.iter().any(|c| !c["need"].is_null()));
+    for c in cases {
+        let input = json!({ "totals": c["totals"], "legs": c["legs"], "start": c["start"], "end": c["end"], "depart_s": c["depart_s"] });
+        let got = ask("navlog_fuel_stop_need", input);
+        assert!(close(&got, &c["need"]), "{c}\ngot {got}");
+    }
+}
+
+#[test]
+fn the_pattern_altitude_flown_to_the_hundred_feet() {
+    let all = fixture();
+    for c in all["patternFlown"].as_array().unwrap() {
+        let got = ask("pattern_altitude", json!({ "elevation_ft": c["elevation_ft"], "published_agl_ft": c["published_agl_ft"] }));
+        assert!(same(&got["flown_ft"], &c["flown_ft"]), "{c}: got {got}");
     }
 }

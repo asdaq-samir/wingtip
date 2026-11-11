@@ -16,11 +16,19 @@ build time from `services/planner/openapi.json` by the pom's
 openapi-generator plugin), which asks the Rust engine; Spring keeps identity and persistence, the
 things it is good at. The owner kept Java here on that line on
 2026-11-06 rather than folding it into the Python: the HTTP boundary is
-already clean and a merge would give a pilot nothing. Some rules are
-still in this app -- currency (14 CFR 61.56, 61.57), the 61.109
-checklist, endorsements and an instructor's dates -- and issue #482
-moves them into the engine, so a reminder will ask the planner whether
-a pilot is current rather than work it out; add no new ones here.
+already clean and a merge would give a pilot nothing. A pilot's
+currency (14 CFR 61.56, 61.57) and a student's 61.109 experience are the
+engine's: this app sends the logbook to the planner (`PlannerClient`,
+POST /api/pilot/currency and /api/pilot/experience) and keeps what it
+answers, a reminder email included. So are what a student's
+endorsements say (how long each is good for, the day the solo
+endorsement runs out, 61.93(d)'s checks of a solo cross-country: POST
+/api/pilot/endorsements) and when an airplane's inspections and VOR check
+fall due (91.409, 91.207, 91.411, 91.413, 91.171: POST
+/api/aircraft/inspections), and AC 61-65K's endorsements, their words and
+the fields they take (GET /api/pilot/endorsement-kinds, POST
+/api/pilot/endorsement-fill: the engine's endorsement_kinds and
+endorsement_fill). Add no rule here.
 
 ## Contents
 
@@ -46,7 +54,7 @@ docker compose up -d --build gateway
 docker run --rm -v "$PWD/services/gateway":/build -v /build/target \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
-  -w /build maven:3.9-eclipse-temurin-25 mvn -B test
+  -w /build maven:3.10-eclipse-temurin-25 mvn -B test
 ```
 
 Three details in that command each fix a real failure, not a style
@@ -183,6 +191,22 @@ same Compose services (`infra/docker-compose.prod.yml`). Note the
 env var name must match `application.yml` exactly — Spring's relaxed
 binding does *not* map `PLANNER_SERVICE_BASE_URL` onto a property with a
 hyphen in it.
+
+**The paperwork is one list, read by the apps and the reminder emails
+alike.** `PaperworkService` gathers what falls due for a pilot -- the
+flight review, the medical, passengers by day and at night, instrument
+currency (14 CFR 61.56(c), 61.23, 61.57(a)-(c)) -- and for each of their
+airplanes the annual, the 100-hour where the owner says it is flown for
+hire (91.409(a), (b)), the ELT's inspection and battery (91.207(d), (c)),
+the static system (91.411(a)), the transponder (91.413(a)), the VOR check
+(91.171(a)(2)) and the owner's own due items, an AD's status kept as
+91.417(a)(2)(v) asks (`aircraft_due_items`, V32). Every day in it is the
+engine's (through the planner) or the owner's; the service only names
+each one, cites its rule and counts the days and hours left.
+`GET /api/paperwork` is the apps' "Coming up"; `ReminderService` emails
+the dated ones 30 and 7 days before, keyed in `reminders_sent` by what
+they are ("aircraft-12-annual", "item-40"), so each is sent once. The
+VOR check and hour-counted items are listed but not emailed.
 
 **Sign-in is conditional, and three-way.** `oauth2Login` registers
 only when `OAuthClientsConfig` actually produced a client registration

@@ -1,0 +1,31 @@
+package app.wingtipmaps.gateway.dto;
+
+import java.time.LocalDate;
+import org.jspecify.annotations.Nullable;
+
+/** A logbook entry as the API returns it. */
+public record LogbookEntryDto(
+        Long id,
+        LocalDate flownOn,
+        @Nullable String aircraft,
+        @Nullable String aircraftType,
+        @Nullable String route,
+        double totalHours,
+        double nightHours,
+        double crossCountryHours,
+        int dayLandings,
+        int nightLandings,
+        @Nullable String remarks,
+        double dualHours,
+        double soloHours,
+        double instrumentHours,
+        int toweredLandings,
+        double distanceNm,
+        double longestLegNm,
+        int approaches,
+        boolean holding,
+        boolean tracking,
+        double airHours,
+        int touchAndGoes,
+        boolean fromTrack,
+        @Nullable Long flightId) {}

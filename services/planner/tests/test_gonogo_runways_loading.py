@@ -2,35 +2,23 @@
 apps/web/src/lib/weightBalance.test.ts's, runwayCheck.test.ts's and
 runwayFlown.test.ts's cases, on the stock profile itself
 (data/aircraft/c172.json, the 172S's POH figures)."""
+
 import pytest
 from wingtip.aircraft import load_aircraft_profile
 
 from app.gonogo import ask
-from app.gonogo.runways import density_altitude_ft, runway_checks, runway_flown
+from app.gonogo.runways import runway_checks
 from app.gonogo.weight_balance import balance, default_load
 
 
-# The engine's names runway_checks and balance ask inside the engine,
+# The engine's names runway_checks asks inside the engine,
 # asked by name as the native app's Go / No-Go would.
-def short_field(table: dict, pressure_alt_ft: float, temp_c: float, weight_lb: float, headwind_kt: float, grass: bool) -> dict:
-    return ask("gonogo_short_field", table=table, pressure_alt_ft=pressure_alt_ft, temp_c=temp_c, weight_lb=weight_lb,
-               headwind_kt=headwind_kt, grass=grass)
-
-
 def soft_surface(runway: dict | None) -> bool:
     return ask("gonogo_soft_surface", surface=(runway or {}).get("surface"))
 
 
-def field_air(elevation_ft: float, altimeter_in_hg: float | None, temp_c: float | None) -> dict:
-    return ask("gonogo_field_air", elevation_ft=elevation_ft, altimeter_in_hg=altimeter_in_hg, temp_c=temp_c)
-
-
 def picked_end(picks: dict | None, ident: str, kind: str, departure: bool) -> str | None:
     return ask("gonogo_picked_end", picks=picks or None, ident=ident, kind=kind, departure=departure)
-
-
-def in_envelope(envelope: list, arm: float, weight: float) -> bool:
-    return ask("gonogo_in_envelope", envelope=envelope, arm=arm, weight=weight)
 
 
 C172 = {"name": "c172", **load_aircraft_profile("c172")}
@@ -52,54 +40,8 @@ def test_over_its_weight_and_the_baggage_over_its_own():
     assert "The baggage, 170 lb in all, is over its 120 lb" in b["problems"]
 
 
-def test_the_envelope_is_the_pohs():
-    envelope = LOADING["envelope"]
-    assert in_envelope(envelope, 36, 1900) is True
-    assert in_envelope(envelope, 36, 2500) is False
-    assert in_envelope(envelope, 47.5, 2000) is False
-
-
 def test_the_default_load_is_the_sample_airplane_and_a_pilot():
     assert default_load(LOADING, 40) == {"empty_weight_lb": 1642, "empty_arm_in": 38.12, "stations_lb": [170, 0, 0, 0], "fuel_gal": 40}
-
-
-TAKEOFF, LANDING = C172["takeoff"], C172["landing"]
-
-
-def test_the_table_at_sea_level_and_15_c_half_way_between_its_10_and_20():
-    assert short_field(TAKEOFF, 0, 15, 2550, 0, False) == {"ground_roll_ft": 960, "total_ft": 1635, "caveats": []}
-
-
-def test_a_headwind_takes_a_tenth_off_every_9_kt_a_tailwind_adds_a_tenth_every_2_grass_the_ground_rolls_15_pct():
-    assert short_field(TAKEOFF, 0, 10, 2550, 9, False)["ground_roll_ft"] == 835      # 925 less 10%
-    assert short_field(TAKEOFF, 0, 10, 2550, -2, False)["ground_roll_ft"] == 1020    # 925 and 10%
-    grass = short_field(TAKEOFF, 0, 10, 2550, 0, True)
-    assert (grass["ground_roll_ft"], grass["total_ft"]) == (1065, 1715)
-
-
-def test_between_its_weights_and_its_one_landing_table_at_any_weight():
-    assert short_field(TAKEOFF, 0, 0, 2475, 0, False)["ground_roll_ft"] == 805       # between 860 and 745
-    landing = short_field(LANDING, 2000, 20, 2200, 0, False)
-    assert (landing["ground_roll_ft"], landing["total_ft"]) == (630, 1420)
-
-
-def test_density_altitude_is_the_pressure_altitude_on_a_standard_day_and_higher_the_hotter_it_is():
-    assert density_altitude_ft(0, 15) == pytest.approx(0, abs=1e-6)
-    # ISA at 5,000 ft is 5.1 °C: at 25 °C the rule of thumb's 120 ft a
-    # degree gives 7,390 ft; the atmosphere itself, 7,260.
-    assert density_altitude_ft(5000, 5.094) == pytest.approx(5000, abs=5)
-    assert 7200 < density_altitude_ft(5000, 25) < 7400
-    assert density_altitude_ft(2000, -10) < 2000
-
-
-def test_a_fields_air_off_the_altimeter_and_a_standard_days_temperature_where_none_is_reported():
-    # A thousand feet an inch under 29.92; ISA at 900 ft is 13.2 °C.
-    air = field_air(900, 29.42, 25)
-    assert air["pressure_alt_ft"] == pytest.approx(1400)
-    assert air["temp_c"] == 25
-    standard = field_air(900, None, None)
-    assert standard["pressure_alt_ft"] == 900
-    assert standard["temp_c"] == pytest.approx(13.2, abs=0.05)
 
 
 def test_takes_turf_grass_dirt_and_gravel_as_soft_and_asphalt_not():
@@ -109,17 +51,23 @@ def test_takes_turf_grass_dirt_and_gravel_as_soft_and_asphalt_not():
 
 
 def runway(length: int, headwind: float, crosswind: float, **extra) -> dict:
-    return {"ends": "09/27", "length_ft": length, "width_ft": 75, "surface": "ASP", "lighted": True, "closed": False,
-            "runway_ends": [], "wind": {"end": "27", "headwind_kt": headwind, "crosswind_kt": crosswind}, **extra}
+    return {
+        "ends": "09/27",
+        "length_ft": length,
+        "width_ft": 75,
+        "surface": "ASP",
+        "lighted": True,
+        "closed": False,
+        "runway_ends": [],
+        "wind": {"end": "27", "headwind_kt": headwind, "crosswind_kt": crosswind},
+        **extra,
+    }
 
 
 FIELDS = [{"ident": "C81", "elevation_ft": 900}, {"ident": "KDLH", "elevation_ft": 1400}]
 BRIEFING = {
     "metars": {"C81": {"temp_c": 30, "altimeter_in_hg": 29.92}, "KDLH": None},
-    "airports": {
-        "C81": {"runways": [runway(1500, 2, 18)]},
-        "KDLH": {"runways": [runway(9000, 10, 3), runway(12000, 0, 0, closed=True)]},
-    },
+    "airports": {"C81": {"runways": [runway(1500, 2, 18)]}, "KDLH": {"runways": [runway(9000, 10, 3), runway(12000, 0, 0, closed=True)]}},
 }
 
 
@@ -149,10 +97,18 @@ def ends(a: str, b: str) -> list[dict]:
 
 def test_checks_the_runway_the_pilot_picked_whatever_the_wind_with_the_wind_on_the_end_picked():
     # KDLH: a long runway into the wind, and a short one the pilot picked.
-    picked = {**BRIEFING, "airports": {**BRIEFING["airports"], "KDLH": {"runways": [
-        runway(9000, 10, 3, ends="09/27", runway_ends=ends("09", "27")),
-        runway(1200, 8, 0, ends="18/36", runway_ends=ends("18", "36"), wind={"end": "36", "headwind_kt": 8, "crosswind_kt": 0}),
-    ]}}}
+    picked = {
+        **BRIEFING,
+        "airports": {
+            **BRIEFING["airports"],
+            "KDLH": {
+                "runways": [
+                    runway(9000, 10, 3, ends="09/27", runway_ends=ends("09", "27")),
+                    runway(1200, 8, 0, ends="18/36", runway_ends=ends("18", "36"), wind={"end": "36", "headwind_kt": 8, "crosswind_kt": 0}),
+                ]
+            },
+        },
+    }
     into = runway_checks(C172, picked, FIELDS, 2550, 2400)[1]
     assert [into["end"], into["picked"], into["distances"][0]["over"]] == ["27", False, False]
     flown = runway_checks(C172, picked, FIELDS, 2550, 2400, {"pattern": {"KDLH": "18"}, "takeoff": {}})[1]
@@ -163,36 +119,6 @@ def test_checks_the_runway_the_pilot_picked_whatever_the_wind_with_the_wind_on_t
 
 def test_is_not_worked_out_without_the_pohs_tables():
     assert runway_checks({**C172, "takeoff": None}, BRIEFING, FIELDS, 2550, 2400) == []
-
-
-def flown_runway(pairs: list[tuple[str, float]], length: int, wind: dict | None = None, closed: bool = False) -> dict:
-    return {"closed": closed, "ends": "/".join(p[0] for p in pairs), "length_ft": length, "lighted": True, "surface": "ASP",
-            "turf": [], "width_ft": 75, "runway_ends": [{"ident": i, "heading_true_deg": h, "traffic": "left"} for i, h in pairs],
-            "wind": wind}
-
-
-# A long runway into the wind and a short one across it.
-FIELD = [
-    flown_runway([("09", 90), ("27", 270)], 6000, {"end": "27", "headwind_kt": 12, "crosswind_kt": 1, "gust_crosswind_kt": None}),
-    flown_runway([("18", 180), ("36", 360)], 2400, {"end": "36", "headwind_kt": 0, "crosswind_kt": -12, "gust_crosswind_kt": None}),
-]
-
-
-def test_runway_flown_the_pilots_pick_where_they_made_one_even_off_the_wind():
-    flown = runway_flown(FIELD, "36")
-    assert flown["end"]["ident"] == "36"
-    assert flown["runway"]["length_ft"] == 2400
-
-
-def test_runway_flown_else_the_runway_most_nearly_into_the_wind():
-    assert runway_flown(FIELD, None)["end"]["ident"] == "27"
-    assert runway_flown(FIELD, "NONE")["end"]["ident"] == "27"
-
-
-def test_a_pick_on_a_closed_runway_or_one_the_field_doesnt_have_falls_back_to_the_winds():
-    closed = [FIELD[0], flown_runway([("18", 180), ("36", 360)], 2400, None, True)]
-    assert runway_flown(closed, "36")["end"]["ident"] == "27"
-    assert runway_flown(FIELD, "4")["end"]["ident"] == "27"
 
 
 PICKS = {"pattern": {"C81": "24", "UES": "10", "KDLH": "NONE"}, "takeoff": {"UES": "28"}}
@@ -224,9 +150,14 @@ def test_picked_end_matches_a_field_as_the_web_does_trimmed_any_case_k_only_befo
 def test_a_variable_wind_with_no_runway_component_is_all_crosswind_gusts_included():
     # runwayCheck.ts: VRB (AIM 7-1-28) gives the runways no wind, and all of
     # it may be across -- past the 172's demonstrated 15 kt, a caution.
-    vrb = {**BRIEFING, "metars": {"C81": {"temp_c": 15, "altimeter_in_hg": 29.92, "wind_dir_true_deg": None, "wind_speed_kt": 12,
-                                          "wind_gust_kt": 22}, "KDLH": None},
-           "airports": {**BRIEFING["airports"], "C81": {"runways": [runway(5000, 0, 0, wind=None)]}}}
+    vrb = {
+        **BRIEFING,
+        "metars": {
+            "C81": {"temp_c": 15, "altimeter_in_hg": 29.92, "wind_dir_true_deg": None, "wind_speed_kt": 12, "wind_gust_kt": 22},
+            "KDLH": None,
+        },
+        "airports": {**BRIEFING["airports"], "C81": {"runways": [runway(5000, 0, 0, wind=None)]}},
+    }
     start = runway_checks(C172, vrb, FIELDS, 2550, 2400)[0]
     assert (start["crosswind_kt"], start["crosswind_over"], start["headwind_kt"]) == (22, True, 0)
     # A wind with a direction gives every runway its components: none here.

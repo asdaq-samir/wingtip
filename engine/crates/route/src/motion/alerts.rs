@@ -67,15 +67,12 @@ const QUIET: Fires = Fires { fires: false, inside: None, nm: None, bearing_deg: 
 /// where it was in the air and is down at a field (`arrived`); near
 /// something where it has come within `limit_nm` of `to` (own ship's fix,
 /// or the airport) since the last answer.
+// What was known before and what is known now, each its own argument as
+// the rule's JSON sends it; a struct for them would only rename the fields.
+#[allow(clippy::too_many_arguments)]
 pub fn fires(
-    kind: Kind,
-    before_airborne: Option<bool>,
-    was_inside: bool,
-    airborne: Option<bool>,
-    arrived: bool,
-    plane: Option<(f64, f64)>,
-    to: Option<(f64, f64)>,
-    limit_nm: f64,
+    kind: Kind, before_airborne: Option<bool>, was_inside: bool, airborne: Option<bool>, arrived: bool, plane: Option<(f64, f64)>,
+    to: Option<(f64, f64)>, limit_nm: f64,
 ) -> Fires {
     match kind {
         Kind::TakeOff => Fires { fires: before_airborne == Some(false) && airborne == Some(true), ..QUIET },

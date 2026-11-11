@@ -13,6 +13,7 @@ two bake files (`target:base`) and the ECR push name. An image that went
 back to its own Python, or a build that forgot the context, would build
 without the engine or not at all -- this test says so before a build does.
 """
+
 import re
 from pathlib import Path
 
@@ -21,12 +22,16 @@ import pytest
 ROOT = Path(__file__).resolve().parents[3]
 BASE = "services/Dockerfile.base"
 
-# Every image whose Dockerfile copies wingtip in, and so needs the base.
+# Every image built on the base: those whose Dockerfile copies wingtip
+# in, and the assistant, which uses the base's Python alone.
 IMAGES = {
     "services/planner/Dockerfile": "planner",
+    "services/ingest/Dockerfile": "ingest",
+    "services/assistant/Dockerfile": "assistant",
+    "services/weather/Dockerfile": "weather",
     "ml/Dockerfile.ml": "ml",
-    "ml/Dockerfile.processing": "pipeline-processing",
-    "ml/Dockerfile.training": "pipeline-training",
+    "services/jobs/retrain/Dockerfile": "retrain",
+    "services/jobs/charts/Dockerfile": "charts",
 }
 
 
@@ -36,11 +41,11 @@ def froms(text: str) -> list[str]:
 
 @pytest.mark.parametrize("path", IMAGES)
 def test_the_image_is_built_from_the_base(path):
-    # The planner also builds tippecanoe in a build-only stage whose
+    # The charts job also builds tippecanoe in a build-only stage whose
     # binaries are copied on; the image itself is the last FROM.
     stages = froms((ROOT / path).read_text())
     assert stages[-1] == "wingtip-base"
-    assert all(f.startswith("python:3.14-slim@sha256:") for f in stages[:-1])
+    assert all(f.startswith("python:3.15-slim@sha256:") for f in stages[:-1])
 
 
 @pytest.mark.parametrize("path", IMAGES)
@@ -52,7 +57,7 @@ def test_the_image_does_not_build_the_engine_again(path):
 def test_the_base_installs_the_requirements_and_the_wheel():
     text = (ROOT / BASE).read_text()
     assert len(froms(text)) == 2
-    assert all(f.startswith("python:3.14-slim@sha256:") for f in froms(text))
+    assert all(f.startswith("python:3.15-slim@sha256:") for f in froms(text))
     assert "maturin build" in text
     assert "pip install -r /tmp/wingtip-requirements.txt" in text
     assert "--mount=type=bind,from=native,source=/wheels,target=/tmp/wheels" in text
@@ -62,7 +67,12 @@ def test_the_base_installs_the_requirements_and_the_wheel():
 def test_every_image_reading_wingtip_is_listed():
     readers = {
         str(p.relative_to(ROOT))
-        for p in [*ROOT.glob("services/*/Dockerfile"), *ROOT.glob("ml/Dockerfile.*"), *ROOT.glob("infra/*/Dockerfile")]
+        for p in [
+            *ROOT.glob("services/*/Dockerfile"),
+            *ROOT.glob("services/jobs/*/Dockerfile"),
+            *ROOT.glob("ml/Dockerfile.*"),
+            *ROOT.glob("infra/*/Dockerfile"),
+        ]
         if "services/planner/wingtip" in p.read_text() or "requirements-wingtip" in p.read_text()
     }
     assert readers <= set(IMAGES), readers - set(IMAGES)

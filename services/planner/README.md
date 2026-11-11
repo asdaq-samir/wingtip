@@ -17,14 +17,22 @@ It serves no pages. The front end is in [`apps/web/`](../../apps/web) and ships 
 
 The Python behind it lives in [`services/planner/wingtip`](wingtip). This is a thin
 HTTP layer over it: `app/main.py` builds the app, `app/routers/` holds
-the endpoints one module per concern (plan, chart, classb, build,
-briefing, notes, devml, devservices, system), and the work they share -- resolving a route
-(`common.py`), scoring and selecting its checkpoints (`scoring.py`), the
-cruise altitude and course line (`planning.py`), the corridor read
-(`detection.py`) -- sits beside them. The legs themselves are
-`wingtip.navlog`'s. The written briefing (`app/narrative.py`) is told
-from the nav log the page already shows, by one streamed Claude call.
-Every response, streamed lines included, is a model in `app/schemas.py`:
+the endpoints one module per concern (plan, chart, classb, briefing,
+gonogo, notes, devml, devservices, system ...), and the work they share --
+resolving a route (`router_basics.py`), what a plan is asked
+(`plan_query.py`), a route's briefing (`route_briefing.py`), the Go / No-Go's
+plan and findings (`gonogo/flight.py`), the dev-services sidecar
+(`dev_services.py`), scoring the checkpoints (`checkpoint_scoring.py`), the
+corridor read (`detection.py`) -- sits beside them. A router only parses,
+calls and returns, and never imports another: `lint-imports` holds that
+(`.importlinter`: no router imports another, only `app/main.py` imports
+the routers, and `wingtip` never imports `app`), in check.sh's py and
+planner areas and in CI. The legs themselves are
+`wingtip.navlog`'s. The planner calls no model: every Claude call is the
+`assistant` service's (services/assistant), which asks the endpoints
+here for its figures.
+Every response, streamed lines included, is a model in `app/schemas/` (one module per router,
+`common.py` for those shared):
 FastAPI validates against it and publishes it in `openapi.json`,
 committed here and checked by `services/planner/tests/test_openapi.py`. After changing a
 model, run `python -m app.openapi` and commit the result; `apps/web/`
@@ -60,6 +68,7 @@ dependency list:
 from fastapi import FastAPI
 
 app = FastAPI()
+
 
 @app.get("/api/course")
 def course(dep: str, dest: str) -> dict:
@@ -117,53 +126,39 @@ once in ten.
 
 ## The endpoints
 
-| Path | What it does |
-|---|---|
-| `GET /` | Says the service is up and where the UI went. |
-| `GET /api/course` | The leg itself. Sub-second, so the map draws immediately. |
-| `GET /api/checkpoints` | Scored candidates and the subset worth flying. |
-| `GET /api/navlog` | The four altitude plans (lowest, highest, fastest for the winds, and the least fuel, climb and cruise; each stepping under a Class B shelf and up past it), the one chosen (`altitude_choice`), and the dead-reckoning legs, streamed as NDJSON. `depart`, an ISO time, picks the winds forecast period (6, 12 or 24 hours out) and whether the fuel reserve is the day or the night one; the totals carry the fuel check against the aeroplane's usable fuel (`usable_fuel_gal` overrides the profile's). Each leg flies the aeroplane's cruise figures -- the profile's, or a pilot's own (`cruise_tas_kt`, `fuel_burn_gph`, and `cruise_power_pct`, the power they are at) -- in its own air: they are its figures at 6,000 ft on a standard day, and the forecast temperature at the leg's altitude gives the density altitude, the TAS and the burn it flies at (`wingtip.performance`). Each leg carries its climb -- from the field on the first, up to a new level where a plan steps -- at the best rate for the density altitude, falling to 100 fpm at the service ceiling. The slow one. |
-| `GET /api/plan` | All three at once, for non-browser callers. |
-| `GET /api/briefing` | The FAA-sequence weather briefing behind Plan's briefing (the nav log drawer opened wide). |
-| `POST /api/briefing/narrative` | The Brief's written briefing (`app.narrative`): the nav log on screen, sent back by the page, told in plain prose by one streamed Claude call (`messages.stream`, `NARRATIVE_MODEL`, Haiku by default), as newline-delimited JSON -- `delta` lines as it is written, then `done` with the whole briefing, or `error`. A paid feature: gateway checks the subscription and the day's allowance before it forwards the call. |
-| `GET /api/detect/stream` | Chart-vision detections, streamed as NDJSON. |
-| `GET /api/classify` | What the chart draws at one point. |
-| `GET /api/chart-tile/{kind}/{z}/{x}/{y}.png` | The map's tiles, rendered from the FAA's own GeoTIFF of each sheet (`wingtip.charts`), collar clipped away so sheets butt together; 404 where no sheet of that kind covers the tile. Any chart kind by key -- `sec`, `tac`, `ifr_low`, `ifr_high` (the IFR enroute charts, base layers the map's info popover can switch to), `ifr_area` (the enroute charts' terminal-area sheets, an overlay over the IFR bases the way the TAC is over the sectional). `chart_layers` on the course lists the kinds, their zooms and which base each overlay belongs over. On AWS the course also carries `chart_tiles_base`, the CloudFront URL the browser fetches tiles from instead (docs/README-AWS.md). |
-| `GET /api/class-b` | Every Class B airport: where it is, and what its METAR/TAF are doing now and forecast. One call for all thirty rather than one per marker -- the airspace shapefile is parsed once and pickled (`wingtip.classb`, `data/raw/faa_nasr/Shape_Files/Class_Airspace.controlled.v5.pkl`), and the METAR/TAF national caches are already held in memory by `wingtip.weather`, so assembling all thirty costs about as much as assembling one. |
-| `POST/DELETE /api/picks` | Hand-marked checkpoints. |
-| `POST /api/checkpoint-notes/generate`, `POST /api/checkpoint-notes` | A "how to spot it" note per checkpoint: streamed, generating (one Claude call each) only the checkpoints with no note yet; and a pilot's own edit. An edit is that pilot's alone (gateway's proxy sends `X-Pilot-Id` from the session) and is appended, so the note it replaced stays in `checkpoint_notes.csv`; everyone else keeps the shared note. |
-| `POST /api/oral/question`, `POST /api/oral/grade` | The mock oral (`app.oral`, the developer's until a CFI has reviewed it): an examiner's question about the flight the page describes, on an ACS element, and the student's answer graded -- each grounded in 14 CFR Parts 61 and 91 and the AIM (`wingtip.references`, fetched from the eCFR and the FAA into `data/raw/references` and searched by BM25), every quote checked word for word against its source and dropped where it is not. One Claude call each (`ORAL_MODEL`). `python -m app.oral_review --count 12 --out …` writes a sheet of questions and answers for a CFI to mark. |
-| `GET /api/airports/search` | Identifier and name lookup for the route form. |
-| `GET /api/model-comparison` | Every trained algorithm's accuracy side by side, and which one is promoted. |
-| `GET /api/aircraft-profiles` | The stock performance profiles the nav log can be computed for. `/api/plan` and `/api/navlog` take `aircraft` plus optional `cruise_tas_kt`/`fuel_burn_gph` for a pilot's own aeroplane. |
-| `GET /api/status` | The whole stack in one snapshot for the dev console: which services answer, how fresh the FAA and weather data is, the model registry, and every collected corridor with its label counts. |
-| `POST /api/retrain` | Starts the training run (`python -m wingtip.pipeline run`, compose's `retrain` container) through the `dev-services` sidecar, or a 501 that says how to run it by hand. `/api/status` reports the run, stage by stage, from the file it writes (`data/models/run.json`) and its container's state. |
-| `GET /api/dev/services`, `POST /api/dev/services/{service}/start` | Whether `ml` is running, and starting it if it isn't -- what the dev console's System tab links to. Asks the `dev-services` sidecar (`infra/dev-services`), which holds the Docker socket and answers only these two requests for the names on its list (`ml` and `retrain`) in this compose project; this service never touches Docker itself. The sidecar is on a network only planner shares, so nothing else in the stack can reach it, and it 404s on any other name. |
+Every endpoint, with its parameters and answers, is in
+[the API reference](../../docs/api/README.md), written from the code
+(`openapi.json`, here); a route's docstring is where its behaviour is
+said. The one with a story of its own is the chart tile endpoint.
 
-The tile endpoints render on first request and cache on disk, which is
-fine for one corridor and not for a map with no street layer under it.
-For the whole country ahead of time (the sectional is the map's only
-base layer, so this is the normal state of a running stack):
+The tile endpoint renders a tile on first request and caches it on
+disk where a kind has no archive yet, which is fine for one corridor and
+not for a map with no street layer under it. The whole country ahead of
+time is the charts job's (services/jobs/charts; the sectional is the
+map's only base layer, so this is the normal state of a running stack):
 
 ```sh
-docker compose run --rm --no-deps planner python -m wingtip.charts prepare   # every sheet: sectionals (the lower 48, Alaska, Hawaii, the Caribbean), TACs, IFR low and high; ~7 GB
-docker compose run --rm --no-deps planner python -m wingtip.charts pyramid   # every tile of every kind; about two hours with --workers 3
+docker compose run --rm charts prepare   # every sheet: sectionals (the lower 48, Alaska, Hawaii, the Caribbean), TACs, IFR low and high; ~7 GB
+docker compose run --rm charts pyramid   # every tile of every kind; about two hours with --workers 3
+docker compose run --rm charts pack      # each finished kind's loose tiles into its archives
 ```
 
-`run --rm`, not `exec`: a render inside the serving planner's own
-container has had it killed for memory twice. The pyramid picks its
-number of workers from the memory the container has left (two for the
-high-density tiles in a 12 GB Docker VM) and logs the pick; `--workers`
-sets it.
+A container of its own, not the planner's: a render inside the serving
+planner's container has had it killed for memory twice. The pyramid picks
+its number of workers from the memory the container has left (two for
+the high-density tiles in a 12 GB Docker VM) and logs the pick;
+`--workers` sets it.
 
-Both resume where they stopped. The sheets land in
+All resume where they stopped. The sheets land in
 `data/raw/charts.nosync/<cycle>/`, the tiles in
 `data/raw/chart_tiles.nosync/<cycle>/` (the suffix keeps iCloud Drive
-from syncing them; elsewhere it is just a name). A tile a render has
-drawn only part of -- a seam its second sheet has yet to reach -- waits
-beside the served tile as `<y>.partial`, never served, until it is
-finished or the pass ends. The Dev console's System tab shows the
-sheets prepared and the pyramid's progress.
+from syncing them; elsewhere it is just a name): loose files while a
+pass draws them, then `<kind>.pmtiles` and `<kind>@2x.pmtiles` once the
+kind is finished and packed. A tile a render has drawn only part of -- a
+seam its second sheet has yet to reach -- waits beside the served tile as
+`<y>.partial`, never served, until it is finished or the pass ends. The
+Dev console's System tab shows the sheets prepared and the pyramid's
+progress.
 
 A change to how a tile is drawn goes with a bump of
 `wingtip.charts.RENDERER_VERSION`. The next refresh then counts the cycle
@@ -172,24 +167,32 @@ bumps the tile revision at the end, as `unmask` does below.
 
 The planner keeps up with the 56-day cycle by itself: at start-up and
 once an hour it asks the FAA's products page which cycle is current
-and, if that cycle's pyramid is not complete on disk, runs `python -m
-wingtip.charts refresh` in a subprocess (prepare, render, then delete the
-previous cycle). The map switches to the new cycle only once every
+and, if that cycle's pyramid is not complete on disk, starts the charts
+job's `charts` container through the dev-services sidecar (prepare,
+render, pack, then delete the previous cycle; `docker compose create
+retrain charts charts-overlays charts-next` once makes the containers it starts).
+Where `CHARTS_CYCLE_AUTO` is on (the default), it also starts
+`charts-next` hourly inside the window from `CHARTS_CYCLE_LEAD_DAYS` (7)
+before the next cycle, so that cycle is drawn ahead and swapped in at
+0901Z on its date (services/jobs/README.md). It
+starts `charts-overlays` the same way, at any hour, when its cycle pack
+has no overlay tiles. The map switches to the new cycle only once every
 tile of it is there, so a refresh in progress changes nothing on
 screen. The render is hours of every core it is given, so it starts
 only inside `CHARTS_REFRESH_WINDOW` (`HH:MM-HH:MM` on the container's
 clock, `01:00-06:00` by default, blank for any time; set `TZ` for a
 local clock), niced, with `CHARTS_REFRESH_WORKERS` processes (one by
-default) -- unless nothing complete is on disk at all, when it starts
-at once. `refresh now` in the Dev console starts one at once with two
-workers, and `CHARTS_AUTO_REFRESH=0` turns the check off. (The FAA aircraft
+default, the job's command in docker-compose.yml) -- unless nothing
+complete is on disk at all, when it starts at once. `refresh now` in the
+Dev console starts the job at once, and `CHARTS_AUTO_REFRESH=0` turns the
+check off. (The FAA aircraft
 registry has its own switch: `REGISTRY_REFRESH=0` turns off its daily
 download, which is on otherwise, whatever the charts do; and so do the
 NASR and obstacle files: `FAA_DATA_AUTO_REFRESH=0` turns off the check
 for their new editions, four times a day otherwise.) All of that
 policy -- the window, the due check, the worker counts -- is
-`app/chart_refresh.py`; `wingtip.charts` does the work it asks for. `python -m
-wingtip.charts check` looks for daylight between adjacent sheets, which is
+`app/chart_refresh.py`; the charts job and `wingtip.charts` do the work it
+asks for. `docker compose run --rm charts check` looks for daylight between adjacent sheets, which is
 what a mis-detected sheet edge would show up as; the one it always
 reports, between the Caribbean 1 chart and Jacksonville west of 83W,
 is the open Gulf, where the FAA charts no sectional.
@@ -205,7 +208,7 @@ box or a dry lake). Sheets prepared before that step existed are
 cleaned, and their tiles rendered again, by
 
 ```sh
-docker compose run --rm -T --no-deps planner python -m wingtip.charts unmask --workers 2   # half an hour; re-runnable
+docker compose run --rm -T charts unmask --workers 2   # half an hour; re-runnable
 ```
 
 which also bumps the cycle's tile revision (`chart_revision` on the
@@ -224,9 +227,8 @@ scored in this process (`app/chart_scorer.py`), from the promoted
 rewrites it — no restart. A joblib artifact is a pickle of sklearn's own
 objects, so the version that loads it must match the version that wrote
 it: `requirements.txt` pins scikit-learn and joblib exactly as
-`ml/requirements-training.txt` does, and `services/planner/tests_wingtip/test_requirements.py`
-fails if they differ. Bump both together. (This was a `model-service`
-container of its own until 2026-11-06.)
+`services/jobs/retrain/requirements.txt` does, and `services/planner/tests_wingtip/test_requirements.py`
+fails if they differ. Bump both together.
 
 **Collection runs in-process, not as a container.** `/api/build` starts a
 thread rather than launching a pipeline container, because handing this

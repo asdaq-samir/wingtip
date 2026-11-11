@@ -1,12 +1,45 @@
 """What every test here shares: fresh caches, two known airports, a
 flyable altitude selection and an NDJSON reader."""
+
 import json
 
 import pytest
-from wingtip import airports, airspace, faa_data, fixes, pattern, publications, tfr, weather
+from fastapi.testclient import TestClient
+from wingtip import airports, airspace, faa_data, fixes, pattern, planning, publications, tfr, weather
 from wingtip.config import get_settings
 
-from app import chart_model, chart_scorer, detection, planning, prefetch, checkpoint_scoring
+from app import chart_model, chart_scorer, detection, prefetch, checkpoint_scoring
+
+
+#: The endpoints that plan a flight: with no `aircraft` they plan with no
+#: airplane (PlanQuery's).
+PLANNING = ("/api/plan", "/api/navlog", "/api/local-flight")
+
+
+class AirplaneClient(TestClient):
+    """A client whose plans fly the stock C172 unless a test names another
+    airplane, as every plan did before no airplane became the default
+    (the owner, 2026-11-09): the tests of an airplane's figures."""
+
+    def get(self, url, *, params=None, **kwargs):
+        if str(url).split("?")[0] in PLANNING and "aircraft=" not in str(url):
+            params = {"aircraft": "c172", **(params or {})}
+        return super().get(url, params=params, **kwargs)
+
+
+@pytest.fixture(autouse=True)
+def _weather_store_of_its_own(tmp_path_factory, monkeypatch):
+    """Each test's weather store an empty folder of its own: none reads the
+    copies the weather service keeps in data/raw/weather, or leaves the
+    planner's `asked` mark there (wingtip.weather_store). A test about the
+    weather writes what it wants in it."""
+    from wingtip import weather_store
+
+    monkeypatch.setenv("WEATHER_STORE", str(tmp_path_factory.mktemp("weather")))
+    monkeypatch.setitem(weather_store._ASKED, "at", 0.0)
+    get_settings.cache_clear()
+    yield
+    get_settings.cache_clear()
 
 
 @pytest.fixture(autouse=True)
@@ -15,8 +48,13 @@ def _fresh_caches():
     corridor detections) across requests, so a test that monkeypatches
     one of those dependencies must not be handed the previous test's
     answer instead."""
-    for cache in (planning._ALTITUDE_CACHE, planning._PLANS_CACHE, planning._CLASS_B_WAYS,
-                  checkpoint_scoring._SCORE_CACHE, detection._DETECT_JOBS):
+    for cache in (
+        planning._ALTITUDE_CACHE,
+        planning._PLANS_CACHE,
+        planning._CLASS_B_WAYS,
+        checkpoint_scoring._SCORE_CACHE,
+        detection._DETECT_JOBS,
+    ):
         cache.clear()
 
 
@@ -31,20 +69,20 @@ def _settings_from_this_tests_environment():
 
 
 def airport(ident: str) -> dict:
-    coords = {"C81": (42.3172, -88.0905), "KDLH": (46.8421, -92.1936), "KMSN": (43.1399, -89.3375)}[ident]
-    return {"ident": ident, "name": ident, "lat": coords[0], "lon": coords[1], "elevation_ft": 900.0,
-            "municipality": "", "region": ""}
+    coords = {"C81": (42.3172, -88.0905), "KDLH": (46.8421, -92.1936), "KMSN": (43.1399, -89.3375), "KOSH": (43.9844, -88.5570)}[ident]
+    return {"ident": ident, "name": ident, "lat": coords[0], "lon": coords[1], "elevation_ft": 900.0, "municipality": "", "region": ""}
 
 
 @pytest.fixture(autouse=True)
 def noon_in_chicago(monkeypatch):
-    """"Now", where a plan has no departure time, is a day's noon in
+    """ "Now", where a plan has no departure time, is a day's noon in
     Chicago (17:00 UTC): the night reserve follows the hour (planning.now),
     and a test about the day's 30 minutes failed when CI ran at 19:44 CDT.
     A test about the night sets its own."""
     from datetime import datetime, timezone
 
-    from app import planning
+    from wingtip import planning
+
     monkeypatch.setattr(planning, "now", lambda: datetime(2026, 9, 22, 17, 0, tzinfo=timezone.utc))
 
 
@@ -82,7 +120,7 @@ def no_navaids(monkeypatch):
 
 @pytest.fixture(autouse=True)
 def known_airports(monkeypatch):
-    """C81, KDLH and KMSN, without the airports table. A test about an unknown
+    """C81, KDLH, KMSN and KOSH, without the airports table. A test about an unknown
     ident stubs get_airport again itself."""
     monkeypatch.setattr(airports, "get_airport", lambda ident, **kw: airport(ident.upper()))
 
@@ -142,10 +180,20 @@ def no_publications(monkeypatch):
 def altitude() -> dict:
     """What wingtip.altitude.select_cruise_altitude returns for a flyable route."""
     return {
-        "recommended_ft": 4500.0, "candidates_ft": [4500.0], "course_magnetic_deg": 335.0, "eastbound": False,
-        "floor_ft": 2200.0, "airspace_ceiling_ft": None,
-        "airspace_transits": [], "freezing_level_ft": None, "band_ceiling_ft": None, "min_ceiling_ft": None,
-        "min_visibility_sm": None, "hazards": [], "low_ceiling_or_visibility": False, "weather_unavailable": [],
+        "recommended_ft": 4500.0,
+        "candidates_ft": [4500.0],
+        "course_magnetic_deg": 335.0,
+        "eastbound": False,
+        "floor_ft": 2200.0,
+        "airspace_ceiling_ft": None,
+        "airspace_transits": [],
+        "freezing_level_ft": None,
+        "band_ceiling_ft": None,
+        "min_ceiling_ft": None,
+        "min_visibility_sm": None,
+        "hazards": [],
+        "low_ceiling_or_visibility": False,
+        "weather_unavailable": [],
         "segments": [],
     }
 
@@ -155,15 +203,28 @@ def select_cruise_altitude_stub(altitude: dict):
     nav log's fixes, one segment per leg with the recommended altitude
     as its only legal one -- or none at all when there is no
     recommendation, which is what makes a route unflyable."""
-    def select(start, end, profile, faa_cache_dir=None, fixes=None, fcst_hr="06", pending=None, window=None,
-               class_b_cleared=False, rules="vfr"):
+
+    def select(
+        start, end, profile, faa_cache_dir=None, fixes=None, fcst_hr="06", pending=None, window=None, class_b_cleared=False, rules="vfr"
+    ):
         candidates = [] if altitude["recommended_ft"] is None else [altitude["recommended_ft"]]
-        segments = [
-            {"from_nm": 0.0, "to_nm": 10.0, "floor_ft": altitude["floor_ft"], "airspace_ceiling_ft": None,
-             "band_ceiling_ft": None, "candidates_ft": candidates}
-            for _ in range(len(fixes) - 1)
-        ] if fixes else []
+        segments = (
+            [
+                {
+                    "from_nm": 0.0,
+                    "to_nm": 10.0,
+                    "floor_ft": altitude["floor_ft"],
+                    "airspace_ceiling_ft": None,
+                    "band_ceiling_ft": None,
+                    "candidates_ft": candidates,
+                }
+                for _ in range(len(fixes) - 1)
+            ]
+            if fixes
+            else []
+        )
         return {**altitude, "rules": rules, "segments": segments}
+
     return select
 
 

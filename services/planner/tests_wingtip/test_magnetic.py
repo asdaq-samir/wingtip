@@ -5,20 +5,16 @@ NOAA's own calculator gave -- the values this project had cached from it
 before the model was evaluated locally -- and the sign convention the
 nav log's true-to-magnetic conversion depends on.
 """
+
 from datetime import date
 
 import pytest
 
-from wingtip.magnetic import _decimal_year, magnetic_variation_deg
+from wingtip.magnetic import magnetic_variation_deg
 
 # Real rows from the CSV this project cached NOAA's calculator into:
 # (lat, lon, declination NOAA returned).
-NOAA_CACHED = [
-    (44.58, -90.14, -2.55629),
-    (42.33, -88.08, -3.89582),
-    (42.36, -88.10, -3.88521),
-    (43.02, -89.00, -3.27400),
-]
+NOAA_CACHED = [(44.58, -90.14, -2.55629), (42.33, -88.08, -3.89582), (42.36, -88.10, -3.88521), (43.02, -89.00, -3.27400)]
 
 
 @pytest.mark.parametrize("lat,lon,noaa", NOAA_CACHED)
@@ -50,8 +46,3 @@ def test_a_date_before_the_model_is_clamped_too():
     early = magnetic_variation_deg(42.3, -88.1, on=date(1990, 1, 1))
     start = magnetic_variation_deg(42.3, -88.1, on=date(2025, 1, 1))
     assert early == pytest.approx(start, abs=0.05)
-
-
-def test_decimal_year_is_the_models_own_time_unit():
-    assert _decimal_year(date(2026, 1, 1)) == pytest.approx(2026.0)
-    assert _decimal_year(date(2026, 7, 2)) == pytest.approx(2026.5, abs=0.01)

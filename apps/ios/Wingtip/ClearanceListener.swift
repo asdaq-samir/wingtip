@@ -5,10 +5,17 @@ import Speech
 import UIKit
 
 /// The radio heard through the microphone by Apple's own recognizer (the
-/// Speech framework's SFSpeechRecognizer), a transmission at a time: on
-/// the phone where it can be, so nothing said goes off it, and told the names near
-/// the route to listen for (contextualStrings, /api/clearance/words) -- a
-/// fix said as a word, "Pykla", is not English.
+/// Speech framework's SFSpeechRecognizer), a transmission at a time, on
+/// the iPhone only (requiresOnDeviceRecognition, always), so nothing a
+/// pilot says goes to Apple or anyone (the owner, 2026-11-09); and told the
+/// names near the route to listen for (contextualStrings,
+/// /api/clearance/words) -- a fix said as a word, "Pykla", is not English.
+///
+/// Where the iPhone cannot recognise English on the device
+/// (supportsOnDeviceRecognition false: an older phone, the language's
+/// model not on it), voice is not offered at all: `canListen` is false and
+/// every microphone control hides itself, and nothing falls back to
+/// Apple's servers.
 ///
 /// It goes on with the phone locked, as the owner asked (2026-11-02;
 /// project.yml's UIBackgroundModes audio keeps the microphone open), and a
@@ -47,9 +54,11 @@ final class ClearanceListener {
         return last
     }
 
-    /// The microphone open for one question to the assistant (hearOnce).
+    /// The microphone open for one thing said to the radio's own screens
+    /// -- a readback (hearOnce). The pilot asking the app by voice is
+    /// VoiceInput's, apart from the radio.
     private(set) var hearingOnce = false
-    /// The words of that question so far.
+    /// The words of it so far.
     private var heardOnce: String?
 
     /// As many transmissions as are kept.
@@ -62,6 +71,10 @@ final class ClearanceListener {
     private static let longestOnce: TimeInterval = 20
 
     private let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "en-US"))
+
+    /// Whether voice is offered here: English recognised on this iPhone,
+    /// never on a server. Every microphone control shows only when it is.
+    var canListen: Bool { recognizer?.supportsOnDeviceRecognition == true }
     private let audio = AVAudioEngine()
     private var request: SFSpeechAudioBufferRecognitionRequest?
     /// The request the microphone's buffers go to, from the audio thread.
@@ -80,17 +93,26 @@ final class ClearanceListener {
     /// one tap feeding whichever request is being heard.
     private func openMicrophone() async -> Bool {
         problem = nil
+        // Asked first, so a phone that cannot keep speech on itself is
+        // never even asked for the permission.
+        guard canListen else {
+            problem = "Speech can't be recognised on this iPhone; type the clearance instead."
+            Log.radio.error("on-device speech recognition is not available")
+            return false
+        }
         guard await Self.allowed() else {
             problem = "Microphone or speech recognition access was refused; allow it for Wingtip Maps in Settings."
             Log.radio.error("the microphone or speech recognition was refused")
             return false
         }
-        guard let recognizer, recognizer.isAvailable else {
+        guard let recognizer, recognizer.isAvailable, recognizer.supportsOnDeviceRecognition else {
             problem = "Speech recognition is not available now."
             Log.radio.error("speech recognition is not available")
             return false
         }
         stop()
+        // The radio takes the microphone: a question being said ends.
+        VoiceInput.shared.finish()
         do {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.record, mode: .measurement, options: .duckOthers)
@@ -142,12 +164,13 @@ final class ClearanceListener {
 
     /// The next transmission, heard afresh.
     private func hear() {
-        guard listening, let recognizer else { return }
+        guard listening, let recognizer, recognizer.supportsOnDeviceRecognition else { return }
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
         request.taskHint = .dictation
         request.contextualStrings = words
-        if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }
+        // On the iPhone, never Apple's servers.
+        request.requiresOnDeviceRecognition = true
         self.request = request
         feed.set(request)
         let id = next
@@ -172,7 +195,12 @@ final class ClearanceListener {
     }
 
     private func heard(_ id: Int, _ text: String, final: Bool) {
-        let forUs = tail.map { HeardCall.ourCall(text, tail: $0) } ?? false
+        // Where the engine cannot say whether it was ours, the call is
+        // shown as not ours and the reason said (problem).
+        var forUs = false
+        if let tail {
+            do { forUs = try HeardCall.ourCall(text, tail: tail) } catch { problem = "Couldn't tell whether that was your call sign: \(error.localizedDescription)" }
+        }
         let was = heard.firstIndex { $0.id == id }
         let wasFinal = was.map { heard[$0].final } ?? false
         let next = Transmission(id: id, at: was.map { heard[$0].at } ?? Date(), text: text, final: final, forUs: forUs)
@@ -183,22 +211,24 @@ final class ClearanceListener {
     }
 
     /// A call to us: a time-sensitive notification while the app is not
-    /// in front, the haptics in the app (the call is on its screen).
+    /// in front, the warning's tap in the app (the call is on its screen; Feel).
     private func tell(_ text: String) {
+        // VoiceOver says the call at once, as the banner shows it.
+        Announce.alert("ATC called you: \(text)", urgent: true)
         if !Notifications.tell("ATC called you", text) {
-            UINotificationFeedbackGenerator().notificationOccurred(.warning)
+            Feel.tap(.warning)
         }
     }
 
-    /// One thing said, for a question to the assistant (AskView): the
-    /// microphone until the words settle -- a pause after the last of
+    /// One thing said for the radio's screens, a readback (ClearanceSheet,
+    /// AtcCopilot): the microphone until the words settle -- a pause after the last of
     /// them, or `longestOnce` -- then closed again. Nothing heard goes in
     /// the radio's log, and nothing is kept. Nil with `problem` set where
     /// the microphone cannot be had, or when the radio is being listened
     /// to, which it would have to be stopped for.
     func hearOnce(words: [String] = []) async -> String? {
         guard !listening else {
-            problem = "The radio is being listened to; stop it to ask by voice."
+            problem = "The radio is being listened to; stop it to read back by voice."
             return nil
         }
         guard await openMicrophone(), let recognizer else { return nil }
@@ -207,14 +237,15 @@ final class ClearanceListener {
         request.shouldReportPartialResults = true
         request.taskHint = .search
         request.contextualStrings = words
-        if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }
+        // On the iPhone, never Apple's servers.
+        request.requiresOnDeviceRecognition = true
         self.request = request
         feed.set(request)
         heardOnce = nil
         let once = Once<String?>()
         let text: String? = await withCheckedContinuation { done in
             once.hold(done)
-            task = recognizer.recognitionTask(with: request) { [weak self] result, error in
+            task = recognizer.recognitionTask(with: request) { [weak self, weak request] result, error in
                 let text = result?.bestTranscription.formattedString
                 let final = result?.isFinal == true || error != nil
                 Task { @MainActor in
@@ -249,7 +280,7 @@ final class ClearanceListener {
     /// seconds, or `longest` seconds have passed. Nil where the
     /// microphone or the recognizer refused (`problem` says why).
     func hearBroadcast(words: [String] = [], pause: TimeInterval = 3, nothing: TimeInterval = 15, longest: TimeInterval = 75,
-                  heard: @MainActor (String) -> Void = { _ in }) async -> String? {
+                       heard: @MainActor (String) -> Void = { _ in }) async -> String? {
         let from = next
         await start(words: words)
         guard listening else { return nil }
@@ -291,11 +322,11 @@ final class ClearanceListener {
 
     /// The microphone's tap, made off the main actor: its block runs on
     /// the audio thread.
-    nonisolated private static func tap(_ input: AVAudioInputNode, into feed: Feed) {
+    private nonisolated static func tap(_ input: AVAudioInputNode, into feed: Feed) {
         input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in feed.append(buffer) }
     }
 
-    private static func allowed() async -> Bool {
+    static func allowed() async -> Bool {
         let speech = await withCheckedContinuation { (done: CheckedContinuation<Bool, Never>) in
             SFSpeechRecognizer.requestAuthorization { done.resume(returning: $0 == .authorized) }
         }
@@ -306,7 +337,7 @@ final class ClearanceListener {
 
 /// A continuation resumed once, whichever of the recognizer's callbacks
 /// (a final result, an error, a cancel) gets there first.
-private final class Once<T: Sendable>: @unchecked Sendable {
+final class Once<T: Sendable>: @unchecked Sendable {
     private let lock = NSLock()
     private var continuation: CheckedContinuation<T, Never>?
 
@@ -325,8 +356,8 @@ private final class Once<T: Sendable>: @unchecked Sendable {
 
 /// The request being heard, for the microphone's tap on the audio thread
 /// to append to while the main actor moves it on from one transmission
-/// to the next.
-private final class Feed: @unchecked Sendable {
+/// to the next (the radio's, and Ask by voice's own, VoiceInput).
+final class Feed: @unchecked Sendable {
     private let lock = NSLock()
     private var request: SFSpeechAudioBufferRecognitionRequest?
 

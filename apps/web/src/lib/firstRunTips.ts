@@ -5,7 +5,8 @@
  * device. Settings, Tips brings them back.
  */
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { browserStorage } from "./storage";
 
 export interface TipSpec {
   /** The control's `data-tip`. */
@@ -21,36 +22,59 @@ export interface TipSpec {
  *  route or been closed: the tips store's key for it. */
 export const FIRST_FLIGHT = "first-flight";
 
+/** The welcome (features/plan/components/welcome), seen once it has been
+ *  finished or skipped: before the first flight's card, and brought back
+ *  with the tips by the Guide's Show Welcome and Tips Again. */
+export const WELCOME = "welcome";
+
+/** Whether the welcome is still to be shown on this device: what holds
+ *  the page's own asks back (locateOnOpen's location, the tips) until it
+ *  has said why. */
+export const welcomeDue = () => unseen(useTips.getState().seen, WELCOME);
+
+/** Whether the welcome is on the screen now: no tip is offered over it. */
+export const useWelcomeOpen = create<{ open: boolean }>(() => ({ open: false }));
+
 /** In the order they are offered, each when its control is in sight. */
 export const TIPS: TipSpec[] = [
   {
     // After the first flight's card planned a route (useFirstFlight): the
-    // one line that points at the Brief, the card's third step.
-    id: "brief", title: "Now the AI brief", after: FIRST_FLIGHT,
-    message: "Weather, NOTAMs and what to look at before you go, read for your route and your time: one verdict first, and ask it anything.",
+    // one line that points at the Brief, the card's third step. It promises
+    // no Ask: the assistant is off by default (lib/subscription, 2026-11-10).
+    id: "brief",
+    title: "Now the Brief",
+    after: FIRST_FLIGHT,
+    message: "Weather, NOTAMs and what to look at before you go, read for your route and your time: one verdict first.",
   },
   {
-    id: "route", title: "Your route",
+    id: "route",
+    title: "Your route",
     message: "Type an airport or a waypoint at any arrow. Drag a point to move it; press and hold one to set its altitude or remove it.",
   },
   {
-    id: "flight-line", title: "The quick numbers",
+    id: "flight-line",
+    title: "The quick numbers",
     message: "Distance, time en route, arrival time and fuel, worked out as you plan. Pull the panel up past the line for the detail.",
   },
   {
-    id: "altitude", title: "Why this altitude",
-    message: "Profile, the button beside the AI brief, shows the flight from the side, how the altitude was chosen and its other plans. Red means no VFR altitude fits; a dot, a rule to check.",
+    id: "altitude",
+    title: "Why this altitude",
+    message:
+      "Profile, the button beside the Brief, shows the flight from the side, how the altitude was chosen and its other plans. Red means no VFR altitude fits; a dot, a rule to check.",
   },
   {
-    id: "tabs", title: "Dots mean look here",
+    id: "tabs",
+    title: "Dots mean look here",
     message: "A red dot on a tab marks something to fix before you go; an amber one, something to look at.",
   },
   {
-    id: "verdict", title: "Start with Go / No-Go",
+    id: "verdict",
+    title: "Start with Go / No-Go",
     message: "Every tab's findings in one list. Tap one to see it in full. The decision stays yours as pilot in command.",
   },
   {
-    id: "weather-places", title: "Weather when you are there",
+    id: "weather-places",
+    title: "Weather when you are there",
     message: "Each place along the route, its forecast read for the hour you pass it, from the departure to the destination.",
   },
 ];
@@ -58,15 +82,12 @@ export const TIPS: TipSpec[] = [
 /** Seen, every one: what a device that has turned them off keeps. */
 const ALL_SEEN = "*";
 
-export const useTips = create<{
-  seen: string[];
-  see: (id: string) => void;
-  reset: () => void;
-}>()(persist(set => ({
-  seen: [],
-  see: id => set(s => (s.seen.includes(id) ? s : { seen: [...s.seen, id] })),
-  reset: () => set({ seen: [] }),
-}), { name: "wingtip.tips" }));
+export const useTips = create<{ seen: string[]; see: (id: string) => void; reset: () => void }>()(
+  persist(
+    (set) => ({ seen: [], see: (id) => set((s) => (s.seen.includes(id) ? s : { seen: [...s.seen, id] })), reset: () => set({ seen: [] }) }),
+    { name: "wingtip.tips", storage: createJSONStorage(() => browserStorage) },
+  ),
+);
 
 /** Whether a tip is still to be offered. */
 export const unseen = (seen: string[], id: string) => !seen.includes(ALL_SEEN) && !seen.includes(id);

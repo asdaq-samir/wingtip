@@ -14,17 +14,17 @@ import WatchConnectivity
 final class WatchLink: NSObject, WCSessionDelegate {
     static let shared = WatchLink()
 
-    /// The checklist of the airplane last fetched, by its N-number, so the
-    /// gateway is asked once an airplane rather than once a tick.
-    private var checklistFor: String?
+    /// The airplane's checklist as last read, with the text it was read
+    /// from, so the engine reads it again only when the text changes.
+    private var checklistText: String?
     private var checklist: Checklist?
     /// The last context sent, so an unchanged one is not sent again.
     private var sentContext: Data?
 
-    private override init() { super.init() }
+    override private init() { super.init() }
 
     /// Activated, then kept up: every few seconds the picked airplane's
-    /// checklist (fetched when the airplane changes) and the fix are sent,
+    /// checklist (kept on this phone) and the fix are sent,
     /// where the phone has a paired watch with the app on it. Returns
     /// only when the task that runs it is cancelled.
     func run(plan: Plan, ownShip: OwnShip) async {
@@ -38,17 +38,21 @@ final class WatchLink: NSObject, WCSessionDelegate {
     private func sync(plan: Plan, ownShip: OwnShip) async {
         let session = WCSession.default
         guard session.activationState == .activated, session.isPaired, session.isWatchAppInstalled else { return }
-        if plan.tail != checklistFor {
-            checklistFor = plan.tail
-            checklist = nil
-            if let tail = plan.tail { checklist = await fetchChecklist(tail) }
+        // The airplane's normal checklist as kept on this phone
+        // (LocalChecklists), by its N-number, else its type.
+        let text = LocalChecklists.text(for: LocalChecklists.airplane(of: plan), .normal)
+        if text != checklistText {
+            checklistText = text
+            // One the engine cannot read is not sent; the phone's own
+            // checklist screen says why (ChecklistModel.problem).
+            checklist = text.isEmpty ? nil : try? ChecklistText.parse(text)
         }
         let fix = ownShip.fix.map {
             WatchFix(lat: $0.coordinate.latitude, lon: $0.coordinate.longitude, altitudeFt: $0.altitudeFt,
                      trackDeg: $0.trackDeg, groundspeedKt: $0.groundspeedKt, at: $0.at)
         }
-        // The gateway's checklist re-read as the watch's own type, from the
-        // same JSON: one shape, two compiled copies.
+        // The checklist re-read as the watch's own type, from the same
+        // JSON: one shape, two compiled copies.
         let watchChecklist = checklist.flatMap { c -> WatchChecklist? in
             guard let data = try? JSONEncoder().encode(c) else { return nil }
             return try? JSONDecoder().decode(WatchChecklist.self, from: data)
@@ -68,12 +72,6 @@ final class WatchLink: NSObject, WCSessionDelegate {
         }
     }
 
-    private func fetchChecklist(_ tail: String) async -> Checklist? {
-        guard let records = try? await Gateway.aircraftRecords(),
-              let record = records.first(where: { $0.tailNumber == tail }) else { return nil }
-        return try? await Gateway.checklist(record.id)
-    }
-
     /// The watch's question answered from the planner. The handler is
     /// called on whichever queue WatchConnectivity holds, so the answer is
     /// handed back from a detached task rather than the main actor.
@@ -83,10 +81,15 @@ final class WatchLink: NSObject, WCSessionDelegate {
             replyHandler([:])
             return
         }
+        // WatchConnectivity's reply handler may be called once from any
+        // thread (Apple's documentation of session(_:didReceiveMessage:
+        // replyHandler:)); the task below is its only caller, so handing
+        // it over is safe though the SDK does not mark it Sendable.
+        nonisolated(unsafe) let reply = replyHandler
         Task.detached {
-            let reply = await WatchLink.nearest(request)
-            let answer = (try? WatchCoding.encoder.encode(reply)) ?? Data()
-            replyHandler([WatchMessageKey.nearest: answer])
+            let nearest = await WatchLink.nearest(request)
+            let answer = (try? WatchCoding.encoder.encode(nearest)) ?? Data()
+            reply([WatchMessageKey.nearest: answer])
         }
     }
 

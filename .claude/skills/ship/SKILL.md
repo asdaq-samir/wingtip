@@ -7,9 +7,12 @@ description: Commit, push and land a change in this repo. Covers which branch, w
 
 A change is shipped when it is merged to `main` with CI green. Until then, say exactly where it stands.
 
+**The standing rule (the owner, 2026-11-08): code first, validation at the end.** During a wave of work, a change is a branch pushed once with no pull request, after only a compile or type check. The branches are merged into `claude/integration`. At the end of the wave, the `checks` skill runs in full there, its fixes are made, and only then are a few grouped pull requests opened (section 4). Don't wait on CI or chase CI failures push by push.
+
 ## 1. Before committing
-- **Branch:** `claude/<topic>`, from `main`. Never commit to `main`, never force-push, never tag a commit.
-- **Verified:** run the `checks` skill for everything the change touched. A green run against a stale image or a container that loaded old code is not evidence.
+- **Branch:** `claude/<topic>`, from `main` (not `claude/native-*`, which starts the phone workflows on push). Never commit to `main`, never force-push, never tag a commit.
+- **During the wave:** a compile or type check of what changed, and the generated files it needs. Tests are written, not run.
+- **For the grouped pull requests at the end:** the `checks` skill in full on the integration branch. A green run against a stale image or a container that loaded old code is not evidence.
 
 ## 2. Stage by name
 ```sh
@@ -30,14 +33,18 @@ One paragraph, in plain sentences:
 Write "airplane". Read `git log -3 --format=%B` first to match the voice. End with the Co-Authored-By trailer.
 
 ## 4. Push
+During the wave, push the branch once when its code is done, with no pull request (no CI runs):
 ```sh
 git push -u origin claude/<topic>
-gh pr create --base main --fill   # once, for the branch's first push
 ```
-To bring the branch up to date, `git merge origin/main` (never rebase a pushed branch). auto-merge-agents.yml turns auto-merge on as the pull request opens, and it merges by itself once the "CI passed" check is green; Claude's review runs only when the "review" label is put on it (the owner, 2026-11-06), so run the covering checks and the aviation-check skill before pushing. Nothing merges red.
+At the end of the wave, after the full checks pass on `claude/integration`, open the grouped pull requests (a few, each a coherent area), one at a time and ten seconds apart:
+```sh
+gh pr create --base main --head <branch> --title "..." --body-file <file>
+```
+To bring a branch up to date, `git merge origin/main` (never rebase a pushed branch). auto-merge-agents.yml turns auto-merge on as the pull request opens, and it merges by itself once the "CI passed" check is green: tier 1, about three minutes (docs/CI.md, "The tiers"). The browser smoke, the image builds and the iPhone's UI smoke run after the merge, on main's push; a failure there opens or updates the one issue "Main CI failed (after merge)", labelled `ready`, which is fixed before new feature work. Claude's review runs only when the "review" label is put on it (the owner, 2026-11-06). Nothing merges red.
 
 ## 5. Follow CI
-- **One push at a time when it matters.** On a pull request, ci.yml cancels the running CI on the same branch when a new push arrives (main's runs queue instead), and the cancelled run's path-filtered jobs (image builds, pdoc) never run again. If a push touched `services/planner/wingtip`, a requirements file or a Dockerfile, wait for its run to finish before pushing again.
+- **One push at a time when it matters.** On a pull request, ci.yml cancels the running CI on the same branch when a new push arrives (main's runs queue instead), and the cancelled run's path-filtered jobs never run again on that pull request. Main's push runs what changed since its last green commit, so nothing is lost after the merge.
 - **In CI,** `gh` is installed and signed in, so use `gh run view`, `gh pr checks` and the rest.
 - **On the owner's Mac there's no `gh` CLI.** Use the public API with `curl`, every three minutes at most (CI takes about two): it allows 60 requests an hour unauthenticated, and a poller that runs while you wait on something else is still polling. Don't use Python's `urllib`, because the host's Python has no CA bundle.
   ```sh
@@ -45,7 +52,7 @@ To bring the branch up to date, `git merge origin/main` (never rebase a pushed b
   curl -s "https://api.github.com/repos/asdaq-samir/wingtip/actions/runs/<run id>/jobs"                       # its jobs
   curl -s "https://api.github.com/repos/asdaq-samir/wingtip/check-runs/<job id>/annotations"                 # why one failed
   ```
-- **Read the annotations before guessing.** test-gateway turns each failing Java test into an annotation, and e2e posts one per failed test plus the planner's data and log. Job logs themselves need authentication.
+- **Read the annotations before guessing.** test-gateway turns each failing Java test into an annotation, guards one per failed check ("Guard failed: <name>", its last lines), and e2e (main's push) posts one per failed test plus the planner's data and log. Job logs themselves need authentication.
 - **Rerunning a failed job** needs the GitHub login that git keeps in the keychain (`git credential fill`): `POST /actions/runs/<id>/rerun-failed-jobs`. The user has allowed this. Never print the token.
 - **Write to GitHub gently.** GitHub suspended the owner's account in October 2026, most likely for nine issues opened through the API in ten seconds. With the owner's login, through the API or `gh`:
   - one write at a time, at least ten seconds apart, never in a loop or several calls in one command;

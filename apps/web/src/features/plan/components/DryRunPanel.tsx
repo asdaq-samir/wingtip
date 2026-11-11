@@ -1,18 +1,23 @@
-import { Suspense, lazy, memo, useMemo, useRef, type ComponentProps, type KeyboardEvent, type PointerEvent } from "react";
+import { Suspense, lazy, memo, useEffect, useMemo, useRef, type ComponentProps, type KeyboardEvent, type PointerEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Pause, Play } from "lucide-react";
+import { Mountain } from "lucide-react";
+import { callEngine } from "../../../lib/engine/engine";
+import { setPilotView, usePilotView } from "../map/terrain/pilotView";
 import { cn } from "cn";
 import CloseButton from "../../../components/CloseButton";
 import RoundButton from "../../../components/RoundButton";
 import { Slider } from "../../../components/ui/slider";
-import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight } from "../../../lib/map/pastFlight";
+import { PlaybackButton, PlaybackToggle, PlaybackToolbar, PlayToggle, SpeedMenu } from "../../../components/PlaybackBar";
+import { playbackKey } from "../../../components/playbackKeys";
+import { REPLAY_SPEEDS, pausePastFlight, playPastFlight, positionAt, usePastFlight } from "../map/pastFlight";
 import { routeProfileQuery } from "../../../lib/queryClient";
 import { TEXT } from "../../../lib/text";
-import { altFt } from "../../../lib/units";
+import { altFt, feet } from "../../../lib/format";
 import FlightLine from "./FlightLine";
 import { dryRunFlown, runNmAt, type DryRun, type Flown } from "./navlog/dryRun";
 import type { RouteEnds } from "./navlog/rows";
 import { loadFlightChart } from "./loadFlightChart";
+import { ForecastStrip, ForecastToggle } from "../forecastRun/ForecastStrip";
 
 const FlightChart = lazy(loadFlightChart);
 
@@ -23,11 +28,17 @@ const FlightChart = lazy(loadFlightChart);
  * marked and said over it, its controls on it -- from the start again,
  * play or pause, how fast, and the close (a past flight's replay's chart,
  * PastFlightChart), the airplane flown along the course on the map
- * (DryRunLayer). In FPL's foot in the side view's place, the flight's
+ * (ReplayGl). In FPL's foot in the side view's place, the flight's
  * figures under it as it goes (DryRunFigures); the chart growing with the
  * sheet.
  */
-export function DryRunControls({ run, ends, onClose, missed = false, onMissed }: {
+export function DryRunControls({
+  run,
+  ends,
+  onClose,
+  missed = false,
+  onMissed,
+}: {
   run: DryRun;
   ends: RouteEnds | null;
   onClose: () => void;
@@ -36,15 +47,19 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
   missed?: boolean;
   onMissed?: () => void;
 }) {
-  const playing = usePastFlight(s => s.playing);
+  const playing = usePastFlight((s) => s.playing);
   // The airspace the course passes through, the side view's answer
   // (routeProfileQuery): it was drawn there before the run's play.
   const { data: profile } = useQuery({
-    ...routeProfileQuery(ends?.departure.ident ?? "", ends?.destination.ident ?? "", (ends?.stops ?? []).map(s => s.ident)),
+    ...routeProfileQuery(
+      ends?.departure.ident ?? "",
+      ends?.destination.ident ?? "",
+      (ends?.stops ?? []).map((s) => s.ident),
+    ),
     enabled: !!ends,
   });
-  const speed = usePastFlight(s => s.speed);
-  const second = usePastFlight(s => (s.at === null ? null : Math.floor(s.at)));
+  const speed = usePastFlight((s) => s.speed);
+  const second = usePastFlight((s) => (s.at === null ? null : Math.floor(s.at)));
   const here = second === null ? null : positionAt(run.points, second);
   // The chart's own, the same while the run is: it is drawn once, its
   // moment moving by itself (PastFlightChart's Now).
@@ -53,19 +68,24 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
   // at the owner's ask ("just show a go missed button when on the final of
   // the approach").
   const onFinal = !!run.final && !missed && !!onMissed && second !== null && second >= run.final.from && second < run.final.to;
-  // The speeds in turn, a tap each: one small button on the chart, where
-  // a segmented control took a row of its own.
-  const nextSpeed = REPLAY_SPEEDS[(REPLAY_SPEEDS.indexOf(speed as (typeof REPLAY_SPEEDS)[number]) + 1) % REPLAY_SPEEDS.length]!;
+  // Play or pause, from the toggle, Space on the bar, or Space on the chart.
+  const toggle = () => (usePastFlight.getState().playing ? pausePastFlight() : playPastFlight());
+  // The run seen from the pilot's seat over the 3D ground, or the chart
+  // from above (features/plan/map/terrain's PilotCamera): a toggle among the
+  // run's own controls, put back to the chart as the run is put away.
+  const pilotView = usePilotView((s) => s.on);
+  useEffect(() => () => setPilotView(false), []);
   // The chart dragged along, at the owner's ask ("can the trace be
   // drag-able in the dry run?"): a finger or a pointer on it puts the
   // airplane where it points along the course, the run held while it does
   // and going on as it was once let go; the arrow keys step it five miles.
-  // shadcn's Slider (Radix's) over the chart, its track and thumb unseen:
+  // shadcn's Slider (Base UI's) over the chart, its track and thumb unseen:
   // the chart's own marks say where the run is. Across the chart's own
   // width, inside its twelve points each side (PastFlightChart), a tenth
   // of a mile a step for the finger.
   const held = useRef<{ was: boolean } | null>(null);
-  const first = run.alongNm[0] ?? 0, last = run.alongNm.at(-1) ?? 0;
+  const first = run.alongNm[0] ?? 0,
+    last = run.alongNm.at(-1) ?? 0;
   // In the run's last second, its end: read at the whole second before
   // it, the airplane at the end read a tenth short of it, and End on the
   // scrubber said 343.3 of 343.4 (dry-run.spec, CI on both projects).
@@ -83,8 +103,13 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
     held.current = null;
   };
   // Five miles an arrow, where the slider's own would step a tenth; Home
-  // and End are the slider's.
+  // and End are the slider's; Space plays or pauses (the playback bar's).
   const step = (event: KeyboardEvent<HTMLSpanElement>) => {
+    if (playbackKey(event.key, event.target) === "toggle") {
+      event.preventDefault();
+      toggle();
+      return;
+    }
     const by = event.key === "ArrowRight" || event.key === "ArrowUp" ? 5 : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -5 : 0;
     if (!by) return;
     event.preventDefault();
@@ -98,29 +123,67 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
           start, play or pause, how fast, and the close. Eight apart, their
           44-point hit areas their own (index.css). */}
       {/* Over the chart's drag where their hit areas reach into it. */}
-      <div className="absolute top-1.5 right-1.5 z-10 flex items-center gap-2">
+      {/* The map's one playback bar (components/PlaybackBar, the radar
+          loop's too): a toolbar, one tab stop, the arrows between its
+          buttons; Play a stock toggle; the speed a menu (decision 0017),
+          its one small button where the speeds went round a tap each. */}
+      <PlaybackToolbar
+        label="Dry run"
+        onToggle={toggle}
+        className="absolute top-1.5 right-1.5 z-10 flex items-center gap-2"
+        data-testid="dry-run-bar"
+      >
         {/* No from the start, at the owner's ask ("I don't think we need the
             replay button"): the chart's drag takes the run back. Go missed
             on the approach's final only (above). */}
         {onFinal && (
-          <RoundButton
-            label="Go missed" onClick={onMissed} className={cn("w-auto px-2.5 font-semibold", TEXT.note)}
-            data-testid="dry-run-missed"
+          <PlaybackButton
+            render={
+              <RoundButton
+                label="Go missed"
+                onClick={onMissed}
+                className={cn("w-auto px-2.5 font-semibold", TEXT.note)}
+                data-testid="dry-run-missed"
+              />
+            }
           >
             Go missed
-          </RoundButton>
+          </PlaybackButton>
         )}
-        <RoundButton label={playing ? "Pause" : "Play"} onClick={playing ? pausePastFlight : playPastFlight} data-testid="dry-run-play">
-          {playing ? <Pause className="size-5" /> : <Play className="size-5" />}
-        </RoundButton>
-        <RoundButton
-          label={`${speed} times as fast; ${nextSpeed} times next`} onClick={() => usePastFlight.setState({ speed: nextSpeed })}
-          className={cn("w-auto px-2 font-semibold tabular-nums", TEXT.note)} data-testid="dry-run-speed"
+        <PlaybackToggle pressed={pilotView} onPressedChange={setPilotView} label="Pilot's view" testId="dry-run-pilot-view">
+          <Mountain className="size-5" aria-hidden />
+        </PlaybackToggle>
+        <ForecastToggle />
+        <PlayToggle playing={playing} onToggle={toggle} testId="dry-run-play" />
+        <SpeedMenu
+          name="Speed"
+          value={speed}
+          choices={REPLAY_SPEEDS.map((x) => ({ value: x as number, label: `${x}×` }))}
+          onPick={(x) => usePastFlight.setState({ speed: x })}
+          testId="dry-run-speed"
+        />
+        <PlaybackButton render={<CloseButton onClick={onClose} data-testid="dry-run-close" />} />
+      </PlaybackToolbar>
+      {/* In the pilot's view, its key at the chart's other corner: what the
+          ground's amber and red are, and that they are a picture of the
+          plan, not terrain clearance (no TAWS; nothing of 14 CFR 91.119 or
+          91.177, which the plan's altitudes answer). */}
+      {pilotView && (
+        <div
+          className={cn("pointer-events-none absolute top-1.5 left-2 z-10 flex flex-col gap-0.5 text-foreground", TEXT.caption)}
+          data-testid="dry-run-pilot-key"
         >
-          {speed}×
-        </RoundButton>
-        <CloseButton onClick={onClose} data-testid="dry-run-close" />
-      </div>
+          <span className="flex items-center gap-1">
+            <span aria-hidden="true" className="size-2.5 rounded-sm bg-(--chart-caution)" />
+            Ground within {feet(amberBandFt(pilotView))}
+          </span>
+          <span className="flex items-center gap-1">
+            <span aria-hidden="true" className="size-2.5 rounded-sm bg-(--chart-warning)" />
+            Ground above you
+          </span>
+          <span className="text-muted-foreground">A view, not terrain clearance</span>
+        </div>
+      )}
       {/* The height and speed are said on the traces themselves (the
           chart's NowMarks), where a line of words over the chart took a
           row of its own: the controls over the chart's corner as the side
@@ -136,19 +199,27 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
             share of, and the chart stayed three rem tall all the way up. */}
         <div className="absolute inset-0">
           <Suspense fallback={null}>
-            <FlightChart
-              points={run.points} fromStart alongNm={run.alongNm} airspace={profile} laid={laid}
-            />
+            <FlightChart points={run.points} fromStart alongNm={run.alongNm} airspace={profile} laid={laid} />
           </Suspense>
         </div>
         {/* Over the chart, its own drag: not the sheet's (touch-none) nor
             the tabs' swipe (a slider, TabBar). The ring round the chart
             while its thumb has the keyboard's focus. */}
         <Slider
-          min={tenth(first)} max={Math.max(tenth(last), tenth(first) + 0.1)} step={0.1}
+          min={tenth(first)}
+          max={Math.max(tenth(last), tenth(first) + 0.1)}
+          step={0.1}
           value={[tenth(nowNm ?? first)]}
-          onValueChange={([nm]) => { if (nm !== undefined) seekNm(nm); }}
-          onPointerDown={grab} onPointerUp={letGo} onPointerCancel={letGo} onKeyDown={step}
+          onValueChange={(v) => {
+            const nm = Array.isArray(v) ? v[0] : v;
+            if (nm !== undefined) seekNm(nm);
+          }}
+          // Across, its own; up and down, still the stock sheet's.
+          data-base-ui-swipe-ignore="x"
+          onPointerDown={grab}
+          onPointerUp={letGo}
+          onPointerCancel={letGo}
+          onKeyDown={step}
           className={cn(
             "absolute inset-y-0 right-3 left-3 w-auto cursor-ew-resize rounded-lg",
             "has-[[data-slot=slider-thumb]:focus-visible]:ring-2 has-[[data-slot=slider-thumb]:focus-visible]:ring-ring",
@@ -156,14 +227,27 @@ export function DryRunControls({ run, ends, onClose, missed = false, onMissed }:
           )}
           thumb={{
             "aria-label": "Where the dry run is along the course",
-            "aria-valuetext": nowNm === null ? undefined : `${Math.round(nowNm)} nm${here ? `, ${altFt(here.alt_ft)} feet, ${here.gs_kt != null ? `${Math.round(here.gs_kt)} knots` : "no ground speed"}` : ""}`,
+            "aria-valuetext":
+              nowNm === null
+                ? undefined
+                : `${Math.round(nowNm)} nm${here ? `, ${altFt(here.alt_ft)} feet, ${here.gs_kt != null ? `${Math.round(here.gs_kt)} knots` : "no ground speed"}` : ""}`,
             className: "opacity-0",
           }}
           data-testid="dry-run-scrub"
         />
       </div>
+      {/* Forecast mode's strip under the chart (forecastRun). */}
+      <ForecastStrip run={run} ends={ends} />
     </div>
   );
+}
+
+/** How deep under the airplane the pilot's view draws the ground amber,
+ *  ft: the engine's band (`terrain_view_bands`), read where its key says it. */
+function amberBandFt(shown: boolean): number {
+  if (!shown) return 0;
+  const bands = callEngine("terrain_view_bands", { altitude_ft: 0 });
+  return bands.warning_from_ft - bands.caution_from_ft;
 }
 
 /** To the tenth of a mile, the scrubber's step. */
@@ -174,9 +258,10 @@ function alongAt(run: DryRun, t: number): number {
   const { points, alongNm } = run;
   if (!points.length) return 0;
   if (t <= points[0]!.t) return alongNm[0]!;
-  const i = points.findIndex(p => p.t >= t);
+  const i = points.findIndex((p) => p.t >= t);
   if (i < 0) return alongNm.at(-1)!;
-  const a = points[i - 1]!, b = points[i]!;
+  const a = points[i - 1]!,
+    b = points[i]!;
   const f = b.t > a.t ? (t - a.t) / (b.t - a.t) : 0;
   return alongNm[i - 1]! + (alongNm[i]! - alongNm[i - 1]!) * f;
 }
@@ -186,9 +271,10 @@ function timeAt(run: DryRun, nm: number): number {
   const { points, alongNm } = run;
   if (!points.length) return 0;
   if (nm <= alongNm[0]!) return points[0]!.t;
-  const i = alongNm.findIndex(a => a >= nm);
+  const i = alongNm.findIndex((a) => a >= nm);
   if (i < 0) return points.at(-1)!.t;
-  const a = alongNm[i - 1]!, b = alongNm[i]!;
+  const a = alongNm[i - 1]!,
+    b = alongNm[i]!;
   const f = b > a ? (nm - a) / (b - a) : 0;
   return points[i - 1]!.t + (points[i]!.t - points[i - 1]!.t) * f;
 }
@@ -205,18 +291,37 @@ export function DryRunFigures({ run, ...line }: { run: DryRun } & Omit<Component
   // minute -- so the strip is drawn again only when one changes, not at
   // each of the run's frames: it measures its figures to fit them
   // (useFigureFit), and the map's own frames came second to it.
-  const key = usePastFlight(s => {
+  const key = usePastFlight((s) => {
     const flown = dryRunFlown(run, s.at ?? run.points[0]?.t ?? 0);
     if (!flown) return "";
     const { hop, now, next, last, burntGal } = flown;
-    return [hop, Math.floor(now / 60) * 60, next.nm.toFixed(1), Math.round(next.min), last.nm.toFixed(1), Math.round(last.min), burntGal.toFixed(1)].join(" ");
+    return [
+      hop,
+      Math.floor(now / 60) * 60,
+      next.nm.toFixed(1),
+      Math.round(next.min),
+      last.nm.toFixed(1),
+      Math.round(last.min),
+      burntGal.toFixed(1),
+    ].join(" ");
   });
   const flown = useMemo((): Flown | null => {
     if (!key) return null;
-    const [hop, now, nextNm, nextMin, lastNm, lastMin, burnt] = key.split(" ").map(Number) as [number, number, number, number, number, number, number];
+    const [hop, now, nextNm, nextMin, lastNm, lastMin, burnt] = key.split(" ").map(Number) as [
+      number,
+      number,
+      number,
+      number,
+      number,
+      number,
+      number,
+    ];
     return {
-      hop, now, burntGal: burnt,
-      next: { nm: nextNm, min: nextMin, at: now + nextMin * 60 }, last: { nm: lastNm, min: lastMin, at: now + lastMin * 60 },
+      hop,
+      now,
+      burntGal: burnt,
+      next: { nm: nextNm, min: nextMin, at: now + nextMin * 60 },
+      last: { nm: lastNm, min: lastMin, at: now + lastMin * 60 },
     };
   }, [key]);
   return (

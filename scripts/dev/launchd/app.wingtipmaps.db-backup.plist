@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The local stack's nightly database dump (scripts/dev/backup-db.sh) at
+  03:30, as the owner's own user. A template: scripts/dev/install-backup.sh
+  fills in __SCRIPT__ (its copy of backup-db.sh, outside any checkout, so a
+  worktree removed or a branch switched never stops it) and __HOME__, writes
+  it to ~/Library/LaunchAgents and bootstraps it. A night the Mac was off
+  is run at the next wake, as launchd does for a calendar interval.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>app.wingtipmaps.db-backup</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>__SCRIPT__</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>3</integer>
+    <key>Minute</key>
+    <integer>30</integer>
+  </dict>
+  <key>StandardOutPath</key>
+  <string>__HOME__/Library/Logs/wingtip-db-backup.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/Library/Logs/wingtip-db-backup.log</string>
+  <key>ProcessType</key>
+  <string>Background</string>
+  <key>LowPriorityIO</key>
+  <true/>
+</dict>
+</plist>

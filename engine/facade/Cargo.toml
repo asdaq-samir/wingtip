@@ -1,7 +1,7 @@
 [package]
 name = "wingtip-engine"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 description = "The planner's figures in Rust, with no network and no Python: route options' straight lines, the airspace at a point, the cycle pack"
 
@@ -12,15 +12,24 @@ name = "wingtip_engine"
 # engine is plain Rust, so the phone can carry it as it is.
 [dependencies]
 wingtip-airspace = { path = "../crates/airspace" }
+wingtip-altitude = { path = "../crates/altitude" }
 wingtip-brief = { path = "../crates/brief" }
 wingtip-procedures = { path = "../crates/procedures" }
 wingtip-core = { path = "../crates/core" }
 wingtip-flight = { path = "../crates/flight" }
+wingtip-inflight = { path = "../crates/inflight" }
 wingtip-pilot = { path = "../crates/pilot" }
 wingtip-radio = { path = "../crates/radio" }
-wingtip-route = { path = "../crates/route" }
+wingtip-receiver = { path = "../crates/receiver" }
+wingtip-route = { path = "../crates/route", default-features = false }
 wingtip-weather = { path = "../crates/weather" }
 wingtip-wording = { path = "../crates/wording" }
+
+# Route options (wingtip_route's `options`), which the planner asks and the
+# web does not: on by default, off in the WebAssembly (bindings/wasm).
+[features]
+default = ["route-options"]
+route-options = ["wingtip-route/options"]
 
 # The shared fixtures (services/planner/tests_wingtip/fixtures/native) are gzip and JSON, which the
 # Python reads as well.
@@ -28,9 +37,12 @@ wingtip-wording = { path = "../crates/wording" }
 flate2 = "1.1"
 # The parsers' fuzz tests (tests/fuzz.rs): stable Rust, where cargo-fuzz
 # needs nightly.
-proptest = { version = "1.7", default-features = false, features = ["std"] }
+proptest = { version = "1.12", default-features = false, features = ["std"] }
 serde_json = { version = "1.0", features = ["float_roundtrip"] }
 # The calls held to their contract (tests/contract.rs,
 # engine/contract/engine.schema.json): JSON Schema's own validator, with
 # no fetching of remote schemas, which the contract has none of.
-jsonschema = { version = "0.30", default-features = false }
+jsonschema = { version = "0.61", default-features = false }
+
+[lints]
+workspace = true

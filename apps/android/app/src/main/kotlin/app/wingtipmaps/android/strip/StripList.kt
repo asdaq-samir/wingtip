@@ -25,12 +25,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.api.Leg
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.route.LegWords
+import app.wingtipmaps.android.ui.InkColors
+import app.wingtipmaps.android.ui.LocalInk
+import app.wingtipmaps.android.ui.largeType
 
 /** More checkpoints than this fold in the middle, the first and the last
  *  kept (the canvas's "N more checkpoints"). */
@@ -67,11 +74,12 @@ private fun FieldCardRow(
     first: Boolean,
     last: Boolean,
     onOpen: () -> Unit,
+    onClearance: (() -> Unit)? = null,
 ) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).height(IntrinsicSize.Min).padding(end = 16.dp)) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp).height(IntrinsicSize.Min).padding(end = WingtipSpace.Lg)) {
         Box(Modifier.width(24.dp).fillMaxHeight()) { Timeline(field = true, first = first, last = last, dotAt = 24.dp) }
         StripCard(onClick = onOpen, modifier = Modifier.weight(1f)) {
-            Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.padding(WingtipSpace.Md), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 Row(verticalAlignment = Alignment.Top) {
                     Column(Modifier.weight(1f)) {
                         Text(ident, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
@@ -79,7 +87,7 @@ private fun FieldCardRow(
                         if (name.isNotEmpty()) {
                             Text(
                                 name, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }
@@ -95,13 +103,21 @@ private fun FieldCardRow(
                     Text(said.joinToString(" · "), style = MaterialTheme.typography.bodyMedium)
                 }
                 val chips = card?.chips.orEmpty()
-                if (chips.isNotEmpty()) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (chips.isNotEmpty() || onClearance != null) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                         chips.forEach { chip ->
                             AssistChip(
                                 onClick = onOpen,
                                 label = { Text(chip.label, style = MaterialTheme.typography.labelMedium) },
                                 modifier = Modifier.semantics { contentDescription = chip.words },
+                            )
+                        }
+                        // The departure's clearance step, as the iPhone's strip has it.
+                        if (onClearance != null) {
+                            AssistChip(
+                                onClick = onClearance,
+                                label = { Text("Clearance", style = MaterialTheme.typography.labelMedium) },
+                                modifier = Modifier.semantics { contentDescription = "The clearance card" },
                             )
                         }
                     }
@@ -112,20 +128,25 @@ private fun FieldCardRow(
 }
 
 /** A checkpoint's row: its number and name, "MH 318 · 24 NM" under them,
- *  the leg's minutes at the right. */
+ *  the leg's minutes at the right. TalkBack reads the row as one sentence
+ *  in words (LegWords), the written figures under it cleared. */
 @Composable
 private fun CheckpointRow(number: Int, name: String, leg: Leg, onOpen: () -> Unit) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).height(IntrinsicSize.Min).padding(end = 16.dp)) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).height(IntrinsicSize.Min).padding(end = WingtipSpace.Lg)) {
         Box(Modifier.width(24.dp).fillMaxHeight()) { Timeline(field = false, first = false, last = false, dotAt = 24.dp) }
-        TextButton(onClick = onOpen, modifier = Modifier.weight(1f).heightIn(min = 48.dp), contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
-            Column(Modifier.weight(1f)) {
+        TextButton(
+            onClick = onOpen,
+            modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { contentDescription = LegWords.checkpoint(number, name, leg) },
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = WingtipSpace.Sm, vertical = WingtipSpace.Xs),
+        ) {
+            Column(Modifier.weight(1f).clearAndSetSemantics {}) {
                 Text(
                     "$number. $name", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis,
                 )
                 Text(StripData.legFigures(leg), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            leg.eteMin?.let { Text(StripData.duration(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            leg.eteMin?.let { Text(Format.duration(it), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.clearAndSetSemantics {}) }
         }
     }
 }
@@ -151,6 +172,7 @@ fun LazyListScope.stripList(
     onUnfold: () -> Unit,
     onField: (String) -> Unit,
     onCheckpoint: (StripRow.Checkpoint) -> Unit,
+    onClearance: (() -> Unit)? = null,
     after: (LazyListScope.() -> Unit)? = null,
 ) {
     val first = rows.firstOrNull() as? StripRow.Departure ?: return
@@ -164,13 +186,13 @@ fun LazyListScope.stripList(
     item(key = first.key) {
         FieldCardRow(
             ident = first.ident, card = cards[first.ident], at = StripData.timeAt(leaveMs, 0.0), atLabel = "leaving",
-            detail = departDetail, first = true, last = false, onOpen = { onField(first.ident) },
+            detail = departDetail, first = true, last = false, onOpen = { onField(first.ident) }, onClearance = onClearance,
         )
     }
     shown.forEach { row ->
         when (row) {
             null -> item(key = "fold") {
-                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).height(IntrinsicSize.Min).padding(end = 16.dp)) {
+                Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).height(IntrinsicSize.Min).padding(end = WingtipSpace.Lg)) {
                     Box(Modifier.width(24.dp).fillMaxHeight()) { Timeline(field = false, first = false, last = false, dotAt = 24.dp) }
                     TextButton(onClick = onUnfold, modifier = Modifier.weight(1f)) {
                         Text("$hidden more checkpoints", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
@@ -180,7 +202,7 @@ fun LazyListScope.stripList(
             is StripRow.Stop -> item(key = row.key) {
                 FieldCardRow(
                     ident = row.ident, card = cards[row.ident], at = StripData.timeAt(leaveMs, row.minutesFlown), atLabel = "ETA",
-                    detail = listOf(row.groundMin?.takeIf { it > 0 }?.let { "${StripData.duration(it)} on the ground" }),
+                    detail = listOf(row.groundMin?.takeIf { it > 0 }?.let { "${Format.duration(it)} on the ground" }),
                     first = false, last = false, onOpen = { onField(row.ident) },
                 )
             }
@@ -206,8 +228,8 @@ fun LazyListScope.stripList(
 @Composable
 fun StripWelcome(modifier: Modifier = Modifier) {
     StripCard(modifier = modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.padding(WingtipSpace.Lg), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
                 Icon(
                     Icons.Filled.Flight, contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp),

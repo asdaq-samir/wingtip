@@ -1,5 +1,5 @@
 {
-  "about": "Flash-card drills: the light gun signals (14 CFR 91.125) and the basic VFR weather minimums (91.155) in the regulation's words, and Leitner's boxes. Times in ms since 1970. Web: lib/drills.ts. iOS: Drills in PilotLogic.swift.",
+  "about": "Flash-card drills: the light gun signals (14 CFR 91.125) and the basic VFR weather minimums (91.155) in the regulation's words, and Leitner's boxes. Times in ms since 1970. Web: features/pilot/drills.ts. iOS: Drills in PilotLogic.swift. next: a card answered, its new box and the days until it is due again (the engine's drill_next).",
   "intervalDays": [
     0,
     1,
@@ -583,6 +583,72 @@
         "a"
       ],
       "next": 1790000000001
+    }
+  ],
+  "next": [
+    {
+      "box": null,
+      "knew": true,
+      "result": {
+        "box": 2,
+        "in_days": 1
+      }
+    },
+    {
+      "box": null,
+      "knew": false,
+      "result": {
+        "box": 1,
+        "in_days": 0
+      }
+    },
+    {
+      "box": 1,
+      "knew": true,
+      "result": {
+        "box": 2,
+        "in_days": 1
+      }
+    },
+    {
+      "box": 2,
+      "knew": true,
+      "result": {
+        "box": 3,
+        "in_days": 3
+      }
+    },
+    {
+      "box": 3,
+      "knew": true,
+      "result": {
+        "box": 4,
+        "in_days": 7
+      }
+    },
+    {
+      "box": 4,
+      "knew": true,
+      "result": {
+        "box": 5,
+        "in_days": 16
+      }
+    },
+    {
+      "box": 5,
+      "knew": true,
+      "result": {
+        "box": 5,
+        "in_days": 16
+      }
+    },
+    {
+      "box": 5,
+      "knew": false,
+      "result": {
+        "box": 1,
+        "in_days": 0
+      }
     }
   ]
 }

@@ -1,5 +1,6 @@
 """wingtip.aircraft: a profile is refused, by name, when it is missing what
 the nav log needs -- at load, not leg by leg further in."""
+
 import json
 
 import pytest

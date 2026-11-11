@@ -10,16 +10,14 @@ import Foundation
 /// response. The app writes none of its own: the flight manual's is the
 /// airplane's.
 enum ChecklistText {
-    /// Nothing read where the engine cannot answer, which is never for
-    /// text.
-    static func parse(_ text: String) -> Checklist {
-        let read: Checklist? = try? Engine.call("checklist_read", ["text": text])
-        return read ?? Checklist(sections: [])
+    /// Thrown where the engine cannot answer, which the checklist's screen
+    /// says (ChecklistModel.problem).
+    static func parse(_ text: String) throws -> Checklist {
+        Checklist(try Engine.checklistRead(text: text))
     }
 
-    static func text(of checklist: Checklist) -> String {
-        let written: String? = try? Engine.call("checklist_write", ["checklist": checklist])
-        return written ?? ""
+    static func text(of checklist: Checklist) throws -> String {
+        try Engine.checklistWrite(checklist: checklist)
     }
 }
 
@@ -34,28 +32,27 @@ enum ChecklistText {
 /// are the gateway's, camel case, as the engine reads and writes them.
 enum LogbookCSV {
     /// RFC 4180's rows of fields (the engine's `csv_rows`).
-    static func rows(_ text: String) -> [[String]] {
-        let rows: [[String]]? = try? Engine.call("csv_rows", ["text": text])
-        return rows ?? []
+    static func rows(_ text: String) throws -> [[String]] {
+        try Engine.csvRows(text: text)
     }
 
-    /// The logbook as a CSV file, oldest flight first.
-    static func csv(_ entries: [LogbookEntry]) -> String {
-        let written: String? = try? Engine.call("logbook_csv_write", ["entries": entries])
-        return written ?? ""
+    /// The logbook as a CSV file, oldest flight first; thrown where the
+    /// engine cannot write it. The contract takes each entry as the
+    /// gateway's JSON object, which the record is.
+    static func csv(_ entries: [LogbookEntry]) throws -> String {
+        try Engine.logbookCsvWrite(entries: entries.map { try Engine.recoded($0) })
     }
 
-    struct Skipped: Equatable, Decodable { let line: Int; let reason: String }
-    struct Imported: Equatable, Decodable { var entries: [LogbookEntryRequest]; var skipped: [Skipped] }
+    typealias Skipped = EngineContract.LogbookCsvReadAnswerSkippedItem
+    struct Imported: Equatable { var entries: [LogbookEntryRequest]; var skipped: [Skipped] }
 
-    /// A logbook CSV read: ForeFlight's, or this logbook's own. A file the
-    /// engine could not answer for is one row left out, said so.
-    static func read(_ text: String) -> Imported {
-        do {
-            return try Engine.call("logbook_csv_read", ["text": text])
-        } catch {
-            return Imported(entries: [], skipped: [Skipped(line: 1, reason: error.localizedDescription)])
-        }
+    /// A logbook CSV read: ForeFlight's, or this logbook's own; thrown
+    /// where the engine cannot read it, which the logbook says.
+    static func read(_ text: String) throws -> Imported {
+        let read = try Engine.logbookCsvRead(text: text)
+        // The engine's entries are the gateway's LogbookEntryRequest by
+        // name, so each is read again as the request sent.
+        return Imported(entries: try read.entries.map { try Engine.recoded($0) }, skipped: read.skipped)
     }
 
     /// What an import brought in, in a line.
@@ -76,10 +73,10 @@ enum LogbookCSV {
 enum Endorsing {
     /// The template's {blanks} filled: {student} with the name as on the
     /// student's certificate, the rest from the form; runs of space made
-    /// one (the engine's `endorsement_render`).
-    static func render(_ template: String, student: String, fields: [String: String]) -> String {
-        let words: String? = try? Engine.call("endorsement_render", json: ["template": template, "student": student, "fields": fields])
-        return words ?? template
+    /// one (the engine's `endorsement_render`); thrown where it cannot, and
+    /// nothing is signed then.
+    static func render(_ template: String, student: String, fields: [String: String]) throws -> String {
+        try Engine.endorsementRender(template: template, student: student, fields: fields)
     }
 
     /// "/s/ 10-13-2026 J. J. Jones 987654321CFI RE 12-31-2027": the date,
@@ -100,33 +97,29 @@ enum Endorsing {
     /// one expires 24 calendar months from issue, renewal or reinstatement
     /// (61.19(d)(2)), and its privileges then wait for reinstatement under
     /// 61.199 (61.197(e)).
-    static func lapseWarning(_ instructor: Instructor, signedOn: String) -> String? {
-        do {
-            return try Engine.call("endorsement_lapse", json: [
-                "until": instructor.until, "until_kind": instructor.untilKind, "signed_on": signedOn,
-            ])
-        } catch {
-            return nil
-        }
+    /// Thrown where the engine cannot say, which the signing screen shows.
+    static func lapseWarning(_ instructor: Instructor, signedOn: String) throws -> String? {
+        try Engine.endorsementLapse(until: instructor.until, untilKind: instructor.untilKind, signedOn: signedOn)
     }
 
     /// The latest of each kind signed in the app and not voided; the
     /// record comes newest first (the engine's `endorsements_in_force`,
-    /// which answers each code with its index into the record).
-    static func inForce(_ signed: [SignedEndorsement]) -> [String: SignedEndorsement] {
-        let asked: [[String: Any]] = signed.map { ["code": $0.code, "voided": $0.voided] }
-        guard let pairs = (try? Engine.callJSON("endorsements_in_force", ["signed": asked])) as? [[Any]] else { return [:] }
+    /// which answers each code with its index into the record, a pair the
+    /// contract leaves untyped).
+    static func inForce(_ signed: [SignedEndorsement]) throws -> [String: SignedEndorsement] {
+        let pairs = try Engine.endorsementsInForce(signed: signed.map { .init(code: $0.code, voided: $0.voided) })
         var out: [String: SignedEndorsement] = [:]
         for pair in pairs {
-            guard pair.count == 2, let code = pair[0] as? String, let at = pair[1] as? Int, signed.indices.contains(at) else { continue }
-            out[code] = signed[at]
+            guard pair.count == 2, case .string(let code) = pair[0], case .number(let at) = pair[1],
+                  signed.indices.contains(Int(at)) else { continue }
+            out[code] = signed[Int(at)]
         }
         return out
     }
 
     /// A solo cross-country's airports in order: "KUGN KRFD KUGN".
     static func route(_ r: CrossCountryReview) -> String {
-        guard let f = r.flight else { return r.makeModel }
+        let f = r.flight
         return ([f.departureIdent] + f.stops + [f.destinationIdent]).joined(separator: " ")
     }
 
@@ -137,19 +130,20 @@ enum Endorsing {
         return "Waiting for your instructor"
     }
 
+    /// One of 61.93(d)'s determinations: the rule and what it asks.
+    typealias Determination = EngineContract.SoloXcDeterminationsAnswerItem
+
     /// 14 CFR 61.93(d)(1)-(3): what an instructor must determine of a solo
-    /// cross-country themselves before endorsing it; (4) and (5), the
-    /// student's endorsements, the record answers.
-    static let determinations: [(rule: String, label: String)] = [
-        ("61.93(d)(1)", "The student's cross-country planning is correct for the flight"),
-        ("61.93(d)(2)", "The current and forecast weather allow it to be completed under VFR"),
-        ("61.93(d)(3)", "The student is proficient to conduct it safely"),
-    ]
+    /// cross-country themselves before endorsing it, the engine's
+    /// (`solo_xc_determinations`); (4) and (5), the student's
+    /// endorsements, the record answers. Asked once; a refusal is said on
+    /// the signing screen, which then signs no cross-country.
+    static let determinations = Result { try Engine.soloXcDeterminations() }
 
     /// The airports' blanks of a solo cross-country's endorsement, filled
     /// from the flight put to the instructor, as the web app fills them.
     static func reviewFields(_ r: CrossCountryReview) -> [String: String] {
-        guard let f = r.flight else { return ["mm": r.makeModel, "date": Day.acDay(r.flightOn)] }
+        let f = r.flight
         return [
             "from": f.departureIdent, "to": f.destinationIdent, "via": f.stops.isEmpty ? "direct" : f.stops.joined(separator: ", "),
             "landings": (f.stops + [f.destinationIdent]).joined(separator: ", "), "mm": r.makeModel, "date": Day.acDay(r.flightOn),
@@ -159,9 +153,8 @@ enum Endorsing {
     /// The ACS codes in what was pasted -- a report's text, a list, codes in
     /// lower case -- each once, in the order given; a sub-element's letter
     /// lower case, as the ACS writes it (K1a). The engine's `acs_codes`.
-    static func acsCodes(in text: String) -> [String] {
-        let codes: [String]? = try? Engine.call("acs_codes", ["text": text])
-        return codes ?? []
+    static func acsCodes(in text: String) throws -> [String] {
+        try Engine.acsCodes(text: text)
     }
 }
 
@@ -186,9 +179,9 @@ struct AcsTable: Decodable, Sendable {
     }
 }
 
-/// The airplane form's fields as typed, checked as the gateway checks
-/// them (AircraftRequest's @NotBlank/@Positive, the web app's form) before
-/// the round trip.
+/// The airplane form's fields as typed, checked by the engine as the
+/// gateway checks them (AircraftRequest's @NotBlank/@Positive, the web
+/// app's form) before the round trip.
 struct AircraftForm: Equatable {
     var tailNumber = ""
     var typeDesignator = ""
@@ -214,33 +207,32 @@ struct AircraftForm: Equatable {
 
     private static func number(_ s: String) -> Double? { Double(s.trimmingCharacters(in: .whitespaces)) }
 
-    /// What is wrong, by field, in the web app's words; empty when it may be saved.
+    /// The key of a problem with the form as a whole, said under it: the
+    /// engine could not check the fields, so nothing may be saved.
+    static let formKey = "form"
+
+    /// What is wrong, by field, in the web app's words; empty when it may
+    /// be saved. The limits are the engine's (`aircraft_problems`), the
+    /// gateway's and the web's own; where the engine cannot answer, the
+    /// form says so rather than pass unchecked figures.
     var problems: [String: String] {
-        var out: [String: String] = [:]
-        let tail = tailNumber.trimmingCharacters(in: .whitespaces), type = typeDesignator.trimmingCharacters(in: .whitespaces)
-        if tail.isEmpty { out["tailNumber"] = "Tail number is required" } else if tail.count > 16 { out["tailNumber"] = "At most 16 characters" }
-        if type.isEmpty { out["typeDesignator"] = "Type designator is required" } else if type.count > 16 { out["typeDesignator"] = "At most 16 characters" }
-        func positive(_ key: String, _ value: String, _ label: String, required: Bool) {
-            let t = value.trimmingCharacters(in: .whitespaces)
-            if t.isEmpty { if required { out[key] = "\(label) must be a positive number" }; return }
-            if (Self.number(t) ?? 0) <= 0 { out[key] = "\(label) must be a positive number" }
+        let answer: EngineContract.AircraftProblemsAnswer
+        do {
+            answer = try Engine.aircraftProblems(
+                tailNumber: tailNumber, typeDesignator: typeDesignator, cruiseTasKt: cruiseTasKt, fuelBurnGph: fuelBurnGph,
+                cruisePowerPct: cruisePowerPct, climbTasKt: climbTasKt, climbFuelBurnGph: climbFuelBurnGph,
+                usableFuelGal: usableFuelGal, equipment: equipment, surveillance: surveillance, colour: colour)
+        } catch {
+            Log.engine.error("aircraft_problems: \(error.localizedDescription, privacy: .public)")
+            return [Self.formKey: "The figures could not be checked: \(error.localizedDescription)"]
         }
-        positive("cruiseTasKt", cruiseTasKt, "Cruise speed", required: true)
-        positive("fuelBurnGph", fuelBurnGph, "Cruise fuel burn", required: true)
-        positive("climbTasKt", climbTasKt, "Climb speed", required: false)
-        positive("climbFuelBurnGph", climbFuelBurnGph, "Climb fuel burn", required: false)
-        positive("usableFuelGal", usableFuelGal, "Usable fuel", required: false)
-        // A power a cruise table has: 40 to 100 percent, the gateway's
-        // limits and the planner's.
-        let power = cruisePowerPct.trimmingCharacters(in: .whitespaces)
-        if !power.isEmpty, !((Self.number(power) ?? 0) >= 40 && (Self.number(power) ?? 0) <= 100) { out["cruisePowerPct"] = "Cruise power must be between 40 and 100%" }
-        // Flight plan items 10a and 10b are letters and figures, at most 40
-        // and 20 (AIM Appendix 4, TBL 4-2 and 4-3); item 19 plain words.
-        let codes = { (s: String, n: Int) in s.count <= n && s.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber) } }
-        if !codes(equipment.trimmingCharacters(in: .whitespaces), 40) { out["equipment"] = "Letters and figures, as SDFGRY" }
-        if !codes(surveillance.trimmingCharacters(in: .whitespaces), 20) { out["surveillance"] = "Letters and figures, as B1" }
-        if colour.trimmingCharacters(in: .whitespaces).count > 40 { out["colour"] = "At most 40 characters" }
-        return out
+        let byField: [String: String?] = [
+            "tailNumber": answer.tailNumber, "typeDesignator": answer.typeDesignator, "cruiseTasKt": answer.cruiseTasKt,
+            "fuelBurnGph": answer.fuelBurnGph, "cruisePowerPct": answer.cruisePowerPct, "climbTasKt": answer.climbTasKt,
+            "climbFuelBurnGph": answer.climbFuelBurnGph, "usableFuelGal": answer.usableFuelGal, "equipment": answer.equipment,
+            "surveillance": answer.surveillance, "colour": answer.colour,
+        ]
+        return byField.compactMapValues { $0 }
     }
 
     /// The request, when there is nothing wrong.
@@ -265,13 +257,16 @@ struct AircraftForm: Equatable {
 
 /// Flash-card drills (the web app's lib/drills, kept the same): the
 /// tower's light signals (14 CFR 91.125) and the basic VFR weather
-/// minimums (91.155), each worded as the regulation words it, gone
+/// minimums (91.155), each worded as the regulation words it by the
+/// engine (`drill_decks`), gone
 /// through by Leitner's boxes -- a card known moves up a box and comes
 /// back later, a card missed goes back to the first. Kept on this device.
 enum Drills {
-    enum Light: String, Sendable { case green, red, white }
+    enum Light: String, Sendable, Decodable { case green, red, white }
 
-    struct Card: Equatable, Sendable, Identifiable {
+    /// The engine's card (EngineContract.DrillCard) with its lamp's colours
+    /// as the app draws them.
+    struct Card: Equatable, Sendable, Identifiable, Decodable {
         let id: String
         let prompt: String
         let answer: String
@@ -280,7 +275,7 @@ enum Drills {
         var flashing = false
     }
 
-    struct Deck: Sendable {
+    struct Deck: Sendable, Decodable {
         let key: String
         let title: String
         let source: String
@@ -288,63 +283,47 @@ enum Drills {
         let cards: [Card]
     }
 
-    private struct Signal { let id, name: String; let colours: [Light]; let flashing: Bool; let surface, flight: String; var flightDetail: String? = nil }
+    /// Both decks, the engine's (`drill_decks`): 14 CFR 91.125's table and
+    /// 91.155(a)'s, worded there once from the rules the airspace column
+    /// gives each band. Asked once; a refusal is said where the drills are
+    /// listed (PilotGuideView), and each deck is then empty.
+    static let decks = Result {
+        try Engine.drillDecks().map { d in
+            Deck(key: d.key, title: d.title, source: d.source, url: URL(string: d.url) ?? URL(string: "https://www.ecfr.gov")!,
+                 cards: d.cards.map {
+                     Card(id: $0.id, prompt: $0.prompt, answer: $0.answer, detail: $0.detail,
+                          colours: $0.colours.compactMap(Light.init(rawValue:)), flashing: $0.flashing)
+                 })
+        }
+    }
 
-    // 14 CFR 91.125's table, word for word as the web app has it.
-    private static let signals: [Signal] = [
-        Signal(id: "steady-green", name: "Steady green", colours: [.green], flashing: false, surface: "Cleared for takeoff", flight: "Cleared to land"),
-        Signal(id: "flashing-green", name: "Flashing green", colours: [.green], flashing: true, surface: "Cleared to taxi", flight: "Return for landing",
-               flightDetail: "To be followed by steady green at the proper time."),
-        Signal(id: "steady-red", name: "Steady red", colours: [.red], flashing: false, surface: "Stop", flight: "Give way to other aircraft and continue circling"),
-        Signal(id: "flashing-red", name: "Flashing red", colours: [.red], flashing: true, surface: "Taxi clear of the runway in use", flight: "Airport unsafe: do not land"),
-        Signal(id: "flashing-white", name: "Flashing white", colours: [.white], flashing: true, surface: "Return to starting point on airport", flight: "Not applicable",
-               flightDetail: "Flashing white means nothing to an aircraft in flight."),
-        Signal(id: "alternating", name: "Alternating red and green", colours: [.red, .green], flashing: true, surface: "Exercise extreme caution", flight: "Exercise extreme caution"),
-    ]
+    private static func deck(_ key: String) -> Deck {
+        ((try? decks.get()) ?? []).first { $0.key == key }
+            ?? Deck(key: key, title: "", source: "", url: URL(string: "https://www.ecfr.gov")!, cards: [])
+    }
 
-    static let lightGun = Deck(
-        key: "light-gun", title: "Light gun signals", source: "14 CFR 91.125",
-        url: URL(string: "https://www.ecfr.gov/current/title-14/part-91/section-91.125")!,
-        cards: signals.flatMap { s in [
-            Card(id: "\(s.id)-surface", prompt: "\(s.name), on the ground", answer: s.surface, colours: s.colours, flashing: s.flashing),
-            Card(id: "\(s.id)-flight", prompt: "\(s.name), in flight", answer: s.flight, detail: s.flightDetail, colours: s.colours, flashing: s.flashing),
-        ] })
+    static var lightGun: Deck { deck("light-gun") }
+    static var vfrMinimums: Deck { deck("vfr-minimums") }
 
-    // 14 CFR 91.155(a)'s table; Class A from 91.135, the pattern exception 91.155(b)(2).
-    private static let standard = "3 sm; 500 ft below, 1,000 ft above, 2,000 ft horizontal"
-    private static let high = "5 sm; 1,000 ft below, 1,000 ft above, 1 sm horizontal"
-
-    static let vfrMinimums = Deck(
-        key: "vfr-minimums", title: "VFR weather minimums", source: "14 CFR 91.155",
-        url: URL(string: "https://www.ecfr.gov/current/title-14/part-91/section-91.155")!,
-        cards: [
-            Card(id: "a", prompt: "Class A", answer: "Not applicable", detail: "Class A is flown under IFR (91.135)."),
-            Card(id: "b", prompt: "Class B", answer: "3 sm; clear of clouds"),
-            Card(id: "c", prompt: "Class C", answer: standard),
-            Card(id: "d", prompt: "Class D", answer: standard),
-            Card(id: "e-low", prompt: "Class E, below 10,000 ft MSL", answer: standard),
-            Card(id: "e-high", prompt: "Class E, at or above 10,000 ft MSL", answer: high),
-            Card(id: "g-low-day", prompt: "Class G, 1,200 ft or less above the surface, by day", answer: "1 sm; clear of clouds"),
-            Card(id: "g-low-night", prompt: "Class G, 1,200 ft or less above the surface, at night", answer: standard,
-                 detail: "Under 3 sm but not under 1 sm at night, an airplane in the traffic pattern within 1/2 mile of the runway may fly clear of clouds (91.155(b)(2))."),
-            Card(id: "g-mid-day", prompt: "Class G, more than 1,200 ft above the surface but below 10,000 ft MSL, by day",
-                 answer: "1 sm; 500 ft below, 1,000 ft above, 2,000 ft horizontal"),
-            Card(id: "g-mid-night", prompt: "Class G, more than 1,200 ft above the surface but below 10,000 ft MSL, at night", answer: standard),
-            Card(id: "g-high", prompt: "Class G, more than 1,200 ft above the surface and at or above 10,000 ft MSL", answer: high),
-        ])
-
-    /// Days until a card in each box comes round again: the first box the
-    /// same session.
-    static let intervalDays = [0, 1, 3, 7, 16]
     static let day: TimeInterval = 86_400
 
     struct Standing: Codable, Equatable, Sendable { var box: Int; var due: Date }
     typealias Progress = [String: Standing]
 
+    /// A card answered: its new box and the days until it comes round
+    /// again are the engine's (`drill_next`, Leitner's boxes). Where the
+    /// engine cannot answer, the progress is kept as it was, so the card
+    /// stays due and comes up again, and the refusal is logged.
     static func answered(_ progress: Progress, card: String, knew: Bool, now: Date) -> Progress {
-        let box = knew ? min(intervalDays.count, (progress[card]?.box ?? 1) + 1) : 1
+        let next: EngineContract.DrillNextAnswer
+        do {
+            next = try Engine.drillNext(box: progress[card].map { Double($0.box) }, knew: knew)
+        } catch {
+            Log.engine.error("drill_next: \(error.localizedDescription, privacy: .public)")
+            return progress
+        }
         var out = progress
-        out[card] = Standing(box: box, due: now.addingTimeInterval(Double(intervalDays[box - 1]) * day))
+        out[card] = Standing(box: Int(next.box), due: now.addingTimeInterval(next.inDays * day))
         return out
     }
 
@@ -379,23 +358,19 @@ enum Drills {
 /// and the planner's own; the altitude on each segment the engine's too
 /// (LostCommsSegmentsSections).
 enum LostComms {
-    /// The engine's answer with no segments: its words alone.
-    static func words(approachFix: Bool = false, efc: String = "", eta: String = "") -> LostCommsAnswer? {
-        try? Engine.lostComms(LostCommsAsk(segments: [], assignedFt: nil, expectedFt: nil, expectedFrom: 0,
-                                           approachFix: approachFix, efc: efc, eta: eta))
+    /// The engine's answer with no segments: its words alone; thrown where
+    /// it cannot answer, which the page says (LostCommsView).
+    static func words(approachFix: Bool = false, efc: String = "", eta: String = "") throws -> LostCommsAnswer {
+        try Engine.lostComms(segments: [], expectedFrom: 0, approachFix: approachFix, efc: efc, eta: eta)
     }
 
-    /// 91.185(c)(1): the route, in the rule's order -- the first that applies.
-    static var routes: [LostCommsRoute] { words()?.routes ?? [] }
-
-    /// 91.185(b): what VFR conditions call for, as the page opens.
-    static var vfr: String { words()?.vfr ?? "" }
-
-    /// 91.185(c)(2): the altitude rule, in words.
-    static let altitude = "On each segment, the highest of the altitude assigned in the last clearance, the minimum altitude for IFR operations, and the altitude ATC said to expect in a further clearance."
+    /// The rule's words as the page opens: 91.185(c)(1)'s routes in the
+    /// rule's order (the first that applies), (b)'s VFR words and (c)(2)'s
+    /// altitude rule.
+    static let opening = Result { try words() }
 
     /// 91.185(c)(3): when to leave the clearance limit, in words.
-    static func leaveLimit(approachFix: Bool, efc: String, eta: String) -> String {
-        words(approachFix: approachFix, efc: efc, eta: eta)?.leave ?? ""
+    static func leaveLimit(approachFix: Bool, efc: String, eta: String) throws -> String {
+        try words(approachFix: approachFix, efc: efc, eta: eta).leave
     }
 }

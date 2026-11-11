@@ -3,6 +3,7 @@ lib/clearance and the app's Clearance read the words the recognizer
 wrote into the clearance's items (AIM 4-4-3), and ask here for the
 idents of the places it named (wingtip.spoken), near the route. Before
 listening, the names the recognizer is told to expect."""
+
 import functools
 import math
 import re
@@ -10,8 +11,9 @@ import re
 from fastapi import APIRouter, Query, Response
 from wingtip import airports, fixes, procedures, spoken
 
-from ..schemas import ClearanceAsk, ClearancePlaces, ClearanceWords
-from .devml import _near
+from ..router_basics import near_points
+from ..schemas.clearance import ClearanceAsk, ClearancePlaces, ClearanceWords
+from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 
 router = APIRouter()
 
@@ -84,7 +86,7 @@ def _exact(said: str, near: tuple) -> list[dict]:
     by_name = _navaids_by_name()
     for n in (1, 2, 3):
         for i in range(len(words) - n + 1):
-            out += by_name.get(" ".join(words[i:i + n]).upper(), [])
+            out += by_name.get(" ".join(words[i : i + n]).upper(), [])
     for ident in {"".join(words).upper(), *(w.upper() for w in words)}:
         if len(ident) < 2:
             continue
@@ -106,7 +108,7 @@ def _airport(said: str, near: tuple) -> dict | None:
     Seattle–Tacoma International, "city of Colorado Springs" -- is tried
     by fewer of its words, the longest run first."""
     words, _ = spoken.words_of(said)
-    runs = [words[i:i + n] for n in range(len(words), 0, -1) for i in range(len(words) - n + 1)]
+    runs = [words[i : i + n] for n in range(len(words), 0, -1) for i in range(len(words) - n + 1)]
     for run in runs:
         if len(run) == 1 and len(run[0]) < 4:
             continue
@@ -133,13 +135,13 @@ def _procedure(field: str | None, ask, kind: str, places: list[dict]) -> dict | 
     return {"id": found["id"], "transition": via, "sure": found["sure"]}
 
 
-@router.post("/api/clearance/places")
+@router.post("/api/clearance/places", openapi_extra=PUBLIC_READ_BY_POST)
 def clearance_places(ask: ClearanceAsk) -> ClearancePlaces:
     """The places a clearance said, found near the route: its limit (an
     airport by its name, AIM 4-4-3 a), each phrase of its route as the
     points in it, and its SID and STAR among its fields' own. A place
     found by its sound alone is not `sure`; one not found has no ident."""
-    near = _near(ask.near)
+    near = near_points(ask.near)
     places = _places(near)
     limit = None
     if ask.limit:
@@ -147,19 +149,20 @@ def clearance_places(ask: ClearanceAsk) -> ClearancePlaces:
         limit = limit or {"said": ask.limit}
     route = [spoken.points(phrase, places + _exact(phrase, near)) for phrase in ask.route]
     return {
-        "limit": limit, "route": route,
+        "limit": limit,
+        "route": route,
         "departure": _procedure(ask.dep, ask.departure, "departure", places),
         "arrival": _procedure(ask.dest, ask.arrival, "arrival", places),
     }
 
 
-@router.get("/api/clearance/words")
+@router.get("/api/clearance/words", openapi_extra=PUBLIC)
 def clearance_words(response: Response, near: str = Query(default=""), dep: str = Query(default="")) -> ClearanceWords:
     """The names a clearance near the route will likely say, for the
     phone's recognizer to listen for: the departure's SIDs as said, the
     navaids' names, then the fixes' five letters as words, at most 100."""
     response.headers["Cache-Control"] = "private, max-age=3600"
-    places = _places(_near(near))
+    places = _places(near_points(near))
     names = _navaid_names(places)
     words: list[str] = []
     listed = procedures.procedures_at(dep) if dep else None

@@ -17,7 +17,7 @@ export type FrequencyKind = EngineAnswer<"frequency_line">["kind"];
 
 /** The fields the engine reads of a frequency. */
 const sent = (frequencies: readonly Frequency[]) =>
-  frequencies.map(f => ({ type: f.type ?? null, description: f.description ?? null, frequency_mhz: f.frequency_mhz ?? null }));
+  frequencies.map((f) => ({ type: f.type ?? null, description: f.description ?? null, frequency_mhz: f.frequency_mhz ?? null }));
 
 /** A field's frequency of the first of these types it lists one for. */
 export function frequencyOf(frequencies: Frequency[], ...types: string[]): Frequency | null {

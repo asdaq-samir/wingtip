@@ -17,9 +17,10 @@ enum FindingStyle {
 
     static func colour(_ finding: String) -> Color {
         switch finding {
-        case "ok": .green
-        case "caution": .orange
-        case "stop": .red
+        // The tokens' inks (go, caution, destructive), as the web says them.
+        case "ok": WingtipInk.go
+        case "caution": WingtipInk.caution
+        case "stop": WingtipInk.problem
         default: .secondary
         }
     }
@@ -44,6 +45,9 @@ enum VerdictTarget: Equatable {
     case section(String)
     case loading
     case risk
+    /// The airplane's figures the finding is worked from (its fuel, its
+    /// runway distances): its profile (AirplaneProfileView).
+    case airplane
 
     /// The Brief's anchors the weather's and the airspace's findings open.
     static let weatherAnchor = "brief-weather"
@@ -55,6 +59,7 @@ enum VerdictTarget: Equatable {
         case "airspace": return .section(airspaceAnchor)
         case "balance": return .loading
         case "risk": return .risk
+        case "fuel", "runways": return .airplane
         default: return nil
         }
     }
@@ -65,7 +70,9 @@ enum VerdictTarget: Equatable {
 /// opening where the Brief says it in full; the pilot's minimums under
 /// them, which the weather is held to.
 struct GoNoGoSection: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Verdict.self) private var verdict
+    @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
     /// Scrolls the Brief to one of its sections.
     var open: (String) -> Void
@@ -79,6 +86,11 @@ struct GoNoGoSection: View {
     @State private var restOpen = false
 
     var body: some View {
+        // With the planner's words out of reach, the glance on this
+        // iPhone first (OnDevice/BriefSummary).
+        if let answer = verdict.answer, let said = riskWords, said.origin != .planner {
+            BriefSummarySection(answer: answer)
+        }
         if verdict.answer != nil {
             WordsSection(title: "The flight in words", said: riskWords, writing: writingWords)
         }
@@ -92,6 +104,7 @@ struct GoNoGoSection: View {
                 }
                 .foregroundStyle(FindingStyle.colour(answer.line.finding))
                 .accessibilityElement(children: .combine)
+                KeptAgeLine(kind: .goNoGo, key: ReadyToFly.flightKey(plan))
                 // At a glance (the owner's rule, 2026-11-03): at most three
                 // lines a pilot acts on, each opening to its why, and the
                 // rest in one row.
@@ -114,26 +127,20 @@ struct GoNoGoSection: View {
                         .accessibilityElement(children: .combine)
                     }
                 }
+                // What the airplane's findings lack, asked in place (the
+                // owner, 2026-11-09); its charts a link to its profile.
+                AskFigureRow(needs: [.fuelTotals, .takeoffLanding], pickDetail: "Its fuel and runway findings are worked from its figures")
             } else if let problem = verdict.problem {
                 Label(problem, systemImage: "exclamationmark.triangle").foregroundStyle(.secondary)
             } else {
                 ProgressView("Checking the flight…")
-            }
-            NavigationLink { MinimumsView() } label: {
-                Label("Personal minimums", systemImage: "slider.horizontal.3")
-            }
-            .task(id: session.signedIn) {
-                // The instructor's name comes with the training (Gateway);
-                // none for a pilot with no instructor, or signed out.
-                guard session.signedIn else { instructor = nil; return }
-                instructor = (try? await Gateway.training())??.instructors.first { $0.accepted }
             }
             if let instructor {
                 Label {
                     Text("Your instructor, \(instructor.name ?? instructor.email), reviews the flights you put to them from their phone.")
                         .font(.subheadline)
                 } icon: {
-                    Image(systemName: "person.crop.circle").foregroundStyle(Color.accentColor)
+                    Image(systemName: "person.crop.circle").foregroundStyle(accent)
                 }
                 .accessibilityElement(children: .combine)
             }
@@ -143,6 +150,12 @@ struct GoNoGoSection: View {
                 if verdict.asking, verdict.answer != nil { ProgressView().controlSize(.mini) }
             }
         }
+        .task(id: session.signedIn) {
+            // The instructor's name comes with the training (Gateway);
+            // none for a pilot with no instructor, or signed out.
+            guard session.signedIn else { instructor = nil; return }
+            instructor = (try? await Gateway.training())??.instructors.first { $0.accepted }
+        }
         // The words for the answer on the page; the findings stay as they
         // are while they are written.
         .task(id: verdict.answer) {
@@ -151,7 +164,12 @@ struct GoNoGoSection: View {
             defer { writingWords = false }
             let minimums = PersonalMinimums.Key.allCases.compactMap { key in verdict.minimums[key].map { "\(key.title): \(key.words($0))" } }
             let pilot: [String: String]? = minimums.isEmpty ? nil : ["personal minimums": minimums.joined(separator: ", ")]
-            guard let ask = try? WordsAsk(kind: .risk, body: RiskWordsAsk(answer, pilot: pilot), figures: WordsFigures.risk(answer)) else { return }
+            let ask: WordsAsk
+            do { ask = try WordsAsk(kind: .risk, body: try RiskWordsAsk(answer, pilot: pilot), figures: WordsFigures.risk(answer)) } catch {
+                // Said where the words would be, not left blank.
+                riskWords = SaidWords(words: .none("none", "No words: the question could not be written (\(error.localizedDescription))."), origin: .none)
+                return
+            }
             let said = await WordsFor().said(ask)
             guard !Task.isCancelled else { return }
             riskWords = said
@@ -167,6 +185,8 @@ struct GoNoGoSection: View {
             NavigationLink { LoadingView() } label: { content }
         case .risk?:
             NavigationLink { RiskView() } label: { content }
+        case .airplane?:
+            AirplaneFiguresLink { content }
         case nil:
             content
         }
@@ -178,13 +198,13 @@ struct VerdictRow: View {
     let item: VerdictItem
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
+        HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.md) {
             Image(systemName: FindingStyle.symbol(item.finding)).foregroundStyle(FindingStyle.colour(item.finding))
                 .accessibilityLabel(FindingStyle.word(item.finding))
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(item.label).font(.body.weight(.semibold))
                 Text(item.detail).font(.subheadline)
-                    .foregroundStyle(item.finding == "stop" ? Color.red : Color.secondary)
+                    .foregroundStyle(item.finding == "stop" ? WingtipInk.problem : Color.secondary)
             }
         }
         .contentShape(Rectangle())
@@ -204,7 +224,7 @@ struct FindingFold: View {
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 Text(item.detail).font(.subheadline)
                 Text("In the Brief: \([item.tab.capitalized, item.section].compactMap { $0 }.joined(separator: " · "))")
                     .font(.footnote).foregroundStyle(.secondary)
@@ -216,6 +236,8 @@ struct FindingFold: View {
                 NavigationLink("See the loading") { LoadingView() }
             case .risk?:
                 NavigationLink("See the risk assessment") { RiskView() }
+            case .airplane?:
+                AirplaneFiguresLink { Text("See the Airplane's Figures") }
             case nil:
                 EmptyView()
             }
@@ -227,108 +249,6 @@ struct FindingFold: View {
                     .accessibilityLabel(FindingStyle.word(item.finding))
             }
             .accessibilityElement(children: .combine)
-        }
-    }
-}
-
-/// The pilot's personal minimums: the weather they will not take off or
-/// land in, each a menu, Off until picked (the web's MinimumsPanel). Kept
-/// on this phone; the planner says where the briefing is under them.
-struct MinimumsView: View {
-    @Environment(Verdict.self) private var verdict
-
-    var body: some View {
-        Form {
-            Section {
-                ForEach(PersonalMinimums.Key.allCases) { key in
-                    Picker(key.title, selection: Binding(
-                        get: { verdict.minimums[key] },
-                        set: { verdict.setMinimum(key, $0) }
-                    )) {
-                        Text("Off").tag(Double?.none)
-                        ForEach(key.choices, id: \.self) { value in
-                            Text(key.words(value)).tag(Double?.some(value))
-                        }
-                    }
-                    .pickerStyle(.menu)
-                }
-            }
-        }
-        .navigationTitle("Personal Minimums")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-/// The airplane's loading: its own empty weight and arm, each station's
-/// pounds and the fuel aboard (the web's Weight & Balance), and the
-/// planner's weight and balance for them. Kept on this phone for each
-/// airplane; until set, the POH's sample airplane and a pilot.
-struct LoadingView: View {
-    @Environment(Verdict.self) private var verdict
-    @Environment(Plan.self) private var plan
-    @Environment(Session.self) private var session
-    /// The figure's field grows with the type, so a four-figure weight fits.
-    @ScaledMetric(relativeTo: .body) private var fieldWidth = 96.0
-
-    var body: some View {
-        Form {
-            if let loading = verdict.answer?.loading, let load = verdict.load(for: plan.aircraft) ?? verdict.answer?.balance?.load {
-                Section("The airplane") {
-                    figure("Empty weight", unit: "lb", value: load.emptyWeightLb) { var l = load; l.emptyWeightLb = $0; save(l) }
-                    figure("Empty arm", unit: "in", value: load.emptyArmIn) { var l = load; l.emptyArmIn = $0; save(l) }
-                }
-                Section("Loaded") {
-                    ForEach(Array(loading.stations.enumerated()), id: \.offset) { i, station in
-                        figure(station.name, unit: "lb", value: i < load.stationsLb.count ? load.stationsLb[i] : 0,
-                               note: station.maxLb.map { "\(Int($0).formatted()) lb at most" }) { value in
-                            var l = load
-                            l.stationsLb = loading.stations.indices.map { k in k == i ? value : (k < load.stationsLb.count ? load.stationsLb[k] : 0) }
-                            save(l)
-                        }
-                    }
-                    figure("Fuel", unit: "gal", value: load.fuelGal, note: "\(loading.fuelMaxGal.formatted()) gal usable") { var l = load; l.fuelGal = $0; save(l) }
-                }
-                if let balance = verdict.answer?.balance {
-                    Section("Balance") {
-                        LabeledContent("Takeoff", value: balance.takeoff.words)
-                        LabeledContent("Landing", value: balance.landing.words)
-                        let problems = balance.problems ?? []
-                        if problems.isEmpty {
-                            Label("Within the weight and the envelope", systemImage: FindingStyle.symbol("ok"))
-                                .foregroundStyle(FindingStyle.colour("ok"))
-                        } else {
-                            ForEach(problems, id: \.self) { problem in
-                                Label(problem, systemImage: FindingStyle.symbol("stop")).foregroundStyle(FindingStyle.colour("stop"))
-                            }
-                        }
-                    }
-                }
-            } else if verdict.answer != nil {
-                Text("The weight and balance is worked out for an airplane whose loading is built in: the Cessna 172S, from its POH.")
-            } else {
-                ProgressView()
-            }
-        }
-        .navigationTitle("Weight & Balance")
-        .navigationBarTitleDisplayMode(.inline)
-        .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
-    }
-
-    private func save(_ load: AirplaneLoad) { verdict.setLoad(load, for: plan.aircraft) }
-
-    /// One figure the pilot types, its unit beside it.
-    private func figure(_ title: String, unit: String, value: Double, note: String? = nil, set: @escaping (Double) -> Void) -> some View {
-        LabeledContent {
-            HStack(spacing: 4) {
-                TextField(title, value: Binding(get: { value }, set: { set(max(0, $0)) }), format: .number.precision(.fractionLength(0...2)))
-                    .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(maxWidth: fieldWidth)
-                Text(unit).foregroundStyle(.secondary)
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                if let note { Text(note).font(.footnote).foregroundStyle(.secondary) }
-            }
         }
     }
 }
@@ -345,7 +265,7 @@ struct RiskView: View {
         List {
             if let risk = verdict.answer?.risk {
                 Section {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                         // The level's mark with its colour, so the line reads
                         // the same to a pilot who does not see the colour.
                         Label(risk.line, systemImage: FindingStyle.symbol(finding(risk.level)))
@@ -355,8 +275,8 @@ struct RiskView: View {
                     .accessibilityElement(children: .combine)
                 }
                 let own = Set((verdict.answer?.selfChecks ?? []).map(\.key))
-                let raised = (risk.factors ?? []).filter { !own.contains($0.key) }
-                Section("From the briefing and your logbook") {
+                let raised = risk.factors.filter { !own.contains($0.key) }
+                Section("From the Briefing and Your Logbook") {
                     if raised.isEmpty {
                         Text("Nothing raised").foregroundStyle(.secondary)
                     } else {
@@ -365,7 +285,7 @@ struct RiskView: View {
                                 Text(factor.value)
                             } label: {
                                 Label {
-                                    VStack(alignment: .leading, spacing: 2) {
+                                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                         Text(factor.label)
                                         if let why = factor.why { Text(why).font(.footnote).foregroundStyle(.secondary) }
                                     }
@@ -389,7 +309,7 @@ struct RiskView: View {
                 Section(group) {
                     ForEach(checks.filter { $0.group == group }) { check in
                         Toggle(isOn: Binding(get: { verdict.ticked.contains(check.key) }, set: { verdict.tick(check.key, $0) })) {
-                            VStack(alignment: .leading, spacing: 2) {
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 Text(check.label)
                                 Text([check.why, check.value].compactMap { $0 }.joined(separator: " · "))
                                     .font(.footnote).foregroundStyle(.secondary)
@@ -400,7 +320,6 @@ struct RiskView: View {
             }
         }
         .navigationTitle("Risk Assessment")
-        .navigationBarTitleDisplayMode(.inline)
         .task(id: verdict.key(for: plan)) { await verdict.refresh(plan: plan, signedIn: session.signedIn) }
     }
 
@@ -432,20 +351,21 @@ struct RiskView: View {
     }
     .environment(Verdict())
     .environment(Session())
+    .environment(Plan())
 }
 
 #Preview("FindingFold") {
     List {
-        FindingFold(item: VerdictItem(key: "balance", label: "Weight & balance", finding: "stop", detail: "The baggage, 170 lb in all, is over its 120 lb", tab: "preflight", section: "Weight & Balance"),
+        FindingFold(item: VerdictItem(detail: "The baggage, 170 lb in all, is over its 120 lb", finding: "stop", key: "balance", label: "Weight & balance", section: "Weight & Balance", tab: "preflight"),
                     words: "Weight & balance: The baggage, 170 lb in all, is over its 120 lb.") { _ in }
     }
 }
 
 #Preview("VerdictRow") {
     List {
-        VerdictRow(item: VerdictItem(key: "weather", label: "Weather", finding: "ok", detail: "VFR along the route, KDLH 10 sm, few at 4,500 ft", tab: "brief"))
-        VerdictRow(item: VerdictItem(key: "fuel", label: "Fuel", finding: "caution", detail: "8.4 gal at landing, 1.9 gal over the reserve", tab: "navlog"))
-        VerdictRow(item: VerdictItem(key: "airspace", label: "Airspace", finding: "stop", detail: "TFR over KHIB until 15:00", tab: "brief"))
+        VerdictRow(item: VerdictItem(detail: "VFR along the route, KDLH 10 sm, few at 4,500 ft", finding: "ok", key: "weather", label: "Weather", tab: "brief"))
+        VerdictRow(item: VerdictItem(detail: "8.4 gal at landing, 1.9 gal over the reserve", finding: "caution", key: "fuel", label: "Fuel", tab: "navlog"))
+        VerdictRow(item: VerdictItem(detail: "TFR over KHIB until 15:00", finding: "stop", key: "airspace", label: "Airspace", tab: "brief"))
     }
 }
 

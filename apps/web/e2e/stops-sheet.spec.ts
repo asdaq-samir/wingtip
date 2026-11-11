@@ -1,5 +1,5 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
-import { grabberTo, inSheet, settle, showTabs, sideDrawer, slow } from "./helpers";
+import { grabberTo, inSheet, settle, showSearch, sideDrawer, slow } from "./helpers";
 
 const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;
 
@@ -18,35 +18,90 @@ const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;
  * without Overture or NASR.
  */
 
-const DINER = { name: "Pilot Pete's", kind: "American restaurant", distance_m: 199, walk_min: 3, phone: null, website: null, lat: 45.2, lon: -90.5, on_field: true };
-const SCHOOL = { name: "Citywings Flight School", kind: "Flight school", distance_m: 300, walk_min: 4, phone: null, website: null, lat: 45.2, lon: -90.5, on_field: true };
+const DINER = {
+  name: "Pilot Pete's",
+  kind: "American restaurant",
+  distance_m: 199,
+  walk_min: 3,
+  phone: null,
+  website: null,
+  lat: 45.2,
+  lon: -90.5,
+  on_field: true,
+};
+const SCHOOL = {
+  name: "Citywings Flight School",
+  kind: "Flight school",
+  distance_m: 300,
+  walk_min: 4,
+  phone: null,
+  website: null,
+  lat: 45.2,
+  lon: -90.5,
+  on_field: true,
+};
 const STOPS = {
   pending: 0,
   fields: [
-    { ident: "KAAA", name: "ALPHA MUNI", city: "ALPHA", lat: 42.4, lon: -88.0, distance_nm: 12.4, bearing_deg: 45,
-      departure: "C81", added_nm: 2.2, off_nm: 0.4, phone: "847-555-0100",
-      fuel_types: ["100LL", "A"], airframe_repair: "major", powerplant_repair: "minor", food: [DINER], training: [SCHOOL], places_known: true },
-    { ident: "KBBB", name: "BRAVO MUNI", city: "BRAVO", lat: 42.8, lon: -88.5, distance_nm: 40.2, bearing_deg: 300,
-      departure: "C81", added_nm: 6.0, off_nm: 3.2, phone: null,
-      fuel_types: ["100LL"], airframe_repair: null, powerplant_repair: null, food: [], training: [], places_known: true },
+    {
+      ident: "KAAA",
+      name: "ALPHA MUNI",
+      city: "ALPHA",
+      lat: 42.4,
+      lon: -88.0,
+      distance_nm: 12.4,
+      bearing_deg: 45,
+      departure: "C81",
+      added_nm: 2.2,
+      off_nm: 0.4,
+      phone: "847-555-0100",
+      fuel_types: ["100LL", "A"],
+      airframe_repair: "major",
+      powerplant_repair: "minor",
+      food: [DINER],
+      training: [SCHOOL],
+      places_known: true,
+    },
+    {
+      ident: "KBBB",
+      name: "BRAVO MUNI",
+      city: "BRAVO",
+      lat: 42.8,
+      lon: -88.5,
+      distance_nm: 40.2,
+      bearing_deg: 300,
+      departure: "C81",
+      added_nm: 6.0,
+      off_nm: 3.2,
+      phone: null,
+      fuel_types: ["100LL"],
+      airframe_repair: null,
+      powerplant_repair: null,
+      food: [],
+      training: [],
+      places_known: true,
+    },
   ],
 };
 
 /** The planner's two answers, each ask written down: "along", or "near"
  *  with the radius asked. */
 async function stops(page: Page, asked: string[] = []) {
-  await page.route(url => url.pathname.endsWith("/stops/near") || url.pathname.endsWith("/stops/along"), route => {
-    const url = new URL(route.request().url());
-    asked.push(url.pathname.endsWith("/near") ? `near ${url.searchParams.get("nm")}` : "along");
-    return route.fulfill({ json: STOPS });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/stops/near") || url.pathname.endsWith("/stops/along"),
+    (route) => {
+      const url = new URL(route.request().url());
+      asked.push(url.pathname.endsWith("/near") ? `near ${url.searchParams.get("nm")}` : "along");
+      return route.fulfill({ json: STOPS });
+    },
+  );
 }
 
-/** The Stops opened from the Airport tab's Find Nearby, `kind` picked. */
+/** The Stops opened from the one search's Find Nearby (its own page's
+ *  foot), `kind` picked. */
 async function findNearby(page: Page, kind: string) {
-  await showTabs(page);
-  await page.getByTestId("tab-airport").click();
-  await grabberTo(page, "half");
+  await showSearch(page);
+  await grabberTo(page, "full");
   await sideDrawer(page).getByTestId(`find-nearby-${kind}`).click();
   const card = sideDrawer(page).getByTestId("stops-card");
   await expect(card).toBeVisible({ timeout: slow(30_000) });
@@ -65,7 +120,10 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("with a course drawn, the Stops along it, each with a line for each kind it has, its pin's tap picking it, and Add Stop", async ({ page, context }) => {
+test("with a course drawn, the Stops along it, each with a line for each kind it has, its pin's tap picking it, and Add Stop", async ({
+  page,
+  context,
+}) => {
   const asked: string[] = [];
   await stops(page, asked);
   await context.grantPermissions(["geolocation"], { origin });
@@ -97,7 +155,7 @@ test("with a course drawn, the Stops along it, each with a line for each kind it
 
   // A kind picked: only the fields that have it, and on the map its pin only.
   await card.getByTestId("stops-kind-food").click();
-  await expect(card.getByTestId("stops-kind-food")).toHaveAttribute("aria-checked", "true");
+  await expect(card.getByTestId("stops-kind-food")).toHaveAttribute("aria-pressed", "true");
   await expect(rows).toHaveCount(1);
   await expect(page.getByTitle("KAAA: Food")).toHaveCount(1);
   await card.getByTestId("stops-kind-all").click();
@@ -122,7 +180,10 @@ test("with a course drawn, the Stops along it, each with a line for each kind it
   await expect(page).toHaveURL(/[?&]stops=KBBB(&|$)/);
 });
 
-test("with no route the Stops look round the pilot, 25 nm at first, the distance and the kind picked from the sheet", async ({ page, context }) => {
+test("with no route the Stops look round the pilot, 25 nm at first, the distance and the kind picked from the sheet", async ({
+  page,
+  context,
+}) => {
   const asked: string[] = [];
   await stops(page, asked);
   await nearMe(page, context);
@@ -142,19 +203,20 @@ test("with no route the Stops look round the pilot, 25 nm at first, the distance
   // The kind picked is kept for the next time.
   await card.getByTestId("stops-kind-training").click();
   await expect(card.getByTestId("stops-field")).toHaveCount(1);
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("wingtip.preferences") ?? "{}").state?.stopKind)).toBe("training");
+  await expect
+    .poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("wingtip.preferences") ?? "{}").state?.stopKind))
+    .toBe("training");
   // Round the pilot no Direct To or Add Stop: a flight there is a tap
   // away on the field's card (the owner, 2026-10-28).
   await expect(card.getByTestId("stops-direct")).toHaveCount(0);
   await expect(card.getByTestId("stops-add-stop")).toHaveCount(0);
 });
 
-test("the Airport tab's Find Nearby tiles open the Stops round the pilot with that kind picked", async ({ page, context }) => {
+test("the one search's Find Nearby tiles open the Stops round the pilot with that kind picked", async ({ page, context }) => {
   await stops(page);
   await nearMe(page, context);
-  await showTabs(page);
-  await page.getByTestId("tab-airport").click();
-  await grabberTo(page, "half");
+  await showSearch(page);
+  await grabberTo(page, "full");
   const nearby = sideDrawer(page).getByTestId("find-nearby");
   await expect(nearby).toBeVisible();
   await expect(nearby.getByRole("button")).toHaveText(["Food", "Fuel", "Repair", "Flight Training"]);
@@ -165,7 +227,7 @@ test("the Airport tab's Find Nearby tiles open the Stops round the pilot with th
   await tile.click();
   const card = sideDrawer(page).getByTestId("stops-card");
   await expect(card).toBeVisible();
-  await expect(card.getByTestId("stops-kind-repair")).toHaveAttribute("aria-checked", "true");
+  await expect(card.getByTestId("stops-kind-repair")).toHaveAttribute("aria-pressed", "true");
   await expect(card.getByTestId("stops-distance")).toHaveText("Within 25 nm");
   await expect(card.getByTestId("stops-field")).toHaveCount(1, { timeout: slow(30_000) });
   await expect(card.getByTestId("stops-field").first().getByTestId("stops-line-repair")).toBeVisible();

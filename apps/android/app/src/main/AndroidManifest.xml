@@ -2,7 +2,8 @@
 <!-- The native Android app (docs/NATIVE-ANDROID.md). The network for the
      planner, the gateway and the chart's tiles; whether there is one, for
      the words shown when there is not; and the position own ship reads. -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -19,11 +20,35 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Android 16's Live Updates (notify/LiveFlight.kt): own ship's
+         notification promoted to the status bar's chip and the top of the
+         shade while flying a route, as the iPhone's Live Activity is. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <!-- The ATC copilot (atc/): the radio listened to through the phone's
+         speech recognizer while flying, with the pilot's leave (Setup's
+         ATC, off until turned on), kept with the screen off by a
+         foreground service of the microphone type. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <!-- A cockpit ADS-B receiver's GDL 90 on the Wi-Fi (receiver/): the
+         multicast lock lets the datagrams sent to the network's broadcast
+         address through, and the foreground service of the
+         connected-device type keeps them coming with the screen off. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <!-- Android 11 and later show an app only the services it names: the
+         phone's speech recognizer, which the ATC copilot listens through. -->
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 
     <!-- Only HTTPS: the gateway and the tiles' CDN are, and a plain-HTTP
          request is refused by the system rather than sent. The session's
          cookies are kept by the app itself (CookieStore), so Android's
-         backup of the app's data is off. Predictive back (Android 14+):
+         backup of the app's data is off (allowBackup and backup_rules below
+         Android 12, data_extraction_rules from it on). Predictive back (Android 14+):
          the system's back animation, with nothing of our own in its way. -->
     <application
         android:name=".WingtipApplication"
@@ -32,15 +57,19 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.WingtipMaps"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:supportsRtl="true"
         android:usesCleartextTraffic="false"
-        android:enableOnBackInvokedCallback="true">
+        android:enableOnBackInvokedCallback="true"
+        tools:targetApi="33">
 
         <!-- One task, one instance: a link tapped in Gmail while the app is
              open comes to the running activity as a new intent
              (MainActivity.onNewIntent) rather than opening a second one. -->
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Theme.WingtipMaps.Starting"
             android:exported="true"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize">
@@ -62,8 +91,56 @@
                 <data android:pathPrefix="/app/plan" />
                 <data android:pathPrefix="/api/auth/magic-link/verify" />
             </intent-filter>
+            <!-- The app's own scheme, wingtipmaps://plan?open=<screen>, for a
+                 shortcut or another app to open a screen (design/screens.json,
+                 Links); the site's address above opens the same screens. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="wingtipmaps" android:host="plan" />
+            </intent-filter>
+            <!-- The app's shortcuts and App Actions' OPEN_APP_FEATURE, one
+                 per screen (res/xml/shortcuts.xml, generated from
+                 design/screens.json; docs/android-ai.md). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
 
+        <!-- Google's Map Tiles key for this app (build.gradle.kts's
+             GOOGLE_MAPS_ANDROID_KEY), where Google's own libraries look for
+             one; empty until the owner adds it. CloseMap reads the same
+             key from BuildConfig. -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${googleMapsAndroidKey}" />
+
+        <!-- The app's actions and entities for Gemini and the system's
+             agents (AppFunctions, Android 16 and later; ai/functions/):
+             the service the AppFunctions compiler writes from
+             WingtipFunctions, bound only by the system
+             (BIND_APP_FUNCTION_SERVICE), with the schema it indexes. -->
+        <service
+            android:name=".ai.functions.WingtipFunctionService"
+            android:permission="android.permission.BIND_APP_FUNCTION_SERVICE"
+            android:exported="true"
+            tools:targetApi="36">
+            <property
+                android:name="android.app.appfunctions.schema"
+                android:value="app_functions_schema.xsd" />
+            <property
+                android:name="android.app.appfunctions.v2"
+                android:value="wingtip_functions.xml" />
+            <intent-filter>
+                <action android:name="android.app.appfunctions.AppFunctionService" />
+            </intent-filter>
+        </service>
+        <!-- What the agents are told of the functions together, and what
+             the pilot is shown they let an agent do. -->
+        <property
+            android:name="android.app.appfunctions.app_metadata"
+            android:resource="@xml/app_functions_metadata" />
         <!-- The foreground service that keeps the fixes coming with the
              screen off while the airplane is flying (flight/OwnShip.kt);
              started and stopped by OwnShip as the airplane reaches and
@@ -72,6 +149,32 @@
             android:name=".flight.OwnShipService"
             android:exported="false"
             android:foregroundServiceType="location" />
+
+        <!-- The ATC copilot's listening with the screen off (atc/AtcListenService.kt). -->
+        <service
+            android:name=".atc.AtcListenService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+
+        <!-- The home screen's Next Flight widget (widget/NextFlightWidget.kt),
+             a Glance widget; the launcher talks to its receiver. -->
+        <receiver
+            android:name=".widget.NextFlightReceiver"
+            android:exported="true"
+            android:label="@string/widget_next_flight">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/next_flight_widget_info" />
+        </receiver>
+
+        <!-- The cockpit receiver's listening with the screen off (receiver/ReceiverService.kt). -->
+        <service
+            android:name=".receiver.ReceiverService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
     </application>
 
 </manifest>

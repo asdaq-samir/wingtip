@@ -7,12 +7,12 @@ import Testing
 /// features/strip/fieldCommands.test.ts case for case, so the phone
 /// reads a line as the website does.
 struct FieldCommandsTests {
-    @Test func readsNothingFromAnEmptyLine() {
+    @Test func readsNothingFromAnEmptyLine() throws {
         #expect(FieldCommands.read("") == nil)
         #expect(FieldCommands.read("   ") == nil)
     }
 
-    @Test func readsIdentsAsARouteOneTheDestinationTwoTheEndsMoreTheStopsBetween() {
+    @Test func readsIdentsAsARouteOneTheDestinationTwoTheEndsMoreTheStopsBetween() throws {
         #expect(FieldCommands.read("KDLH") == .route(dep: nil, stops: [], dest: "KDLH"))
         #expect(FieldCommands.read("kdlh") == .route(dep: nil, stops: [], dest: "KDLH"))
         #expect(FieldCommands.read("C81 KDLH") == .route(dep: "C81", stops: [], dest: "KDLH"))
@@ -26,19 +26,19 @@ struct FieldCommandsTests {
         #expect(FieldCommands.read("KDLH from C81") == .route(dep: "C81", stops: [], dest: "KDLH"))
     }
 
-    @Test func takesThreeSmallLettersAsAWordNotAFieldAndThreeCapitalsAsAField() {
+    @Test func takesThreeSmallLettersAsAWordNotAFieldAndThreeCapitalsAsAField() throws {
         #expect(FieldCommands.read("ORD") == .route(dep: nil, stops: [], dest: "ORD"))
         #expect(FieldCommands.read("ord") == .place("ord"))
         #expect(FieldCommands.read("fly") == .place("fly"))
     }
 
-    @Test func opensAScreenByItsWordWithTheFillerTakenOff() {
+    @Test func opensAScreenByItsWordWithTheFillerTakenOff() throws {
         #expect(FieldCommands.read("Brief me") == .open(.brief))
         #expect(FieldCommands.read("brief") == .open(.brief))
         #expect(FieldCommands.read("My airplane") == .open(.airplane))
         #expect(FieldCommands.read("open my logbook") == .open(.logbook))
-        #expect(FieldCommands.read("Settings") == .open(.settings))
-        #expect(FieldCommands.read("setup") == .open(.settings))
+        #expect(FieldCommands.read("Settings") == .open(.setup))
+        #expect(FieldCommands.read("setup") == .open(.setup))
         #expect(FieldCommands.read("instructor") == .open(.instructor))
         #expect(FieldCommands.read("Nearest fuel") == .open(.fuel))
         #expect(FieldCommands.read("nearest") == .open(.nearest))
@@ -52,14 +52,14 @@ struct FieldCommandsTests {
         #expect(FieldCommands.read("stops") == .open(.stops))
     }
 
-    @Test func opensAFieldsCardByItsIdentNotARouteToIt() {
+    @Test func opensAFieldsCardByItsIdentNotARouteToIt() throws {
         #expect(FieldCommands.read("about KDLH") == .field("KDLH"))
         #expect(FieldCommands.read("KDLH info") == .field("KDLH"))
         #expect(FieldCommands.read("C81 airport") == .field("C81"))
         #expect(FieldCommands.read("recent routes") == .open(.recentRoutes))
     }
 
-    @Test func readsAShortNameWithNoQuestionInItAsAPlaceToFlyTo() {
+    @Test func readsAShortNameWithNoQuestionInItAsAPlaceToFlyTo() throws {
         #expect(FieldCommands.read("Duluth") == .place("Duluth"))
         #expect(FieldCommands.read("to Duluth") == .place("Duluth"))
         #expect(FieldCommands.read("Las Vegas") == .place("Las Vegas"))
@@ -68,7 +68,7 @@ struct FieldCommandsTests {
         #expect(FieldCommands.read("take me to Duluth") == .place("Duluth"))
     }
 
-    @Test func asksTheAssistantEverythingElse() {
+    @Test func asksTheAssistantEverythingElse() throws {
         #expect(FieldCommands.read("Weather at KDLH") == .ask("Weather at KDLH"))
         #expect(FieldCommands.read("Can I make Duluth before dark?") == .ask("Can I make Duluth before dark?"))
         #expect(FieldCommands.read("Is the weather within my minimums") == .ask("Is the weather within my minimums"))
@@ -76,7 +76,7 @@ struct FieldCommandsTests {
         #expect(FieldCommands.read("winds aloft on the way to Duluth") == .ask("winds aloft on the way to Duluth"))
     }
 
-    @Test func anIdentIsThreeOrFourLettersAndDigitsUppercased() {
+    @Test func anIdentIsThreeOrFourLettersAndDigitsUppercased() throws {
         #expect(FieldCommands.identOf(" kdlh ") == "KDLH")
         #expect(FieldCommands.identOf("c81") == "C81")
         #expect(FieldCommands.identOf("KDLHX") == "")
@@ -95,9 +95,9 @@ struct StripDataTests {
     /// Three legs of a route with a stop: C81 to KJVL (a checkpoint on
     /// the way), KJVL to KDLH, the figures the planner's leg lines carry.
     private static let legLines = [
-        #"{"type":"leg","from":"C81","to":"ROCKFORD","distance_nm":30.0,"altitude_ft":4500.0,"true_course_deg":330.0,"wca_deg":0.0,"true_heading_deg":330.0,"magnetic_variation_deg":1.0,"magnetic_heading_deg":329.0,"groundspeed_kt":104.0,"ete_min":17.3,"fuel_gal":2.4,"tas_kt":110.0}"#,
-        #"{"type":"leg","from":"ROCKFORD","to":"KJVL","distance_nm":20.0,"altitude_ft":4500.0,"true_course_deg":330.0,"wca_deg":0.0,"true_heading_deg":330.0,"magnetic_variation_deg":1.0,"magnetic_heading_deg":329.0,"groundspeed_kt":104.0,"ete_min":11.5,"fuel_gal":1.6,"tas_kt":110.0,"ground_min":45.0}"#,
-        #"{"type":"leg","from":"KJVL","to":"KDLH","distance_nm":273.5,"altitude_ft":6500.0,"true_course_deg":330.0,"wca_deg":0.0,"true_heading_deg":330.0,"magnetic_variation_deg":-1.0,"magnetic_heading_deg":331.0,"groundspeed_kt":100.0,"ete_min":164.1,"fuel_gal":22.9,"tas_kt":110.0}"#,
+        #"{"type":"leg","from":"C81","to":"ROCKFORD","distance_nm":30.0,"altitude_ft":4500.0,"true_course_deg":330.0,"wca_deg":0.0,"true_heading_deg":330.0,"magnetic_variation_deg":1.0,"magnetic_heading_deg":329.0,"magnetic_course_deg":329.0,"wind":null,"fuel_burn_gph":8.5,"power_pct":75.0,"density_altitude_ft":5200.0,"groundspeed_kt":104.0,"ete_min":17.3,"fuel_gal":2.4,"tas_kt":110.0}"#,
+        #"{"type":"leg","from":"ROCKFORD","to":"KJVL","distance_nm":20.0,"altitude_ft":4500.0,"true_course_deg":330.0,"wca_deg":0.0,"true_heading_deg":330.0,"magnetic_variation_deg":1.0,"magnetic_heading_deg":329.0,"magnetic_course_deg":329.0,"wind":null,"fuel_burn_gph":8.5,"power_pct":75.0,"density_altitude_ft":5200.0,"groundspeed_kt":104.0,"ete_min":11.5,"fuel_gal":1.6,"tas_kt":110.0,"ground_min":45.0}"#,
+        #"{"type":"leg","from":"KJVL","to":"KDLH","distance_nm":273.5,"altitude_ft":6500.0,"true_course_deg":330.0,"wca_deg":0.0,"true_heading_deg":330.0,"magnetic_variation_deg":-1.0,"magnetic_heading_deg":331.0,"magnetic_course_deg":331.0,"wind":null,"fuel_burn_gph":8.5,"power_pct":75.0,"density_altitude_ft":5200.0,"groundspeed_kt":100.0,"ete_min":164.1,"fuel_gal":22.9,"tas_kt":110.0}"#,
     ]
 
     private static func legs() throws -> [Leg] {
@@ -142,40 +142,34 @@ struct StripDataTests {
     @Test func theAirplaneIsPutOnTheLegItIsOnAndHowFarAlongIt() throws {
         let points = StripData.points(dep: "C81", dest: "KDLH", stops: ["KJVL"], legs: try Self.legs(), checkpoints: Self.checkpoints, course: try Self.course())
         // Nowhere known: nothing.
-        #expect(StripData.positionAlong(points, fix: nil) == nil)
+        #expect(try StripData.positionAlong(points, fix: nil) == nil)
         // Just past Rockford on the way to Janesville: the second leg, near its start.
-        let past = StripData.positionAlong(points, fix: CLLocationCoordinate2D(latitude: 42.33, longitude: -89.08))
+        let past = try StripData.positionAlong(points, fix: CLLocationCoordinate2D(latitude: 42.33, longitude: -89.08))
         #expect(past?.leg == 1)
         #expect((past?.along ?? 1) < 0.3)
         // Half way from Janesville to Duluth: the third leg, about half along.
-        let half = StripData.positionAlong(points, fix: CLLocationCoordinate2D(latitude: 44.73, longitude: -90.6))
+        let half = try StripData.positionAlong(points, fix: CLLocationCoordinate2D(latitude: 44.73, longitude: -90.6))
         #expect(half?.leg == 2)
         #expect(abs((half?.along ?? 0) - 0.5) < 0.1)
         // Short of Rockford, on the way from C81: the first leg.
-        let early = StripData.positionAlong(points, fix: CLLocationCoordinate2D(latitude: 42.3, longitude: -88.6))
+        let early = try StripData.positionAlong(points, fix: CLLocationCoordinate2D(latitude: 42.3, longitude: -88.6))
         #expect(early?.leg == 0)
         #expect(StripData.nextPoint(points, position: early)?.name == "ROCKFORD")
         #expect(StripData.nextPoint(points, position: half)?.name == "KDLH")
     }
 
-    @Test func aDurationIsWrittenAsTheWebWritesEveryOne() {
-        #expect(StripData.duration(65) == "1h 5m")
-        #expect(StripData.duration(45) == "45m")
-        #expect(StripData.duration(180) == "3h")
-        #expect(StripData.duration(0) == "0m")
-        // The minutes rounded first: 119.6 is "2h", never "1h 60m".
-        #expect(StripData.duration(119.6) == "2h")
+    @Test func theStripsFiguresAreTheSharedTablesForms() throws {
         #expect(StripData.figures(eteMin: 165, fuelGal: 29.1) == "2h 45m · 29.1 gal")
         #expect(StripData.figures(eteMin: nil, fuelGal: nil) == "")
     }
 
-    @Test func theHeadsLineIsTheRouteTheAirplaneTheAltitudeAsFLAndWhen() {
+    @Test func theHeadsLineIsTheRouteTheAirplaneTheAltitudeAsFLAndWhen() throws {
         #expect(StripData.routeName(dep: "C81", dest: "KDLH", stops: ["KJVL"]) == "C81 → KJVL → KDLH")
         #expect(StripData.routeName(dep: "KDLH", dest: "KDLH", stops: []) == "KDLH local")
-        #expect(flightLevel(4500) == "FL-045")
-        #expect(flightLevel(10500) == "FL-105")
+        #expect(Format.cruiseAltitude(4500) == "FL-045")
+        #expect(Format.cruiseAltitude(10500) == "FL-105")
         #expect(StripData.headLine(dep: "C81", dest: "KDLH", stops: ["KJVL"], airplane: "C172", cruiseFt: 4500, departAt: nil)
-                == "C81 → KJVL → KDLH · C172 · FL-045 · leaving now")
+            == "C81 → KJVL → KDLH · C172 · FL-045 · leaving now")
         #expect(StripData.headLine(dep: "C81", dest: "KDLH", stops: [], airplane: "", cruiseFt: nil, departAt: nil) == "C81 → KDLH · leaving now")
     }
 
@@ -190,7 +184,7 @@ struct StripDataTests {
         #expect(lines.allSatisfy { $0.words.count <= Glance.longest })
     }
 
-    @Test func thePilotsInitialsAreTheirNamesElseTheirAddressesFirstLetter() {
+    @Test func thePilotsInitialsAreTheirNamesElseTheirAddressesFirstLetter() throws {
         #expect(StripData.initials(name: "Asdaq Samir", email: "asdaq@example.com") == "AS")
         #expect(StripData.initials(name: "Cher", email: nil) == "CH")
         #expect(StripData.initials(name: "pilot@example.com", email: "pilot@example.com") == "P")
@@ -198,7 +192,7 @@ struct StripDataTests {
         #expect(StripData.initials(name: nil, email: nil) == "")
     }
 
-    @Test func theRadioChipsAreTheAtisTheTowerOrTheCtaf() {
+    @Test func theRadioChipsAreTheAtisTheTowerOrTheCtaf() throws {
         let towered = [
             Frequency(description: "ATIS", frequencyMhz: 124.1, type: "ATIS"),
             Frequency(description: "Tower", frequencyMhz: 118.3, type: "TWR"),
@@ -215,7 +209,7 @@ struct StripDataTests {
         #expect(StripData.radioChips([], towered: false).map(\.words) == ["CTAF 122.9"])
     }
 
-    @Test func theMiddleFoldsPastSixCheckpointsTheFirstThreeAndTheLastTwoKept() {
+    @Test func theMiddleFoldsPastSixCheckpointsTheFirstThreeAndTheLastTwoKept() throws {
         func checkpoint(_ n: Int) -> StripPoint { StripPoint(key: "c\(n)", kind: .checkpoint, name: "CP\(n)") }
         let six = (1...6).map(checkpoint)
         #expect(StripData.folded(six, unfolded: false).hidden == 0)
@@ -230,14 +224,7 @@ struct StripDataTests {
         #expect(numbers["c1"] == 1 && numbers["c8"] == 8)
     }
 
-    @Test func theSuggestionsFollowWhetherARouteIsPlanned() {
-        #expect(StripData.suggestions(routed: true, dest: "KDLH").prefix(2) == ["Brief me", "Weather at KDLH"])
-        #expect(StripData.suggestions(routed: false, dest: "").first == "Nearest fuel")
-        #expect(StripData.suggestions(routed: false, dest: "").allSatisfy { FieldCommands.read($0) != nil })
-        #expect(StripData.suggestions(routed: true, dest: "KDLH").allSatisfy { FieldCommands.read($0) != nil })
-    }
-
-    @Test func theWeatherLineIsTheCategoryAndTheWindReported() {
+    @Test func theWeatherLineIsTheCategoryAndTheWindReported() throws {
         var metar = Metar()
         #expect(StripData.weatherLine(nil) == nil)
         #expect(StripData.weatherLine(metar) == nil)

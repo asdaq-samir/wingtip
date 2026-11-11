@@ -24,13 +24,11 @@ struct WordsTests {
         try WordsAsk(kind: .weather, body: WeatherWordsAsk(dep: "KMSN", dest: "KDLH"), figures: figures)
     }
 
-    static let planners = Words(sentences: [WordsSentence(text: "KMSN is VFR.", sources: ["metar:KMSN"])],
-                                sources: [figures[0]], model: "claude", unavailable: nil)
-    static let devices = Words(sentences: [WordsSentence(text: "Fuel is enough.", sources: ["finding:fuel"])],
-                               sources: [figures[1]], model: "apple-on-device", unavailable: nil)
+    static let planners = Words(model: "claude", sentences: [WordsSentence(sources: ["metar:KMSN"], text: "KMSN is VFR.")], sources: [figures[0]], unavailable: nil)
+    static let devices = Words(model: "apple-on-device", sentences: [WordsSentence(sources: ["finding:fuel"], text: "Fuel is enough.")], sources: [figures[1]], unavailable: nil)
 
     @Test func theFacadePicksThePlannersWordsWhenItAnswers() async throws {
-        let said = await WordsFor(planner: Fake(words: Self.planners), device: Fake(words: Self.devices)).said(try Self.ask())
+        let said = await WordsFor(planner: Fake(words: Self.planners), device: Fake(words: Self.devices), claudeOn: { true }).said(try Self.ask())
         #expect(said.origin == .planner)
         #expect(said.words.sentences.map(\.text) == ["KMSN is VFR."])
         #expect(said.origin.caption == "From the planner")
@@ -38,14 +36,14 @@ struct WordsTests {
 
     @Test func theFacadeFallsToThisIphoneWhenThePlannerThrows() async throws {
         let offline = Planner.Failure(status: 0, detail: "no signal")
-        let said = await WordsFor(planner: Fake(words: nil, error: offline), device: Fake(words: Self.devices)).said(try Self.ask())
+        let said = await WordsFor(planner: Fake(words: nil, error: offline), device: Fake(words: Self.devices), claudeOn: { true }).said(try Self.ask())
         #expect(said.origin == .device)
         #expect(said.words.sentences.map(\.text) == ["Fuel is enough."])
         #expect(said.origin.caption == "On this iPhone")
     }
 
     @Test func noWordsSayWhyInPlainLanguageWhenNeitherCan() async throws {
-        let said = await WordsFor(planner: Fake(words: nil), device: Fake(words: nil, error: WordsUnavailable(why: "Words on this iPhone need iOS 26."))).said(try Self.ask())
+        let said = await WordsFor(planner: Fake(words: nil), device: Fake(words: nil, error: WordsUnavailable(why: "Words on this iPhone need iOS 26.")), claudeOn: { true }).said(try Self.ask())
         #expect(said.origin == .none)
         #expect(said.words.sentences.isEmpty)
         #expect(said.words.unavailable == "No words: the planner cannot be reached, and words on this iPhone need iOS 26.")
@@ -55,20 +53,20 @@ struct WordsTests {
     /// reason to ask the device, not an answer with no words.
     @Test func thePlannersUnavailableFallsToThisIphone() async throws {
         let unavailable = Words.none("claude", "The briefer could not be reached.")
-        let said = await WordsFor(planner: Fake(words: unavailable), device: Fake(words: Self.devices)).said(try Self.ask())
+        let said = await WordsFor(planner: Fake(words: unavailable), device: Fake(words: Self.devices), claudeOn: { true }).said(try Self.ask())
         #expect(said.origin == .device)
     }
 
     /// The guard: a sentence citing an id it was not given is dropped,
     /// as is one citing nothing; the rest keep their order, and only the
     /// figures cited come back.
-    @Test func aSentenceCitingAnUnknownIdIsDropped() {
+    @Test func aSentenceCitingAnUnknownIdIsDropped() throws {
         let said = [
-            WordsSentence(text: "KMSN is VFR.", sources: ["metar:KMSN"]),
-            WordsSentence(text: "KDLH is IFR.", sources: ["metar:KDLH"]),
-            WordsSentence(text: "Fuel is enough, and KMSN is VFR.", sources: ["finding:fuel", "metar:KMSN", "metar:KDLH"]),
-            WordsSentence(text: "Something with no figure.", sources: []),
-            WordsSentence(text: "  Fuel is enough.  ", sources: [" finding:fuel ", "finding:fuel"]),
+            WordsSentence(sources: ["metar:KMSN"], text: "KMSN is VFR."),
+            WordsSentence(sources: ["metar:KDLH"], text: "KDLH is IFR."),
+            WordsSentence(sources: ["finding:fuel", "metar:KMSN", "metar:KDLH"], text: "Fuel is enough, and KMSN is VFR."),
+            WordsSentence(sources: [], text: "Something with no figure."),
+            WordsSentence(sources: [" finding:fuel ", "finding:fuel"], text: "  Fuel is enough.  "),
         ]
         let words = Words.checked(said, sources: Self.figures, model: "test")
         #expect(words.sentences.map(\.text) == ["KMSN is VFR.", "Fuel is enough."])
@@ -77,8 +75,8 @@ struct WordsTests {
         #expect(words.unavailable == nil)
     }
 
-    @Test func atMostSoManySentencesAreKept() {
-        let said = (0..<12).map { _ in WordsSentence(text: "KMSN is VFR.", sources: ["metar:KMSN"]) }
+    @Test func atMostSoManySentencesAreKept() throws {
+        let said = (0..<12).map { _ in WordsSentence(sources: ["metar:KMSN"], text: "KMSN is VFR.") }
         #expect(Words.checked(said, sources: Self.figures, model: "test", most: 8).sentences.count == 8)
     }
 
@@ -119,21 +117,22 @@ struct WordsTests {
         #expect(unlawful.text.contains("8 points, level caution"))
     }
 
-    /// POST /api/words/risk's body in the planner's snake case, with the
-    /// self checks the planner's GoNoGo requires and no loading.
+    /// POST /api/words/risk's body in the planner's snake case, the
+    /// verdict as the document's RiskVerdict has it.
     @Test func theRiskAskEncodesForThePlanner() throws {
         let answer = try Planner.snakeCase.decode(GoNoGoAnswer.self, from: Data(GoNoGoTests.answer.utf8))
         let ask = try WordsAsk(kind: .risk, body: RiskWordsAsk(answer, pilot: ["personal minimums": "Ceiling: 2,000 ft"]), figures: WordsFigures.risk(answer))
         let body = try #require(JSONSerialization.jsonObject(with: ask.body) as? [String: Any])
         let verdict = try #require(body["verdict"] as? [String: Any])
-        #expect(verdict["self_checks"] is [Any] && verdict["loading"] == nil)
+        // The document's RiskVerdict has no self checks, loading or balance: none is sent.
+        #expect(verdict["self_checks"] == nil && verdict["loading"] == nil)
         #expect((verdict["items"] as? [Any])?.count == 7)
         #expect((body["pilot"] as? [String: String])?["personal minimums"] == "Ceiling: 2,000 ft")
     }
 
     /// The on-device model's prompt is the figures as compact JSON and
     /// nothing else; its instructions forbid a figure of the model's own.
-    @Test func theDevicePromptIsTheFiguresAsJson() {
+    @Test func theDevicePromptIsTheFiguresAsJson() throws {
         let prompt = OnDeviceWords.prompt(Self.figures)
         #expect(prompt.contains(#""id":"metar:KMSN""#) && prompt.contains(#""id":"finding:fuel""#))
         #expect(OnDeviceWords.instructions(.weather).contains("never compute"))

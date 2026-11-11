@@ -3,7 +3,9 @@ package app.wingtipmaps.android.api
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Config
-import java.io.IOException
+import app.wingtipmaps.android.ai.ClaudeGate
+import app.wingtipmaps.android.ai.Nano
+import app.wingtipmaps.android.ai.OnPhoneAsk
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,6 +24,7 @@ import kotlinx.serialization.encodeToString
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.IOException
 
 /**
  * One line of the assistant's stream (POST /api/assistant, newline-
@@ -41,6 +44,10 @@ sealed interface AssistantLine {
     data object Done : AssistantLine
 
     data class Problem(val words: String) : AssistantLine
+
+    /** The answer is being made on the phone by Gemini Nano (ai/OnPhoneAsk),
+     *  not by the server; said under it. */
+    data object OnPhone : AssistantLine
 }
 
 /** A raw thing an answer rests on (a METAR, a NOTAM), shown to the pilot
@@ -57,6 +64,8 @@ data class AssistantTurn(
     val content: String,
     val sources: List<AssistantSource> = emptyList(),
     val problem: String? = null,
+    /** Made on the phone by Gemini Nano, nothing of it sent to a server. */
+    val onPhone: Boolean = false,
 ) {
     enum class Role(val wire: String) { USER("user"), ASSISTANT("assistant") }
 }
@@ -127,6 +136,7 @@ data class AssistantConversation(
             is AssistantLine.Sources -> replacingLast(last.copy(sources = last.sources + line.sources))
             AssistantLine.Done -> copy(status = null, answering = false)
             is AssistantLine.Problem -> replacingLast(last.copy(problem = line.words)).copy(status = null, answering = false)
+            AssistantLine.OnPhone -> replacingLast(last.copy(onPhone = true))
         }
     }
 
@@ -193,9 +203,10 @@ object Assistant {
 
     /** The planner's words for a call that failed, where it is said. */
     fun words(e: Exception): String = when {
+        e is ClaudeGate.Off -> e.message.orEmpty()
         e is Planner.Failure && e.status == 404 -> NOT_HERE
         e is Planner.Failure -> e.message ?: "The planner answered ${e.status}."
-        e is IOException -> "The assistant could not be reached: ${e.message}"
+        e is IOException -> Problems.say("The assistant could not be reached", e)
         else -> e.message ?: "The assistant could not answer."
     }
 
@@ -203,13 +214,16 @@ object Assistant {
      *  changes nothing goes with the CSRF token where the session has
      *  one, as the gateway's own calls carry it. */
     fun stream(ask: Ask): Flow<AssistantLine> = flow {
+        // Never a billed call while the Claude features are off (ClaudeGate,
+        // the owner's decision of 2026-11-10).
+        ClaudeGate.require()
         val body = Gateway.json.encodeToString(ask).toRequestBody("application/json".toMediaType())
         val builder = Request.Builder().url(Config.gateway + Config.plannerPath("/api/assistant"))
             .header("Accept", "application/x-ndjson").post(body)
         Gateway.csrfToken?.let { builder.header("X-XSRF-TOKEN", it) }
         Gateway.client.newCall(builder.build()).execute().use { response ->
-            if (response.code != 200) throw Planner.Failure(response.code, Planner.detail(response.body?.string() ?: ""))
-            val source = response.body?.source() ?: return@use
+            if (response.code != 200) throw Planner.Failure(response.code, Planner.detail(response.body.string()))
+            val source = response.body.source()
             while (true) {
                 val line = source.readUtf8Line() ?: break
                 if (line.isNotEmpty()) decode(line)?.let { emit(it) }
@@ -238,7 +252,17 @@ class AssistantClient : ViewModel() {
         val ask = Assistant.Ask(_conversation.value.messages, context)
         running = viewModelScope.launch {
             try {
-                Assistant.stream(ask).collect { line -> _conversation.update { it.take(line) } }
+                // On the phone first: Gemini Nano with the app's own tools
+                // where this phone has it (docs/android-ai.md), else the
+                // server's assistant only while the Claude features are on
+                // (ClaudeGate); off, Ask is not offered (AiOffered) and
+                // a question asked anyway stops here.
+                val lines = when {
+                    Nano.ready() -> OnPhoneAsk.stream(ask.messages, ask.context)
+                    ClaudeGate.on.value -> Assistant.stream(ask)
+                    else -> throw ClaudeGate.Off()
+                }
+                lines.collect { line -> _conversation.update { it.take(line) } }
                 // A stream that ends with no "done" is cut off; the words so
                 // far stay, and the pilot is told the answer is short.
                 if (_conversation.value.answering) _conversation.update { it.broke("The answer was cut off.") }

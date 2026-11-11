@@ -1,0 +1,123 @@
+{
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "name": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "elevation_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "runways": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Runway"
+      }
+    },
+    "metar": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "raw": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The report as sent, which copilot_watch reads its category and ceiling from (metar::parse); without it the field has no weather."
+        },
+        "dir_true_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gust_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "altimeter_in_hg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "temp_c": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "flight_category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "towered": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "private": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "military": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "fuel": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "NASR lists fuel sold there."
+    },
+    "planned_category": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Its flight category when the copilot first saw it, so a worse one is said as a change."
+    }
+  },
+  "required": [
+    "ident",
+    "lat",
+    "lon",
+    "runways"
+  ],
+  "title": "CopilotField",
+  "description": "A candidate as best_fields reads it, with fuel and the category first seen: /api/copilot/around's."
+}

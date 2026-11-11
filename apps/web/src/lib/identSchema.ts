@@ -83,7 +83,7 @@ export function departureOf(value: string | null | undefined): string {
 /** A present position's name in the route, at the owner's ask ("Let's
  *  call current position as POS0"): short as an ident is, where its
  *  coordinates filled the route's box and FPL's line. */
-export const POSITION_NAME = "POS0";
+const POSITION_NAME = "POS0";
 
 /** The pilot's own points in the route now -- one off a fix (frdOf), made
  *  by a long press on the map or Create a fix -- by the name each goes by,
@@ -96,7 +96,7 @@ let ownPointNames = new Map<string, string>();
 
 /** The route's stops, in order: its own points named POS1, POS2… */
 export function nameOwnPoints(stops: readonly string[]) {
-  const own = [...new Set(stops.filter(stop => frdOf(stop) !== null))];
+  const own = [...new Set(stops.filter((stop) => frdOf(stop) !== null))];
   if (own.length === ownPointNames.size && own.every((stop, i) => ownPointNames.get(stop) === `POS${i + 1}`)) return;
   ownPointNames = new Map(own.map((stop, i) => [stop, `POS${i + 1}`]));
 }
@@ -104,7 +104,7 @@ export function nameOwnPoints(stops: readonly string[]) {
 /** A point's name as the route shows it: a present position as POS0, the
  *  pilot's own points POS1 on (nameOwnPoints), the rest by their idents. */
 export function pointName(ident: string): string {
-  return isPosition(ident) ? POSITION_NAME : ownPointNames.get(ident) ?? ident;
+  return isPosition(ident) ? POSITION_NAME : (ownPointNames.get(ident) ?? ident);
 }
 
 /** A point's name where it is told after the flight -- a saved or recent
@@ -138,9 +138,12 @@ export const MAX_STOPS = 16;
  *  ways -- Train's form let a same-airport route through, and its chart
  *  read then asked for that corridor. */
 export function routeOf(
-  dep: string | null | undefined, dest: string | null | undefined, stops: string[] = [],
+  dep: string | null | undefined,
+  dest: string | null | undefined,
+  stops: string[] = [],
 ): { dep: string; dest: string } | null {
-  const d = departureOf(dep), a = identOf(dest);
+  const d = departureOf(dep),
+    a = identOf(dest);
   if (!d || !a) return null;
   const idents = [d, ...stops, a];
   return idents.every((ident, i) => i === 0 || ident !== idents[i - 1]) ? { dep: d, dest: a } : null;
@@ -157,13 +160,16 @@ export const routeName = (dep: string, dest: string, stops: string[] = []) =>
 
 /** Points' own altitudes from the address, feet by ident -- "VPBNG:4500,
  *  KMSN:1900": a waypoint's flown to it, an airport's its pattern (the
- *  planner's `altitudes`). What is not one is left out. */
+ *  planner's `altitudes`). What is not one is left out, and so is a VFR
+ *  altitude the engine does not allow (`altitude_allowed`: under Class A,
+ *  14 CFR 71.33, 91.135; no lower than 500 ft, 91.119(c)). */
 export function altitudesOf(value: string | null | undefined): Record<string, number> {
   const out: Record<string, number> = {};
   for (const part of (value ?? "").split(",")) {
     const [ident, feet] = part.split(":");
-    const point = stopOf(ident), ft = Number(feet);
-    if (point && Number.isInteger(ft) && ft > 0 && ft < 18_000) out[point] = ft;
+    const point = stopOf(ident),
+      ft = Number(feet);
+    if (point && Number.isInteger(ft) && callEngine("altitude_allowed", { ft })) out[point] = ft;
   }
   return out;
 }
@@ -176,7 +182,8 @@ export function groundOf(value: string | null | undefined): Record<string, numbe
   const out: Record<string, number> = {};
   for (const part of (value ?? "").split(",")) {
     const [ident, minutes] = part.split(":");
-    const point = stopOf(ident), min = Number(minutes);
+    const point = stopOf(ident),
+      min = Number(minutes);
     if (point && minutes !== "" && Number.isInteger(min) && min >= 0 && min <= 24 * 60) out[point] = min;
   }
   return out;
@@ -184,7 +191,9 @@ export function groundOf(value: string | null | undefined): Record<string, numbe
 
 /** And back, for the address: "" with none. */
 export const altitudesParam = (altitudes: Record<string, number>) =>
-  Object.entries(altitudes).map(([ident, ft]) => `${ident}:${ft}`).join(",");
+  Object.entries(altitudes)
+    .map(([ident, ft]) => `${ident}:${ft}`)
+    .join(",");
 
 /** An airway as a route's stop, "V100" or "T254" (the planner's
  *  wingtip.airways): flown fix by fix between the stops either side of it. By

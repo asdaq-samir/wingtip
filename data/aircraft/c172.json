@@ -12,6 +12,11 @@
     "demonstrated_kt": 15,
     "source": "Cessna 172S POH (1998), section 4: maximum demonstrated crosswind velocity, takeoff or landing"
   },
+  "glide": {
+    "best_glide_kias": 68,
+    "ratio": 9,
+    "source": "Cessna 172S POH (1998), section 3: best glide 68 KIAS; figure 3-1, maximum glide, about 1.5 nm for every 1,000 ft (9 to 1), propeller windmilling, flaps up, zero wind"
+  },
   "taxi_fuel_gal": 1.4,
   "loading": {
     "source": "Cessna 172S POH (1998), sections 2 and 6: the normal category",
@@ -360,7 +365,11 @@
         ]
       }
     ],
-    "grass_ground_roll_pct": 15
+    "grass_ground_roll_pct": 15,
+    "headwind_kt_per_10pct": 9,
+    "tailwind_kt_per_10pct": 2,
+    "tailwind_max_kt": 10,
+    "wind_source": "Cessna 172S POH (1998), notes to figures 5-5 and 5-11: decrease distances 10% for each 9 knots headwind; with tail winds up to 10 knots, increase distances by 10% for each 2 knots"
   },
   "landing": {
     "source": "Cessna 172S POH (1998), figure 5-11: short field, flaps 30\u00b0, paved, level and dry",
@@ -519,6 +528,10 @@
         ]
       }
     ],
-    "grass_ground_roll_pct": 45
+    "grass_ground_roll_pct": 45,
+    "headwind_kt_per_10pct": 9,
+    "tailwind_kt_per_10pct": 2,
+    "tailwind_max_kt": 10,
+    "wind_source": "Cessna 172S POH (1998), notes to figures 5-5 and 5-11: decrease distances 10% for each 9 knots headwind; with tail winds up to 10 knots, increase distances by 10% for each 2 knots"
   }
 }

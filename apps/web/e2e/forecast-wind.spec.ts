@@ -8,13 +8,16 @@ import { openTab, settle, sideDrawer, slow } from "./helpers";
  * an easterly at 14 kt, whatever the field reports now.
  */
 async function easterly(page: Page, asked: string[] = []) {
-  await page.route(url => /\/airport\/[^/]+\/forecast-wind$/.test(url.pathname), route => {
-    const ident = new URL(route.request().url()).pathname.split("/").at(-2)!;
-    asked.push(ident);
-    return route.fulfill({
-      json: { ident, distance_nm: 0, dir_true_deg: 90, speed_kt: 14, gust_kt: null, valid_from: 0, valid_to: 4_000_000_000 },
-    });
-  });
+  await page.route(
+    (url) => /\/airport\/[^/]+\/forecast-wind$/.test(url.pathname),
+    (route) => {
+      const ident = new URL(route.request().url()).pathname.split("/").at(-2)!;
+      asked.push(ident);
+      return route.fulfill({
+        json: { ident, distance_nm: 0, dir_true_deg: 90, speed_kt: 14, gust_kt: null, valid_from: 0, valid_to: 4_000_000_000 },
+      });
+    },
+  );
 }
 
 const depart = () => encodeURIComponent(new Date(Date.now() + 3 * 60 * 60_000).toISOString());
@@ -33,7 +36,7 @@ test("a field reached hours from now picks its runway into the forecast wind, an
   await expect(wind).toContainText("090° 14 kt");
   expect(asked).toContain("KDLH");
   // Duluth's 09 into the easterly.
-  await expect(kdlh.getByRole("radio", { name: /^Runway 9, into the wind/ })).toBeVisible();
+  await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toBeVisible();
 });
 
 test("a runway picked into an earlier wind follows the wind, where one the pilot picked stays", async ({ page }) => {
@@ -47,7 +50,9 @@ test("a runway picked into an earlier wind follows the wind, where one the pilot
   await settle(page);
   await openTab(page, "Nav Log");
   const kdlh = sideDrawer(page).getByRole("region", { name: "KDLH · Arrive" });
-  await expect(kdlh.getByRole("radio", { name: /^Runway 9, into the wind/ })).toBeChecked({ timeout: slow(60_000) });
+  await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-pressed", "true", {
+    timeout: slow(60_000),
+  });
   await expect(page).toHaveURL(/[?&]pattern=([^&]*%2C)?KDLH%3A9(%2C|&|$)/);
 
   // Picked by the pilot: an address that says none was picked for the
@@ -57,12 +62,14 @@ test("a runway picked into an earlier wind follows the wind, where one the pilot
   await settle(page);
   await openTab(page, "Nav Log");
   await expect(kdlh.getByTestId("field-wind")).toContainText("090° 14 kt", { timeout: slow(60_000) });
-  await expect(kdlh.getByRole("radio", { name: /^Runway 27/ })).toBeChecked();
+  await expect(kdlh.getByRole("button", { name: /^Runway 27/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page).not.toHaveURL(/land%3AKDLH/);
 
   await page.goto(`/app/plan?dep=C81&dest=KDLH&depart=${depart()}&pattern=KDLH%3A27`);
   await settle(page);
   await openTab(page, "Nav Log");
-  await expect(kdlh.getByRole("radio", { name: /^Runway 9, into the wind/ })).toBeChecked({ timeout: slow(60_000) });
+  await expect(kdlh.getByRole("button", { name: /^Runway 9, into the wind/ })).toHaveAttribute("aria-pressed", "true", {
+    timeout: slow(60_000),
+  });
   await expect(page).toHaveURL(/[?&]auto=[^&]*land%3AKDLH/);
 });

@@ -1,0 +1,70 @@
+{
+  "x-call": "wingtip_brief::runway::marks::call",
+  "description": "Of a field's runways, each on the end the wind favours, the least crosswind, steady or gust, whichever is more: the runway a pilot would pick to keep the wind most nearly down it. A variable wind is all crosswind (AIM 7-1-28); calm is none. null with no wind or no runway end with a heading.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "LeastCrosswindInput",
+      "type": "object",
+      "properties": {
+        "runways": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "end_headings": {
+                "$ref": "#/definitions/EndHeadings"
+              }
+            }
+          }
+        },
+        "metar": {
+          "$ref": "#/definitions/MetarWindIn"
+        },
+        "variation_deg": {
+          "type": "number",
+          "description": "The field's magnetic variation, east positive, to turn a runway's number true where its end has no true heading."
+        }
+      },
+      "required": [
+        "variation_deg"
+      ]
+    },
+    "answer": {
+      "title": "LeastCrosswindAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "end": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The end it is on, null for a variable wind or calm."
+            },
+            "crosswind_kt": {
+              "type": "number",
+              "description": "Knots, unsigned, steady or gust whichever is more."
+            }
+          },
+          "required": [
+            "end",
+            "crosswind_kt"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

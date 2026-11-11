@@ -1,9 +1,8 @@
 import { callEngine, type EngineAnswer } from "../../../../lib/engine/engine";
 import type { NavLogRow } from "./rows";
+import { CHART } from "../../../../lib/tokens";
 
-export type PlanProfile = EngineAnswer<"plan_profile">;
-export type ProfilePoint = PlanProfile["points"][number];
-export type ProfileMark = PlanProfile["marks"][number];
+type PlanProfile = EngineAnswer<"plan_profile">;
 
 /**
  * The plan's altitudes as a line over the ground, from the nav log's
@@ -20,16 +19,16 @@ export function planProfile(rows: NavLogRow[]): PlanProfile {
 
 /** The ceilings of the airspace the side views draw (B, C and D), ft MSL. */
 export function ceilings(airspace: { class: string; ceiling_ft?: number | null }[]): number[] {
-  return airspace.filter(a => ["B", "C", "D"].includes(a.class) && a.ceiling_ft != null).map(a => a.ceiling_ft!);
+  return airspace.filter((a) => ["B", "C", "D"].includes(a.class) && a.ceiling_ft != null).map((a) => a.ceiling_ft!);
 }
 
 /** The sectional's airspace colours: Class B solid blue, C magenta, D
  *  blue dashed (FAA Aeronautical Chart User's Guide, Airspace); each name
  *  in its colour as text, lightened on a dark card (index.css). */
 export const AIRSPACE: Record<string, { stroke: string; text: string; dashed?: boolean }> = {
-  B: { stroke: "#2465b8", text: "var(--airspace-blue-text)" },
-  C: { stroke: "#c0309f", text: "var(--airspace-magenta-text)" },
-  D: { stroke: "#2465b8", text: "var(--airspace-blue-text)", dashed: true },
+  B: { stroke: CHART.towered, text: "var(--airspace-blue-text)" },
+  C: { stroke: CHART.untowered, text: "var(--airspace-magenta-text)" },
+  D: { stroke: CHART.towered, text: "var(--airspace-blue-text)", dashed: true },
 };
 
 /** Each Class B, C and D's widest piece along the route, by the name it

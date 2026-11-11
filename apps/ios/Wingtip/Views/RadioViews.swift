@@ -7,13 +7,13 @@ import SwiftUI
 /// Captions sit over what is under them. A tap on the captions opens the
 /// radio's sheet with the whole log.
 struct RadioOverlay: View {
+    @Environment(\.lookAccent) private var accent
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var listener: ClearanceListener { ClearanceListener.shared }
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: WingtipSpace.sm) {
             if let call = listener.call {
                 RadioCallBanner(call: call)
             }
@@ -22,21 +22,22 @@ struct RadioOverlay: View {
                     listener.sheetText = listener.heard.last(where: \.final)?.text
                     listener.sheetShown = true
                 } label: {
-                    HStack(alignment: .top, spacing: 8) {
-                        // The pulse says it is listening; with Reduce Motion
-                        // on the tint and the words say it instead.
-                        Image(systemName: "mic.fill").foregroundStyle(listener.listening ? Color.accentColor : .secondary)
-                            .symbolEffect(.pulse, isActive: listener.listening && !reduceMotion)
+                    HStack(alignment: .top, spacing: WingtipSpace.sm) {
+                        // The radio's waves, lit in turn while it listens
+                        // (never the mic's look, which is Ask by voice's);
+                        // with Reduce Motion on the tint and the words say it.
+                        Image(systemName: WingtipIcon.radio).foregroundStyle(listener.listening ? accent : .secondary)
+                            .symbolOnAir(listener.listening)
                             .accessibilityHidden(true)
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             if let problem = listener.problem {
-                                Text(problem).foregroundStyle(.orange)
+                                ProblemLine(problem)
                             } else if listener.heard.isEmpty {
                                 Text("Listening to the radio…").foregroundStyle(.secondary)
                             }
                             ForEach(listener.heard.suffix(2)) { t in
-                                Text(t.text).lineLimit(2)
-                                    .foregroundStyle(t.forUs ? Color.accentColor : Color.primary)
+                                Text("Heard: \(t.text)").lineLimit(2)
+                                    .foregroundStyle(t.forUs ? accent : Color.primary)
                                     .fontWeight(t.forUs ? .semibold : .regular)
                                     .opacity(t.final ? 1 : 0.8)
                             }
@@ -44,15 +45,15 @@ struct RadioOverlay: View {
                         .font(.subheadline)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(.horizontal, 12).padding(.vertical, 8)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
+                    .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
+                    .floatingGlass(in: floatingCard)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("What the radio is saying: open the log")
             }
         }
         .frame(maxWidth: 440)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, WingtipSpace.md)
         .onChange(of: plan.tail, initial: true) { _, tail in listener.tail = tail }
     }
 }
@@ -63,6 +64,7 @@ struct RadioOverlay: View {
 /// read it first), Fly the altitude. Nothing is done until it is tapped;
 /// ✕ puts it away.
 struct RadioCallBanner: View {
+    @Environment(\.lookAccent) private var accent
     let call: ClearanceListener.Transmission
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
@@ -72,11 +74,15 @@ struct RadioCallBanner: View {
     private var listener: ClearanceListener { ClearanceListener.shared }
 
     var body: some View {
-        let clearance = Clearance.read(call.text)
-        let direct = HeardCall.directOf(call.text)
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(Color.accentColor).accessibilityHidden(true)
+        // A call the engine cannot read shows as heard, with nothing read
+        // out of it (logged by Engine.rule).
+        let clearance = (try? Clearance.read(call.text)) ?? Clearance()
+        // A call the engine cannot read offers no Direct To (logged by
+        // Engine.rule); the words are still shown as heard.
+        let direct = try? HeardCall.directOf(call.text)
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+            HStack(alignment: .top, spacing: WingtipSpace.sm) {
+                Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(accent).accessibilityHidden(true)
                 Text(call.text).font(.subheadline.weight(.semibold)).frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityLabel("A call to you: \(call.text)")
                 Button { listener.seen = call.id } label: {
@@ -85,8 +91,13 @@ struct RadioCallBanner: View {
                 }
                 .buttonStyle(.borderless).accessibilityLabel("Put away")
             }
+            // The ATC copilot's reading of it, where it is on: each item
+            // the engine read (atc_call), and the readback checked.
+            if let card = AtcCopilot.shared.card(for: call.id) {
+                AtcCardRows(card: card, tail: plan.tail)
+            }
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: WingtipSpace.sm) {
                     if let direct, ownShip.fix != nil {
                         Button("Direct To \(direct.capitalized)") { Task { await go(direct) } }.disabled(busy)
                     }
@@ -98,25 +109,26 @@ struct RadioCallBanner: View {
                         }
                     }
                     if let ft = clearance.maintainFt, !clearance.vfr {
-                        Button("Fly \(ft >= 18_000 ? "FL\(ft / 100)" : "\(ft.formatted()) ft")") {
+                        Button("Fly \(Altitudes.said(Double(ft)))") {
                             plan.ownAltitudeFt = Double(ft)
                             plan.ownAltitudeLegal = false
+                            Feel.tap(.altitude)
                             plan.plan()
                             listener.seen = call.id
                         }
                     }
                     if let frequency = clearance.frequency {
-                        Button("Copy \(frequency)") { UIPasteboard.general.string = frequency }
+                        FrequencyCopyButton(figure: frequency)
                     }
                     if let squawk = clearance.squawk { Text("Squawk \(squawk)").font(.subheadline.weight(.semibold)) }
                 }
-                .buttonStyle(.bordered)
+                .glassButton()
                 .buttonBorderShape(.capsule)
             }
-            if let problem { Text(problem).font(.footnote).foregroundStyle(.red) }
+            if let problem { ProblemLine(problem) }
         }
-        .padding(12)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22))
+        .padding(WingtipSpace.md)
+        .floatingGlass(in: floatingCard)
     }
 
     /// Direct to the place said, found near the route and the airplane.

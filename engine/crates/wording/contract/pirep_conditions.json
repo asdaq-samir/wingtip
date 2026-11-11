@@ -1,0 +1,37 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A PIREP's turbulence and icing in words, or null where it reports neither.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PirepConditionsInput",
+      "type": "object",
+      "properties": {
+        "turbulence": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "icing": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "PirepConditionsAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

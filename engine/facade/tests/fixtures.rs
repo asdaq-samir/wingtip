@@ -25,11 +25,11 @@ fn gunzip(name: &str) -> Vec<u8> {
 }
 
 fn f64s(b: &[u8]) -> Vec<f64> {
-    b.chunks_exact(8).map(|c| f64::from_le_bytes(c.try_into().unwrap())).collect()
+    b.as_chunks::<8>().0.iter().map(|c| f64::from_le_bytes(*c)).collect()
 }
 
 fn i64s(b: &[u8]) -> Vec<i64> {
-    b.chunks_exact(8).map(|c| i64::from_le_bytes(c.try_into().unwrap())).collect()
+    b.as_chunks::<8>().0.iter().map(|c| i64::from_le_bytes(*c)).collect()
 }
 
 fn point(v: &Value) -> Point {
@@ -55,8 +55,7 @@ fn route(name: &str) {
     let (rows, cols) = (shape[0].as_u64().unwrap() as usize, shape[1].as_u64().unwrap() as usize);
     let (closed, marginal) = (i64s(&arrays["closed"]), i64s(&arrays["marginal"]));
     let (dear, offshore, gs) = (f64s(&arrays["dear"]), f64s(&arrays["offshore"]), f64s(&arrays["gs"]));
-    let ends: HashSet<Cell> = header["ends"].as_array().unwrap().iter()
-        .map(|e| (e[0].as_i64().unwrap(), e[1].as_i64().unwrap())).collect();
+    let ends: HashSet<Cell> = header["ends"].as_array().unwrap().iter().map(|e| (e[0].as_i64().unwrap(), e[1].as_i64().unwrap())).collect();
     let corner = point(&header["corner"]);
     let g = Geom::new(corner.0, corner.1, CELL_DEG, rows as i64, cols as i64).unwrap();
     let costs = Costs::new(rows, cols, &closed, &marginal, &dear, &offshore, &gs, &ends).unwrap();
@@ -78,15 +77,20 @@ fn route(name: &str) {
         let turns = straightened(g, &costs, &points, &leg_nm, |i| Ok::<_, ()>(nm_from[i].clone()), &how).unwrap();
         let want: Vec<Point> = case["turns"].as_array().unwrap().iter().map(point).collect();
         assert_eq!(turns.iter().map(|&k| points[k]).collect::<Vec<_>>(), want, "{name}");
-        let legs: Vec<f64> = points.windows(2).zip(&leg_nm).map(|(w, &nm)| {
-            if nm == 0.0 { 0.0 } else {
-                legs_costs.minutes(&line_cells(g, w[0], w[1]), w[0], w[1], nm, how.marginal_cost, how.water_cost)
-            }
-        }).collect();
+        let legs: Vec<f64> = points
+            .windows(2)
+            .zip(&leg_nm)
+            .map(|(w, &nm)| {
+                if nm == 0.0 {
+                    0.0
+                } else {
+                    legs_costs.minutes(&line_cells(g, w[0], w[1]), w[0], w[1], nm, how.marginal_cost, how.water_cost)
+                }
+            })
+            .collect();
         assert_eq!(legs, floats(&case["legs_min"]), "{name}");
         for (p, want) in points[1..].iter().zip(case["cells_from_first"].as_array().unwrap()) {
-            let want: Vec<Cell> = want.as_array().unwrap().iter()
-                .map(|c| (c[0].as_i64().unwrap(), c[1].as_i64().unwrap())).collect();
+            let want: Vec<Cell> = want.as_array().unwrap().iter().map(|c| (c[0].as_i64().unwrap(), c[1].as_i64().unwrap())).collect();
             assert_eq!(line_cells(g, points[0], *p), want, "{name}");
         }
     }
@@ -108,11 +112,16 @@ fn chicago_taps_find_the_records_shapely_found() {
     let shx = std::fs::read(fixtures().join("chicago_airspace.shx")).unwrap();
     // The .shx: from byte 100, each record's offset and length in 16-bit
     // words, big-endian (ESRI's shapefile technical description, 1998).
-    let records: Vec<&[u8]> = shx[100..].chunks_exact(8).map(|e| {
-        let offset = u32::from_be_bytes(e[..4].try_into().unwrap()) as usize * 2 + 8;
-        let length = u32::from_be_bytes(e[4..].try_into().unwrap()) as usize * 2;
-        &shp[offset..offset + length]
-    }).collect();
+    let records: Vec<&[u8]> = shx[100..]
+        .as_chunks::<8>()
+        .0
+        .iter()
+        .map(|e| {
+            let offset = u32::from_be_bytes(e[..4].try_into().unwrap()) as usize * 2 + 8;
+            let length = u32::from_be_bytes(e[4..].try_into().unwrap()) as usize * 2;
+            &shp[offset..offset + length]
+        })
+        .collect();
     let wkbs: Vec<Vec<u8>> = records.iter().map(|r| shape_to_wkb(r).unwrap()).collect();
     let taps: Value = serde_json::from_slice(&std::fs::read(fixtures().join("chicago_airspace.json")).unwrap()).unwrap();
     for (name, tap) in taps.as_object().unwrap() {

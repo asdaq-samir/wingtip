@@ -10,10 +10,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -27,10 +27,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.LocalNative
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.InkColors
+import app.wingtipmaps.android.ui.LocalInk
+import app.wingtipmaps.android.ui.ProblemLine
+import app.wingtipmaps.android.ui.largeType
 
 /** A finding's glyph, as the web's FindingIcon draws it. */
 @Composable
@@ -45,10 +55,35 @@ fun FindingIcon(finding: Finding, modifier: Modifier = Modifier) {
     Icon(icon, contentDescription = null, tint = tint, modifier = modifier)
 }
 
+/** A finding said, for TalkBack where the glyph and its colour are the
+ *  only other sign of it: Go, Caution, No-Go; "not known" otherwise. */
+@Composable
+fun findingSaid(finding: Finding): String = when (finding) {
+    Finding.OK -> stringResource(R.string.verdict_go)
+    Finding.CAUTION -> stringResource(R.string.verdict_caution)
+    Finding.STOP -> stringResource(R.string.verdict_no_go)
+    Finding.UNKNOWN, Finding.PENDING -> app.wingtipmaps.android.format.Spoken.NOT_KNOWN
+}
+
+/** A finding's colour as words, 4.5:1 and more on a card. */
+fun InkColors.words(finding: Finding, muted: Color): Color = when (finding) {
+    Finding.OK -> goInk
+    Finding.CAUTION -> cautionInk
+    Finding.STOP -> stopInk
+    Finding.UNKNOWN, Finding.PENDING -> muted
+}
+
 /** A card of the strip: 18-point corners, white on the paper, a hair of
- *  shadow (the canvas's boards). */
+ *  shadow (the canvas's boards). In the Native look (LocalNative) it is
+ *  Material's filled card as it comes, its own shape and colours, so the
+ *  dark scheme's card is not the lowest container's pure black on the
+ *  sheet (the sheet audit's L-3). */
 @Composable
 fun StripCard(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, content: @Composable () -> Unit) {
+    if (LocalNative.current) {
+        if (onClick != null) Card(onClick = onClick, modifier = modifier) { content() } else Card(modifier = modifier) { content() }
+        return
+    }
     val colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest)
     val elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     if (onClick != null) {
@@ -64,8 +99,9 @@ fun StripCard(modifier: Modifier = Modifier, onClick: (() -> Unit)? = null, cont
  * capitals ("C81 → KJVL → KDLH · C172 · FL-045 · leaving now"), the
  * route's other ways as chips where there are any, and at most three
  * one-line actions from the glance, each a row into the Brief. Until the
- * brief is on this phone the verdict reads "Reading the brief…", as the
- * web's does before its briefing answers.
+ * planner's Go / No-Go answers (BriefModel) the verdict reads "Reading
+ * the brief…", as the web's does before its briefing answers; where it
+ * could not, why, in the error style.
  */
 @Composable
 fun StripHead(
@@ -78,46 +114,56 @@ fun StripHead(
     onAction: (GlanceAction) -> Unit,
     onBrief: () -> Unit,
     modifier: Modifier = Modifier,
+    problem: String? = null,
 ) {
     val ink = LocalInk.current
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        StripCard(onClick = onBrief, modifier = Modifier.fillMaxWidth().semantics { contentDescription = "The flight" }) {
-            Column(Modifier.padding(16.dp).heightIn(min = 80.dp), verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.Bottom)) {
+    val briefWord = stringResource(R.string.brief)
+    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        // The card reads its verdict and its line, and its action is
+        // named Brief, rather than the whole card being called "Brief" and
+        // the verdict never said.
+        StripCard(onClick = onBrief, modifier = Modifier.fillMaxWidth().semantics { onClick(label = briefWord) { onBrief(); true } }) {
+            Column(Modifier.padding(WingtipSpace.Lg).heightIn(min = 80.dp), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm, Alignment.Bottom)) {
                 if (verdict != null) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
                         FindingIcon(verdict.finding, Modifier.size(24.dp))
                         Text(
                             verdict.words, style = MaterialTheme.typography.titleLarge,
                             color = ink.words(verdict.finding, MaterialTheme.colorScheme.onSurfaceVariant),
                         )
                     }
+                } else if (problem != null) {
+                    ProblemLine(problem)
                 } else {
-                    Text("Reading the brief…", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.reading_brief), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 if (line != null) {
                     Text(
                         line.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        maxLines = if (largeType()) 3 else 1, overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
         }
         if (ways.size > 1) {
-            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 ways.forEach { way ->
                     FilterChip(selected = way.key == wayKey, onClick = { onWay(way.key) }, label = { Text(way.label) })
                 }
             }
         }
         actions.take(3).forEach { action ->
+            // The finding said before the line, as its glyph shows it.
+            val said = "${findingSaid(action.finding)}: ${action.line}"
             StripCard(onClick = { onAction(action) }, modifier = Modifier.fillMaxWidth()) {
                 ListItem(
-                    headlineContent = { Text(action.line, style = MaterialTheme.typography.bodyLarge) },
                     leadingContent = { FindingIcon(action.finding, Modifier.size(20.dp)) },
                     trailingContent = {
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     },
                     colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                    modifier = Modifier.clearAndSetSemantics { contentDescription = said },
+                    content = { Text(action.line, style = MaterialTheme.typography.bodyLarge) },
                 )
             }
         }

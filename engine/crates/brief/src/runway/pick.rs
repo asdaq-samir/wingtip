@@ -8,6 +8,7 @@
 
 use super::performance::has;
 use super::wind::{js_normalize, js_round, RunwayWind};
+use wingtip_core::sort::StableSort;
 
 /// A runway end: its ident as the data has it ("09") and its true
 /// heading, None for one without (a helipad's).
@@ -60,12 +61,11 @@ pub type Flown = (usize, usize, bool);
 /// calm, the one the field's last wind favoured -- or, with no wind
 /// reported, the most used runway's first end. Only ends with a heading.
 pub fn runway_in_use(runways: &[Runway]) -> Option<Flown> {
-    let open: Vec<usize> = (0..runways.len())
-        .filter(|&i| !runways[i].closed && runways[i].ends.iter().any(|e| e.heading_true_deg.is_some()))
-        .collect();
+    let open: Vec<usize> =
+        (0..runways.len()).filter(|&i| !runways[i].closed && runways[i].ends.iter().any(|e| e.heading_true_deg.is_some())).collect();
     let mut winded: Vec<usize> = open.iter().copied().filter(|&i| runways[i].wind.is_some()).collect();
     // A stable sort, as JavaScript's: equals keep the data's order.
-    winded.sort_by(|&a, &b| {
+    winded.stable_sort_by(|&a, &b| {
         let (wa, wb) = (runways[a].wind.as_ref().unwrap(), runways[b].wind.as_ref().unwrap());
         (wb.in_use as i32)
             .cmp(&(wa.in_use as i32))
@@ -79,7 +79,7 @@ pub fn runway_in_use(runways: &[Runway]) -> Option<Flown> {
         }
     }
     let mut by_use = open;
-    by_use.sort_by(|&a, &b| most_used(&runways[a], &runways[b]));
+    by_use.stable_sort_by(|&a, &b| most_used(&runways[a], &runways[b]));
     let longest = *by_use.first()?;
     let j = runways[longest].ends.iter().position(|e| e.heading_true_deg.is_some())?;
     Some((longest, j, false))
@@ -91,10 +91,8 @@ pub fn runway_in_use(runways: &[Runway]) -> Option<Flown> {
 pub fn runway_flown(runways: &[Runway], picked: Option<&str>) -> Option<Flown> {
     if let Some(picked) = picked.filter(|p| !p.is_empty()) {
         for (i, runway) in runways.iter().enumerate().filter(|(_, r)| !r.closed) {
-            if let Some(j) = runway
-                .ends
-                .iter()
-                .position(|e| runway_number(&e.ident) == runway_number(picked) && e.heading_true_deg.is_some())
+            if let Some(j) =
+                runway.ends.iter().position(|e| runway_number(&e.ident) == runway_number(picked) && e.heading_true_deg.is_some())
             {
                 let by_wind = runway.wind.as_ref().is_some_and(|w| w.end == runway.ends[j].ident);
                 return Some((i, j, by_wind));
@@ -109,7 +107,8 @@ pub fn runway_flown(runways: &[Runway], picked: Option<&str>) -> Option<Flown> {
 /// off, so a stop typed UES is the planner's KUES.
 pub fn bare_ident(ident: &str) -> String {
     let upper = ident.trim().to_uppercase();
-    let rest = upper.strip_prefix('K').filter(|r| r.chars().count() == 3 && r.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()));
+    let rest =
+        upper.strip_prefix('K').filter(|r| r.chars().count() == 3 && r.chars().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit()));
     rest.map_or(upper.clone(), str::to_owned)
 }
 
@@ -132,7 +131,6 @@ pub fn picked_end<'a>(picks: Option<&'a Picks>, ident: &str, takeoff: bool, depa
     let (_, end) = by_field.iter().find(|(field, _)| bare_ident(field) == want)?;
     (end != "NONE").then_some(end.as_str())
 }
-
 
 /// A runway end as both the FAA's and OurAirports' tables can be matched
 /// on (wingtip.pattern end_key): trimmed, in capitals, as painted -- NASR
@@ -237,6 +235,19 @@ pub fn pattern_altitude(elevation_ft: Option<f64>, published_agl_ft: Option<f64>
     (agl, elevation_ft.map(|e| (e + agl).round_ties_even()), published_agl_ft.is_some())
 }
 
+/// The pattern altitude as a pilot sets it on the altimeter and the
+/// planner flies it down to (the planner's routers.plan field_pattern_ft
+/// before the move): the field's elevation and the pattern's height above
+/// it (pattern_altitude) to the nearest hundred feet, halves to even as
+/// Python's round. No rule sets the rounding -- AC 90-66C gives the height
+/// above the field, the Chart Supplement a TPA in whole feet -- so it is a
+/// simplification of at most 50 ft, for a figure read off an altimeter
+/// marked in hundreds; the published TPA itself is pattern_altitude's.
+pub fn pattern_altitude_flown(elevation_ft: Option<f64>, published_agl_ft: Option<f64>) -> Option<f64> {
+    let agl = published_agl_ft.unwrap_or(PATTERN_AGL_FT);
+    elevation_ft.map(|e| ((e + agl) / 100.0).round_ties_even() * 100.0)
+}
+
 /// A runway end as the map and the card take it (wingtip.pattern with_traffic):
 /// its ident, its true heading (super::wind::end_heading_true_deg) and
 /// which way its pattern is flown -- right where the FAA flags it (NASR's
@@ -244,7 +255,7 @@ pub fn pattern_altitude(elevation_ft: Option<f64>, published_agl_ft: Option<f64>
 /// them), else left (14 CFR 91.126(b)(1)).
 pub fn end_traffic(ident: Option<&str>, right: &[String]) -> &'static str {
     let key = end_key(ident.unwrap_or(""));
-    if right.iter().any(|r| *r == key) {
+    if right.contains(&key) {
         "right"
     } else {
         "left"

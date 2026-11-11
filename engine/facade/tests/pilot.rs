@@ -23,15 +23,8 @@ fn ask(name: &str, input: Value) -> Value {
 #[test]
 fn a_checklist_reads_sections_and_items_each_split_as_printed() {
     let text = [
-        "Preflight inspection -- Complete",
-        "",
-        "# Before takeoff",
-        "Fuel selector -- Both",
-        "Mixture ..... Rich",
-        "Flight controls\tFree and correct",
-        "Doors – Closed and latched",
-        "Seat belts",
-        "#   Empty section",
+        "Preflight inspection -- Complete", "", "# Before takeoff", "Fuel selector -- Both", "Mixture ..... Rich",
+        "Flight controls\tFree and correct", "Doors – Closed and latched", "Seat belts", "#   Empty section",
     ]
     .join("\n");
     let checklist = ask("checklist_read", json!({ "text": text }));
@@ -104,7 +97,10 @@ const FOREFLIGHT: &str = concat!(
 
 #[test]
 fn csv_reads_quoted_fields_their_doubled_quotes_and_line_breaks() {
-    assert_eq!(ask("csv_rows", json!({ "text": "a,\"b, c\",\"d \"\"e\"\"\",\r\n\"f\ng\",h" })), json!([["a", "b, c", "d \"e\"", ""], ["f\ng", "h"]]));
+    assert_eq!(
+        ask("csv_rows", json!({ "text": "a,\"b, c\",\"d \"\"e\"\"\",\r\n\"f\ng\",h" })),
+        json!([["a", "b, c", "d \"e\"", ""], ["f\ng", "h"]])
+    );
 }
 
 /// The members of `want` as `got` has them.
@@ -130,7 +126,10 @@ fn reads_foreflights_export_its_types_approaches_holds_and_landings_ours() {
             "remarks": "Night XC, \"hood\" back",
         }),
     );
-    matches(&entries[1], json!({ "aircraftType": "PA28", "route": "C81 C81", "dualHours": 1.1, "dayLandings": 3.0, "approaches": 0.0, "holding": false }));
+    matches(
+        &entries[1],
+        json!({ "aircraftType": "PA28", "route": "C81 C81", "dualHours": 1.1, "dayLandings": 3.0, "approaches": 0.0, "holding": false }),
+    );
     assert_eq!(
         read["skipped"],
         json!([
@@ -147,6 +146,7 @@ fn writes_its_own_oldest_first_and_reads_it_back_as_it_was() {
             "id": 1, "flownOn": "2026-10-01", "aircraft": "N12345", "aircraftType": "C172", "route": "C81 KDLH", "totalHours": 3.4, "nightHours": 0.5,
             "crossCountryHours": 3.4, "dayLandings": 2, "nightLandings": 1, "remarks": "Smooth, then \"bumpy\"", "dualHours": 0, "soloHours": 3.4,
             "instrumentHours": 0.3, "toweredLandings": 1, "distanceNm": 230, "longestLegNm": 230, "approaches": 2, "holding": true, "tracking": true,
+            "airHours": 3.1, "touchAndGoes": 1, "fromTrack": false, "flightId": null,
             "createdAt": "2026-10-01T20:00:00Z",
         });
         for (k, v) in over.as_object().unwrap() {
@@ -161,7 +161,7 @@ fn writes_its_own_oldest_first_and_reads_it_back_as_it_was() {
     let written = written.as_str().unwrap();
     assert_eq!(
         written.split("\r\n").next().unwrap(),
-        "Date,AircraftID,TypeCode,Route,TotalTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments"
+        "Date,AircraftID,TypeCode,Route,TotalTime,AirTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,TouchAndGoes,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments"
     );
     let read = ask("logbook_csv_read", json!({ "text": written }));
     assert_eq!(read["skipped"], json!([]));
@@ -214,7 +214,10 @@ fn a_pipers_page_in_knots_where_it_prints_mph() {
     // The Cherokee 140 "D" handbook's page 1, the owner's photo of it as
     // Tesseract read it: its misreads ("sca", "{flaps", "(142%)") kept.
     let page = "CHEROKEE 140 “D\" SECTION |\nSECTION |\nSPECIFICATIONS\nPERFORMANCE\n\nThe gross weight of 2150 pounds in the following performance\ncharts applies to Serial Nos. 28-25001 and up.\n\nGROSS WEIGHT 2150\n\nTake-off Run (ft) (flaps up) 800\n\nTake-off Distance Over 50-ft\n\nObstacle (ft) {flaps up) 1700\n\nBest Rate of Climb Speed (mph) 85\n\nRate of Climb (ft per min) 660\n\nService Ceiling (ft) 14,300\n\nAbsolute Ceiling 16,800\n\nTop Speed (mph) 139 (142%)\n\nCruising Speed (75% power, sca\n\nlevel) (mph) 121 (124%)\n\nOptimum Cruising Speed (75%\n\npower, 7000 ft, mph) 132 (135)\nInstructional Power Cruise Speed\n(50% power, sea level) 100 (102%)\n\nFuel Consumption (gal per hr 75%) 8.4\n\nFuel Consumption (gal per hr 50%) 5.6\n*WITH FENDERS INSTALLED";
-    assert!(same(&values(page), &json!({ "serviceCeilingFt": 14300, "climbTasKt": 74, "cruiseTasKt": 115, "cruisePowerPct": 75, "fuelBurnGph": 8.4 })));
+    assert!(same(
+        &values(page),
+        &json!({ "serviceCeilingFt": 14300, "climbTasKt": 74, "cruiseTasKt": 115, "cruisePowerPct": 75, "fuelBurnGph": 8.4 })
+    ));
     assert_eq!(ask("handbook_figures", json!({ "text": page }))["serviceCeilingFt"]["words"], json!("Service Ceiling (ft) 14,300"));
 }
 
@@ -309,4 +312,42 @@ fn a_figure_typed_in_is_held_to_the_bounds_the_page_is_read_by() {
     assert_eq!(within("climbFuelBurnGph", 150.0), json!(true));
     assert_eq!(within("serviceCeilingFt", 30001.0), json!(false));
     assert!(call("handbook_within", r#"{"key": "wingspan", "value": 3}"#).is_err());
+}
+
+// --- Currency and 61.109 -----------------------------------------------------
+
+/// A pilot's currency (14 CFR 61.56, 61.57) and a student's 61.109(a)
+/// experience, held to the shared fixture (currency.json) the planner's
+/// test reads too.
+#[test]
+fn currency_and_experience_answer_the_shared_fixture() {
+    let fixture = fixture("currency.json");
+    for case in fixture["currency"].as_array().unwrap() {
+        let at = |k: &str| case.get(k).cloned().unwrap_or(Value::Null);
+        let got = ask(
+            "pilot_currency",
+            json!({ "entries": case["entries"], "today": case["today"], "flight_review_on": at("flightReviewOn"),
+                "medical_expires_on": at("medicalExpiresOn"), "ipc_on": at("ipcOn") }),
+        );
+        for (key, want) in case["expected"].as_object().unwrap() {
+            assert_eq!(&got[key], want, "{}: {key}", case["name"]);
+        }
+    }
+    for case in fixture["experience"].as_array().unwrap() {
+        let got = ask("pilot_experience", json!({ "entries": case["entries"], "today": case["today"] }));
+        let items = got.as_array().unwrap();
+        assert_eq!(items.len(), 12, "61.109(a)'s twelve items");
+        for (key, want) in case["expected"].as_object().unwrap() {
+            let item = items.iter().find(|i| i["key"] == key.as_str()).unwrap_or_else(|| panic!("no {key}"));
+            assert_eq!(item["have"].as_f64(), want[0].as_f64(), "{}: {key}", case["name"]);
+            assert_eq!(item["met"], want[1], "{}: {key}", case["name"]);
+        }
+    }
+}
+
+#[test]
+fn currency_refuses_a_day_that_is_none() {
+    let e = call("pilot_currency", &json!({ "entries": [{ "flownOn": "2026-02-30" }], "today": "2026-10-11" }).to_string()).unwrap_err();
+    assert!(e.contains("not a day"), "{e}");
+    assert!(call("pilot_experience", &json!({ "entries": [], "today": "today" }).to_string()).is_err());
 }

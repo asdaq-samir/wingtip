@@ -69,19 +69,20 @@ pub struct Atis {
 /// A word a leftover run is trimmed of at either end, and that makes no
 /// remark on its own: the broadcast's connectives and units.
 const FILLER: &[&str] = &[
-    "and", "at", "the", "a", "an", "is", "are", "in", "on", "to", "of", "with", "this", "that", "for", "or", "weather",
-    "observation", "observations", "special", "automated", "degrees", "celsius", "knots", "knot", "miles", "mile", "statute",
-    "sky", "condition", "conditions", "time", "expect", "greater", "more", "than", "less", "use", "airport", "information",
-    "zulu", "z", "utc", "wind", "winds", "visibility", "temperature", "dew", "dewpoint", "point", "altimeter", "setting",
-    "runway", "runways", "clouds", "cloud", "layer", "notams", "notam", "notices", "notice", "airmen", "all", "aircraft", "please",
-    "readback", "read", "back", "hold", "short", "instructions", "advise", "initial", "contact", "you", "have", "received",
-    "departure", "arrival", "ground", "tower", "frequency", "clearance", "delivery", "available",
+    "and", "at", "the", "a", "an", "is", "are", "in", "on", "to", "of", "with", "this", "that", "for", "or", "weather", "observation",
+    "observations", "special", "automated", "degrees", "celsius", "knots", "knot", "miles", "mile", "statute", "sky", "condition",
+    "conditions", "time", "expect", "greater", "more", "than", "less", "use", "airport", "information", "zulu", "z", "utc", "wind",
+    "winds", "visibility", "temperature", "dew", "dewpoint", "point", "altimeter", "setting", "runway", "runways", "clouds", "cloud",
+    "layer", "notams", "notam", "notices", "notice", "airmen", "all", "aircraft", "please", "readback", "read", "back", "hold", "short",
+    "instructions", "advise", "initial", "contact", "you", "have", "received", "departure", "arrival", "ground", "tower", "frequency",
+    "clearance", "delivery", "available",
 ];
 
 /// A word in a one-word run worth keeping: the weather in sight, which
 /// an ATIS says between the visibility and the sky (AIM 4-1-13).
 const PHENOMENA: &[&str] = &[
-    "mist", "haze", "fog", "rain", "snow", "drizzle", "thunderstorm", "thunderstorms", "smoke", "showers", "sleet", "hail", "squalls", "dust", "sand",
+    "mist", "haze", "fog", "rain", "snow", "drizzle", "thunderstorm", "thunderstorms", "smoke", "showers", "sleet", "hail", "squalls",
+    "dust", "sand",
 ];
 
 /// The kind of approach, as said, and as written.
@@ -187,11 +188,11 @@ impl Read<'_> {
         } else {
             return None;
         };
-        if self.word(j) == "and" {
-            if let Some((f, k)) = self.num(j + 1).and_then(|n| n.parse::<f64>().ok()).and_then(|n| frac(j + 1, n)) {
-                v += f;
-                j = k;
-            }
+        if self.word(j) == "and"
+            && let Some((f, k)) = self.num(j + 1).and_then(|n| n.parse::<f64>().ok()).and_then(|n| frac(j + 1, n))
+        {
+            v += f;
+            j = k;
         }
         while matches!(self.word(j), "statute" | "miles" | "mile" | "sm") {
             j += 1;
@@ -247,13 +248,13 @@ impl Read<'_> {
                 }
             }
         }
-        if self.word(j) == "at" {
-            if let Some(kt) = self.int(j + 1) {
-                w.kt = Some(kt);
-                j += 2;
-                if self.word(j) == "knots" {
-                    j += 1;
-                }
+        if self.word(j) == "at"
+            && let Some(kt) = self.int(j + 1)
+        {
+            w.kt = Some(kt);
+            j += 2;
+            if self.word(j) == "knots" {
+                j += 1;
             }
         }
         if matches!(self.word(j), "gust" | "gusts" | "gusting") {
@@ -271,7 +272,12 @@ impl Read<'_> {
         }
         // "variable between one eight zero and two four zero": the wind's
         // direction varies, which the METAR writes as 180V240.
-        if self.word(j) == "variable" && self.word(j + 1) == "between" && self.int(j + 2).is_some() && self.word(j + 3) == "and" && self.int(j + 4).is_some() {
+        if self.word(j) == "variable"
+            && self.word(j + 1) == "between"
+            && self.int(j + 2).is_some()
+            && self.word(j + 3) == "and"
+            && self.int(j + 4).is_some()
+        {
             w.variable = true;
             j += 5;
         }
@@ -346,13 +352,13 @@ impl Read<'_> {
         if self.word(j) == "in" && self.word(j + 1) == "use" {
             j += 2;
         }
-        if self.word(j) == "runway" {
-            if let Some((r, next)) = self.runway_at(j + 1) {
-                runways.push(r);
-                j = next;
-                if self.word(j) == "in" && self.word(j + 1) == "use" {
-                    j += 2;
-                }
+        if self.word(j) == "runway"
+            && let Some((r, next)) = self.runway_at(j + 1)
+        {
+            runways.push(r);
+            j = next;
+            if self.word(j) == "in" && self.word(j + 1) == "use" {
+                j += 2;
             }
         }
         let mut said = kinds.join(" and ");
@@ -383,12 +389,12 @@ impl Read<'_> {
             },
         };
         let mut j = i + 1;
-        if self.word(j) == "and" {
-            if let Some((l, d)) = mode(self.word(j + 1)) {
-                landing |= l;
-                departing |= d;
-                j += 2;
-            }
+        if self.word(j) == "and"
+            && let Some((l, d)) = mode(self.word(j + 1))
+        {
+            landing |= l;
+            departing |= d;
+            j += 2;
         }
         while matches!(self.word(j), "runway" | "runways" | "on" | "in" | "use" | "is" | "are") {
             j += 1;
@@ -486,7 +492,9 @@ pub fn read(text: &str) -> Atis {
                     (Some(a), _) if (3..=4).contains(&a.len()) => (format!("{a:0>4}"), i - 1),
                     _ => (String::new(), i),
                 };
-                let ok = digits.len() == 4 && digits[..2].parse::<u32>().is_ok_and(|h| h < 24) && digits[2..].parse::<u32>().is_ok_and(|m| m < 60);
+                let ok = digits.len() == 4
+                    && digits[..2].parse::<u32>().is_ok_and(|h| h < 24)
+                    && digits[2..].parse::<u32>().is_ok_and(|m| m < 60);
                 if ok && r.out.time_z.is_none() {
                     r.out.time_z = Some(format!("{digits}Z"));
                     let from = if from > 0 && r.word(from - 1) == "time" { from - 1 } else { from };
@@ -516,8 +524,20 @@ pub fn read(text: &str) -> Atis {
                 let from = if i > 0 && r.word(i - 1) == "indefinite" { i - 1 } else { i };
                 match r.int(j) {
                     Some(base) => {
-                        let cover = cover_of(r.word(j + 1)).unwrap_or(if r.word(j + 1) == "sky" && r.word(j + 2) == "obscured" { "obscured" } else { "broken" });
-                        let end = j + 1 + if cover_of(r.word(j + 1)).is_some() { 1 } else if cover == "obscured" { 2 } else { 0 };
+                        let cover = cover_of(r.word(j + 1)).unwrap_or(if r.word(j + 1) == "sky" && r.word(j + 2) == "obscured" {
+                            "obscured"
+                        } else {
+                            "broken"
+                        });
+                        let end = j
+                            + 1
+                            + if cover_of(r.word(j + 1)).is_some() {
+                                1
+                            } else if cover == "obscured" {
+                                2
+                            } else {
+                                0
+                            };
                         r.take(from, end);
                         r.out.sky.push(Layer { cover, base_ft: Some(base) });
                         end
@@ -525,7 +545,10 @@ pub fn read(text: &str) -> Atis {
                     None => i + 1,
                 }
             }
-            "clear" if matches!(r.word(i + 1), "below" | "skies" | "sky") || (i > 0 && matches!(r.word(i - 1), "sky" | "skies" | "condition" | "conditions")) => {
+            "clear"
+                if matches!(r.word(i + 1), "below" | "skies" | "sky")
+                    || (i > 0 && matches!(r.word(i - 1), "sky" | "skies" | "condition" | "conditions")) =>
+            {
                 let from = if i > 0 && matches!(r.word(i - 1), "sky" | "skies" | "condition" | "conditions") { i - 1 } else { i };
                 let mut j = i + 1;
                 if r.word(j) == "below" && r.int(j + 1).is_some() {

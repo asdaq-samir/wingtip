@@ -1,12 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
-import { chartZoom, grabberTo, openPanel, openProfile, closeProfile, settle, settled, sideDrawer, slow } from "./helpers";
+import { chartZoom, grabberTo, openPanel, openProfile, closeProfile, settle, settled, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The planned flight's dry run flies own ship, as if a pilot were flying
- * the route (lib/map/ownShip's simulateFix): the location arrow on, own
+ * the route (lib/map/position/ownShip's simulateFix): the location arrow on, own
  * ship moving along the course with the plan's heading, and put back as
- * the pilot had it -- here off, no GPS asked -- when the run is closed;
- * nothing of it kept as where the pilot has flown (ownTrail).
+ * the pilot had it -- here off, no GPS asked -- when the run is closed; nothing of it kept as where the pilot has flown (ownTrail).
  */
 test("the dry run flies own ship along the route, and gives it back as it was", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -17,14 +18,13 @@ test("the dry run flies own ship along the route, and gives it back as it was", 
   await expect(start).toBeVisible({ timeout: slow(60_000) });
   await expect(page.locator("[data-own-ship]")).toHaveCount(0);
 
-  await start.click();
+  await pressDryRunStart(page, start);
   const ship = page.locator('[data-own-ship="on"]');
   await expect(ship).toHaveCount(1);
   // The airplane followed: the location arrow is the whole route's button
   // (the owner's "Can the locator button change to fit line during dry
   // run when plane is centered on the screen"). Tapped, the map takes the
-  // route, and the arrow comes back to bring the airplane to the middle.
-  // Each tap goes out to the route and back in on the airplane (the
+  // route, and the arrow comes back to bring the airplane to the middle. Each tap goes out to the route and back in on the airplane (the
   // owner's "toggling the zoom in and out is not working"): the base
   // chart's level in use, its top tile container's.
   const level = () => chartZoom(page);
@@ -41,17 +41,21 @@ test("the dry run flies own ship along the route, and gives it back as it was", 
   await expect.poll(level, { timeout: slow(10_000) }).toBe(10);
   // Moving: its place on the chart changes as the run plays (with the
   // map following it, the marker itself may stay put, so the map pane's too).
-  const where = () => page.evaluate(() => {
-    const icon = document.querySelector('[data-own-ship="on"]')!.closest(".maplibregl-marker") as HTMLElement;
-    const map = document.querySelector<HTMLElement>("[data-testid=gl-map]")!;
-    return `${icon.style.transform} ${map.dataset.center}`;
-  });
+  const where = () =>
+    page.evaluate(() => {
+      const icon = document.querySelector('[data-own-ship="on"]')!.closest(".maplibregl-marker") as HTMLElement;
+      const map = document.querySelector<HTMLElement>("[data-testid=gl-map]")!;
+      return `${icon.style.transform} ${map.dataset.center}`;
+    });
   const first = await where();
   await expect.poll(where, { timeout: slow(10_000) }).not.toBe(first);
 
   await sideDrawer(page).getByTestId("dry-run-close").click();
   await expect(page.locator("[data-own-ship]")).toHaveCount(0);
-  const kept = await page.evaluate(() => ({ ship: localStorage.getItem("wingtip.ownship"), trail: localStorage.getItem("wingtip.owntrail") }));
+  const kept = await page.evaluate(() => ({
+    ship: localStorage.getItem("wingtip.ownship"),
+    trail: localStorage.getItem("wingtip.owntrail"),
+  }));
   expect(JSON.parse(kept.ship ?? "{}").state?.enabled ?? false).toBe(false);
   expect(kept.trail).toBeNull();
 });
@@ -64,22 +68,24 @@ test("the dry run's chart draws the airspace the course passes through, named as
   await openProfile(page);
   const side = sideDrawer(page).getByTestId("mini-profile-airspace");
   await expect(side.first()).toBeVisible({ timeout: slow(60_000) });
-  const names = (await side.allTextContents()).map(t => t.trim()).sort();
-  expect(names.some(n => n.startsWith("KMSN "))).toBe(true);
+  const names = (await side.allTextContents()).map((t) => t.trim()).sort();
+  expect(names.some((n) => n.startsWith("KMSN "))).toBe(true);
 
-  await sideDrawer(page).getByTestId("dry-run-start").click();
+  await pressDryRunStart(page, sideDrawer(page).getByTestId("dry-run-start"));
   const run = sideDrawer(page).getByTestId("dry-run");
   // Each piece drawn, and each name once, as the side view had them (the
   // chart's only labels: recharts draws them in a layer of their own).
   await expect.poll(() => run.locator(".recharts-reference-area").count(), { timeout: slow(10_000) }).toBeGreaterThanOrEqual(names.length);
-  const drawn = async () => (await run.locator(".recharts-label").allTextContents()).map(t => t.trim()).sort();
+  const drawn = async () => (await run.locator(".recharts-label").allTextContents()).map((t) => t.trim()).sort();
   await expect.poll(drawn).toEqual(names);
   // Inside the chart, its ends' names too.
   const chart = (await run.locator(".recharts-surface").boundingBox())!;
-  for (const box of await run.locator(".recharts-label").evaluateAll(els => els.map(el => {
-    const r = el.getBoundingClientRect();
-    return { left: r.left, right: r.right };
-  }))) {
+  for (const box of await run.locator(".recharts-label").evaluateAll((els) =>
+    els.map((el) => {
+      const r = el.getBoundingClientRect();
+      return { left: r.left, right: r.right };
+    }),
+  )) {
     expect(box.left).toBeGreaterThanOrEqual(chart.x - 1);
     expect(box.right).toBeLessThanOrEqual(chart.x + chart.width + 1);
   }
@@ -93,11 +99,16 @@ test("the dry run waits for the legs: no way to it until the plan is in, and the
   // button only shows with an altitude there"), so with the plan held back
   // there is no way to the run at all.
   let release!: () => void;
-  const held = new Promise<void>(done => { release = done; });
-  await page.route(url => url.pathname.endsWith("/planner/navlog"), async route => {
-    await held;
-    await route.continue();
+  const held = new Promise<void>((done) => {
+    release = done;
   });
+  await page.route(
+    (url) => url.pathname.endsWith("/planner/navlog"),
+    async (route) => {
+      await held;
+      await route.continue();
+    },
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -107,7 +118,7 @@ test("the dry run waits for the legs: no way to it until the plan is in, and the
   await openProfile(page);
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeEnabled({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
 });
 
@@ -128,14 +139,19 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   // wind as the route comes in plan it again with their patterns flown
   // (with_procedures), a few miles more.
   const distNow = async () => line.locator("dd").nth(1).innerText();
-  await expect.poll(async () => {
-    const was = await distNow();
-    await page.waitForTimeout(1500);
-    return was === await distNow();
-  }, { timeout: slow(30_000) }).toBe(true);
+  await expect
+    .poll(
+      async () => {
+        const was = await distNow();
+        await page.waitForTimeout(1500);
+        return was === (await distNow());
+      },
+      { timeout: slow(30_000) },
+    )
+    .toBe(true);
   const plannedNm = parseFloat(await distNow());
 
-  await start.click();
+  await pressDryRunStart(page, start);
   const figures = sideDrawer(page).getByTestId("dry-run-figures");
   await expect(figures.locator("dt")).toHaveText(planned);
   await expect(figures.getByTestId("navlog-to")).toHaveText("KDLH");
@@ -148,7 +164,11 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
 
 /** Own ship's marker, on screen. */
 async function shipAt(page: Page) {
-  const box = (await page.locator(".maplibregl-marker").filter({ has: page.locator('[data-own-ship="on"]') }).last().boundingBox())!;
+  const box = (await page
+    .locator(".maplibregl-marker")
+    .filter({ has: page.locator('[data-own-ship="on"]') })
+    .last()
+    .boundingBox())!;
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
@@ -163,7 +183,9 @@ async function middleOfMap(page: Page) {
     : { x: viewport.width / 2, y: (sheet.y + sheet.height + viewport.height) / 2 };
 }
 
-test("the dry run's airplane is brought back to the middle of what the panel leaves as the sheet goes down and up, after a pan too", async ({ page }) => {
+test("the dry run's airplane is brought back to the middle of what the panel leaves as the sheet goes down and up, after a pan too", async ({
+  page,
+}) => {
   // The owner's notice: "during dry run map should adjust as well to the
   // pill and half card".
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -172,7 +194,7 @@ test("the dry run's airplane is brought back to the middle of what the panel lea
   await openProfile(page);
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
   // Panned by hand, off the middle: the map no longer follows it.
   const viewport = page.viewportSize()!;
@@ -184,7 +206,8 @@ test("the dry run's airplane is brought back to the middle of what the panel lea
   const inTheMiddle = async () => {
     await settled(sideDrawer(page));
     await expect(async () => {
-      const at = await shipAt(page), middle = await middleOfMap(page);
+      const at = await shipAt(page),
+        middle = await middleOfMap(page);
       expect(Math.abs(at.x - middle.x)).toBeLessThan(40);
       expect(Math.abs(at.y - middle.y)).toBeLessThan(40);
     }).toPass({ timeout: slow(10_000) });
@@ -216,7 +239,7 @@ test("half way a dry run started from the profile's card plays in the card, in o
   await openProfile(page);
   const start = panel.getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   // In the card, in the side view's place (the owner's "profile should play
   // the dry run within profile card").
   const run = page.getByTestId("profile-card").getByTestId("dry-run");
@@ -225,30 +248,41 @@ test("half way a dry run started from the profile's card plays in the card, in o
   await expect.poll(level, { timeout: slow(10_000) }).toBe(10);
 });
 
-test("the side view is a skeleton of the ground and the climb while its ground is fetched, not an empty box", { tag: "@smoke" }, async ({ page }) => {
-  // The design review, 2026-10-28: a blank white box under the Dry run.
-  let answer: (() => void) | null = null;
-  await page.route(url => url.pathname.endsWith("/route-profile"), async route => {
-    await new Promise<void>(resolve => { answer = resolve; });
-    await route.continue().catch(() => {});
-  });
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  await grabberTo(page, "half");
-  const card = await openProfile(page);
-  const skeleton = card.getByTestId("mini-profile-skeleton");
-  await expect(skeleton).toBeVisible({ timeout: slow(60_000) });
-  await expect(skeleton).toHaveRole("status");
-  await expect(skeleton).toContainText("Fetching the side view");
-  // As tall as the chart will be: the card's height, not a strip.
-  expect((await skeleton.boundingBox())!.height).toBeGreaterThan(96);
-  await expect.poll(() => answer !== null, { timeout: slow(30_000) }).toBe(true);
-  answer!();
-  await expect(card.getByTestId("mini-profile")).toBeVisible({ timeout: slow(30_000) });
-  await expect(skeleton).toHaveCount(0);
-});
+test(
+  "the side view is a skeleton of the ground and the climb while its ground is fetched, not an empty box",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    // The design review, 2026-10-28: a blank white box under the Dry run.
+    let answer: (() => void) | null = null;
+    await page.route(
+      (url) => url.pathname.endsWith("/route-profile"),
+      async (route) => {
+        await new Promise<void>((resolve) => {
+          answer = resolve;
+        });
+        await route.continue().catch(() => {});
+      },
+    );
+    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await settle(page);
+    await grabberTo(page, "half");
+    const card = await openProfile(page);
+    const skeleton = card.getByTestId("mini-profile-skeleton");
+    await expect(skeleton).toBeVisible({ timeout: slow(60_000) });
+    await expect(skeleton).toHaveRole("status");
+    await expect(skeleton).toContainText("Fetching the side view");
+    // As tall as the chart will be: the card's height, not a strip.
+    expect((await skeleton.boundingBox())!.height).toBeGreaterThan(96);
+    await expect.poll(() => answer !== null, { timeout: slow(30_000) }).toBe(true);
+    answer!();
+    await expect(card.getByTestId("mini-profile")).toBeVisible({ timeout: slow(30_000) });
+    await expect(skeleton).toHaveCount(0);
+  },
+);
 
-test("the profile is a card from its button beside the AI brief's, no swipe at the foot; a dry run started there plays over the route, and stopped, the card is back", async ({ page }) => {
+test("the profile is a card from its button beside the AI brief's, no swipe at the foot; a dry run started there plays over the route, and stopped, the card is back", async ({
+  page,
+}) => {
   // The owner's ask (2026-10-20): "profile view can move next to the
   // navlog button and open like brief and navlog opens instead of the
   // swipe"; and before, "When stopping dry run it should become profile
@@ -271,7 +305,7 @@ test("the profile is a card from its button beside the AI brief's, no swipe at t
   // again.
   const start = card.getByTestId("dry-run-start");
   await expect(start).toBeEnabled({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(card.getByTestId("dry-run")).toBeVisible();
   await expect(card.getByTestId("mini-profile")).toHaveCount(0);
   await card.getByTestId("dry-run-close").click();
@@ -291,7 +325,7 @@ test("the dry run is the Profile card's: closed, the run is put away and FPL's f
   await openProfile(page);
   const start = panel.getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(panel.getByTestId("dry-run")).toBeVisible();
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
   await closeProfile(page);
@@ -305,11 +339,40 @@ test("the dry run is the Profile card's: closed, the run is put away and FPL's f
 // on CI's runner. From PLANE, south-east of the field, north to HOMUV, and
 // west down its final through CIRUS to the runway.
 const R27 = {
-  airport: "KDLH", kind: "approach", id: "R27", name: "RNAV (GPS) RWY 27", transition: "PLANE", cycle: "261001", stale: false,
+  airport: "KDLH",
+  kind: "approach",
+  id: "R27",
+  name: "RNAV (GPS) RWY 27",
+  transition: "PLANE",
+  cycle: "261001",
+  stale: false,
   lines: [
-    { role: "transition", name: "PLANE", points: [[46.733597, -91.910758], [46.833461, -91.904417]] },
-    { role: "final", name: null, points: [[46.833461, -91.904417], [46.837675, -92.048269], [46.841361, -92.180119]] },
-    { role: "missed", name: null, points: [[46.841361, -92.180119], [46.842746, -92.228777], [46.849967, -92.511453]] },
+    {
+      role: "transition",
+      name: "PLANE",
+      points: [
+        [46.733597, -91.910758],
+        [46.833461, -91.904417],
+      ],
+    },
+    {
+      role: "final",
+      name: null,
+      points: [
+        [46.833461, -91.904417],
+        [46.837675, -92.048269],
+        [46.841361, -92.180119],
+      ],
+    },
+    {
+      role: "missed",
+      name: null,
+      points: [
+        [46.841361, -92.180119],
+        [46.842746, -92.228777],
+        [46.849967, -92.511453],
+      ],
+    },
   ],
   holds: [],
   fixes: [
@@ -323,7 +386,10 @@ const R27 = {
 
 test("with an approach picked, the dry run flies it into the field: out to its first fix and down its final", async ({ page }) => {
   // The owner's notice: "Dry run is not following approach when selected".
-  await page.route(url => /\/airport\/KDLH\/procedures\/R27$/.test(url.pathname), route => route.fulfill({ json: R27 }));
+  await page.route(
+    (url) => /\/airport\/KDLH\/procedures\/R27$/.test(url.pathname),
+    (route) => route.fulfill({ json: R27 }),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH&procs=KDLH:R27:PLANE");
   await settle(page);
   await openPanel(page);
@@ -332,7 +398,7 @@ test("with an approach picked, the dry run flies it into the field: out to its f
   await expect(start).toBeVisible({ timeout: slow(60_000) });
   // The approach drawn, so in hand as the run starts.
   await expect(page.locator('[data-procedure-fix="CIRUS"]')).toHaveCount(1, { timeout: slow(10_000) });
-  await start.click();
+  await pressDryRunStart(page, start);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
   // Held at its end, then ten miles back: on the final, between HOMUV and
   // CIRUS -- where straight in it was still south-east of the field.
@@ -357,10 +423,14 @@ test("with an approach picked, the dry run flies it into the field: out to its f
     return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
   };
   await expect(async () => {
-    const ship = await shipAt(page), from = await fixAt("HOMUV"), to = await fixAt("CIRUS");
+    const ship = await shipAt(page),
+      from = await fixAt("HOMUV"),
+      to = await fixAt("CIRUS");
     // HOMUV to CIRUS is 5.9 nm: the ship within half a mile of the line
     // between them, and between them along it.
-    const dx = to.x - from.x, dy = to.y - from.y, length = Math.hypot(dx, dy);
+    const dx = to.x - from.x,
+      dy = to.y - from.y,
+      length = Math.hypot(dx, dy);
     const along = ((ship.x - from.x) * dx + (ship.y - from.y) * dy) / (length * length);
     const off = Math.abs((ship.x - from.x) * dy - (ship.y - from.y) * dx) / length;
     expect(along).toBeGreaterThan(0);
@@ -385,7 +455,8 @@ test("with an approach picked, the dry run flies it into the field: out to its f
   await thumb.focus();
   await page.keyboard.press("End");
   await expect(async () => {
-    const ship = await shipAt(page), udteg = await fixAt("UDTEG");
+    const ship = await shipAt(page),
+      udteg = await fixAt("UDTEG");
     expect(Math.hypot(ship.x - udteg.x, ship.y - udteg.y)).toBeLessThan(12);
   }).toPass({ timeout: slow(10_000) });
 });

@@ -127,12 +127,18 @@ pub fn balance(loading: &Loading, load: &Load, trip_fuel_gal: Option<f64>) -> Ba
         problems.push(format!("The ramp weight, {}, is over its most, {}", pounds(weight), pounds(loading.max_ramp_lb)));
     }
     if takeoff.weight_lb > loading.max_takeoff_lb {
-        problems.push(format!("The takeoff weight, {}, is {} over its most", pounds(takeoff.weight_lb),
-                              pounds(takeoff.weight_lb - loading.max_takeoff_lb)));
+        problems.push(format!(
+            "The takeoff weight, {}, is {} over its most",
+            pounds(takeoff.weight_lb),
+            pounds(takeoff.weight_lb - loading.max_takeoff_lb)
+        ));
     }
     if landing.weight_lb > loading.max_landing_lb {
-        problems.push(format!("The landing weight, {}, is {} over its most", pounds(landing.weight_lb),
-                              pounds(landing.weight_lb - loading.max_landing_lb)));
+        problems.push(format!(
+            "The landing weight, {}, is {} over its most",
+            pounds(landing.weight_lb),
+            pounds(landing.weight_lb - loading.max_landing_lb)
+        ));
     }
     let heaviest = envelope.iter().map(|p| p.1).fold(f64::NEG_INFINITY, f64::max);
     for (name, c) in [("takeoff", takeoff), ("landing", landing)] {
@@ -150,10 +156,10 @@ pub fn balance(loading: &Loading, load: &Load, trip_fuel_gal: Option<f64>) -> Ba
         }
     }
     for (i, station) in loading.stations.iter().enumerate() {
-        if let Some(most) = station.max_lb {
-            if at(i) > most {
-                problems.push(format!("{} holds {}, over its {}", station.name, pounds(at(i)), pounds(most)));
-            }
+        if let Some(most) = station.max_lb
+            && at(i) > most
+        {
+            problems.push(format!("{} holds {}, over its {}", station.name, pounds(at(i)), pounds(most)));
         }
     }
     let baggage: f64 = loading
@@ -163,10 +169,10 @@ pub fn balance(loading: &Loading, load: &Load, trip_fuel_gal: Option<f64>) -> Ba
         .filter(|(_, s)| s.name.to_lowercase().starts_with("baggage"))
         .map(|(i, _)| at(i))
         .fold(0.0, |sum, lb| sum + lb);
-    if let Some(most) = loading.baggage_combined_max_lb {
-        if baggage > most {
-            problems.push(format!("The baggage, {} in all, is over its {}", pounds(baggage), pounds(most)));
-        }
+    if let Some(most) = loading.baggage_combined_max_lb
+        && baggage > most
+    {
+        problems.push(format!("The baggage, {} in all, is over its {}", pounds(baggage), pounds(most)));
     }
     if load.fuel_gal > loading.fuel_max_gal {
         problems.push(format!("{} gal is more than the tanks' usable {}", js_num(load.fuel_gal), js_num(loading.fuel_max_gal)));

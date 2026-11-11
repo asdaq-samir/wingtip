@@ -37,7 +37,7 @@ struct RibbonLine: View {
                 if let at {
                     GeometryReader { geo in
                         Image(systemName: "airplane")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(WingtipType.note.weight(.bold))
                             .foregroundStyle(ink.magenta)
                             .rotationEffect(.degrees(-45))
                             .position(x: geo.size.width * CGFloat(at / Double(legs)), y: geo.size.height / 2)
@@ -88,6 +88,7 @@ struct StripRibbonRow: View {
     let points: [StripPoint]
     var position: (leg: Int, along: Double)?
     @Environment(\.chartInk) private var ink
+    @Environment(\.dynamicTypeSize) private var size
 
     private var route: String {
         if !dest.isEmpty { return "\(dep.isEmpty ? "Here" : dep) → \(dest)" }
@@ -96,29 +97,36 @@ struct StripRibbonRow: View {
 
     var body: some View {
         let figures = StripData.figures(eteMin: eteMin, fuelGal: fuelGal)
-        VStack(spacing: 6) {
-            HStack(spacing: 8) {
+        // At the accessibility sizes the tag, the route and its figures
+        // each take a line, whole, where one line would cut them.
+        let line = size.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: WingtipSpace.xs)) : AnyLayout(HStackLayout(spacing: WingtipSpace.sm))
+        VStack(spacing: WingtipSpace.sm) {
+            line {
+                // The verdict as Weather says a condition: its symbol and
+                // word in the finding's colour, no capsule drawn round it.
                 if let verdict, let tag = StripData.tag(verdict.finding) {
-                    Text(tag)
+                    Label(tag, systemImage: FindingStyle.symbol(verdict.finding))
                         .condensedCaps(.caption, weight: .bold)
-                        .padding(.horizontal, 8).padding(.vertical, 3)
                         .foregroundStyle(ink.finding(verdict.finding))
-                        .background(ink.finding(verdict.finding).opacity(0.14), in: Capsule())
                         .accessibilityLabel("Verdict: \(verdict.words)")
                 }
                 Text(route)
                     .font(ChartInk.text.weight(.semibold))
-                    .lineLimit(1)
+                    .lineLimit(size.isAccessibilitySize ? nil : 1)
+                    .accessibilityLabel(dest.isEmpty ? route : "\(dep.isEmpty ? "Here" : dep) to \(dest)")
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if !figures.isEmpty {
                     Text(figures).font(ChartInk.detail.monospacedDigit()).foregroundStyle(ink.muted)
+                        .accessibilityLabel(StripData.spokenFigures(eteMin: eteMin, fuelGal: fuelGal))
                 } else if dest.isEmpty {
-                    Text("Where to, or ask").font(ChartInk.note).foregroundStyle(ink.muted)
+                    // Whole before the app's name beside it is.
+                    Text("Where to, or ask").font(ChartInk.note).foregroundStyle(ink.muted).layoutPriority(1)
                 }
             }
             RibbonLine(points: points, position: position)
         }
-        .padding(.horizontal, 4)
+        .padding(.horizontal, WingtipSpace.xs)
         .accessibilityIdentifier("strip-ribbon")
     }
 }

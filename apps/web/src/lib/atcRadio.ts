@@ -36,11 +36,11 @@ interface AtcRadio {
   /** Where the route is, its ends' "lat,lon;lat,lon", for the places the
    *  radio names to be looked for near (/api/clearance). */
   near: string;
-  /** How it listens: once, from the map's microphone, as Siri does (the
-   *  owner's pick A, 2026-11-02), or on and on from the Radio card, with
-   *  the captions over the map. */
+  /** How it listens: once, from Comms assist on the map (the owner's pick
+   *  A, 2026-11-02), or on and on from the Radio card, with the captions
+   *  over the map. */
   mode: "once" | "radio" | null;
-  /** The microphone's pill over the map: listening, then what was heard
+  /** Comms assist's pill over the map: listening, then what was heard
    *  with what it offers, until put away. A readback is listened for with
    *  the clearance it reads back (`readbackOf`, lib/readback); a timer the
    *  pilot started by voice counts from `timerFrom`. */
@@ -50,7 +50,7 @@ interface AtcRadio {
    *  was chosen), for the pill, the captions and the card to name; null
    *  while none is held, as in every browser that cannot pick one. */
   input: HeardInput | null;
-  /** Stops the ATIS being heard (lib/atis's hearAtis), while it is: the
+  /** Stops the ATIS being heard (features/plan/lib/atis's hearAtis), while it is: the
    *  radio or the microphone started meanwhile stops it first, so one
    *  recognizer listens at a time. */
   atisStop: (() => void) | null;
@@ -82,7 +82,17 @@ export interface HeardInput {
 }
 
 export const useAtcRadio = create<AtcRadio>(() => ({
-  listening: false, error: null, heard: [], seen: null, cardOpen: false, cardText: null, tail: null, near: "", mode: null, pill: null, input: null,
+  listening: false,
+  error: null,
+  heard: [],
+  seen: null,
+  cardOpen: false,
+  cardText: null,
+  tail: null,
+  near: "",
+  mode: null,
+  pill: null,
+  input: null,
   atisStop: null,
 }));
 
@@ -137,7 +147,9 @@ export const inputLevel = {
   listen(fn: LevelListener): () => void {
     levelListeners.add(fn);
     if (lastLevel !== null) fn(lastLevel);
-    return () => { levelListeners.delete(fn); };
+    return () => {
+      levelListeners.delete(fn);
+    };
   },
   emit(level: number | null) {
     lastLevel = level;
@@ -147,18 +159,22 @@ export const inputLevel = {
 
 /** The newest call to us not yet put away, settled. */
 export function callToUs(s: Pick<AtcRadio, "heard" | "seen">): Transmission | null {
-  const last = [...s.heard].reverse().find(t => t.forUs && t.final);
+  const last = [...s.heard].reverse().find((t) => t.forUs && t.final);
   return last && last.id !== s.seen ? last : null;
 }
 
 /** A route as the plan has it: either end may be missing. */
-export interface PlannedRoute { dep: string; stops: string[]; dest: string }
+export interface PlannedRoute {
+  dep: string;
+  stops: string[];
+  dest: string;
+}
 
 /** What the radio can be acted on with, from the plan (PlanWorkspace): a
  *  direct to a place as said, which answers why not where it cannot; an
  *  altitude to fly; a clearance's route entered over the route planned,
  *  with its SID and STAR and the altitude it gives; and of the pilot's
- *  own commands (lib/pilotCommand), the Nearest list and an approach's
+ *  own commands (components/pilotCommand), the Nearest list and an approach's
  *  page in the procedures sheet, which answers why not where it cannot. */
 export const useRadioActions = create<{
   directTo: ((said: string) => Promise<string | null>) | null;
@@ -171,4 +187,12 @@ export const useRadioActions = create<{
    *  the route's departure or from where the airplane is; answers why it
    *  could not be. */
   planTo: ((place: string) => Promise<string | null>) | null;
-}>(() => ({ directTo: null, fly: null, route: { dep: "", stops: [], dest: "" }, enter: null, nearest: null, showProcedure: null, planTo: null }));
+}>(() => ({
+  directTo: null,
+  fly: null,
+  route: { dep: "", stops: [], dest: "" },
+  enter: null,
+  nearest: null,
+  showProcedure: null,
+  planTo: null,
+}));

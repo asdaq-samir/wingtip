@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Rehearses the production stack on this machine
-# (docker-compose.rehearsal.yml): builds the two images the server runs
-# (the planner on wingtip's base),
+# (docker-compose.rehearsal.yml): builds the three images the server runs
+# (the planner and the weather service on wingtip's base),
 # seeds a data folder as deploy.sh does, writes a .env of its own and
 # starts infra/docker-compose.prod.yml with the rehearsal's stand-ins for
 # CloudFront and SES, as the project "wingtip-prod" beside the
@@ -14,7 +14,9 @@
 # TILES_DIR      a chart pyramid to serve as the S3 bucket
 #                (this checkout's data/raw/chart_tiles.nosync)
 # SKIP_BUILD=1   use the images already built
-# ANTHROPIC_API_KEY, else this checkout's .env's: for briefings and notes
+# ANTHROPIC_API_KEY, else this checkout's .env's: for the Claude features,
+#                which stay off unless APP_CLAUDE_FEATURES and
+#                COMPOSE_PROFILES=claude turn them on (docs/decisions/0035)
 #
 # Stop it with: docker compose -p wingtip-prod down   (add -v to forget it)
 set -euo pipefail
@@ -23,9 +25,15 @@ export REHEARSAL_DIR=${REHEARSAL_DIR:-$HOME/.wingtip-rehearsal}
 export TILES_DIR=${TILES_DIR:-$PWD/data/raw/chart_tiles.nosync}
 
 if [ "${SKIP_BUILD:-}" != 1 ]; then
-  # The planner is built FROM wingtip's base (services/Dockerfile.base).
+  # The planner and the services beside it are built FROM wingtip's base (services/Dockerfile.base).
   docker build -t wingtip-local/base:rehearsal -f services/Dockerfile.base --target base .
   docker build -t wingtip-local/planner:rehearsal -f services/planner/Dockerfile \
+    --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
+  docker build -t wingtip-local/ingest:rehearsal -f services/ingest/Dockerfile \
+    --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
+  docker build -t wingtip-local/assistant:rehearsal -f services/assistant/Dockerfile \
+    --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
+  docker build -t wingtip-local/weather:rehearsal -f services/weather/Dockerfile \
     --build-context wingtip-base=docker-image://wingtip-local/base:rehearsal .
   docker build -t wingtip-local/gateway:rehearsal -f services/gateway/Dockerfile .
 fi

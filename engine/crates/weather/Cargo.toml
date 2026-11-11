@@ -1,7 +1,7 @@
 [package]
 name = "wingtip-weather"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 description = "The weather and NOTAM products as sent, read strictly: METAR, TAF, winds aloft, NOTAMs, TFRs, a field's forecast flight category and when a report stops counting"
 
@@ -12,3 +12,7 @@ name = "wingtip_weather"
 # plain Rust, so the phones carry it as it is.
 [dependencies]
 wingtip-core = { path = "../core" }
+wingtip-flight = { path = "../flight" }
+
+[lints]
+workspace = true

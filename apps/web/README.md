@@ -80,7 +80,7 @@ docker run --rm -v "$PWD/apps/web":/w -w /w node:26-slim \
 # real-browser layout tests, against the running stack
 docker run --rm --add-host=host.docker.internal:host-gateway -v "$PWD/apps/web":/w -w /w \
   -e BASE_URL=http://host.docker.internal:8080 -e MAILPIT_URL=http://host.docker.internal:8025 \
-  mcr.microsoft.com/playwright:v1.55.1-noble sh -c "npm ci && npx playwright test"
+  mcr.microsoft.com/playwright:v1.65.0-noble sh -c "npm ci && npx playwright test"
 ```
 
 The suite signs in first, as the stack's own developer
@@ -124,7 +124,7 @@ docker compose logs -f web-build     # each rebuild, as it happens
 # with -g @smoke, about a minute)
 docker run --rm --add-host=host.docker.internal:host-gateway -v "$PWD/apps/web":/w -w /w \
   -e BASE_URL=http://host.docker.internal:8080 -e MAILPIT_URL=http://host.docker.internal:8025 \
-  mcr.microsoft.com/playwright:v1.55.1-noble npx playwright test e2e/checkpoints.spec.ts -g "nav log"
+  mcr.microsoft.com/playwright:v1.65.0-noble npx playwright test e2e/checkpoints.spec.ts -g "nav log"
 
 # the checks, with their caches: seconds after the first run
 docker run --rm -v "$PWD/apps/web":/w -w /w node:26-slim \
@@ -188,28 +188,74 @@ src/
     MapControls.tsx          The map's own corner stack: the layers popover, the zoom toggle, full screen
     ChartLayers.tsx           The layers popover's contents: base chart, TAC pin, Class B, marker zoom
     ConsoleTabs.tsx, DevSwitch.tsx, ThemeToggle.tsx, FullscreenButton.tsx, KeepRoute.tsx, SelectableRows.tsx
+    map/                     The map's own screen: GlMapShell (the map with its banners, controls and sheet),
+                               cards/ (airspace, navaid, waypoint) and the layers that open them (layers/)
+    SignInModal.tsx, ChecklistPage.tsx, ReviewAsk.tsx, ClearanceCard.tsx, WordsSection.tsx, SourceChips.tsx
+                             Screens two features show (the pilot's console and the plan's Brief, the radio)
     ui/                      shadcn/ui primitives (components.json), stock unless a comment says why not
-  lib/
+  hooks/                   Hooks with no feature of their own (viewport, shortcuts, the plan's history)
+  lib/                     Only what two or more features (or components/ and a feature) use
     api/client.ts             Every network call, one function per endpoint
     api/types.ts               API request/response shapes, re-exported from schema.d.ts and gateway-schema.d.ts
     engine/                    The Rust engine as WebAssembly: callEngine, and contract.ts generated from its schema
-    map/                       Everything the two maps share: gl/ (the MapLibre map, its style and layers) and
-                                the cards, marks and overlay tiles over it (see Maps, below)
+    fixtures/                  The cases the web, the engine and the phones are all tested against
+    format/                    How a figure is written: format/figures, format/time
+    map/                       Everything the planner's map and the chart-labels map share (see Maps, below):
+      gl/                        the MapLibre map: its style, overlays and hooks (the shell is components/map)
+      gl/layers/                 the layers both maps draw (base, chart, route, ruler, own ship)
+      cards/                     what a point's card on the map is made of: MapCard, its place, its actions
+      marks/                     what is drawn: airport and airspace marks, procedure and pattern marks, icons, colours
+      sources/                   where the drawing comes from: tiles, overlay tiles, imagery, weather layers
+      position/                  own ship, its trail and track, the glide ring, alerts ahead
+      route/                     the route kept on the map, its ways, a lesson's map
+      ruler/                     the ruler and where it was placed
+      view.ts, clear.ts, useCruiseTas.ts
+    atc/, copilot/             The radio and copilot pieces the ATC, copilot and map features share
+    ask/useAsk.ts              The assistant's conversation (the Brief's Ask card, the radio's Ask chip)
+    mapChrome.ts, emergencyStore.ts, briefPlan.ts, wordsState.ts, pointFilters.ts   State and styling the layers above share
+    glyphs/                    The app's own drawn glyphs (the tab bar's, Direct To) that lib/icons names
     preferences.ts             What's remembered per browser (zustand + localStorage): charts, aeroplane, filters
     queryClient.ts             The react-query client; a failed query becomes one toast, keyed by its message
-  features/
-    shell/MapPage.tsx, workspace.ts  The shell both pages mount into, and the contract a workspace hands it
+    problems.ts, text.ts, tokens.ts, geo.ts, storage.ts, …   The rest every feature leans on
+  features/                One folder per feature; a file used by one feature lives in it, not in lib/;
+                           another feature or a shared component reaches it only through its index.ts
+    shell/MapPage.tsx, workspace.ts  The shell both pages mount into, and the contract a workspace hands it;
+                                      the page's start (dynamicType, freshLoad, storageRename) that main.tsx runs
     plan/PlanWorkspace.tsx           The pilot's workspace: hooks/usePlan.ts (state), components/: RouteMap,
-                                      BuildNotice, AltitudeReasoning, navlog/, briefing/
+                                      BuildNotice, AltitudeReasoning, navlog/, briefing/, procedures/
+    plan/lib/                        The plan's own rules and readings: pattern, wind, radio, routeHolds,
+                                      runwayCheck, passTimes, hourly, glance, oral, flightPlanForm, …
+    plan/map/                        The planner's own map: GlRouteMap, layers/ only it draws (traffic, TFRs,
+                                      weather, tracks, marks), terrain/ (the 3D view), its traffic and TFR cards
     chart-labels/TrainWorkspace.tsx  The developer's workspace: hooks/useTraining.ts (state), logic.ts (pure,
                                       tested), components/: ChartMap, WaypointPanel, PointPopup, FilterBar
-    pilot/PilotPanel.tsx             The pilot console: AccountPanels.tsx (sign-in, aircraft, flights), SignInModal.tsx
-    dev/DevPanel.tsx, DevButton.tsx  The dev console (its own chunk — see Architecture) and the header button that opens it
+    pilot/PilotPanel.tsx             The pilot console: AccountPanels.tsx (sign-in, aircraft, flights),
+                                      and its own logic: logbookCsv, drills, lostComms, paperwork, students, debrief
+    emergency/                       The emergency assistant, emergency.ts its reading of the engine's answers
+    chart-labels/dev/DevPanel.tsx    The dev console (its own chunk — see Architecture), drawn in the pilot console's
+                                      PilotPanel, which the training workspace loads beside it (pilot's loadPilotPanel)
 ```
+
+A file goes in `lib/` only when two or more features use it; one feature's
+file sits in that feature's folder (`features/<feature>/lib/` for its rules,
+beside the screen when one screen alone uses it), and one shared component's
+helper sits beside it in `components/`. A feature does not reach into
+another feature's files; what two need moves to `lib/` (or `components/`
+for a screen), and what a feature offers the rest is its `index.ts`, with a
+loader (`loadPilotPanel = () => import("./PilotPanel")`) for a part on a
+chunk of its own, so naming the entry never pulls the chunk into a first
+load.
+
+The lint holds the layers (`eslint/boundaries.js`, rule
+`boundaries/layers`): `lib/` and `hooks/` import neither `components/` nor
+`features/`; `components/` import a feature only through its `index.ts`;
+a feature imports another only through its `index.ts`; `main.tsx`, which
+wires them, may name any. Every way a module is named counts: `import`,
+`export ... from`, `import()`, a type's `import("...")`, `vi.mock()`.
 
 ## Architecture
 
-**Routing.** `main.tsx` builds a `react-router-dom` browser router with
+**Routing.** `main.tsx` builds a `react-router` browser router with
 one lazy-loaded route per page and `basename: "/app"`. Deep links and a
 hard refresh work because `gateway`'s `WebMvcConfig` serves `index.html`
 for any `/app/**` path that is not a real file.
@@ -220,7 +266,7 @@ are `React.lazy`, so a pilot loading `/app/plan` never pays for either
 — importing `DevButton` used to pull the console in by accident, since
 it lived in the same module `DevPanel` did. The nav log's calendar
 popover (`react-day-picker`, one component behind one button) is lazy
-the same way. The div-icon marks (`lib/map/icons.ts`: traffic, own
+the same way. The div-icon marks (`lib/map/marks/icons.ts`: traffic, own
 ship, the replay's airplane, put on the map as MapLibre markers by
 `lib/map/gl/htmlMarker.ts`) are built from template strings rather than JSX rendered with
 `renderToStaticMarkup`, which otherwise pulled the whole of
@@ -229,7 +275,7 @@ these took the planner's cold-load JavaScript from 1.67 MB to 1.00 MB.
 
 **Cold load.** `main.tsx` asks the planner for the course named in the
 address (`prefetchQuery`, the same query key and fetcher `usePlan`
-uses) *before* `ReactDOM.createRoot(...).render(...)` runs — React
+uses) _before_ `ReactDOM.createRoot(...).render(...)` runs — React
 mounting, the router resolving and the workspace rendering all used to
 happen first, with the request queued behind them for a route the URL
 had already named. The component then finds the answer already in
@@ -277,9 +323,9 @@ failing the same way used to stack three identical toasts. Its own
 that happened to toast last. Toasts have `pointer-events: none` on
 their container with `auto` restored on the toast itself
 (`index.css`), so the map keeps taking wheel/drag events with one on
-screen, and Radix's `onInteractOutside` (`components/ui/sheet.tsx`) is
-told to ignore a click inside the toaster, so closing a toast never
-closes the drawer under it.
+screen, and a press inside the toaster is not "outside" a dialog or a
+sheet (`components/ui/dismiss.ts`), so closing a toast never closes the
+sheet under it.
 
 **Styling.** Tailwind utilities and stock shadcn components. The only
 inline styles are colours computed from data (a rating, a flight
@@ -289,7 +335,7 @@ WebGL is styled in its layers' MapLibre paint properties
 
 ## Maps
 
-Both maps are MapLibre GL on one shell (`lib/map/gl`): the planner's
+Both maps are MapLibre GL on one shell (`components/map/GlMapShell.tsx`, over `lib/map/gl`): the planner's
 (`GlRouteMap.tsx`, which `RouteMap.tsx` gives the page's state) and the
 training map (`ChartMap.tsx`). The FAA chart, the airspace, the route
 and its checkpoints are drawn in one WebGL map, so an overlay moves with
@@ -299,8 +345,9 @@ its end.
 **The shell and its layers.** `GlMapShell.tsx` owns the map itself: the
 container, the camera and what moves it (a route's fit, a point picked,
 the sheet), the one tap the layers share, and the card a tap opens.
-Everything drawn on it is a React component in `gl/layers` (`ChartGl`,
-`AirspaceGl`, `AirportsGl`, `RouteGl`, `OwnShipGl`, `TrafficGl` ...)
+Everything drawn on it is a React component in `lib/map/gl/layers` (`ChartGl`,
+`AirportsGl`, `RouteGl`, `OwnShipGl`, `TrafficGl` ...; `AirspaceGl` and
+`NavaidsGl`, which open the shared cards, in `components/map/layers`)
 that says through `glLayer.ts`'s hooks what it adds -- its sources and
 style layers, in one of the map's slots (base, chart, imagery, areas,
 lines, route, marks, top), the data it gives them, and what a tap on it
@@ -316,11 +363,17 @@ special-use areas, airports, navaids, fixes and runways come from one
 PMTiles archive the planner builds once a cycle
 (`wingtip.vector_tiles`) and serves in byte ranges
 (`/api/overlay-tiles/{name}.pmtiles`), read by protomaps' `pmtiles`
-library (`lib/map/overlayTiles.ts`). They are in the map's first style
+library (`lib/map/sources/overlayTiles.ts`). They are in the map's first style
 (`glOverlays.ts`), so they load per tile with the chart, with nothing
 asked of the planner for the view and no wait on the engine; what
 changes over them (the fields the settings hide, the route's own
-fields, each field's weather) is set on their layers.
+fields, each field's weather, from `/api/airports/in-view`'s reporting
+fields) is set on their layers. They are the only source of those
+marks: a map made before the archive's name came (or before the
+planner built it) draws none, and has them added once it comes
+(`addOverlays`). The browser suite's stack has a small archive of its
+own round its corridor (`apps/web/e2e/fixtures/overlay-tiles`, see
+docs/CI.md).
 
 **Loading.** The map is drawn before the engine has loaded: `GlBootMap`
 holds the chart and the overlays alone, which ask the engine nothing,
@@ -347,7 +400,7 @@ one sheet: the panel's close is every card's, and there is no other
 surface over the chart.
 
 **Marks that move.** Traffic, own ship and the replay's airplane are
-the app's own div icons (`lib/map/icons.ts`) put on the map as MapLibre
+the app's own div icons (`lib/map/marks/icons.ts`) put on the map as MapLibre
 markers (`gl/htmlMarker.ts`), which MapLibre places in the frame it
 draws the chart, so they stay on their point through a pinch.
 

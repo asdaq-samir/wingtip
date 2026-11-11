@@ -1,0 +1,115 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogFuelPlanInput",
+      "type": "object",
+      "properties": {
+        "total_fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
+        },
+        "night": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "rules": {
+          "enum": [
+            "vfr",
+            "ifr",
+            null
+          ]
+        },
+        "alternate_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "profile"
+      ]
+    },
+    "answer": {
+      "title": "NavLogFuelPlanAnswer",
+      "type": "object",
+      "properties": {
+        "reserve_min": {
+          "type": "number"
+        },
+        "reserve_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "taxi_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_required_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "usable_fuel_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "fuel_margin_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "night": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "rules": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "reserve_min",
+        "reserve_gal",
+        "taxi_gal",
+        "fuel_required_gal",
+        "usable_fuel_gal",
+        "fuel_margin_gal",
+        "night",
+        "rules"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

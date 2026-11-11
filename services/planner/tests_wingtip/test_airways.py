@@ -3,6 +3,7 @@ way along it, each segment with the published altitudes for the way
 flown -- a directional MEA's own -- and an airway that cannot be flown
 as written refused in a pilot's words. A NASR AWY_SEG_ALT.csv of a few
 rows, its header the FAA's own."""
+
 import pytest
 
 from wingtip import airways, faa_data
@@ -34,12 +35,17 @@ WHERE = {"AAA": (44.0, -90.0), "BBB": (45.0, -90.0), "CCC": (46.0, -90.0), "DDD"
 @pytest.fixture
 def awy(tmp_path, monkeypatch):
     path = tmp_path / "AWY_SEG_ALT.csv"
-    path.write_text(HEADER + "".join([
-        _row("V900", 10, "AAA", "BBB", mea=4000, moca=2600),
-        _row("V900", 20, "BBB", "CCC", mea=5000, mea_dir="N BND", opp=7000, opp_dir="S BND"),
-        _row("V900", 30, "CCC", "DDD", mea=6000, mea_gap="U"),
-        _row("T900", 10, "AAA", "BBB", gps=3500),
-    ]))
+    path.write_text(
+        HEADER
+        + "".join(
+            [
+                _row("V900", 10, "AAA", "BBB", mea=4000, moca=2600),
+                _row("V900", 20, "BBB", "CCC", mea=5000, mea_dir="N BND", opp=7000, opp_dir="S BND"),
+                _row("V900", 30, "CCC", "DDD", mea=6000, mea_gap="U"),
+                _row("T900", 10, "AAA", "BBB", gps=3500),
+            ]
+        )
+    )
     monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda name, cache_dir: path)
     monkeypatch.setattr(airways, "_TABLE", None)
     monkeypatch.setattr(airways, "_where", lambda ident, near=(): WHERE.get(ident))
@@ -63,13 +69,16 @@ def test_a_t_routes_gnss_mea_is_kept(awy):
     assert segment.mea_ft is None and segment.gnss_mea_ft == 3500
 
 
-@pytest.mark.parametrize(("airway", "frm", "to", "says"), [
-    ("V901", "AAA", "BBB", "No airway V901 is published."),
-    ("V900", "XXX", "BBB", "XXX is not on V900: an airway is joined at one of its own fixes."),
-    ("V900", "AAA", "XXX", "XXX is not on V900: an airway is left at one of its own fixes."),
-    ("V900", "BBB", "BBB", "V900 from BBB to itself goes nowhere."),
-    ("V900", "BBB", "DDD", "V900 from CCC to DDD is not usable as published."),
-])
+@pytest.mark.parametrize(
+    ("airway", "frm", "to", "says"),
+    [
+        ("V901", "AAA", "BBB", "No airway V901 is published."),
+        ("V900", "XXX", "BBB", "XXX is not on V900: an airway is joined at one of its own fixes."),
+        ("V900", "AAA", "XXX", "XXX is not on V900: an airway is left at one of its own fixes."),
+        ("V900", "BBB", "BBB", "V900 from BBB to itself goes nowhere."),
+        ("V900", "BBB", "DDD", "V900 from CCC to DDD is not usable as published."),
+    ],
+)
 def test_an_airway_that_cannot_be_flown_as_written_says_why(awy, airway, frm, to, says):
     with pytest.raises(airways.AirwayError, match=f"^{says}$"):
         airways.along(airway, frm, to)

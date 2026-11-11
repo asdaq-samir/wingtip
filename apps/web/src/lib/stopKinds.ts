@@ -1,6 +1,7 @@
 import type { StopField } from "./api/types";
 import { compassPoint } from "./compass";
 import { fuelNames } from "./stopServices";
+import { BADGE } from "./tokens";
 
 /** What the map's Stops look for at a field, in the order a row lists
  *  them (the owner's layout, 2026-10-27). */
@@ -18,22 +19,38 @@ export type StopPick = StopKind | "all";
  */
 export const STOP_KINDS: Record<StopKind, { name: string; tile: string; colour: string; paths: string[] }> = {
   fuel: {
-    name: "Fuel", tile: "Fuel", colour: "#d97706",
-    paths: ["M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0v-6.998a2 2 0 0 0-.59-1.42L18 5", "M14 21V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v16", "M2 21h13", "M3 9h11"],
+    name: "Fuel",
+    tile: "Fuel",
+    colour: BADGE.stopFuel,
+    paths: [
+      "M14 13h2a2 2 0 0 1 2 2v2a2 2 0 0 0 4 0v-6.998a2 2 0 0 0-.59-1.42L18 5",
+      "M14 21V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v16",
+      "M2 21h13",
+      "M3 9h11",
+    ],
   },
   food: {
-    name: "Food", tile: "Food", colour: "#dc2626",
+    name: "Food",
+    tile: "Food",
+    colour: BADGE.stopFood,
     paths: ["M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2", "M7 2v20", "M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"],
   },
   repair: {
-    name: "Repair", tile: "Repair", colour: "#0f766e",
-    paths: ["M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z"],
+    name: "Repair",
+    tile: "Repair",
+    colour: BADGE.stopRepair,
+    paths: [
+      "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.106-3.105c.32-.322.863-.22.983.218a6 6 0 0 1-8.259 7.057l-7.91 7.91a1 1 0 0 1-2.999-3l7.91-7.91a6 6 0 0 1 7.057-8.259c.438.12.54.662.219.984z",
+    ],
   },
   training: {
-    name: "Training", tile: "Flight Training", colour: "#0369a1",
+    name: "Training",
+    tile: "Flight Training",
+    colour: BADGE.stopTraining,
     paths: [
       "M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z",
-      "M22 10v6", "M6 12.5V16a6 3 0 0 0 12 0v-3.5",
+      "M22 10v6",
+      "M6 12.5V16a6 3 0 0 0 12 0v-3.5",
     ],
   },
 };
@@ -53,7 +70,9 @@ const capital = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
  *  PWR_PLANT_REPAIR_SER, MAJOR or MINOR) in words: "Airframe major,
  *  engine minor". Empty where it has neither. */
 export function repairWords(f: Pick<StopField, "airframe_repair" | "powerplant_repair">): string {
-  const parts = [f.airframe_repair && `airframe ${f.airframe_repair}`, f.powerplant_repair && `engine ${f.powerplant_repair}`].filter(Boolean);
+  const parts = [f.airframe_repair && `airframe ${f.airframe_repair}`, f.powerplant_repair && `engine ${f.powerplant_repair}`].filter(
+    Boolean,
+  );
   return capital(parts.join(", "));
 }
 
@@ -63,15 +82,15 @@ export function repairWords(f: Pick<StopField, "airframe_repair" | "powerplant_r
 export function kindLines(f: StopField): { kind: StopKind; words: string }[] {
   const words: Record<StopKind, string> = {
     fuel: fuelNames(f.fuel_types ?? []),
-    food: (f.food ?? []).map(p => p.name).join(", "),
+    food: (f.food ?? []).map((p) => p.name).join(", "),
     repair: repairWords(f),
-    training: (f.training ?? []).map(p => p.name).join(", "),
+    training: (f.training ?? []).map((p) => p.name).join(", "),
   };
-  return KIND_ORDER.filter(k => words[k]).map(kind => ({ kind, words: words[kind] }));
+  return KIND_ORDER.filter((k) => words[k]).map((kind) => ({ kind, words: words[kind] }));
 }
 
 /** The kinds a field has, in a row's order. */
-export const kindsOf = (f: StopField): StopKind[] => kindLines(f).map(l => l.kind);
+export const kindsOf = (f: StopField): StopKind[] => kindLines(f).map((l) => l.kind);
 
 /** Where the field is: "12 nm NE" round the pilot; along the route how far
  *  off it, "12 nm off course", or "On the route" under a mile (the owner's

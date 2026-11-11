@@ -1,22 +1,22 @@
 // The drill's words are also the planner's (app/figures, GET /api/diversion, for the native app): the two change together.
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Check, Timer, X } from "lucide-react";
 import { cn } from "cn";
 import { ListChoices, ListGroup, ListRow } from "../../../../components/GroupedList";
-import {
-  ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger,
-} from "../../../../components/ResponsivePopover";
+import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../../components/ResponsivePopover";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import type { Leg } from "../../../../lib/api/types";
+import { useClock } from "../../../../lib/useMinuteClock";
 import { ALLOWANCES, divert, reasonable, stopwatch, type Diversion, type EstimateKey } from "../../../../lib/diversion";
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../format";
-import { bearing, grouped, windCorrection } from "../../../../lib/units";
+import { bearing, grouped, windCorrection } from "../../../../lib/format";
 import { FINDING_TONE } from "../../../../lib/findings";
-import { typedNumber, written } from "../../../../lib/workings";
+import { typedNumber, written } from "./workings";
 import { nearestQuery } from "../../../../lib/queryClient";
+import { AskFigure } from "../../../../components/airplane/AskFigure";
 
 /** The diversion worked out, step by step, once checked. */
 function Answer({ ident, d }: { ident: string; d: Diversion }) {
@@ -31,7 +31,9 @@ function Answer({ ident, d }: { ident: string; d: Diversion }) {
   ];
   return (
     <ListGroup title={`To ${ident}, worked out`}>
-      {steps.map(([name, value]) => <ListRow key={name} title={name} value={value} />)}
+      {steps.map(([name, value]) => (
+        <ListRow key={name} title={name} value={value} />
+      ))}
     </ListGroup>
   );
 }
@@ -48,50 +50,60 @@ function Answer({ ident, d }: { ident: string; d: Diversion }) {
 export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: string; lat: number; lon: number } }) {
   const id = useId();
   const [started, setStarted] = useState<number | null>(null);
-  const [now, setNow] = useState(0);
+
   const [stopped, setStopped] = useState<number | null>(null);
   const [field, setField] = useState<string | null>(null);
   const [typed, setTyped] = useState<Partial<Record<EstimateKey, string>>>({});
   // The fields nearest, as Nearest asks for them (nearestQuery), one
   // answer for both where they were asked under two keys.
   const nearest = useQuery({ ...nearestQuery(at.lat, at.lon), enabled: started != null });
-  useEffect(() => {
-    if (started == null || stopped != null) return;
-    const tick = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(tick);
-  }, [started, stopped]);
+  // Counting while the drill runs and FPL is in sight (useClock).
+  const now = useClock(1000, started != null && stopped == null);
 
   // A field under the point is where the airplane is, not a diversion.
-  const fields = (nearest.data ?? []).filter(f => f.distance_nm >= 2).slice(0, 6);
-  const chosen = fields.find(f => f.ident === field) ?? null;
+  const fields = (nearest.data ?? []).filter((f) => f.distance_nm >= 2).slice(0, 6);
+  const chosen = fields.find((f) => f.ident === field) ?? null;
   const exact = chosen ? divert(leg, chosen.bearing_deg, chosen.distance_nm) : null;
   const checked = stopped != null;
   const number = (key: EstimateKey) => typedNumber(typed[key]);
   const start = () => {
     const t = Date.now();
-    setStarted(t); setNow(t); setStopped(null); setField(null); setTyped({});
+    setStarted(t);
+    setStopped(null);
+    setField(null);
+    setTyped({});
   };
 
   return (
     <ResponsivePopover>
       <ResponsivePopoverTrigger asChild>
         <Button
-          type="button" variant="link" size="sm" className={cn("h-auto p-0 text-tint", TEXT.detail)}
-          onClick={e => e.stopPropagation()} data-testid="diversion-drill"
+          type="button"
+          variant="link"
+          size="sm"
+          className={cn("h-auto p-0 text-tint", TEXT.detail)}
+          onClick={(e) => e.stopPropagation()}
+          data-testid="diversion-drill"
         >
           Divert from here
         </Button>
       </ResponsivePopoverTrigger>
       <ResponsivePopoverContent
-        title={`Diversion over ${at.name}`} className="w-[26rem] max-w-[calc(100vw-2rem)] p-3"
-        align="start" data-testid="diversion-content"
+        title={`Diversion over ${at.name}`}
+        className="w-[26rem] max-w-[calc(100vw-2rem)] p-3"
+        align="start"
+        data-testid="diversion-content"
       >
         <div className="space-y-3">
-          {started == null ? (
+          {leg.tas_kt == null ? (
+            // No airplane: its heading, ground speed, time and fuel are all
+            // worked at an airplane's speed and burn, and none is assumed.
+            <AskFigure figure="legs" what="The diversion" testId="diversion-needs-airplane" />
+          ) : started == null ? (
             <>
               <p className={TEXT.prose}>
-                Over {at.name} at {altFt(leg.altitude_ft)} ft, the examiner says: divert. Pick a field, and work out the
-                magnetic heading, ground speed, time and fuel to it from the chart and the leg’s wind.
+                Over {at.name} at {altFt(leg.altitude_ft)} ft, the examiner says: divert. Pick a field, and work out the magnetic heading,
+                ground speed, time and fuel to it from the chart and the leg’s wind.
               </p>
               <Button type="button" className="w-full" onClick={start} data-testid="diversion-start">
                 <Timer aria-hidden /> Start the clock
@@ -99,56 +111,73 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
             </>
           ) : (
             <form
-              className="space-y-3" aria-label="Your diversion"
-              onSubmit={e => { e.preventDefault(); setStopped(Date.now()); }}
+              className="space-y-3"
+              aria-label="Your diversion"
+              onSubmit={(e) => {
+                e.preventDefault();
+                setStopped(Date.now());
+              }}
             >
               <p className={cn("flex items-center justify-between font-medium tabular-nums", TEXT.prose)} data-testid="diversion-clock">
                 <span>{checked ? "You took" : "On the clock"}</span>
-                <span>{stopwatch((stopped ?? now) - started)}</span>
+                <span>{stopwatch(Math.max(0, (stopped ?? now) - started))}</span>
               </p>
               <ListChoices value={field ?? ""} onChange={setField} label="Divert to">
-              {/* The nearest fields, with their longest runway and their
+                {/* The nearest fields, with their longest runway and their
                   weather: how far and which way are the chart's to read. */}
-              <ListGroup title="Divert to">
-                {nearest.isPending ? (
-                  <ListRow muted title="Finding the nearest fields…" />
-                ) : fields.length === 0 ? (
-                  <ListRow muted title="No fields near here" />
-                ) : fields.map(f => (
-                  <ListRow
-                    key={f.ident} radio={f.ident} disabled={checked}
-                    title={`${f.ident} · ${f.name}`}
-                    description={[
-                      f.longest_runway_ft ? `${grouped(f.longest_runway_ft)} ft runway` : "no runway length",
-                      f.flight_category ?? "no weather report",
-                    ].join(" · ")}
-                    data-testid="diversion-field"
-                  />
-                ))}
-              </ListGroup>
+                <ListGroup title="Divert to">
+                  {nearest.isPending ? (
+                    <ListRow muted title="Finding the nearest fields…" />
+                  ) : fields.length === 0 ? (
+                    <ListRow muted title="No fields near here" />
+                  ) : (
+                    fields.map((f) => (
+                      <ListRow
+                        key={f.ident}
+                        radio={f.ident}
+                        disabled={checked}
+                        title={`${f.ident} · ${f.name}`}
+                        description={[
+                          f.longest_runway_ft ? `${grouped(f.longest_runway_ft)} ft runway` : "no runway length",
+                          f.flight_category ?? "no weather report",
+                        ].join(" · ")}
+                        data-testid="diversion-field"
+                      />
+                    ))
+                  )}
+                </ListGroup>
               </ListChoices>
               {/* The ACS asks for a reasonable estimate (PA.VI.C.S2) and
                   gives no figures: within 10° and 10 kt, 3 minutes and a
                   gallon is this drill's own (ALLOWANCES). */}
               <ListGroup title="Your estimates">
-                {ALLOWANCES.map(a => {
+                {ALLOWANCES.map((a) => {
                   const value = number(a.key);
                   const marked = checked && !!exact && value !== null && Number.isFinite(value);
                   const right = marked && reasonable(a.key, value, exact![a.key]);
                   return (
                     <ListRow
-                      key={a.key} id={`${id}-${a.key}`} title={a.label}
+                      key={a.key}
+                      id={`${id}-${a.key}`}
+                      title={a.label}
                       description={marked && !right ? `Not quite: ${written(a.key, exact![a.key])}` : undefined}
                       data-testid={`diversion-${a.key}`}
                     >
                       <span className="flex items-center gap-1.5">
-                        {marked && (right
-                          ? <Check className={cn("size-4", FINDING_TONE.ok)} aria-label="Reasonable" />
-                          : <X className={cn("size-4", FINDING_TONE.stop)} aria-label="Not reasonable" />)}
+                        {marked &&
+                          (right ? (
+                            <Check className={cn("size-4", FINDING_TONE.ok)} aria-label="Reasonable" />
+                          ) : (
+                            <X className={cn("size-4", FINDING_TONE.stop)} aria-label="Not reasonable" />
+                          ))}
                         <Input
-                          id={`${id}-${a.key}`} inputMode="decimal" className="h-8 w-20 text-right tabular-nums"
-                          value={typed[a.key] ?? ""} disabled={checked} data-testid={`diversion-${a.key}-input`}
-                          onChange={e => setTyped({ ...typed, [a.key]: e.target.value })}
+                          id={`${id}-${a.key}`}
+                          inputMode="decimal"
+                          className="h-8 w-20 text-right tabular-nums"
+                          value={typed[a.key] ?? ""}
+                          disabled={checked}
+                          data-testid={`diversion-${a.key}-input`}
+                          onChange={(e) => setTyped({ ...typed, [a.key]: e.target.value })}
                         />
                         <span className={cn("w-7 text-muted-foreground", TEXT.detail)}>{a.unit}</span>
                       </span>
@@ -156,18 +185,28 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
                   );
                 })}
               </ListGroup>
-              {checked && chosen && (exact
-                ? <Answer ident={chosen.ident} d={exact} />
-                : <p className={cn(FINDING_TONE.stop, TEXT.prose)}>The wind is too strong for a heading to {chosen.ident} to hold.</p>)}
+              {checked &&
+                chosen &&
+                (exact ? (
+                  <Answer ident={chosen.ident} d={exact} />
+                ) : (
+                  <p className={cn(FINDING_TONE.stop, TEXT.prose)}>The wind is too strong for a heading to {chosen.ident} to hold.</p>
+                ))}
               {checked && chosen && fields[0] && fields[0].ident !== chosen.ident && (
                 <p className={cn("text-muted-foreground", TEXT.note)} data-testid="diversion-nearest">
                   The nearest was {fields[0].ident}, {fields[0].distance_nm.toFixed(0)} nm: was {chosen.ident} the better choice?
                 </p>
               )}
               <div className="flex justify-end gap-2">
-                {checked
-                  ? <Button type="button" size="sm" onClick={start} data-testid="diversion-again">Again</Button>
-                  : <Button type="submit" size="sm" disabled={!chosen} data-testid="diversion-check">Check</Button>}
+                {checked ? (
+                  <Button type="button" size="sm" onClick={start} data-testid="diversion-again">
+                    Again
+                  </Button>
+                ) : (
+                  <Button type="submit" size="sm" disabled={!chosen} data-testid="diversion-check">
+                    Check
+                  </Button>
+                )}
               </div>
             </form>
           )}

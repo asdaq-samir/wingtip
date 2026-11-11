@@ -1,18 +1,21 @@
 import { describe, expect, it } from "vitest";
-import type { Frequency, ProcedureDrawing, ProcedureMissedLeg } from "./api/types";
+import type { Frequency, ProcedureDrawing } from "./api/types";
 import {
-  alongNm, approachBrief, approachCategory, approachQuiz, coachingSteps, lessonPath, lessonProfile, pathBetween, stopwatch,
+  alongNm,
+  approachBrief,
+  approachCategory,
+  approachQuiz,
+  coachingSteps,
+  lessonPath,
+  lessonProfile,
+  pathBetween,
+  stopwatch,
 } from "./approachLesson";
 import { callEngine } from "./engine/engine";
 
 // The engine's names behind the lesson's sentences, asked through the
 // .wasm as approach_brief asks them inside the engine.
 const descentFpm = (gsKt: number, angleDeg: number) => callEngine("approach_descent_fpm", { gs_kt: gsKt, angle_deg: angleDeg });
-const roundedFpm = (fpm: number) => callEngine("approach_rounded_fpm", { fpm });
-const minimumsKind = (name: string) => callEngine("approach_minimums_kind", { name });
-const fixName = (ident: string) => callEngine("approach_fix_name", { ident });
-const missedWords = (legs: ProcedureMissedLeg[] | undefined) => callEngine("approach_missed_words", { legs: legs ?? [] });
-const briefFrequencies = (frequencies: Frequency[] | null) => callEngine("approach_brief_frequencies", { frequencies: frequencies ?? [] });
 const SEE_THE_PLATE = "See the plate";
 
 /** KDLH's ILS 09 via DLH as the CIFP of 29 Oct 2026 codes it: DL the IAF
@@ -22,22 +25,75 @@ const SEE_THE_PLATE = "See the plate";
  *  intercept, on 017° to CHERL at or above 4,500 and hold there. Its
  *  places rounded. */
 const ILS: ProcedureDrawing = {
-  airport: "KDLH", kind: "approach", id: "I09", name: "ILS RWY 09", transition: "DLH", cycle: "261029", stale: false,
-  glidepath_deg: 3, final_course_deg: 93,
+  airport: "KDLH",
+  kind: "approach",
+  id: "I09",
+  name: "ILS RWY 09",
+  transition: "DLH",
+  cycle: "261029",
+  stale: false,
+  glidepath_deg: 3,
+  final_course_deg: 93,
   lines: [
-    { role: "transition", name: "DLH", points: [[46.80, -92.20], [46.84, -92.36]] },
-    { role: "final", name: null, points: [[46.84, -92.36], [46.84, -92.33], [46.84, -92.30], [46.842, -92.21]] },
-    { role: "missed", name: null, points: [[46.842, -92.21], [46.843, -92.17], [47.0, -92.1]] },
+    {
+      role: "transition",
+      name: "DLH",
+      points: [
+        [46.8, -92.2],
+        [46.84, -92.36],
+      ],
+    },
+    {
+      role: "final",
+      name: null,
+      points: [
+        [46.84, -92.36],
+        [46.84, -92.33],
+        [46.84, -92.3],
+        [46.842, -92.21],
+      ],
+    },
+    {
+      role: "missed",
+      name: null,
+      points: [
+        [46.842, -92.21],
+        [46.843, -92.17],
+        [47.0, -92.1],
+      ],
+    },
   ],
   holds: [
-    { fix: "DL", turn: "R", inbound_deg: 92, missed: false, kind: "hold", points: [[46.84, -92.36], [46.83, -92.40], [46.84, -92.36]] },
-    { fix: "CHERL", turn: "R", inbound_deg: 196, missed: true, kind: "hold", points: [[47.0, -92.1], [47.02, -92.12], [47.0, -92.1]] },
+    {
+      fix: "DL",
+      turn: "R",
+      inbound_deg: 92,
+      missed: false,
+      kind: "hold",
+      points: [
+        [46.84, -92.36],
+        [46.83, -92.4],
+        [46.84, -92.36],
+      ],
+    },
+    {
+      fix: "CHERL",
+      turn: "R",
+      inbound_deg: 196,
+      missed: true,
+      kind: "hold",
+      points: [
+        [47.0, -92.1],
+        [47.02, -92.12],
+        [47.0, -92.1],
+      ],
+    },
   ],
   fixes: [
-    { ident: "DLH", lat: 46.80, lon: -92.20, roles: [], min_ft: null, max_ft: null, missed: false },
+    { ident: "DLH", lat: 46.8, lon: -92.2, roles: [], min_ft: null, max_ft: null, missed: false },
     { ident: "DL", lat: 46.84, lon: -92.36, roles: ["IAF", "hold"], min_ft: 3300, max_ft: null, missed: false },
     { ident: "CFBSJ", lat: 46.84, lon: -92.33, roles: ["FACF"], min_ft: 3300, max_ft: null, missed: false },
-    { ident: "PYKLA", lat: 46.84, lon: -92.30, roles: ["FAF"], min_ft: 3300, max_ft: null, missed: false, vertical_angle_deg: 3 },
+    { ident: "PYKLA", lat: 46.84, lon: -92.3, roles: ["FAF"], min_ft: 3300, max_ft: null, missed: false, vertical_angle_deg: 3 },
     { ident: "RW09", lat: 46.842, lon: -92.21, roles: ["MAP"], min_ft: null, max_ft: null, missed: false, vertical_angle_deg: 3 },
     { ident: "CHERL", lat: 47.0, lon: -92.1, roles: ["hold"], min_ft: 4500, max_ft: null, missed: true },
   ],
@@ -52,8 +108,26 @@ const ILS: ProcedureDrawing = {
 /** A VOR approach with none of the extras: no glidepath, no final course,
  *  no missed approach legs coded, two step-downs inside the FAF. */
 const BARE: ProcedureDrawing = {
-  airport: "KXYZ", kind: "approach", id: "V27", name: "VOR RWY 27", transition: null, cycle: "261029", stale: false, missed_legs: [],
-  lines: [{ role: "final", name: null, points: [[45, -93], [45, -93.1], [45, -93.2], [45, -93.25]] }],
+  airport: "KXYZ",
+  kind: "approach",
+  id: "V27",
+  name: "VOR RWY 27",
+  transition: null,
+  cycle: "261029",
+  stale: false,
+  missed_legs: [],
+  lines: [
+    {
+      role: "final",
+      name: null,
+      points: [
+        [45, -93],
+        [45, -93.1],
+        [45, -93.2],
+        [45, -93.25],
+      ],
+    },
+  ],
   holds: [],
   fixes: [
     { ident: "AAAAA", lat: 45, lon: -93, roles: ["FAF"], min_ft: 2500, max_ft: null, missed: false },
@@ -80,7 +154,6 @@ describe("descentFpm", () => {
     expect(descentFpm(100, 3) / 100).toBeCloseTo(5.3, 1);
     // Steeper is faster: 3.5° at 90 kt, 557.
     expect(descentFpm(90, 3.5)).toBeCloseTo(557, 0);
-    expect(roundedFpm(descentFpm(90, 3))).toBe(480);
   });
 });
 
@@ -100,45 +173,22 @@ describe("approachCategory", () => {
   });
 });
 
-describe("minimumsKind", () => {
-  it("is a DA on a precision approach, an MDA on a non-precision one, either on an RNAV (GPS)", () => {
-    expect(minimumsKind("ILS RWY 09")).toBe("DA");
-    expect(minimumsKind("RNAV (RNP) Y RWY 08")).toBe("DA");
-    expect(minimumsKind("RNAV (GPS) Y RWY 26L")).toBe("DA or MDA");
-    expect(minimumsKind("LOC RWY 09")).toBe("MDA");
-    expect(minimumsKind("VOR/DME-A")).toBe("MDA");
-  });
-});
-
-describe("missedWords", () => {
-  it("says the missed approach in the plate's words, leg by leg", () => {
-    expect(missedWords(ILS.missed_legs)).toBe(
-      "Climb to 3,000 on course 093°, then left turn to heading 320° to intercept, then on course 017° to CHERL climbing to 4,500, "
-      + "then hold at CHERL, right turns, 197° inbound.",
-    );
-  });
-  it("leaves to the plate what its words do not say, and is null with nothing coded", () => {
-    expect(missedWords([{ path: "CA", fix: null, course_deg: 270, turn: null, min_ft: 2000, max_ft: null }, { path: "RF", fix: "X", course_deg: null, turn: "R", min_ft: null, max_ft: null }]))
-      .toBe("Climb to 2,000 on course 270°, then as the plate shows.");
-    expect(missedWords([{ path: "AF", fix: "X", course_deg: null, turn: "R", min_ft: null, max_ft: null }])).toBeNull();
-    expect(missedWords([])).toBeNull();
-    expect(missedWords(undefined)).toBeNull();
-  });
-  it("says a climbing turn, a heading to an altitude and a direct leg", () => {
-    expect(missedWords([
-      { path: "VA", fix: null, course_deg: 0, turn: "R", min_ft: 3000, max_ft: null },
-      { path: "DF", fix: "ABC", course_deg: null, turn: null, min_ft: null, max_ft: null },
-    ])).toBe("Climbing right turn to 3,000 on heading 360°, then direct ABC.");
-  });
-});
-
 describe("approachBrief", () => {
   it("goes as a briefing does: the approach, the radio, the course, the fixes from the IAF to the FAF, the minimums, the MAP and the missed", () => {
     const brief = approachBrief({ drawing: ILS, frequencies: RADIO });
-    expect(brief.map(b => b.key)).toEqual([
-      "approach", "frequencies", "course", "fix:DLH", "fix:DL", "fix:CFBSJ", "fix:PYKLA", "minimums", "map", "missed",
+    expect(brief.map((b) => b.key)).toEqual([
+      "approach",
+      "frequencies",
+      "course",
+      "fix:DLH",
+      "fix:DL",
+      "fix:CFBSJ",
+      "fix:PYKLA",
+      "minimums",
+      "map",
+      "missed",
     ]);
-    const by = Object.fromEntries(brief.map(b => [b.key, b]));
+    const by = Object.fromEntries(brief.map((b) => [b.key, b]));
     expect(by["fix:DL"]!.title).toBe("Initial Approach Fix");
     expect(by["fix:CFBSJ"]!.title).toBe("Intermediate Fix");
     expect(by["fix:PYKLA"]!.title).toBe("Final Approach Fix");
@@ -155,11 +205,11 @@ describe("approachBrief", () => {
     expect(by.missed!.focus).toEqual({ fix: null, segment: "missed" });
   });
   it("says the airplane's category where its figures give a speed", () => {
-    const by = Object.fromEntries(approachBrief({ drawing: ILS, vsoKt: 48 }).map(b => [b.key, b]));
+    const by = Object.fromEntries(approachBrief({ drawing: ILS, vsoKt: 48 }).map((b) => [b.key, b]));
     expect(by.minimums!.lines).toEqual(["DA: see the plate", "Category A"]);
   });
   it("says See the Plate for what the coded data does not hold, and makes up nothing", () => {
-    const by = Object.fromEntries(approachBrief({ drawing: BARE }).map(b => [b.key, b]));
+    const by = Object.fromEntries(approachBrief({ drawing: BARE }).map((b) => [b.key, b]));
     expect(by.frequencies!.lines).toEqual([SEE_THE_PLATE]);
     expect(by.course!.lines).toEqual([SEE_THE_PLATE]);
     expect(by.missed!.lines).toEqual([SEE_THE_PLATE]);
@@ -174,26 +224,18 @@ describe("approachBrief", () => {
   });
 });
 
-describe("briefFrequencies", () => {
-  it("briefs the approach control as the plate's where the field lists none, and no CTAF it does not list", () => {
-    expect(briefFrequencies([{ type: "UNICOM", description: "UNICOM", frequency_mhz: 122.8 }]))
-      .toEqual(["Approach: see the plate", "CTAF 122.8"]);
-    // ctafOf's MULTICOM 122.9 is a guess, not this field's.
-    expect(briefFrequencies([{ type: "GND", description: "GND", frequency_mhz: 121.7 }])).toEqual(["Approach: see the plate"]);
-    expect(briefFrequencies(null)).toEqual([SEE_THE_PLATE]);
-  });
-});
-
 describe("coachingSteps", () => {
   it("flies the approach fix by fix in order, IAF to FAF, the decision, then the missed approach", () => {
     const steps = coachingSteps({ drawing: ILS }, 90);
-    expect(steps.map(s => s.key)).toEqual(["fix:DLH", "fix:DL", "fix:CFBSJ", "fix:PYKLA", "decision", "missed"]);
+    expect(steps.map((s) => s.key)).toEqual(["fix:DLH", "fix:DL", "fix:CFBSJ", "fix:PYKLA", "decision", "missed"]);
     const faf = steps[3]!;
     expect(faf.title).toBe("Crossing PYKLA (FAF)");
     expect(faf.say).toBe("Descend on the 3.00° path, about 480 ft/min at 90 kt, and start the timer.");
     // PYKLA to the threshold along the line, and the time at 90 kt.
-    const nm = alongNm(lessonPath(ILS), { lat: 46.842, lon: -92.21 }) - alongNm(lessonPath(ILS), { lat: 46.84, lon: -92.30 });
-    expect(faf.why).toBe(`The final approach starts here. ${nm.toFixed(1)} nm to the missed approach point: ${stopwatch((nm / 90) * 3600)} at 90 kt.`);
+    const nm = alongNm(lessonPath(ILS), { lat: 46.842, lon: -92.21 }) - alongNm(lessonPath(ILS), { lat: 46.84, lon: -92.3 });
+    expect(faf.why).toBe(
+      `The final approach starts here. ${nm.toFixed(1)} nm to the missed approach point: ${stopwatch((nm / 90) * 3600)} at 90 kt.`,
+    );
     expect(steps[2]!.say).toBe("Cross CFBSJ at or above 3,300 ft and turn onto the final approach course, 093°.");
     const decision = steps[4]!;
     expect(decision.title).toBe("At the Decision Altitude");
@@ -206,7 +248,7 @@ describe("coachingSteps", () => {
   });
   it("steps down to each next altitude where there is no path, and to the MDA at the last", () => {
     const steps = coachingSteps({ drawing: BARE }, 90);
-    expect(steps.map(s => s.key)).toEqual(["fix:AAAAA", "fix:BBBBB", "fix:CCCCC", "decision"]);
+    expect(steps.map((s) => s.key)).toEqual(["fix:AAAAA", "fix:BBBBB", "fix:CCCCC", "decision"]);
     expect(steps[0]!.say).toBe("Descend to 1,900 at BBBBB and start the timer.");
     expect(steps[1]!.say).toBe("Cross BBBBB at or above 1,900 ft, then descend to 1,520 at CCCCC.");
     expect(steps[2]!.say).toBe("Cross CCCCC at or above 1,520 ft, then descend to the MDA (see the plate).");
@@ -218,20 +260,20 @@ describe("coachingSteps", () => {
 describe("approachQuiz", () => {
   const quiz = approachQuiz({ drawing: ILS }, 90);
   it("asks from the procedure's own data", () => {
-    expect(quiz.map(q => q.key)).toEqual(["alt:DL", "alt:CFBSJ", "alt:PYKLA", "faf", "course", "descent", "decision", "missed-fix"]);
-    const faf = quiz.find(q => q.key === "faf")!;
+    expect(quiz.map((q) => q.key)).toEqual(["alt:DL", "alt:CFBSJ", "alt:PYKLA", "faf", "course", "descent", "decision", "missed-fix"]);
+    const faf = quiz.find((q) => q.key === "faf")!;
     expect(faf.choices[faf.answer]).toBe("PYKLA");
-    expect(quiz.find(q => q.key === "course")!.choices).toContain("093°");
-    const descent = quiz.find(q => q.key === "descent")!;
+    expect(quiz.find((q) => q.key === "course")!.choices).toContain("093°");
+    const descent = quiz.find((q) => q.key === "descent")!;
     expect(descent.choices[descent.answer]).toBe("480 ft/min");
-    const missed = quiz.find(q => q.key === "missed-fix")!;
+    const missed = quiz.find((q) => q.key === "missed-fix")!;
     expect(missed.choices[missed.answer]).toBe("CHERL");
   });
   it("never offers the answer as a wrong choice, nor any choice twice", () => {
     for (const drawing of [ILS, BARE]) {
       for (const q of approachQuiz({ drawing }, 90)) {
         expect(new Set(q.choices).size).toBe(q.choices.length);
-        expect(q.choices.filter(c => c === q.choices[q.answer])).toHaveLength(1);
+        expect(q.choices.filter((c) => c === q.choices[q.answer])).toHaveLength(1);
         expect(q.choices.length).toBeGreaterThanOrEqual(2);
         expect(q.choices.length).toBeLessThanOrEqual(4);
       }
@@ -250,13 +292,17 @@ describe("the lesson's line", () => {
   it("runs transition, final, missed, each joint once, and from one fix to the next along it", () => {
     const path = lessonPath(ILS);
     expect(path).toHaveLength(7);
-    const leg = pathBetween(path, { lat: 46.84, lon: -92.36 }, { lat: 46.84, lon: -92.30 });
-    expect(leg).toEqual([{ lat: 46.84, lon: -92.36 }, { lat: 46.84, lon: -92.33 }, { lat: 46.84, lon: -92.30 }]);
+    const leg = pathBetween(path, { lat: 46.84, lon: -92.36 }, { lat: 46.84, lon: -92.3 });
+    expect(leg).toEqual([
+      { lat: 46.84, lon: -92.36 },
+      { lat: 46.84, lon: -92.33 },
+      { lat: 46.84, lon: -92.3 },
+    ]);
     expect(pathBetween([], { lat: 1, lon: 1 }, { lat: 2, lon: 2 })).toHaveLength(2);
   });
   it("draws the side view's path down from the FAF's altitude at its angle", () => {
     const { marks, path } = lessonProfile(ILS);
-    expect(marks.map(m => m.ident)).toEqual(["DLH", "DL", "CFBSJ", "PYKLA", "RW09"]);
+    expect(marks.map((m) => m.ident)).toEqual(["DLH", "DL", "CFBSJ", "PYKLA", "RW09"]);
     expect(marks.at(-1)!.ft).toBeNull();
     // 318 ft a mile on 3.00°, from 3,300 at PYKLA.
     const nm = path!.to.nm - path!.from.nm;
@@ -266,10 +312,8 @@ describe("the lesson's line", () => {
   });
 });
 
-describe("fixName and stopwatch", () => {
-  it("say a threshold by its runway and a time as a stopwatch does", () => {
-    expect(fixName("RW09")).toBe("the runway 09 threshold");
-    expect(fixName("PYKLA")).toBe("PYKLA");
+describe("stopwatch", () => {
+  it("says a time as a stopwatch does", () => {
     expect(stopwatch(125)).toBe("2:05");
   });
 });

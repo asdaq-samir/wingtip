@@ -11,6 +11,9 @@ struct Kept: Codable, Equatable, Sendable {
     var dest: String
     var stops: [String]
     var aircraft: String
+    /// The airplane's N-number where one was picked; none in a plan kept
+    /// before it was kept.
+    var tail: String?
     var ownAltitudeFt: Double?
     var altitudeChoice: String?
     var course: Course?
@@ -20,6 +23,8 @@ struct Kept: Codable, Equatable, Sendable {
     var legs: [Leg] = []
     var totals: Totals?
     var briefing: Briefing?
+    /// When the briefing was fetched; none in a plan kept before it was.
+    var briefedAt: Date?
     var plannedAt: Date
 
     static let file = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]

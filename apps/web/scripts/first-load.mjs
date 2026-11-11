@@ -21,7 +21,7 @@ const dist = args.find((a, i) => !a.startsWith("--") && (budgetAt < 0 || i !== b
 const assets = join(dist, "assets");
 
 const html = readFileSync(join(dist, "index.html"), "utf8");
-const roots = [...html.matchAll(/(?:src|href)="[^"]*\/assets\/([^"/]+\.js)"/g)].map(m => m[1]);
+const roots = [...html.matchAll(/(?:src|href)="[^"]*\/assets\/([^"/]+\.js)"/g)].map((m) => m[1]);
 if (roots.length === 0) {
   console.error(`first-load: no script in ${join(dist, "index.html")}`);
   process.exit(2);
@@ -52,10 +52,12 @@ console.log(`first load bytes: ${total}`);
 // budget, which is JavaScript's -- the parse and run that held the first
 // draw up on a phone. A module is compiled as it streams in, off the main
 // thread, and its 143 KB were 66 KB gzipped on 2026-11-03.
-const wasm = [...html.matchAll(/<link[^>]*rel="preload"[^>]*href="[^"]*\/assets\/([^"/]+\.wasm)"/g)].map(m => m[1]);
+const wasm = [...html.matchAll(/<link[^>]*rel="preload"[^>]*href="[^"]*\/assets\/([^"/]+\.wasm)"/g)].map((m) => m[1]);
 const wasmBytes = wasm.reduce((sum, file) => sum + statSync(join(assets, file)).size, 0);
 if (wasm.length) console.log(`plus ${mb(wasmBytes)} of WebAssembly the first render waits for (${wasm.join(", ")}), not in the budget`);
 if (budget && total > budget) {
-  console.error(`::error title=First load over budget::${mb(total)} of JavaScript, over the ${mb(budget)} budget. Find what grew with this script's list against main's, and see the measure-speed skill.`);
+  console.error(
+    `::error title=First load over budget::${mb(total)} of JavaScript, over the ${mb(budget)} budget. Find what grew with this script's list against main's, and see the measure-speed skill.`,
+  );
   process.exit(1);
 }

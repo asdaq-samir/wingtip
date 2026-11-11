@@ -12,7 +12,13 @@ import { openPanel, settle, sideDrawer, slow } from "./helpers";
  * they start as a pilot's do.
  */
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => { try { localStorage.removeItem("wingtip.fieldsOpen"); } catch { /* no storage */ } });
+  await page.addInitScript(() => {
+    try {
+      localStorage.removeItem("wingtip.fieldsOpen");
+    } catch {
+      /* no storage */
+    }
+  });
 });
 
 test.afterEach(async ({ page }) => {
@@ -44,7 +50,10 @@ test("the departure and the destination are one block each, opened and folded by
 
 test("a stop is one block, its landing and its takeoff a tap away, and a fuel stop wears the pump before its ident", async ({ page }) => {
   // The fields alone: the plan through the stop is not what is tried.
-  await page.route(url => /\/(course|checkpoints|navlog|briefing)$/.test(url.pathname) && !!url.searchParams.get("stops"), route => route.abort());
+  await page.route(
+    (url) => /\/(course|checkpoints|navlog|briefing)$/.test(url.pathname) && !!url.searchParams.get("stops"),
+    (route) => route.abort(),
+  );
   await page.goto("/app/plan?dep=C81&stops=KMSN&dest=KDLH&fuel=KMSN");
   await settle(page);
   await openPanel(page);

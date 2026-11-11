@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Setup → Downloads (offline/): the charts of a region kept for flying with no signal. -->
+<resources>
+    <string name="offline_downloads">Downloads</string>
+    <string name="offline_on_phone">On This Phone</string>
+    <string name="offline_charts">Charts</string>
+    <string name="offline_sheets">Sectional Sheets</string>
+    <string name="offline_states">States</string>
+    <string name="offline_sharp">Sharp</string>
+    <string name="offline_smaller">Smaller</string>
+    <string name="offline_pick_map">Pick on the Map</string>
+    <string name="offline_search">Sheet or State</string>
+    <string name="offline_sizing">Sizing…</string>
+    <string name="offline_asking">Asking…</string>
+    <string name="offline_storage_used">Storage Used</string>
+    <string name="offline_free">Free on Phone</string>
+    <string name="offline_delete">Delete</string>
+    <string name="offline_try_again">Try Again</string>
+    <string name="offline_update_to">Update to %1$s</string>
+    <string name="offline_download_named">Download %1$s?</string>
+    <string name="offline_download_size">Download %1$s</string>
+    <string name="offline_download_view">Download This View</string>
+    <string name="offline_background">Downloads in the background, over Wi-Fi or cellular.</string>
+    <string name="offline_edition">Edition %1$s, until %2$s · %3$s</string>
+    <string name="offline_expired">Edition %1$s, expired %2$s · %3$s</string>
+    <string name="offline_stopped">Stopped: %1$s</string>
+    <string name="offline_tap_sheet">Tap a sheet, or download the map\'s view.</string>
+    <string name="offline_kind_sec">Sectional</string>
+    <string name="offline_kind_tac">Terminal Area</string>
+    <string name="offline_kind_ifr_low">IFR Low</string>
+    <string name="offline_kind_ifr_high">IFR High</string>
+    <string name="offline_kind_ifr_area">IFR Area</string>
+</resources>

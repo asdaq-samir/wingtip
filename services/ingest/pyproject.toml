@@ -1,0 +1,13 @@
+# ingest's test settings. wingtip is the planner's library
+# (services/planner/wingtip), on the path beside ingest's own package, as
+# the image puts both on PYTHONPATH.
+[tool.pytest.ini_options]
+pythonpath = [".", "../planner"]
+addopts = "-p no:cacheprovider --strict-markers"
+# No warning stands (the owner, 2026-11-09): every warning a test raises
+# is an error, so a deprecation is fixed where it starts, not let pile up.
+# A third-party warning that cannot be fixed here is let through below by
+# its exact message and module, each with why; none is, today.
+filterwarnings = [
+    "error",
+]

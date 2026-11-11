@@ -1,19 +1,23 @@
-import { useRef, useState, type ReactNode } from "react";
-import { Command as CommandPrimitive } from "cmdk";
-import { ChevronsUpDown, Search } from "lucide-react";
+import { Suspense, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
+import { ChevronsUpDown } from "lucide-react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
+import { fromChunk } from "../lib/fromChunk";
 import { Button } from "./ui/button";
-import { Command, CommandEmpty } from "./ui/command";
-import AirportResults, { AirportRow, PickerGroup } from "./AirportResults";
-import { FavoriteTiles } from "./Favorites";
-import { usePreferences, type RecentAirport } from "../lib/preferences";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "./ResponsivePopover";
-import { useAirportSearch } from "../lib/useAirportSearch";
 import { useIsMobile } from "../hooks/use-mobile";
-import { useKeyboardInset } from "../hooks/use-viewport";
-import CloseButton from "./CloseButton";
-import ClearButton from "./ClearButton";
+import { askSearchPick, useSearchPick } from "../lib/oneSearch";
+
+// The search it opens (AirportSearch: Base UI's Autocomplete, the lookup's rows, the
+// Favorites' tiles) on a chunk of its own, not the first load's: the
+// first screen draws the button alone (scripts/first-load.mjs's budget,
+// 2026-11-09). Asked for a moment after the page has drawn, and at a
+// finger on the button, so an open draws it straight from the chunk.
+const { Part: Search, prefetch: prefetchSearch } = fromChunk(
+  () => import("./AirportSearch"),
+  (m) => m.default,
+);
+const SEARCH_AFTER_MS = 2000;
 
 interface Props {
   value: string;
@@ -45,7 +49,7 @@ interface Props {
  * DEP or DEST as shadcn's own combobox: a button showing the ident that
  * opens a `Command` -- its search box, its list, its keyboard handling
  * (Up/Down/Enter/Escape, the highlighted row, `aria-activedescendant`)
- * all cmdk's -- with the airport lookup as the list. Typing "duluth"
+ * all Base UI's Autocomplete's -- with the airport lookup as the list. Typing "duluth"
  * surfaces KDLH the same as typing "KDL" would, for a pilot who does
  * not have every ident memorised; an ident the lookup does not know
  * (a private strip, say) still goes through on Enter. This replaced a
@@ -56,8 +60,19 @@ interface Props {
  * is, where it was a popover the keyboard covered half of.
  */
 export default function AirportPicker({
-  value, onChange, placeholder, ariaLabel, invalid, className, look = "field", testId, fixes = false,
-  open: shown, onOpenChange, onTap, children,
+  value,
+  onChange,
+  placeholder,
+  ariaLabel,
+  invalid,
+  className,
+  look = "field",
+  testId,
+  fixes = false,
+  open: shown,
+  onOpenChange,
+  onTap,
+  children,
 }: Props) {
   const [ownOpen, setOwnOpen] = useState(false);
   const open = shown ?? ownOpen;
@@ -65,33 +80,43 @@ export default function AirportPicker({
   const [query, setQuery] = useState("");
   const input = useRef<HTMLInputElement>(null);
   const onPhone = useIsMobile();
-  const keyboard = useKeyboardInset();
-  // Enter takes the highlighted row only once the rows answer what is in
-  // the box: it used to take it whenever there were rows, so "KD", a
-  // pause, then "LH" and a quick Enter set the field to the first "KD..."
-  // airport rather than KDLH.
-  const { typed, rows, answered } = useAirportSearch(query, open, fixes);
+  useEffect(() => {
+    const later = window.setTimeout(prefetchSearch, SEARCH_AFTER_MS);
+    return () => window.clearTimeout(later);
+  }, []);
 
   const pick = (ident: string) => {
     onChange(ident.toUpperCase());
     setOpen(false);
     setQuery("");
   };
-
-  // Before anything is typed, what the search bar offers too: Home and
-  // the favorites as tiles, and the airports picked last.
-  const home = usePreferences(p => p.homeAirport);
-  const favorites = usePreferences(p => p.favoriteAirports);
-  const recents = usePreferences(p => p.recentAirports);
-  const choose = (airport: RecentAirport) => {
-    usePreferences.getState().addRecentAirport(airport);
-    pick(airport.ident);
-  };
+  // One search field (the one card rule, the owner 2026-11-10): where the
+  // planner's one search is drawn, the picker asks it for the airport,
+  // scoped to what this picker sets, rather than opening a search of its
+  // own over the sheet. The developer's page has none: its own then.
+  const oneSearch = useSearchPick((s) => s.fields > 0);
+  const toOneSearch = () => askSearchPick({ label: placeholder, fixes, onPick: (ident) => onChange(ident.toUpperCase()) });
+  // Opened from elsewhere (the route's menu's Change): handed on the same.
+  const handOn = useEffectEvent(() => {
+    onOpenChange?.(false);
+    toOneSearch();
+  });
+  useEffect(() => {
+    if (shown && oneSearch) handOn();
+  }, [shown, oneSearch]);
 
   return (
     // From the top of a phone's screen, where the keyboard cannot come up
     // over the field: from the bottom it came up over it, field and all.
-    <ResponsivePopover open={open} onOpenChange={next => { setOpen(next); if (!next) setQuery(""); }} phoneEdge="top">
+    <ResponsivePopover
+      open={open && !oneSearch}
+      onOpenChange={(next) => {
+        if (next && oneSearch) return toOneSearch();
+        setOpen(next);
+        if (!next) setQuery("");
+      }}
+      phoneEdge="top"
+    >
       <ResponsivePopoverTrigger asChild>
         <Button
           type="button"
@@ -101,20 +126,34 @@ export default function AirportPicker({
           // opens the airport's card (`onTap`), the search its menu's.
           role={onTap ? undefined : "combobox"}
           aria-expanded={onTap ? undefined : open}
-          aria-label={ariaLabel}
+          // Its ident first, as seen, then which field (WCAG 2.5.3, Label
+          // in Name): "C81, Departure"; empty, the placeholder it shows.
+          aria-label={value && !children ? `${value}, ${ariaLabel}` : ariaLabel}
           aria-invalid={invalid}
           data-testid={testId}
-          // A tap the caller's (`onTap`), not the trigger's opening:
-          // Radix's own toggle runs only where nothing prevented it.
-          onClick={onTap ? e => { e.preventDefault(); onTap(); } : undefined}
+          onPointerDown={prefetchSearch}
+          // A tap the caller's (`onTap`), not the trigger's opening: the
+          // trigger's own toggle is kept from running (preventDefault on a
+          // phone's card, Base UI's handler from md up).
+          onClick={
+            onTap
+              ? (e) => {
+                  e.preventDefault();
+                  (e as { preventBaseUIHandler?: () => void }).preventBaseUIHandler?.();
+                  onTap();
+                }
+              : undefined
+          }
           // A field, as a search box is: its ident in the text's colour
           // (not a button's tint) at a row's size (TEXT). A route's pill
           // in the system face, semibold, at a line under a row's (15):
           // in the monospaced face at 17 two took a phone's line, the pilot
           // asked for three.
-          className={look === "pill"
-            ? cn("font-semibold uppercase text-foreground", TEXT.detail, className)
-            : cn("font-mono uppercase text-foreground", TEXT.row, !value && "text-muted-foreground", className)}
+          className={
+            look === "pill"
+              ? cn("font-semibold uppercase text-foreground", TEXT.detail, className)
+              : cn("font-mono uppercase text-foreground", TEXT.row, !value && "text-muted-foreground", className)
+          }
         >
           {children ?? (
             <>
@@ -128,7 +167,10 @@ export default function AirportPicker({
           phone a sheet from the top, the field a capsule at its top,
           Favorites and Recents under it until something is typed. */}
       <ResponsivePopoverContent
-        title={`${ariaLabel} airport`} titleHidden className="w-96 p-3" align="start"
+        title={`${ariaLabel} airport`}
+        titleHidden
+        className="w-96 p-3"
+        align="start"
         // As tall as what it holds, at the owner's pick ("a tall, mostly
         // empty glass pane" before anything was typed): the field and
         // Favorites and Recents, growing as rows come in, to the screen's
@@ -139,70 +181,25 @@ export default function AirportPicker({
         style={onPhone ? { maxHeight: "calc(100dvh - 1rem - env(safe-area-inset-top))" } : undefined}
         // The field focused as it opens, as the search bar is on its tap:
         // the sheet's own first focus went to the sheet itself.
-        onOpenAutoFocus={e => { e.preventDefault(); input.current?.focus(); }}
+        initialFocus={input}
       >
-        {/* The server already filters (an ident, a word of a name or a
-            town), so cmdk's own filter is off: it would drop a row whose
-            name matched but whose ident, the `value`, did not. */}
-        <Command
-          shouldFilter={false} className="gap-4 overflow-visible bg-transparent"
-          // Room under the last row for the keyboard, so it scrolls above it.
-          style={onPhone && keyboard > 0 ? { paddingBottom: keyboard } : undefined}
-        >
-          {/* The field, and a close beside it, as Maps' search sheet has:
-              on a phone the sheet stands over nearly the whole screen.
-              A field, not a control grown to its hit area: 44 tall as
-              the search field of Maps' sheet is, its whole box the place
-              to type. */}
-          <div className="flex shrink-0 items-center gap-2">
-            <div className={cn("flex h-11 min-w-0 flex-1 items-center gap-2 rounded-full bg-foreground/8 px-4 text-muted-foreground", TEXT.row)}>
-              <Search className="size-5 shrink-0" aria-hidden="true" />
-              <CommandPrimitive.Input
-                ref={input}
-                // Short enough for a phone's field, as Maps' "Search Maps"
-                // is: "Search airports and waypoints" was cut at "wayp".
-                // Its label says the whole of it.
-                placeholder={fixes ? "Search" : `Search for a ${ariaLabel.toLowerCase()}`}
-                aria-label={fixes ? "Search airports and waypoints" : `Search for a ${ariaLabel.toLowerCase()}`}
-                value={query}
-                onValueChange={setQuery}
-                className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
-                onKeyDown={e => {
-                  // What was typed goes through when the rows are not the
-                  // answer to it yet, and when the lookup has nothing for it
-                  // (a private strip, say).
-                  if (e.key === "Enter" && typed && !(answered && rows.length > 0)) {
-                    e.preventDefault();
-                    pick(typed);
-                  }
-                }}
-              />
-              {query && <ClearButton label="Clear the search" onClear={() => { setQuery(""); input.current?.focus(); }} />}
-            </div>
-            <CloseButton onClick={() => { setOpen(false); setQuery(""); }} data-testid="picker-close" />
-          </div>
-          {/* Its own height, not shrunk: with the keyboard up the sheet is
-              short, and the tiles were squeezed to a sliver of their tops. */}
-          {!typed && (home || favorites.length > 0) && (
-            <div className="shrink-0">
-              <FavoriteTiles home={home} favorites={favorites} onOpen={choose} />
-            </div>
-          )}
-          {/* Dimmed while they answer something older than the box. */}
-          <AirportResults
-            rows={rows} answered={!typed || answered} onAirport={choose} onWaypoint={pick}
-            empty={typed && <CommandEmpty>No {fixes ? "airport or waypoint" : "airport"} matches; Enter keeps what you typed.</CommandEmpty>}
-          >
-            {!typed && recents.length > 0 && (
-              <PickerGroup heading="Recents">
-                {recents.map(a => <AirportRow key={a.ident} airport={a} recent onSelect={() => choose(a)} />)}
-              </PickerGroup>
-            )}
-            {!typed && recents.length === 0 && !home && favorites.length === 0 && (
-              <p className={cn("px-1 text-muted-foreground", TEXT.note)}>Search by an airport's ident, its name or its town.</p>
-            )}
-          </AirportResults>
-        </Command>
+        {/* Its own wait, the card empty a moment at a first open before
+            the chunk is in hand, not the panel round it. */}
+        <Suspense fallback={null}>
+          <Search
+            query={query}
+            setQuery={setQuery}
+            open={open}
+            fixes={fixes}
+            ariaLabel={ariaLabel}
+            input={input}
+            onPick={pick}
+            onClose={() => {
+              setOpen(false);
+              setQuery("");
+            }}
+          />
+        </Suspense>
       </ResponsivePopoverContent>
     </ResponsivePopover>
   );

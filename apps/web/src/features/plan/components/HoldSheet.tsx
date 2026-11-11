@@ -7,9 +7,9 @@ import PullDown from "../../../components/PullDown";
 import Segmented from "../../../components/Segmented";
 import { Button } from "../../../components/ui/button";
 import { Input } from "../../../components/ui/input";
-import { lengthCode, lengthOfCode, lengthWords, type Hold } from "../../../lib/routeHolds";
+import { lengthCode, lengthOfCode, lengthWords, type Hold } from "../lib/routeHolds";
 import { legMinutes } from "../../../lib/holdEntry";
-import { bearing } from "../../../lib/units";
+import { bearing } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
 
 /** The point a hold is being set at: its ident, the hold there now, the
@@ -38,17 +38,31 @@ const LENGTHS = ["1T", "2T", "3T", "4T", "10M", "15M", "20M", "30M"];
  * and fuel to the flight's (plan.with_holds). A card in the map's panel
  * on a phone, its title on top and Close, as the fix's card is.
  */
-export default function HoldSheet({ at, onClose, onSet }: {
+export default function HoldSheet({
+  at,
+  onClose,
+  onSet,
+}: {
   at: HoldAt | null;
   onClose: () => void;
   onSet: (fix: string, hold: Hold | null) => void;
 }) {
   return (
-    <ResponsivePopover open={!!at} onOpenChange={next => { if (!next) onClose(); }}>
-      <ResponsivePopoverAnchor asChild><span aria-hidden="true" className="pointer-events-none fixed top-16 left-1/2 size-0" /></ResponsivePopoverAnchor>
+    <ResponsivePopover
+      open={!!at}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <ResponsivePopoverAnchor asChild>
+        <span aria-hidden="true" className="pointer-events-none fixed top-16 left-1/2 size-0" />
+      </ResponsivePopoverAnchor>
       <ResponsivePopoverContent
-        title={at ? `Hold at ${at.fix}` : "Hold"} side="bottom" align="center"
-        className="flex w-80 flex-col gap-3 p-3" data-testid="hold-sheet"
+        title={at ? `Hold at ${at.fix}` : "Hold"}
+        side="bottom"
+        align="center"
+        className="flex w-80 flex-col gap-3 p-3"
+        data-testid="hold-sheet"
         action={<CloseButton onClick={onClose} data-testid="hold-close" />}
       >
         {at && <HoldForm key={at.fix} at={at} onSet={onSet} />}
@@ -61,7 +75,7 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
   const was = at.hold;
   // The course flown to it, as the inbound course, where none is set:
   // the hold straight ahead, a direct entry (AIM 5-3-8).
-  const ahead = was ? was.inbound : at.arrivalDeg ?? null;
+  const ahead = was ? was.inbound : (at.arrivalDeg ?? null);
   // In three figures, north as 360 (units.bearing), as the pilot reads it.
   const [course, setCourse] = useState(ahead === null ? "" : bearing(ahead).replace("°", ""));
   const [way, setWay] = useState<"in" | "out">("in");
@@ -76,52 +90,112 @@ function HoldForm({ at, onSet }: { at: HoldAt; onSet: (fix: string, hold: Hold |
     if (!valid) return;
     const inbound = (way === "in" ? deg : deg + 180) % 360;
     onSet(at.fix, {
-      fix: at.fix, inbound, right, leg: timed ? { min: legMin } : { nm: legNm },
+      fix: at.fix,
+      inbound,
+      right,
+      leg: timed ? { min: legMin } : { nm: legNm },
       length: lengthOfCode(length) ?? { turns: 2 },
     });
   };
   return (
-    <form className="flex flex-col gap-3" onSubmit={e => { e.preventDefault(); set(); }}>
+    <form
+      className="flex flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        set();
+      }}
+    >
       <ListGroup>
         <ListRow title={<label htmlFor="hold-course">Course</label>}>
           <span className="flex items-center gap-2">
             <Segmented
-              label="The course is" value={way} onChange={v => setWay(v as "in" | "out")} testId="hold-way"
-              options={[{ value: "in", label: "Inbound" }, { value: "out", label: "Outbound" }]}
+              label="The course is"
+              value={way}
+              onChange={(v) => setWay(v as "in" | "out")}
+              testId="hold-way"
+              options={[
+                { value: "in", label: "Inbound" },
+                { value: "out", label: "Outbound" },
+              ]}
             />
             <Input
-              id="hold-course" value={course} onChange={e => setCourse(e.target.value.replace(/\D/g, "").slice(0, 3))}
-              inputMode="numeric" autoComplete="off" placeholder="270" aria-label={`The hold's ${way}bound course, magnetic degrees`}
-              className="h-9 w-16 text-right tabular-nums" data-testid="hold-course"
+              id="hold-course"
+              value={course}
+              onChange={(e) => setCourse(e.target.value.replace(/\D/g, "").slice(0, 3))}
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="270"
+              aria-label={`The hold's ${way}bound course, magnetic degrees`}
+              className="h-9 w-16 text-right tabular-nums"
+              data-testid="hold-course"
             />
           </span>
         </ListRow>
         <ListRow title="Turns">
           <Segmented
-            label="Turns" value={right ? "R" : "L"} onChange={v => setRight(v === "R")} testId="hold-turns"
-            options={[{ value: "R", label: "Right" }, { value: "L", label: "Left" }]}
+            label="Turns"
+            value={right ? "R" : "L"}
+            onChange={(v) => setRight(v === "R")}
+            testId="hold-turns"
+            options={[
+              { value: "R", label: "Right" },
+              { value: "L", label: "Left" },
+            ]}
           />
         </ListRow>
         <ListRow title="Legs">
           <span className="flex items-center gap-2">
             <Segmented
-              label="Legs by" value={timed ? "time" : "distance"} onChange={v => setTimed(v === "time")} testId="hold-legs"
-              options={[{ value: "time", label: "Time" }, { value: "distance", label: "Distance" }]}
+              label="Legs by"
+              value={timed ? "time" : "distance"}
+              onChange={(v) => setTimed(v === "time")}
+              testId="hold-legs"
+              options={[
+                { value: "time", label: "Time" },
+                { value: "distance", label: "Distance" },
+              ]}
             />
-            {timed
-              ? <PullDown label="Leg time" value={`${legMin}`} options={LEG_MIN.map(m => ({ value: `${m}`, label: `${m} min`, testId: `hold-leg-min-${m}` }))} onChange={v => setLegMin(Number(v))} testId="hold-leg-min" />
-              : <PullDown label="Leg distance" value={`${legNm}`} options={LEG_NM.map(n => ({ value: `${n}`, label: `${n} nm`, testId: `hold-leg-nm-${n}` }))} onChange={v => setLegNm(Number(v))} testId="hold-leg-nm" />}
+            {timed ? (
+              <PullDown
+                label="Leg time"
+                value={`${legMin}`}
+                options={LEG_MIN.map((m) => ({ value: `${m}`, label: `${m} min`, testId: `hold-leg-min-${m}` }))}
+                onChange={(v) => setLegMin(Number(v))}
+                testId="hold-leg-min"
+              />
+            ) : (
+              <PullDown
+                label="Leg distance"
+                value={`${legNm}`}
+                options={LEG_NM.map((n) => ({ value: `${n}`, label: `${n} nm`, testId: `hold-leg-nm-${n}` }))}
+                onChange={(v) => setLegNm(Number(v))}
+                testId="hold-leg-nm"
+              />
+            )}
           </span>
         </ListRow>
         <ListRow title="Hold for">
-          <PullDown label="Hold for" value={length} options={LENGTHS.map(l => ({ value: l, label: lengthWords(lengthOfCode(l)!), testId: `hold-length-${l}` }))} onChange={setLength} testId="hold-length" />
+          <PullDown
+            label="Hold for"
+            value={length}
+            options={LENGTHS.map((l) => ({ value: l, label: lengthWords(lengthOfCode(l)!), testId: `hold-length-${l}` }))}
+            onChange={setLength}
+            testId="hold-length"
+          />
         </ListRow>
       </ListGroup>
       <Button type="submit" size="lg" disabled={!valid} className={cn("w-full", TEXT.row)} data-testid="hold-set">
         {was ? "Change Hold" : "Add Hold"}
       </Button>
       {was && (
-        <Button type="button" size="lg" variant="ghost" onClick={() => onSet(at.fix, null)} className={cn("w-full text-destructive", TEXT.row)} data-testid="hold-remove">
+        <Button
+          type="button"
+          size="lg"
+          variant="ghost"
+          onClick={() => onSet(at.fix, null)}
+          className={cn("w-full text-destructive", TEXT.row)}
+          data-testid="hold-remove"
+        >
           Remove hold
         </Button>
       )}

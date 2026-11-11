@@ -10,7 +10,11 @@
 *
 !engine/
 !services/planner/
+!services/ingest/
+!services/assistant/
+!services/weather/
 !services/gateway/
+!services/jobs/
 !apps/web/
 !ml/requirements-*.txt
 !infra/dev-services/
@@ -18,6 +22,10 @@
 # Inside those: what no Dockerfile reads.
 services/planner/tests/
 services/planner/tests_wingtip/
+services/ingest/tests/
+services/assistant/tests/
+services/weather/tests/
+services/jobs/*/tests/
 **/__pycache__/
 **/*.pyc
 **/node_modules/

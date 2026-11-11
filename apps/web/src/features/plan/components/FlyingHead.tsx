@@ -1,11 +1,14 @@
 import { cn } from "cn";
-import { GLASS } from "../../../components/mapChrome";
-import { clockTime, duration } from "../../../lib/clock";
+import { GLASS } from "../../../lib/mapChrome";
+import { Button } from "../../../components/ui/button";
+import { openEmergency } from "../../../lib/emergencyStore";
+import { clockTime, duration } from "../../../lib/format";
 import { distanceNm } from "../../../lib/geo";
-import { useOwnShip } from "../../../lib/map/ownShip";
-import { DRY_RUN, usePastFlight } from "../../../lib/map/pastFlight";
+import { useOwnShip } from "../../../lib/map/position/ownShip";
+import { DRY_RUN, usePastFlight } from "../map/pastFlight";
 import { GROUP_HEADING, TEXT } from "../../../lib/text";
-import { dryRunAt, dryRunRow, type DryRun } from "./navlog/dryRun";
+import { dryRunAt, type DryRun } from "./navlog/dryRun";
+import { dryRunNext, forgetPassed, gpsNext } from "./navlog/flyingTo";
 import { isLegPoint, rowPoint, type NavLogRow } from "./navlog/rows";
 
 /**
@@ -28,28 +31,22 @@ import { isLegPoint, rowPoint, type NavLogRow } from "./navlog/rows";
  * at each of a run's frames, as the dry run's figures are (DryRunFigures).
  */
 
-/** Within this of a checkpoint, own ship has passed it. */
-const PASSED_NM = 1;
-/** The rows own ship has passed, by key, from the GPS: kept across fixes
- *  and the rows' changes as legs come in, and let go with the position. */
-const passed = new Set<string>();
-
-interface Next { index: number; number: number; name: string; nm: number; min: number | null; at: number | null }
-
-/** The next checkpoint's row from `from`, skipping the tops of climb and
- *  descent; null past the last. */
-function checkpointFrom(rows: NavLogRow[], from: number): number | null {
-  for (let i = Math.max(1, from); i < rows.length; i++) if (!isLegPoint(rows[i]!)) return i;
-  return null;
+interface Next {
+  index: number;
+  number: number;
+  name: string;
+  nm: number;
+  min: number | null;
+  at: number | null;
 }
 
 /** Its number as the log counts the checkpoints: the departure 0. */
-const numberOf = (rows: NavLogRow[], index: number) => rows.slice(1, index + 1).filter(r => !isLegPoint(r)).length;
+const numberOf = (rows: NavLogRow[], index: number) => rows.slice(1, index + 1).filter((r) => !isLegPoint(r)).length;
 
 export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: NavLogRow[] }) {
-  const key = usePastFlight(s => {
+  const key = usePastFlight((s) => {
     if (!run || s.hex !== DRY_RUN || s.at === null) return "";
-    const index = checkpointFrom(rows, dryRunRow(run, s.at));
+    const index = dryRunNext(run, rows, s.at);
     const at = dryRunAt(run, s.at);
     if (index === null || !at || !run.bends[index] || run.rowT[index] == null) return "";
     const along = run.alongNm.at(-1)! - at.leftNm;
@@ -57,16 +54,12 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
     const min = Math.max(0, (run.rowT[index]! - s.at) / 60);
     return [index, nm.toFixed(1), Math.round(min), Math.floor(run.rowT[index]! / 60) * 60].join(" ");
   });
-  const gpsKey = useOwnShip(s => {
+  const gpsKey = useOwnShip((s) => {
     if (run || !s.enabled || !s.fix) {
-      passed.clear();
+      forgetPassed();
       return "";
     }
-    let index = checkpointFrom(rows, 1);
-    while (index !== null && (passed.has(rows[index]!.key) || distanceNm(s.fix, rowPoint(rows[index]!)) < PASSED_NM)) {
-      passed.add(rows[index]!.key);
-      index = checkpointFrom(rows, index + 1);
-    }
+    const index = gpsNext(rows, s.fix);
     if (index === null) return "";
     const nm = distanceNm(s.fix, rowPoint(rows[index]!));
     const min = s.fix.speedKt ? (nm / s.fix.speedKt) * 60 : null;
@@ -78,8 +71,12 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
   const [i, nm, min, at] = words.split(" ");
   const index = Number(i);
   const next: Next = {
-    index, number: numberOf(rows, index), name: rowPoint(rows[index]!).name,
-    nm: Number(nm), min: min === "" ? null : Number(min), at: at === "" ? null : Number(at),
+    index,
+    number: numberOf(rows, index),
+    name: rowPoint(rows[index]!).name,
+    nm: Number(nm),
+    min: min === "" ? null : Number(min),
+    at: at === "" ? null : Number(at),
   };
   return (
     <div
@@ -90,7 +87,7 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
         // map's insets, MapPage): over a wide screen it ran on under the
         // panel, its next point hidden there (the owner's screenshot,
         // 2026-11-06); on a phone's bottom sheet both are 0.
-        "pointer-events-none absolute right-3 left-[calc(0.75rem+var(--map-inset-left,0px))] top-[calc(max(0.75rem,env(safe-area-inset-top))+var(--map-inset-top,0px))] z-[1000] flex items-center gap-3.5 rounded-[18px] px-4 py-3",
+        "pointer-events-none absolute right-3 left-[calc(0.75rem+var(--map-inset-left,0px))] top-[calc(max(0.75rem,env(safe-area-inset-top))+var(--map-inset-top,0px))] z-[1000] flex items-center gap-3.5 rounded-(--radius-card) px-4 py-3",
         // In as the flight starts; not where the pilot asks for less motion.
         "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-4 motion-safe:duration-300",
       )}
@@ -99,18 +96,42 @@ export default function FlyingHead({ run, rows }: { run: DryRun | null; rows: Na
         <span className={TEXT.card}>{next.number}</span>
       </div>
       <div className="min-w-0 flex-1">
-        <div className={cn(GROUP_HEADING, "truncate")}>Next · <span data-testid="flying-next-name">{next.name}</span></div>
-        <div className="truncate text-[1.875rem] leading-[2.0625rem] font-bold tabular-nums" data-testid="flying-next-figures">
-          {next.nm.toFixed(1)}<span className={cn(TEXT.title, "font-medium")}> nm</span>
+        <div className={cn(GROUP_HEADING, "truncate")}>
+          Next · <span data-testid="flying-next-name">{next.name}</span>
+        </div>
+        <div className="truncate text-3xl leading-[2.0625rem] font-bold tabular-nums" data-testid="flying-next-figures">
+          {next.nm.toFixed(1)}
+          <span className={cn(TEXT.title, "font-medium")}> nm</span>
           {next.min !== null && <> · {duration(next.min)}</>}
         </div>
       </div>
       {next.at !== null && (
         <div className="text-right">
           <div className={GROUP_HEADING}>ETA</div>
-          <div className={cn(TEXT.card, "font-semibold tabular-nums")} data-testid="flying-next-eta">{clockTime(new Date(next.at * 1000))}</div>
+          <div className={cn(TEXT.card, "font-semibold tabular-nums")} data-testid="flying-next-eta">
+            {clockTime(new Date(next.at * 1000))}
+          </div>
         </div>
       )}
+      {/* The emergency assistant's way in from flying mode, inside its own
+          head rather than a map button (the owner removed EMER, 2026-11-08). */}
+      <EmergencyEntry />
     </div>
+  );
+}
+
+/** "Emergency", labelled in the system red, a 44-point target. */
+function EmergencyEntry() {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      data-testid="flying-emergency"
+      className="pointer-events-auto relative -mr-2 font-semibold text-destructive after:absolute after:-inset-1.5"
+      onClick={() => openEmergency("flying")}
+    >
+      Emergency
+    </Button>
   );
 }

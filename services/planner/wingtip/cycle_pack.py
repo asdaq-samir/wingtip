@@ -31,6 +31,7 @@ airports and VORs in view as the planner's endpoints answer them. They
 are built beside the planner's (`ensure_phone`), in
 data/raw/packs/phone/<cycle>, with an index the phone asks for first.
 """
+
 from __future__ import annotations
 
 import csv
@@ -62,15 +63,50 @@ ENTRY = 32
 #: service volume and hours (wingtip.fixes). A column added here is read by
 #: name, so an older pack without it answers that field as unknown.
 COLUMNS = {
-    "airports": ("APT_BASE.csv", ("ARPT_ID", "ICAO_ID", "SITE_TYPE_CODE", "ARPT_NAME", "CITY", "STATE_CODE",
-                                  "LAT_DECIMAL", "LONG_DECIMAL", "ELEV", "MAG_VARN", "MAG_HEMIS", "TPA",
-                                  "FACILITY_USE_CODE", "ARPT_STATUS", "TWR_TYPE_CODE", "FUEL_TYPES", "CHART_NAME",
-                                  "OWNERSHIP_TYPE_CODE")),
-    "navaids": ("NAV_BASE.csv", ("NAV_ID", "NAV_TYPE", "NAME", "CITY", "STATE_CODE", "NAV_STATUS",
-                                 "LAT_DECIMAL", "LONG_DECIMAL", "ELEV", "MAG_VARN", "MAG_VARN_HEMIS", "FREQ", "CHAN",
-                                 "ALT_CODE", "OPER_HOURS")),
-    "fixes": ("FIX_BASE.csv", ("FIX_ID", "ICAO_REGION_CODE", "STATE_CODE", "LAT_DECIMAL", "LONG_DECIMAL",
-                               "FIX_USE_CODE", "CHARTS")),
+    "airports": (
+        "APT_BASE.csv",
+        (
+            "ARPT_ID",
+            "ICAO_ID",
+            "SITE_TYPE_CODE",
+            "ARPT_NAME",
+            "CITY",
+            "STATE_CODE",
+            "LAT_DECIMAL",
+            "LONG_DECIMAL",
+            "ELEV",
+            "MAG_VARN",
+            "MAG_HEMIS",
+            "TPA",
+            "FACILITY_USE_CODE",
+            "ARPT_STATUS",
+            "TWR_TYPE_CODE",
+            "FUEL_TYPES",
+            "CHART_NAME",
+            "OWNERSHIP_TYPE_CODE",
+        ),
+    ),
+    "navaids": (
+        "NAV_BASE.csv",
+        (
+            "NAV_ID",
+            "NAV_TYPE",
+            "NAME",
+            "CITY",
+            "STATE_CODE",
+            "NAV_STATUS",
+            "LAT_DECIMAL",
+            "LONG_DECIMAL",
+            "ELEV",
+            "MAG_VARN",
+            "MAG_VARN_HEMIS",
+            "FREQ",
+            "CHAN",
+            "ALT_CODE",
+            "OPER_HOURS",
+        ),
+    ),
+    "fixes": ("FIX_BASE.csv", ("FIX_ID", "ICAO_REGION_CODE", "STATE_CODE", "LAT_DECIMAL", "LONG_DECIMAL", "FIX_USE_CODE", "CHARTS")),
 }
 
 #: How far the phones' rings may stray from the FAA's, in degrees: each
@@ -130,7 +166,7 @@ class Pack:
 
     def section(self, name: str) -> memoryview:
         offset, length = self.sections[name]
-        return memoryview(self.mapped)[offset:offset + length]
+        return memoryview(self.mapped)[offset : offset + length]
 
     def verify(self) -> bool:
         """Every byte after the header as it was written."""
@@ -150,7 +186,7 @@ class Pack:
     def wkb(self, layer: str) -> list[bytes]:
         offsets = np.frombuffer(self.section(f"{layer}.off"), dtype="<u8")
         data = self.section(f"{layer}.wkb")
-        return [bytes(data[int(a):int(b)]) for a, b in zip(offsets[:-1], offsets[1:])]
+        return [bytes(data[int(a) : int(b)]) for a, b in zip(offsets[:-1], offsets[1:])]
 
     def geometries(self, layer: str) -> list:
         import shapely
@@ -275,7 +311,7 @@ def _airspace(shp_path: Path):
                 values = record.as_dict()
                 if (values.get("CLASS") or "").strip() not in ("B", "C", "D", "E"):
                     continue
-                content = shp[int(starts[i]):int(starts[i] + lengths[i])]
+                content = shp[int(starts[i]) : int(starts[i] + lengths[i])]
                 boxes.append(struct.unpack_from("<4d", content, 4))
                 wkbs.append(wingtip_native.shape_to_wkb(content))
                 fields.append(values)
@@ -331,19 +367,33 @@ def build(cache_dir, pack_dir=None) -> Path:
     cache_dir = Path(cache_dir)
     started = time.monotonic()
     sua_held = sua.everything()
-    path = write(Path(pack_dir or PACK_DIR), cycle_of(cache_dir) or time.strftime("%Y-%m-%d", time.gmtime()),
-                 shp_path=Path(airspace.ensure_class_airspace_shapefile(cache_dir)),
-                 sua_held=sua_held, sua_at=(sua._CACHE.get("all") or (time.time(), None))[0],
-                 urban=congested._urban_areas(), urban_path=congested.URBAN_AREAS_PATH,
-                 tables={name: (cache_dir / file, columns) for name, (file, columns) in COLUMNS.items()},
-                 sizes=airport_sizes())
-    log.info("Cycle pack %s built in %.1f s, %.0f MB", path.name, time.monotonic() - started,
-             path.stat().st_size / 1e6)
+    path = write(
+        Path(pack_dir or PACK_DIR),
+        cycle_of(cache_dir) or time.strftime("%Y-%m-%d", time.gmtime()),
+        shp_path=Path(airspace.ensure_class_airspace_shapefile(cache_dir)),
+        sua_held=sua_held,
+        sua_at=(sua._CACHE.get("all") or (time.time(), None))[0],
+        urban=congested._urban_areas(),
+        urban_path=congested.URBAN_AREAS_PATH,
+        tables={name: (cache_dir / file, columns) for name, (file, columns) in COLUMNS.items()},
+        sizes=airport_sizes(),
+    )
+    log.info("Cycle pack %s built in %.1f s, %.0f MB", path.name, time.monotonic() - started, path.stat().st_size / 1e6)
     return path
 
 
-def write(pack_dir: Path, cycle: str, *, shp_path: Path, sua_held: list, sua_at: float, urban: list,
-          urban_path: Path | None, tables: dict, sizes: dict[str, str] | None = None) -> Path:
+def write(
+    pack_dir: Path,
+    cycle: str,
+    *,
+    shp_path: Path,
+    sua_held: list,
+    sua_at: float,
+    urban: list,
+    urban_path: Path | None,
+    tables: dict,
+    sizes: dict[str, str] | None = None,
+) -> Path:
     """The pack of these sources written to pack_dir, whole or not at all,
     and any other pack there removed. `sizes`, OurAirports' sizes by
     ident (airport_sizes), gives the airports table its SIZE column."""
@@ -372,8 +422,13 @@ def write(pack_dir: Path, cycle: str, *, shp_path: Path, sua_held: list, sua_at:
         w = _Writer(f, names)
         w.put("meta", json.dumps(meta, separators=(",", ":")).encode())
         _layer(w, "airspace", *_airspace(shp_path))
-        _layer(w, "sua", [b for _, _, b in sua_held], list(shapely.to_wkb([g for _, g, _ in sua_held], byte_order=1)),
-               [feature.get("properties") for feature, _, _ in sua_held])
+        _layer(
+            w,
+            "sua",
+            [b for _, _, b in sua_held],
+            list(shapely.to_wkb([g for _, g, _ in sua_held], byte_order=1)),
+            [feature.get("properties") for feature, _, _ in sua_held],
+        )
         _layer(w, "urban", shapely.bounds(urban) if urban else [], list(shapely.to_wkb(urban, byte_order=1)), None)
         for name, (file, columns) in tables.items():
             w.put(name, _table(file, columns, sizes if name == "airports" else None))
@@ -393,8 +448,12 @@ def ensure(cache_dir, pack_dir=None) -> Path | None:
 
     pack = current(pack_dir)
     shp_path = airspace.ensure_class_airspace_shapefile(cache_dir)
-    if (pack is not None and pack.cycle == cycle_of(cache_dir) and matches(pack, "airspace", shp_path)
-            and matches(pack, "urban", congested.URBAN_AREAS_PATH)):
+    if (
+        pack is not None
+        and pack.cycle == cycle_of(cache_dir)
+        and matches(pack, "airspace", shp_path)
+        and matches(pack, "urban", congested.URBAN_AREAS_PATH)
+    ):
         return None
     return build(cache_dir, pack_dir)
 
@@ -419,6 +478,7 @@ def region_bounds(name: str) -> tuple[float, float, float, float]:
 def _rings(wkb: bytes) -> list[list[np.ndarray]]:
     """A little-endian WKB Polygon's or MultiPolygon's rings, polygon by
     polygon, in their order and direction."""
+
     def polygon(at: int):
         n = struct.unpack_from("<I", wkb, at + 5)[0]
         at += 9
@@ -446,7 +506,9 @@ def _rings(wkb: bytes) -> list[list[np.ndarray]]:
 def _wkb(polygons: list[list[np.ndarray]]) -> bytes:
     def polygon(rings):
         return struct.pack("<BII", 1, 3, len(rings)) + b"".join(
-            struct.pack("<I", len(r)) + np.ascontiguousarray(r, "<f8").tobytes() for r in rings)
+            struct.pack("<I", len(r)) + np.ascontiguousarray(r, "<f8").tobytes() for r in rings
+        )
+
     if len(polygons) == 1:
         return polygon(polygons[0])
     return struct.pack("<BII", 1, 6, len(polygons)) + b"".join(polygon(p) for p in polygons)
@@ -472,8 +534,7 @@ def simplified(wkb: bytes, tolerance: float = PHONE_TOLERANCE_DEG) -> tuple[byte
     if not points:
         return _wkb(polygons), None
     every = np.concatenate(points)
-    return _wkb(polygons), (float(every[:, 0].min()), float(every[:, 1].min()),
-                            float(every[:, 0].max()), float(every[:, 1].max()))
+    return _wkb(polygons), (float(every[:, 0].min()), float(every[:, 1].min()), float(every[:, 0].max()), float(every[:, 1].max()))
 
 
 def _regions_of(box) -> list[str]:
@@ -526,14 +587,14 @@ def _terrain(region: str) -> bytes | None:
         return None
     per = ground_grid.PER_DEG
     r0, c0 = round((south - ground_grid.SOUTH) * per), round((west - ground_grid.WEST) * per)
-    block = np.asarray(high[r0:r0 + REGION_DEG * per, c0:c0 + REGION_DEG * per]).astype(np.int32)
+    block = np.asarray(high[r0 : r0 + REGION_DEG * per, c0 : c0 + REGION_DEG * per]).astype(np.int32)
     # A guard, as wingtip.ground_grid now leaves voids and impossible peaks
     # out of its cells: one still above Mount Whitney (a grid built before
     # that, not yet repaired) is no ground known to the phones rather than
     # a 32,000 ft mountain over Florida.
     block[block > ground_grid.HIGHEST_GROUND_FT] = ground_grid.NONE
     rows, cols = block.shape[0] // TERRAIN_POOL, block.shape[1] // TERRAIN_POOL
-    tiles = block[:rows * TERRAIN_POOL, :cols * TERRAIN_POOL].reshape(rows, TERRAIN_POOL, cols, TERRAIN_POOL)
+    tiles = block[: rows * TERRAIN_POOL, : cols * TERRAIN_POOL].reshape(rows, TERRAIN_POOL, cols, TERRAIN_POOL)
     known = tiles != ground_grid.NONE
     pooled = np.where(known, tiles, np.iinfo(np.int32).min).max(axis=(1, 3))
     pooled = np.where(known.any(axis=(1, 3)), pooled, ground_grid.NONE).astype("<i2")
@@ -552,18 +613,25 @@ def _sua_alt(areas: list[dict]) -> tuple[bytes, bytes]:
     spans, run = _strings([a.get("times_of_use") or "" for a in areas])
     nan = float("nan")
     rec = b"".join(
-        struct.pack("<4sBB2xddII", (a["type"] or "").encode()[:4], _SUA_REFS.get(a["floor_ref"] or "", 0),
-                    _SUA_REFS.get(a["ceiling_ref"] or "", 0), nan if a["floor_ft"] is None else float(a["floor_ft"]),
-                    nan if a["ceiling_ft"] is None else float(a["ceiling_ft"]), *span)
-        for a, span in zip(areas, spans))
+        struct.pack(
+            "<4sBB2xddII",
+            (a["type"] or "").encode()[:4],
+            _SUA_REFS.get(a["floor_ref"] or "", 0),
+            _SUA_REFS.get(a["ceiling_ref"] or "", 0),
+            nan if a["floor_ft"] is None else float(a["floor_ft"]),
+            nan if a["ceiling_ft"] is None else float(a["ceiling_ft"]),
+            *span,
+        )
+        for a, span in zip(areas, spans)
+    )
     return rec, run
 
 
 def _controlled_numbers(pack: Pack) -> list[int | None]:
     """Each airspace record's number among the Class B, C and D in the
-    national file's order -- what wingtip.airspace_map numbers a volume's
-    `id` by, so the phone's map keys a volume as the planner does from
-    one box to the next -- and None for a Class E."""
+    national file's order -- what the engine's in-view answer numbers a
+    volume's `id` by, so the phone's map keys a volume the same from one
+    box to the next -- and None for a Class E."""
     from . import airspace
 
     numbers: list[int | None] = []
@@ -574,8 +642,8 @@ def _controlled_numbers(pack: Pack) -> list[int | None]:
 
 
 def _volume_drawn(record: dict, number: int | None) -> dict:
-    """wingtip.airspace_at's volume, with what the map's volume in view
-    (wingtip.airspace_map's AirspaceVolume) says of it besides: its number,
+    """wingtip.airspace_at's volume, with what the phone's map says of a
+    volume besides (the engine's in-view answer): its number,
     whether its top is "to but not including" its ceiling (UPPER_DESC
     TNI) and when it is in effect (WKHR_CODE, WKHR_RMK, as wingtip.airspace
     reads them): the phone's `airspace.attr`."""
@@ -635,19 +703,25 @@ def write_phone(pack: Pack, out_dir: Path, veil: list[dict]) -> dict:
                     regions.setdefault(region, {}).setdefault(name, []).append(i)
     tables = {name: pack.table(name) for name in COLUMNS if name in pack.sections}
     veil_spans, veil_names = _strings([a.get("name") or "" for a in veil])
-    veil_pts = b"".join(struct.pack("<dd8sII", a["lat"], a["lon"], a["ident"].encode()[:8], *span)
-                        for a, span in zip(veil, veil_spans))
+    veil_pts = b"".join(struct.pack("<dd8sII", a["lat"], a["lon"], a["ident"].encode()[:8], *span) for a, span in zip(veil, veil_spans))
     folder = out_dir / pack.cycle
     part = out_dir / f"{pack.cycle}.part"
     if part.exists():
         for old in part.iterdir():
             old.unlink()
     part.mkdir(parents=True, exist_ok=True)
-    index = {"cycle": pack.cycle, "built_at": time.time(), "tolerance_deg": PHONE_TOLERANCE_DEG,
-             "worst_nm": PHONE_WORST_NM, "region_deg": REGION_DEG, "terrain_pool": TERRAIN_POOL,
-             # The ground grid the terrain was read from: a new one (its voids
-             # read as no height, 2026-11-02) builds the phones' packs again.
-             "ground_grid": ground_grid_version(), "regions": []}
+    index = {
+        "cycle": pack.cycle,
+        "built_at": time.time(),
+        "tolerance_deg": PHONE_TOLERANCE_DEG,
+        "worst_nm": PHONE_WORST_NM,
+        "region_deg": REGION_DEG,
+        "terrain_pool": TERRAIN_POOL,
+        # The ground grid the terrain was read from: a new one (its voids
+        # read as no height, 2026-11-02) builds the phones' packs again.
+        "ground_grid": ground_grid_version(),
+        "regions": [],
+    }
     for region in sorted(regions):
         west, south, east, north = region_bounds(region)
         held = regions[region]
@@ -666,10 +740,22 @@ def write_phone(pack: Pack, out_dir: Path, veil: list[dict]) -> dict:
         path = part / f"{region}.pack"
         with open(path, "w+b") as f:
             w = _Writer(f, names)
-            w.put("meta", json.dumps({"format": VERSION, "cycle": pack.cycle, "flavour": "phone", "region": region,
-                                      "bounds": [west, south, east, north], "tolerance_deg": PHONE_TOLERANCE_DEG,
-                                      "worst_nm": PHONE_WORST_NM, "sources": pack.meta.get("sources")},
-                                     separators=(",", ":")).encode())
+            w.put(
+                "meta",
+                json.dumps(
+                    {
+                        "format": VERSION,
+                        "cycle": pack.cycle,
+                        "flavour": "phone",
+                        "region": region,
+                        "bounds": [west, south, east, north],
+                        "tolerance_deg": PHONE_TOLERANCE_DEG,
+                        "worst_nm": PHONE_WORST_NM,
+                        "sources": pack.meta.get("sources"),
+                    },
+                    separators=(",", ":"),
+                ).encode(),
+            )
             for layer in ("airspace", "sua", "urban"):
                 if layer in held:
                     picked = [layers[layer][i] for i in held[layer]]
@@ -677,25 +763,47 @@ def write_phone(pack: Pack, out_dir: Path, veil: list[dict]) -> dict:
             if "airspace" in held:
                 volumes = [layers["airspace"][i][2] for i in held["airspace"]]
                 spans, run = _strings([v["name"] for v in volumes])
-                w.put("airspace.vol", b"".join(
-                    struct.pack("<BB6xddII", ord((v["class"] or "E")[0]), _FLOOR_REFS[v["floor_ref"]],
-                                v["floor_ft"], v["ceiling_ft"], *span) for v, span in zip(volumes, spans)))
+                w.put(
+                    "airspace.vol",
+                    b"".join(
+                        struct.pack(
+                            "<BB6xddII", ord((v["class"] or "E")[0]), _FLOOR_REFS[v["floor_ref"]], v["floor_ft"], v["ceiling_ft"], *span
+                        )
+                        for v, span in zip(volumes, spans)
+                    ),
+                )
                 w.put("airspace.names", run)
-                # What the map's volume says besides (wingtip.airspace_map), one
+                # What the phone's map says of a volume besides, one
                 # object a volume, in the layer's order: the engine's `view`
                 # reads it, and answers each field null from a pack without it.
-                w.put("airspace.attr", json.dumps(
-                    [{"ident": v["ident"] or None, "number": v["number"], "ceiling_excluded": v["ceiling_excluded"],
-                      "hours_code": v["hours_code"], "hours_remark": v["hours_remark"]} for v in volumes],
-                    separators=(",", ":")).encode())
+                w.put(
+                    "airspace.attr",
+                    json.dumps(
+                        [
+                            {
+                                "ident": v["ident"] or None,
+                                "number": v["number"],
+                                "ceiling_excluded": v["ceiling_excluded"],
+                                "hours_code": v["hours_code"],
+                                "hours_remark": v["hours_remark"],
+                            }
+                            for v in volumes
+                        ],
+                        separators=(",", ":"),
+                    ).encode(),
+                )
             if "sua" in held:
                 areas = [layers["sua"][i][2] for i in held["sua"]]
                 blobs = [json.dumps(a, separators=(",", ":")) for a in areas]
                 blob_spans, blob_run = _strings(blobs)
                 name_spans, name_run = _strings([a["name"] for a in areas])
-                w.put("sua.rec", b"".join(
-                    struct.pack("<dIIII", float("nan") if a["floor_ft"] is None else a["floor_ft"], *b, *n)
-                    for a, b, n in zip(areas, blob_spans, name_spans)))
+                w.put(
+                    "sua.rec",
+                    b"".join(
+                        struct.pack("<dIIII", float("nan") if a["floor_ft"] is None else a["floor_ft"], *b, *n)
+                        for a, b, n in zip(areas, blob_spans, name_spans)
+                    ),
+                )
                 w.put("sua.json", blob_run)
                 w.put("sua.names", name_run)
                 alt, times = _sua_alt(areas)
@@ -715,13 +823,16 @@ def write_phone(pack: Pack, out_dir: Path, veil: list[dict]) -> dict:
                     except ValueError:
                         return False
                     return south <= lat < north and west <= lon < east
-                w.put(name, json.dumps({"columns": columns, "rows": [r for r in table["rows"] if inside(r)]},
-                                       separators=(",", ":")).encode())
+
+                w.put(
+                    name, json.dumps({"columns": columns, "rows": [r for r in table["rows"] if inside(r)]}, separators=(",", ":")).encode()
+                )
             w.finish(pack.cycle, time.time())
             f.seek(36)
             crc = struct.unpack("<I", f.read(4))[0]
-        index["regions"].append({"name": region, "west": west, "south": south, "east": east, "north": north,
-                                 "bytes": path.stat().st_size, "crc32": crc})
+        index["regions"].append(
+            {"name": region, "west": west, "south": south, "east": east, "north": north, "bytes": path.stat().st_size, "crc32": crc}
+        )
     (part / "index.json").write_text(json.dumps(index, separators=(",", ":")))
     if folder.exists():
         for old in folder.iterdir():
@@ -777,11 +888,21 @@ def ensure_phone(pack_dir=None) -> dict | None:
     if pack is None:
         return None
     index = phone_index(pack_dir)
-    if (index is not None and index.get("cycle") == pack.cycle and index.get("tolerance_deg") == PHONE_TOLERANCE_DEG
-            and index.get("terrain_pool") == TERRAIN_POOL and index.get("ground_grid") == ground_grid_version()):
+    if (
+        index is not None
+        and index.get("cycle") == pack.cycle
+        and index.get("tolerance_deg") == PHONE_TOLERANCE_DEG
+        and index.get("terrain_pool") == TERRAIN_POOL
+        and index.get("ground_grid") == ground_grid_version()
+    ):
         return None
     started = time.monotonic()
     index = write_phone(pack, Path(pack_dir or PACK_DIR) / "phone", list(airspace_at.mode_c_airports()))
-    log.info("Phone packs for %s built in %.1f s: %d regions, %.1f MB", pack.cycle, time.monotonic() - started,
-             len(index["regions"]), sum(r["bytes"] for r in index["regions"]) / 1e6)
+    log.info(
+        "Phone packs for %s built in %.1f s: %d regions, %.1f MB",
+        pack.cycle,
+        time.monotonic() - started,
+        len(index["regions"]),
+        sum(r["bytes"] for r in index["regions"]) / 1e6,
+    )
     return index

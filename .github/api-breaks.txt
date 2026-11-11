@@ -1,4 +1,4 @@
-# Breaking changes to the planner's or the gateway's API made on purpose,
+# Breaking changes to the planner's, the assistant's or the gateway's API made on purpose,
 # which ci.yml's api-compat job lets through (oasdiff --err-ignore).
 # One line each, dated, with the method and path and oasdiff's own words
 # for the change, as its failure printed them, and why no released app
@@ -17,3 +17,137 @@
 2026-11-07 GET /api/status removed the required property `services/crewai_agent` from the response with the `200` status -- the agent services were removed (#495); only the Dev panel reads /api/status
 2026-11-07 GET /api/status removed the required property `services/nav_log_agent` from the response with the `200` status -- the agent services were removed (#495); only the Dev panel reads /api/status
 2026-11-07 POST /api/comparison api path removed without deprecation -- the LangGraph/CrewAI comparison was a web Dev screen; no phone calls it (#495)
+2026-11-08 POST /api/assistant api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/assistant address, which the gateway now sends there
+2026-11-08 POST /api/briefing/narrative api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/briefing/narrative address, which the gateway now sends there
+2026-11-08 POST /api/checkpoint-notes/generate api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/checkpoint-notes/generate address, which the gateway now sends there
+2026-11-08 POST /api/oral/question api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/oral/question address, which the gateway now sends there
+2026-11-08 POST /api/oral/grade api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/oral/grade address, which the gateway now sends there
+2026-11-08 POST /api/words/notams api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/words/notams address, which the gateway now sends there
+2026-11-08 POST /api/words/weather api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/words/weather address, which the gateway now sends there
+2026-11-08 POST /api/words/risk api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/words/risk address, which the gateway now sends there
+2026-11-08 POST /api/words/debrief api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/words/debrief address, which the gateway now sends there
+2026-11-08 POST /api/words/changes api path removed without deprecation -- moved to the assistant service's document (services/assistant/openapi.json, #535); the apps ask the same /api/planner/api/words/changes address, which the gateway now sends there
+2026-11-09 GET /api/airspace/in-view api path removed without deprecation -- nothing is released yet: no app is in pilots' hands, so the integration of 7-9 November (#570) changes the documents and every app with them (the owner: break freely until first launch, 2026-11-07)
+2026-11-09 GET /api/alternate the `query` request parameter `tas_kt` became required -- the same
+2026-11-09 GET /api/alternate for the `query` request parameter `tas_kt`, the exclusiveMinimum was set to `0.00` -- the same
+2026-11-09 GET /api/alternate for the `query` request parameter `tas_kt`, the max was set to `1000.00` -- the same
+2026-11-09 POST /api/checkpoint-notes the `description` request property's maxLength was set to `500` -- the same
+2026-11-09 POST /api/go-no-go removed `#/components/schemas/VorCheck` from the `own_airplane/anyOf[subschema #1: OwnAirplane]/vor_check` request property `anyOf` list -- the same
+2026-11-09 GET /api/local-flight response property `alternate/anyOf[subschema #1: AlternateLeg]/ete_min` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/local-flight response property `alternate/anyOf[subschema #1: AlternateLeg]/fuel_gal` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/navaids/in-view api path removed without deprecation -- the same
+2026-11-09 GET /api/plan added `#/components/schemas/AircraftProfile, subschema #2` to the `aircraft` response property `anyOf` list for the response status `200` -- the same
+2026-11-09 GET /api/plan response property `altitude_options/items/climb_penalty_min` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan response property `legs/items/density_altitude_ft` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan response property `legs/items/fuel_burn_gph` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan response property `legs/items/magnetic_heading_deg` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan response property `legs/items/power_pct` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan response property `legs/items/procedure/anyOf[subschema #1: LegProcedure]/more_gal` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan response property `legs/items/procedure/anyOf[subschema #1: LegProcedure]/more_min` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan response property `legs/items/tas_kt` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan response property `legs/items/true_heading_deg` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan response property `legs/items/wca_deg` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan response property `totals/alternate/anyOf[subschema #1: AlternateLeg]/ete_min` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan response property `totals/alternate/anyOf[subschema #1: AlternateLeg]/fuel_gal` list-of-types was widened by adding types `null` to media type `application/json` of response `200` -- the same
+2026-11-09 GET /api/plan the `aircraft` response's property `type` changed from `object` to `any` for status `200` -- the same
+2026-11-09 GET /api/plan removed the required property `aircraft/cruise_tas_kt` from the response with the `200` status -- the same
+2026-11-09 GET /api/plan removed the required property `aircraft/fuel_burn_gph` from the response with the `200` status -- the same
+2026-11-09 GET /api/plan removed the required property `aircraft/name` from the response with the `200` status -- the same
+2026-11-09 GET /api/plan removed the required property `aircraft/service_ceiling_ft` from the response with the `200` status -- the same
+2026-11-09 GET /api/route-options response property `options/items/air_min` list-of-types was widened by adding types `null` to media type `application/json` of response `200` (shared schema: `RouteOption`, also at `own/anyOf[subschema #1: RouteOption]/air_min`) -- the same
+2026-11-09 GET /api/route-options response property `options/items/fuel_gal` list-of-types was widened by adding types `null` to media type `application/json` of response `200` (shared schema: `RouteOption`, also at `own/anyOf[subschema #1: RouteOption]/fuel_gal`) -- the same
+2026-11-09 POST /api/aircraft added the new required request property `figures` -- the same
+2026-11-09 POST /api/aircraft the `climbFuelBurnGph` request property's exclusiveMinimum was set to `0.00` -- the same
+2026-11-09 POST /api/aircraft the `climbTasKt` request property's exclusiveMinimum was set to `0.00` -- the same
+2026-11-09 POST /api/aircraft the `cruiseTasKt` request property's exclusiveMinimum was set to `0.00` -- the same
+2026-11-09 POST /api/aircraft the `fuelBurnGph` request property's exclusiveMinimum was set to `0.00` -- the same
+2026-11-09 POST /api/aircraft the `usableFuelGal` request property's exclusiveMinimum was set to `0.00` -- the same
+2026-11-09 PUT /api/aircraft/{id} added the new required request property `figures` -- the same
+2026-11-09 PUT /api/aircraft/{id} the `climbFuelBurnGph` request property's exclusiveMinimum was set to `0.00` -- the same
+2026-11-09 PUT /api/aircraft/{id} the `climbTasKt` request property's exclusiveMinimum was set to `0.00` -- the same
+2026-11-09 PUT /api/aircraft/{id} the `cruiseTasKt` request property's exclusiveMinimum was set to `0.00` -- the same
+2026-11-09 PUT /api/aircraft/{id} the `fuelBurnGph` request property's exclusiveMinimum was set to `0.00` -- the same
+2026-11-09 PUT /api/aircraft/{id} the `usableFuelGal` request property's exclusiveMinimum was set to `0.00` -- the same
+2026-11-09 GET /api/aircraft/{id}/checklist api path removed without deprecation -- the same
+2026-11-09 PUT /api/aircraft/{id}/checklist api path removed without deprecation -- the same
+2026-11-09 PUT /api/aircraft/{id}/inspections added the new required request property `forHire` -- the same
+2026-11-09 PUT /api/aircraft/{id}/inspections the `hoursNow` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/aircraft/{id}/inspections the `hundredHourAtHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/auth/magic-link the `email` request property `format` changed from `none` to `email` -- the same
+2026-11-09 POST /api/auth/magic-link/verify added the new required request property `token` -- the same
+2026-11-09 POST /api/auth/magic-link/verify the request's body `type` changed from `string` to `object` -- the same
+2026-11-09 POST /api/client-errors api path removed without deprecation -- the same
+2026-11-09 POST /api/flights the request property `stops/items/` became not nullable -- the same
+2026-11-09 DELETE /api/instructor removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 GET /api/instructor removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 PUT /api/instructor removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 POST /api/instructor/endorsements/{id}/void removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 POST /api/instructor/reviews/{id}/decline removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 DELETE /api/instructor/students/{linkId} removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 POST /api/instructor/students/{linkId}/accept removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 POST /api/instructor/students/{studentId}/endorsements removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 POST /api/instructor/students/{studentId}/lessons removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 DELETE /api/instructor/students/{studentId}/lessons/{id} removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 GET /api/instructor/students/{studentId}/training removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 POST /api/logbook added the new required request property `airHours` -- the same
+2026-11-09 POST /api/logbook added the new required request property `flightId` -- the same
+2026-11-09 POST /api/logbook added the new required request property `fromTrack` -- the same
+2026-11-09 POST /api/logbook added the new required request property `touchAndGoes` -- the same
+2026-11-09 POST /api/logbook the `approaches` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook the `crossCountryHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook the `dayLandings` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook the `distanceNm` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook the `dualHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook the `instrumentHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook the `longestLegNm` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook the `nightHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook the `nightLandings` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook the `soloHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook the `totalHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook the `toweredLandings` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import added the new required request property `entries/items/airHours` -- the same
+2026-11-09 POST /api/logbook/import added the new required request property `entries/items/flightId` -- the same
+2026-11-09 POST /api/logbook/import added the new required request property `entries/items/fromTrack` -- the same
+2026-11-09 POST /api/logbook/import added the new required request property `entries/items/touchAndGoes` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/approaches` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/crossCountryHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/dayLandings` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/distanceNm` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/dualHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/instrumentHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/longestLegNm` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/nightHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/nightLandings` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/soloHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/totalHours` request property's min was set to `0.00` -- the same
+2026-11-09 POST /api/logbook/import the `entries/items/toweredLandings` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} added the new required request property `airHours` -- the same
+2026-11-09 PUT /api/logbook/{id} added the new required request property `flightId` -- the same
+2026-11-09 PUT /api/logbook/{id} added the new required request property `fromTrack` -- the same
+2026-11-09 PUT /api/logbook/{id} added the new required request property `touchAndGoes` -- the same
+2026-11-09 PUT /api/logbook/{id} the `approaches` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} the `crossCountryHours` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} the `dayLandings` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} the `distanceNm` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} the `dualHours` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} the `instrumentHours` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} the `longestLegNm` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} the `nightHours` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} the `nightLandings` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} the `soloHours` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} the `totalHours` request property's min was set to `0.00` -- the same
+2026-11-09 PUT /api/logbook/{id} the `toweredLandings` request property's min was set to `0.00` -- the same
+2026-11-09 DELETE /api/planner/** the response's body `type` changed from `object` to `any` for status `200` -- the same
+2026-11-09 GET /api/planner/** the response's body `type` changed from `object` to `any` for status `200` -- the same
+2026-11-09 POST /api/planner/** the response's body `type` changed from `object` to `any` for status `200` -- the same
+2026-11-09 GET /api/training removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 DELETE /api/training/endorsements/{code} removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 PUT /api/training/endorsements/{code} removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 POST /api/training/instructors the `email` request property `format` changed from `none` to `email` -- the same
+2026-11-09 POST /api/training/instructors removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 DELETE /api/training/instructors/{id} removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 PUT /api/training/knowledge-test removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 POST /api/training/lessons/{id}/progress removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 PUT /api/training/name removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 POST /api/training/reviews removed the required property `kinds/items/validDays` from the response with the `200` status -- the same
+2026-11-09 DELETE /api/training/reviews/{id} removed the required property `kinds/items/validDays` from the response with the `200` status -- the same

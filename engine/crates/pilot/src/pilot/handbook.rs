@@ -93,12 +93,12 @@ fn bare(line: &str) -> String {
     let mut out = String::with_capacity(line.len());
     let mut i = 0;
     while i < c.len() {
-        if c[i] == '(' {
-            if let Some(close) = c[i + 1..].iter().position(|&x| x == ')') {
-                out.push(' ');
-                i += close + 2;
-                continue;
-            }
+        if c[i] == '('
+            && let Some(close) = c[i + 1..].iter().position(|&x| x == ')')
+        {
+            out.push(' ');
+            i += close + 2;
+            continue;
         }
         out.push(c[i]);
         i += 1;
@@ -111,7 +111,9 @@ fn bare(line: &str) -> String {
 pub fn number(s: &str) -> f64 {
     let t = s.replace(',', "");
     let b = t.as_bytes();
-    let thousands = (b.len() == 5 || b.len() == 6) && b[b.len() - 4] == b'.' && b.iter().enumerate().all(|(i, d)| i == b.len() - 4 || d.is_ascii_digit());
+    let thousands = (b.len() == 5 || b.len() == 6)
+        && b[b.len() - 4] == b'.'
+        && b.iter().enumerate().all(|(i, d)| i == b.len() - 4 || d.is_ascii_digit());
     if thousands {
         js::number(&t.replacen('.', "", 1))
     } else {
@@ -354,7 +356,11 @@ pub fn figures_of_page(text: &str) -> Figures {
         // Not the structural cruising speed (Vno), a limit, not a cruise.
         let is_cruise = js::contains_ci(&c, "cruis")
             && !(js::contains_ci(&c, "structural") || says_vno(&c))
-            && (js::contains_ci(&c, "speed") || js::contains_ci(&c, "knots") || js::has_word_ci(&c, "kt") || js::has_word_ci(&c, "kts") || js::contains_ci(&c, "mph"))
+            && (js::contains_ci(&c, "speed")
+                || js::contains_ci(&c, "knots")
+                || js::has_word_ci(&c, "kt")
+                || js::has_word_ci(&c, "kts")
+                || js::contains_ci(&c, "mph"))
             && bounded(figure(l), "cruiseTasKt");
         if !is_cruise {
             continue;

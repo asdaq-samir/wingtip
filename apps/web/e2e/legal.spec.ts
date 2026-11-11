@@ -2,12 +2,15 @@ import { test, expect } from "@playwright/test";
 import { noTips, openConsole, openSetup, showTabs, consolePage } from "./helpers";
 
 /**
- * The privacy policy, terms and support pages (public/*.html): served
+ * The privacy policy, terms and support pages (public/*.html, written
+ * from docs/legal by scripts/build/legal_pages.py): served
  * as plain HTML that needs no JavaScript, for App Store Connect's URLs,
  * and linked from Settings and from the sign-in dialog (Apple's Review
  * Guidelines 1.5 and 5.1.1(i)).
  */
-test.beforeEach(async ({ page }) => { await page.addInitScript(noTips); });
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(noTips);
+});
 
 const PAGES = [
   { path: "/app/privacy.html", heading: "Privacy policy", text: /Anthropic/ },
@@ -34,7 +37,11 @@ test("the console's About links the three pages", async ({ page }) => {
   // With the app's build and its sources, since About took them from
   // under Settings.
   await consolePage(page.getByTestId("console-sheet"), "About");
-  for (const [key, p] of [["privacy", PAGES[0]!], ["terms", PAGES[1]!], ["support", PAGES[2]!]] as const) {
+  for (const [key, p] of [
+    ["privacy", PAGES[0]!],
+    ["terms", PAGES[1]!],
+    ["support", PAGES[2]!],
+  ] as const) {
     await expect(page.getByTestId(`legal-${key}`)).toHaveAttribute("href", p.path);
   }
 });
@@ -47,7 +54,7 @@ test.describe("signed out", () => {
     await showTabs(page);
     await openConsole(page);
     await consolePage(page.getByTestId("console-sheet"), "Account");
-    await page.getByTestId("console-sheet").getByTestId("setup-page").getByRole("button", { name: "Sign in" }).click();
+    await page.getByTestId("console-sheet").getByTestId("setup-page").getByRole("button", { name: "Sign in", exact: true }).click();
     const legal = page.getByRole("dialog", { name: "Sign in to Wingtip Maps" }).getByTestId("sign-in-legal");
     await expect(page.getByTestId("sign-in-accept")).toHaveText("By signing in you accept the");
     await expect(legal.getByRole("link", { name: "Terms of use" })).toHaveAttribute("href", "/app/terms.html");

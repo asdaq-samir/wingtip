@@ -1,0 +1,91 @@
+{
+  "x-call": "wingtip_radio::atc::call",
+  "description": "A readback against the clearance or instruction heard (AIM 4-4-7 b): what was missed or said otherwise, each marked where 4-4-7 b asks it be read back, and the warning line; with `tail`, the call sign too (4-4-7 b.1).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ReadbackCheckInput",
+      "type": "object",
+      "properties": {
+        "cleared": {
+          "type": "string"
+        },
+        "said": {
+          "type": "string"
+        },
+        "tail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "cleared",
+        "said"
+      ]
+    },
+    "answer": {
+      "title": "ReadbackCheckAnswer",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "item": {
+                "enum": [
+                  "limit",
+                  "route",
+                  "altitude",
+                  "expect",
+                  "frequency",
+                  "squawk",
+                  "heading",
+                  "runway",
+                  "approach",
+                  "hold",
+                  "direct",
+                  "altimeter",
+                  "call sign",
+                  "order"
+                ]
+              },
+              "cleared": {
+                "type": "string"
+              },
+              "said": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "required": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "item",
+              "cleared",
+              "said",
+              "required"
+            ]
+          }
+        },
+        "words": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "items",
+        "words"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

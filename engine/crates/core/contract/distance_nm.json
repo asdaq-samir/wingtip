@@ -1,0 +1,41 @@
+{
+  "x-call": "wingtip_core::geo::call",
+  "description": "The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0), the great circle of FAA-H-8083-25C ch. 16.",
+  "x-tool": true,
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DistanceNmInput",
+      "type": "object",
+      "properties": {
+        "lat1": {
+          "type": "number"
+        },
+        "lon1": {
+          "type": "number"
+        },
+        "lat2": {
+          "type": "number"
+        },
+        "lon2": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "lat1",
+        "lon1",
+        "lat2",
+        "lon2"
+      ]
+    },
+    "answer": {
+      "title": "DistanceNmAnswer",
+      "type": "number"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

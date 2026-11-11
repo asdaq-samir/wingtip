@@ -6,5 +6,7 @@
 //! (the web's lib/aircraftChoice, the iPhone's Registered).
 
 pub mod calls;
+pub mod figures;
 pub mod filters;
+pub mod form;
 pub mod registry;

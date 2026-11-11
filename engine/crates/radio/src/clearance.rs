@@ -27,7 +27,12 @@ pub enum Item {
     Heading(i64),
     Airway(String),
     /// A SID ("departure") or a STAR ("arrival") by its name and number.
-    Procedure { kind: &'static str, name: String, number: String, transition: Option<String> },
+    Procedure {
+        kind: &'static str,
+        name: String,
+        number: String,
+        transition: Option<String>,
+    },
     /// Words naming one place or more, to be found.
     Places(String),
 }
@@ -140,7 +145,7 @@ fn airway_letter(w: &str) -> Option<char> {
     })
 }
 
-fn is_ascii_digits(w: &str) -> bool {
+pub(crate) fn is_ascii_digits(w: &str) -> bool {
     !w.is_empty() && w.bytes().all(|b| b.is_ascii_digit())
 }
 
@@ -212,6 +217,35 @@ fn words_of(text: &str) -> Vec<String> {
         }
     }
     out
+}
+
+/// The text in the phrases a recognizer's commas and semicolons mark
+/// ("left two seven zero, three thousand"), a thousands comma ("3,000")
+/// no break: figures in two phrases are two figures, where `tokens` reads
+/// figures said in a row as one, as a recognizer that writes no commas
+/// gives them.
+pub fn phrases(text: &str) -> Vec<String> {
+    let chars: Vec<char> = text.chars().collect();
+    let mut out = Vec::new();
+    let mut now = String::new();
+    for (i, &c) in chars.iter().enumerate() {
+        let thousands = c == ','
+            && i > 0
+            && chars[i - 1].is_ascii_digit()
+            && chars.get(i + 1..i + 4).is_some_and(|s| s.iter().all(|d| d.is_ascii_digit()));
+        if (c == ',' || c == ';') && !thousands {
+            out.push(std::mem::take(&mut now));
+        } else {
+            now.push(c);
+        }
+    }
+    out.push(now);
+    out.into_iter().filter(|p| !p.trim().is_empty()).collect()
+}
+
+/// The figures said in `text`, phrase by phrase (`phrases`), in order.
+pub fn figures_by_phrase(text: &str) -> Vec<String> {
+    phrases(text).iter().flat_map(|p| tokens(p)).filter_map(|t| t.num).collect()
 }
 
 /// The words, with each run of figures one number: "one two five point
@@ -307,7 +341,11 @@ pub fn tokens(text: &str) -> Vec<Token> {
 pub fn frequency_of(num: &str) -> Option<String> {
     let (value, places) = if let Some((_, fraction)) = num.split_once('.') {
         (num.parse::<f64>().ok()?, fraction.len().max(1))
-    } else if (5..=7).contains(&num.len()) && num.starts_with('1') && matches!(num.as_bytes()[1], b'1' | b'2' | b'3') && is_ascii_digits(num) {
+    } else if (5..=7).contains(&num.len())
+        && num.starts_with('1')
+        && matches!(num.as_bytes()[1], b'1' | b'2' | b'3')
+        && is_ascii_digits(num)
+    {
         (format!("{}.{}", &num[..3], &num[3..]).parse::<f64>().ok()?, (num.len() - 3).max(1))
     } else {
         return None;
@@ -329,7 +367,8 @@ const BETWEEN: &[&str] = &["then", "direct", "to", "and", "thence", "via", "the"
 /// "Cleared ILS approach", "cleared visual": an approach, not a route.
 const APPROACH_WORDS: &[&str] = &["ils", "rnp", "rnav", "gps", "loc", "visual", "approach", "vor", "ndb"];
 /// Whose a frequency is, said before it.
-const FACILITIES: &[&str] = &["departure", "center", "approach", "tower", "ground", "clearance", "information", "apron", "radio", "unicom", "director"];
+const FACILITIES: &[&str] =
+    &["departure", "center", "approach", "tower", "ground", "clearance", "information", "apron", "radio", "unicom", "director"];
 
 fn after_route(w: &str) -> bool {
     ALTITUDE_WORDS.contains(&w) || AFTER_ROUTE_MORE.contains(&w)
@@ -348,15 +387,16 @@ fn is_facility(toks: &[Token], i: usize) -> bool {
 fn altitude_at(toks: &[Token], i: usize) -> Option<(i64, usize)> {
     let word = |k: usize| toks.get(k).map(|t| t.word.as_str());
     let num = |k: usize| toks.get(k).and_then(|t| t.num.as_deref());
-    if word(i) == Some("flight") && word(i + 1) == Some("level") {
-        if let Some(level) = num(i + 2).and_then(|n| n.parse::<f64>().ok()) {
-            return Some(((level * 100.0) as i64, 3));
-        }
+    if word(i) == Some("flight")
+        && word(i + 1) == Some("level")
+        && let Some(level) = num(i + 2).and_then(|n| n.parse::<f64>().ok())
+    {
+        return Some(((level * 100.0) as i64, 3));
     }
-    if word(i) == Some("fl") {
-        if let Some(level) = num(i + 1).and_then(|n| n.parse::<f64>().ok()) {
-            return Some(((level * 100.0) as i64, 2));
-        }
+    if word(i) == Some("fl")
+        && let Some(level) = num(i + 1).and_then(|n| n.parse::<f64>().ok())
+    {
+        return Some(((level * 100.0) as i64, 2));
     }
     let n = num(i)?;
     if n.contains('.') {
@@ -443,13 +483,13 @@ fn route_of(toks: &[Token]) -> (Vec<Item>, bool) {
             let name = place_words(&words[..words.len() - 1]);
             words.clear();
             let mut transition = None;
-            if let Some(end) = (i + 1..toks.len()).find(|&k| toks[k].word == "transition") {
-                if end - i <= 4 {
-                    let said: Vec<Token> = toks[i + 1..end].iter().filter(|x| !BETWEEN.contains(&x.word.as_str())).cloned().collect();
-                    let said = place_words(&said);
-                    transition = (!said.is_empty()).then_some(said);
-                    i = end;
-                }
+            if let Some(end) = (i + 1..toks.len()).find(|&k| toks[k].word == "transition")
+                && end - i <= 4
+            {
+                let said: Vec<Token> = toks[i + 1..end].iter().filter(|x| !BETWEEN.contains(&x.word.as_str())).cloned().collect();
+                let said = place_words(&said);
+                transition = (!said.is_empty()).then_some(said);
+                i = end;
             }
             route.push(Item::Procedure { kind: if w == "departure" { "departure" } else { "arrival" }, name, number, transition });
         } else if BETWEEN.contains(&w) || w == "fly" || w == "after" {
@@ -484,7 +524,9 @@ pub fn read(text: &str) -> Clearance {
                 Some(k) => k + 1,
                 None => i + 4,
             };
-        } else if word(i).is_some_and(|w| w == "for" || w == "on" || APPROACH_WORDS.contains(&w)) || (word(i) == Some("to") && word(i + 1) == Some("land")) {
+        } else if word(i).is_some_and(|w| w == "for" || w == "on" || APPROACH_WORDS.contains(&w))
+            || (word(i) == Some("to") && word(i + 1) == Some("land"))
+        {
             // No route in it, the altitudes after it still read.
         } else {
             if word(i) == Some("to") || toks.get(i).and_then(|t| t.num.as_deref()) == Some("2") {
@@ -543,29 +585,30 @@ pub fn read(text: &str) -> Clearance {
                 i += used;
                 // "...one zero minutes after departure".
                 let minutes = (i + 1..(i + 4).min(toks.len())).find(|&k| ["minutes", "minute", "min"].contains(&toks[k].word.as_str()));
-                if let Some(m) = minutes {
-                    if m - i > 1 {
-                        out.expect_min = toks[m - 1].num.as_deref().and_then(|n| n.parse::<f64>().ok()).map(|n| n as i64);
-                    }
+                if let Some(m) = minutes
+                    && m - i > 1
+                {
+                    out.expect_min = toks[m - 1].num.as_deref().and_then(|n| n.parse::<f64>().ok()).map(|n| n as i64);
                 }
             }
         } else if w == "squawk" || w == "transponder" || w == "code" {
             let code = toks[i + 1..(i + 3).min(toks.len())].iter().find_map(|x| x.num.clone());
-            if let Some(code) = code {
-                if is_squawk(&code) && out.squawk.is_none() {
-                    out.squawk = Some(code);
-                }
+            if let Some(code) = code
+                && is_squawk(&code)
+                && out.squawk.is_none()
+            {
+                out.squawk = Some(code);
             }
-        } else if let Some(num) = &t.num {
-            if out.frequency.is_none() {
-                let said: Vec<&str> = toks[i.saturating_sub(4)..i].iter().map(|x| x.word.as_str()).collect();
-                let facility = said.iter().rev().find(|w| FACILITIES.contains(w)).map(|w| (*w).to_owned());
-                if let Some(frequency) = frequency_of(num) {
-                    if facility.is_some() || said.contains(&"contact") || said.contains(&"monitor") || said.contains(&"frequency") {
-                        out.frequency = Some(frequency);
-                        out.facility = facility;
-                    }
-                }
+        } else if let Some(num) = &t.num
+            && out.frequency.is_none()
+        {
+            let said: Vec<&str> = toks[i.saturating_sub(4)..i].iter().map(|x| x.word.as_str()).collect();
+            let facility = said.iter().rev().find(|w| FACILITIES.contains(w)).map(|w| (*w).to_owned());
+            if let Some(frequency) = frequency_of(num)
+                && (facility.is_some() || said.contains(&"contact") || said.contains(&"monitor") || said.contains(&"frequency"))
+            {
+                out.frequency = Some(frequency);
+                out.facility = facility;
             }
         }
         i += 1;
@@ -730,7 +773,11 @@ pub fn cleared_route(c: &Clearance, found: &FoundPlaces, planned: &Route) -> (Ro
             Item::Airway(a) => said.push(a.clone()),
             Item::Procedure { kind: "departure", .. } => {
                 if let Some(d) = &found.departure {
-                    typed.push(Typed { name: d.id.clone(), before: (!planned.dep.is_empty()).then(|| planned.dep.clone()), after: d.transition.clone() });
+                    typed.push(Typed {
+                        name: d.id.clone(),
+                        before: (!planned.dep.is_empty()).then(|| planned.dep.clone()),
+                        after: d.transition.clone(),
+                    });
                     if let Some(t) = &d.transition {
                         said.push(t.clone());
                     }
@@ -770,75 +817,10 @@ pub fn cleared_route(c: &Clearance, found: &FoundPlaces, planned: &Route) -> (Ro
     (Route { dep: planned.dep.clone(), stops: kept, dest }, typed)
 }
 
-// --- calls to us (lib/heardCall) ---------------------------------------
+// --- calls to us (lib/heardCall): callsign.rs ------------------------
 
-/// Words said in place of the N (AIM 4-2-4 b), the common ones; "Tango"
-/// for an air taxi.
-const TYPE_WORDS: &[&str] = &[
-    "cessna", "skyhawk", "skylane", "skylark", "centurion", "cardinal", "caravan", "citation", "piper", "cherokee", "warrior", "archer",
-    "arrow", "dakota", "lance", "saratoga", "seneca", "seminole", "aztec", "navajo", "malibu", "cub", "cirrus", "mooney", "bonanza", "baron",
-    "beech", "beechcraft", "king", "diamond", "katana", "grumman", "tiger", "cheetah", "yankee", "experimental", "lancair", "glasair", "vans",
-    "rv", "sport", "helicopter", "robinson", "tango", "november",
-];
-
-/// How far into a transmission our call sign may begin: a controller says
-/// it first; a pilot's readback ends with it.
-const CALL_WITHIN: usize = 3;
-
-fn mark(w: &str) -> Option<String> {
-    if let Some(l) = letter(w) {
-        return Some(l.to_string());
-    }
-    if let Some(d) = digit(w) {
-        return Some(d.to_string());
-    }
-    let alnum = w.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit());
-    (is_ascii_digits(w) || (alnum && w.bytes().any(|b| b.is_ascii_digit()))).then(|| w.to_uppercase())
-}
-
-/// Whether the transmission is said to the airplane `tail` ("N123AB"), in
-/// the forms AIM 4-2-4 lets its call sign take: the registration whole,
-/// with its N or a type's name in its place, or the prefix and its last
-/// three; never a longer call sign that ends the same (AIM 4-2-4 a.1).
-pub fn our_call(text: &str, tail: &str) -> bool {
-    let full = tail.trim().to_uppercase();
-    if !(2..=7).contains(&full.len()) || !full.bytes().all(|b| b.is_ascii_alphanumeric()) {
-        return false;
-    }
-    let body = full.strip_prefix('N').unwrap_or(&full).to_owned();
-    let last = body[body.len().saturating_sub(3)..].to_owned();
-    let lower = text.to_lowercase().replace("x-ray", "xray").replace("x ray", "xray");
-    let words: Vec<String> = lower
-        .split(|c: char| !c.is_ascii_alphanumeric())
-        .filter(|w| !w.is_empty())
-        .map(str::to_owned)
-        .collect();
-    let mut i = 0;
-    while i < words.len() {
-        if mark(&words[i]).is_none() {
-            i += 1;
-            continue;
-        }
-        let mut run = String::new();
-        let mut j = i;
-        while let Some(m) = words.get(j).and_then(|w| mark(w)) {
-            run.push_str(&m);
-            j += 1;
-        }
-        let before = if i > 0 { Some(words[i - 1].as_str()) } else { None };
-        if i <= CALL_WITHIN
-            && (run == full
-                || run == format!("N{body}")
-                || run == body
-                || run == format!("N{last}")
-                || (run == last && before.is_some_and(|b| TYPE_WORDS.contains(&b))))
-        {
-            return true;
-        }
-        i = j;
-    }
-    false
-}
+pub use crate::callsign::our_call;
+use crate::callsign::{CALL_WITHIN, TYPE_WORDS};
 
 const AFTER_DIRECT: &[&str] = &[
     "then", "climb", "maintain", "descend", "contact", "squawk", "expect", "cross", "at", "and", "when", "resume", "report", "cleared",
@@ -849,13 +831,42 @@ const AFTER_DIRECT: &[&str] = &[
 /// 4-2-7, TBL 4-2-7; "tree", "fife", "niner"), for the call sign's
 /// pattern below: the inverse of `letter` and `digit`.
 const SAID: &[(char, &[&str])] = &[
-    ('A', &["alpha", "alfa"]), ('B', &["bravo"]), ('C', &["charlie"]), ('D', &["delta"]), ('E', &["echo"]),
-    ('F', &["foxtrot"]), ('G', &["golf"]), ('H', &["hotel"]), ('I', &["india"]), ('J', &["juliet", "juliett"]),
-    ('K', &["kilo"]), ('L', &["lima"]), ('M', &["mike"]), ('N', &["november"]), ('O', &["oscar"]), ('P', &["papa"]),
-    ('Q', &["quebec"]), ('R', &["romeo"]), ('S', &["sierra"]), ('T', &["tango"]), ('U', &["uniform"]),
-    ('V', &["victor"]), ('W', &["whiskey", "whisky"]), ('X', &["xray"]), ('Y', &["yankee"]), ('Z', &["zulu"]),
-    ('0', &["zero"]), ('1', &["one"]), ('2', &["two"]), ('3', &["three", "tree"]), ('4', &["four", "fower"]),
-    ('5', &["five", "fife"]), ('6', &["six"]), ('7', &["seven"]), ('8', &["eight", "ait"]), ('9', &["nine", "niner"]),
+    ('A', &["alpha", "alfa"]),
+    ('B', &["bravo"]),
+    ('C', &["charlie"]),
+    ('D', &["delta"]),
+    ('E', &["echo"]),
+    ('F', &["foxtrot"]),
+    ('G', &["golf"]),
+    ('H', &["hotel"]),
+    ('I', &["india"]),
+    ('J', &["juliet", "juliett"]),
+    ('K', &["kilo"]),
+    ('L', &["lima"]),
+    ('M', &["mike"]),
+    ('N', &["november"]),
+    ('O', &["oscar"]),
+    ('P', &["papa"]),
+    ('Q', &["quebec"]),
+    ('R', &["romeo"]),
+    ('S', &["sierra"]),
+    ('T', &["tango"]),
+    ('U', &["uniform"]),
+    ('V', &["victor"]),
+    ('W', &["whiskey", "whisky"]),
+    ('X', &["xray"]),
+    ('Y', &["yankee"]),
+    ('Z', &["zulu"]),
+    ('0', &["zero"]),
+    ('1', &["one"]),
+    ('2', &["two"]),
+    ('3', &["three", "tree"]),
+    ('4', &["four", "fower"]),
+    ('5', &["five", "fife"]),
+    ('6', &["six"]),
+    ('7', &["seven"]),
+    ('8', &["eight", "ait"]),
+    ('9', &["nine", "niner"]),
 ];
 
 /// Our call sign as a regular expression over a recognizer's words, for

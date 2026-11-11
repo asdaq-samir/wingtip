@@ -1,27 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { SetURLSearchParams } from "react-router-dom";
+import type { SetURLSearchParams } from "react-router";
 import { toast } from "../lib/toast";
-import { cn } from "cn";
-import { TEXT } from "../lib/text";
-import { observed, planStateOf, redone, restored, started, undone, type PlanHistory } from "../lib/planHistory";
+import { observed, planStateOf, redone, restored, started, undone, type PlanHistory } from "./planHistory";
 
-/** One Undo bar at a time: the next edit's takes its place. */
-const UNDO_TOAST = "plan-undo";
-/** Long enough to read the words and reach the button, as iOS's own
- *  undo banners stay. */
-const UNDO_MS = 4000;
+/** The route's Undo toast up now, if any: one at a time, the next
+ *  change's in its place. */
+let routeUndo: string | null = null;
+
+/** What it offered was done, or no longer applies. */
+const dismissRouteUndo = () => {
+  if (routeUndo) toast.close(routeUndo);
+  routeUndo = null;
+};
 
 /** Typing in a field undoes the field's own text, the browser's way. */
 const typing = (target: EventTarget | null) =>
   target instanceof HTMLElement && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName));
 
 /**
- * The plan's Undo and Redo (lib/planHistory), from the address the page
+ * The plan's Undo and Redo (hooks/planHistory), from the address the page
  * keeps it in: each change of the route taken in as it lands, whichever
  * button made it. One that took something away -- the route cleared, a
  * stop removed, the route replaced by Fly Here or a Direct to, a
- * procedure taken off -- puts up "Route cleared · Undo" for six seconds,
- * in the app's one place for news that goes by itself (AppToaster). A
+ * procedure taken off -- puts up "Route Cleared · Undo" as a toast with
+ * its Undo, the web's stock confirmation (the owner, 2026-11-10). A
  * keyboard's Cmd-Z or Ctrl-Z undoes any step, Shift with it (or Ctrl-Y)
  * redoes it.
  */
@@ -29,15 +31,18 @@ export function usePlanHistory(searchParams: URLSearchParams, setSearchParams: S
   const history = useRef<PlanHistory | null>(null);
   const state = useMemo(() => planStateOf(searchParams), [searchParams]);
 
-  const go = useCallback((step: typeof undone) => {
-    if (!history.current) return false;
-    const next = step(history.current, Date.now());
-    if (!next) return false;
-    history.current = next;
-    toast.dismiss(UNDO_TOAST);
-    setSearchParams(prev => restored(prev, next.now), { replace: true });
-    return true;
-  }, [setSearchParams]);
+  const go = useCallback(
+    (step: typeof undone) => {
+      if (!history.current) return false;
+      const next = step(history.current, Date.now());
+      if (!next) return false;
+      history.current = next;
+      dismissRouteUndo();
+      setSearchParams((prev) => restored(prev, next.now), { replace: true });
+      return true;
+    },
+    [setSearchParams],
+  );
   const undo = useCallback(() => go(undone), [go]);
   const redo = useCallback(() => go(redone), [go]);
 
@@ -50,17 +55,11 @@ export function usePlanHistory(searchParams: URLSearchParams, setSearchParams: S
     const { history: next, note } = observed(history.current, state, now);
     history.current = next;
     if (!note) return;
-    toast(note, {
-      id: UNDO_TOAST,
-      duration: UNDO_MS,
-      action: { label: "Undo", onClick: () => { undo(); } },
-      classNames: {
-        // The blue tint of what is tapped, and a 44-point hit area made
-        // round the button rather than the button grown (CLAUDE.md).
-        actionButton: cn(TEXT.row, "bg-transparent! text-tint! font-semibold relative after:absolute after:-inset-x-3 after:-inset-y-3"),
-      },
-    });
+    dismissRouteUndo();
+    routeUndo = toast.undo(note, undo, { testId: "route-undo", onClose: () => (routeUndo = null) });
   }, [state, undo]);
+  // The page gone, its Undo with it.
+  useEffect(() => dismissRouteUndo, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

@@ -1,0 +1,87 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The items with the alternate's finding put in the weather's, where the weather says nothing worse.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoWithAlternateInput",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "tab": {
+                "type": "string"
+              },
+              "section": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "finding": {
+                "type": "string"
+              },
+              "detail": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "key",
+              "label",
+              "tab",
+              "finding",
+              "detail"
+            ]
+          }
+        },
+        "found": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "finding": {
+                  "type": "string"
+                },
+                "detail": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "finding",
+                "detail"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "gonogo_alternate_finding's answer."
+        }
+      }
+    },
+    "answer": {
+      "title": "GonogoWithAlternateAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/GonogoItem"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

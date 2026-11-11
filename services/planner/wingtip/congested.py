@@ -1,5 +1,7 @@
-"""Where a route is over a congested area, for the terrain floor's
-clearances (wingtip.terrain), which 14 CFR 91.119 sets by it:
+"""The towns a route may be over, for the terrain floor's clearances
+(wingtip.terrain), which 14 CFR 91.119 sets by them -- read here, and
+held to the rule by the engine (`congested_points`, engine/crates/altitude/
+src/altitude/congested.rs: inside a town or within (b)'s 2,000 ft of one):
 
   (b) Over congested areas. Over any congested area of a city, town, or
   settlement, or over any open air assembly of persons, an altitude of
@@ -33,6 +35,7 @@ the pilot's to see. Where the data cannot be had, nothing can be ruled
 out, and the caller takes every point as congested: 91.119(b)'s 1,000 ft,
 the safer answer.
 """
+
 from __future__ import annotations
 
 import logging
@@ -47,6 +50,7 @@ import requests
 import shapely
 
 from . import geocode
+from .engine import ask as engine
 from .units import M_PER_NM
 
 logger = logging.getLogger(__name__)
@@ -57,16 +61,16 @@ DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "census"
 URBAN_AREAS_URL = "https://www2.census.gov/geo/tiger/GENZ2020/shp/cb_2020_us_ua20_corrected_500k.zip"
 URBAN_AREAS_PATH = DIR / "cb_2020_us_ua20_corrected_500k.zip"
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; wingtip-maps/0.1; terrain floor)"}
-#: 14 CFR 91.119(b): the obstacles that count over a congested area are
-#: those "within a horizontal radius of 2,000 feet of the aircraft". An
-#: airplane over the edge of a town is that close to whatever stands that
-#: far outside it, so a point this near a town counts as over it.
-RADIUS_FT = 2000.0
+#: How far round a point the towns are looked for, ft: wider than 14 CFR
+#: 91.119(b)'s "horizontal radius of 2,000 feet" the engine holds each
+#: point to, so a town near that edge is always among those it measures.
+SEARCH_FT = 2500.0
 #: The largest circle a gazetteer place is drawn as, m: a nautical mile,
 #: the planner's own figure -- about the built-up core of a small town.
 PLACE_RADIUS_M = M_PER_NM
 #: A degree of latitude: sixty nautical miles of 6,076.12 ft, near enough
-#: (the earth's flattening moves it under 1% from the equator to the pole).
+#: (the earth's flattening moves it under 1% from the equator to the pole),
+#: as the engine has it.
 FT_PER_DEG_LAT = 60 * 6076.12
 M_PER_DEG_LAT = 60 * M_PER_NM
 #: After a failed download, the next try waits this long.
@@ -171,10 +175,25 @@ def preload() -> None:
     _tree()
 
 
+def _rings(geometry) -> list:
+    """A town's outline as the engine reads it: each polygon its outer ring
+    and holes, each ring [[lon, lat], ...]."""
+    parts = getattr(geometry, "geoms", [geometry])
+    return [
+        [shapely.get_coordinates(ring).tolist() for ring in (part.exterior, *part.interiors)] for part in parts if hasattr(part, "exterior")
+    ]
+
+
 def congested(lats, lons) -> np.ndarray | None:
-    """Whether each point is over a congested area or within RADIUS_FT of
-    one; None where that cannot be told (the data could not be had), for
-    the caller to take every point as congested."""
+    """Whether each point is over a congested area or within 91.119(b)'s
+    2,000 ft of one, the engine's (`congested_points`); None where that
+    cannot be told (the data could not be had), for the caller to take
+    every point as congested.
+
+    One ask a route: the towns within SEARCH_FT of each point by their
+    boxes (the tree), each outline sent once and each point with the
+    indices of its own, so a route over Chicago measures its thousands of
+    obstacles against the towns near them alone."""
     lats = np.asarray(lats, dtype=float)
     lons = np.asarray(lons, dtype=float)
     if lats.size == 0:
@@ -182,62 +201,24 @@ def congested(lats, lons) -> np.ndarray | None:
     tree = _tree()
     if tree is None:
         return None
-    points = shapely.points(lons, lats)
     found = np.zeros(lats.size, dtype=bool)
-    # Inside one first: the candidates by their boxes, then each town's
-    # own points against its outline at once, the outline prepared on its
-    # first use. The tree's own "intersects" tested each point against a
-    # whole city's outline unprepared, 80 ms of a route over Chicago.
-    by_box, area = tree.query(points)
-    for j in np.unique(area).tolist():
-        mine = by_box[area == j]
-        outline = tree.geometries[j]
-        if not shapely.is_prepared(outline):
-            shapely.prepare(outline)
-        found[mine[shapely.contains_xy(outline, lons[mine], lats[mine])]] = True
-    # Then those outside within 2,000 ft of one: first by a distance in
-    # degrees that is never short of 2,000 ft any way (a degree of
-    # longitude is shorter than one of latitude by the latitude's cosine),
-    # then each of those few measured on its own, the town's edge near it
-    # scaled east-west by its own latitude's cosine -- so an obstacle
-    # 2,100 ft north of a town is not counted as within 2,000.
+    # Degrees never short of SEARCH_FT any way: a degree of longitude is
+    # shorter than one of latitude by the latitude's cosine.
     widest = max(0.2, math.cos(math.radians(min(89.0, float(np.abs(lats).max())))))
-    reach = RADIUS_FT / FT_PER_DEG_LAT / widest
-    rest = np.flatnonzero(~found)
-    if rest.size:
-        near_point, near_area = tree.query(points[rest], predicate="dwithin", distance=reach)
-        if near_point.size:
-            near = _within(tree.geometries[near_area], lats[rest][near_point], lons[rest][near_point], reach)
-            found[rest[near_point[near]]] = True
+    reach = SEARCH_FT / FT_PER_DEG_LAT / widest
+    near_point, near_area = tree.query(shapely.points(lons, lats), predicate="dwithin", distance=reach)
+    if not near_point.size:
+        return found
+    asked = np.unique(near_point)
+    towns, index = np.unique(near_area, return_inverse=True)
+    candidates: dict[int, list[int]] = {int(i): [] for i in asked}
+    for i, j in zip(near_point.tolist(), index.tolist()):
+        candidates[i].append(j)
+    answer = engine(
+        "congested_points",
+        areas=[_rings(tree.geometries[j]) for j in towns.tolist()],
+        points=[[float(lats[i]), float(lons[i])] for i in asked.tolist()],
+        candidates=[candidates[i] for i in asked.tolist()],
+    )
+    found[asked] = np.asarray(answer, dtype=bool)
     return found
-
-
-def _within(areas, lats, lons, reach: float) -> np.ndarray:
-    """Whether each of `areas` comes within RADIUS_FT of its own point
-    (lats, lons): its part near the point, east-west scaled by the cosine
-    of the point's latitude.
-
-    Every pair at once: one at a time, a clip, a transform and a distance
-    each in Python, it was most of a cold route's terrain floor -- the
-    thousands of DOF obstacles round Chicago and Milwaukee each measured
-    on their own (py-spy on the live planner, 2026-10-28), each of its
-    calls letting the interpreter go and waiting to have it back from the
-    planner's other threads. Now the clip alone is one a pair; the moving,
-    scaling and measuring are done for all of them at once. The same GEOS
-    calls on the same numbers, so the same answer to the bit: the cosine
-    is still math's, one a point, as it was."""
-    lats = np.asarray(lats, dtype=float)
-    lons = np.asarray(lons, dtype=float)
-    # GEOS's clip one pair at a time: shapely.clip_by_rect takes one
-    # rectangle a call (2.2 refuses arrays of them, and the ufunc under it
-    # in 2.1 answered wrong given arrays: tried, and the equality tests in
-    # services/planner/tests_wingtip/test_congested.py failed), and the same clip keeps the same
-    # answer at the 2,000 ft edge, where an intersection with a box might not.
-    pieces = np.array([shapely.clip_by_rect(area, lon - reach, lat - reach, lon + reach, lat + reach)
-                       for area, lat, lon in zip(areas, lats.tolist(), lons.tolist())], dtype=object)
-    scale = np.array([max(0.2, math.cos(math.radians(lat))) for lat in lats.tolist()])
-    xy, which = shapely.get_coordinates(pieces, return_index=True)
-    flat = shapely.set_coordinates(
-        pieces.copy(), (xy - np.stack([lons, lats], axis=1)[which]) * np.stack([scale, np.ones_like(scale)], axis=1)[which])
-    near = shapely.distance(flat, shapely.Point(0.0, 0.0)) * FT_PER_DEG_LAT <= RADIUS_FT
-    return near & ~shapely.is_empty(pieces)

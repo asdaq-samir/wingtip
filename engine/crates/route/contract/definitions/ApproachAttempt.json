@@ -1,0 +1,24 @@
+{
+  "title": "ApproachAttempt",
+  "type": "object",
+  "properties": {
+    "faf": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "from": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "to": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "faf",
+    "from",
+    "to"
+  ],
+  "description": "An attempt at an approach as indices into the track's points: where it crossed the final approach fix inbound, and the points it runs from and to."
+}

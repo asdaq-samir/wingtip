@@ -1,0 +1,54 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "Minutes after departure the flight passes a point along the route, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoPassMinutesInput",
+      "type": "object",
+      "properties": {
+        "legs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "distance_nm": {
+                "type": "number"
+              },
+              "ete_min": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "distance_nm"
+            ]
+          }
+        },
+        "along_nm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "along_nm"
+      ]
+    },
+    "answer": {
+      "title": "GonogoPassMinutesAnswer",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

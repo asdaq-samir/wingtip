@@ -15,6 +15,30 @@ if (typeof document !== "undefined") {
   const { cleanup } = await import("@testing-library/react");
   afterEach(cleanup);
   lingeringTimers();
+  // jsdom has no matchMedia, which the app's one way of asking (SheetDialog,
+  // through useIsMobile) reads as it draws: a window that matches nothing,
+  // a desktop's, where a test stubs none of its own.
+  if (!window.matchMedia)
+    window.matchMedia = (query: string) =>
+      ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        addListener: () => {},
+        removeListener: () => {},
+        dispatchEvent: () => false,
+      }) as MediaQueryList;
+  // The menus, popovers and tooltips are on a chunk of their own
+  // (components/popupsChunk), which main.tsx fetches while the page waits
+  // for the engine, so a pilot's first tap finds it in. A test had no such
+  // wait: the first tap on a pull-down in a file fetched and transformed
+  // the chunk then, and ClearanceCard's "Find Inputs" test, waiting the
+  // default second for the menu's rows, failed whenever a busy run took
+  // longer (two runs of 2026-11-09, at 1016 ms). In before
+  // any test, as in the app, so no test races its import.
+  await (await import("../components/popupsChunk")).loadPopups();
 }
 
 /**
@@ -30,10 +54,14 @@ function lingeringTimers() {
   const pending = new Set<ReturnType<typeof setTimeout>>();
   const { setTimeout: set, clearTimeout: clear, setInterval: every, clearInterval: stop } = globalThis;
   globalThis.setTimeout = ((handler: (...a: unknown[]) => void, ms?: number, ...args: unknown[]) => {
-    const id = set((...a: unknown[]) => {
-      pending.delete(id);
-      return typeof handler === "function" ? handler(...a) : undefined;
-    }, ms, ...args);
+    const id = set(
+      (...a: unknown[]) => {
+        pending.delete(id);
+        return typeof handler === "function" ? handler(...a) : undefined;
+      },
+      ms,
+      ...args,
+    );
     pending.add(id);
     return id;
   }) as typeof setTimeout;
@@ -58,6 +86,37 @@ function lingeringTimers() {
     pending.clear();
   });
 }
+
+// No warnings (the owner's rule): a test that makes React, a library or
+// the app write a warning or an error to the console fails, with what was
+// said, rather than passing over it in the run's output. Only what a test
+// means to provoke is let through, matched here with why; a test that
+// expects one of its own spies on console itself (vi.spyOn), which
+// replaces this for that test.
+const ALLOWED_CONSOLE: RegExp[] = [
+  // The copilot says in the console when the engine refused its question
+  // and it answers nothing (features/copilot/copilotInput's watch).
+  /^copilot_watch:/,
+];
+const consoleSaid: string[] = [];
+for (const level of ["warn", "error"] as const) {
+  const write = console[level].bind(console);
+  console[level] = (...args: unknown[]) => {
+    const text = args.map((a) => (a instanceof Error ? (a.stack ?? a.message) : String(a))).join(" ");
+    if (ALLOWED_CONSOLE.some((allowed) => allowed.test(text))) return;
+    consoleSaid.push(`console.${level}: ${text}`);
+    write(...args);
+  };
+}
+afterEach(() => {
+  if (consoleSaid.length === 0) return;
+  const said = consoleSaid.splice(0).join("\n");
+  throw new Error(
+    `This test wrote to the console:\n${said}\n` +
+      "Fix the cause; if the test means to provoke it, spy on console in the test, or add it to " +
+      "ALLOWED_CONSOLE in src/test/guards.ts with why.",
+  );
+});
 
 // A test that turns on fake timers turns them off again (vi.useRealTimers
 // in its own afterEach or finally). Left on, the next test's setTimeout

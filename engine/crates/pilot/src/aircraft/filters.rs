@@ -54,7 +54,7 @@ pub fn band_of(altitude_ft: Option<f64>) -> Option<&'static str> {
         "low"
     } else if a < 10_000.0 {
         "mid"
-    } else if a < 18_000.0 {
+    } else if a < wingtip_flight::limits::FLIGHT_LEVELS_FROM_FT {
         "high"
     } else {
         "flight-levels"
@@ -142,8 +142,8 @@ pub fn relation_to(plane: &Plane, lat: f64, lon: f64, elevation_ft: f64) -> Rela
     let to_field = bearing_deg(plane.lat, plane.lon, lat, lon);
     let rate = plane.vertical_fpm.unwrap_or(0.0);
     let inbound = angle_between(track, to_field) <= HEADED_DEG && (rate <= -CHANGING_FPM || nm <= AROUND_NM);
-    let departing = angle_between(track, (to_field + 180.0) % 360.0) <= HEADED_DEG
-        && (rate >= CHANGING_FPM || (nm <= AROUND_NM && above < 3000.0));
+    let departing =
+        angle_between(track, (to_field + 180.0) % 360.0) <= HEADED_DEG && (rate >= CHANGING_FPM || (nm <= AROUND_NM && above < 3000.0));
     Relation { around, inbound, departing }
 }
 

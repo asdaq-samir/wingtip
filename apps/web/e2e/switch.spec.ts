@@ -40,12 +40,12 @@ test("the panel's head looks the same on both pages: the console's role says whi
   await closeSidebarWithTheStockKey(page);
   await expectDrawerClosed(page);
   // The pill on both pages the tab bar alone, no head under it: the panel's own.
-  const pilotBg = await page.locator('[data-slot="map-panel"]').evaluate(el => getComputedStyle(el).backgroundColor);
+  const pilotBg = await page.locator('[data-slot="map-panel"]').evaluate((el) => getComputedStyle(el).backgroundColor);
   await expect(page.locator("[data-mode]")).toHaveAttribute("data-mode", "pilot");
   await expect((await roleMenu(page)).developer).toHaveAttribute("aria-checked", "false");
   await page.goto("/app/dev");
   await settle(page);
-  const devBg = await page.locator('[data-slot="map-panel"]').evaluate(el => getComputedStyle(el).backgroundColor);
+  const devBg = await page.locator('[data-slot="map-panel"]').evaluate((el) => getComputedStyle(el).backgroundColor);
   await expect(page.locator("[data-mode]")).toHaveAttribute("data-mode", "dev");
   await expect((await roleMenu(page)).developer).toHaveAttribute("aria-checked", "true");
   expect(devBg).toBe(pilotBg);
@@ -56,17 +56,20 @@ test("the route box leads the pill's head the same, signed in or out", async ({ 
   // whose actions differ. (The dev page's form has no pill to set it
   // against: its pill is the tabs.) From the panel's edge: at the pill's
   // size the route is the pill's, not in the panel's header.
-  const lead = (p: Page) => sideDrawer(p).evaluate(panel => {
-    const form = panel.querySelector("[data-testid=route-box]")!.getBoundingClientRect();
-    return Math.round(form.left - panel.getBoundingClientRect().left);
-  });
+  const lead = (p: Page) =>
+    sideDrawer(p).evaluate((panel) => {
+      const form = panel.querySelector("[data-testid=route-box]")!.getBoundingClientRect();
+      return Math.round(form.left - panel.getBoundingClientRect().left);
+    });
   const leads: number[] = [];
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
   leads.push(await lead(page));
   const signedOut = await browser.newContext({
-    baseURL: new URL(page.url()).origin, viewport: page.viewportSize(), storageState: { cookies: [], origins: [] },
+    baseURL: new URL(page.url()).origin,
+    viewport: page.viewportSize(),
+    storageState: { cookies: [], origins: [] },
   });
   await signedOut.addInitScript(noTips);
   const planner = await signedOut.newPage();

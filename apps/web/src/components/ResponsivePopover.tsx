@@ -1,7 +1,10 @@
-import { createContext, useContext, useState, type ComponentProps, type ReactNode } from "react";
-import { Slot } from "radix-ui";
+import { createContext, useContext, useState, type ComponentProps, type ReactElement, type ReactNode } from "react";
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
+import type { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 import { cn } from "cn";
-import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from "./ui/popover";
+import type { PopoverContent, PopoverTrigger } from "./ui/popover";
+import { loadPopups, usePopups } from "./popupsChunk";
 import { useIsMobile } from "../hooks/use-mobile";
 import { SheetCard } from "./SheetCard";
 import { TEXT } from "../lib/text";
@@ -26,26 +29,67 @@ type OnPhoneCard = {
   search: boolean;
 };
 
-/** The card's open state on a phone; from `md` up, none (Radix's). */
+/** The card's open state on a phone; from `md` up, none (Base UI's). */
 const OnPhone = createContext<OnPhoneCard | null>(null);
 
-export function ResponsivePopover({ children, open, onOpenChange, phoneEdge }: {
+/** From `md` up: the popover's parts, on the popups' chunk (popupsChunk);
+ *  until that is in, none, and a tap on the trigger asks for it and opens
+ *  the popover once it is. */
+const Desk = createContext<{ popups: ReturnType<typeof usePopups>; ask: () => void } | null>(null);
+
+/** What the popover is placed against where that is not its trigger
+ *  (ResponsivePopoverAnchor): Base UI's Positioner takes it as `anchor`,
+ *  where Radix had an Anchor part. */
+const Anchor = createContext<{ el: HTMLElement | null; set: (el: HTMLElement | null) => void } | null>(null);
+
+/** Why it is closing, from `md` up: Base UI's, which a caller can cancel
+ *  (a press on a row that switches the form, a focus moved by a menu just
+ *  closed); on a phone, where only its close shuts it, none. */
+type CloseDetails = PopoverPrimitive.Root.ChangeEventDetails;
+
+export function ResponsivePopover({
+  children,
+  open,
+  onOpenChange,
+  phoneEdge,
+}: {
   children: ReactNode;
   open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  onOpenChange?: (open: boolean, details?: CloseDetails) => void;
   /** "top" for a search typed into, whose card comes all the way up, clear
    *  of the keyboard; else a card half way. */
   phoneEdge?: "top" | "bottom";
 }) {
   const isMobile = useIsMobile();
   // Open as the caller says where it says (`open`), else its own, as
-  // Radix's are.
+  // Base UI's are.
   const [own, setOwn] = useState(false);
   const [trigger, setTrigger] = useState<HTMLElement | null>(null);
-  if (!isMobile) return <Popover open={open} onOpenChange={onOpenChange}>{children}</Popover>;
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const popups = usePopups();
+  const [asked, setAsked] = useState(false);
+  if (!isMobile) {
+    const placed = <Anchor.Provider value={{ el: anchor, set: setAnchor }}>{children}</Anchor.Provider>;
+    if (!popups) {
+      const ask = () => {
+        setAsked(true);
+        onOpenChange?.(true);
+        void loadPopups();
+      };
+      return <Desk.Provider value={{ popups, ask }}>{placed}</Desk.Provider>;
+    }
+    return (
+      <popups.Popover open={open} defaultOpen={asked} onOpenChange={onOpenChange}>
+        <Desk.Provider value={{ popups, ask: () => {} }}>{placed}</Desk.Provider>
+      </popups.Popover>
+    );
+  }
   const phone: OnPhoneCard = {
     open: open ?? own,
-    setOpen: next => { setOwn(next); onOpenChange?.(next); },
+    setOpen: (next) => {
+      setOwn(next);
+      onOpenChange?.(next);
+    },
     setTrigger,
     trigger: () => trigger,
     search: phoneEdge === "top",
@@ -53,30 +97,59 @@ export function ResponsivePopover({ children, open, onOpenChange, phoneEdge }: {
   return <OnPhone.Provider value={phone}>{children}</OnPhone.Provider>;
 }
 
-export function ResponsivePopoverTrigger({ asChild, onClick, ...props }: ComponentProps<typeof PopoverTrigger>) {
+/** Its button: `asChild` makes the one child the button (Base UI's
+ *  `render`), as it did under Radix. */
+export function ResponsivePopoverTrigger({
+  asChild,
+  children,
+  onClick,
+  ...props
+}: Omit<ComponentProps<typeof PopoverTrigger>, "render"> & { asChild?: boolean; children?: ReactNode }) {
   const phone = useContext(OnPhone);
-  if (!phone) return <PopoverTrigger asChild={asChild} onClick={onClick} {...props} />;
-  const Comp = asChild ? Slot.Root : "button";
-  const { open, setOpen, setTrigger } = phone;
-  return (
-    <Comp
-      type={asChild ? undefined : "button"} aria-expanded={open} data-state={open ? "open" : "closed"}
-      {...props}
-      ref={setTrigger}
-      // The caller's first, which can keep it shut (preventDefault), as
-      // Radix's trigger lets it.
-      onClick={event => {
-        onClick?.(event);
-        if (!event.defaultPrevented) setOpen(!open);
-      }}
-    />
-  );
+  const desk = useContext(Desk);
+  // A plain button: the phone's, which opens its card, or, from `md` up,
+  // one standing in for the popover's until its chunk is in.
+  const own = phone
+    ? { open: phone.open, toggle: () => phone.setOpen(!phone.open), ref: phone.setTrigger }
+    : desk && !desk.popups
+      ? { open: false, toggle: desk.ask, ref: undefined }
+      : null;
+  const child = asChild ? (children as ReactElement<Record<string, unknown>>) : undefined;
+  const element = useRender({
+    enabled: !!own,
+    defaultTagName: "button",
+    render: child,
+    ref: own?.ref,
+    props: mergeProps<"button">(
+      { type: asChild ? undefined : "button", "aria-expanded": own?.open, children: asChild ? undefined : children },
+      // As Base UI's trigger marks itself while its popover is open.
+      { "data-popup-open": own?.open ? "" : undefined } as ComponentProps<"button">,
+      // Base UI's own, which the phone's plain button has no use for.
+      (({ nativeButton: _native, ...rest }) => rest)(props) as ComponentProps<"button">,
+      {
+        // The caller's first, which can keep it shut (preventDefault).
+        onClick: (event) => {
+          onClick?.(event as Parameters<NonNullable<typeof onClick>>[0]);
+          if (own && !event.defaultPrevented) own.toggle();
+        },
+      },
+    ),
+  });
+  if (!own && desk?.popups)
+    return (
+      <desk.popups.PopoverTrigger render={child} onClick={onClick} {...props}>
+        {asChild ? undefined : children}
+      </desk.popups.PopoverTrigger>
+    );
+  return element;
 }
 
 /** What the popover is placed against, where a trigger cannot be (a mark
- *  inside another button, the logbook's); a phone's card needs none. */
-export function ResponsivePopoverAnchor({ children, ...props }: ComponentProps<typeof PopoverAnchor>) {
-  return useContext(OnPhone) ? <>{children}</> : <PopoverAnchor {...props}>{children}</PopoverAnchor>;
+ *  inside another button, the logbook's): its one child, measured for the
+ *  popover's place. A phone's card needs none. */
+export function ResponsivePopoverAnchor({ children }: { asChild?: boolean; children: ReactElement }) {
+  const anchor = useContext(Anchor);
+  return useRender({ render: children, ref: anchor?.set });
 }
 
 type ContentProps = ComponentProps<typeof PopoverContent> & {
@@ -104,41 +177,73 @@ type ContentProps = ComponentProps<typeof PopoverContent> & {
 };
 
 export function ResponsivePopoverContent({
-  title, description, titleHidden, action, leading, className, closeButton, children, align, side, sideOffset,
-  alignOffset, collisionPadding, ...props
+  title,
+  description,
+  titleHidden,
+  action,
+  leading,
+  className,
+  closeButton,
+  children,
+  align,
+  side,
+  sideOffset,
+  alignOffset,
+  collisionPadding,
+  ...props
 }: ContentProps) {
   const phone = useContext(OnPhone);
+  const desk = useContext(Desk);
+  const anchor = useContext(Anchor);
   if (!phone) {
+    if (!desk?.popups) return null;
     return (
-      <PopoverContent
+      <desk.popups.PopoverContent
+        anchor={anchor?.el ?? undefined}
         // Eight off its trigger, past the trigger's hit area (index.css),
         // where the stock four laid the popover over it.
-        aria-label={title} className={className} align={align} side={side} sideOffset={sideOffset ?? 8} alignOffset={alignOffset}
-        collisionPadding={collisionPadding} {...props}
+        aria-label={title}
+        className={className}
+        align={align}
+        side={side}
+        sideOffset={sideOffset ?? 8}
+        alignOffset={alignOffset}
+        collisionPadding={collisionPadding}
+        {...props}
       >
         {action !== undefined && (
           <div className="flex min-h-8 items-center justify-between gap-2">
             {leading}
             {/* A heading, as the phone's card's name is, so a page pushed
                 in the popover (the Procedures') is named alike on both. */}
-            <div role="heading" aria-level={2} className={cn("font-semibold", TEXT.row, leading && "flex-1 text-center")}>{title}</div>
+            <div role="heading" aria-level={2} className={cn("font-semibold", TEXT.row, leading && "flex-1 text-center")}>
+              {title}
+            </div>
             {action}
           </div>
         )}
         {children}
-      </PopoverContent>
+      </desk.popups.PopoverContent>
     );
   }
   if (!phone.open) return null;
-  // The popover's own sizes and its other Radix handlers are left behind:
-  // the card is the panel's width, and no modal (nothing outside it to
-  // dismiss it on).
-  const { onOpenAutoFocus, onCloseAutoFocus, onEscapeKeyDown, "data-testid": testId } = props as typeof props & { "data-testid"?: string };
+  // The popover's own sizes and placement are left behind: the card is the
+  // panel's width, and no modal (nothing outside it to dismiss it on).
+  const { initialFocus, finalFocus, "data-testid": testId } = props as typeof props & { "data-testid"?: string };
   return (
     <SheetCard
-      title={title} titleHidden={titleHidden} description={description} leading={leading} action={action} closeButton={closeButton}
-      onClose={() => phone.setOpen(false)} raise={phone.search ? "full" : "half"} testId={testId} returnFocus={phone.trigger}
-      onOpenAutoFocus={onOpenAutoFocus} onCloseAutoFocus={onCloseAutoFocus} onEscapeKeyDown={onEscapeKeyDown}
+      title={title}
+      titleHidden={titleHidden}
+      description={description}
+      leading={leading}
+      action={action}
+      closeButton={closeButton}
+      onClose={() => phone.setOpen(false)}
+      raise={phone.search ? "full" : "half"}
+      testId={testId}
+      returnFocus={phone.trigger}
+      initialFocus={initialFocus}
+      finalFocus={finalFocus}
     >
       {children}
     </SheetCard>

@@ -8,10 +8,12 @@ conftest's autouse fixture stubs `score_detections` for every other
 test, so the real one is taken here at import, before any fixture runs.
 `_cache` is kept at module scope while the files are unchanged, which
 would leak one test's model into the next: cleared before each."""
+
 import json
 import os
 
 import joblib
+import pandas as pd
 import pytest
 from sklearn.dummy import DummyRegressor
 from sklearn.linear_model import LinearRegression
@@ -31,12 +33,24 @@ def _chart_dir(tmp_path, monkeypatch):
 def _write_chart_model(chart):
     chart.mkdir(parents=True, exist_ok=True)
     # rating = log_area - is_river: a row without is_river reads it as 0.
-    model = LinearRegression().fit([[1.0, 0.0], [2.0, 1.0], [3.0, 0.0]], [1.0, 1.0, 3.0])
+    # Fitted on named columns, as wingtip.chartmodel fits on train[FEATURE_COLS]:
+    # fitted on bare lists, scikit-learn warns at predict that the scorer's
+    # DataFrame has names the model was not fitted with.
+    X = pd.DataFrame([[1.0, 0.0], [2.0, 1.0], [3.0, 0.0]], columns=["log_area", "is_river"])
+    model = LinearRegression().fit(X, [1.0, 1.0, 3.0])
     joblib.dump(model, chart / "model.joblib")
-    (chart / "metrics.json").write_text(json.dumps({
-        "model_type": "LinearRegression", "feature_cols": ["log_area", "is_river"], "trained_at": "2026-10-02T00:00:00Z",
-        "held_out_mae": 0.6, "palette_held_out_mae": 1.4, "rating_range": [0, 5],
-    }))
+    (chart / "metrics.json").write_text(
+        json.dumps(
+            {
+                "model_type": "LinearRegression",
+                "feature_cols": ["log_area", "is_river"],
+                "trained_at": "2026-10-02T00:00:00Z",
+                "held_out_mae": 0.6,
+                "palette_held_out_mae": 1.4,
+                "rating_range": [0, 5],
+            }
+        )
+    )
 
 
 def test_no_chart_model_promoted_is_no_scores(_chart_dir):
@@ -46,12 +60,14 @@ def test_no_chart_model_promoted_is_no_scores(_chart_dir):
 def test_each_row_is_scored_in_order_on_the_columns_the_model_was_fitted_on(_chart_dir):
     _write_chart_model(_chart_dir)
 
-    scores = score_detections([
-        {"is_river": 1.0, "log_area": 4.0, "nn_dist_nm": 9.0},
-        {"log_area": 2.0},
-        # 9 by the line, held to the scale it was trained on.
-        {"log_area": 9.0},
-    ])
+    scores = score_detections(
+        [
+            {"is_river": 1.0, "log_area": 4.0, "nn_dist_nm": 9.0},
+            {"log_area": 2.0},
+            # 9 by the line, held to the scale it was trained on.
+            {"log_area": 9.0},
+        ]
+    )
 
     assert scores == pytest.approx([3.0, 2.0, 5.0])
 
@@ -75,9 +91,9 @@ def _write_model(model_dir, constant: float, mtime_s: float):
     model = DummyRegressor(strategy="constant", constant=constant)
     model.fit([[0.0]], [0.0])
     joblib.dump(model, model_dir / "model.joblib")
-    (model_dir / "metrics.json").write_text(json.dumps({
-        "model_type": "dummy", "feature_cols": ["x"], "trained_at": "2026-01-01T00:00:00Z",
-    }))
+    (model_dir / "metrics.json").write_text(
+        json.dumps({"model_type": "dummy", "feature_cols": ["x"], "trained_at": "2026-01-01T00:00:00Z"})
+    )
     for name in ("model.joblib", "metrics.json"):
         os.utime(model_dir / name, (mtime_s, mtime_s))
 

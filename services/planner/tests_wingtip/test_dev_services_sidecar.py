@@ -2,6 +2,7 @@
 socket for the developer console. What it must never do is reach the
 Docker API for anything but listing and starting its own four
 services -- that is the whole reason it replaced a socket proxy."""
+
 import importlib.util
 import json
 import urllib.parse
@@ -40,10 +41,7 @@ class FakeDocker:
 
 def test_states_report_every_allowed_service():
     api = FakeDocker({"ml": "exited"})
-    assert server.states("flight_plan", ALLOWED, api) == [
-        {"name": "ml", "state": "exited"},
-        {"name": "retrain", "state": "absent"},
-    ]
+    assert server.states("flight_plan", ALLOWED, api) == [{"name": "ml", "state": "exited"}, {"name": "retrain", "state": "absent"}]
 
 
 def test_start_starts_a_stopped_service():
@@ -77,7 +75,7 @@ def test_start_needs_an_existing_container():
 def test_lookups_are_scoped_to_the_project():
     api = FakeDocker({"ml": "running"})
     server.states("other_checkout", ("ml",), api)
-    (_, path), = api.calls
+    ((_, path),) = api.calls
     assert "com.docker.compose.project%3Dother_checkout" in path
 
 
@@ -101,10 +99,15 @@ class LabelledDocker:
 
 
 def _container(id_: str, state: str, oneoff: bool) -> dict:
-    return {"Id": id_, "State": state, "Labels": {
-        "com.docker.compose.project": "flight_plan", "com.docker.compose.service": "ml",
-        "com.docker.compose.oneoff": str(oneoff),
-    }}
+    return {
+        "Id": id_,
+        "State": state,
+        "Labels": {
+            "com.docker.compose.project": "flight_plan",
+            "com.docker.compose.service": "ml",
+            "com.docker.compose.oneoff": str(oneoff),
+        },
+    }
 
 
 def test_a_one_off_run_is_never_taken_for_the_service():

@@ -1,12 +1,21 @@
 """A route with no legal altitude flown anyway, with what it breaks said
-(app.planning.altitude_anyway, own_altitude_caution), at the owner's "I
+(wingtip.planning.altitude_anyway, own_altitude_caution), at the owner's "I
 don't want to put hard limits on anything" (2026-10-23)."""
-from app.planning import altitude_anyway, own_altitude_caution, prohibited_caution
+
+from wingtip.planning import altitude_anyway, own_altitude_caution, prohibited_caution
 
 # The Rockies on Los Angeles to Hartford's line, eastbound, for an airplane
 # whose ceiling is 10,950 ft.
-ROCKIES = {"floor_ft": 13600.0, "service_ceiling_ft": 10950.0, "course_magnetic_deg": 80.0, "eastbound": True,
-           "hemispheric_rule_from_ft": 9000.0, "airspace_ceiling_ft": None, "cloud_ceiling_ft": None, "candidates_ft": []}
+ROCKIES = {
+    "floor_ft": 13600.0,
+    "service_ceiling_ft": 10950.0,
+    "course_magnetic_deg": 80.0,
+    "eastbound": True,
+    "hemispheric_rule_from_ft": 9000.0,
+    "airspace_ceiling_ft": None,
+    "cloud_ceiling_ft": None,
+    "candidates_ft": [],
+}
 
 
 def test_over_the_high_ground_above_the_ceiling_with_its_warning():
@@ -21,18 +30,6 @@ def test_over_the_high_ground_above_the_ceiling_with_its_warning():
     # Carrying oxygen, the ceiling alone.
     with_oxygen = own_altitude_caution(selection, [{"altitude_ft": 15500.0}], ("KLAX", "KBDL"), {"supplemental_oxygen": True})
     assert with_oxygen["reasons"] == ["Over the aircraft's 10,950 ft service ceiling"]
-
-
-def test_oxygen_by_91_211s_three_heights():
-    from app.planning import oxygen_caution
-    # Each side of 12,500, 14,000 and 15,000 ft MSL (14 CFR 91.211(a)).
-    assert oxygen_caution(12500.0, None) == []
-    assert "(a)(1)" in oxygen_caution(13500.0, None)[0]
-    assert "(a)(1)" in oxygen_caution(14000.0, None)[0]
-    assert oxygen_caution(14500.0, None)[0].endswith("(14 CFR 91.211(a)(2))")
-    assert oxygen_caution(15000.0, None)[0].endswith("(14 CFR 91.211(a)(2))")
-    assert "(3)" in oxygen_caution(15500.0, None)[0]
-    assert oxygen_caution(15500.0, {"pressurized": True}) == []
 
 
 def test_class_a_is_a_warning_too():

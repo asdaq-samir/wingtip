@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, slow, grabberTo } from "./helpers";
+import { grabberTo, settle, slow } from "./helpers";
 
 /**
  * The traffic about the map (TrafficLayer), from adsb.lol through the
@@ -8,23 +8,47 @@ import { settle, slow, grabberTo } from "./helpers";
  */
 
 const TRAFFIC = {
-  source: "adsb.lol", license: "ODbL 1.0",
+  source: "adsb.lol",
+  license: "ODbL 1.0",
   aircraft: [
-    { hex: "a1", callsign: "N174HA", lat: 42.33, lon: -88.05, altitude_ft: 4500, pressure_altitude: false, track_deg: 320, speed_kt: 94, vertical_fpm: -800 },
-    { hex: "a2", callsign: "UAL1023", lat: 42.30, lon: -88.10, altitude_ft: 9800, pressure_altitude: false, track_deg: 90, speed_kt: 220, vertical_fpm: 0 },
+    {
+      hex: "a1",
+      callsign: "N174HA",
+      lat: 42.33,
+      lon: -88.05,
+      altitude_ft: 4500,
+      pressure_altitude: false,
+      track_deg: 320,
+      speed_kt: 94,
+      vertical_fpm: -800,
+    },
+    {
+      hex: "a2",
+      callsign: "UAL1023",
+      lat: 42.3,
+      lon: -88.1,
+      altitude_ft: 9800,
+      pressure_altitude: false,
+      track_deg: 90,
+      speed_kt: 220,
+      vertical_fpm: 0,
+    },
   ],
 };
 
 async function showTraffic(page: Page, on: boolean) {
-  await page.addInitScript(show => {
+  await page.addInitScript((show) => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
     localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, traffic: show } }));
   }, on);
   const asks: URL[] = [];
-  await page.route(url => url.pathname.endsWith("/api/planner/traffic"), route => {
-    asks.push(new URL(route.request().url()));
-    return route.fulfill({ json: TRAFFIC });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/traffic"),
+    (route) => {
+      asks.push(new URL(route.request().url()));
+      return route.fulfill({ json: TRAFFIC });
+    },
+  );
   return asks;
 }
 
@@ -32,7 +56,9 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("shown in the map's settings, the airplanes about are drawn on their tracks with their heights, and adsb.lol is credited", async ({ page }) => {
+test("shown in the map's settings, the airplanes about are drawn on their tracks with their heights, and adsb.lol is credited", async ({
+  page,
+}) => {
   const asks = await showTraffic(page, true);
   await page.goto("/app/plan?place=C81");
   await settle(page);
@@ -51,35 +77,40 @@ test("shown in the map's settings, the airplanes about are drawn on their tracks
 
 test.describe("on a touch screen", () => {
   test.use({ hasTouch: true });
-test("on a phone the credit rides on the sheet's top, under a finger and at rest", { tag: "@smoke" }, async ({ page }) => {
-  test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
-  await showTraffic(page, true);
-  await page.goto("/app/plan?place=C81");
-  await settle(page);
-  const credit = page.locator(".maplibregl-ctrl-attrib", { hasText: "adsb.lol" });
-  await expect(credit).toBeVisible({ timeout: slow(15_000) });
-  const panel = page.locator('[data-slot="map-panel"]');
-  // The credit's foot against the sheet's top.
-  const gap = async () => {
-    const [c, p] = [(await credit.boundingBox())!, (await panel.boundingBox())!];
-    return Math.abs(c.y + c.height - p.y);
-  };
-  for (const size of ["half", "peek"] as const) {
-    await grabberTo(page, size);
+  test("on a phone the credit rides on the sheet's top, at rest and where a drag lands it", { tag: "@smoke" }, async ({ page }) => {
+    test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
+    await showTraffic(page, true);
+    await page.goto("/app/plan?place=C81");
+    await settle(page);
+    const credit = page.locator(".maplibregl-ctrl-attrib", { hasText: "adsb.lol" });
+    await expect(credit).toBeVisible({ timeout: slow(15_000) });
+    const panel = page.locator('[data-slot="map-panel"]');
+    // The credit's foot against the sheet's top.
+    const gap = async () => {
+      const [c, p] = [(await credit.boundingBox())!, (await panel.boundingBox())!];
+      return Math.abs(c.y + c.height - p.y);
+    };
+    for (const size of ["half", "peek"] as const) {
+      await grabberTo(page, size);
+      await expect.poll(gap).toBeLessThan(3);
+    }
+    // Dragged up from its grabber and let go (the card is the sheet, no
+    // search over it): the credit on the sheet's top where the throw lands
+    // it, where it once stayed at the inset the sheet had before (the
+    // owner, 2026-10-28). Under the finger it waits for the throw: the
+    // map's buttons and credits, outside the stock Drawer's tree, take the
+    // height the sheet is going to once per snap point (sheetCover; the
+    // Drawer as it is, the owner 2026-11-10).
+    const tabs = (await page.getByTestId("sidebar-trigger-button").boundingBox())!;
+    const at = { x: tabs.x + tabs.width / 2, y: tabs.y + tabs.height / 2 };
+    const cdp = await page.context().newCDPSession(page);
+    const touch = (type: string, q?: { x: number; y: number }) =>
+      cdp.send("Input.dispatchTouchEvent", { type, touchPoints: q ? [{ ...q, id: 1 }] : [] });
+    await touch("touchStart", at);
+    for (let i = 1; i <= 6; i++) await touch("touchMove", { x: at.x, y: at.y - 25 * i });
+    await touch("touchEnd");
     await expect.poll(gap).toBeLessThan(3);
-  }
-  // Dragged up from its tabs and held: the credit goes with it, where it
-  // stayed at the inset the sheet had at rest (the owner, 2026-10-28).
-  const tabs = (await panel.getByTestId("tab-bar").boundingBox())!;
-  const at = { x: tabs.x + tabs.width / 2, y: tabs.y + tabs.height / 2 };
-  const cdp = await page.context().newCDPSession(page);
-  const touch = (type: string, q?: { x: number; y: number }) =>
-    cdp.send("Input.dispatchTouchEvent", { type, touchPoints: q ? [{ ...q, id: 1 }] : [] });
-  await touch("touchStart", at);
-  for (let i = 1; i <= 6; i++) await touch("touchMove", { x: at.x, y: at.y - 25 * i });
-  await expect.poll(gap).toBeLessThan(3);
-  await touch("touchEnd");
-});
+  });
 });
 
 test("between reports each airplane is carried on along its track, as ForeFlight's and FlightAware's are", async ({ page }) => {
@@ -91,8 +122,10 @@ test("between reports each airplane is carried on along its track, as ForeFlight
   // not asked again (wingtip.traffic): UAL1023 east at 450 kt.
   const reported = Date.now();
   const jet = { ...TRAFFIC.aircraft[1], speed_kt: 450 };
-  await page.route(url => url.pathname.endsWith("/api/planner/traffic"), route =>
-    route.fulfill({ json: { ...TRAFFIC, aircraft: [jet], age_s: (Date.now() - reported) / 1000 } }));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/traffic"),
+    (route) => route.fulfill({ json: { ...TRAFFIC, aircraft: [jet], age_s: (Date.now() - reported) / 1000 } }),
+  );
   await page.goto("/app/plan?place=C81");
   await settle(page);
   const mark = page.locator("svg[data-traffic]");
@@ -115,10 +148,14 @@ test("off, as it is unless shown, nothing is asked and nothing drawn", async ({ 
   await page.waitForTimeout(2000);
   expect(asks).toHaveLength(0);
   await expect(page.locator("svg[data-traffic]")).toHaveCount(0);
-  await expect(page.locator(".maplibregl-ctrl-attrib")).toHaveCount(0);
+  // The map's row keeps its legal links (MapCredits); the traffic's credit is not in it.
+  await expect(page.locator(".maplibregl-ctrl-attrib")).not.toContainText("adsb.lol");
 });
 
-test("the traffic is asked about wherever the map is panned, own ship or not, and further out for a map zoomed out", async ({ page, context }) => {
+test("the traffic is asked about wherever the map is panned, own ship or not, and further out for a map zoomed out", async ({
+  page,
+  context,
+}) => {
   // Own ship at Campbell (C81): the traffic was asked about it whatever
   // the map showed, so a map panned to Madison showed none there.
   await context.grantPermissions(["geolocation"]);
@@ -130,11 +167,17 @@ test("the traffic is asked about wherever the map is panned, own ship or not, an
   const last = () => asks[asks.length - 1]!.searchParams;
   // About Madison, the map's middle (a little off it, clear of the card),
   // not Campbell, 65 nm away to the south-east.
-  await expect.poll(() => {
-    const lat = Number(last().get("lat")), lon = Number(last().get("lon"));
-    const from = (a: number, b: number) => Math.hypot(lat - a, (lon - b) * 0.73);
-    return from(43.14, -89.34) < from(42.32, -88.07);
-  }, { timeout: slow(15_000) }).toBe(true);
+  await expect
+    .poll(
+      () => {
+        const lat = Number(last().get("lat")),
+          lon = Number(last().get("lon"));
+        const from = (a: number, b: number) => Math.hypot(lat - a, (lon - b) * 0.73);
+        return from(43.14, -89.34) < from(42.32, -88.07);
+      },
+      { timeout: slow(15_000) },
+    )
+    .toBe(true);
   // Zoomed out to a state: asked further than the near regions' 60 nm --
   // the card's link opens all the way up, so down to its pill first.
   await grabberTo(page, "peek");
@@ -147,15 +190,21 @@ test("the traffic is asked about wherever the map is panned, own ship or not, an
   await expect.poll(() => Number(last().get("radius")), { timeout: slow(15_000) }).toBeGreaterThan(60);
 });
 
-test("an answer missed while the map is panned is not said; traffic is said unavailable only after half a minute without one", async ({ page }) => {
+test("an answer missed while the map is panned is not said; traffic is said unavailable only after half a minute without one", async ({
+  page,
+}) => {
   await page.addInitScript(() => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
     localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, traffic: true } }));
   });
   let down = false;
-  await page.route(url => url.pathname.endsWith("/api/planner/traffic"), route => (down
-    ? route.fulfill({ status: 503, json: { detail: "Traffic isn't available right now: adsb.lol has not answered for a minute." } })
-    : route.fulfill({ json: TRAFFIC })));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/traffic"),
+    (route) =>
+      down
+        ? route.fulfill({ status: 503, json: { detail: "Traffic isn't available right now: adsb.lol has not answered for a minute." } })
+        : route.fulfill({ json: TRAFFIC }),
+  );
   await page.clock.install();
   await page.goto("/app/plan?place=C81");
   await settle(page);

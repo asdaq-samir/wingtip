@@ -15,6 +15,7 @@ privileged container with the host's `/` mounted is root on the host.
 
 Standard library only, so the image is python plus this file.
 """
+
 from __future__ import annotations
 
 import http.client
@@ -75,11 +76,9 @@ def find(name: str, project: str, api=docker) -> dict | None:
     project and service labels, and was taken for the service -- a
     training run reported as Jupyter running, and an exited one restarted
     in Jupyter's place. Compose tells its own apart by this label too."""
-    filters = json.dumps({"label": [
-        f"com.docker.compose.project={project}",
-        f"com.docker.compose.service={name}",
-        "com.docker.compose.oneoff=False",
-    ]})
+    filters = json.dumps(
+        {"label": [f"com.docker.compose.project={project}", f"com.docker.compose.service={name}", "com.docker.compose.oneoff=False"]}
+    )
     status, body = api("GET", "/containers/json?all=1&filters=" + urllib.parse.quote(filters))
     if status != 200:
         raise DockerError(f"listing containers failed with {status}")

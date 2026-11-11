@@ -1,0 +1,569 @@
+{
+ "about": "A pilot's currency (14 CFR 61.56(c), 61.57(a)-(d)) and a student's 61.109(a) experience from the logbook: the engine's pilot_currency and pilot_experience (engine/crates/pilot/src/pilot/currency.rs), moved from the gateway's CurrencyService and TrainingService with the cases their tests held them to (#482 phase 1). Each `expected` lists the members it pins; an experience item is [have, met]. Entries are the gateway's LogbookEntry, camelCase. The engine (engine/facade/tests/pilot.rs) and the planner (services/planner/tests/test_pilot.py) are held to it.",
+ "currency": [
+  {
+   "name": "Passengers by day: 90 days from the third most recent landing (61.57(a))",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-09-20",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0
+    },
+    {
+     "flownOn": "2026-09-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0
+    },
+    {
+     "flownOn": "2026-08-10",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 2,
+     "nightLandings": 0
+    },
+    {
+     "flownOn": "2026-06-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 5,
+     "nightLandings": 0
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": "2026-11-08",
+    "nightPassengersUntil": null,
+    "landings": 9,
+    "totalHours": 4.0,
+    "flights": 4
+   }
+  },
+  {
+   "name": "At night only the night full-stop landings count (61.57(b))",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-09-20",
+     "totalHours": 1.0,
+     "nightHours": 1.0,
+     "crossCountryHours": 0,
+     "dayLandings": 5,
+     "nightLandings": 2
+    },
+    {
+     "flownOn": "2026-09-01",
+     "totalHours": 1.0,
+     "nightHours": 1.0,
+     "crossCountryHours": 0,
+     "dayLandings": 0,
+     "nightLandings": 1
+    }
+   ],
+   "expected": {
+    "nightPassengersUntil": "2026-11-30",
+    "dayPassengersUntil": "2026-12-19"
+   }
+  },
+  {
+   "name": "Fewer than three landings is no passenger currency",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-09-20",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 2,
+     "nightLandings": 0
+    }
+   ],
+   "expected": {
+    "dayPassengersUntil": null
+   }
+  },
+  {
+   "name": "A flight review is good to the end of the 24th calendar month after (61.56(c))",
+   "today": "2026-10-11",
+   "entries": [],
+   "flightReviewOn": "2025-06-14",
+   "medicalExpiresOn": "2027-06-30",
+   "expected": {
+    "flightReviewOn": "2025-06-14",
+    "flightReviewUntil": "2027-06-30",
+    "medicalExpiresOn": "2027-06-30",
+    "instrumentCurrentUntil": null,
+    "ipcNeededAfter": null,
+    "flights": 0,
+    "landings": 0
+   }
+  },
+  {
+   "name": "Six approaches, holding and tracking in January are current through July; a check is needed after January (61.57(c)(1), (d))",
+   "today": "2026-07-15",
+   "entries": [
+    {
+     "flownOn": "2026-01-10",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 4,
+     "holding": true,
+     "tracking": false
+    },
+    {
+     "flownOn": "2026-01-25",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 2,
+     "holding": false,
+     "tracking": true
+    }
+   ],
+   "expected": {
+    "instrumentCurrentUntil": "2026-07-31",
+    "ipcNeededAfter": "2027-01-31",
+    "approachesInWindow": 6,
+    "holdingInWindow": true,
+    "trackingInWindow": true,
+    "instrumentCurrentFrom": null
+   }
+  },
+  {
+   "name": "Approaches over two months are current while all six are in the window",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-01-10",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 3,
+     "holding": true,
+     "tracking": true
+    },
+    {
+     "flownOn": "2026-03-05",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 3,
+     "holding": false,
+     "tracking": false
+    }
+   ],
+   "expected": {
+    "instrumentCurrentUntil": "2026-07-31",
+    "instrumentCurrentFrom": null
+   }
+  },
+  {
+   "name": "Approaches flown this month count from next month on, and the answer says it starts then rather than calling the pilot current now (61.57(c)(1): the 6 calendar months preceding the month of the flight)",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-10-02",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": true,
+     "tracking": true
+    }
+   ],
+   "expected": {
+    "approachesInWindow": 0,
+    "instrumentCurrentFrom": "2026-11-01",
+    "instrumentCurrentUntil": "2027-04-30"
+   }
+  },
+  {
+   "name": "Five approaches is not instrument currency",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-09-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 5,
+     "holding": true,
+     "tracking": true
+    }
+   ],
+   "expected": {
+    "instrumentCurrentUntil": null
+   }
+  },
+  {
+   "name": "Six approaches without holding is not instrument currency",
+   "today": "2026-10-11",
+   "entries": [
+    {
+     "flownOn": "2026-09-01",
+     "totalHours": 1.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "approaches": 6,
+     "holding": false,
+     "tracking": true
+    }
+   ],
+   "expected": {
+    "instrumentCurrentUntil": null
+   }
+  },
+  {
+   "name": "An instrument proficiency check is current to the end of the sixth month after (61.57(d))",
+   "today": "2026-10-11",
+   "entries": [],
+   "ipcOn": "2026-09-18",
+   "expected": {
+    "instrumentCurrentUntil": "2027-03-31",
+    "ipcOn": "2026-09-18",
+    "ipcNeededAfter": "2027-09-30",
+    "instrumentCurrentFrom": null
+   }
+  }
+ ],
+ "experience": [
+  {
+   "name": "Dual cross-country and night are the smaller of the two columns on each entry",
+   "today": "2026-10-15",
+   "entries": [
+    {
+     "flownOn": "2026-09-01",
+     "totalHours": 2.0,
+     "nightHours": 1.5,
+     "crossCountryHours": 1.0,
+     "dayLandings": 0,
+     "nightLandings": 4,
+     "dualHours": 2.0,
+     "soloHours": 0,
+     "instrumentHours": 0,
+     "toweredLandings": 0,
+     "distanceNm": 0,
+     "longestLegNm": 0
+    },
+    {
+     "flownOn": "2026-09-05",
+     "totalHours": 2.5,
+     "nightHours": 0,
+     "crossCountryHours": 2.5,
+     "dayLandings": 2,
+     "nightLandings": 0,
+     "dualHours": 0,
+     "soloHours": 2.5,
+     "instrumentHours": 0,
+     "toweredLandings": 0,
+     "distanceNm": 0,
+     "longestLegNm": 0
+    }
+   ],
+   "expected": {
+    "dualCrossCountry": [
+     1.0,
+     false
+    ],
+    "dualNight": [
+     1.5,
+     false
+    ],
+    "nightLandings": [
+     4,
+     false
+    ],
+    "soloCrossCountry": [
+     2.5,
+     false
+    ],
+    "total": [
+     4.5,
+     false
+    ]
+   }
+  },
+  {
+   "name": "No long solo cross-country under 150 nm or with two full stops",
+   "today": "2026-10-15",
+   "entries": [
+    {
+     "flownOn": "2026-09-10",
+     "totalHours": 3.0,
+     "nightHours": 0,
+     "crossCountryHours": 3.0,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "dualHours": 0,
+     "soloHours": 3.0,
+     "instrumentHours": 0,
+     "toweredLandings": 1,
+     "distanceNm": 140,
+     "longestLegNm": 60
+    },
+    {
+     "flownOn": "2026-09-11",
+     "totalHours": 3.5,
+     "nightHours": 0,
+     "crossCountryHours": 3.5,
+     "dayLandings": 2,
+     "nightLandings": 0,
+     "dualHours": 0,
+     "soloHours": 3.5,
+     "instrumentHours": 0,
+     "toweredLandings": 1,
+     "distanceNm": 160,
+     "longestLegNm": 60
+    }
+   ],
+   "expected": {
+    "longSoloCrossCountry": [
+     0,
+     false
+    ]
+   }
+  },
+  {
+   "name": "The long solo cross-country: 150 nm, three full stops, a leg over 50 nm (61.109(a)(5)(ii))",
+   "today": "2026-10-15",
+   "entries": [
+    {
+     "flownOn": "2026-09-10",
+     "totalHours": 3.0,
+     "nightHours": 0,
+     "crossCountryHours": 3.0,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "dualHours": 0,
+     "soloHours": 3.0,
+     "instrumentHours": 0,
+     "toweredLandings": 1,
+     "distanceNm": 140,
+     "longestLegNm": 60
+    },
+    {
+     "flownOn": "2026-09-11",
+     "totalHours": 3.5,
+     "nightHours": 0,
+     "crossCountryHours": 3.5,
+     "dayLandings": 2,
+     "nightLandings": 0,
+     "dualHours": 0,
+     "soloHours": 3.5,
+     "instrumentHours": 0,
+     "toweredLandings": 1,
+     "distanceNm": 160,
+     "longestLegNm": 60
+    },
+    {
+     "flownOn": "2026-09-12",
+     "totalHours": 3.6,
+     "nightHours": 0,
+     "crossCountryHours": 3.6,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "dualHours": 0,
+     "soloHours": 3.6,
+     "instrumentHours": 0,
+     "toweredLandings": 2,
+     "distanceNm": 158,
+     "longestLegNm": 62
+    }
+   ],
+   "expected": {
+    "longSoloCrossCountry": [
+     1,
+     true
+    ],
+    "toweredLandings": [
+     4,
+     true
+    ]
+   }
+  },
+  {
+   "name": "Checkride training counts from the first of the month two months back (61.109(a)(4))",
+   "today": "2026-10-15",
+   "entries": [
+    {
+     "flownOn": "2026-07-31",
+     "totalHours": 2.0,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "dualHours": 2.0,
+     "soloHours": 0,
+     "instrumentHours": 0,
+     "toweredLandings": 0,
+     "distanceNm": 0,
+     "longestLegNm": 0
+    },
+    {
+     "flownOn": "2026-08-01",
+     "totalHours": 1.5,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "dualHours": 1.5,
+     "soloHours": 0,
+     "instrumentHours": 0,
+     "toweredLandings": 0,
+     "distanceNm": 0,
+     "longestLegNm": 0
+    },
+    {
+     "flownOn": "2026-10-02",
+     "totalHours": 1.5,
+     "nightHours": 0,
+     "crossCountryHours": 0,
+     "dayLandings": 1,
+     "nightLandings": 0,
+     "dualHours": 1.5,
+     "soloHours": 0,
+     "instrumentHours": 0,
+     "toweredLandings": 0,
+     "distanceNm": 0,
+     "longestLegNm": 0
+    }
+   ],
+   "expected": {
+    "checkridePrep": [
+     3.0,
+     true
+    ],
+    "dual": [
+     5.0,
+     false
+    ]
+   }
+  },
+  {
+   "name": "The night cross-country is dual, at night, over 100 nm (61.109(a)(2)(i))",
+   "today": "2026-10-15",
+   "entries": [
+    {
+     "flownOn": "2026-09-20",
+     "totalHours": 2.2,
+     "nightHours": 2.2,
+     "crossCountryHours": 2.2,
+     "dayLandings": 0,
+     "nightLandings": 3,
+     "dualHours": 2.2,
+     "soloHours": 0,
+     "instrumentHours": 0,
+     "toweredLandings": 0,
+     "distanceNm": 104,
+     "longestLegNm": 52
+    }
+   ],
+   "expected": {
+    "nightCrossCountry": [
+     1,
+     true
+    ]
+   }
+  },
+  {
+   "name": "By day it is not the night cross-country",
+   "today": "2026-10-15",
+   "entries": [
+    {
+     "flownOn": "2026-09-21",
+     "totalHours": 2.2,
+     "nightHours": 0,
+     "crossCountryHours": 2.2,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "dualHours": 2.2,
+     "soloHours": 0,
+     "instrumentHours": 0,
+     "toweredLandings": 0,
+     "distanceNm": 104,
+     "longestLegNm": 52
+    }
+   ],
+   "expected": {
+    "nightCrossCountry": [
+     0,
+     false
+    ]
+   }
+  },
+  {
+   "name": "Exactly 100 nm is not more than 100 (61.109(a)(2)(i))",
+   "today": "2026-10-15",
+   "entries": [
+    {
+     "flownOn": "2026-09-21",
+     "totalHours": 2.2,
+     "nightHours": 2.2,
+     "crossCountryHours": 2.2,
+     "dayLandings": 0,
+     "nightLandings": 3,
+     "dualHours": 2.2,
+     "soloHours": 0,
+     "instrumentHours": 0,
+     "toweredLandings": 0,
+     "distanceNm": 100,
+     "longestLegNm": 52
+    }
+   ],
+   "expected": {
+    "nightCrossCountry": [
+     0,
+     false
+    ]
+   }
+  },
+  {
+   "name": "A leg of exactly 50 nm is not more than 50 (61.109(a)(5)(ii))",
+   "today": "2026-10-15",
+   "entries": [
+    {
+     "flownOn": "2026-09-12",
+     "totalHours": 3.6,
+     "nightHours": 0,
+     "crossCountryHours": 3.6,
+     "dayLandings": 3,
+     "nightLandings": 0,
+     "dualHours": 0,
+     "soloHours": 3.6,
+     "instrumentHours": 0,
+     "toweredLandings": 2,
+     "distanceNm": 158,
+     "longestLegNm": 50
+    }
+   ],
+   "expected": {
+    "longSoloCrossCountry": [
+     0,
+     false
+    ]
+   }
+  }
+ ]
+}

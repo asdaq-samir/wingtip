@@ -3,19 +3,21 @@ airport search, and the scikit-learn
 models retrain() compared side by side (Settings' Dev ML panel, and the one line in
 Plan's own info popover naming the model that scored the checkpoints).
 Nothing the planner's own scoring path depends on."""
+
 import json
 
 from fastapi import APIRouter, Response
 from wingtip import aircraft, airports, model_registry, places
 from wingtip import fixes as fixes_module
 
-from ..router_basics import SHARED_CACHE
-from ..schemas import AircraftProfiles, AirportSearch, ModelComparison
+from ..router_basics import SHARED_CACHE, near_points
+from ..schemas.devml import AircraftProfiles, AirportSearch, ModelComparison
+from ..gateway import DEVELOPER, SHARED, gateway
 
 router = APIRouter()
 
 
-@router.get("/api/aircraft-profiles")
+@router.get("/api/aircraft-profiles", openapi_extra=SHARED)
 def aircraft_profiles(response: Response) -> AircraftProfiles:
     """The stock performance profiles (data/aircraft/*.json) the nav log
     can be computed for -- a pilot's own aeroplane overrides the cruise
@@ -37,20 +39,13 @@ def _where(fix: dict) -> str | None:
     return ", ".join(part for part in (where, fix["state"]) if part) or None
 
 
-def _near(near: str) -> tuple:
-    """"42.2,-88.1;46.8,-92.2" as ((42.2, -88.1), (46.8, -92.2)); what is
-    not a pair of numbers left out."""
-    points = []
-    for pair in near.split(";"):
-        try:
-            lat, lon = (float(v) for v in pair.split(","))
-        except ValueError:
-            continue
-        points.append((lat, lon))
-    return tuple(points)
-
-
-@router.get("/api/airports/index", responses={200: {"content": {"application/json": {}}}})
+# Sent gzipped, so the gateway passes on what it is encoded in and that
+# the encoding varies with the ask.
+@router.get(
+    "/api/airports/index",
+    responses={200: {"content": {"application/json": {}}}},
+    openapi_extra=gateway("public", cache=True, headers=("Content-Encoding", "Vary")),
+)
 def airport_index(v: int = 0) -> Response:
     """Every US airport the search answers with, for the app to search on
     the phone itself as a pilot types (wingtip.airports.search_index): its
@@ -62,12 +57,13 @@ def airport_index(v: int = 0) -> Response:
     reads, unused here: in the address, so a day's copy of an older shape
     is not taken for this one."""
     return Response(
-        content=airports.search_index(), media_type="application/json",
+        content=airports.search_index(),
+        media_type="application/json",
         headers={"Content-Encoding": "gzip", "Cache-Control": "public, max-age=86400", "Vary": "Accept-Encoding"},
     )
 
 
-@router.get("/api/airports/search")
+@router.get("/api/airports/search", openapi_extra=SHARED)
 def airport_search(response: Response, q: str = "", fixes: bool = False, near: str = "") -> AirportSearch:
     """DEP/DEST's own autocomplete -- every airport whose ident or name
     starts with `q`, for the route inputs to suggest as a pilot types.
@@ -84,13 +80,14 @@ def airport_search(response: Response, q: str = "", fixes: bool = False, near: s
     response.headers["Cache-Control"] = SHARED_CACHE
     # Of fields alike, the nearest to `near` first: the pilot's position,
     # or the route's ends (wingtip.airports.search_airports).
-    by_route = _near(near)
+    by_route = near_points(near)
     found = airports.search_airports(q, near=[(p[0], p[1]) for p in by_route] if by_route else None)
     if fixes:
         known = {a["ident"] for a in found}
         found_fixes = [
             (fixes_module.find_navaid(f["ident"], by_route) or f) if f.get("navaid") else f
-            for f in fixes_module.search_fixes(q) if f["ident"] not in known
+            for f in fixes_module.search_fixes(q)
+            if f["ident"] not in known
         ]
         named = [{"ident": f["ident"], "name": fixes_module.title(f), "region": _where(f), "kind": "fix"} for f in found_fixes]
         # The fix typed whole before the airports: "RFD" is the navaid a
@@ -101,7 +98,7 @@ def airport_search(response: Response, q: str = "", fixes: bool = False, near: s
     return {"airports": found}
 
 
-@router.get("/api/model-comparison")
+@router.get("/api/model-comparison", openapi_extra=DEVELOPER)
 def model_comparison() -> ModelComparison:
     """The scikit-learn models retrain() grid-searched for the promoted
     one, side by side: Ridge, RandomForest, GradientBoosting and the
@@ -119,8 +116,4 @@ def model_comparison() -> ModelComparison:
         for name, score in (current_metrics.get("cv_mae_by_model") or {}).items()
     ]
 
-    return {
-        "models": models,
-        "trained_at": current_metrics.get("trained_at"),
-        "n_labeled": current_metrics.get("n_labeled"),
-    }
+    return {"models": models, "trained_at": current_metrics.get("trained_at"), "n_labeled": current_metrics.get("n_labeled")}

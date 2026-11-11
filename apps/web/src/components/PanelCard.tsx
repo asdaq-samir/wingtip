@@ -1,7 +1,10 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useContext, useEffect, useRef, type ReactNode } from "react";
+import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import { closeTopCard, useHeldCard, type CardShare } from "../lib/openCards";
+import { PinnedCardBar } from "./PinnedCardBar";
+import RoundButton from "./RoundButton";
+import { closeTopCard, useHeldCard, RouteShareMenu, type CardShare } from "../lib/openCards";
 import { TEXT } from "../lib/text";
 
 /**
@@ -13,7 +16,11 @@ import { TEXT } from "../lib/text";
  * is, at the pilot's ask; no scroll bar, as iOS shows none, to move that
  * in from the side.
  */
-export function PanelCard({ testId, flush = false, children }: {
+export function PanelCard({
+  testId,
+  flush = false,
+  children,
+}: {
   testId: string;
   /** Its head a picture from the sheet's very top (PhotoHead), with no
    *  room over it. */
@@ -61,7 +68,17 @@ export function PanelCard({ testId, flush = false, children }: {
  * what goes beside them (an airport's weather and its star), and the
  * close, out to the head's row's inset (px-3) as the route's close is.
  */
-export function CardHead({ name, line, nameTestId, lineClassName, lineTestId, onClose, onShare, closeTestId, children }: {
+export function CardHead({
+  name,
+  line,
+  nameTestId,
+  lineClassName,
+  lineTestId,
+  onClose,
+  onShare,
+  closeTestId,
+  children,
+}: {
   name: ReactNode;
   /** Under the name; none where the caller sets it out itself (an
    *  airport's card, beside its diagram's thumbnail). */
@@ -70,51 +87,81 @@ export function CardHead({ name, line, nameTestId, lineClassName, lineTestId, on
   lineClassName?: string;
   lineTestId?: string;
   onClose: () => void;
-  /** Its share, for the bar's (CardClose). */
+  /** Its share, beside its close (CardClose). */
   onShare?: CardShare;
   closeTestId: string;
   /** Between the name and the close. */
   children?: ReactNode;
 }) {
+  // Its name folding into a pinned compact head as the card scrolls, with
+  // its close, by the one scrolling rule (PinnedCardBar).
+  const named = useRef<HTMLHeadingElement>(null);
   return (
-    <div className="flex items-start gap-2">
-      <div className="min-w-0 flex-1">
-        <h2 tabIndex={-1} className={cn("font-bold tracking-tight text-foreground outline-none", TEXT.card)} data-testid={nameTestId}>{name}</h2>
-        {line != null && <p className={cn("text-muted-foreground", TEXT.note, lineClassName)} data-testid={lineTestId}>{line}</p>}
+    <>
+      <PinnedCardBar title={name} watched={named} onClose={() => closeTopCard() || onClose()} closeTestId={closeTestId} />
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h2
+            ref={named}
+            tabIndex={-1}
+            className={cn("card-title-fold font-bold tracking-tight text-foreground outline-none", TEXT.card)}
+            data-testid={nameTestId}
+          >
+            {name}
+          </h2>
+          {line != null && (
+            <p className={cn("text-muted-foreground", TEXT.note, lineClassName)} data-testid={lineTestId}>
+              {line}
+            </p>
+          )}
+        </div>
+        {children}
+        <CardClose onClose={onClose} onShare={onShare} testId={closeTestId} className="-mr-1" />
       </div>
-      {children}
-      <CardClose onClose={onClose} onShare={onShare} testId={closeTestId} className="-mr-1" />
-    </div>
+    </>
   );
 }
 
 /**
- * A card's close, kept for a device's Back (lib/openCards, lib/backNavigation) and
- * the minimized tab bar's Back (TabBar) while the card is open -- and never
- * drawn, at the owner's ask: "Close should not be anywhere except the top
- * right corner of the card inline with label; when tabs labels appear,
- * both close and back button hide" (the tab bar's own, TabBar). Kept for
- * a keyboard and a screen reader, shown when it has the focus, as a skip
- * link is, so a card always has a control of its own to reach (and the
- * airspace's, with no other, a stop in its scrolling region). With the
- * tabs shown, the tab up tapped again puts the card away.
+ * A card's Share and close at its head's end, inline with its name, at the
+ * owner's ask ("Close should not be anywhere except the top right corner
+ * of the card inline with label"), now the tabs stay over a card as the
+ * platform's own do (TabBar): its Share where it has one -- its own, or
+ * the route's menu for the Brief, the nav log and the profile -- and the
+ * close, which goes back one (a page opened in the card first, else the
+ * card, lib/openCards), as a device's Back does.
  */
-export function CardClose({ onClose, onShare, testId }: {
+export function CardClose({
+  onClose,
+  onShare,
+  testId,
+  className,
+}: {
   onClose: () => void;
-  /** The card's share (an airport's, an airplane's, or the route's menu
-   *  for the Brief, the nav log and the profile, each its own): the
-   *  minimized tab bar's Share where its Back was (TabBar). */
+  /** The card's share: an airport's, an airplane's, or the route's menu
+   *  for the Brief, the nav log and the profile, each its own. */
   onShare?: CardShare;
   testId: string;
   className?: string;
 }) {
   useHeldCard(onClose, onShare);
+  const routeShare = useContext(RouteShareMenu);
   return (
-    <span className="sr-only focus-within:not-sr-only">
-      {/* Back one: a page opened in the card first (the Brief's), else the
-          card (lib/openCards), as the bar's close goes. */}
-      <CloseButton onClick={() => { if (!closeTopCard()) onClose(); }} data-testid={testId} />
-    </span>
+    <div className={cn("flex shrink-0 items-center gap-2", className)}>
+      {typeof onShare === "string"
+        ? routeShare?.(onShare)
+        : onShare && (
+            <RoundButton label="Share" onClick={onShare} data-testid="card-share">
+              <Share className="size-5" strokeWidth={2} />
+            </RoundButton>
+          )}
+      <CloseButton
+        onClick={() => {
+          if (!closeTopCard()) onClose();
+        }}
+        data-back=""
+        data-testid={testId}
+      />
+    </div>
   );
 }
-

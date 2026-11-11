@@ -64,6 +64,9 @@ final class Tracking {
     @ObservationIgnored private var remote: Task<Void, Never>?
     /// The last watch that went off, for the banner over the map.
     var fired: String?
+    /// Why the watches could not be checked just now (the engine refused),
+    /// for the banner over the map; nil once a check goes through.
+    private(set) var watchProblem: String?
     /// Whether each watched airplane was in the air, where known.
     private var airborne: [String: Bool] = [:]
 
@@ -151,12 +154,16 @@ final class Tracking {
 
     func isFavorite(_ hex: String) -> Bool { favorites.contains { $0.hex == hex.lowercased() } }
 
-    func toggleFavorite(_ kept: KeptAirplane) {
+    /// The star: an airplane made a Favorite or taken off; either way the
+    /// window's UndoManager, where given, turns it back.
+    func toggleFavorite(_ kept: KeptAirplane, undo: UndoManager? = nil) {
         let record = self.record(kept)
         record.favorite.toggle()
         if record.favorite { record.addedAt = Date() }
+        let name = record.favorite ? "Add Favorite" : "Remove Favorite"
         prune(record)
         saved()
+        undo?.register(self, named: name) { $0.toggleFavorite(kept, undo: undo) }
     }
 
     func remember(_ kept: KeptAirplane) {
@@ -252,16 +259,10 @@ final class Tracking {
     /// ground where it has landed, or where nothing was known and it has
     /// not been heard for half an hour or ever (parked out of the
     /// receivers' hearing); else what was known, as one gone quiet in the
-    /// pattern has not landed until it is known to have. What was known
-    /// where the engine cannot answer.
-    static func airborneNow(before: Bool?, _ now: FlightStatus) -> Bool? {
-        do {
-            return try Engine.call("airborne_now", json: [
-                "before": before, "airborne": now.airborne == true, "arrived": now.arrived != nil, "heard_s": now.heardS,
-            ])
-        } catch {
-            return before
-        }
+    /// pattern has not landed until it is known to have. Throws where the
+    /// engine cannot answer, which the watch shows (watchProblem).
+    static func airborneNow(before: Bool?, _ now: FlightStatus) throws -> Bool? {
+        try Engine.airborneNow(before: before, airborne: now.airborne == true, arrived: now.arrived != nil, heardS: now.heardS)
     }
 
     /// The words a watch goes off with, or nil where it has not: "N654FL
@@ -269,11 +270,9 @@ final class Tracking {
     /// the engine's (`alert_fires`: off where it was known on the ground
     /// and is in the air, down where it was in the air and has arrived at a
     /// field); the words are the app's.
-    static func fired(_ watch: AirplaneWatch, before: Bool?, now: Bool?, status: FlightStatus) -> String? {
-        let go: EngineAlertFiresAnswer? = try? Engine.call("alert_fires", json: [
-            "kind": watch.kind.rawValue, "before_airborne": before, "airborne": now, "arrived": status.arrived != nil,
-        ])
-        guard go?.fires == true else { return nil }
+    static func fired(_ watch: AirplaneWatch, before: Bool?, now: Bool?, status: FlightStatus) throws -> String? {
+        let go = try Engine.alertFires(kind: watch.kind.rawValue, beforeAirborne: before, airborne: now, arrived: status.arrived != nil)
+        guard go.fires else { return nil }
         switch watch.kind {
         case .takeoff:
             return status.departed.map { "\(watch.name) took off from \($0.ident)" } ?? "\(watch.name) took off"
@@ -315,9 +314,23 @@ final class Tracking {
                 continue
             }
             let before = airborne[hex]
-            let now = Self.airborneNow(before: before, status)
+            let now: Bool?
+            do {
+                now = try Self.airborneNow(before: before, status)
+                watchProblem = nil
+            } catch {
+                // The engine could not say: shown over the map, and no
+                // watch goes off on a guess.
+                watchProblem = "Couldn't tell whether \(hex) is flying: \(error.localizedDescription)"
+                continue
+            }
             for watch in watches where watch.hex == hex {
-                if let words = Self.fired(watch, before: before, now: now, status: status) {
+                let words: String?
+                do { words = try Self.fired(watch, before: before, now: now, status: status) } catch {
+                    watchProblem = "Couldn't check the watch on \(watch.name): \(error.localizedDescription)"
+                    continue
+                }
+                if let words {
                     Log.records.notice("watch went off: \(words, privacy: .public)")
                     // The banner over the map and the voice in the app; a
                     // time-sensitive notification with the app put away.

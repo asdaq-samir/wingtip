@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { cn } from "cn";
-import { usePanelDragging } from "./mapChrome";
-import { useRoom } from "../lib/useRoom";
+import { usePanelDragging } from "../lib/mapChrome";
+import { useRoom } from "./useRoom";
 
 /** As small as a figure is set to fit before it is cut short: three
  *  quarters, 15 points at the default size, the body's. */
@@ -18,7 +18,7 @@ interface Fitted {
 /** Each figure on its own: the one that does not fit its column rounded,
  *  the rest as they are. */
 export function fitFigures<F>(exact: F[], rounded: F[], fits: (f: F, i: number) => boolean): F[] {
-  return exact.map((f, i) => (fits(f, i) ? f : rounded[i] ?? f));
+  return exact.map((f, i) => (fits(f, i) ? f : (rounded[i] ?? f)));
 }
 
 /**
@@ -41,7 +41,12 @@ export function fitFigures<F>(exact: F[], rounded: F[], fits: (f: F, i: number) 
  * every frame a drag above half went at half the frame rate. Fitted once
  * at rest, and again only as the figures or the room change.
  */
-export function useFigureFit<F extends Fitted>(exact: F[], rounded: F[], valueType: string, unitType: string): {
+export function useFigureFit<F extends Fitted>(
+  exact: F[],
+  rounded: F[],
+  valueType: string,
+  unitType: string,
+): {
   room: (el: HTMLElement | null) => void;
   shown: F[];
   sized: (part: "value" | "unit") => CSSProperties | undefined;
@@ -60,13 +65,20 @@ export function useFigureFit<F extends Fitted>(exact: F[], rounded: F[], valueTy
   // of three seconds at 4x a phone's (a dry run at 200x, 2026-10-29).
   const shape = (f: F) => `${f.value.replace(/\d/g, "0")}${f.unit ?? ""}${f.alert ? "!" : ""}`;
   const key = [...exact.map(shape), "/", ...rounded.map(shape)].join("|");
-  const moving = usePanelDragging(d => d.dragging);
-  const [verdict, setVerdict] = useState<{ key: string; room: typeof space; fits: boolean[]; scale: number; px: { value: number; unit: number } } | null>(null);
+  const moving = usePanelDragging((d) => d.dragging);
+  const [verdict, setVerdict] = useState<{
+    key: string;
+    room: typeof space;
+    fits: boolean[];
+    scale: number;
+    px: { value: number; unit: number };
+  } | null>(null);
   // The room itself is kept, not its width: useRoom hands out a new one
   // when the width or the font changes, and once the web font is in (same
   // width, same font name), and each of those moves the figures' widths.
   useLayoutEffect(() => {
-    const value = probe.current, unit = unitProbe.current;
+    const value = probe.current,
+      unit = unitProbe.current;
     if (moving || !space || !value || !unit || (verdict?.key === key && verdict.room === space)) return;
     value.style.fontSize = unit.style.fontSize = "";
     const px = { value: parseFloat(getComputedStyle(value).fontSize), unit: parseFloat(getComputedStyle(unit).fontSize) };
@@ -82,7 +94,7 @@ export function useFigureFit<F extends Fitted>(exact: F[], rounded: F[], valueTy
       return value.getBoundingClientRect().width + unit.getBoundingClientRect().width + mark;
     };
     const fitsAt = (f: F, scale: number) => width(f, scale) <= space.width + 0.5;
-    const fits = exact.map(f => fitsAt(f, 1));
+    const fits = exact.map((f) => fitsAt(f, 1));
     // The size the widest of the figures shown fits at, each figure and
     // its unit alike, measured at that size: Inter's optical sizes set a
     // smaller size a little wider than its share, so the straight
@@ -90,7 +102,7 @@ export function useFigureFit<F extends Fitted>(exact: F[], rounded: F[], valueTy
     let scale = 1;
     for (const f of fitFigures(exact, rounded, (_, i) => fits[i]!)) {
       if (fitsAt(f, scale)) continue;
-      scale = Math.max(SMALLEST, Math.floor((scale * space.width) / width(f, scale) * 100) / 100);
+      scale = Math.max(SMALLEST, Math.floor(((scale * space.width) / width(f, scale)) * 100) / 100);
       while (scale > SMALLEST && !fitsAt(f, scale)) scale = Math.max(SMALLEST, Math.round((scale - 0.01) * 100) / 100);
     }
     value.style.fontSize = unit.style.fontSize = "";
@@ -101,7 +113,10 @@ export function useFigureFit<F extends Fitted>(exact: F[], rounded: F[], valueTy
   const sized = (part: "value" | "unit") =>
     fitting && fitting.scale < 1 ? { fontSize: `${(fitting.px[part] * fitting.scale).toFixed(2)}px` } : undefined;
   return {
-    room, shown, sized, fitted: fitting && fitting.scale < 1 ? "" : undefined,
+    room,
+    shown,
+    sized,
+    fitted: fitting && fitting.scale < 1 ? "" : undefined,
     probes: (
       <span aria-hidden="true" className="pointer-events-none invisible absolute top-0 left-0 whitespace-nowrap">
         {/* The value's own weight where its type names one (the ink look's

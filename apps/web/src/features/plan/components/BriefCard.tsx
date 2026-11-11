@@ -3,6 +3,7 @@ import { CardHead } from "../../../components/PanelCard";
 import PanelTabs from "./navlog/PanelTabs";
 import BriefOverview from "./briefing/BriefOverview";
 import type { PanelTab } from "./navlog/panelTab";
+import RefreshButton from "../../../components/RefreshButton";
 
 /**
  * FPL's Brief, a card over it as an airport's is, at the owner's ask ("we
@@ -17,7 +18,17 @@ import type { PanelTab } from "./navlog/panelTab";
  * Arrive -- the close going back from a page to the cards. On paper the
  * briefing is FPL's, every page after the legs (NavLogView).
  */
-export default function BriefCard({ name, line, contents, notice, marks, onClose, onTap, onLegs, route }: {
+export default function BriefCard({
+  name,
+  line,
+  contents,
+  notice,
+  marks,
+  onClose,
+  onTap,
+  onLegs,
+  route,
+}: {
   name: ReactNode;
   /** Under the name: where from and to, the airplane, the altitude, when. */
   line: ReactNode;
@@ -36,13 +47,30 @@ export default function BriefCard({ name, line, contents, notice, marks, onClose
   return (
     <div className="flex min-h-0 flex-1 flex-col print:hidden" data-testid="brief-card">
       <PanelTabs
-        printing={false} marks={marks} route={route} notice={notice} contents={contents} onTap={onTap} onLegs={onLegs}
+        printing={false}
+        marks={marks}
+        route={route}
+        notice={notice}
+        contents={contents}
+        onTap={onTap}
+        onLegs={onLegs}
         overview={BriefOverview}
-        before={(
+        before={
           <div className="px-4 pt-[var(--corner-inset,0.75rem)]">
-            <CardHead name={name} line={line} nameTestId="brief-name" lineTestId="brief-line" onClose={onClose} onShare="brief" closeTestId="brief-close" />
+            <CardHead
+              name={name}
+              line={line}
+              nameTestId="brief-name"
+              lineTestId="brief-line"
+              onClose={onClose}
+              onShare="brief"
+              closeTestId="brief-close"
+            >
+              {/* The live reports asked again; kept fresh by themselves too. */}
+              <RefreshButton card="brief" label="Refresh the Brief" />
+            </CardHead>
           </div>
-        )}
+        }
       />
     </div>
   );

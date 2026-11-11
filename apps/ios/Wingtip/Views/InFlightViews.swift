@@ -3,60 +3,6 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
-/// The nearest fields for a diversion, from where the airplane is (the dry
-/// run's airplane while it flies): the planner's distance and bearing to
-/// each, and Divert, which plans the route from here to it -- its heading,
-/// time and fuel the planner's, as any route's are -- with the route as it
-/// was kept for Cancel.
-struct DiversionView: View {
-    @Environment(Plan.self) private var plan
-    @Environment(OwnShip.self) private var ownShip
-    @Environment(DryRun.self) private var dryRun
-    @Environment(\.dismiss) private var dismiss
-    @State private var fields: [NearestAirport] = []
-    @State private var problem: String?
-
-    private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
-
-    var body: some View {
-        List {
-            if fix == nil {
-                ContentUnavailableView("Finding your position…", systemImage: "location", description: Text("Nearest is from where the airplane is."))
-            }
-            Section(fields.isEmpty ? "" : "Nearest to you") {
-                ForEach(fields) { field in
-                    HStack {
-                        NavigationLink { AirportCard(ident: field.ident) } label: { NearestRow(field: field) }
-                    }
-                    .swipeActions(edge: .leading) {
-                        Button("Divert") { divert(field.ident) }.tint(.orange)
-                    }
-                    .contextMenu {
-                        Button { divert(field.ident) } label: { Label("Divert to \(field.ident)", systemImage: "arrow.uturn.right") }
-                    }
-                }
-            }
-            ProblemLine(problem)
-            // The checkride's diversion from here, worked by the planner.
-            Section {
-                NavigationLink { DiversionDrillView() } label: { Label("Diversion Drill", systemImage: "timer") }
-            }
-        }
-        .navigationTitle("Nearest")
-        .navigationBarTitleDisplayMode(.inline)
-        .task(id: fix.map { "\(($0.coordinate.latitude * 60).rounded()),\(($0.coordinate.longitude * 60).rounded())" }) {
-            guard let at = fix?.coordinate else { return }
-            do { fields = try await Planner.nearest(lat: at.latitude, lon: at.longitude); problem = nil } catch { problem = "The nearest fields could not be found." }
-        }
-    }
-
-    private func divert(_ ident: String) {
-        guard let fix else { return }
-        plan.divert(to: ident, from: fix)
-        dismiss()
-    }
-}
-
 /// How to spot each checkpoint from the air, one line each, written on
 /// the pilot's tap (each is a billed call, so never on its own) and
 /// streamed as they come; a pilot's own edit is theirs from then on (the
@@ -75,11 +21,11 @@ struct CheckpointNotesView: View {
 
     var body: some View {
         List {
-            Section {
-                Button(writing ? (count.map { "Writing \(notes.count) of \($0)…" } ?? "Writing…") : "Describe the Checkpoints") { describe() }
-                    .disabled(writing || plan.checkpoints.isEmpty)
-                ProblemLine(problem)
+            // Claude's descriptions have no free path: hidden while the Claude features are off (docs/decisions/0035).
+            if ServerFeatures.shared.claudeOn {
+                Button(writing ? (count.map { "Writing \(notes.count) of \($0)…" } ?? "Writing…") : "Describe the Checkpoints") { describe() }.disabled(writing || plan.checkpoints.isEmpty)
             }
+            ProblemLine(problem)
             Section("Checkpoints") {
                 if plan.checkpoints.isEmpty { Text("The route's checkpoints come with its plan.").foregroundStyle(.secondary) }
                 ForEach(plan.checkpoints) { point in
@@ -87,7 +33,7 @@ struct CheckpointNotesView: View {
                         editing = point
                         typed = notes[Self.key(point.lat, point.lon)]?.text ?? ""
                     } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(point.name ?? point.waypoint ?? point.category).font(.headline).foregroundStyle(.primary)
                             if let note = notes[Self.key(point.lat, point.lon)], !note.text.isEmpty {
                                 Text(note.text).font(.subheadline).foregroundStyle(note.source == "saved" ? Color.primary : Color.secondary)
@@ -100,7 +46,6 @@ struct CheckpointNotesView: View {
             }
         }
         .navigationTitle("Checkpoint notes")
-        .navigationBarTitleDisplayMode(.inline)
         .alert(editing.map { $0.name ?? $0.waypoint ?? $0.category } ?? "Note", isPresented: Binding(get: { editing != nil }, set: { if !$0 { editing = nil } })) {
             TextField("What you see there", text: $typed)
             Button("Save") { save() }
@@ -152,20 +97,17 @@ struct CheckpointNotesView: View {
     }
 }
 
-/// A flight plan's items as FAA Form 7233-4 writes them (AIM Appendix 4),
-/// from the planner's figures, as the web app's flightPlanForm does.
+/// FAA Form 7233-4's items as AIM Appendix 4 writes them: the engine's
+/// (`filed_speed`, `filed_level`, `filed_route`, `filed_duration`), the
+/// very ones the web app's lib/flightPlanForm asks. Each throws where the
+/// engine cannot write the item, and nothing is filed then.
 enum FilingForm {
-    /// Item 15's cruising speed: the true airspeed in knots, N and four
-    /// figures (AIM Appendix 4: "N0450").
-    static func cruisingSpeed(_ tasKt: Double) -> String { String(format: "N%04d", Int(tasKt.rounded())) }
+    /// Item 15's cruising speed, "N0450".
+    static func cruisingSpeed(_ tasKt: Double) throws -> String { try Engine.filedSpeed(tasKt: tasKt) }
 
-    /// Item 15's level: at and above 18,000 ft a flight level, F and three
-    /// figures, the altimeter set to 29.92 (14 CFR 91.121(a)(2)); below it
-    /// the altitude in hundreds of feet, A and three figures (AIM Appendix
-    /// 4: "F350", "A080").
-    static func cruisingLevel(_ altitudeFt: Double) -> String {
-        String(format: "%@%03d", altitudeFt >= 18_000 ? "F" : "A", Int((altitudeFt / 100).rounded()))
-    }
+    /// Item 15's level: "F350" at and above 18,000 ft, "A080" below it
+    /// (14 CFR 91.121(a)(2)).
+    static func cruisingLevel(_ altitudeFt: Double) throws -> String { try Engine.filedLevel(ft: altitudeFt) }
 
     /// An airway as a route names one: Victor, T, Jet or Q and its number
     /// (the web app's identSchema isAirwayToken).
@@ -173,22 +115,14 @@ enum FilingForm {
         stop.range(of: "^[VTJQ][0-9]{1,4}$", options: .regularExpression) != nil
     }
 
-    /// Item 15's route between the ends: an airway between the fixes it is
-    /// joined and left at, DCT between two points flown direct, and DCT
-    /// alone for a flight direct from one to the other (AIM Appendix 4:
-    /// "DALL3 EIC V18 MEI LGC4", "FLACK DCT IRW"), as the web app's
-    /// routeItem writes it; its procedures are not filed from here yet.
-    static func route(_ stops: [String], isAirway: (String) -> Bool = FilingForm.airwayToken) -> String {
-        var words: [String] = []
-        for (i, point) in stops.enumerated() {
-            if i > 0, !isAirway(point), !isAirway(stops[i - 1]) { words.append("DCT") }
-            words.append(point)
-        }
-        return words.isEmpty ? "DCT" : words.joined(separator: " ")
+    /// Item 15's route between the ends ("FLACK DCT IRW", "EIC V18 MEI");
+    /// its procedures are not filed from here yet.
+    static func route(_ stops: [String], isAirway: (String) -> Bool = FilingForm.airwayToken) throws -> String {
+        try Engine.filedRoute(stops: stops, airways: stops.filter(isAirway))
     }
 
     /// Hours and minutes in four figures, HHMM (items 16 and 19).
-    static func hhmm(_ minutes: Int) -> String { String(format: "%02d%02d", minutes / 60, minutes % 60) }
+    static func hhmm(_ minutes: Int) throws -> String { try Engine.filedDuration(minutes: Double(minutes)) }
 }
 
 /// Filing with Flight Service, where the gateway has it connected, as the
@@ -213,31 +147,33 @@ struct FlightServiceView: View {
     var body: some View {
         Form {
             if let status, status.connected, session.signedIn {
-                Section("Flight plan") {
+                Section("Flight Plan") {
                     LabeledContent("Rules", value: "VFR")
                     TextField("Aircraft identification", text: $aircraftId).textInputAutocapitalization(.characters).autocorrectionDisabled()
                     TextField("Type of aircraft, as C172", text: $aircraftType).textInputAutocapitalization(.characters).autocorrectionDisabled()
                     LabeledContent("Departure", value: plan.dep)
                     DatePicker("Departs", selection: $departs, in: Date()...)
-                    if let request = request() {
+                    let asked = Result { try request() }
+                    if let request = try? asked.get() {
                         LabeledContent("Cruising speed", value: request.cruisingSpeed)
                         LabeledContent("Cruising level", value: request.cruisingLevel)
                         LabeledContent("Route", value: request.route)
-                        LabeledContent("Total EET", value: FilingForm.hhmm(request.eetMinutes))
+                        LabeledContent("Total EET", value: (try? FilingForm.hhmm(request.eetMinutes)) ?? "\(request.eetMinutes) min")
                     }
+                    ProblemLine(asked, "The flight plan's items")
                     LabeledContent("Destination", value: plan.dest)
                     TextField("Endurance, HHMM", text: $endurance).keyboardType(.numberPad)
                     TextField("Persons on board", text: $persons).keyboardType(.numberPad)
                 }
                 Section {
                     Button(reference.map { "Filed: \($0)" } ?? (sending ? "Filing…" : "File with \(status.provider)")) { Task { await file() } }
-                        .disabled(request() == nil || reference != nil || sending)
+                        .disabled((try? request()) == nil || reference != nil || sending)
                     Button("Standard Briefing") { Task { await brief() } }
-                        .disabled(request() == nil || sending)
+                        .disabled((try? request()) == nil || sending)
                     ProblemLine(problem)
                 }
                 if let briefing {
-                    Section("Standard briefing") { Text(briefing).font(.footnote.monospaced()).textSelection(.enabled) }
+                    Section("Standard Briefing") { Text(briefing).font(.footnote.monospaced()).textSelection(.enabled) }
                 }
             }
             Section(status?.connected == true ? "Or" : "File it with Flight Service") {
@@ -247,39 +183,35 @@ struct FlightServiceView: View {
                 Link(destination: URL(string: "tel:18009927433")!) { LabeledContent("Flight Service", value: "1-800-WX-BRIEF") }
             }
         }
-        .navigationTitle("File flight plan")
-        .navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("File Flight Plan")
         .task {
             status = try? await Gateway.flightService()
             if aircraftId.isEmpty { aircraftId = plan.tail ?? "" }
-            if aircraftType.isEmpty { aircraftType = plan.aircraft.uppercased() }
+            if aircraftType.isEmpty, let type = plan.stockType { aircraftType = type }
         }
     }
 
     /// The request, where every item it needs is there: the first leg's
     /// speed and level, the planner's time en route rounded up, and the
     /// endurance typed (the pilot's fuel aboard).
-    private func request() -> FlightPlanFilingRequest? {
-        guard plan.routed, let first = plan.legs.first, let ete = plan.totals?.eteMin, !aircraftId.isEmpty, !aircraftType.isEmpty else { return nil }
+    /// Thrown where the engine cannot write an item, which the form says.
+    private func request() throws -> FlightPlanFilingRequest? {
+        guard plan.routed, let first = plan.legs.first, let tas = first.tasKt, let ete = plan.totals?.eteMin, !aircraftId.isEmpty, !aircraftType.isEmpty else { return nil }
         let digits = endurance.filter(\.isNumber)
         guard digits.count == 4, let hours = Int(digits.prefix(2)), let minutes = Int(digits.suffix(2)), minutes < 60 else { return nil }
         let pob = Int(persons.filter(\.isNumber)).flatMap { (1...999).contains($0) ? $0 : nil }
-        return FlightPlanFilingRequest(
-            rules: "VFR", aircraftId: aircraftId.uppercased(), aircraftType: aircraftType.uppercased(), departure: plan.dep,
-            departureTime: ISO8601DateFormatter().string(from: departs), cruisingSpeed: FilingForm.cruisingSpeed(first.tasKt),
-            cruisingLevel: FilingForm.cruisingLevel(first.altitudeFt), route: FilingForm.route(plan.stops), destination: plan.dest,
-            eetMinutes: Int(ete.rounded(.up)), enduranceMinutes: hours * 60 + minutes, personsOnBoard: pob)
+        return FlightPlanFilingRequest(aircraftId: aircraftId.uppercased(), aircraftType: aircraftType.uppercased(), cruisingLevel: try FilingForm.cruisingLevel(first.altitudeFt), cruisingSpeed: try FilingForm.cruisingSpeed(tas), departure: plan.dep, departureTime: ISO8601DateFormatter().string(from: departs), destination: plan.dest, eetMinutes: Int(ete.rounded(.up)), enduranceMinutes: hours * 60 + minutes, personsOnBoard: pob, route: try FilingForm.route(plan.stops), rules: "VFR")
     }
 
     private func file() async {
-        guard let request = request() else { return }
+        guard let request = try? request() else { return }
         sending = true
         do { reference = try await Gateway.file(request); problem = nil } catch { problem = "Not filed: \(error.localizedDescription)" }
         sending = false
     }
 
     private func brief() async {
-        guard let request = request() else { return }
+        guard let request = try? request() else { return }
         sending = true
         do { briefing = try await Gateway.standardBriefing(request); problem = nil } catch { problem = "No briefing: \(error.localizedDescription)" }
         sending = false
@@ -290,7 +222,7 @@ struct FlightServiceView: View {
 /// route, put in from a GPX file (ForeFlight's, Garmin Pilot's, a GPS's),
 /// or taken off. GPS altitude, not what the altimeter read.
 struct FlownTrackView: View {
-    let flight: Int64
+    let flight: Int
     let title: String
     @State private var track: SavedTrack?
     @State private var loaded = false
@@ -304,78 +236,75 @@ struct FlownTrackView: View {
     private var replayKey: String { "flown:\(flight)" }
 
     var body: some View {
-        NavigationStack {
-            List {
-                if let track, !track.points.isEmpty {
-                    // Its replay, the airplane flown along it again on the
-                    // map, the track put there with it.
-                    ReplaySection(points: Replay.points(track.points), key: replayKey, onPlay: {
-                        if Tracking.shared.flown.isEmpty { Tracking.shared.flown = points }
-                    })
-                    Section {
-                        if let first = points.first, let last = points.last {
-                            LabeledContent("Flown", value: FlightWords.lasted(last.t - first.t))
-                        }
-                        if let top = points.compactMap(\.altFt).max() { LabeledContent("Highest", value: "\(Int(top).formatted()) ft") }
-                    }
-                    // Its debrief against the flight's nav log, the planner's (POST /api/debrief).
-                    DebriefSections(flight: flight, points: track.points)
-                    Section {
-                        Button(Tracking.shared.flown.isEmpty ? "Show on the Map" : "Hide from the Map") {
-                            Tracking.shared.flown = Tracking.shared.flown.isEmpty ? points : []
-                        }
-                        Button("Delete the Track", role: .destructive) {
-                            Task {
-                                do { try await Gateway.deleteTrack(flight); self.track = nil; Tracking.shared.flown = []; Replay.shared.clear(replayKey) } catch { problem = error.localizedDescription }
-                            }
-                        }
-                    }
-                } else if loaded {
-                    ContentUnavailableView("No track kept", systemImage: "point.topleft.down.to.point.bottomright.curvepath",
-                                           description: Text(OwnTrail.shared.points.count > 1
-                                                             ? "Keep the path this iPhone flew, or put in a GPX file."
-                                                             : "Put in the flight's track from a GPX file."))
-                }
+        List {
+            if let track, !track.points.isEmpty {
+                // Its replay, the airplane flown along it again on the
+                // map, the track put there with it.
+                ReplaySection(points: Replay.points(track.points), key: replayKey, onPlay: {
+                    if Tracking.shared.flown.isEmpty { Tracking.shared.flown = points }
+                })
                 Section {
-                    // The path the phone flew (OwnTrail), kept as the flight's
-                    // track with no file to find: the debrief from the
-                    // airplane's own GPS, as ForeFlight's track logs are.
-                    if OwnTrail.shared.points.count > 1 {
-                        Button("Keep the Path This iPhone Flew") {
-                            let saved = OwnTrail.shared.asSavedTrack
-                            Task {
-                                do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
-                            }
+                    if let first = points.first, let last = points.last {
+                        LabeledContent("Flown", value: FlightWords.lasted(last.t - first.t))
+                    }
+                    if let top = points.compactMap(\.altFt).max() { LabeledContent("Highest", value: Format.altitude(top)) }
+                }
+                // Its debrief against the flight's nav log, the planner's (POST /api/debrief).
+                DebriefSections(flight: flight, points: track.points)
+                Section {
+                    Button(Tracking.shared.flown.isEmpty ? "Show on the Map" : "Hide from the Map") {
+                        Tracking.shared.flown = Tracking.shared.flown.isEmpty ? points : []
+                    }
+                    Button("Delete the Track", role: .destructive) {
+                        Task {
+                            do { try await Gateway.deleteTrack(flight); self.track = nil; Tracking.shared.flown = []; Replay.shared.clear(replayKey) } catch { problem = error.localizedDescription }
                         }
                     }
-                    Button("Put In a GPX File…") { importing = true }
-                    ProblemLine(problem)
                 }
+            } else if loaded {
+                ContentUnavailableView("No track kept", systemImage: "point.topleft.down.to.point.bottomright.curvepath",
+                                       description: Text(OwnTrail.shared.points.count > 1
+                                           ? "Keep the path this iPhone flew, or put in a GPX file."
+                                           : "Put in the flight's track from a GPX file."))
             }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                // The card's own close, whether a sheet (iPhone) or the
-                // inspector (iPad) holds it.
-                ToolbarItem(placement: .topBarTrailing) { Button { FlightUI.shared.card = nil } label: { Image(systemName: "xmark") }.accessibilityLabel("Close") }
-            }
-            .task {
-                do { track = try await Gateway.track(flight) } catch { problem = error.localizedDescription }
-                loaded = true
-            }
-            .onDisappear { Replay.shared.clear(replayKey) }
-            .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(filenameExtension: "gpx") ?? .xml, .xml]) { result in
-                guard case .success(let url) = result else { return }
-                let reading = url.startAccessingSecurityScopedResource()
-                defer { if reading { url.stopAccessingSecurityScopedResource() } }
-                guard let data = try? Data(contentsOf: url), let read = GPXTrack.points(data), !read.isEmpty else {
-                    problem = "No track points with their times in that file."
-                    return
+            Section {
+                // The path the phone flew (OwnTrail), kept as the flight's
+                // track with no file to find: the debrief from the
+                // airplane's own GPS, as ForeFlight's track logs are.
+                if OwnTrail.shared.points.count > 1 {
+                    Button("Keep the Path This iPhone Flew") {
+                        let saved = OwnTrail.shared.asSavedTrack
+                        Task {
+                            do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
+                        }
+                    }
                 }
-                let saved = SavedTrack(points: read, source: "gpx")
-                Task {
-                    do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
-                }
+                Button("Put In a GPX File…") { importing = true }
+                ProblemLine(problem)
+            }
+        }
+        .navigationTitle(title)
+        .task {
+            do { track = try await Gateway.track(flight) } catch { problem = error.localizedDescription }
+            loaded = true
+        }
+        .onDisappear { Replay.shared.clear(replayKey) }
+        .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(filenameExtension: "gpx") ?? .xml, .xml]) { result in
+            guard case .success(let url) = result else { return }
+            let reading = url.startAccessingSecurityScopedResource()
+            defer { if reading { url.stopAccessingSecurityScopedResource() } }
+            let found: [SavedTrackPoint]?
+            do { found = try GPXTrack.points(try Data(contentsOf: url)) } catch {
+                problem = "The file couldn't be read: \(error.localizedDescription)"
+                return
+            }
+            guard let read = found, !read.isEmpty else {
+                problem = "No track points with their times in that file."
+                return
+            }
+            let saved = SavedTrack(points: read, source: "gpx")
+            Task {
+                do { try await Gateway.saveTrack(flight, saved); track = saved; problem = nil } catch { problem = error.localizedDescription }
             }
         }
     }
@@ -388,85 +317,37 @@ struct FlownTrackView: View {
 /// (`thin_track`). Nil where the file has no track to use.
 enum GPXTrack {
     /// The engine's points: t in ms since 1970, which it writes as a
-    /// fraction ("1792940400000.0"), so read as one.
-    private struct Point: Codable { let t: Double; let lat: Double; let lon: Double; let altFt: Double? }
+    /// fraction ("1792940400000.0"), so read as one. The contract leaves
+    /// read_track's answer and thin_track's points open, so this shape is
+    /// the app's, read from the engine's JSON.
+    private struct Point: Codable {
+        let t: Double; let lat: Double; let lon: Double; let altFt: Double?
+        enum CodingKeys: String, CodingKey { case t, lat, lon, altFt = "alt_ft" }
+    }
 
     private struct Read: Decodable {
         let points: [Point]?
         let error: String?
     }
 
-    static func points(_ data: Data) -> [SavedTrackPoint]? {
+    /// Nil where the file has no track; thrown where the engine refuses.
+    static func points(_ data: Data) throws -> [SavedTrackPoint]? {
         let text = String(decoding: data, as: UTF8.self)
-        let read: Read? = try? Engine.call("read_track", ["text": text], decoder: Planner.snakeCase)
-        guard let read, read.error == nil, let points = read.points else { return nil }
-        let thinned: [Point]? = try? Engine.call("thin_track", ["points": points], encoder: Planner.snakeEncoder, decoder: Planner.snakeCase)
-        return (thinned ?? points).map { SavedTrackPoint(t: Int64($0.t.rounded()), lat: $0.lat, lon: $0.lon, altFt: $0.altFt) }
-    }
-}
-
-/// The route shared, as the web app's ShareMenu: its link, the nav log as
-/// text and as the kneeboard's page (PDF), a GPX route for another app,
-/// ForeFlight's own link (the checkpoints' pack first, then the route),
-/// and filing.
-struct ShareMenu: View {
-    @Environment(Plan.self) private var plan
-    @Environment(\.openURL) private var openURL
-    @State private var sharing: ShareItems?
-
-    struct ShareItems: Identifiable {
-        let id = UUID()
-        let items: [Any]
-    }
-
-    var body: some View {
-        Menu {
-            ShareLink(item: RouteShare.link(plan)) { Label("Share Link", systemImage: "link") }
-            ShareLink(item: RouteShare.navLogText(plan)) { Label("Nav Log as Text", systemImage: "list.number") }
-            Button { pdf() } label: { Label("Nav Log as PDF", systemImage: "doc.richtext") }
-            // ForeFlight sends the route on to the panel wirelessly (Garmin's
-            // Connext, Avidyne, Dynon): the owner's pick (2026-11-02), as most
-            // pilots have ForeFlight and not Garmin Pilot.
-            Button { foreflight() } label: { Label("Open in ForeFlight", systemImage: "paperplane") }
-        } label: {
-            Image(systemName: "square.and.arrow.up")
-        }
-        .accessibilityLabel("Share")
-        .disabled(plan.legs.isEmpty)
-        .sheet(item: $sharing) { share in ActivityView(items: share.items).presentationDetents([.medium, .large]) }
-    }
-
-    private func pdf() {
-        guard let url = Kneeboard.pdf(plan) else { return }
-        sharing = ShareItems(items: [url])
-    }
-
-    /// ForeFlight takes no route and pack in one: the pack the first time a
-    /// route goes there from this device, then the route itself, its
-    /// checkpoints by their names in the pack.
-    private func foreflight() {
-        let route = plan.idents.joined(separator: "-")
-        let names = plan.checkpoints.map { $0.waypoint ?? "" }
-        let sent = RouteShare.packSent(route, names: names)
-        if !sent, !plan.checkpoints.isEmpty {
-            RouteShare.markPackSent(route, names: names)
-            openURL(RouteShare.openPack(RouteShare.packURL(plan)))
-        } else {
-            openURL(RouteShare.foreflightRoute(plan, named: sent))
-        }
+        let read: Read = try Engine.recoded(try Engine.readTrack(text: text))
+        guard read.error == nil, let points = read.points else { return nil }
+        let thinned: [Point] = try Engine.thinTrack(points: try points.map { try Engine.recoded($0) }).map { try Engine.recoded($0) }
+        return thinned.map { SavedTrackPoint(altFt: $0.altFt, lat: $0.lat, lon: $0.lon, t: Int($0.t.rounded())) }
     }
 }
 
 /// The route as it goes to other places.
 @MainActor
 enum RouteShare {
-    /// The plan's own address on the website.
-    static func link(_ plan: Plan) -> URL {
-        var items = [URLQueryItem(name: "dep", value: plan.dep), URLQueryItem(name: "dest", value: plan.dest)]
-        if !plan.stops.isEmpty { items.append(URLQueryItem(name: "stops", value: plan.stops.joined(separator: ","))) }
-        if let feet = plan.ownAltitudeFt { items.append(URLQueryItem(name: "altitude_ft", value: String(Int(feet)))) }
-        if !plan.extras.holds.isEmpty { items.append(URLQueryItem(name: "holds", value: plan.extras.holds.map(\.text).joined(separator: ","))) }
-        return Config.gateway.appending(path: "/app/plan").appending(queryItems: items)
+    /// The plan as a shared flight's link (SharedPlan): opened as a preview
+    /// on the other pilot's phone or browser; the N-number only when asked.
+    static func link(_ plan: Plan, includeTail: Bool = false) -> URL {
+        SharedPlan(dep: plan.dep, dest: plan.dest, stops: plan.stops, altitudeFt: (plan.ownAltitudeFt ?? plan.altitudeFt).map { Int($0) },
+                   type: plan.aircraft == Plan.noAirplane ? nil : plan.aircraft.uppercased(), rules: FlightRules.saved(), tail: plan.tail).link(includeTail: includeTail)
     }
 
     static func fileName(_ plan: Plan) -> String {
@@ -477,12 +358,14 @@ enum RouteShare {
     static func navLogText(_ plan: Plan) -> String {
         var lines = [plan.idents.joined(separator: " → ")]
         if let totals = plan.totals {
-            lines.append([totals.distanceNm.map(AirportWords.nm), totals.eteMin.map(hoursMinutes),
-                          totals.fuelGal.map(AirportWords.gal)].compactMap { $0 }.joined(separator: " · "))
+            lines.append([Format.distance(totals.distanceNm), totals.eteMin.map(Format.duration),
+                          totals.fuelGal.map { Format.fuel($0) }].compactMap { $0 }.joined(separator: " · "))
         }
         for leg in plan.legs {
-            lines.append(String(format: "%@ → %@  %05.0f ft  MH %03.0f°  %.1f nm  %@  %@", leg.from, leg.to, leg.altitudeFt, leg.magneticHeadingDeg, leg.distanceNm,
-                                leg.groundspeedKt.map { String(format: "GS %.0f kt", $0) } ?? "", leg.eteMin.map(hoursMinutes) ?? ""))
+            // No heading without an airplane: the planner sends none.
+            let heading = leg.magneticHeadingDeg.map { "MH \(Format.heading($0))" }
+            lines.append(["\(leg.from) → \(leg.to)", Format.altitude(leg.altitudeFt), heading, Format.distance(leg.distanceNm),
+                          leg.groundspeedKt.map { "GS \(Format.speed($0))" }, leg.eteMin.map(Format.navLogTime)].compactMap { $0 }.joined(separator: "  "))
         }
         return lines.joined(separator: "\n")
     }
@@ -540,84 +423,6 @@ enum RouteShare {
     }
 }
 
-/// The kneeboard card: the flight on one half-letter page to fly with --
-/// the route, the airplane and the totals; the legs' altitude, heading,
-/// distance, ground speed, time and fuel, with ETA, ATA and fuel left to
-/// fill in; and the lines for the squawk and the clearance. Black on
-/// white whatever the theme (the web app's Kneeboard). A printed page at
-/// a fixed size, rendered to PDF and never shown on screen, so its type
-/// is in points and does not follow Dynamic Type.
-struct Kneeboard: View {
-    let route: String
-    let aircraft: String
-    let totals: Totals?
-    let legs: [Leg]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(route).font(.system(size: 15, weight: .bold))
-                Spacer()
-                Text("Date ________").font(.system(size: 9))
-            }
-            Rectangle().frame(height: 1.5)
-            Text([aircraft, totals?.distanceNm.map(AirportWords.nm), totals?.eteMin.map(hoursMinutes),
-                  totals?.fuelGal.map(AirportWords.gal),
-                  totals?.fuelRequiredGal.map { "(\(Formats.number($0, decimals: 1)) with reserve)" }].compactMap { $0 }.joined(separator: " · "))
-                .font(.system(size: 9))
-            Grid(alignment: .leading, horizontalSpacing: 6, verticalSpacing: 3) {
-                GridRow {
-                    ForEach(["Checkpoint", "Alt", "MH", "Dist", "GS", "ETE", "ETA", "ATA", "Fuel", "Rem"], id: \.self) { Text($0).bold() }
-                }
-                Divider().gridCellUnsizedAxes(.horizontal)
-                ForEach(Array(legs.enumerated()), id: \.offset) { _, leg in
-                    GridRow {
-                        Text(leg.to).lineLimit(1)
-                        Text(Int(leg.altitudeFt).formatted())
-                        Text(Formats.number(leg.magneticHeadingDeg, decimals: 0).leftPadded(to: 3))
-                        Text(Formats.number(leg.distanceNm, decimals: 1))
-                        Text(leg.groundspeedKt.map { Formats.number($0, decimals: 0) } ?? "")
-                        Text(leg.eteMin.map { Formats.number($0, decimals: 1) } ?? "")
-                        Text("")
-                        Text("")
-                        Text(leg.fuelGal.map { Formats.number($0, decimals: 1) } ?? "")
-                        Text("")
-                    }
-                    Divider().gridCellUnsizedAxes(.horizontal)
-                }
-            }
-            .font(.system(size: 8.5).monospacedDigit())
-            Text("Squawk ______   Clearance ____________________   Hobbs out ______ in ______").font(.system(size: 9)).padding(.top, 6)
-            Spacer(minLength: 0)
-            Text("Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight.").font(.system(size: 6.5))
-        }
-        .padding(24)
-        .frame(width: 396, height: 612, alignment: .topLeading)
-        .foregroundStyle(.black)
-        .background(.white)
-        .environment(\.colorScheme, .light)
-    }
-
-    /// The page as a PDF in the temporary folder, for the share sheet.
-    @MainActor
-    static func pdf(_ plan: Plan) -> URL? {
-        let page = Kneeboard(route: plan.idents.joined(separator: " → "), aircraft: plan.tail ?? plan.aircraft.uppercased(), totals: plan.totals, legs: plan.legs)
-        let url = FileManager.default.temporaryDirectory.appending(path: "\(RouteShare.fileName(plan))-nav-log.pdf")
-        let renderer = ImageRenderer(content: page)
-        var made = false
-        renderer.render { size, draw in
-            var box = CGRect(origin: .zero, size: size)
-            guard let context = CGContext(url as CFURL, mediaBox: &box, nil) else { return }
-            context.beginPDFPage(nil)
-            draw(context)
-            context.endPDFPage()
-            context.closePDF()
-            made = true
-        }
-        return made ? url : nil
-    }
-}
-
 /// iOS's share sheet, for a file made here.
 struct ActivityView: UIViewControllerRepresentable {
     let items: [Any]
@@ -659,8 +464,8 @@ struct ForgetNotesButton: View {
 struct WatchBanner: View {
     var body: some View {
         if let words = Tracking.shared.fired {
-            HStack(spacing: 8) {
-                Image(systemName: "bell.fill").accessibilityHidden(true)
+            HStack(spacing: WingtipSpace.sm) {
+                Image(systemName: "bell.fill").symbolRing(on: words).accessibilityHidden(true)
                 Text(words).font(.subheadline.weight(.semibold)).lineLimit(2)
                 Button { Tracking.shared.fired = nil } label: {
                     // The 44-point hit area round the glyph, which does not grow.
@@ -668,27 +473,25 @@ struct WatchBanner: View {
                 }
                 .accessibilityLabel("Dismiss")
             }
-            .padding(.horizontal, 12).padding(.vertical, 8)
-            .background(.regularMaterial, in: Capsule())
+            .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
+            .floatingGlass(in: Capsule())
+        } else if let problem = Tracking.shared.watchProblem {
+            // A watch that could not be checked says so where it would
+            // have gone off, rather than staying quiet.
+            Label(problem, systemImage: "exclamationmark.triangle")
+                .font(.subheadline).foregroundStyle(WingtipInk.caution).lineLimit(2)
+                .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
+                .floatingGlass(in: Capsule())
         }
     }
 }
 
 private enum PreviewData {
     static let legs = [
-        Leg(from: "KDLH", to: "KHIB", distanceNm: 62.4, altitudeFt: 4500, trueCourseDeg: 318, magneticHeadingDeg: 315, wcaDeg: -4,
-            trueHeadingDeg: 314, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 104, eteMin: 36, fuelGal: 5.1, tasKt: 112),
-        Leg(from: "KHIB", to: "KGPZ", distanceNm: 31.8, altitudeFt: 4500, trueCourseDeg: 296, magneticHeadingDeg: 293, wcaDeg: -4,
-            trueHeadingDeg: 292, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 106, eteMin: 18, fuelGal: 3.3, tasKt: 112),
+        Leg.preview(from: "KDLH", to: "KHIB", distanceNm: 62.4, altitudeFt: 4500, trueCourseDeg: 318, magneticHeadingDeg: 315, wcaDeg: -4, trueHeadingDeg: 314, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 104, eteMin: 36, fuelGal: 5.1, tasKt: 112),
+        Leg.preview(from: "KHIB", to: "KGPZ", distanceNm: 31.8, altitudeFt: 4500, trueCourseDeg: 296, magneticHeadingDeg: 293, wcaDeg: -4, trueHeadingDeg: 292, magneticVariationDeg: -1, climbMin: 6, groundspeedKt: 106, eteMin: 18, fuelGal: 3.3, tasKt: 112),
     ]
-    static let totals = Totals(distanceNm: 94.2, eteMin: 54, fuelGal: 8.4, fuelRequiredGal: 12.4, fuelMarginGal: 35.6, usableFuelGal: 48)
-}
-
-#Preview("DiversionView") {
-    NavigationStack { DiversionView() }
-        .environment(Plan())
-        .environment(OwnShip())
-        .environment(DryRun())
+    static let totals = Totals.preview(distanceNm: 94.2, eteMin: 54, fuelGal: 8.4, fuelMarginGal: 35.6, fuelRequiredGal: 12.4, usableFuelGal: 48)
 }
 
 #Preview("CheckpointNotesView") {

@@ -5,13 +5,14 @@ import { Switch } from "../../../../components/ui/switch";
 import { api, describeError } from "../../../../lib/api/client";
 import type { SaveFlightRequest } from "../../../../lib/api/types";
 import { flightWatch, type FlightWatch as Watch } from "../../../../lib/api/words";
-import { useBriefPlan } from "../../../../lib/briefPlan";
-import { clockTime, useMinuteClock } from "../../../../lib/clock";
+import { useBriefPlan, type FlightToSave } from "../../../../lib/briefPlan";
+import { clockTime } from "../../../../lib/format";
+import { useMinuteClock } from "../../../../lib/useMinuteClock";
 import { pilotQuery } from "../../../../lib/queryClient";
 import { TEXT } from "../../../../lib/text";
-import SourceChips from "../ask/SourceChips";
+import SourceChips from "../../../../components/SourceChips";
 import DepartPicker from "../navlog/DepartPicker";
-import { planOf, SAVE_FLIGHT, useSaveRequest, type FlightToSave } from "./saveFlightRequest";
+import { planOf, SAVE_FLIGHT, useSaveRequest } from "./saveFlightRequest";
 
 /** How often the watch is read while the Brief is open: the gateway
  *  checks on its own clock, and the Brief shows what it found. */
@@ -26,7 +27,10 @@ const NOTHING: FlightToSave = { course: null, totals: null, nav: null, legs: [],
 const watchQuery = (flightId: number | null) => ({
   queryKey: ["flight-watch", flightId] as const,
   queryFn: ({ signal }: { signal: AbortSignal }) => flightWatch.get(flightId!, signal),
-  enabled: flightId !== null, staleTime: POLL_MS, refetchInterval: POLL_MS, meta: { silent: true },
+  enabled: flightId !== null,
+  staleTime: POLL_MS,
+  refetchInterval: POLL_MS,
+  meta: { silent: true },
 });
 
 /**
@@ -57,18 +61,31 @@ export default function FlightWatch() {
   // or earlier, in the pilot's flights.
   const filed = useMutationState({
     filters: { mutationKey: SAVE_FLIGHT, status: "success" },
-    select: m => ({ plan: planOf(m.state.variables as SaveFlightRequest), id: (m.state.data as { id: number }).id }),
+    select: (m) => ({ plan: planOf(m.state.variables as SaveFlightRequest), id: (m.state.data as { id: number }).id }),
   });
-  const { data: flights } = useQuery({ queryKey: ["flights"], queryFn: api.flights.list, enabled: !!pilot, staleTime: 60_000, meta: { silent: true } });
+  const { data: flights } = useQuery({
+    queryKey: ["flights"],
+    queryFn: api.flights.list,
+    enabled: !!pilot,
+    staleTime: 60_000,
+    meta: { silent: true },
+  });
   const sameStops = (a: string[], b: (string | null)[] | null | undefined) => {
     const stops = (b ?? []).filter((s): s is string => s !== null);
     return a.length === stops.length && a.every((s, i) => s === stops[i]);
   };
-  const flightId: number | null = (planKey ? filed.find(f => f.plan === planKey)?.id : undefined)
-    ?? (request ? flights?.find(f =>
-      f.departureIdent === request.departureIdent && f.destinationIdent === request.destinationIdent
-      && sameStops(f.stops, request.stops) && (f.plannedFor ?? null) === (request.plannedFor ?? null))?.id : undefined)
-    ?? null;
+  const flightId: number | null =
+    (planKey ? filed.find((f) => f.plan === planKey)?.id : undefined) ??
+    (request
+      ? flights?.find(
+          (f) =>
+            f.departureIdent === request.departureIdent &&
+            f.destinationIdent === request.destinationIdent &&
+            sameStops(f.stops, request.stops) &&
+            (f.plannedFor ?? null) === (request.plannedFor ?? null),
+        )?.id
+      : undefined) ??
+    null;
   const watch = useQuery(watchQuery(flightId));
   const save = useMutation({ mutationKey: SAVE_FLIGHT, mutationFn: api.flights.save, meta: { silent: true } });
   const start = useMutation({
@@ -99,20 +116,42 @@ export default function FlightWatch() {
       {/* The picker's 44-point area reaches 10 past it and the switch's 12
           (their ::after insets): gap-6 keeps the two apart. */}
       <div className="flex items-center gap-6 rounded-xl bg-card px-3.5 py-2.5 shadow-[0_0_0_0.5px_var(--border)]">
-        <label htmlFor="flight-watch-switch" className={cn("min-w-0 flex-1 font-medium", TEXT.row)}>Watch this flight</label>
-        <DepartPicker value={departAt} onChange={setDepart} look="time" label="Watched departure" testId="flight-watch-depart" leavesNow={false} earliest={minute} />
+        <label htmlFor="flight-watch-switch" className={cn("min-w-0 flex-1 font-medium", TEXT.row)}>
+          Watch this flight
+        </label>
+        <DepartPicker
+          value={departAt}
+          onChange={setDepart}
+          look="time"
+          label="Watched departure"
+          testId="flight-watch-depart"
+          leavesNow={false}
+          earliest={minute}
+        />
         <Switch
-          id="flight-watch-switch" checked={on} disabled={!request || busy} data-testid="flight-watch-switch"
-          onCheckedChange={next => (next ? start.mutate(departAt) : stop.mutate())}
+          id="flight-watch-switch"
+          checked={on}
+          disabled={!request || busy}
+          data-testid="flight-watch-switch"
+          onCheckedChange={(next) => (next ? start.mutate(departAt) : stop.mutate())}
         />
       </div>
-      {problem && <p className={cn("px-1 text-destructive-ink", TEXT.note)} role="alert" data-testid="flight-watch-problem">{describeError(problem, "The watch could not be set")}</p>}
-      {watch.data && (
-        watch.data.changes.length > 0 ? (
+      {problem && (
+        <p className={cn("px-1 text-destructive-ink", TEXT.note)} role="alert" data-testid="flight-watch-problem">
+          {describeError(problem, "The watch could not be set")}
+        </p>
+      )}
+      {watch.data &&
+        (watch.data.changes.length > 0 ? (
           <div className="px-1" data-testid="flight-watch-changes">
             <p className={cn("tabular-nums", TEXT.prose)}>
               <span className="font-semibold">What changed: </span>
-              {watch.data.changes.map((c, i) => <span key={i}>{i > 0 ? " " : ""}{c.text}</span>)}
+              {watch.data.changes.map((c, i) => (
+                <span key={i}>
+                  {i > 0 ? " " : ""}
+                  {c.text}
+                </span>
+              ))}
             </p>
             <SourceChips sources={watch.data.sources} testId="flight-watch-source" />
           </div>
@@ -120,8 +159,7 @@ export default function FlightWatch() {
           <p className={cn("px-1 text-muted-foreground tabular-nums", TEXT.note)} data-testid="flight-watch-quiet">
             Checked {clockTime(new Date(watch.data.checkedAt))}, nothing has changed
           </p>
-        )
-      )}
+        ))}
     </section>
   );
 }

@@ -18,7 +18,7 @@ package app.wingtipmaps.android.strip
 
 /** The screens the field opens by their word, in the web app's names. */
 enum class FieldScreen {
-    AIRPLANE, LOGBOOK, SETTINGS, INSTRUCTOR, BRIEF, NEAREST, FUEL, FOOD, STOPS,
+    AIRPLANE, LOGBOOK, SETUP, INSTRUCTOR, BRIEF, NEAREST, FUEL, FOOD, STOPS,
     ROUTES, ALTITUDE, PROCEDURES, NAVLOG, PROFILE, SHARE, FILE, CLEARANCE, DRYRUN,
     SAVED, FAVORITES, RECENTS, RECENT_ROUTES, RADIO, MAP,
 }
@@ -47,7 +47,7 @@ object FieldCommands {
         fun words(screen: FieldScreen, vararg ws: String) = ws.forEach { put(it, screen) }
         words(FieldScreen.AIRPLANE, "airplane", "my airplane", "plane", "aircraft", "my aircraft", "airplanes", "weight and balance", "w&b", "checklist", "poh")
         words(FieldScreen.LOGBOOK, "logbook", "log book", "my logbook", "currency", "endorsements")
-        words(FieldScreen.SETTINGS, "settings", "setup", "account", "sign in", "sign out", "training", "pilot guide", "guide", "mock oral", "passenger briefing")
+        words(FieldScreen.SETUP, "settings", "setup", "account", "sign in", "sign out", "training", "pilot guide", "guide", "mock oral", "passenger briefing")
         words(FieldScreen.INSTRUCTOR, "instructor", "my instructor")
         words(FieldScreen.BRIEF, "brief", "brief me", "briefing", "the brief", "go no go", "go/no-go")
         words(FieldScreen.NEAREST, "nearest", "nearest airport", "nearest airports", "nrst")

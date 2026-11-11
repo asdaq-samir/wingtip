@@ -1,6 +1,7 @@
 """The chart's lakes and towns read once a cycle (app.landmarks): a
 corridor read with them is the reader's own read to the digit, on a
 chart drawn here with lakes and towns across every edge a read has."""
+
 import functools
 import json
 import threading
@@ -27,11 +28,14 @@ def _scene():
     (x0, y0), (x1, y1) = (chartvision.latlon_to_global_px(*p) for p in (START, END))
     lo_x, hi_x = min(x0, x1) - 600, max(x0, x1) + 600
     lo_y, hi_y = min(y0, y1) - 600, max(y0, y1) + 600
-    lakes = [(rng.uniform(lo_x, hi_x), rng.uniform(lo_y, hi_y), r, r * rng.uniform(0.4, 1.0))
-             for r in rng.choice([6.0, 10.0, 16.0, 30.0, 60.0, 200.0, 420.0], size=200,
-                                    p=[0.25, 0.25, 0.2, 0.12, 0.1, 0.05, 0.03])]
-    towns = [(rng.uniform(lo_x, hi_x), rng.uniform(lo_y, hi_y), w, w * rng.uniform(0.5, 1.5))
-             for w in rng.choice([22.0, 40.0, 90.0, 300.0], size=70)]
+    lakes = [
+        (rng.uniform(lo_x, hi_x), rng.uniform(lo_y, hi_y), r, r * rng.uniform(0.4, 1.0))
+        for r in rng.choice([6.0, 10.0, 16.0, 30.0, 60.0, 200.0, 420.0], size=200, p=[0.25, 0.25, 0.2, 0.12, 0.1, 0.05, 0.03])
+    ]
+    towns = [
+        (rng.uniform(lo_x, hi_x), rng.uniform(lo_y, hi_y), w, w * rng.uniform(0.5, 1.5))
+        for w in rng.choice([22.0, 40.0, 90.0, 300.0], size=70)
+    ]
     lines = []
     for t in np.linspace(0.1, 0.9, 6):
         cx, cy = x0 + t * (x1 - x0), y0 + t * (y1 - y0)
@@ -39,7 +43,7 @@ def _scene():
     return lakes, towns, lines, (x0, y0, x1, y1)
 
 
-@functools.lru_cache(maxsize=None)
+@functools.cache
 def _tile(x: int, y: int):
     """One tile of the chart drawn here; None for the odd tile no sheet
     covers, as along a coast."""
@@ -138,8 +142,9 @@ def test_a_blob_cut_off_by_its_cells_block_is_not_kept_and_its_tiles_say_so(draw
     cell = _corridor_cells()[0]
     landmarks.build_cell(cell, landmarks.cells_dir())
     loaded = landmarks._cell(landmarks.cells_dir(), cell)
-    cut = {tile for tile, bits in loaded["bits"].items()
-           if any(bits >> (kind * landmarks._BITS_PER_KIND) & landmarks.CUT for kind in range(2))}
+    cut = {
+        tile for tile, bits in loaded["bits"].items() if any(bits >> (kind * landmarks._BITS_PER_KIND) & landmarks.CUT for kind in range(2))
+    }
     assert cut, "the drawn chart has lakes bigger than a block"
     kept_tiles = set(loaded["blobs"])
     # Every blob kept sits in a tile of its cell.
@@ -160,10 +165,12 @@ def test_the_cells_are_named_for_the_cycle_its_tiles_and_the_reader(monkeypatch,
 def test_the_reader_keeps_a_read_with_the_cells_without_reading_the_chart_again(monkeypatch, tmp_path):
     kept = tmp_path / "kept.json"
     monkeypatch.setattr(detection, "_kept_path", lambda key: kept)
-    landmark = chartvision.Landmark(category="water", lat=42.2, lon=-89.0, area_m2=1.0, score=4.2, pixels=40,
-                                    extras={"cross_track_nm": 0.1, "along_track_nm": 2.0})
-    monkeypatch.setattr(landmarks, "read_blocks", lambda *args: [
-        {"block": 0, "blocks": 1, "tiles": 3, "missing": 0, "landmarks": [landmark]}])
+    landmark = chartvision.Landmark(
+        category="water", lat=42.2, lon=-89.0, area_m2=1.0, score=4.2, pixels=40, extras={"cross_track_nm": 0.1, "along_track_nm": 2.0}
+    )
+    monkeypatch.setattr(
+        landmarks, "read_blocks", lambda *args: [{"block": 0, "blocks": 1, "tiles": 3, "missing": 0, "landmarks": [landmark]}]
+    )
     monkeypatch.setattr(chart_reader, "detect_job", lambda *args: pytest.fail("read the chart again"))
     assert chart_reader.read_corridor(("C81->KRFD", 4.0), START, END, 4.0) is None
     assert detection._load_kept(kept)[0]["landmarks"] == [landmark]
@@ -193,8 +200,10 @@ def test_the_reader_reads_as_before_where_the_cells_cannot(monkeypatch, tmp_path
 def test_the_cells_under_a_sectional_are_the_zoom_7_tiles_it_spans():
     cells = landmarks.sheet_cells(["Chicago"])
     west, south, east, north = charts.COVERAGE["sec"]["Chicago"]
-    corners = [landmarks.cell_of(tuple(int(v) // 256 for v in chartvision.latlon_to_global_px(lat, lon)))
-               for lat, lon in ((north, west), (south, east))]
+    corners = [
+        landmarks.cell_of(tuple(int(v) // 256 for v in chartvision.latlon_to_global_px(lat, lon)))
+        for lat, lon in ((north, west), (south, east))
+    ]
     assert cells[0] == corners[0] and cells[-1] == corners[1]
     assert len(cells) == (corners[1][0] - corners[0][0] + 1) * (corners[1][1] - corners[0][1] + 1)
 

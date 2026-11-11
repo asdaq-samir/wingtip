@@ -1,5 +1,5 @@
 import { altFt } from "../../format";
-import type { SuaWhen, TfrWhen } from "../../../../lib/passTimes";
+import type { SuaWhen, TfrWhen } from "../../lib/passTimes";
 import type { Finding } from "../../../../lib/findings";
 
 // The words the briefing's parts share (FlightBriefingView), apart from
@@ -15,21 +15,26 @@ export function hazardAltitudeRange(lowFt: number | null, highFt: number | null)
   return `${altFt(lowFt)}-${altFt(highFt)} ft`;
 }
 
-/** What a special-use area's times of use say for the pass (lib/passTimes). */
-export const SUA_WORDS: Record<SuaWhen, string> = {
-  "active": "scheduled in use then",
+/** A special-use area's word for the pass: its times of use's
+ *  (features/plan/lib/passTimes), or SFDPS's status now where it holds then
+ *  (lib/liveReports liveWhen). */
+type AreaWhen = SuaWhen | "active-now" | "cold-now";
+
+/** What a special-use area's times of use, or SFDPS, say for the pass. */
+export const SUA_WORDS: Record<AreaWhen, string> = {
+  active: "scheduled in use then",
   "by-notam": "not scheduled then, but a NOTAM can activate it",
   "not-scheduled": "not scheduled then",
-  "unknown": "read its times against yours",
+  unknown: "read its times against yours",
+  "active-now": "active now (FAA SFDPS)",
+  "cold-now": "cold now (FAA SFDPS)",
 };
-export const SUA_FINDING: Record<SuaWhen, Finding> = {
-  "active": "stop",
+export const SUA_FINDING: Record<AreaWhen, Finding> = {
+  active: "stop",
   "by-notam": "caution",
   "not-scheduled": "ok",
-  "unknown": "caution",
+  unknown: "caution",
+  "active-now": "stop",
+  "cold-now": "ok",
 };
-export const TFR_WORDS: Record<TfrWhen, string> = {
-  "in-force": "in force then",
-  "before": "before it starts",
-  "after": "after it ends",
-};
+export const TFR_WORDS: Record<TfrWhen, string> = { "in-force": "in force then", before: "before it starts", after: "after it ends" };

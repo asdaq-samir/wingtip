@@ -1,0 +1,94 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "The still-air glide ring about own ship (#218): glide_range's radius at the picked airplane's own glide_ratio over the higher of the ground under the airplane (a pack's terrain) and the nearest field's elevation, and its outline as 73 points on the sphere, the first repeated last. Null on the ground, under flying speed, with no height, or with no glide ratio (no airplane, or none in its profile).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GlideRingInput",
+      "type": "object",
+      "properties": {
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        },
+        "altitude_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "speed_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "terrain_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "field_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "glide_ratio": {
+          "description": "The airplane's still-air glide ratio, feet forward for each foot down (its profile's glide.ratio); null or missing for none.",
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "lat",
+        "lon"
+      ]
+    },
+    "answer": {
+      "title": "GlideRingAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "range_nm": {
+              "type": "number"
+            },
+            "ground_ft": {
+              "type": "number"
+            },
+            "ring": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                },
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          },
+          "required": [
+            "range_nm",
+            "ground_ft",
+            "ring"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

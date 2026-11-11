@@ -17,7 +17,7 @@
  * - the pattern "entered at a 45° angle to the downwind leg" abeam
  *   midfield (AIM 4-3-3, AC 90-66C 11.3), from the pattern's side;
  * - left traffic unless the FAA says right (14 CFR 91.126(b)(1)),
- *   lib/pattern's patternSideDeg.
+ *   features/plan/lib/pattern's patternSideDeg.
  *
  * A sketch of the pattern to fly by, not a procedure: the size of a
  * pattern is the pilot's, flown as the field and its traffic need.
@@ -32,7 +32,7 @@ import { callEngine, type EngineAnswer } from "./engine/engine";
 import type { LatLon } from "./geo";
 import { isFixIdent } from "./identSchema";
 
-export type LegName = "Upwind" | "Crosswind" | "Downwind" | "Base" | "Final";
+type LegName = "Upwind" | "Crosswind" | "Downwind" | "Base" | "Final";
 
 export interface TrafficPattern {
   /** Round the runway to land on it, or off it and out of the pattern
@@ -56,7 +56,12 @@ export interface TrafficPattern {
 // planner's runway ends are "left" or "right", so the drawing's is too.
 const drawn = (d: EngineAnswer<"traffic_pattern">): TrafficPattern | null =>
   d && {
-    kind: d.kind, ident: d.ident, runway: d.runway, traffic: d.traffic === "right" ? "right" : "left", altitudeFt: d.altitude_ft, legs: d.legs,
+    kind: d.kind,
+    ident: d.ident,
+    runway: d.runway,
+    traffic: d.traffic === "right" ? "right" : "left",
+    altitudeFt: d.altitude_ft,
+    legs: d.legs,
     entry: d.entry,
   };
 
@@ -82,10 +87,22 @@ export function trafficPattern(ident: string, runway: Runway, endIdent: string, 
  * its 45° entry at the field left from (the owner, 2026-10-27: "why is c81
  * also drawing a visual pattern?").
  */
-export function departurePattern(ident: string, runway: Runway, endIdent: string, altitudeFt: number | null, toward: LatLon | null): TrafficPattern | null {
-  return drawn(callEngine("departure_pattern", {
-    ident, runway: runwayOf(runway), end_ident: endIdent, altitude_ft: altitudeFt, toward: toward ? { lat: toward.lat, lon: toward.lon } : null,
-  }));
+export function departurePattern(
+  ident: string,
+  runway: Runway,
+  endIdent: string,
+  altitudeFt: number | null,
+  toward: LatLon | null,
+): TrafficPattern | null {
+  return drawn(
+    callEngine("departure_pattern", {
+      ident,
+      runway: runwayOf(runway),
+      end_ident: endIdent,
+      altitude_ft: altitudeFt,
+      toward: toward ? { lat: toward.lat, lon: toward.lon } : null,
+    }),
+  );
 }
 
 /** The patterns picked, by field, from the address: "KDLH:27,C81:24".
@@ -96,7 +113,7 @@ export function departurePattern(ident: string, runway: Runway, endIdent: string
 export function patternsOf(param: string | null): Map<string, string> {
   const picked = new Map<string, string>();
   for (const part of (param ?? "").split(",")) {
-    const [ident, end] = part.split(":").map(s => s.trim().toUpperCase());
+    const [ident, end] = part.split(":").map((s) => s.trim().toUpperCase());
     if (ident && end && isFixIdent(ident) && /^\d{1,2}[LCR]?$|^[NSEW]{1,2}$/.test(end)) picked.set(ident, end);
   }
   return picked;

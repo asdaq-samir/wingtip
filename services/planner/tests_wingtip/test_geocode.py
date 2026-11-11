@@ -1,5 +1,6 @@
 """Where a town or an address a pilot types is, for Nearest: the Census
 Bureau's gazetteer of places and its geocoder, stubbed."""
+
 import io
 import zipfile
 
@@ -55,12 +56,20 @@ def test_an_address_is_where_the_census_geocoder_places_it(monkeypatch):
 
     def get(url, **kwargs):
         asked.append(kwargs["params"]["address"])
-        return _Answer({"result": {"addressMatches": [
-            {"matchedAddress": "4000 INTERNATIONAL LN, MADISON, WI, 53704", "coordinates": {"x": -89.349, "y": 43.134}}]}})
+        return _Answer(
+            {
+                "result": {
+                    "addressMatches": [
+                        {"matchedAddress": "4000 INTERNATIONAL LN, MADISON, WI, 53704", "coordinates": {"x": -89.349, "y": 43.134}}
+                    ]
+                }
+            }
+        )
 
     monkeypatch.setattr(geocode.requests, "get", get)
     assert geocode.find_addresses("4000 International Ln Madison WI") == [
-        {"label": "4000 International Ln, Madison, WI 53704", "lat": 43.134, "lon": -89.349}]
+        {"label": "4000 International Ln, Madison, WI 53704", "lat": 43.134, "lon": -89.349}
+    ]
     # Not an address -- no house number first -- and not asked.
     assert geocode.find_addresses("Madison") == []
     assert asked == ["4000 International Ln Madison WI"]
@@ -71,8 +80,10 @@ def test_an_address_is_where_the_census_geocoder_places_it(monkeypatch):
 
 def test_a_geocoder_that_does_not_answer_finds_nothing_and_fails_nothing(monkeypatch):
     monkeypatch.setattr(geocode, "_ADDRESSES", {})
+
     def down(url, **kwargs):
         raise requests.ConnectionError("down")
+
     monkeypatch.setattr(geocode.requests, "get", down)
     assert geocode.find_addresses("4000 International Ln") == []
 
@@ -85,6 +96,7 @@ def test_an_address_kept_past_its_time_is_given_when_the_geocoder_does_not_answe
 
     def down(url, **kwargs):
         raise requests.ConnectionError("down")
+
     monkeypatch.setattr(geocode.requests, "get", down)
     assert geocode.find_addresses("4000 International Ln") == found
 
@@ -102,6 +114,7 @@ def test_a_failed_download_is_not_tried_again_at_once(monkeypatch, tmp_path):
     def down(url, **kwargs):
         calls.append(url)
         raise requests.ConnectionError("down")
+
     monkeypatch.setattr(geocode.requests, "get", down)
     assert geocode.find_towns("madison") == []
     assert geocode.find_towns("madison") == []
@@ -117,5 +130,6 @@ def test_a_corrupt_kept_gazetteer_is_downloaded_again(monkeypatch, tmp_path):
 
         def raise_for_status(self):
             pass
+
     monkeypatch.setattr(geocode.requests, "get", lambda url, **kwargs: Resp())
     assert geocode.find_towns("madison")[0]["label"] == "Madison, WI"

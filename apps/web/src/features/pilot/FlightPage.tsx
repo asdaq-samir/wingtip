@@ -1,27 +1,24 @@
 // The debrief's tolerances and marks are the engine's (debrief.rs), the very ones the planner and the phones give.
 import { Suspense, lazy, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { Check, Upload, X } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
 import ConsoleClose from "../../components/ConsoleClose";
 import { api } from "../../lib/api/client";
 import type { Flight, FlightSummary } from "../../lib/api/types";
-import {
-  debrief, type Debrief,
-} from "../../lib/debrief";
+import { debrief, type Debrief } from "./debrief";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../lib/frat";
 import { TEXT } from "../../lib/text";
 import { keepTrack, keptTrack, readTrack, thin, TrackError, type TrackPoint } from "../../lib/track";
-import { useFlownTrack } from "../../lib/map/flownTrack";
+import { useFlownTrack } from "../../lib/map/position/flownTrack";
 import { routeName } from "../../lib/identSchema";
-import { altFt, bearing, feet, gal, grouped, nm } from "../../lib/units";
+import { altFt, bearing, feet, gal, grouped, nm } from "../../lib/format";
 import { mayUse, useEntitlement } from "../../lib/subscription";
 import PaidPrompt from "../../components/PaidPrompt";
-import { hm, localDay } from "../../lib/clock";
+import { dayMonthTime, dayMonthYear, hm, localDay } from "../../lib/format";
 import { reviewState, said } from "../../lib/endorsements";
-import { ReviewAskForm, type ReviewAsk } from "./ReviewAsk";
+import { ReviewAskForm, type ReviewAsk } from "../../components/ReviewAsk";
 import { FINDING_TONE } from "../../lib/findings";
 import { airportQuery, trainingQuery } from "../../lib/queryClient";
 import { proceduresOf, sameField } from "../../lib/procedures";
@@ -40,9 +37,11 @@ function signed(n: number, unit = ""): string {
 
 /** A tolerance met or not, as the drills mark one. */
 function Mark({ ok }: { ok: boolean }) {
-  return ok
-    ? <Check className={cn("size-4", FINDING_TONE.ok)} aria-label="Within" />
-    : <X className={cn("size-4", FINDING_TONE.stop)} aria-label="Outside" />;
+  return ok ? (
+    <Check className={cn("size-4", FINDING_TONE.ok)} aria-label="Within" />
+  ) : (
+    <X className={cn("size-4", FINDING_TONE.stop)} aria-label="Outside" />
+  );
 }
 
 /**
@@ -50,10 +49,11 @@ function Mark({ ok }: { ok: boolean }) {
  * drawn, not read -- the figures are in the rows under it.
  */
 function Profile({ d }: { d: Debrief }) {
-  const end = Math.max(...d.planned.map(p => p.toNm), ...d.profile.map(p => p.alongNm));
-  const alts = [...d.profile.map(p => p.altFt), ...d.planned.flatMap(p => (p.altFt == null ? [] : [p.altFt]))];
+  const end = Math.max(...d.planned.map((p) => p.toNm), ...d.profile.map((p) => p.alongNm));
+  const alts = [...d.profile.map((p) => p.altFt), ...d.planned.flatMap((p) => (p.altFt == null ? [] : [p.altFt]))];
   if (end <= 0 || alts.length === 0) return null;
-  const low = Math.floor(Math.min(...alts) / 500) * 500, high = Math.ceil(Math.max(...alts) / 500) * 500 || low + 500;
+  const low = Math.floor(Math.min(...alts) / 500) * 500,
+    high = Math.ceil(Math.max(...alts) / 500) * 500 || low + 500;
   const x = (nm: number) => (nm / end) * 300;
   const y = (ft: number) => 100 - ((ft - low) / (high - low)) * 100;
   const flown = d.profile.map((p, i) => `${i ? "L" : "M"}${x(p.alongNm).toFixed(1)} ${y(p.altFt).toFixed(1)}`).join(" ");
@@ -62,17 +62,39 @@ function Profile({ d }: { d: Debrief }) {
       <div className={cn("flex justify-between text-muted-foreground tabular-nums", TEXT.note)}>
         <span>{feet(high)}</span>
         <span className="flex gap-3">
-          <span><span className="mr-1 inline-block h-0.5 w-4 bg-tint align-middle" />Planned</span>
-          <span><span className="mr-1 inline-block h-0.5 w-4 bg-foreground align-middle" />Flown</span>
+          <span>
+            <span className="mr-1 inline-block h-0.5 w-4 bg-tint align-middle" />
+            Planned
+          </span>
+          <span>
+            <span className="mr-1 inline-block h-0.5 w-4 bg-foreground align-middle" />
+            Flown
+          </span>
         </span>
       </div>
-      <svg viewBox="0 0 300 100" preserveAspectRatio="none" className="h-28 w-full" role="img" aria-label="Flown altitude along the course, over the planned">
-        {d.planned.map((p, i) => p.altFt != null && (
-          <line
-            key={i} x1={x(p.fromNm)} x2={x(p.toNm)} y1={y(p.altFt)} y2={y(p.altFt)}
-            className="stroke-tint" strokeWidth={2} strokeDasharray="4 3" vectorEffect="non-scaling-stroke"
-          />
-        ))}
+      <svg
+        viewBox="0 0 300 100"
+        preserveAspectRatio="none"
+        className="h-28 w-full"
+        role="img"
+        aria-label="Flown altitude along the course, over the planned"
+      >
+        {d.planned.map(
+          (p, i) =>
+            p.altFt != null && (
+              <line
+                key={i}
+                x1={x(p.fromNm)}
+                x2={x(p.toNm)}
+                y1={y(p.altFt)}
+                y2={y(p.altFt)}
+                className="stroke-tint"
+                strokeWidth={2}
+                strokeDasharray="4 3"
+                vectorEffect="non-scaling-stroke"
+              />
+            ),
+        )}
         <path d={flown} fill="none" className="stroke-foreground" strokeWidth={1.5} vectorEffect="non-scaling-stroke" />
       </svg>
       <div className={cn("flex justify-between text-muted-foreground tabular-nums", TEXT.note)}>
@@ -91,14 +113,18 @@ function Findings({ d }: { d: Debrief }) {
     <div className="space-y-4">
       {d.notes.length > 0 && (
         <ul className={cn("list-disc space-y-0.5 pl-5 text-caution-ink", TEXT.prose)} data-testid="debrief-notes">
-          {d.notes.map(note => <li key={note}>{note}</li>)}
+          {d.notes.map((note) => (
+            <li key={note}>{note}</li>
+          ))}
         </ul>
       )}
       <ListGroup title="The flight">
-        <ListRow title="Took off" value={format(new Date(d.takeoff), "d MMM, HH:mm")} />
+        <ListRow title="Took off" value={dayMonthTime(new Date(d.takeoff))} />
         <ListRow
-          title="In the air" description={d.plannedMin != null ? `${hm(d.plannedMin)} planned` : undefined}
-          value={hm(d.flownMin)} data-testid="debrief-time"
+          title="In the air"
+          description={d.plannedMin != null ? `${hm(d.plannedMin)} planned` : undefined}
+          value={hm(d.flownMin)}
+          data-testid="debrief-time"
         />
         {d.hasAltitude && <Profile d={d} />}
       </ListGroup>
@@ -111,23 +137,27 @@ function Findings({ d }: { d: Debrief }) {
         {d.legs.map((leg, i) => {
           return (
             <ListRow
-              key={i} media={<Mark ok={leg.ok} />}
+              key={i}
+              media={<Mark ok={leg.ok} />}
               title={`${leg.from} → ${leg.to}`}
-              description={(
+              description={
                 <>
                   <span className="block">
                     {leg.altitudeWithin == null
-                      ? d.hasAltitude ? "Altitude: no cruise on this leg" : "Altitude: the file has none"
+                      ? d.hasAltitude
+                        ? "Altitude: no cruise on this leg"
+                        : "Altitude: the file has none"
                       : `Altitude: ${Math.round(leg.altitudeWithin * 100)}% within ${t.altitudeFt} ft of ${feet(leg.plannedAltFt)}${leg.worstAltFt != null ? `, at most ${signed(leg.worstAltFt, " ft")}` : ""}`}
                   </span>
                   {leg.courseWithin != null && leg.courseDeg != null && (
                     <span className="block">
                       Course: {Math.round(leg.courseWithin * 100)}% within {t.courseDeg}° of {bearing(leg.courseDeg)}
-                      {leg.worstOffNm != null && `, at most ${Math.abs(leg.worstOffNm).toFixed(1)} nm ${leg.worstOffNm >= 0 ? "right" : "left"} of the line`}
+                      {leg.worstOffNm != null &&
+                        `, at most ${Math.abs(leg.worstOffNm).toFixed(1)} nm ${leg.worstOffNm >= 0 ? "right" : "left"} of the line`}
                     </span>
                   )}
                 </>
-              )}
+              }
               data-testid="debrief-leg"
             />
           );
@@ -140,13 +170,18 @@ function Findings({ d }: { d: Debrief }) {
           const { landed, lateMin: late } = p;
           return (
             <ListRow
-              key={i} media={p.ok != null ? <Mark ok={p.ok} /> : undefined}
+              key={i}
+              media={p.ok != null ? <Mark ok={p.ok} /> : undefined}
               title={p.name}
               description={[
                 p.dueMin != null && `Due ${hm(p.dueMin)}`,
-                p.passedMin != null ? `${landed ? "landed" : "passed"} ${hm(p.passedMin)}${late != null ? ` (${signed(late, " min")})` : ""}` : "not reached",
+                p.passedMin != null
+                  ? `${landed ? "landed" : "passed"} ${hm(p.passedMin)}${late != null ? ` (${signed(late, " min")})` : ""}`
+                  : "not reached",
                 !landed && p.closestNm != null && `${p.closestNm.toFixed(1)} nm from it at closest`,
-              ].filter(Boolean).join(" · ")}
+              ]
+                .filter(Boolean)
+                .join(" · ")}
               data-testid="debrief-checkpoint"
             />
           );
@@ -157,11 +192,14 @@ function Findings({ d }: { d: Debrief }) {
         // PA.III.B: pattern altitude within its feet, read its distance from
         // the field, about where the downwind starts (the engine's tolerances).
         <ListGroup title={`Into the pattern · within ${t.patternFt} ft`}>
-          {d.patterns.map(p => (
+          {d.patterns.map((p) => (
             <ListRow
-              key={p.ident} media={<Mark ok={p.ok} />}
-              title={p.ident} description={`Pattern altitude ${feet(p.patternFt)}`}
-              value={`${altFt(p.altFt)} ft (${signed(p.offFt)})`} data-testid="debrief-pattern"
+              key={p.ident}
+              media={<Mark ok={p.ok} />}
+              title={p.ident}
+              description={`Pattern altitude ${feet(p.patternFt)}`}
+              value={`${altFt(p.altFt)} ft (${signed(p.offFt)})`}
+              data-testid="debrief-pattern"
             />
           ))}
         </ListGroup>
@@ -174,7 +212,7 @@ type Track = { source: string; points: TrackPoint[] };
 
 /**
  * The debrief: a track imported from the pilot's own app (GPX or KML),
- * read against the saved flight's nav log (lib/debrief). The track stays
+ * read against the saved flight's nav log (features/pilot/debrief). The track stays
  * on this device unless the pilot saves it to their account, and either
  * can be forgotten.
  */
@@ -189,12 +227,16 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
     () => local ?? (saved.data ? { source: saved.data.source, points: saved.data.points } : null),
     [local, saved.data],
   );
-  const fields = [...new Set(flight.checkpoints.filter(c => ["departure", "stop", "destination"].includes(c.category)).map(c => c.name))];
+  const fields = [
+    ...new Set(flight.checkpoints.filter((c) => ["departure", "stop", "destination"].includes(c.category)).map((c) => c.name)),
+  ];
   const places = useQueries({ queries: fields.map(airportQuery) });
-  const patterns = Object.fromEntries(fields.flatMap((ident, i) => {
-    const ft = places[i]?.data?.pattern?.altitude_ft;
-    return ft == null ? [] : [[ident, ft]];
-  }));
+  const patterns = Object.fromEntries(
+    fields.flatMap((ident, i) => {
+      const ft = places[i]?.data?.pattern?.altitude_ft;
+      return ft == null ? [] : [[ident, ft]];
+    }),
+  );
   const patternKey = JSON.stringify(patterns);
   const result = useMemo(
     () => (track ? debrief(flight, track.points, patterns) : null),
@@ -227,7 +269,7 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
     setLocal(null);
   };
 
-  const showTrack = useFlownTrack(s => s.show);
+  const showTrack = useFlownTrack((s) => s.show);
   const onAccount = !!saved.data;
   // The procedures picked for the flight (its `procs`), and the fields to
   // look for an approach flown at: the destination, and a stop an
@@ -236,7 +278,7 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
   const approachFields = useMemo(() => {
     const fields = [flight.destinationIdent];
     for (const p of picked) {
-      if (flight.stops.some(s => sameField(s, p.ident)) && !fields.some(f => sameField(f, p.ident))) fields.push(p.ident);
+      if (flight.stops.some((s) => sameField(s, p.ident)) && !fields.some((f) => sameField(f, p.ident))) fields.push(p.ident);
     }
     return fields;
   }, [flight.destinationIdent, flight.stops, picked]);
@@ -254,14 +296,21 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
           />
         )}
         <ListRow
-          title={track ? "Import another track" : "Import a track"} media={<Upload className="size-5" aria-hidden />}
-          onClick={() => input.current?.click()} data-testid="debrief-import"
+          title={track ? "Import another track" : "Import a track"}
+          media={<Upload className="size-5" aria-hidden />}
+          onClick={() => input.current?.click()}
+          data-testid="debrief-import"
         />
         {track && !onAccount && (
           <ListRow title="Save to your account" onClick={() => save.mutate(track)} disabled={save.isPending} data-testid="debrief-save" />
         )}
         {onAccount && (
-          <ListRow title="Remove from your account" onClick={() => unsave.mutate()} disabled={unsave.isPending} data-testid="debrief-unsave" />
+          <ListRow
+            title="Remove from your account"
+            onClick={() => unsave.mutate()}
+            disabled={unsave.isPending}
+            data-testid="debrief-unsave"
+          />
         )}
         {local && <ListRow title="Forget it on this device" onClick={forget} data-testid="debrief-forget" />}
         {result && (
@@ -269,18 +318,33 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
           // tolerance; the map's buttons have its key and Hide.
           <ConsoleClose>
             <ListRow
-              title="Show on the map" to={planHref} data-testid="debrief-show"
-              onClick={() => showTrack({
-                flightId: flight.id, title: routeName(flight.departureIdent, flight.destinationIdent, flight.stops),
-                departure: flight.departureIdent, destination: flight.destinationIdent, line: result.line,
-              })}
+              title="Show on the map"
+              to={planHref}
+              data-testid="debrief-show"
+              onClick={() =>
+                showTrack({
+                  flightId: flight.id,
+                  title: routeName(flight.departureIdent, flight.destinationIdent, flight.stops),
+                  departure: flight.departureIdent,
+                  destination: flight.destinationIdent,
+                  line: result.line,
+                })
+              }
             />
           </ConsoleClose>
         )}
       </ListGroup>
       <input
-        ref={input} id={inputId} type="file" className="hidden" accept=".gpx,.kml,application/gpx+xml,application/vnd.google-earth.kml+xml"
-        onChange={e => { const file = e.target.files?.[0]; e.target.value = ""; if (file) void read(file); }}
+        ref={input}
+        id={inputId}
+        type="file"
+        className="hidden"
+        accept=".gpx,.kml,application/gpx+xml,application/vnd.google-earth.kml+xml"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) void read(file);
+        }}
         data-testid="debrief-file"
       />
       {(problem || save.error || unsave.error) && (
@@ -289,13 +353,15 @@ function DebriefSection({ flight, planHref }: { flight: Flight; planHref: string
         </p>
       )}
       {track && !result && (
-        <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>
-          No flight in this track: it never went faster than taxiing.
-        </p>
+        <p className={cn("px-1 text-muted-foreground", TEXT.prose)}>No flight in this track: it never went faster than taxiing.</p>
       )}
       {result && <Findings d={result} />}
       {/* Under the figures, what they say to practise next, in words. */}
-      {result && <Suspense fallback={null}><DebriefWords flightId={flight.id} debrief={result} /></Suspense>}
+      {result && (
+        <Suspense fallback={null}>
+          <DebriefWords flightId={flight.id} debrief={result} />
+        </Suspense>
+      )}
       {result && track && (
         <Suspense fallback={null}>
           <ApproachDebriefs fields={approachFields} points={track.points} picked={picked} />
@@ -321,30 +387,40 @@ function InstructorReview({ summary }: { summary: FlightSummary }) {
   const { data: training } = useQuery(trainingQuery);
   const ask = useMutation({
     mutationFn: (a: ReviewAsk) => api.training.askReview({ flightId: summary.id, ...a }),
-    onSuccess: next => queryClient.setQueryData(["training"], next),
+    onSuccess: (next) => queryClient.setQueryData(["training"], next),
   });
   if (!training) return null;
-  const theirs = training.instructors.filter(l => l.accepted);
-  const asked = training.reviews.filter(r => r.flight.id === summary.id);
-  const waiting = asked.some(r => !r.answeredAt);
+  const theirs = training.instructors.filter((l) => l.accepted);
+  const asked = training.reviews.filter((r) => r.flight.id === summary.id);
+  const waiting = asked.some((r) => !r.answeredAt);
   return (
     <>
       {/* Before each solo cross-country the instructor reviews its planning
           and the weather and endorses it (14 CFR 61.93(c)(3), (d)). */}
       <ListGroup title="Solo cross-country">
-        {asked.map(r => (
-          <ListRow key={r.id} title={r.instructorName ?? "Your instructor"} description={`${said(r.flightOn)} · ${reviewState(r)}`}
-            data-testid="flight-review" />
+        {asked.map((r) => (
+          <ListRow
+            key={r.id}
+            title={r.instructorName ?? "Your instructor"}
+            description={`${said(r.flightOn)} · ${reviewState(r)}`}
+            data-testid="flight-review"
+          />
         ))}
         {theirs.length === 0 && <ListRow muted title="Ask your instructor in first, from Logbook, then Checkride" />}
       </ListGroup>
       {!waiting && theirs.length > 0 && (
         <ReviewAskForm
-          instructors={theirs} pending={ask.isPending} onAsk={a => ask.mutate(a)}
+          instructors={theirs}
+          pending={ask.isPending}
+          onAsk={(a) => ask.mutate(a)}
           initialDay={localDay(summary.plannedFor ? new Date(summary.plannedFor) : new Date())}
         />
       )}
-      {ask.error && <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="review-problem">{ask.error.message}</p>}
+      {ask.error && (
+        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)} data-testid="review-problem">
+          {ask.error.message}
+        </p>
+      )}
     </>
   );
 }
@@ -361,13 +437,13 @@ export default function FlightPage({ summary, planHref }: { summary: FlightSumma
   return (
     <div className="space-y-4">
       <ListGroup>
-        <Row title="Filed" value={format(new Date(summary.createdAt), "d MMM yyyy")} />
+        <Row title="Filed" value={dayMonthYear(new Date(summary.createdAt))} />
         {summary.aircraftTailNumber && <Row title="Airplane" value={summary.aircraftTailNumber} />}
         <Row title="Altitude" value={feet(summary.cruiseAltitudeFt)} />
         {summary.totalDistanceNm != null && <Row title="Distance" value={nm(summary.totalDistanceNm)} />}
         {summary.totalEteMin != null && <Row title="Time" value={hm(summary.totalEteMin)} />}
         {summary.totalFuelGal != null && <Row title="Fuel" value={gal(summary.totalFuelGal)} />}
-        {summary.plannedFor && <Row title="Planned for" value={format(new Date(summary.plannedFor), "d MMM, HH:mm")} />}
+        {summary.plannedFor && <Row title="Planned for" value={dayMonthTime(new Date(summary.plannedFor))} />}
         {summary.risk && (
           <ListRow
             title="Risk"
@@ -381,7 +457,9 @@ export default function FlightPage({ summary, planHref }: { summary: FlightSumma
       </ListGroup>
       <InstructorReview summary={summary} />
       {isPending ? (
-        <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>Fetching its nav log…</p>
+        <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>
+          Fetching its nav log…
+        </p>
       ) : error || !flight ? (
         <p className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>Its nav log could not be fetched ({error?.message ?? "not found"}).</p>
       ) : mayUse(entitlement) ? (

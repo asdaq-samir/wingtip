@@ -1,8 +1,9 @@
 """/api/airspace/at: the airspace over a point, with the ground, the
 shapefile and both feeds stubbed."""
+
 import requests
 from fastapi.testclient import TestClient
-from wingtip import airspace, airspace_at, airspace_map, elevation, fixes, sua, tfr
+from wingtip import airspace, airspace_at, elevation, fixes, sua, tfr
 
 from app.main import app
 
@@ -11,20 +12,46 @@ client = TestClient(app)
 
 def _point(monkeypatch, sua_at=lambda lat, lon: [], tfr_at=lambda lat, lon: [], ground=lambda lat, lon: 238.0):
     monkeypatch.setattr(airspace, "ensure_class_airspace_shapefile", lambda cache_dir: "Class_Airspace.shp")
-    monkeypatch.setattr(airspace_at, "volumes_at", lambda lat, lon, shp: [
-        {"class": "E", "local_type": "CLASS_E5", "name": "CHICAGO CLASS E5", "ident": "",
-         "floor_ft": 700.0, "floor_ref": "AGL", "ceiling_ft": 18000.0},
-        {"class": "B", "local_type": "CLASS_B", "name": "CHICAGO CLASS B", "ident": "ORD",
-         "floor_ft": 3600.0, "floor_ref": "MSL", "ceiling_ft": 10000.0},
-    ])
+    monkeypatch.setattr(
+        airspace_at,
+        "volumes_at",
+        lambda lat, lon, shp: [
+            {
+                "class": "E",
+                "local_type": "CLASS_E5",
+                "name": "CHICAGO CLASS E5",
+                "ident": "",
+                "floor_ft": 700.0,
+                "floor_ref": "AGL",
+                "ceiling_ft": 18000.0,
+            },
+            {
+                "class": "B",
+                "local_type": "CLASS_B",
+                "name": "CHICAGO CLASS B",
+                "ident": "ORD",
+                "floor_ft": 3600.0,
+                "floor_ref": "MSL",
+                "ceiling_ft": 10000.0,
+            },
+        ],
+    )
     monkeypatch.setattr(elevation, "ground_m", ground)
     monkeypatch.setattr(airspace_at, "mode_c_airports", lambda: ({"ident": "KORD", "name": "O'Hare", "lat": 41.9786, "lon": -87.9048},))
     monkeypatch.setattr(sua, "at_point", sua_at)
     monkeypatch.setattr(tfr, "at_point", tfr_at)
-    monkeypatch.setattr(fixes, "frd_near", lambda lat, lon: {
-        "ident": "VPBNG/095/14.2", "base": "VPBNG", "course_deg": 95, "distance_nm": 14.2, "radial": False,
-        "name": "14.2 nm on 095° from VPBNG",
-    })
+    monkeypatch.setattr(
+        fixes,
+        "frd_near",
+        lambda lat, lon: {
+            "ident": "VPBNG/095/14.2",
+            "base": "VPBNG",
+            "course_deg": 95,
+            "distance_nm": 14.2,
+            "radial": False,
+            "name": "14.2 nm on 095° from VPBNG",
+        },
+    )
 
 
 def test_the_column_over_a_point_from_the_ground_up(monkeypatch):
@@ -32,7 +59,11 @@ def test_the_column_over_a_point_from_the_ground_up(monkeypatch):
     body = client.get("/api/airspace/at", params={"lat": 42.3172, "lon": -88.0905}).json()
     assert body["ground_ft"] == 780.0
     assert [(b["class"], b["floor_ft"], b["ceiling_ft"]) for b in body["bands"]] == [
-        ("G", 780.0, 1480.0), ("E", 1480.0, 3600.0), ("B", 3600.0, 10000.0), ("E", 10000.0, 18000.0), ("A", 18000.0, 60000.0),
+        ("G", 780.0, 1480.0),
+        ("E", 1480.0, 3600.0),
+        ("B", 3600.0, 10000.0),
+        ("E", 10000.0, 18000.0),
+        ("A", 18000.0, 60000.0),
     ]
     assert body["bands"][2]["name"] == "CHICAGO CLASS B"
     assert body["bands"][0]["minimums"]["night"]["visibility_sm"] == 3.0
@@ -68,15 +99,28 @@ def test_what_is_ahead_of_own_ship(monkeypatch):
     from shapely.geometry import box
 
     _point(monkeypatch)
-    monkeypatch.setattr(airspace, "load_controlled_airspace", lambda shp, bbox: [
-        {"name": "ROCKFORD CLASS C", "class": "C", "ident": "RFD", "floor_ft_msl": 0.0, "ceiling_ft_msl": 4700.0,
-         "geometry": box(-87.9, 41.9, -87.8, 42.1), "bbox": (-87.9, 41.9, -87.8, 42.1)},
-    ])
+    monkeypatch.setattr(
+        airspace,
+        "load_controlled_airspace",
+        lambda shp, bbox: [
+            {
+                "name": "ROCKFORD CLASS C",
+                "class": "C",
+                "ident": "RFD",
+                "floor_ft_msl": 0.0,
+                "ceiling_ft_msl": 4700.0,
+                "geometry": box(-87.9, 41.9, -87.8, 42.1),
+                "bbox": (-87.9, 41.9, -87.8, 42.1),
+            }
+        ],
+    )
     monkeypatch.setattr(sua, "areas_in", lambda bbox: [])
     monkeypatch.setattr(tfr, "all_tfrs", lambda: [])
     monkeypatch.setattr("wingtip.faa_data.ensure_nasr_file", lambda name, cache_dir: "DOF.DAT")
-    monkeypatch.setattr("wingtip.faa_data.load_obstacles", lambda path, bbox, min_agl_ft=0: __import__("pandas").DataFrame(
-        columns=["lat", "lon", "city", "type", "agl_ft", "amsl_ft", "lit"]))
+    monkeypatch.setattr(
+        "wingtip.faa_data.load_obstacles",
+        lambda path, bbox, min_agl_ft=0: __import__("pandas").DataFrame(columns=["lat", "lon", "city", "type", "agl_ft", "amsl_ft", "lit"]),
+    )
     monkeypatch.setattr("wingtip.airports.nearest", lambda lat, lon, limit=1: [{"ident": "C81", "distance_nm": 20.0}])
     body = client.get("/api/airspace/ahead", params={"lat": 42.0, "lon": -88.0, "track": 90, "gs": 120, "alt": 3000}).json()
     (alert,) = body["alerts"]
@@ -88,27 +132,3 @@ def test_nothing_is_ahead_on_the_ground(monkeypatch):
     _point(monkeypatch)
     body = client.get("/api/airspace/ahead", params={"lat": 42.0, "lon": -88.0, "track": 90, "gs": 10}).json()
     assert body == {"alerts": [], "unavailable": []}
-
-
-def test_the_airspace_in_view_is_each_volumes_lines_and_altitudes(monkeypatch):
-    monkeypatch.setattr(airspace, "ensure_class_airspace_shapefile", lambda cache_dir: "Class_Airspace.shp")
-    monkeypatch.setattr(airspace_map, "volumes_in", lambda shp, south, west, north, east, classes="BCD": ({
-        "id": "PWK-12", "ident": "PWK", "name": "WHEELING CLASS D", "airspace_class": "D",
-        "floor_ft": 0.0, "floor_sfc": True, "ceiling_ft": 3000.0, "ceiling_excluded": True,
-        "hours_code": "NOTAM", "hours_remark": "Legal description references NOTAM",
-        "label_lat": 42.11, "label_lon": -87.9, "lines": [[[42.1, -87.95], [42.15, -87.9]]],
-    },))
-    body = client.get("/api/airspace/in-view", params={"south": 41.5, "west": -88.5, "north": 42.5, "east": -87.5}).json()
-    assert [(v["ident"], v["ceiling_ft"], v["ceiling_excluded"]) for v in body["volumes"]] == [("PWK", 3000.0, True)]
-    assert body["volumes"][0]["lines"] == [[[42.1, -87.95], [42.15, -87.9]]]
-    assert body["volumes"][0]["hours_code"] == "NOTAM"
-
-
-def test_the_airspace_in_view_without_the_file_is_none(monkeypatch):
-    def missing(cache_dir):
-        raise RuntimeError("no shapefile")
-
-    monkeypatch.setattr(airspace, "ensure_class_airspace_shapefile", missing)
-    body = client.get("/api/airspace/in-view", params={"south": 41.5, "west": -88.5, "north": 42.5, "east": -87.5}).json()
-    assert body == {"volumes": []}
-    assert client.get("/api/airspace/in-view", params={"south": 43, "west": -88.5, "north": 42.5, "east": -87.5}).status_code == 422

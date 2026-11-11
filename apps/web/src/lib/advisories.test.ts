@@ -1,13 +1,33 @@
 import { describe, expect, it } from "vitest";
-import { faaWords, gairmetAltitudes, gairmetTitle, pirepConditions, sigmetHazard, suaAltitudes, tfrAltitudes, tfrTimes, titleCase } from "./advisories";
+import {
+  faaWords,
+  gairmetAltitudes,
+  gairmetTitle,
+  pirepConditions,
+  sigmetHazard,
+  suaAltitudes,
+  tfrAltitudes,
+  tfrTimes,
+  titleCase,
+} from "./advisories";
 
-const gairmet = { hazard: "Icing", severity: "MOD", due_to: "ICE", valid_at: null, altitude_low_ft: null, from_freezing_level: true, altitude_high_ft: 22000 };
+const gairmet = {
+  hazard: "Icing",
+  severity: "MOD",
+  due_to: "ICE",
+  valid_at: null,
+  altitude_low_ft: null,
+  from_freezing_level: true,
+  altitude_high_ft: 22000,
+};
 
 describe("advisories in words", () => {
   it("a G-AIRMET's hazard, how bad, and how high", () => {
     expect(gairmetTitle(gairmet)).toBe("Icing, moderate");
     expect(gairmetAltitudes(gairmet)).toBe("Freezing level to 22,000 ft");
-    expect(gairmetAltitudes({ ...gairmet, from_freezing_level: false, altitude_low_ft: 5000, altitude_high_ft: 18000 })).toBe("5,000 to 18,000 ft");
+    expect(gairmetAltitudes({ ...gairmet, from_freezing_level: false, altitude_low_ft: 5000, altitude_high_ft: 18000 })).toBe(
+      "5,000 to 18,000 ft",
+    );
     expect(gairmetAltitudes({ ...gairmet, hazard: "IFR conditions", from_freezing_level: false, altitude_high_ft: null })).toBeNull();
   });
 
@@ -23,12 +43,16 @@ describe("advisories in words", () => {
     expect(tfrTimes({ effective: null, expires: null })).toBeNull();
     // In the test's own zone, as date-fns wrote them.
     const at = (iso: string) => new Date(iso);
-    const local = (d: Date) => `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()]} ${d.getDate()} ${
-      ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()]} ${
-      String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    expect(tfrTimes({ effective: "2026-10-06T18:00:00", expires: "2026-10-06T20:00:00" })).toBe(`${local(at("2026-10-06T18:00:00"))} – 20:00`);
-    expect(tfrTimes({ effective: "2026-10-06T18:00:00", expires: "2026-10-07T00:30:00" }))
-      .toBe(`${local(at("2026-10-06T18:00:00"))} – ${local(at("2026-10-07T00:30:00"))}`);
+    const local = (d: Date) =>
+      `${["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][d.getDay()]} ${d.getDate()} ${
+        ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][d.getMonth()]
+      } ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    expect(tfrTimes({ effective: "2026-10-06T18:00:00", expires: "2026-10-06T20:00:00" })).toBe(
+      `${local(at("2026-10-06T18:00:00"))} – 20:00`,
+    );
+    expect(tfrTimes({ effective: "2026-10-06T18:00:00", expires: "2026-10-07T00:30:00" })).toBe(
+      `${local(at("2026-10-06T18:00:00"))} – ${local(at("2026-10-07T00:30:00"))}`,
+    );
     expect(tfrTimes({ effective: "2026-10-01T16:00:00Z", expires: null })).toMatch(/^From .* until further notice$/);
   });
 });
@@ -45,7 +69,9 @@ describe("the FAA's capitals in sentence case", () => {
   it("keeps the codes and the figures, and starts each sentence with a capital", () => {
     expect(faaWords("INTERMITTENT BY NOTAM 4 HOURS IN ADVANCE")).toBe("Intermittent by NOTAM 4 hours in advance");
     expect(faaWords("0700 - 2200 LOCAL, MON - FRI; OTHER TIMES BY NOTAM")).toBe("0700 - 2200 local, Mon - Fri; other times by NOTAM");
-    expect(faaWords("AIR SPEED LOSS OR GAIN OF 20KTS OR MORE BELOW 2000 FT AGL")).toBe("Air speed loss or gain of 20KTS or more below 2000 ft AGL");
+    expect(faaWords("AIR SPEED LOSS OR GAIN OF 20KTS OR MORE BELOW 2000 FT AGL")).toBe(
+      "Air speed loss or gain of 20KTS or more below 2000 ft AGL",
+    );
     // A cause made of contractions alone stays as the FAA wrote it.
     expect(faaWords("CIG BLW 010 VIS BLW 3SM BR FG")).toBe("CIG BLW 010 VIS BLW 3SM BR FG");
     expect(faaWords("Security: VIP movement")).toBe("Security: VIP movement");

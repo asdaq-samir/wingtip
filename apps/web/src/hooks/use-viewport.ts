@@ -26,7 +26,9 @@ function held<T>(read: () => T, events: (onChange: () => void) => () => void) {
   const watch = () => {
     if (watching) return;
     watching = true;
-    events(() => { fresh = false; });
+    events(() => {
+      fresh = false;
+    });
   };
   return {
     subscribe: (onChange: () => void) => {
@@ -55,8 +57,9 @@ function readInsets(): string {
   if (!probe) {
     probe = document.createElement("div");
     probe.setAttribute("aria-hidden", "true");
-    probe.style.cssText = "position:fixed;top:0;left:0;visibility:hidden;pointer-events:none;"
-      + "padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)";
+    probe.style.cssText =
+      "position:fixed;top:0;left:0;visibility:hidden;pointer-events:none;" +
+      "padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)";
     document.body.appendChild(probe);
   }
   const style = getComputedStyle(probe);
@@ -67,7 +70,9 @@ const insets = held(readInsets, onResize);
 const windowHeight = held(() => window.innerHeight, onResize);
 
 export function useSafeArea(): { top: number; bottom: number } {
-  const [top = 0, bottom = 0] = useSyncExternalStore(insets.subscribe, insets.get, () => "0px|0px").split("|").map(v => parseFloat(v) || 0);
+  const [top = 0, bottom = 0] = useSyncExternalStore(insets.subscribe, insets.get, () => "0px|0px")
+    .split("|")
+    .map((v) => parseFloat(v) || 0);
   return { top, bottom };
 }
 

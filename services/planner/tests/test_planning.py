@@ -1,11 +1,12 @@
-"""app.planning's own pieces: the aircraft profile an override must not
+"""wingtip.planning's own pieces: the aircraft profile an override must not
 corrupt for the next pilot, and SingleFlightTTLCache's actual promise --
 one computation per key, even from several threads at once.
 """
+
 import threading
 import time
 
-from app import planning
+from wingtip import aircraft, planning
 
 
 def test_an_aeroplanes_own_override_does_not_leak_into_the_stock_profile():
@@ -17,10 +18,10 @@ def test_an_aeroplanes_own_override_does_not_leak_into_the_stock_profile():
     with no override at all. Two different pilots, two different answers,
     is the only acceptable outcome.
     """
-    overridden = planning.aircraft_profile("c172", cruise_tas_kt=999.0)
+    overridden = aircraft.aircraft_profile("c172", cruise_tas_kt=999.0)
     assert overridden["cruise_tas_kt"] == 999.0
 
-    stock = planning.aircraft_profile("c172")
+    stock = aircraft.aircraft_profile("c172")
     assert stock["cruise_tas_kt"] != 999.0
 
 
@@ -178,7 +179,9 @@ def _stuck(pending_stage: str | None = None):
             started.set()
             release.wait(timeout=5)
             return "late"
+
         return compute
+
     make.started = started
     return make, release
 
@@ -265,7 +268,7 @@ def test_a_second_abandoned_computation_is_not_replaced_while_the_first_still_ru
     time.sleep(0.3)
     second_pending: set = set()
     second = threading.Thread(target=lambda: cache.get_or_compute("k", make(second_pending), 0.2, second_pending))
-    second.start()                       # replaces the first, which is abandoned
+    second.start()  # replaces the first, which is abandoned
     time.sleep(0.3)
 
     started = []
@@ -282,8 +285,10 @@ def test_a_second_abandoned_computation_is_not_replaced_while_the_first_still_ru
 
 
 def test_stages_are_named_in_a_pilots_words():
-    assert planning.describe_stages(["weather.freezing_level", "terrain.floor_profile", "weather.hazards_along_route"]) \
+    assert (
+        planning.describe_stages(["weather.freezing_level", "terrain.floor_profile", "weather.hazards_along_route"])
         == "aviationweather.gov and the terrain and obstacles"
+    )
     assert planning.describe_stages([]) == ""
 
 
@@ -296,8 +301,9 @@ def test_the_checkpoints_are_the_charts_own_within_a_mile_of_the_course_scored_b
     from app import chart_model, checkpoint_scoring
 
     def landmark(category, along, cross, score, name=None):
-        return chartvision.Landmark(category, 43.0 + along / 60, -89.0, 0.0, score, 40, name=name,
-                                    extras={"along_track_nm": along, "cross_track_nm": cross})
+        return chartvision.Landmark(
+            category, 43.0 + along / 60, -89.0, 0.0, score, 40, name=name, extras={"along_track_nm": along, "cross_track_nm": cross}
+        )
 
     landmarks = [
         landmark("river", 40.0, 0.2, 4.3),
@@ -310,7 +316,9 @@ def test_the_checkpoints_are_the_charts_own_within_a_mile_of_the_course_scored_b
     checkpoints = checkpoint_scoring.score("C81", "KDLH")
 
     assert [(c["name"], c["category"], c["predicted_score"]) for c in checkpoints] == [
-        ("Wonder Lake", "airport", 3.9), ("River", "river", 0.4)]
+        ("Wonder Lake", "airport", 3.9),
+        ("River", "river", 0.4),
+    ]
 
 
 def test_with_no_chart_model_the_palettes_constants_score_them(monkeypatch):
@@ -328,11 +336,15 @@ def test_with_no_chart_model_the_palettes_constants_score_them(monkeypatch):
 def test_an_aircraft_name_that_is_a_path_is_not_opened():
     """The aircraft name is the request's: only a stock profile's bare
     name picks a file, and a path (the loader opens one with a suffix as
-    it is) is a 422, never read (CodeQL's py/path-injection)."""
+    it is) is refused, never read (CodeQL's py/path-injection): a 422 from
+    the planner (app.main's handler)."""
     import pytest
-    from fastapi import HTTPException
+    from fastapi.testclient import TestClient
+
+    from app.main import app
 
     for name in ("/etc/hostname.json", "../aircraft/c172.json", "c172.json", "nosuchplane"):
-        with pytest.raises(HTTPException) as refused:
-            planning.aircraft_profile(name)
-        assert refused.value.status_code == 422
+        with pytest.raises(aircraft.UnknownAircraft):
+            aircraft.aircraft_profile(name)
+    resp = TestClient(app).get("/api/plan", params={"dep": "C81", "dest": "KDLH", "aircraft": "nosuchplane"})
+    assert resp.status_code == 422 and "nosuchplane" in resp.json()["detail"]

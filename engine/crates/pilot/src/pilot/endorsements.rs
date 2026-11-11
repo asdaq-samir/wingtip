@@ -2,14 +2,14 @@
 //! lib/endorsements and lib/checkride): which signed endorsements are in
 //! force, the warning an instructor sees once their own date has passed,
 //! an endorsement's words as they will be signed (AC 61-65K's samples,
-//! the gateway's EndorsementKind.render), and the ACS codes in a
+//! kinds.rs's catalogue), and the ACS codes in a
 //! knowledge test report the student pastes in.
 //!
 //! The days are the gateway's, "YYYY-MM-DD" on the pilot's own calendar,
 //! compared as text: no time zone enters here.
 
 use super::js;
-use crate::time::days_in_month;
+use crate::time::{days_from_civil, days_in_month};
 
 /// The day of a "YYYY-MM-DD" (a longer ISO text read by its first ten);
 /// None for no such day.
@@ -49,10 +49,37 @@ pub fn lapse_warning(until: Option<&str>, until_kind: Option<&str>, signed_on: &
     }
     let on = said(until).ok_or_else(|| format!("endorsement_lapse: {until:?} is not a day"))?;
     Ok(Some(if until_kind == Some("EXP") {
-        format!("Your certificate expired on {on}: 14 CFR 61.197(e) asks for it to be reinstated (61.199) before you sign as an instructor.")
+        format!(
+            "Your certificate expired on {on}: 14 CFR 61.197(e) asks for it to be reinstated (61.199) before you sign as an instructor."
+        )
     } else {
         format!("Your recent experience ran out on {on}: 14 CFR 61.197(a) asks for recent experience in the preceding 24 calendar months before you sign as an instructor.")
     }))
+}
+
+/// A student's solo endorsement wants the instructor once it lapses within
+/// this many days: the owner's planning choice, a week (the instructor
+/// list's canvas, 2026-11-03), on a 61.87(n) endorsement good for 90 days
+/// (the day it runs out is the gateway's, pilot::records).
+pub const SOLO_LAPSE_SOON_DAYS: i64 = 7;
+
+/// A student's solo endorsement's standing on `today`, from the last day it
+/// is good (`until`, "YYYY-MM-DD"): the days from today to that day,
+/// negative once gone by, and "ok" (in force), "caution" (lapsing within
+/// SOLO_LAPSE_SOON_DAYS, or today), "stop" (lapsed) or "unknown" (none on
+/// record). Err where a date given is not a day.
+pub fn solo_standing(until: Option<&str>, today: &str) -> Result<(Option<i64>, &'static str), String> {
+    let Some(until) = until.filter(|u| !u.is_empty()) else { return Ok((None, "unknown")) };
+    let on = |iso: &str| day(iso).map(|(y, m, d)| days_from_civil(y, m, d)).ok_or_else(|| format!("solo_standing: {iso:?} is not a day"));
+    let days = on(until)? - on(today)?;
+    let standing = if days < 0 {
+        "stop"
+    } else if days <= SOLO_LAPSE_SOON_DAYS {
+        "caution"
+    } else {
+        "ok"
+    };
+    Ok((Some(days), standing))
 }
 
 /// The latest of each kind signed in the app and not voided, by its code,
@@ -69,7 +96,7 @@ pub fn in_force(signed: &[(String, bool)]) -> Vec<(String, usize)> {
 }
 
 /// An endorsement's words with the student's name and the fields filled
-/// in, as the gateway's EndorsementKind.render fills them: each {blank}
+/// in, as kinds::fill fills them to sign: each {blank}
 /// ({letters}) the student's name for {student}, else its field, a blank
 /// with no field left empty; every run of space then one space, and none
 /// at the ends. What the sheet shows is what is signed: the gateway
@@ -151,9 +178,25 @@ fn acs_code_at(c: &[char], i: usize) -> Option<(String, usize)> {
             if js::boundary(c, end) {
                 let number: String = c[j..after].iter().collect();
                 let sub = if take { letter.map(|l| l.to_ascii_lowercase().to_string()).unwrap_or_default() } else { String::new() };
-                return Some((format!("{}.{roman}.{task}.{kind}{number}{sub}", &c[i..i + 2].iter().collect::<String>()), end));
+                return Some((format!("{}.{roman}.{task}.{kind}{number}{sub}", c[i..i + 2].iter().collect::<String>()), end));
             }
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_solo_endorsement_lapsing_within_a_week_wants_the_instructor() {
+        assert_eq!(solo_standing(None, "2026-11-08").unwrap(), (None, "unknown"));
+        assert_eq!(solo_standing(Some("2026-11-16"), "2026-11-08").unwrap(), (Some(8), "ok"));
+        assert_eq!(solo_standing(Some("2026-11-15"), "2026-11-08").unwrap(), (Some(7), "caution"));
+        assert_eq!(solo_standing(Some("2026-11-08"), "2026-11-08").unwrap(), (Some(0), "caution"));
+        assert_eq!(solo_standing(Some("2026-11-07"), "2026-11-08").unwrap(), (Some(-1), "stop"));
+        assert_eq!(solo_standing(Some("2027-01-01"), "2026-12-31").unwrap(), (Some(1), "caution"));
+        assert!(solo_standing(Some("2026-02-30"), "2026-11-08").is_err());
+    }
 }

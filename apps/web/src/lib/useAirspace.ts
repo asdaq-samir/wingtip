@@ -2,6 +2,7 @@ import { useEffect, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { usePreferences, type AirspaceClass, type RecentAirport } from "./preferences";
 import { airportQuery } from "./queryClient";
+import { CHART } from "./tokens";
 
 /**
  * An airport drawn as the sectional draws its airspace -- the Favorites'
@@ -12,11 +13,11 @@ type Space = AirspaceClass;
 
 /** The sectional's blue and magenta, a shade lighter so a glyph in them
  *  reads on the panel's dark material too -- the map's airport marks'
- *  as well (lib/map/icons). The magenta nearer the chart's ink, at the
+ *  as well (lib/map/marks/icons). The magenta nearer the chart's ink, at the
  *  owner's ask ("Why is class C color red instead of magenta?"): it was
  *  #b02e7c, which read as red beside IFR's. */
-export const BLUE = "#2465b8";
-export const MAGENTA = "#c0309f";
+export const BLUE = CHART.towered;
+export const MAGENTA = CHART.untowered;
 
 /**
  * A field's airspace as the sectional draws it, on its tile: Class B a
@@ -40,11 +41,28 @@ export const MAGENTA = "#c0309f";
  * was 4.2:1 in the light and 2:1 in the dark, under WCAG's 4.5.
  */
 const AIRSPACE: Record<Space, { name: string; style: CSSProperties }> = {
-  B: { name: "Class B", style: { backgroundColor: BLUE, color: "#ffffff" } },
-  C: { name: "Class C", style: { backgroundColor: MAGENTA, color: "#ffffff" } },
-  D: { name: "Class D", style: { outline: `2.5px dashed ${BLUE}`, outlineOffset: -2.5, backgroundColor: `${BLUE}1f`, color: "var(--airspace-blue-ink)" } },
-  E: { name: "Class E", style: { outline: `2.5px dashed ${MAGENTA}`, outlineOffset: -2.5, backgroundColor: `${MAGENTA}1f`, color: "var(--airspace-magenta-ink)" } },
-  G: { name: "Class G", style: { background: `radial-gradient(circle closest-side, ${MAGENTA}00 58%, ${MAGENTA}70 82%, ${MAGENTA}10 100%)`, color: "var(--airspace-magenta-ink)" } },
+  B: { name: "Class B", style: { backgroundColor: BLUE, color: CHART.casing } },
+  C: { name: "Class C", style: { backgroundColor: MAGENTA, color: CHART.casing } },
+  D: {
+    name: "Class D",
+    style: { outline: `2.5px dashed ${BLUE}`, outlineOffset: -2.5, backgroundColor: `${BLUE}1f`, color: "var(--airspace-blue-ink)" },
+  },
+  E: {
+    name: "Class E",
+    style: {
+      outline: `2.5px dashed ${MAGENTA}`,
+      outlineOffset: -2.5,
+      backgroundColor: `${MAGENTA}1f`,
+      color: "var(--airspace-magenta-ink)",
+    },
+  },
+  G: {
+    name: "Class G",
+    style: {
+      background: `radial-gradient(circle closest-side, ${MAGENTA}00 58%, ${MAGENTA}70 82%, ${MAGENTA}10 100%)`,
+      color: "var(--airspace-magenta-ink)",
+    },
+  },
 };
 
 /** A kept airport's airspace class: the one remembered with it, so the
@@ -62,4 +80,3 @@ export function useAirspace(airport: RecentAirport, enabled = true): { name: str
   const known = answered ?? airport.airspace;
   return known ? AIRSPACE[known] : { name: "Airport", className: "bg-foreground/8 text-muted-foreground" };
 }
-

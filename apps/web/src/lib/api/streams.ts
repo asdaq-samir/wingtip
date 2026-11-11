@@ -13,8 +13,23 @@ export async function* ended<T extends { type: string }>(stream: AsyncIterable<T
   let finished = false;
   for await (const msg of stream) {
     if (msg.type === "error") {
-      const { detail = `${what} failed`, retry, reasons = [], advice = null, class_b = false, detours = [], brief = null } =
-        msg as { detail?: string; retry?: boolean; reasons?: string[]; advice?: string | null; class_b?: boolean; detours?: Detour[]; brief?: string | null };
+      const {
+        detail = `${what} failed`,
+        retry,
+        reasons = [],
+        advice = null,
+        class_b = false,
+        detours = [],
+        brief = null,
+      } = msg as {
+        detail?: string;
+        retry?: boolean;
+        reasons?: string[];
+        advice?: string | null;
+        class_b?: boolean;
+        detours?: Detour[];
+        brief?: string | null;
+      };
       // A failure asking again cannot change (a route with no legal
       // altitude) as the client error it is: no Try again (queryClient).
       // Its reasons and advice come with it, for the nav log to list.
@@ -27,7 +42,7 @@ export async function* ended<T extends { type: string }>(stream: AsyncIterable<T
 }
 
 /** How long a stream's lines are gathered before they are handed on, ms. */
-export const BATCH_MS = 120;
+const BATCH_MS = 120;
 
 /**
  * A stream's lines handed on in batches: the ones that come within
@@ -51,7 +66,12 @@ export async function* inBatches<T>(stream: AsyncIterable<T>, windowMs = BATCH_M
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
         got = batch.length
-          ? await Promise.race([next, new Promise<typeof later>(resolve => { timer = setTimeout(() => resolve(later), Math.max(0, opened + windowMs - Date.now())); })])
+          ? await Promise.race([
+              next,
+              new Promise<typeof later>((resolve) => {
+                timer = setTimeout(() => resolve(later), Math.max(0, opened + windowMs - Date.now()));
+              }),
+            ])
           : await next;
       } catch (err) {
         if (batch.length) yield batch;

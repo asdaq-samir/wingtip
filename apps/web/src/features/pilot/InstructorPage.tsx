@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Controller, useForm, useWatch } from "react-hook-form";
+import { FormDateField } from "../../components/FormFields";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Check, X } from "lucide-react";
 import { cn } from "cn";
@@ -15,16 +16,16 @@ import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
 import { api } from "../../lib/api/client";
-import { hm } from "../../lib/clock";
-import { z } from "../../lib/formSchema";
+import { hm } from "../../lib/format";
+import { z } from "./formSchema";
 import type { CrossCountryReview, EndorsementKind, Instructor, InstructorRequest, StudentRow } from "../../lib/api/types";
 import { planHrefOf } from "../../lib/flightLink";
 import { LEVEL_TONE, riskLine, type RiskLevel } from "../../lib/frat";
 import { FINDING_TONE, type Finding } from "../../lib/findings";
-import { studentLines, type StudentLine } from "../../lib/students";
+import { studentLines, type StudentLine } from "./students";
 import { TEXT } from "../../lib/text";
-import { localDay } from "../../lib/clock";
-import { feet, gal, nm } from "../../lib/units";
+import { localDay } from "../../lib/format";
+import { feet, gal, nm } from "../../lib/format";
 import { ExperienceGroup, KnowledgeCodes } from "./CheckridePage";
 import { acDay, inForce, reviewRoute, said } from "../../lib/endorsements";
 import { GoodTo, SignedRow, SignForm } from "./Endorsements";
@@ -39,7 +40,10 @@ import StudentLessons from "./LessonAssign";
 // owner's rule, 2026-10-26).
 const certificateSchema = z.object({
   fullName: z.string().trim().min(1, "Your name is required").max(120, "At most 120 characters"),
-  certificate: z.string().trim().regex(/^[A-Za-z0-9]{4,20}$/, "4 to 20 letters and figures, as 987654321CFI"),
+  certificate: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9]{4,20}$/, "4 to 20 letters and figures, as 987654321CFI"),
   until: z.string().min(1, "The date is required"),
   untilKind: z.enum(["RE", "EXP"]),
 });
@@ -49,21 +53,36 @@ type CertificateValues = z.infer<typeof certificateSchema>;
 function CertificateForm({ instructor, onDone }: { instructor: Instructor; onDone?: () => void }) {
   const queryClient = useQueryClient();
   const ids = { name: useId(), number: useId(), until: useId() };
-  const { register, control, handleSubmit, formState: { errors } } = useForm<CertificateValues>({
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<CertificateValues>({
     resolver: zodResolver(certificateSchema),
     defaultValues: {
-      fullName: instructor.fullName ?? "", certificate: instructor.certificate ?? "",
-      until: instructor.until ?? "", untilKind: instructor.untilKind ?? "RE",
+      fullName: instructor.fullName ?? "",
+      certificate: instructor.certificate ?? "",
+      until: instructor.until ?? "",
+      untilKind: instructor.untilKind ?? "RE",
     },
   });
   const untilKind = useWatch({ control, name: "untilKind" });
   const save = useMutation({
     mutationFn: (request: InstructorRequest) => api.instructor.set(request),
-    onSuccess: next => { queryClient.setQueryData(["instructor"], next); onDone?.(); },
+    onSuccess: (next) => {
+      queryClient.setQueryData(["instructor"], next);
+      onDone?.();
+    },
   });
-  const onSave = handleSubmit(values => save.mutate({
-    fullName: values.fullName.trim(), certificate: values.certificate.trim(), until: values.until, untilKind: values.untilKind,
-  }));
+  const onSave = handleSubmit((values) =>
+    save.mutate({
+      fullName: values.fullName.trim(),
+      certificate: values.certificate.trim(),
+      until: values.until,
+      untilKind: values.untilKind,
+    }),
+  );
   return (
     <>
       {/* As every endorsement signed carries it (AC 61-65K): the name, the
@@ -74,43 +93,91 @@ function CertificateForm({ instructor, onDone }: { instructor: Instructor; onDon
       <ListGroup title="Your flight instructor certificate">
         <ListRow id={ids.name} title="Name">
           <RowField id={ids.name} error={errors.fullName?.message}>
-            <FieldHit htmlFor={ids.name}><Input id={ids.name} {...register("fullName")} placeholder="J. J. Jones" maxLength={120} className="h-8 w-44 sm:w-56"
-              {...invalidProps(ids.name, errors.fullName?.message)} data-testid="cfi-name" /></FieldHit>
+            <FieldHit htmlFor={ids.name}>
+              <Input
+                id={ids.name}
+                {...register("fullName")}
+                placeholder="J. J. Jones"
+                maxLength={120}
+                className="h-8 w-44 sm:w-56"
+                {...invalidProps(ids.name, errors.fullName?.message)}
+                data-testid="cfi-name"
+              />
+            </FieldHit>
           </RowField>
         </ListRow>
         <ListRow id={ids.number} title="Certificate">
           <RowField id={ids.number} error={errors.certificate?.message}>
-            <FieldHit htmlFor={ids.number}><Input id={ids.number} {...register("certificate")} placeholder="987654321CFI" maxLength={20} className="h-8 w-44 font-mono sm:w-56"
-              autoCapitalize="characters" {...invalidProps(ids.number, errors.certificate?.message)} data-testid="cfi-number" /></FieldHit>
+            <FieldHit htmlFor={ids.number}>
+              <Input
+                id={ids.number}
+                {...register("certificate")}
+                placeholder="987654321CFI"
+                maxLength={20}
+                className="h-8 w-44 font-mono sm:w-56"
+                autoCapitalize="characters"
+                {...invalidProps(ids.number, errors.certificate?.message)}
+                data-testid="cfi-number"
+              />
+            </FieldHit>
           </RowField>
         </ListRow>
         <ListRow title="Its date">
-          <Controller control={control} name="untilKind" render={({ field }) => (
-            <Segmented
-              label="What the date is" value={field.value} onChange={v => field.onChange(v as CertificateValues["untilKind"])}
-              options={[{ value: "RE", label: "Recent experience" }, { value: "EXP", label: "Expires" }]} testId="cfi-until-kind"
-            />
-          )} />
+          <Controller
+            control={control}
+            name="untilKind"
+            render={({ field }) => (
+              <Segmented
+                label="What the date is"
+                value={field.value}
+                onChange={(v) => field.onChange(v as CertificateValues["untilKind"])}
+                options={[
+                  { value: "RE", label: "Recent experience" },
+                  { value: "EXP", label: "Expires" },
+                ]}
+                testId="cfi-until-kind"
+              />
+            )}
+          />
         </ListRow>
         <ListRow id={ids.until} title={untilKind === "RE" ? "Recent experience through" : "Certificate expires"}>
           <RowField id={ids.until} error={errors.until?.message}>
-            <FieldHit htmlFor={ids.until}><Input id={ids.until} type="date" {...register("until")} className="h-8 w-40"
-              {...invalidProps(ids.until, errors.until?.message)} data-testid="cfi-until" /></FieldHit>
+            <FormDateField
+              control={control}
+              name="until"
+              id={ids.until}
+              aria-label={untilKind === "RE" ? "Recent experience through" : "Certificate expires"}
+              className="h-8 w-40"
+              error={errors.until?.message}
+              data-testid="cfi-until"
+            />
           </RowField>
         </ListRow>
         <ListRow
-          title={<span className="font-medium text-tint">Save</span>} disabled={save.isPending}
-          onClick={() => void onSave()} data-testid="cfi-save"
+          title={<span className="font-medium text-tint">Save</span>}
+          disabled={save.isPending}
+          onClick={() => void onSave()}
+          data-testid="cfi-save"
         />
         {onDone && <ListRow title="Cancel" onClick={onDone} />}
       </ListGroup>
-      {save.error && <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{save.error.message}</p>}
+      {save.error && (
+        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+          {save.error.message}
+        </p>
+      )}
     </>
   );
 }
 
 /** What the student's record answers of 61.93(d), and the flight as saved. */
-function ReviewSection({ review, kind, studentId, studentName, instructor }: {
+function ReviewSection({
+  review,
+  kind,
+  studentId,
+  studentName,
+  instructor,
+}: {
   review: CrossCountryReview;
   kind: EndorsementKind;
   studentId: number;
@@ -122,7 +189,7 @@ function ReviewSection({ review, kind, studentId, studentName, instructor }: {
   const [note, setNote] = useState("");
   const decline = useMutation({
     mutationFn: () => api.instructor.decline(review.id, note.trim()),
-    onSuccess: next => {
+    onSuccess: (next) => {
       queryClient.setQueryData(["instructor"], next);
       void queryClient.invalidateQueries({ queryKey: ["student-training", studentId] });
       setAnswering(null);
@@ -142,50 +209,97 @@ function ReviewSection({ review, kind, studentId, studentName, instructor }: {
         {f.totalFuelGal != null && <ListRow title="Fuel" value={gal(f.totalFuelGal)} />}
         {f.risk && (
           <ListRow
-            title="Risk" description={f.risk.factors.join(" · ") || undefined}
+            title="Risk"
+            description={f.risk.factors.join(" · ") || undefined}
             value={<span className={LEVEL_TONE[f.risk.level as RiskLevel]}>{riskLine(f.risk)}</span>}
           />
         )}
         <ConsoleClose>
-          <ListRow title="Open on the map" description="Its nav log, and today's weather and NOTAMs along it" to={planHrefOf(f)} data-testid="review-open" />
+          <ListRow
+            title="Open on the map"
+            description="Its nav log, and today's weather and NOTAMs along it"
+            to={planHrefOf(f)}
+            data-testid="review-open"
+          />
         </ConsoleClose>
       </ListGroup>
       {/* 14 CFR 61.93(d)(4) and (5), as their record has them. */}
       <ListGroup title="The student's endorsements">
-        {review.checks.map(c => (
+        {review.checks.map((c) => (
           <ListRow
-            key={c.rule} title={c.label} description={`${c.rule} · ${c.detail}`} data-testid="review-check"
-            media={c.met ? <Check className={cn("size-5", FINDING_TONE.ok)} aria-label="Met" /> : <X className={cn("size-5", FINDING_TONE.stop)} aria-label="Not met" />}
+            key={c.rule}
+            title={c.label}
+            description={`${c.rule} · ${c.detail}`}
+            data-testid="review-check"
+            media={
+              c.met ? (
+                <Check className={cn("size-5", FINDING_TONE.ok)} aria-label="Met" />
+              ) : (
+                <X className={cn("size-5", FINDING_TONE.stop)} aria-label="Not met" />
+              )
+            }
           />
         ))}
       </ListGroup>
       {answering === "sign" ? (
         <SignForm
-          kind={kind} studentId={studentId} studentName={studentName} instructor={instructor} reviewId={review.id}
+          kind={kind}
+          studentId={studentId}
+          studentName={studentName}
+          instructor={instructor}
+          reviewId={review.id}
           initial={{
-            from: f.departureIdent, to: f.destinationIdent, via: f.stops.length ? f.stops.join(", ") : "direct",
-            landings: landings.join(", "), mm: review.makeModel, date: acDay(review.flightOn),
+            from: f.departureIdent,
+            to: f.destinationIdent,
+            via: f.stops.length ? f.stops.join(", ") : "direct",
+            landings: landings.join(", "),
+            mm: review.makeModel,
+            date: acDay(review.flightOn),
           }}
-          onDone={() => setAnswering(null)} onCancel={() => setAnswering(null)}
+          onDone={() => setAnswering(null)}
+          onCancel={() => setAnswering(null)}
         />
       ) : answering === "decline" ? (
         // The note goes to the student by email and on their Checkride page.
         <ListGroup title="Not endorsed">
           <div className="p-2">
-            <Textarea value={note} onChange={e => setNote(e.target.value)} rows={3} maxLength={500}
-              placeholder="Why, and what to change" aria-label="Why not" data-testid="review-decline-note" />
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
+              maxLength={500}
+              placeholder="Why, and what to change"
+              aria-label="Why not"
+              data-testid="review-decline-note"
+            />
           </div>
-          <ListRow title={<span className="font-medium text-tint">Send</span>} disabled={!note.trim() || decline.isPending}
-            onClick={() => decline.mutate()} data-testid="review-decline-send" />
+          <ListRow
+            title={<span className="font-medium text-tint">Send</span>}
+            disabled={!note.trim() || decline.isPending}
+            onClick={() => decline.mutate()}
+            data-testid="review-decline-send"
+          />
           <ListRow title="Cancel" onClick={() => setAnswering(null)} />
         </ListGroup>
       ) : (
         <ListGroup>
-          <ListRow title={<span className="font-medium text-tint">Endorse this flight</span>} onClick={() => setAnswering("sign")} data-testid="review-endorse" />
-          <ListRow title={<span className="font-medium text-destructive">Not endorsed</span>} onClick={() => setAnswering("decline")} data-testid="review-decline" />
+          <ListRow
+            title={<span className="font-medium text-tint">Endorse this flight</span>}
+            onClick={() => setAnswering("sign")}
+            data-testid="review-endorse"
+          />
+          <ListRow
+            title={<span className="font-medium text-destructive">Not endorsed</span>}
+            onClick={() => setAnswering("decline")}
+            data-testid="review-decline"
+          />
         </ListGroup>
       )}
-      {decline.error && <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{decline.error.message}</p>}
+      {decline.error && (
+        <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+          {decline.error.message}
+        </p>
+      )}
     </div>
   );
 }
@@ -199,40 +313,67 @@ function ReviewSection({ review, kind, studentId, studentName, instructor }: {
  */
 function StudentPage({ row, instructor }: { row: StudentRow; instructor: Instructor }) {
   const { data: training, error } = useQuery({
-    queryKey: ["student-training", row.studentId], queryFn: () => api.instructor.student(row.studentId),
+    queryKey: ["student-training", row.studentId],
+    queryFn: () => api.instructor.student(row.studentId),
   });
   const [signing, setSigning] = useState<EndorsementKind | null>(null);
-  if (error) return <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>Their record could not be fetched ({error.message}).</p>;
-  if (!training) return <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>Fetching their record…</p>;
+  if (error)
+    return (
+      <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+        Their record could not be fetched ({error.message}).
+      </p>
+    );
+  if (!training)
+    return (
+      <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>
+        Fetching their record…
+      </p>
+    );
   const signed = inForce(training.signed);
-  const recorded = new Map(training.endorsements.map(e => [e.code, e]));
-  const crossCountry = training.kinds.find(k => k.code === "solo-xc-flight")!;
-  const waiting = training.reviews.filter(r => !r.answeredAt);
+  const recorded = new Map(training.endorsements.map((e) => [e.code, e]));
+  const crossCountry = training.kinds.find((k) => k.code === "solo-xc-flight")!;
+  const waiting = training.reviews.filter((r) => !r.answeredAt);
   const name = training.fullName ?? row.name;
   return (
     <div className="space-y-5" data-testid="student-page">
-      {waiting.map(r => (
+      {waiting.map((r) => (
         <ReviewSection key={r.id} review={r} kind={crossCountry} studentId={row.studentId} studentName={name} instructor={instructor} />
       ))}
       {signing ? (
         <SignForm
-          kind={signing} studentId={row.studentId} studentName={name} instructor={instructor}
-          onDone={() => setSigning(null)} onCancel={() => setSigning(null)}
+          kind={signing}
+          studentId={row.studentId}
+          studentName={name}
+          instructor={instructor}
+          onDone={() => setSigning(null)}
+          onCancel={() => setSigning(null)}
         />
       ) : (
         // Each signed in AC 61-65K's words, which name the student as on
         // their certificate: none until they have given it.
         <ListGroup title="Endorsements">
           {!training.fullName && <ListRow muted title="Waiting for their name as on their certificate" />}
-          {training.kinds.map(kind => {
+          {training.kinds.map((kind) => {
             const e = signed.get(kind.code);
             if (e) return <SignedRow key={kind.code} kind={kind} e={e} />;
             const paper = recorded.get(kind.code);
             return (
               <ListRow
-                key={kind.code} title={kind.label}
-                description={<><span className="block">{kind.rule}{paper ? ` · on paper ${said(paper.endorsedOn)}` : ""}</span><GoodTo until={paper?.until} /></>}
-                value="Sign" disabled={!training.fullName} onClick={() => setSigning(kind)} data-testid={`sign-${kind.code}`}
+                key={kind.code}
+                title={kind.label}
+                description={
+                  <>
+                    <span className="block">
+                      {kind.rule}
+                      {paper ? ` · on paper ${said(paper.endorsedOn)}` : ""}
+                    </span>
+                    <GoodTo until={paper?.until} />
+                  </>
+                }
+                value="Sign"
+                disabled={!training.fullName}
+                onClick={() => setSigning(kind)}
+                data-testid={`sign-${kind.code}`}
               />
             );
           })}
@@ -246,16 +387,28 @@ function StudentPage({ row, instructor }: { row: StudentRow; instructor: Instruc
 }
 
 /** A finding as a dot, for a row's two: the solo endorsement's standing
- *  and the next flight's Go / No-Go (lib/students). */
+ *  and the next flight's Go / No-Go (features/pilot/students). */
 const DOT_FILL: Record<Finding, string> = {
-  ok: "bg-go-ink", caution: "bg-caution", stop: "bg-destructive-ink", unknown: "bg-muted-foreground/40", pending: "bg-muted-foreground/40",
+  ok: "bg-go-ink",
+  caution: "bg-caution",
+  stop: "bg-destructive-ink",
+  unknown: "bg-muted-foreground/40",
+  pending: "bg-muted-foreground/40",
 };
 const DOT_WORDS: Record<Finding, string> = { ok: "good", caution: "look", stop: "no", unknown: "none", pending: "pending" };
 function Dots({ line }: { line: StudentLine }) {
   return (
     <span className="flex gap-1.5" data-testid="student-dots" data-currency={line.currency} data-go={line.goNoGo}>
-      <span className={cn("size-2.5 rounded-full", DOT_FILL[line.currency])} role="img" aria-label={`Solo endorsement: ${DOT_WORDS[line.currency]}`} />
-      <span className={cn("size-2.5 rounded-full", DOT_FILL[line.goNoGo])} role="img" aria-label={`Next flight: ${DOT_WORDS[line.goNoGo]}`} />
+      <span
+        className={cn("size-2.5 rounded-full", DOT_FILL[line.currency])}
+        role="img"
+        aria-label={`Solo endorsement: ${DOT_WORDS[line.currency]}`}
+      />
+      <span
+        className={cn("size-2.5 rounded-full", DOT_FILL[line.goNoGo])}
+        role="img"
+        aria-label={`Next flight: ${DOT_WORDS[line.goNoGo]}`}
+      />
     </span>
   );
 }
@@ -277,14 +430,24 @@ export default function InstructorPage() {
   const leave = useMutation({ mutationFn: api.instructor.leave, onSuccess: keep });
   const voidOne = useMutation({ mutationFn: api.instructor.voidEndorsement, onSuccess: keep });
   const stop = useMutation({ mutationFn: api.instructor.stop, onSuccess: keep });
-  if (error) return <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>Could not fetch it ({error.message}).</p>;
-  if (!instructor) return <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>Fetching…</p>;
+  if (error)
+    return (
+      <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+        Could not fetch it ({error.message}).
+      </p>
+    );
+  if (!instructor)
+    return (
+      <p role="status" className={cn("px-1 text-muted-foreground", TEXT.note)}>
+        Fetching…
+      </p>
+    );
   const problem = (accept.error ?? leave.error ?? voidOne.error ?? stop.error)?.message;
   const students = studentLines(instructor, localDay());
-  const pages = Object.fromEntries(instructor.students.map(s => [`student-${s.studentId}`, {
-    title: s.name, content: <StudentPage row={s} instructor={instructor} />,
-  }]));
-  const kindOf = (code: string) => instructor.kinds.find(k => k.code === code);
+  const pages = Object.fromEntries(
+    instructor.students.map((s) => [`student-${s.studentId}`, { title: s.name, content: <StudentPage row={s} instructor={instructor} /> }]),
+  );
+  const kindOf = (code: string) => instructor.kinds.find((k) => k.code === code);
   return (
     <ConsolePages back="Instructing" pages={pages}>
       <div className="space-y-5" data-testid="instructor-page">
@@ -292,19 +455,33 @@ export default function InstructorPage() {
           <CertificateForm instructor={instructor} onDone={instructor.certificate ? () => setEditing(false) : undefined} />
         ) : (
           <ListGroup title="Your certificate">
-            <ListRow title={instructor.fullName ?? ""} description={<span className="font-mono">{instructor.certificate}</span>}
-              value={<GoodTo until={instructor.until} />} data-testid="cfi-certificate" />
+            <ListRow
+              title={instructor.fullName ?? ""}
+              description={<span className="font-mono">{instructor.certificate}</span>}
+              value={<GoodTo until={instructor.until} />}
+              data-testid="cfi-certificate"
+            />
             <ListRow title={<span className="font-medium text-tint">Change</span>} onClick={() => setEditing(true)} />
           </ListGroup>
         )}
 
         {instructor.asking.length > 0 && (
           <ListGroup title="Asking you">
-            {instructor.asking.map(s => (
+            {instructor.asking.map((s) => (
               <ListRow key={s.linkId} title={s.name} description={s.email} data-testid="student-ask">
                 <span className="flex gap-1">
-                  <Button type="button" variant="ghost" size="sm" disabled={leave.isPending} onClick={() => leave.mutate(s.linkId)}>Decline</Button>
-                  <Button type="button" size="sm" disabled={accept.isPending} onClick={() => accept.mutate(s.linkId)} data-testid="student-accept">Accept</Button>
+                  <Button type="button" variant="ghost" size="sm" disabled={leave.isPending} onClick={() => leave.mutate(s.linkId)}>
+                    Decline
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={accept.isPending}
+                    onClick={() => accept.mutate(s.linkId)}
+                    data-testid="student-accept"
+                  >
+                    Accept
+                  </Button>
                 </span>
               </ListRow>
             ))}
@@ -312,37 +489,58 @@ export default function InstructorPage() {
         )}
 
         {students.needs.length > 0 && (
-          // Who needs the instructor today (lib/students): a solo
+          // Who needs the instructor today (features/pilot/students): a solo
           // cross-country flown today or before still waiting on its
           // sign-off, a solo endorsement lapsing within the week.
           <ListGroup title="Needs you today">
-            {students.needs.map(l => (
+            {students.needs.map((l) => (
               <PageRow
-                key={l.row.linkId} page={`student-${l.row.studentId}`} title={l.row.name} testId="student-needs"
-                description={l.needs!.words} value={<span className="font-medium text-tint">{l.needs!.action}</span>}
+                key={l.row.linkId}
+                page={`student-${l.row.studentId}`}
+                title={l.row.name}
+                testId="student-needs"
+                description={l.needs!.words}
+                value={<span className="font-medium text-tint">{l.needs!.action}</span>}
               />
             ))}
           </ListGroup>
         )}
-        <ListGroup title="Everyone" footer={instructor.students.length ? "Dots: their solo endorsement, and the next flight's Go / No-Go. Tap a student for their flights, lessons and endorsements." : undefined}>
+        <ListGroup
+          title="Everyone"
+          footer={
+            instructor.students.length
+              ? "Dots: their solo endorsement, and the next flight's Go / No-Go. Tap a student for their flights, lessons and endorsements."
+              : undefined
+          }
+        >
           {instructor.students.length === 0 ? (
             <ListRow muted title="None yet" />
-          ) : students.everyone.map(l => (
-            <PageRow
-              key={l.row.linkId} page={`student-${l.row.studentId}`} title={l.row.name} testId="student-row"
-              description={l.status} value={<Dots line={l} />}
-            />
-          ))}
+          ) : (
+            students.everyone.map((l) => (
+              <PageRow
+                key={l.row.linkId}
+                page={`student-${l.row.studentId}`}
+                title={l.row.name}
+                testId="student-row"
+                description={l.status}
+                value={<Dots line={l} />}
+              />
+            ))
+          )}
         </ListGroup>
 
         {instructor.signed.length > 0 && (
           // What was signed here in the last 3 years, the record 14 CFR
           // 61.189 asks an instructor to keep: kept when a student's account goes.
           <ListGroup title="Signed">
-            {instructor.signed.map(e => (
+            {instructor.signed.map((e) => (
               <SignedRow
-                key={e.id} kind={kindOf(e.code)} e={e} who={e.studentName}
-                onVoid={() => voidOne.mutate(e.id)} voiding={voidOne.isPending}
+                key={e.id}
+                kind={kindOf(e.code)}
+                e={e}
+                who={e.studentName}
+                onVoid={() => voidOne.mutate(e.id)}
+                voiding={voidOne.isPending}
               />
             ))}
           </ListGroup>
@@ -350,10 +548,18 @@ export default function InstructorPage() {
 
         {instructor.certificate && !editing && (
           <ListGroup>
-            <ListRow title={<span className="text-destructive">Stop instructing here</span>} disabled={stop.isPending} onClick={() => stop.mutate()} />
+            <ListRow
+              title={<span className="text-destructive">Stop instructing here</span>}
+              disabled={stop.isPending}
+              onClick={() => stop.mutate()}
+            />
           </ListGroup>
         )}
-        {problem && <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>{problem}</p>}
+        {problem && (
+          <p role="alert" className={cn("px-1", FINDING_TONE.stop, TEXT.prose)}>
+            {problem}
+          </p>
+        )}
       </div>
     </ConsolePages>
   );

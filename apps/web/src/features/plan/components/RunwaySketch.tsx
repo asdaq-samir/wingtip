@@ -2,7 +2,8 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Runway } from "../../../lib/api/types";
 import { TEXT_POINTS } from "../../../lib/text";
 import { FT_PER_NM } from "../../../lib/geo";
-import { numberHalfWidth, numbersOf, stripsOf } from "../../../lib/runwaySketch";
+import { numberHalfWidth, numbersOf, stripsOf } from "../lib/runwaySketch";
+import { CHART } from "../../../lib/tokens";
 
 /** Round the runways, in the box's own points: the strips' half width and
  *  a little air. */
@@ -11,7 +12,7 @@ const MARGIN = 8;
 /** Turf, green as the grass it is, at the pilot's ask: a shade that
  *  reads beside the paved strips' ink on the card's glass in either
  *  scheme. */
-const TURF = "#3f8f3a";
+const TURF = CHART.runwaySoft;
 
 type Hole = { x: number; y: number; w: number; h: number };
 
@@ -36,8 +37,16 @@ function pavedOf(turf: [number, number][]): [number, number][] {
  * shorter for it. Drawn in the box's own points, whatever its shape, so
  * the field fills it. Nothing where no runway can be drawn.
  */
-export function RunwaySketch({ runways, lat, lon, avoid, numberSize = TEXT_POINTS.caption }: {
-  runways: Runway[]; lat: number; lon: number;
+export function RunwaySketch({
+  runways,
+  lat,
+  lon,
+  avoid,
+  numberSize = TEXT_POINTS.caption,
+}: {
+  runways: Runway[];
+  lat: number;
+  lon: number;
   /** A pane laid over the box (the elevation): nothing is drawn under it. */
   avoid?: HTMLElement | null;
   /** The ends' numbers' size, points: TEXT_POINTS.caption (iOS's Caption 2)
@@ -49,10 +58,12 @@ export function RunwaySketch({ runways, lat, lon, avoid, numberSize = TEXT_POINT
   useLayoutEffect(() => {
     const parent = box.current?.parentElement;
     if (!parent) return;
-    const measure = () => setSize({
-      w: parent.clientWidth, h: parent.clientHeight,
-      hole: avoid ? { x: avoid.offsetLeft, y: avoid.offsetTop, w: avoid.offsetWidth, h: avoid.offsetHeight } : null,
-    });
+    const measure = () =>
+      setSize({
+        w: parent.clientWidth,
+        h: parent.clientHeight,
+        hole: avoid ? { x: avoid.offsetLeft, y: avoid.offsetTop, w: avoid.offsetWidth, h: avoid.offsetHeight } : null,
+      });
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(parent);
@@ -63,7 +74,8 @@ export function RunwaySketch({ runways, lat, lon, avoid, numberSize = TEXT_POINT
     const strips = stripsOf(runways, lat, lon);
     if (!strips.length || !size || size.w < 2 * MARGIN || size.h < 2 * MARGIN) return null;
     const { w, h } = size;
-    const xs = strips.flatMap(s => [s.a[0], s.b[0]]), ys = strips.flatMap(s => [s.a[1], s.b[1]]);
+    const xs = strips.flatMap((s) => [s.a[0], s.b[0]]),
+      ys = strips.flatMap((s) => [s.a[1], s.b[1]]);
     const [minX, maxX, minY, maxY] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
     // Each end's number, its middle this far past the end along the
     // runway: clear of the strip whichever way it runs.
@@ -72,19 +84,25 @@ export function RunwaySketch({ runways, lat, lon, avoid, numberSize = TEXT_POINT
     // field inside the margin and the numbers past its ends inside the
     // box, and off its edge: the widest number's half past the gap, and
     // half the margin's air.
-    const widest = Math.max(...strips.flatMap(s => s.ends.map(e => e.length)));
+    const widest = Math.max(...strips.flatMap((s) => s.ends.map((e) => e.length)));
     const margin = gap + numberHalfWidth(widest, numberSize) + MARGIN / 2;
     const fit = Math.min((w - 2 * margin) / Math.max(maxX - minX, 1e-3), (h - 2 * margin) / Math.max(maxY - minY, 1e-3));
-    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
-    const atScale = (k: number) => ([x, y]: [number, number]): [number, number] => [w / 2 + (x - cx) * k, h / 2 - (y - cy) * k];
-    const place = (k: number) => strips.map(s => {
-      const to = atScale(k);
-      const [ax, ay] = to(s.a), [bx, by] = to(s.b);
-      const length = Math.hypot(bx - ax, by - ay) || 1;
-      const [ux, uy] = [(bx - ax) / length, (by - ay) / length];
-      const na: [number, number] = [ax - ux * gap, ay - uy * gap], nb: [number, number] = [bx + ux * gap, by + uy * gap];
-      return { ax, ay, bx, by, ux, uy, na, nb };
-    });
+    const cx = (minX + maxX) / 2,
+      cy = (minY + maxY) / 2;
+    const atScale =
+      (k: number) =>
+      ([x, y]: [number, number]): [number, number] => [w / 2 + (x - cx) * k, h / 2 - (y - cy) * k];
+    const place = (k: number) =>
+      strips.map((s) => {
+        const to = atScale(k);
+        const [ax, ay] = to(s.a),
+          [bx, by] = to(s.b);
+        const length = Math.hypot(bx - ax, by - ay) || 1;
+        const [ux, uy] = [(bx - ax) / length, (by - ay) / length];
+        const na: [number, number] = [ax - ux * gap, ay - uy * gap],
+          nb: [number, number] = [bx + ux * gap, by + uy * gap];
+        return { ax, ay, bx, by, ux, uy, na, nb };
+      });
     // A runway or a number that reaches the pane's corner is drawn smaller
     // about the box's centre until it clears it, so the pane never hides
     // a runway end or its number.
@@ -94,12 +112,13 @@ export function RunwaySketch({ runways, lat, lon, avoid, numberSize = TEXT_POINT
     const inHole = (x: number, y: number, rx = 0, ry = 0) =>
       !!hole && x + rx > hole.x - pad && x - rx < hole.x + hole.w + pad && y + ry > hole.y - pad && y - ry < hole.y + hole.h + pad;
     if (hole) {
-      const under = (k: number) => place(k).some(s => {
-        for (let t = 0; t <= 1; t += 1 / 24) {
-          if (inHole(s.ax + (s.bx - s.ax) * t, s.ay + (s.by - s.ay) * t)) return true;
-        }
-        return [s.na, s.nb].some(([x, y]) => inHole(x, y, numberSize * 0.9, numberSize * 0.6));
-      });
+      const under = (k: number) =>
+        place(k).some((s) => {
+          for (let t = 0; t <= 1; t += 1 / 24) {
+            if (inHole(s.ax + (s.bx - s.ax) * t, s.ay + (s.by - s.ay) * t)) return true;
+          }
+          return [s.na, s.nb].some(([x, y]) => inHole(x, y, numberSize * 0.9, numberSize * 0.6));
+        });
       while (under(scale) && scale > fit / 4) scale *= 0.95;
     }
     const placed = place(scale).map((p, i) => {
@@ -114,21 +133,27 @@ export function RunwaySketch({ runways, lat, lon, avoid, numberSize = TEXT_POINT
     <svg
       // Out of the flow, the box's size its own: an SVG's own default
       // size (150 tall) made the box that tall.
-      ref={box} viewBox={drawn ? `0 0 ${drawn.w} ${drawn.h}` : undefined} className="absolute inset-0 size-full"
+      ref={box}
+      viewBox={drawn ? `0 0 ${drawn.w} ${drawn.h}` : undefined}
+      className="absolute inset-0 size-full"
       aria-hidden="true"
       data-testid="runway-sketch"
     >
-      {drawn?.strips.map(s => (
+      {drawn?.strips.map((s) => (
         <g key={s.ends.join("/")} opacity={s.closed ? 0.35 : 1}>
           <line x1={s.ax} y1={s.ay} x2={s.bx} y2={s.by} stroke="currentColor" strokeWidth={s.width} />
           {/* Its turf over the paving, the part the remarks say (C81's
               south-west 1,000 ft), or all of a turf runway. */}
           {s.turf.map(([from, to]) => (
             <line
-              key={`${from}-${to}`} data-turf=""
-              x1={s.ax + (s.bx - s.ax) * from} y1={s.ay + (s.by - s.ay) * from}
-              x2={s.ax + (s.bx - s.ax) * to} y2={s.ay + (s.by - s.ay) * to}
-              stroke={TURF} strokeWidth={s.width}
+              key={`${from}-${to}`}
+              data-turf=""
+              x1={s.ax + (s.bx - s.ax) * from}
+              y1={s.ay + (s.by - s.ay) * from}
+              x2={s.ax + (s.bx - s.ax) * to}
+              y2={s.ay + (s.by - s.ay) * to}
+              stroke={TURF}
+              strokeWidth={s.width}
             />
           ))}
           {/* A dotted line of light down the turf, so it is told from
@@ -136,18 +161,28 @@ export function RunwaySketch({ runways, lat, lon, avoid, numberSize = TEXT_POINT
           {s.turf.map(([from, to]) => (
             <line
               key={`dots-${from}-${to}`}
-              x1={s.ax + (s.bx - s.ax) * from} y1={s.ay + (s.by - s.ay) * from}
-              x2={s.ax + (s.bx - s.ax) * to} y2={s.ay + (s.by - s.ay) * to}
-              stroke="white" strokeOpacity={0.7} strokeWidth={Math.max(1, s.width / 4)} strokeDasharray="1 3" strokeLinecap="round"
+              x1={s.ax + (s.bx - s.ax) * from}
+              y1={s.ay + (s.by - s.ay) * from}
+              x2={s.ax + (s.bx - s.ax) * to}
+              y2={s.ay + (s.by - s.ay) * to}
+              stroke="white"
+              strokeOpacity={0.7}
+              strokeWidth={Math.max(1, s.width / 4)}
+              strokeDasharray="1 3"
+              strokeLinecap="round"
             />
           ))}
           {/* The centre line on the paving alone: grass has none painted. */}
           {pavedOf(s.turf).map(([from, to]) => (
             <line
               key={`${from}-${to}`}
-              x1={s.ax + (s.bx - s.ax) * from + s.ux * 3} y1={s.ay + (s.by - s.ay) * from + s.uy * 3}
-              x2={s.ax + (s.bx - s.ax) * to - s.ux * 3} y2={s.ay + (s.by - s.ay) * to - s.uy * 3}
-              className="stroke-background" strokeWidth={0.9} strokeDasharray="3.5 3"
+              x1={s.ax + (s.bx - s.ax) * from + s.ux * 3}
+              y1={s.ay + (s.by - s.ay) * from + s.uy * 3}
+              x2={s.ax + (s.bx - s.ax) * to - s.ux * 3}
+              y2={s.ay + (s.by - s.ay) * to - s.uy * 3}
+              className="stroke-background"
+              strokeWidth={0.9}
+              strokeDasharray="3.5 3"
             />
           ))}
         </g>
@@ -155,11 +190,22 @@ export function RunwaySketch({ runways, lat, lon, avoid, numberSize = TEXT_POINT
       {/* Each end's number past it, upright, over every strip, in the
           strips' ink with a casing of the box's ground so a crossing
           runway does not cut through it. */}
-      {drawn?.numbers.map(n => (
+      {drawn?.numbers.map((n) => (
         <text
-          key={n.key} x={n.x} y={n.y} textAnchor="middle" dominantBaseline="central" data-runway-end={n.end}
-          fontSize={numberSize} fontWeight={700} fill="currentColor" opacity={n.closed ? 0.35 : 1}
-          className="stroke-background" strokeWidth={3} paintOrder="stroke" strokeLinejoin="round"
+          key={n.key}
+          x={n.x}
+          y={n.y}
+          textAnchor="middle"
+          dominantBaseline="central"
+          data-runway-end={n.end}
+          fontSize={numberSize}
+          fontWeight={700}
+          fill="currentColor"
+          opacity={n.closed ? 0.35 : 1}
+          className="stroke-background"
+          strokeWidth={3}
+          paintOrder="stroke"
+          strokeLinejoin="round"
         >
           {n.end}
         </text>

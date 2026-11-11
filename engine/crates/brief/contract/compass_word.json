@@ -1,0 +1,38 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "A bearing as one of the eight compass points.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CompassWordInput",
+      "type": "object",
+      "properties": {
+        "bearing_deg": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "bearing_deg"
+      ]
+    },
+    "answer": {
+      "title": "CompassWordAnswer",
+      "type": "string",
+      "enum": [
+        "north",
+        "northeast",
+        "east",
+        "southeast",
+        "south",
+        "southwest",
+        "west",
+        "northwest"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,13 +1,15 @@
 import { test, expect, type Page } from "@playwright/test";
 import { openPanel, settle, sideDrawer, slow } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * FPL's route line, at the owner's ask ("make it more like the runway
  * folding with the route symbol, and no need for accept or not buttons.
  * You can simply have none in the beginning", 2026-10-26): under the
- * departure, the route's glyph and the chip picked, "None" at first; a tap
+ * departure, the route's glyph and the chip picked, "As typed" at first; a tap
  * on it the planner's ways as chips, a tap on one the route at once,
- * planned, and "None" the route as typed again. No Routes button.
+ * planned, and "As typed" the route as typed again. No Routes button.
  *
  * The ways are the planner's (wingtip.route_options, its chips app.routers.
  * route_options, tested there); here /api/route-options is answered, so
@@ -16,19 +18,71 @@ import { openPanel, settle, sideDrawer, slow } from "./helpers";
 
 const WAYS = {
   options: [
-    { kind: "fastest", kinds: ["fastest", "stops"], title: "Fastest", stops: ["DLH/180/40.0"], fuel: [],
-      path: [[42.23, -88.0], [46.0, -92.2], [46.84, -92.19]], distance_nm: 352.4, air_min: 181, ground_min: 0,
-      fuel_gal: 25.6, landings: 0, crosses: [], marginal: [], bands: [{ kind: "vfr", min: 181 }], tail_kt: 12, floor_ft: 2200 },
-    { kind: "weather", kinds: ["weather"], title: "Best weather", stops: ["KEAU"], fuel: ["KEAU"],
-      path: [[42.23, -88.0], [44.87, -91.48], [46.84, -92.19]], distance_nm: 371.2, air_min: 190, ground_min: 30,
-      fuel_gal: 27.0, landings: 1, crosses: [], marginal: [1],
-      bands: [{ kind: "vfr", min: 90 }, { kind: "mvfr", min: 40 }, { kind: "vfr", min: 60 }], tail_kt: 4, floor_ft: 2400 },
+    {
+      kind: "fastest",
+      kinds: ["fastest", "stops"],
+      title: "Fastest",
+      stops: ["DLH/180/40.0"],
+      fuel: [],
+      path: [
+        [42.23, -88.0],
+        [46.0, -92.2],
+        [46.84, -92.19],
+      ],
+      distance_nm: 352.4,
+      air_min: 181,
+      ground_min: 0,
+      fuel_gal: 25.6,
+      landings: 0,
+      crosses: [],
+      marginal: [],
+      bands: [{ kind: "vfr", min: 181 }],
+      tail_kt: 12,
+      floor_ft: 2200,
+    },
+    {
+      kind: "weather",
+      kinds: ["weather"],
+      title: "Best weather",
+      stops: ["KEAU"],
+      fuel: ["KEAU"],
+      path: [
+        [42.23, -88.0],
+        [44.87, -91.48],
+        [46.84, -92.19],
+      ],
+      distance_nm: 371.2,
+      air_min: 190,
+      ground_min: 30,
+      fuel_gal: 27.0,
+      landings: 1,
+      crosses: [],
+      marginal: [1],
+      bands: [
+        { kind: "vfr", min: 90 },
+        { kind: "mvfr", min: 40 },
+        { kind: "vfr", min: 60 },
+      ],
+      tail_kt: 4,
+      floor_ft: 2400,
+    },
   ],
   own: null,
-  direct: [0], ends: [], current: [], current_marginal: [],
-  current_along: { bands: [{ kind: "vfr", min: 60 }, { kind: "storm", min: 30 }, { kind: "vfr", min: 82 }], tail_kt: 6, floor_ft: 2100 },
+  direct: [0],
+  ends: [],
+  current: [],
+  current_marginal: [],
+  current_along: {
+    bands: [
+      { kind: "vfr", min: 60 },
+      { kind: "storm", min: 30 },
+      { kind: "vfr", min: 82 },
+    ],
+    tail_kt: 6,
+    floor_ft: 2100,
+  },
   chips: [
-    { key: "none", label: "None", stops: [], fuel: [], crosses: [0] },
+    { key: "none", label: "As typed", stops: [], fuel: [], crosses: [0] },
     { key: "weather", label: "Avoid Weather", stops: ["KEAU"], fuel: ["KEAU"], crosses: [] },
     { key: "fastest", label: "Fastest", stops: ["DLH/180/40.0"], fuel: [], crosses: [] },
   ],
@@ -40,17 +94,20 @@ const WAYS = {
 };
 
 async function ways(page: Page) {
-  await page.route(url => url.pathname.endsWith("/route-options"), route => route.fulfill({ json: WAYS }));
+  await page.route(
+    (url) => url.pathname.endsWith("/route-options"),
+    (route) => route.fulfill({ json: WAYS }),
+  );
 }
 
 test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("FPL's route line folds to the way picked, None at first, and a chip tapped is the route at once", async ({ page }) => {
+test("FPL's route line folds to the way picked, As typed at first, and a chip tapped is the route at once", async ({ page }) => {
   await ways(page);
   const planned: string[] = [];
-  page.on("request", request => {
+  page.on("request", (request) => {
     if (new URL(request.url()).pathname.endsWith("/navlog")) planned.push(new URL(request.url()).searchParams.get("stops") ?? "");
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -62,10 +119,11 @@ test("FPL's route line folds to the way picked, None at first, and a chip tapped
   const picked = line.getByTestId("route-line-picked");
   // Folded to one row over the fields (the owner's K1, 2026-10-29): None,
   // the route as typed, planned at once, with its time; what it meets said.
-  await expect(picked).toHaveText(/^None/, { timeout: slow(30_000) });
-  await expect(line.getByTestId("route-line-toggle")).toHaveAccessibleName(/None, the route as typed, .*crosses storms, 2 more/);
+  await expect(picked).toHaveText(/^As typed/, { timeout: slow(30_000) });
+  await expect(line.getByTestId("route-line-toggle")).toHaveAccessibleName(/As typed, the route as typed, .*crosses storms, 2 more/);
   // Over the route's fields, not among them.
-  const lineBox = (await line.boundingBox())!, fields = (await sideDrawer(page).getByTestId("procedures").boundingBox())!;
+  const lineBox = (await line.boundingBox())!,
+    fields = (await sideDrawer(page).getByTestId("procedures").boundingBox())!;
   expect(lineBox.y + lineBox.height).toBeLessThanOrEqual(fields.y + 1);
   await expect.poll(() => planned.length, { timeout: slow(15_000) }).toBeGreaterThan(0);
 
@@ -73,20 +131,24 @@ test("FPL's route line folds to the way picked, None at first, and a chip tapped
   // chart beside the course.
   await picked.click();
   const chips = line.getByTestId("route-line-chip");
-  await expect(chips).toHaveText([/None$/, /Avoid Weather$/, /Fastest$/]);
+  // Each its miles and fuel under its name, as ForeFlight's and Garmin's
+  // cards (the owner, 2026-11-08): the planner's, the route as typed's
+  // from its nav log.
+  await expect(chips).toHaveText([/As typed\d+ nm/, /Avoid Weather/, /Fastest/]);
+  await expect(chips.nth(1).getByTestId("route-line-figures")).toHaveText(/\d+ nm · \d+\.\d gal/);
   await expect(page.locator("[data-route-way]")).toHaveCount(2);
 
   // A chip tapped: the route at once, its fuel stop named, and planned.
   await chips.filter({ hasText: "Avoid Weather" }).click();
   await expect(page).toHaveURL(/[?&]stops=KEAU(&|$)/);
   await expect(page).toHaveURL(/[?&]fuel=KEAU(&|$)/);
-  await expect.poll(() => planned.some(stops => stops.includes("KEAU")), { timeout: slow(15_000) }).toBe(true);
-  await expect(chips.filter({ hasText: "Avoid Weather" })).toHaveAttribute("data-state", "on");
+  await expect.poll(() => planned.some((stops) => stops.includes("KEAU")), { timeout: slow(15_000) }).toBe(true);
+  await expect(chips.filter({ hasText: "Avoid Weather" })).toHaveAttribute("data-pressed", "");
 
-  // None: the route as typed again.
-  await chips.filter({ hasText: "None" }).click();
+  // As typed: the route as typed again.
+  await chips.filter({ hasText: "As typed" }).click();
   await expect(page).not.toHaveURL(/[?&]stops=/);
-  await expect(chips.filter({ hasText: "None" })).toHaveAttribute("data-state", "on");
+  await expect(chips.filter({ hasText: "As typed" })).toHaveAttribute("data-pressed", "");
 });
 
 test("the routes stay open until their row folds them, to the way picked", async ({ page }) => {

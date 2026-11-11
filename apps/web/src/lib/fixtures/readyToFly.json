@@ -1,0 +1,97 @@
+{
+  "why": "ready_to_fly's cases, held by the engine (engine/facade/tests/ready_to_fly.rs) and the web (features/readyToFly). Now is 2026-11-09 18:00Z: the 56-day charts of 29 Oct 2026 and AIRAC 2611 (29 Oct 2026) are in force, 2612 starts 26 Nov 2026.",
+  "cases": [
+    {
+      "why": "Everything on the device and fresh: ready, no actions",
+      "input": {
+        "now": 1794247200,
+        "plan": { "route": true, "airplane": "N123AB", "altitude_ft": 5500 },
+        "charts": { "kept": true, "can_keep": true, "edition": "2026-10-29", "download_mb": 120 },
+        "packs": { "edition": "2026-10-29" },
+        "briefing": { "fetched_at": 1794246000 },
+        "fields": [
+          { "ident": "KOSH", "role": "departure", "metar_observed": 1794245400, "taf": true },
+          { "ident": "KMSN", "role": "destination", "metar_observed": 1794245400, "taf": true }
+        ],
+        "notams": { "fetched_at": 1794246000 },
+        "device": { "battery_pct": 80, "charging": false, "location": "granted", "plan_saved": true }
+      },
+      "expected": { "ready": true, "finding": "ok", "actions": [], "next_cycle": "2026-11-26", "next_cycle_ident": "2612", "briefing_age_min": 20 }
+    },
+    {
+      "why": "No airplane, no altitude, charts not kept, old packs and weather, no NOTAMs: the plan first, then the charts",
+      "input": {
+        "now": 1794247200,
+        "plan": { "route": true, "airplane": null, "altitude_ft": null },
+        "charts": { "kept": false, "can_keep": true, "edition": null, "download_mb": 120 },
+        "packs": { "edition": "2026-10-01" },
+        "briefing": { "fetched_at": 1794240000 },
+        "fields": [{ "ident": "KOSH", "role": "departure", "metar_observed": 1794240000, "taf": false }],
+        "notams": null,
+        "device": { "battery_pct": 30, "charging": false, "location": "prompt", "plan_saved": false },
+        "receiver": { "used": true, "connected": false }
+      },
+      "expected": {
+        "ready": false,
+        "finding": "caution",
+        "actions": ["airplane", "altitude", "charts"],
+        "line": "11 things to fix while you have a signal",
+        "charts": "Download charts for the route, 120 MB",
+        "briefing": "Refresh weather, 2 h old",
+        "fixes": { "airplane": "pick_airplane", "charts": "download_charts", "packs": "update_packs", "notams": "fetch_notams", "battery": null },
+        "briefing_age_min": 120
+      }
+    },
+    {
+      "why": "No route yet: the plan's three asks lead, nothing of a route is judged",
+      "input": { "now": 1794247200, "plan": { "route": false, "airplane": null, "altitude_ft": null } },
+      "expected": { "ready": false, "finding": "caution", "actions": ["route", "airplane", "altitude"], "keys": ["route", "airplane", "altitude"] }
+    },
+    {
+      "why": "Keep for the Air holds all of the route's answers: on board, nothing to do",
+      "input": {
+        "now": 1794247200,
+        "plan": { "route": true, "airplane": "N123AB", "altitude_ft": 5500 },
+        "charts": { "kept": true, "can_keep": true, "edition": "2026-10-29", "download_mb": 120 },
+        "packs": { "edition": "2026-10-29" },
+        "briefing": { "fetched_at": 1794246000 },
+        "fields": [
+          { "ident": "KOSH", "role": "departure", "metar_observed": 1794245400, "taf": true },
+          { "ident": "KMSN", "role": "destination", "metar_observed": 1794245400, "taf": true }
+        ],
+        "notams": { "fetched_at": 1794246000 },
+        "kept": {
+          "on_board": ["briefing", "weather", "notams", "airports", "plates", "plan", "go_no_go", "weather_loop"],
+          "missing": [],
+          "size_mb": 3.4
+        },
+        "device": { "battery_pct": 80, "charging": false, "location": "granted", "plan_saved": true }
+      },
+      "expected": { "ready": true, "finding": "ok", "actions": [], "kept": "Kept for the air, 3 MB" }
+    },
+    {
+      "why": "NOTAMs and plates not kept yet: Keep for the Air is the fix, its size said",
+      "input": {
+        "now": 1794247200,
+        "plan": { "route": true, "airplane": "N123AB", "altitude_ft": 5500 },
+        "charts": { "kept": true, "can_keep": true, "edition": "2026-10-29", "download_mb": 120 },
+        "packs": { "edition": "2026-10-29" },
+        "briefing": { "fetched_at": 1794246000 },
+        "fields": [
+          { "ident": "KOSH", "role": "departure", "metar_observed": 1794245400, "taf": true },
+          { "ident": "KMSN", "role": "destination", "metar_observed": 1794245400, "taf": true }
+        ],
+        "notams": { "fetched_at": 1794246000 },
+        "kept": { "on_board": ["briefing", "plan"], "missing": ["notams", "plates"], "size_mb": 2.2 },
+        "device": { "battery_pct": 80, "charging": false, "location": "granted", "plan_saved": true }
+      },
+      "expected": {
+        "ready": false,
+        "finding": "caution",
+        "actions": ["kept"],
+        "kept": "Keep NOTAMs and plates for the air, 2 MB",
+        "fixes": { "kept": "keep_for_air" }
+      }
+    }
+  ]
+}

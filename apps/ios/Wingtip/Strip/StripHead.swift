@@ -3,7 +3,7 @@ import SwiftUI
 /// The strip's head: the verdict -- go, caution or no-go, in the planner's
 /// words (Verdict, POST /api/go-no-go) -- on a paper card, the route's
 /// line under it in condensed capitals ("C81 → KJVL → KDLH · C172 ·
-/// FL-045 · leaving now"), the route's other ways as chips, and at most
+/// FL-045 · leaving now"), the route's other ways in a menu, and at most
 /// three one-line findings from the glance (Glance.lines), each a row
 /// into the Brief. The route's menu (Share, File, Clear) at the head's
 /// corner, where the tabs' route box had it. No photo behind the
@@ -13,23 +13,25 @@ struct StripHead: View {
     @Environment(Plan.self) private var plan
     @Environment(Verdict.self) private var verdict
     @Environment(\.chartInk) private var ink
+    /// At the accessibility sizes the route's line wraps rather than is cut.
+    @Environment(\.dynamicTypeSize) private var size
     /// A finding's row, or the verdict, tapped: the Brief.
     let onBrief: () -> Void
     let onFile: () -> Void
 
     private var line: String {
-        StripData.headLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.tail ?? plan.aircraft.uppercased(),
+        StripData.headLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.airplaneName ?? "",
                            cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: nil)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             card
             ways
             if let answer = verdict.answer {
                 ForEach(Glance.lines(answer)) { glanceLine in
                     Button(action: onBrief) {
-                        HStack(spacing: 10) {
+                        HStack(spacing: WingtipSpace.md) {
                             Image(systemName: FindingStyle.symbol(glanceLine.finding))
                                 .foregroundStyle(ink.finding(glanceLine.finding))
                                 .accessibilityHidden(true)
@@ -39,7 +41,7 @@ struct StripHead: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                             Image(systemName: "chevron.right").foregroundStyle(ink.tint).accessibilityHidden(true)
                         }
-                        .padding(.horizontal, 14).padding(.vertical, 10)
+                        .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.md)
                         .frame(minHeight: 44)
                     }
                     .buttonStyle(.plain)
@@ -53,14 +55,14 @@ struct StripHead: View {
     }
 
     private var card: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack(alignment: .top) {
                 Spacer(minLength: 0)
                 menu
             }
             if let answer = verdict.answer {
                 Button(action: onBrief) {
-                    HStack(spacing: 10) {
+                    HStack(spacing: WingtipSpace.md) {
                         Image(systemName: FindingStyle.symbol(answer.line.finding))
                             .font(.title2)
                             .foregroundStyle(ink.finding(answer.line.finding))
@@ -79,15 +81,30 @@ struct StripHead: View {
             } else {
                 Text("Reading the brief…").font(ChartInk.heading).foregroundStyle(ink.muted)
             }
-            Text(line)
-                .condensedCaps()
-                .foregroundStyle(ink.magenta)
-                .lineLimit(1)
-                .accessibilityLabel(line)
+            // The line names the N-number, which opens its profile (the
+            // owner, 2026-11-09); in the chart's magenta, as the route is.
+            Group {
+                if let tail = plan.tail {
+                    Button { Navigator.shared.push(.tail(ProfileAsk(tail: tail))) } label: { lineText }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Opens \(tail)'s profile")
+                } else {
+                    lineText
+                }
+            }
+            .accessibilityLabel(StripData.spokenHeadLine(dep: plan.dep, dest: plan.dest, stops: plan.stops, airplane: plan.airplaneName ?? "",
+                                                         cruiseFt: plan.ownAltitudeFt ?? plan.altitudeFt, departAt: nil))
         }
-        .padding(16)
+        .padding(WingtipSpace.lg)
         .frame(maxWidth: .infinity, minHeight: 112, alignment: .bottomLeading)
         .inkCard()
+    }
+
+    private var lineText: some View {
+        Text(line)
+            .condensedCaps()
+            .foregroundStyle(ink.magenta)
+            .lineLimit(size.isAccessibilitySize ? nil : 1)
     }
 
     /// The route's menu: Share (its own menu, the web's ShareMenu), File,
@@ -95,11 +112,11 @@ struct StripHead: View {
     private var menu: some View {
         Menu {
             ShareMenu()
-            Button { onFile() } label: { Label("File flight plan", systemImage: "paperplane") }
+            Button { onFile() } label: { Label("File Flight Plan", systemImage: WingtipIcon.send) }
             Divider()
-            Button(role: .destructive) { plan.clear() } label: { Label("Clear route", systemImage: "xmark") }
+            Button(role: .destructive) { plan.clear() } label: { Label("Clear Route", systemImage: WingtipIcon.close) }
         } label: {
-            Image(systemName: "ellipsis.circle")
+            Image(systemName: WingtipIcon.more)
                 .font(.body.weight(.medium))
                 .foregroundStyle(ink.tint)
                 .frame(width: 32, height: 32)
@@ -108,23 +125,12 @@ struct StripHead: View {
         .accessibilityLabel("The route's menu")
     }
 
-    /// The route's other ways (the planner's chips): each a chip, the one
-    /// flown filled; a tap flies it (Plan.use).
+    /// The route's other ways (the planner's chips), in the system's
+    /// menu picker as the plan's sheet has them (RouteWayPicker).
     @ViewBuilder
     private var ways: some View {
         if let chips = plan.routes?.chips, chips.count > 1 {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(chips) { chip in
-                        let picked = (plan.pickedChip?.key ?? "none") == chip.key
-                        Button(chip.label) { plan.use(chip) }
-                            .buttonStyle(InkChipStyle(filled: picked))
-                            .accessibilityAddTraits(picked ? .isSelected : [])
-                    }
-                }
-                .padding(.horizontal, 2).padding(.vertical, 6)
-            }
-            .accessibilityLabel("The route's ways")
+            RouteWayPicker()
         }
     }
 }

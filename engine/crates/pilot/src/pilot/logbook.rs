@@ -13,21 +13,33 @@
 //! landings as day landings (all of them, which 14 CFR 61.57(a) counts by
 //! day or night) beside the night full-stop ones (61.57(b)).
 //!
+//! Of the columns an entry drawn from the app's track adds (V34), the air
+//! time and the touch-and-goes are written under names of this logbook's
+//! own (ForeFlight has neither) and read back from them, else from
+//! ForeFlight's wheels off and on and its landings (logbook_derived); an
+//! entry read from a file was not drawn from a track and opens no saved
+//! flight, wherever it was first logged.
+//!
 //! The web app's lib/logbookCsv, moved here whole; the entries are the
 //! gateway's LogbookEntryRequest, camelCase, as the apps send them.
 
 use super::csv;
 use super::js;
+use super::logbook_derived;
 use crate::json::{self, Value};
+use wingtip_core::sort::StableSort;
 
 /// The columns written, ForeFlight's names where it has the field, each
 /// with the entry's member it is written from.
-const OUT: [(&str, &str); 19] = [
+const OUT: [(&str, &str); 21] = [
     ("Date", "flownOn"),
     ("AircraftID", "aircraft"),
     ("TypeCode", "aircraftType"),
     ("Route", "route"),
     ("TotalTime", "totalHours"),
+    // Takeoff roll to landing roll; ForeFlight keeps it as TimeOff and
+    // TimeOn instead.
+    ("AirTime", "airHours"),
     ("Night", "nightHours"),
     ("CrossCountry", "crossCountryHours"),
     ("Solo", "soloHours"),
@@ -36,6 +48,8 @@ const OUT: [(&str, &str); 19] = [
     // Every landing, by day and at night: dayLandings + nightLandings.
     ("AllLandings", ""),
     ("NightLandingsFullStop", "nightLandings"),
+    // Among AllLandings: those not to a full stop.
+    ("TouchAndGoes", "touchAndGoes"),
     ("ToweredLandings", "toweredLandings"),
     ("Distance", "distanceNm"),
     ("LongestLeg", "longestLegNm"),
@@ -59,7 +73,6 @@ fn cell(v: Option<&Value>) -> String {
         Some(Value::Object(_)) => "[object Object]".to_owned(),
     }
 }
-
 
 /// JavaScript's truth of a value, for `holding ? 1 : 0`.
 fn truthy(v: Option<&Value>) -> bool {
@@ -106,7 +119,7 @@ pub fn write(entries: &[Value]) -> String {
         Some(v) => cell(Some(v)),
         None => "undefined".to_owned(),
     };
-    sorted.sort_by_key(|e| day(e));
+    sorted.stable_sort_by_key(|e| day(e));
     let mut rows = vec![OUT.iter().map(|(name, _)| (*name).to_owned()).collect::<Vec<_>>()];
     for e in sorted {
         rows.push(
@@ -167,10 +180,15 @@ fn date_of(v: Option<&str>) -> Option<String> {
         return Some(s.to_owned());
     }
     let parts: Vec<&str> = s.split('/').collect();
-    if let [m, d, y] = parts[..] {
-        if (1..=2).contains(&m.len()) && digits(m.as_bytes()) && (1..=2).contains(&d.len()) && digits(d.as_bytes()) && y.len() == 4 && digits(y.as_bytes()) {
-            return Some(format!("{y}-{m:0>2}-{d:0>2}"));
-        }
+    if let [m, d, y] = parts[..]
+        && (1..=2).contains(&m.len())
+        && digits(m.as_bytes())
+        && (1..=2).contains(&d.len())
+        && digits(d.as_bytes())
+        && y.len() == 4
+        && digits(y.as_bytes())
+    {
+        return Some(format!("{y}-{m:0>2}-{d:0>2}"));
     }
     None
 }
@@ -202,12 +220,14 @@ pub fn read(text_in: &str) -> (Vec<String>, Vec<Skipped>) {
         let col = |n: &str| names.iter().position(|k| k == n);
         for row in &rows[a + 1..flights_at.unwrap_or(rows.len())] {
             let cell = |n: &str| col(n).and_then(|i| row.get(i)).map(|c| js::trim(c));
-            if let (Some(tail), Some(kind)) = (cell("aircraftid"), cell("typecode")) {
-                if !tail.is_empty() && !kind.is_empty() && tail.to_lowercase() != "text" {
-                    match types.iter_mut().find(|(t, _)| t == tail) {
-                        Some(known) => known.1 = kind.to_owned(),
-                        None => types.push((tail.to_owned(), kind.to_owned())),
-                    }
+            if let (Some(tail), Some(kind)) = (cell("aircraftid"), cell("typecode"))
+                && !tail.is_empty()
+                && !kind.is_empty()
+                && tail.to_lowercase() != "text"
+            {
+                match types.iter_mut().find(|(t, _)| t == tail) {
+                    Some(known) => known.1 = kind.to_owned(),
+                    None => types.push((tail.to_owned(), kind.to_owned())),
                 }
             }
         }
@@ -231,11 +251,19 @@ pub fn read(text_in: &str) -> (Vec<String>, Vec<Skipped>) {
         };
         let total = hours(at("totaltime"));
         if total > 24.0 {
-            skipped.push(Skipped { line, reason: format!("{} hours is more than a day: a summary entry, to log as its flights", js::number_string(total)) });
+            skipped.push(Skipped {
+                line,
+                reason: format!("{} hours is more than a day: a summary entry, to log as its flights", js::number_string(total)),
+            });
             continue;
         }
         let tail = js::trim(at("aircraftid").unwrap_or(""));
-        let route = [at("from"), at("route"), at("to")].iter().map(|s| js::trim(s.unwrap_or(""))).filter(|s| !s.is_empty()).collect::<Vec<_>>().join(" ");
+        let route = [at("from"), at("route"), at("to")]
+            .iter()
+            .map(|s| js::trim(s.unwrap_or("")))
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join(" ");
         let night = count(at("nightlandingsfullstop"));
         // All its landings, by day or night, as day landings for 61.57(a),
         // the night full-stop ones apart; where it gives no total, its day
@@ -292,7 +320,24 @@ pub fn read(text_in: &str) -> (Vec<String>, Vec<Skipped>) {
         num(&mut e, "longestLegNm", hours(at("longestleg")));
         num(&mut e, "approaches", approaches);
         e.push_str(&format!(",\"holding\":{}", count(at("holds")) > 0.0));
-        e.push_str(&format!(",\"tracking\":{}}}", yes(at("tracking"))));
+        e.push_str(&format!(",\"tracking\":{}", yes(at("tracking"))));
+        // This logbook's own AirTime, else ForeFlight's wheels off to on,
+        // else none known (logbook_derived says why not the flight time).
+        let air = if has("airtime") {
+            hours(at("airtime")).min(total)
+        } else {
+            logbook_derived::air_hours(at("timeoff"), at("timeon"), total).unwrap_or(0.0)
+        };
+        num(&mut e, "airHours", air);
+        let given = |n: &str| at(n).filter(|s| !js::trim(s).is_empty()).map(|s| count(Some(s)));
+        let touch_and_goes = if has("touchandgoes") {
+            count(at("touchandgoes"))
+        } else {
+            logbook_derived::touch_and_goes(given("alllandings"), given("daylandingsfullstop"), night)
+        };
+        // Never more than the day landings that hold them.
+        num(&mut e, "touchAndGoes", touch_and_goes.min((all - night).max(0.0)));
+        e.push_str(",\"fromTrack\":false,\"flightId\":null}");
         entries.push(e);
     }
     (entries, skipped)

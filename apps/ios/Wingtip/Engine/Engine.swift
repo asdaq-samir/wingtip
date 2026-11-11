@@ -1,6 +1,6 @@
 import Foundation
-import WingtipEngine
 import os
+import WingtipEngine
 
 /// wingtip-engine, the planner's own Rust, through its C functions
 /// (engine/bindings/ffi): the same figures the planner works out, here with no
@@ -41,9 +41,10 @@ enum Engine {
         pack.withUnsafeBytes { raw in wt_pack_verify(raw.bindMemory(to: UInt8.self).baseAddress, raw.count) } == 1
     }
 
-    /// The region whose pack holds a point ("n40w088").
+    /// The region whose pack holds a point ("n40w088"), the engine's
+    /// `region_of` by name.
     static func region(lat: Double, lon: Double) -> String {
-        taken(wt_region_of(lat, lon)) ?? ""
+        (try? call("region_of", json: ["lat": lat, "lon": lon]) as String) ?? ""
     }
 
     /// What the radio said, all the phone can make of it with no signal
@@ -100,6 +101,31 @@ enum Engine {
                                      decoder: JSONDecoder = Engine.decoder) throws -> Out {
         let asked = try String(decoding: encoder.encode(input), as: UTF8.self)
         return try decoder.decode(Out.self, from: Data(called(name, asked).utf8))
+    }
+
+    /// The way in for the generated functions (Engine/Generated/EngineCalls.swift,
+    /// one per rule of engine/contract/engine.schema.json): the input and
+    /// answer are the contract's types, so their keys are the rule's own
+    /// and no strategy is applied. A refusal is logged by `called`; an
+    /// answer that is not the contract's shape is logged here, so neither
+    /// reaches a screen as a default value unseen.
+    static func rule<In: Encodable, Out: Decodable>(_ name: String, _ input: In) throws -> Out {
+        let asked = try String(decoding: encoder.encode(input), as: UTF8.self)
+        let text = try called(name, asked)
+        do {
+            return try decoder.decode(Out.self, from: Data(text.utf8))
+        } catch {
+            Log.engine.error("\(name, privacy: .public) answered outside its contract: \(String(describing: error), privacy: .public)")
+            throw error
+        }
+    }
+
+    /// One type read as another of the same members by name, through the
+    /// JSON both write: for a rule whose contract types a member the app
+    /// already has a model of (the gateway's logbook entry) only loosely.
+    static func recoded<Out: Decodable>(_ value: some Encodable, encoder: JSONEncoder = Engine.encoder,
+                                        decoder: JSONDecoder = Engine.decoder) throws -> Out {
+        try decoder.decode(Out.self, from: encoder.encode(value))
     }
 
     /// The same with the input as a JSON object written out in place, for

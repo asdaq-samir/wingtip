@@ -42,14 +42,15 @@ def test_each_runway_end_carries_its_heading_and_its_side(tmp_path):
 
 def test_the_pattern_is_the_faas_where_published_and_1000_ft_where_not(tmp_path):
     _files(tmp_path)
-    assert pattern.pattern_at("KRFD", 742.0, tmp_path) == {"agl_ft": 800.0, "altitude_ft": 1542, "published": True}
-    assert pattern.pattern_at("UGN", 727.0, tmp_path) == {"agl_ft": 1000.0, "altitude_ft": 1727, "published": False}
+    assert pattern.pattern_at("KRFD", 742.0, tmp_path) == {"agl_ft": 800.0, "altitude_ft": 1542, "flown_ft": 1500, "published": True}
+    assert pattern.pattern_at("UGN", 727.0, tmp_path) == {"agl_ft": 1000.0, "altitude_ft": 1727, "flown_ft": 1700, "published": False}
     assert pattern.pattern_at("UGN", None, tmp_path)["altitude_ft"] is None
 
 
 def test_no_runway_end_file_is_left_traffic_not_a_failure(monkeypatch, tmp_path):
     def unreachable(name, cache_dir):
         raise RuntimeError("the FAA is down")
+
     monkeypatch.setattr(faa_data, "ensure_nasr_file", unreachable)
     assert pattern.right_traffic_ends("KUGN", tmp_path) == set()
 
@@ -62,20 +63,27 @@ def test_each_end_is_where_the_faa_surveyed_it_else_where_ourairports_has_it(tmp
     ]
     ends = [e for r in pattern.with_traffic(runways, "KUGN", 42.42, -87.87, tmp_path) for e in r["runway_ends"]]
     assert [(e["ident"], e["lat"], e["lon"]) for e in ends] == [
-        ("5", 42.4176, -87.8742), ("23", 42.4268, -87.8593), ("14", 42.43, -87.87), ("32", None, None)]
+        ("5", 42.4176, -87.8742),
+        ("23", 42.4268, -87.8593),
+        ("14", 42.43, -87.87),
+        ("32", None, None),
+    ]
 
 
 # UGN's runway 5/23 as with_traffic gives it: 23 right traffic, 5 left.
-UGN_5_23 = {"runway_ends": [
-    {"ident": "05", "heading_true_deg": 49.0, "traffic": "left", "lat": 42.4176, "lon": -87.8742},
-    {"ident": "23", "heading_true_deg": 229.0, "traffic": "right", "lat": 42.4268, "lon": -87.8593},
-]}
+UGN_5_23 = {
+    "runway_ends": [
+        {"ident": "05", "heading_true_deg": 49.0, "traffic": "left", "lat": 42.4176, "lon": -87.8742},
+        {"ident": "23", "heading_true_deg": 229.0, "traffic": "right", "lat": 42.4268, "lon": -87.8593},
+    ]
+}
 
 
 def _side_of(runway_end: tuple, along: float, p: tuple) -> float:
     """Which side of the runway's line a point is: positive to the right
     of the direction landed in."""
     from wingtip import geo
+
     return ((geo.bearing_deg(*runway_end, *p) - along) % 360 + 540) % 360 - 180
 
 
@@ -83,6 +91,7 @@ def test_the_arrival_comes_in_at_45_to_the_downwind_and_lands_on_the_threshold()
     """AIM 4-3-3: in at 45° abeam midfield, downwind, base, final; level
     at the pattern altitude to the base, down to the field at the end."""
     from wingtip import geo
+
     flown = pattern.arrival_circuit(UGN_5_23, "5", 1700, 727)
     entry, midfield, downwind_end, final_start, threshold = flown["points"]
     assert threshold == (42.4176, -87.8742)
@@ -98,6 +107,7 @@ def test_the_arrival_comes_in_at_45_to_the_downwind_and_lands_on_the_threshold()
 
 def test_right_traffic_puts_the_downwind_to_the_right():
     from wingtip import geo
+
     flown = pattern.arrival_circuit(UGN_5_23, "23", 1700, 727)
     threshold, midfield = flown["points"][-1], flown["points"][1]
     along = geo.bearing_deg(42.4268, -87.8593, 42.4176, -87.8742)
@@ -107,6 +117,7 @@ def test_right_traffic_puts_the_downwind_to_the_right():
 def test_the_departure_leaves_straight_out_or_at_45_toward_the_way_on():
     """AIM 4-3-3: straight out, or a 45° turn to the pattern's side."""
     from wingtip import geo
+
     along = geo.bearing_deg(42.4176, -87.8742, 42.4268, -87.8593)
     ahead = geo.destination_point(42.4268, -87.8593, along, 30)
     left = geo.destination_point(42.4268, -87.8593, (along - 60) % 360, 30)

@@ -1,9 +1,7 @@
 package app.wingtipmaps.android.strip
 
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,12 +10,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flight
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,18 +23,22 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.R
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.ui.LocalInk
 
 /** The verdict's tag, as the ribbon wears it. */
-private fun tagWords(finding: Finding): String? = when (finding) {
-    Finding.OK -> "Go"
-    Finding.CAUTION -> "Caution"
-    Finding.STOP -> "No-go"
+private fun tagWords(finding: Finding): Int? = when (finding) {
+    Finding.OK -> R.string.verdict_go
+    Finding.CAUTION -> R.string.verdict_caution
+    Finding.STOP -> R.string.verdict_no_go
     else -> null
 }
 
@@ -96,9 +96,8 @@ fun RibbonLine(points: List<RibbonPoint>, position: Position?, modifier: Modifie
  * field's row stays over it): the verdict's tag, the route's ends, its
  * time and fuel at the right, and under them the route's points on one
  * line (RibbonLine). With no route, the app's name and a word on what the
- * field takes. A screen over the strip (`over`: an airport's card, the
- * airplane, Settings, Ask) is named here with its close, so the way back
- * is where it always is.
+ * field takes. A screen over the strip is a sheet of its own, with its
+ * title and its close (WingtipSheet), not a mode of the ribbon.
  */
 @Composable
 fun StripRibbon(
@@ -106,51 +105,36 @@ fun StripRibbon(
     verdict: Verdict?,
     points: List<RibbonPoint>,
     position: Position?,
-    over: StripModel.Over?,
-    onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val ink = LocalInk.current
-    if (over != null) {
-        Box(modifier.fillMaxWidth().height(48.dp)) {
-            Text(
-                over.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.align(Alignment.Center).padding(horizontal = 56.dp),
-            )
-            IconButton(onClick = onClose, modifier = Modifier.align(Alignment.CenterEnd)) {
-                Icon(Icons.Filled.Close, contentDescription = "Back")
-            }
-        }
-        return
-    }
     val figures = StripData.ribbonFigures(state)
-    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            val tag = verdict?.let { tagWords(it.finding) }
+    Column(modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+            val tag = verdict?.let { tagWords(it.finding) }?.let { stringResource(it) }
             if (verdict != null && tag != null) {
+                // Material's badge with text, washed in the verdict's colour.
                 val wash = when (verdict.finding) {
                     Finding.OK -> ink.field.copy(alpha = 0.14f)
                     Finding.CAUTION -> ink.caution.copy(alpha = 0.18f)
                     else -> MaterialTheme.colorScheme.error.copy(alpha = 0.10f)
                 }
-                Text(
-                    tag.uppercase(), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold,
-                    color = ink.words(verdict.finding, MaterialTheme.colorScheme.onSurfaceVariant),
-                    modifier = Modifier.background(wash, CircleShape).padding(horizontal = 8.dp, vertical = 2.dp),
-                )
+                Badge(containerColor = wash, contentColor = ink.words(verdict.finding, MaterialTheme.colorScheme.onSurfaceVariant)) {
+                    Text(tag.uppercase(), fontWeight = FontWeight.Bold)
+                }
             }
             Text(
                 when {
                     state.dest.isNotEmpty() -> "${state.dep.ifEmpty { "Here" }} → ${state.dest}"
                     state.dep.isNotEmpty() -> state.dep
-                    else -> "Wingtip"
+                    else -> stringResource(R.string.app_short_name)
                 },
                 style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f),
             )
             if (figures.isNotEmpty()) {
                 Text(figures, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else if (state.dest.isEmpty()) {
-                Text("Where to, or ask", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.where_to_or_ask), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         RibbonLine(points = points, position = position)

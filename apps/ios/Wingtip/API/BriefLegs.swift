@@ -20,10 +20,7 @@ typealias RoutePoint = APIRoutePoint
 
 /// When the planner fetched what the map's weather layers are drawn
 /// from (MapLayerAges, /api/map/ages).
-struct MapLayerAges: Codable, Equatable, Sendable {
-    var metarsAt: String?
-    var tfrsAt: String?
-}
+typealias MapLayerAges = APIMapLayerAges
 
 /// The legs a hazard tapped in the Brief is on, for the map to draw and
 /// bring into view: `key` says which hazard, so a second tap puts them
@@ -65,8 +62,7 @@ enum BriefLegs {
         return Query(
             fixes: points.map { AirportWords.point($0.0, $0.1) }.joined(separator: ";"),
             legMin: legs.map { String(format: "%.1f", $0.eteMin ?? 0) }.joined(separator: ","),
-            groundMin: legs.map { String(format: "%.0f", $0.groundMin ?? 0) }.joined(separator: ",")
-        )
+            groundMin: legs.map { String(format: "%.0f", $0.groundMin ?? 0) }.joined(separator: ","))
     }
 
     /// Legs said 1-based as the nav log numbers its rows: "Leg 2",
@@ -143,6 +139,19 @@ enum BriefLegs {
         let minutes = max(0, Int(now.timeIntervalSince(at) / 60))
         if minutes < 1 { return "just now" }
         return minutes < 60 ? "\(minutes) min ago" : "\(minutes / 60) h \(minutes % 60) min ago"
+    }
+
+    /// What is said of a source that has stopped coming in past its usual
+    /// cadence (the planner's feed watch, a source's `stale`): "Not
+    /// updating: last updated 3 h 0 min ago", for a pilot to tell a feed
+    /// gone quiet from a sky with nothing in it.
+    static func staleWords(_ at: Date?, now: Date = Date()) -> String {
+        age(at, now: now).map { "Not updating: last updated \($0)" } ?? "Not updating"
+    }
+
+    /// The sources the planner says have stopped updating, from its ages.
+    static func staleSources(_ ages: MapLayerAges?) -> [APIDataSource] {
+        (ages?.sources ?? []).filter { $0.stale == true }
     }
 }
 

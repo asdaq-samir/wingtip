@@ -48,8 +48,7 @@ struct AirportEntity: AppEntity {
             title: "\(id)",
             subtitle: under.isEmpty ? nil : "\(under)",
             image: .init(systemName: "airplane"),
-            synonyms: heard
-        )
+            synonyms: heard)
     }
 }
 

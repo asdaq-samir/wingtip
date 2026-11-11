@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { Airport, Candidate, Leg } from "../../../../lib/api/types";
-import { groundMinAt, legOf, navLogRows, rowPoint, savedCheckpoints, TURNAROUND_MIN } from "./rows";
+import { flownNmOf, groundMinAt, legOf, navLogRows, procedureOf, routeLegs, rowPoint, savedCheckpoints, turnaroundMin } from "./rows";
 
 const airport = (ident: string, lat: number, lon: number): Airport =>
   ({ ident, name: `${ident} field`, lat, lon, elevation_ft: 900 }) as Airport;
@@ -8,8 +8,15 @@ const ends = { departure: airport("C81", 42.1, -88.1), destination: airport("KDL
 const cp = (lat: number, lon: number, along: number): Candidate =>
   ({ lat, lon, name: "", category: "lake_or_pond", along_track_nm: along }) as Candidate;
 const leg = (ete: number | null, distance = 30): Leg =>
-  ({ distance_nm: distance, ete_min: ete, fuel_gal: ete === null ? null : ete / 6, groundspeed_kt: ete === null ? null : 100,
-    true_course_deg: 330, magnetic_heading_deg: 332, altitude_ft: 4500 }) as Leg;
+  ({
+    distance_nm: distance,
+    ete_min: ete,
+    fuel_gal: ete === null ? null : ete / 6,
+    groundspeed_kt: ete === null ? null : 100,
+    true_course_deg: 330,
+    magnetic_heading_deg: 332,
+    altitude_ft: 4500,
+  }) as Leg;
 
 describe("navLogRows", () => {
   test("no course yet, no rows -- not a destination at 0, 0", () => {
@@ -18,23 +25,67 @@ describe("navLogRows", () => {
 
   test("a route with no checkpoints is the departure and the destination, with the one leg", () => {
     const rows = navLogRows(ends, [], [leg(180)]);
-    expect(rows.map(r => r.kind)).toEqual(["departure", "destination"]);
+    expect(rows.map((r) => r.kind)).toEqual(["departure", "destination"]);
     expect(rows[1]).toMatchObject({ kind: "destination", minutesFlown: 180 });
   });
 
   test("minutes flown add up, and stop at the first leg not in yet", () => {
     const rows = navLogRows(ends, [cp(43, -89, 50), cp(44, -90, 120)], [leg(30), leg(40)]);
-    expect(rows.map(r => r.minutesFlown)).toEqual([0, 30, 70, null]);
+    expect(rows.map((r) => r.minutesFlown)).toEqual([0, 30, 70, null]);
   });
 
   test("an unflyable leg leaves every row after it without a time", () => {
     const rows = navLogRows(ends, [cp(43, -89, 50), cp(44, -90, 120)], [leg(30), leg(null), leg(20)]);
-    expect(rows.map(r => r.minutesFlown)).toEqual([0, 30, null, null]);
+    expect(rows.map((r) => r.minutesFlown)).toEqual([0, 30, null, null]);
   });
 
   test("a checkpoint row's key is its place, so a note stays with its checkpoint", () => {
     const rows = navLogRows(ends, [cp(43, -89, 50)], []);
     expect(rows[1]?.key).toBe("43.00000,-89.00000");
+  });
+});
+
+describe("a leg flown by a procedure", () => {
+  // KUGN to KOSH at 3,000 ft, runway 23's pattern departure and 27's
+  // pattern into KOSH (the planner's answer, 2026-11-08): the first leg
+  // 4.99 nm and 6.7 min, its top of climb 3.6 nm and 3.5 min in, the
+  // departure 3.4 nm and 2.3 min more than its line. The nav log said
+  // "1.5 nm · 3.4 min" at 89 kt, a minute's flying (the FPL audit's A4).
+  const flownBy = (more: { nm: number; min: number; landing: boolean }): Leg =>
+    ({
+      ...leg(6.7, 4.99),
+      groundspeed_kt: 88.8,
+      toc: { along_nm: 3.6, ete_min: 3.5, fuel_gal: 0.61, altitude_ft: 3000, lat: 42.48, lon: -87.89, tas_kt: 74, groundspeed_kt: 61.7 },
+      procedure: {
+        path: [],
+        ft: [],
+        nm: 8.3,
+        landing: more.landing,
+        final_at: null,
+        map_at: null,
+        missed: null,
+        more_nm: more.nm,
+        more_min: more.min,
+        more_gal: 0.4,
+      },
+    }) as Leg;
+
+  test("the row that ends the leg says the procedure's miles, so they come to its minutes at its ground speed", () => {
+    const rows = navLogRows(ends, [cp(42.5, -87.9, 5)], [flownBy({ nm: 3.4, min: 2.3, landing: false }), leg(60)]);
+    const [toc, first] = [rows[1]!, rows[2]!];
+    expect(toc.kind).toBe("toc");
+    expect(procedureOf(toc)).toBeNull();
+    expect(legOf(toc)?.procedure).toBeNull();
+    expect(procedureOf(first)).toEqual({ nm: 3.4, min: 2.3, word: "departure" });
+    const nm = flownNmOf(first)!;
+    expect(nm).toBeCloseTo(4.79, 2);
+    expect((nm / 88.8) * 60).toBeCloseTo(legOf(first)!.ete_min!, 0);
+  });
+
+  test("a landing's is its pattern, and a route's rows add up to the totals' distance", () => {
+    const rows = navLogRows(ends, [], [{ ...flownBy({ nm: 3.1, min: 2.1, landing: true }), toc: null }]);
+    expect(procedureOf(rows[1]!)?.word).toBe("pattern");
+    expect(flownNmOf(rows[1]!)).toBeCloseTo(4.99 + 3.1, 5);
   });
 });
 
@@ -44,7 +95,7 @@ describe("a route with stops", () => {
 
   test("each hop's checkpoints, then the stop it lands at, the legs running on through it", () => {
     const rows = navLogRows(withStop, [onHop(cp(42.6, -88.6, 20), 0), onHop(cp(44, -90, 150), 1)], [leg(10), leg(20), leg(30), leg(40)]);
-    expect(rows.map(r => r.kind)).toEqual(["departure", "checkpoint", "stop", "checkpoint", "destination"]);
+    expect(rows.map((r) => r.kind)).toEqual(["departure", "checkpoint", "stop", "checkpoint", "destination"]);
     expect(rows[2]).toMatchObject({ kind: "stop", airport: { ident: "KMSN" }, minutesFlown: 30 });
     // 30 minutes on the ground at the stop, where the pilot gave none.
     expect(rows.at(-1)?.minutesFlown).toBe(130);
@@ -54,7 +105,7 @@ describe("a route with stops", () => {
     const legs = [leg(10), leg(20), leg(30), leg(40)];
     const selected = [onHop(cp(42.6, -88.6, 20), 0), onHop(cp(44, -90, 150), 1)];
     const own = navLogRows({ ...withStop, ground: { KMSN: 45 } }, selected, legs);
-    expect(own.map(r => r.minutesFlown)).toEqual([0, 10, 30, 105, 145]);
+    expect(own.map((r) => r.minutesFlown)).toEqual([0, 10, 30, 105, 145]);
     const fix = { ...airport("VPBNG", 43.1, -89.3), kind: "fix" } as Airport;
     expect(navLogRows({ ...ends, stops: [fix] }, selected, legs).at(-1)?.minutesFlown).toBe(100);
   });
@@ -69,13 +120,13 @@ describe("a route with stops", () => {
     // The pilot's own, newer than a plan still coming, wins.
     expect(navLogRows({ ...withStop, ground: { KMSN: 45 } }, selected, legs).at(-1)?.minutesFlown).toBe(145);
     // Before the leg is in, the mirror of the planner's 30.
-    expect(navLogRows(withStop, selected, [])[2]).toMatchObject({ kind: "stop", groundMin: TURNAROUND_MIN });
+    expect(navLogRows(withStop, selected, [])[2]).toMatchObject({ kind: "stop", groundMin: turnaroundMin() });
     expect(groundMinAt(undefined, "KMSN")).toBe(30);
   });
 
   test("a hop with no checkpoints is the stop alone", () => {
     const rows = navLogRows(withStop, [], [leg(10), leg(20)]);
-    expect(rows.map(r => r.kind)).toEqual(["departure", "stop", "destination"]);
+    expect(rows.map((r) => r.kind)).toEqual(["departure", "stop", "destination"]);
   });
 
   test("a stop is filed as one, as far along as its legs", () => {
@@ -103,18 +154,39 @@ describe("tops of climb and descent", () => {
 
   test("each a row of its own, the leg cut there: each row its piece, the minutes running on to the leg's", () => {
     const rows = navLogRows(ends, [], [climbAndDescent]);
-    expect(rows.map(r => r.kind)).toEqual(["departure", "toc", "tod", "destination"]);
-    expect(rows.map(r => legOf(r)?.distance_nm)).toEqual([undefined, 6, 14, 10]);
-    expect(rows.map(r => legOf(r)?.ete_min)).toEqual([undefined, 5, 9, 16]);
-    expect(rows.map(r => r.minutesFlown)).toEqual([0, 5, 14, 30]);
+    expect(rows.map((r) => r.kind)).toEqual(["departure", "toc", "tod", "destination"]);
+    expect(rows.map((r) => legOf(r)?.distance_nm)).toEqual([undefined, 6, 14, 10]);
+    expect(rows.map((r) => legOf(r)?.ete_min)).toEqual([undefined, 5, 9, 16]);
+    expect(rows.map((r) => r.minutesFlown)).toEqual([0, 5, 14, 30]);
     expect(rowPoint(rows[1]!)).toMatchObject({ name: "TOC", lat: 42.2, lon: -88.2 });
     // Up to the top of climb, the climb's speeds; after it, the cruise's.
-    expect(rows.map(r => legOf(r)?.groundspeed_kt)).toEqual([undefined, 72, 100, 100]);
+    expect(rows.map((r) => legOf(r)?.groundspeed_kt)).toEqual([undefined, 72, 100, 100]);
   });
 
   test("filed without them, as the whole legs fix to fix", () => {
     const saved = savedCheckpoints(navLogRows(ends, [], [climbAndDescent]), 30);
-    expect(saved.map(c => c.name)).toEqual(["C81", "KDLH"]);
+    expect(saved.map((c) => c.name)).toEqual(["C81", "KDLH"]);
     expect(saved[1]).toMatchObject({ sequenceNo: 1, legDistanceNm: 30, eteMin: 30 });
+  });
+});
+
+describe("routeLegs", () => {
+  const toc = { along_nm: 6, ete_min: 5, fuel_gal: 1, altitude_ft: 4500, lat: 42.2, lon: -88.2, tas_kt: 70, groundspeed_kt: 72 };
+  const withStop = { ...ends, stops: [airport("KMSN", 43.1, -89.3)] };
+
+  test("one leg a row after the departure, from the row before, a top of climb not an end of one", () => {
+    const first = { ...leg(10, 12), toc } as Leg;
+    const rows = navLogRows(withStop, [{ ...cp(42.6, -88.6, 20), hop: 0 } as Candidate], [first, leg(20, 40), leg(30, 90)]);
+    const legs = routeLegs(rows);
+    expect(legs.map((l) => `${l.from.name}→${l.to.name}`)).toEqual(["C81→lake_or_pond", "lake_or_pond→KMSN", "KMSN→KDLH"]);
+    // The whole leg's figures, not the piece after the top of climb.
+    expect(legs[0]!.leg?.distance_nm).toBe(12);
+    expect(legs.map((l) => l.toRow.kind)).toEqual(["checkpoint", "stop", "destination"]);
+  });
+
+  test("a leg not in yet is still there to tap, its figures to come", () => {
+    const legs = routeLegs(navLogRows(ends, [], []));
+    expect(legs).toHaveLength(1);
+    expect(legs[0]).toMatchObject({ key: "destination", leg: undefined });
   });
 });

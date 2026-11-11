@@ -1,0 +1,301 @@
+{
+  "about": "What counts as a route's weather getting worse between the briefing a pilot had and a later reading (the engine's weather_worse, wingtip-weather's worse.rs): a field's METAR in a worse flight category and worse than VFR (AIM 7-1-7), a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6), and a TAF where the flight lands forecasting a worse category for the flight's time there. Each case gives both readings and the keys and lines the engine answers, in order. Read by the engine's tests (engine/facade/tests/weather_worse.rs) and the iPhone's (WeatherWatchTests).",
+  "cases": [
+    {
+      "why": "KMSN's METAR goes from VFR to IFR; KDLH's improves and is not told.",
+      "input": {
+        "then": {
+          "metars": [
+            {
+              "ident": "KMSN",
+              "ceiling_ft": 5000,
+              "visibility_sm": 10
+            },
+            {
+              "ident": "KDLH",
+              "ceiling_ft": 800,
+              "visibility_sm": 2
+            }
+          ]
+        },
+        "now": {
+          "metars": [
+            {
+              "ident": "KMSN",
+              "ceiling_ft": 800,
+              "visibility_sm": 10
+            },
+            {
+              "ident": "KDLH",
+              "ceiling_ft": 5000,
+              "visibility_sm": 10
+            }
+          ]
+        }
+      },
+      "keys": [
+        "metar:KMSN:IFR"
+      ],
+      "lines": [
+        "KMSN is IFR now; it was VFR at the briefing"
+      ]
+    },
+    {
+      "why": "A field VFR before and MVFR now is worse; one MVFR both times is not.",
+      "input": {
+        "then": {
+          "metars": [
+            {
+              "ident": "C81",
+              "ceiling_ft": null,
+              "visibility_sm": 10
+            },
+            {
+              "ident": "KJVL",
+              "ceiling_ft": 2500,
+              "visibility_sm": 10
+            }
+          ]
+        },
+        "now": {
+          "metars": [
+            {
+              "ident": "C81",
+              "ceiling_ft": 2800,
+              "visibility_sm": 10
+            },
+            {
+              "ident": "KJVL",
+              "ceiling_ft": 2000,
+              "visibility_sm": 10
+            }
+          ]
+        }
+      },
+      "keys": [
+        "metar:C81:MVFR"
+      ],
+      "lines": [
+        "C81 is MVFR now; it was VFR at the briefing"
+      ]
+    },
+    {
+      "why": "A field with no METAR at the briefing that is LIFR now is told; one VFR now is not.",
+      "input": {
+        "then": {
+          "metars": []
+        },
+        "now": {
+          "metars": [
+            {
+              "ident": "KHIB",
+              "ceiling_ft": 300,
+              "visibility_sm": 0.5
+            },
+            {
+              "ident": "KBRD",
+              "ceiling_ft": null,
+              "visibility_sm": 10
+            }
+          ]
+        }
+      },
+      "keys": [
+        "metar:KHIB:LIFR"
+      ],
+      "lines": [
+        "KHIB is LIFR now; it had no category at the briefing"
+      ]
+    },
+    {
+      "why": "A SIGMET newly on the route is told; an AIRMET on it both times and one near but off the route are not.",
+      "input": {
+        "then": {
+          "advisories": [
+            {
+              "key": "AIRMET SIERRA IFR",
+              "kind": "AIRMET",
+              "hazard": "IFR",
+              "on_route": true
+            }
+          ]
+        },
+        "now": {
+          "advisories": [
+            {
+              "key": "AIRMET SIERRA IFR",
+              "kind": "AIRMET",
+              "hazard": "IFR",
+              "on_route": true
+            },
+            {
+              "key": "SIGMET NOVEMBER 3 TURB",
+              "kind": "SIGMET",
+              "hazard": "TURB",
+              "on_route": true
+            },
+            {
+              "key": "CONVECTIVE SIGMET 12C",
+              "kind": "Convective SIGMET",
+              "hazard": "CONVECTIVE",
+              "on_route": false
+            }
+          ]
+        }
+      },
+      "keys": [
+        "advisory:SIGMET NOVEMBER 3 TURB"
+      ],
+      "lines": [
+        "A new SIGMET (TURB) is on the route"
+      ]
+    },
+    {
+      "why": "An advisory near the route at the briefing that is on it now is told.",
+      "input": {
+        "then": {
+          "advisories": [
+            {
+              "key": "G-AIRMET ICE 120-180",
+              "kind": "G-AIRMET",
+              "hazard": "ICE",
+              "on_route": false
+            }
+          ]
+        },
+        "now": {
+          "advisories": [
+            {
+              "key": "G-AIRMET ICE 120-180",
+              "kind": "G-AIRMET",
+              "hazard": "ICE",
+              "on_route": true
+            }
+          ]
+        }
+      },
+      "keys": [
+        "advisory:G-AIRMET ICE 120-180"
+      ],
+      "lines": [
+        "A new G-AIRMET (ICE) is on the route"
+      ]
+    },
+    {
+      "why": "The destination's TAF for the arrival goes from VFR to MVFR; a station the flight does not land at and one new to the briefing are not compared.",
+      "input": {
+        "then": {
+          "tafs": [
+            {
+              "ident": "KDLH",
+              "ceiling_ft": 4000,
+              "visibility_sm": 6,
+              "arrival": true
+            },
+            {
+              "ident": "KMSP",
+              "ceiling_ft": 5000,
+              "visibility_sm": 6
+            }
+          ]
+        },
+        "now": {
+          "tafs": [
+            {
+              "ident": "KDLH",
+              "ceiling_ft": 2000,
+              "visibility_sm": 6,
+              "arrival": true
+            },
+            {
+              "ident": "KMSP",
+              "ceiling_ft": 400,
+              "visibility_sm": 1
+            },
+            {
+              "ident": "KHIB",
+              "ceiling_ft": 400,
+              "visibility_sm": 1,
+              "arrival": true
+            }
+          ]
+        }
+      },
+      "keys": [
+        "taf:KDLH:MVFR"
+      ],
+      "lines": [
+        "KDLH's TAF for your arrival is MVFR now; it was VFR at the briefing"
+      ]
+    },
+    {
+      "why": "A TAF whose ceiling is sent with no height now (OVC///) is not known, not worse, unless its visibility settles it (14 CFR 1.1).",
+      "input": {
+        "then": {
+          "tafs": [
+            {
+              "ident": "KDLH",
+              "ceiling_ft": 4000,
+              "visibility_sm": 6,
+              "arrival": true
+            }
+          ]
+        },
+        "now": {
+          "tafs": [
+            {
+              "ident": "KDLH",
+              "ceiling_ft": null,
+              "ceiling_unknown": true,
+              "visibility_sm": 6,
+              "arrival": true
+            }
+          ]
+        }
+      },
+      "keys": [],
+      "lines": []
+    },
+    {
+      "why": "Nothing changed: nothing to tell.",
+      "input": {
+        "then": {
+          "metars": [
+            {
+              "ident": "KMSN",
+              "ceiling_ft": 800,
+              "visibility_sm": 10
+            }
+          ],
+          "advisories": [
+            {
+              "key": "a",
+              "kind": "AIRMET",
+              "hazard": "IFR",
+              "on_route": true
+            }
+          ]
+        },
+        "now": {
+          "metars": [
+            {
+              "ident": "KMSN",
+              "ceiling_ft": 800,
+              "visibility_sm": 10
+            }
+          ],
+          "advisories": [
+            {
+              "key": "a",
+              "kind": "AIRMET",
+              "hazard": "IFR",
+              "on_route": true
+            }
+          ]
+        }
+      },
+      "keys": [],
+      "lines": []
+    }
+  ]
+}

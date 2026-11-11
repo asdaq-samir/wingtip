@@ -13,6 +13,9 @@ struct WingtipApp: App {
     @State private var dryRun = DryRun()
     @State private var traffic = Traffic()
     @State private var verdict = Verdict()
+    @Environment(\.scenePhase) private var scenePhase
+    /// iOS's hand-over of the chart downloads finished in the background.
+    @UIApplicationDelegateAdaptor(OfflineAppDelegate.self) private var offlineDelegate
 
     init() {
         // Apple's own measurements of this app on this phone -- launch,
@@ -25,6 +28,11 @@ struct WingtipApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                // Every list's section titles the system's prominent ones,
+                // 20 points in the text colour (the owner's "section titles
+                // 20 pt", docs/decisions/0021), drawn by the system rather
+                // than a hand-built title (the owner, 2026-11-10).
+                .headerProminence(.increased)
                 .environment(session)
                 .environment(charts)
                 .environment(plan)
@@ -34,8 +42,14 @@ struct WingtipApp: App {
                 .environment(verdict)
                 .task { ownShip.start() }
                 .task { await session.refresh() }
+                // The deletes an earlier launch held behind their Undo and
+                // never sent, sent once the pilot is signed in (PendingDeletes).
+                .task(id: session.signedIn) {
+                    if session.signedIn { await PendingDeletes().sendLeftOver(PendingDeletes.gateway) }
+                }
                 .task { await charts.load() }
-                .task { plan.restore() }
+                .task { OfflineDownloads.shared.start() }
+                .task { await plan.restore() }
                 // The flight in progress on the Lock Screen and in the
                 // Dynamic Island (FlightActivity, a Live Activity: the
                 // owner's ask, 2026-11-03, as Apple recommends for anything
@@ -45,9 +59,23 @@ struct WingtipApp: App {
                 // The next flight on the Home Screen and the Lock Screen
                 // (WidgetFeed, FlightWidget in WingtipWidgets): the plan, its
                 // verdict and the departure's weather, written to the App
-                // Group only as they change, on the same clock.
-                .task { await Ticker.shared.run(every: 15) { WidgetFeed.shared.update(plan: plan, verdict: verdict) } }
+                // Group only as they change, on the same clock; and the
+                // fields the weather widget's settings offer first.
+                .task {
+                    await Ticker.shared.run(every: 15) {
+                        WidgetFeed.shared.update(plan: plan, verdict: verdict)
+                        WidgetFeed.shared.airports(homeBase: session.pilot?.homeBase, favorites: AirportShelf.shared.favorites)
+                    }
+                }
+                // The route's weather watched after the Brief (WeatherWatch):
+                // a look every quarter hour while the app runs, and iOS's
+                // background refresh asked for as it goes behind.
+                .task { await Ticker.shared.run(every: 60) { WeatherWatch.shared.tick(plan: plan) } }
+                .onChange(of: scenePhase) { _, phase in if phase == .background { WeatherWatch.schedule() } }
                 .task { await WatchLink.shared.run(plan: plan, ownShip: ownShip) }
+                // The cockpit's ADS-B receiver on the Wi-Fi, read once a
+                // second while the setting is Auto (Receiver).
+                .task { await Receiver.shared.run() }
                 // A link opens the app (Associated Domains): a route, a
                 // field or an airplane shared from the site, or a track
                 // file from Files or Mail, is a command RootView does
@@ -56,11 +84,20 @@ struct WingtipApp: App {
                 // a browser.
                 .onOpenURL { url in
                     if let command = Links.command(for: url) {
+                        // A screen named beside a route opens once it is in.
+                        switch command {
+                        case .open, .sharedFlight: break
+                        default: PendingCommand.shared.then = Links.screen(for: url)
+                        }
                         PendingCommand.shared.command = command
                     } else {
                         Task { await session.open(url) }
                     }
                 }
+        }
+        .backgroundTask(.appRefresh(WeatherWatch.taskId)) {
+            await WeatherWatch.shared.look()
+            await WeatherWatch.schedule()
         }
     }
 }

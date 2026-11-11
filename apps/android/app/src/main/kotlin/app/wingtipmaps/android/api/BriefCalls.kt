@@ -1,0 +1,41 @@
+package app.wingtipmaps.android.api
+
+import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.api.generated.DepartureWindow
+import app.wingtipmaps.android.api.generated.DepartureWindowAsk
+import app.wingtipmaps.android.api.generated.IcingForecast
+import app.wingtipmaps.android.api.generated.NotamsRanked
+import app.wingtipmaps.android.api.generated.NotamsRankedAsk
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+
+// The Brief's planner calls beside its Go / No-Go (Planner.goNoGo), as
+// extensions of Planner, each as the web's lib/api/client asks it.
+
+/** The AWC's forecast icing (CIP and FIP) on each leg at the altitude it
+ *  is flown (/api/icing/route, wingtip.icing_forecast; the engine's
+ *  icing_forecast_route decides what it says): the nav log's fixes
+ *  ("lat,lon;…", one more than its legs), each leg's altitude and ETE,
+ *  its minutes on the ground after it, and the departure (now when none). */
+suspend fun Planner.icingRoute(fixes: String, altFt: String, legMin: String, groundMin: String, depart: String? = null): IcingForecast =
+    Gateway.json.decodeFromString(
+        fetch("/api/icing/route", mapOf("fixes" to fixes, "alt_ft" to altFt, "leg_min" to legMin, "ground_min" to groundMin, "depart" to depart)),
+    )
+
+/** "When should I go?": the Go / No-Go for each departure hour of the
+ *  next day or so (POST /api/departure-window), the engine's
+ *  departure_window over the planner's briefing of each. */
+suspend fun Planner.departureWindow(ask: DepartureWindowAsk): DepartureWindow =
+    Gateway.json.decodeFromString(Gateway.send("POST", Config.plannerPath("/api/departure-window"), Gateway.json.encodeToString(ask)))
+
+/** The flight's NOTAMs and TFRs, those that bear on it first (POST
+ *  /api/notams/ranked, the engine's notams_ranked over the FAA's feed):
+ *  Ready to fly's Get NOTAMs, the ranking the engine's. */
+suspend fun Planner.notamsRanked(ask: NotamsRankedAsk): NotamsRanked =
+    Gateway.json.decodeFromString(Gateway.send("POST", Config.plannerPath("/api/notams/ranked"), Gateway.json.encodeToString(ask)))
+
+/** One field's own NOTAMs and the TFRs within 5 nm of it, ranked by the
+ *  engine's notams_ranked as a route's are and in the same shape (GET
+ *  /api/airport/{ident}/notams): the airport card's NOTAMs and its alerts. */
+suspend fun Planner.airportNotams(ident: String): NotamsRanked =
+    Gateway.json.decodeFromString(fetch("/api/airport/$ident/notams"))

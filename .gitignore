@@ -87,3 +87,4 @@ apps/android/local.properties
 # (android/.idea/), which the reorg (#536) left behind.
 apps/android/.idea/
 docker-compose.live.local.yml
+docker-compose.override.yml

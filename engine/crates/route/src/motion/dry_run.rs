@@ -204,7 +204,7 @@ fn missed_heights(start: f64, end: f64, from: f64, to: f64) -> Vec<ProfilePoint>
 
 /// Sorted, each once: a JavaScript Set of numbers, sorted.
 fn sorted_once(mut marks: Vec<f64>) -> Vec<f64> {
-    marks.sort_by(|x, y| x.partial_cmp(y).unwrap_or(std::cmp::Ordering::Equal));
+    crate::sort::StableSort::stable_sort_by(&mut marks[..], |x, y| x.partial_cmp(y).unwrap_or(std::cmp::Ordering::Equal));
     marks.dedup();
     marks
 }
@@ -225,11 +225,12 @@ fn sorted_once(mut marks: Vec<f64>) -> Vec<f64> {
 fn landing_heights(at: &[f64], ft: &[Option<f64>], cruise: f64, field: f64, climb: &dyn Fn(f64) -> f64) -> Vec<ProfilePoint> {
     let end = *at.last().unwrap_or(&0.0);
     let mut targets = vec![(0.0, cruise)];
-    for i in 1..at.len().saturating_sub(1) {
-        if let Some(Some(x)) = ft.get(i) {
-            if *x <= cruise {
-                targets.push((at[i], *x));
-            }
+    let inner = at.len().saturating_sub(1);
+    for (&s, x) in at.iter().zip(ft).take(inner).skip(1) {
+        if let Some(x) = *x
+            && x <= cruise
+        {
+            targets.push((s, x));
         }
     }
     targets.push((end, field));
@@ -337,17 +338,8 @@ fn truthy(v: Option<&Value>) -> bool {
 pub fn dry_run(rows: &[Row], start_s: f64, line: Option<&[LatLon]>, missed: bool) -> DryRun {
     let Some(first) = rows.first().filter(|r| r.kind == Kind::Departure) else { return DryRun::default() };
     let plan = plan_profile(rows).0;
-    let mut anchors = vec![Anchor {
-        along: 0.0,
-        route: 0.0,
-        lat: first.lat,
-        lon: first.lon,
-        t: start_s,
-        fuel: 0.0,
-        gs: None,
-        track: None,
-        flown: None,
-    }];
+    let mut anchors =
+        vec![Anchor { along: 0.0, route: 0.0, lat: first.lat, lon: first.lon, t: start_s, fuel: 0.0, gs: None, track: None, flown: None }];
     let mut missable = false;
     let mut went_missed = false;
     let mut last_final: Option<(f64, f64)> = None;
@@ -362,7 +354,7 @@ pub fn dry_run(rows: &[Row], start_s: f64, line: Option<&[LatLon]>, missed: bool
         .enumerate()
         .filter(|(_, r)| r.kind != Kind::Departure && !r.is_leg_point() && procedure_of(r).is_some_and(|p| truthy(p.get("missed"))))
         .map(|(i, _)| i)
-        .last();
+        .next_back();
     for (i, row) in rows.iter().enumerate().skip(1) {
         let Some(part) = row.leg_of() else { break };
         let prev = anchors.last().expect("the departure's anchor").clone();
@@ -539,11 +531,17 @@ pub fn dry_run(rows: &[Row], start_s: f64, line: Option<&[LatLon]>, missed: bool
                     None => {
                         // The plan's own bends, laid evenly over the path.
                         let k = flown.at.last().copied().unwrap_or(0.0) / js_max(1e-9, b.route - a.route);
-                        marks.extend(plan.iter().filter(|p| p.along_nm > a.route && p.along_nm < b.route).map(|p| a.along + (p.along_nm - a.route) * k));
+                        marks.extend(
+                            plan.iter()
+                                .filter(|p| p.along_nm > a.route && p.along_nm < b.route)
+                                .map(|p| a.along + (p.along_nm - a.route) * k),
+                        );
                     }
                 }
             }
-            None => marks.extend(plan.iter().filter(|p| p.along_nm > a.route && p.along_nm < b.route).map(|p| a.along + p.along_nm - a.route)),
+            None => {
+                marks.extend(plan.iter().filter(|p| p.along_nm > a.route && p.along_nm < b.route).map(|p| a.along + p.along_nm - a.route))
+            }
         }
     }
     let mut s = STEP_NM;
@@ -617,10 +615,12 @@ pub fn dry_run(rows: &[Row], start_s: f64, line: Option<&[LatLon]>, missed: bool
     // Dorado's runway (the owner's recording, 2026-10-19). Not where the run
     // goes missed and ends in the air, or stops short of the legs not in.
     let last_row = rows.last();
-    if !went_missed && anchors.len() == rows.len() && last_row.is_some_and(|r| r.kind == Kind::Destination && !r.fix) {
-        if let Some(p) = out.points.last_mut() {
-            p.gs_kt = Some(0.0);
-        }
+    if !went_missed
+        && anchors.len() == rows.len()
+        && last_row.is_some_and(|r| r.kind == Kind::Destination && !r.fix)
+        && let Some(p) = out.points.last_mut()
+    {
+        p.gs_kt = Some(0.0);
     }
     out
 }

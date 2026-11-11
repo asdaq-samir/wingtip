@@ -1,6 +1,7 @@
 """/api/cycle-packs and /api/cycle-pack/{cycle}/{region}.pack: the phones'
 packs as wingtip.cycle_pack keeps them, kept by the phone and the CDN for their
 cycle."""
+
 import json
 
 from fastapi.testclient import TestClient
@@ -10,9 +11,14 @@ from app.main import app
 
 client = TestClient(app)
 
-INDEX = {"cycle": "2026-10-29", "built_at": 1.0, "tolerance_deg": 0.0001, "worst_nm": 0.006, "region_deg": 4,
-         "regions": [{"name": "n40w088", "west": -88.0, "south": 40.0, "east": -84.0, "north": 44.0,
-                      "bytes": 4, "crc32": 7}]}
+INDEX = {
+    "cycle": "2026-10-29",
+    "built_at": 1.0,
+    "tolerance_deg": 0.0001,
+    "worst_nm": 0.006,
+    "region_deg": 4,
+    "regions": [{"name": "n40w088", "west": -88.0, "south": 40.0, "east": -84.0, "north": 44.0, "bytes": 4, "crc32": 7}],
+}
 
 
 def test_no_packs_yet_is_a_404(tmp_path, monkeypatch):

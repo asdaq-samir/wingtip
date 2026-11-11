@@ -16,6 +16,9 @@ final class PendingCommand {
         /// A route to the field, from the route's departure or the field
         /// nearest the airplane ("plan a trip to Las Vegas").
         case planTo(ident: String)
+        /// The same route, then its Brief opened ("brief my flight to
+        /// Oshkosh").
+        case brief(ident: String)
         /// A whole route, as a shared link carries one.
         case planRoute(dep: String, stops: [String], dest: String)
         /// Direct to the place said, from where the airplane is.
@@ -28,9 +31,35 @@ final class PendingCommand {
         case aircraft(hex: String)
         /// A track file (GPX, KML) opened in the app, flown again on the map.
         case track(URL)
+        /// One of the app's screens by its name (design/screens.json), as a
+        /// link's `open=` names it.
+        case open(Screen)
+        /// A flight another pilot sent, previewed before anything is
+        /// planned (SharedFlightModel).
+        case sharedFlight(SharedFlightLink)
+        /// An airplane's profile, by its N-number, as a link's `?airplane=`
+        /// opens it (design/screens.json).
+        case airplane(tail: String)
+        /// The route flown with an airplane, by its N-number (FlyAirplaneIntent).
+        case fly(tail: String)
+        /// An approach put on the route at its field and the Brief opened
+        /// (BriefApproachIntent).
+        case approach(ProcedurePick)
+        /// The route kept for the air: charts, briefing, NOTAMs, cards
+        /// (KeepForAirIntent, KeepForAir).
+        case keepForAir
     }
 
     var command: Command?
+    /// The screen a link named beside its route (`?dep=C81&dest=KDLH&open=brief`),
+    /// opened once the command is done.
+    var then: Screen?
+
+    /// The screen to open after the command, and none left.
+    func takeThen() -> Screen? {
+        defer { then = nil }
+        return then
+    }
 
     /// The command, and none left: taken once by whoever does it.
     func take() -> Command? {

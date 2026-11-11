@@ -2,20 +2,21 @@
 Airspace card): the classes from the ground up, the Mode C veil, the
 special-use areas and the TFRs there; and what is ahead of own ship in
 the air (the map's alerts)."""
+
 import logging
 from concurrent.futures import ThreadPoolExecutor
 
 import requests
-from fastapi import APIRouter, HTTPException, Query
-from wingtip import airports, airspace, airspace_at, airspace_map, alerts, altitude, elevation, fixes, sua, tfr
+from fastapi import APIRouter, Query
+from wingtip import airports, airspace, airspace_at, alerts, altitude, elevation, fixes, sua, tfr
 from wingtip.units import M_TO_FT
 
-from ..schemas import AirspaceAt, AirspaceInView, AlertsAhead, PointOffFix
+from ..schemas.airspace import AirspaceAt, AlertsAhead, PointOffFix
+from ..gateway import PUBLIC
 
 log = logging.getLogger(__name__)
 
 router = APIRouter()
-
 
 
 def _ground_ft(lat: float, lon: float) -> float | None:
@@ -32,10 +33,8 @@ def _ground_ft(lat: float, lon: float) -> float | None:
     return float(nearest[0]["elevation_ft"]) if nearest and nearest[0].get("elevation_ft") is not None else None
 
 
-@router.get("/api/airspace/at", response_model=AirspaceAt, response_model_by_alias=True)
-def airspace_at_point(
-    lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180),
-) -> AirspaceAt:
+@router.get("/api/airspace/at", response_model=AirspaceAt, response_model_by_alias=True, openapi_extra=PUBLIC)
+def airspace_at_point(lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180)) -> AirspaceAt:
     """The airspace over a point, from the ground to FL600, in bands
     (wingtip.airspace_at): each class's floor and ceiling in feet MSL, its
     VFR weather minimums by day and by night (91.155), what it takes to
@@ -69,15 +68,23 @@ def airspace_at_point(
         log.warning("fixes near (%s, %s) not read: %s", lat, lon, err)
         near = None
     return AirspaceAt(
-        lat=lat, lon=lon, ground_ft=ground_ft, bands=bands, mode_c_veil=veil,
-        special_use=special_use, special_use_unavailable=special_use_unavailable,
-        tfrs=tfrs, tfrs_unavailable=tfrs_unavailable, point=PointOffFix(**near) if near else None,
+        lat=lat,
+        lon=lon,
+        ground_ft=ground_ft,
+        bands=bands,
+        mode_c_veil=veil,
+        special_use=special_use,
+        special_use_unavailable=special_use_unavailable,
+        tfrs=tfrs,
+        tfrs_unavailable=tfrs_unavailable,
+        point=PointOffFix(**near) if near else None,
     )
 
 
-@router.get("/api/airspace/ahead", response_model=AlertsAhead, response_model_by_alias=True)
+@router.get("/api/airspace/ahead", response_model=AlertsAhead, response_model_by_alias=True, openapi_extra=PUBLIC)
 def airspace_ahead(
-    lat: float = Query(ge=-90, le=90), lon: float = Query(ge=-180, le=180),
+    lat: float = Query(ge=-90, le=90),
+    lon: float = Query(ge=-180, le=180),
     track: float = Query(ge=0, le=360, description="True track over the ground, degrees"),
     gs: float = Query(ge=0, le=1000, description="Ground speed, knots"),
     alt: float | None = Query(default=None, ge=-2000, le=60000, description="GPS altitude, feet MSL"),
@@ -89,30 +96,13 @@ def airspace_ahead(
     the next minute. Nothing under 40 kt, on the ground. Advisory, from
     the phone's GPS: not a TAWS."""
     found = alerts.ahead(
-        lat, lon, track % 360, gs, alt, vs,
+        lat,
+        lon,
+        track % 360,
+        gs,
+        alt,
+        vs,
         shp_path=airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR),
         faa_cache_dir=altitude.DEFAULT_FAA_CACHE_DIR,
     )
     return AlertsAhead(**found)
-
-
-@router.get("/api/airspace/in-view", response_model=AirspaceInView)
-def airspace_in_view(
-    south: float = Query(ge=-90, le=90), west: float = Query(ge=-180, le=180),
-    north: float = Query(ge=-90, le=90), east: float = Query(ge=-180, le=180),
-    classes: str = Query(default="BCD", pattern="^[BCD]{1,3}$", description="Which classes: the Class B alone further out"),
-) -> AirspaceInView:
-    """The Class B, C and D inside the map's view (wingtip.airspace_map), for
-    the map to draw over the chart: each volume's lines from the FAA's own
-    shapefile, so they lie on the chart's printed ones, with its floor and
-    top for the label the chart prints. None where the FAA's airspace
-    cannot be had: the chart's own lines are still under the map."""
-    if south > north or west > east:
-        raise HTTPException(422, "The box's south is above its north, or its west east of its east.")
-    try:
-        shp_path = airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR)
-        volumes = airspace_map.volumes_in(shp_path, south, west, north, east, classes)
-    except (OSError, RuntimeError) as err:
-        log.warning("airspace in (%s, %s, %s, %s) not read: %s", south, west, north, east, err)
-        volumes = ()
-    return {"volumes": list(volumes)}

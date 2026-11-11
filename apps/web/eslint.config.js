@@ -1,31 +1,44 @@
 import js from "@eslint/js";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
-import jsxA11y from "eslint-plugin-jsx-a11y";
+// The maintained fork of eslint-plugin-jsx-a11y (the same rules, as
+// jsx-a11y-x/...), which runs on ESLint 10; the original stops at 9.
+import jsxA11y from "eslint-plugin-jsx-a11y-x";
 import vitest from "@vitest/eslint-plugin";
 import testingLibrary from "eslint-plugin-testing-library";
+import { defineConfig } from "eslint/config";
 import globals from "globals";
 import tseslint from "typescript-eslint";
+import boundaries from "./eslint/boundaries.js";
 
-export default tseslint.config(
-  { ignores: ["dist", "node_modules", "playwright-report", "test-results", "src/lib/api/schema.d.ts", "src/lib/engine/contract.ts"] },
+export default defineConfig(
+  // No warnings (the owner's rule): a disable comment that disables
+  // nothing is an error, and the lint runs with --max-warnings 0, so a
+  // rule a plugin's preset sets to "warn" fails it too.
+  { linterOptions: { reportUnusedDisableDirectives: "error" } },
+  {
+    ignores: [
+      "dist",
+      "node_modules",
+      "playwright-report",
+      "test-results",
+      "src/lib/api/schema.d.ts",
+      "src/lib/api/assistant-schema.d.ts",
+      "src/lib/engine/contract.ts",
+    ],
+  },
   {
     files: ["**/*.{ts,tsx}"],
     extends: [
       js.configs.recommended,
       ...tseslint.configs.recommended,
       reactHooks.configs.flat["recommended-latest"],
-      jsxA11y.flatConfigs.recommended,
+      jsxA11y.configs.recommended,
     ],
-    languageOptions: {
-      ecmaVersion: 2022,
-      globals: globals.browser,
-    },
-    plugins: {
-      "react-refresh": reactRefresh,
-    },
+    languageOptions: { ecmaVersion: 2022, globals: globals.browser },
+    plugins: { "react-refresh": reactRefresh },
     rules: {
-      "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
+      "react-refresh/only-export-components": ["error", { allowConstantExport: true }],
       // Test/setup files intentionally export non-component helpers
       // alongside components; the rule above is for app source only.
 
@@ -36,12 +49,11 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_", varsIgnorePattern: "^_" }],
     },
   },
-  {
-    files: ["e2e/**/*.ts", "**/*.test.ts", "**/*.test.tsx"],
-    languageOptions: {
-      globals: globals.node,
-    },
-  },
+  // The layers: lib/ and hooks/ under components/, under the features, and
+  // a feature reached by another only through its index.ts
+  // (eslint/boundaries.js, apps/web/README.md's "Project layout").
+  { files: ["src/**/*.{ts,tsx}"], plugins: { boundaries }, rules: { "boundaries/layers": "error" } },
+  { files: ["e2e/**/*.ts", "**/*.test.ts", "**/*.test.tsx"], languageOptions: { globals: globals.node } },
   // The usual causes of a flaky test, caught as it is written (docs/CI.md,
   // "Flaky tests"). Vitest's own plugin (@vitest/eslint-plugin, which
   // replaced eslint-plugin-vitest) on the unit tests: its recommended
@@ -87,11 +99,17 @@ export default tseslint.config(
   {
     files: ["e2e/**/*.ts"],
     rules: {
-      "no-restricted-properties": ["error",
-        { object: "test", property: "only", message: "A focused test runs alone: remove .only before committing." }],
-      "no-restricted-syntax": ["error",
-        { selector: "MemberExpression[object.object.name='test'][object.property.name='describe'][property.name='only']",
-          message: "A focused test runs alone: remove .only before committing." }],
+      "no-restricted-properties": [
+        "error",
+        { object: "test", property: "only", message: "A focused test runs alone: remove .only before committing." },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "MemberExpression[object.object.name='test'][object.property.name='describe'][property.name='only']",
+          message: "A focused test runs alone: remove .only before committing.",
+        },
+      ],
     },
   },
   {
@@ -100,8 +118,6 @@ export default tseslint.config(
     // how the registry ships them and how other components compose
     // them -- kept stock rather than split to please Fast Refresh.
     files: ["src/components/ui/**"],
-    rules: {
-      "react-refresh/only-export-components": "off",
-    },
+    rules: { "react-refresh/only-export-components": "off" },
   },
 );

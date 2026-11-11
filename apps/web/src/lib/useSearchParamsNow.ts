@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { createSearchParams, useNavigate, useSearchParams, type SetURLSearchParams } from "react-router-dom";
+import { createSearchParams, useNavigate, useSearchParams, type SetURLSearchParams } from "react-router";
 
 /**
  * React Router's `useSearchParams`, except that a change written as a
@@ -37,13 +37,16 @@ export function patched(params: URLSearchParams, changes: Record<string, string 
 export function useSearchParamsNow(): [URLSearchParams, SetURLSearchParams] {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const setSearchParams = useCallback<SetURLSearchParams>((next, options) => {
-    const base = pending ?? window.location.search;
-    const search = `?${createSearchParams(typeof next === "function" ? next(new URLSearchParams(base)) : next)}`;
-    pending = search;
-    void Promise.resolve(navigate(search, options)).finally(() => {
-      if (pending === search) pending = null;
-    });
-  }, [navigate]);
+  const setSearchParams = useCallback<SetURLSearchParams>(
+    (next, options) => {
+      const base = pending ?? window.location.search;
+      const search = `?${createSearchParams(typeof next === "function" ? next(new URLSearchParams(base)) : next)}`;
+      pending = search;
+      void Promise.resolve(navigate(search, options)).finally(() => {
+        if (pending === search) pending = null;
+      });
+    },
+    [navigate],
+  );
   return [searchParams, setSearchParams];
 }

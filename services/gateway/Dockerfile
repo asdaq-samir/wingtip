@@ -21,10 +21,12 @@ COPY apps/web/package.json apps/web/package-lock.json ./
 # `npm ci` doesn't re-download the same packages every time.
 RUN --mount=type=cache,target=/root/.npm npm ci
 COPY apps/web/ ./
-# The planner's and this app's own OpenAPI documents, from which `npm run
-# types` generates the front end's API types (apps/web/src/lib/api/schema.d.ts
-# and gateway-schema.d.ts, not committed).
+# The planner's, the assistant's and this app's own OpenAPI documents,
+# from which `npm run types` generates the front end's API types
+# (apps/web/src/lib/api/schema.d.ts, assistant-schema.d.ts and
+# gateway-schema.d.ts, not committed).
 COPY services/planner/openapi.json /repo/services/planner/openapi.json
+COPY services/assistant/openapi.json /repo/services/assistant/openapi.json
 COPY services/gateway/openapi.json /repo/services/gateway/openapi.json
 # The engine's contract, from which it generates the engine calls' types
 # (apps/web/src/lib/engine/contract.ts, committed, made again here).
@@ -35,9 +37,12 @@ RUN npm run types && npx vite build --outDir /web/dist --emptyOutDir
 # JDK 25, the same LTS the app targets (pom.xml's java.version), runs on
 # (the eclipse-temurin:25-jre stage below) and CI tests with. ASM in
 # Spring Boot's `repackage` can't parse Java 26+ class files anyway.
-FROM maven:3.9-eclipse-temurin-25@sha256:93b8a14ea2f412782e4e842651273b4d903e35cc496284f178fbbe2d67d00976 AS build
+FROM maven:3.10-eclipse-temurin-25@sha256:047a82fc82c613266cfb1b66fd920be9c8ba51fd67edc68245e4542768f45e36 AS build
 WORKDIR /build
 COPY services/gateway/pom.xml .
+# Maven's JVM options: Lombok, run inside javac, still reads fields
+# through sun.misc.Unsafe, which JDK 24 on warns about unless allowed.
+COPY services/gateway/.mvn ./.mvn
 # The dependencies into the layer itself (/build/m2), not only into the
 # cache mount. A cache mount belongs to the machine that built it and is
 # not exported with the layer cache: on a CI runner restoring the layers
@@ -46,10 +51,15 @@ COPY services/gateway/pom.xml .
 # The mount stays, as the local download cache for a changed pom.
 RUN --mount=type=cache,target=/root/.m2/repository \
     mvn -B -q dependency:go-offline && cp -R /root/.m2/repository /build/m2
-# The planner's OpenAPI document, from which the build generates the
-# planner's answers PlannerClient reads (pom.xml's
-# openapi-generator-maven-plugin): at ../planner from the pom, where it
+# The assistant's OpenAPI document, from which the build generates the
+# assistant's answers PlannerClient reads (pom.xml's
+# openapi-generator-maven-plugin): at ../assistant from the pom, where it
 # is in the repository too.
+COPY services/assistant/openapi.json /assistant/openapi.json
+# And the planner's: with the assistant's, the routes the proxy forwards
+# and who may call each, from their x-gateway marks (UpstreamRoutes),
+# copied into the jar by pom.xml, and the planner's asks and answers
+# PlannerClient sends and reads, generated from it the same way.
 COPY services/planner/openapi.json /planner/openapi.json
 # src/main alone: the tests are neither run here (-DskipTests) nor
 # wanted in the layer, where an edited test rebuilt the jar.

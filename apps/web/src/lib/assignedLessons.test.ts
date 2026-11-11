@@ -4,10 +4,25 @@ import { dueWords, lessonPicked, lessonStatus, notableFixes, noteAt, notesToSend
 import { lessonHref, lessonOf } from "./lessonLink";
 
 const LESSON: ApproachLesson = {
-  id: 12, studentId: 3, studentName: "Avery B. Student", instructorName: "J. J. Jones", airportIdent: "KDLH", procedureId: "I09",
-  procedureName: "ILS RWY 09", cycle: "261029", fixNotes: { PYKLA: "Power to 1,800 rpm, gear down" }, dueOn: "2026-11-08",
-  createdAt: "2026-10-31T18:00:00Z", updatedAt: "2026-10-31T18:00:00Z", status: "not-started", briefedAt: null, flownAt: null,
-  quizAnswers: [], quizOf: null, quizAt: null, flights: [],
+  id: 12,
+  studentId: 3,
+  studentName: "Avery B. Student",
+  instructorName: "J. J. Jones",
+  airportIdent: "KDLH",
+  procedureId: "I09",
+  procedureName: "ILS RWY 09",
+  cycle: "261029",
+  fixNotes: { PYKLA: "Power to 1,800 rpm, gear down" },
+  dueOn: "2026-11-08",
+  createdAt: "2026-10-31T18:00:00Z",
+  updatedAt: "2026-10-31T18:00:00Z",
+  status: "not-started",
+  briefedAt: null,
+  flownAt: null,
+  quizAnswers: [],
+  quizOf: null,
+  quizAt: null,
+  flights: [],
 };
 const answer = (right: boolean) => ({ question: "What's the minimum altitude at DL?", chosen: right ? "3,300 ft" : "2,700 ft", right });
 
@@ -18,7 +33,9 @@ describe("an assigned lesson", () => {
     expect(lessonStatus({ ...LESSON, status: "flown" })).toBe("Flown");
     const all = [...Array(6)].map(() => answer(true)).concat([answer(false), answer(false)]);
     expect(lessonStatus({ ...LESSON, status: "quizzed", quizAnswers: all, quizOf: 8 })).toBe("Quiz 6 of 8");
-    expect(lessonStatus({ ...LESSON, status: "quizzed", quizAnswers: [answer(true), answer(false)], quizOf: 8 })).toBe("Quiz 2 of 8 answered, 1 right");
+    expect(lessonStatus({ ...LESSON, status: "quizzed", quizAnswers: [answer(true), answer(false)], quizOf: 8 })).toBe(
+      "Quiz 2 of 8 answered, 1 right",
+    );
     expect(quizScore({ quizAnswers: [answer(true), answer(false)], quizOf: 8 })).toEqual({ right: 1, answered: 2, of: 8 });
     expect(quizScore(LESSON)).toBeNull();
   });
@@ -39,7 +56,16 @@ describe("an assigned lesson", () => {
   });
 
   it("offers the approach's own fixes for notes, its missed approach's left out", () => {
-    const fix = (ident: string, missed = false) => ({ ident, lat: 0, lon: 0, roles: [], min_ft: null, max_ft: null, speed_kt: null, missed });
+    const fix = (ident: string, missed = false) => ({
+      ident,
+      lat: 0,
+      lon: 0,
+      roles: [],
+      min_ft: null,
+      max_ft: null,
+      speed_kt: null,
+      missed,
+    });
     const drawing = { fixes: [fix("DL"), fix("PYKLA"), fix("RW09"), fix("CHERL", true), fix("PYKLA")] } as unknown as ProcedureDrawing;
     expect(notableFixes(drawing)).toEqual(["DL", "PYKLA", "RW09"]);
   });

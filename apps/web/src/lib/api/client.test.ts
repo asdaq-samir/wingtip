@@ -1,10 +1,21 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { describeError, detailOf, GatewayRequest, ndjson, STREAM_QUIET_MS } from "./client";
+import { ApiError, describeError, detailOf, GatewayRequest, ndjson, STREAM_QUIET_MS, unknownPlaceOf } from "./client";
+
+describe("unknownPlaceOf", () => {
+  test("names the ident a 404 quotes, and nothing for any other failure", () => {
+    expect(unknownPlaceOf(new ApiError("No airport goes by 'KZZZ'.", 404))).toBe("KZZZ");
+    expect(unknownPlaceOf(new ApiError("No airport or waypoint goes by 'vpxyz'.", 404))).toBe("VPXYZ");
+    expect(unknownPlaceOf(new ApiError("planner service unreachable", 502))).toBeNull();
+    expect(unknownPlaceOf(new Error("No airport goes by 'KZZZ'."))).toBeNull();
+  });
+});
 
 describe("GatewayRequest", () => {
   test("the planner's paths go through the gateway, the query and the body as they were", async () => {
     const request = new GatewayRequest("http://localhost/api/picks?route=C81-KDLH", {
-      method: "POST", body: JSON.stringify({ rating: 3 }), headers: { "Content-Type": "application/json" },
+      method: "POST",
+      body: JSON.stringify({ rating: 3 }),
+      headers: { "Content-Type": "application/json" },
     });
     expect(request.url).toBe("http://localhost/api/planner/picks?route=C81-KDLH");
     expect(await request.json()).toEqual({ rating: 3 });
@@ -30,7 +41,7 @@ describe("detailOf", () => {
     expect(await detailOf(response(401, undefined, "Unauthorized"))).toBe("Unauthorized");
   });
 
-  test("nothing with it, as over HTTP/2: the status in words, never \"request failed\"", async () => {
+  test('nothing with it, as over HTTP/2: the status in words, never "request failed"', async () => {
     expect(await detailOf(response(502, undefined))).toBe("The planner is not answering");
     expect(await detailOf(response(504, undefined))).toBe("No answer in time");
     expect(await detailOf(response(500, undefined))).toBe("The server hit an error (500)");
@@ -52,6 +63,14 @@ describe("describeError", () => {
     expect(describeError(new TypeError("x is not a function"))).toBe("x is not a function");
     expect(describeError("nope", "request failed")).toBe("request failed");
   });
+
+  test("an answer with only HTTP's reason phrase is said as what it means, never 'Not Found'", () => {
+    expect(describeError(new ApiError("Not Found", 404))).toBe("Not available yet");
+    expect(describeError(new ApiError("Bad Gateway", 502))).toBe("The planner is not answering; try again in a moment");
+    expect(describeError(new ApiError("Forbidden", 403), "sign in to see it")).toBe("sign in to see it");
+    // The planner's own words stay its own.
+    expect(describeError(new ApiError("No airport goes by 'KZZZ'.", 404))).toBe("No airport goes by 'KZZZ'.");
+  });
 });
 
 describe("me", () => {
@@ -62,12 +81,18 @@ describe("me", () => {
   // page, so the module is loaded afresh under both stubbed.
   const meAnswering = async (res: Response) => {
     const NodeRequest = Request;
-    vi.stubGlobal("Request", class extends NodeRequest {
-      constructor(input: RequestInfo | URL, init?: RequestInit) {
-        super(typeof input === "string" ? new URL(input, "http://localhost").href : input, init);
-      }
-    });
-    vi.stubGlobal("fetch", vi.fn(async () => res));
+    vi.stubGlobal(
+      "Request",
+      class extends NodeRequest {
+        constructor(input: RequestInfo | URL, init?: RequestInit) {
+          super(typeof input === "string" ? new URL(input, "http://localhost").href : input, init);
+        }
+      },
+    );
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => res),
+    );
     vi.resetModules();
     return (await import("./client")).api.me();
   };
@@ -86,12 +111,13 @@ describe("me", () => {
 });
 
 describe("ndjson", () => {
-  const streamOf = (...chunks: string[]) => new ReadableStream<Uint8Array>({
-    start(controller) {
-      for (const chunk of chunks) controller.enqueue(new TextEncoder().encode(chunk));
-      controller.close();
-    },
-  });
+  const streamOf = (...chunks: string[]) =>
+    new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const chunk of chunks) controller.enqueue(new TextEncoder().encode(chunk));
+        controller.close();
+      },
+    });
   const read = async (stream: ReadableStream) => {
     const out: unknown[] = [];
     for await (const line of ndjson(stream)) out.push(line);
@@ -102,7 +128,7 @@ describe("ndjson", () => {
     expect(await read(streamOf('{"type":"stage"}\n{"ty', 'pe":"done"}\n'))).toEqual([{ type: "stage" }, { type: "done" }]);
   });
 
-  test("a line that is not JSON -- a gateway's error page -- is one plain error, not \"Unexpected token <\"", async () => {
+  test('a line that is not JSON -- a gateway\'s error page -- is one plain error, not "Unexpected token <"', async () => {
     await expect(read(streamOf('{"type":"stage"}\n<html>Bad gateway</html>\n'))).rejects.toThrow("The planner's answer came back garbled");
   });
 
@@ -114,7 +140,7 @@ describe("ndjson", () => {
       // Awaited below, once the clock has moved: set up first, so the
       // rejection is never unhandled.
       // eslint-disable-next-line vitest/valid-expect
-      const failed = expect(reading).rejects.toSatisfy(err => describeError(err) === "No answer in time");
+      const failed = expect(reading).rejects.toSatisfy((err) => describeError(err) === "No answer in time");
       await vi.advanceTimersByTimeAsync(STREAM_QUIET_MS + 1);
       await failed;
     } finally {

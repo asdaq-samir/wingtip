@@ -13,7 +13,12 @@ import { CARD_GAP, POINT_CARD } from "./routeListStyle";
  * typed in. The airplane, the altitude and the route's buttons
  * come with the route, over its Routes.
  */
-export default function RouteEnds({ dep, dest, onDep, onDest }: {
+export default function RouteEnds({
+  dep,
+  dest,
+  onDep,
+  onDest,
+}: {
   dep: string;
   dest: string;
   onDep: (ident: string) => void;
@@ -31,7 +36,13 @@ export default function RouteEnds({ dep, dest, onDep, onDest }: {
   );
 }
 
-function EndCard({ value, onChange, label, testId, first = false }: {
+function EndCard({
+  value,
+  onChange,
+  label,
+  testId,
+  first = false,
+}: {
   value: string;
   onChange: (ident: string) => void;
   label: string;
@@ -44,7 +55,9 @@ function EndCard({ value, onChange, label, testId, first = false }: {
       {/* The airport symbol on the marks' grey, faded, at the owner's ask
           (2026-11-05: "The stop icons can be airport like when empty"). */}
       <span className="grid w-7 shrink-0 place-items-center" aria-hidden="true">
-        <CardMark><EmptyMark /></CardMark>
+        <CardMark>
+          <EmptyMark />
+        </CardMark>
       </span>
       {/* A text box, as every card's ident is (CardIdent), at the owner's
           ask (2026-11-05: "Even the start can be consistent with it to

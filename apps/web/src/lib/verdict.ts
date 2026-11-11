@@ -42,7 +42,7 @@ export interface VerdictInput {
     vfrNotRecommended: string[];
     /** Under the pilot's own minimums (lib/minimums). */
     underMinimums: string[];
-    /** Under IFR, icing possible at an altitude flown (lib/icing), in a
+    /** Under IFR, icing possible at an altitude flown (features/plan/lib/icing), in a
      *  line. */
     icing?: string | null;
     /** The SIGMETs and G-AIRMETs along the route, by name. */
@@ -51,6 +51,13 @@ export interface VerdictInput {
     unchecked: string[];
     /** The worst the forecast says along the route, in words. */
     worst: string | null;
+    /** The ITWS alerts in force now at the route's airports, each in its
+     *  words with its airport (lib/liveReports). */
+    terminalAlerts?: string[];
+    /** The Command Center's programs at the route's airports, in words:
+     *  a finding under IFR only (`ifr`). */
+    flowPrograms?: string[];
+    ifr?: boolean;
   };
   airspace: {
     pending: boolean;
@@ -61,8 +68,9 @@ export interface VerdictInput {
     /** TFRs near the route that are not. */
     near: number;
     /** Special-use areas the legs cross, as their times of use read for
-     *  the pass (lib/passTimes). */
-    specialUse: { name: string; when: "active" | "not-scheduled" | "by-notam" | "unknown" }[];
+     *  the pass (features/plan/lib/passTimes), or as SFDPS says they are now
+     *  (active-now, cold-now: lib/liveReports). */
+    specialUse: { name: string; when: "active" | "not-scheduled" | "by-notam" | "unknown" | "active-now" | "cold-now" }[];
   };
   altitude: {
     pending: boolean;
@@ -95,12 +103,7 @@ export interface VerdictInput {
      *  or the field's elevation not known. */
     unchecked: string[];
   };
-  balance: {
-    pending: boolean;
-    worked: boolean;
-    problems: string[];
-    takeoff: string | null;
-  };
+  balance: { pending: boolean; worked: boolean; problems: string[]; takeoff: string | null };
   risk: { level: "low" | "caution" | "high"; line: string } | null;
 }
 
@@ -109,16 +112,33 @@ export interface VerdictInput {
 function engineInput({ weather, airspace, altitude, fuel, runways, balance, risk }: VerdictInput) {
   return {
     weather: {
-      pending: weather.pending, failed: weather.failed, vfr_not_recommended: weather.vfrNotRecommended,
-      under_minimums: weather.underMinimums, icing: weather.icing ?? null, hazards: weather.hazards, unchecked: weather.unchecked,
+      pending: weather.pending,
+      failed: weather.failed,
+      vfr_not_recommended: weather.vfrNotRecommended,
+      under_minimums: weather.underMinimums,
+      icing: weather.icing ?? null,
+      hazards: weather.hazards,
+      unchecked: weather.unchecked,
       worst: weather.worst,
+      terminal_alerts: weather.terminalAlerts ?? [],
+      flow_programs: weather.flowPrograms ?? [],
+      ifr: weather.ifr ?? false,
     },
     airspace: {
-      pending: airspace.pending, unchecked: airspace.unchecked, in_force: airspace.inForce, near: airspace.near,
+      pending: airspace.pending,
+      unchecked: airspace.unchecked,
+      in_force: airspace.inForce,
+      near: airspace.near,
       special_use: airspace.specialUse,
     },
     altitude,
-    fuel: { pending: fuel.pending, margin_gal: fuel.marginGal, required_gal: fuel.requiredGal, reserve_min: fuel.reserveMin, ifr: fuel.ifr ?? false },
+    fuel: {
+      pending: fuel.pending,
+      margin_gal: fuel.marginGal,
+      required_gal: fuel.requiredGal,
+      reserve_min: fuel.reserveMin,
+      ifr: fuel.ifr ?? false,
+    },
     runways,
     balance,
     risk,
@@ -134,12 +154,12 @@ export function verdictItems(input: VerdictInput): VerdictItem[] {
 
 /** What the findings come to, in a line over them. */
 export function verdictLine(items: VerdictItem[]): { finding: Finding; words: string } {
-  return callEngine("gonogo_verdict_line", { items: items.map(i => ({ ...i, section: i.section ?? null })) });
+  return callEngine("gonogo_verdict_line", { items: items.map((i) => ({ ...i, section: i.section ?? null })) });
 }
 
 /** The findings for the flight on screen, published once (as the risk
  *  is, lib/frat) for the tabs' marks. */
-export const useVerdict = create<{ items: VerdictItem[]; setItems: (items: VerdictItem[]) => void }>(set => ({
+export const useVerdict = create<{ items: VerdictItem[]; setItems: (items: VerdictItem[]) => void }>((set) => ({
   items: [],
-  setItems: items => set({ items }),
+  setItems: (items) => set({ items }),
 }));

@@ -110,13 +110,7 @@ impl<'a> Pack<'a> {
             }
             sections.push((name, offset, length));
         }
-        Ok(Pack {
-            bytes,
-            cycle: text(&bytes[8..24]),
-            built_at: f64_at(bytes, 24).unwrap(),
-            crc32: u32_at(bytes, 36).unwrap(),
-            sections,
-        })
+        Ok(Pack { bytes, cycle: text(&bytes[8..24]), built_at: f64_at(bytes, 24).unwrap(), crc32: u32_at(bytes, 36).unwrap(), sections })
     }
 
     /// Whether every byte after the header is as it was written.
@@ -212,7 +206,7 @@ mod tests {
         let mut table = Vec::new();
         let start = HEADER + ENTRY * sections.len();
         for (name, data) in &sections {
-            while (start + body.len()) % 8 != 0 {
+            while !(start + body.len()).is_multiple_of(8) {
                 body.push(0);
             }
             let mut n = [0u8; 16];

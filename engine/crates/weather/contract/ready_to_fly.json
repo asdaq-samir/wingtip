@@ -1,0 +1,290 @@
+{
+  "x-call": "wingtip_weather::ready::call",
+  "description": "Ready to fly: whether the device holds what the flight needs before it loses the signal -- the route's charts kept and of the 56-day edition in force, the cycle packs of the AIRAC cycle in force (FAA 28 and 56 Day Product Schedule; 14 CFR 91.103), a weather briefing under an hour old (the app's choice, at AIM 7-1-28's hourly METAR), each field's METAR in force and its TAF, the route's NOTAMs under an hour old (91.103, AIM 5-1-3; the age the app's choice), the plan's route, airplane and altitude (none assumed), what Keep for the Air holds for the route (its ages are kept_age's), the plan saved, location allowed, the battery at half or charging (the app's choice) and an ADS-B receiver where the pilot uses one. A caution at worst, never a stop; one line and at most three actions, the most pressing first.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ReadyToFlyInput",
+      "type": "object",
+      "properties": {
+        "now": {
+          "type": "number",
+          "description": "Unix seconds, UTC: the engine has no clock."
+        },
+        "plan": {
+          "type": "object",
+          "properties": {
+            "route": {
+              "type": "boolean"
+            },
+            "airplane": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "altitude_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "description": "The flight plan: a route, the airplane's name and the cruise altitude, null where not set."
+        },
+        "charts": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "kept": {
+              "type": "boolean"
+            },
+            "can_keep": {
+              "type": "boolean",
+              "description": "False where the platform cannot keep tiles (a browser with no service worker)."
+            },
+            "edition": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "download_mb": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "description": "The route's offline chart tiles: kept or not, the kept edition's effective date (YYYY-MM-DD) and the download's size. Null leaves the item out."
+        },
+        "packs": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "edition": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "can_update": {
+              "type": "boolean"
+            }
+          },
+          "description": "The cycle packs (airports, airspace, procedures): the AIRAC edition held (YYYY-MM-DD), null where none is. Null leaves the item out."
+        },
+        "briefing": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "fetched_at": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "role": {
+                "type": "string",
+                "enum": [
+                  "departure",
+                  "destination",
+                  "alternate"
+                ]
+              },
+              "metar_observed": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "taf": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "ident"
+            ]
+          },
+          "description": "The departure, destination and alternate: each METAR's observed time (Unix seconds) and whether a TAF is in."
+        },
+        "notams": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "fetched_at": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "kept": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "on_board": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/KeptKind"
+              },
+              "description": "The kinds kept on the device for this route."
+            },
+            "missing": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/KeptKind"
+              },
+              "description": "The kinds the route has and the device does not yet."
+            },
+            "size_mb": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "What Keep for the Air downloads or holds for them, megabytes."
+            }
+          },
+          "description": "What Keep for the Air holds for the route beside its charts. Null leaves the item out."
+        },
+        "device": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "battery_pct": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "charging": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "location": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "enum": [
+                "granted",
+                "denied",
+                "prompt",
+                null
+              ]
+            },
+            "plan_saved": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "description": "What the platform tells: a member null or missing leaves its item out."
+        },
+        "receiver": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "used": {
+              "type": "boolean"
+            },
+            "connected": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "required": [
+        "now"
+      ]
+    },
+    "answer": {
+      "title": "ReadyToFlyAnswer",
+      "type": "object",
+      "properties": {
+        "ready": {
+          "type": "boolean"
+        },
+        "finding": {
+          "type": "string",
+          "enum": [
+            "ok",
+            "caution"
+          ]
+        },
+        "line": {
+          "type": "string"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReadyItem"
+          },
+          "maxItems": 3
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/ReadyItem"
+          }
+        },
+        "next_cycle": {
+          "type": "string",
+          "description": "YYYY-MM-DD: the next AIRAC cycle's first day."
+        },
+        "next_cycle_ident": {
+          "type": "string"
+        },
+        "briefing_age_min": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "ready",
+        "finding",
+        "line",
+        "actions",
+        "items",
+        "next_cycle",
+        "next_cycle_ident",
+        "briefing_age_min"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

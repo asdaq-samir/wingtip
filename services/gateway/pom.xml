@@ -7,21 +7,25 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.16</version>
+        <version>4.1.2</version>
         <relativePath/>
     </parent>
 
-    <groupId>com.northflyers</groupId>
+    <groupId>app.wingtipmaps</groupId>
     <artifactId>wingtip</artifactId>
     <version>0.1.0</version>
     <name>wingtip</name>
     <description>VFR route planning API -- proxies planner, persists saved routes.</description>
 
     <properties>
-        <!-- 25, not 26: spring-boot-maven-plugin 3.5.3's bundled ASM can't
-             parse a Java 26 class file yet ("Unsupported class file major
-             version 70" at repackage). 25 is the newest it supports. -->
+        <!-- 25, the current long-term-support Java: the JDK CI tests with
+             and the eclipse-temurin:25-jre image the Dockerfile runs on.
+             26 is a six-month release, out of support once 27 ships. -->
         <java.version>25</java.version>
+        <!-- Newer than Spring Boot 4.1.2 manages (3.15.0 and 3.5.6): the
+             newest stable releases, as the owner asks of every tool. -->
+        <maven-compiler-plugin.version>3.16.0</maven-compiler-plugin.version>
+        <maven-surefire-plugin.version>3.6.1</maven-surefire-plugin.version>
     </properties>
 
     <dependencies>
@@ -35,7 +39,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -59,7 +63,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-        <!-- Traces, to an OTLP collector, where management.tracing is on. -->
+        <!-- Traces, to an OTLP collector, where management.tracing is on:
+             Spring Boot's tracing module and the bridge and exporter it
+             configures. Not spring-boot-starter-opentelemetry, which also
+             brings the OTLP metrics registry, and with it a metrics export
+             to a collector this app does not run. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-micrometer-tracing-opentelemetry</artifactId>
+        </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-tracing-bridge-otel</artifactId>
@@ -69,10 +81,12 @@
             <artifactId>opentelemetry-exporter-otlp</artifactId>
         </dependency>
         <!-- Versioned schema migrations, replacing ddl-auto: update now that
-             this is more than a stub; see db/migration/. -->
+             this is more than a stub; see db/migration/. The starter, not
+             flyway-core alone: Spring Boot 4 runs migrations at start only
+             with its Flyway module on the classpath. -->
         <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
@@ -87,15 +101,24 @@
              of spring-security-oauth2-jose, not declared separately. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+            <artifactId>spring-boot-starter-security-oauth2-client</artifactId>
+        </dependency>
+        <!-- The OAuth 2.1 authorization server a pilot signs in through to
+             connect Wingtip to their own Claude or ChatGPT (the MCP
+             connector, docs/design/mcp-connector.md): Spring Security's
+             own, stock, rather than tokens minted here by hand. Its
+             tokens are for the planner's /mcp alone (security/mcp). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-oauth2-authorization-server</artifactId>
         </dependency>
         <!-- Sessions kept in Postgres rather than the JVM's memory, so a
              sign-in survives a gateway restart (every rebuild used to sign
              everyone out) and can last the 30 days application.yml sets.
              The tables are Flyway's (V8), not created at startup. -->
         <dependency>
-            <groupId>org.springframework.session</groupId>
-            <artifactId>spring-session-jdbc</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-session-jdbc</artifactId>
         </dependency>
         <!-- The magic-link email flow's own sender. Configured, or left
              unconfigured (see application.yml's MAIL_HOST default), the
@@ -105,16 +128,23 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
+        <!-- @WebMvcTest and MockMvc, with JUnit, Mockito and AssertJ. -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- SimpleTracer, for the tracing package's tests. -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-test</artifactId>
             <scope>test</scope>
         </dependency>
         <!-- oidcLogin() and csrf() request post-processors, so the
              security rules are tested as rules rather than trusted. -->
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-test</artifactId>
             <scope>test</scope>
         </dependency>
         <!-- Drives a real Postgres for the migration/persistence tests, so
@@ -128,12 +158,12 @@
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>postgresql</artifactId>
+            <artifactId>testcontainers-postgresql</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
         <!-- Generates an OpenAPI spec + Swagger UI (/swagger-ui.html,
@@ -144,16 +174,49 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.8.6</version>
+            <version>3.2.0</version>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- The Java's one layout (scripts/dev/format.sh java, or
+                 `mvn spotless:apply`; `mvn spotless:check` in CI's gateway
+                 job): palantir-java-format, Google's formatter at 120
+                 columns with lambdas and chains kept closer to how they
+                 are written here, through Spotless. src/main and src/test
+                 only, Spotless's default, so target/generated-sources is
+                 left as its generator writes it. -->
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>3.11.0</version>
+                <configuration>
+                    <java>
+                        <palantirJavaFormat>
+                            <version>2.103.0</version>
+                        </palantirJavaFormat>
+                    </java>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <!-- Every lint, and a warning fails the build (the
+                         owner's rule: no warnings). All but "processing",
+                         which only says that no processor claimed the
+                         Spring, JPA and Jackson annotations Lombok is
+                         shown: they are read at run time, not by a
+                         processor, so there is nothing to fix. Lombok
+                         1.18.48 (the newest) still reads fields through
+                         sun.misc.Unsafe, which the JDK warns of on
+                         Maven's console: .mvn/jvm.config allows it. -->
+                    <showWarnings>true</showWarnings>
+                    <failOnWarning>true</failOnWarning>
+                    <compilerArgs>
+                        <arg>-Xlint:all,-processing</arg>
+                    </compilerArgs>
                     <!-- Named explicitly, not picked up off the
                          classpath: from JDK 23 javac no longer runs
                          annotation processors it merely finds there,
@@ -180,34 +243,85 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <!-- The planner's answers this app reads itself (PlannerClient),
-                 generated at build time from the planner's committed
+            <!-- The assistant's answers this app reads itself (PlannerClient's
+                 changes in words, for the flight watch), generated at
+                 build time from the assistant service's committed
                  OpenAPI document rather than written out by hand, so a
-                 field the planner renames or drops fails this build
+                 field the assistant renames or drops fails this build
                  instead of reading as null in production. Models only:
                  PlannerClient asks with java.net.http, pinned to
                  HTTP/1.1 for the reason StreamingProxy gives, which a
                  generated client would replace. Only the schemas read
-                 here are generated (modelsToGenerate), prefixed Planner
+                 here are generated (modelsToGenerate), prefixed Assistant
                  so "Source" and "Sentence" do not read as this app's own;
                  the browser's pass-through proxies read nothing and need
                  none. The Dockerfile copies the document to the same
                  place relative to the pom. -->
+            <!-- The planner's and the assistant's committed OpenAPI
+                 documents, into the jar at upstreams/{planner,assistant}/:
+                 the routes the proxy forwards and who may call each are
+                 read from their x-gateway extensions (UpstreamRoutes).
+                 Built in rather than fetched from the planner at start, so
+                 the jar's rules are the ones it was tested with and do not
+                 wait on the planner being up. The Dockerfile copies both
+                 beside the pom, as it does the assistant's above. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>upstream-routes-planner</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/upstreams/planner</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/../planner</directory>
+                                    <includes>
+                                        <include>openapi.json</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>upstream-routes-assistant</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.outputDirectory}/upstreams/assistant</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}/../assistant</directory>
+                                    <includes>
+                                        <include>openapi.json</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
-                <version>7.26.0</version>
+                <version>7.27.0</version>
                 <executions>
                     <execution>
-                        <id>planner-models</id>
+                        <id>assistant-models</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/../planner/openapi.json</inputSpec>
+                            <inputSpec>${project.basedir}/../assistant/openapi.json</inputSpec>
                             <generatorName>spring</generatorName>
-                            <modelPackage>com.northflyers.wingtip.planner.model</modelPackage>
-                            <modelNamePrefix>Planner</modelNamePrefix>
+                            <modelPackage>app.wingtipmaps.gateway.assistant.model</modelPackage>
+                            <modelNamePrefix>Assistant</modelNamePrefix>
                             <modelsToGenerate>ChangesWords,Sentence,Source</modelsToGenerate>
                             <generateApis>false</generateApis>
                             <generateSupportingFiles>false</generateSupportingFiles>
@@ -218,7 +332,51 @@
                                  nullable field, not a wrapper type. -->
                             <openapiNormalizer>SIMPLIFY_ONEOF_ANYOF=true</openapiNormalizer>
                             <configOptions>
-                                <useSpringBoot3>true</useSpringBoot3>
+                                <useSpringBoot4>true</useSpringBoot4>
+                                <useJackson3>true</useJackson3>
+                                <useJspecify>true</useJspecify>
+                                <generateJsonIncludeAnnotations>false</generateJsonIncludeAnnotations>
+                                <generateJsonSetterNullsAnnotations>false</generateJsonSetterNullsAnnotations>
+                                <openApiNullable>false</openApiNullable>
+                                <useBeanValidation>false</useBeanValidation>
+                                <documentationProvider>none</documentationProvider>
+                                <annotationLibrary>none</annotationLibrary>
+                                <hideGenerationTimestamp>true</hideGenerationTimestamp>
+                            </configOptions>
+                        </configuration>
+                    </execution>
+                    <!-- The planner's asks and answers PlannerClient sends and
+                         reads (the pilot's and the airplane's rules),
+                         generated from the planner's committed document
+                         the same way, prefixed Planner: a field the planner
+                         renames or drops, or a type it changes, fails this
+                         build at the line that uses it. A JSON number stays
+                         the generator's BigDecimal: typeMappings number=Double
+                         leaves LogbookEntry's defaults written as
+                         `new BigDecimal("0")`, which does not compile, so
+                         PlannerClient turns them to doubles itself. -->
+                    <execution>
+                        <id>planner-models</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/../planner/openapi.json</inputSpec>
+                            <generatorName>spring</generatorName>
+                            <modelPackage>app.wingtipmaps.gateway.planner.model</modelPackage>
+                            <modelNamePrefix>Planner</modelNamePrefix>
+                            <modelsToGenerate>FeedHealth,FeedState,CurrencyAsk,Currency,LogbookEntry,ExperienceAsk,ExperienceItem,EndorsementsAsk,HeldEndorsement,Endorsements,ReviewCheck,EndorsementKind,EndorsementField,EndorsementFillAsk,EndorsementFilled,InspectionsAsk,VorCheckAsk,Inspections,VorCheck-Output</modelsToGenerate>
+                            <generateApis>false</generateApis>
+                            <generateSupportingFiles>false</generateSupportingFiles>
+                            <generateModelTests>false</generateModelTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <openapiNormalizer>SIMPLIFY_ONEOF_ANYOF=true</openapiNormalizer>
+                            <configOptions>
+                                <useSpringBoot4>true</useSpringBoot4>
+                                <useJackson3>true</useJackson3>
+                                <useJspecify>true</useJspecify>
+                                <generateJsonIncludeAnnotations>false</generateJsonIncludeAnnotations>
+                                <generateJsonSetterNullsAnnotations>false</generateJsonSetterNullsAnnotations>
                                 <openApiNullable>false</openApiNullable>
                                 <useBeanValidation>false</useBeanValidation>
                                 <documentationProvider>none</documentationProvider>
@@ -235,7 +393,7 @@
                 <configuration>
                     <!-- Generated, and documented by the planner's own
                          document instead. -->
-                    <excludePackageNames>com.northflyers.wingtip.planner.model</excludePackageNames>
+                    <excludePackageNames>app.wingtipmaps.gateway.assistant.model:app.wingtipmaps.gateway.planner.model</excludePackageNames>
                     <!-- Still catches malformed {@link}s, bad HTML, and
                          unknown tags; just doesn't demand a comment on
                          every trivial getter/DI constructor, where one

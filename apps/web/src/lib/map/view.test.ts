@@ -8,7 +8,12 @@ vi.hoisted(() => {
 });
 const { aheadOf, within } = await import("./view");
 
-const bounds = (s: number, w: number, n: number, e: number) => ({ getSouth: () => s, getWest: () => w, getNorth: () => n, getEast: () => e });
+const bounds = (s: number, w: number, n: number, e: number) => ({
+  getSouth: () => s,
+  getWest: () => w,
+  getNorth: () => n,
+  getEast: () => e,
+});
 
 describe("aheadOf", () => {
   it("adds the view's own size on every side, out to the half degree", () => {

@@ -33,6 +33,7 @@
 use crate::json;
 use crate::pack::Pack;
 use crate::rules::{self, FloorRef, Volume};
+use wingtip_core::sort::StableSort;
 
 /// A phone pack's region: a square of this many degrees (wingtip.cycle_pack's
 /// REGION_DEG), named by its south-west corner.
@@ -42,13 +43,7 @@ pub const REGION_DEG: f64 = 4.0;
 pub fn region_of(lat: f64, lon: f64) -> String {
     let south = ((lat / REGION_DEG).floor() * REGION_DEG) as i32;
     let west = ((lon / REGION_DEG).floor() * REGION_DEG) as i32;
-    format!(
-        "{}{:02}{}{:03}",
-        if south >= 0 { 'n' } else { 's' },
-        south.abs(),
-        if west >= 0 { 'e' } else { 'w' },
-        west.abs()
-    )
+    format!("{}{:02}{}{:03}", if south >= 0 { 'n' } else { 's' }, south.abs(), if west >= 0 { 'e' } else { 'w' }, west.abs())
 }
 
 fn u32_at(b: &[u8], o: usize) -> Option<u32> {
@@ -94,7 +89,7 @@ pub fn mode_c_veil(pack: &Pack, lat: f64, lon: f64) -> Option<(String, String, f
     let points = pack.section("veil.pts")?;
     let names = pack.section("veil.names")?;
     let mut airports = Vec::new();
-    for r in points.chunks_exact(32) {
+    for r in points.as_chunks::<32>().0 {
         let ident = String::from_utf8_lossy(r[16..24].split(|&c| c == 0).next().unwrap_or(&[])).into_owned();
         airports.push((f64_at(r, 0)?, f64_at(r, 8)?, ident, text_at(names, r, 24)?.to_owned()));
     }
@@ -120,7 +115,7 @@ pub fn special_use<'a>(pack: &Pack<'a>, lat: f64, lon: f64) -> Option<Vec<&'a st
         found.push((name, f64_at(r, 0)?, text_at(blobs, r, 8)?));
     }
     // Python's sort: (floor is None, floor or 0), stable.
-    found.sort_by(|a, b| {
+    found.stable_sort_by(|a, b| {
         let key = |f: f64| (f.is_nan(), if f.is_nan() { 0.0 } else { f });
         let (ka, kb) = (key(a.1), key(b.1));
         ka.0.cmp(&kb.0).then(ka.1.partial_cmp(&kb.1).unwrap())

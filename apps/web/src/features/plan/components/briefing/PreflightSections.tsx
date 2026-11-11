@@ -4,25 +4,38 @@ import { OctagonAlert, TriangleAlert } from "lucide-react";
 import AccordionSection from "../../../../components/AccordionSection";
 import AfterPaint from "../../../../components/AfterPaint";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import { Input } from "../../../../components/ui/input";
+import { NumberField as StockNumberField } from "../../../../components/ui/number-field";
 import type { AircraftProfile, Briefing, Course } from "../../../../lib/api/types";
-import { runwayChecks, type RunwayDistance } from "../../../../lib/runwayCheck";
-import { useRunwayPicks } from "../../../../lib/useRunwayPicks";
+import { runwayChecks, type RunwayDistance } from "../../lib/runwayCheck";
+import { useRunwayPicks } from "../../lib/useRunwayPicks";
 import { FINDING_TONE } from "../../../../lib/findings";
 import FindingIcon from "../../../../components/FindingIcon";
 import { windOnRunway } from "../../format";
 import { TEXT } from "../../../../lib/text";
-import { altFt, pounds } from "../../../../lib/units";
+import { altFt, pounds } from "../../../../lib/format";
 import { useLoad } from "../../hooks/useLoad";
 import { armText } from "../../../../lib/weightBalance";
 import { phasesOf, type Phase } from "./sections";
+import { AirplaneLink } from "../../../../components/airplane/AirplaneLink";
+import { AskFigure } from "../../../../components/airplane/AskFigure";
+import { useNotInProfileSummary } from "./notInProfileSummary";
 
 /** The envelope's picture: Recharts, loaded with the section. */
 const EnvelopeChart = lazy(() => import("./EnvelopeChart"));
 
 /** A number typed into a row: the stock field, short, its unit after it. */
-function NumberField({ value, onChange, unit, label, testId }: {
-  value: number; onChange: (n: number) => void; unit: string; label: string; testId?: string;
+function NumberField({
+  value,
+  onChange,
+  unit,
+  label,
+  testId,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  unit: string;
+  label: string;
+  testId?: string;
 }) {
   const id = useId();
   return (
@@ -30,11 +43,19 @@ function NumberField({ value, onChange, unit, label, testId }: {
     // pseudo-element behind them (isolate keeps it over the row): a tap
     // just above or below the 32 pt field still lands in it, and the
     // field does not grow.
-    <label htmlFor={id} className="relative isolate flex items-center gap-1.5 after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-['']">
-      <Input
-        id={id} type="number" inputMode="decimal" min={0} step="any" aria-label={label} data-testid={testId}
-        className="h-8 w-24 text-right tabular-nums" value={Number.isFinite(value) ? value : ""}
-        onChange={e => onChange(e.target.value === "" ? 0 : Number(e.target.value))}
+    <label
+      htmlFor={id}
+      className="relative isolate flex items-center gap-1.5 after:absolute after:inset-x-0 after:-inset-y-1.5 after:-z-10 after:content-['']"
+    >
+      <StockNumberField
+        id={id}
+        minValue={0}
+        aria-label={label}
+        data-testid={testId}
+        className="h-8 w-24"
+        inputClassName="text-right"
+        value={Number.isFinite(value) ? value : null}
+        onChange={(v) => onChange(v ?? 0)}
       />
       <span className={cn("w-6 text-muted-foreground", TEXT.detail)}>{unit}</span>
     </label>
@@ -46,48 +67,78 @@ function NumberField({ value, onChange, unit, label, testId }: {
  * empty weight and arm, each station's load and the fuel, and the
  * weight and centre of gravity at takeoff and at landing -- the trip's
  * fuel burned -- against the most it may weigh and its envelope. For an
- * airplane whose profile has its POH's loading (the 172S's).
+ * airplane whose profile has its POH's loading; none else, the figures it lacks asked for (AskFigure).
  */
-export function WeightBalanceSection({ aircraft, tripFuelGal }: { aircraft: AircraftProfile | null | undefined; tripFuelGal: number | null }) {
+export function WeightBalanceSection({
+  aircraft,
+  tripFuelGal,
+}: {
+  aircraft: AircraftProfile | null | undefined;
+  tripFuelGal: number | null;
+}) {
   const { loading, load, result, setLoad } = useLoad(aircraft, tripFuelGal);
-  const summary = !result ? "Built in for the Cessna 172S"
+  const missing = useNotInProfileSummary();
+  const summary = !result
+    ? missing
     : `${pounds(result.takeoff.weightLb)} at ${armText(result.takeoff)}${result.problems.length ? "" : " · within limits"}`;
   return (
     <AccordionSection
-      title="Weight & Balance" summary={summary}
-      aside={result && result.problems.length > 0 ? (
-        <span className={cn("inline-flex items-center gap-1 font-semibold", FINDING_TONE.stop, TEXT.note)} data-testid="wb-flag">
-          <OctagonAlert className="size-3.5" aria-hidden />
-          Out of limits
-        </span>
-      ) : undefined}
+      title="Weight & Balance"
+      summary={summary}
+      aside={
+        result && result.problems.length > 0 ? (
+          <span className={cn("inline-flex items-center gap-1 font-semibold", FINDING_TONE.stop, TEXT.note)} data-testid="wb-flag">
+            <OctagonAlert className="size-3.5" aria-hidden />
+            Out of limits
+          </span>
+        ) : undefined
+      }
     >
       {!loading || !load || !result ? (
-        <p className={TEXT.prose}>
-          The weight and balance is worked out for an airplane whose loading is built in: the Cessna 172S, from its POH.
-        </p>
+        <AskFigure figure="weight_balance" what="The weight and balance" tables={aircraft} testId="wb-not-in-profile" />
       ) : (
         <div className="space-y-4" data-testid="weight-balance">
           {/* From its own weight and balance record; the POH's sample airplane until set. */}
-          <ListGroup title="The airplane">
+          <ListGroup title="The airplane" action={<AirplaneLink focus="empty_weight_lb" testId="wb-airplane-profile" />}>
             <ListRow title="Empty weight">
-              <NumberField value={load.emptyWeightLb} unit="lb" label="Empty weight" onChange={n => setLoad({ ...load, emptyWeightLb: n })} testId="wb-empty-weight" />
+              <NumberField
+                value={load.emptyWeightLb}
+                unit="lb"
+                label="Empty weight"
+                onChange={(n) => setLoad({ ...load, emptyWeightLb: n })}
+                testId="wb-empty-weight"
+              />
             </ListRow>
             <ListRow title="Empty arm">
-              <NumberField value={load.emptyArmIn} unit="in" label="Empty arm" onChange={n => setLoad({ ...load, emptyArmIn: n })} />
+              <NumberField value={load.emptyArmIn} unit="in" label="Empty arm" onChange={(n) => setLoad({ ...load, emptyArmIn: n })} />
             </ListRow>
           </ListGroup>
           <ListGroup title="Loaded">
             {loading.stations.map((station, i) => (
-              <ListRow key={station.name} title={station.name} description={station.max_lb != null ? `${pounds(station.max_lb)} at most` : undefined}>
+              <ListRow
+                key={station.name}
+                title={station.name}
+                description={station.max_lb != null ? `${pounds(station.max_lb)} at most` : undefined}
+              >
                 <NumberField
-                  value={load.stationsLb[i] ?? 0} unit="lb" label={station.name} testId={`wb-station-${i}`}
-                  onChange={n => setLoad({ ...load, stationsLb: loading.stations.map((_, k) => (k === i ? n : load.stationsLb[k] ?? 0)) })}
+                  value={load.stationsLb[i] ?? 0}
+                  unit="lb"
+                  label={station.name}
+                  testId={`wb-station-${i}`}
+                  onChange={(n) =>
+                    setLoad({ ...load, stationsLb: loading.stations.map((_, k) => (k === i ? n : (load.stationsLb[k] ?? 0))) })
+                  }
                 />
               </ListRow>
             ))}
             <ListRow title="Fuel" description={`${loading.fuel_max_gal} gal usable`}>
-              <NumberField value={load.fuelGal} unit="gal" label="Fuel" onChange={n => setLoad({ ...load, fuelGal: n })} testId="wb-fuel" />
+              <NumberField
+                value={load.fuelGal}
+                unit="gal"
+                label="Fuel"
+                onChange={(n) => setLoad({ ...load, fuelGal: n })}
+                testId="wb-fuel"
+              />
             </ListRow>
           </ListGroup>
           {/* The loading's source (its POH); the start and taxi's fuel off at takeoff, the trip's at landing. */}
@@ -96,9 +147,15 @@ export function WeightBalanceSection({ aircraft, tripFuelGal }: { aircraft: Airc
             <ListRow title="Landing" value={`${pounds(result.landing.weightLb)} · ${armText(result.landing)}`} />
             {result.problems.length === 0 ? (
               <ListRow media={<FindingIcon finding="ok" />} title="Within the weight and the envelope" data-testid="wb-ok" />
-            ) : result.problems.map(problem => (
-              <ListRow key={problem} media={<FindingIcon finding="stop" />} title={<span className={FINDING_TONE.stop}>{problem}</span>} />
-            ))}
+            ) : (
+              result.problems.map((problem) => (
+                <ListRow
+                  key={problem}
+                  media={<FindingIcon finding="stop" />}
+                  title={<span className={FINDING_TONE.stop}>{problem}</span>}
+                />
+              ))
+            )}
           </ListGroup>
           <AfterPaint fallback={<div className="h-56" />}>
             <EnvelopeChart envelope={loading.envelope as [number, number][]} takeoff={result.takeoff} landing={result.landing} />
@@ -116,8 +173,14 @@ function RunwayBar({ distance, lengthFt }: { distance: RunwayDistance; lengthFt:
   const share = (ft: number) => `${Math.min(100, (ft / lengthFt) * 100)}%`;
   return (
     <span className="mt-1.5 mb-0.5 block h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
-      <span className={cn("relative block h-full rounded-full", distance.over ? "bg-destructive/40" : "bg-primary/35")} style={{ width: share(distance.totalFt) }}>
-        <span className={cn("absolute inset-y-0 left-0 rounded-full", distance.over ? "bg-destructive" : "bg-primary")} style={{ width: `${Math.min(100, (distance.groundRollFt / Math.max(distance.totalFt, 1)) * 100)}%` }} />
+      <span
+        className={cn("relative block h-full rounded-full", distance.over ? "bg-destructive/40" : "bg-primary/35")}
+        style={{ width: share(distance.totalFt) }}
+      >
+        <span
+          className={cn("absolute inset-y-0 left-0 rounded-full", distance.over ? "bg-destructive" : "bg-primary")}
+          style={{ width: `${Math.min(100, (distance.groundRollFt / Math.max(distance.totalFt, 1)) * 100)}%` }}
+        />
       </span>
     </span>
   );
@@ -125,7 +188,7 @@ function RunwayBar({ distance, lengthFt }: { distance: RunwayDistance; lengthFt:
 
 /**
  * The runway check at each airport the flight takes off from or lands at
- * (lib/runwayCheck): the runway the wind favours, the POH's short-field
+ * (features/plan/lib/runwayCheck): the runway the wind favours, the POH's short-field
  * distances on it at the field's pressure altitude and temperature, the
  * weight from Weight & Balance and the reported wind -- drawn against the
  * runway's length -- then the density altitude the airplane performs at,
@@ -133,7 +196,14 @@ function RunwayBar({ distance, lengthFt }: { distance: RunwayDistance; lengthFt:
  * On the Depart tab its takeoff (`phase`), on the Arrive tab its landing,
  * the stops' on En route's.
  */
-export function TakeoffLandingSection({ aircraft, briefing, course, landing: landingWeight, takeoff: takeoffWeight, phase }: {
+export function TakeoffLandingSection({
+  aircraft,
+  briefing,
+  course,
+  landing: landingWeight,
+  takeoff: takeoffWeight,
+  phase,
+}: {
   /** Only this part of the flight's fields (its tab's). */
   phase?: Phase;
   aircraft: AircraftProfile | null | undefined;
@@ -148,40 +218,55 @@ export function TakeoffLandingSection({ aircraft, briefing, course, landing: lan
   const picks = useRunwayPicks();
   const all = runwayChecks(aircraft, briefing, course, takeoffWeight, landingWeight, picks);
   const checks = phase ? all.filter((_, i) => phasesOf(i, all.length).includes(phase)) : all;
-  const short = [...new Set(checks.filter(c => c.distances.some(d => d.over)).map(c => c.field.ident))];
-  const gusty = [...new Set(checks.filter(c => c.crosswindOver).map(c => c.field.ident))];
+  const short = [...new Set(checks.filter((c) => c.distances.some((d) => d.over)).map((c) => c.field.ident))];
+  const gusty = [...new Set(checks.filter((c) => c.crosswindOver).map((c) => c.field.ident))];
   const demonstrated = aircraft?.crosswind ?? null;
-  const summary = !takeoffTable ? "Built in for the Cessna 172S"
-    : !briefing ? undefined
-      : short.length ? `Over the runway at ${short.join(", ")}` : "Within each runway";
+  const missing = useNotInProfileSummary();
+  const summary = !takeoffTable
+    ? missing
+    : !briefing
+      ? undefined
+      : short.length
+        ? `Over the runway at ${short.join(", ")}`
+        : "Within each runway";
   return (
     <AccordionSection
-      title={phase === "depart" ? "Takeoff" : phase === "arrive" ? "Landing" : phase === "enroute" ? "Stops" : "Takeoff & Landing"} summary={summary}
-      aside={short.length ? (
-        <span className={cn("inline-flex items-center gap-1 font-semibold", FINDING_TONE.stop, TEXT.note)} data-testid="tl-flag">
-          <OctagonAlert className="size-3.5" aria-hidden />
-          Runway too short
-        </span>
-      ) : gusty.length ? (
-        <span className={cn("inline-flex items-center gap-1 font-semibold", FINDING_TONE.caution, TEXT.note)} data-testid="crosswind-flag">
-          <TriangleAlert className="size-3.5" aria-hidden />
-          Crosswind
-        </span>
-      ) : undefined}
+      title={phase === "depart" ? "Takeoff" : phase === "arrive" ? "Landing" : phase === "enroute" ? "Stops" : "Takeoff & Landing"}
+      summary={summary}
+      aside={
+        short.length ? (
+          <span className={cn("inline-flex items-center gap-1 font-semibold", FINDING_TONE.stop, TEXT.note)} data-testid="tl-flag">
+            <OctagonAlert className="size-3.5" aria-hidden />
+            Runway too short
+          </span>
+        ) : gusty.length ? (
+          <span
+            className={cn("inline-flex items-center gap-1 font-semibold", FINDING_TONE.caution, TEXT.note)}
+            data-testid="crosswind-flag"
+          >
+            <TriangleAlert className="size-3.5" aria-hidden />
+            Crosswind
+          </span>
+        ) : undefined
+      }
     >
       {!takeoffTable || !landingTable ? (
-        <p className={cn("text-muted-foreground", TEXT.prose)}>The takeoff and landing distances are worked out for an airplane whose POH tables are built in: the Cessna 172S.</p>
+        <AskFigure figure="takeoff_landing" what="The takeoff and landing distances" tables={aircraft} testId="tl-not-in-profile" />
       ) : !briefing ? (
-        <p className="text-muted-foreground" role="status">Waiting on the runways and the weather at each field…</p>
+        <p className="text-muted-foreground" role="status">
+          Waiting on the runways and the weather at each field…
+        </p>
       ) : (
         <div className="space-y-4" data-testid="takeoff-landing">
+          <AirplaneLink testId="tl-airplane-profile" />
           {checks.map((c, i) => {
             const length = c.runway?.length_ft ?? null;
             return (
               <ListGroup
                 // No heading on Depart's or Arrive's tab, its one field the
                 // tab's own; a stop's named, on En route.
-                key={`${c.field.ident}${i}`} title={phase === "depart" || phase === "arrive" ? undefined : `${c.field.ident} · ${c.role}`}
+                key={`${c.field.ident}${i}`}
+                title={phase === "depart" || phase === "arrive" ? undefined : `${c.field.ident} · ${c.role}`}
               >
                 {/* The runway the distances are for, first, and the wind on
                     it -- said once, here, where it was a row of its own and
@@ -190,46 +275,58 @@ export function TakeoffLandingSection({ aircraft, briefing, course, landing: lan
                 <ListRow
                   media={c.crosswindOver ? <FindingIcon finding="caution" /> : undefined}
                   title={c.runway ? `Runway ${c.end ?? c.runway.ends}` : <span className="text-muted-foreground">No runway data</span>}
-                  description={!c.runway ? undefined : c.runway.wind ? (
-                    <span className={cn(c.crosswindOver && FINDING_TONE.caution)} data-testid="runway-wind-check">
-                      {c.picked && c.end !== c.runway.wind.end
-                        ? `Picked in FPL: ${Math.abs(c.headwindKt)} kt ${c.headwindKt < 0 ? "tailwind" : "headwind"}, ${c.crosswindKt} kt across`
-                        : `${c.picked && c.end !== c.runway.wind.end ? "Picked in FPL" : "Most into the wind"}: ${windOnRunway(c.runway.wind)}`}
-                      {c.crosswindOver && demonstrated && `, over the ${demonstrated.demonstrated_kt} kt the POH demonstrates`}
-                    </span>
-                  ) : c.picked ? "Picked in FPL, no wind reported: the distances are for calm"
-                    : "The longest, no wind reported: the wind indicator decides, and the distances are for calm"}
+                  description={
+                    !c.runway ? undefined : c.runway.wind ? (
+                      <span className={cn(c.crosswindOver && FINDING_TONE.caution)} data-testid="runway-wind-check">
+                        {c.picked && c.end !== c.runway.wind.end
+                          ? `Picked in FPL: ${Math.abs(c.headwindKt)} kt ${c.headwindKt < 0 ? "tailwind" : "headwind"}, ${c.crosswindKt} kt across`
+                          : `${c.picked && c.end !== c.runway.wind.end ? "Picked in FPL" : "Most into the wind"}: ${windOnRunway(c.runway.wind)}`}
+                        {c.crosswindOver && demonstrated && `, over the ${demonstrated.demonstrated_kt} kt the POH demonstrates`}
+                      </span>
+                    ) : c.picked ? (
+                      "Picked in FPL, no wind reported: the distances are for calm"
+                    ) : (
+                      "The longest, no wind reported: the wind indicator decides, and the distances are for calm"
+                    )
+                  }
                   value={c.runway ? `${length != null ? `${altFt(length)} ft` : "length unknown"}${c.grass ? " · grass" : ""}` : undefined}
                   data-testid="performance-runway"
                 />
-                {c.distances.map(d => {
+                {c.distances.map((d) => {
                   // A stop's runway out may not be its runway in: each
                   // distance against its own runway, named where it differs.
                   const runwayFt = d.runway?.length_ft ?? null;
                   const elsewhere = d.end != null && d.end !== c.end ? ` on ${d.end}` : "";
                   return (
-                  <ListRow
-                    key={d.kind}
-                    media={<FindingIcon finding={runwayFt == null ? "unknown" : d.over ? "stop" : "ok"} />}
-                    title={`${d.kind === "takeoff" ? "Takeoff" : "Landing"} over 50 ft${elsewhere}`}
-                    description={(
-                      <>
-                        {runwayFt != null && <RunwayBar distance={d} lengthFt={runwayFt} />}
-                        <span className={cn("block", d.over && FINDING_TONE.stop)}>
-                          {[`${altFt(d.groundRollFt)} ft roll`, runwayFt != null && (d.over ? `${altFt(d.totalFt - runwayFt)} ft past the end` : `${altFt(runwayFt)} ft runway`), ...d.caveats].filter(Boolean).join(" · ")}
-                        </span>
-                      </>
-                    )}
-                    value={`${altFt(d.totalFt)} ft`}
-                    data-testid={`runway-${d.kind}`}
-                  />
+                    <ListRow
+                      key={d.kind}
+                      media={<FindingIcon finding={runwayFt == null ? "unknown" : d.over ? "stop" : "ok"} />}
+                      title={`${d.kind === "takeoff" ? "Takeoff" : "Landing"} over 50 ft${elsewhere}`}
+                      description={
+                        <>
+                          {runwayFt != null && <RunwayBar distance={d} lengthFt={runwayFt} />}
+                          <span className={cn("block", d.over && FINDING_TONE.stop)}>
+                            {[
+                              `${altFt(d.groundRollFt)} ft roll`,
+                              runwayFt != null &&
+                                (d.over ? `${altFt(d.totalFt - runwayFt)} ft past the end` : `${altFt(runwayFt)} ft runway`),
+                              ...d.caveats,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                        </>
+                      }
+                      value={`${altFt(d.totalFt)} ft`}
+                      data-testid={`runway-${d.kind}`}
+                    />
                   );
                 })}
                 {c.unchecked != null || c.pressureAltFt == null || c.densityAltFt == null ? (
                   <ListRow
                     media={<FindingIcon finding="unknown" />}
                     title="Distances not worked out"
-                    description={`${c.unchecked ?? "the field's elevation is not known"}`.replace(/^./, ch => ch.toUpperCase())}
+                    description={`${c.unchecked ?? "the field's elevation is not known"}`.replace(/^./, (ch) => ch.toUpperCase())}
                     data-testid="runway-unchecked"
                   />
                 ) : (

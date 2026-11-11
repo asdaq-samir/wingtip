@@ -13,6 +13,7 @@ wingtip.sua's areas.
   engine's C functions, hold Swift to the planner's code too.
 
 The Chicago cut and its taps are services/planner/tests_wingtip/test_native.py's."""
+
 import gzip
 import json
 import math
@@ -28,6 +29,7 @@ from shapely.geometry import Point, Polygon
 import wingtip_native
 from wingtip import airspace_at, geo, sua
 from wingtip import cycle_pack
+from wingtip.engine import ask as engine
 
 FIXTURES = Path(__file__).parent / "fixtures" / "native"
 PHONE = FIXTURES / "phone"
@@ -51,9 +53,20 @@ def _restricted_area():
     outer = [(-88.3, 41.5), (-88.1, 41.5), (-88.1, 41.7), (-88.3, 41.7), (-88.3, 41.5)]
     hole = [(-88.22, 41.58), (-88.22, 41.62), (-88.18, 41.62), (-88.18, 41.58), (-88.22, 41.58)]
     geometry = Polygon(outer, [hole])
-    props = {"NAME": "R-9999 TEST", "TYPE_CODE": "R", "LOWER_VAL": "0", "LOWER_UOM": "FT", "LOWER_CODE": "SFC",
-             "UPPER_VAL": "5000", "UPPER_UOM": "FT", "UPPER_CODE": "MSL", "TIMESOFUSE": "0700-2200 MON-FRI",
-             "GMTOFFSET": "-6", "DST_CODE": "1", "CONT_AGENT": "CHICAGO TRACON"}
+    props = {
+        "NAME": "R-9999 TEST",
+        "TYPE_CODE": "R",
+        "LOWER_VAL": "0",
+        "LOWER_UOM": "FT",
+        "LOWER_CODE": "SFC",
+        "UPPER_VAL": "5000",
+        "UPPER_UOM": "FT",
+        "UPPER_CODE": "MSL",
+        "TIMESOFUSE": "0700-2200 MON-FRI",
+        "GMTOFFSET": "-6",
+        "DST_CODE": "1",
+        "CONT_AGENT": "CHICAGO TRACON",
+    }
     return {"properties": props}, geometry, geometry.bounds
 
 
@@ -64,14 +77,13 @@ AREA = [_restricted_area()]
 def phone(chicago, tmp_path):
     """The planner's pack of the Chicago cut and a restricted area, and the
     phones' packs of it."""
-    server = cycle_pack.write(tmp_path, "2026-10-29", shp_path=chicago, sua_held=AREA, sua_at=0.0,
-                              urban=[], urban_path=None, tables={})
+    server = cycle_pack.write(tmp_path, "2026-10-29", shp_path=chicago, sua_held=AREA, sua_at=0.0, urban=[], urban_path=None, tables={})
     index = cycle_pack.write_phone(cycle_pack.Pack(server), tmp_path / "phone", VEIL)
     return tmp_path / "phone" / "2026-10-29", index
 
 
 def _pack_at(folder: Path, lat: float, lon: float):
-    path = folder / f"{wingtip_native.region_of(lat, lon)}.pack"
+    path = folder / f"{engine('region_of', lat=lat, lon=lon)}.pack"
     return cycle_pack.Pack(path).mapped if path.exists() else None
 
 
@@ -90,11 +102,16 @@ def _planner(chicago: Path, lat: float, lon: float, ground_ft=None, areas=()) ->
             area = sua._area(feature["properties"])
             found.setdefault(area["name"], area)
     return {
-        "lat": lat, "lon": lon, "ground_ft": ground_ft,
+        "lat": lat,
+        "lon": lon,
+        "ground_ft": ground_ft,
         "bands": airspace_at.column(lat, lon, ground_ft or 0.0, volumes, in_veil=veil is not None),
         "mode_c_veil": veil,
         "special_use": sorted(found.values(), key=lambda a: (a["floor_ft"] is None, a["floor_ft"] or 0)),
-        "special_use_unavailable": False, "tfrs": [], "tfrs_unavailable": True, "point": None,
+        "special_use_unavailable": False,
+        "tfrs": [],
+        "tfrs_unavailable": True,
+        "point": None,
     }
 
 
@@ -104,7 +121,7 @@ def test_the_regions_are_named_alike_in_python_and_rust():
     points += list(zip(rng.uniform(-89, 89, 2000), rng.uniform(-180, 180, 2000)))
     for lat, lon in points:
         name = cycle_pack.region_of(lat, lon)
-        assert wingtip_native.region_of(lat, lon) == name, (lat, lon)
+        assert engine("region_of", lat=lat, lon=lon) == name, (lat, lon)
         west, south, east, north = cycle_pack.region_bounds(name)
         assert south <= lat < north and west <= lon < east, (lat, lon, name)
 
@@ -113,7 +130,7 @@ def test_the_engines_distance_is_vfr_geos():
     rng = np.random.default_rng(11)
     for lat, lon in zip(rng.uniform(20, 65, 500), rng.uniform(-160, -65, 500)):
         lat2, lon2 = lat + rng.uniform(-3, 3), lon + rng.uniform(-4, 4)
-        assert abs(wingtip_native.distance_nm(lat, lon, lat2, lon2) - geo.distance_nm(lat, lon, lat2, lon2)) < 1e-9
+        assert abs(engine("distance_nm", lat1=lat, lon1=lon, lat2=lat2, lon2=lon2) - geo.distance_nm(lat, lon, lat2, lon2)) < 1e-9
 
 
 def test_the_real_taps_answer_as_the_planner_at_any_ground(chicago, phone):
@@ -132,8 +149,9 @@ def test_random_points_answer_as_the_planner_but_on_a_line(chicago, phone):
     folder, _ = phone
     server = cycle_pack.Pack(next(folder.parent.parent.glob("wingtip-*.pack")))
     boxes = server.boxes("airspace")
-    lines = shapely.MultiLineString([ring for shape in server.wkb("airspace") for rings in cycle_pack._rings(shape)
-                                     for ring in rings if len(ring) >= 2])
+    lines = shapely.MultiLineString(
+        [ring for shape in server.wkb("airspace") for rings in cycle_pack._rings(shape) for ring in rings if len(ring) >= 2]
+    )
     rng = np.random.default_rng(13)
     w, s = boxes[:, 0].min(), boxes[:, 1].min()
     e, n = boxes[:, 2].max(), boxes[:, 3].max()
@@ -144,8 +162,7 @@ def test_random_points_answer_as_the_planner_but_on_a_line(chicago, phone):
             if _engine(folder, lat, lon, ground) != _planner(chicago, lat, lon, ground, AREA):
                 differing += 1
                 ends = shapely.get_coordinates(shapely.shortest_line(lines, Point(lon, lat)))
-                off_nm = math.hypot((ends[1][0] - ends[0][0]) * 60 * math.cos(math.radians(lat)),
-                                    (ends[1][1] - ends[0][1]) * 60)
+                off_nm = math.hypot((ends[1][0] - ends[0][0]) * 60 * math.cos(math.radians(lat)), (ends[1][1] - ends[0][1]) * 60)
                 assert off_nm <= cycle_pack.PHONE_WORST_NM, (lat, lon, ground, off_nm)
     assert asked == 4500 and differing <= 10
 
@@ -198,6 +215,7 @@ def test_the_ios_apps_fixture_packs_answer_as_the_planner(chicago):
 
 # --- The alerts ahead with no network (wingtip_engine::ahead) -------------
 
+
 def _ground_pack(tmp_path, monkeypatch, heights) -> bytes:
     """A region's pack holding only its ground, written by wingtip.cycle_pack's own
     `_terrain` from a ground grid of two cells a degree over n40w088
@@ -214,12 +232,20 @@ def _ground_pack(tmp_path, monkeypatch, heights) -> bytes:
     ground = cycle_pack._terrain("n40w088")
     area = Polygon([(-87.0, 42.4), (-87.0, 42.6), (-86.6, 42.6), (-86.6, 42.4)])
     wkb = shapely.to_wkb(shapely.geometry.polygon.orient(area, sign=-1.0), byte_order=1)
-    record = {"name": "R-9999", "type": "R", "floor_ft": None, "floor_ref": "SFC", "ceiling_ft": 18000.0,
-              "ceiling_ref": "MSL", "times_of_use": "0800-1700 MON-FRI"}
+    record = {
+        "name": "R-9999",
+        "type": "R",
+        "floor_ft": None,
+        "floor_ref": "SFC",
+        "ceiling_ft": 18000.0,
+        "ceiling_ref": "MSL",
+        "times_of_use": "0800-1700 MON-FRI",
+    }
     path = tmp_path / "n40w088.pack"
     with open(path, "w+b") as f:
-        w = cycle_pack._Writer(f, ["meta", "sua.box", "sua.off", "sua.wkb", "sua.rec", "sua.json", "sua.names",
-                                   "sua.alt", "sua.times", "terrain"])
+        w = cycle_pack._Writer(
+            f, ["meta", "sua.box", "sua.off", "sua.wkb", "sua.rec", "sua.json", "sua.names", "sua.alt", "sua.times", "terrain"]
+        )
         w.put("meta", b"{}")
         cycle_pack._layer(w, "sua", [area.bounds], [wkb], None)
         w.put("sua.rec", struct.pack("<dIIII", float("nan"), 0, 0, 0, 6))
@@ -235,9 +261,9 @@ def _ground_pack(tmp_path, monkeypatch, heights) -> bytes:
 
 def test_the_ground_is_pooled_by_its_highest_and_a_misread_cell_is_none(tmp_path, monkeypatch):
     heights = np.full((8, 8), 1000)
-    heights[0, 1] = 1500                 # pooled with three 1,000s: the cell is 1,500
-    heights[4:6, 4:6] = 32000            # tiles misread: no ground known
-    heights[6, 6] = 32000                # one misread among three read: theirs
+    heights[0, 1] = 1500  # pooled with three 1,000s: the cell is 1,500
+    heights[4:6, 4:6] = 32000  # tiles misread: no ground known
+    heights[6, 6] = 32000  # one misread among three read: theirs
     pack = _ground_pack(tmp_path, monkeypatch, heights)
     raw = cycle_pack._terrain("n40w088")
     south, west, per, rows, cols, _ = struct.unpack("<ddIIII", raw[:32])

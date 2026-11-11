@@ -1,5 +1,5 @@
 {
-  "about": "The logbook as a CSV file, out in ForeFlight's column names and in from ForeFlight's export or this logbook's own (ForeFlight Logbook Guide v14.0; landings as 61.57(a) and (b) count them). A field with no value is written empty, and a field with a space at either end is quoted, on both. Web: lib/logbookCsv.ts. iOS: LogbookCSV in PilotLogic.swift.",
+  "about": "The logbook as a CSV file, out in ForeFlight's column names and in from ForeFlight's export or this logbook's own (ForeFlight Logbook Guide v14.0; landings as 61.57(a) and (b) count them). Air time and touch-and-goes, which ForeFlight has no column for, are this logbook's AirTime and TouchAndGoes, else read from ForeFlight's TimeOff to TimeOn and its landings less the full-stop ones; no air time in the file is 0, not known, never the flight time (61.51(b) asks only the flight time). A file's entry is never from a track. A field with no value is written empty, and a field with a space at either end is quoted, on both. Web: features/pilot/logbookCsv.ts. iOS: LogbookCSV in PilotLogic.swift.",
   "export": [
     {
       "entries": [
@@ -23,7 +23,11 @@
           "toweredLandings": 1,
           "longestLegNm": 48,
           "holding": false,
-          "tracking": false
+          "tracking": false,
+          "airHours": 1.3,
+          "touchAndGoes": 1,
+          "fromTrack": false,
+          "flightId": null
         },
         {
           "id": 2,
@@ -45,7 +49,11 @@
           "toweredLandings": 1,
           "longestLegNm": 0,
           "holding": true,
-          "tracking": true
+          "tracking": true,
+          "airHours": 1.0,
+          "touchAndGoes": 0,
+          "fromTrack": false,
+          "flightId": null
         },
         {
           "id": 3,
@@ -67,10 +75,14 @@
           "toweredLandings": 1,
           "longestLegNm": 48,
           "holding": false,
-          "tracking": false
+          "tracking": false,
+          "airHours": 0,
+          "touchAndGoes": 0,
+          "fromTrack": true,
+          "flightId": 12
         }
       ],
-      "csv": "Date,AircraftID,TypeCode,Route,TotalTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments\r\n2026-09-12,N12345,C172,KUGN,1.2,1.2,0,0,1.2,0.4,4,3,1,0,0,2,1,x,\"Pattern work, \"\"short field\"\"\"\r\n2026-10-01,N3429J,P28A,KUGN KRFD,1.5,0,1.5,1.5,0,0,2,0,1,48,48,0,0,,\r\n2026-10-20,N3429J,,,1.5,0,1.5,1.5,0,0,2,0,1,48,48,0,0,,\"Line one\nline two\"\r\n"
+      "csv": "Date,AircraftID,TypeCode,Route,TotalTime,AirTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,TouchAndGoes,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments\r\n2026-09-12,N12345,C172,KUGN,1.2,1,1.2,0,0,1.2,0.4,4,3,0,1,0,0,2,1,x,\"Pattern work, \"\"short field\"\"\"\r\n2026-10-01,N3429J,P28A,KUGN KRFD,1.5,1.3,0,1.5,1.5,0,0,2,0,1,1,48,48,0,0,,\r\n2026-10-20,N3429J,,,1.5,0,0,1.5,1.5,0,0,2,0,0,1,48,48,0,0,,\"Line one\nline two\"\r\n"
     },
     {
       "entries": [
@@ -97,13 +109,13 @@
           "tracking": null
         }
       ],
-      "csv": "Date,AircraftID,TypeCode,Route,TotalTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments\r\n2026-10-25,N3429J,P28A,C81 KUGN,0.8,0,0,,,0,1,0,,11,,0,0,,\" Gusty crosswind \"\r\n"
+      "csv": "Date,AircraftID,TypeCode,Route,TotalTime,AirTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,TouchAndGoes,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments\r\n2026-10-25,N3429J,P28A,C81 KUGN,0.8,,0,0,,,0,1,0,,,11,,0,0,,\" Gusty crosswind \"\r\n"
     }
   ],
   "import": [
     {
       "name": "this logbook's own file, read back",
-      "text": "Date,AircraftID,TypeCode,Route,TotalTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments\r\n2026-09-12,N12345,C172,KUGN,1.2,1.2,0,0,1.2,0.4,4,3,1,0,0,2,1,x,\"Pattern work, \"\"short field\"\"\"\r\n2026-10-01,N3429J,P28A,KUGN KRFD,1.5,0,1.5,1.5,0,0,2,0,1,48,48,0,0,,\r\n2026-10-20,N3429J,,,1.5,0,1.5,1.5,0,0,2,0,1,48,48,0,0,,\"Line one\nline two\"\r\n",
+      "text": "Date,AircraftID,TypeCode,Route,TotalTime,AirTime,Night,CrossCountry,Solo,DualReceived,Instrument,AllLandings,NightLandingsFullStop,TouchAndGoes,ToweredLandings,Distance,LongestLeg,Approaches,Holds,Tracking,PilotComments\r\n2026-09-12,N12345,C172,KUGN,1.2,1,1.2,0,0,1.2,0.4,4,3,0,1,0,0,2,1,x,\"Pattern work, \"\"short field\"\"\"\r\n2026-10-01,N3429J,P28A,KUGN KRFD,1.5,1.3,0,1.5,1.5,0,0,2,0,1,1,48,48,0,0,,\r\n2026-10-20,N3429J,,,1.5,0,0,1.5,1.5,0,0,2,0,0,1,48,48,0,0,,\"Line one\nline two\"\r\n",
       "entries": [
         {
           "flownOn": "2026-09-12",
@@ -124,7 +136,11 @@
           "longestLegNm": 0,
           "approaches": 2,
           "holding": true,
-          "tracking": true
+          "tracking": true,
+          "airHours": 1,
+          "touchAndGoes": 0,
+          "fromTrack": false,
+          "flightId": null
         },
         {
           "flownOn": "2026-10-01",
@@ -145,7 +161,11 @@
           "longestLegNm": 48,
           "approaches": 0,
           "holding": false,
-          "tracking": false
+          "tracking": false,
+          "airHours": 1.3,
+          "touchAndGoes": 1,
+          "fromTrack": false,
+          "flightId": null
         },
         {
           "flownOn": "2026-10-20",
@@ -166,7 +186,11 @@
           "longestLegNm": 48,
           "approaches": 0,
           "holding": false,
-          "tracking": false
+          "tracking": false,
+          "airHours": 0,
+          "touchAndGoes": 0,
+          "fromTrack": false,
+          "flightId": null
         }
       ],
       "skipped": []
@@ -194,7 +218,11 @@
           "longestLegNm": 0,
           "approaches": 3,
           "holding": true,
-          "tracking": false
+          "tracking": false,
+          "airHours": 0,
+          "touchAndGoes": 0,
+          "fromTrack": false,
+          "flightId": null
         },
         {
           "flownOn": "2026-08-09",
@@ -215,7 +243,11 @@
           "longestLegNm": 0,
           "approaches": 0,
           "holding": false,
-          "tracking": false
+          "tracking": false,
+          "airHours": 0,
+          "touchAndGoes": 0,
+          "fromTrack": false,
+          "flightId": null
         },
         {
           "flownOn": "2026-08-11",
@@ -236,7 +268,11 @@
           "longestLegNm": 0,
           "approaches": 0,
           "holding": false,
-          "tracking": false
+          "tracking": false,
+          "airHours": 0,
+          "touchAndGoes": 0,
+          "fromTrack": false,
+          "flightId": null
         }
       ],
       "skipped": [
@@ -249,6 +285,63 @@
           "reason": "31.5 hours is more than a day: a summary entry, to log as its flights"
         }
       ]
+    },
+    {
+      "name": "ForeFlight's wheels off and on as the air time, past midnight; its landings not to a full stop as touch-and-goes",
+      "text": "Date,AircraftID,TotalTime,TimeOff,TimeOn,DayLandingsFullStop,NightLandingsFullStop,AllLandings\r\n2026-07-04,N3429J,1.6,2350,0115,1,1,4\r\n2026-07-05,N3429J,1.0,,,1,0,\r\n",
+      "entries": [
+        {
+          "aircraft": "N3429J",
+          "aircraftType": null,
+          "route": null,
+          "nightHours": 0,
+          "crossCountryHours": 0,
+          "remarks": null,
+          "dualHours": 0,
+          "soloHours": 0,
+          "instrumentHours": 0,
+          "toweredLandings": 0,
+          "distanceNm": 0,
+          "longestLegNm": 0,
+          "approaches": 0,
+          "holding": false,
+          "tracking": false,
+          "fromTrack": false,
+          "flightId": null,
+          "flownOn": "2026-07-04",
+          "totalHours": 1.6,
+          "dayLandings": 3,
+          "nightLandings": 1,
+          "airHours": 1.4,
+          "touchAndGoes": 2
+        },
+        {
+          "aircraft": "N3429J",
+          "aircraftType": null,
+          "route": null,
+          "nightHours": 0,
+          "crossCountryHours": 0,
+          "remarks": null,
+          "dualHours": 0,
+          "soloHours": 0,
+          "instrumentHours": 0,
+          "toweredLandings": 0,
+          "distanceNm": 0,
+          "longestLegNm": 0,
+          "approaches": 0,
+          "holding": false,
+          "tracking": false,
+          "fromTrack": false,
+          "flightId": null,
+          "flownOn": "2026-07-05",
+          "totalHours": 1,
+          "dayLandings": 1,
+          "nightLandings": 0,
+          "airHours": 0,
+          "touchAndGoes": 0
+        }
+      ],
+      "skipped": []
     },
     {
       "name": "a byte-order mark, quoted commas and doubled quotes, a US date",
@@ -273,7 +366,11 @@
           "longestLegNm": 0,
           "approaches": 1,
           "holding": false,
-          "tracking": true
+          "tracking": true,
+          "airHours": 0,
+          "touchAndGoes": 0,
+          "fromTrack": false,
+          "flightId": null
         },
         {
           "flownOn": "2026-01-03",
@@ -294,7 +391,11 @@
           "longestLegNm": 0,
           "approaches": 0,
           "holding": false,
-          "tracking": false
+          "tracking": false,
+          "airHours": 0,
+          "touchAndGoes": 0,
+          "fromTrack": false,
+          "flightId": null
         }
       ],
       "skipped": []

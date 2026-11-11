@@ -1,0 +1,48 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The PIREPs still told (the last 90 minutes, at or under 18,000 ft) in a box, the urgent last.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PirepsInBoxInput",
+      "type": "object",
+      "properties": {
+        "reports": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "box": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4,
+          "description": "[south, west, north, east]"
+        },
+        "now": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "reports",
+        "box",
+        "now"
+      ]
+    },
+    "answer": {
+      "title": "PirepsInBoxAnswer",
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

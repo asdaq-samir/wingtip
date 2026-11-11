@@ -6,7 +6,11 @@ describe("the variation at a point (WMM-2025)", () => {
     // The rows services/planner/tests_wingtip/test_magnetic.py holds wingtip.magnetic to: the same
     // model, so the ruler's courses and the nav log's agree.
     const at = await loadDeclination(new Date("2026-09-21T12:00:00Z"));
-    for (const [lat, lon, noaa] of [[44.58, -90.14, -2.55629], [42.33, -88.08, -3.89582], [43.02, -89.0, -3.274]] as const) {
+    for (const [lat, lon, noaa] of [
+      [44.58, -90.14, -2.55629],
+      [42.33, -88.08, -3.89582],
+      [43.02, -89.0, -3.274],
+    ] as const) {
       expect(at(lat, lon)).toBeCloseTo(noaa, 1);
     }
   });

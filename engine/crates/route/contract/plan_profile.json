@@ -1,0 +1,84 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "The plan's altitudes along the route, from the nav log's rows: climbs, levels, descents at three to one.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PlanProfileInput",
+      "type": "object",
+      "properties": {
+        "rows": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogRow"
+          }
+        }
+      },
+      "required": [
+        "rows"
+      ]
+    },
+    "answer": {
+      "title": "PlanProfileAnswer",
+      "type": "object",
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "along_nm": {
+                "type": "number"
+              },
+              "plan_ft": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "along_nm",
+              "plan_ft"
+            ]
+          }
+        },
+        "marks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "kind": {
+                "enum": [
+                  "TOC",
+                  "TOD"
+                ]
+              },
+              "along_nm": {
+                "type": "number"
+              },
+              "plan_ft": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kind",
+              "along_nm",
+              "plan_ft"
+            ]
+          }
+        },
+        "length_nm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "points",
+        "marks",
+        "length_nm"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

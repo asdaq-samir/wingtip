@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A field's fuel codes (NASR's) as names.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FuelNamesInput",
+      "type": "object",
+      "properties": {
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "types"
+      ]
+    },
+    "answer": {
+      "title": "FuelNamesAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

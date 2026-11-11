@@ -6,7 +6,7 @@ import InputGuide from "./InputGuide";
 import { FieldError } from "./ui/field";
 import { inputLevel, lostWords, useAtcRadio } from "../lib/atcRadio";
 import { canPickInput, find, hold, isOutside, matchInput, pick, refresh, useInputs } from "../lib/audioInput";
-import { canListen } from "../lib/listen";
+import { useCanListen } from "../lib/speechLocal";
 import { usePreferences } from "../lib/preferences";
 import { TEXT } from "../lib/text";
 
@@ -24,7 +24,9 @@ function useSoundArriving(on: boolean): boolean | null {
   useEffect(() => {
     if (!on) return;
     let peak = 0;
-    const off = inputLevel.listen(level => { if (level !== null) peak = Math.max(peak, level); });
+    const off = inputLevel.listen((level) => {
+      if (level !== null) peak = Math.max(peak, level);
+    });
     const every = setInterval(() => {
       setArriving(peak > SOUND);
       peak = 0;
@@ -56,16 +58,16 @@ function useSoundArriving(on: boolean): boolean | null {
  * audioInput's canPickInput): not in the apps, not on Chrome for Android.
  */
 export default function ListenThrough() {
-  const found = useInputs(s => s.found);
-  const inputs = useInputs(s => s.inputs);
-  const chosen = useInputs(s => s.chosen);
-  const problem = useInputs(s => s.problem);
-  const input = useAtcRadio(s => s.input);
+  const found = useInputs((s) => s.found);
+  const inputs = useInputs((s) => s.inputs);
+  const chosen = useInputs((s) => s.chosen);
+  const problem = useInputs((s) => s.problem);
+  const input = useAtcRadio((s) => s.input);
   // A recognizer is listening -- the radio, the microphone or the ATIS --
   // so the input is heard, not only held.
-  const hearing = useAtcRadio(s => s.listening || !!s.atisStop);
-  const kept = usePreferences(s => s.listenInput);
-  const shown = canListen() && canPickInput();
+  const hearing = useAtcRadio((s) => s.listening || !!s.atisStop);
+  const kept = usePreferences((s) => s.listenInput);
+  const shown = useCanListen() && canPickInput();
   const arriving = useSoundArriving(shown && !!input && !input.lost && !input.paused);
   // The card's hold: what it opens stays open while the card is, and is
   // let go with it unless the radio is still being listened to.
@@ -78,15 +80,13 @@ export default function ListenThrough() {
   if (!shown) return null;
   // While the input chosen is not heard, none is shown as chosen, so it
   // can be chosen again.
-  const value = input?.lost ? "" : chosen ?? matchInput(inputs, kept)?.id ?? "";
+  const value = input?.lost ? "" : (chosen ?? matchInput(inputs, kept)?.id ?? "");
   const remembered = kept && isOutside(kept.label) ? kept.label : null;
   const lost = input?.lost ? lostWords(input) : null;
-  // What the input chosen brings (InputGuide, lib/audioGear): the one
+  // What the input chosen brings (InputGuide, components/audioGear): the one
   // heard, or before listening the one picked or remembered -- not one
   // lost, whose words say what is heard instead.
-  const guideLabel = input
-    ? (input.lost ? null : input.label)
-    : inputs.find(i => i.id === value)?.label ?? remembered;
+  const guideLabel = input ? (input.lost ? null : input.label) : (inputs.find((i) => i.id === value)?.label ?? remembered);
   return (
     // Twelve points over the first line and four under it, so its controls'
     // 44-point areas (index.css's pseudo-element, eleven or twelve over and
@@ -100,18 +100,25 @@ export default function ListenThrough() {
       <div className="flex min-w-0">
         {found ? (
           <PullDown
-            label="Listen through" value={value} align="start" placeholder="Choose" testId="listen-input"
-            options={inputs.map(i => ({ value: i.id, label: i.label, testId: "listen-input-option" }))}
-            onChange={id => void pick(id)}
+            label="Listen through"
+            value={value}
+            align="start"
+            placeholder="Choose"
+            testId="listen-input"
+            options={inputs.map((i) => ({ value: i.id, label: i.label, testId: "listen-input-option" }))}
+            onChange={(id) => void pick(id)}
           />
         ) : (
           // Its 44-point area a pseudo-element round the words, as the
           // pull-down's that takes its place.
           <button
-            type="button" onClick={() => void find()} data-testid="listen-find"
+            type="button"
+            onClick={() => void find()}
+            data-testid="listen-find"
             className={cn(
               "relative inline-flex min-w-0 rounded-sm text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              "after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-['']", TEXT.row,
+              "after:absolute after:-inset-x-2 after:-inset-y-[11px] after:content-['']",
+              TEXT.row,
             )}
           >
             {/* Cut short inside, not the button itself, which would clip
@@ -143,9 +150,17 @@ export default function ListenThrough() {
           <InputGuide label={guideLabel} />
         </div>
       )}
-      {problem
-        ? <FieldError className="col-span-2" data-testid="listen-problem">{problem}</FieldError>
-        : lost && <p className="col-span-2 text-caution-ink" data-testid="listen-problem">{lost}</p>}
+      {problem ? (
+        <FieldError className="col-span-2" data-testid="listen-problem">
+          {problem}
+        </FieldError>
+      ) : (
+        lost && (
+          <p className="col-span-2 text-caution-ink" data-testid="listen-problem">
+            {lost}
+          </p>
+        )
+      )}
     </div>
   );
 }

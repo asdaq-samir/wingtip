@@ -8,8 +8,12 @@ held on disk), so a route already planned asks nothing new of the USGS.
 The airspace is each Class B, C and D the hops' lines pass through: where
 along the route it begins and ends, its floor and its ceiling, and the
 airport it is drawn round (its ident, as the route's are), for the page
-to name it on the side view.
+to name it on the side view. The obstacles are the FAA's Digital
+Obstacle File's (DOF.DAT) within PROFILE_OBSTACLE_NM of each hop's line,
+each at its height above sea level where it stands along the route, for
+the profile's clearance colouring (the engine's profile_clearance).
 """
+
 from itertools import pairwise
 
 from shapely.geometry import LineString
@@ -17,10 +21,32 @@ from shapely.geometry import LineString
 from functools import lru_cache
 
 from . import airports as airports_module
-from . import elevation, geo
+from . import elevation, faa_data, geo
 from .airspace import load_controlled_airspace
 from .terrain import SAMPLE_INTERVAL_NM, _route_sample_points
 from .units import M_TO_FT
+
+
+#: How far off each hop's line an obstacle is drawn on the side view: a
+#: display choice, a nautical mile either side, not a rule -- the legal
+#: margins over obstacles are 14 CFR 91.119's (a 2,000 ft radius over a
+#: congested area) and 91.177's 4 nm under IFR, which the planner's floors
+#: keep with their own wider read (wingtip.terrain's OBSTACLE_READ_NM).
+PROFILE_OBSTACLE_NM = 1.0
+
+
+def _obstacles_along(start: tuple, end: tuple, length: float, offset: float, dof_path) -> list[dict]:
+    """The DOF's obstacles within PROFILE_OBSTACLE_NM of one hop's line,
+    where along the route each is and its height above sea level."""
+    found = faa_data.load_obstacles(dof_path, geo.corridor_bbox(start, end, buffer_nm=PROFILE_OBSTACLE_NM), min_agl_ft=0)
+    if not len(found):
+        return []
+    cross, along = geo.track_distances_nm(found["lat"].to_numpy(dtype=float), found["lon"].to_numpy(dtype=float), start, end)
+    return [
+        {"along_nm": round(offset + float(a), 2), "amsl_ft": float(ft)}
+        for c, a, ft in zip(cross, along, found["amsl_ft"].to_numpy(dtype=float))
+        if abs(c) <= PROFILE_OBSTACLE_NM and 0.0 <= a <= length
+    ]
 
 
 def _along(point: tuple, start: tuple, end: tuple, length_nm: float) -> float:
@@ -48,13 +74,15 @@ def _airport_ident(faa_ident: str, bounds: tuple) -> str:
     return ""
 
 
-def route_profile(path: list, shp_path) -> dict:
+def route_profile(path: list, shp_path, dof_path=None) -> dict:
     """The ground and the airspace along a route through `path` [(lat,
     lon)], its airports in order: {"length_nm", "terrain": [{"along_nm",
     "ground_ft"}], "airspace": [{"name", "class", "from_nm", "to_nm",
-    "floor_ft", "ceiling_ft", "ident"}]}, distances from the departure, hop after
-    hop, the airspace in the order it is reached."""
-    terrain, airspace, offset = [], [], 0.0
+    "floor_ft", "ceiling_ft", "ident"}], "obstacles": [{"along_nm",
+    "amsl_ft"}]}, distances from the departure, hop after hop, the airspace
+    in the order it is reached; obstacles from `dof_path` (DOF.DAT) where
+    given."""
+    terrain, airspace, obstacles, offset = [], [], [], 0.0
     for start, end in pairwise(path):
         length = geo.distance_nm(*start, *end)
         points = _route_sample_points(start, end, SAMPLE_INTERVAL_NM)
@@ -63,7 +91,7 @@ def route_profile(path: list, shp_path) -> dict:
         terrain.extend(
             {"along_nm": round(offset + i * spacing, 2), "ground_ft": round(elevations[p] * M_TO_FT)}
             for i, p in enumerate(points)
-            if not (terrain and i == 0)        # a stop's sample once, not twice
+            if not (terrain and i == 0)  # a stop's sample once, not twice
         )
         line = LineString([(start[1], start[0]), (end[1], end[0])])
         for polygon in load_controlled_airspace(shp_path, geo.corridor_bbox(start, end, buffer_nm=2.0)):
@@ -74,15 +102,23 @@ def route_profile(path: list, shp_path) -> dict:
                 ends = sorted(_along(c, start, end, length) for c in (part.coords[0], part.coords[-1]))
                 if ends[1] - ends[0] < 0.05:
                     continue
-                airspace.append({
-                    "name": polygon["name"], "class": polygon["class"],
-                    "ident": _airport_ident(polygon.get("ident", ""), tuple(polygon["geometry"].bounds)),
-                    "from_nm": round(offset + ends[0], 2), "to_nm": round(offset + ends[1], 2),
-                    "floor_ft": polygon["floor_ft_msl"], "ceiling_ft": polygon.get("ceiling_ft_msl"),
-                })
+                airspace.append(
+                    {
+                        "name": polygon["name"],
+                        "class": polygon["class"],
+                        "ident": _airport_ident(polygon.get("ident", ""), tuple(polygon["geometry"].bounds)),
+                        "from_nm": round(offset + ends[0], 2),
+                        "to_nm": round(offset + ends[1], 2),
+                        "floor_ft": polygon["floor_ft_msl"],
+                        "ceiling_ft": polygon.get("ceiling_ft_msl"),
+                    }
+                )
+        if dof_path is not None:
+            obstacles.extend(_obstacles_along(start, end, length, offset, dof_path))
         offset += length
     return {
         "length_nm": round(offset, 1),
         "terrain": terrain,
         "airspace": sorted(airspace, key=lambda a: (a["from_nm"], a["floor_ft"])),
+        "obstacles": sorted(obstacles, key=lambda o: o["along_nm"]),
     }

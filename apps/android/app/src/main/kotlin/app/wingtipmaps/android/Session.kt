@@ -1,10 +1,17 @@
 package app.wingtipmaps.android
 
+import android.app.Application
+import android.content.Context
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Pilot
+import app.wingtipmaps.android.api.Problems
+import app.wingtipmaps.android.api.deleteAccount
+import app.wingtipmaps.android.checklist.ChecklistStore
+import app.wingtipmaps.android.plan.KeptPlan
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +36,12 @@ class Session : ViewModel() {
     private val _problem = MutableStateFlow<String?>(null)
     val problem: StateFlow<String?> = _problem.asStateFlow()
 
+    /** Whether the problem is the account's own check failing, which Try
+     *  Again asks again ([refresh]); a link or a deletion is asked again
+     *  by its own button. */
+    private val _checkFailed = MutableStateFlow(false)
+    val checkFailed: StateFlow<Boolean> = _checkFailed.asStateFlow()
+
     /** A sign-in link has been asked for and the gateway took the ask. */
     private val _linkSent = MutableStateFlow(false)
     val linkSent: StateFlow<Boolean> = _linkSent.asStateFlow()
@@ -46,13 +59,18 @@ class Session : ViewModel() {
         try {
             _pilot.value = Gateway.me()
             _problem.value = null
+            _checkFailed.value = false
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             // Offline, or the gateway down: the last answer stands, and the
             // chart is still the pilot's from its cache.
-            _problem.value = e.message ?: "The gateway could not be reached."
+            _problem.value = Problems.say("Your account could not be checked", e)
+            _checkFailed.value = true
         }
+        // Whether the server's Claude features are this pilot's, asked with
+        // every sign-in change: DEVELOPERS depends on who it is (ClaudeGate).
+        ClaudeGate.refresh(_pilot.value?.developer == true)
         _loaded.value = true
     }
 
@@ -65,7 +83,7 @@ class Session : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _problem.value = "The link could not be sent: ${e.message}"
+                _problem.value = Problems.say("The link could not be sent", e)
                 _linkSent.value = false
             }
         }
@@ -83,18 +101,60 @@ class Session : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _problem.value = "The sign-in link did not work: ${e.message}"
+                _problem.value = Problems.say("The sign-in link did not work", e)
             }
         }
     }
 
-    /** Signing out ends the session on the gateway (the owner's pick:
-     *  sign-out clears, as the web app's useLogout does). */
-    fun signOut() {
+    /** Signing out ends the session on the gateway and forgets what the
+     *  phone kept of the pilot's, their airplanes' checklists and their
+     *  plan kept for the next launch (the owner's pick: sign-out clears, as
+     *  the web app's useLogout does). The public aviation data kept for the
+     *  air -- the fields' cards, the NOTAMs, the weather (KeptForAir) -- is
+     *  not the pilot's, and stays. */
+    fun signOut(context: Context) {
+        val checklists = ChecklistStore.of(context.applicationContext)
+        val plan = KeptPlan(context.applicationContext as Application)
         viewModelScope.launch {
             runCatching { Gateway.signOut() }
-            _pilot.value = null
-            _linkSent.value = false
+            forget(checklists)
+            plan.clear()
+            ClaudeGate.refresh(developer = false)
         }
+    }
+
+    /** The account being deleted: the button waits while it is. */
+    private val _deleting = MutableStateFlow(false)
+    val deleting: StateFlow<Boolean> = _deleting.asStateFlow()
+
+    /** The account deleted on the gateway, which signs out every device,
+     *  then this phone forgets the pilot as signing out does. Where the
+     *  gateway refuses (nothing deleted), the pilot stays signed in and
+     *  its words are the problem shown under the account. */
+    fun deleteAccount(context: Context) {
+        val checklists = ChecklistStore.of(context.applicationContext)
+        val plan = KeptPlan(context.applicationContext as Application)
+        viewModelScope.launch {
+            _deleting.value = true
+            try {
+                Gateway.deleteAccount()
+                _problem.value = null
+                forget(checklists)
+                plan.clear()
+                ClaudeGate.refresh(developer = false)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _problem.value = Problems.say("The account could not be deleted", e)
+            } finally {
+                _deleting.value = false
+            }
+        }
+    }
+
+    private fun forget(checklists: ChecklistStore) {
+        _pilot.value = null
+        _linkSent.value = false
+        checklists.forgetAll()
     }
 }

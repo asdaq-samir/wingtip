@@ -14,7 +14,7 @@ import SwiftUI
 struct ClearanceSheet: View {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.look) private var look
     private var listener: ClearanceListener { ClearanceListener.shared }
     /// The words read: the newest transmission settled while listening,
     /// until the pilot picks one from the log or types.
@@ -32,6 +32,9 @@ struct ClearanceSheet: View {
     /// next one settled is the read back, not a new clearance.
     @State private var readbackAfter = -1
     @State private var transcriptOpen = false
+    @State private var askingCancel = false
+    /// Words heard or typed, or a read back: Cancel asks before they go.
+    private var edited: Bool { !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !readback.isEmpty }
 
     /// The route's ends and the pilot's position, to look near.
     private var nearPoints: [(Double, Double)] {
@@ -48,11 +51,13 @@ struct ClearanceSheet: View {
         nearPoints.map { String(format: "%.4f,%.4f", $0.0, $0.1) }.joined(separator: ";")
     }
 
-    private var clearance: Clearance { Clearance.read(text) }
+    /// The clearance as read; a refusal is said under the steps.
+    private var reading: Result<Clearance, any Error> { Result { try Clearance.read(text) } }
+    private var clearance: Clearance { (try? reading.get()) ?? Clearance() }
 
     private var wantsPlaces: Bool {
         let asked = clearance.asked(near: "", dep: "", dest: "")
-        return asked.limit != nil || !asked.route.isEmpty || asked.departure != nil || asked.arrival != nil
+        return asked.limit != nil || !(asked.route ?? []).isEmpty || asked.departure != nil || asked.arrival != nil
     }
 
     private var ready: Bool {
@@ -61,68 +66,29 @@ struct ClearanceSheet: View {
 
     /// The route the clearance gives from the one planned, once its
     /// places are found.
+    /// The route as planned where the engine cannot answer, and why in
+    /// `engineProblem`.
+    private var clearing: Result<(dep: String, stops: [String], dest: String, typed: [Clearance.Typed]), any Error> {
+        Result { try Clearance.clearedRoute(text, found ?? ClearancePlaces(), dep: plan.dep, stops: plan.stops, dest: plan.dest) }
+    }
     private var cleared: (dep: String, stops: [String], dest: String, typed: [Clearance.Typed]) {
-        Clearance.clearedRoute(text, found ?? ClearancePlaces(), dep: plan.dep, stops: plan.stops, dest: plan.dest)
+        (try? clearing.get()) ?? (plan.dep, plan.stops, plan.dest, [])
     }
 
-    private var check: ReadbackCheck? {
-        readback.isEmpty ? nil : ReadbackCheck.check(cleared: text, said: readback)
+    private var checking: Result<ReadbackCheck, any Error>? {
+        readback.isEmpty ? nil : Result { try ReadbackCheck.check(cleared: text, said: readback) }
     }
+    private var check: ReadbackCheck? { try? checking?.get() }
 
-    private static func altitude(_ ft: Int) -> String {
-        // AIM 4-2-9: feet below 18,000, a flight level from there up.
-        ft >= 18_000 ? "FL\(ft / 100)" : "\(ft.formatted()) ft"
-    }
-
-    private func placeText(_ place: ClearancePlaces.Place) -> Text {
-        guard let ident = place.ident else { return Text("“\(place.said)”?").foregroundStyle(.red) }
-        return place.sure == true ? Text(ident) : Text("\(ident)?").foregroundStyle(.orange)
-    }
-
-    private var routeText: Text {
-        var parts: [Text] = []
-        var run = 0
-        for item in clearance.route {
-            switch item.kind {
-            case "vectors": parts.append(Text("Radar vectors"))
-            case "heading": parts.append(Text(String(format: "Heading %03d", item.degrees ?? 0)))
-            case "airway": parts.append(Text(item.ident ?? ""))
-            case "places":
-                let places = found.flatMap { $0.route.flatMap { run < $0.count ? $0[run] : nil } }
-                    ?? [ClearancePlaces.Place(said: item.said ?? "", ident: item.said?.uppercased(), sure: true)]
-                parts += places.map(placeText)
-                run += 1
-            default:
-                let picked = item.kind == "departure" ? found?.departure : found?.arrival
-                parts.append(Text(picked.map { $0.id + ($0.transition.map { ".\($0)" } ?? "") }
-                    ?? "\((item.name ?? "").capitalized) \(item.number ?? "") \(item.kind)"))
-            }
-        }
-        if clearance.asFiled { parts.append(Text("as filed")) }
-        return parts.enumerated().reduce(Text("")) { all, part in part.offset == 0 ? part.element : all + Text(" → ") + part.element }
-    }
-
-    /// The altitudes in one line: "Maintain 5,000 ft, expect 9,000 ft 10
-    /// min after departure".
-    private var altitudeWords: String? {
-        var parts: [String] = []
-        if let ft = clearance.maintainFt {
-            parts.append("Maintain " + (clearance.vfr ? "VFR " : "") + (clearance.maintainLimit.map { "\($0) " } ?? "") + Self.altitude(ft))
-        }
-        if let ft = clearance.expectFt {
-            parts.append("expect " + Self.altitude(ft) + (clearance.expectMin.map { " \($0) min after departure" } ?? ""))
-        }
-        guard !parts.isEmpty else { return nil }
-        let line = parts.joined(separator: ", ")
-        return line.prefix(1).uppercased() + line.dropFirst()
-    }
-
-    /// The same for VoiceOver, each altitude in words (SpokenFigures).
-    private var altitudeSpoken: String {
-        var parts: [String] = []
-        if let ft = clearance.maintainFt { parts.append("maintain " + (clearance.vfr ? "VFR " : "") + (clearance.maintainLimit.map { "\($0) " } ?? "") + SpokenFigures.feet(Double(ft))) }
-        if let ft = clearance.expectFt { parts.append("expect " + SpokenFigures.feet(Double(ft)) + (clearance.expectMin.map { " \(SpokenFigures.minutes(Double($0))) after departure" } ?? "")) }
-        return parts.joined(separator: ", ")
+    /// What the engine could not read of the clearance, the route it gives
+    /// or the read back, said beside the listener's own problems.
+    private var engineProblem: String? {
+        let failures: [(String, (any Error)?)] = [
+            ("The clearance", { if case .failure(let e) = reading { e } else { nil } }()),
+            ("The route it gives", { if case .failure(let e) = clearing { e } else { nil } }()),
+            ("The read back", { if case .failure(let e)? = checking { e } else { nil } }()),
+        ]
+        return failures.compactMap { what, e in e.map { "\(what) couldn't be read: \($0.localizedDescription)" } }.first
     }
 
     /// When the clearance shown was heard, where it came off the radio.
@@ -130,232 +96,140 @@ struct ClearanceSheet: View {
         listener.heard.last { $0.final && $0.text == text }?.at
     }
 
-    /// Where each of the four parts stands.
-    private enum Standing { case done, now, later }
-
-    private var parts: [(name: String, standing: Standing)] {
-        let heard = clearance.heardAny
-        let readBack = heard && !readback.isEmpty
-        return [
-            ("Hear", heard ? .done : .now),
-            ("Read back", readBack ? .done : (heard ? .now : .later)),
-            ("Enter", readBack && ready ? .now : .later),
-            ("Compare", ready ? .done : .later),
-        ]
-    }
-
     var body: some View {
         let clearance = clearance
-        NavigationStack {
-            Form {
-                Section {
-                    stepsRow
-                    if !clearance.heardAny {
-                        heardField
-                    }
-                    if let problem = listener.problem ?? lookupProblem {
-                        Text(problem).font(.footnote).foregroundStyle(.red)
-                    }
-                } header: {
-                    // The flight the clearance is for, as the canvas heads it.
-                    Text([plan.dep.isEmpty ? nil : "\(plan.dep) → \(plan.dest)", "IFR", plan.tail].compactMap { $0 }.joined(separator: " · "))
+        Form {
+            Section {
+                ClearanceStepsRow(heard: clearance.heardAny, readBack: !readback.isEmpty, ready: ready)
+                if !clearance.heardAny {
+                    heardField
                 }
-                if clearance.heardAny {
-                    // No Play: the listener keeps the words, not the sound.
-                    Section {
-                        if clearance.classB {
-                            craft("Cleared to", Text("Class Bravo airspace"), spoken: "Class Bravo airspace")
-                        } else if let limit = clearance.limit {
-                            craft("Cleared to", found?.limit.map(placeText) ?? Text(limit.capitalized), spoken: found?.limit?.name ?? limit)
-                        }
-                        if !clearance.route.isEmpty || clearance.asFiled {
-                            craft("Route", routeText, spoken: nil)
-                        }
-                        if let altitudeWords {
-                            craft("Altitude", Text(altitudeWords), spoken: altitudeSpoken)
-                        }
-                        if let frequency = clearance.frequency {
-                            craft("Frequency", Text("\(clearance.facility?.capitalized ?? "") \(frequency)".trimmingCharacters(in: .whitespaces)),
-                                  spoken: "\(clearance.facility ?? "") \(SpokenFigures.digits(frequency))")
-                        }
-                        if let squawk = clearance.squawk {
-                            craft("Transponder", Text(squawk), spoken: SpokenFigures.digits(squawk))
-                        }
-                    } header: {
-                        Text(heardAt.map { "Heard \(Formats.time($0))" } ?? "Heard")
-                    }
-                    Section("Your read back") {
-                        if readback.isEmpty {
-                            Text(readingBack ? "Listening for your read back…"
-                                 : "Read it back to ATC with Read back again, and it is checked here line by line.")
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Text("“\(readback)”").foregroundStyle(.secondary)
-                            if let check {
-                                ForEach(ReadbackCheck.lines(clearance, check)) { line in
-                                    Label {
-                                        Text(line.words)
-                                    } icon: {
-                                        Image(systemName: line.ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                            .foregroundStyle(line.ok ? Color.green : Color.orange)
-                                            .accessibilityLabel(line.ok ? "Read back" : "Differs")
-                                    }
-                                    .accessibilityElement(children: .combine)
-                                }
-                            } else {
-                                Text("The read back could not be checked.").foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    if ready {
-                        let cleared = cleared
-                        let difference = ClearanceCompare.describe(plannedStops: plan.stops, plannedDest: plan.dest,
-                                                                   clearedStops: cleared.stops, clearedDest: cleared.dest, typed: cleared.typed)
-                        Section {
-                            Label {
-                                difference.same ? Text(difference.words)
-                                    : Text("Differs from what you filed: ").bold() + Text(difference.words)
-                            } icon: {
-                                Image(systemName: difference.same ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                    .foregroundStyle(difference.same ? Color.green : Color.orange)
-                                    .accessibilityLabel(difference.same ? "As filed" : "Differs")
-                            }
-                            .accessibilityElement(children: .combine)
-                        }
-                        .listRowBackground(difference.same ? nil : Color.orange.opacity(0.12))
-                    }
-                    Section {
-                        HStack(spacing: 10) {
-                            Button("Enter the route") { enter() }
-                                .buttonStyle(.borderedProminent)
-                                .disabled(!ready)
-                            Button("Read back again") { readBackAgain() }
-                                .buttonStyle(.bordered)
-                        }
-                        .controlSize(.large)
-                        .frame(maxWidth: .infinity)
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets())
-                    } footer: {
-                        Text("The words are the engine's reading of what was heard (AIM 4-4-3); nothing enters the plan until you tap Enter.")
-                    }
-                    Section {
-                        DisclosureGroup("Transcript", isExpanded: $transcriptOpen) {
-                            heardField
-                            TextField("Your read back, as said", text: $readback, axis: .vertical)
-                                .lineLimit(2...6)
-                            heardLog
-                        }
-                    }
-                } else {
-                    Section { heardLog }
+                if let problem = listener.problem ?? lookupProblem ?? engineProblem {
+                    ProblemLine(problem)
                 }
+            } header: {
+                // The flight the clearance is for, as the canvas heads it.
+                Text([plan.dep.isEmpty ? nil : "\(plan.dep) → \(plan.dest)", "IFR", plan.tail].compactMap { $0 }.joined(separator: " · "))
             }
-            .navigationTitle("Clearance")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    // Listening goes on with the sheet put away: the
-                    // captions over the map carry it, and Stop ends it.
-                    Button("Close") { dismiss() }
+            if clearance.heardAny {
+                ClearanceCraftSection(clearance: clearance, found: found, heardAt: heardAt)
+                ClearanceReadbackSection(clearance: clearance, readback: readback, readingBack: readingBack, check: check)
+                if ready {
+                    let cleared = cleared
+                    let difference = ClearanceCompare.describe(plannedStops: plan.stops, plannedDest: plan.dest,
+                                                               clearedStops: cleared.stops, clearedDest: cleared.dest, typed: cleared.typed)
+                    ClearanceCompareSection(difference: difference)
                 }
+                Section {
+                    HStack(spacing: WingtipSpace.md) {
+                        Button("Enter the route") { enter() }
+                            .glassProminentButton()
+                            .disabled(!ready)
+                        if listener.canListen { Button("Read back again") { readBackAgain() }.glassButton() }
+                    }
+                    .controlSize(.large)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets())
+                }
+                Section {
+                    DisclosureGroup("Transcript", isExpanded: $transcriptOpen) {
+                        heardField
+                        TextField("Your read back, as said", text: $readback, axis: .vertical)
+                            .lineLimit(2...6)
+                        heardLog
+                    }
+                }
+            } else {
+                Section { heardLog }
+            }
+        }
+        .navigationTitle("Clearance")
+        .navigationBarTitleDisplayMode(.inline)
+        // A swipe down asks through Cancel once something is heard or typed.
+        .formGuard(edited: edited)
+        .toolbar {
+            // Cancel throws away what was heard here, the plan untouched
+            // (HIG Sheets: Cancel leading, Done trailing); listening goes
+            // on with the sheet put away: the captions over the map carry
+            // it, and Stop ends it.
+            FormCancel(edited: edited, cancel: { Navigator.shared.finish(.clearance) }, asking: $askingCancel)
+            // Done enters the route, as Enter the route does: nothing
+            // heard reaches the plan before one of them.
+            ToolbarItem(placement: .confirmationAction) { Button("Done") { enter() }.disabled(!ready) }
+            if listener.canListen { // speech recognised on the iPhone, else no Listen or Read back: typed
                 ToolbarItem(placement: .bottomBar) {
                     Button {
                         if listener.listening { listener.stop() } else { following = true; Task { await listener.start(words: words) } }
                     } label: {
-                        Label(listener.listening ? "Stop" : "Listen", systemImage: listener.listening ? "stop.circle.fill" : "mic.fill")
+                        Label(listener.listening ? "Stop" : "Listen", systemImage: listener.listening ? "stop.circle.fill" : WingtipIcon.radio)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .glassProminentButton()
                 }
             }
-            .task {
-                words = (try? await Planner.clearanceWords(near: near, dep: plan.dep)) ?? []
+        }
+        .task {
+            words = (try? await Planner.clearanceWords(near: near, dep: plan.dep)) ?? []
+        }
+        // A clearance read in full is felt as a success; one with a
+        // place the reader is unsure of, as a warning, once each. In
+        // Native (Look.isStock) only the warning, which carries meaning.
+        .sensoryFeedback(.success, trigger: ready) { was, now in !look.isStock && !was && now }
+        .sensoryFeedback(.warning, trigger: ClearanceCraftSection.unsure(found)) { was, now in !was && now }
+        .onAppear { if let given = listener.sheetText { text = given; following = false } }
+        .onChange(of: listener.heard.last(where: \.final)?.text) { _, newest in
+            guard let newest else { return }
+            if readingBack, let last = listener.heard.last(where: \.final), last.id > readbackAfter {
+                readback = newest
+                readingBack = false
+            } else if following {
+                text = newest
             }
-            .onAppear { if let given = listener.sheetText { text = given; following = false } }
-            .onChange(of: listener.heard.last(where: \.final)?.text) { _, newest in
-                guard let newest else { return }
-                if readingBack, let last = listener.heard.last(where: \.final), last.id > readbackAfter {
-                    readback = newest
-                    readingBack = false
-                } else if following {
-                    text = newest
-                }
-            }
-            .task(id: text) {
-                // Once the words stop changing, their places looked up.
-                guard wantsPlaces else { return }
-                let heard = text
-                try? await Task.sleep(for: .milliseconds(400))
-                guard !Task.isCancelled else { return }
-                do {
-                    found = try await Planner.clearancePlaces(Clearance.read(heard).asked(near: near, dep: plan.dep, dest: plan.dest))
+        }
+        .task(id: text) {
+            // Once the words stop changing, their places looked up.
+            guard wantsPlaces else { return }
+            let heard = text
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            do {
+                found = try await Planner.clearancePlaces(try Clearance.read(heard).asked(near: near, dep: plan.dep, dest: plan.dest))
+                foundFor = heard
+                lookupProblem = nil
+            } catch {
+                // No signal: found by the engine among the places of
+                // the regions kept for the air, SIDs and STARs left
+                // as said.
+                let packs = CyclePacks.shared.keptPacks()
+                let offline = Engine.hear(heard, tail: nil, packs: packs, near: nearPoints,
+                                          dep: plan.dep, stops: plan.stops, dest: plan.dest)
+                if let offline, !packs.isEmpty {
+                    found = offline.found
                     foundFor = heard
-                    lookupProblem = nil
-                } catch {
-                    // No signal: found by the engine among the places of
-                    // the regions kept for the air, SIDs and STARs left
-                    // as said.
-                    let packs = CyclePacks.shared.keptPacks()
-                    let offline = Engine.hear(heard, tail: nil, packs: packs, near: nearPoints,
-                                              dep: plan.dep, stops: plan.stops, dest: plan.dest)
-                    if let offline, !packs.isEmpty {
-                        found = offline.found
-                        foundFor = heard
-                        lookupProblem = "No signal: places found among the regions kept for the air."
-                    } else {
-                        lookupProblem = "The places in it could not be looked up; check the connection and try again."
-                    }
+                    lookupProblem = "No signal: places found among the regions kept for the air."
+                } else {
+                    lookupProblem = "The places in it could not be looked up; check the connection and try again."
                 }
             }
         }
-    }
-
-    /// The four parts of the step in a row: done in green, the one now in
-    /// the tint, the rest to come.
-    private var stepsRow: some View {
-        HStack(spacing: 6) {
-            ForEach(Array(parts.enumerated()), id: \.offset) { i, part in
-                Text("\(i + 1) \(part.name)")
-                    .font(.caption)
-                    .fontWeight(part.standing == .later ? .regular : .semibold)
-                    .foregroundStyle(part.standing == .done ? Color.green : part.standing == .now ? Color.accentColor : Color.secondary)
-                    .frame(maxWidth: .infinity)
-                    .accessibilityLabel("\(part.name), \(part.standing == .done ? "done" : part.standing == .now ? "now" : "to come")")
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 
     /// The clearance's words, to type or to read as heard.
-    private var heardField: some View {
+    @ViewBuilder private var heardField: some View {
         TextField("Tap Listen and hold the phone to the speaker, or type the clearance.",
-                  text: Binding(get: { text }, set: { text = $0; following = false }), axis: .vertical)
-            .lineLimit(3...6)
+                  text: Binding(get: { text }, set: { text = $0; following = false }), axis: .vertical).lineLimit(3...6)
+        ClearancePhotoRow { said in text = said; following = false }
+        // The words said in full by the on-device model, where the engine
+        // reads more from them (ClearanceInFull); in only on the tap.
+        ClearanceInFullRow(text: text) { said in text = said; following = false }
     }
 
-    /// The radio as heard, newest first, a call to us in the tint: a tap
-    /// reads that one above.
-    @ViewBuilder private var heardLog: some View {
-        let log = listener.heard.filter(\.final).reversed().prefix(10)
-        ForEach(Array(log)) { t in
-            Button {
-                text = t.text
-                following = false
-            } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(t.text).foregroundStyle(t.forUs ? Color.accentColor : Color.primary).fontWeight(t.forUs ? .semibold : .regular)
-                    Text(t.at, style: .time).font(.caption).foregroundStyle(.secondary)
-                }
-            }
+    /// The radio as heard, newest first: a tap reads that one above.
+    private var heardLog: some View {
+        ClearanceHeardLog(heard: listener.heard) { picked in
+            text = picked
+            following = false
         }
-    }
-
-    /// One CRAFT line, its figures said in words to VoiceOver where the
-    /// screen writes them as figures.
-    private func craft(_ name: String, _ value: Text, spoken: String?) -> some View {
-        LabeledContent(name) { value.multilineTextAlignment(.trailing).fontWeight(.semibold) }
-            .accessibilityElement(children: spoken == nil ? .combine : .ignore)
-            .accessibilityLabel(spoken.map { "\(name), \($0)" } ?? "")
     }
 
     /// Listens for the pilot's read back: the next transmission settled
@@ -394,12 +268,12 @@ struct ClearanceSheet: View {
             plan.ownAltitudeLegal = false
         }
         plan.plan()
-        dismiss()
+        Navigator.shared.finish(.clearance)
     }
 }
 
 #Preview("ClearanceSheet") {
-    ClearanceSheet()
+    NavigationStack { ClearanceSheet() }
         .environment(Plan())
         .environment(OwnShip())
 }

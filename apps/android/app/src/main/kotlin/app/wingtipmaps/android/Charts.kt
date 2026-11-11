@@ -1,6 +1,8 @@
 package app.wingtipmaps.android
 
 import android.app.Application
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.ChartInfo
@@ -8,9 +10,10 @@ import app.wingtipmaps.android.api.ChartLayer
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.engine.CyclePacks
+import app.wingtipmaps.android.map.CloseMap
 import app.wingtipmaps.android.tiles.TileTemplate
-import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -21,6 +24,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import okhttp3.HttpUrl.Companion.toHttpUrl
+import java.io.File
 
 /**
  * Which chart the map draws (/api/chart): its cycle, its layers and where
@@ -82,7 +87,7 @@ class Charts(app: Application) : AndroidViewModel(app) {
                 throw e
             } catch (e: Exception) {
                 // Offline, or the planner down: the kept chart stands.
-                _problem.value = if (_info.value == null) "The chart could not be fetched: ${e.message}" else null
+                _problem.value = if (_info.value == null) Problems.say("The chart could not be fetched", e) else null
             }
         }
     }
@@ -108,6 +113,7 @@ class Charts(app: Application) : AndroidViewModel(app) {
                 withContext(Dispatchers.IO) {
                     runCatching { if (fresh == null) keptOverlays.delete() else keptOverlays.writeText(Gateway.json.encodeToString(fresh)) }
                 }
+                if (fresh != null) launch { keepForTheAir(fresh) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -120,10 +126,63 @@ class Charts(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * The cycle's archive kept for the air (OverlayStore): another
+     * archive's ranges dropped, and the whole of this one fetched while the
+     * phone is on an unmetered network (Wi-Fi at home or at the FBO), so
+     * the overlays draw over the whole country with no signal; on a
+     * metered one only the ranges the map reads are kept, as it reads
+     * them. A fetch cut off carries on the next time.
+     */
+    private suspend fun keepForTheAir(tiles: OverlayTiles) {
+        val store = Gateway.overlayStore
+        withContext(Dispatchers.IO) { runCatching { store.keepOnly(tiles.name) } }
+        if (store.hasWhole(tiles.name, tiles.bytes) || !unmetered()) return
+        val url = (Config.gateway + Config.plannerPath("/api/overlay-tiles/${tiles.name}.pmtiles")).toHttpUrl()
+        runCatching { store.download(Gateway.client, url, tiles.name, tiles.bytes) }
+    }
+
+    private fun unmetered(): Boolean {
+        val connectivity = getApplication<Application>().getSystemService(ConnectivityManager::class.java) ?: return false
+        val capabilities = connectivity.getNetworkCapabilities(connectivity.activeNetwork) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+    }
+
+    /** Google's street map close in, its tiles' address (CloseMap), or
+     *  null where the deployment has no Google key or Google refused. */
+    private val _closeTiles = MutableStateFlow<String?>(null)
+    val closeTiles: StateFlow<String?> = _closeTiles.asStateFlow()
+
+    private var askedClose = false
+
+    /** Asked once the map is first near where the street map comes in, as
+     *  the web asks only then, so no session is made (or billed) for a
+     *  pilot who never goes close in. */
+    fun wantClose() {
+        if (askedClose) return
+        askedClose = true
+        viewModelScope.launch {
+            _closeTiles.value = runCatching { CloseMap.tiles(getApplication()) }.getOrNull()
+        }
+    }
+
     companion object {
         /** The longest the map waits for the overlays' name before its
          *  first style, the web's FIRST_STYLE_WAIT_MS. */
         const val FIRST_STYLE_WAIT_MS = 1_500L
+
+        /** The terminal sheet that belongs over the base chart -- the
+         *  terminal area chart over the sectional -- with its zooms
+         *  (apps/web/src/lib/map/tiles.ts chartPair's overlay): drawn at every
+         *  zoom it exists at while Setup's switch pins it. */
+        data class Terminal(val template: TileTemplate, val minZoom: Int, val maxZoom: Int)
+
+        fun terminal(info: ChartInfo?, density: Float = 1f): Terminal? {
+            val base = base(info) ?: return null
+            val layer = info!!.chartLayers.firstOrNull { !it.base && it.over.orEmpty().contains(base.kind) } ?: return null
+            val scale = if (density > 1f && layer.scales?.contains(2) == true) 2 else 1
+            return Terminal(TileTemplate(info.chartCycle, info.chartRevision ?: 0, info.chartTilesBase, layer.kind, scale), layer.minZoom, layer.maxZoom)
+        }
 
         /** The sectional, the base layer the map opens on
          *  (apps/web/src/lib/map/tiles.ts chartPair: "sec", else the first base

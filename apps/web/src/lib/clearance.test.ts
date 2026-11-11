@@ -17,10 +17,14 @@ describe("a clearance heard", () => {
   });
 
   test("asks the planner for its limit, its runs of places and its SID", () => {
-    const c = readClearance("cleared to the Duluth airport via the Bunyan one departure, Duluth transition, Gopher victor two Farmington then as filed");
+    const c = readClearance(
+      "cleared to the Duluth airport via the Bunyan one departure, Duluth transition, Gopher victor two Farmington then as filed",
+    );
     expect(placesAsked(c)).toEqual({
-      limit: "duluth airport", route: ["gopher", "farmington"],
-      departure: { name: "bunyan", number: "1", transition: "duluth" }, arrival: null,
+      limit: "duluth airport",
+      route: ["gopher", "farmington"],
+      departure: { name: "bunyan", number: "1", transition: "duluth" },
+      arrival: null,
     });
   });
 });
@@ -49,7 +53,8 @@ describe("the route cleared held against the one filed", () => {
 
   test("another destination and other points are two", () => {
     expect(compare(2)).toEqual({
-      same: false, parts: ["to KHIB instead of KDLH", "GEP V2 FGT PYKLA instead of BRD"],
+      same: false,
+      parts: ["to KHIB instead of KDLH", "GEP V2 FGT PYKLA instead of BRD"],
       words: "to KHIB instead of KDLH; GEP V2 FGT PYKLA instead of BRD.",
     });
   });
@@ -59,7 +64,9 @@ describe("the route cleared held against the one filed", () => {
   });
 
   test("the same points in another order, a point left out, and no filed destination", () => {
-    expect(routeDifference({ stops: ["GEP", "BRD"], dest: "KDLH" }, { stops: ["BRD", "GEP"], dest: "KDLH" }).parts).toEqual(["the same points in another order"]);
+    expect(routeDifference({ stops: ["GEP", "BRD"], dest: "KDLH" }, { stops: ["BRD", "GEP"], dest: "KDLH" }).parts).toEqual([
+      "the same points in another order",
+    ]);
     expect(routeDifference({ stops: ["GEP", "BRD"], dest: "KDLH" }, { stops: ["GEP"], dest: "KDLH" }).parts).toEqual(["leaves out BRD"]);
     expect(routeDifference({ stops: [], dest: "" }, { stops: [], dest: "KDLH" }).parts).toEqual(["to KDLH"]);
   });

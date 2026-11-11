@@ -1,0 +1,319 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "A flight under way against its route (#218): miles along and off the course line and which side, the desired track at the airplane against its track (true, and magnetic by the World Magnetic Model where now_s is given), the fuel the nav log's legs burn to here, and the next waypoint (direct) and the destination (direct to the next, then along the route) with their miles, bearing, time at the groundspeed now, arrival and the fuel the plan leaves from fuel_start_gal. on_route within 3 nm of the line at flying speed. Null with no line. A planning aid beside the airplane's instruments (AC 120-76D).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "InFlightInput",
+      "type": "object",
+      "properties": {
+        "fix": {
+          "type": "object",
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            },
+            "track_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "speed_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        },
+        "line": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "points": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "name",
+              "lat",
+              "lon"
+            ]
+          }
+        },
+        "legs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "distance_nm": {
+                "type": "number"
+              },
+              "fuel_gal": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "distance_nm"
+            ]
+          }
+        },
+        "fuel_start_gal": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "now_s": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "fix"
+      ]
+    },
+    "answer": {
+      "title": "InFlightAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "on_route": {
+              "type": "boolean"
+            },
+            "along_nm": {
+              "type": "number"
+            },
+            "total_nm": {
+              "type": "number"
+            },
+            "left_nm": {
+              "type": "number"
+            },
+            "off_nm": {
+              "type": "number"
+            },
+            "off_side": {
+              "enum": [
+                "left",
+                "right",
+                null
+              ]
+            },
+            "desired_track_deg": {
+              "type": "number"
+            },
+            "desired_track_mag_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "track_mag_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "track_error_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "variation_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "burnt_gal": {
+              "type": "number"
+            },
+            "next": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "index": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "distance_nm": {
+                      "type": "number"
+                    },
+                    "bearing_deg": {
+                      "type": "number"
+                    },
+                    "bearing_mag_deg": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "ete_min": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "eta_s": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fuel_left_gal": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "index",
+                    "name",
+                    "distance_nm",
+                    "bearing_deg",
+                    "bearing_mag_deg",
+                    "ete_min",
+                    "eta_s",
+                    "fuel_left_gal"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "destination": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "index": {
+                      "type": "integer"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "distance_nm": {
+                      "type": "number"
+                    },
+                    "bearing_deg": {
+                      "type": "number"
+                    },
+                    "bearing_mag_deg": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "ete_min": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "eta_s": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    },
+                    "fuel_left_gal": {
+                      "type": [
+                        "number",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "index",
+                    "name",
+                    "distance_nm",
+                    "bearing_deg",
+                    "bearing_mag_deg",
+                    "ete_min",
+                    "eta_s",
+                    "fuel_left_gal"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "on_route",
+            "along_nm",
+            "total_nm",
+            "left_nm",
+            "off_nm",
+            "off_side",
+            "desired_track_deg",
+            "desired_track_mag_deg",
+            "track_mag_deg",
+            "track_error_deg",
+            "variation_deg",
+            "burnt_gal",
+            "next",
+            "destination"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

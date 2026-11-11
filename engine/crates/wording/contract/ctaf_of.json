@@ -1,0 +1,55 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "The CTAF's index in frequencies (a CTAF, else a UNICOM that is the CTAF, else a UNICOM), or MULTICOM's 122.9 as a frequency where none is listed (AC 90-66C 9.6).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CtafOfInput",
+      "type": "object",
+      "properties": {
+        "frequencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FieldFrequency"
+          }
+        }
+      },
+      "required": [
+        "frequencies"
+      ]
+    },
+    "answer": {
+      "title": "CtafOfAnswer",
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 0
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "MULTICOM"
+            },
+            "description": {
+              "const": "MULTICOM"
+            },
+            "frequency_mhz": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "type",
+            "description",
+            "frequency_mhz"
+          ]
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

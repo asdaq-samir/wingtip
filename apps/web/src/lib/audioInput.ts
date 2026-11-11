@@ -21,7 +21,7 @@
  * held for nothing. Nothing heard is sent anywhere or saved: the level is
  * a number for the bars, gone as it is drawn.
  *
- * Imported by lib/atcListening, lib/atis and the card's ListenThrough, all
+ * Imported by lib/atcListening, features/plan/lib/atis and the card's ListenThrough, all
  * chunks of their own, never by lib/listen, which the first load carries.
  * Every browser call is feature-tested and caught; where nothing can be
  * picked -- Chrome for Android, whose recognizer opens the microphone itself and whose
@@ -34,14 +34,14 @@ import { noMicrophone, takesTrack } from "./listen";
 import { usePreferences } from "./preferences";
 
 /** One input, as enumerateDevices lists it once the page may see names. */
-export interface Input {
+interface Input {
   id: string;
   label: string;
   outside: boolean;
 }
 
 /** An input chosen, as preferences keep it: by id, then by name. */
-export interface InputChoice {
+interface InputChoice {
   id: string;
   label: string;
 }
@@ -54,7 +54,10 @@ export interface InputChoice {
  * track is on, and why a choice could not be had.
  */
 export const useInputs = create<{ found: boolean; inputs: Input[]; chosen: string | null; problem: string | null }>(() => ({
-  found: false, inputs: [], chosen: null, problem: null,
+  found: false,
+  inputs: [],
+  chosen: null,
+  problem: null,
 }));
 
 /** Whether an input can be picked here at all. */
@@ -81,7 +84,7 @@ const BUILT_IN = [
  *  a Bluetooth panel or headset, a cable's. */
 export function isOutside(label: string): boolean {
   const name = label.replace(/^Default\s*-\s*/i, "").trim();
-  return !BUILT_IN.some(re => re.test(name));
+  return !BUILT_IN.some((re) => re.test(name));
 }
 
 /** The level of a block of samples, 0 to 1: its RMS from -60 to 0 dBFS,
@@ -100,10 +103,12 @@ export function levelOf(samples: ArrayLike<number>): number {
 export function matchInput(inputs: Input[], want: InputChoice | null): Input | null {
   if (!want) return null;
   const bare = (label: string) => label.replace(/^Default\s*-\s*/i, "").trim();
-  return inputs.find(i => i.id === want.id)
-    ?? inputs.find(i => i.label === want.label)
-    ?? inputs.find(i => bare(i.label) === bare(want.label))
-    ?? null;
+  return (
+    inputs.find((i) => i.id === want.id) ??
+    inputs.find((i) => i.label === want.label) ??
+    inputs.find((i) => bare(i.label) === bare(want.label)) ??
+    null
+  );
 }
 
 interface Held {
@@ -143,9 +148,11 @@ export function heldTrack(): MediaStreamTrack | null {
 }
 
 /** Called each time a new track is held; returns its unsubscribe. */
-export function onSwitch(fn: () => void): () => void {
+function onSwitch(fn: () => void): () => void {
   switched.add(fn);
-  return () => { switched.delete(fn); };
+  return () => {
+    switched.delete(fn);
+  };
 }
 
 /** A hold on the input; the returned function lets it go, and the input
@@ -164,7 +171,7 @@ export function hold(): () => void {
 }
 
 /** The input the pilot chose, as preferences keep it. */
-export function remembered(): InputChoice | null {
+function remembered(): InputChoice | null {
   try {
     return usePreferences.getState().listenInput ?? null;
   } catch {
@@ -190,8 +197,8 @@ export async function refresh(): Promise<void> {
     // Chrome's "default" and Windows' "communications" are the same
     // inputs again under another name.
     const inputs = all
-      .filter(d => d.kind === "audioinput" && d.deviceId && d.label && d.deviceId !== "default" && d.deviceId !== "communications")
-      .map(d => ({ id: d.deviceId, label: d.label, outside: isOutside(d.label) }));
+      .filter((d) => d.kind === "audioinput" && d.deviceId && d.label && d.deviceId !== "default" && d.deviceId !== "communications")
+      .map((d) => ({ id: d.deviceId, label: d.label, outside: isOutside(d.label) }));
     useInputs.setState({ found: inputs.length > 0, inputs });
   } catch {
     // The list stays as it was.
@@ -210,7 +217,7 @@ export function find(): Promise<void> {
 
 /** One of the listed inputs picked, remembered for the next listening. */
 export function pick(id: string): Promise<void> {
-  const input = useInputs.getState().inputs.find(i => i.id === id);
+  const input = useInputs.getState().inputs.find((i) => i.id === id);
   if (!input) return Promise.resolve();
   remember({ id: input.id, label: input.label });
   return choose(input);
@@ -261,8 +268,8 @@ export function choose(want: InputChoice | null): Promise<void> {
     asked = Promise.reject(err);
   }
   return asked.then(
-    stream => adopt(stream, gen, target, before),
-    err => failed(err, gen, want, target, before, !!known),
+    (stream) => adopt(stream, gen, target, before),
+    (err) => failed(err, gen, want, target, before, !!known),
   );
 }
 
@@ -281,7 +288,7 @@ function adopt(stream: MediaStream, gen: number, target: InputChoice | null, bef
   if (gen === generation) opening = false;
   const track = stream.getAudioTracks()[0];
   if (gen !== generation || holds === 0 || !track) {
-    stream.getTracks().forEach(t => t.stop());
+    stream.getTracks().forEach((t) => t.stop());
     if (gen === generation && holds > 0 && before) reattach(before);
     return;
   }
@@ -292,7 +299,7 @@ function adopt(stream: MediaStream, gen: number, target: InputChoice | null, bef
   // Asked for by name and had: nothing chosen is missing any more. The
   // default, opened in a missing one's place, leaves it said.
   if (target) missing = null;
-  if (before && before.track !== track) before.stream.getTracks().forEach(t => t.stop());
+  if (before && before.track !== track) before.stream.getTracks().forEach((t) => t.stop());
   // Only once the track is live: WebKit bug 282939 comment 6 found that
   // "play-and-record" set after the capture is what moves iOS to the
   // headset, and "playback" then "auto" after it full quality again.
@@ -309,7 +316,12 @@ function adopt(stream: MediaStream, gen: number, target: InputChoice | null, bef
 }
 
 function failed(
-  err: unknown, gen: number, want: InputChoice | null, target: InputChoice | null, before: Held | null, listed: boolean,
+  err: unknown,
+  gen: number,
+  want: InputChoice | null,
+  target: InputChoice | null,
+  before: Held | null,
+  listed: boolean,
 ): Promise<void> | void {
   if (gen !== generation) return;
   opening = false;
@@ -381,7 +393,9 @@ function attach(h: Held): () => void {
   const on = () => publish();
   const events = ["ended", "mute", "unmute", "configurationchange"];
   for (const e of events) h.track.addEventListener(e, on);
-  return () => { for (const e of events) h.track.removeEventListener(e, on); };
+  return () => {
+    for (const e of events) h.track.removeEventListener(e, on);
+  };
 }
 
 /** Back on the input held before a switch that failed, its session as it
@@ -417,12 +431,13 @@ function watch() {
  * and a second after listening starts (lib/atcListening), as starting
  * Safari's recognizer may move the route itself.
  */
-export function publish() {
+function publish() {
   const h = held;
   if (!h) {
     // An outside input wanted and not had, nothing in its place: the
     // recognizer hears the default.
-    if (missing) useAtcRadio.setState({ input: { label: missing.label, outside: true, lost: true, why: "missing", instead: null, paused: false } });
+    if (missing)
+      useAtcRadio.setState({ input: { label: missing.label, outside: true, lost: true, why: "missing", instead: null, paused: false } });
     return;
   }
   const { track } = h;
@@ -438,12 +453,15 @@ export function publish() {
       ? { label: missing.label, outside: true, lost: true, why: "missing", instead: live ? now : null, paused: false }
       : { label: now, outside: isOutside(now), lost: false, why: null, instead: null, paused: live && !!track.muted };
   useAtcRadio.setState({ input });
-  useInputs.setState({ chosen: input.lost ? null : (matchInput(inputs, { id: live ? settingsId(track) || h.id : h.id, label: now })?.id ?? null) });
+  useInputs.setState({
+    chosen: input.lost ? null : (matchInput(inputs, { id: live ? settingsId(track) || h.id : h.id, label: now })?.id ?? null),
+  });
 }
 
 function startContext() {
-  const Context = (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext
-    ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  const Context =
+    (window as unknown as { AudioContext?: typeof AudioContext; webkitAudioContext?: typeof AudioContext }).AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Context) return;
   try {
     if (!context || context.state === "closed") context = new Context();
@@ -493,7 +511,7 @@ function letGo() {
   held = null;
   if (h) {
     h.detach();
-    h.stream.getTracks().forEach(t => t.stop());
+    h.stream.getTracks().forEach((t) => t.stop());
   }
   if (meter) clearInterval(meter);
   meter = null;
@@ -525,7 +543,7 @@ function letGo() {
 }
 
 /** A listening session's hold on the input, for lib/listen. */
-export interface ListeningHold {
+interface ListeningHold {
   /** The held track, read at each start of the recognizer. */
   track: () => MediaStreamTrack | null;
   /** Starts the recognizer afresh when another input is held, where it
@@ -556,11 +574,13 @@ export function holdForListening(): ListeningHold {
   let done = false;
   return {
     track: heldTrack,
-    follow: renew => {
+    follow: (renew) => {
       // A listening that ended before it began has nothing to follow.
       if (done) return;
       off();
-      off = onSwitch(() => { if (takesTrack()) renew(); });
+      off = onSwitch(() => {
+        if (takesTrack()) renew();
+      });
     },
     release: () => {
       done = true;

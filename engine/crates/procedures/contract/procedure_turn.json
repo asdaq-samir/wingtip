@@ -1,0 +1,51 @@
+{
+  "x-call": "wingtip_procedures::paths::call",
+  "description": "A 45°/180° procedure turn at its fix (AIM 5-4-9): 4 nm out on the final's reciprocal, 2 nm on the barb's true course, a standard-rate 180° turn at 120 kt toward the final's side, back to meet the final within 10 nm, and in to the fix.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ProcedureTurnInput",
+      "type": "object",
+      "properties": {
+        "fix": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon]"
+        },
+        "inbound_deg": {
+          "type": "number"
+        },
+        "pt_course_deg": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "fix",
+        "inbound_deg",
+        "pt_course_deg"
+      ]
+    },
+    "answer": {
+      "title": "ProcedureTurnAnswer",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 2,
+        "maxItems": 2,
+        "description": "[lat, lon]"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

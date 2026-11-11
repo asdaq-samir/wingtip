@@ -1,6 +1,7 @@
 """adsb.lol, the map's traffic: its API asked about a region at most once in five seconds
 (the package's docstring says how), a pilot's search asked ahead of the regions' turns, and its
 globe's traces of an airplane, today's and its last few minutes."""
+
 from __future__ import annotations
 
 import math
@@ -240,8 +241,11 @@ def _heard(text: str) -> list[dict]:
         if now - at >= KEEP_S:
             continue
         for plane in planes:
-            if text.lower() not in (plane["hex"], plane["hex"].lstrip("~")) and (plane["callsign"] or "").upper() != text \
-                    and (plane["registration"] or "").replace("-", "").upper() != bare:
+            if (
+                text.lower() not in (plane["hex"], plane["hex"].lstrip("~"))
+                and (plane["callsign"] or "").upper() != text
+                and (plane["registration"] or "").replace("-", "").upper() != bare
+            ):
                 continue
             aged = {**plane, "seen_s": round((plane["seen_s"] or 0.0) + now - at, 1)}
             if plane["hex"] not in best or aged["seen_s"] < best[plane["hex"]]["seen_s"]:
@@ -301,13 +305,25 @@ def _last_heard(trace: dict) -> dict | None:
         return None
     last = points[-1]
     details = next((p[8] for p in reversed(points) if len(p) > 8 and isinstance(p[8], dict)), {})
-    return _aircraft({
-        "hex": trace.get("icao"), "flight": details.get("flight"), "r": trace.get("r"), "t": trace.get("t"),
-        "lat": last[1], "lon": last[2], "alt_baro": last[3], "alt_geom": last[10] if len(last) > 10 else None,
-        "gs": last[4], "track": last[5], "baro_rate": last[7], "geom_rate": last[11] if len(last) > 11 else None,
-        "seen_pos": round(max(0.0, _wall() - base - float(last[0])), 1),
-        "squawk": details.get("squawk"), "emergency": details.get("emergency"),
-    })
+    return _aircraft(
+        {
+            "hex": trace.get("icao"),
+            "flight": details.get("flight"),
+            "r": trace.get("r"),
+            "t": trace.get("t"),
+            "lat": last[1],
+            "lon": last[2],
+            "alt_baro": last[3],
+            "alt_geom": last[10] if len(last) > 10 else None,
+            "gs": last[4],
+            "track": last[5],
+            "baro_rate": last[7],
+            "geom_rate": last[11] if len(last) > 11 else None,
+            "seen_pos": round(max(0.0, _wall() - base - float(last[0])), 1),
+            "squawk": details.get("squawk"),
+            "emergency": details.get("emergency"),
+        }
+    )
 
 
 #: How long the globe's files are not asked for after it turns the planner

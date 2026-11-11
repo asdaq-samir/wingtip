@@ -82,11 +82,7 @@ pub struct Read {
 /// The pieces of the address's `procedures`, "KBUR:I08-Y:LAX,KBUR:JANNY5",
 /// each trimmed, the empty ones left out.
 pub fn procedures_read(text: &str) -> Vec<Read> {
-    text.split(',')
-        .map(trim)
-        .filter(|p| !p.is_empty())
-        .map(|p| Read { part: p.to_owned(), pick: lenient(p), exact: exact(p) })
-        .collect()
+    text.split(',').map(trim).filter(|p| !p.is_empty()).map(|p| Read { part: p.to_owned(), pick: lenient(p), exact: exact(p) }).collect()
 }
 
 /// The picks for the address: "KBUR:I08-Y:LAX,C81:R24", a direct fix after

@@ -3,19 +3,16 @@ collect, engineer_features, retrain. (evaluate/promote moved to
 wingtip.model_registry -- see that module's docstring for why.) run() is
 the whole training run, every stage in order, which the developer
 console's Retrain starts (`python -m wingtip.pipeline run`, in the
-pipeline-training image). The notebooks stay the human-facing/
+retrain job's image, services/jobs/retrain). The notebooks stay the human-facing/
 exploratory versions of this same logic (plots, the folium map, the
 interactive hand-labeling cell); this module is the automatable subset --
 everything except labeling itself, which is still a human judgment call.
 
 scikit-learn/joblib are imported lazily, inside retrain() only, rather than
-at module level -- this module is shared by two differently-provisioned
-containers (Dockerfile.processing has wingtip's own requirements but NOT
-scikit-learn; Dockerfile.training has those and scikit-learn/joblib on
-top, so run() works there). A module-level sklearn import would make
-collect()/engineer_features() uncallable in the processing image even
-though neither one touches sklearn.
+at module level: the planner imports this module too (app.chart_model,
+for _publish), and loads scikit-learn only when it first scores.
 """
+
 from __future__ import annotations
 
 import json
@@ -68,16 +65,12 @@ RAILROAD_FILTER = '["railway"="rail"]["service"!~".*"]'
 # They stay in the features parquet as identity/display columns (see
 # engineer_features) because the serving API orders checkpoints by
 # along-track distance; they are just not fed to the model.
-FEATURE_COLS_BASE = [
-    "log_size",
-    "elevation_prominence_m",
-    "name_uniqueness",
-    "nn_dist_nm",
-]
+FEATURE_COLS_BASE = ["log_size", "elevation_prominence_m", "name_uniqueness", "nn_dist_nm"]
 
 # Carried through to the parquet for display and ordering, not as model
 # inputs.
 ROUTE_POSITION_COLS = ["cross_track_nm", "along_track_nm", "within_preferred_corridor"]
+
 
 class InsufficientLabelsError(RuntimeError):
     """Raised by retrain() when fewer than min_labeled_rows candidates are
@@ -136,10 +129,7 @@ def held_out_scores(y_test, y_pred) -> dict:
     }
 
 
-def metrics_record(
-    model_type: str, scores: dict, *,
-    n_labeled: int, n_train: int, n_test: int, feature_cols: list, **extra,
-) -> dict:
+def metrics_record(model_type: str, scores: dict, *, n_labeled: int, n_train: int, n_test: int, feature_cols: list, **extra) -> dict:
     """metrics.json, the same shape whichever library did the training.
 
     Two trainers write this file -- retrain() below and the chart model
@@ -171,12 +161,7 @@ def _ensure_local_dir(path) -> Path:
     return path
 
 
-def collect(
-    dep_ident: str = "C81",
-    dest_ident: str = "KDLH",
-    out_path: Path | None = None,
-    refresh: bool = False,
-) -> Path:
+def collect(dep_ident: str = "C81", dest_ident: str = "KDLH", out_path: Path | None = None, refresh: bool = False) -> Path:
     """Notebook 01: pull candidate checkpoints along the route corridor from
     OSM (Overpass) + FAA NASR data, filter to the corridor, dedupe, and save
     -- by default to the corridor's own candidates file. (The default used
@@ -245,9 +230,7 @@ def collect(
     # APT_BASE rather than from every strip OSM or OurAirports lists. The
     # two route endpoints are excluded, being where the flight starts and
     # ends rather than marks along the way.
-    airport_df = faa_data.load_route_airports(
-        apt_csv_path, bbox, exclude_idents=(dep_ident, dest_ident)
-    )
+    airport_df = faa_data.load_route_airports(apt_csv_path, bbox, exclude_idents=(dep_ident, dest_ident))
     raw_df = pd.concat([raw_df, vor_df, airport_df], ignore_index=True)
 
     def add_route_distances(df):
@@ -255,23 +238,17 @@ def collect(
         # The whole corridor in one call rather than a row at a time:
         # both distances come out of the same pair of azimuth solutions,
         # and PROJ does the arithmetic for every candidate at once.
-        cross, along = geo.track_distances_nm(
-            df["lat"].to_numpy(), df["lon"].to_numpy(), route_start, route_end
-        )
+        cross, along = geo.track_distances_nm(df["lat"].to_numpy(), df["lon"].to_numpy(), route_start, route_end)
         df["cross_track_nm"] = cross
         df["along_track_nm"] = along
         return df
 
     candidates_df = add_route_distances(raw_df)
-    in_corridor = (
-        candidates_df["cross_track_nm"].abs() <= FALLBACK_HALF_WIDTH_NM
-    ) & (
+    in_corridor = (candidates_df["cross_track_nm"].abs() <= FALLBACK_HALF_WIDTH_NM) & (
         candidates_df["along_track_nm"].between(-MARGIN_NM, route_distance_nm + MARGIN_NM)
     )
     candidates_df = candidates_df[in_corridor].reset_index(drop=True)
-    candidates_df["within_preferred_corridor"] = (
-        candidates_df["cross_track_nm"].abs() <= PREFERRED_HALF_WIDTH_NM
-    )
+    candidates_df["within_preferred_corridor"] = candidates_df["cross_track_nm"].abs() <= PREFERRED_HALF_WIDTH_NM
     candidates_df = candidates_df.drop_duplicates(subset=["lat", "lon"]).reset_index(drop=True)
 
     # Unnamed water bodies are dropped outright, whatever their size.
@@ -284,9 +261,7 @@ def collect(
     # about a millimetre of chart) and still left ponds that were either
     # undrawn or unidentifiable. A charted name is the identification, so
     # named water stays regardless of size.
-    is_unnamed_water = candidates_df["category"].isin(
-        ["lake_or_pond", "reservoir"]
-    ) & candidates_df["name"].isna()
+    is_unnamed_water = candidates_df["category"].isin(["lake_or_pond", "reservoir"]) & candidates_df["name"].isna()
     candidates_df = candidates_df[~is_unnamed_water].reset_index(drop=True)
 
     out_df = candidates_df.copy()
@@ -316,7 +291,7 @@ def engineer_features(in_path: Path = CANDIDATES_PATH, out_path: Path = FEATURES
 
 
 def _route_of(features_path: Path) -> str | None:
-    """"C81->KDLH" from features_c81_kdlh.parquet -- the route key a chart
+    """ "C81->KDLH" from features_c81_kdlh.parquet -- the route key a chart
     pick carries -- or None for a file not named that way."""
     stem = Path(features_path).stem
     if not stem.startswith("features_") or stem.count("_") != 2:
@@ -372,8 +347,7 @@ def _picks_as_labels(candidates_df: pd.DataFrame, route: str | None, picks_path:
     return pd.DataFrame(rows, columns=["osm_id", "osm_type", "rating"]).drop_duplicates(["osm_id", "osm_type"], keep="last")
 
 
-def _load_labeled(features_path: Path, labels_path: Path,
-                  picks_path: Path | None = None) -> tuple[pd.DataFrame, list[str]]:
+def _load_labeled(features_path: Path, labels_path: Path, picks_path: Path | None = None) -> tuple[pd.DataFrame, list[str]]:
     """The candidates with a rating: the older ratings file, and the chart
     picks made in the training workspace on top of it -- a pick is the
     newer judgment, so it wins where both rate one candidate."""
@@ -444,8 +418,12 @@ class LabeledSplit:
         return self.test["rating"].astype(float)
 
 
-def training_readiness(features_path: Path = FEATURES_PATH, labels_path: Path = LABELS_PATH,
-                       picks_path: Path | None = None, min_labeled_rows: int = MIN_LABELED_ROWS) -> dict:
+def training_readiness(
+    features_path: Path = FEATURES_PATH,
+    labels_path: Path = LABELS_PATH,
+    picks_path: Path | None = None,
+    min_labeled_rows: int = MIN_LABELED_ROWS,
+) -> dict:
     """Whether a retrain would have enough to learn from, and why not:
     what the trainer would get (`usable`), what it needs, and what became
     of the ratings that do not count. Asked before a run is started, so
@@ -458,8 +436,15 @@ def training_readiness(features_path: Path = FEATURES_PATH, labels_path: Path = 
     route = _route_of(features_path)
     if not Path(features_path).exists():
         return {
-            "route": route, "usable": 0, "needed": min_labeled_rows, "ready": False,
-            "rated": 0, "zeros": 0, "off_landmark": 0, "same_landmark": 0, "older": 0,
+            "route": route,
+            "usable": 0,
+            "needed": min_labeled_rows,
+            "ready": False,
+            "rated": 0,
+            "zeros": 0,
+            "off_landmark": 0,
+            "same_landmark": 0,
+            "older": 0,
             "message": f"No landmarks collected for {route or 'the route'} yet: collect the route first.",
         }
     labeled_df, _ = _load_labeled(features_path, labels_path, picks_path)
@@ -482,8 +467,13 @@ def training_readiness(features_path: Path = FEATURES_PATH, labels_path: Path = 
         + ("" if ready else f" Rate {min_labeled_rows - usable} more on landmarks the model knows.")
     )
     return {
-        "route": route, "usable": usable, "needed": min_labeled_rows, "ready": ready,
-        **counts, "older": int(len(labels_df)), "message": message,
+        "route": route,
+        "usable": usable,
+        "needed": min_labeled_rows,
+        "ready": ready,
+        **counts,
+        "older": int(len(labels_df)),
+        "message": message,
     }
 
 
@@ -549,9 +539,7 @@ def select_model(X_train, y_train) -> tuple[str, object, dict, float]:
         best_estimators[name] = search.best_estimator_
         cv_mae[name] = -search.best_score_
 
-    dummy_mae = -cross_val_score(
-        DummyRegressor(strategy="mean"), X_train, y_train, cv=cv, scoring="neg_mean_absolute_error"
-    ).mean()
+    dummy_mae = -cross_val_score(DummyRegressor(strategy="mean"), X_train, y_train, cv=cv, scoring="neg_mean_absolute_error").mean()
 
     best_name = min(cv_mae, key=cv_mae.get)
     best_model = best_estimators[best_name]
@@ -588,12 +576,15 @@ def retrain(
     # promotion gate compares two answers to one set of questions rather
     # than two cross-validation scores from whatever labels each run had.
     metrics = metrics_record(
-        best_name, held_out_scores(y_test, y_pred),
+        best_name,
+        held_out_scores(y_test, y_pred),
         current_held_out_mae=_score_current_model(X_test, y_test, feature_cols),
         cv_mae=cv_mae[best_name],
         cv_mae_by_model={**cv_mae, "Dummy": dummy_mae},
         dummy_cv_mae=dummy_mae,
-        n_labeled=len(split.labeled), n_train=len(X_train), n_test=len(X_test),
+        n_labeled=len(split.labeled),
+        n_train=len(X_train),
+        n_test=len(X_test),
         feature_cols=feature_cols,
     )
 
@@ -756,7 +747,11 @@ def run(status_path: Path | None = None, branches: list | None = None) -> dict:
     branches = branches if branches is not None else [_landmark_branch(), _chart_branch()]
     status = {
         "run_id": datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"),
-        "state": "running", "stage": None, "started_at": _now(), "finished_at": None, "error": None,
+        "state": "running",
+        "stage": None,
+        "started_at": _now(),
+        "finished_at": None,
+        "error": None,
         "stages": [{"name": name, "state": "pending", "detail": None} for branch in branches for name, _ in branch],
     }
     by_name = {stage["name"]: stage for stage in status["stages"]}
@@ -795,8 +790,8 @@ def run(status_path: Path | None = None, branches: list | None = None) -> dict:
 
 def _cli() -> None:
     """Run the whole training run (`docker compose up retrain`)
-    or one stage standalone, e.g. `docker compose run --rm pipeline-training retrain`
-    or `docker compose run --rm pipeline-processing collect`.
+    or one stage standalone, e.g. `docker compose run --rm retrain retrain`
+    or `docker compose run --rm retrain collect`.
 
     Kept deliberately close to a SageMaker script-mode entry point (one
     stage per invocation, paths as arguments with sensible defaults, result

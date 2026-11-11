@@ -1,0 +1,35 @@
+{
+  "x-call": "wingtip_pilot::aircraft::calls::call",
+  "description": "An airplane's kind from its ADS-B emitter category (GDL 90 Table 11).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TrafficKindInput",
+      "type": "object",
+      "properties": {
+        "category": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "TrafficKindAnswer",
+      "type": "string",
+      "enum": [
+        "light",
+        "small",
+        "large",
+        "helicopter",
+        "other"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

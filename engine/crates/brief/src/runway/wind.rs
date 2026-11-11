@@ -14,6 +14,7 @@
 use super::pick::{runway_in_use, runway_number, Runway};
 use crate::figures::words::js_round_f;
 use crate::geo::py_mod;
+use wingtip_core::sort::StableSort;
 
 /// A runway's wind as the planner works it out (favoured_end): the end it
 /// favours as painted, and its components, knots -- the crosswind signed,
@@ -152,8 +153,9 @@ fn first_max<T>(items: impl IntoIterator<Item = T>, key: impl Fn(&T) -> f64) -> 
 /// (`recent`, its direction and speed), the runway in use, said so, else
 /// the first one named. None with no report, a variable wind or no end
 /// with a heading.
-pub fn favoured_end(ends: &[(Option<String>, Option<f64>)], report: Option<&Reported>, variation_deg: f64, recent: Option<(f64, f64)>)
-                    -> Option<Favoured> {
+pub fn favoured_end(
+    ends: &[(Option<String>, Option<f64>)], report: Option<&Reported>, variation_deg: f64, recent: Option<(f64, f64)>,
+) -> Option<Favoured> {
     let report = report?;
     let speed = report.speed_kt?;
     let headed: Vec<(&Option<String>, f64)> =
@@ -162,7 +164,12 @@ pub fn favoured_end(ends: &[(Option<String>, Option<f64>)], report: Option<&Repo
         return None;
     }
     let calm = |end: &Option<String>, in_use: bool| Favoured {
-        end: end.clone(), headwind_kt: 0.0, crosswind_kt: 0.0, gust_crosswind_kt: None, calm: true, in_use,
+        end: end.clone(),
+        headwind_kt: 0.0,
+        crosswind_kt: 0.0,
+        gust_crosswind_kt: None,
+        calm: true,
+        in_use,
     };
     if speed == 0.0 {
         return Some(match recent {
@@ -189,8 +196,9 @@ pub fn favoured_end(ends: &[(Option<String>, Option<f64>)], report: Option<&Repo
 /// (ident, true heading or None). Calm with the field's last wind
 /// (`recent`): the one runway the last wind favoured most is the one in
 /// use, on its end into that wind; the rest stay calm on their first end.
-pub fn with_winds(runways: &[Vec<(Option<String>, Option<f64>)>], report: Option<&Reported>, variation_deg: f64,
-                  recent: Option<(f64, f64)>) -> Vec<Option<Favoured>> {
+pub fn with_winds(
+    runways: &[Vec<(Option<String>, Option<f64>)>], report: Option<&Reported>, variation_deg: f64, recent: Option<(f64, f64)>,
+) -> Vec<Option<Favoured>> {
     let mut out: Vec<Option<Favoured>> = runways.iter().map(|ends| favoured_end(ends, report, variation_deg, None)).collect();
     let Some((dir, kt)) = recent else { return out };
     if report.and_then(|r| r.speed_kt) != Some(0.0) {
@@ -202,10 +210,10 @@ pub fn with_winds(runways: &[Vec<(Option<String>, Option<f64>)>], report: Option
             .map(|h| headwind_kt(dir, kt, h))
             .fold(f64::NEG_INFINITY, |a, b| if b > a { b } else { a })
     };
-    if let Some(best) = first_max(0..runways.len(), |&k| into_last(&runways[k])) {
-        if out[best].is_some() {
-            out[best] = favoured_end(&runways[best], report, variation_deg, recent);
-        }
+    if let Some(best) = first_max(0..runways.len(), |&k| into_last(&runways[k]))
+        && out[best].is_some()
+    {
+        out[best] = favoured_end(&runways[best], report, variation_deg, recent);
     }
     out
 }
@@ -259,26 +267,32 @@ pub struct WindPick {
 /// 2026-10-20), the report now set aside.
 pub fn wind_pick(runways: &[Runway], nearby: Option<&Nearby>, forecast_at: Option<f64>) -> Option<WindPick> {
     let none = WindPick {
-        ident: String::new(), headwind_kt: 0.0, crosswind_kt: 0.0, gust_crosswind_kt: None, calm: true, variable_kt: None, in_use: false,
-        from: None, forecast_at,
+        ident: String::new(),
+        headwind_kt: 0.0,
+        crosswind_kt: 0.0,
+        gust_crosswind_kt: None,
+        calm: true,
+        variable_kt: None,
+        in_use: false,
+        from: None,
+        forecast_at,
     };
     // A forecast's wind is worked out here alone: the runways' winds are
     // the field's report now.
-    if forecast_at.is_none() {
-        if let Some((r, e, true)) = runway_in_use(runways) {
-            if let Some(w) = &runways[r].wind {
-                let calm = calm_on_runway(w);
-                return Some(WindPick {
-                    ident: runway_number(&runways[r].ends[e].ident).to_owned(),
-                    headwind_kt: w.headwind_kt,
-                    crosswind_kt: w.crosswind_kt,
-                    gust_crosswind_kt: w.gust_crosswind_kt,
-                    calm,
-                    in_use: calm && w.in_use,
-                    ..none
-                });
-            }
-        }
+    if forecast_at.is_none()
+        && let Some((r, e, true)) = runway_in_use(runways)
+        && let Some(w) = &runways[r].wind
+    {
+        let calm = calm_on_runway(w);
+        return Some(WindPick {
+            ident: runway_number(&runways[r].ends[e].ident).to_owned(),
+            headwind_kt: w.headwind_kt,
+            crosswind_kt: w.crosswind_kt,
+            gust_crosswind_kt: w.gust_crosswind_kt,
+            calm,
+            in_use: calm && w.in_use,
+            ..none
+        });
     }
     let nearby = nearby?;
     let speed = nearby.wind.speed_kt?;
@@ -305,7 +319,7 @@ pub fn wind_pick(runways: &[Runway], nearby: Option<&Nearby>, forecast_at: Optio
     // The most headwind, the longer runway on a tie (a stable sort, the
     // data's order among equals).
     let mut sorted = ends;
-    sorted.sort_by(|a, b| {
+    sorted.stable_sort_by(|a, b| {
         tie_places(headwind_kt(dir, speed, b.2))
             .total_cmp(&tie_places(headwind_kt(dir, speed, a.2)))
             .then_with(|| b.0.length_ft.unwrap_or(0.0).total_cmp(&a.0.length_ft.unwrap_or(0.0)))

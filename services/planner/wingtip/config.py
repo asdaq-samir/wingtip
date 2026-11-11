@@ -17,6 +17,7 @@ with a message naming the variable, and the list of knobs is one class
 to read rather than a grep. pydantic-settings is the one import that
 costs anything here, and pydantic is in every image that imports wingtip.
 """
+
 import functools
 from pathlib import Path
 
@@ -78,6 +79,7 @@ FAA_ENROUTE_ZIP_URL = "https://aeronav.faa.gov/enroute/{cycle}/{name}.zip"
 
 # --- The environment ---
 
+
 def _switch(value):
     """A switch as the code has always read one: on unless it is "0"
     (compose and infra write 0 and 1)."""
@@ -94,8 +96,9 @@ def _none_if_blank(value):
 class Settings(BaseSettings):
     """Every environment variable wingtip and the planner read, by its
     own name (case aside; the field `log_level` is LOG_LEVEL), with its
-    default. Unset optional keys (SWIM_*, the ADS-B keys) are None,
-    which is how each feature knows it is off. ANTHROPIC_API_KEY is not here: the anthropic SDK reads it itself."""
+    default. Unset optional keys (the ADS-B keys) are None,
+    which is how each feature knows it is off. The Claude models and ANTHROPIC_API_KEY are the assistant
+    service's (services/assistant, app.settings): the planner calls no model."""
 
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 
@@ -112,6 +115,9 @@ class Settings(BaseSettings):
     charts_fetch_for_tiles: bool = True
     #: wingtip.filed_routes' SQLite store of the FAA's filed routes.
     filed_store: Path = DATA_DIR / "raw" / "faa_filed" / "filed.sqlite"
+    #: Where the weather service (services/weather) writes the weather it
+    #: fetches and the planner reads it (wingtip.weather_store).
+    weather_store: Path = DATA_DIR / "raw" / "weather"
     #: wingtip.notams' SQLite store of NOTAMs.
     notam_store: Path = DATA_DIR / "raw" / "faa_notams" / "notams.sqlite"
     #: SageMaker's channel folders and model folder, set only inside a Training Job (wingtip.pipeline).
@@ -126,43 +132,57 @@ class Settings(BaseSettings):
     adsbx_usage_file: Path = DATA_DIR / "raw" / "adsbx_usage.json"
     #: Whether adsb.fi's open data is asked for watched airplanes (0 in production until adsb.fi agrees).
     adsbfi_open_data: bool = True
-    #: Where watched airplanes' recorded tracks are kept.
-    recorded_tracks_dir: Path = DATA_DIR / "raw" / "watched_tracks"
+    #: wingtip.traffic.store's SQLite store of the live feeds (the FAA's radar,
+    #: the followed airplanes and their tracks, where the map looks): written by
+    #: ingest (services/ingest) and the planner both, on the data folder they share.
+    live_store: Path = DATA_DIR / "raw" / "live" / "live.sqlite"
+    #: wingtip.live_reports' SQLite store of what SWIM says now of airports
+    #: and airspace (wind shear alerts, flow programs, RVR, D-ATIS, special
+    #: activity airspace, departures): written by ingest, read by the planner.
+    reports_store: Path = DATA_DIR / "raw" / "live" / "reports.sqlite"
 
     # The planner (services/planner/app)
-    #: The logging level for the planner and its SWIM reader.
+    #: The logging level for the planner.
     log_level: str = "INFO"
     #: Whether the FAA aircraft registry is downloaded and read (0 on a test stack).
     registry_refresh: bool = True
     #: Whether the cycle pack is built once a cycle (0 on a test stack).
     cycle_pack: bool = True
-    #: Whether the map's overlay tiles are built from the cycle pack once a cycle.
-    overlay_tiles: bool = True
     #: Whether the chart's landmark cells are read at start (0 in CI).
     landmarks_build: bool = True
     #: Where the landmark cells are kept; None means beside the cycle's tiles.
     chart_landmarks_dir: Path | None = None
-    #: Whether the planner refreshes the chart cycle on its own (0 in production).
+    #: Whether the planner starts the charts job when a cycle or its overlay tiles are due (0 in production, which schedules it).
     charts_auto_refresh: bool = True
     #: Whether the planner fetches a new edition of the FAA's NASR files and
     #: obstacle file on its own (0 on a test stack): on in production, whatever the charts do.
     faa_data_auto_refresh: bool = True
     #: The "HH:MM-HH:MM" window a cycle's render may start in, or blank for any time.
     charts_refresh_window: str = "01:00-06:00"
-    #: How many render processes a cycle refresh gets.
+    #: How many render processes the charts job's run of a cycle gets (compose passes it to both).
     charts_refresh_workers: int = 1
+    #: Whether the planner starts the charts job's `next` run, which draws the
+    #: FAA's next chart cycle ahead of its effective date into a folder the
+    #: map does not serve until that date (wingtip.chart_next): on for a
+    #: machine of one's own, 0 in production (the AWS task draws each cycle)
+    #: and in CI. Its own switch, not CHARTS_AUTO_REFRESH's.
+    charts_cycle_auto: bool = True
+    #: How many days before the next cycle's effective date its staging may start.
+    charts_cycle_lead_days: int = 7
+    #: How many minutes a live feed may read stale before the planner says
+    #: so as an alert (app.feed_health): the console's row, a log warning
+    #: and FEED_ALERT_WEBHOOK.
+    feed_alert_after_min: int = 15
+    #: Where an alert is POSTed as JSON when a feed has been stale that
+    #: long, and again when it is back; None posts nothing (the log and
+    #: the console still say it).
+    feed_alert_webhook: str | None = None
+    #: The weather service's health answer (services/weather, GET /), which
+    #: says how fresh each product is by its own schedule; None reads only
+    #: the weather store's fetch times.
+    weather_url: str | None = "http://weather:8000"
     #: Whether the chart model reads tiles in the planner's own process pool.
     chart_reads_in_process: bool = True
-    #: The assistant's model, its effort, and whether the server-side fallback is asked for (1 only).
-    assistant_model: str = "claude-opus-5-5"
-    assistant_effort: str = "medium"
-    assistant_fallbacks: bool = False
-    #: The mock oral's model.
-    oral_model: str = "claude-opus-5-5"
-    #: The plain-words briefs' model.
-    words_model: str = "claude-haiku-5-5"
-    #: The checkpoint notes' model.
-    checkpoint_note_model: str = "claude-haiku-5-5"
     #: The OTLP collector traces go to; None sends none (app.tracing).
     otel_exporter_otlp_endpoint: str | None = None
     #: The service name on those traces.
@@ -171,42 +191,43 @@ class Settings(BaseSettings):
     google_maps_api_key: str = ""
     #: The compose stack's dev-services sidecar; None everywhere else.
     dev_services_url: str | None = None
-    #: The gateway's address (GATEWAY_URL), for the status page's health probe.
+    #: The gateway's address (GATEWAY_URL), for the status page's health probe
+    #: and the connector's records and signing keys (app.mcp).
     gateway_url: str = "http://gateway:8080"
-    #: The FAA SWIM subscription (app.swim_reader): the broker, the account, and the CA store.
-    #: A feed is read only where all of host, username, password and its own VPN and queue are set.
-    swim_host: str | None = None
-    swim_username: str | None = None
-    swim_password: str | None = None
-    swim_trust_store: str = "/etc/ssl/certs"
-    #: Each feed's own broker (where it is not SWIM_HOST), VPN and queue.
-    swim_host_stdds: str | None = None
-    swim_vpn_stdds: str | None = None
-    swim_queue_stdds: str | None = None
-    swim_host_fns: str | None = None
-    swim_vpn_fns: str | None = None
-    swim_queue_fns: str | None = None
-    swim_host_tfms: str | None = None
-    swim_vpn_tfms: str | None = None
-    swim_queue_tfms: str | None = None
+    #: Who issues the connector's tokens: the gateway's public address
+    #: (MCP_ISSUER); None serves no /mcp (app.mcp).
+    mcp_issuer: str | None = None
+    #: The connector's public address, the audience its tokens must carry
+    #: (MCP_RESOURCE_URL); the issuer's /mcp when unset.
+    mcp_resource_url: str | None = None
+    #: The secret the gateway's /internal/mcp records ask for (MCP_INTERNAL_TOKEN).
+    mcp_internal_token: str | None = None
+    #: Tool calls one pilot's connector may make a minute and a day (app.mcp.limits).
+    mcp_calls_per_minute: int = 30
+    mcp_calls_per_day: int = 600
 
     read_switches = field_validator(
-        "charts_fetch_for_tiles", "adsbfi_open_data", "registry_refresh", "cycle_pack", "overlay_tiles", "landmarks_build",
-        "charts_auto_refresh", "faa_data_auto_refresh", "chart_reads_in_process", mode="before")(_switch)
+        "charts_fetch_for_tiles",
+        "adsbfi_open_data",
+        "registry_refresh",
+        "cycle_pack",
+        "landmarks_build",
+        "charts_auto_refresh",
+        "faa_data_auto_refresh",
+        "chart_reads_in_process",
+        "charts_cycle_auto",
+        mode="before",
+    )(_switch)
 
-    @field_validator("assistant_fallbacks", mode="before")
-    @classmethod
-    def read_opt_in(cls, value):
-        """The fallback is opt-in: "1" turns it on, anything else leaves it off."""
-        return value == "1" if isinstance(value, str) else value
-
-    @field_validator("chart_tiles_url", "dev_services_url", mode="before")
+    @field_validator(
+        "chart_tiles_url", "dev_services_url", "feed_alert_webhook", "weather_url", "mcp_resource_url", "mcp_issuer", mode="before"
+    )
     @classmethod
     def read_base_url(cls, value):
         """A base address without its trailing slash, None where blank."""
         return _none_if_blank(value.rstrip("/") if isinstance(value, str) else value)
 
-    read_blank_as_unset = field_validator("chart_tiles_bucket", "chart_landmarks_dir", mode="before")(_none_if_blank)
+    read_blank_as_unset = field_validator("chart_tiles_bucket", "chart_landmarks_dir", "mcp_internal_token", mode="before")(_none_if_blank)
 
     @field_validator("chart_tiles_prefix", mode="before")
     @classmethod
@@ -231,8 +252,7 @@ def get_settings() -> Settings:
     try:
         return Settings()
     except ValidationError as err:
-        bad = "; ".join(
-            f"{'_'.join(str(part) for part in e['loc']).upper()}={e.get('input')!r}: {e['msg']}" for e in err.errors())
+        bad = "; ".join(f"{'_'.join(str(part) for part in e['loc']).upper()}={e.get('input')!r}: {e['msg']}" for e in err.errors())
         raise SettingsError(f"The environment has a malformed setting: {bad}") from None
 
 

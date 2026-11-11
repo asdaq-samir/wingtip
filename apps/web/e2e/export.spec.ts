@@ -15,16 +15,21 @@ async function routeWithCheckpoints(page: Page) {
   await controlsInSight(page);
 }
 
-test("the route goes to the panel through ForeFlight, with no Garmin Pilot item and no files for an SD card or a USB stick", async ({ page }) => {
+test("the route goes to the panel through ForeFlight, with no Garmin Pilot item and no files for an SD card or a USB stick", async ({
+  page,
+}) => {
   await routeWithCheckpoints(page);
   await page.getByTestId("share-route").click();
   await expect(page.getByTestId("open-foreflight")).toBeVisible();
   // The owner's calls (2026-11-02): wireless through ForeFlight, which
   // most pilots have; no Garmin Pilot, no SD card or USB stick.
-  for (const id of ["open-garmin-pilot", "export-fpl", "export-gfp", "export-gpx", "export-user-wpt", "export-dynon"]) await expect(page.getByTestId(id)).toHaveCount(0);
+  for (const id of ["open-garmin-pilot", "export-fpl", "export-gfp", "export-gpx", "export-user-wpt", "export-dynon"])
+    await expect(page.getByTestId(id)).toHaveCount(0);
 });
 
-test("the route goes to ForeFlight in one button: its checkpoints' pack the first time, then the route by their names", async ({ page }) => {
+test("the route goes to ForeFlight in one button: its checkpoints' pack the first time, then the route by their names", async ({
+  page,
+}) => {
   await routeWithCheckpoints(page);
   await page.getByTestId("share-route").click();
   // The first time, ForeFlight's content-pack link, to the pack on this server.
@@ -32,7 +37,10 @@ test("the route goes to ForeFlight in one button: its checkpoints' pack the firs
   const packLink = new URL((await open.getAttribute("href"))!);
   expect(packLink.origin + packLink.pathname).toBe("https://foreflight.com/content");
   expect(new URL(packLink.searchParams.get("downloadURL")!).pathname).toMatch(/\/C81-KDLH-checkpoints\.zip$/);
-  await page.route(url => url.hostname === "foreflight.com", route => route.fulfill({ status: 200, contentType: "text/html", body: "ForeFlight" }));
+  await page.route(
+    (url) => url.hostname === "foreflight.com",
+    (route) => route.fulfill({ status: 200, contentType: "text/html", body: "ForeFlight" }),
+  );
   await open.click();
   await expect(page).toHaveURL(/foreflight\.com\/content/);
 
@@ -50,7 +58,7 @@ test("the route goes to ForeFlight in one button: its checkpoints' pack the firs
   expect(file.suggestedFilename()).toBe("C81-KDLH-checkpoints.zip");
   // A ZIP's entry names are stored as they are: a page beside the first
   // waypoint, named for it, and the course layer.
-  const bytes = await (await file.createReadStream()).toArray().then(chunks => Buffer.concat(chunks));
+  const bytes = await (await file.createReadStream()).toArray().then((chunks) => Buffer.concat(chunks));
   expect(bytes.subarray(0, 2).toString()).toBe("PK");
   // Named for its place where the place names know it, else the route and its number.
   expect(bytes.toString("latin1")).toMatch(/C81-KDLH-checkpoints\/navdata\/[A-Z0-9_]{3,}Checkpoint 1 of /);

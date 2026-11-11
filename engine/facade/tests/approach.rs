@@ -131,7 +131,12 @@ fn gp() -> Value {
 }
 
 fn glidepath_ft(nm_out: f64) -> f64 {
-    ask("glidepath_ft", json!({"runway_path": gp(), "nm_out": nm_out})).as_f64().unwrap()
+    let p = gp();
+    let at = |k: &str| p[k].as_f64().unwrap();
+    wingtip_engine::approach::debrief::glidepath_ft(
+        &wingtip_engine::approach::RunwayPath { lat: at("lat"), lon: at("lon"), ft: at("ft"), deg: at("deg") },
+        nm_out,
+    )
 }
 
 fn gp_ft() -> f64 {
@@ -293,7 +298,12 @@ fn a_track_a_mile_off_the_final_is_flagged_full_scale_on_final() {
         Fly { alt: Some(on_ils()), off: Some(Box::new(off)), after: 60, after_alt: Some(missed_after(5.0)), ..Default::default() },
     );
     let d = debrief(&drawing("I08-Y"), &track, None);
-    let lateral = d["findings"].as_array().unwrap().iter().find(|f| f["text"].as_str().unwrap().starts_with("Full scale left of the course")).unwrap();
+    let lateral = d["findings"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["text"].as_str().unwrap().starts_with("Full scale left of the course"))
+        .unwrap();
     assert_eq!(lateral["tone"], "stop");
     let text = lateral["text"].as_str().unwrap();
     assert!(text.ends_with("on final, 1.0 nm off at most"), "{text}");
@@ -360,7 +370,8 @@ fn a_track_under_a_fixs_altitude_before_it_is_flagged() {
             1200.0
         }
     };
-    let track = fly(&line, Fly { alt: Some(Box::new(alt)), after: 60, after_alt: Some(Box::new(|s| 1200.0 + s * 15.0)), ..Default::default() });
+    let track =
+        fly(&line, Fly { alt: Some(Box::new(alt)), after: 60, after_alt: Some(Box::new(|s| 1200.0 + s * 15.0)), ..Default::default() });
     let d = debrief(&mikei, &track, None);
     let silex = d["findings"].as_array().unwrap().iter().find(|f| f["text"].as_str().unwrap().contains("SILEX")).unwrap().clone();
     assert_eq!(silex, json!({"tone": "stop", "text": "At SILEX: 600 ft below 4,100"}));
@@ -407,8 +418,10 @@ fn under_a_step_down_inside_the_final_is_marked_for_an_mdas_minimums() {
             1500.0
         }
     };
-    let track =
-        fly(&final_of(&stepped), Fly { alt: Some(Box::new(alt)), after: 60, after_alt: Some(Box::new(|s| 1500.0 + s * 15.0)), ..Default::default() });
+    let track = fly(
+        &final_of(&stepped),
+        Fly { alt: Some(Box::new(alt)), after: 60, after_alt: Some(Box::new(|s| 1500.0 + s * 15.0)), ..Default::default() },
+    );
     let d = debrief(&stepped, &track, None);
     let stepp = d["findings"].as_array().unwrap().iter().find(|f| f["text"].as_str().unwrap().contains("STEPP")).unwrap().clone();
     assert_eq!(stepp, json!({"tone": "caution", "text": "At STEPP: 300 ft below 1,800 (an MDA's step-down, not a glidepath's)"}));
@@ -439,7 +452,10 @@ fn under_the_minimums_to_land_is_what_91_175_c_allows() {
 fn below_the_glide_slopes_full_scale_is_flagged() {
     let ils = on_ils();
     let low = move |t: f64| if t < 4.0 && t > 2.0 { ils(t) - 400.0 } else { ils(t) };
-    let track = fly(&final_of(&drawing("I08-Y")), Fly { alt: Some(Box::new(low)), after: 60, after_alt: Some(missed_after(5.0)), ..Default::default() });
+    let track = fly(
+        &final_of(&drawing("I08-Y")),
+        Fly { alt: Some(Box::new(low)), after: 60, after_alt: Some(missed_after(5.0)), ..Default::default() },
+    );
     let d = debrief(&drawing("I08-Y"), &track, None);
     assert!(d["findings"]
         .as_array()
@@ -504,8 +520,9 @@ fn two_attempts_are_two_approaches() {
         .collect();
     // The way back round, far off the final, between them.
     let last_t = once.last().unwrap()["t"].as_f64().unwrap();
-    let between: Vec<Value> =
-        (0..30).map(|k| json!({"t": last_t + (k as f64 + 1.0) * 30_000.0, "lat": 34.4, "lon": -118.5 + k as f64 * 0.001, "alt_ft": 3000})).collect();
+    let between: Vec<Value> = (0..30)
+        .map(|k| json!({"t": last_t + (k as f64 + 1.0) * 30_000.0, "lat": 34.4, "lon": -118.5 + k as f64 * 0.001, "alt_ft": 3000}))
+        .collect();
     let all: Vec<Value> = once.into_iter().chain(between).chain(again).collect();
     assert_eq!(find(&[drawing("I08-Y")], &all, None).len(), 2);
 }
@@ -592,7 +609,6 @@ fn descent_rate_is_the_faas_table() {
     assert!((fpm(100.0, 3.0) / 100.0 - 5.3).abs() < 0.05);
     // Steeper is faster: 3.5° at 90 kt, 557.
     assert!((fpm(90.0, 3.5) - 557.0).abs() < 0.5);
-    assert_eq!(ask("approach_rounded_fpm", json!({"fpm": fpm(90.0, 3.0)})), json!(480.0));
 }
 
 #[test]
@@ -610,51 +626,6 @@ fn approach_category_is_97_3s() {
     assert_eq!(cat(json!(85), json!(70)), json!("A"));
     assert_eq!(cat(Value::Null, Value::Null), Value::Null);
     assert_eq!(cat(json!(0), json!(70)), Value::Null);
-}
-
-#[test]
-fn minimums_kind_is_a_da_an_mda_or_either() {
-    for (name, want) in [
-        ("ILS RWY 09", "DA"),
-        ("RNAV (RNP) Y RWY 08", "DA"),
-        ("RNAV (GPS) Y RWY 26L", "DA or MDA"),
-        ("LOC RWY 09", "MDA"),
-        ("VOR/DME-A", "MDA"),
-        ("GPS-A", "DA or MDA"),
-        ("GPSX", "MDA"),
-        ("ILS", "DA"),
-    ] {
-        assert_eq!(ask("approach_minimums_kind", json!({"name": name})), json!(want), "{name}");
-    }
-}
-
-fn missed_words(legs: Value) -> Value {
-    ask("approach_missed_words", json!({"legs": legs}))
-}
-
-#[test]
-fn the_missed_approach_in_the_plates_words() {
-    assert_eq!(
-        missed_words(kdlh()["missed_legs"].clone()),
-        json!("Climb to 3,000 on course 093°, then left turn to heading 320° to intercept, then on course 017° to CHERL climbing to 4,500, then hold at CHERL, right turns, 197° inbound.")
-    );
-    assert_eq!(
-        missed_words(json!([
-            {"path": "CA", "fix": null, "course_deg": 270, "turn": null, "min_ft": 2000, "max_ft": null},
-            {"path": "RF", "fix": "X", "course_deg": null, "turn": "R", "min_ft": null, "max_ft": null},
-        ])),
-        json!("Climb to 2,000 on course 270°, then as the plate shows.")
-    );
-    assert_eq!(missed_words(json!([{"path": "AF", "fix": "X", "course_deg": null, "turn": "R", "min_ft": null, "max_ft": null}])), Value::Null);
-    assert_eq!(missed_words(json!([])), Value::Null);
-    assert_eq!(ask("approach_missed_words", json!({})), Value::Null);
-    assert_eq!(
-        missed_words(json!([
-            {"path": "VA", "fix": null, "course_deg": 0, "turn": "R", "min_ft": 3000, "max_ft": null},
-            {"path": "DF", "fix": "ABC", "course_deg": null, "turn": null, "min_ft": null, "max_ft": null},
-        ])),
-        json!("Climbing right turn to 3,000 on heading 360°, then direct ABC.")
-    );
 }
 
 fn brief(input: Value) -> Vec<Value> {
@@ -710,16 +681,10 @@ fn the_brief_says_see_the_plate_and_makes_up_nothing() {
 fn the_brief_says_a_procedures_data_are_out_of_date() {
     let mut stale = kdlh();
     stale["stale"] = json!(true);
-    assert!(brief(json!({"drawing": stale}))[0]["lines"].as_array().unwrap().contains(&json!("Out of date: these are an older cycle's data")));
-}
-
-#[test]
-fn brief_frequencies_brief_only_what_the_field_lists() {
-    let f = |r: Value| ask("approach_brief_frequencies", json!({"frequencies": r}));
-    assert_eq!(f(json!([{"type": "UNICOM", "description": "UNICOM", "frequency_mhz": 122.8}])), json!(["Approach: see the plate", "CTAF 122.8"]));
-    // ctafOf's MULTICOM 122.9 is a guess, not this field's.
-    assert_eq!(f(json!([{"type": "GND", "description": "GND", "frequency_mhz": 121.7}])), json!(["Approach: see the plate"]));
-    assert_eq!(f(Value::Null), json!(["See the plate"]));
+    assert!(brief(json!({"drawing": stale}))[0]["lines"]
+        .as_array()
+        .unwrap()
+        .contains(&json!("Out of date: these are an older cycle's data")));
 }
 
 fn coach(d: Value, gs: f64) -> Vec<Value> {
@@ -748,7 +713,11 @@ fn coaching_flies_the_approach_fix_by_fix() {
     let secs = ((miles / 90.0) * 3600.0).round() as i64;
     assert_eq!(
         faf["why"],
-        json!(format!("The final approach starts here. {miles:.1} nm to the missed approach point: {}:{:02} at 90 kt.", secs / 60, secs % 60))
+        json!(format!(
+            "The final approach starts here. {miles:.1} nm to the missed approach point: {}:{:02} at 90 kt.",
+            secs / 60,
+            secs % 60
+        ))
     );
     assert_eq!(steps[2]["say"], "Cross CFBSJ at or above 3,300 ft and turn onto the final approach course, 093°.");
     assert_eq!(steps[4]["title"], "At the Decision Altitude");
@@ -800,7 +769,7 @@ fn the_quiz_never_offers_the_answer_as_a_wrong_choice_nor_any_choice_twice() {
             let choices = q["choices"].as_array().unwrap();
             let mut seen = choices.clone();
             seen.dedup();
-            seen.sort_by_key(|c| c.to_string());
+            wingtip_engine::sort::StableSort::stable_sort_by_key(&mut seen[..], |c| c.to_string());
             seen.dedup();
             assert_eq!(seen.len(), choices.len());
             assert_eq!(choices.iter().filter(|c| **c == answer(&q)).count(), 1);
@@ -829,10 +798,7 @@ fn the_quiz_asks_nothing_it_cannot_offer_a_wrong_choice_for() {
 fn the_lessons_line_runs_transition_final_missed() {
     let path = path_of(kdlh());
     assert_eq!(path.as_array().unwrap().len(), 7);
-    let leg = ask(
-        "approach_path_between",
-        json!({"path": path, "a": {"lat": 46.84, "lon": -92.36}, "b": {"lat": 46.84, "lon": -92.30}}),
-    );
+    let leg = ask("approach_path_between", json!({"path": path, "a": {"lat": 46.84, "lon": -92.36}, "b": {"lat": 46.84, "lon": -92.30}}));
     assert_eq!(leg, json!([{"lat": 46.84, "lon": -92.36}, {"lat": 46.84, "lon": -92.33}, {"lat": 46.84, "lon": -92.30}]));
     let empty = ask("approach_path_between", json!({"path": [], "a": {"lat": 1, "lon": 1}, "b": {"lat": 2, "lon": 2}}));
     assert_eq!(empty.as_array().unwrap().len(), 2);
@@ -849,13 +815,4 @@ fn the_side_view_draws_the_path_down_from_the_fafs_altitude() {
     assert_eq!(p["path"]["from"]["ft"], json!(3300.0));
     assert!((p["path"]["to"]["ft"].as_f64().unwrap() - (3300.0 - miles * 318.4)).abs() < 5.0);
     assert!(ask("approach_profile", json!({"drawing": bare()}))["path"].is_null());
-}
-
-#[test]
-fn fix_name_says_a_threshold_by_its_runway() {
-    assert_eq!(ask("approach_fix_name", json!({"ident": "RW09"})), json!("the runway 09 threshold"));
-    assert_eq!(ask("approach_fix_name", json!({"ident": "RW36C"})), json!("the runway 36C threshold"));
-    assert_eq!(ask("approach_fix_name", json!({"ident": "PYKLA"})), json!("PYKLA"));
-    assert_eq!(ask("approach_fix_name", json!({"ident": "RW9"})), json!("RW9"));
-    assert_eq!(wingtip_engine::approach::lesson::stopwatch(125.0), "2:05");
 }

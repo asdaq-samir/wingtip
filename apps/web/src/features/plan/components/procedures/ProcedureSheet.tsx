@@ -8,10 +8,10 @@ import { ToggleGroupItem } from "../../../../components/ui/toggle-group";
 import { api } from "../../../../lib/api/client";
 import type { ProcedureDrawing, ProcedureList, ProcedureSummary } from "../../../../lib/api/types";
 import { distanceNm } from "../../../../lib/geo";
-import { runwayNumber, type WindPick } from "../../../../lib/pattern";
+import { runwayNumber, type WindPick } from "../../lib/pattern";
 import { transitionWords, type PickedProcedure } from "../../../../lib/procedures";
 import { TEXT } from "../../../../lib/text";
-import { altFt } from "../../../../lib/units";
+import { altFt } from "../../../../lib/format";
 import { PROCEDURE_STALE_MS, type ProcedureKind } from "../../hooks/useProceduresRoute";
 import { Chips, NONE } from "./PatternChips";
 import { CHIP } from "../routeListStyle";
@@ -28,7 +28,15 @@ type Kind = ProcedureKind;
  * approach to the runway the wind favours said so. Drawn from the FAA's
  * coded procedure: a sketch on the chart, not the chart.
  */
-export function ProcedurePicker({ kind, list, failed, chosen, stale, wind, onOpen }: {
+export function ProcedurePicker({
+  kind,
+  list,
+  failed,
+  chosen,
+  stale,
+  wind,
+  onOpen,
+}: {
   kind: Kind;
   list: ProcedureList | undefined;
   /** The FAA's file could not be had. */
@@ -38,13 +46,27 @@ export function ProcedurePicker({ kind, list, failed, chosen, stale, wind, onOpe
   wind: WindPick | null;
   onOpen: (procedure: ProcedureSummary) => void;
 }) {
-  if (failed) return <p role="alert" className="px-1 text-muted-foreground">The FAA's procedures could not be had</p>;
-  if (!list) return <p role="status" className="px-1 text-muted-foreground">Fetching the procedures…</p>;
-  const of = list.procedures.filter(p => p.kind === kind);
-  if (of.length === 0) return <p className="px-1 text-muted-foreground" data-testid="procedures-none">{`No ${KIND_TITLE[kind].toLowerCase()} published`}</p>;
-  const runways = (p: ProcedureSummary) => p.runway_transitions.length
-    ? p.runway_transitions.includes("ALL") ? "All runways" : `Runway ${p.runway_transitions.map(r => r.replace(/^RW/, "").replace(/B$/, "")).join(", ")}`
-    : undefined;
+  if (failed)
+    return (
+      <p role="alert" className="px-1 text-muted-foreground">
+        The FAA's procedures could not be had
+      </p>
+    );
+  if (!list)
+    return (
+      <p role="status" className="px-1 text-muted-foreground">
+        Fetching the procedures…
+      </p>
+    );
+  const of = list.procedures.filter((p) => p.kind === kind);
+  if (of.length === 0)
+    return <p className="px-1 text-muted-foreground" data-testid="procedures-none">{`No ${KIND_TITLE[kind].toLowerCase()} published`}</p>;
+  const runways = (p: ProcedureSummary) =>
+    p.runway_transitions.length
+      ? p.runway_transitions.includes("ALL")
+        ? "All runways"
+        : `Runway ${p.runway_transitions.map((r) => r.replace(/^RW/, "").replace(/B$/, "")).join(", ")}`
+      : undefined;
   // From the FAA's coded procedures (CIFP): a sketch on the chart to plan
   // by, not for navigation. No footnote under them (the owner's "Avoid
   // putting so many footnotes"); a cycle out of date is still said, as a
@@ -52,17 +74,23 @@ export function ProcedurePicker({ kind, list, failed, chosen, stale, wind, onOpe
   return (
     <ListGroup>
       {stale && <ListRow title={<span className="text-destructive-ink">{stale}</span>} data-testid="procedures-stale" />}
-      {of.map(p => {
+      {of.map((p) => {
         const mine = chosen?.id === p.id ? chosen : null;
         const windward = kind === "approach" && !!p.runway && !!wind && !wind.calm && runwayNumber(p.runway) === wind.ident;
         const said = [
           mine ? `In the route, ${transitionWords(kind, mine.transition, true)}` : null,
           windward ? "Into the wind" : null,
           kind === "approach" ? null : runways(p),
-        ].filter(Boolean).join(" · ");
+        ]
+          .filter(Boolean)
+          .join(" · ");
         return (
           <ListRow
-            key={p.id} title={p.name} chevron onClick={() => onOpen(p)} data-testid="procedure-option"
+            key={p.id}
+            title={p.name}
+            chevron
+            onClick={() => onOpen(p)}
+            data-testid="procedure-option"
             description={said || undefined}
             value={mine ? <Check className="size-4 text-tint" aria-label="In the route" /> : undefined}
           />
@@ -81,7 +109,17 @@ export function ProcedurePicker({ kind, list, failed, chosen, stale, wind, onOpe
  * Add to Route at the foot (Remove from Route, where it is the route's),
  * an approach's chart beside it.
  */
-export function ProcedurePage({ kind, ident, procedure, chosen, stale, onAdd, onRemove, onPreview, onChart }: {
+export function ProcedurePage({
+  kind,
+  ident,
+  procedure,
+  chosen,
+  stale,
+  onAdd,
+  onRemove,
+  onPreview,
+  onChart,
+}: {
   kind: Kind;
   ident: string;
   procedure: ProcedureSummary;
@@ -115,12 +153,14 @@ export function ProcedurePage({ kind, ident, procedure, chosen, stale, onAdd, on
       {procedure.transitions.length > 0 && (
         <div className="space-y-2">
           <h4 className={cn("px-1 font-semibold", TEXT.detail)}>Transition</h4>
-          <Chips label="Transition" value={transition ?? NONE} onChange={v => setTransition(v === NONE ? null : v)}>
+          <Chips label="Transition" value={transition ?? NONE} onChange={(v) => setTransition(v === NONE ? null : v)}>
             <ToggleGroupItem value={NONE} className={CHIP} data-testid="procedure-transition">
               {transitionWords(kind, null)}
             </ToggleGroupItem>
-            {procedure.transitions.map(t => (
-              <ToggleGroupItem key={t} value={t} className={CHIP} data-testid="procedure-transition">{transitionWords(kind, t)}</ToggleGroupItem>
+            {procedure.transitions.map((t) => (
+              <ToggleGroupItem key={t} value={t} className={CHIP} data-testid="procedure-transition">
+                {transitionWords(kind, t)}
+              </ToggleGroupItem>
             ))}
           </Chips>
         </div>
@@ -140,7 +180,9 @@ export function ProcedurePage({ kind, ident, procedure, chosen, stale, onAdd, on
         )}
       >
         {onChart && kind === "approach" && (
-          <Button type="button" variant="secondary" onClick={onChart} data-testid="procedure-chart">Chart</Button>
+          <Button type="button" variant="secondary" onClick={onChart} data-testid="procedure-chart">
+            Chart
+          </Button>
         )}
         {inRoute ? (
           <Button type="button" variant="outline" className="flex-1 text-destructive" onClick={onRemove} data-testid="procedure-remove">
@@ -170,32 +212,32 @@ const FIX_ROLES = ["IAF", "IF", "FAF", "MAP"];
  * at both where they are one.
  */
 function FixLadder({ drawing }: { drawing: ProcedureDrawing }) {
-  const flown = drawing.fixes.filter(f => !f.missed && !(f.roles.length === 1 && f.roles[0] === "hold"));
+  const flown = drawing.fixes.filter((f) => !f.missed && !(f.roles.length === 1 && f.roles[0] === "hold"));
   if (flown.length === 0) return null;
-  const hold = drawing.holds.find(h => h.missed);
+  const hold = drawing.holds.find((h) => h.missed);
   return (
     <ol className="rounded-lg border border-border bg-card px-4 py-1" aria-label="Fixes" data-testid="procedure-fixes">
       {flown.map((f, i) => {
         const from = i > 0 ? flown[i - 1] : undefined;
         return (
-        <Fragment key={`${f.ident}-${i}`}>
-          {from && (
-            <li aria-hidden="true" className="grid grid-cols-[2.75rem_1fr] items-center gap-x-2.5">
-              <span className="mx-auto h-5 w-0.5 rounded-full bg-tint" />
-              <span className={cn("text-muted-foreground", TEXT.note)}>{`${distanceNm(from, f).toFixed(1)} nm`}</span>
+          <Fragment key={`${f.ident}-${i}`}>
+            {from && (
+              <li aria-hidden="true" className="grid grid-cols-[2.75rem_1fr] items-center gap-x-2.5">
+                <span className="mx-auto h-5 w-0.5 rounded-full bg-tint" />
+                <span className={cn("text-muted-foreground", TEXT.note)}>{`${distanceNm(from, f).toFixed(1)} nm`}</span>
+              </li>
+            )}
+            <li className="grid min-h-10 grid-cols-[2.75rem_1fr_auto] items-center gap-x-2.5">
+              <span className={cn("font-bold tracking-wide text-tint", TEXT.caption)}>
+                {f.roles.find((r) => FIX_ROLES.includes(r)) ?? ""}
+              </span>
+              <span className={cn("font-semibold", TEXT.row)}>{f.ident}</span>
+              <span className={cn("tabular-nums", TEXT.detail)}>{crossing(f.min_ft, f.max_ft)}</span>
             </li>
-          )}
-          <li className="grid min-h-10 grid-cols-[2.75rem_1fr_auto] items-center gap-x-2.5">
-            <span className={cn("font-bold tracking-wide text-tint", TEXT.caption)}>{f.roles.find(r => FIX_ROLES.includes(r)) ?? ""}</span>
-            <span className={cn("font-semibold", TEXT.row)}>{f.ident}</span>
-            <span className={cn("tabular-nums", TEXT.detail)}>{crossing(f.min_ft, f.max_ft)}</span>
-          </li>
-        </Fragment>
+          </Fragment>
         );
       })}
-      {hold && (
-        <li className={cn("border-t border-border py-2.5 text-muted-foreground", TEXT.detail)}>{`Missed: hold at ${hold.fix}`}</li>
-      )}
+      {hold && <li className={cn("border-t border-border py-2.5 text-muted-foreground", TEXT.detail)}>{`Missed: hold at ${hold.fix}`}</li>}
     </ol>
   );
 }

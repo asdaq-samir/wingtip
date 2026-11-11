@@ -1,22 +1,22 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useQueries, type UseQueryResult } from "@tanstack/react-query";
-import { BellRing, X } from "lucide-react";
+import { BellRing } from "lucide-react";
 import { cn } from "cn";
 import { Alert } from "./ui/alert";
 import { Button } from "./ui/button";
-import IconButton from "./IconButton";
-import { GLASS } from "./mapChrome";
+import CloseButton from "./CloseButton";
+import { GLASS } from "../lib/mapChrome";
 import { airborneNow, alertKey, dismissFired as dismiss, fired, useFiredAlerts, type Watched } from "../lib/aircraftAlerts";
 import type { FlightStatus } from "../lib/api/types";
-import { useOwnFix } from "../lib/map/ownShip";
-import { useTracking } from "../lib/map/tracking";
+import { useOwnFix } from "../lib/map/position/ownShip";
+import { useTracking } from "../lib/map/position/tracking";
 import { usePreferences } from "../lib/preferences";
 import { flightStatusQuery } from "../lib/queryClient";
 import { say } from "../lib/speech";
 import { TEXT } from "../lib/text";
 
 /** Each answer's state and when it came: the same answer is not read twice. */
-const answers = (results: UseQueryResult<FlightStatus>[]) => results.map(r => ({ data: r.data, at: r.dataUpdatedAt }));
+const answers = (results: UseQueryResult<FlightStatus>[]) => results.map((r) => ({ data: r.data, at: r.dataUpdatedAt }));
 
 /**
  * Watches the airplanes the pilot asked to be told of (lib/aircraftAlerts):
@@ -25,9 +25,9 @@ const answers = (results: UseQueryResult<FlightStatus>[]) => results.map(r => ({
  * before, and one that goes off said on the map and aloud, then let go.
  */
 function useAircraftAlertWatch() {
-  const alerts = usePreferences(s => s.aircraftAlerts);
-  const hexes = useMemo(() => [...new Set(alerts.map(a => a.hex))], [alerts]);
-  const results = useQueries({ queries: hexes.map(hex => flightStatusQuery(hex)), combine: answers });
+  const alerts = usePreferences((s) => s.aircraftAlerts);
+  const hexes = useMemo(() => [...new Set(alerts.map((a) => a.hex))], [alerts]);
+  const results = useQueries({ queries: hexes.map((hex) => flightStatusQuery(hex)), combine: answers });
   const me = useOwnFix();
   const watched = useRef(new Map<string, Watched>());
   const read = useRef(new Map<string, number>());
@@ -39,12 +39,12 @@ function useAircraftAlertWatch() {
       const before = watched.current.get(hex) ?? { airborne: null, inside: {} };
       const airborne = airborneNow(before.airborne, data);
       const inside = { ...before.inside };
-      for (const alert of alerts.filter(a => a.hex === hex)) {
+      for (const alert of alerts.filter((a) => a.hex === hex)) {
         const out = fired(alert, before, airborne, data, me, Date.now());
         if (out.inside !== undefined) inside[alertKey(alert)] = out.inside;
         if (!out.alert) continue;
         const went = out.alert;
-        useFiredAlerts.setState(s => ({ fired: [...s.fired, went] }));
+        useFiredAlerts.setState((s) => ({ fired: [...s.fired, went] }));
         say(went.spoken);
         // Said once, as FlightAware's alert for a flight is: set again to hear it again.
         usePreferences.getState().removeAircraftAlert(alert.hex, alert.kind);
@@ -69,17 +69,30 @@ function useAircraftAlertWatch() {
  */
 export default function AircraftAlerts() {
   useAircraftAlertWatch();
-  const shown = useFiredAlerts(s => s.fired);
-  return shown.map(alert => (
-    <div key={alert.id} className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-testid="aircraft-alert">
-      <Alert role="alert" className="flex min-h-11 items-center gap-2 rounded-[22px] border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0">
+  const shown = useFiredAlerts((s) => s.fired);
+  return shown.map((alert) => (
+    <div
+      key={alert.id}
+      className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-(--radius-banner)")}
+      data-testid="aircraft-alert"
+    >
+      <Alert
+        role="alert"
+        className="flex min-h-11 items-center gap-2 rounded-(--radius-banner) border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0"
+      >
         <BellRing className="shrink-0 text-tint" />
         <div className={cn("flex min-w-0 flex-1 flex-col py-1", TEXT.detail)}>
-          <span className="truncate font-semibold text-foreground" data-testid="aircraft-alert-title">{alert.title}</span>
+          <span className="truncate font-semibold text-foreground" data-testid="aircraft-alert-title">
+            {alert.title}
+          </span>
           {alert.detail && <span className="truncate text-muted-foreground">{alert.detail}</span>}
         </div>
         <Button
-          type="button" size="sm" variant="ghost" className="shrink-0 rounded-full text-tint" data-testid="aircraft-alert-show"
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="shrink-0 rounded-full text-tint"
+          data-testid="aircraft-alert-show"
           onClick={() => {
             // Its card, where the planner is open; from another page, the planner on it.
             const pick = useTracking.getState().pick;
@@ -90,9 +103,8 @@ export default function AircraftAlerts() {
         >
           Show
         </Button>
-        <IconButton label="Dismiss" className="shrink-0 rounded-full" onClick={() => dismiss(alert.id)} data-testid="aircraft-alert-dismiss">
-          <X />
-        </IconButton>
+        {/* The app's one close (CloseButton), as every card's and sheet's. */}
+        <CloseButton label="Dismiss" className="shrink-0" onClick={() => dismiss(alert.id)} data-testid="aircraft-alert-dismiss" />
       </Alert>
     </div>
   ));

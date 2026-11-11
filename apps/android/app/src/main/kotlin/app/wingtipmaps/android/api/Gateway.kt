@@ -1,11 +1,12 @@
 package app.wingtipmaps.android.api
 
+import android.annotation.SuppressLint
 import android.content.Context
 import app.wingtipmaps.android.Config
-import java.io.File
-import java.io.IOException
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
+import app.wingtipmaps.android.api.generated.gateway.MagicLinkRequest
+import app.wingtipmaps.android.map.CloseMap
+import app.wingtipmaps.android.map.OverlayCache
+import app.wingtipmaps.android.map.OverlayStore
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
@@ -22,6 +23,10 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
+import java.io.File
+import java.io.IOException
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * The gateway's calls, by hand, as the iOS app's Gateway.swift has them:
@@ -30,6 +35,7 @@ import okhttp3.Response
  * session cookie the gateway sets kept by CookieStore, so a call made
  * after signing in is the pilot's, as in Chrome.
  */
+@SuppressLint("StaticFieldLeak") // the application's context alone (attach), which lives as long as the process
 object Gateway {
     /** The coder for the servers' JSON: a key not modelled is passed
      *  over, and a null is left out of a body. The planner's snake case
@@ -49,9 +55,19 @@ object Gateway {
 
     val cookies: CookieStore by lazy { CookieStore(app.getSharedPreferences("cookies", Context.MODE_PRIVATE)) }
 
+    /** The overlay tiles' archive kept on the phone, for the air
+     *  (OverlayStore): in the app's files, not its cache, which the system
+     *  may empty before a flight. */
+    val overlayStore: OverlayStore by lazy { OverlayStore(File(app.filesDir, "overlay-tiles")) }
+
     val client: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .cookieJar(cookies)
+            // The archive's byte ranges answered from the phone where kept,
+            // and kept as they come: OkHttp's cache keeps no 206.
+            .addInterceptor(OverlayCache(overlayStore))
+            // The app named to Google's Map Tiles API (CloseMap).
+            .addInterceptor(CloseMap.signer(app))
             // A cache of the answers the gateway and the planner say may be
             // kept (Cache-Control: the chart's tiles for a cycle, the fields
             // and airspace of a box, a field's card for minutes), so a view
@@ -95,7 +111,7 @@ object Gateway {
      *  or `read` in the gateway's own words. */
     suspend fun call(method: String, path: String, json: String? = null, form: Map<String, String>? = null): Pair<String, Int> =
         client.newCall(request(method, path, json, form)).await().use { response ->
-            (response.body?.string() ?: "") to response.code
+            response.body.string() to response.code
         }
 
     /** A call whose answer is read, or nothing where the server sends no
@@ -127,9 +143,6 @@ object Gateway {
 
     /** The pilot signed in, or null (the gateway's 204) when no one is. */
     suspend fun me(): Pilot? = read("/api/me", none = setOf(204, 401))
-
-    @Serializable
-    private class MagicLinkRequest(val email: String)
 
     /** A sign-in link emailed to the pilot; the gateway answers 202
      *  whether or not the address is known. */

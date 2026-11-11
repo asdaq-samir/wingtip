@@ -1,0 +1,50 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "Each comma-separated piece of text, trimmed, the empty left out, with its hold or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "HoldsReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "HoldsReadAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "part": {
+            "type": "string"
+          },
+          "hold": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/RouteHold"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "part",
+          "hold"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

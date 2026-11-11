@@ -1,0 +1,1068 @@
+{
+  "_note": "A pilot's own altitude's cautions (14 CFR 91.119, 91.159, 91.131, 91.155, 71.33, 91.135, 91.211(a), 91.177(a), 91.179(b), 73.83) and the IFR alternate (91.169(b), (c)): the engine's own_altitude_caution, floor_caution, oxygen_caution, prohibited_caution, ifr_alternate_destination, ifr_alternate_check and ifr_alternates_ranked, made from the planner's tests (tests/test_plan.py, test_floor_caution.py, test_altitude_anyway.py, tests_wingtip/test_alternates.py). Held by engine/facade/tests/cautions.rs.",
+  "own_altitude": [
+    {
+      "selection": {
+        "segments": [
+          {
+            "floor_ft": 3200,
+            "hemispheric_rule_from_ft": 3800,
+            "eastbound": false,
+            "airspace_ceiling_ft": 8000,
+            "service_ceiling_ft": 13000,
+            "cloud_ceiling_ft": 7000
+          },
+          {
+            "floor_ft": 3200,
+            "hemispheric_rule_from_ft": 3800,
+            "eastbound": false,
+            "airspace_ceiling_ft": 8000,
+            "service_ceiling_ft": 13000,
+            "cloud_ceiling_ft": 7000
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 4500
+        },
+        {
+          "altitude_ft": 4500
+        }
+      ],
+      "between": [
+        "C81",
+        "VPBNG"
+      ],
+      "answer": null
+    },
+    {
+      "selection": {
+        "segments": [
+          {
+            "floor_ft": 3200,
+            "hemispheric_rule_from_ft": 3800,
+            "eastbound": false,
+            "airspace_ceiling_ft": 8000,
+            "service_ceiling_ft": 13000,
+            "cloud_ceiling_ft": 7000
+          },
+          {
+            "floor_ft": 3200,
+            "hemispheric_rule_from_ft": 3800,
+            "eastbound": false,
+            "airspace_ceiling_ft": 8000,
+            "service_ceiling_ft": 13000,
+            "cloud_ceiling_ft": 7000
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 5500
+        },
+        {
+          "altitude_ft": 5500
+        }
+      ],
+      "between": [
+        "C81",
+        "VPBNG"
+      ],
+      "answer": {
+        "from_ident": "C81",
+        "to_ident": "VPBNG",
+        "altitude_ft": 5500,
+        "reasons": [
+          "Westbound more than 3,000 ft above the ground flies even thousands plus 500: fly 4,500 or 6,500 ft (14 CFR 91.159)"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "segments": [
+          {
+            "floor_ft": 3200,
+            "hemispheric_rule_from_ft": 3800,
+            "eastbound": false,
+            "airspace_ceiling_ft": 8000,
+            "service_ceiling_ft": 13000,
+            "cloud_ceiling_ft": 7000
+          },
+          {
+            "floor_ft": 3200,
+            "hemispheric_rule_from_ft": 3800,
+            "eastbound": false,
+            "airspace_ceiling_ft": 8000,
+            "service_ceiling_ft": 13000,
+            "cloud_ceiling_ft": 7000
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 3000
+        },
+        {
+          "altitude_ft": 3000
+        }
+      ],
+      "between": [
+        "C81",
+        "VPBNG"
+      ],
+      "answer": {
+        "from_ident": "C81",
+        "to_ident": "VPBNG",
+        "altitude_ft": 3000,
+        "reasons": [
+          "Under the 3,200 ft the terrain and obstacles need (14 CFR 91.119)"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "segments": [
+          {
+            "floor_ft": 3200,
+            "hemispheric_rule_from_ft": 3800,
+            "eastbound": false,
+            "airspace_ceiling_ft": 8000,
+            "service_ceiling_ft": 13000,
+            "cloud_ceiling_ft": 7000
+          },
+          {
+            "floor_ft": 3200,
+            "hemispheric_rule_from_ft": 3800,
+            "eastbound": false,
+            "airspace_ceiling_ft": 8000,
+            "service_ceiling_ft": 13000,
+            "cloud_ceiling_ft": 7000
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 8500
+        },
+        {
+          "altitude_ft": 8500
+        }
+      ],
+      "between": [
+        "C81",
+        "VPBNG"
+      ],
+      "answer": {
+        "from_ident": "C81",
+        "to_ident": "VPBNG",
+        "altitude_ft": 8500,
+        "reasons": [
+          "Into Class B from 8,000 ft: it needs a clearance (14 CFR 91.131)",
+          "Inside the cloud clearance under 7,000 ft (14 CFR 91.155)"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "rules": "ifr",
+        "segments": [
+          {
+            "floor_ft": 4100,
+            "eastbound": true,
+            "service_ceiling_ft": 13000,
+            "obstacle_clearance_ft": 2000
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 5000
+        }
+      ],
+      "between": [
+        "C81",
+        "KDLH"
+      ],
+      "answer": null
+    },
+    {
+      "selection": {
+        "rules": "ifr",
+        "segments": [
+          {
+            "floor_ft": 4100,
+            "eastbound": true,
+            "service_ceiling_ft": 13000,
+            "obstacle_clearance_ft": 2000
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 6000
+        }
+      ],
+      "between": [
+        "C81",
+        "KDLH"
+      ],
+      "answer": {
+        "from_ident": "C81",
+        "to_ident": "KDLH",
+        "altitude_ft": 6000,
+        "reasons": [
+          "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "rules": "ifr",
+        "segments": [
+          {
+            "floor_ft": 4100,
+            "eastbound": true,
+            "service_ceiling_ft": 13000,
+            "obstacle_clearance_ft": 2000
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 3000
+        }
+      ],
+      "between": [
+        "C81",
+        "KDLH"
+      ],
+      "answer": {
+        "from_ident": "C81",
+        "to_ident": "KDLH",
+        "altitude_ft": 3000,
+        "reasons": [
+          "Under the 4,100 ft minimum IFR altitude: 2,000 ft over the highest obstacle within 4 nm (14 CFR 91.177(a)(2))"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "rules": "ifr",
+        "segments": [
+          {
+            "floor_ft": 5500,
+            "eastbound": true,
+            "service_ceiling_ft": 13000,
+            "airway": {
+              "id": "V100",
+              "mea_ft": 5500,
+              "gnss_mea_ft": null,
+              "moca_ft": 2600,
+              "maa_ft": 9000
+            }
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 5000
+        }
+      ],
+      "between": [
+        "KJVL",
+        "KPIA"
+      ],
+      "answer": {
+        "from_ident": "KJVL",
+        "to_ident": "KPIA",
+        "altitude_ft": 5000,
+        "reasons": [
+          "Under the 5,500 ft MEA of V100 (14 CFR 91.177(a)(1))"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "rules": "ifr",
+        "segments": [
+          {
+            "floor_ft": 4000,
+            "eastbound": false,
+            "service_ceiling_ft": 13000,
+            "airway": {
+              "id": "T270",
+              "mea_ft": null,
+              "gnss_mea_ft": 4000,
+              "moca_ft": null,
+              "maa_ft": 17500
+            }
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 3000
+        }
+      ],
+      "between": [
+        "KJVL",
+        "KPIA"
+      ],
+      "answer": {
+        "from_ident": "KJVL",
+        "to_ident": "KPIA",
+        "altitude_ft": 3000,
+        "reasons": [
+          "Under the 4,000 ft GNSS MEA of T270 (14 CFR 91.177(a)(1))",
+          "Westbound under IFR flies even thousands, unless ATC assigns otherwise (14 CFR 91.179)"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "rules": "ifr",
+        "segments": [
+          {
+            "floor_ft": 4100,
+            "eastbound": true,
+            "service_ceiling_ft": 13000,
+            "obstacle_clearance_ft": 2000
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 5500
+        }
+      ],
+      "between": [
+        "C81",
+        "KDLH"
+      ],
+      "answer": {
+        "from_ident": "C81",
+        "to_ident": "KDLH",
+        "altitude_ft": 5500,
+        "reasons": [
+          "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "segments": [
+          {
+            "floor_ft": 1700,
+            "highest_ft": 1200,
+            "highest_is_obstacle": false,
+            "obstacle_type": null,
+            "obstacle_clearance_ft": 500,
+            "congested": false,
+            "hemispheric_rule_from_ft": 4000,
+            "eastbound": true
+          },
+          {
+            "floor_ft": 2500,
+            "highest_ft": 1500,
+            "highest_is_obstacle": true,
+            "obstacle_type": "TOWER",
+            "obstacle_clearance_ft": 1000,
+            "congested": true,
+            "hemispheric_rule_from_ft": 4000,
+            "eastbound": true
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 2000
+        },
+        {
+          "altitude_ft": 2000
+        }
+      ],
+      "between": [
+        "KRZL",
+        "KLAF"
+      ],
+      "answer": {
+        "from_ident": "KRZL",
+        "to_ident": "KLAF",
+        "altitude_ft": 2000,
+        "reasons": [
+          "500 ft under the 2,500 ft 14 CFR 91.119(b) asks over a congested area: 1,000 ft over the highest obstacle within 2,000 ft, here a 1,500 ft tower"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "course_magnetic_deg": 80,
+        "segments": [
+          {
+            "floor_ft": 13600,
+            "service_ceiling_ft": 10950,
+            "course_magnetic_deg": 80,
+            "eastbound": true,
+            "hemispheric_rule_from_ft": 9000,
+            "airspace_ceiling_ft": null,
+            "cloud_ceiling_ft": null,
+            "candidates_ft": []
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 15500
+        }
+      ],
+      "between": [
+        "KLAX",
+        "KBDL"
+      ],
+      "answer": {
+        "from_ident": "KLAX",
+        "to_ident": "KBDL",
+        "altitude_ft": 15500,
+        "reasons": [
+          "Over the aircraft's 10,950 ft service ceiling",
+          "Over 15,000 ft MSL: oxygen for the crew the whole time there and for every occupant (14 CFR 91.211(a)(2), (3))"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "course_magnetic_deg": 80,
+        "segments": [
+          {
+            "floor_ft": 13600,
+            "service_ceiling_ft": 10950,
+            "course_magnetic_deg": 80,
+            "eastbound": true,
+            "hemispheric_rule_from_ft": 9000,
+            "airspace_ceiling_ft": null,
+            "cloud_ceiling_ft": null,
+            "candidates_ft": []
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 15500
+        }
+      ],
+      "between": [
+        "KLAX",
+        "KBDL"
+      ],
+      "profile": {
+        "supplemental_oxygen": true
+      },
+      "answer": {
+        "from_ident": "KLAX",
+        "to_ident": "KBDL",
+        "altitude_ft": 15500,
+        "reasons": [
+          "Over the aircraft's 10,950 ft service ceiling"
+        ]
+      }
+    },
+    {
+      "selection": {
+        "course_magnetic_deg": 80,
+        "segments": [
+          {
+            "floor_ft": 3000,
+            "service_ceiling_ft": 25000,
+            "course_magnetic_deg": 80,
+            "eastbound": true,
+            "hemispheric_rule_from_ft": 9000,
+            "airspace_ceiling_ft": null,
+            "cloud_ceiling_ft": null,
+            "candidates_ft": []
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 17500
+        }
+      ],
+      "between": [
+        "A",
+        "B"
+      ],
+      "profile": {
+        "supplemental_oxygen": true
+      },
+      "answer": null
+    },
+    {
+      "selection": {
+        "course_magnetic_deg": 80,
+        "segments": [
+          {
+            "floor_ft": 3000,
+            "service_ceiling_ft": 25000,
+            "course_magnetic_deg": 80,
+            "eastbound": true,
+            "hemispheric_rule_from_ft": 9000,
+            "airspace_ceiling_ft": null,
+            "cloud_ceiling_ft": null,
+            "candidates_ft": []
+          }
+        ]
+      },
+      "legs": [
+        {
+          "altitude_ft": 18500
+        }
+      ],
+      "between": [
+        "A",
+        "B"
+      ],
+      "profile": {
+        "supplemental_oxygen": true
+      },
+      "answer": {
+        "from_ident": "A",
+        "to_ident": "B",
+        "altitude_ft": 18500,
+        "reasons": [
+          "Eastbound more than 3,000 ft above the ground flies odd thousands plus 500: fly 17,500 ft (14 CFR 91.159)",
+          "At or over 18,000 ft MSL: Class A, flown under IFR with a clearance alone (14 CFR 71.33, 91.135)"
+        ]
+      }
+    }
+  ],
+  "floor": [
+    {
+      "segment": {
+        "floor_ft": 2500,
+        "highest_ft": 1500,
+        "highest_is_obstacle": true,
+        "obstacle_type": "TOWER",
+        "obstacle_clearance_ft": 1000,
+        "congested": true,
+        "hemispheric_rule_from_ft": 4000,
+        "eastbound": true
+      },
+      "altitude_ft": 2500,
+      "answer": null
+    },
+    {
+      "segment": {
+        "floor_ft": 2500,
+        "highest_ft": 1500,
+        "highest_is_obstacle": true,
+        "obstacle_type": "TOWER",
+        "obstacle_clearance_ft": 1000,
+        "congested": true,
+        "hemispheric_rule_from_ft": 4000,
+        "eastbound": true
+      },
+      "altitude_ft": 2499,
+      "answer": "1 ft under the 2,500 ft 14 CFR 91.119(b) asks over a congested area: 1,000 ft over the highest obstacle within 2,000 ft, here a 1,500 ft tower"
+    },
+    {
+      "segment": {
+        "floor_ft": 1700,
+        "highest_ft": 1200,
+        "highest_is_obstacle": false,
+        "obstacle_type": null,
+        "obstacle_clearance_ft": 500,
+        "congested": false,
+        "hemispheric_rule_from_ft": 4000,
+        "eastbound": true
+      },
+      "altitude_ft": 1700,
+      "answer": null
+    },
+    {
+      "segment": {
+        "floor_ft": 1700,
+        "highest_ft": 1200,
+        "highest_is_obstacle": false,
+        "obstacle_type": null,
+        "obstacle_clearance_ft": 500,
+        "congested": false,
+        "hemispheric_rule_from_ft": 4000,
+        "eastbound": true
+      },
+      "altitude_ft": 1699,
+      "answer": "1 ft under the 1,700 ft 14 CFR 91.119(c) asks: 500 ft over the ground at 1,200 ft"
+    },
+    {
+      "segment": {
+        "floor_ft": 2000,
+        "highest_ft": 1480,
+        "highest_is_obstacle": true,
+        "obstacle_type": "T-L TWR",
+        "obstacle_clearance_ft": 500,
+        "congested": false,
+        "hemispheric_rule_from_ft": 4000,
+        "eastbound": true
+      },
+      "altitude_ft": 1980,
+      "answer": null
+    },
+    {
+      "segment": {
+        "floor_ft": 2000,
+        "highest_ft": 1480,
+        "highest_is_obstacle": true,
+        "obstacle_type": "T-L TWR",
+        "obstacle_clearance_ft": 500,
+        "congested": false,
+        "hemispheric_rule_from_ft": 4000,
+        "eastbound": true
+      },
+      "altitude_ft": 1500,
+      "answer": "480 ft under the 1,980 ft 14 CFR 91.119(c) asks: 500 ft over a 1,480 ft transmission line tower"
+    },
+    {
+      "segment": {
+        "floor_ft": 1800,
+        "highest_ft": 800,
+        "highest_is_obstacle": true,
+        "obstacle_type": "ANTENNA",
+        "obstacle_clearance_ft": 1000,
+        "congested": null,
+        "hemispheric_rule_from_ft": 4000,
+        "eastbound": true
+      },
+      "altitude_ft": 1500,
+      "answer": "300 ft under the 1,800 ft 14 CFR 91.119(b) asks where a congested area could not be ruled out: 1,000 ft over the highest obstacle within 2,000 ft, here an 800 ft antenna"
+    },
+    {
+      "segment": {
+        "floor_ft": 3200
+      },
+      "altitude_ft": 3000,
+      "answer": "Under the 3,200 ft the terrain and obstacles need (14 CFR 91.119)"
+    },
+    {
+      "segment": {
+        "floor_ft": 3200
+      },
+      "altitude_ft": 3200,
+      "answer": null
+    }
+  ],
+  "prohibited": [
+    {
+      "selection": {
+        "special_use": [
+          {
+            "name": "P-56A",
+            "type": "P"
+          },
+          {
+            "name": "R-4001",
+            "type": "R"
+          }
+        ]
+      },
+      "answer": [
+        "Through P-56A, prohibited airspace (14 CFR 73.83)"
+      ]
+    }
+  ],
+  "alternate_destination": [
+    {
+      "ident": "KDST",
+      "approaches": {
+        "any": true,
+        "precision": true,
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 2000,
+        "ceiling_unknown": false,
+        "visibility_sm": 3,
+        "raw": "TAF KDST"
+      },
+      "answer": {
+        "ident": "KDST",
+        "approach": true,
+        "ceiling_ft": 2000,
+        "visibility_sm": 3,
+        "taf": "TAF KDST",
+        "required": false,
+        "reasons": []
+      }
+    },
+    {
+      "ident": "KDST",
+      "approaches": {
+        "any": true,
+        "precision": true,
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 1900,
+        "ceiling_unknown": false,
+        "visibility_sm": 6,
+        "raw": "TAF KDST"
+      },
+      "answer": {
+        "ident": "KDST",
+        "approach": true,
+        "ceiling_ft": 1900,
+        "visibility_sm": 6,
+        "taf": "TAF KDST",
+        "required": true,
+        "reasons": [
+          "The TAF has a 1,900 ft ceiling within an hour of the ETA: under 2,000 ft."
+        ]
+      }
+    },
+    {
+      "ident": "KDST",
+      "approaches": {
+        "any": true,
+        "precision": true,
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 3000,
+        "ceiling_unknown": false,
+        "visibility_sm": 2.5,
+        "raw": "TAF KDST"
+      },
+      "answer": {
+        "ident": "KDST",
+        "approach": true,
+        "ceiling_ft": 3000,
+        "visibility_sm": 2.5,
+        "taf": "TAF KDST",
+        "required": true,
+        "reasons": [
+          "The TAF has 2.5 sm within an hour of the ETA: under 3 sm."
+        ]
+      }
+    },
+    {
+      "ident": "KDST",
+      "approaches": {
+        "any": false,
+        "precision": false,
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": null,
+        "ceiling_unknown": false,
+        "visibility_sm": 6,
+        "raw": "TAF KDST"
+      },
+      "answer": {
+        "ident": "KDST",
+        "approach": false,
+        "ceiling_ft": null,
+        "visibility_sm": 6,
+        "taf": "TAF KDST",
+        "required": true,
+        "reasons": [
+          "KDST has no instrument approach published (14 CFR 91.169(b)(1))."
+        ]
+      }
+    },
+    {
+      "ident": "KNOA",
+      "approaches": {
+        "any": true,
+        "precision": true,
+        "alternate_minimums_url": null
+      },
+      "forecast": null,
+      "answer": {
+        "ident": "KNOA",
+        "approach": true,
+        "ceiling_ft": null,
+        "visibility_sm": null,
+        "taf": null,
+        "required": true,
+        "reasons": [
+          "No TAF for KNOA covers an hour either side of the ETA."
+        ]
+      }
+    },
+    {
+      "ident": "KDST",
+      "approaches": {
+        "any": true,
+        "precision": true,
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": null,
+        "ceiling_unknown": true,
+        "visibility_sm": 6,
+        "raw": "TAF KDST"
+      },
+      "answer": {
+        "ident": "KDST",
+        "approach": true,
+        "ceiling_ft": null,
+        "visibility_sm": 6,
+        "taf": "TAF KDST",
+        "required": true,
+        "reasons": [
+          "The TAF has a ceiling of unknown height within an hour of the ETA."
+        ]
+      }
+    }
+  ],
+  "alternate_check": [
+    {
+      "ident": "KALT",
+      "approaches": {
+        "any": true,
+        "precision": true,
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 700,
+        "ceiling_unknown": false,
+        "visibility_sm": 2,
+        "raw": "TAF KALT"
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": true,
+        "minimums": {
+          "ceiling_ft": 600,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 700,
+        "visibility_sm": 2,
+        "taf": "TAF KALT",
+        "good": true,
+        "meets_standard": true,
+        "reasons": []
+      }
+    },
+    {
+      "ident": "KALT",
+      "approaches": {
+        "any": true,
+        "precision": false,
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 700,
+        "ceiling_unknown": false,
+        "visibility_sm": 2,
+        "raw": "TAF KALT"
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": false,
+        "minimums": {
+          "ceiling_ft": 800,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 700,
+        "visibility_sm": 2,
+        "taf": "TAF KALT",
+        "good": false,
+        "meets_standard": false,
+        "reasons": [
+          "The TAF has a 700 ft ceiling at the ETA: under 800 ft."
+        ]
+      }
+    },
+    {
+      "ident": "KALT",
+      "approaches": {
+        "any": true,
+        "precision": false,
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 3000,
+        "ceiling_unknown": false,
+        "visibility_sm": 1.5,
+        "raw": "TAF KALT"
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": false,
+        "minimums": {
+          "ceiling_ft": 800,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": 3000,
+        "visibility_sm": 1.5,
+        "taf": "TAF KALT",
+        "good": false,
+        "meets_standard": false,
+        "reasons": [
+          "The TAF has 1.5 sm at the ETA: under 2 sm."
+        ]
+      }
+    },
+    {
+      "ident": "KALT",
+      "approaches": {
+        "any": true,
+        "precision": true,
+        "alternate_minimums_url": "https://aeronav.faa.gov/d-tpp/2610/NC3ALT.PDF"
+      },
+      "forecast": {
+        "ceiling_ft": 3000,
+        "ceiling_unknown": false,
+        "visibility_sm": 6,
+        "raw": "TAF KALT"
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": true,
+        "minimums": {
+          "ceiling_ft": 600,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": "https://aeronav.faa.gov/d-tpp/2610/NC3ALT.PDF",
+        "ceiling_ft": 3000,
+        "visibility_sm": 6,
+        "taf": "TAF KALT",
+        "good": null,
+        "meets_standard": true,
+        "reasons": [
+          "KALT publishes its own alternate minimums, higher than standard or not authorized for some approaches: check its alternate minimums page."
+        ]
+      }
+    },
+    {
+      "ident": "KALT",
+      "approaches": {
+        "any": false,
+        "precision": false,
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": 3000,
+        "ceiling_unknown": false,
+        "visibility_sm": 6,
+        "raw": "TAF KALT"
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": false,
+        "precision": false,
+        "minimums": null,
+        "alternate_minimums_url": null,
+        "ceiling_ft": 3000,
+        "visibility_sm": 6,
+        "taf": "TAF KALT",
+        "good": null,
+        "meets_standard": false,
+        "reasons": [
+          "KALT has no instrument approach: the forecast must allow a descent from the MEA and a landing under basic VFR (14 CFR 91.169(c)(2))."
+        ]
+      }
+    },
+    {
+      "ident": "KALT",
+      "approaches": {
+        "any": true,
+        "precision": true,
+        "alternate_minimums_url": null
+      },
+      "forecast": null,
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": true,
+        "minimums": {
+          "ceiling_ft": 600,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": null,
+        "visibility_sm": null,
+        "taf": null,
+        "good": null,
+        "meets_standard": false,
+        "reasons": [
+          "No TAF for KALT covers the ETA there."
+        ]
+      }
+    },
+    {
+      "ident": "KALT",
+      "approaches": {
+        "any": true,
+        "precision": true,
+        "alternate_minimums_url": null
+      },
+      "forecast": {
+        "ceiling_ft": null,
+        "ceiling_unknown": true,
+        "visibility_sm": 6,
+        "raw": "TAF KALT"
+      },
+      "answer": {
+        "ident": "KALT",
+        "approach": true,
+        "precision": true,
+        "minimums": {
+          "ceiling_ft": 600,
+          "visibility_sm": 2
+        },
+        "alternate_minimums_url": null,
+        "ceiling_ft": null,
+        "visibility_sm": 6,
+        "taf": "TAF KALT",
+        "good": null,
+        "meets_standard": false,
+        "reasons": [
+          "The TAF has a ceiling of unknown height at the ETA."
+        ]
+      }
+    }
+  ],
+  "alternates_ranked": [
+    {
+      "checks": [
+        {
+          "ident": "KNOA",
+          "good": null,
+          "meets_standard": false,
+          "distance_nm": 12.0
+        },
+        {
+          "ident": "KALT",
+          "good": null,
+          "meets_standard": true,
+          "distance_nm": 30.0
+        },
+        {
+          "ident": "KBAD",
+          "good": false,
+          "meets_standard": false,
+          "distance_nm": 40.0
+        },
+        {
+          "ident": "KFAR",
+          "good": true,
+          "meets_standard": true,
+          "distance_nm": 90.0
+        }
+      ],
+      "limit": 5,
+      "answer": [
+        "KFAR",
+        "KALT"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,187 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "Whether an end fits the airplane today for a takeoff or a landing: crosswind against the demonstrated, distance needed against the length with SAFO 19001's 15 per cent margin.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RunwayEndFitInput",
+      "type": "object",
+      "properties": {
+        "aircraft": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "takeoff": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ShortFieldTable"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "landing": {
+              "anyOf": [
+                {
+                  "$ref": "#/definitions/ShortFieldTable"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "crosswind": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "demonstrated_kt": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "runway": {
+          "$ref": "#/definitions/Runway"
+        },
+        "end": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "heading_true_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "wind": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "dir_true_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "speed_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "gust_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Null where the field's elevation is not known: no distance is worked out (needed_ft null, unknown true)."
+        },
+        "altimeter_in_hg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "temp_c": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "weight_lb": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "None: the table's heaviest."
+        },
+        "kind": {
+          "type": "string",
+          "description": "\"takeoff\"; anything else is a landing."
+        }
+      },
+      "required": [
+        "runway",
+        "elevation_ft",
+        "kind"
+      ]
+    },
+    "answer": {
+      "title": "RunwayEndFitAnswer",
+      "type": "object",
+      "properties": {
+        "crosswind_kt": {
+          "type": "number"
+        },
+        "crosswind_over": {
+          "type": "boolean"
+        },
+        "needed_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "length_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "close": {
+          "type": "boolean",
+          "description": "Not short, but within SAFO 19001's 15 per cent."
+        },
+        "unknown": {
+          "type": "boolean",
+          "description": "The distance or the runway's length is not known, so whether it fits is not (14 CFR 91.103(b)); never read as fitting."
+        },
+        "beyond": {
+          "type": "boolean",
+          "description": "The distance was read past the POH's table (higher, hotter, heavier or more tailwind than it goes): its edge's figures."
+        }
+      },
+      "required": [
+        "crosswind_kt",
+        "crosswind_over",
+        "needed_ft",
+        "length_ft",
+        "short",
+        "close",
+        "unknown",
+        "beyond"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

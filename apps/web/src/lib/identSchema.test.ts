@@ -1,5 +1,21 @@
 import { describe, expect, test } from "vitest";
-import { altitudesOf, altitudesParam, departureOf, frdIdent, frdOf, groundOf, identOf, nameOwnPoints, placeOfPoint, pointName, positionIdent, routeOf, stopOf, stopsOf, withoutAltitude } from "./identSchema";
+import {
+  altitudesOf,
+  altitudesParam,
+  departureOf,
+  frdIdent,
+  frdOf,
+  groundOf,
+  identOf,
+  nameOwnPoints,
+  placeOfPoint,
+  pointName,
+  positionIdent,
+  routeOf,
+  stopOf,
+  stopsOf,
+  withoutAltitude,
+} from "./identSchema";
 
 describe("identOf and stopsOf", () => {
   test("an airport's ident trimmed and uppercased, else empty", () => {
@@ -41,7 +57,6 @@ describe("altitudesOf", () => {
     expect(altitudesParam({})).toBe("");
   });
 });
-
 
 describe("a present position", () => {
   test("is written with the GPS's altitude, to the hundred, where it has one", () => {

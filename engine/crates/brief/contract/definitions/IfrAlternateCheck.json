@@ -1,0 +1,84 @@
+{
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "approach": {
+      "type": "boolean"
+    },
+    "precision": {
+      "type": "boolean"
+    },
+    "minimums": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "ceiling_ft": {
+          "type": "number"
+        },
+        "visibility_sm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "ceiling_ft",
+        "visibility_sm"
+      ]
+    },
+    "alternate_minimums_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "visibility_sm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "taf": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "good": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "meets_standard": {
+      "type": "boolean"
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "ident",
+    "approach",
+    "precision",
+    "minimums",
+    "alternate_minimums_url",
+    "ceiling_ft",
+    "visibility_sm",
+    "taf",
+    "good",
+    "meets_standard",
+    "reasons"
+  ]
+}

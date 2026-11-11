@@ -1,32 +1,34 @@
-import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { useAirplaneChosen } from "../../../lib/preferences";
+import { useEffect, useState, useEffectEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { aircraftListQuery, currencyQuery, pilotQuery } from "../../../lib/queryClient";
 import type { Briefing, Course, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
 import type { BriefingState } from "./usePlan";
 import { ceilingAndVisibility, PLAN_NAME, reportedWind } from "../format";
-import { feetRange, flightLevel, grouped } from "../../../lib/units";
+import { feetRange, flightLevel, grouped, localDay, reportedDirection, weekdayDayMonthTime } from "../../../lib/format";
 import { isAirwayToken } from "../../../lib/identSchema";
 import { useLoad } from "./useLoad";
 import { armText } from "../../../lib/weightBalance";
 import { underMinimums } from "../../../lib/minimums";
 import { usePreferences } from "../../../lib/preferences";
 import { faaWords, gairmetTitle, sigmetHazard, suaAltitudes } from "../../../lib/advisories";
-import { passTime, suaWhen, tfrWhen, type SuaWhen } from "../../../lib/passTimes";
-import { pickedEnd, runwayFlown, runwayNumber } from "../../../lib/pattern";
-import { useRunwayPicks } from "../../../lib/useRunwayPicks";
-import { runwayChecks } from "../../../lib/runwayCheck";
+import { passTime, suaWhen, tfrWhen, type SuaWhen } from "../lib/passTimes";
+import { pickedEnd, runwayFlown, runwayNumber } from "../lib/pattern";
+import { useRunwayPicks } from "../lib/useRunwayPicks";
+import { runwayChecks } from "../lib/runwayCheck";
 import { worstOf } from "../../../lib/findings";
 import { useVerdict, verdictItems, type VerdictItem } from "../../../lib/verdict";
-import { callSign, fieldPhases } from "../../../lib/radio";
-import { useGlance, type BriefGlance, type FieldGlance } from "../../../lib/glance";
+import { callSign, fieldPhases } from "../lib/radio";
+import { useGlance, type BriefGlance, type FieldGlance } from "../lib/glance";
 import { shortName } from "../../../lib/aircraftChoice";
-import { usePrinting } from "../../../lib/usePrinting";
+import { usePrinting } from "../lib/usePrinting";
 import { fieldCategory } from "../components/briefing/fieldWeather";
-import { flightPlanForms, type FiledProcedure } from "../../../lib/flightPlanForm";
+import { flightPlanForms, type FiledProcedure } from "../lib/flightPlanForm";
 import { alternateFinding, useAlternate } from "./useAlternate";
-import { icingAtAltitude, icingLine } from "../../../lib/icing";
-import { planFacts } from "../../../lib/oral";
+import { flowQuery, itwsLines, itwsQuery, liveWhen, programLines, saaQuery } from "../../../lib/liveReports";
+import { icingAtAltitude, icingLine } from "../lib/icing";
+import { useIcingForecast } from "./useIcingForecast";
+import { planFacts } from "../lib/oral";
 import { assess, riskLine, useRisk } from "../../../lib/frat";
 import type { BriefingPart } from "../components/briefing/sections";
 
@@ -41,7 +43,7 @@ export const WEATHER_SOURCE_LABEL: Record<Briefing["weather_unavailable"][number
   gairmets: "G-AIRMETs",
 };
 
-export interface Stretch {
+interface Stretch {
   from: string;
   to: string;
   altitudeFt: number;
@@ -62,8 +64,11 @@ export function windStretches(legs: Leg[]): Stretch[] {
     const wind = leg.wind ? { dir: Math.round(leg.wind.wind_dir_true_deg), speed: Math.round(leg.wind.wind_speed_kt) } : null;
     const oatC = leg.oat_c == null ? null : Math.round(leg.oat_c);
     const last = stretches[stretches.length - 1];
-    const same = last && last.altitudeFt === leg.altitude_ft && last.oatC === oatC
-      && (last.wind === null ? wind === null : wind !== null && last.wind.dir === wind.dir && last.wind.speed === wind.speed);
+    const same =
+      last &&
+      last.altitudeFt === leg.altitude_ft &&
+      last.oatC === oatC &&
+      (last.wind === null ? wind === null : wind !== null && last.wind.dir === wind.dir && last.wind.speed === wind.speed);
     if (same) last.to = leg.to;
     else stretches.push({ from: leg.from, to: leg.to, altitudeFt: leg.altitude_ft, wind, oatC });
   }
@@ -72,16 +77,16 @@ export function windStretches(legs: Leg[]): Stretch[] {
 
 /** The altitudes a plan flies as the nav log's header gives them: one
  *  figure, or its lowest and highest. */
-export function altitudeRange(nav: NavLogAltitude): string {
-  const chosen = nav.options.find(o => o.kind === nav.flown);
-  const alts = chosen ? chosen.steps.map(s => s.altitude_ft) : nav.altitude_ft != null ? [nav.altitude_ft] : [];
+function altitudeRange(nav: NavLogAltitude): string {
+  const chosen = nav.options.find((o) => o.kind === nav.flown);
+  const alts = chosen ? chosen.steps.map((s) => s.altitude_ft) : nav.altitude_ft != null ? [nav.altitude_ft] : [];
   if (alts.length === 0) return "No altitude";
   return feetRange(alts);
 }
 
 const NO_STOPS: string[] = [];
 
-export interface FlightBriefingInputs {
+interface FlightBriefingInputs {
   /** Which of the panel's tabs this is drawn in (FlightBriefingView). */
   part: BriefingPart | null;
   /** The one instance that publishes the risk, the findings and the glance. */
@@ -107,8 +112,20 @@ export interface FlightBriefingInputs {
  * published by the one instance outside the tabs (`publish`).
  */
 export function useFlightBriefing({
-  part, publish = false, nav, legs, dep, dest, stops = NO_STOPS, route = NO_STOPS, procedures, course = null, totals = null, depart = "",
-  briefing: briefingState, problem = null,
+  part,
+  publish = false,
+  nav,
+  legs,
+  dep,
+  dest,
+  stops = NO_STOPS,
+  route = NO_STOPS,
+  procedures,
+  course = null,
+  totals = null,
+  depart = "",
+  briefing: briefingState,
+  problem = null,
 }: FlightBriefingInputs) {
   // The load's weights, for the takeoff and landing distances.
   const { loading, load, result: loaded } = useLoad(nav?.aircraft, totals?.fuel_gal ?? null);
@@ -127,17 +144,19 @@ export function useFlightBriefing({
   // Under IFR "VFR flight not recommended" is no reason not to go: its
   // weather check is the destination's and the alternate's (14 CFR
   // 91.169), not VFR's minimums.
-  const ifr = usePreferences(p => p.flightRules) === "ifr";
-  const vnrReasons = ifr ? [] : briefing?.vfr_not_recommended ?? [];
+  const ifr = usePreferences((p) => p.flightRules) === "ifr";
+  const vnrReasons = ifr ? [] : (briefing?.vfr_not_recommended ?? []);
   const briefingPendingMessage =
-    briefingState.state === "waiting" ? "The briefing follows once the route's course is drawn."
-      : failed ? `Briefing data is unavailable (${failed}).`
+    briefingState.state === "waiting"
+      ? "The briefing follows once the route's course is drawn."
+      : failed
+        ? `Briefing data is unavailable (${failed}).`
         : "Fetching METARs, forecasts, hazards, runways and frequencies…";
   const unchecked = (source: Briefing["weather_unavailable"][number]) => briefing?.weather_unavailable.includes(source) ?? false;
 
-  const chosen = nav?.options.find(o => o.kind === nav.flown);
+  const chosen = nav?.options.find((o) => o.kind === nav.flown);
   // Where the weather is under the pilot's own minimums (lib/minimums).
-  const minimums = usePreferences(s => s.minimums);
+  const minimums = usePreferences((s) => s.minimums);
   const underMine = briefing ? underMinimums(minimums, briefing, landings, dest) : [];
   // When the flight passes a point along the route: from the departure
   // picked, or from now, the time the page was opened, for "Now".
@@ -152,18 +171,28 @@ export function useFlightBriefing({
     const pass = passAt(t.along_track_nm);
     return !pass || tfrWhen(t, pass) === "in-force";
   };
-  const tfrsCrossed = briefing?.tfrs.filter(t => t.crosses && tfrInForce(t)) ?? [];
+  const tfrsCrossed = briefing?.tfrs.filter((t) => t.crosses && tfrInForce(t)) ?? [];
   // The special-use areas the legs cross (wingtip.sua, with the altitudes),
   // and their times of use read for when the flight passes each, in the
   // area's own time zone.
-  const specialUse = (nav?.altitude_selection.special_use ?? []).map(area => {
+  // Where SFDPS says an area is active or cold now, at the pass, that is
+  // its word instead (lib/liveReports), the FAA's own and newer than the
+  // chart's times of use.
+  const { data: saaNow } = useQuery(saaQuery((nav?.altitude_selection.special_use ?? []).map((area) => area.name)));
+  const specialUse = (nav?.altitude_selection.special_use ?? []).map((area) => {
     const pass = passAt(area.along_track_nm);
-    return { area, pass, when: pass ? suaWhen(area.times_of_use, pass, area.time_zone) : "unknown" as SuaWhen };
+    const scheduled = pass ? suaWhen(area.times_of_use, pass, area.time_zone) : ("unknown" as SuaWhen);
+    return { area, pass, when: liveWhen(scheduled, saaNow?.areas[area.name], pass) };
   });
+  // What SWIM says now at the route's airports: the ITWS alerts and,
+  // under IFR, the Command Center's ground stops and delay programs, for
+  // the Go / No-Go's weather finding (the engine's verdict).
+  const { data: itwsNow } = useQuery(itwsQuery(landings));
+  const { data: flowNow } = useQuery(flowQuery(ifr ? landings : []));
   // The call sign the radio calls use: the pilot's own airplane's
   // registration where they fly one, and its make from its profile.
-  const flying = usePreferences(s => s.aircraft);
-  const make = nav?.aircraft.type?.split(" ")[0] || "Airplane";
+  const flying = usePreferences((s) => s.aircraft);
+  const make = nav?.aircraft?.type?.split(" ")[0] || "Airplane";
   const ownCallSign = callSign(make, flying.aircraftId != null ? shortName(flying.label) : null);
   // The risk assessment (lib/frat): the briefing's, the nav log's and the
   // logbook's factors, and what the pilot ticks. Published for the Save
@@ -172,195 +201,291 @@ export function useFlightBriefing({
   const { data: currency } = useQuery({ ...currencyQuery, enabled: !!pilot });
   // The pilot's own airplane being flown, for its inspections and, under
   // IFR, its VOR check.
-  const flyingId = usePreferences(p => p.aircraft.aircraftId);
+  const flyingId = usePreferences((p) => p.aircraft.aircraftId);
   const { data: ownAircraft } = useQuery({ ...aircraftListQuery, enabled: !!pilot && flyingId != null });
-  const flownOwn = flyingId == null ? undefined : ownAircraft?.find(a => a.id === flyingId);
-  const ticked = useRisk(s => s.ticked);
-  const setAssessment = useRisk(s => s.setAssessment);
-  const margins = [totals?.fuel_margin_gal, ...(totals?.hops ?? []).map(h => h.totals.fuel_margin_gal)]
-    .filter((n): n is number => n != null);
+  const flownOwn = flyingId == null ? undefined : ownAircraft?.find((a) => a.id === flyingId);
+  const ticked = useRisk((s) => s.ticked);
+  const setAssessment = useRisk((s) => s.setAssessment);
+  const margins = [totals?.fuel_margin_gal, ...(totals?.hops ?? []).map((h) => h.totals.fuel_margin_gal)].filter(
+    (n): n is number => n != null,
+  );
   // The least margin of the route's flights: one figure, for the risk
   // assessment, the Go / No-Go's fuel and the glance alike.
   const leastMarginGal = margins.length ? Math.min(...margins) : null;
-  // Under IFR, in cloud at or above the freezing level (lib/icing).
-  const icing = ifr && nav && briefing ? icingAtAltitude(nav.altitude_selection, legs.map(l => l.altitude_ft), briefing.pireps) : null;
-  const hazardNames = briefing ? [...briefing.hazards.map(h => sigmetHazard(h.hazard, h.type ?? "SIGMET")), ...briefing.gairmets.map(gairmetTitle)] : [];
-  const assessment = briefing ? assess({
-    vfrNotRecommended: vnrReasons.length > 0,
-    underMinimums: underMine,
-    tfrOnRoute: tfrsCrossed.length > 0,
-    hazards: unchecked("hazards") && unchecked("gairmets") ? 0 : hazardNames.length,
-    night: totals?.night === true,
-    fuelMarginGal: leastMarginGal,
-    ifr,
-    vorCheck: flownOwn === undefined ? undefined : flownOwn.vorCheck
-      ? { goodThrough: flownOwn.vorCheck.goodThrough, withinLimit: flownOwn.vorCheck.withinLimit } : null,
-    inspections: flownOwn?.inspections,
-    squawks: flownOwn?.openSquawks,
-    currency: currency ?? null,
-    day: format(new Date(depart || opened), "yyyy-MM-dd"),
-    ticked,
-  }) : null;
-  const destStation = briefing?.forecast.stations.find(st => st.icaoId === dest);
-  // The flight in plain lines, for the mock oral's examiner (lib/oral):
+  // Under IFR, in cloud at or above the freezing level (features/plan/lib/icing).
+  const icing =
+    ifr && nav && briefing
+      ? icingAtAltitude(
+          nav.altitude_selection,
+          legs.map((l) => l.altitude_ft),
+          briefing.pireps,
+        )
+      : null;
+  // Under IFR, the AWC's forecast icing (CIP and FIP) on each leg at the
+  // altitude flown (useIcingForecast): its line joins the one above in the
+  // Go / No-Go, and a forecast that could not be had is said unchecked.
+  const icingForecast = useIcingForecast({ ifr, briefing, legs, depart });
+  const icingLines = [icing && icingLine(icing), ifr ? icingForecast.data?.line : null].filter((l): l is string => !!l);
+  const hazardNames = briefing
+    ? [...briefing.hazards.map((h) => sigmetHazard(h.hazard, h.type ?? "SIGMET")), ...briefing.gairmets.map(gairmetTitle)]
+    : [];
+  const assessment = briefing
+    ? assess({
+        vfrNotRecommended: vnrReasons.length > 0,
+        underMinimums: underMine,
+        tfrOnRoute: tfrsCrossed.length > 0,
+        hazards: unchecked("hazards") && unchecked("gairmets") ? 0 : hazardNames.length,
+        night: totals?.night === true,
+        nightPassengers: totals?.night_passengers,
+        fuelMarginGal: leastMarginGal,
+        ifr,
+        vorCheck:
+          flownOwn === undefined
+            ? undefined
+            : flownOwn.vorCheck
+              ? { goodThrough: flownOwn.vorCheck.goodThrough, withinLimit: flownOwn.vorCheck.withinLimit }
+              : null,
+        inspections: flownOwn?.inspections,
+        squawks: flownOwn?.openSquawks,
+        currency: currency ?? null,
+        day: localDay(new Date(depart || opened)),
+        ticked,
+      })
+    : null;
+  const destStation = briefing?.forecast.stations.find((st) => st.icaoId === dest);
+  // The flight in plain lines, for the mock oral's examiner (features/plan/lib/oral):
   // what the briefing already holds.
-  const planText = briefing ? planFacts({
-    route: landings.filter(i => briefing.airports[i]).map(i => {
-      const a = briefing.airports[i]!;
-      const picked = pickedEnd(picks, i, i === dep ? "takeoff" : "landing", i === dep);
-      const inUse = runwayFlown(a.runways, picked);
-      return { ident: i, name: a.name, airspaceClass: a.airspace_class, patternFt: a.pattern?.altitude_ft, runway: inUse && (picked || inUse.byWind) ? runwayNumber(inUse.end.ident) : null };
-    }),
-    aircraft: nav?.aircraft.type ?? nav?.aircraft.name, cruiseFt: nav?.altitude_ft,
-    distanceNm: totals?.distance_nm ?? course?.distance_nm, eteMin: totals?.ete_min, fuelGal: totals?.fuel_gal,
-    reserveMin: totals?.reserve_min, night: totals?.night,
-    depart: depart ? format(new Date(depart), "EEE d MMM, HH:mm") : null,
-    metars: landings.flatMap(i => (briefing.metars[i]?.raw ? [{ ident: i, raw: briefing.metars[i]!.raw! }] : [])),
-    destinationForecast: destStation ? ceilingAndVisibility(destStation.ceiling_ft, destStation.visibility_sm) : null,
-    hazards: hazardNames,
-    specialUse: specialUse.map(({ area }) => `${faaWords(area.name)} (${area.kind}), ${suaAltitudes(area)}`),
-    tfrs: briefing.tfrs.length,
-  }) : "";
-  const assessmentKey = assessment ? `${assessment.level}:${assessment.score}:${assessment.factors.map(f => f.key).join(",")}` : "";
-  useEffect(() => {
+  const planText = briefing
+    ? planFacts({
+        route: landings
+          .filter((i) => briefing.airports[i])
+          .map((i) => {
+            const a = briefing.airports[i]!;
+            const picked = pickedEnd(picks, i, i === dep ? "takeoff" : "landing", i === dep);
+            const inUse = runwayFlown(a.runways, picked);
+            return {
+              ident: i,
+              name: a.name,
+              airspaceClass: a.airspace_class,
+              patternFt: a.pattern?.altitude_ft,
+              runway: inUse && (picked || inUse.byWind) ? runwayNumber(inUse.end.ident) : null,
+            };
+          }),
+        aircraft: nav?.aircraft?.type ?? nav?.aircraft?.name,
+        cruiseFt: nav?.altitude_ft,
+        distanceNm: totals?.distance_nm ?? course?.distance_nm,
+        eteMin: totals?.ete_min,
+        fuelGal: totals?.fuel_gal,
+        reserveMin: totals?.reserve_min,
+        night: totals?.night,
+        depart: depart ? weekdayDayMonthTime(new Date(depart)) : null,
+        metars: landings.flatMap((i) => (briefing.metars[i]?.raw ? [{ ident: i, raw: briefing.metars[i]!.raw! }] : [])),
+        destinationForecast: destStation ? ceilingAndVisibility(destStation.ceiling_ft, destStation.visibility_sm) : null,
+        hazards: hazardNames,
+        specialUse: specialUse.map(({ area }) => `${faaWords(area.name)} (${area.kind}), ${suaAltitudes(area)}`),
+        tfrs: briefing.tfrs.length,
+      })
+    : "";
+  const assessmentKey = assessment ? `${assessment.level}:${assessment.score}:${assessment.factors.map((f) => f.key).join(",")}` : "";
+  const publishAssessment = useEffectEvent(() => {
     if (publish) setAssessment(assessment);
-    // Keyed on what it says, not the object made each render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [assessmentKey, setAssessment, publish]);
-  useEffect(() => () => { if (publish) setAssessment(null); }, [setAssessment, publish]);
+  });
+  // Keyed on what it says, not the object made each render.
+  useEffect(() => publishAssessment(), [assessmentKey, publish]);
+  useEffect(
+    () => () => {
+      if (publish) setAssessment(null);
+    },
+    [setAssessment, publish],
+  );
 
-  // The runway check at each field (lib/runwayCheck), for the
+  // The runway check at each field (features/plan/lib/runwayCheck), for the
   // Performance tab and the Go / No-Go.
   const checks = runwayChecks(nav?.aircraft, briefing, course, loaded?.takeoff.weightLb ?? null, loaded?.landing.weightLb ?? null, picks);
   const hops = totals?.hops ?? [];
   // Under IFR, the alternate (AlternateSection): its ETA the nav log's.
   const etaIso = totals?.ete_min != null ? new Date(new Date(depart || opened).getTime() + totals.ete_min * 60_000).toISOString() : null;
-  const alternateWhere = { dest, eta: ifr ? etaIso : null, tasKt: nav?.aircraft.cruise_tas_kt ?? 110 };
+  const alternateWhere = { dest, eta: ifr ? etaIso : null, tasKt: nav?.aircraft?.cruise_tas_kt ?? null };
   const alternateCheck = useAlternate(alternateWhere);
   const alternateFound = ifr ? alternateFinding(alternateCheck.data) : null;
   const verdictFound: VerdictItem[] = verdictItems({
     weather: {
-      pending: !briefing && !failed, failed,
-      vfrNotRecommended: vnrReasons, underMinimums: underMine, icing: icing && icingLine(icing), hazards: hazardNames,
-      unchecked: (briefing?.weather_unavailable ?? []).filter(w => w !== "tfrs").map(w => WEATHER_SOURCE_LABEL[w]),
-      worst: briefing && (briefing.forecast.min_ceiling_ft != null || briefing.forecast.min_visibility_sm != null)
-        ? ceilingAndVisibility(briefing.forecast.min_ceiling_ft, briefing.forecast.min_visibility_sm) : null,
+      pending: !briefing && !failed,
+      failed,
+      vfrNotRecommended: vnrReasons,
+      underMinimums: underMine,
+      icing: icingLines.length ? icingLines.join("; ") : null,
+      hazards: hazardNames,
+      unchecked: [
+        ...(briefing?.weather_unavailable ?? []).filter((w) => w !== "tfrs").map((w) => WEATHER_SOURCE_LABEL[w]),
+        ...(ifr && icingForecast.isError ? ["the forecast icing"] : []),
+      ],
+      worst:
+        briefing && (briefing.forecast.min_ceiling_ft != null || briefing.forecast.min_visibility_sm != null)
+          ? ceilingAndVisibility(briefing.forecast.min_ceiling_ft, briefing.forecast.min_visibility_sm)
+          : null,
+      terminalAlerts: itwsLines(itwsNow?.alerts ?? []),
+      flowPrograms: programLines(flowNow?.programs ?? []),
+      ifr,
     },
     airspace: {
-      pending: !briefing && !failed, unchecked: !!failed || unchecked("tfrs"),
-      inForce: tfrsCrossed.map(t => t.notam_id), near: (briefing?.tfrs.length ?? 0) - tfrsCrossed.length,
+      pending: !briefing && !failed,
+      unchecked: !!failed || unchecked("tfrs"),
+      inForce: tfrsCrossed.map((t) => t.notam_id),
+      near: (briefing?.tfrs.length ?? 0) - tfrsCrossed.length,
       specialUse: specialUse.map(({ area, when }) => ({ name: area.name, when })),
     },
     altitude: {
-      pending: !nav, problem,
-      cautions: nav?.cautions.flatMap(c => c.reasons) ?? [],
-      flown: !nav ? null : nav.flown === "custom" ? `${flightLevel(nav.altitude_ft)}, your own` : `${altitudeRange(nav)}${chosen ? ` · ${PLAN_NAME[chosen.kind]} plan` : ""}`,
+      pending: !nav,
+      problem,
+      cautions: nav?.cautions.flatMap((c) => c.reasons) ?? [],
+      flown: !nav
+        ? null
+        : nav.flown === "custom"
+          ? `${flightLevel(nav.altitude_ft)}, your own`
+          : `${altitudeRange(nav)}${chosen ? ` · ${PLAN_NAME[chosen.kind]} plan` : ""}`,
     },
     fuel: {
       pending: !totals,
       marginGal: leastMarginGal,
-      requiredGal: totals?.fuel_required_gal ?? (hops.length ? Math.max(...hops.map(h => h.totals.fuel_required_gal ?? 0)) : null),
+      requiredGal: totals?.fuel_required_gal ?? (hops.length ? Math.max(...hops.map((h) => h.totals.fuel_required_gal ?? 0)) : null),
       reserveMin: totals?.reserve_min ?? hops[0]?.totals.reserve_min ?? null,
       ifr,
     },
     runways: {
-      pending: !nav || !briefing, worked: !nav || (!!nav.aircraft.takeoff && !!nav.aircraft.landing),
-      short: [...new Set(checks.filter(c => c.distances.some(d => d.over)).map(c => c.field.ident))],
-      crosswind: [...new Set(checks.filter(c => c.crosswindOver).map(c => c.field.ident))],
-      beyond: [...new Set(checks.filter(c => c.distances.some(d => d.beyond)).map(c => c.field.ident))],
-      unchecked: [...new Set(checks.filter(c => c.unchecked || c.distances.some(d => d.unknown)).map(c => c.field.ident))],
+      pending: !nav || !briefing,
+      worked: !nav || (!!nav.aircraft?.takeoff && !!nav.aircraft?.landing),
+      short: [...new Set(checks.filter((c) => c.distances.some((d) => d.over)).map((c) => c.field.ident))],
+      crosswind: [...new Set(checks.filter((c) => c.crosswindOver).map((c) => c.field.ident))],
+      beyond: [...new Set(checks.filter((c) => c.distances.some((d) => d.beyond)).map((c) => c.field.ident))],
+      unchecked: [...new Set(checks.filter((c) => c.unchecked || c.distances.some((d) => d.unknown)).map((c) => c.field.ident))],
     },
     balance: {
-      pending: !nav, worked: !!loading && !!loaded,
+      pending: !nav,
+      worked: !!loading && !!loaded,
       problems: loaded?.problems ?? [],
       takeoff: loaded ? `${grouped(loaded.takeoff.weightLb)} lb at ${armText(loaded.takeoff)}` : null,
     },
     risk: assessment ? { level: assessment.level, line: riskLine(assessment) } : null,
   });
   // Published once, for the tabs' marks (PlanWorkspace), as the risk is.
-  const setItems = useVerdict(v => v.setItems);
+  const setItems = useVerdict((v) => v.setItems);
   // The alternate is the weather's to say, where the weather says nothing
   // worse: a caution or a stop of its own, opening its section.
-  const items: VerdictItem[] = alternateFound
-    ? verdictFound.map(i => (i.key === "weather" && (i.finding === "ok" || (alternateFound.finding === "stop" && i.finding !== "stop"))
-      ? { ...i, ...alternateFound, tab: "arrive", section: "Alternate" } : i))
+  // No airplane picked: the fuel, the runways' distances and crosswind
+  // limits and the weight and balance are an airplane's, and are not
+  // judged on one assumed (the owner, 2026-11-08: "don't assume").
+  const airplane = useAirplaneChosen();
+  const found: VerdictItem[] = alternateFound
+    ? verdictFound.map((i) =>
+        i.key === "weather" && (i.finding === "ok" || (alternateFound.finding === "stop" && i.finding !== "stop"))
+          ? { ...i, ...alternateFound, tab: "arrive", section: "Alternate" }
+          : i,
+      )
     : verdictFound;
-  const itemsKey = items.map(i => `${i.key}:${i.finding}:${i.detail}`).join("|");
-  useEffect(() => {
+  const items = found.filter((i) => airplane || !AIRPLANE_ITEMS.includes(i.key));
+  const itemsKey = `${airplane}|` + items.map((i) => `${i.key}:${i.finding}:${i.detail}`).join("|");
+  const publishItems = useEffectEvent(() => {
     if (publish) setItems(items);
-    // Keyed on what they say, not the array made each render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [itemsKey, setItems, publish]);
-  useEffect(() => () => { if (publish) setItems([]); }, [setItems, publish]);
+  });
+  // Keyed on what they say, not the array made each render.
+  useEffect(() => publishItems(), [itemsKey, publish]);
+  useEffect(
+    () => () => {
+      if (publish) setItems([]);
+    },
+    [setItems, publish],
+  );
 
-  // The Brief's glance (lib/glance): each part of the flight in a few
+  // The Brief's glance (features/plan/lib/glance): each part of the flight in a few
   // figures, from what the pages say -- the runway checks, the radio's
   // first call, the forecast at each field and along the way -- published
   // by the one instance outside the pages, as the findings are.
-  const glance: BriefGlance | null = publish ? (() => {
-    const leaving = new Date(depart || opened);
-    const fieldAt = (ident: string, kind: "departure" | "arrival", at: Date | null): FieldGlance => {
-      const check = checks.find(c => c.field.ident === ident && (kind === "departure" ? c.role === "Departure" : c.role === "Destination"));
-      const distance = check?.distances.find(d => d.kind === (kind === "departure" ? "takeoff" : "landing"));
-      const metar = briefing?.metars[ident];
-      const said = metar ? reportedWind(metar.wind_dir_true_deg ?? null, metar.wind_speed_kt ?? null, metar.wind_gust_kt ?? null) : null;
-      const phase = briefing ? fieldPhases(briefing, landings, legs, ownCallSign, ident, picks).find(p => p.kind === kind) : undefined;
-      const call = phase?.calls.find(c => c.mhz != null);
-      return {
-        ident,
-        category: briefing && course ? fieldCategory(briefing, course, ident) : null,
-        at: at ? at.toISOString() : null,
-        runway: check?.end ? runwayNumber(check.end) : null,
-        runwayFt: check?.runway?.length_ft ?? null,
-        overFiftyFt: distance ? Math.round(distance.totalFt) : null,
-        wind: said === "calm" ? "Calm" : said ? `${said.dir.replace(/T$/, "")}/${said.speed}` : null,
-        crosswindKt: check ? Math.round(check.crosswindKt) : null,
-        radio: call ? { to: call.to, mhz: call.mhz! } : null,
-        // A field not checked (no elevation, no runway length) is not known,
-        // never fine; one past the POH's tables is a caution (the engine's
-        // runways finding says the same).
-        finding: !check || check.unchecked || !distance || distance.unknown ? "unknown" : distance.over ? "stop"
-          : check.crosswindOver || distance.beyond ? "caution" : "ok",
-      };
-    };
-    const byKey = (keys: VerdictItem["key"][]) => worstOf(items.filter(i => keys.includes(i.key)).map(i => i.finding));
-    const wind = stretches[0]?.wind;
-    return {
-      before: {
-        risk: assessment ? { score: assessment.score, level: assessment.level } : null,
-        spareGal: leastMarginGal,
-        balance: loaded ? { within: loaded.problems.length === 0, problem: loaded.problems[0] ?? null } : null,
-        finding: byKey(["risk", "fuel", "balance", "airspace"]),
-      },
-      depart: course ? fieldAt(dep, "departure", leaving) : null,
-      enroute: {
-        ceilingFt: briefing?.forecast.min_ceiling_ft ?? null,
-        visibilitySm: briefing?.forecast.min_visibility_sm ?? null,
-        wind: wind ? `${String(wind.dir).padStart(3, "0")}°/${wind.speed}` : null,
-        eteMin: totals?.ete_min ?? null,
-        line: items.find(i => i.key === "weather")?.detail ?? null,
-        finding: byKey(["weather", "altitude"]),
-      },
-      arrive: course ? fieldAt(dest, "arrival", totals?.ete_min != null ? new Date(leaving.getTime() + totals.ete_min * 60_000) : null) : null,
-      // The reports as sent, for a finding's sources under its line.
-      raw: {
-        metars: landings.flatMap(i => (briefing?.metars[i]?.raw ? [{ ident: i, raw: briefing.metars[i]!.raw! }] : [])),
-        tafs: landings.flatMap(i => {
-          const st = briefing?.forecast.stations.find(s => s.icaoId === i);
-          return st?.raw ? [{ ident: i, raw: st.raw }] : [];
-        }),
-        tfrs: (briefing?.tfrs ?? []).map(t => [t.notam_id, t.title].filter(Boolean).join(" · ")),
-      },
-    };
-  })() : null;
-  const setGlance = useGlance(g => g.set);
+  const glance: BriefGlance | null = publish
+    ? (() => {
+        const leaving = new Date(depart || opened);
+        const fieldAt = (ident: string, kind: "departure" | "arrival", at: Date | null): FieldGlance => {
+          const check = checks.find(
+            (c) => c.field.ident === ident && (kind === "departure" ? c.role === "Departure" : c.role === "Destination"),
+          );
+          const distance = check?.distances.find((d) => d.kind === (kind === "departure" ? "takeoff" : "landing"));
+          const metar = briefing?.metars[ident];
+          const said = metar
+            ? reportedWind(metar.wind_dir_true_deg ?? null, metar.wind_speed_kt ?? null, metar.wind_gust_kt ?? null)
+            : null;
+          const phase = briefing
+            ? fieldPhases(briefing, landings, legs, ownCallSign, ident, picks).find((p) => p.kind === kind)
+            : undefined;
+          const call = phase?.calls.find((c) => c.mhz != null);
+          return {
+            ident,
+            category: briefing && course ? fieldCategory(briefing, course, ident) : null,
+            at: at ? at.toISOString() : null,
+            runway: check?.end ? runwayNumber(check.end) : null,
+            runwayFt: check?.runway?.length_ft ?? null,
+            overFiftyFt: distance ? Math.round(distance.totalFt) : null,
+            wind: said === "calm" ? "Calm" : said ? `${said.dir.replace(/T$/, "")}/${said.speed}` : null,
+            crosswindKt: check ? Math.round(check.crosswindKt) : null,
+            radio: call ? { to: call.to, mhz: call.mhz! } : null,
+            // A field not checked (no elevation, no runway length) is not known,
+            // never fine; one past the POH's tables is a caution (the engine's
+            // runways finding says the same).
+            finding:
+              !check || check.unchecked || !distance || distance.unknown
+                ? "unknown"
+                : distance.over
+                  ? "stop"
+                  : check.crosswindOver || distance.beyond
+                    ? "caution"
+                    : "ok",
+          };
+        };
+        const byKey = (keys: VerdictItem["key"][]) => worstOf(items.filter((i) => keys.includes(i.key)).map((i) => i.finding));
+        const wind = stretches[0]?.wind;
+        return {
+          before: {
+            risk: assessment ? { score: assessment.score, level: assessment.level } : null,
+            spareGal: leastMarginGal,
+            balance: loaded ? { within: loaded.problems.length === 0, problem: loaded.problems[0] ?? null } : null,
+            finding: byKey(["risk", "fuel", "balance", "airspace"]),
+          },
+          depart: course ? fieldAt(dep, "departure", leaving) : null,
+          enroute: {
+            ceilingFt: briefing?.forecast.min_ceiling_ft ?? null,
+            visibilitySm: briefing?.forecast.min_visibility_sm ?? null,
+            wind: wind ? `${reportedDirection(wind.dir)}°/${wind.speed}` : null,
+            eteMin: totals?.ete_min ?? null,
+            line: items.find((i) => i.key === "weather")?.detail ?? null,
+            finding: byKey(["weather", "altitude"]),
+          },
+          arrive: course
+            ? fieldAt(dest, "arrival", totals?.ete_min != null ? new Date(leaving.getTime() + totals.ete_min * 60_000) : null)
+            : null,
+          // The reports as sent, for a finding's sources under its line.
+          raw: {
+            metars: landings.flatMap((i) => (briefing?.metars[i]?.raw ? [{ ident: i, raw: briefing.metars[i]!.raw! }] : [])),
+            tafs: landings.flatMap((i) => {
+              const st = briefing?.forecast.stations.find((s) => s.icaoId === i);
+              return st?.raw ? [{ ident: i, raw: st.raw }] : [];
+            }),
+            tfrs: (briefing?.tfrs ?? []).map((t) => [t.notam_id, t.title].filter(Boolean).join(" · ")),
+          },
+        };
+      })()
+    : null;
+  const setGlance = useGlance((g) => g.set);
   const glanceKey = glance ? JSON.stringify(glance) : "";
-  useEffect(() => {
+  const publishGlance = useEffectEvent(() => {
     if (publish) setGlance(glance);
-    // Keyed on what it says, not the object made each render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [glanceKey, setGlance, publish]);
-  useEffect(() => () => { if (publish) setGlance(null); }, [setGlance, publish]);
+  });
+  // Keyed on what it says, not the object made each render.
+  useEffect(() => publishGlance(), [glanceKey, publish]);
+  useEffect(
+    () => () => {
+      if (publish) setGlance(null);
+    },
+    [setGlance, publish],
+  );
 
   // Preflight's sections a tile opens and the paperwork, folded on screen
   // under the checks (BriefChecks), each opened by its tile or a tap on
@@ -373,33 +498,73 @@ export function useFlightBriefing({
   // wake category from the profile's maximum takeoff weight only where
   // the profile is that type's. Worked out only for Preflight, which
   // shows the forms.
-  const ownType = flying.aircraftId != null ? flying.label.split(" · ")[1] ?? null : null;
-  const profileType = nav?.aircraft.designator ?? null;
+  const ownType = flying.aircraftId != null ? (flying.label.split(" · ")[1] ?? null) : null;
+  const profileType = nav?.aircraft?.designator ?? null;
   const planType = flying.aircraftId != null ? ownType : profileType;
-  const planForms = part === "preflight" ? flightPlanForms({
-    rules: ifr ? "ifr" : "vfr", dep, dest, route, landings: stops,
-    isAirway: stop => isAirwayToken(stop) && !course?.stops?.some(s => s.ident === stop),
-    legs, totals, depart: depart ? new Date(depart) : null, now: new Date(opened),
-    aircraft: {
-      ident: flying.aircraftId != null ? shortName(flying.label) : null,
-      type: planType,
-      maxTakeoffLb: planType && planType === profileType ? nav?.aircraft.loading?.max_takeoff_lb ?? null : null,
-      // Items 10 and 19's colour, from the pilot's own airplane's page.
-      equipment: flownOwn?.equipment ?? null, surveillance: flownOwn?.surveillance ?? null, colour: flownOwn?.colour ?? null,
-    },
-    // Item 19's pilot in command, from their own page (Pilot details, in Setup).
-    pilot: pilot ? { name: pilot.fullName ?? null, phone: pilot.phone ?? null, homeBase: pilot.homeBase ?? null } : null,
-    fuelGal: load?.fuelGal ?? null,
-    alternate: totals?.alternate?.ident ?? null,
-    departureProcedure: procedures?.departure, arrivalProcedure: procedures?.arrival,
-  }) : [];
+  const planForms =
+    part === "preflight"
+      ? flightPlanForms({
+          rules: ifr ? "ifr" : "vfr",
+          dep,
+          dest,
+          route,
+          landings: stops,
+          isAirway: (stop) => isAirwayToken(stop) && !course?.stops?.some((s) => s.ident === stop),
+          legs,
+          totals,
+          depart: depart ? new Date(depart) : null,
+          now: new Date(opened),
+          aircraft: {
+            ident: flying.aircraftId != null ? shortName(flying.label) : null,
+            type: planType,
+            maxTakeoffLb: planType && planType === profileType ? (nav?.aircraft?.loading?.max_takeoff_lb ?? null) : null,
+            // Items 10 and 19's colour, from the pilot's own airplane's page.
+            equipment: flownOwn?.equipment ?? null,
+            surveillance: flownOwn?.surveillance ?? null,
+            colour: flownOwn?.colour ?? null,
+          },
+          // Item 19's pilot in command, from their own page (Pilot details, in Setup).
+          pilot: pilot ? { name: pilot.fullName ?? null, phone: pilot.phone ?? null, homeBase: pilot.homeBase ?? null } : null,
+          fuelGal: load?.fuelGal ?? null,
+          alternate: totals?.alternate?.ident ?? null,
+          departureProcedure: procedures?.departure,
+          arrivalProcedure: procedures?.arrival,
+        })
+      : [];
 
   return {
-    briefing, ifr, vnrReasons, briefingPendingMessage, unchecked, underMine, opened, passAt, tfrInForce, tfrsCrossed,
-    specialUse, landings, stretches, ownCallSign, pilot, assessment, icing, hazardNames, planText, loaded, items,
-    alternateWhere, printing, folds, setFolds, planForms,
+    briefing,
+    ifr,
+    vnrReasons,
+    briefingPendingMessage,
+    unchecked,
+    underMine,
+    opened,
+    passAt,
+    tfrInForce,
+    tfrsCrossed,
+    specialUse,
+    landings,
+    stretches,
+    ownCallSign,
+    pilot,
+    assessment,
+    icing,
+    icingForecast,
+    hazardNames,
+    planText,
+    loaded,
+    items,
+    alternateWhere,
+    printing,
+    folds,
+    setFolds,
+    planForms,
   };
 }
 
 /** The briefing's view model, as its parts read it. */
 export type FlightBriefing = ReturnType<typeof useFlightBriefing>;
+
+/** The verdict's items that need an airplane's figures. */
+const AIRPLANE_ITEMS: VerdictItem["key"][] = ["fuel", "runways", "balance"];

@@ -10,9 +10,9 @@ final class LaunchTests: XCTestCase {
     @MainActor
     func testTheAppLaunchesToItsMap() throws {
         let app = XCUIApplication()
-        // Opened on the plan tab with no account: the first screen is the
+        // Opened on the plan with no account: the first screen is the
         // chart under the sheet (RootView), whatever the pilot last had.
-        app.launchArguments += ["-tab", "fpl"]
+        app.launchArguments += ["-screen", "fpl"]
         app.launch()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 30), "the app did not come to the foreground")
         // A sheet or a side column is up within a few seconds; either has
@@ -24,5 +24,19 @@ final class LaunchTests: XCTestCase {
         shot.name = "first screen"
         shot.lifetime = .keepAlways
         add(shot)
+    }
+
+    /// The account button beside the one search opens Settings at once,
+    /// with no menu in between (the owner, 2026-11-10).
+    @MainActor
+    func testTheAccountButtonOpensSettings() throws {
+        let app = XCUIApplication()
+        app.launchArguments += ["-layout", "plan", "-screen", "fpl"]
+        app.launch()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 30), "the app did not come to the foreground")
+        let account = app.buttons["account-button"]
+        XCTAssertTrue(account.waitForExistence(timeout: 20), "no account button")
+        account.tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10), "Settings did not open")
     }
 }

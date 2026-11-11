@@ -8,6 +8,7 @@ HTTP contract (status codes, response shape, error translation) rather
 than re-testing wingtip.altitude/wingtip.weather's own logic, which has its own
 tests in the tests_wingtip/ package.
 """
+
 import json
 
 from fastapi.testclient import TestClient
@@ -16,7 +17,8 @@ from wingtip import model_registry, tfr, weather
 from wingtip.weather import WeatherServiceError
 
 from app.main import app
-from app.routers import devservices, system
+from app import dev_services
+from app.routers import system
 
 client = TestClient(app)
 
@@ -38,12 +40,16 @@ def test_model_comparison_is_empty_when_nothing_has_been_promoted(tmp_path, monk
 def test_model_comparison_lists_the_sklearn_models_retrain_compared(tmp_path, monkeypatch):
     current_dir = tmp_path / "current"
     current_dir.mkdir()
-    (current_dir / "metrics.json").write_text(json.dumps({
-        "model_type": "random_forest",
-        "trained_at": "2026-09-10T00:00:00Z",
-        "n_labeled": 206,
-        "cv_mae_by_model": {"random_forest": 0.41, "ridge": 0.52},
-    }))
+    (current_dir / "metrics.json").write_text(
+        json.dumps(
+            {
+                "model_type": "random_forest",
+                "trained_at": "2026-09-10T00:00:00Z",
+                "n_labeled": 206,
+                "cv_mae_by_model": {"random_forest": 0.41, "ridge": 0.52},
+            }
+        )
+    )
     monkeypatch.setattr(model_registry, "CURRENT_MODEL_DIR", current_dir)
     monkeypatch.setattr(model_registry, "MODELS_DIR", tmp_path)
 
@@ -80,12 +86,26 @@ def test_checkpoints_translates_a_chart_that_would_not_read_to_502(monkeypatch):
 
 
 def test_status_reports_every_service_and_the_data_on_disk(monkeypatch):
-    monkeypatch.setattr(devservices, "SIDECAR_URL", None)
-    monkeypatch.setattr(system, "_gateway_status", lambda: (
-        system.ServiceStatus(up=True, detail="HTTP 200"), system.ServiceStatus(up=False, detail="HTTP 503")))
+    monkeypatch.setattr(dev_services, "SIDECAR_URL", None)
+    monkeypatch.setattr(
+        system,
+        "_gateway_status",
+        lambda: (system.ServiceStatus(up=True, detail="HTTP 200"), system.ServiceStatus(up=False, detail="HTTP 503")),
+    )
     # Not the chart model's real count: that reads the real ratings'
     # corridors, a chart read of its own.
     monkeypatch.setattr(system, "_training", lambda: None)
+    # The feeds' own suite is tests/test_feed_health.py: no store or
+    # weather service asked here.
+    monkeypatch.setattr(
+        system.feeds_watch,
+        "snapshot",
+        lambda: {
+            "checked_at": None,
+            "alert_after_min": 15,
+            "feeds": [{"name": "STDDS", "kind": "swim", "what": "terminal radar", "state": "ok"}],
+        },
+    )
 
     resp = client.get("/api/status")
 
@@ -97,13 +117,21 @@ def test_status_reports_every_service_and_the_data_on_disk(monkeypatch):
     assert "docker compose up retrain" in body["pipeline"]["detail"]
     # Every weather source, the winds for each forecast period included.
     assert {w["name"] for w in body["weather"]} == {
-        "metars", "tafs", "airsigmets", "pireps", "gairmets", "winds-06", "winds-12", "winds-24",
+        "metars",
+        "tafs",
+        "airsigmets",
+        "pireps",
+        "gairmets",
+        "winds-06",
+        "winds-12",
+        "winds-24",
     }
     for corridor in body["corridors"]:
         assert corridor["departure_ident"].isupper() and "by_rating" in corridor["labels"]
     # Each FAA data set on disk, with whether it is in its cycle.
     for cycle in body["data_cycles"]:
         assert cycle["state"] in {"in_force", "expired", "not_yet", "unknown"} and cycle["current"]
+    assert body["feeds"]["feeds"][0]["name"] == "STDDS"
 
 
 class FakeSidecar:
@@ -135,7 +163,7 @@ class FakeResponse:
 
 def test_retrain_writes_the_chart_models_table_and_says_how_without_the_sidecar(monkeypatch):
     written = []
-    monkeypatch.setattr(devservices, "SIDECAR_URL", None)
+    monkeypatch.setattr(dev_services, "SIDECAR_URL", None)
     monkeypatch.setattr(system, "_training", lambda: None)
     monkeypatch.setattr(system.chart_model, "write_training_table", lambda: written.append(True))
 
@@ -149,7 +177,7 @@ def test_retrain_writes_the_chart_models_table_and_says_how_without_the_sidecar(
 
 def test_retrain_starts_the_training_runs_container(monkeypatch):
     sidecar = FakeSidecar("exited")
-    monkeypatch.setattr(devservices, "_sidecar", sidecar)
+    monkeypatch.setattr(dev_services, "ask", sidecar)
     monkeypatch.setattr(system, "_training", lambda: None)
     monkeypatch.setattr(system.chart_model, "write_training_table", lambda: None)
 
@@ -164,7 +192,7 @@ def test_retrain_while_a_run_is_going_leaves_it_and_its_table_alone(monkeypatch)
     # One run at a time: the table a run trains on is not written under it.
     written = []
     sidecar = FakeSidecar("running")
-    monkeypatch.setattr(devservices, "_sidecar", sidecar)
+    monkeypatch.setattr(dev_services, "ask", sidecar)
     monkeypatch.setattr(system, "_training", lambda: None)
     monkeypatch.setattr(system.chart_model, "write_training_table", lambda: written.append(True))
 
@@ -179,10 +207,14 @@ def test_retrain_with_too_few_ratings_says_why_instead_of_starting_a_run(monkeyp
     # It started the run, which failed minutes later with the news in a
     # log nobody was shown.
     sidecar = FakeSidecar("exited")
-    monkeypatch.setattr(devservices, "_sidecar", sidecar)
-    monkeypatch.setattr(system, "_training", lambda: system.TrainingReadiness(
-        usable=28, needed=30, ready=False, rated=32, off_detection=4, reading=[],
-        message="28 of the 30 ratings training needs."))
+    monkeypatch.setattr(dev_services, "ask", sidecar)
+    monkeypatch.setattr(
+        system,
+        "_training",
+        lambda: system.TrainingReadiness(
+            usable=28, needed=30, ready=False, rated=32, off_detection=4, reading=[], message="28 of the 30 ratings training needs."
+        ),
+    )
 
     resp = client.post("/api/retrain")
 
@@ -194,26 +226,33 @@ def test_retrain_with_too_few_ratings_says_why_instead_of_starting_a_run(monkeyp
 def test_the_pipeline_status_is_the_runs_own_file_and_its_container(tmp_path, monkeypatch):
     run_file = tmp_path / "run.json"
     monkeypatch.setattr(model_registry, "RUN_STATUS_PATH", run_file)
-    run_file.write_text(json.dumps({
-        "run_id": "20261106T120000Z", "state": "running", "stage": "chart_retrain", "error": None,
-        "stages": [{"name": "chart_retrain", "state": "running", "detail": None}],
-    }))
+    run_file.write_text(
+        json.dumps(
+            {
+                "run_id": "20261106T120000Z",
+                "state": "running",
+                "stage": "chart_retrain",
+                "error": None,
+                "stages": [{"name": "chart_retrain", "state": "running", "detail": None}],
+            }
+        )
+    )
 
-    monkeypatch.setattr(devservices, "_sidecar", FakeSidecar("running"))
+    monkeypatch.setattr(dev_services, "ask", FakeSidecar("running"))
     going = system._pipeline_status()
     assert going.startable is True
     assert (going.last_run.state, going.last_run.stage) == ("running", "chart_retrain")
 
     # The container stopped with the file still saying running: the run
     # was cut short, which reads as a failure, not a run going for ever.
-    monkeypatch.setattr(devservices, "_sidecar", FakeSidecar("exited"))
+    monkeypatch.setattr(dev_services, "ask", FakeSidecar("exited"))
     stopped = system._pipeline_status()
     assert stopped.last_run.state == "failed"
     assert stopped.last_run.error == "The run stopped before it finished."
 
     # Just started: the container runs before the run has written itself down.
     run_file.write_text(json.dumps({"run_id": "earlier", "state": "success", "stages": []}))
-    monkeypatch.setattr(devservices, "_sidecar", FakeSidecar("running"))
+    monkeypatch.setattr(dev_services, "ask", FakeSidecar("running"))
     assert system._pipeline_status().last_run.state == "running"
 
 
@@ -256,15 +295,49 @@ def test_the_briefing_carries_a_ceiling_of_unknown_height_through(monkeypatch):
     (wingtip.weather._sky_ceiling): not known, not none, so the briefing
     says so where it would say no ceiling."""
     monkeypatch.setattr(weather, "hazards_along_route", lambda start, end: [])
-    monkeypatch.setattr(weather, "ceiling_visibility_along_route", lambda start, end, window=None: {
-        "min_ceiling_ft": None, "min_visibility_sm": 10.0, "ceiling_unknown_at": ["KDLH"], "stations": [
-            {"icaoId": "KDLH", "lat": 46.8421, "lon": -92.1936, "elevation_ft": 1424, "ceiling_ft": None,
-             "ceiling_unknown": True, "visibility_sm": 10.0}]})
-    monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {ident: (
-        {"raw": "KC81 251755Z AUTO 10SM OVC///", "flight_category": None, "ceiling_ft": None, "ceiling_unknown": True,
-         "visibility_sm": 10.0} if ident in ("C81", "KC81") else None) for ident in idents})
-    monkeypatch.setattr(weather, "tafs_over", lambda asked: {
-        "KDLH": {"ceiling_ft": None, "ceiling_unknown": True, "visibility_sm": 10.0, "raw": "TAF KDLH ..."}})
+    monkeypatch.setattr(
+        weather,
+        "ceiling_visibility_along_route",
+        lambda start, end, window=None: {
+            "min_ceiling_ft": None,
+            "min_visibility_sm": 10.0,
+            "ceiling_unknown_at": ["KDLH"],
+            "stations": [
+                {
+                    "icaoId": "KDLH",
+                    "lat": 46.8421,
+                    "lon": -92.1936,
+                    "elevation_ft": 1424,
+                    "ceiling_ft": None,
+                    "ceiling_unknown": True,
+                    "visibility_sm": 10.0,
+                }
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        weather,
+        "metar_for_idents",
+        lambda idents: {
+            ident: (
+                {
+                    "raw": "KC81 251755Z AUTO 10SM OVC///",
+                    "flight_category": None,
+                    "ceiling_ft": None,
+                    "ceiling_unknown": True,
+                    "visibility_sm": 10.0,
+                }
+                if ident in ("C81", "KC81")
+                else None
+            )
+            for ident in idents
+        },
+    )
+    monkeypatch.setattr(
+        weather,
+        "tafs_over",
+        lambda asked: {"KDLH": {"ceiling_ft": None, "ceiling_unknown": True, "visibility_sm": 10.0, "raw": "TAF KDLH ..."}},
+    )
     monkeypatch.setattr(airports, "get_runways", lambda ident: [])
     monkeypatch.setattr(airports, "get_frequencies", lambda ident: [])
 
@@ -275,21 +348,25 @@ def test_the_briefing_carries_a_ceiling_of_unknown_height_through(monkeypatch):
     assert (station["ceiling_unknown"], station["eta_ceiling_unknown"]) == (True, True)
     assert body["metars"]["C81"]["ceiling_unknown"] is True
     assert body["vfr_not_recommended"] == [
-        "C81 currently reporting a ceiling of unknown height", "forecast ceiling of unknown height at KDLH"]
+        "C81 currently reporting a ceiling of unknown height",
+        "forecast ceiling of unknown height at KDLH",
+    ]
 
 
 def test_the_briefing_forecast_is_read_over_the_flight(monkeypatch):
     """From the departure to an hour past arrival, not whenever it was asked."""
     windows = []
     monkeypatch.setattr(weather, "hazards_along_route", lambda start, end: [])
-    monkeypatch.setattr(weather, "ceiling_visibility_along_route", lambda start, end, window=None: (
-        windows.append(window) or {"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []}))
+    monkeypatch.setattr(
+        weather,
+        "ceiling_visibility_along_route",
+        lambda start, end, window=None: windows.append(window) or {"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []},
+    )
     monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {ident: None for ident in idents})
     monkeypatch.setattr(airports, "get_runways", lambda ident: [])
     monkeypatch.setattr(airports, "get_frequencies", lambda ident: [])
 
-    resp = client.get("/api/briefing", params={
-        "dep": "C81", "dest": "KDLH", "depart": "2026-09-25T13:00:00Z", "ete_min": 150})
+    resp = client.get("/api/briefing", params={"dep": "C81", "dest": "KDLH", "depart": "2026-09-25T13:00:00Z", "ete_min": 150})
 
     assert resp.status_code == 200
     start = 1790341200.0  # 2026-09-25T13:00:00Z
@@ -300,18 +377,28 @@ def test_each_taf_station_is_placed_along_the_route_and_read_for_when_the_flight
     """For the Weather tab's places: the destination's TAF is read for the
     arrival, an hour either side, not over the whole flight."""
     monkeypatch.setattr(weather, "hazards_along_route", lambda start, end: [])
-    monkeypatch.setattr(weather, "ceiling_visibility_along_route", lambda start, end, window=None: {
-        "min_ceiling_ft": 900.0, "min_visibility_sm": 4.0, "stations": [
-            {"icaoId": "KDLH", "lat": 46.8421, "lon": -92.1936, "elevation_ft": 1424, "ceiling_ft": 900.0, "visibility_sm": 4.0}]})
+    monkeypatch.setattr(
+        weather,
+        "ceiling_visibility_along_route",
+        lambda start, end, window=None: {
+            "min_ceiling_ft": 900.0,
+            "min_visibility_sm": 4.0,
+            "stations": [
+                {"icaoId": "KDLH", "lat": 46.8421, "lon": -92.1936, "elevation_ft": 1424, "ceiling_ft": 900.0, "visibility_sm": 4.0}
+            ],
+        },
+    )
     monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {ident: None for ident in idents})
     monkeypatch.setattr(airports, "get_runways", lambda ident: [])
     monkeypatch.setattr(airports, "get_frequencies", lambda ident: [])
     windows = {}
-    monkeypatch.setattr(weather, "tafs_over", lambda asked: windows.update(asked) or {
-        "KDLH": {"ceiling_ft": 3000.0, "visibility_sm": 6.0, "raw": "TAF KDLH 251720Z ..."}})
+    monkeypatch.setattr(
+        weather,
+        "tafs_over",
+        lambda asked: windows.update(asked) or {"KDLH": {"ceiling_ft": 3000.0, "visibility_sm": 6.0, "raw": "TAF KDLH 251720Z ..."}},
+    )
 
-    body = client.get("/api/briefing", params={
-        "dep": "C81", "dest": "KDLH", "depart": "2026-09-25T13:00:00Z", "ete_min": 150}).json()
+    body = client.get("/api/briefing", params={"dep": "C81", "dest": "KDLH", "depart": "2026-09-25T13:00:00Z", "ete_min": 150}).json()
 
     station = body["forecast"]["stations"][0]
     arrival = 1790341200.0 + 150 * 60
@@ -325,22 +412,70 @@ def test_each_taf_station_is_placed_along_the_route_and_read_for_when_the_flight
 
 def test_the_briefing_tells_the_tfrs_pilot_reports_and_g_airmets_on_the_route(monkeypatch):
     monkeypatch.setattr(weather, "hazards_along_route", lambda start, end: [])
-    monkeypatch.setattr(weather, "ceiling_visibility_along_route", lambda start, end, window=None: (
-        {"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []}))
+    monkeypatch.setattr(
+        weather,
+        "ceiling_visibility_along_route",
+        lambda start, end, window=None: ({"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []}),
+    )
     monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {ident: None for ident in idents})
     monkeypatch.setattr(airports, "get_runways", lambda ident: [])
     monkeypatch.setattr(airports, "get_frequencies", lambda ident: [])
     paths = []
-    monkeypatch.setattr(tfr, "along_route", lambda path, start, end: paths.append(path) or [{
-        "notam_id": "6/6664", "kind": "Security", "floor_ft": 0.0, "floor_ref": "AGL", "ceiling_ft": 400.0,
-        "ceiling_ref": "AGL", "effective": "2026-10-06T23:00:00Z", "expires": "2026-10-07T01:00:00Z",
-        "along_track_nm": 12.0, "crosses": True, "active_now": False, "geometry": {"type": "MultiPolygon"}}])
-    monkeypatch.setattr(weather, "pireps_along_route", lambda path: [{
-        "observed_at": "2026-10-04T04:07:00Z", "altitude_ft": 7000.0, "aircraft": "BE58", "urgent": False,
-        "turbulence": "MOD", "icing": None, "raw": "UA /OV ...", "along_track_nm": 40.0}])
-    monkeypatch.setattr(weather, "gairmet_snapshots_along_route", lambda path, window: [{
-        "hazard": "Icing", "severity": "MOD", "due_to": "ICE", "valid_at": "2026-10-04T03:00:00Z",
-        "valid": 1791085200.0, "altitude_low_ft": None, "from_freezing_level": True, "altitude_high_ft": 22000.0}])
+    monkeypatch.setattr(
+        tfr,
+        "along_route",
+        lambda path, start, end: (
+            paths.append(path)
+            or [
+                {
+                    "notam_id": "6/6664",
+                    "kind": "Security",
+                    "floor_ft": 0.0,
+                    "floor_ref": "AGL",
+                    "ceiling_ft": 400.0,
+                    "ceiling_ref": "AGL",
+                    "effective": "2026-10-06T23:00:00Z",
+                    "expires": "2026-10-07T01:00:00Z",
+                    "along_track_nm": 12.0,
+                    "crosses": True,
+                    "active_now": False,
+                    "geometry": {"type": "MultiPolygon"},
+                }
+            ]
+        ),
+    )
+    monkeypatch.setattr(
+        weather,
+        "pireps_along_route",
+        lambda path: [
+            {
+                "observed_at": "2026-10-04T04:07:00Z",
+                "altitude_ft": 7000.0,
+                "aircraft": "BE58",
+                "urgent": False,
+                "turbulence": "MOD",
+                "icing": None,
+                "raw": "UA /OV ...",
+                "along_track_nm": 40.0,
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        weather,
+        "gairmet_snapshots_along_route",
+        lambda path, window: [
+            {
+                "hazard": "Icing",
+                "severity": "MOD",
+                "due_to": "ICE",
+                "valid_at": "2026-10-04T03:00:00Z",
+                "valid": 1791085200.0,
+                "altitude_low_ft": None,
+                "from_freezing_level": True,
+                "altitude_high_ft": 22000.0,
+            }
+        ],
+    )
 
     body = client.get("/api/briefing", params={"dep": "C81", "dest": "KDLH", "stops": "KMSN"}).json()
 
@@ -356,12 +491,27 @@ def test_each_airport_landed_at_has_its_pattern_and_its_runway_ends(monkeypatch)
     and which way round at each end, the class over the field and what
     it is called."""
     monkeypatch.setattr(weather, "hazards_along_route", lambda start, end: [])
-    monkeypatch.setattr(weather, "ceiling_visibility_along_route", lambda start, end, window=None: (
-        {"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []}))
+    monkeypatch.setattr(
+        weather,
+        "ceiling_visibility_along_route",
+        lambda start, end, window=None: ({"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []}),
+    )
     monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {ident: None for ident in idents})
-    monkeypatch.setattr(airports, "get_runways", lambda ident: [{
-        "ends": "09/27", "end_headings": [("09", 90.2), ("27", 270.2)], "length_ft": 3270, "width_ft": 40,
-        "surface": "ASP", "lighted": True, "closed": False}])
+    monkeypatch.setattr(
+        airports,
+        "get_runways",
+        lambda ident: [
+            {
+                "ends": "09/27",
+                "end_headings": [("09", 90.2), ("27", 270.2)],
+                "length_ft": 3270,
+                "width_ft": 40,
+                "surface": "ASP",
+                "lighted": True,
+                "closed": False,
+            }
+        ],
+    )
     monkeypatch.setattr(airports, "get_frequencies", lambda ident: [])
     monkeypatch.setattr(pattern, "right_traffic_ends", lambda ident, cache_dir=None: {"27"} if ident == "C81" else set())
     monkeypatch.setattr(faa_data, "published_pattern_agl_ft", lambda ident, cache_dir: 800.0 if ident == "DLH" else None)
@@ -380,14 +530,18 @@ def test_each_airport_landed_at_has_its_pattern_and_its_runway_ends(monkeypatch)
 
 def test_a_tfr_site_that_does_not_answer_is_said_not_taken_for_none(monkeypatch):
     monkeypatch.setattr(weather, "hazards_along_route", lambda start, end: [])
-    monkeypatch.setattr(weather, "ceiling_visibility_along_route", lambda start, end, window=None: (
-        {"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []}))
+    monkeypatch.setattr(
+        weather,
+        "ceiling_visibility_along_route",
+        lambda start, end, window=None: ({"min_ceiling_ft": None, "min_visibility_sm": None, "stations": []}),
+    )
     monkeypatch.setattr(weather, "metar_for_idents", lambda idents: {ident: None for ident in idents})
     monkeypatch.setattr(airports, "get_runways", lambda ident: [])
     monkeypatch.setattr(airports, "get_frequencies", lambda ident: [])
 
     def down(*args):
         raise tfr.TfrUnavailable("down")
+
     monkeypatch.setattr(tfr, "along_route", down)
     monkeypatch.setattr(tfr, "all_tfrs", down)
 
@@ -437,6 +591,7 @@ def test_a_chart_tile_no_sheet_covers_is_an_empty_204_kept_as_long_as_a_drawn_on
     # It was a 404: an error in the browser's console for every tile of sea
     # or Canada round the country as the planner opens.
     from wingtip import charts
+
     monkeypatch.setattr(charts, "tile_png", lambda x, y, z, kind, scale=1: None)
     empty = client.get("/api/chart-tile/sec/4/1/8.png")
     assert empty.status_code == 204 and empty.content == b""
@@ -451,6 +606,7 @@ def test_a_chart_tile_no_sheet_covers_is_an_empty_204_kept_as_long_as_a_drawn_on
 
 def test_the_512_pixel_tile_is_the_same_address_with_at_2x(monkeypatch):
     from wingtip import charts
+
     asked = []
     monkeypatch.setattr(charts, "tile_png", lambda x, y, z, kind, scale=1: asked.append((kind, z, x, y, scale)) or b"\x89PNG")
     assert client.get("/api/chart-tile/sec/4/3/6@2x.png").status_code == 200

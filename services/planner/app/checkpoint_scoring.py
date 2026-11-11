@@ -11,12 +11,13 @@ elevation downloads -- before it had a checkpoint, and the planner
 offered "Collect this route" for every new one. The chart is read in
 seconds for any route it covers, and it is what the pilot will be
 looking at."""
+
 import threading
 
 from cachetools import LRUCache
 from fastapi import HTTPException
 from wingtip import chartlabels, charts, model_registry, places
-from wingtip import checkpoints as checkpoint_selection
+from wingtip.engine import ask as engine
 
 from . import chart_model
 
@@ -77,8 +78,7 @@ def score(dep: str, dest: str) -> list:
     # neighbours either side; only then cut to the planner's corridor.
     predicted = chart_model.predicted_scores(landmarks)
     checkpoints = sorted(
-        (_checkpoint(landmark, p) for landmark, p in zip(landmarks, predicted)
-         if abs(landmark.extras["cross_track_nm"]) <= HALF_WIDTH_NM),
+        (_checkpoint(landmark, p) for landmark, p in zip(landmarks, predicted) if abs(landmark.extras["cross_track_nm"]) <= HALF_WIDTH_NM),
         key=lambda c: c["along_track_nm"],
     )
     with _SCORE_CACHE_LOCK:
@@ -94,7 +94,7 @@ def scored_and_selected(dep: str, dest: str, length_nm: float | None = None) -> 
     in the cached scores, as the names load after the service starts.
 
     Picked only from those between the ends (`length_nm`, the hop's own
-    great circle), NEAR_A_STOP_NM in from each: the corridor runs past
+    great circle), 3 nm in from each (the engine's NEAR_A_STOP_NM): the corridor runs past
     them, and a route of one hop took a checkpoint behind its departure
     or beyond its destination, its nav log flying out to it and back --
     KLSE-KCMY 34.5 nm of legs for a 22.9 nm course, a lake 2.6 nm behind
@@ -105,18 +105,21 @@ def scored_and_selected(dep: str, dest: str, length_nm: float | None = None) -> 
     scored = score(dep, dest)
     for c in scored:
         c["name"] = places.checkpoint_name(c["category"], c["lat"], c["lon"]) or c["name"]
-    between = scored if length_nm is None else [
-        c for c in scored if NEAR_A_STOP_NM <= c["along_track_nm"] <= length_nm - NEAR_A_STOP_NM]
-    selected = checkpoint_selection.select_checkpoints(between)
+    selected = select_checkpoints(scored, length_nm=length_nm)
     keys = {c["id"] for c in selected}
     for c in scored:
         c["selected"] = c["id"] in keys
     return scored, selected
 
 
-#: How near a stop a hop's checkpoint is no use: the field itself is the
-#: fix there, landed at or just taken off from.
-NEAR_A_STOP_NM = 3.0
+def select_checkpoints(scored: list, *, length_nm: float | None = None, **given) -> list:
+    """The checkpoints the engine picks from `scored` (checkpoints_select,
+    route/checkpoints.rs: greedy by the model's score, 10 nm apart, none
+    under 2.5, and within a hop of `length_nm` none within 3 nm of either
+    end), in route order. `given`: min_spacing_nm, max_count, min_score."""
+    asked = [{"along_track_nm": c.get("along_track_nm"), "predicted_score": c.get("predicted_score")} for c in scored]
+    picked = engine("checkpoints_select", candidates=asked, length_nm=length_nm, **given)
+    return [scored[i] for i in picked]
 
 
 def route_checkpoints(r) -> tuple[list, list, list]:
@@ -149,12 +152,12 @@ def route_checkpoints(r) -> tuple[list, list, list]:
         def on_hop(c, length=length, earlier=earlier):
             return 0.0 <= c["along_track_nm"] <= length and c["id"] not in earlier
 
-        mine = [c for c in selected if on_hop(c) and NEAR_A_STOP_NM <= c["along_track_nm"] <= length - NEAR_A_STOP_NM]
+        # selected is already 3 nm in from the hop's ends (the engine's).
+        mine = [c for c in selected if on_hop(c)]
         chosen = {c["id"] for c in mine}
 
         def along(c, offset=offset, index=index, chosen=chosen):
-            return {**c, "along_track_nm": round(c["along_track_nm"] + offset, 3), "hop": index,
-                    "selected": c["id"] in chosen}
+            return {**c, "along_track_nm": round(c["along_track_nm"] + offset, 3), "hop": index, "selected": c["id"] in chosen}
 
         kept = [c for c in scored if on_hop(c)]
         seen |= {c["id"] for c in kept}

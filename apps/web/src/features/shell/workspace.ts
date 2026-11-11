@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import type { PanelState } from "../../components/mapChrome";
+import type { PanelState } from "../../lib/mapChrome";
 
 /**
  * What a workspace (the pilot's planner, the developer's training)
@@ -33,18 +33,27 @@ export interface WorkspacePieces {
    *  actions: the planner's pills (RouteBox). */
   route?: ReactNode;
   /** The panel's top row with it out, in place of the route form and the
-   *  actions: the search bar, while there is no route. */
+   *  actions: a list's own field (the traffic's, Nearest's); null for none,
+   *  the first row (`bar`) being the search. */
   head?: ReactNode;
   /** The panel's body alone with it out -- no route form, actions or
    *  controls over it: an airport's card opened over a route,
    *  as a place in Maps takes the sheet from the directions. */
   alone?: boolean;
-  /** That card is another tab's (an airport's over FPL): on a phone the
-   *  bar minimized to its kind, with Back (MapPanel's `cardOver`). */
+  /** A card open over the place up (an airport's over the plan)
+   *  (MapPanel's `cardOver`). */
   cardOver?: boolean;
-  /** The planner's tab bar (TabBar): the sheet's first row at half and all
-   *  the way up (MapPanel's `bar`). */
+  /** The sheet's first row, and at rest its pill: the planner's one search
+   *  (OneSearchField), the developer's places (MapPanel's `bar`). */
   bar?: ReactNode;
+  /** Over the first row: the app's name and the account button
+   *  (MapPanel's `title`), and whether it stays all the way up. */
+  title?: ReactNode;
+  titleAtFull?: boolean;
+  /** What the panel is drawn inside, where its first row and its body are
+   *  one control: the one search's Autocomplete root, its field the first
+   *  row and its list in the body. */
+  around?: (panel: ReactNode) => ReactNode;
   /** Pinned at the sheet's foot at half and all the way up: the route's
    *  figures, while there is a route (MapPanel's `foot`). */
   foot?: ReactNode;
@@ -52,8 +61,8 @@ export interface WorkspacePieces {
    *  indicator (MapPanel's toEdge): an airport's card, its tiles and tabs
    *  at its foot. */
   toEdge?: boolean;
-  /** The airplane flying the route (useFlyingMode): the panel's tab bar
-   *  and top row put away and its foot grown (MapPanel's `flying`). */
+  /** The airplane flying the route (useFlyingMode): the panel's first
+   *  row and top row put away and its foot grown (MapPanel's `flying`). */
   flying?: boolean;
 }
 

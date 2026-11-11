@@ -187,12 +187,12 @@ pub fn plan_profile(rows: &[Row]) -> (Vec<ProfilePoint>, Vec<Mark>, f64) {
         let start = along;
         along += f(part, "distance_nm");
         // A step-down levelling off on this piece.
-        if let Some((to, at, false)) = descent {
-            if at <= along {
-                point(at, to);
-                level = Some(to);
-                descent = None;
-            }
+        if let Some((to, at, false)) = descent
+            && at <= along
+        {
+            point(at, to);
+            level = Some(to);
+            descent = None;
         }
         match (row.kind, row.point) {
             (Kind::Toc, Some(p)) => {
@@ -257,14 +257,6 @@ pub fn descent_altitude(cruise_ft: f64, pattern_ft: Option<f64>, nm_out: f64) ->
         // JavaScript's Math.round, half up, as the web wrote it.
         Some(p) => cruise_ft.min(((p + nm_out * DESCENT_FT_PER_NM) / 100.0 + 0.5).floor() * 100.0),
     }
-}
-
-/// `descent_altitude`: feet MSL, from `{"cruise_ft", "pattern_ft"?, "nm_out"}`.
-pub(super) fn descent_altitude_rule(v: &Value) -> Result<String, String> {
-    let n = "descent_altitude";
-    let mut out = String::new();
-    json::number(&mut out, descent_altitude(num(n, v, "cruise_ft")?, opt(n, v, "pattern_ft")?, num(n, v, "nm_out")?));
-    Ok(out)
 }
 
 /// `plan_profile`: {"points": [{along_nm, plan_ft}], "marks": [{kind:

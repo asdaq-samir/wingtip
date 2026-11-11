@@ -1,6 +1,6 @@
 import { Marker } from "maplibre-gl";
 import { prefersReducedMotion } from "../../motion";
-import type { IconLike } from "../icons";
+import type { IconLike } from "../marks/icons";
 
 export type { IconLike };
 
@@ -47,7 +47,8 @@ function setIcon(el: HTMLElement, icon: IconLike) {
 
 function sizeOf(size: unknown): [number, number] {
   if (Array.isArray(size)) return [Number(size[0]) || 0, Number(size[1]) || 0];
-  if (size && typeof size === "object" && "x" in size) return [Number((size as { x: number }).x), Number((size as unknown as { y: number }).y)];
+  if (size && typeof size === "object" && "x" in size)
+    return [Number((size as { x: number }).x), Number((size as unknown as { y: number }).y)];
   return [0, 0];
 }
 

@@ -4,22 +4,24 @@ import WidgetKit
 /// The next flight on the Home Screen and the Lock Screen (a WidgetKit
 /// timeline widget, Apple's way to put an app's one fact where the
 /// phone is glanced at): the route with its distance, time and fuel,
-/// the Brief's Go / No-Go, and the departure's weather, from the
-/// snapshot the app keeps in the App Group (WidgetSnapshot, WidgetFeed).
-/// The widget never asks the planner: the app's own answer is the one
-/// shown, with when it last changed, and the system is asked to draw it
-/// again every quarter hour so a snapshot the app has moved on from is
-/// not read as fresh for long.
+/// the Brief's Go / No-Go, and the departure's weather. Its settings
+/// (NextFlightIntent, App Intents' widget configuration) pick the plan on
+/// the app's page, from the snapshot the app keeps in the App Group
+/// (WidgetSnapshot, WidgetFeed), or one of the pilot's saved flights,
+/// whose departure's weather the widget asks the planner for itself
+/// (NextFlightProvider). The system is asked to draw it again every
+/// quarter hour so an answer the app has moved on from is not read as
+/// fresh for long.
 struct FlightWidget: Widget {
     static let kind = "FlightWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: Self.kind, provider: FlightProvider()) { entry in
+        AppIntentConfiguration(kind: Self.kind, intent: NextFlightIntent.self, provider: NextFlightProvider()) { entry in
             FlightWidgetView(entry: entry)
                 .containerBackground(.fill.tertiary, for: .widget)
         }
         .configurationDisplayName("Next Flight")
-        .description("The route, its Go / No-Go and the departure's weather, as last planned.")
+        .description("The route, its Go / No-Go and the departure's weather: the plan on the page or a saved flight.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryRectangular])
     }
 }
@@ -28,28 +30,6 @@ struct FlightEntry: TimelineEntry {
     let date: Date
     /// Nil with no flight planned.
     let flight: WidgetSnapshot?
-}
-
-/// One entry per timeline, the snapshot as it stands: the app reloads
-/// the timeline the moment the snapshot changes (WidgetFeed), so there
-/// is nothing to schedule ahead.
-struct FlightProvider: TimelineProvider {
-    /// How long the entry stands before the system asks again.
-    static let refreshAfter: TimeInterval = 15 * 60
-
-    func placeholder(in context: Context) -> FlightEntry {
-        FlightEntry(date: Date(), flight: .sample)
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (FlightEntry) -> Void) {
-        completion(FlightEntry(date: Date(), flight: context.isPreview ? .sample : WidgetSnapshot.read()))
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<FlightEntry>) -> Void) {
-        let now = Date()
-        let entry = FlightEntry(date: now, flight: WidgetSnapshot.read())
-        completion(Timeline(entries: [entry], policy: .after(now.addingTimeInterval(Self.refreshAfter))))
-    }
 }
 
 /// The widget by its family: a card on the Home Screen, small or
@@ -80,7 +60,7 @@ private struct SmallCard: View {
     let flight: WidgetSnapshot
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
             RouteTitle(flight: flight)
             VerdictLine(verdict: flight.verdict)
             Spacer(minLength: 0)
@@ -101,8 +81,8 @@ private struct MediumCard: View {
     let flight: WidgetSnapshot
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 RouteTitle(flight: flight)
                 VerdictLine(verdict: flight.verdict)
                 if let words = flight.verdictWords {
@@ -119,7 +99,7 @@ private struct MediumCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Divider()
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                 Text("Departure \(flight.dep)")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.secondary)
@@ -132,7 +112,8 @@ private struct MediumCard: View {
                         .lineLimit(3)
                 }
                 Spacer(minLength: 0)
-                Text("as of \(flight.updatedAt, style: .time)")
+                // Not live: when the app last had it (HIG Widgets).
+                Text("Updated \(Format.zulu(flight.updatedAt))")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
@@ -149,15 +130,15 @@ private struct LockLine: View {
     let flight: WidgetSnapshot
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            HStack(spacing: 4) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+            HStack(spacing: WingtipSpace.xs) {
                 Image(systemName: "airplane")
                 Text(FlightWords.route(flight))
                     .lineLimit(1)
             }
             .font(.headline)
             .widgetAccentable()
-            Text("\(VerdictMark.word(flight.verdict)) · \(flight.eteMin.map(minutesWords) ?? "—")")
+            Text("\(VerdictMark.word(flight.verdict)) · \(flight.eteMin.map(Format.duration) ?? "—")")
                 .font(.subheadline.monospacedDigit())
                 .lineLimit(1)
             Text(FlightWords.weather(flight))
@@ -174,10 +155,10 @@ private struct NoFlight: View {
     let family: WidgetFamily
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+            HStack(spacing: WingtipSpace.sm) {
                 Image(systemName: "airplane")
-                    .foregroundStyle(.blue)
+                    .foregroundStyle(WingtipInk.tint)
                 Text("No flight planned")
                     .font(.headline)
             }
@@ -191,15 +172,15 @@ private struct NoFlight: View {
     }
 }
 
-/// "C81 → KDLH", with the airplane symbol in the map's blue, as the Live
+/// "C81 → KDLH", with the airplane symbol in the brand's tint, as the Live
 /// Activity's RouteLine writes it.
 private struct RouteTitle: View {
     let flight: WidgetSnapshot
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: WingtipSpace.sm) {
             Image(systemName: "airplane")
-                .foregroundStyle(.blue)
+                .foregroundStyle(WingtipInk.tint)
             Text(FlightWords.route(flight))
                 .font(.headline)
                 .lineLimit(1)
@@ -214,7 +195,7 @@ private struct VerdictLine: View {
     let verdict: String?
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: WingtipSpace.xs) {
             Image(systemName: VerdictMark.symbol(verdict))
             Text(VerdictMark.word(verdict))
         }
@@ -228,11 +209,13 @@ private struct WeatherLine: View {
     let flight: WidgetSnapshot
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: WingtipSpace.xs) {
             if let category = flight.depFlightCategory {
                 Text(category)
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(CategoryMark.colour(category))
+                    .foregroundStyle(Color(uiColor: FlightCategory.words(category)))
+                    // The tinted and clear Home Screens keep it, as a word.
+                    .widgetAccentable()
             }
             Text(flight.depWind ?? (flight.depFlightCategory == nil ? "No report" : ""))
                 .font(.caption)
@@ -268,24 +251,9 @@ enum VerdictMark {
 
     static func colour(_ verdict: String?) -> Color {
         switch verdict {
-        case "ok": return .green
-        case "caution": return .orange
-        case "stop": return .red
-        default: return .secondary
-        }
-    }
-}
-
-/// A flight category in the colour aviationweather.gov draws it, which
-/// the app's airport marks use: VFR green, MVFR blue, IFR red, LIFR
-/// magenta.
-enum CategoryMark {
-    static func colour(_ category: String) -> Color {
-        switch category.uppercased() {
-        case "VFR": return .green
-        case "MVFR": return .blue
-        case "IFR": return .red
-        case "LIFR": return Color(red: 0.8, green: 0.1, blue: 0.8)
+        case "ok": return WingtipInk.go
+        case "caution": return WingtipInk.caution
+        case "stop": return WingtipInk.problem
         default: return .secondary
         }
     }
@@ -303,7 +271,7 @@ enum FlightWords {
     static func figures(_ flight: WidgetSnapshot) -> String {
         var parts: [String] = []
         if let nm = flight.distanceNm { parts.append("\(Int(nm.rounded())) nm") }
-        if let minutes = flight.eteMin { parts.append(minutesWords(minutes)) }
+        if let minutes = flight.eteMin { parts.append(Format.duration(minutes)) }
         if let gal = flight.fuelGal { parts.append(String(format: "%.1f gal", gal)) }
         return parts.isEmpty ? "Planning…" : parts.joined(separator: " · ")
     }

@@ -8,13 +8,13 @@ import { openPanel, settle, sideDrawer, slow } from "./helpers";
  * nothing yet. Its items are shown there -- the limit and the route
  * found as idents, the altitudes, the frequency and the code -- the
  * Enter row says what it would put in and Compare how that differs from
- * the route planned, and only Enter Route changes the plan: the route
+ * the route planned, and only Use This Route changes the plan: the route
  * through Gopher (GEP), "then as filed", and the expected altitude flown
  * (AIM 4-4-3, 5-2-6).
  */
 test("a clearance read is shown in its items and entered as the route", async ({ page }) => {
-  // A browser with no recognizer, as Firefox: the microphone opens the
-  // card to type in.
+  // A browser with no recognizer, as Firefox: no voice is offered, and
+  // the comms button opens the card to type in, with no microphone in it.
   await page.addInitScript(() => {
     const w = window as unknown as Record<string, unknown>;
     delete w.SpeechRecognition;
@@ -25,10 +25,14 @@ test("a clearance read is shown in its items and entered as the route", async ({
   await openPanel(page);
   const box = sideDrawer(page).getByTestId("route-box");
   await page.getByTestId("radio-button").click();
-  await page.getByTestId("clearance-text").fill(
-    "Cessna one two three alpha bravo cleared to the Duluth airport via Gopher then as filed, climb and maintain three thousand, "
-    + "expect seven thousand one zero minutes after departure, departure frequency one two five point three five, squawk four five two one",
-  );
+  await expect(page.getByTestId("clearance-text")).toBeVisible();
+  await expect(page.getByTestId("clearance-toggle")).toHaveCount(0);
+  await page
+    .getByTestId("clearance-text")
+    .fill(
+      "Cessna one two three alpha bravo cleared to the Duluth airport via Gopher then as filed, climb and maintain three thousand, " +
+        "expect seven thousand one zero minutes after departure, departure frequency one two five point three five, squawk four five two one",
+    );
   const body = page.getByTestId("clearance-body");
   const hear = body.getByTestId("clearance-detail-hear");
   await expect(hear.getByText("GEP", { exact: true })).toBeVisible({ timeout: slow(20_000) });
@@ -54,6 +58,37 @@ test("a clearance read is shown in its items and entered as the route", async ({
 });
 
 /**
+ * Typing works as well as speaking (docs/design/web.md §12): Enter in the
+ * field reads what was typed at once, and Use This Route, the Enter row's
+ * one button, enters it.
+ */
+test("Enter in the typed clearance reads it, and Use This Route enters it", async ({ page }) => {
+  // No recognizer, as the first test's: the comms button opens the card to type in.
+  await page.addInitScript(() => {
+    const w = window as unknown as Record<string, unknown>;
+    delete w.SpeechRecognition;
+    delete w.webkitSpeechRecognition;
+  });
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await openPanel(page);
+  await page.getByTestId("radio-button").click();
+  const field = page.getByTestId("clearance-text");
+  await field.fill("cleared to the Duluth airport via Gopher then as filed, maintain three thousand, squawk four five two one");
+  await field.press("Enter");
+  // One line: Enter put no new line in it.
+  await expect(field).not.toHaveValue(/\n/);
+  const body = page.getByTestId("clearance-body");
+  await expect(body.getByTestId("clearance-elements")).toContainText("4521");
+  const use = body.getByTestId("clearance-enter");
+  await expect(use).toHaveText("Use This Route");
+  await expect(use).toBeEnabled({ timeout: slow(20_000) });
+  await expect(body.getByRole("button", { name: "Use This Route" })).toHaveCount(1);
+  await use.click();
+  await expect(page).toHaveURL(/stops=GEP/, { timeout: slow(10_000) });
+});
+
+/**
  * The microphone used as Siri's is (the owner's pick, 2026-11-02): a tap
  * listens, the pill over the map typing the words; at the pause after
  * them, the chips of what was heard, and Fly flies its altitude. The
@@ -62,17 +97,30 @@ test("a clearance read is shown in its items and entered as the route", async ({
 test("the microphone listens once into a pill, and its chip flies the altitude said", async ({ page }) => {
   await page.addInitScript(() => {
     class Heard {
-      lang = ""; continuous = false; interimResults = false;
-      onresult: ((e: unknown) => void) | null = null; onerror: ((e: unknown) => void) | null = null; onend: (() => void) | null = null;
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onresult: ((e: unknown) => void) | null = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
       start() {
         const said = "November one two three alpha bravo climb and maintain five thousand";
-        setTimeout(() => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: said.slice(0, 30) }], { isFinal: false })] }), 200);
+        setTimeout(
+          () => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: said.slice(0, 30) }], { isFinal: false })] }),
+          200,
+        );
         setTimeout(() => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: said }], { isFinal: true })] }), 500);
       }
-      stop() { setTimeout(() => this.onend?.(), 50); }
+      stop() {
+        setTimeout(() => this.onend?.(), 50);
+      }
     }
     // Both names: this Chromium has the unprefixed one as well.
-    Object.assign(window, { SpeechRecognition: Heard, webkitSpeechRecognition: Heard });
+    // `available`, Chrome's on-device ask (lib/speechLocal): voice is offered only where speech stays on the device.
+    Object.assign(window, {
+      SpeechRecognition: Object.assign(Heard, { available: async () => "available" }),
+      webkitSpeechRecognition: Heard,
+    });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -96,21 +144,44 @@ test("the microphone listens once into a pill, and its chip flies the altitude s
 test("the pilot's own words are chips: the nearest airports and a timer", { tag: "@smoke" }, async ({ page }) => {
   await page.addInitScript(() => {
     class Heard {
-      lang = ""; continuous = false; interimResults = false;
-      onresult: ((e: unknown) => void) | null = null; onerror: ((e: unknown) => void) | null = null; onend: (() => void) | null = null;
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onresult: ((e: unknown) => void) | null = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
       start() {
-        setTimeout(() => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: "nearest airport and start the timer" }], { isFinal: true })] }), 300);
+        setTimeout(
+          () =>
+            this.onresult?.({
+              resultIndex: 0,
+              results: [Object.assign([{ transcript: "nearest airport and start the timer" }], { isFinal: true })],
+            }),
+          300,
+        );
       }
-      stop() { setTimeout(() => this.onend?.(), 50); }
+      stop() {
+        setTimeout(() => this.onend?.(), 50);
+      }
     }
-    Object.assign(window, { SpeechRecognition: Heard, webkitSpeechRecognition: Heard });
+    Object.assign(window, {
+      SpeechRecognition: Object.assign(Heard, { available: async () => "available" }),
+      webkitSpeechRecognition: Heard,
+    });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const pill = page.getByTestId("radio-pill");
+  // Tapped again only while it is still idle: the pill takes the button's
+  // place once listening starts, and a slow start (the listening code
+  // loading) had the next try wait on a button no longer there until the
+  // time ran out (run 42867578624), where a tap that landed would have
+  // stopped the listening instead.
+  const button = page.getByTestId("radio-button");
   await expect(async () => {
-    if (!(await pill.count())) await page.getByTestId("radio-button").click();
-    await expect(pill).toBeVisible({ timeout: 2000 });
+    if (!(await pill.count()) && (await button.getAttribute("aria-pressed", { timeout: 1000 })) !== "true")
+      await button.click({ timeout: 1000 });
+    await expect(pill).toBeVisible({ timeout: slow(5000) });
   }).toPass({ timeout: slow(20_000) });
   await expect(pill).toContainText("nearest airport", { timeout: slow(10_000) });
   // The timer counts in the pill once started, and stays as the chips go.
@@ -127,11 +198,23 @@ test("with nothing heard the pill stays and says so until put away", async ({ pa
   // cockpit.
   await page.addInitScript(() => {
     class Quiet {
-      onresult = null; onerror: ((e: unknown) => void) | null = null; onend: (() => void) | null = null;
-      start() { setTimeout(() => { this.onerror?.({ error: "audio-capture" }); this.onend?.(); }, 300); }
-      stop() { setTimeout(() => this.onend?.(), 50); }
+      onresult = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        setTimeout(() => {
+          this.onerror?.({ error: "audio-capture" });
+          this.onend?.();
+        }, 300);
+      }
+      stop() {
+        setTimeout(() => this.onend?.(), 50);
+      }
     }
-    Object.assign(window, { SpeechRecognition: Quiet, webkitSpeechRecognition: Quiet });
+    Object.assign(window, {
+      SpeechRecognition: Object.assign(Quiet, { available: async () => "available" }),
+      webkitSpeechRecognition: Quiet,
+    });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);

@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useAirplaneChosen } from "../../../lib/preferences";
+import { Suspense, lazy, useState } from "react";
+import { zoneName } from "../../../lib/format";
 import { cn } from "cn";
 import type { Totals } from "../../../lib/api/types";
 import { FLYING_FIGURE, GROUP_HEADING, GROW_FIGURE, TEXT } from "../../../lib/text";
@@ -7,8 +9,12 @@ import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger }
 import { TriangleAlert } from "lucide-react";
 import { Button } from "../../../components/ui/button";
 import { nextLanding, shortFlights, tripFigures } from "../figures";
-import FuelBreakdown from "./FuelBreakdown";
+import { wantScreen } from "../../../lib/navigation/wanted";
 import type { Flown } from "./navlog/dryRun";
+
+/** What the fuel is made of, from the figure's first tap: its own chunk,
+ *  off the first load (scripts/first-load.mjs's budget). */
+const FuelBreakdown = lazy(() => import("./FuelBreakdown"));
 
 /**
  * The flight's figures, the last of the route's panel over the tabs, at
@@ -31,7 +37,7 @@ import type { Flown } from "./navlog/dryRun";
  * is ever said short of what it is. Where a rounded one still does not
  * fit (Chicago to Las Vegas, over 1,300 nm, its distance, time and fuel
  * cut to "131…", "≈12.…" and "≈10…" on an iPhone set to a larger text
- * size, which the app follows (lib/dynamicType), 2026-10-11), the four
+ * size, which the app follows (features/shell/dynamicType), 2026-10-11), the four
  * are set smaller together, figures and units, as iOS shrinks a label to
  * fit its width (UILabel's adjustsFontSizeToFitWidth), down to three
  * quarters -- 15 points at the default size, the body's -- and only past
@@ -43,7 +49,21 @@ import type { Flown } from "./navlog/dryRun";
  *  13), with the sheet (`grow`); TEXT's sizes, a mouse's and a finger's. */
 const { value: GROW_VALUE, unit: GROW_UNIT, name: GROW_NAME } = GROW_FIGURE;
 
-export default function FlightLine({ totals, estimate, destination, depart, local, grow = false, flown = null, flying = false, fuelStop = null }: {
+/** A figure as it is seen, first in its button's name (WCAG 2.5.3, Label
+ *  in Name), the words said for it after: "102 nm, Distance, …". */
+const seen = (f: { value: string; unit?: string }) => (f.unit ? `${f.value} ${f.unit}` : f.value);
+
+export default function FlightLine({
+  totals,
+  estimate,
+  destination,
+  depart,
+  local,
+  grow = false,
+  flown = null,
+  flying = false,
+  fuelStop = null,
+}: {
   totals: Totals | null;
   /** Before the nav log's totals, at the pilot's ask for the figures as
    *  soon as can be: the course's distance at once, and the time and fuel
@@ -88,7 +108,10 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
   const stops = (totals?.hops.length ?? 0) > 0;
   const input = { totals, estimate, local, destination, depart, arrival, toDestination: stops && toDestination, flown };
   const exact = tripFigures(input, false);
-  const rounded = tripFigures(input, true);
+  // A dry run's figures keep the strip's own format, set smaller to fit
+  // rather than rounded ("1.2h", "102 nm" in the run against "1h 14m",
+  // "105.1 nm" in the plan, the FPL audit's A20; the owner's one strip).
+  const rounded = tripFigures(input, !flown);
   // The fuel required tapped, what it is made of (FuelBreakdown), at the
   // owner's ask ("fuel is the fuel required which gives a breakdown when
   // tapped"): once the nav log's figures are in.
@@ -97,16 +120,38 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
   // Each figure on its own: the one too wide for its column rounded, the
   // rest as they are, and set smaller together where that is not enough
   // (useFigureFit).
-  const { room, shown, sized, fitted, probes } = useFigureFit(exact, rounded, valueType, unitType);
+  // No airplane picked: the route's own figures alone, To and Dist --
+  // the time and the fuel are an airplane's, and none is assumed (the
+  // owner, 2026-11-08: "only show the distance and the things you can
+  // without airplane profile, don't assume").
+  const airplane = useAirplaneChosen();
+  const ours = (fs: typeof exact) => (airplane ? fs : fs.filter((f) => f.name === "To" || f.name === "Dist"));
+  const { room, shown, sized, fitted, probes } = useFigureFit(ours(exact), ours(rounded), valueType, unitType);
+  // Which figures are buttons (below), each its 44-point area round it.
+  const tapped = (name: string) =>
+    (name === "Fuel" && !!breakdown) ||
+    (name === "To" && stops && !local) ||
+    ((name === "ETE" || name === "ETA") && !local) ||
+    (name === "Dist" && !local && !flown);
   return (
     // What the planner is working on is the toast's (useProgressToast), at
     // the pilot's ask: the strip keeps the figures, as soon as there are
     // any, and with none yet their names over dashes -- it keeps its
     // place, as the panel's controls do.
-    <div className="relative" data-slot="section-summary" data-tip="flight-line">
+    <div className="@container/figures relative" data-slot="section-summary" data-tip="flight-line">
       {/* Each figure centred in its column, at the owner's ask ("Can the
-          calculations be center aligned?"), as FigureStrip's are. */}
-      <dl className={cn("grid gap-3", shown.length === 3 ? "grid-cols-3" : "grid-cols-4")}>
+          calculations be center aligned?"), as FigureStrip's are. Two by
+          two where the strip is under 16 rem wide, which with every rem
+          grown is an accessibility text size (24 px a rem and up on a
+          phone; the owner's 17.88 and 19.65 keep four), as the iPhone's
+          and Android's strips stack: four columns then cut the figures. */}
+      <dl
+        className={cn(
+          "grid gap-3",
+          shown.length === 2 ? "grid-cols-2" : shown.length === 3 ? "grid-cols-3" : "grid-cols-4",
+          "@max-[16rem]/figures:grid-cols-2",
+        )}
+      >
         {shown.map((f, i) => (
           <div key={f.name} className="min-w-0 text-center">
             {/* Its names and units a grey that reads on the pill's glass
@@ -115,8 +160,24 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
                 start and taxi, the reserve): beside the route's rows' fuel in
                 the tanks, "Fuel" read as the fuel burnt, 16.6 against the 13
                 gone from 40 to 27 (the owner's screenshot, 2026-11-06). */}
-            <dt className={cn(GROUP_HEADING, nameType, "truncate text-foreground/65")}>{f.name === "Fuel" ? "Fuel req" : f.name}</dt>
-            <dd ref={i === 0 ? room : undefined} className={cn(valueType, "truncate font-semibold tabular-nums")} data-testid={f.testId}>
+            {/* To a screen reader the figure in full words, name and all
+                (tripFigures' said), here or as its button's name, the
+                shorthand hidden from it: "Dist 102.4 nm" was read as
+                letters. */}
+            <dt className={cn(GROUP_HEADING, nameType, "truncate text-foreground/65")}>
+              <span aria-hidden>{f.name === "Fuel" ? "Fuel req" : f.name === "ETA" ? `ETA ${zoneName()}` : f.name}</span>
+              {!tapped(f.name) && <span className="sr-only">{f.said}</span>}
+            </dt>
+            {/* Where the figure is a button, the dd does not clip: its
+                44-point area (the button's after) reached past it and was
+                cut off, so a tap 11 points over ETE or Fuel at half landed
+                on the name (the FPL audit's A17). The figure itself is cut
+                short instead (its own truncate). */}
+            <dd
+              ref={i === 0 ? room : undefined}
+              className={cn(valueType, "truncate font-semibold tabular-nums", tapped(f.name) && "overflow-visible")}
+              data-testid={f.testId}
+            >
               {f.name === "Fuel" && breakdown ? (
                 <ResponsivePopover open={breakdownOpen} onOpenChange={setBreakdownOpen}>
                   <ResponsivePopoverTrigger asChild>
@@ -124,29 +185,48 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
                         tapped is; its 44-point area round it, the figure
                         not grown to make it (index.css's after). */}
                     <button
-                      type="button" data-testid="fuel-breakdown-open" data-alert={f.alert || undefined}
-                      aria-label={`Fuel required, ${f.value} gallons${f.alert ? ", more than the tanks hold on a flight of the route" : ""}: what it is made of`}
-                      className={cn("relative inline-flex items-baseline after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']", f.alert ? "text-destructive" : "text-tint")}
+                      type="button"
+                      data-testid="fuel-breakdown-open"
+                      data-alert={f.alert || undefined}
+                      aria-label={`${seen(f)}, ${f.said}: what it is made of`}
+                      className={cn(
+                        "relative inline-flex max-w-full items-baseline after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']",
+                        f.alert ? "text-destructive" : "text-tint",
+                      )}
                     >
                       {/* Short said by a mark too, not the red alone (WCAG 1.4.1). */}
                       {f.alert && <TriangleAlert className="mr-0.5 size-[0.8em] self-center" aria-hidden data-testid="fuel-short-mark" />}
-                      <span style={sized("value")} data-fitted={fitted}>{f.value}</span>
+                      <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
+                        {f.value}
+                      </span>
                       {/* Its space a no-break one: a flex item drops a
                           leading plain one, and it read "16.6gal" (the
                           owner's screenshot, 2026-11-06). */}
-                      {f.unit && <span className={cn(unitType, "font-normal")} style={sized("unit")} data-fitted={fitted}>{"\u00a0"}{f.unit}</span>}
+                      {f.unit && (
+                        <span className={cn(unitType, "font-normal")} style={sized("unit")} data-fitted={fitted}>
+                          {"\u00a0"}
+                          {f.unit}
+                        </span>
+                      )}
                     </button>
                   </ResponsivePopoverTrigger>
                   <ResponsivePopoverContent title={`Fuel to ${breakdown.to}`} className="w-72 p-3" side="top" align="end">
-                    <FuelBreakdown totals={breakdown.totals!} short={shortFlights(totals)} burnt={flown?.burntGal} />
+                    <Suspense fallback={null}>
+                      <FuelBreakdown totals={breakdown.totals!} short={shortFlights(totals)} burnt={flown?.burntGal} />
+                    </Suspense>
                     {f.alert && fuelStop && (
                       <Button
-                        type="button" variant="ghost" data-testid="fuel-short-add-stop"
+                        type="button"
+                        variant="ghost"
+                        data-testid="fuel-short-add-stop"
                         // Its 44-point area made by the after, the button not grown to it;
                         // the popover put away as the stop is kept, so a second tap cannot
                         // keep it again over figures that are changing.
                         className="relative mt-2 w-full text-tint after:absolute after:-inset-y-1 after:content-['']"
-                        onClick={() => { setBreakdownOpen(false); fuelStop.add(); }}
+                        onClick={() => {
+                          setBreakdownOpen(false);
+                          fuelStop.add();
+                        }}
                       >
                         Add fuel stop at {fuelStop.idents.join(", ")}
                       </Button>
@@ -155,24 +235,59 @@ export default function FlightLine({ totals, estimate, destination, depart, loca
                 </ResponsivePopover>
               ) : f.name === "To" && stops && !local ? (
                 <button
-                  type="button" onClick={() => setToDestination(!toDestination)} data-testid="to-toggle"
-                  aria-label={`To ${f.value}: show the ${toDestination ? "next stop" : "destination"}`}
-                  className="relative text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+                  type="button"
+                  onClick={() => setToDestination(!toDestination)}
+                  data-testid="to-toggle"
+                  aria-label={`${f.said}: show the ${toDestination ? "next stop" : "destination"}`}
+                  className="relative inline-flex max-w-full text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
-                  <span style={sized("value")} data-fitted={fitted}>{f.value}</span>
+                  <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
+                    {f.value}
+                  </span>
+                </button>
+              ) : f.name === "Dist" && !local && !flown ? (
+                // The distance opens the nav log it is the sum of, leg by
+                // leg (tap what you see, docs/navigation.md).
+                <button
+                  type="button"
+                  onClick={() => wantScreen("navlog")}
+                  data-testid="dist-navlog"
+                  aria-label={`${seen(f)}, ${f.said}: open the nav log`}
+                  className="relative inline-flex max-w-full items-baseline text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+                >
+                  <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
+                    {f.value}
+                  </span>
+                  {f.unit && (
+                    <span className={cn(unitType, "font-normal")} style={sized("unit")} data-fitted={fitted}>
+                      {"\u00a0"}
+                      {f.unit}
+                    </span>
+                  )}
                 </button>
               ) : (f.name === "ETE" || f.name === "ETA") && !local ? (
                 <button
-                  type="button" onClick={() => setArrival(!arrival)} data-testid="ete-eta-toggle"
-                  aria-label={`${f.name === "ETE" ? "Time en route" : "Arrival"}, ${f.value}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
-                  className="relative text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+                  type="button"
+                  onClick={() => setArrival(!arrival)}
+                  data-testid="ete-eta-toggle"
+                  aria-label={`${seen(f)}, ${f.said}: show the ${f.name === "ETE" ? "arrival" : "time en route"}`}
+                  className="relative inline-flex max-w-full text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
                 >
-                  <span style={sized("value")} data-fitted={fitted}>{f.value}</span>
+                  <span key={f.value} className="figure-roll min-w-0 truncate" style={sized("value")} data-fitted={fitted}>
+                    {f.value}
+                  </span>
                 </button>
               ) : (
                 <>
-                  <span style={sized("value")} data-fitted={fitted}>{f.value}</span>
-                  {f.unit && <span className={cn(unitType, "font-normal text-foreground/65")} style={sized("unit")} data-fitted={fitted}> {f.unit}</span>}
+                  <span key={f.value} aria-hidden className="figure-roll" style={sized("value")} data-fitted={fitted}>
+                    {f.value}
+                  </span>
+                  {f.unit && (
+                    <span aria-hidden className={cn(unitType, "font-normal text-foreground/65")} style={sized("unit")} data-fitted={fitted}>
+                      {" "}
+                      {f.unit}
+                    </span>
+                  )}
                 </>
               )}
             </dd>

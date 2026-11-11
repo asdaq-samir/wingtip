@@ -11,12 +11,19 @@
 export { default as NavLogView } from "./components/navlog/NavLogView";
 export { default as ProceduresRoute } from "./components/ProceduresRoute";
 export { RouteLine } from "./components/ProceduresRoute";
-export { default as FlightBriefingView, BriefingNotices, ReviewAskItem, ReviewAskSheet, SaveFlightButton } from "./components/briefing/FlightBriefingView";
+export {
+  default as FlightBriefingView,
+  BriefingNotices,
+  ReviewAskItem,
+  ReviewAskSheet,
+  SaveFlightButton,
+} from "./components/briefing/FlightBriefingView";
 export { default as RouteEnds } from "./components/RouteEnds";
 export { default as RouteSplit } from "./components/RouteSplit";
 export { default as Kneeboard } from "./components/Kneeboard";
 export { default as FlightInputs } from "./components/navlog/FlightInputs";
-export { default as AltitudeGroup, AltitudeProfile } from "./components/navlog/AltitudeGroup";
+export { default as AltitudeGroup } from "./components/navlog/AltitudeGroup";
+export { AltitudeProfile } from "./components/navlog/altitude/AltitudeProfile";
 export { default as BriefNarrative } from "./components/briefing/BriefNarrative";
 export { default as RouteProblem } from "./components/RouteProblem";
 export { default as LocalDuration } from "./components/LocalDuration";

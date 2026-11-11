@@ -1,5 +1,5 @@
 import type { ComponentProps } from "react";
-import { X } from "lucide-react";
+import { ICON } from "../lib/icons";
 import RoundButton from "./RoundButton";
 
 /**
@@ -11,13 +11,16 @@ import RoundButton from "./RoundButton";
  * 20 it read as a small mark. Its size held against a row's own glyph
  * size (`!`).
  */
-export default function CloseButton({ label = "Close", ...props }: Omit<ComponentProps<typeof RoundButton>, "label" | "children"> & {
+export default function CloseButton({
+  label = "Close",
+  ...props
+}: Omit<ComponentProps<typeof RoundButton>, "label" | "children"> & {
   /** What it does, where that is more than closing ("Clear the route"). */
   label?: string;
 }) {
   return (
     <RoundButton label={label} {...props}>
-      <X className="size-6!" strokeWidth={1.7} />
+      <ICON.close className="size-6!" strokeWidth={1.7} />
     </RoundButton>
   );
 }

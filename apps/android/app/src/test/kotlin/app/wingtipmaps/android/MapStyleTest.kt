@@ -31,6 +31,8 @@ class MapStyleTest {
     private fun style(overlays: OverlayTiles?, night: Boolean = false): JsonObject =
         Json.parseToJsonElement(MapStyle.styleJson(template, 5, 12, overlays, night)).jsonObject
 
+    private val TRAFFIC = listOf(MapStyle.TRAFFIC_TREND, MapStyle.TRAFFIC_TRACKED, MapStyle.TRAFFIC, MapStyle.TRAFFIC_LABELS)
+
     private fun ids(style: JsonObject) = style["layers"]!!.jsonArray.map { it.jsonObject["id"]!!.jsonPrimitive.content }
 
     private fun layer(style: JsonObject, id: String) = style["layers"]!!.jsonArray.first { it.jsonObject["id"]!!.jsonPrimitive.content == id }.jsonObject
@@ -44,7 +46,7 @@ class MapStyleTest {
         val under = s["sources"]!!.jsonObject["chart-under"]!!.jsonObject
         assertEquals("5", under["minzoom"]!!.jsonPrimitive.content)
         assertEquals("5", under["maxzoom"]!!.jsonPrimitive.content)
-        assertEquals(listOf("chart-under", "chart", MapStyle.ROUTE_SLOT), ids(s))
+        assertEquals(listOf("chart-under", "chart", MapStyle.ROUTE_SLOT) + TRAFFIC, ids(s))
         assertEquals(13.0, MapStyle.maxZoom(12), 0.0)
     }
 
@@ -61,7 +63,7 @@ class MapStyleTest {
 
     @Test
     fun theOverlaysAreThePlannersArchiveInTheFirstStyle() {
-        val s = style(tiles("airspace", "airports", "navaids", "fixes", "runways"))
+        val s = style(tiles("airspace", "airspace_labels", "special_use", "airports", "navaids", "fixes", "runways"))
         val source = s["sources"]!!.jsonObject[MapStyle.OVERLAY_SOURCE]!!.jsonObject
         assertEquals("vector", source["type"]!!.jsonPrimitive.content)
         assertEquals(
@@ -74,11 +76,12 @@ class MapStyleTest {
             listOf(
                 "chart-under", "chart",
                 "runway-surface", "runway-centreline", "runway-ends",
-                "airspace-D", "airspace-C", "airspace-B", "airspace-labels",
+                "sua-band", "sua-line",
+                "airspace-D-band", "airspace-D", "airspace-C-band", "airspace-C", "airspace-B-band", "airspace-B", "airspace-labels",
                 MapStyle.ROUTE_SLOT,
                 "navaids", "navaids-idents", "fixes", "fixes-idents", "vfr-waypoints", "vfr-waypoints-idents",
                 "airports",
-            ),
+            ) + TRAFFIC,
             ids(s),
         )
     }
@@ -93,7 +96,7 @@ class MapStyleTest {
 
     @Test
     fun theAirspaceIsTheWebsInksAndZooms() {
-        val s = style(tiles("airspace"))
+        val s = style(tiles("airspace", "airspace_labels"))
         val b = layer(s, "airspace-B")
         assertEquals("#2f8cff", b["paint"]!!.jsonObject["line-color"]!!.jsonPrimitive.content)
         assertEquals("4.0", b["paint"]!!.jsonObject["line-width"]!!.jsonPrimitive.content)
@@ -101,22 +104,42 @@ class MapStyleTest {
         val d = layer(s, "airspace-D")
         assertTrue(d["paint"]!!.jsonObject.containsKey("line-dasharray"))
         assertEquals("7.0", d["minzoom"]!!.jsonPrimitive.content)
-        val labels = layer(s, "airspace-labels")["layout"]!!.jsonObject
-        assertEquals(MapStyle.AIRSPACE_TAB, labels["icon-image"]!!.jsonPrimitive.content)
-        assertEquals(MapStyle.AIRSPACE_LABEL, labels["text-field"])
+        // The band inside each line: its own ink, faint, offset inwards.
+        val band = layer(s, "airspace-C-band")["paint"]!!.jsonObject
+        assertEquals("#e02ad8", band["line-color"]!!.jsonPrimitive.content)
+        assertEquals(MapStyle.BAND_OFFSET, band["line-offset"])
+        // One tab a shelf, from the label points, turned along its ring.
+        val labels = layer(s, "airspace-labels")
+        assertEquals("airspace_labels", labels["source-layer"]!!.jsonPrimitive.content)
+        val layout = labels["layout"]!!.jsonObject
+        assertEquals("""["concat","airspace|tab|",["get","class"]]""", layout["icon-image"].toString())
+        assertEquals("""["get","angle"]""", layout["text-rotate"].toString())
+        assertFalse(layout.containsKey("symbol-placement"))
+        assertEquals(MapStyle.AIRSPACE_LABEL, layout["text-field"])
+        // An older archive without them: along every ring, as before.
+        val older = layer(style(tiles("airspace")), "airspace-labels")
+        assertEquals("line", older["layout"]!!.jsonObject["symbol-placement"]!!.jsonPrimitive.content)
     }
 
     @Test
-    fun theAirspaceLabelIsTheSectionalsHundredsOfFeet() {
-        // ["concat", ["get","class"], ": ", ["case", D?, top, [top "–" floor]]]
+    fun theAirspaceLabelIsForeFlightsFloorToCeilingInFeet() {
+        // ["concat", ["get","class"], ": ", floor, "–", top]: "C: 2300–4900".
         val label = MapStyle.AIRSPACE_LABEL
         assertEquals("concat", label[0].jsonPrimitive.content)
-        val case = label[3] as JsonArray
-        assertEquals("case", case[0].jsonPrimitive.content)
-        val shelf = case[3] as JsonArray
-        assertEquals("–", shelf[2].jsonPrimitive.content)
-        val floor = shelf[3] as JsonArray
+        val floor = label[3] as JsonArray
         assertEquals("SFC", floor[2].jsonPrimitive.content)
+        assertEquals("–", label[4].jsonPrimitive.content)
+        val top = label[5] as JsonArray
+        assertEquals("""["case",["==",["get","ceiling_excluded"],true],"<",""]""", top[1].toString())
+    }
+
+    @Test
+    fun theSpecialUseAreasAreALineAndAHatchedBand() {
+        val s = style(tiles("special_use"))
+        val band = layer(s, "sua-band")["paint"]!!.jsonObject
+        assertTrue(band["line-pattern"].toString().contains(MapStyle.SUA_HATCH_RESTRICTED))
+        val line = layer(s, "sua-line")["paint"]!!.jsonObject
+        assertTrue(line["line-color"].toString().contains(MapStyle.SUA_RESTRICTED_INK))
     }
 
     @Test
@@ -126,8 +149,8 @@ class MapStyleTest {
             """["all",["!=",["get","military"],"military"],["!=",["get","use"],"private"]]""",
             airports["filter"].toString(),
         )
-        assertEquals("apt|t|large||", MapStyle.airportMarkId(true, "large", ""))
-        assertEquals("apt|u|other||private", MapStyle.airportMarkId(false, "other", "private"))
+        assertEquals("apt|t|large||", MapStyle.airportMarkId(true, "large", "", ""))
+        assertEquals("apt|u|other|#1a7f37|private", MapStyle.airportMarkId(false, "other", "#1a7f37", "private"))
         val colour = airports["paint"]!!.jsonObject["text-color"]!!.jsonArray
         assertEquals(MapStyle.BLUE, colour[2].jsonPrimitive.content)
         assertEquals(MapStyle.MAGENTA, colour[3].jsonPrimitive.content)

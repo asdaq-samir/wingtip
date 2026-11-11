@@ -16,6 +16,7 @@ person to save typed. These notes tell a pilot how to recognise a
 checkpoint from the air, so one pilot's mistake must not become every
 pilot's.
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -54,7 +55,7 @@ def find_note(notes: list, lat: float, lon: float, pilot: str | None = None) -> 
     since a checkpoint's own coordinates can shift by a hair between
     requests (a different candidate tie-break, a rounding difference)
     without actually being a different checkpoint."""
-    for owner in ([pilot, ""] if pilot else [""]):
+    for owner in [pilot, ""] if pilot else [""]:
         near = [n for n in notes if n["pilot"] == owner and distance_nm(n["lat"], n["lon"], lat, lon) < SAME_PLACE_NM]
         if near:
             nearest = min(distance_nm(n["lat"], n["lon"], lat, lon) for n in near)
@@ -65,8 +66,7 @@ def find_note(notes: list, lat: float, lon: float, pilot: str | None = None) -> 
     return None
 
 
-def _append(route: str, lat: float, lon: float, description: str, pilot: str, path: Path,
-            if_absent: bool) -> tuple[dict, bool]:
+def _append(route: str, lat: float, lon: float, description: str, pilot: str, path: Path, if_absent: bool) -> tuple[dict, bool]:
     """(the note in force at the place, whether it is the one written
     now). Decided under the file's lock, against the file as it is --
     not a snapshot taken earlier by the caller.
@@ -85,18 +85,28 @@ def _append(route: str, lat: float, lon: float, description: str, pilot: str, pa
         if if_absent and (held := find_note(on_route, lat, lon, pilot)) is not None:
             return held, False
         row = {
-            "route": route, "lat": lat, "lon": lon, "description": description,
+            "route": route,
+            "lat": lat,
+            "lon": lon,
+            "description": description,
             "created_at": datetime.now(timezone.utc).isoformat(timespec="microseconds"),
             "pilot": pilot,
         }
-        write_rows(path, COLUMNS, [*notes, row])
+        # One row per pilot and place: an edit replaces the pilot's earlier
+        # one there, so a loop of saves cannot grow the file or the read
+        # every notes request makes of all of it.
+        kept = [
+            n
+            for n in notes
+            if not (n["route"] == route and n["pilot"] == pilot and distance_nm(n["lat"], n["lon"], lat, lon) < SAME_PLACE_NM)
+        ]
+        write_rows(path, COLUMNS, [*kept, row])
     return row, True
 
 
-def save_note(route: str, lat: float, lon: float, description: str, pilot: str | None = None,
-              path: Path | None = None) -> dict:
-    """Add one note. Appended, never overwritten: the latest at a place
-    is what find_note returns, and what it said before stays readable.
+def save_note(route: str, lat: float, lon: float, description: str, pilot: str | None = None, path: Path | None = None) -> dict:
+    """Save one note, replacing the same pilot's earlier one at that place
+    (the file keeps the latest only, so it cannot be grown without limit).
     `pilot` makes it that pilot's own; None is the shared note."""
     row, _ = _append(route, lat, lon, description, pilot or "", path or NOTES_PATH, if_absent=False)
     return row

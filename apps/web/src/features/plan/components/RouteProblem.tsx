@@ -15,7 +15,13 @@ import { FINDING_TONE } from "../../../lib/findings";
  * mark beside the Nav Log's title, and before that a line under the
  * route. At rest the route's capsule says so in its chip (PlanWorkspace).
  */
-export default function RouteProblem({ problem, onAddStop, onFlyVia, onAcceptClassB, onGoRound }: {
+export default function RouteProblem({
+  problem,
+  onAddStop,
+  onFlyVia,
+  onAcceptClassB,
+  onGoRound,
+}: {
   problem: Unflyable;
   onAddStop: () => void;
   onFlyVia: () => void;
@@ -27,18 +33,22 @@ export default function RouteProblem({ problem, onAddStop, onFlyVia, onAcceptCla
   // At the owner's ask ("Suggest a way around the terrain ... Yes build
   // it"): where the airplane's ceiling is what stops it over high ground,
   // the planner's way round, its points named, a tap putting them all in.
-  const round = problem.detours.find(d => d.via && d.via.length > 0);
+  const round = problem.detours.find((d) => d.via && d.via.length > 0);
   return (
     <div className="space-y-3" data-testid="route-problem">
       <p className={cn("font-semibold", FINDING_TONE.stop, TEXT.row)}>{problem.title}</p>
       {problem.reasons.length > 0 && (
         <ul className={cn("list-disc space-y-0.5 pl-4", TEXT.detail)}>
-          {problem.reasons.map(reason => <li key={reason}>{reason}</li>)}
+          {problem.reasons.map((reason) => (
+            <li key={reason}>{reason}</li>
+          ))}
         </ul>
       )}
       {problem.classB ? (
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" size="sm" onClick={onFlyVia} data-testid="unflyable-fly-via">Fly via…</Button>
+          <Button type="button" size="sm" onClick={onFlyVia} data-testid="unflyable-fly-via">
+            Fly via…
+          </Button>
           <Button type="button" size="sm" variant="outline" onClick={onAcceptClassB} data-testid="unflyable-accept-class-b">
             Accept Class B
           </Button>

@@ -7,7 +7,7 @@
 
 use super::{num, opt, rad};
 use crate::figures::words::{grouped, js_round};
-use crate::geo::{angle_between, destination, distance_nm};
+use crate::geo::{angle_between, bearing_deg, destination, distance_nm};
 use crate::json::{self, Value};
 
 /// Within this of own ship's height an airplane is drawn amber, the traffic
@@ -20,6 +20,16 @@ pub const NEAR_FT: f64 = 1000.0;
 pub const ARROW_FPM: f64 = 500.0;
 /// How far ahead a closest approach is looked for, minutes.
 pub const CPA_MIN: f64 = 10.0;
+/// An airplane near own ship's height (NEAR_FT) and within this of it, nm,
+/// is told in a notification while the app is not in front. A design
+/// choice, no rule (the phones' Traffic, 2026-10): the amber mark says it
+/// on the screen out to the map's edge, but a notification is for traffic
+/// a pilot looks for now, so the bound keeps an airplane 40 nm off quiet.
+pub const TELL_WITHIN_NM: f64 = 5.0;
+/// A position older than this, s, is left out: the airplane is somewhere
+/// else by now. The planner's own bound on the feed (wingtip.traffic's
+/// STALE_S), which the phones hold the internet's answer to.
+pub const STALE_S: f64 = 30.0;
 
 /// Whether two heights are within NEAR_FT of each other: the map's traffic
 /// coloured so, and the airplane card's closest approach said in red.
@@ -129,7 +139,7 @@ pub fn closest_approach(own: &Fix, plane: &Plane) -> Option<(f64, f64, Option<f6
     let vx = kt * rad(track).sin() - speed * rad(heading).sin();
     let vy = kt * rad(track).cos() - speed * rad(heading).cos();
     let closing = vx * vx + vy * vy;
-    let hours = if closing > 0.0 { f64::min(CPA_MIN / 60.0, f64::max(0.0, -(rx * vx + ry * vy) / closing)) } else { 0.0 };
+    let hours = if closing > 0.0 { (-(rx * vx + ry * vy) / closing).clamp(0.0, CPA_MIN / 60.0) } else { 0.0 };
     let nm = (rx + vx * hours).hypot(ry + vy * hours);
     let above = match (plane.altitude_ft, own.altitude_ft) {
         (Some(ft), Some(own_ft)) => Some(ft + plane.vertical_fpm.unwrap_or(0.0) * hours * 60.0 - own_ft),
@@ -167,21 +177,62 @@ fn list<'a>(name: &str, v: &'a Value, key: &str) -> Result<&'a [Value], String> 
     v.get(key).and_then(Value::as_array).ok_or_else(|| format!("{name}: \"{key}\" is missing or not a list"))
 }
 
-/// `traffic_marks`: [{"label", "near"}], one an airplane, from
-/// `{"own_ft"?, "planes": [{"altitude_ft"?, "vertical_fpm"?}]}`: the map's
+/// Own ship's place for `traffic_marks`, where the phone has a fix.
+fn own_at(name: &str, v: &Value) -> Result<Option<(f64, f64)>, String> {
+    match v.get("own") {
+        None | Some(Value::Null) => Ok(None),
+        Some(o) => Ok(Some((num(name, o, "lat")?, num(name, o, "lon")?))),
+    }
+}
+
+/// `traffic_marks`: [{"label", "near", "nm", "bearing_deg", "tell"}], one
+/// an airplane, from `{"own_ft"?, "own"?: {"lat", "lon"}, "planes":
+/// [{"altitude_ft"?, "vertical_fpm"?, "lat"?, "lon"?}]}`: the map's
 /// airplanes all at once, as one call a plane costs more than the rule.
+/// With own ship's place and the airplane's, how far off it is and its
+/// bearing from own ship (true), and `tell`: near in height and within
+/// TELL_WITHIN_NM, the traffic the phones notify; null and false without.
 pub(super) fn marks_rule(v: &Value) -> Result<String, String> {
     let n = "traffic_marks";
     let own = opt(n, v, "own_ft")?;
+    let at = own_at(n, v)?;
     let mut out = String::from("[");
     for (i, p) in list(n, v, "planes")?.iter().enumerate() {
         if i > 0 {
             out.push(',');
         }
         let ft = opt(n, p, "altitude_ft")?;
+        let near = near_own_height(ft, own);
+        let apart = match (at, opt(n, p, "lat")?, opt(n, p, "lon")?) {
+            (Some((lat, lon)), Some(plat), Some(plon)) => Some((distance_nm(lat, lon, plat, plon), bearing_deg(lat, lon, plat, plon))),
+            _ => None,
+        };
         out.push_str("{\"label\":");
         json::string(&mut out, &label(ft, opt(n, p, "vertical_fpm")?, own));
-        out.push_str(if near_own_height(ft, own) { ",\"near\":true}" } else { ",\"near\":false}" });
+        out.push_str(if near { ",\"near\":true" } else { ",\"near\":false" });
+        out.push_str(",\"nm\":");
+        json::opt_number(&mut out, apart.map(|a| a.0));
+        out.push_str(",\"bearing_deg\":");
+        json::opt_number(&mut out, apart.map(|a| a.1));
+        let tell = near && apart.is_some_and(|(nm, _)| nm <= TELL_WITHIN_NM);
+        out.push_str(if tell { ",\"tell\":true}" } else { ",\"tell\":false}" });
+    }
+    out.push(']');
+    Ok(out)
+}
+
+/// `traffic_fresh`: [bool], one an airplane, from `{"age_s"?, "planes":
+/// [{"seen_s"?}]}`: whether its position, `seen_s` old when the answer was
+/// made and the answer `age_s` old now, is within STALE_S, so drawn.
+pub(super) fn fresh_rule(v: &Value) -> Result<String, String> {
+    let n = "traffic_fresh";
+    let age = opt(n, v, "age_s")?.unwrap_or(0.0);
+    let mut out = String::from("[");
+    for (i, p) in list(n, v, "planes")?.iter().enumerate() {
+        if i > 0 {
+            out.push(',');
+        }
+        out.push_str(if opt(n, p, "seen_s")?.unwrap_or(0.0) + age <= STALE_S { "true" } else { "false" });
     }
     out.push(']');
     Ok(out)

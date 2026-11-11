@@ -34,7 +34,7 @@ fn near(a: f64, b: f64, within: f64) -> bool {
 
 #[test]
 fn a_cruising_altitude_is_written_fl_dash_as_the_owner_asked() {
-    // lib/units flightLevel, the owner's 2026-10-27 format; the Python wrote
+    // lib/format flightLevel, the owner's 2026-10-27 format; the Python wrote
     // FL045 and FL--- until the engine took the web's.
     assert_eq!(words::flight_level(Some(4500.0)), "FL-045");
     assert_eq!(words::flight_level(Some(12_500.0)), "FL-125");
@@ -131,6 +131,43 @@ fn asks_for_another_look_at_hazards_an_area_in_use_a_pilots_own_altitude_and_a_c
 }
 
 #[test]
+fn an_itws_alert_at_the_routes_airports_is_a_caution_saying_its_source() {
+    let mut v = quiet();
+    v.weather.terminal_alerts = strings(&["ATL: Runway 27L arrival microburst alert 40 kt, 3 mile final to runway"]);
+    let item = finding(&v, "weather");
+    assert_eq!(
+        (item.finding.as_str(), item.detail.as_str()),
+        ("caution", "ATL: Runway 27L arrival microburst alert 40 kt, 3 mile final to runway (FAA ITWS, now)")
+    );
+    // Under the pilot's own minimums still says so first.
+    v.weather.under_minimums = strings(&["KATL 400 ft"]);
+    assert_eq!(finding(&v, "weather").finding, "stop");
+}
+
+#[test]
+fn a_ground_stop_is_a_caution_under_ifr_and_nothing_under_vfr() {
+    let mut v = quiet();
+    v.weather.flow_programs = strings(&["Ground stop at EWR until 2130Z"]);
+    assert_eq!(finding(&v, "weather").finding, "ok");
+    v.weather.ifr = true;
+    let item = finding(&v, "weather");
+    assert_eq!((item.finding.as_str(), item.detail.as_str()), ("caution", "Ground stop at EWR until 2130Z (FAA Command Center)"));
+}
+
+#[test]
+fn sfdps_saying_an_area_is_active_or_cold_now_comes_before_its_schedule() {
+    let mut v = quiet();
+    v.airspace.special_use = vec![(s("R-4401A"), s("active")), (s("W-136C"), s("active-now"))];
+    assert_eq!(finding(&v, "airspace").detail, "W-136C active now (FAA SFDPS)");
+    v.airspace.special_use = vec![(s("R-4401A"), s("cold-now")), (s("B"), s("not-scheduled"))];
+    let item = finding(&v, "airspace");
+    assert_eq!(
+        (item.finding.as_str(), item.detail.as_str()),
+        ("ok", "1 special-use area not scheduled then; 1 special-use area cold now (FAA SFDPS)")
+    );
+}
+
+#[test]
 fn says_what_was_not_worked_out_and_what_is_still_coming() {
     let mut v = quiet();
     v.runways.worked = false;
@@ -148,8 +185,10 @@ fn names_a_near_tfr_and_an_area_not_scheduled_as_nothing_against_it() {
     v.airspace.near = 2.0;
     v.airspace.special_use = vec![(s("A"), s("not-scheduled"))];
     let item = finding(&v, "airspace");
-    assert_eq!((item.finding.as_str(), item.detail.as_str()),
-               ("ok", "2 TFRs near, none in force on the route; 1 special-use area not scheduled then"));
+    assert_eq!(
+        (item.finding.as_str(), item.detail.as_str()),
+        ("ok", "2 TFRs near, none in force on the route; 1 special-use area not scheduled then")
+    );
 }
 
 #[test]
@@ -165,11 +204,14 @@ fn an_altitude_line_left_empty_stays_empty_as_the_webs_nullish_says() {
 #[test]
 fn the_alternate_speaks_for_the_weather_where_the_weather_says_nothing_worse() {
     let needed = Alternates { required: true, alternate: None };
-    assert_eq!(verdict::alternate_finding(Some(&needed)),
-               Some(("caution", s("An alternate is required (14 CFR 91.169): file one in Weather"))));
+    assert_eq!(
+        verdict::alternate_finding(Some(&needed)),
+        Some(("caution", s("An alternate is required (14 CFR 91.169): file one in Weather")))
+    );
     assert_eq!(verdict::alternate_finding(Some(&Alternates { required: false, alternate: None })), None);
     let filed = |good, good_given| Alternates {
-        required: true, alternate: Some(FiledAlternate { ident: s("KMSN"), good, good_given, first_reason: None }),
+        required: true,
+        alternate: Some(FiledAlternate { ident: s("KMSN"), good, good_given, first_reason: None }),
     };
     let under = verdict::alternate_finding(Some(&filed(Some(false), true)));
     assert_eq!(under, Some(("stop", s("KMSN is under its alternate minimums at the ETA there"))));
@@ -202,7 +244,12 @@ fn briefing() -> minimums::Weather {
         landings: vec![
             Landing {
                 ident: s("C81"),
-                metar: Some(Winds { ceiling_ft: Some(2500.0), visibility_sm: Some(10.0), wind_speed_kt: Some(12.0), wind_gust_kt: Some(22.0) }),
+                metar: Some(Winds {
+                    ceiling_ft: Some(2500.0),
+                    visibility_sm: Some(10.0),
+                    wind_speed_kt: Some(12.0),
+                    wind_gust_kt: Some(22.0),
+                }),
                 runways: c81_winds(),
             },
             Landing { ident: s("KDLH"), metar: None, runways: vec![] },
@@ -250,13 +297,14 @@ fn takes_a_variable_wind_which_favours_no_runway_as_all_crosswind_gusts_included
 #[test]
 fn each_airports_report_the_destinations_forecast_and_the_routes_against_each_minimum() {
     let mine = Minimums { ceiling_ft: Some(3000.0), visibility_sm: Some(5.0), crosswind_kt: Some(10.0), wind_kt: Some(20.0) };
-    assert_eq!(minimums::under_minimums(&mine, &briefing()), strings(&[
-        "C81 ceiling 2,500 ft, under your 3,000 ft",
-        "C81 wind 12G22 kt, over your 20 kt",
-        "C81 crosswind 13 kt on its best runway (36), over your 10 kt",
-        "KDLH forecast visibility 4 sm, under your 5 sm",
-        "Along the route, forecast ceiling 1,800 ft, under your 3,000 ft",
-    ]));
+    assert_eq!(
+        minimums::under_minimums(&mine, &briefing()),
+        strings(&[
+            "C81 ceiling 2,500 ft, under your 3,000 ft", "C81 wind 12G22 kt, over your 20 kt",
+            "C81 crosswind 13 kt on its best runway (36), over your 10 kt", "KDLH forecast visibility 4 sm, under your 5 sm",
+            "Along the route, forecast ceiling 1,800 ft, under your 3,000 ft",
+        ])
+    );
 }
 
 // --- icing ------------------------------------------------------------------
@@ -270,8 +318,10 @@ fn a_leg_at_or_above_the_freezing_level_in_cloud_with_the_reports_of_icing_near_
     let pireps = [Some(s("MOD")), Some(s("NEG")), Some(s("NEGclr")), None, Some(s("LGT-MOD"))];
     let found = icing::icing_at_altitude(&selection(Some(5000.0), true, false), &[4000.0, 6000.0], &pireps).unwrap();
     assert_eq!(found, icing::Icing { altitude_ft: 6000.0, freezing_level_ft: 5000.0, at_or_below: false, reports: 2 });
-    assert_eq!(icing::icing_line(&found),
-               "Icing possible at 6,000 ft: the freezing level at 5,000 ft, in cloud; 2 pilot reports of icing near the route");
+    assert_eq!(
+        icing::icing_line(&found),
+        "Icing possible at 6,000 ft: the freezing level at 5,000 ft, in cloud; 2 pilot reports of icing near the route"
+    );
     assert!(icing::icing_at_altitude(&selection(Some(5000.0), true, false), &[5000.0], &[]).is_some());
 }
 
@@ -298,8 +348,12 @@ fn quiet_risk() -> frat::Input {
 
 fn current() -> Currency {
     Currency {
-        day_passengers_until: Some(s("2026-12-01")), flight_review_until: Some(s("2027-06-30")),
-        medical_expires_on: Some(s("2028-01-31")), total_hours: 240.0, flights: 120.0, ..Default::default()
+        day_passengers_until: Some(s("2026-12-01")),
+        flight_review_until: Some(s("2027-06-30")),
+        medical_expires_on: Some(s("2028-01-31")),
+        total_hours: 240.0,
+        flights: 120.0,
+        ..Default::default()
     }
 }
 
@@ -357,11 +411,45 @@ fn the_logbook_counts_only_where_the_pilot_keeps_one_and_night_landings_only_at_
     assert_eq!(keys(&frat::assess(&frat::Input { night: true, currency: Some(current()), ..quiet_risk() })), ["night", "recent-night"]);
 }
 
+/// 61.57(b)'s night-passenger caution follows its own window, an hour
+/// after sunset to an hour before sunrise, not 1.1's night: out of
+/// Anchorage at 02:00 on the June solstice there is no 1.1 night (civil
+/// twilight all night) but the caution is raised; at Chicago 45 minutes
+/// after sunset it is 1.1's night but not yet the period.
+#[test]
+fn the_night_passenger_caution_follows_61_57_bs_own_window() {
+    let anchorage = frat::Input { night: false, night_passengers: Some(true), currency: Some(current()), ..quiet_risk() };
+    assert_eq!(keys(&frat::assess(&anchorage)), ["recent-night"]);
+    let dusk = frat::Input { night: true, night_passengers: Some(false), currency: Some(current()), ..quiet_risk() };
+    assert_eq!(keys(&frat::assess(&dusk)), ["night"]);
+    let risk = call(
+        "gonogo_risk",
+        r#"{"day": "2026-06-21", "night": false, "night_passengers": true, "currency": {"flights": 10, "total_hours": 200,
+        "day_passengers_until": "2026-12-01", "flight_review_until": "2027-06-30", "medical_expires_on": "2028-01-31"}}"#,
+    );
+    assert_eq!(risk["factors"][0]["key"], "recent-night");
+}
+
+/// Approaches flown this month count from next month (61.57(c)(1)): with
+/// the currency's first day after the flight's, the pilot is not
+/// instrument current yet, whatever its last day.
+#[test]
+fn an_instrument_currency_not_begun_yet_is_not_current() {
+    let soon = Currency { instrument_current_from: Some(s("2026-11-01")), instrument_current_until: Some(s("2027-04-30")), ..current() };
+    assert_eq!(keys(&frat::assess(&frat::Input { currency: Some(soon.clone()), ifr: true, ..quiet_risk() })), ["instrument"]);
+    let november = frat::Input { currency: Some(soon), ifr: true, day: s("2026-11-01"), ..quiet_risk() };
+    assert!(frat::assess(&november).factors.is_empty());
+}
+
 fn good() -> Inspections {
     Inspections {
-        annual_good_through: Some(s("2026-10-31")), hours_now: Some(1250.0), hundred_hour_due_at_hours: Some(1300.5),
-        static_check_good_through: Some(s("2027-01-31")), transponder_check_good_through: Some(s("2027-01-31")),
-        elt_inspection_good_through: Some(s("2027-02-28")), elt_battery_due_on: Some(s("2028-06-01")),
+        annual_good_through: Some(s("2026-10-31")),
+        hours_now: Some(1250.0),
+        hundred_hour_due_at_hours: Some(1300.5),
+        static_check_good_through: Some(s("2027-01-31")),
+        transponder_check_good_through: Some(s("2027-01-31")),
+        elt_inspection_good_through: Some(s("2027-02-28")),
+        elt_battery_due_on: Some(s("2028-06-01")),
     }
 }
 
@@ -379,7 +467,10 @@ fn inspections_all_good_nothing_none_recorded_nothing_either_way() {
 fn an_annual_an_elt_inspection_or_an_elt_battery_past_due_stops_the_flight() {
     assert!(frat::inspection_factors(&Inspections { annual_good_through: Some(s(DAY)), ..good() }, DAY, false).is_empty());
     let annual = frat::inspection_factors(&Inspections { annual_good_through: Some(s("2026-09-30")), ..good() }, DAY, false);
-    assert_eq!(annual.iter().map(|f| (f.key.as_str(), f.stop, f.why.as_deref())).collect::<Vec<_>>(), [("annual", true, Some("91.409(a)"))]);
+    assert_eq!(
+        annual.iter().map(|f| (f.key.as_str(), f.stop, f.why.as_deref())).collect::<Vec<_>>(),
+        [("annual", true, Some("91.409(a)"))]
+    );
     assert_eq!(inspection_keys(&Inspections { elt_inspection_good_through: Some(s("2026-09-30")), ..good() }, false), ["elt"]);
     assert_eq!(inspection_keys(&Inspections { elt_battery_due_on: Some(s(DAY)), ..good() }, false), ["eltBattery"]);
     let past = Inspections { annual_good_through: Some(s("2026-09-30")), ..good() };
@@ -391,7 +482,8 @@ fn the_static_test_only_under_ifr_the_transponder_and_the_100_hour_as_cautions()
     let lapsed = Inspections { static_check_good_through: Some(s("2026-09-30")), ..good() };
     assert!(inspection_keys(&lapsed, false).is_empty());
     assert_eq!(inspection_keys(&lapsed, true), ["static"]);
-    let transponder = frat::inspection_factors(&Inspections { transponder_check_good_through: Some(s("2026-09-30")), ..good() }, DAY, false);
+    let transponder =
+        frat::inspection_factors(&Inspections { transponder_check_good_through: Some(s("2026-09-30")), ..good() }, DAY, false);
     assert_eq!((transponder[0].key.as_str(), transponder[0].points, transponder.len()), ("transponder", 3, 1));
     assert_eq!(inspection_keys(&Inspections { hours_now: Some(1300.5), ..good() }, false), ["hundredHour"]);
     assert!(inspection_keys(&Inspections { hours_now: Some(1300.4), ..good() }, false).is_empty());
@@ -405,8 +497,8 @@ fn squawk(text: &str, inoperative: bool, deferred_for: Option<&str>) -> Squawk {
 fn an_inoperative_item_not_deferred_for_this_kind_of_flight_stops_it_other_squawks_are_a_caution() {
     let light = squawk("Landing light out", true, Some("VFR_DAY"));
     let keys_of = |f: Vec<frat::Factor>| f.into_iter().map(|f| f.key).collect::<Vec<_>>();
-    assert_eq!(keys_of(frat::squawk_factors(&[light.clone()], false, false)), ["squawks"]);
-    let night = frat::squawk_factors(&[light.clone()], true, false);
+    assert_eq!(keys_of(frat::squawk_factors(std::slice::from_ref(&light), false, false)), ["squawks"]);
+    let night = frat::squawk_factors(std::slice::from_ref(&light), true, false);
     assert_eq!((night[0].key.as_str(), night[0].stop, night[0].why.as_deref()), ("inoperative", true, Some("91.213(d)")));
     assert_eq!(frat::squawk_factors(&[light], false, true)[0].label, "Inoperative and not deferred for this flight: Landing light out");
     assert_eq!(keys_of(frat::squawk_factors(&[squawk("Landing light out", true, Some("ALL"))], true, true)), ["squawks"]);
@@ -454,12 +546,19 @@ fn table(v: &Value) -> ShortField {
         ground_roll_ft: tables.iter().map(|t| grid(&t["ground_roll_ft"])).collect(),
         total_50ft_ft: tables.iter().map(|t| grid(&t["total_50ft_ft"])).collect(),
         grass_ground_roll_pct: v["grass_ground_roll_pct"].as_f64().unwrap(),
+        headwind_kt_per_10pct: v["headwind_kt_per_10pct"].as_f64(),
+        tailwind_kt_per_10pct: v["tailwind_kt_per_10pct"].as_f64(),
+        tailwind_max_kt: v["tailwind_max_kt"].as_f64(),
     }
 }
 
 fn airplane() -> Airplane {
     let p = c172();
-    Airplane { takeoff: Some(table(&p["takeoff"])), landing: Some(table(&p["landing"])), demonstrated_kt: p["crosswind"]["demonstrated_kt"].as_f64() }
+    Airplane {
+        takeoff: Some(table(&p["takeoff"])),
+        landing: Some(table(&p["landing"])),
+        demonstrated_kt: p["crosswind"]["demonstrated_kt"].as_f64(),
+    }
 }
 
 fn loading() -> Loading {
@@ -474,7 +573,11 @@ fn loading() -> Loading {
             .as_array()
             .unwrap()
             .iter()
-            .map(|st| Station { name: st["name"].as_str().unwrap().into(), arm_in: st["arm_in"].as_f64().unwrap(), max_lb: st["max_lb"].as_f64() })
+            .map(|st| Station {
+                name: st["name"].as_str().unwrap().into(),
+                arm_in: st["arm_in"].as_f64().unwrap(),
+                max_lb: st["max_lb"].as_f64(),
+            })
             .collect(),
         baggage_combined_max_lb: l["baggage_combined_max_lb"].as_f64(),
         fuel_arm_in: l["fuel_arm_in"].as_f64().unwrap(),
@@ -518,8 +621,15 @@ fn the_envelope_is_the_pohs() {
 #[test]
 fn the_default_load_is_the_sample_airplane_and_a_pilot() {
     let d = weight_balance::default_load(&loading(), 40.0);
-    assert_eq!(d, Load { empty_weight_lb: 1642.0, empty_arm_in: 38.12, stations_lb: vec![Some(170.0), Some(0.0), Some(0.0), Some(0.0)],
-                         fuel_gal: 40.0 });
+    assert_eq!(
+        d,
+        Load {
+            empty_weight_lb: 1642.0,
+            empty_arm_in: 38.12,
+            stations_lb: vec![Some(170.0), Some(0.0), Some(0.0), Some(0.0)],
+            fuel_gal: 40.0
+        }
+    );
 }
 
 #[test]
@@ -529,11 +639,8 @@ fn the_table_at_sea_level_and_15_c_half_way_between_its_10_and_20() {
 }
 
 #[test]
-fn a_headwind_takes_a_tenth_off_every_9_kt_a_tailwind_adds_a_tenth_every_2_grass_the_ground_rolls_15_pct() {
-    let t = airplane().takeoff.unwrap();
-    assert_eq!(runways::short_field(&t, 0.0, 10.0, 2550.0, 9.0, false).ground_roll_ft, 835.0);
-    assert_eq!(runways::short_field(&t, 0.0, 10.0, 2550.0, -2.0, false).ground_roll_ft, 1020.0);
-    let grass = runways::short_field(&t, 0.0, 10.0, 2550.0, 0.0, true);
+fn on_grass_the_ground_rolls_15_pct_more() {
+    let grass = runways::short_field(&airplane().takeoff.unwrap(), 0.0, 10.0, 2550.0, 0.0, true);
     assert_eq!((grass.ground_roll_ft, grass.total_ft), (1065.0, 1715.0));
 }
 
@@ -577,7 +684,10 @@ fn takes_turf_grass_dirt_and_gravel_as_soft_and_asphalt_not() {
 
 fn runway(length: f64, headwind: f64, crosswind: f64) -> Runway {
     Runway {
-        surface: Some(s("ASP")), length_ft: Some(length), closed: false, ends: vec![],
+        surface: Some(s("ASP")),
+        length_ft: Some(length),
+        closed: false,
+        ends: vec![],
         wind: Some(wind("27", headwind, crosswind, None)),
     }
 }
@@ -595,7 +705,11 @@ fn fields(c81: Vec<Runway>, kdlh: Vec<Runway>, c81_metar: Option<Report>) -> Vec
 
 fn standard() -> Vec<Field> {
     let hot = Report { temp_c: Some(30.0), altimeter_in_hg: Some(29.92), ..Default::default() };
-    fields(vec![runway(1500.0, 2.0, 18.0)], vec![runway(9000.0, 10.0, 3.0), Runway { closed: true, ..runway(12000.0, 0.0, 0.0) }], Some(hot))
+    fields(
+        vec![runway(1500.0, 2.0, 18.0)],
+        vec![runway(9000.0, 10.0, 3.0), Runway { closed: true, ..runway(12000.0, 0.0, 0.0) }],
+        Some(hot),
+    )
 }
 
 #[test]
@@ -655,7 +769,13 @@ fn a_variable_wind_with_no_runway_component_is_all_crosswind_gusts_included() {
     // runwayCheck.ts (AIM 7-1-28): a VRB wind gives the runways no
     // components, and all of it, gusts included, may be across -- past the
     // 172's demonstrated 15 kt, the Runways caution. The Python gave 0.
-    let vrb = Report { temp_c: Some(15.0), altimeter_in_hg: Some(29.92), wind_dir_true_deg: None, wind_speed_kt: Some(12.0), wind_gust_kt: Some(22.0) };
+    let vrb = Report {
+        temp_c: Some(15.0),
+        altimeter_in_hg: Some(29.92),
+        wind_dir_true_deg: None,
+        wind_speed_kt: Some(12.0),
+        wind_gust_kt: Some(22.0),
+    };
     let calm_runway = Runway { wind: None, ..runway(5000.0, 0.0, 0.0) };
     let f = fields(vec![calm_runway.clone()], vec![runway(9000.0, 10.0, 3.0)], Some(vrb));
     let start = &runways::runway_checks(&airplane(), true, &f, Some(2550.0), Some(2400.0), None)[0];
@@ -672,8 +792,11 @@ fn a_variable_wind_with_no_runway_component_is_all_crosswind_gusts_included() {
 
 fn flown_runway(pairs: &[(&str, f64)], length: f64, w: Option<RunwayWind>, closed: bool) -> Runway {
     Runway {
-        surface: Some(s("ASP")), length_ft: Some(length), closed,
-        ends: pairs.iter().map(|(i, h)| End { ident: s(i), heading_true_deg: Some(*h) }).collect(), wind: w,
+        surface: Some(s("ASP")),
+        length_ft: Some(length),
+        closed,
+        ends: pairs.iter().map(|(i, h)| End { ident: s(i), heading_true_deg: Some(*h) }).collect(),
+        wind: w,
     }
 }
 
@@ -703,10 +826,7 @@ fn a_pick_on_a_closed_runway_or_one_the_field_doesnt_have_falls_back_to_the_wind
 }
 
 fn picks() -> Picks {
-    Picks {
-        pattern: vec![(s("C81"), s("24")), (s("UES"), s("10")), (s("KDLH"), s("NONE"))],
-        takeoff: vec![(s("UES"), s("28"))],
-    }
+    Picks { pattern: vec![(s("C81"), s("24")), (s("UES"), s("10")), (s("KDLH"), s("NONE"))], takeoff: vec![(s("UES"), s("28"))] }
 }
 
 #[test]
@@ -852,25 +972,52 @@ fn every_rule_answers_by_name_from_the_planners_and_the_webs_own_objects() {
     assert_eq!(line["finding"], "caution");
     // An alternate with no `good` at all says nothing; one with good null
     // is the pilot's to check (useAlternate's `=== null`).
-    assert!(call("gonogo_alternate_finding", r#"{"data": {"destination": {"required": true}, "alternate": {"ident": "KMSN", "reasons": []}}}"#).is_null());
-    assert_eq!(call("gonogo_alternate_finding", r#"{"data": {"destination": {"required": true}, "alternate": {"ident": "KMSN", "good": null, "reasons": []}}}"#)["detail"],
-               "KMSN: check it");
-    let under = call("gonogo_under_minimums", r#"{"minimums": {"crosswind_kt": 15}, "landings": ["C81"], "dest": "KDLH",
+    assert!(call(
+        "gonogo_alternate_finding",
+        r#"{"data": {"destination": {"required": true}, "alternate": {"ident": "KMSN", "reasons": []}}}"#
+    )
+    .is_null());
+    assert_eq!(
+        call(
+            "gonogo_alternate_finding",
+            r#"{"data": {"destination": {"required": true}, "alternate": {"ident": "KMSN", "good": null, "reasons": []}}}"#
+        )["detail"],
+        "KMSN: check it"
+    );
+    let under = call(
+        "gonogo_under_minimums",
+        r#"{"minimums": {"crosswind_kt": 15}, "landings": ["C81"], "dest": "KDLH",
         "metars": {"C81": {"wind_speed_kt": 15, "wind_gust_kt": 25}}, "airports": {"C81": {"runways": [{"closed": false, "wind": null}]}},
-        "forecast": {"stations": []}}"#);
+        "forecast": {"stations": []}}"#,
+    );
     assert_eq!(under[0], "C81 variable wind 25 kt, which may all be crosswind, over your 15 kt");
-    let risk = call("gonogo_risk", r#"{"day": "2026-10-05", "night": true, "hazards": 1, "ticked": {"pressure": true}, "ifr": true, "vor_check": null}"#);
+    let risk = call(
+        "gonogo_risk",
+        r#"{"day": "2026-10-05", "night": true, "hazards": 1, "ticked": {"pressure": true}, "ifr": true, "vor_check": null}"#,
+    );
     assert_eq!((risk["score"].as_i64(), risk["line"].as_str()), (Some(10), Some("Raised · 10 points")));
     assert_eq!(risk["factors"][2]["key"], "vor");
     assert!(risk["factors"][3]["finding"].is_null());
     let none = call("gonogo_risk", r#"{"day": "2026-10-05", "ifr": true}"#);
     assert_eq!(none["factors"].as_array().unwrap().len(), 0);
-    let icing = call("gonogo_icing", r#"{"selection": {"freezing_level_ft": 5000, "icing_possible": true}, "flown_ft": [6000], "pireps": [{"icing": "MOD"}]}"#);
+    let icing = call(
+        "gonogo_icing",
+        r#"{"selection": {"freezing_level_ft": 5000, "icing_possible": true}, "flown_ft": [6000], "pireps": [{"icing": "MOD"}]}"#,
+    );
     assert_eq!(icing["reports"], 1);
-    assert_eq!(call("gonogo_picked_end", r#"{"picks": {"pattern": [[" kues", "10"]]}, "ident": "UES", "kind": "landing", "departure": false}"#), "10");
+    assert_eq!(
+        call("gonogo_picked_end", r#"{"picks": {"pattern": [[" kues", "10"]]}, "ident": "UES", "kind": "landing", "departure": false}"#),
+        "10"
+    );
     assert_eq!(call("gonogo_sua_when", r#"{"times_of_use": "1400 - 2200Z, MON - FRI", "utc": [2, 860]}"#), "active");
     assert_eq!(call("gonogo_tfr_when", r#"{"at_us": 0, "effective_us": 3600000000}"#), "before");
-    assert_eq!(call("gonogo_pass_minutes", r#"{"legs": [{"distance_nm": 50, "ete_min": 30}, {"distance_nm": 100, "ete_min": 50}], "along_nm": 100}"#), 55.0);
+    assert_eq!(
+        call(
+            "gonogo_pass_minutes",
+            r#"{"legs": [{"distance_nm": 50, "ete_min": 30}, {"distance_nm": 100, "ete_min": 50}], "along_nm": 100}"#
+        ),
+        55.0
+    );
     assert_eq!(call("gonogo_runway_number", r#"{"ident": "09"}"#), "9");
     assert_eq!(call("gonogo_soft_surface", r#"{"surface": "TURF"}"#), true);
     let c172 = c172();
@@ -889,7 +1036,10 @@ fn every_rule_answers_by_name_from_the_planners_and_the_webs_own_objects() {
         "trip_fuel_gal": 10,
     }).to_string());
     assert!(b["problems"].as_array().unwrap().iter().any(|p| p == "The takeoff weight, 2,692 lb, is 142 lb over its most"));
-    assert_eq!(call("gonogo_default_load", &serde_json::json!({"loading": c172["loading"], "fuel_gal": 40}).to_string())["empty_arm_in"], 38.12);
+    assert_eq!(
+        call("gonogo_default_load", &serde_json::json!({"loading": c172["loading"], "fuel_gal": 40}).to_string())["empty_arm_in"],
+        38.12
+    );
 }
 
 #[test]
@@ -897,8 +1047,6 @@ fn a_bad_ask_is_an_error_not_a_panic() {
     let err = |name: &str, input: &str| wingtip_engine::call::call(name, input).unwrap_err();
     assert!(err("gonogo_verdict_items", "{}").contains("\"weather\" is missing"));
     assert!(err("gonogo_risk", r#"{"day": 5}"#).contains("not a string"));
-    assert!(err("gonogo_short_field", r#"{"table": {"pressure_altitudes_ft": [0], "temperatures_c": [0], "weights_lb": [], "tables": [], "grass_ground_roll_pct": 0}, "pressure_alt_ft": 0, "temp_c": 0, "weight_lb": 0, "headwind_kt": 0}"#)
-        .contains("not a short-field table"));
     assert!(err("gonogo_sua_when", r#"{"utc": [9, 0]}"#).contains("day 0-6"));
     assert!(err("gonogo_nope", "{}").contains("no rule called"));
 }
@@ -970,12 +1118,17 @@ fn the_runways_finding_is_a_caution_past_the_tables_and_unknown_where_not_checke
     let item = finding(&v, "runways");
     assert_eq!((item.finding.as_str(), item.detail.as_str()), ("caution", "Past the POH's tables at KLXV: its distances will be longer"));
     v.runways.crosswind = strings(&["C81"]);
-    assert_eq!(finding(&v, "runways").detail,
-               "Crosswind past the POH's demonstrated at C81; Past the POH's tables at KLXV: its distances will be longer");
+    assert_eq!(
+        finding(&v, "runways").detail,
+        "Crosswind past the POH's demonstrated at C81; Past the POH's tables at KLXV: its distances will be longer"
+    );
     let mut v = quiet();
     v.runways.unchecked = strings(&["C81"]);
     let item = finding(&v, "runways");
-    assert_eq!((item.finding.as_str(), item.detail.as_str()), ("unknown", "Not checked at C81: runway length or field elevation not known"));
+    assert_eq!(
+        (item.finding.as_str(), item.detail.as_str()),
+        ("unknown", "Not checked at C81: runway length or field elevation not known")
+    );
     // A short runway is still the stop it was.
     v.runways.short = strings(&["KDLH"]);
     assert_eq!(finding(&v, "runways").finding, "stop");

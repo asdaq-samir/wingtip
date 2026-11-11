@@ -2,17 +2,18 @@ import { useMemo, type ReactNode } from "react";
 import { SheetCard } from "../../../components/SheetCard";
 import type { Course, Point, Rating } from "../../../lib/api/types";
 import { isEndpoint } from "../../../lib/api/types";
-import GlMapShell from "../../../lib/map/gl/GlMapShell";
+import GlMapShell from "../../../components/map/GlMapShell";
 import { useGlTap } from "../../../lib/map/gl/glLayer";
-import { AirspaceGl } from "../../../lib/map/gl/layers/AirspaceGl";
+import { AirspaceGl } from "../../../components/map/layers/AirspaceGl";
 import { LandWaterGl, OverlayGl } from "../../../lib/map/gl/layers/BaseGl";
 import { ChartGl } from "../../../lib/map/gl/layers/ChartGl";
-import { NavaidsGl } from "../../../lib/map/gl/layers/NavaidsGl";
+import { NavaidsGl } from "../../../components/map/layers/NavaidsGl";
 import { OwnShipGl } from "../../../lib/map/gl/layers/OwnShipGl";
 import { PickedGl } from "../../../lib/map/gl/layers/RouteExtrasGl";
 import { RouteGl, type GlCandidate, type GlEndpoint } from "../../../lib/map/gl/layers/RouteGl";
 import { usePreferences } from "../../../lib/preferences";
 import { COLORS, hasRating, isVisible, pointKey, type Filters } from "../logic";
+import { CATEGORY_UNKNOWN, CHART } from "../../../lib/tokens";
 
 interface Props {
   course: Course | null;
@@ -33,7 +34,7 @@ interface Props {
 
 const NO_HOLD = () => {};
 /** An unrated point's grey. */
-const UNRATED = "#8fa3b0";
+const UNRATED = CATEGORY_UNKNOWN;
 
 /**
  * The training map: the chart, the airspace, the VORs, the course and its
@@ -44,18 +45,42 @@ const UNRATED = "#8fa3b0";
  * there.
  */
 export default function ChartMap({
-  course, endpoints, detections, added, filters, selected, selectedContent,
-  onSelect, onDeselect, onAddAt, flyTo = null, flyZoom = 12,
+  course,
+  endpoints,
+  detections,
+  added,
+  filters,
+  selected,
+  selectedContent,
+  onSelect,
+  onDeselect,
+  onAddAt,
+  flyTo = null,
+  flyZoom = 12,
 }: Props) {
-  const show = usePreferences(s => s.waypoints);
-  const candidates = useMemo<GlCandidate[]>(() => (!show ? [] : [...detections, ...added].filter(p => isVisible(p, filters)).map(p => ({
-    key: pointKey(p), lat: p.lat, lon: p.lon,
-    colour: hasRating(p) ? COLORS[(p as { rating: Rating }).rating] : UNRATED,
-    select: () => onSelect(p),
-  }))), [show, detections, added, filters, onSelect]);
-  const ends = useMemo<GlEndpoint[]>(() => endpoints.filter(isEndpoint).map(e => ({
-    ident: e.ident, lat: e.lat, lon: e.lon, colour: "#ffffff", space: null, fix: false, select: () => onSelect(e),
-  })), [endpoints, onSelect]);
+  const show = usePreferences((s) => s.waypoints);
+  const candidates = useMemo<GlCandidate[]>(
+    () =>
+      !show
+        ? []
+        : [...detections, ...added]
+            .filter((p) => isVisible(p, filters))
+            .map((p) => ({
+              key: pointKey(p),
+              lat: p.lat,
+              lon: p.lon,
+              colour: hasRating(p) ? COLORS[(p as { rating: Rating }).rating] : UNRATED,
+              select: () => onSelect(p),
+            })),
+    [show, detections, added, filters, onSelect],
+  );
+  const ends = useMemo<GlEndpoint[]>(
+    () =>
+      endpoints
+        .filter(isEndpoint)
+        .map((e) => ({ ident: e.ident, lat: e.lat, lon: e.lon, colour: CHART.casing, space: null, fix: false, select: () => onSelect(e) })),
+    [endpoints, onSelect],
+  );
   return (
     <GlMapShell course={course} focus={flyTo} focusZoom={flyZoom} place={null}>
       <LandWaterGl />
@@ -74,8 +99,8 @@ export default function ChartMap({
   );
 }
 
-/** A tap on the course line adds a point there (the training map's
- *  CourseLine onClick): within a finger's reach of the line. */
+/** A tap on the course line adds a point there, within a finger's reach
+ *  of the line. */
 function AddOnCourse({ onAddAt }: { onAddAt: (lat: number, lon: number) => void }) {
   useGlTap(["route-core"], 9, 6, (_feature, e) => onAddAt(e.lngLat.lat, e.lngLat.lng));
   return null;

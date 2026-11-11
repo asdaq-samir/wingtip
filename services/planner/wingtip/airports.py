@@ -2,6 +2,7 @@
 data -- all backed by OurAirports' free, no-API-key-required dataset
 (three sibling CSVs from the same host).
 """
+
 import bisect
 import gzip
 import json
@@ -112,8 +113,8 @@ def _airport_rows(path: str, _mtime: float) -> dict:
     df = _read_table(path, _mtime)
     rows: dict = {}
     # A missing local code is no code: as "NAN" it would answer a lookup of "NAN".
-    idents = df["ident"].fillna("").astype(str).str.strip().str.upper()
-    locals_ = df["local_code"].fillna("").astype(str).str.strip().str.upper()
+    idents = df["ident"].astype(str).fillna("").str.strip().str.upper()  # cast, then fill: pandas 4 won't put "" in a float column
+    locals_ = df["local_code"].astype(str).fillna("").str.strip().str.upper()
     for i, (ident, local) in enumerate(zip(idents, locals_)):
         if ident:
             rows.setdefault(ident, i)
@@ -162,7 +163,9 @@ def get_airport(ident: str, cache_path: Path = DEFAULT_CACHE_PATH) -> dict:
     if at is None and len(ident) == 4 and ident[0] == "K" and ident[1:].isalnum():
         at = rows.get(ident[1:])
     if at is None:
-        raise ValueError(f"Airport identifier {ident!r} not found in OurAirports data")
+        # The pilot's words, which the route box shows on the ident's own
+        # pill (the FPL audit's A2): what it is, not which file it is not in.
+        raise ValueError(f"No airport goes by {ident!r}.")
     row = _read_table(str(path), mtime).iloc[at]
     elevation = row.get("elevation_ft")
     return {
@@ -249,7 +252,7 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
             on = np.zeros(len(us), dtype=bool)
             for column in ("ident", "local_code", "icao_code", "gps_code"):
                 if column in us.columns:
-                    on |= us[column].fillna("").astype(str).str.strip().str.upper().isin(listed).to_numpy()
+                    on |= us[column].astype(str).fillna("").str.strip().str.upper().isin(listed).to_numpy()
             us = us[on]
     us = us.copy()
     us["_ident_upper"] = us["ident"].astype(str).str.upper()
@@ -258,7 +261,7 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
     # Every word of the name and the town, each after a space, so a
     # search finds a word's start anywhere: "oshkosh" is Wittman
     # Regional's town, not the start of its name.
-    us["_words_upper"] = " " + us["_name_upper"] + " " + us["municipality"].fillna("").astype(str).str.upper()
+    us["_words_upper"] = " " + us["_name_upper"] + " " + us["municipality"].astype(str).fillna("").str.upper()
     us["_size_rank"] = us["type"].map({"large_airport": 0, "medium_airport": 1, "small_airport": 2}).fillna(3)
     # OurAirports' own `ident` column is a synthesized ICAO-style
     # code (usually "K" + `local_code`) it assigns even to airports
@@ -290,8 +293,9 @@ def _nearness(lat: float, lon: float, near: list[tuple[float, float]]) -> float:
     return min((lat - a) ** 2 + ((lon - b) * math.cos(math.radians(a))) ** 2 for a, b in near)
 
 
-def search_airports(query: str, limit: int = 8, cache_path: Path = DEFAULT_CACHE_PATH,
-                    near: list[tuple[float, float]] | None = None) -> list[dict]:
+def search_airports(
+    query: str, limit: int = 8, cache_path: Path = DEFAULT_CACHE_PATH, near: list[tuple[float, float]] | None = None
+) -> list[dict]:
     """Airports whose ident or local code starts with `query`, or a word of
     whose name or town does -- the route form's pickers and the panel's
     search bar, so a pilot who doesn't have an ident memorized can find
@@ -348,18 +352,34 @@ def search_index(cache_path: Path = DEFAULT_CACHE_PATH) -> bytes:
 def _search_index_bytes(path: str, _mtime: float, faa_path: str = "", _faa_mtime: float = 0.0) -> bytes:
     us = _us_airports_of(path, _mtime, faa_path, _faa_mtime)
     rows = []
-    columns = zip(us["_display_ident"].astype(str), us["_ident_upper"], us["_local_upper"], us["name"],
-                  us["municipality"], us["iso_region"], us["_size_rank"], us["latitude_deg"], us["longitude_deg"])
+    columns = zip(
+        us["_display_ident"].astype(str),
+        us["_ident_upper"],
+        us["_local_upper"],
+        us["name"],
+        us["municipality"],
+        us["iso_region"],
+        us["_size_rank"],
+        us["latitude_deg"],
+        us["longitude_deg"],
+    )
     for display, ident, local, name, town, region, size, lat, lon in columns:
         # A missing local code is "NAN" once upper-cased (_us_airports_of).
         others = sorted({key for key in (ident, local) if isinstance(key, str) and key not in ("NAN", display.upper())})
-        rows.append([
-            display, name if isinstance(name, str) else "", town if isinstance(town, str) else "",
-            region.removeprefix("US-") if isinstance(region, str) else "", int(size),
-            # Where it is, to a hundredth of a degree, for the nearest of a
-            # name first (searchIndex's `near`).
-            round(float(lat), 2) if lat == lat else 0.0, round(float(lon), 2) if lon == lon else 0.0, *others,
-        ])
+        rows.append(
+            [
+                display,
+                name if isinstance(name, str) else "",
+                town if isinstance(town, str) else "",
+                region.removeprefix("US-") if isinstance(region, str) else "",
+                int(size),
+                # Where it is, to a hundredth of a degree, for the nearest of a
+                # name first (searchIndex's `near`).
+                round(float(lat), 2) if lat == lat else 0.0,
+                round(float(lon), 2) if lon == lon else 0.0,
+                *others,
+            ]
+        )
     return gzip.compress(json.dumps({"airports": rows}, separators=(",", ":")).encode(), mtime=0)
 
 
@@ -401,10 +421,14 @@ def _search_index_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: f
     idents.sort()
     words.sort()
     return {
-        "exact": exact, "idents": idents, "words": words,
-        "size": us["_size_rank"].tolist(), "display": us["_display_ident"].astype(str).tolist(),
+        "exact": exact,
+        "idents": idents,
+        "words": words,
+        "size": us["_size_rank"].tolist(),
+        "display": us["_display_ident"].astype(str).tolist(),
         "names": us["_name_upper"].tolist(),
-        "lat": us["latitude_deg"].astype(float).tolist(), "lon": us["longitude_deg"].astype(float).tolist(),
+        "lat": us["latitude_deg"].astype(float).tolist(),
+        "lon": us["longitude_deg"].astype(float).tolist(),
     }
 
 
@@ -413,6 +437,7 @@ def _indexed_matches(index: dict, query: str, limit: int, near: list[tuple[float
     order: the ident whole, then idents that start with it, then names and
     towns with a word that does; the bigger fields first in each, then a
     name that starts with it, then the nearest to `near`, then by ident."""
+
     def prefixed(keys: list[tuple[str, int]]) -> set[int]:
         found, at = set(), bisect.bisect_left(keys, (query,))
         while at < len(keys) and keys[at][0].startswith(query):
@@ -423,9 +448,18 @@ def _indexed_matches(index: dict, query: str, limit: int, near: list[tuple[float
     exact = index["exact"].get(query, set())
     ident = prefixed(index["idents"]) - exact
     word = prefixed(index["words"]) - exact - ident
-    ranked = [(rank, index["size"][row], not index["names"][row].startswith(query),
-               _nearness(index["lat"][row], index["lon"][row], near or []), index["display"][row], row)
-              for rank, rows in enumerate((exact, ident, word)) for row in rows]
+    ranked = [
+        (
+            rank,
+            index["size"][row],
+            not index["names"][row].startswith(query),
+            _nearness(index["lat"][row], index["lon"][row], near or []),
+            index["display"][row],
+            row,
+        )
+        for rank, rows in enumerate((exact, ident, word))
+        for row in rows
+    ]
     return [row for *_, row in sorted(ranked)[:limit]]
 
 
@@ -457,8 +491,18 @@ def _place_of(row) -> dict:
 
 
 #: The columns _place_of reads.
-_PLACE_COLUMNS = ("_display_ident", "ident", "name", "municipality", "iso_region",
-                  "latitude_deg", "longitude_deg", "elevation_ft", "type", "local_code")
+_PLACE_COLUMNS = (
+    "_display_ident",
+    "ident",
+    "name",
+    "municipality",
+    "iso_region",
+    "latitude_deg",
+    "longitude_deg",
+    "elevation_ft",
+    "type",
+    "local_code",
+)
 
 
 def _places_of(frame: pd.DataFrame) -> list[dict]:
@@ -516,9 +560,16 @@ def _place_index(path: str, _mtime: float, faa_path: str = "", _faa_mtime: float
     return df, index
 
 
-def places_in(south: float, west: float, north: float, east: float, limit: int = 300,
-              cache_path: Path = DEFAULT_CACHE_PATH, only: set | None = None,
-              first: set | None = None) -> list[dict]:
+def places_in(
+    south: float,
+    west: float,
+    north: float,
+    east: float,
+    limit: int = 300,
+    cache_path: Path = DEFAULT_CACHE_PATH,
+    only: set | None = None,
+    first: set | None = None,
+) -> list[dict]:
     """The landing fields inside a box, the biggest first, at most
     `limit` of them -- what the map lays its tap targets over, so a tap
     on an airport printed on the chart opens its card. Zoomed out the
@@ -529,11 +580,7 @@ def places_in(south: float, west: float, north: float, east: float, limit: int =
     so a busy box's limit drops small fields with no weather to show,
     never a small field's weather chip."""
     df = _us_airports(cache_path)
-    inside = df[
-        df["type"].isin(list(_FIELD_KINDS))
-        & df["latitude_deg"].between(south, north)
-        & df["longitude_deg"].between(west, east)
-    ]
+    inside = df[df["type"].isin(list(_FIELD_KINDS)) & df["latitude_deg"].between(south, north) & df["longitude_deg"].between(west, east)]
     if only is not None:
         inside = inside[_among(inside["ident"], only)]
     rank = inside["type"].map({kind: i for i, kind in enumerate(_FIELD_KINDS)})
@@ -560,8 +607,9 @@ def nearest(lat: float, lon: float, limit: int = 10, cache_path: Path = DEFAULT_
     df = _us_airports(cache_path)
     fields = df[df["type"].isin(list(_FIELD_KINDS))]
     for half in _NEAREST_BOX_DEG:
-        box = fields[fields["latitude_deg"].between(lat - half, lat + half)
-                     & fields["longitude_deg"].between(lon - half * 1.5, lon + half * 1.5)]
+        box = fields[
+            fields["latitude_deg"].between(lat - half, lat + half) & fields["longitude_deg"].between(lon - half * 1.5, lon + half * 1.5)
+        ]
         if len(box) >= limit:
             break
     lats, lons = box["latitude_deg"].to_numpy(dtype=float), box["longitude_deg"].to_numpy(dtype=float)
@@ -594,8 +642,7 @@ def nearest_abroad(lat: float, lon: float, limit: int = 3, cache_path: Path = DE
     path = _ensure_cached(OURAIRPORTS_URL, cache_path)
     fields = _abroad_of(str(path), path.stat().st_mtime)
     half = 0.5
-    box = fields[fields["latitude_deg"].between(lat - half, lat + half)
-                 & fields["longitude_deg"].between(lon - half * 2, lon + half * 2)]
+    box = fields[fields["latitude_deg"].between(lat - half, lat + half) & fields["longitude_deg"].between(lon - half * 2, lon + half * 2)]
     if box.empty:
         return []
     lats, lons = box["latitude_deg"].to_numpy(dtype=float), box["longitude_deg"].to_numpy(dtype=float)
@@ -623,31 +670,35 @@ def get_runways(ident: str, cache_path: Path = RUNWAYS_CACHE_PATH) -> list[dict]
         le, he = row.get("le_ident"), row.get("he_ident")
         ends = "/".join(str(e) for e in (le, he) if pd.notna(e)) or None
         length, width = row.get("length_ft"), row.get("width_ft")
-        runways.append({
-            "ends": ends,
-            "end_headings": [
-                (str(end), float(row.get(f"{side}_heading_degT")) if pd.notna(row.get(f"{side}_heading_degT")) else None)
-                for side, end in (("le", le), ("he", he)) if pd.notna(end)
-            ],
-            # Where each end is, where the table has it (four runways in ten
-            # at a small US field): wingtip.pattern's fallback to NASR's own.
-            "end_positions": {
-                str(end): (float(row.get(f"{side}_latitude_deg")), float(row.get(f"{side}_longitude_deg")))
-                for side, end in (("le", le), ("he", he))
-                if pd.notna(end) and pd.notna(row.get(f"{side}_latitude_deg")) and pd.notna(row.get(f"{side}_longitude_deg"))
-            },
-            "length_ft": int(length) if pd.notna(length) else None,
-            "width_ft": int(width) if pd.notna(width) else None,
-            "surface": row.get("surface") if pd.notna(row.get("surface")) else None,
-            "lighted": bool(row.get("lighted")),
-            "closed": bool(row.get("closed")),
-        })
+        runways.append(
+            {
+                "ends": ends,
+                "end_headings": [
+                    (str(end), float(row.get(f"{side}_heading_degT")) if pd.notna(row.get(f"{side}_heading_degT")) else None)
+                    for side, end in (("le", le), ("he", he))
+                    if pd.notna(end)
+                ],
+                # Where each end is, where the table has it (four runways in ten
+                # at a small US field): wingtip.pattern's fallback to NASR's own.
+                "end_positions": {
+                    str(end): (float(row.get(f"{side}_latitude_deg")), float(row.get(f"{side}_longitude_deg")))
+                    for side, end in (("le", le), ("he", he))
+                    if pd.notna(end) and pd.notna(row.get(f"{side}_latitude_deg")) and pd.notna(row.get(f"{side}_longitude_deg"))
+                },
+                "length_ft": int(length) if pd.notna(length) else None,
+                "width_ft": int(width) if pd.notna(width) else None,
+                "surface": row.get("surface") if pd.notna(row.get("surface")) else None,
+                "lighted": bool(row.get("lighted")),
+                "closed": bool(row.get("closed")),
+            }
+        )
     return runways
 
 
 def _sorted_frequencies(frequencies: list[dict]) -> list[dict]:
     """CTAF/UNICOM first, then the tower and the ground, the weather, the
     approach -- what a VFR pilot needs first, first."""
+
     def sort_key(f: dict) -> int:
         try:
             return _FREQUENCY_TYPE_ORDER.index((f["type"] or "").upper())
@@ -686,9 +737,12 @@ def _with_faa(ours: list[dict], faa: list[dict] | None) -> list[dict]:
         return ours
     have = {f["frequency_mhz"] for f in faa}
     covered = {_FAMILY[t] for t in ((f["type"] or "").upper() for f in faa) if t in _FAMILY}
-    gaps = [f for f in ours if f["frequency_mhz"] not in have and (
-        (f["type"] or "").upper() in _WEATHER_TYPES
-        or _FAMILY.get((f["type"] or "").upper(), "") not in covered | {""})]
+    gaps = [
+        f
+        for f in ours
+        if f["frequency_mhz"] not in have
+        and ((f["type"] or "").upper() in _WEATHER_TYPES or _FAMILY.get((f["type"] or "").upper(), "") not in covered | {""})
+    ]
     return _sorted_frequencies(faa + gaps)
 
 
@@ -703,9 +757,7 @@ def get_frequencies(ident: str, cache_path: Path = FREQUENCIES_CACHE_PATH, faa_c
     return _with_faa(_frequency_list(df[df["airport_ident"].str.upper() == ident]), faa)
 
 
-def get_frequencies_for(
-    idents: list[str], cache_path: Path = FREQUENCIES_CACHE_PATH, faa_cache_dir=FAA_CACHE_DIR,
-) -> dict[str, list[dict]]:
+def get_frequencies_for(idents: list[str], cache_path: Path = FREQUENCIES_CACHE_PATH, faa_cache_dir=FAA_CACHE_DIR) -> dict[str, list[dict]]:
     """The frequencies of several airports from one pass over the table,
     by ident (as given, upper-cased), for a list that would otherwise
     scan the whole table once per row; the FAA's first, as get_frequencies'."""

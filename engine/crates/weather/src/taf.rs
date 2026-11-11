@@ -8,12 +8,16 @@
 //! differ.
 
 use crate::metar::{self, Layer, Wind};
-use crate::{json, time};
+use crate::time;
 
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct Period {
     pub from: i64,
     pub to: i64,
+    /// The end of a BECMG's, TEMPO's or PROB's own window as sent: a
+    /// BECMG's change is under way until then and holds after it, so its
+    /// `to` runs on to the next prevailing group (AC 00-45H, the TAF).
+    pub by: Option<i64>,
     /// "" for the forecast's first part, else FM, TEMPO, BECMG or PROB.
     pub change: String,
     pub probability: Option<u32>,
@@ -80,7 +84,9 @@ fn weather_of(p: &mut Period, words: &[&str]) {
             // matters (WMO No. 306): the AWC writes its weather NSW.
             p.visibility_sm = Some(6.0);
             p.weather = vec!["NSW".to_string()];
-        } else if p.visibility_sm.is_none() && w.len() == 1 && w.as_bytes()[0].is_ascii_digit()
+        } else if p.visibility_sm.is_none()
+            && w.len() == 1
+            && w.as_bytes()[0].is_ascii_digit()
             && words.get(i).is_some_and(|n| n.contains('/') && n.ends_with("SM"))
         {
             p.visibility_sm = metar::statute_miles(words[i], w.parse().ok()).map(|(v, _)| v);
@@ -178,7 +184,7 @@ pub fn parse(raw: &str, near: i64) -> Option<Taf> {
             }
             let Some((from, to)) = words.get(i).and_then(|t| window(t, issued)) else { continue };
             i += 1;
-            groups.push((Period { from, to, change: change.into(), probability, ..Default::default() }, vec![]));
+            groups.push((Period { from, to, by: Some(to), change: change.into(), probability, ..Default::default() }, vec![]));
             continue;
         }
         groups.last_mut().unwrap().1.push(w);
@@ -197,16 +203,16 @@ pub fn parse(raw: &str, near: i64) -> Option<Taf> {
             p.to = starts.iter().copied().filter(|&s| s > p.from).min().unwrap_or(valid_to);
         }
         weather_of(&mut p, &words);
-        if p.change == "BECMG" {
-            if let Some(before) = &prevailing {
-                p.wind = p.wind.or(before.wind);
-                p.visibility_sm = p.visibility_sm.or(before.visibility_sm);
-                if p.layers.is_empty() && !words.iter().any(|w| matches!(*w, "SKC" | "CLR" | "NSC" | "CAVOK")) {
-                    p.layers = before.layers.clone();
-                }
-                if p.weather.is_empty() {
-                    p.weather = before.weather.clone();
-                }
+        if p.change == "BECMG"
+            && let Some(before) = &prevailing
+        {
+            p.wind = p.wind.or(before.wind);
+            p.visibility_sm = p.visibility_sm.or(before.visibility_sm);
+            if p.layers.is_empty() && !words.iter().any(|w| matches!(*w, "SKC" | "CLR" | "NSC" | "CAVOK")) {
+                p.layers = before.layers.clone();
+            }
+            if p.weather.is_empty() {
+                p.weather = before.weather.clone();
             }
         }
         if lasting {
@@ -218,39 +224,6 @@ pub fn parse(raw: &str, near: i64) -> Option<Taf> {
         periods.push(p);
     }
     Some(Taf { station: station.to_string(), issued, valid_from, valid_to, periods })
-}
-
-/// The periods as wingtip.weather's `fcsts`, JSON.
-pub fn to_json(t: &Taf) -> String {
-    let mut out = String::from("{\"station\":");
-    json::string(&mut out, &t.station);
-    out.push_str(&format!(",\"issued\":{},\"valid_from\":{},\"valid_to\":{},\"fcsts\":[", t.issued, t.valid_from, t.valid_to));
-    for (k, p) in t.periods.iter().enumerate() {
-        if k > 0 {
-            out.push(',');
-        }
-        out.push_str(&format!("{{\"timeFrom\":{},\"timeTo\":{},\"change\":", p.from, p.to));
-        json::string(&mut out, &p.change);
-        out.push_str(",\"probability\":");
-        json::opt_number(&mut out, p.probability.map(f64::from));
-        out.push_str(",\"wind_dir_true_deg\":");
-        json::opt_number(&mut out, p.wind.and_then(|w| w.dir_true_deg));
-        out.push_str(",\"wind_speed_kt\":");
-        json::opt_number(&mut out, p.wind.map(|w| w.speed_kt));
-        out.push_str(",\"wind_gust_kt\":");
-        json::opt_number(&mut out, p.wind.and_then(|w| w.gust_kt));
-        out.push_str(",\"visibility_sm\":");
-        json::opt_number(&mut out, p.visibility_sm);
-        out.push_str(",\"ceiling_ft\":");
-        json::opt_number(&mut out, p.ceiling_ft());
-        out.push_str(",\"ceiling_unknown\":");
-        out.push_str(if p.ceiling_unknown() { "true" } else { "false" });
-        out.push_str(",\"wx\":");
-        json::string(&mut out, &p.weather.join(" "));
-        out.push('}');
-    }
-    out.push_str("]}");
-    out
 }
 
 #[cfg(test)]
@@ -266,7 +239,10 @@ mod tests {
         assert_eq!(t.periods.len(), 4);
         assert_eq!((t.periods[0].to, t.periods[0].ceiling_ft()), (day + 18 * 3600, Some(4000.0)));
         assert_eq!((t.periods[1].change.as_str(), t.periods[1].to), ("FM", day + 36 * 3600));
-        assert_eq!((t.periods[2].change.as_str(), t.periods[2].visibility_sm, t.periods[2].ceiling_ft()), ("TEMPO", Some(2.0), Some(1200.0)));
+        assert_eq!(
+            (t.periods[2].change.as_str(), t.periods[2].visibility_sm, t.periods[2].ceiling_ft()),
+            ("TEMPO", Some(2.0), Some(1200.0))
+        );
         assert_eq!((t.periods[3].change.as_str(), t.periods[3].probability, t.periods[3].ceiling_ft()), ("PROB", Some(30), Some(200.0)));
         assert!(t.periods.iter().all(|p| !p.ceiling_unknown()));
     }
@@ -276,7 +252,6 @@ mod tests {
         let near = time::days_from_civil(2026, 11, 2) * time::DAY_S + 12 * 3600;
         let t = parse("TAF KXYZ 021120Z 0212/0312 27012KT P6SM OVC/// FM021800 30015KT P6SM SCT040 BKN///", near).unwrap();
         assert_eq!((t.periods[0].ceiling_ft(), t.periods[0].ceiling_unknown()), (None, true));
-        assert!(to_json(&t).contains("\"ceiling_unknown\":true"));
         // Above a scattered layer of known height it is still the ceiling, and not known.
         assert_eq!((t.periods[1].ceiling_ft(), t.periods[1].ceiling_unknown()), (None, true));
     }

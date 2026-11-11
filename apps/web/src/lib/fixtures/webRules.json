@@ -1,0 +1,375 @@
+{
+  "_note": "Rules the web app held and the engine now answers (#482 phase 1): the TAF that speaks for a field (field_taf), the radio calls for a route (radio_script, radio_call_sign, radio_place_name; AIM 4-2, AC 90-66C) and a student's solo endorsement's standing (solo_standing, 14 CFR 61.87(n), the owner's week). engine/facade/tests/web_rules.rs holds the engine to it; the web's tests read it too. Also #482 phase 0's copies the apps kept: the passengers' briefing (passenger_briefing, 14 CFR 91.107(a), the FAA's SAFETY briefing, ACS PA.II.B.S2), 61.93(d)(1)-(3)'s determinations (solo_xc_determinations), own ship on the airport diagram (diagram_fix_usable, AC 120-76D 11.17.2.3's 3 s and 11.17.2.4's 30 m, at and past each), the traffic asked round an airport (traffic_reach) and 91.185(c)(2) in words (lost_comms' altitude).",
+  "fieldTaf": [
+    {
+      "about": "a three-letter ident's own TAF is K and the ident",
+      "input": {
+        "ident": "UGN",
+        "at": null,
+        "stations": [
+          {
+            "icao_id": "KRFD",
+            "lat": 42.195,
+            "lon": -89.097
+          },
+          {
+            "icao_id": "KUGN",
+            "lat": 42.422,
+            "lon": -87.868
+          }
+        ]
+      },
+      "answer": {
+        "index": 1,
+        "nm": null,
+        "reach_nm": 25
+      }
+    },
+    {
+      "about": "a field with none of its own reads the nearest within 25 nm (C81 to KUGN, about 11 nm)",
+      "input": {
+        "ident": "C81",
+        "at": {
+          "lat": 42.324,
+          "lon": -88.074
+        },
+        "stations": [
+          {
+            "icao_id": "KRFD",
+            "lat": 42.195,
+            "lon": -89.097
+          },
+          {
+            "icao_id": "KUGN",
+            "lat": 42.422,
+            "lon": -87.868
+          }
+        ]
+      },
+      "index": 1,
+      "nm_under": 12
+    },
+    {
+      "about": "none within reach",
+      "input": {
+        "ident": "C81",
+        "at": {
+          "lat": 42.324,
+          "lon": -88.074
+        },
+        "stations": [
+          {
+            "icao_id": "KRFD",
+            "lat": 42.195,
+            "lon": -89.097
+          }
+        ]
+      },
+      "answer": {
+        "index": null,
+        "nm": null,
+        "reach_nm": 25
+      }
+    }
+  ],
+  "callSign": [
+    {
+      "make": "Cessna",
+      "tail": "N345SP",
+      "said": "Cessna Three Four Five Sierra Papa"
+    },
+    {
+      "make": "Cessna",
+      "tail": "n19",
+      "said": "Cessna One Niner"
+    },
+    {
+      "make": "Piper",
+      "tail": null,
+      "said": "Piper [your registration]"
+    }
+  ],
+  "placeName": [
+    {
+      "name": "Waukegan National Airport",
+      "ident": "KUGN",
+      "said": "Waukegan"
+    },
+    {
+      "name": "Lake In The Hills Airport",
+      "ident": "3CK",
+      "said": "Lake In The Hills"
+    },
+    {
+      "name": null,
+      "ident": "C81",
+      "said": "C81"
+    }
+  ],
+  "radioScript": {
+    "input": {
+      "call_sign": "Cessna Three Four Five Sierra Papa",
+      "airports": [
+        {
+          "ident": "C81",
+          "name": "Dacy Airport",
+          "airspace_class": "G",
+          "pattern_altitude_ft": 1913,
+          "frequencies": [
+            {
+              "type": "A/D",
+              "description": "CHICAGO APP/DEP",
+              "frequency_mhz": 120.55
+            },
+            {
+              "type": "UNIC",
+              "description": "CTAF/UNICOM",
+              "frequency_mhz": 122.7
+            }
+          ],
+          "takeoff": {
+            "ident": "27",
+            "traffic": "left"
+          },
+          "landing": {
+            "ident": "27",
+            "traffic": "left"
+          }
+        },
+        {
+          "ident": "KUGN",
+          "name": "Waukegan National Airport",
+          "airspace_class": "D",
+          "pattern_altitude_ft": 1727,
+          "frequencies": [
+            {
+              "type": "ATIS",
+              "description": "ATIS",
+              "frequency_mhz": 132.4
+            },
+            {
+              "type": "A/D",
+              "description": "CHICAGO APP/DEP",
+              "frequency_mhz": 120.55
+            },
+            {
+              "type": "GND",
+              "description": "GND",
+              "frequency_mhz": 121.65
+            },
+            {
+              "type": "TWR",
+              "description": "TWR",
+              "frequency_mhz": 120.05
+            },
+            {
+              "type": "CTAF",
+              "description": "CTAF",
+              "frequency_mhz": 120.05
+            }
+          ],
+          "takeoff": {
+            "ident": "23",
+            "traffic": "right"
+          },
+          "landing": {
+            "ident": "23",
+            "traffic": "right"
+          }
+        }
+      ],
+      "legs": [
+        {
+          "from": "C81",
+          "to": "Lake",
+          "true_course_deg": 45,
+          "altitude_ft": 5500
+        },
+        {
+          "from": "Lake",
+          "to": "KUGN",
+          "true_course_deg": 45,
+          "altitude_ft": 3500
+        }
+      ]
+    },
+    "phases": [
+      {
+        "title": "Leaving C81",
+        "kind": "departure",
+        "calls": [
+          {
+            "to": "Dacy traffic",
+            "mhz": 122.7,
+            "words": "Dacy traffic, Cessna Three Four Five Sierra Papa, taxiing to runway two seven, Dacy."
+          },
+          {
+            "to": "Dacy traffic",
+            "mhz": 122.7,
+            "words": "Dacy traffic, Cessna Three Four Five Sierra Papa, departing runway two seven, departing the pattern to the northeast, climbing to five thousand five hundred, Dacy."
+          },
+          {
+            "to": "Chicago Departure",
+            "mhz": 120.55,
+            "words": "Chicago Departure, Cessna Three Four Five Sierra Papa, VFR request."
+          },
+          {
+            "to": "Chicago Departure",
+            "mhz": 120.55,
+            "words": "Cessna Three Four Five Sierra Papa, [distance] northeast of Dacy, five thousand five hundred, request flight following to Waukegan."
+          }
+        ]
+      },
+      {
+        "title": "Into KUGN",
+        "kind": "arrival",
+        "calls": [
+          {
+            "to": "Waukegan ATIS",
+            "mhz": 132.4,
+            "words": "The weather, the runway in use and the information letter.",
+            "listen": true
+          },
+          {
+            "to": "Waukegan Tower",
+            "mhz": 120.05,
+            "words": "Waukegan Tower, Cessna Three Four Five Sierra Papa, ten miles southwest, three thousand five hundred, with information [letter], landing.",
+            "note_has": "self-announce on the CTAF, 120.05"
+          },
+          {
+            "to": "Waukegan Ground",
+            "mhz": 121.65,
+            "words": "Waukegan Ground, Cessna Three Four Five Sierra Papa, clear of runway two three at [taxiway], taxi to [where you are going]."
+          }
+        ]
+      }
+    ]
+  },
+  "soloStanding": [
+    {
+      "until": null,
+      "today": "2026-11-08",
+      "days": null,
+      "standing": "unknown"
+    },
+    {
+      "until": "2026-11-16",
+      "today": "2026-11-08",
+      "days": 8,
+      "standing": "ok"
+    },
+    {
+      "until": "2026-11-15",
+      "today": "2026-11-08",
+      "days": 7,
+      "standing": "caution"
+    },
+    {
+      "until": "2026-11-08",
+      "today": "2026-11-08",
+      "days": 0,
+      "standing": "caution"
+    },
+    {
+      "until": "2026-11-07",
+      "today": "2026-11-08",
+      "days": -1,
+      "standing": "stop"
+    }
+  ],
+  "passengerBriefing": [
+    {
+      "key": "pax-belts",
+      "title": "How to fasten and unfasten their seat belts and shoulder harnesses",
+      "rule": "14 CFR 91.107(a)(1)"
+    },
+    {
+      "key": "pax-fastened",
+      "title": "Belts fastened to taxi, take off and land, seats locked",
+      "rule": "14 CFR 91.107(a)(2), (3)"
+    },
+    {
+      "key": "pax-air",
+      "title": "Air vents and heat, and to say if they feel unwell",
+      "rule": "FAA Safety Briefing, Passenger SAFETY briefing"
+    },
+    {
+      "key": "pax-fire",
+      "title": "The fire extinguisher: where it is and how it works",
+      "rule": "FAA Safety Briefing, Passenger SAFETY briefing"
+    },
+    {
+      "key": "pax-exits",
+      "title": "The doors, how to get out, the survival kit, and clear of the propeller",
+      "rule": "FAA Safety Briefing, Passenger SAFETY briefing; ACS PA.II.B.S2"
+    },
+    {
+      "key": "pax-traffic",
+      "title": "Point out traffic; quiet while the pilot is on the radio and close to the ground",
+      "rule": "FAA Safety Briefing, Passenger SAFETY briefing; ACS PA.II.B.S2"
+    },
+    {
+      "key": "pax-questions",
+      "title": "Their questions",
+      "rule": "FAA Safety Briefing, Passenger SAFETY briefing"
+    }
+  ],
+  "soloXcDeterminations": [
+    {
+      "rule": "61.93(d)(1)",
+      "label": "The student's cross-country planning is correct for the flight"
+    },
+    {
+      "rule": "61.93(d)(2)",
+      "label": "The current and forecast weather allow it to be completed under VFR"
+    },
+    {
+      "rule": "61.93(d)(3)",
+      "label": "The student is proficient to conduct it safely"
+    }
+  ],
+  "diagramFix": [
+    {
+      "age_s": 0.5,
+      "accuracy_m": 5,
+      "usable": true
+    },
+    {
+      "age_s": 3,
+      "accuracy_m": 30,
+      "usable": true
+    },
+    {
+      "age_s": 3.1,
+      "accuracy_m": 5,
+      "usable": false
+    },
+    {
+      "age_s": 1,
+      "accuracy_m": 31,
+      "usable": false
+    },
+    {
+      "age_s": 1,
+      "accuracy_m": -1,
+      "usable": false
+    }
+  ],
+  "trafficReach": {
+    "around_nm": 10,
+    "relation_nm": 40
+  },
+  "lostCommsAltitude": "On each segment, the highest of the altitude assigned in the last clearance, the minimum altitude for IFR operations, and the altitude ATC said to expect in a further clearance.",
+  "terrainViewBands": [
+    {
+      "altitude_ft": 5500,
+      "caution_from_ft": 4500,
+      "warning_from_ft": 5500
+    },
+    {
+      "altitude_ft": 800,
+      "caution_from_ft": -200,
+      "warning_from_ft": 800
+    }
+  ]
+}

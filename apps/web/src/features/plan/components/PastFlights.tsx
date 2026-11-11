@@ -1,6 +1,6 @@
 import { lazy, memo, Suspense, useEffect, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { format } from "date-fns";
+import { localDay } from "../../../lib/format";
 import { ArrowRight, RotateCw } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
@@ -10,10 +10,11 @@ import type { PastFlightSummary } from "../../../lib/api/types";
 import { TEXT } from "../../../lib/text";
 import { dayOf, lasted, placeOf, when, whenSaid } from "./pastFlightFormat";
 import { pastFlightsQuery } from "./pastFlightsQuery";
+import { useShown } from "../../../lib/shown";
 
 // The stock calendar, as the departure's picker has it (DepartPicker):
 // its own chunk, asked for once a day is to be picked.
-const Calendar = lazy(() => import("../../../components/ui/calendar").then(m => ({ default: m.Calendar })));
+const DayCalendar = lazy(() => import("../../../components/ui/calendar").then((m) => ({ default: m.DayCalendar })));
 
 /** How far back a day may be picked: adsb.lol's archive (wingtip.traffic
  *  ARCHIVE_DAYS), today among them. */
@@ -22,7 +23,7 @@ const ARCHIVE_DAYS = 42;
 /** A day, ISO (the planner's `until`): the calendar's day as it shows it,
  *  where an ISO string of its local midnight was the day before east of
  *  Greenwich. */
-const isoDay = (d: Date) => format(d, "yyyy-MM-dd");
+const isoDay = (d: Date) => localDay(d);
 
 /**
  * An airplane's past flights on its card, at the pilot's ask ("can we
@@ -34,7 +35,13 @@ const isoDay = (d: Date) => format(d, "yyyy-MM-dd");
  * fetch more by date"), as far back as adsb.lol's archive goes, about six
  * weeks. A tap opens the flight's own card over this one (PastFlightCard).
  */
-export default function PastFlights({ hex, onOpen, nowShown = false, untitled = false, type = null }: {
+export default function PastFlights({
+  hex,
+  onOpen,
+  nowShown = false,
+  untitled = false,
+  type = null,
+}: {
   hex: string;
   /** Opens a flight's own card (PastFlightCard), over this one. */
   onOpen: (id: number) => void;
@@ -52,9 +59,11 @@ export default function PastFlights({ hex, onOpen, nowShown = false, untitled = 
   const [picking, setPicking] = useState(false);
   const { data, isError, fetchNextPage, hasNextPage, isFetchingNextPage, isFetching } = useInfiniteQuery({
     ...pastFlightsQuery(hex, from),
+    // Not while its tab is out of sight (lib/shown).
+    subscribed: useShown(),
     // Days adsb.lol did not give just now are asked for again, a minute
     // apart, five times at most, while only the first page is out.
-    refetchInterval: query => {
+    refetchInterval: (query) => {
       const pages = query.state.data?.pages ?? [];
       return pages.length === 1 && (pages[0]?.unread_days ?? 0) > 0 && query.state.dataUpdateCount <= 5 ? 60_000 : false;
     },
@@ -62,7 +71,7 @@ export default function PastFlights({ hex, onOpen, nowShown = false, untitled = 
   const pages = data?.pages ?? [];
   // A page without its list (an older planner's answer, a stand-in) is no
   // flights, not a fault that takes the card down.
-  const flights = pages.flatMap(page => page.flights ?? []).filter(f => !(nowShown && f.in_air));
+  const flights = pages.flatMap((page) => page.flights ?? []).filter((f) => !(nowShown && f.in_air));
   const unread = pages.reduce((n, page) => n + (page.unread_days ?? 0), 0);
   const today = new Date();
   const earliest = new Date(today.getTime() - (ARCHIVE_DAYS - 1) * 86_400_000);
@@ -81,38 +90,60 @@ export default function PastFlights({ hex, onOpen, nowShown = false, untitled = 
       <ListGroup
         // No footnote under it, at the owner's ask ("Avoid putting so many
         // footnotes for pilots experience"): the rows say it.
-        title={from ? `On and before ${dayOf(new Date(`${from}T12:00:00Z`))}` : untitled ? undefined : nowShown ? "Earlier" : "Last flights"}
+        title={
+          from ? `On and before ${dayOf(new Date(`${from}T12:00:00Z`))}` : untitled ? undefined : nowShown ? "Earlier" : "Last flights"
+        }
       >
-        {(!data || looking) && !isError && <ListRow title={<span role="status" className="text-muted-foreground">{data ? "Fetching earlier flights…" : "Fetching its flights…"}</span>} />}
-        {isError && !data && <ListRow title={<span className={cn("text-destructive", TEXT.detail)}>Its past flights could not be had. Try again in a moment.</span>} />}
+        {(!data || looking) && !isError && (
+          <ListRow
+            title={
+              <span role="status" className="text-muted-foreground">
+                {data ? "Fetching earlier flights…" : "Fetching its flights…"}
+              </span>
+            }
+          />
+        )}
+        {isError && !data && (
+          <ListRow
+            title={<span className={cn("text-destructive", TEXT.detail)}>Its past flights could not be had. Try again in a moment.</span>}
+          />
+        )}
         {data && !flights.length && !hasNextPage && !unread && (
           // The owner's words, where it read "None heard in adsb.lol's archive".
-          <ListRow title={<span className="text-muted-foreground" data-testid="past-flights-none">
-            {from ? "None heard on or before that day" : "No flights heard in the last six weeks"}
-          </span>} />
+          <ListRow
+            title={
+              <span className="text-muted-foreground" data-testid="past-flights-none">
+                {from ? "None heard on or before that day" : "No flights heard in the last six weeks"}
+              </span>
+            }
+          />
         )}
-        {flights.map(flight => (
+        {flights.map((flight) => (
           <PastFlightRow key={flight.id} flight={flight} type={type} onPick={() => onOpen(flight.id)} />
         ))}
         {/* A gap that is adsb.lol's, not the airplane's, said as one. */}
         {!!unread && (
-          <ListRow title={
-            <span className={cn("text-muted-foreground", TEXT.detail)} data-testid="past-flights-unread">
-              {/* A week or more unread is adsb.lol's history closed to the
+          <ListRow
+            title={
+              <span className={cn("text-muted-foreground", TEXT.detail)} data-testid="past-flights-unread">
+                {/* A week or more unread is adsb.lol's history closed to the
                   app (behind a browser check since 19 Oct 2026), not a
                   moment's refusal: said so, and that the flights listed
                   are those watched here (wingtip.traffic's recorded tracks). */}
-              {unread >= 7
-                ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
-                : `${unread === 1 ? "One day" : `${unread} days`} could not be read from adsb.lol just now, so their flights are missing; asking again.`}
-            </span>
-          } />
+                {unread >= 7
+                  ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
+                  : `${unread === 1 ? "One day" : `${unread} days`} could not be read from adsb.lol just now, so their flights are missing; asking again.`}
+              </span>
+            }
+          />
         )}
         {/* Ten more, before the last listed, as far back as the archive goes. */}
         {hasNextPage && !looking && (
           <ListRow
             title={isFetchingNextPage ? "Fetching earlier flights…" : "Show earlier flights"}
-            onClick={() => void fetchNextPage()} disabled={isFetchingNextPage} data-testid="past-flights-more"
+            onClick={() => void fetchNextPage()}
+            disabled={isFetchingNextPage}
+            data-testid="past-flights-more"
           />
         )}
       </ListGroup>
@@ -125,8 +156,11 @@ export default function PastFlights({ hex, onOpen, nowShown = false, untitled = 
           <div>
             <ListGroup>
               <ListRow
-                title="Flights before a date" value={picked ? dayOf(picked) : "Pick a day"} chevron
-                onClick={() => setPicking(true)} data-testid="past-flights-date"
+                title="Flights before a date"
+                value={picked ? dayOf(picked) : "Pick a day"}
+                chevron
+                onClick={() => setPicking(true)}
+                data-testid="past-flights-date"
               />
             </ListGroup>
           </div>
@@ -135,32 +169,51 @@ export default function PastFlights({ hex, onOpen, nowShown = false, untitled = 
         <ResponsivePopoverContent title="Flights before a date" className="w-auto p-0" align="start" closeButton={false}>
           <div className="flex flex-col items-center gap-3 pb-3" data-testid="past-flights-picker">
             <Suspense fallback={<div className="h-[21rem] w-[17rem]" />}>
-              <Calendar
-                mode="single" required selected={picked} defaultMonth={picked ?? today}
-                startMonth={earliest} endMonth={today} disabled={{ before: earliest, after: today }}
-                onSelect={day => { setFrom(isoDay(day)); setPicking(false); }}
+              <DayCalendar
+                aria-label="Flights before a date"
+                value={from}
+                min={isoDay(earliest)}
+                max={isoDay(today)}
+                onChange={(day) => {
+                  setFrom(day);
+                  setPicking(false);
+                }}
               />
             </Suspense>
             <div className="flex items-center gap-2 px-3">
               <Button
-                type="button" variant="ghost" size="sm" className="text-tint" disabled={!from}
-                onClick={() => { setFrom(null); setPicking(false); }} data-testid="past-flights-latest"
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-tint"
+                disabled={!from}
+                onClick={() => {
+                  setFrom(null);
+                  setPicking(false);
+                }}
+                data-testid="past-flights-latest"
               >
                 Latest
               </Button>
-              <Button type="button" size="sm" onClick={() => setPicking(false)}>Done</Button>
+              <Button type="button" size="sm" onClick={() => setPicking(false)}>
+                Done
+              </Button>
             </div>
           </div>
         </ResponsivePopoverContent>
       </ResponsivePopover>
-      {isFetching && data && !isFetchingNextPage && <span className="sr-only" role="status">Updating</span>}
+      {isFetching && data && !isFetchingNextPage && (
+        <span className="sr-only" role="status">
+          Updating
+        </span>
+      )}
     </>
   );
 }
 
 /** One end of a flight, as FlightAware's list sets it: the field's ident
  *  large, its town under it, and when. */
-export interface FlightEnd {
+interface FlightEnd {
   ident: string;
   place?: string | null;
   when?: string | null;
@@ -172,7 +225,12 @@ export interface FlightEnd {
  * owner's ask, with FlightAware's list as the example: the airplane's
  * past flights on an airplane's card, and a past flight's own card.
  */
-export function FlightEnds({ from, to, local = false, testIds }: {
+function FlightEnds({
+  from,
+  to,
+  local = false,
+  testIds,
+}: {
   from: FlightEnd;
   to: FlightEnd;
   local?: boolean;
@@ -202,8 +260,17 @@ function endedOf(flight: PastFlightSummary): string {
   return `${flight.in_air ? "In the air" : local ? "Local flight" : flight.landed ? "Landed" : "Last heard"} · ${lasted(flight.on - flight.off)}`;
 }
 
-const PastFlightRow = memo(function PastFlightRow({ flight, type, onPick }: { flight: PastFlightSummary; type: string | null; onPick: () => void }) {
-  const off = when(flight.off), on = when(flight.on);
+const PastFlightRow = memo(function PastFlightRow({
+  flight,
+  type,
+  onPick,
+}: {
+  flight: PastFlightSummary;
+  type: string | null;
+  onPick: () => void;
+}) {
+  const off = when(flight.off),
+    on = when(flight.on);
   const local = !flight.in_air && !!flight.origin && flight.origin.ident === flight.destination?.ident;
   return (
     <ListRow
@@ -212,23 +279,24 @@ const PastFlightRow = memo(function PastFlightRow({ flight, type, onPick }: { fl
       title={
         <span className="flex w-full flex-col gap-1.5 py-1">
           <span className={cn("flex items-center gap-2 font-semibold", TEXT.detail)}>
-            <span className={flight.landed || flight.in_air ? "text-go-ink" : "text-muted-foreground"}>
-              {endedOf(flight)}
-            </span>
+            <span className={flight.landed || flight.in_air ? "text-go-ink" : "text-muted-foreground"}>{endedOf(flight)}</span>
             {type && <span className="ml-auto text-muted-foreground">{type}</span>}
           </span>
           <FlightEnds
             local={local}
             from={{ ident: flight.origin?.ident ?? "?", place: placeOf(flight.origin), when: whenSaid(off) }}
             to={{
-              ident: flight.in_air ? "Now" : flight.destination?.ident ?? "?",
+              ident: flight.in_air ? "Now" : (flight.destination?.ident ?? "?"),
               place: flight.in_air ? null : placeOf(flight.destination),
               when: flight.in_air ? null : whenSaid(on),
             }}
           />
         </span>
       }
-      wide chevron onClick={onPick} data-testid="past-flight"
+      wide
+      chevron
+      onClick={onPick}
+      data-testid="past-flight"
     />
   );
 });

@@ -1,0 +1,113 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "Icing possible at an altitude flown, under IFR: the highest altitude at or above the freezing level, with its line; null where the flight is not planned into it.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoIcingInput",
+      "type": "object",
+      "properties": {
+        "selection": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "freezing_level_ft": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "icing_possible": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ],
+                  "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+                },
+                "freezing_level_at_or_below": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ],
+                  "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "flown_ft": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number"
+          },
+          "description": "The altitudes flown."
+        },
+        "pireps": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "icing": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "answer": {
+      "title": "GonogoIcingAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "altitude_ft": {
+              "type": "number"
+            },
+            "freezing_level_ft": {
+              "type": "number"
+            },
+            "at_or_below": {
+              "type": "boolean"
+            },
+            "reports": {
+              "type": "integer",
+              "description": "Pilot reports of icing near the route, NEG not counted."
+            },
+            "line": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "altitude_ft",
+            "freezing_level_ft",
+            "at_or_below",
+            "reports",
+            "line"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

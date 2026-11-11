@@ -10,25 +10,19 @@ import Vision
 /// it was read from, for the pilot to check against the page before
 /// saving; one the page does not label plainly is not guessed.
 enum Handbook {
-    struct Figure: Equatable, Sendable, Decodable {
-        let value: Double
-        let words: String
-    }
+    typealias Figure = EngineContract.HandbookFigure
 
     /// The engine's answer, camel case: a figure the page does not label
     /// plainly is left out.
-    struct Figures: Equatable, Sendable, Decodable {
-        var cruiseTasKt: Figure?
-        var cruisePowerPct: Figure?
-        var fuelBurnGph: Figure?
-        var usableFuelGal: Figure?
-        var climbTasKt: Figure?
-        var serviceCeilingFt: Figure?
+    typealias Figures = EngineContract.HandbookFiguresAnswer
+}
 
-        var isEmpty: Bool { cruiseTasKt == nil && cruisePowerPct == nil && fuelBurnGph == nil && usableFuelGal == nil && climbTasKt == nil && serviceCeilingFt == nil }
-        var words: [String] { [cruiseTasKt, cruisePowerPct, fuelBurnGph, usableFuelGal, climbTasKt, serviceCeilingFt].compactMap { $0?.words } }
-    }
+extension Handbook.Figures {
+    var isEmpty: Bool { cruiseTasKt == nil && cruisePowerPct == nil && fuelBurnGph == nil && usableFuelGal == nil && climbTasKt == nil && serviceCeilingFt == nil }
+    var words: [String] { [cruiseTasKt, cruisePowerPct, fuelBurnGph, usableFuelGal, climbTasKt, serviceCeilingFt].compactMap { $0?.words } }
+}
 
+extension Handbook {
     /// The words on the page, top to bottom, one line each.
     static func read(_ image: UIImage) async throws -> String {
         guard let cg = image.cgImage else { return "" }
@@ -42,10 +36,9 @@ enum Handbook {
             .joined(separator: "\n")
     }
 
-    /// The figures on the page's text; none where the engine cannot
-    /// answer, which is never for text.
-    static func figures(of text: String) -> Figures {
-        let found: Figures? = try? Engine.call("handbook_figures", ["text": text])
-        return found ?? Figures()
+    /// The figures on the page's text; thrown where the engine cannot
+    /// answer, which the page says.
+    static func figures(of text: String) throws -> Figures {
+        try Engine.handbookFigures(text: text)
     }
 }

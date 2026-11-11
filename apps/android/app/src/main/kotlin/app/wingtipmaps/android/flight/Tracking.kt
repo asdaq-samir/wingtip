@@ -1,13 +1,15 @@
 package app.wingtipmaps.android.flight
 
+import android.annotation.SuppressLint
 import android.content.Context
 import app.wingtipmaps.android.api.FlightStatus
 import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.api.flightStatus
-import app.wingtipmaps.android.engine.AlertFiresAnswer
 import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.airborneNow
+import app.wingtipmaps.android.engine.generated.alertFires
 import app.wingtipmaps.android.notify.Notifications
 import app.wingtipmaps.android.records.AirplaneWatch
 import app.wingtipmaps.android.records.Keeping
@@ -21,14 +23,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 
 /**
  * An airplane being tracked, as FlightAware and ForeFlight track one (the
@@ -61,6 +61,10 @@ class Tracking private constructor(
 
     /** The last watch that went off, for the banner over the map. */
     val fired = MutableStateFlow<String?>(null)
+
+    /** The engine's words where a watch's rules failed, shown on an
+     *  airplane's card; the watch is kept for the next answer. */
+    val problem = MutableStateFlow<String?>(null)
 
     private val kept: StateFlow<List<KeptAirplane>> =
         dao.keptAirplanes().stateIn(scope, SharingStarted.Eagerly, emptyList())
@@ -224,10 +228,16 @@ class Tracking private constructor(
                 continue
             }
             val before = airborne[hex]
-            val now = airborneNow(before, status)
+            // Where the engine cannot say, what was known stands and the
+            // watch waits; the card says why (problem).
+            val asked = airborneNow(before, status)
+            asked.exceptionOrNull()?.let { problem.value = "Watching $hex failed: ${it.message}" }
+            val now = asked.getOrDefault(before)
             for (watch in watches.value.filter { it.hex == hex }) {
                 val kind = WatchKind.of(watch.kind) ?: continue
-                val words = fired(watch.name, kind, before, now, status) ?: continue
+                val goes = fired(watch.name, kind, before, now, status)
+                goes.exceptionOrNull()?.let { problem.value = "Watching ${watch.name} failed: ${it.message}" }
+                val words = goes.getOrNull() ?: continue
                 // The banner over the map; a heads-up notification with the
                 // app put away.
                 fired.value = words
@@ -243,6 +253,8 @@ class Tracking private constructor(
          *  app's PATH_POINTS. */
         const val PATH_POINTS = 2000
 
+        // The application's context alone (of), which lives as long as the process.
+        @SuppressLint("StaticFieldLeak")
         @Volatile
         private var shared: Tracking? = null
 
@@ -254,39 +266,27 @@ class Tracking private constructor(
                 ).also { shared = it }
             }
 
-        @Serializable
-        private class AirborneAsk(val before: Boolean?, val airborne: Boolean, val arrived: Boolean, @SerialName("heard_s") val heardS: Double?)
-
         /** Whether the airplane is in the air (the engine's `airborne_now`,
          *  the web app's airborneNow): in the air where heard there; on the
          *  ground where it has landed, or where nothing was known and it
          *  has not been heard for half an hour or ever; else what was
-         *  known. What was known where the engine cannot answer. */
-        fun airborneNow(before: Boolean?, now: FlightStatus): Boolean? =
-            runCatching {
-                Engine.call<AirborneAsk, Boolean?>("airborne_now", AirborneAsk(before, now.airborne == true, now.arrived != null, now.heardS))
-            }.getOrDefault(before)
-
-        @Serializable
-        private class FiresAsk(
-            val kind: String,
-            @SerialName("before_airborne") val beforeAirborne: Boolean?,
-            val airborne: Boolean?,
-            val arrived: Boolean,
-        )
+         *  known. */
+        fun airborneNow(before: Boolean?, now: FlightStatus): Result<Boolean?> =
+            Engine.airborneNow(before, now.airborne == true, now.arrived != null, now.heardS)
 
         /** The words a watch goes off with, or null where it has not: "N654FL
          *  took off from 10C", "N654FL landed at KDAW". Whether it goes off
          *  is the engine's (`alert_fires`); the words are the app's. */
-        fun fired(name: String, kind: WatchKind, before: Boolean?, now: Boolean?, status: FlightStatus): String? {
-            val go = runCatching {
-                Engine.call<FiresAsk, AlertFiresAnswer>("alert_fires", FiresAsk(kind.word, before, now, status.arrived != null))
-            }.getOrNull()
-            if (go?.fires != true) return null
-            return when (kind) {
-                WatchKind.TAKEOFF -> status.departed?.let { "$name took off from ${it.ident}" } ?: "$name took off"
-                WatchKind.LAND -> status.arrived?.let { "$name landed at ${it.ident}" }
+        fun fired(name: String, kind: WatchKind, before: Boolean?, now: Boolean?, status: FlightStatus): Result<String?> =
+            Engine.alertFires(kind.word, beforeAirborne = before, airborne = now, arrived = status.arrived != null).map { go ->
+                if (!go.fires) {
+                    null
+                } else {
+                    when (kind) {
+                        WatchKind.TAKEOFF -> status.departed?.let { "$name took off from ${it.ident}" } ?: "$name took off"
+                        WatchKind.LAND -> status.arrived?.let { "$name landed at ${it.ident}" }
+                    }
+                }
             }
-        }
     }
 }

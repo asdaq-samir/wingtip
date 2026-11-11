@@ -35,6 +35,7 @@
 //!   over them, the pilot's minimums, icing under IFR, the risk
 //!   assessment, the runway check, the weight and balance and the pass
 //!   times (the web's lib/verdict and the modules it is fed from);
+//! - autolog: a logbook entry drawn from the app's own flown track;
 //! - pilot: the pilot's records and text -- a checklist, the logbook's
 //!   CSV file, a handbook page, endorsements and ACS codes;
 //! - route: the route's pilot-made pieces as the address writes them
@@ -45,6 +46,12 @@
 //!   short-field distances and how an end suits the airplane;
 //! - approach: instrument approaches taught (the brief, the coached dry
 //!   run, the quiz) and debriefed against the procedure flown;
+//! - altitude: the altitude a flight is planned at -- the terrain and
+//!   obstacle floor (14 CFR 91.119), the IFR floor (91.177), the band under
+//!   Class B, the clouds (91.155) and the service ceiling, the cruising
+//!   altitudes by course (91.159, 91.179) and the words where none fits;
+//! - inflight: the flight under way -- the in-flight copilot's ranked
+//!   messages, its alternative from the emergency assistant's best_fields;
 //! - flight: the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere;
 //! - wmm: magnetic variation from the World Magnetic Model;
 //! - forecast: a field's flight category from what is known of its
@@ -55,6 +62,8 @@
 //! - wording: the FAA's own words in the app's -- its capitals in sentence
 //!   case, names, the advisories' intensities, a field's radio and fuel, a
 //!   VOR's radial, Morse and service volume;
+//! - receiver: a portable ADS-B receiver's GDL 90 -- own ship, the
+//!   traffic it hears and the FIS-B weather it is sent;
 //! - validity: when a weather report stops counting;
 //! - cycles: when an FAA data set's edition stops counting;
 //! - metar, taf, winds, notam, tfr: the weather and NOTAM products as
@@ -63,15 +72,23 @@
 
 pub mod call;
 
-pub use wingtip_airspace::{ahead, airspace, pack, pack_query, rules, spoken, view};
-pub use wingtip_brief::{gonogo, runway};
+pub use wingtip_airspace::{ahead, airspace, drills, pack, pack_query, rules, spoken, view, view_marks};
+pub use wingtip_altitude::altitude;
+pub use wingtip_brief::{alternates, fields, gonogo, passengers, runway};
+// Forecast icing along an IFR route (#216).
+pub use wingtip_brief::icing_forecast;
 pub use wingtip_procedures::figures;
-pub use wingtip_core::{geo, grid, sums, time, wmm, xml};
-pub use wingtip_flight::flight;
-pub use wingtip_pilot::{aircraft, pilot};
-pub use wingtip_radio::{atis, clearance, readback};
-pub use wingtip_route::{approach, motion, route};
-pub use wingtip_weather::{cycles, forecast, metar, notam, taf, tfr, validity, winds};
+// A procedure's legs drawn: arcs, holds, procedure turns (#482 phase 4b).
+pub use wingtip_core::{base64, geo, grid, sort, sums, time, wmm, xml};
+pub use wingtip_flight::{filing, flight, limits, performance, sun};
+pub use wingtip_procedures::paths;
+// The in-flight copilot (copilot_watch).
+pub use wingtip_inflight as inflight;
+pub use wingtip_pilot::{aircraft, autolog, documents, pilot};
+pub use wingtip_radio::{atc, atis, callsign, clearance, datis, instruction, mayday, readback};
+pub use wingtip_receiver as receiver;
+pub use wingtip_route::{approach, motion, navlog, route};
+pub use wingtip_weather::{cycles, forecast, metar, notam, rvr, taf, tfr, validity, winds};
 pub use wingtip_wording::wording;
 
 // The JSON every rule reads and writes, as call.rs names it; not part of

@@ -1,7 +1,7 @@
 [package]
 name = "wingtip-wasm"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
 description = "The engine for the web app: one WebAssembly function, a rule by name with JSON in and out (apps/web/src/lib/engine)"
 
@@ -12,5 +12,14 @@ crate-type = ["cdylib"]
 # None but the engine: no wasm-bindgen, so building it takes only cargo
 # and the wasm32-unknown-unknown target, and the JavaScript side is the
 # few lines of apps/web/src/lib/engine/engine.ts.
+#
+# Route options are left out (the facade's route-options feature): the web
+# never asks them, and they were 153 KB of the module. And only the rules
+# the web asks are built in, wherever the facade is built for wasm32
+# (facade/build.rs, facade/web-rules.txt): the other 143 were 194 KB
+# (2026-11-10).
 [dependencies]
-wingtip-engine = { path = "../../facade" }
+wingtip-engine = { path = "../../facade", default-features = false }
+
+[lints]
+workspace = true

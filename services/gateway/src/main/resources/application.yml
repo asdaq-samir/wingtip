@@ -16,9 +16,25 @@ spring:
   # (server.servlet.session below): sign in once per device a month,
   # not after every half hour away or every gateway restart. The tables
   # come from Flyway (V8__spring_session.sql).
+  # Boot 4 no longer takes the session store's timeout from
+  # server.servlet.session.timeout: a stored session lasted Spring
+  # Session's own default (30 minutes) until this said 30 days again.
   session:
+    timeout: 30d
     jdbc:
       initialize-schema: never
+  # Jackson 3 refuses a null or missing value for a primitive field,
+  # where Jackson 2 read it as 0 or false. The request records were
+  # written to that contract: a logbook entry's training, instrument and
+  # track columns are "none when not sent" (LogbookEntryRequest), and the
+  # form, the ForeFlight import and the phones leave them out or send
+  # null, so every add, edit and import was a 500. A primitive that must
+  # be sent is checked by its constraint (@Positive, @Min(1)); one whose
+  # 0 would be a wrong figure rather than none is a boxed @NotNull field
+  # (VorCheckRequest.errorDeg, TrackPointDto's time and position).
+  jackson:
+    deserialization:
+      fail-on-null-for-primitives: false
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/wingtip}
     username: ${SPRING_DATASOURCE_USERNAME:wingtip}
@@ -68,6 +84,13 @@ spring:
 planner-service:
   base-url: ${PLANNER_SERVICE_URL:http://localhost:8084}
 
+# The assistant service: every Claude call (the assistant, the narrative,
+# the words, the checkpoint notes, the mock oral), reached as the planner
+# is, at the same /api/planner/... addresses (PlannerProxyController
+# picks which by path).
+assistant-service:
+  base-url: ${ASSISTANT_SERVICE_URL:http://localhost:8085}
+
 server:
   port: 8080
   servlet:
@@ -96,13 +119,23 @@ server:
     mime-types: text/html,text/css,text/javascript,application/javascript,application/json,image/svg+xml,application/wasm
     min-response-size: 1024
 
+logging:
+  pattern:
+    # Each line of a request carries its trace and span (where tracing is
+    # on) and the page's request id (RequestIdFilter), so a log line
+    # leads to its trace in Jaeger and a trace back to its lines.
+    correlation: "[%X{traceId:-},%X{spanId:-},%X{requestId:-}] "
+
 management:
   # Traces (Micrometer's OpenTelemetry bridge) only where they are asked
-  # for: docker-compose's tracing profile sets MANAGEMENT_TRACING_ENABLED
-  # and the OTLP endpoint (Jaeger's). On, each request is a span and the
-  # planner's spans go under it (StreamingProxy passes the context on).
+  # for: docker-compose sets MANAGEMENT_TRACING_EXPORT_ENABLED from
+  # TRACING and the OTLP endpoint (Jaeger's). On, each request is a span
+  # sent to it, and the planner's and the assistant's spans go under it
+  # (TraceHeaders passes the context on); off, nothing is sent.
+  # (management.tracing.enabled until Spring Boot 4 renamed it.)
   tracing:
-    enabled: false
+    export:
+      enabled: false
   opentelemetry:
     resource-attributes:
       service.name: gateway
@@ -204,9 +237,13 @@ app:
   # proof of concept, at the owner's ask -- the page then says nothing of
   # it, the debrief is everyone's, and the features Claude writes are
   # claude-features' (OFF, DEVELOPERS or EVERYONE, each within the caps).
-  # Every pilot with an account has them for now, at the owner's ask
-  # ("I can offer the AI features to users with an account, no revenue").
-  claude-features: ${APP_CLAUDE_FEATURES:EVERYONE}
+  # OFF by default, and OFF wins over a sold subscription, a developer and
+  # an open machine: no request reaches Anthropic, the assistant service
+  # need not run, and the apps use only on-device models and the engine's
+  # own words. The owner, 2026-11-10: "To keep the cost low, we only add
+  # the claude feature later when we decide about subscription model. For
+  # now just the free siri and gemini." (docs/decisions/0035).
+  claude-features: ${APP_CLAUDE_FEATURES:OFF}
   subscription:
     enabled: ${APP_SUBSCRIPTION_ENABLED:false}
     trial-days: ${APP_SUBSCRIPTION_TRIAL_DAYS:30}
@@ -217,6 +254,20 @@ app:
       assistant: ${APP_SUBSCRIPTION_CAP_ASSISTANT:100}
       words: ${APP_SUBSCRIPTION_CAP_WORDS:1000}
     comped-emails: ${APP_SUBSCRIPTION_COMPED_EMAILS:}
+  # The MCP connector a pilot adds to their own Claude or ChatGPT
+  # (docs/design/mcp-connector.md, security/mcp): the MCP server's
+  # address, the audience of every token issued (blank: the public
+  # address's /mcp); the callbacks a client may register (Claude's,
+  # ChatGPT's, and a loopback one on any port for Claude Code and the MCP
+  # Inspector; RedirectUris says the forms); the RSA key, PKCS#8 PEM, its
+  # tokens are signed with (blank: one made at start, for a machine of
+  # one's own); and the token the planner's tools show to read a pilot's
+  # records (blank: refused).
+  mcp:
+    resource: ${MCP_RESOURCE_URL:}
+    redirect-uris: ${MCP_REDIRECT_URIS:https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector_platform_oauth_redirect,https://chatgpt.com/connector/oauth/*,http://localhost,http://127.0.0.1}
+    signing-key: ${MCP_SIGNING_KEY:}
+    internal-token: ${MCP_INTERNAL_TOKEN:}
   magic-link:
     per-address-per-hour: ${APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR:5}
     per-client-per-hour: ${APP_MAGIC_LINK_PER_CLIENT_PER_HOUR:20}
@@ -232,6 +283,20 @@ app:
   # implementation is written.
   flight-service:
     provider: ${APP_FLIGHT_SERVICE_PROVIDER:none}
+
+  # The launch's monitor (UptimeWatch, docs/OPERATIONS.md): each minute
+  # (cron, UTC; "-" turns it off) the planner, the assistant, the weather
+  # service and this app's readiness are asked whether they are up, and the
+  # planner which live feeds have gone stale; one down for down-after, or a
+  # feed the planner calls alerting, is mailed to alert-emails (the
+  # developer-emails where none are given), and again when it is back.
+  # weather-url is the weather service's address on the stack's network;
+  # blank, it is not watched.
+  monitoring:
+    cron: ${APP_MONITORING_CRON:30 * * * * *}
+    down-after: ${APP_MONITORING_DOWN_AFTER:PT5M}
+    alert-emails: ${APP_ALERT_EMAILS:}
+    weather-url: ${WEATHER_SERVICE_URL:}
 
 # The flight watch (FlightWatchService): how often the watched flights
 # departing within the window are re-briefed and the planner asked what

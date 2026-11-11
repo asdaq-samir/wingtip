@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The Aviation Weather Center's national pireps cache file (XML) read into the shape the weather store keeps: The PIREPs (UA, UUA), not the AIREPs: [{observed_at, observed, lat, lon, altitude_ft, aircraft, urgent, turbulence, icing, raw}].",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AwcPirepsReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "AwcPirepsReadAnswer",
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

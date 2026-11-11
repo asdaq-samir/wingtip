@@ -20,7 +20,7 @@ struct WithinMark: View {
     let ok: Bool
     var body: some View {
         Image(systemName: ok ? "checkmark.circle.fill" : "xmark.circle.fill")
-            .foregroundStyle(ok ? .green : .red)
+            .foregroundStyle(ok ? WingtipInk.go : WingtipInk.problem)
             .accessibilityLabel(ok ? "Within" : "Outside")
     }
 }
@@ -33,7 +33,7 @@ struct WithinMark: View {
 /// the checkpoints and the patterns, each with its mark. GPS altitude is
 /// not the altimeter's, and a ground track is not a heading.
 struct DebriefSections: View {
-    let flight: Int64
+    let flight: Int
     let points: [SavedTrackPoint]
     @State private var answer: DebriefAnswer?
     @State private var loaded = false
@@ -44,16 +44,16 @@ struct DebriefSections: View {
             if let d = answer?.debrief {
                 LabeledContent("Took off", value: Date(timeIntervalSince1970: d.takeoff / 1000).formatted(.dateTime.day().month(.abbreviated).hour().minute()))
                 LabeledContent {
-                    Text(hoursMinutes(d.flownMin)).monospacedDigit()
+                    Text(Format.duration(d.flownMin)).monospacedDigit()
                 } label: {
                     Text("In the air")
-                    if let planned = d.plannedMin { Text("\(hoursMinutes(planned)) planned") }
+                    if let planned = d.plannedMin { Text("\(Format.duration(planned)) planned") }
                 }
-                ForEach(d.notes, id: \.self) { note in Text(note).font(.subheadline).foregroundStyle(.orange) }
+                ForEach(d.notes, id: \.self) { note in Text(note).font(.subheadline).foregroundStyle(WingtipInk.caution) }
             } else if loaded, answer != nil {
                 Text("No flight in this track: it never went faster than taxiing.").foregroundStyle(.secondary)
             } else if let problem {
-                Text(problem).font(.footnote).foregroundStyle(.red)
+                ProblemLine(problem)
             } else {
                 ProgressView("Reading the track…")
             }
@@ -62,11 +62,11 @@ struct DebriefSections: View {
         if let answer, let d = answer.debrief {
             let t = answer.tolerances
             // PA.VI.A's tolerances in the title, as the web page has them.
-            Section("Leg by leg · within \(AirportWords.tenths(t.offRouteNm)) nm, \(AirportWords.tenths(t.altitudeFt)) ft, \(AirportWords.tenths(t.courseDeg))°") {
+            Section("Leg by Leg · Within \(Format.tenths(t.offRouteNm)) nm, \(Format.tenths(t.altitudeFt)) ft, \(Format.tenths(t.courseDeg))°") {
                 ForEach(Array(d.legs.enumerated()), id: \.offset) { _, leg in
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .top, spacing: WingtipSpace.md) {
                         WithinMark(ok: leg.ok)
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text("\(leg.from) → \(leg.to)")
                             Text(altitudeLine(leg, d, t)).font(.subheadline).foregroundStyle(.secondary)
                             if let course = courseLine(leg, t) { Text(course).font(.subheadline).foregroundStyle(.secondary) }
@@ -74,11 +74,11 @@ struct DebriefSections: View {
                     }
                 }
             }
-            Section("Checkpoints · within \(AirportWords.tenths(t.etaMin)) min") {
+            Section("Checkpoints · Within \(Format.tenths(t.etaMin)) min") {
                 ForEach(Array(d.passes.enumerated()), id: \.offset) { _, pass in
-                    HStack(alignment: .top, spacing: 12) {
+                    HStack(alignment: .top, spacing: WingtipSpace.md) {
                         if let ok = pass.ok { WithinMark(ok: ok) } else { Image(systemName: "circle").foregroundStyle(.secondary).accessibilityHidden(true) }
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(pass.name)
                             Text(passLine(pass)).font(.subheadline).foregroundStyle(.secondary)
                         }
@@ -86,15 +86,15 @@ struct DebriefSections: View {
                 }
             }
             if !d.patterns.isEmpty {
-                Section("Into the pattern · within \(AirportWords.tenths(t.patternFt)) ft") {
+                Section("Into the Pattern · Within \(Format.tenths(t.patternFt)) ft") {
                     ForEach(d.patterns, id: \.ident) { entry in
-                        HStack(spacing: 12) {
+                        HStack(spacing: WingtipSpace.md) {
                             WithinMark(ok: entry.ok)
                             LabeledContent {
-                                Text("\(AirportWords.feet(entry.altFt)) (\(FigureWords.signed(entry.offFt, "")))").monospacedDigit()
+                                Text("\(Format.altitude(entry.altFt)) (\(FigureWords.signed(entry.offFt, "")))").monospacedDigit()
                             } label: {
                                 Text(entry.ident)
-                                Text("Pattern altitude \(AirportWords.feet(entry.patternFt))")
+                                Text("Pattern altitude \(Format.altitude(entry.patternFt))")
                             }
                         }
                     }
@@ -120,37 +120,35 @@ struct DebriefSections: View {
             return d.hasAltitude ? "Altitude: no cruise on this leg" : "Altitude: the file has none"
         }
         let worst = leg.worstAltFt.map { ", at most \(FigureWords.signed($0, " ft"))" } ?? ""
-        return "Altitude: \(FigureWords.percent(within)) within \(AirportWords.tenths(t.altitudeFt)) ft of \(AirportWords.feet(leg.plannedAltFt))\(worst)"
+        return "Altitude: \(FigureWords.percent(within)) within \(Format.tenths(t.altitudeFt)) ft of \(Format.altitude(leg.plannedAltFt))\(worst)"
     }
 
     private func courseLine(_ leg: LegGrade, _ t: DebriefTolerances) -> String? {
         guard let within = leg.courseWithin, let course = leg.courseDeg else { return nil }
-        let off = leg.worstOffNm.map { ", at most \(Formats.nm(abs($0))) \($0 >= 0 ? "right" : "left") of the line" } ?? ""
-        return "Course: \(FigureWords.percent(within)) within \(AirportWords.tenths(t.courseDeg))° of \(AirportWords.bearing(course))\(off)"
+        let off = leg.worstOffNm.map { ", at most \(Format.distance(abs($0))) \($0 >= 0 ? "right" : "left") of the line" } ?? ""
+        return "Course: \(FigureWords.percent(within)) within \(Format.tenths(t.courseDeg))° of \(Format.heading(course))\(off)"
     }
 
     private func passLine(_ p: CheckpointPass) -> String {
         var parts: [String] = []
-        if let due = p.dueMin { parts.append("Due \(hoursMinutes(due))") }
+        if let due = p.dueMin { parts.append("Due \(Format.duration(due))") }
         if let passed = p.passedMin {
-            parts.append("\(p.landed ? "landed" : "passed") \(hoursMinutes(passed))\(p.lateMin.map { " (\(FigureWords.signed($0, " min")))" } ?? "")")
+            parts.append("\(p.landed ? "landed" : "passed") \(Format.duration(passed))\(p.lateMin.map { " (\(FigureWords.signed($0, " min")))" } ?? "")")
         } else {
             parts.append("not reached")
         }
-        if !p.landed, let closest = p.closestNm { parts.append("\(Formats.nm(closest)) from it at closest") }
+        if !p.landed, let closest = p.closestNm { parts.append("\(Format.distance(closest)) from it at closest") }
         return parts.joined(separator: " · ")
     }
 }
 
 // MARK: - The diversion drill
 
-/// The diversion drill (the web app's DiversionDrill, ACS PA.VI.C): where
-/// the airplane is, the examiner says divert. The clock starts, the
-/// student picks one of the nearest fields (with their runways and
-/// weather, and not how far or which way: that is off the chart),
-/// estimates the heading, ground speed, time and fuel, and checks them
-/// against the planner's exact solution in its forecast air on the way
-/// (GET /api/diversion), each estimate marked reasonable or not.
+/// The diversion drill (the web app's DiversionDrill, ACS PA.VI.C): where the airplane is, the
+/// examiner says divert. The clock starts, the student picks one of the nearest fields (with their
+/// runways and weather, and not how far or which way: that is off the chart), estimates the heading,
+/// ground speed, time and fuel, and checks them against the planner's exact solution in its forecast
+/// air on the way (GET /api/diversion), each estimate marked reasonable or not.
 struct DiversionDrillView: View {
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
@@ -174,20 +172,26 @@ struct DiversionDrillView: View {
     ]
     /// The altitudes the drill can be flown at, VFR's: below 18,000 ft
     /// MSL, the floor of Class A (14 CFR 71.33).
-    private static let altitudes = Array(stride(from: 1500.0, through: 17500.0, by: 500.0))
+    /// A failure is said under the picker, which is then empty.
+    private static let altitudes = Result { try Altitudes.vfr(from: 1500) }
 
     private var fix: OwnShip.Fix? { dryRun.fix ?? ownShip.fix }
     private var checked: Bool { stopped != nil }
 
     var body: some View {
         List {
-            if started == nil {
+            if !plan.airplaneChosen { // No airplane: no speed to work at, and the planner not asked (it answers 422).
+                Section { PickAirplaneRow(detail: "Its heading, ground speed, time and fuel are worked at its speed and burn") }
+            } else if started == nil {
                 Section {
-                    Text("Where you are, at \(AirportWords.feet(altitudeFt)), the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind.")
+                    Text("Where you are, at \(Format.altitude(altitudeFt)), the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind.")
                     Picker("Altitude", selection: $altitudeFt) {
-                        ForEach(Self.altitudes, id: \.self) { ft in Text(AirportWords.feet(ft)).tag(ft) }
+                        ForEach((try? Self.altitudes.get()) ?? [], id: \.self) { ft in Text(Format.altitude(ft)).tag(ft) }
                     }
                     .pickerStyle(.menu)
+                    if case .failure(let error) = Self.altitudes {
+                        Text("The altitudes couldn't be listed: \(error.localizedDescription)").foregroundStyle(WingtipInk.caution)
+                    }
                     Button { start() } label: { Label("Start the Clock", systemImage: "timer") }
                         .disabled(fix == nil)
                     if fix == nil { Text("Waiting for your position").foregroundStyle(.secondary) }
@@ -209,9 +213,9 @@ struct DiversionDrillView: View {
                     ForEach(fields) { field in
                         Button { chosen = field.ident } label: {
                             HStack {
-                                VStack(alignment: .leading, spacing: 2) {
+                                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                     Text("\(field.ident) · \(field.name)").foregroundStyle(.primary)
-                                    Text([field.longestRunwayFt.map { "\($0.formatted()) ft runway" } ?? "no runway length",
+                                    Text([field.longestRunwayFt.map { "\(Format.altitude(Double($0))) runway" } ?? "no runway length",
                                           field.flightCategory ?? "no weather report"].joined(separator: " · "))
                                         .font(.subheadline).foregroundStyle(.secondary)
                                 }
@@ -222,11 +226,11 @@ struct DiversionDrillView: View {
                         .disabled(checked)
                     }
                 }
-                Section("Your estimates") {
+                Section("Your Estimates") {
                     ForEach(Self.estimates, id: \.key) { e in
                         let check = answer?.checks.first { $0.key == e.key }
                         LabeledContent {
-                            HStack(spacing: 6) {
+                            HStack(spacing: WingtipSpace.sm) {
                                 if let ok = check?.reasonable { WithinMark(ok: ok) }
                                 TextField("", text: Binding(get: { typed[e.key] ?? "" }, set: { typed[e.key] = $0 }))
                                     .keyboardType(.decimalPad).multilineTextAlignment(.trailing).monospacedDigit()
@@ -241,9 +245,9 @@ struct DiversionDrillView: View {
                 }
                 if checked, let answer {
                     if let line = answer.problem {
-                        Text(line).foregroundStyle(.red)
+                        Text(line).foregroundStyle(WingtipInk.problem)
                     } else {
-                        Section("To \(answer.to), worked out") {
+                        Section("To \(answer.to), Worked Out") {
                             ForEach(answer.steps, id: \.name) { step in LabeledContent(step.name, value: step.value).monospacedDigit() }
                         }
                     }
@@ -263,13 +267,12 @@ struct DiversionDrillView: View {
             }
         }
         .navigationTitle("Diversion Drill")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             // The plan's cruise to start with, else the airplane's own
             // altitude to the nearest 500 ft: a choice to change, no rule.
             guard altitudeFt == 0 else { return }
             let own = plan.altitudeFt ?? fix?.altitudeFt.map { ($0 / 500).rounded() * 500 }
-            altitudeFt = Self.altitudes.min { abs($0 - (own ?? 3500)) < abs($1 - (own ?? 3500)) } ?? 3500
+            altitudeFt = ((try? Self.altitudes.get()) ?? []).min { abs($0 - (own ?? 3500)) < abs($1 - (own ?? 3500)) } ?? 3500
         }
     }
 
@@ -292,7 +295,7 @@ struct DiversionDrillView: View {
         let estimates = typed.compactMapValues { Double($0.replacingOccurrences(of: ",", with: ".").trimmingCharacters(in: .whitespaces)) }
         stopped = Date()
         checking = true
-        let aircraft = plan.aircraft, figures = plan.figures, altitude = altitudeFt
+        let aircraft = plan.plannerAircraft, figures = plan.figures, altitude = altitudeFt
         Task {
             do {
                 answer = try await Planner.diversion(lat: at.latitude, lon: at.longitude, to: ident, altitudeFt: altitude,
@@ -336,7 +339,7 @@ struct HoldingView: View {
 
     var body: some View {
         List {
-            Section("The hold") {
+            Section("The Hold") {
                 number("Inbound course", $inbound, "°")
                 Picker("Turns", selection: $turns) {
                     Text("Right").tag("right")
@@ -350,14 +353,14 @@ struct HoldingView: View {
                     HoldDiagram(inbound: i, heading: h, turns: turns, entry: answer.entry, from: answer.approachRelative)
                         .frame(maxWidth: 320).frame(maxWidth: .infinity)
                         .accessibilityElement()
-                        .accessibilityLabel("\(answer.entryName) entry to a hold with \(turns) turns on an inbound course of \(AirportWords.bearing(i)), arriving on a heading of \(AirportWords.bearing(h)).")
-                    VStack(alignment: .leading, spacing: 4) {
+                        .accessibilityLabel("\(answer.entryName) entry to a hold with \(turns) turns on an inbound course of \(Format.heading(i)), arriving on a heading of \(Format.heading(h)).")
+                    VStack(alignment: .leading, spacing: WingtipSpace.xs) {
                         Text("\(answer.entryName) entry").font(.headline)
                         Text(answer.steps).font(.subheadline)
                     }
                     // Within 5° of a sector's line, either entry (AIM 5-3-8).
                     if let either = answer.eitherName {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text("Or \(either.lowercased())")
                             Text("Within 5° of the line between the two").font(.subheadline).foregroundStyle(.secondary)
                         }
@@ -367,7 +370,7 @@ struct HoldingView: View {
             // The course and the wind in the same reference: magnetic, as a
             // clearance gives the course (winds aloft are true, so the row
             // says which).
-            Section("In the wind") {
+            Section("In the Wind") {
                 number("True airspeed", $tas, "kt")
                 number("Wind from, magnetic", $windFrom, "°")
                 number("Wind speed", $windKt, "kt")
@@ -375,8 +378,8 @@ struct HoldingView: View {
             }
             if let wind = answer?.wind {
                 Section {
-                    row("Inbound heading", wind.inboundWords, AirportWords.bearing(wind.inbound.heading))
-                    row("Outbound heading", wind.outboundWords, AirportWords.bearing(wind.outbound.heading))
+                    row("Inbound heading", wind.inboundWords, Format.heading(wind.inbound.heading))
+                    row("Outbound heading", wind.outboundWords, Format.heading(wind.outbound.heading))
                     row("Outbound time", wind.timeWords, "\(Int(wind.outboundSec.rounded())) s")
                 }
             } else if let line = answer?.windProblem {
@@ -385,7 +388,6 @@ struct HoldingView: View {
             ProblemLine(problem)
         }
         .navigationTitle("Holding Entries")
-        .navigationBarTitleDisplayMode(.inline)
         .task(id: asked) {
             // A pause while the pilot types, then the engine's answer.
             try? await Task.sleep(for: .milliseconds(300))
@@ -402,7 +404,7 @@ struct HoldingView: View {
 
     private func number(_ title: String, _ value: Binding<String>, _ unit: String) -> some View {
         LabeledContent(title) {
-            HStack(spacing: 6) {
+            HStack(spacing: WingtipSpace.sm) {
                 TextField("", text: value).keyboardType(.numberPad).multilineTextAlignment(.trailing).monospacedDigit().frame(width: 72)
                 Text(unit).foregroundStyle(.secondary).frame(width: 24, alignment: .leading)
             }
@@ -444,7 +446,7 @@ struct HoldDiagram: View {
             let cx = fx + side * r, ox = fx + side * 2 * r
             let k = r * 0.5523
             let faint = GraphicsContext.Shading.color(.primary.opacity(0.25))
-            let tint = GraphicsContext.Shading.color(.accentColor)
+            let tint = GraphicsContext.Shading.style(.tint)
 
             var course = Path()
             course.move(to: CGPoint(x: fx, y: 4)); course.addLine(to: CGPoint(x: fx, y: 266))
@@ -457,7 +459,7 @@ struct HoldDiagram: View {
             let labels: [(String, Double)] = turns == "right"
                 ? [("parallel", 52), ("teardrop", 322), ("direct", 205)] : [("parallel", 308), ("teardrop", 38), ("direct", 155)]
             for (name, deg) in labels {
-                context.draw(Text(Self.names[name] ?? name).font(.system(size: 12, weight: name == entry ? .bold : .regular)).foregroundStyle(.secondary),
+                context.draw(Text(Self.names[name] ?? name).font(WingtipType.tabBar.weight(name == entry ? .bold : .regular)).foregroundStyle(.secondary),
                              at: at(fx, fy, 92, deg))
             }
 
@@ -494,7 +496,7 @@ struct HoldDiagram: View {
             chevron.move(to: CGPoint(x: fx - 6, y: fy + len - 30)); chevron.addLine(to: CGPoint(x: fx, y: fy + len - 42)); chevron.addLine(to: CGPoint(x: fx + 6, y: fy + len - 30))
             context.stroke(chevron, with: .color(.primary.opacity(0.55)), lineWidth: 1.5)
             context.fill(Path(ellipseIn: CGRect(x: fx - 5, y: fy - 5, width: 10, height: 10)), with: .color(.primary))
-            context.draw(Text("Fix").font(.system(size: 12)), at: CGPoint(x: fx - side * 10, y: fy - 8), anchor: turns == "right" ? .trailing : .leading)
+            context.draw(Text("Fix").font(WingtipType.tabBar), at: CGPoint(x: fx - side * 10, y: fy - 8), anchor: turns == "right" ? .trailing : .leading)
 
             // The way in, dashed, with its arrowhead at the fix's end.
             let a = at(fx, fy, 128, from), b = at(fx, fy, 30, from)
@@ -526,11 +528,14 @@ struct HoldDiagram: View {
 /// says the expected altitude applies from there. It opens on a made-up
 /// route for the pilot's own.
 struct LostCommsSegmentsSections: View {
+    /// A segment's name as typed; its minimum is typed beside it.
+    struct Segment { var name: String }
+
     @Binding var leave: String?
-    @State private var segments: [LostCommsSegmentAsk] = [
-        LostCommsSegmentAsk(name: "Departure to SWEDE", minimumFt: 2600),
-        LostCommsSegmentAsk(name: "SWEDE to RAYMO", minimumFt: 5000),
-        LostCommsSegmentAsk(name: "RAYMO to the approach fix", minimumFt: 3400),
+    @State private var segments: [Segment] = [
+        Segment(name: "Departure to SWEDE"),
+        Segment(name: "SWEDE to RAYMO"),
+        Segment(name: "RAYMO to the approach fix"),
     ]
     @State private var minimums = ["2600", "5000", "3400"]
     @State private var assigned = "4000"
@@ -542,18 +547,17 @@ struct LostCommsSegmentsSections: View {
     @State private var answer: LostCommsAnswer?
     @State private var problem: String?
 
-    private var ask: LostCommsAsk {
-        LostCommsAsk(
-            segments: zip(segments, minimums).map { LostCommsSegmentAsk(name: $0.name, minimumFt: Self.feet($1)) },
+    private var ask: EngineContract.LostCommsInput {
+        EngineContract.LostCommsInput(
+            segments: zip(segments, minimums).map { .init(name: $0.name, minimumFt: Self.feet($1)) },
             assignedFt: Self.feet(assigned), expectedFt: Self.feet(expected), expectedFrom: expectedFrom,
-            approachFix: approachFix, efc: efc, eta: eta
-        )
+            approachFix: approachFix, efc: efc, eta: eta)
     }
 
     static func feet(_ text: String) -> Double? { Double(text.trimmingCharacters(in: .whitespaces)) }
 
     var body: some View {
-        Section("The clearance") {
+        Section("The Clearance") {
             LabeledContent("Assigned") {
                 TextField("", text: $assigned).keyboardType(.numberPad).multilineTextAlignment(.trailing).monospacedDigit().frame(width: 90)
             }
@@ -569,7 +573,9 @@ struct LostCommsSegmentsSections: View {
             try? await Task.sleep(for: .milliseconds(300))
             guard !Task.isCancelled else { return }
             do {
-                let found = try Engine.lostComms(ask)
+                let ask = ask
+                let found = try Engine.lostComms(segments: ask.segments, assignedFt: ask.assignedFt, expectedFt: ask.expectedFt,
+                                                 expectedFrom: ask.expectedFrom, approachFix: ask.approachFix, efc: ask.efc, eta: ask.eta)
                 answer = found
                 leave = found.leave
                 problem = nil
@@ -577,9 +583,9 @@ struct LostCommsSegmentsSections: View {
                 problem = error.localizedDescription
             }
         }
-        Section("The route's segments") {
+        Section("The Route's Segments") {
             ForEach(segments.indices, id: \.self) { i in
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                     HStack {
                         TextField("Segment", text: $segments[i].name)
                         TextField("", text: $minimums[i]).keyboardType(.numberPad).multilineTextAlignment(.trailing).monospacedDigit().frame(width: 80)
@@ -589,7 +595,7 @@ struct LostCommsSegmentsSections: View {
                         expectedFrom = i
                     } label: {
                         Text(answer?.segments.indices.contains(i) == true ? answer!.segments[i].words : "…")
-                            .foregroundStyle(i >= expectedFrom ? Color.primary : Color.accentColor)
+                            .foregroundStyle(i >= expectedFrom ? AnyShapeStyle(.primary) : AnyShapeStyle(.tint))
                     }
                     .buttonStyle(.borderless)
                 }
@@ -600,7 +606,7 @@ struct LostCommsSegmentsSections: View {
                 minimums.remove(atOffsets: at)
                 expectedFrom = max(0, min(expectedFrom, segments.count - 1))
             }
-            Button { segments.append(LostCommsSegmentAsk(name: "", minimumFt: nil)); minimums.append("") } label: {
+            Button { segments.append(Segment(name: "")); minimums.append("") } label: {
                 Label("Add a Segment", systemImage: "plus")
             }
             ProblemLine(problem)
@@ -609,7 +615,7 @@ struct LostCommsSegmentsSections: View {
 }
 
 #Preview("WithinMark") {
-    HStack(spacing: 12) {
+    HStack(spacing: WingtipSpace.md) {
         WithinMark(ok: true)
         WithinMark(ok: false)
     }

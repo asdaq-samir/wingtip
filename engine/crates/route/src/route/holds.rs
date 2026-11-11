@@ -110,7 +110,10 @@ pub fn read(text: &str) -> Option<Hold> {
     let s = normal(text);
     let mut parts = s.split(':');
     let (fix, inbound, turns, leg, length) = (parts.next()?, parts.next()?, parts.next()?, parts.next()?, parts.next()?);
-    if parts.next().is_some() || fix.is_empty() || !fix.bytes().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == b'/' || c == b'.') {
+    if parts.next().is_some()
+        || fix.is_empty()
+        || !fix.bytes().all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == b'/' || c == b'.')
+    {
         return None;
     }
     if !digits(inbound, 1, 3) {
@@ -172,13 +175,5 @@ pub fn held_minutes(leg: Leg, turns: Option<f64>, minutes: Option<f64>, tas_kt: 
     match minutes {
         Some(m) => m,
         None => turns.filter(|t| *t != 0.0).unwrap_or(1.0) * lap_minutes(leg, tas_kt),
-    }
-}
-
-/// A hold's minutes, as `held_minutes` has them, from its length.
-pub fn length_minutes(leg: Leg, length: Length, tas_kt: f64) -> f64 {
-    match length {
-        Length::Turns(n) => held_minutes(leg, Some(n as f64), None, tas_kt),
-        Length::Minutes(n) => held_minutes(leg, None, Some(n as f64), tas_kt),
     }
 }

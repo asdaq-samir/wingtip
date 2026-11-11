@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { slow, settle, openTab, openSection, openConsole } from "./helpers";
+import { NO_OWN_FIGURES } from "./airplaneMocks";
 
 /**
  * The Brief tab's Flight Plan: the FAA's form (FAA Form 7233-4) filled in
@@ -14,7 +15,10 @@ test("under VFR the flight plan flies direct, with no alternate, and says where 
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.addInitScript(() => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
-    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "vfr", waypoints: false } }));
+    localStorage.setItem(
+      "wingtip.preferences",
+      JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "vfr", waypoints: false } }),
+    );
   });
   await page.goto("/app/plan?dep=KMSN&dest=KOSH");
   await settle(page);
@@ -39,24 +43,62 @@ test("under VFR the flight plan flies direct, with no alternate, and says where 
   expect(text).toContain("Item 15  Route: DCT");
 });
 
-test("items 10 and 19 come from the airplane's page, the pilot's and the persons typed, and Open in 1800wxbrief copies the form", async ({ page, context }) => {
+test("items 10 and 19 come from the airplane's page, the pilot's and the persons typed, and Open in 1800wxbrief copies the form", async ({
+  page,
+  context,
+}) => {
   test.slow();
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   // The pilot's own airplane, with its flight plan's items, and the
   // pilot's name, number and home base.
-  await page.route(url => url.pathname === "/api/aircraft", route => route.fulfill({ json: [{
-    id: 5, tailNumber: "N12345", typeDesignator: "C172", cruiseTasKt: 110, fuelBurnGph: 8.5, cruisePowerPct: null,
-    climbTasKt: null, climbFuelBurnGph: null, usableFuelGal: 40, createdAt: "2026-10-01T00:00:00Z", vorCheck: null,
-    inspections: {}, openSquawks: [], equipment: "SDFGRY", surveillance: "B1", colour: "White blue stripes",
-  }] }));
-  await page.route(url => url.pathname === "/api/me", async route => {
-    const me = await (await route.fetch()).json() as Record<string, unknown>;
-    await route.fulfill({ json: { ...me, fullName: "Avery B. Pilot", phone: "608-555-0100", homeBase: "KMSN" } });
-  });
+  await page.route(
+    (url) => url.pathname === "/api/aircraft",
+    (route) =>
+      route.fulfill({
+        json: [
+          {
+            id: 5,
+            tailNumber: "N12345",
+            typeDesignator: "C172",
+            figures: NO_OWN_FIGURES,
+            cruiseTasKt: 110,
+            fuelBurnGph: 8.5,
+            cruisePowerPct: null,
+            climbTasKt: null,
+            climbFuelBurnGph: null,
+            usableFuelGal: 40,
+            createdAt: "2026-10-01T00:00:00Z",
+            vorCheck: null,
+            inspections: {},
+            openSquawks: [],
+            equipment: "SDFGRY",
+            surveillance: "B1",
+            colour: "White blue stripes",
+          },
+        ],
+      }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/me",
+    async (route) => {
+      const me = (await (await route.fetch()).json()) as Record<string, unknown>;
+      await route.fulfill({ json: { ...me, fullName: "Avery B. Pilot", phone: "608-555-0100", homeBase: "KMSN" } });
+    },
+  );
   await page.addInitScript(() => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
-    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "vfr", waypoints: false,
-      aircraft: { profile: "c172", label: "N12345 · C172", aircraftId: 5, cruiseTasKt: 110, fuelBurnGph: 8.5, usableFuelGal: 40 } } }));
+    localStorage.setItem(
+      "wingtip.preferences",
+      JSON.stringify({
+        ...kept,
+        state: {
+          ...kept.state,
+          flightRules: "vfr",
+          waypoints: false,
+          aircraft: { profile: "c172", label: "N12345 · C172", aircraftId: 5, cruiseTasKt: 110, fuelBurnGph: 8.5, usableFuelGal: 40 },
+        },
+      }),
+    );
   });
   await page.goto("/app/plan?dep=KMSN&dest=KOSH");
   await settle(page);
@@ -75,11 +117,14 @@ test("items 10 and 19 come from the airplane's page, the pilot's and the persons
   await persons.fill("2");
   // The form copied as the site opens in a new tab, to paste in: the
   // FAA's site answered here, not asked.
-  await context.route(url => url.hostname === "www.1800wxbrief.com", route => route.fulfill({ contentType: "text/html", body: "<title>1800wxbrief</title>" }));
+  await context.route(
+    (url) => url.hostname === "www.1800wxbrief.com",
+    (route) => route.fulfill({ contentType: "text/html", body: "<title>1800wxbrief</title>" }),
+  );
   const opened = context.waitForEvent("page");
   await form.getByTestId("flight-plan-open-wx").click();
   const wx = await opened;
-  await wx.waitForURL(url => url.hostname === "www.1800wxbrief.com");
+  await wx.waitForURL((url) => url.hostname === "www.1800wxbrief.com");
   await wx.close();
   await expect(form.getByTestId("flight-plan-open-wx")).toContainText("Copied");
   const text = await page.evaluate(() => navigator.clipboard.readText());
@@ -93,15 +138,31 @@ test("items 10 and 19 come from the airplane's page, the pilot's and the persons
 test("where Flight Service is connected, the form is filed from here in the pilot's name", async ({ page }) => {
   test.slow();
   const filed: Record<string, unknown>[] = [];
-  await page.route(url => url.pathname === "/api/flight-service", route => route.fulfill({ json: { connected: true, provider: "test" } }));
-  await page.route(url => url.pathname === "/api/flight-service/flight-plans", async route => {
-    filed.push(route.request().postDataJSON() as Record<string, unknown>);
-    await route.fulfill({ status: 201, json: { reference: "FP-123" } });
-  });
+  await page.route(
+    (url) => url.pathname === "/api/flight-service",
+    (route) => route.fulfill({ json: { connected: true, provider: "test" } }),
+  );
+  await page.route(
+    (url) => url.pathname === "/api/flight-service/flight-plans",
+    async (route) => {
+      filed.push(route.request().postDataJSON() as Record<string, unknown>);
+      await route.fulfill({ status: 201, json: { reference: "FP-123" } });
+    },
+  );
   await page.addInitScript(() => {
     const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":0}');
-    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, flightRules: "vfr", waypoints: false,
-      aircraft: { profile: "c172", label: "N12345 · C172", aircraftId: 5, cruiseTasKt: 110, fuelBurnGph: 8.5, usableFuelGal: 40 } } }));
+    localStorage.setItem(
+      "wingtip.preferences",
+      JSON.stringify({
+        ...kept,
+        state: {
+          ...kept.state,
+          flightRules: "vfr",
+          waypoints: false,
+          aircraft: { profile: "c172", label: "N12345 · C172", aircraftId: 5, cruiseTasKt: 110, fuelBurnGph: 8.5, usableFuelGal: 40 },
+        },
+      }),
+    );
   });
   const depart = new Date(Math.ceil(Date.now() / 3600_000 + 3) * 3600_000).toISOString();
   await page.goto(`/app/plan?dep=KMSN&dest=KOSH&depart=${encodeURIComponent(depart)}`);
@@ -118,33 +179,43 @@ test("where Flight Service is connected, the form is filed from here in the pilo
   expect(filed[0]).toMatchObject({ rules: "VFR", aircraftId: "N12345", aircraftType: "C172/L", departure: "KMSN", destination: "KOSH" });
 });
 
-test("the pilot's number and home base are set in Setup's Pilot details, and a wrong one is said under its label", { tag: "@smoke" }, async ({ page }) => {
-  const sent: Record<string, unknown>[] = [];
-  await page.route(url => url.pathname === "/api/me/contact", async route => {
-    const body = route.request().postDataJSON() as { phone: string; homeBase: string };
-    sent.push(body);
-    const me = await (await page.request.get("/api/me")).json() as Record<string, unknown>;
-    await route.fulfill({ json: { ...me, phone: body.phone || null, homeBase: body.homeBase.toUpperCase() || null } });
-  });
-  // Neither set yet, whatever the shared developer account kept: with the
-  // same number and base already its own, nothing was sent at all.
-  await page.route(url => url.pathname === "/api/me", async route => {
-    const me = await (await route.fetch()).json() as Record<string, unknown>;
-    await route.fulfill({ json: { ...me, phone: null, homeBase: null } });
-  });
-  await page.goto("/app/plan");
-  await settle(page);
-  await openConsole(page);
-  const setup = page.getByTestId("console-sheet").getByTestId("setup-page");
-  await setup.getByTestId("pilot-row").click();
-  const details = page.getByRole("region", { name: "Pilot details" });
-  await details.getByTestId("pilot-phone").fill("call me");
-  await expect(details.getByText("Figures, spaces and + ( ) - . only")).toBeVisible();
-  await details.getByTestId("pilot-phone").fill("608-555-0100");
-  await details.getByTestId("pilot-home-base").fill("kmsn");
-  await details.getByTestId("pilot-phone").focus();
-  await expect.poll(() => sent.at(-1)).toEqual({ phone: "608-555-0100", homeBase: "kmsn" });
-  // A save still on its way as the test ends (a field left as the page
-  // closes) reads /api/me with the page gone.
-  await page.unrouteAll({ behavior: "ignoreErrors" });
-});
+test(
+  "the pilot's number and home base are set in Setup's Pilot details, and a wrong one is said under its label",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    const sent: Record<string, unknown>[] = [];
+    await page.route(
+      (url) => url.pathname === "/api/me/contact",
+      async (route) => {
+        const body = route.request().postDataJSON() as { phone: string; homeBase: string };
+        sent.push(body);
+        const me = (await (await page.request.get("/api/me")).json()) as Record<string, unknown>;
+        await route.fulfill({ json: { ...me, phone: body.phone || null, homeBase: body.homeBase.toUpperCase() || null } });
+      },
+    );
+    // Neither set yet, whatever the shared developer account kept: with the
+    // same number and base already its own, nothing was sent at all.
+    await page.route(
+      (url) => url.pathname === "/api/me",
+      async (route) => {
+        const me = (await (await route.fetch()).json()) as Record<string, unknown>;
+        await route.fulfill({ json: { ...me, phone: null, homeBase: null } });
+      },
+    );
+    await page.goto("/app/plan");
+    await settle(page);
+    await openConsole(page);
+    const setup = page.getByTestId("console-sheet").getByTestId("setup-page");
+    await setup.getByTestId("pilot-row").click();
+    const details = page.getByRole("region", { name: "Pilot details" });
+    await details.getByTestId("pilot-phone").fill("call me");
+    await expect(details.getByText("Figures, spaces and + ( ) - . only")).toBeVisible();
+    await details.getByTestId("pilot-phone").fill("608-555-0100");
+    await details.getByTestId("pilot-home-base").fill("kmsn");
+    await details.getByTestId("pilot-phone").focus();
+    await expect.poll(() => sent.at(-1)).toEqual({ phone: "608-555-0100", homeBase: "kmsn" });
+    // A save still on its way as the test ends (a field left as the page
+    // closes) reads /api/me with the page gone.
+    await page.unrouteAll({ behavior: "ignoreErrors" });
+  },
+);

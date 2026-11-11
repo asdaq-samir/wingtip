@@ -22,7 +22,7 @@ test("Delete account asks, then deletes the account and everything in it, and si
   // Signed in once the server says so; then an airplane of theirs, saved
   // through the app's own endpoint with the session's CSRF token.
   await expect.poll(async () => (await page.request.get("/api/me")).status()).toBe(200);
-  const xsrf = (await page.context().cookies()).find(c => c.name === "XSRF-TOKEN")?.value ?? "";
+  const xsrf = (await page.context().cookies()).find((c) => c.name === "XSRF-TOKEN")?.value ?? "";
   const added = await page.request.post("/api/aircraft", {
     headers: { "X-XSRF-TOKEN": decodeURIComponent(xsrf) },
     data: { tailNumber: "N12345", typeDesignator: "C172", cruiseTasKt: 110, fuelBurnGph: 8 },
@@ -39,7 +39,10 @@ test("Delete account asks, then deletes the account and everything in it, and si
   await page.getByTestId("delete-account").click();
   // Asked first: Cancel keeps it -- on a phone the sheet's close, in its
   // title row.
-  await page.getByRole("alertdialog").getByRole("button", { name: /^(Cancel|Close)$/ }).click();
+  await page
+    .getByRole("alertdialog")
+    .getByRole("button", { name: /^(Cancel|Close)$/ })
+    .click();
   expect((await page.request.get("/api/me")).status()).toBe(200);
 
   await console.getByTestId("role-menu").click();

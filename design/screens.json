@@ -1,0 +1,47 @@
+{
+  "$description": "Wingtip Maps' screens and the one link that opens each, the source for the web, iOS and Android (docs/navigation.md). A link is the web app's own address, https://<host>/app/plan?open=<id>, with the plan's own keys beside it (dep, dest, stops, place, flight); the phones take the same address as a universal link or App Link, and as wingtipmaps://plan?open=<id> from another app. scripts/build/screens.sh generates apps/web/src/lib/navigation/generated/screens.ts, apps/ios/Wingtip/Navigation/Generated/Screens.swift, apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/Screens.kt and docs/navigation.md's table of links from it; CI generates them again and fails on a difference. Each app opens a screen it has in one exhaustive switch over the generated list, so a screen added here fails each app's build until that app opens it. Add a screen here, never in a generated file. A screen's \"shortcut\" is its place among Android's app shortcuts (res/xml/shortcuts.xml) and the web app manifest's shortcuts (apps/web/src/lib/navigation/generated/manifest-shortcuts.json): the launcher's long press shows the first four, and Google's assistant opens each by its title (App Actions, OPEN_APP_FEATURE); a screen that needs something to open with has none. Its \"shortLabel\" is the launcher's short label where the title is over ten characters (the long label is the title, 25 at most).",
+  "link": {
+    "path": "/app/plan",
+    "key": "open",
+    "scheme": "wingtipmaps",
+    "schemeHost": "plan"
+  },
+  "params": [
+    { "key": "dep", "about": "The route's departure, an ident." },
+    { "key": "dest", "about": "The route's destination, an ident." },
+    { "key": "stops", "about": "The points between, idents comma-separated." },
+    { "key": "place", "about": "A field's card, by its ident." },
+    { "key": "flight", "about": "An airplane tracked, by its ICAO address (six hex digits)." },
+    { "key": "airplane", "about": "An airplane's profile, by its N-number." },
+    { "key": "altitude_ft", "about": "A shared plan's cruise altitude, feet MSL." },
+    { "key": "depart", "about": "A shared plan's departure time, an ISO 8601 instant in UTC; none for about now." },
+    { "key": "type", "about": "A shared plan's airplane type, its designator (C172); shown, never assumed: the receiver flies their own." },
+    { "key": "rules", "about": "A shared plan's flight rules, vfr or ifr." },
+    { "key": "tail", "about": "A shared plan's N-number, only where its pilot chose to send it." },
+    { "key": "share", "about": "A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it." }
+  ],
+  "screens": [
+    { "id": "fpl", "title": "FPL", "about": "The plan: the route, its altitude and its figures, the sheet's main content under the one search.", "platforms": ["web", "ios", "android"], "shortcut": 6 },
+    { "id": "airport", "title": "Airport", "about": "The one search with nothing typed: the flight, favorites, recents, nearest.", "platforms": ["web", "ios", "android"], "shortcut": 7 },
+    { "id": "airplane", "title": "Airplane", "about": "The airplane picked's profile, or the traffic about where none is picked.", "platforms": ["web", "ios", "android"], "shortcut": 8 },
+    { "id": "setup", "title": "Setup", "about": "The account and settings page, the account button's.", "platforms": ["web", "ios", "android"], "shortcut": 15 },
+    { "id": "brief", "title": "Brief", "about": "The route's Brief and its Go / No-Go (needs a route).", "platforms": ["web", "ios", "android"], "shortcut": 1 },
+    { "id": "navlog", "title": "Nav Log", "about": "The nav log, leg by leg (needs a route). On Android the plan's Nav Log button opens it.", "platforms": ["web", "ios", "android"], "shortcut": 5 },
+    { "id": "profile", "title": "Profile", "about": "The route's side view and its altitudes (needs a route).", "platforms": ["web", "ios"] },
+    { "id": "flights", "title": "Saved Flights", "about": "The pilot's saved flights.", "platforms": ["web", "ios"] },
+    { "id": "favorites", "title": "Favorites", "about": "The pilot's favorite airports.", "platforms": ["web", "ios"] },
+    { "id": "nearest", "title": "Nearest", "about": "The fields nearest the airplane.", "platforms": ["web", "ios", "android"], "shortcut": 2 },
+    { "id": "ask", "title": "Ask", "about": "Ask the assistant about the flight.", "platforms": ["ios", "android"], "shortcut": 4 },
+    { "id": "emergency", "title": "Emergency Assistant", "about": "The emergency assistant: the nearest fields, the checklist, 7700 and 121.5.", "platforms": ["web", "ios", "android"], "shortcut": 3, "shortLabel": "Emergency" },
+    { "id": "checklists", "title": "Checklists", "about": "The picked airplane's checklists.", "platforms": ["web", "ios", "android"], "shortcut": 10 },
+    { "id": "airplanes", "title": "Your Airplanes", "about": "The pilot's own airplanes, their figures, checklists and squawks.", "platforms": ["web", "ios"] },
+    { "id": "logbook", "title": "Logbook", "about": "The pilot's logbook and currency.", "platforms": ["web", "ios", "android"], "shortcut": 9 },
+    { "id": "coach", "title": "Coach", "about": "The training coach.", "platforms": ["web", "ios", "android"], "shortcut": 11 },
+    { "id": "minimums", "title": "Personal Minimums", "about": "The weather the pilot will not take off or land in.", "platforms": ["web", "ios", "android"], "shortcut": 12, "shortLabel": "Minimums" },
+    { "id": "guide", "title": "Guide", "about": "How the app works, and the practice drills.", "platforms": ["web", "ios"] },
+    { "id": "downloads", "title": "Downloads", "about": "Charts kept for flying with no signal.", "platforms": ["ios", "android"], "shortcut": 13 },
+    { "id": "passengers", "title": "Passenger Briefing", "about": "The passenger briefing.", "platforms": ["ios", "android"], "shortcut": 14, "shortLabel": "Passengers" },
+    { "id": "shared", "title": "Shared Flight", "about": "A flight another pilot sent: its plan shown first, with Use This Plan and Not Now, the receiver's own plan kept until they choose. Its keys are the plan's (dep, dest, stops, altitude_ft, depart, type, rules, tail) or a saved flight's share.", "platforms": ["web", "ios", "android"] },
+    { "id": "about", "title": "About", "about": "The build, the data's cycles, the credits and the legal pages.", "platforms": ["web", "ios", "android"] }
+  ]
+}

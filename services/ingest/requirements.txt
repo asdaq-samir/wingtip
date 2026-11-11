@@ -1,0 +1,5 @@
+# ingest's own list, on top of wingtip's, which its base image
+# (services/Dockerfile.base) installs from services/planner/requirements-wingtip.txt.
+# Pinned to what python:3.15-slim resolves; moved on in each wave's end
+# pass, with Dependabot's alerts flagging an advisory between them.
+solace-pubsubplus==1.12.0   # ingest.swim: the FAA's SWIM feeds (Solace's broker), where SWIM_* are set

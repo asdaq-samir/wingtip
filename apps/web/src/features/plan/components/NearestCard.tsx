@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { LocateFixed, MapPin, Navigation2 } from "lucide-react";
 import { cn } from "cn";
+import { Badge } from "../../../components/ui/badge";
 import { ListPageHead } from "../../../components/Favorites";
 import { PanelCard } from "../../../components/PanelCard";
 import QueryState from "../../../components/QueryState";
@@ -11,15 +12,17 @@ import type { NearestAirport, PlaceFound } from "../../../lib/api/types";
 import { compassPoint, saidPoint } from "../../../lib/compass";
 import { nmAway, nmFigure } from "../../../lib/useAway";
 import { mhzText } from "../../../lib/frequencies";
-import { colourOf } from "../../../lib/map/flightCategory";
-import { glideRangeNm, reachesField } from "../../../lib/map/glide";
-import { airportMarkSvg } from "../../../lib/map/airportMark";
-import { positionNow, useOwnShip, useOwnFix } from "../../../lib/map/ownShip";
+import { chipFillOf, colourOf } from "../../../lib/map/marks/flightCategory";
+import { glideRangeNm, reachesField, underway } from "../../../lib/map/position/glide";
+import { useGlideRatio } from "../../../lib/map/position/useGlideRatio";
+import { AskFigure } from "../../../components/airplane/AskFigure";
+import { airportMarkSvg } from "../../../lib/map/marks/airportMark";
+import { positionNow, useOwnShip, useOwnFixShown } from "../../../lib/map/position/ownShip";
 import { nearestQuery } from "../../../lib/queryClient";
 import { inkOn } from "../../../lib/scoreScale";
 import { TEXT } from "../../../lib/text";
-import { useTabSearch } from "../../../lib/tabSearch";
-import { altFt } from "../../../lib/units";
+import { useTabSearch } from "../lib/tabSearch";
+import { altFt } from "../../../lib/format";
 import { FINDING_TONE } from "../../../lib/findings";
 
 export interface NearFrom {
@@ -36,24 +39,39 @@ const TYPING_MS = 250;
  * Where Nearest is from: the pilot's position until a place is typed --
  * a town, a street address, an airport -- at the pilot's ask, as Maps'
  * search asks where. Typed in Nearest's field, in the panel's head
- * (PlanWorkspace, lib/tabSearch), which reads "Current position" until
+ * (PlanWorkspace, features/plan/lib/tabSearch), which reads "Current position" until
  * then; what answers comes up here, at the top of the list, and the
  * field's clear goes back to the position.
  */
 function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: NearFrom | null) => void }) {
-  const typed = useTabSearch(s => s.near);
+  const typed = useTabSearch((s) => s.near);
   const [asked, setAsked] = useState("");
   // The field shows the place picked, as it did when it was this card's.
+  // Not emptied as the card first comes up with no place: the field is in
+  // the panel's head, there before the card, and what was typed into it
+  // in that moment was wiped (nearest.spec's smoke test, on a fast stack).
+  const shownFrom = useRef<string | null | undefined>(undefined);
   useEffect(() => {
-    useTabSearch.setState({ near: from?.label ?? "" });
+    const label = from?.label ?? null;
+    const first = shownFrom.current === undefined;
+    shownFrom.current = label;
+    if (first && label === null) return;
+    useTabSearch.setState({ near: label ?? "" });
   }, [from?.label]);
   useEffect(() => {
     const later = window.setTimeout(() => setAsked(typed.trim()), TYPING_MS);
     return () => window.clearTimeout(later);
   }, [typed]);
   const searching = asked.length >= 2 && asked !== from?.label && typed.trim() !== from?.label;
-  const { data: answered, isFetching, isError } = useQuery({
-    queryKey: ["places", asked], queryFn: () => api.placesSearch(asked), enabled: searching, staleTime: 60 * 60_000,
+  const {
+    data: answered,
+    isFetching,
+    isError,
+  } = useQuery({
+    queryKey: ["places", asked],
+    queryFn: () => api.placesSearch(asked),
+    enabled: searching,
+    staleTime: 60 * 60_000,
     meta: { silent: true },
   });
   // What answers belongs to what was asked, which trails what is typed by
@@ -69,41 +87,45 @@ function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: N
   // Return in the field: the first that answers. The clear: the position.
   const first = found?.[0];
   useEffect(() => {
-    useTabSearch.setState({ submitNear: () => { if (first) pick(first); }, clearNear: () => pick(null) });
+    useTabSearch.setState({
+      submitNear: () => {
+        if (first) pick(first);
+      },
+      clearNear: () => pick(null),
+    });
   });
   useEffect(() => () => useTabSearch.setState({ submitNear: null, clearNear: null }), []);
   if (!searching) return null;
   return (
     <div className="pb-4">
       <ListGroup>
-        {(found ?? []).map(place => (
+        {(found ?? []).map((place) => (
           <ListRow
-            key={`${place.kind}-${place.label}`} media={<MapPin className="size-5 text-muted-foreground" />}
-            title={place.label} description={place.kind === "airport" ? "Airport" : place.kind === "town" ? "Town" : "Address"}
-            onClick={() => pick(place)} data-testid="nearest-from-option"
+            key={`${place.kind}-${place.label}`}
+            media={<MapPin className="size-5 text-muted-foreground" />}
+            title={place.label}
+            description={place.kind === "airport" ? "Airport" : place.kind === "town" ? "Town" : "Address"}
+            onClick={() => pick(place)}
+            data-testid="nearest-from-option"
           />
         ))}
-        {found && !found.length && !isFetching && (
-          <ListRow muted title="Nothing by that name" />
+        {found && !found.length && !isFetching && <ListRow muted title="Nothing by that name" />}
+        {current && isError && <ListRow title={<span className={cn("text-destructive", TEXT.detail)}>Couldn't search. Try again.</span>} />}
+        {!found && !(current && isError) && (
+          <ListRow title={<span className={cn("text-muted-foreground", TEXT.detail)}>Fetching {typed.trim()}…</span>} />
         )}
-        {current && isError && (
-          <ListRow title={<span className={cn("text-destructive", TEXT.detail)}>Couldn't search. Try again.</span>} />
-        )}
-        {!found && !(current && isError) && <ListRow title={<span className={cn("text-muted-foreground", TEXT.detail)}>Fetching {typed.trim()}…</span>} />}
         {from && (
           <ListRow
-            media={<LocateFixed className="size-5 text-tint" />} title="Current position"
-            onClick={() => pick(null)} data-testid="nearest-from-position"
+            media={<LocateFixed className="size-5 text-tint" />}
+            title="Current position"
+            onClick={() => pick(null)}
+            data-testid="nearest-from-position"
           />
         )}
       </ListGroup>
     </div>
   );
 }
-
-/** Faster than this over the ground, the airplane is going somewhere and
- *  its GPS track is steady enough to point the rows' arrows from. */
-const MOVING_KT = 30;
 
 /**
  * One field of Nearest's, at the pilot's ask for a list that reads as an
@@ -114,7 +136,12 @@ const MOVING_KT = 30;
  * compass point. A row that opens the field's card, so its words are the
  * text's and it ends in a chevron, as iOS's do.
  */
-function NearestRow({ field, ahead, reach, onOpen }: {
+function NearestRow({
+  field,
+  ahead,
+  reach,
+  onOpen,
+}: {
   field: NearestAirport;
   /** The airplane's track, true, when it is moving; else null. */
   ahead: number | null;
@@ -135,31 +162,52 @@ function NearestRow({ field, ahead, reach, onOpen }: {
   const point = compassPoint(field.bearing_deg);
   return (
     <ListRow
-      media={<span className="block size-[26px]" dangerouslySetInnerHTML={{ __html: airportMarkSvg(field.airspace_class ?? null, colourOf(category), use, "overflow-visible") }} />}
-      title={<span className="line-clamp-2"><span className="font-semibold">{field.ident}</span> {field.name}</span>}
+      media={
+        <span
+          className="block size-[26px]"
+          dangerouslySetInnerHTML={{ __html: airportMarkSvg(field.airspace_class ?? null, colourOf(category), use, "overflow-visible") }}
+        />
+      }
+      title={
+        <span className="line-clamp-2">
+          <span className="font-semibold">{field.ident}</span> {field.name}
+        </span>
+      }
       // One run of words, the weather's chip at its head, wrapping between
       // its parts and never inside one ("TWR 123.675" kept whole).
       description={
         <>
           {category && (
-            <span
-              className={cn("mr-1.5 inline-block rounded-[5px] px-1.5 align-[0.05em] font-bold tracking-wide", TEXT.note)}
-              style={{ backgroundColor: colourOf(category), color: inkOn(colourOf(category)) }}
+            <Badge
+              className={cn("mr-1.5 h-auto rounded-sm px-1.5 align-[0.05em] font-bold tracking-wide", TEXT.note)}
+              style={{ backgroundColor: chipFillOf(category), color: inkOn(chipFillOf(category)) }}
             >
               {category}
-            </span>
+            </Badge>
           )}
           {parts.map((part, i) => (
-            <span key={part}>{i > 0 && " · "}<span className="whitespace-nowrap">{part}</span></span>
+            <span key={part}>
+              {i > 0 && " · "}
+              <span className="whitespace-nowrap">{part}</span>
+            </span>
           ))}
-          {reach && <>{parts.length > 0 && " · "}<span className={cn("font-semibold whitespace-nowrap", FINDING_TONE.ok)}>within glide</span></>}
+          {reach && (
+            <>
+              {parts.length > 0 && " · "}
+              <span className={cn("font-semibold whitespace-nowrap", FINDING_TONE.ok)}>within glide</span>
+            </>
+          )}
         </>
       }
-      chevron onClick={onOpen} data-testid="nearest-airport"
+      chevron
+      onClick={onOpen}
+      data-testid="nearest-airport"
     >
       <span className="flex items-center gap-2">
         <Navigation2
-          aria-hidden="true" strokeWidth={0} data-testid="nearest-arrow"
+          aria-hidden="true"
+          strokeWidth={0}
+          data-testid="nearest-arrow"
           className="size-5 shrink-0 fill-current text-foreground"
           style={{ transform: `rotate(${field.bearing_deg - (ahead ?? 0)}deg)` }}
         />
@@ -170,7 +218,9 @@ function NearestRow({ field, ahead, reach, onOpen }: {
           <span className={cn("font-semibold text-foreground tabular-nums", TEXT.row)}>{nmAway(field.distance_nm)}</span>
           <span className={cn("text-muted-foreground", TEXT.note)}>{point}</span>
         </span>
-        <span className="sr-only">{nmFigure(field.distance_nm)} nautical miles, true bearing {saidPoint(point)}</span>
+        <span className="sr-only">
+          {nmFigure(field.distance_nm)} nautical miles, true bearing {saidPoint(point)}
+        </span>
       </span>
     </ListRow>
   );
@@ -182,12 +232,17 @@ function NearestRow({ field, ahead, reach, onOpen }: {
  * where it was a sheet of its own over the panel: the ten fields nearest
  * own ship, how far and which way, the longest runway, and -- in the
  * air, with the GPS's altitude -- which are within a still-air glide
- * (lib/map/glide), the ring the map draws round own ship. Or nearest a
+ * (lib/map/position/glide), the ring the map draws round own ship. Or nearest a
  * place typed in its field (NearField), at the pilot's ask: a town, an
  * address, an airport. A tap on one opens its card over this one, and
  * its close comes back here. With no position yet, it offers to show it.
  */
-export default function NearestCard({ onOpen, from, onFrom, onBack }: {
+export default function NearestCard({
+  onOpen,
+  from,
+  onFrom,
+  onBack,
+}: {
   onOpen: (ident: string) => void;
   /** Back to Airport's start: the list put away, as every list in full has
    *  its Back (ListPageHead), where this one had no way out but a tab. */
@@ -196,9 +251,9 @@ export default function NearestCard({ onOpen, from, onFrom, onBack }: {
   from: NearFrom | null;
   onFrom: (from: NearFrom | null) => void;
 }) {
-  const enabled = useOwnShip(s => s.enabled);
-  const setEnabled = useOwnShip(s => s.setEnabled);
-  const fix = useOwnFix();
+  const enabled = useOwnShip((s) => s.enabled);
+  const setEnabled = useOwnShip((s) => s.setEnabled);
+  const fix = useOwnFixShown();
   const origin = from ?? fix;
   const nearestAsked = useQuery({ ...nearestQuery(origin?.lat ?? 0, origin?.lon ?? 0), enabled: !!origin });
   const data = nearestAsked.data;
@@ -209,10 +264,14 @@ export default function NearestCard({ onOpen, from, onFrom, onBack }: {
     void positionNow(0);
   }, []);
   // A glide only from where the airplane is, with its altitude.
-  const glide = !from && fix ? glideRangeNm(fix, data?.[0]?.elevation_ft) : null;
+  // At the picked airplane's own glide ratio; none, no glide said.
+  const ratio = useGlideRatio();
+  const glide = !from && fix ? glideRangeNm(fix, data?.[0]?.elevation_ft, ratio) : null;
   // The arrows from the airplane's track, where it is moving and the list
   // is from where it is.
-  const ahead = !from && fix?.headingDeg != null && (fix.speedKt ?? 0) >= MOVING_KT ? fix.headingDeg : null;
+  // Underway (the engine's, its flying speed): the GPS track is steady
+  // enough to point the rows' arrows from.
+  const ahead = !from && fix?.headingDeg != null && underway(fix) ? fix.headingDeg : null;
   return (
     <PanelCard testId="nearest-card">
       <ListPageHead title="Nearest" backLabel="Back to the search" onBack={onBack} testId="nearest-page" />
@@ -220,9 +279,11 @@ export default function NearestCard({ onOpen, from, onFrom, onBack }: {
       <div className="pt-1">
         {!origin ? (
           <ListGroup>
-            {enabled
-              ? <ListRow muted title="Finding your position…" />
-              : <ListRow title="Show my position" onClick={() => setEnabled(true)} data-testid="nearest-show-position" />}
+            {enabled ? (
+              <ListRow muted title="Finding your position…" />
+            ) : (
+              <ListRow title="Show my position" onClick={() => setEnabled(true)} data-testid="nearest-show-position" />
+            )}
           </ListGroup>
         ) : (
           <ListGroup
@@ -236,14 +297,30 @@ export default function NearestCard({ onOpen, from, onFrom, onBack }: {
             // listed tower, CTAF or UNICOM frequency.
             title={from ? `Near ${from.label}` : glide != null ? `Within a glide: about ${Math.round(glide)} nm` : "Nearest to you"}
           >
-            {(data ?? []).map(a => (
-              <NearestRow key={a.ident} field={a} ahead={ahead} reach={!from && reachesField(fix, a)} onOpen={() => onOpen(a.ident)} />
+            {(data ?? []).map((a) => (
+              <NearestRow
+                key={a.ident}
+                field={a}
+                ahead={ahead}
+                reach={!from && reachesField(fix, a, ratio)}
+                onOpen={() => onOpen(a.ident)}
+              />
             ))}
             {/* Where they could not be found, said with Try again, where the
                 list stayed on "Looking…" (QueryState). */}
-            {!data && <QueryState row query={nearestAsked} fetching="Fetching the nearest fields…" failed="The nearest fields could not be found." />}
+            {!data && (
+              <QueryState
+                row
+                query={nearestAsked}
+                fetching="Fetching the nearest fields…"
+                failed="The nearest fields could not be found."
+              />
+            )}
           </ListGroup>
         )}
+        {/* In the air with an airplane of no glide ratio: asked for in
+            place, the fields listed nearest first meanwhile (AskFigure). */}
+        {!from && ratio == null && underway(fix) && <AskFigure figure="glide" what="The glide" testId="nearest-glide-ask" />}
       </div>
     </PanelCard>
   );

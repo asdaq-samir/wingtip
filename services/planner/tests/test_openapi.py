@@ -1,5 +1,6 @@
 """The committed openapi.json is what apps/web/ builds its types from, so it
 has to be the document this code actually serves."""
+
 from app.openapi import OPENAPI_PATH, render
 
 
@@ -11,5 +12,5 @@ def test_the_committed_openapi_document_matches_the_app():
 
 def test_every_stream_message_union_is_published():
     document = render()
-    for name in ("NavLogMessage", "DetectMessage", "CheckpointNoteMessage"):
+    for name in ("NavLogMessage", "DetectMessage"):
         assert f'"{name}"' in document

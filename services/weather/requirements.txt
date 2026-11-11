@@ -1,0 +1,6 @@
+# The weather service: what it needs on top of wingtip's own list
+# (services/planner/requirements-wingtip.txt, installed by the base image,
+# services/Dockerfile.base), which brings requests, numpy, cachetools,
+# pydantic-settings and the engine's wheel. Pinned to what python:3.15-slim
+# resolves; moved on in each wave's end pass.
+gribberish==1.9.0   # app.gfs and app.glmp read the GFS's and GLMP's GRIB2, complex packing included (MIT; 2 MB, where eccodes is 100)

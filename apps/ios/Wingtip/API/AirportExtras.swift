@@ -1,11 +1,9 @@
 import Foundation
 
 // The planner's answers an airport's card and the map read beyond the
-// card itself (services/planner/openapi.json, app.schemas), as Codable by
-// hand in the document's own names, as Models.swift has them; those
-// generated from the document (Generated/PlannerModels.swift) are
-// typealiases here. A property the document may leave out or send as
-// null is optional.
+// card itself, generated from services/planner/openapi.json
+// (Generated/PlannerModels.swift): the names the app uses are typealiases
+// here, with what it adds as extensions.
 
 /// The nearest station's report, for a field with none of its own
 /// (NearbyMetar, wingtip.weather.nearest_report): within 30 nm, `near` where
@@ -30,31 +28,14 @@ typealias RunwayEnd = APIRunwayEnd
 /// The pictures behind the card's diagram (AirportPhotos): the USGS's
 /// aerial of every field, and a free photo from the ground where
 /// Wikipedia has one, with its photographer and licence.
-struct GroundPhoto: Codable, Equatable, Sendable {
-    let url: String
-    let credit: String
-    var width: Int?
-    var height: Int?
-    var license: String?
-}
-
-struct AirportPhotos: Codable, Equatable, Sendable {
-    let aerialUrl: String
-    var photo: GroundPhoto?
-}
+typealias GroundPhoto = APIGroundPhoto
+typealias AirportPhotos = APIAirportPhotos
 
 /// A place to eat, sleep or hire a car near a field (NearbyPlace,
 /// Overture Maps via wingtip.nearby).
-struct NearbyPlace: Codable, Equatable, Sendable, Identifiable {
-    let name: String
-    let kind: String
-    let lat: Double
-    let lon: Double
-    let distanceM: Int
-    var walkMin: Int?
-    var phone: String?
-    var website: String?
+typealias NearbyPlace = APINearbyPlace
 
+extension NearbyPlace: Identifiable {
     var id: String { "\(name)-\(lat)-\(lon)" }
 }
 
@@ -62,173 +43,71 @@ struct NearbyPlace: Codable, Equatable, Sendable, Identifiable {
 /// its Chart Supplement entry the fuel, fees, parking, repair and oxygen,
 /// and from Overture the places within five miles. `nearbyUnavailable`
 /// where Overture could not be read, which is not the same as nothing near.
-struct AirportServices: Codable, Equatable, Sendable {
-    let ident: String
-    var fuelTypes: [String]?
-    var fuelNotes: [String]?
-    var groundNotes: [String]?
-    var courtesyCar: Bool?
-    var tieDown: Bool?
-    var hangar: Bool?
-    var oxygen: Bool?
-    var landingFee: Bool?
-    var airframeRepair: String?
-    var powerplantRepair: String?
-    var food: [NearbyPlace]?
-    var lodging: [NearbyPlace]?
-    var cars: [NearbyPlace]?
-    var nearbyUnavailable: Bool?
-}
+typealias AirportServices = APIAirportServices
 
 /// 91.155's VFR weather minimums for a band, by day or by night
 /// (VfrMinimums), as the planner reads them for the class and height.
-struct VfrMinimums: Codable, Equatable, Sendable {
-    let visibilitySm: Double
-    let clearOfClouds: Bool
-    var belowFt: Double?
-    var aboveFt: Double?
-    var horizontalFt: Double?
-}
-
-struct DayNightMinimums: Codable, Equatable, Sendable {
-    let day: VfrMinimums
-    let night: VfrMinimums
-}
+typealias VfrMinimums = APIVfrMinimums
+typealias DayNightMinimums = APIDayNightMinimums
 
 /// One class of airspace over a point, floor to ceiling in feet MSL
-/// (AirspaceBand), with what it takes to go in, in the planner's words.
-struct AirspaceBand: Codable, Equatable, Sendable, Identifiable {
-    /// A to G: the document's `class`, which Swift keeps for itself.
-    let airspaceClass: String
-    let floorFt: Double
-    let ceilingFt: Double
-    let entry: String
-    var name: String?
-    var equipment: String?
-    var speedKt: Int?
-    var minimums: DayNightMinimums?
+/// (AirspaceBand), with what it takes to go in, in the planner's words;
+/// its `class`, A to G, is airspaceClass.
+typealias AirspaceBand = APIAirspaceBand
 
+extension AirspaceBand: Identifiable {
     var id: String { "\(floorFt)-\(airspaceClass)" }
-
-    enum CodingKeys: String, CodingKey {
-        case floorFt, ceilingFt, entry, name, equipment, speedKt, minimums
-        case airspaceClass = "class"
-    }
 }
 
 /// A Class B's Mode C veil the point is in (ModeCVeil).
-struct ModeCVeil: Codable, Equatable, Sendable {
-    let ident: String
-    let distanceNm: Double
-    var name: String?
-}
+typealias ModeCVeil = APIModeCVeil
 
 /// The point named off its nearest fix, "VPBNG/095/14.2" (PointOffFix,
 /// wingtip.fixes.frd_near).
-struct PointOffFix: Codable, Equatable, Sendable {
-    let ident: String
-    let name: String
-    let base: String
-    let courseDeg: Int
-    let distanceNm: Double
-    let radial: Bool
-}
+typealias PointOffFix = APIPointOffFix
 
 /// A special-use area over the point (SpecialUse), as the FAA's file has it.
-struct SpecialUse: Codable, Equatable, Sendable, Identifiable {
-    let name: String
-    let kind: String
-    let type: String
-    var floorFt: Double?
-    var floorRef: String?
-    var ceilingFt: Double?
-    var ceilingRef: String?
-    var timesOfUse: String?
-    var timeZone: String?
-    var controllingAgency: String?
+typealias SpecialUse = APISpecialUse
 
+extension SpecialUse: Identifiable {
     var id: String { name }
 }
 
 /// A TFR over the point now or to come (TfrHere).
-struct TfrHere: Codable, Equatable, Sendable, Identifiable {
-    let notamId: String
-    let activeNow: Bool
-    var kind: String?
-    var title: String?
-    var purpose: String?
-    var effective: String?
-    var expires: String?
+typealias TfrHere = APITfrHere
 
+extension TfrHere: Identifiable {
     var id: String { notamId }
 }
 
 /// The airspace over a point the pilot held a finger on (AirspaceAt).
-struct AirspaceAt: Codable, Equatable, Sendable {
-    let lat: Double
-    let lon: Double
-    var groundFt: Double?
-    let bands: [AirspaceBand]
-    var modeCVeil: ModeCVeil?
-    var point: PointOffFix?
-    var specialUse: [SpecialUse]?
-    var specialUseUnavailable: Bool?
-    var tfrs: [TfrHere]?
-    var tfrsUnavailable: Bool?
-}
+typealias AirspaceAt = APIAirspaceAt
 
 /// A town, a street address or an airport found by what was typed
 /// (PlaceFound, the Census geocoder through the planner).
-struct PlaceFound: Codable, Equatable, Sendable, Identifiable, Hashable {
-    let kind: String
-    let label: String
-    let lat: Double
-    let lon: Double
+typealias PlaceFound = APIPlaceFound
 
+extension PlaceFound: Identifiable, Hashable {
     var id: String { "\(label)-\(lat)-\(lon)" }
+
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
 
 /// A VFR waypoint in the map's view (WaypointPin).
-struct WaypointPin: Codable, Equatable, Sendable {
-    let ident: String
-    let lat: Double
-    let lon: Double
-    var description: String?
-}
+typealias WaypointPin = APIWaypointPin
 
 /// A Class B airport and what it reports now (ClassBAirport).
-struct ClassBAirport: Codable, Equatable, Sendable {
-    let ident: String
-    let name: String
-    let lat: Double
-    let lon: Double
-    var flightCategory: String?
-    var metar: String?
-    var taf: String?
-}
+typealias ClassBAirport = APIClassBAirport
 
 /// Where the planner places an approach plate's plan view on the chart,
 /// by the FAA's own georeference in it (PlateOverlay, wingtip.plates).
-struct PlateOverlay: Codable, Equatable, Sendable {
-    let cycle: String
-    let name: String
-    let south: Double
-    let west: Double
-    let north: Double
-    let east: Double
-    var circling: Bool?
-}
+typealias PlateOverlay = APIPlateOverlay
 
 /// One page of an FAA chart, drawn by the planner as a picture
 /// (ChartPage): a plate, the airport diagram, a Chart Supplement page.
-struct ChartPage: Codable, Equatable, Sendable {
-    let source: String
-    let edition: String
-    let pdf: String
-    let page: Int
-    let width: Int
-    let height: Int
+typealias ChartPage = APIChartPage
 
+extension ChartPage {
     /// The page's picture, through the gateway (web lib/diagram chartPagePicture).
     var path: String {
         let parts = [source, edition, pdf].map { $0.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(CharacterSet(charactersIn: "/"))) ?? $0 }
@@ -260,6 +139,12 @@ extension Planner {
         try await fetch(AirportPhotos.self, "/api/airport/\(ident)/photos")
     }
 
+    /// The field's own NOTAMs and the TFRs within 5 nm of it, the engine's
+    /// ranking (/api/airport/{ident}/notams, notams_ranked).
+    static func notams(_ ident: String) async throws -> APINotamsRanked {
+        try await fetch(APINotamsRanked.self, "/api/airport/\(ident)/notams")
+    }
+
     /// What the field offers on the ground (/api/airport/{ident}/services).
     static func services(_ ident: String) async throws -> AirportServices {
         try await fetch(AirportServices.self, "/api/airport/\(ident)/services")
@@ -272,21 +157,18 @@ extension Planner {
 
     /// Towns, addresses and airports by what was typed (/api/places/search).
     static func places(_ q: String) async throws -> [PlaceFound] {
-        struct Answer: Decodable { let places: [PlaceFound] }
-        return try await fetch(Answer.self, "/api/places/search", ["q": q]).places
+        try await fetch(APIPlacesFound.self, "/api/places/search", ["q": q]).places
     }
 
     /// The VFR waypoints in a box (/api/waypoints/in-view).
     static func waypoints(south: Double, west: Double, north: Double, east: Double) async throws -> [WaypointPin] {
-        struct Answer: Decodable { let waypoints: [WaypointPin] }
         let box = ["south": String(south), "west": String(west), "north": String(north), "east": String(east)]
-        return try await fetch(Answer.self, "/api/waypoints/in-view", box).waypoints
+        return try await fetch(APIWaypointsInView.self, "/api/waypoints/in-view", box).waypoints
     }
 
     /// Every Class B airport and its weather now (/api/class-b).
     static func classB() async throws -> [ClassBAirport] {
-        struct Answer: Decodable { let airports: [ClassBAirport] }
-        return try await fetch(Answer.self, "/api/class-b").airports
+        try await fetch(APIClassBResponse.self, "/api/class-b").airports
     }
 
     /// Where an approach's plate lies on the chart (/api/airport/{ident}/procedures/{id}/plate).
@@ -302,8 +184,7 @@ extension Planner {
     /// One of the FAA's charts as the planner draws its pages
     /// (/api/faa-chart): of a region's booklet, the field's pages alone.
     static func faaChart(url: String, airport: String) async throws -> [ChartPage] {
-        struct Answer: Decodable { let pages: [ChartPage] }
-        return try await fetch(Answer.self, "/api/faa-chart", ["url": url, "airport": airport]).pages
+        try await fetch(APIChartPages.self, "/api/faa-chart", ["url": url, "airport": airport]).pages
     }
 
     /// The airport diagram for the cycle, whole or cropped to its runways

@@ -5,6 +5,7 @@ training page's points (app.chart_scorer, which loads it in this process).
 Here rather than in the pipeline because the planner holds the chart
 reader -- the pipeline images have no GDAL -- and has every rated
 route's corridor read already, kept on disk (app.detection)."""
+
 import logging
 import multiprocessing
 import threading
@@ -61,8 +62,8 @@ def _pool() -> ProcessPoolExecutor:
 # for them).
 READERS = 2
 AHEAD_KEPT = 4
-_WANTED: deque = deque()   # (key, start, end), first asked first read
-_AHEAD: deque = deque()    # (key, start, end), the newest at the left
+_WANTED: deque = deque()  # (key, start, end), first asked first read
+_AHEAD: deque = deque()  # (key, start, end), the newest at the left
 _RUNNING = 0
 # And one process kept for the reads waited on: a read can't be stopped
 # once it is going, and with both processes on reads ahead, a route's
@@ -71,7 +72,7 @@ _RUNNING_AHEAD = 0
 
 # A request made ahead of the pilot: the web app planning the pilot's
 # Recents and Saved routes while the page is idle (?ahead=true on
-# /api/checkpoints and /api/navlog, app.routers.plan). It waits on its
+# /api/checkpoints and /api/navlog, app.routers.plan, wingtip.flight_plan). It waits on its
 # reads as any request does, but they are reads ahead, behind the pilot's
 # and one at a time: asked as waited-on reads, two of them took both
 # processes, and a new route's checkpoints waited for one to end: 3.9 s
@@ -282,8 +283,7 @@ def readiness() -> dict:
 def write_training_table():
     """Every rated route's rows (wingtip.chartmodel.labeled_rows) into the one
     table the training image reads, written whole or not at all."""
-    frames = [chartmodel.labeled_rows(route, corridor(route, wait=True), picks)
-              for route, picks in _rated_by_route().items()]
+    frames = [chartmodel.labeled_rows(route, corridor(route, wait=True), picks) for route, picks in _rated_by_route().items()]
     table = pd.concat(frames, ignore_index=True) if frames else chartmodel.labeled_rows("", [], [])
     return _publish(chartmodel.TRAINING_TABLE_PATH, lambda tmp: table.to_parquet(tmp, index=False))
 

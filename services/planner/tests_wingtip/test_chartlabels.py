@@ -1,12 +1,6 @@
 import pytest
 
-from wingtip.chartlabels import (
-    delete_pick,
-    load_picks,
-    route_key,
-    save_pick,
-    summarise,
-)
+from wingtip.chartlabels import delete_pick, load_picks, route_key, save_pick, summarise
 
 ROUTE = "KDSM->KOMA"
 LAT, LON = 41.5443, -93.6208
@@ -19,9 +13,16 @@ def picks_file(tmp_path):
 
 def _pick(lat=LAT, lon=LON, source="detected", rating=4, category="water", route=ROUTE):
     return {
-        "route": route, "source": source, "category": category,
-        "lat": lat, "lon": lon, "along_track_nm": 1.7, "cross_track_nm": 0.4,
-        "rating": rating, "area_m2": 1000.0, "note": None,
+        "route": route,
+        "source": source,
+        "category": category,
+        "lat": lat,
+        "lon": lon,
+        "along_track_nm": 1.7,
+        "cross_track_nm": 0.4,
+        "rating": rating,
+        "area_m2": 1000.0,
+        "note": None,
     }
 
 
@@ -67,7 +68,7 @@ def test_a_pick_on_another_point_nearby_is_named_when_it_is_displaced(picks_file
     # stop showing the river as rated. Re-rating the same point is no
     # displacement at all.
     save_pick(_pick(category="river"), path=picks_file)
-    again = save_pick(_pick(lat=LAT + 0.0002, category="river", rating=2), path=picks_file)   # the same river, re-rated
+    again = save_pick(_pick(lat=LAT + 0.0002, category="river", rating=2), path=picks_file)  # the same river, re-rated
     assert again["replaced"] and again["displaced"] == []
 
     bridge = save_pick(_pick(lat=LAT + 0.0005, category="road_or_rail"), path=picks_file)

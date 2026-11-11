@@ -1,5 +1,6 @@
 import { lazy, memo, useState, type ComponentType } from "react";
 import { fromChunk } from "../../lib/fromChunk";
+import { loadPilotPanel } from "../pilot";
 
 // The planner's parts drawn from chunks of their own (PlanWorkspace and its
 // sub-views, components/workspace): the pilot console and the route's panel.
@@ -9,7 +10,7 @@ import { fromChunk } from "../../lib/fromChunk";
 // first load. Asked for once the page has drawn (below), so the gear
 // opens it at once, drawn straight from the chunk (fromChunk); MapPage's
 // AfterTheSheet holds its place meanwhile.
-export const { Part: PilotPanel, prefetch: prefetchPilotPanel } = fromChunk(() => import("../pilot/PilotPanel"), m => m.PilotPanel);
+export const { Part: PilotPanel, prefetch: prefetchPilotPanel } = fromChunk(loadPilotPanel, (m) => m.PilotPanel);
 // The route's own panel, a chunk of its own (routePanel), fetched once
 // the page is idle and drawn where a route is. Its parts drawn straight
 // from the chunk once it is in hand, and waited for (lazy) only until
@@ -25,7 +26,7 @@ let routePanel: RoutePanel | null = null;
 // phone's connection with the fonts, the map's chunks and the engine the
 // first paint waits for (issue #214). Every part has its room meanwhile
 // (its Suspense), and nothing of the chunk shows on a first paint.
-const painted = new Promise<void>(resolve => {
+const painted = new Promise<void>((resolve) => {
   // Where paints are not reported (Node's observer under the tests), at once.
   if (typeof PerformanceObserver === "undefined" || !PerformanceObserver.supportedEntryTypes?.includes("paint")) {
     resolve();
@@ -33,7 +34,7 @@ const painted = new Promise<void>(resolve => {
   }
   try {
     new PerformanceObserver((list, observer) => {
-      if (!list.getEntries().some(entry => entry.name === "first-contentful-paint")) return;
+      if (!list.getEntries().some((entry) => entry.name === "first-contentful-paint")) return;
       observer.disconnect();
       resolve();
     }).observe({ type: "paint", buffered: true });
@@ -43,14 +44,14 @@ const painted = new Promise<void>(resolve => {
   // Where no paint is reported (a hidden tab, an old browser), soon anyway.
   window.setTimeout(resolve, 3000);
 });
-export const loadRoutePanel = () => painted.then(() => import("./routePanel")).then(m => (routePanel = m));
+export const loadRoutePanel = () => painted.then(() => import("./routePanel")).then((m) => (routePanel = m));
 // Each part drawn again only when its own props change (memo): the
 // workspace renders at each answer that streams in, and the route's box,
 // the chips and the nav log were all drawn again each time -- 60 to 85 ms
 // a time on a phone, a dozen times between Fly Here and the nav log.
 function fromRoutePanel<K extends keyof RoutePanel>(name: K) {
   type Props = PropsOf<RoutePanel[K]>;
-  const Waited = lazy(() => loadRoutePanel().then(m => ({ default: m[name] as ComponentType<Props> })));
+  const Waited = lazy(() => loadRoutePanel().then((m) => ({ default: m[name] as ComponentType<Props> })));
   return memo(function RoutePanelPart(props: Props) {
     // Not compiled: the React Compiler (1.0.0) lost `Waited`, this
     // factory's own, from the compiled part, and the page failed to draw

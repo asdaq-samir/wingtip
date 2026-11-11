@@ -23,28 +23,31 @@ import { closeConsole, roleMenu, showTabs } from "./helpers";
 /** Dev mode: Developer in the console's role menu. */
 const devSwitch = (page: Page) => page.getByRole("menuitemradio", { name: "Developer" });
 
-/** The console drawn without it: the Settings button is there (the
+/** The console drawn without it: the account button is there (the
  *  header has rendered with who is signed in known), the role menu
  *  opened if there is one, and Developer has not followed within a
  *  moment. It used to be a flat three seconds. */
 async function noDevSwitch(page: Page) {
   await showTabs(page);
-  await expect(page.getByTestId("setup-button")).toBeVisible();
+  await expect(page.getByTestId("account-button")).toBeVisible();
   await roleMenu(page);
   await page.waitForTimeout(500);
   await expect(devSwitch(page)).toHaveCount(0);
 }
 
 async function withAuth(page: Page, opts: { access: "SIGN_IN" | "OPEN" | "CLOSED"; pilot: object | null }) {
-  await page.route("**/api/auth/capabilities", route =>
+  await page.route("**/api/auth/capabilities", (route) =>
     route.fulfill({
-      status: 200, contentType: "application/json",
+      status: 200,
+      contentType: "application/json",
       body: JSON.stringify({ access: opts.access, providers: opts.access === "SIGN_IN" ? ["google"] : [] }),
-    }));
-  await page.route("**/api/me", route =>
+    }),
+  );
+  await page.route("**/api/me", (route) =>
     opts.pilot
       ? route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(opts.pilot) })
-      : route.fulfill({ status: 401, body: "" }));
+      : route.fulfill({ status: 401, body: "" }),
+  );
 }
 
 const A_PILOT = { id: 1, email: "pilot@example.com", displayName: "A Pilot", developer: false };
@@ -96,12 +99,11 @@ test("the header holds together without it", async ({ page }) => {
   await closeConsole(page);
 
   await expect(devSwitch(page)).toHaveCount(0);
-  // The tabs and the grabber over them (MapPanel).
+  // The one search and the grabber over it (MapPanel).
   await showTabs(page);
-  await expect(page.getByTestId("tab-airport")).toBeVisible();
+  await expect(page.getByTestId("search-airports")).toBeVisible();
   await expect(page.getByTestId("sidebar-trigger-button")).toBeVisible();
 
-  const overflowing = await page.evaluate(
-    () => document.documentElement.scrollWidth > document.documentElement.clientWidth);
+  const overflowing = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth);
   expect(overflowing).toBe(false);
 });

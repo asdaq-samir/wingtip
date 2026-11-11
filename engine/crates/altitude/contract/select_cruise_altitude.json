@@ -1,0 +1,331 @@
+{
+  "x-call": "wingtip_altitude::altitude::calls::call",
+  "description": "The planner's altitude selection from the data it read: each leg's band (the floor up to the lowest of the Class B shelf, 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace; under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "SelectCruiseAltitudeInput",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon], degrees."
+        },
+        "end": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon], degrees."
+        },
+        "fixes": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2,
+            "description": "[lat, lon], degrees."
+          }
+        },
+        "breaks_nm": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "rules": {
+          "enum": [
+            "vfr",
+            "ifr",
+            null
+          ]
+        },
+        "class_b_cleared": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "floors": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          },
+          "description": "vfr_floors' or ifr_floors' answer, a floor a leg."
+        },
+        "airway": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "mea_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "gnss_mea_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "maa_ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          }
+        },
+        "airspace_ceilings_ft": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        },
+        "service_ceilings_ft": {
+          "type": "array",
+          "items": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "description": "Null on a leg: no airplane, no ceiling of its own."
+        },
+        "variation_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "leg_variations_deg": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "stations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "icaoId": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "lat": {
+                "type": "number"
+              },
+              "lon": {
+                "type": "number"
+              },
+              "ceiling_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "elevation_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "min_ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "special_use": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "freezing": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "ft": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "at_or_below": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "hazards": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "weather_unavailable": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "service_ceilings_ft"
+      ]
+    },
+    "answer": {
+      "title": "SelectCruiseAltitudeAnswer",
+      "type": "object",
+      "properties": {
+        "rules": {
+          "enum": [
+            "vfr",
+            "ifr"
+          ]
+        },
+        "recommended_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "candidates_ft": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "course_magnetic_deg": {
+          "type": "number"
+        },
+        "eastbound": {
+          "type": "boolean"
+        },
+        "hemispheric_rule_from_ft": {
+          "type": "number"
+        },
+        "floor_ft": {
+          "type": "number"
+        },
+        "airspace_ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "class_b_cleared": {
+          "type": "boolean"
+        },
+        "service_ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "cloud_base_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "cloud_station": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cloud_ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "cloud_clearance_kept": {
+          "type": "boolean"
+        },
+        "freezing_level_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "freezing_level_at_or_below": {
+          "type": "boolean"
+        },
+        "icing_possible": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "band_ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/AltitudeSegment"
+          }
+        },
+        "mountainous": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "rules",
+        "recommended_ft",
+        "candidates_ft",
+        "course_magnetic_deg",
+        "eastbound",
+        "hemispheric_rule_from_ft",
+        "floor_ft",
+        "service_ceiling_ft",
+        "cloud_clearance_kept",
+        "icing_possible",
+        "segments",
+        "mountainous"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

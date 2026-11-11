@@ -1,0 +1,38 @@
+{
+  "description": "A row of 14 CFR 91.155(a)'s table: the flight visibility in statute miles and the distance from clouds in feet (all three null: clear of clouds), and the row as the drill words it.",
+  "type": "object",
+  "properties": {
+    "visibility_sm": {
+      "type": "number"
+    },
+    "below_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "above_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "horizontal_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "words": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "visibility_sm",
+    "below_ft",
+    "above_ft",
+    "horizontal_ft",
+    "words"
+  ],
+  "additionalProperties": false
+}

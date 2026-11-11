@@ -14,7 +14,13 @@ test.use({ hasTouch: true });
 
 type Finger = { x: number; y: number };
 
-async function fingers(page: Page): Promise<{ cdp: CDPSession; touch: (type: string, at?: [Finger, Finger]) => Promise<unknown>; map: { x: number; y: number; width: number; height: number } }> {
+async function fingers(
+  page: Page,
+): Promise<{
+  cdp: CDPSession;
+  touch: (type: string, at?: [Finger, Finger]) => Promise<unknown>;
+  map: { x: number; y: number; width: number; height: number };
+}> {
   const cdp = await page.context().newCDPSession(page);
   const touch = (type: string, at?: [Finger, Finger]) =>
     cdp.send("Input.dispatchTouchEvent", { type, touchPoints: at ? at.map((p, i) => ({ ...p, id: i + 1 })) : [] });
@@ -38,7 +44,10 @@ test("two fingers held on the chart bring up the ruler, with its course magnetic
   const { touch, map } = await fingers(page);
   // Over the chart, above the sheet.
   const y = map.y + 160;
-  const at: [Finger, Finger] = [{ x: map.x + 60, y }, { x: map.x + map.width - 60, y: y + 80 }];
+  const at: [Finger, Finger] = [
+    { x: map.x + 60, y },
+    { x: map.x + map.width - 60, y: y + 80 },
+  ];
   await touch("touchStart", at);
   // Held, a finger wandering a little as one at rest does.
   await page.waitForTimeout(150);
@@ -56,7 +65,11 @@ test("two fingers held on the chart bring up the ruler, with its course magnetic
   const figures = async () => Number(/([\d.]+) nm/.exec((await ruler.textContent()) ?? "")?.[1]);
   const before = await figures();
   const zoom = await tileLevel(page);
-  for (let i = 1; i <= 5; i++) await touch("touchMove", [{ x: at[0].x, y: at[0].y }, { x: at[1].x, y: at[1].y + 40 * i }]);
+  for (let i = 1; i <= 5; i++)
+    await touch("touchMove", [
+      { x: at[0].x, y: at[0].y },
+      { x: at[1].x, y: at[1].y + 40 * i },
+    ]);
   await expect.poll(figures).toBeGreaterThan(before);
   // And the chart under it held still: fingers spread did not zoom it.
   expect(await tileLevel(page)).toBe(zoom);
@@ -75,7 +88,10 @@ test("a pinch that moves at once still zooms the chart, with no ruler", async ({
   const { touch, map } = await fingers(page);
   const middle = { x: map.x + map.width / 2, y: map.y + 220 };
   // Fingers 300 points apart drawn together to 40: out more than two levels.
-  const apart = (d: number): [Finger, Finger] => [{ x: middle.x - d / 2, y: middle.y }, { x: middle.x + d / 2, y: middle.y }];
+  const apart = (d: number): [Finger, Finger] => [
+    { x: middle.x - d / 2, y: middle.y },
+    { x: middle.x + d / 2, y: middle.y },
+  ];
   await touch("touchStart", apart(300));
   for (let d = 280; d >= 40; d -= 20) await touch("touchMove", apart(d));
   await expect(page.getByTestId("map-ruler")).toHaveCount(0);

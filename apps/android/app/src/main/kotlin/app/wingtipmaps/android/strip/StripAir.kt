@@ -10,20 +10,25 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.Spoken
+import app.wingtipmaps.android.route.LegWords
 import app.wingtipmaps.android.ui.FiguresStrip
+import app.wingtipmaps.android.ui.largeType
 
 /**
  * The strip in the air, the sheet's first rows at every size: the ribbon
  * with the airplane on it, the flown part grey and the way ahead magenta
  * (RibbonLine), the next checkpoint large under it -- its name, the leg's
  * heading, miles and minutes, the planner's own -- and the flight's
- * figures (FiguresStrip, the tabs layout's own). The field under them is
+ * figures (FiguresStrip, the plan's own). The field under them is
  * the radio (FieldRow with `flying`). Everything here is read at arm's
  * length: one large thing, the figures at 26 points and more.
  */
@@ -33,7 +38,7 @@ fun StripAir(state: Plan.State, rows: List<StripRow>, position: Position?, modif
     // The next point: the end of the leg the airplane is on; the first
     // leg's with no fix yet.
     val next = rows.drop(1).getOrNull(position?.leg ?: 0)
-    Column(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md)) {
         RibbonLine(points = points, position = position)
         if (next != null) {
             val (name, leg) = when (next) {
@@ -42,16 +47,21 @@ fun StripAir(state: Plan.State, rows: List<StripRow>, position: Position?, modif
                 is StripRow.Destination -> next.ident to next.leg
                 is StripRow.Departure -> next.ident to null
             }
-            Column(Modifier.semantics { contentDescription = "Next: $name" }) {
+            // Read as one, its figures in words (Spoken), not "Next:" and
+            // then the written figures again one by one.
+            val said = listOfNotNull(
+                "Next: $name", leg?.let(LegWords::bearing), leg?.let { Spoken.distance(it.distanceNm) }, leg?.eteMin?.let(Spoken::duration),
+            ).joinToString(", ")
+            Column(Modifier.clearAndSetSemantics { contentDescription = said }) {
                 Text("NEXT", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(
                     name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    maxLines = if (largeType()) 2 else 1, overflow = TextOverflow.Ellipsis,
                 )
                 if (leg != null) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Bottom) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Lg), verticalAlignment = Alignment.Bottom) {
                         Text(StripData.legFigures(leg), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        leg.eteMin?.let { Text(StripData.duration(it), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        leg.eteMin?.let { Text(Format.duration(it), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                     }
                 }
             }

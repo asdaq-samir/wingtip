@@ -1,49 +1,45 @@
 package app.wingtipmaps.android.ui
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.NavLogTotals
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.engine.Engine
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
-import java.util.Locale
-import kotlin.math.roundToInt
-
-// The figures' formatting, as the iOS app's AirportWords and FPLView
-// write them: the words and the decimals are the app's, the figures
-// themselves the planner's.
-
-/** A distance to a tenth, "12.3 nm". */
-fun nm(x: Double): String = String.format(Locale.US, "%.1f nm", x)
-
-/** Fuel to a tenth, "8.4 gal". */
-fun gal(x: Double): String = String.format(Locale.US, "%.1f gal", x)
-
-/** A speed in whole knots, "112 kt". */
-fun kt(x: Double): String = String.format(Locale.US, "%.0f kt", x)
-
-/** Feet, whole, with a thousands separator: "3,500 ft". */
-fun ft(x: Double): String = String.format(Locale.US, "%,.0f ft", x)
-
-/** A heading or course in three figures, "007°". */
-fun degrees(x: Double): String = String.format(Locale.US, "%03d°", ((x.roundToInt() % 360) + 360) % 360)
-
-/** Minutes as the nav log's "1h 05m". */
-fun hoursMinutes(minutes: Double): String {
-    val whole = minutes.roundToInt()
-    return String.format(Locale.US, "%dh %02dm", whole / 60, whole % 60)
-}
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.stripFuel
+import app.wingtipmaps.android.flight.InFlight
+import app.wingtipmaps.android.format.Format
+import app.wingtipmaps.android.format.Spoken
+import app.wingtipmaps.android.navigation.ScreenRequests
+import app.wingtipmaps.android.navigation.generated.Screen
 
 /**
  * The flight's figures in one line -- To, Dist, ETE, Fuel -- what the
@@ -55,62 +51,114 @@ fun hoursMinutes(minutes: Double): String {
  */
 @Composable
 fun FiguresStrip(state: Plan.State) {
-    val distance = state.totals?.distanceNm ?: state.course?.distanceNm
-    val fuel = stripFuel(state.totals)
-    val warn = fuel.short.isNotEmpty()
-    Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)) {
-        Figure("TO", if (state.routed) state.dest else "—")
-        Figure("DIST", distance?.let(::nm) ?: "—")
-        Figure("ETE", state.totals?.eteMin?.let(::hoursMinutes) ?: "—")
-        Figure("FUEL", fuel.requiredGal?.let(::gal) ?: "—", warn = warn)
+    // In the air on the route -- moving, within 3 nm of the line (the
+    // engine's `in_flight`, InFlight) -- the figures count down from where
+    // the airplane is, as the iPhone's do: what is left to the destination
+    // at the groundspeed now, and the fuel still required.
+    val flight by InFlight.shared.state.collectAsStateWithLifecycle()
+    val progress = flight.progress?.takeIf { it.onRoute }
+    val warn = stripFuel(state.totals).getOrNull()?.short?.isNotEmpty() == true
+    // A failed rule reads "Failed" in the error colour, never as no fuel
+    // required (Engine.rule logs the engine's words).
+    val fuel = stripFuel(state.totals, burntGal = progress?.burntGal)
+    val to = stringResource(R.string.figure_to)
+    val dist = stringResource(R.string.figure_dist)
+    val ete = stringResource(R.string.figure_ete)
+    val fuelName = stringResource(R.string.figure_fuel)
+    val saidTo = stringResource(R.string.said_to)
+    val saidDist = stringResource(R.string.leg_distance)
+    val saidEte = stringResource(R.string.leg_time)
+    val saidFuel = stringResource(R.string.said_fuel_required)
+    val failed = stringResource(R.string.failed)
+    // Each figure with what TalkBack says for it (Spoken), so "102.4 nm"
+    // is heard as miles rather than as "one hundred two point four n m".
+    val figures = buildList {
+        add(StripFigure(to, if (state.routed) state.dest else Format.NONE, "$saidTo, ${if (state.routed) state.dest else Spoken.NOT_KNOWN}"))
+        val nm = if (progress != null) progress.destination?.distanceNm ?: progress.leftNm
+        else state.totals?.distanceNm ?: state.course?.distanceNm
+        add(StripFigure(dist, Format.distance(nm), "$saidDist, ${Spoken.distance(nm)}"))
+        // With no airplane, To and Dist alone: no time or fuel is guessed
+        // (decision 0011).
+        if (state.airplane) {
+            val min = if (progress != null) progress.destination?.eteMin else state.totals?.eteMin
+            add(StripFigure(ete, min?.let(Format::duration) ?: Format.NONE, "$saidEte, ${Spoken.duration(min)}"))
+            fuel.fold(
+                { add(StripFigure(fuelName, Format.fuel(it.requiredGal), "$saidFuel, ${Spoken.fuel(it.requiredGal)}", warn)) },
+                { add(StripFigure(fuelName, failed, "$saidFuel, $failed", warn = true)) },
+            )
+        }
+    }
+    // At 150 % type and more four figures do not fit across a phone: two
+    // rows of two, so no figure is cut.
+    val rows = if (largeType()) figures.chunked(2) else listOf(figures)
+    // The figures open the nav log they add up, the plan's legs (tap
+    // what you see, docs/navigation.md).
+    val openNavLog = stringResource(R.string.said_open_nav_log)
+    // Material's clickable surface, clear, over the figures.
+    Surface(
+        onClick = { ScreenRequests.ask(Screen.NAVLOG) },
+        enabled = state.routed,
+        color = Color.Transparent,
+        modifier = Modifier.fillMaxWidth().semantics { onClick(label = openNavLog, action = null) },
+    ) {
+        Column(Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Xs), verticalArrangement = Arrangement.spacedBy(WingtipSpace.Xs)) {
+            rows.forEach { row ->
+                Row(Modifier.fillMaxWidth()) { row.forEach { Figure(it.name, it.value, it.warn, it.said) } }
+            }
+        }
     }
 }
 
-@Serializable
-private class StripFuelAsk(
-    @SerialName("fuel_required_gal") val fuelRequiredGal: Double?,
-    @SerialName("fuel_margin_gal") val fuelMarginGal: Double?,
-)
-
-/** The engine's answer to strip_fuel. */
-@Serializable
-class StripFuel(
-    @SerialName("required_gal") val requiredGal: Double? = null,
-    val short: List<ShortFlight> = emptyList(),
-) {
-    @Serializable
-    class ShortFlight(val name: String, @SerialName("short_gal") val shortGal: Double)
-}
+/** One of the strip's figures: its name, as written and as said. */
+private data class StripFigure(val name: String, val value: String, val said: String, val warn: Boolean = false)
 
 /** The strip's fuel from the planner's totals, as the engine works it for
- *  the three apps; none where the engine cannot answer. */
-fun stripFuel(totals: NavLogTotals?): StripFuel =
-    runCatching { Engine.call<StripFuelAsk, StripFuel>("strip_fuel", StripFuelAsk(totals?.fuelRequiredGal, totals?.fuelMarginGal)) }
-        .getOrDefault(StripFuel())
+ *  the three apps (`strip_fuel`); a failure where the engine could not. */
+fun stripFuel(totals: NavLogTotals?, burntGal: Double? = null): Result<EngineContract.StripFuelAnswer> =
+    Engine.stripFuel(fuelRequiredGal = totals?.fuelRequiredGal, fuelMarginGal = totals?.fuelMarginGal, burntGal = burntGal)
 
-/** One figure of the strip, its name over it. */
+/** One figure of a strip, its name over it, read as one node: `said` is
+ *  what TalkBack says, the name and the figure in words (Spoken); the
+ *  written name and figure where none is given. At large type the figure
+ *  takes a second line rather than being cut; otherwise a change rolls
+ *  its digits. */
 @Composable
-fun RowScope.Figure(name: String, value: String, warn: Boolean = false) {
-    Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+fun RowScope.Figure(name: String, value: String, warn: Boolean = false, said: String? = null) {
+    Column(
+        Modifier.weight(1f).clearAndSetSemantics { contentDescription = said ?: "$name, $value" },
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Text(name, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        // The figure in the expressive figure role.
         Text(
             value,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleMediumEmphasized,
             color = if (warn) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-            maxLines = 1,
+            maxLines = if (largeType()) 2 else 1,
             overflow = TextOverflow.Ellipsis,
         )
     }
 }
 
 /**
- * A problem said where it happened, as the web app's lib/problems says
- * it: the call's own words in the error colour under what failed, and
- * nothing at all without one.
+ * A problem said where it happened, the app's one error style, as the
+ * web app's lib/problems says it: the error glyph and one plain sentence
+ * in the error colour under what failed (Problems: the details go to the
+ * log), read out as it appears, and nothing at all without one. Where the
+ * ask can be made again, Try Again under it, Material's text button.
  */
 @Composable
-fun ProblemLine(problem: String?) {
-    if (problem != null) {
-        Text(problem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+fun ProblemLine(problem: String?, modifier: Modifier = Modifier, onRetry: (() -> Unit)? = null) {
+    if (problem.isNullOrEmpty()) return
+    Column(modifier) {
+        Row(
+            Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(WingtipSpace.Lg + WingtipSpace.Xs))
+            Text(problem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+        }
+        if (onRetry != null) TextButton(onClick = onRetry) { Text(stringResource(R.string.try_again)) }
     }
 }

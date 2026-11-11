@@ -1,6 +1,6 @@
 import type { ProcedureFix, ProcedureList } from "./api/types";
 import { callEngine } from "./engine/engine";
-import { altFt } from "./units";
+import { altFt } from "./format";
 
 /** An instrument procedure picked at a field of the route (the route's
  *  Procedures): the field, the procedure's coded identifier ("I08-Y"),
@@ -22,15 +22,21 @@ export interface PickedProcedure {
 export type BranchFix = Pick<ProcedureFix, "ident" | "roles" | "min_ft" | "max_ft"> & { turn?: boolean };
 
 /** The parts a fix plays, as a chart names them, its hold left to the line. */
-export const fixRoles = (fix: BranchFix) => [...fix.roles.filter(r => r !== "hold"), ...(fix.turn ? ["↺ procedure turn"] : [])];
+export const fixRoles = (fix: BranchFix) => [...fix.roles.filter((r) => r !== "hold"), ...(fix.turn ? ["↺ procedure turn"] : [])];
 
 /** A transition as a pilot picks it, said one way everywhere (the
  *  menus, the procedure's page, the route's box): an approach's from its
  *  initial fix or from vectors to final; an arrival's from where it
  *  starts, or its common route alone; a departure's to where it ends. */
 export function transitionWords(kind: "approach" | "arrival" | "departure", transition: string | null, inLine = false): string {
-  const words = transition === null ? (kind === "approach" ? "Vectors to final" : "Common route")
-    : kind === "departure" ? `To ${transition}` : `From ${transition}`;
+  const words =
+    transition === null
+      ? kind === "approach"
+        ? "Vectors to final"
+        : "Common route"
+      : kind === "departure"
+        ? `To ${transition}`
+        : `From ${transition}`;
   // In the middle of a line, its first word's capital dropped, the fix's kept.
   return inLine ? words.charAt(0).toLowerCase() + words.slice(1) : words;
 }
@@ -52,9 +58,7 @@ export function proceduresOf(param: string | null): PickedProcedure[] {
   // The shared engine's reading (crate::route::picks), the one the
   // planner's PlanQuery.procedure_picks asks too: the planner refuses a
   // piece that is not exactly one, the address leaves it out.
-  const read = callEngine(
-    "procedures_read", { text: param },
-  );
+  const read = callEngine("procedures_read", { text: param });
   return read.flatMap(({ pick }) => {
     if (!pick) return [];
     const { direct, ...picked } = pick;
@@ -83,13 +87,18 @@ export interface TypedProcedure {
  *  fix before it. With the kind, so the field's pick of that kind it
  *  replaces can be found; null where neither field publishes it. */
 export async function typedProcedure(
-  typed: TypedProcedure, route: { dep: string; dest: string }, list: (ident: string) => Promise<ProcedureList>,
+  typed: TypedProcedure,
+  route: { dep: string; dest: string },
+  list: (ident: string) => Promise<ProcedureList>,
 ): Promise<{ picked: PickedProcedure; kind: "departure" | "arrival"; list: ProcedureList } | null> {
-  const ends = [[route.dep, "departure", typed.after], [route.dest, "arrival", typed.before]] as const;
+  const ends = [
+    [route.dep, "departure", typed.after],
+    [route.dest, "arrival", typed.before],
+  ] as const;
   for (const [field, kind, join] of ends) {
     if (!field) continue;
     const found = await list(field).catch(() => null);
-    const procedure = found?.procedures.find(p => p.kind === kind && p.id === typed.name);
+    const procedure = found?.procedures.find((p) => p.kind === kind && p.id === typed.name);
     if (found && procedure) {
       const transition = join && procedure.transitions.includes(join) ? join : null;
       return { picked: { ident: field, id: procedure.id, transition }, kind, list: found };
@@ -108,13 +117,16 @@ export function sameField(a: string, b: string): boolean {
 
 /** The procedures picked, for the address. */
 export function proceduresParam(picks: PickedProcedure[]): string {
+  // None picked writes nothing: the engine not asked (the page's first
+  // draw, before it is there).
+  if (!picks.length) return "";
   return callEngine("procedures_write", { picks });
 }
 
 /** One line of a fix's altitudes as an approach chart sets it (the FAA's
  *  Aeronautical Chart User's Guide, terminal procedures): a minimum
  *  altitude underlined, a maximum one overlined, a mandatory one both. */
-export interface AltitudeLine {
+interface AltitudeLine {
   text: string;
   under: boolean;
   over: boolean;
@@ -126,9 +138,7 @@ export interface AltitudeLine {
 export function altitudeLines(fix: Pick<ProcedureFix, "min_ft" | "max_ft">): { lines: AltitudeLine[]; words: string | null } {
   // Which lines and how each is set are the engine's (crate::route::picks);
   // the figures' print and the words are the page's.
-  const set = callEngine(
-    "altitude_lines", { min_ft: fix.min_ft ?? null, max_ft: fix.max_ft ?? null },
-  );
+  const set = callEngine("altitude_lines", { min_ft: fix.min_ft ?? null, max_ft: fix.max_ft ?? null });
   const lines = set.lines.map(({ ft, under, over }) => ({ text: altFt(ft), under, over }));
   const { min_ft: low, max_ft: high } = fix;
   const words = {
@@ -142,7 +152,8 @@ export function altitudeLines(fix: Pick<ProcedureFix, "min_ft" | "max_ft">): { l
 
 /** A crossing altitude's line as CSS's text-decoration: underlined for at
  *  or above, overlined for at or below, both for at. */
-export const decorationOf = (line: AltitudeLine) => [line.under && "underline", line.over && "overline"].filter(Boolean).join(" ") || "none";
+export const decorationOf = (line: AltitudeLine) =>
+  [line.under && "underline", line.over && "overline"].filter(Boolean).join(" ") || "none";
 
 /** A fix's speed as the chart words it (ARINC 424-18 5.261): "at" the
  *  speed, or "min" or "max" of it. */

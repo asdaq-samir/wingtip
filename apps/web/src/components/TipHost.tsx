@@ -2,9 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { Lightbulb } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
+import { usePopups } from "./popupsChunk";
 import { TEXT } from "../lib/text";
-import { TIPS, unseen, useTips, type TipSpec } from "../lib/firstRunTips";
+import { TIPS, unseen, useTips, useWelcomeOpen, type TipSpec } from "../lib/firstRunTips";
 
 /** In sight and not under anything: the point at its middle is its own.
  *  Not in the panel at rest: there the pill is the tab bar and a strip
@@ -24,7 +24,9 @@ function inSight(el: Element): boolean {
 /** Something else up over the page -- a sheet, a menu, a popover: a tip
  *  waits for it to go. */
 const somethingOpen = () =>
-  !!document.querySelector("[role='dialog'][data-state='open'], [role='alertdialog'][data-state='open'], [role='menu'], [data-slot='popover-content']:not([data-tip-content])");
+  !!document.querySelector(
+    "[role='dialog'][data-open], [role='alertdialog'][data-open], [role='menu'], [data-slot='popover-content']:not([data-tip-content])",
+  );
 
 /**
  * The planner's first-run tips (lib/firstRunTips), one at a time, as TipKit shows
@@ -36,12 +38,14 @@ const somethingOpen = () =>
  * stock popover, anchored to the control without wrapping it.
  */
 export default function TipHost() {
-  const seen = useTips(s => s.seen);
-  const see = useTips(s => s.see);
+  const seen = useTips((s) => s.seen);
+  const see = useTips((s) => s.see);
   const [current, setCurrent] = useState<TipSpec | null>(null);
   const anchor = useRef<HTMLElement | null>(null);
-  const waiting = TIPS.filter(t => unseen(seen, t.id) && (!t.after || seen.includes(t.after)));
-  const waitingKey = waiting.map(t => t.id).join(",");
+  // None over the welcome, which says its own first words.
+  const welcoming = useWelcomeOpen((s) => s.open);
+  const waiting = welcoming ? [] : TIPS.filter((t) => unseen(seen, t.id) && (!t.after || seen.includes(t.after)));
+  const waitingKey = waiting.map((t) => t.id).join(",");
 
   useEffect(() => {
     if (!waitingKey) return;
@@ -56,39 +60,66 @@ export default function TipHost() {
       // a layout forced into the move's frames (a probe of the sheet's
       // turns, 2026-11-03). The next look, 0.7 s on, is soon enough. One
       // that runs for ever -- a spinner, the radio's wave -- is no move.
-      if (document.getAnimations().some(a => a.playState === "running" && a.effect?.getTiming().iterations !== Infinity)) return;
+      if (document.getAnimations().some((a) => a.playState === "running" && a.effect?.getTiming().iterations !== Infinity)) return;
       const up = anchor.current;
       if (up) {
-        if (!up.isConnected || !inSight(up)) { anchor.current = null; setCurrent(null); }
+        if (!up.isConnected || !inSight(up)) {
+          anchor.current = null;
+          setCurrent(null);
+        }
         return;
       }
-      if (somethingOpen()) { candidate = null; return; }
-      const found = ids.map(id => ({ id, el: document.querySelector<HTMLElement>(`[data-tip="${id}"]`) }))
-        .find(t => t.el && inSight(t.el));
-      if (!found) { candidate = null; return; }
-      if (candidate !== found.id) { candidate = found.id; return; }
+      if (somethingOpen()) {
+        candidate = null;
+        return;
+      }
+      const found = ids
+        .map((id) => ({ id, el: document.querySelector<HTMLElement>(`[data-tip="${id}"]`) }))
+        .find((t) => t.el && inSight(t.el));
+      if (!found) {
+        candidate = null;
+        return;
+      }
+      if (candidate !== found.id) {
+        candidate = found.id;
+        return;
+      }
       anchor.current = found.el;
-      setCurrent(TIPS.find(t => t.id === found.id) ?? null);
+      setCurrent(TIPS.find((t) => t.id === found.id) ?? null);
     };
     const timer = window.setInterval(look, 700);
     return () => window.clearInterval(timer);
   }, [waitingKey]);
 
+  const popups = usePopups();
   const done = () => {
     if (current) see(current.id);
     anchor.current = null;
     setCurrent(null);
   };
 
-  if (!current) return null;
+  // The popover is on the popups' chunk (popupsChunk); a tip waits for it.
+  if (!current || !popups) return null;
+  const { Popover, PopoverContent } = popups;
   return (
-    <Popover open onOpenChange={open => { if (!open) done(); }} modal={false}>
-      <PopoverAnchor virtualRef={anchor as React.RefObject<HTMLElement>} />
+    <Popover
+      open
+      onOpenChange={(open) => {
+        if (!open) done();
+      }}
+      modal={false}
+    >
       <PopoverContent
-        side="bottom" align="start" sideOffset={10} collisionPadding={12}
+        side="bottom"
+        align="start"
+        sideOffset={10}
+        collisionPadding={12}
+        anchor={anchor}
         className="w-80 max-w-[calc(100vw-2rem)] gap-0.5 p-3"
-        onOpenAutoFocus={e => e.preventDefault()}
-        data-tip-content="" data-testid="tip" aria-label={current.title}
+        initialFocus={false}
+        data-tip-content=""
+        data-testid="tip"
+        aria-label={current.title}
       >
         <div className="flex items-center gap-3">
           <Lightbulb className="size-5 shrink-0 text-tint" aria-hidden />

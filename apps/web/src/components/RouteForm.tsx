@@ -1,7 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import RouteInputGroup from "./RouteInputGroup";
 import { InputGroupButton } from "./ui/input-group";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
+import { usePopups } from "./popupsChunk";
 
 interface Props {
   dep: string;
@@ -15,9 +15,14 @@ interface Props {
 /** DEP → DEST and its Load button, the same on Plan and Label. Each
  *  field is an `AirportPicker`, the stock combobox: a button that opens
  *  a searchable list of idents and names. */
-export default function RouteForm({
-  dep, dest, onDepChange, onDestChange, onSubmit, disabled = false,
-}: Props) {
+export default function RouteForm({ dep, dest, onDepChange, onDestChange, onSubmit, disabled = false }: Props) {
+  const popups = usePopups();
+  const load = (
+    <InputGroupButton type="submit" variant="default" size="icon-sm" disabled={disabled}>
+      <ArrowRight />
+      <span className="sr-only">Load</span>
+    </InputGroupButton>
+  );
   return (
     // flex-wrap, not a fixed single line -- DEP/DEST need their full
     // width to actually show a 4-letter ident (a narrower box clips
@@ -30,7 +35,7 @@ export default function RouteForm({
     <form
       className="flex flex-wrap items-center gap-1.5"
       autoComplete="off"
-      onSubmit={e => {
+      onSubmit={(e) => {
         e.preventDefault();
         // Label's keyboard shortcuts ignore every key while an input
         // has focus, so without this Space wouldn't start the walk
@@ -40,19 +45,13 @@ export default function RouteForm({
       }}
     >
       <RouteInputGroup
-        dep={dep} dest={dest}
-        onDepChange={v => onDepChange(v.toUpperCase())}
-        onDestChange={v => onDestChange(v.toUpperCase())}
+        dep={dep}
+        dest={dest}
+        onDepChange={(v) => onDepChange(v.toUpperCase())}
+        onDestChange={(v) => onDestChange(v.toUpperCase())}
       >
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <InputGroupButton type="submit" variant="default" size="icon-sm" disabled={disabled}>
-              <ArrowRight />
-              <span className="sr-only">Load</span>
-            </InputGroupButton>
-          </TooltipTrigger>
-          <TooltipContent>Load</TooltipContent>
-        </Tooltip>
+        {/* Its label a tooltip once the popups' chunk is in (popupsChunk). */}
+        {popups ? <popups.Tip label="Load">{load}</popups.Tip> : load}
       </RouteInputGroup>
     </form>
   );

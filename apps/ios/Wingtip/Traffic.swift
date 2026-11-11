@@ -14,17 +14,30 @@ final class Traffic {
     /// seconds (wingtip.traffic), so no sooner than that; twice that with the
     /// app put away (Ticker).
     static let everyS: TimeInterval = 5
-    /// No newer report than this, s, and the airplane is not drawn: the
-    /// web app's CARRY_S.
-    static let staleS = 30.0
     var on: Bool = UserDefaults.standard.object(forKey: "traffic") as? Bool ?? true {
         didSet { UserDefaults.standard.set(on, forKey: "traffic"); if !on { planes = [] } }
     }
+    /// The airplanes drawn: the cockpit receiver's own first, where one is
+    /// heard, then the internet's it does not hear (Receiver.traffic).
     private(set) var planes: [TrafficAircraft] = []
+    /// The internet's airplanes at the last answer, none once it fails.
+    private var internet: [TrafficAircraft] = []
+    /// Own ship's height at the last answer, for the receiver's heights.
+    private var ownFt: Double?
+    /// Whether any airplane drawn came from the internet, whose credit
+    /// the map then shows.
+    var credited: Bool { on && !internet.isEmpty }
     private(set) var source: String?
     /// When the airplanes last heard were where they are given: the
     /// answer's time less its own age (TrafficAnswer.age_s).
     private(set) var heardAt: Date?
+    /// Why the airplanes' marks could not be worked out at the last
+    /// report (the engine refused), shown with the traffic's credit.
+    /// Either the engine's refusal to say which of the internet's
+    /// airplanes are fresh, or to mark their heights.
+    var marksProblem: String? { freshProblem ?? heightsProblem }
+    private var freshProblem: String?
+    private var heightsProblem: String?
     /// The middle of the map and the miles to its corner, as the map last
     /// rested.
     var mapCentre: CLLocationCoordinate2D?
@@ -32,24 +45,21 @@ final class Traffic {
     /// The airplanes near own ship at the last answer, each told once.
     private var nearHexes: Set<String> = []
 
-    /// An airplane within this of own ship, with its height within 1,000
-    /// ft (`near`), is told while the app is not in front. A design
-    /// choice, no rule: the amber mark says it on the screen out to the
-    /// map's edge, but a notification is for traffic a pilot looks for
-    /// now, so the horizontal bound keeps an airplane 40 nm off quiet.
-    static let tellWithinNm = 5.0
-
     /// Ask again and again while the map is shown, on the app's one clock,
     /// about own ship where there is a fix (its height tells which
     /// airplanes are near), else about the middle of the map.
     func run(near ownShip: @escaping @MainActor () -> OwnShip.Fix?) async {
+        // The receiver's airplanes merged as each second's bytes are read.
+        Receiver.shared.onRead = { [weak self] in self?.merge() }
         await Ticker.shared.run(every: Self.everyS) { [weak self] in
             await self?.ask(near: ownShip())
         }
     }
 
-    /// One answer about a point, where traffic is on and there is one.
-    private func ask(near fix: OwnShip.Fix?) async {
+    /// One answer about a point, where traffic is on and there is one: on
+    /// the clock, and when a traffic list is pulled down (TrafficFindView).
+    func ask(near fix: OwnShip.Fix?) async {
+        ownFt = fix?.altitudeFt
         guard on, let at = fix?.coordinate ?? mapCentre else { return }
         let radius = min(60, max(10, mapRadiusNm))
         let answer: TrafficAnswer
@@ -57,18 +67,48 @@ final class Traffic {
             answer = try await Planner.traffic(lat: at.latitude, lon: at.longitude, radiusNm: radius)
         } catch {
             Log.map.notice("the traffic could not be asked for: \(error.localizedDescription, privacy: .public)")
+            // No signal: the receiver's airplanes alone, the internet's
+            // last answer going stale.
+            internet = []
+            freshProblem = nil
+            merge()
             return
         }
         guard on else { return }
-        planes = answer.aircraft.filter { ($0.seenS ?? 0) + (answer.ageS ?? 0) <= Self.staleS }
+        internet = fresh(answer)
+        merge()
         source = answer.source
         heardAt = Date().addingTimeInterval(-(answer.ageS ?? 0))
+        // With no height of own ship tellNear asks nothing, so the marks
+        // the map draws are checked here, their problem kept to show.
+        if fix?.altitudeFt == nil { _ = drawn(planes, ownFt: nil) }
         await tellNear(fix)
     }
 
-    /// The airplanes near own ship (the engine's `traffic_marks`, the
-    /// amber mark: within 1,000 ft of its height) and within
-    /// `tellWithinNm`, each told once as it comes near, as a
+    /// The internet's airplanes still where they were heard, the engine's
+    /// `traffic_fresh` (30 s, wingtip.traffic's STALE_S); none where the
+    /// engine refuses, and why in `marksProblem`, never an old airplane
+    /// drawn where it no longer is.
+    private func fresh(_ answer: TrafficAnswer) -> [TrafficAircraft] {
+        do {
+            let keep = try Engine.trafficFresh(ageS: answer.ageS, planes: answer.aircraft.map { .init(seenS: $0.seenS) })
+            freshProblem = nil
+            return zip(answer.aircraft, keep).filter(\.1).map(\.0)
+        } catch {
+            freshProblem = "Traffic unavailable: \(error.localizedDescription)"
+            return []
+        }
+    }
+
+    /// The internet's airplanes and the receiver's, as drawn.
+    private func merge() {
+        planes = on ? Receiver.shared.traffic(internet, ownFt: ownFt) : []
+    }
+
+    /// The airplanes the engine's `traffic_marks` says to tell (`tell`:
+    /// within 1,000 ft of own ship's height and 5 nm of it, a design
+    /// choice, so an airplane 40 nm off stays quiet), each told once as it
+    /// comes near, as a
     /// time-sensitive notification while the app is not in front
     /// (Notifications); on the screen the amber mark says it, so nothing
     /// is sent then. Permission is asked the first time traffic is near
@@ -78,12 +118,9 @@ final class Traffic {
             nearHexes = []
             return
         }
-        let marks = Self.marks(planes, ownFt: ownFt)
+        let marks = drawn(planes, ownFt: ownFt, own: fix.coordinate)
         var near: Set<String> = []
-        for (plane, mark) in zip(planes, marks) where mark.near {
-            let here = CLLocationCoordinate2D(latitude: plane.lat, longitude: plane.lon)
-            let nm = Flight.nm(from: fix.coordinate, to: here)
-            guard nm <= Self.tellWithinNm else { continue }
+        for (plane, mark) in zip(planes, marks) where mark.tell {
             near.insert(plane.hex)
             guard !nearHexes.contains(plane.hex) else { continue }
             if Notifications.inFront {
@@ -92,8 +129,11 @@ final class Traffic {
             }
             let name = plane.callsign ?? plane.registration ?? plane.hex
             let against = plane.altitudeFt.map { ", \(FlightWords.against($0 - ownFt))" } ?? ""
-            let place = "\(Formats.nm(nm, decimals: 0)) \(AirportWords.compassPoint(Flight.bearing(from: fix.coordinate, to: here))) of you"
-            Notifications.tell("Traffic near you", "\(name), \(place)\(against)", id: "traffic-\(plane.hex)")
+            // The engine gives the distance and bearing with own ship's
+            // place; where it has neither, the words leave them out.
+            let compass = mark.bearingDeg.map { " \(AirportWords.compassPoint($0))" } ?? ""
+            let place = mark.nm.map { ", \(Format.distance($0, decimals: 0))\(compass) of you" } ?? ""
+            Notifications.tell("Traffic near you", "\(name)\(place)\(against)", id: "traffic-\(plane.hex)")
         }
         nearHexes = near
     }
@@ -110,24 +150,39 @@ final class Traffic {
     /// the web app's, 1,000 ft being the spacing VFR cruising altitudes
     /// keep between opposite directions (14 CFR 91.159).
     /// The engine's own answer, its type generated from the engine's
-    /// contract (EngineContract.swift, scripts/build/engine-contract-apps.sh).
-    typealias Mark = EngineTrafficMarksAnswerElement
+    /// contract (Engine/Generated, scripts/build/engine-contract-apps.sh).
+    typealias Mark = EngineContract.TrafficMarksAnswerItem
 
     /// Each airplane's mark, in one call (the engine's `traffic_marks`,
-    /// the web app's trafficLabel, traffic.json); none where the engine
-    /// cannot answer.
-    static func marks(_ planes: [TrafficAircraft], ownFt: Double?) -> [Mark] {
-        let asked: [[String: Any?]] = planes.map { ["altitude_ft": $0.altitudeFt, "vertical_fpm": $0.verticalFpm] }
-        let marks: [Mark]? = try? Engine.call("traffic_marks", json: ["own_ft": ownFt, "planes": asked])
-        return marks ?? []
+    /// the web app's trafficLabel, traffic.json), with own ship's place
+    /// where there is one for each one's distance, bearing and `tell`;
+    /// throws where the engine cannot answer.
+    static func marks(_ planes: [TrafficAircraft], ownFt: Double?, own: CLLocationCoordinate2D? = nil) throws -> [Mark] {
+        try Engine.trafficMarks(
+            ownFt: ownFt,
+            planes: planes.map { .init(altitudeFt: $0.altitudeFt, verticalFpm: $0.verticalFpm, lat: $0.lat, lon: $0.lon) },
+            own: own.map { .init(lat: $0.latitude, lon: $0.longitude) })
     }
 
-    static func label(_ plane: TrafficAircraft, ownFt: Double?) -> String {
-        marks([plane], ownFt: ownFt).first?.label ?? ""
+    /// The marks to draw: none where the engine cannot answer, and why in
+    /// `marksProblem`, which the map's traffic credit shows.
+    func drawn(_ planes: [TrafficAircraft], ownFt: Double?, own: CLLocationCoordinate2D? = nil) -> [Mark] {
+        do {
+            let marks = try Self.marks(planes, ownFt: ownFt, own: own)
+            heightsProblem = nil
+            return marks
+        } catch {
+            heightsProblem = "Traffic heights unavailable: \(error.localizedDescription)"
+            return []
+        }
     }
 
-    static func near(_ plane: TrafficAircraft, ownFt: Double?) -> Bool {
-        marks([plane], ownFt: ownFt).first?.near ?? false
+    static func label(_ plane: TrafficAircraft, ownFt: Double?) throws -> String {
+        try marks([plane], ownFt: ownFt).first?.label ?? ""
+    }
+
+    static func near(_ plane: TrafficAircraft, ownFt: Double?) throws -> Bool {
+        try marks([plane], ownFt: ownFt).first?.near ?? false
     }
 
     /// What the Open Database License asks of a map that draws adsb.lol's

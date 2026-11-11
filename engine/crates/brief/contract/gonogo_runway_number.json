@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "A runway end's number with its leading zero dropped: \"09\" to \"9\".",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoRunwayNumberInput",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "ident"
+      ]
+    },
+    "answer": {
+      "title": "GonogoRunwayNumberAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

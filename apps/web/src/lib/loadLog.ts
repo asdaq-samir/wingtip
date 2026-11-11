@@ -38,7 +38,7 @@ export const MILESTONES = [
   { key: "tfrData", label: "TFR data in" },
   { key: "airports", label: "Airports" },
 ] as const;
-export type Milestone = typeof MILESTONES[number]["key"];
+export type Milestone = (typeof MILESTONES)[number]["key"];
 
 const LOADS_KEPT = 30;
 const LOOK_MS = 200;
@@ -53,14 +53,19 @@ function drew(record: string | undefined): boolean {
   try {
     const kept: unknown = JSON.parse(record);
     if (Array.isArray(kept)) return kept.length > 0;
-    if (kept && typeof kept === "object") return Object.values(kept).some(v => typeof v === "number" ? v > 0 : !!v);
-  } catch { /* not JSON: drawn, as it was written */ }
+    if (kept && typeof kept === "object") return Object.values(kept).some((v) => (typeof v === "number" ? v > 0 : !!v));
+  } catch {
+    /* not JSON: drawn, as it was written */
+  }
   return true;
 }
 
 /** Which milestone each of the map's probes stands for. */
 const PROBES: Record<string, Milestone> = {
-  "airspace-lines": "rings", "airspace-edge-labels": "labels", "navaid-marks": "navaids", "airport-marks": "airports",
+  "airspace-lines": "rings",
+  "airspace-edge-labels": "labels",
+  "navaid-marks": "navaids",
+  "airport-marks": "airports",
 };
 
 /** Started once, as the app starts (main.tsx). */
@@ -69,12 +74,19 @@ export function startLoadLog(win: Window = window) {
   if (!perf?.getEntriesByType) return;
   const ms: LoadEntry["ms"] = {};
   const at = new Date(Date.now() - perf.now()).toISOString();
-  const mark = (key: Milestone, when = perf.now()) => { if (ms[key] === undefined) ms[key] = Math.round(when); };
-  const answered = (part: string) => perf.getEntriesByType("resource")
-    .find(e => e.name.includes(part) && (e as PerformanceResourceTiming).responseEnd > 0) as PerformanceResourceTiming | undefined;
+  const mark = (key: Milestone, when = perf.now()) => {
+    if (ms[key] === undefined) ms[key] = Math.round(when);
+  };
+  const answered = (part: string) =>
+    perf.getEntriesByType("resource").find((e) => e.name.includes(part) && (e as PerformanceResourceTiming).responseEnd > 0) as
+      PerformanceResourceTiming | undefined;
   // The tiles fill the browser's buffer of 250 and the planner's answers
   // fall out of it (the profile notes, 2026-11-03).
-  try { perf.setResourceTimingBufferSize?.(4000); } catch { /* kept at its size */ }
+  try {
+    perf.setResourceTimingBufferSize?.(4000);
+  } catch {
+    /* kept at its size */
+  }
   const doc = win.document;
   const look = () => {
     const paint = perf.getEntriesByName("first-contentful-paint")[0];
@@ -95,7 +107,7 @@ export function startLoadLog(win: Window = window) {
   };
   const timer = win.setInterval(() => {
     look();
-    if (MILESTONES.every(m => ms[m.key] !== undefined) || perf.now() > GIVE_UP_MS) done();
+    if (MILESTONES.every((m) => ms[m.key] !== undefined) || perf.now() > GIVE_UP_MS) done();
   }, LOOK_MS);
   let kept = false;
   function done() {
@@ -106,10 +118,10 @@ export function startLoadLog(win: Window = window) {
     if (ms.map === undefined) return;
     // Fresh where any of the app's scripts came over the network: from the
     // browser's cache or the service worker they carry no bytes.
-    const scripts = perf.getEntriesByType("resource").filter(e => /\.js(\?|$)/.test(e.name)) as PerformanceResourceTiming[];
-    const fresh = scripts.some(e => e.transferSize > 0);
+    const scripts = perf.getEntriesByType("resource").filter((e) => /\.js(\?|$)/.test(e.name)) as PerformanceResourceTiming[];
+    const fresh = scripts.some((e) => e.transferSize > 0);
     const entry: LoadEntry = { at, fresh, ms: { ...ms } };
-    useLoadLog.setState(s => ({ value: [entry, ...s.value].slice(0, LOADS_KEPT) }));
+    useLoadLog.setState((s) => ({ value: [entry, ...s.value].slice(0, LOADS_KEPT) }));
   }
   win.addEventListener("pagehide", done);
 }

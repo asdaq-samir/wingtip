@@ -1,6 +1,4042 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "" : {
+
+    },
+    " %@" : {
+
+    },
+    " · %@" : {
+
+    },
+    " → " : {
+
+    },
+    "%@" : {
+
+    },
+    "%@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@"
+          }
+        }
+      }
+    },
+    "%@ %@ degrees" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ degrees"
+          }
+        }
+      }
+    },
+    "%@ %@ → %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@ → %3$@"
+          }
+        }
+      }
+    },
+    "%@ %@%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$@%3$@%4$@"
+          }
+        }
+      }
+    },
+    "%@ (%@)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "%@ NOTAMs" : {
+
+    },
+    "%@ NOTAMs, %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ NOTAMs, %2$lld"
+          }
+        }
+      }
+    },
+    "%@ Squawks" : {
+
+    },
+    "%@ airport diagram" : {
+
+    },
+    "%@ along" : {
+
+    },
+    "%@ at %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ at %2$@"
+          }
+        }
+      }
+    },
+    "%@ could not be read from adsb.lol just now, so their flights are missing." : {
+
+    },
+    "%@ degrees %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ degrees %2$@"
+          }
+        }
+      }
+    },
+    "%@ entry" : {
+
+    },
+    "%@ entry to a hold with %@ turns on an inbound course of %@, arriving on a heading of %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ entry to a hold with %2$@ turns on an inbound course of %3$@, arriving on a heading of %4$@."
+          }
+        }
+      }
+    },
+    "%@ fixes" : {
+
+    },
+    "%@ flown of %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ flown of %2$@"
+          }
+        }
+      }
+    },
+    "%@ frame" : {
+
+    },
+    "%@ hours" : {
+
+    },
+    "%@ is outside the planner's legal altitudes; flown with its warnings." : {
+
+    },
+    "%@ leaving %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ leaving %2$@"
+          }
+        }
+      }
+    },
+    "%@ long" : {
+
+    },
+    "%@ loop" : {
+
+    },
+    "%@ magnetic" : {
+
+    },
+    "%@ min" : {
+
+    },
+    "%@ nm" : {
+
+    },
+    "%@ on %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ on %2$@"
+          }
+        }
+      }
+    },
+    "%@ on the ground" : {
+
+    },
+    "%@ over FIS-B" : {
+
+    },
+    "%@ planned" : {
+
+    },
+    "%@ profile" : {
+
+    },
+    "%@ to %@, C172" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ to %2$@, C172"
+          }
+        }
+      }
+    },
+    "%@ to go" : {
+
+    },
+    "%@ transition" : {
+
+    },
+    "%@ wide" : {
+
+    },
+    "%@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "%@ · %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@ · %3$@"
+          }
+        }
+      }
+    },
+    "%@ · %@ · %@ gal/h" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@ · %3$@ gal/h"
+          }
+        }
+      }
+    },
+    "%@ · %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@, %3$@"
+          }
+        }
+      }
+    },
+    "%@ · %@, in your logbook; your currency is worked out again from it." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$@, in your logbook; your currency is worked out again from it."
+          }
+        }
+      }
+    },
+    "%@ · %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld"
+          }
+        }
+      }
+    },
+    "%@ · %lld · ACS %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld · ACS %3$@"
+          }
+        }
+      }
+    },
+    "%@ · Check" : {
+
+    },
+    "%@ → %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ → %2$@"
+          }
+        }
+      }
+    },
+    "%@ → %@ needs fuel on the way" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ → %2$@ needs fuel on the way"
+          }
+        }
+      }
+    },
+    "%@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@%2$@"
+          }
+        }
+      }
+    },
+    "%@'s ATIS couldn't be had; check the connection." : {
+
+    },
+    "%@'s minimum altitude" : {
+
+    },
+    "%@'s weather could not be had; check the connection." : {
+
+    },
+    "%@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      }
+    },
+    "%@, %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@%3$@"
+          }
+        }
+      }
+    },
+    "%@, account and settings" : {
+
+    },
+    "%@, full screen" : {
+
+    },
+    "%@, in %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, in %2$@, %3$@"
+          }
+        }
+      }
+    },
+    "%@, on your figures" : {
+
+    },
+    "%@: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$@"
+          }
+        }
+      }
+    },
+    "%@: %lld flight%@ read%@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@: %2$lld flight%3$@ read%4$@."
+          }
+        }
+      }
+    },
+    "%@T" : {
+
+    },
+    "%@…" : {
+
+    },
+    "%lld" : {
+
+    },
+    "%lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld %2$@"
+          }
+        }
+      }
+    },
+    "%lld approaches%@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld approaches%2$@. %3$@"
+          }
+        }
+      }
+    },
+    "%lld card%@ done" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld card%2$@ done"
+          }
+        }
+      }
+    },
+    "%lld code%@ found" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld code%2$@ found"
+          }
+        }
+      }
+    },
+    "%lld ft wide" : {
+
+    },
+    "%lld more" : {
+
+    },
+    "%lld more checkpoints" : {
+
+    },
+    "%lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "%lld of 6 approaches%@%@ in the window" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of 6 approaches%2$@%3$@ in the window"
+          }
+        }
+      }
+    },
+    "%lld percent flown" : {
+
+    },
+    "%lld/%lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld/%2$lld"
+          }
+        }
+      }
+    },
+    "%lld×" : {
+
+    },
+    "+%lld" : {
+
+    },
+    "0" : {
+
+    },
+    "1800wxbrief.com" : {
+
+    },
+    "2" : {
+
+    },
+    "218 555 0100" : {
+
+    },
+    "270" : {
+
+    },
+    "3 takeoffs and landings in 90 days" : {
+
+    },
+    "3 to a full stop at night in 90 days" : {
+
+    },
+    "3,500 ft" : {
+
+    },
+    "30 and 7 days before each runs out, your airplanes' too" : {
+
+    },
+    "90" : {
+
+    },
+    "91.213(d)" : {
+
+    },
+    "987654321CFI" : {
+
+    },
+    "A Planning Aid" : {
+
+    },
+    "A call to you: %@" : {
+
+    },
+    "A fix" : {
+
+    },
+    "A fix from %@" : {
+
+    },
+    "A note for your instructor" : {
+
+    },
+    "ADS-B Receiver" : {
+
+    },
+    "ADS-B receiver: %@" : {
+
+    },
+    "ATC" : {
+
+    },
+    "ATIS at ${airport}" : {
+
+    },
+    "ATIS at an Airport" : {
+
+    },
+    "AWC CIP and FIP, issued %@" : {
+
+    },
+    "About" : {
+
+    },
+    "Accept" : {
+
+    },
+    "Account" : {
+
+    },
+    "Account and Settings" : {
+
+    },
+    "Account, Records, Sync" : {
+
+    },
+    "Active Leg" : {
+
+    },
+    "Add" : {
+
+    },
+    "Add ${approach} to the route" : {
+
+    },
+    "Add Date" : {
+
+    },
+    "Add a Segment" : {
+
+    },
+    "Add a Stop" : {
+
+    },
+    "Add a note" : {
+
+    },
+    "Add an Approach to the Route" : {
+
+    },
+    "Add from a Photo" : {
+
+    },
+    "Add to Favorites" : {
+
+    },
+    "Add to Plan" : {
+
+    },
+    "Add yours with its handbook's figures." : {
+
+    },
+    "Added the %@ at %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Added the %1$@ at %2$@."
+          }
+        }
+      }
+    },
+    "After the flight, from its saved track" : {
+
+    },
+    "Again" : {
+
+    },
+    "Aircraft identification" : {
+
+    },
+    "Airplane" : {
+
+    },
+    "Airplane Type" : {
+
+    },
+    "Airplane type" : {
+
+    },
+    "Airplanes" : {
+
+    },
+    "Airport" : {
+
+    },
+    "Airport Weather" : {
+
+    },
+    "Airport diagram" : {
+
+    },
+    "Airport diagram, full screen" : {
+
+    },
+    "Airports" : {
+
+    },
+    "Airspace" : {
+
+    },
+    "Airspace Here" : {
+
+    },
+    "Airworthiness" : {
+
+    },
+    "Alert" : {
+
+    },
+    "Alerts" : {
+
+    },
+    "All Nearest" : {
+
+    },
+    "Allow" : {
+
+    },
+    "Along" : {
+
+    },
+    "Along the route" : {
+
+    },
+    "Alt" : {
+
+    },
+    "Alternating" : {
+
+    },
+    "Altitude" : {
+
+    },
+    "Altitude at %@" : {
+
+    },
+    "Altitude not read" : {
+
+    },
+    "An airport's METAR and TAF, as sent." : {
+
+    },
+    "And %lld more" : {
+
+    },
+    "Answers From" : {
+
+    },
+    "Answers from" : {
+
+    },
+    "Approach" : {
+
+    },
+    "Approach Plates" : {
+
+    },
+    "As Charted" : {
+
+    },
+    "As Said" : {
+
+    },
+    "As Sent" : {
+
+    },
+    "As Written" : {
+
+    },
+    "As filed" : {
+
+    },
+    "As marked on the transmitter, 91.207(c)" : {
+
+    },
+    "As on your student pilot certificate" : {
+
+    },
+    "As printed on the page, in %@." : {
+
+    },
+    "As published" : {
+
+    },
+    "Ask" : {
+
+    },
+    "Ask %@ to Review It" : {
+
+    },
+    "Ask about the flight" : {
+
+    },
+    "Ask about this flight" : {
+
+    },
+    "Ask by voice" : {
+
+    },
+    "Ask for a Review" : {
+
+    },
+    "Asking You" : {
+
+    },
+    "Asking the iPhone…" : {
+
+    },
+    "Asking…" : {
+
+    },
+    "Asks the assistant" : {
+
+    },
+    "Assigned" : {
+
+    },
+    "At a Glance" : {
+
+    },
+    "Auto" : {
+
+    },
+    "Avery B. Student" : {
+
+    },
+    "Balance" : {
+
+    },
+    "Band" : {
+
+    },
+    "Based at" : {
+
+    },
+    "Bearing error" : {
+
+    },
+    "Best Fields" : {
+
+    },
+    "Best Fields · Glide About %@" : {
+
+    },
+    "Blank where none was given" : {
+
+    },
+    "Block" : {
+
+    },
+    "Book Figures" : {
+
+    },
+    "Brief" : {
+
+    },
+    "Brief ${approach}" : {
+
+    },
+    "Brief Them" : {
+
+    },
+    "Brief a Flight" : {
+
+    },
+    "Brief a flight to ${airport}" : {
+
+    },
+    "Brief a flight to where?" : {
+
+    },
+    "Brief an Approach" : {
+
+    },
+    "Brief, VFR flight not recommended" : {
+
+    },
+    "Briefing your flight to %@." : {
+
+    },
+    "Briefs an instrument approach: course, glidepath, fixes, altitudes, missed approach and frequencies." : {
+
+    },
+    "Build" : {
+
+    },
+    "CRS %@" : {
+
+    },
+    "Call %@" : {
+
+    },
+    "Call 911" : {
+
+    },
+    "Callsign" : {
+
+    },
+    "Callsign, N-number or address" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Cancel Direct" : {
+
+    },
+    "Caution ahead" : {
+
+    },
+    "Cautions" : {
+
+    },
+    "Ceiling" : {
+
+    },
+    "Certificate" : {
+
+    },
+    "Certificate expires" : {
+
+    },
+    "Cessna 172" : {
+
+    },
+    "Change" : {
+
+    },
+    "Change Hold…" : {
+
+    },
+    "Chart" : {
+
+    },
+    "Chart Edition" : {
+
+    },
+    "Chart at Night" : {
+
+    },
+    "Charts" : {
+
+    },
+    "Check" : {
+
+    },
+    "Check your mail: the link opens Wingtip Maps and signs you in." : {
+
+    },
+    "Checked on" : {
+
+    },
+    "Checking the flight…" : {
+
+    },
+    "Checking what's on this device…" : {
+
+    },
+    "Checking…" : {
+
+    },
+    "Checklist" : {
+
+    },
+    "Checklists, Squawks and Inspections" : {
+
+    },
+    "Checkpoint Colours" : {
+
+    },
+    "Checkpoint Notes" : {
+
+    },
+    "Checkpoint notes" : {
+
+    },
+    "Checkpoints" : {
+
+    },
+    "Checkpoints · Within %@ min" : {
+
+    },
+    "Checks this iPhone is ready to fly your route with no signal: charts, data, briefing, NOTAMs, battery and position." : {
+
+    },
+    "Choose the airport whose METAR and TAF the widget shows." : {
+
+    },
+    "Choose the currency the small widget shows." : {
+
+    },
+    "Choose the flight to show: the plan on the page or a saved flight." : {
+
+    },
+    "Class %@" : {
+
+    },
+    "Class %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Class %1$@, %2$@"
+          }
+        }
+      }
+    },
+    "Class B" : {
+
+    },
+    "Class B Weather" : {
+
+    },
+    "Class Bravo airspace" : {
+
+    },
+    "Clear" : {
+
+    },
+    "Clear %@" : {
+
+    },
+    "Clear Route" : {
+
+    },
+    "Clearance" : {
+
+    },
+    "Climb and Descent" : {
+
+    },
+    "Climbing" : {
+
+    },
+    "Close" : {
+
+    },
+    "Close the trip planner" : {
+
+    },
+    "Clouds" : {
+
+    },
+    "Coach" : {
+
+    },
+    "Coming Up" : {
+
+    },
+    "Confirmed" : {
+
+    },
+    "Contact" : {
+
+    },
+    "Copies it" : {
+
+    },
+    "Copilot" : {
+
+    },
+    "Copy" : {
+
+    },
+    "Copy %@" : {
+
+    },
+    "Correct" : {
+
+    },
+    "Corrects this figure" : {
+
+    },
+    "Couldn't Read That" : {
+
+    },
+    "Couldn't search. Try again in a moment." : {
+
+    },
+    "Course" : {
+
+    },
+    "Course and Heading" : {
+
+    },
+    "Course, as 090" : {
+
+    },
+    "Create a Fix from Here…" : {
+
+    },
+    "Credits" : {
+
+    },
+    "Cross %@ at" : {
+
+    },
+    "Cross at" : {
+
+    },
+    "Cross at…" : {
+
+    },
+    "Cross-country" : {
+
+    },
+    "Cruise" : {
+
+    },
+    "Cruise altitude, hundreds of feet" : {
+
+    },
+    "Cruise figures at %@, standard day" : {
+
+    },
+    "Cruise figures, standard day" : {
+
+    },
+    "Cruise speed · fuel burn · ceiling" : {
+
+    },
+    "Cruising level" : {
+
+    },
+    "Cruising speed" : {
+
+    },
+    "Currency" : {
+
+    },
+    "Currency Status" : {
+
+    },
+    "Danger ahead" : {
+
+    },
+    "Data Cycle" : {
+
+    },
+    "Date" : {
+
+    },
+    "Date ________" : {
+
+    },
+    "Day of the flight" : {
+
+    },
+    "Debrief" : {
+
+    },
+    "Debrief Against" : {
+
+    },
+    "Decline" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete %@?" : {
+
+    },
+    "Delete Account" : {
+
+    },
+    "Delete Airplane" : {
+
+    },
+    "Delete the Track" : {
+
+    },
+    "Delete your account?" : {
+
+    },
+    "Deleting…" : {
+
+    },
+    "Demo Flight" : {
+
+    },
+    "Departs" : {
+
+    },
+    "Departure" : {
+
+    },
+    "Departure %@" : {
+
+    },
+    "Departure hours" : {
+
+    },
+    "Describe the Checkpoints" : {
+
+    },
+    "Describe the trip" : {
+
+    },
+    "Destination" : {
+
+    },
+    "Detail" : {
+
+    },
+    "Differs" : {
+
+    },
+    "Differs from what you filed: " : {
+
+    },
+    "Direct %@" : {
+
+    },
+    "Direct To" : {
+
+    },
+    "Direct To %@" : {
+
+    },
+    "Direct to ${airport}" : {
+
+    },
+    "Direct to ${place}" : {
+
+    },
+    "Direct to %@" : {
+
+    },
+    "Direct to %@." : {
+
+    },
+    "Direct to %@?" : {
+
+    },
+    "Direct to a Fix" : {
+
+    },
+    "Direct to an Airport" : {
+
+    },
+    "Direct to the Nearest Airport" : {
+
+    },
+    "Direct to where?" : {
+
+    },
+    "Direct to which airport?" : {
+
+    },
+    "Directions in Maps" : {
+
+    },
+    "Discard Changes" : {
+
+    },
+    "Discard your changes?" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Dismiss the answer" : {
+
+    },
+    "Display" : {
+
+    },
+    "Dist" : {
+
+    },
+    "Distance" : {
+
+    },
+    "Distance, nm" : {
+
+    },
+    "Diversion Drill" : {
+
+    },
+    "Divert" : {
+
+    },
+    "Divert to" : {
+
+    },
+    "Divert to %@" : {
+
+    },
+    "Do" : {
+
+    },
+    "Done" : {
+
+    },
+    "Dot" : {
+
+    },
+    "Download %@" : {
+
+    },
+    "Download %@?" : {
+
+    },
+    "Download This View" : {
+
+    },
+    "Downloads" : {
+
+    },
+    "Downloads in the background, over Wi-Fi or cellular." : {
+
+    },
+    "Draft a Remark" : {
+
+    },
+    "Drafting a Remark…" : {
+
+    },
+    "Drawing the entry from the track…" : {
+
+    },
+    "Drawn from this flight's track. Change anything, then Log it." : {
+
+    },
+    "Dry run" : {
+
+    },
+    "ETA · %@" : {
+
+    },
+    "ETE" : {
+
+    },
+    "Each leg flies them in the forecast air at its altitude, as a density altitude: faster in thinner air at the same power, and slower and thriftier where full throttle can no longer make it. Climbs slow as the air thins, and a warm day lowers the service ceiling." : {
+
+    },
+    "Earlier" : {
+
+    },
+    "Edit" : {
+
+    },
+    "Edit %@" : {
+
+    },
+    "Edit Airplane" : {
+
+    },
+    "Edit the %@" : {
+
+    },
+    "Edition" : {
+
+    },
+    "Effective" : {
+
+    },
+    "Email" : {
+
+    },
+    "Email reminders" : {
+
+    },
+    "Emergency" : {
+
+    },
+    "Emergency Assistant" : {
+
+    },
+    "En route" : {
+
+    },
+    "End Flight" : {
+
+    },
+    "End the dry run" : {
+
+    },
+    "Ended %@" : {
+
+    },
+    "Endorse This Flight" : {
+
+    },
+    "Endorsements" : {
+
+    },
+    "Endurance" : {
+
+    },
+    "Endurance, HHMM" : {
+
+    },
+    "Enter Route" : {
+
+    },
+    "Enter a clearance" : {
+
+    },
+    "Enter the route" : {
+
+    },
+    "Entry" : {
+
+    },
+    "Every card is new: start whenever you like." : {
+
+    },
+    "Every check" : {
+
+    },
+    "Every note you wrote on a checkpoint goes; the shared ones stay." : {
+
+    },
+    "Expect" : {
+
+    },
+    "Expect further clearance" : {
+
+    },
+    "Expires" : {
+
+    },
+    "Explain ${notam}" : {
+
+    },
+    "Explain a NOTAM" : {
+
+    },
+    "Export My Data" : {
+
+    },
+    "Export as CSV" : {
+
+    },
+    "FAA ATCSCC" : {
+
+    },
+    "FAA D-ATIS" : {
+
+    },
+    "FAA RVR, through SWIM" : {
+
+    },
+    "FAA Registration" : {
+
+    },
+    "FL-045 as 045" : {
+
+    },
+    "Favorite" : {
+
+    },
+    "Favorites" : {
+
+    },
+    "Feet" : {
+
+    },
+    "Fetching earlier flights…" : {
+
+    },
+    "Fetching its flights…" : {
+
+    },
+    "Fetching the airspace here…" : {
+
+    },
+    "Fetching the fields round you…" : {
+
+    },
+    "Fetching the forecast for the run…" : {
+
+    },
+    "Fetching the forecast icing along the legs…" : {
+
+    },
+    "Fetching the hours…" : {
+
+    },
+    "Fetching…" : {
+
+    },
+    "Fields Below VFR" : {
+
+    },
+    "Fields near %@" : {
+
+    },
+    "Figures" : {
+
+    },
+    "Figures Not Saved" : {
+
+    },
+    "File" : {
+
+    },
+    "File Flight Plan" : {
+
+    },
+    "File it with Flight Service" : {
+
+    },
+    "File with %@" : {
+
+    },
+    "Filed: %@" : {
+
+    },
+    "Filing…" : {
+
+    },
+    "Fill in %@" : {
+
+    },
+    "Find Nearby" : {
+
+    },
+    "Find Nearby is from where the airplane is." : {
+
+    },
+    "Find an Airplane" : {
+
+    },
+    "Find an airplane" : {
+
+    },
+    "Finding the nearest fields…" : {
+
+    },
+    "Finding your position…" : {
+
+    },
+    "Finds the airport nearest you and, once you confirm, flies your route direct to it." : {
+
+    },
+    "Fit the page" : {
+
+    },
+    "Fix" : {
+
+    },
+    "Fix: %@" : {
+
+    },
+    "Fixed" : {
+
+    },
+    "Fixed Today" : {
+
+    },
+    "Flashing" : {
+
+    },
+    "Flies your route direct to a navaid, a fix or a field said by name from where the airplane is." : {
+
+    },
+    "Flies your route direct to an airport from where the airplane is." : {
+
+    },
+    "Flight" : {
+
+    },
+    "Flight Logged" : {
+
+    },
+    "Flight Plan" : {
+
+    },
+    "Flight Review" : {
+
+    },
+    "Flight Rules" : {
+
+    },
+    "Flight Service" : {
+
+    },
+    "Flight from %@ to %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Flight from %1$@ to %2$@"
+          }
+        }
+      }
+    },
+    "Flights" : {
+
+    },
+    "Flights you log, or the ones Wingtip drafts after you land, show here." : {
+
+    },
+    "Floor" : {
+
+    },
+    "Flown" : {
+
+    },
+    "Flown Track" : {
+
+    },
+    "Flown by Instruments" : {
+
+    },
+    "Flown for hire" : {
+
+    },
+    "Fly" : {
+
+    },
+    "Fly ${airplane}" : {
+
+    },
+    "Fly %@" : {
+
+    },
+    "Fly %@ as Charted" : {
+
+    },
+    "Fly Anyway" : {
+
+    },
+    "Fly Here" : {
+
+    },
+    "Fly Here, %@" : {
+
+    },
+    "Fly an Airplane" : {
+
+    },
+    "Fly as Planned" : {
+
+    },
+    "Fly via %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fly via %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Flying" : {
+
+    },
+    "Flying This Airplane" : {
+
+    },
+    "Flying now" : {
+
+    },
+    "Folds the reasons" : {
+
+    },
+    "Follow" : {
+
+    },
+    "Following" : {
+
+    },
+    "Forecast" : {
+
+    },
+    "Forecast %@" : {
+
+    },
+    "Forecast Along the Route" : {
+
+    },
+    "Forecast Icing" : {
+
+    },
+    "Forecast mode" : {
+
+    },
+    "Forget Them" : {
+
+    },
+    "Forget your checkpoint notes?" : {
+
+    },
+    "Found" : {
+
+    },
+    "Found on" : {
+
+    },
+    "Free on iPhone" : {
+
+    },
+    "Frequencies" : {
+
+    },
+    "Frequencies (Class %@)" : {
+
+    },
+    "Frequency" : {
+
+    },
+    "From" : {
+
+    },
+    "From %@" : {
+
+    },
+    "From %@ on" : {
+
+    },
+    "From Your Debriefs" : {
+
+    },
+    "From a Photo" : {
+
+    },
+    "From the Briefing and Your Logbook" : {
+
+    },
+    "From the filed or amended time en route" : {
+
+    },
+    "From your logbook and the fields near %@" : {
+
+    },
+    "Fuel" : {
+
+    },
+    "Fuel Burn" : {
+
+    },
+    "Fuel, Minutes" : {
+
+    },
+    "G-AIRMETs" : {
+
+    },
+    "GS" : {
+
+    },
+    "Getting Worse by Arrival" : {
+
+    },
+    "Give your name first: your endorsements name you by it" : {
+
+    },
+    "Glide Ring" : {
+
+    },
+    "Go / No-Go" : {
+
+    },
+    "Go Round · %@" : {
+
+    },
+    "Good to %@" : {
+
+    },
+    "Ground" : {
+
+    },
+    "Groundspeed" : {
+
+    },
+    "Guide" : {
+
+    },
+    "Halo" : {
+
+    },
+    "Handbook figures confirmed, saved with the airplane" : {
+
+    },
+    "Hazards" : {
+
+    },
+    "Heading %@" : {
+
+    },
+    "Heard" : {
+
+    },
+    "Heard %@" : {
+
+    },
+    "Heard: %@" : {
+
+    },
+    "Here's the entry from your flight; check it and log it." : {
+
+    },
+    "Hide from the Map" : {
+
+    },
+    "Highest" : {
+
+    },
+    "Hire or instruction for hire: the 100-hour, 91.409(b)" : {
+
+    },
+    "Hold Here…" : {
+
+    },
+    "Hold at %@" : {
+
+    },
+    "Hold for" : {
+
+    },
+    "Hold to reset" : {
+
+    },
+    "Holding" : {
+
+    },
+    "Holding Entries" : {
+
+    },
+    "Home base" : {
+
+    },
+    "Hours" : {
+
+    },
+    "Hours at last 100-hour" : {
+
+    },
+    "Hours flown by %@" : {
+
+    },
+    "Hours now" : {
+
+    },
+    "How" : {
+
+    },
+    "How the Altitude Was Chosen" : {
+
+    },
+    "I can't tell where you are, so here are the nearest airports." : {
+
+    },
+    "ICAO address" : {
+
+    },
+    "IPC needed" : {
+
+    },
+    "Ident" : {
+
+    },
+    "Import %lld Flight%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Import %1$lld Flight%2$@"
+          }
+        }
+      }
+    },
+    "Import a Logbook" : {
+
+    },
+    "Importing…" : {
+
+    },
+    "In Flight" : {
+
+    },
+    "In the Brief: %@" : {
+
+    },
+    "In the Wind" : {
+
+    },
+    "In the air" : {
+
+    },
+    "In the air · %@" : {
+
+    },
+    "In words" : {
+
+    },
+    "Inbound" : {
+
+    },
+    "Include %@" : {
+
+    },
+    "Information %@" : {
+
+    },
+    "Inoperative equipment" : {
+
+    },
+    "Inspections" : {
+
+    },
+    "Instructing" : {
+
+    },
+    "Instructor" : {
+
+    },
+    "Instructor's Signature" : {
+
+    },
+    "Instructor's email" : {
+
+    },
+    "Instrument" : {
+
+    },
+    "Instrument currency" : {
+
+    },
+    "Into the Pattern · Within %@ ft" : {
+
+    },
+    "It goes from your airplanes and from the nav log's picker. This can't be undone." : {
+
+    },
+    "Its date" : {
+
+    },
+    "Its magnetic course from %@, a VOR's radial, and how far. Flown over next." : {
+
+    },
+    "Its pilot stopped sharing it." : {
+
+    },
+    "Its profile" : {
+
+    },
+    "J. J. Jones" : {
+
+    },
+    "KDLH" : {
+
+    },
+    "KDLH VOT" : {
+
+    },
+    "KXXX" : {
+
+    },
+    "Keep Editing" : {
+
+    },
+    "Keep for the Air" : {
+
+    },
+    "Keep on This iPhone" : {
+
+    },
+    "Keep the Path This iPhone Flew" : {
+
+    },
+    "Keep the path this iPhone flew, or put in a GPX file." : {
+
+    },
+    "Keep your airplanes, flights and logbook on every device." : {
+
+    },
+    "Keeping for the Air: %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Keeping for the Air: %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "Keeping the briefing, NOTAMs and plates…" : {
+
+    },
+    "Keeping your flight for the air." : {
+
+    },
+    "Keeps your route's charts, briefing, NOTAMs, airport cards and plates on this iPhone for flying with no signal." : {
+
+    },
+    "Kept %@" : {
+
+    },
+    "Kept for the Air" : {
+
+    },
+    "Kept for the Air: %@" : {
+
+    },
+    "Keying" : {
+
+    },
+    "Kneeboard as PDF" : {
+
+    },
+    "Knew It" : {
+
+    },
+    "Knowledge Test" : {
+
+    },
+    "Landed" : {
+
+    },
+    "Landing" : {
+
+    },
+    "Landings" : {
+
+    },
+    "Last check" : {
+
+    },
+    "Last flights" : {
+
+    },
+    "Later" : {
+
+    },
+    "Layer" : {
+
+    },
+    "Leaving" : {
+
+    },
+    "Leaving the Clearance Limit" : {
+
+    },
+    "Left" : {
+
+    },
+    "Leg" : {
+
+    },
+    "Leg %lld" : {
+
+    },
+    "Leg by Leg · Within %@ nm, %@ ft, %@°" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Leg by Leg · Within %1$@ nm, %2$@ ft, %3$@°"
+          }
+        }
+      }
+    },
+    "Leg distance" : {
+
+    },
+    "Leg time" : {
+
+    },
+    "Legal" : {
+
+    },
+    "Legs" : {
+
+    },
+    "Legs by" : {
+
+    },
+    "Legs · %@" : {
+
+    },
+    "Lights" : {
+
+    },
+    "Line" : {
+
+    },
+    "Line %lld: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Line %1$lld: %2$@"
+          }
+        }
+      }
+    },
+    "Listen" : {
+
+    },
+    "Listen to ATIS" : {
+
+    },
+    "Listen to the radio" : {
+
+    },
+    "Listening for your read back…" : {
+
+    },
+    "Listening to the radio" : {
+
+    },
+    "Listening to the radio." : {
+
+    },
+    "Listening to the radio…" : {
+
+    },
+    "Listening…" : {
+
+    },
+    "Listens to the radio through the microphone and writes out what ATC says." : {
+
+    },
+    "Loaded" : {
+
+    },
+    "Loading the map" : {
+
+    },
+    "Log" : {
+
+    },
+    "Log %lld Flight%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Log %1$lld Flight%2$@"
+          }
+        }
+      }
+    },
+    "Log %lld more flight%@ this year to see your trends." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Log %1$lld more flight%2$@ this year to see your trends."
+          }
+        }
+      }
+    },
+    "Log This Flight" : {
+
+    },
+    "Log a Flight" : {
+
+    },
+    "Logbook" : {
+
+    },
+    "Logbook Entry" : {
+
+    },
+    "Logbook Page" : {
+
+    },
+    "Logged" : {
+
+    },
+    "Logging…" : {
+
+    },
+    "Look" : {
+
+    },
+    "Loop Speed" : {
+
+    },
+    "Lost Communications" : {
+
+    },
+    "Lowest ceiling" : {
+
+    },
+    "Lowest visibility" : {
+
+    },
+    "MAYDAY" : {
+
+    },
+    "METARs" : {
+
+    },
+    "MH" : {
+
+    },
+    "MH %@ · %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "MH %1$@ · %2$@"
+          }
+        }
+      }
+    },
+    "Magnetic heading" : {
+
+    },
+    "Magnetic heading %@" : {
+
+    },
+    "Make It Again" : {
+
+    },
+    "Make My Plan" : {
+
+    },
+    "Make and model" : {
+
+    },
+    "Maker and model · in the air or not" : {
+
+    },
+    "Map" : {
+
+    },
+    "Map Settings" : {
+
+    },
+    "Map: the glide's reach" : {
+
+    },
+    "Map: the line to %@ and the glide's reach" : {
+
+    },
+    "May count toward WINGS: %@, ACS %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "May count toward WINGS: %1$@, ACS %2$@"
+          }
+        }
+      }
+    },
+    "Medical" : {
+
+    },
+    "Military Fields" : {
+
+    },
+    "Missed It" : {
+
+    },
+    "Model" : {
+
+    },
+    "Modelled for %@" : {
+
+    },
+    "More" : {
+
+    },
+    "More Info" : {
+
+    },
+    "My position" : {
+
+    },
+    "N-Number" : {
+
+    },
+    "N-number" : {
+
+    },
+    "N3429J · PA-28-140" : {
+
+    },
+    "NEXT" : {
+
+    },
+    "NOTAM" : {
+
+    },
+    "NOTAM %@" : {
+
+    },
+    "NOTAMs" : {
+
+    },
+    "NOTAMs issued before %@ and unchanged since aren't held." : {
+
+    },
+    "Name" : {
+
+    },
+    "Nav Log" : {
+
+    },
+    "Nav Log as PDF" : {
+
+    },
+    "Nav Log as Text" : {
+
+    },
+    "Nav Log · %@" : {
+
+    },
+    "Nav log legs" : {
+
+    },
+    "Nearby" : {
+
+    },
+    "Nearest" : {
+
+    },
+    "Nearest %@" : {
+
+    },
+    "Nearest Airport" : {
+
+    },
+    "Nearest Airports" : {
+
+    },
+    "Nearest Report, %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Nearest Report, %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Nearest airports" : {
+
+    },
+    "Nearest for a Diversion" : {
+
+    },
+    "Nearest is from where the airplane is." : {
+
+    },
+    "Nearest to you" : {
+
+    },
+    "New Airplane" : {
+
+    },
+    "Next" : {
+
+    },
+    "Next FAA data cycle %@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Next FAA data cycle %1$@, %2$@"
+          }
+        }
+      }
+    },
+    "Next Flight" : {
+
+    },
+    "Next Lesson" : {
+
+    },
+    "Next · %@" : {
+
+    },
+    "Next, %@" : {
+
+    },
+    "Night" : {
+
+    },
+    "No %@ Within 25 nm" : {
+
+    },
+    "No Airplane" : {
+
+    },
+    "No Airplanes" : {
+
+    },
+    "No D-ATIS or report at %@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No D-ATIS or report at %1$@. %2$@"
+          }
+        }
+      }
+    },
+    "No Favorites" : {
+
+    },
+    "No Flights Yet" : {
+
+    },
+    "No Legs Yet" : {
+
+    },
+    "No NOTAMs" : {
+
+    },
+    "No Profile Yet" : {
+
+    },
+    "No Recents" : {
+
+    },
+    "No Saved Flight" : {
+
+    },
+    "No TAF along the route reaches past the next hour." : {
+
+    },
+    "No airplane picked" : {
+
+    },
+    "No airports" : {
+
+    },
+    "No answer from the planner." : {
+
+    },
+    "No briefing" : {
+
+    },
+    "No checklist yet" : {
+
+    },
+    "No clearance was read on this page." : {
+
+    },
+    "No codes yet" : {
+
+    },
+    "No fields near here" : {
+
+    },
+    "No flight has ended on this iPhone yet. Here's your logbook." : {
+
+    },
+    "No flight in this track: it never went faster than taxiing." : {
+
+    },
+    "No flight planned" : {
+
+    },
+    "No flights heard in the last six weeks" : {
+
+    },
+    "No flights were read on this page." : {
+
+    },
+    "No hour with nothing against it before %@." : {
+
+    },
+    "No items under the headings yet" : {
+
+    },
+    "No report" : {
+
+    },
+    "No report at %@." : {
+
+    },
+    "No report within 10 statute miles." : {
+
+    },
+    "No runways listed" : {
+
+    },
+    "No saved flights" : {
+
+    },
+    "No track kept" : {
+
+    },
+    "None" : {
+
+    },
+    "None for the route" : {
+
+    },
+    "None here" : {
+
+    },
+    "None here now or to come" : {
+
+    },
+    "None in the air by that name is heard now" : {
+
+    },
+    "None listed" : {
+
+    },
+    "None open" : {
+
+    },
+    "None yet" : {
+
+    },
+    "None yet: the airplanes opened are kept here." : {
+
+    },
+    "Not Available" : {
+
+    },
+    "Not Endorsed" : {
+
+    },
+    "Not Now" : {
+
+    },
+    "Not Yet" : {
+
+    },
+    "Not a Flight to Log" : {
+
+    },
+    "Not current" : {
+
+    },
+    "Not done" : {
+
+    },
+    "Not quite: %@" : {
+
+    },
+    "Not shown" : {
+
+    },
+    "Notes" : {
+
+    },
+    "Nothing dated yet: your flight review, medical and airplanes' inspections show here once given." : {
+
+    },
+    "Nothing due" : {
+
+    },
+    "Nothing raised" : {
+
+    },
+    "Nothing to practise for now: every currency is good past the reminders, and no debrief shows a weak area." : {
+
+    },
+    "Nothing written yet" : {
+
+    },
+    "Now" : {
+
+    },
+    "OK" : {
+
+    },
+    "Off" : {
+
+    },
+    "On This iPhone" : {
+
+    },
+    "On the Field" : {
+
+    },
+    "On the clock" : {
+
+    },
+    "Open" : {
+
+    },
+    "Open Emergency" : {
+
+    },
+    "Open Wingtip Maps" : {
+
+    },
+    "Open a Flight" : {
+
+    },
+    "Open a Logbook Entry" : {
+
+    },
+    "Open an Airport" : {
+
+    },
+    "Open in ForeFlight" : {
+
+    },
+    "Open the Brief" : {
+
+    },
+    "Open your route in Wingtip Maps first, and I'll check it." : {
+
+    },
+    "Opens %@'s NOTAMs" : {
+
+    },
+    "Opens %@'s profile" : {
+
+    },
+    "Opens an airport's card: its weather, runways and frequencies." : {
+
+    },
+    "Opens it in Maps" : {
+
+    },
+    "Opens its profile, with Fly This Airplane" : {
+
+    },
+    "Opens the Brief" : {
+
+    },
+    "Opens the Brief for a route to an airport, from your route's departure or the field nearest you." : {
+
+    },
+    "Opens the airports nearest you, nearest first." : {
+
+    },
+    "Opens the airspace where it is" : {
+
+    },
+    "Opens the emergency assistant: the best fields within a glide, the checklist and the MAYDAY." : {
+
+    },
+    "Opens the entry drafted from the flight you just flew, for you to check and log." : {
+
+    },
+    "Opens the field's card" : {
+
+    },
+    "Opens the leg in the nav log" : {
+
+    },
+    "Opens the nav log" : {
+
+    },
+    "Opens your account" : {
+
+    },
+    "Opens your logbook." : {
+
+    },
+    "Operator" : {
+
+    },
+    "Or" : {
+
+    },
+    "Or %@" : {
+
+    },
+    "Or by Email" : {
+
+    },
+    "Other" : {
+
+    },
+    "Our flight" : {
+
+    },
+    "Outbound" : {
+
+    },
+    "Outside" : {
+
+    },
+    "Over %@°" : {
+
+    },
+    "Passenger Briefing" : {
+
+    },
+    "Passengers" : {
+
+    },
+    "Passengers at Night" : {
+
+    },
+    "Passengers at night" : {
+
+    },
+    "Passengers by Day" : {
+
+    },
+    "Passengers by day" : {
+
+    },
+    "Passengers by day and at night, instrument, flight review and medical, from your logbook." : {
+
+    },
+    "Paste or type the report's codes" : {
+
+    },
+    "Pattern altitude %@" : {
+
+    },
+    "Pause" : {
+
+    },
+    "Pause the dry run" : {
+
+    },
+    "Pause the replay" : {
+
+    },
+    "People on Board" : {
+
+    },
+    "Performance" : {
+
+    },
+    "Period" : {
+
+    },
+    "Personal Minimums" : {
+
+    },
+    "Persons on board" : {
+
+    },
+    "Phone" : {
+
+    },
+    "Pick an airplane on the iPhone." : {
+
+    },
+    "Pick on the Map" : {
+
+    },
+    "Pick one" : {
+
+    },
+    "Pick one for the time, fuel and groundspeed" : {
+
+    },
+    "Pilot" : {
+
+    },
+    "Pilot Reports" : {
+
+    },
+    "Place" : {
+
+    },
+    "Places near the field could not be looked up" : {
+
+    },
+    "Places © Overture Maps Foundation" : {
+
+    },
+    "Plan" : {
+
+    },
+    "Plan Your First Flight" : {
+
+    },
+    "Plan a Trip" : {
+
+    },
+    "Plan a route first for Direct To" : {
+
+    },
+    "Plan a trip to ${airport} leaving ${departure}" : {
+
+    },
+    "Plan a trip…" : {
+
+    },
+    "Plan and brief your flight in Wingtip Maps first, and I'll tell you." : {
+
+    },
+    "Plan one in Wingtip Maps." : {
+
+    },
+    "Plan the route first." : {
+
+    },
+    "Plan the route to see it from the side." : {
+
+    },
+    "Plan the trip" : {
+
+    },
+    "Planned %@" : {
+
+    },
+    "Planned With" : {
+
+    },
+    "Planning a trip to %@, leaving %@. The Brief opens on that hour." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Planning a trip to %1$@, leaving %2$@. The Brief opens on that hour."
+          }
+        }
+      }
+    },
+    "Planning a trip to %@." : {
+
+    },
+    "Planning aid · not for navigation" : {
+
+    },
+    "Planning with %@." : {
+
+    },
+    "Planning…" : {
+
+    },
+    "Plans a flight's route again in the app." : {
+
+    },
+    "Plans a route to an airport, from your route's departure or the field nearest you, and briefs it for the time you say." : {
+
+    },
+    "Plans your route with an airplane, by its N-number." : {
+
+    },
+    "Plates" : {
+
+    },
+    "Play" : {
+
+    },
+    "Play the dry run" : {
+
+    },
+    "Play the replay" : {
+
+    },
+    "Practice" : {
+
+    },
+    "Practice Them All" : {
+
+    },
+    "Preview" : {
+
+    },
+    "Previews the airplane's own altitude" : {
+
+    },
+    "Privacy Policy" : {
+
+    },
+    "Private Fields" : {
+
+    },
+    "Private Pilot Experience" : {
+
+    },
+    "Procedures" : {
+
+    },
+    "Profile" : {
+
+    },
+    "Profile, Altitude Caution" : {
+
+    },
+    "Profile, highest %@" : {
+
+    },
+    "Put In a GPX File…" : {
+
+    },
+    "Put away" : {
+
+    },
+    "Put in the flight's track from a GPX file." : {
+
+    },
+    "Puts an approach on your route at its airport and opens the Brief." : {
+
+    },
+    "Putting your plan into words…" : {
+
+    },
+    "Radar and Satellite" : {
+
+    },
+    "Radar vectors" : {
+
+    },
+    "Radio" : {
+
+    },
+    "Ran out %@" : {
+
+    },
+    "Read Back" : {
+
+    },
+    "Read Back Again" : {
+
+    },
+    "Read back" : {
+
+    },
+    "Read back again" : {
+
+    },
+    "Read from the page: check each against it before saving." : {
+
+    },
+    "Read it back to ATC with Read back again, and it is checked here line by line." : {
+
+    },
+    "Read it back…" : {
+
+    },
+    "Reading the brief…" : {
+
+    },
+    "Reading the page…" : {
+
+    },
+    "Reading the track…" : {
+
+    },
+    "Reading your logbook…" : {
+
+    },
+    "Reads an airport's D-ATIS, or its latest weather report and ATIS frequency." : {
+
+    },
+    "Reads the glance aloud" : {
+
+    },
+    "Ready" : {
+
+    },
+    "Ready to Fly" : {
+
+    },
+    "Ready to Fly?" : {
+
+    },
+    "Recent experience" : {
+
+    },
+    "Recent experience through" : {
+
+    },
+    "Recents" : {
+
+    },
+    "Record Check" : {
+
+    },
+    "Recording…" : {
+
+    },
+    "Refresh" : {
+
+    },
+    "Registered to" : {
+
+    },
+    "Registration" : {
+
+    },
+    "Remarks" : {
+
+    },
+    "Reminders" : {
+
+    },
+    "Remove" : {
+
+    },
+    "Remove %@" : {
+
+    },
+    "Remove Hold" : {
+
+    },
+    "Remove from Favorites" : {
+
+    },
+    "Replay time" : {
+
+    },
+    "Reset" : {
+
+    },
+    "Reset to Book Figure, %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reset to Book Figure, %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Right" : {
+
+    },
+    "Risk Assessment" : {
+
+    },
+    "Route" : {
+
+    },
+    "Route Leg" : {
+
+    },
+    "Route options" : {
+
+    },
+    "Route, airplane or remarks" : {
+
+    },
+    "Rules" : {
+
+    },
+    "Run" : {
+
+    },
+    "Runway %@" : {
+
+    },
+    "Runway Visual Range, ft" : {
+
+    },
+    "Runways %@, north up" : {
+
+    },
+    "Said in Full" : {
+
+    },
+    "Save" : {
+
+    },
+    "Save %@" : {
+
+    },
+    "Save Inspections" : {
+
+    },
+    "Save Read Figures" : {
+
+    },
+    "Save This Plan" : {
+
+    },
+    "Save as File" : {
+
+    },
+    "Save the plan on the page with the button above." : {
+
+    },
+    "Save the planned flight first, from Flights." : {
+
+    },
+    "Save to Account" : {
+
+    },
+    "Saved Flights" : {
+
+    },
+    "Saved flight" : {
+
+    },
+    "Saving…" : {
+
+    },
+    "Say It" : {
+
+    },
+    "Say a field, a route, a screen or a question" : {
+
+    },
+    "Say where to go direct to." : {
+
+    },
+    "Says an airport's latest weather report: wind, visibility, ceiling, temperature, altimeter and the flight category." : {
+
+    },
+    "Says the forecast at your destination for when you land, from your route's briefing." : {
+
+    },
+    "Says what a NOTAM means for your flight, in plain words, on this iPhone." : {
+
+    },
+    "Scheduled Route" : {
+
+    },
+    "Screen" : {
+
+    },
+    "Search" : {
+
+    },
+    "Search NOTAMs" : {
+
+    },
+    "Search airports, airplanes, or ask" : {
+
+    },
+    "Search an Airport" : {
+
+    },
+    "Search for an airport to fly to or from; the chart, the weather and the route follow." : {
+
+    },
+    "Section" : {
+
+    },
+    "See a Sample Flight" : {
+
+    },
+    "See the Airplane's Figures" : {
+
+    },
+    "See the loading" : {
+
+    },
+    "See the reports" : {
+
+    },
+    "See the risk assessment" : {
+
+    },
+    "Segment" : {
+
+    },
+    "Send" : {
+
+    },
+    "Send Me a Link" : {
+
+    },
+    "Send to Your Passengers" : {
+
+    },
+    "Server" : {
+
+    },
+    "Services" : {
+
+    },
+    "Sessions" : {
+
+    },
+    "Set" : {
+
+    },
+    "Set Altitude…" : {
+
+    },
+    "Set Altitude… (%@)" : {
+
+    },
+    "Set the usable fuel and the cruise fuel burn above for the endurance." : {
+
+    },
+    "Settings" : {
+
+    },
+    "Share" : {
+
+    },
+    "Share Link" : {
+
+    },
+    "Share Link with %@" : {
+
+    },
+    "Shared Flight" : {
+
+    },
+    "Share…" : {
+
+    },
+    "Sharp" : {
+
+    },
+    "Sheet or State" : {
+
+    },
+    "Show" : {
+
+    },
+    "Show All %lld" : {
+
+    },
+    "Show Nearest" : {
+
+    },
+    "Show Welcome Again" : {
+
+    },
+    "Show earlier flights" : {
+
+    },
+    "Show on the Map" : {
+
+    },
+    "Show the Answer" : {
+
+    },
+    "Show the whole route" : {
+
+    },
+    "Showing the nearest airports." : {
+
+    },
+    "Shown on the map" : {
+
+    },
+    "Shows the plan" : {
+
+    },
+    "Shows the report as sent" : {
+
+    },
+    "Shows these legs on the map" : {
+
+    },
+    "Shows why" : {
+
+    },
+    "Shows your planned flight on the Lock Screen and in the Dynamic Island, or ends it." : {
+
+    },
+    "Shows your planned flight on the Lock Screen and in the Dynamic Island." : {
+
+    },
+    "Sign In" : {
+
+    },
+    "Sign Out" : {
+
+    },
+    "Sign as %@" : {
+
+    },
+    "Sign in for your logbook" : {
+
+    },
+    "Sign in for your plan" : {
+
+    },
+    "Sign in for your training" : {
+
+    },
+    "Sign in to log it: the track is kept on this phone until then." : {
+
+    },
+    "Sign in to save flights" : {
+
+    },
+    "Sign in to see the hours to go across the next day." : {
+
+    },
+    "Signed" : {
+
+    },
+    "Signing…" : {
+
+    },
+    "Smaller" : {
+
+    },
+    "Solo Cross-Countries" : {
+
+    },
+    "Sort By" : {
+
+    },
+    "Source: %@" : {
+
+    },
+    "Speak Alerts Ahead" : {
+
+    },
+    "Speak your question" : {
+
+    },
+    "Special Use" : {
+
+    },
+    "Speed, Time and Fuel" : {
+
+    },
+    "Squawk %@" : {
+
+    },
+    "Squawk %@%@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Squawk %1$@%2$@"
+          }
+        }
+      }
+    },
+    "Squawk ______   Clearance ____________________   Hobbs out ______ in ______" : {
+
+    },
+    "Squawks" : {
+
+    },
+    "Standard Briefing" : {
+
+    },
+    "Start %@ timer" : {
+
+    },
+    "Start Flight" : {
+
+    },
+    "Start Listening to the Radio" : {
+
+    },
+    "Start Over" : {
+
+    },
+    "Start from the Phases" : {
+
+    },
+    "Start or Stop the Flight" : {
+
+    },
+    "Start the Clock" : {
+
+    },
+    "Started %@" : {
+
+    },
+    "Started %@. It's on the Lock Screen." : {
+
+    },
+    "Starts the flight's Live Activity" : {
+
+    },
+    "Station" : {
+
+    },
+    "Station Model When Zoomed In" : {
+
+    },
+    "Steady" : {
+
+    },
+    "Stop" : {
+
+    },
+    "Stop %@ timer" : {
+
+    },
+    "Stop Instructing" : {
+
+    },
+    "Stop Instructing Here" : {
+
+    },
+    "Stop Listening to the Radio" : {
+
+    },
+    "Stop Sharing" : {
+
+    },
+    "Stop following my position" : {
+
+    },
+    "Stop instructing here?" : {
+
+    },
+    "Stop listening" : {
+
+    },
+    "Stop the replay" : {
+
+    },
+    "Stopped listening to the radio." : {
+
+    },
+    "Stops" : {
+
+    },
+    "Stops listening to the radio." : {
+
+    },
+    "Storage Used" : {
+
+    },
+    "Strip" : {
+
+    },
+    "Students" : {
+
+    },
+    "Support" : {
+
+    },
+    "Swipe up or down to preview another altitude; Set flies it." : {
+
+    },
+    "TFRs" : {
+
+    },
+    "TFRs on the Way" : {
+
+    },
+    "Take Back" : {
+
+    },
+    "Takeoff" : {
+
+    },
+    "Tap Listen and hold the phone to the speaker, or type the clearance." : {
+
+    },
+    "Tap a sheet, or download the map's view." : {
+
+    },
+    "Tap refresh to ask." : {
+
+    },
+    "Tell me when it lands" : {
+
+    },
+    "Tell me when it takes off" : {
+
+    },
+    "Terms of Use" : {
+
+    },
+    "The %@ at %@ couldn't be briefed: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The %1$@ at %2$@ couldn't be briefed: %3$@"
+          }
+        }
+      }
+    },
+    "The %@ at %@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The %1$@ at %2$@. %3$@"
+          }
+        }
+      }
+    },
+    "The Airplane" : {
+
+    },
+    "The Clearance" : {
+
+    },
+    "The FAA publishes no airport diagram for this field" : {
+
+    },
+    "The Flight" : {
+
+    },
+    "The Hold" : {
+
+    },
+    "The NOTAM's subject" : {
+
+    },
+    "The NOTAMs in words" : {
+
+    },
+    "The Route's Segments" : {
+
+    },
+    "The airplane · its landings · remarks" : {
+
+    },
+    "The airplane, on leg %lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The airplane, on leg %1$lld of %2$lld"
+          }
+        }
+      }
+    },
+    "The altitude ATC gave you to cross it at, in feet above sea level." : {
+
+    },
+    "The altitudes couldn't be listed: %@" : {
+
+    },
+    "The approach plates" : {
+
+    },
+    "The assistant: %@" : {
+
+    },
+    "The best fields within a glide, the emergency checklist and the MAYDAY" : {
+
+    },
+    "The clearance card" : {
+
+    },
+    "The climb or descent begins at %@." : {
+
+    },
+    "The climb or descent is done by %@." : {
+
+    },
+    "The course is" : {
+
+    },
+    "The day it expires" : {
+
+    },
+    "The day · the route" : {
+
+    },
+    "The engine reads the %@ in these words too." : {
+
+    },
+    "The field's name · its longest runway" : {
+
+    },
+    "The figures are the engine's and the planner's; each answer shows what it read." : {
+
+    },
+    "The flight in words" : {
+
+    },
+    "The forecast along the run" : {
+
+    },
+    "The leg time for this altitude couldn't be worked out: %@" : {
+
+    },
+    "The legs come in as the planner works them out." : {
+
+    },
+    "The limit is a fix an approach begins from" : {
+
+    },
+    "The nav log gives each leg's TAS, and the altitude's reasoning the rest. A model, within a few percent of most handbooks: yours governs." : {
+
+    },
+    "The nearest airport couldn't be found; here's the list." : {
+
+    },
+    "The nearest fields, with Divert" : {
+
+    },
+    "The nearest is %@. Go direct?" : {
+
+    },
+    "The nearest was %@, %lld nm: was %@ the better choice?" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The nearest was %1$@, %2$lld nm: was %3$@ the better choice?"
+          }
+        }
+      }
+    },
+    "The next one is due %@." : {
+
+    },
+    "The read back could not be checked." : {
+
+    },
+    "The regulation, in its own words" : {
+
+    },
+    "The route from the side" : {
+
+    },
+    "The route has changed" : {
+
+    },
+    "The route's checkpoints come with its plan." : {
+
+    },
+    "The route's menu" : {
+
+    },
+    "The route, its Go / No-Go and the departure's weather: the plan on the page or a saved flight." : {
+
+    },
+    "The route: %@" : {
+
+    },
+    "The station's report as the weather service sends it" : {
+
+    },
+    "The track is with the saved flight too: its debrief is there in Flights." : {
+
+    },
+    "The weather in words" : {
+
+    },
+    "This Month" : {
+
+    },
+    "This Page" : {
+
+    },
+    "This flight is no longer shared." : {
+
+    },
+    "Time" : {
+
+    },
+    "Time En Route" : {
+
+    },
+    "Timers" : {
+
+    },
+    "To" : {
+
+    },
+    "To %@" : {
+
+    },
+    "To %@, Worked Out" : {
+
+    },
+    "To go" : {
+
+    },
+    "Took off" : {
+
+    },
+    "Top of climb" : {
+
+    },
+    "Top of descent" : {
+
+    },
+    "Total" : {
+
+    },
+    "Total EET" : {
+
+    },
+    "Totals" : {
+
+    },
+    "Touch and hold to choose an airport." : {
+
+    },
+    "Trace" : {
+
+    },
+    "Tracking" : {
+
+    },
+    "Traffic" : {
+
+    },
+    "Traffic Management" : {
+
+    },
+    "Traffic data" : {
+
+    },
+    "Training" : {
+
+    },
+    "Training and Endorsements" : {
+
+    },
+    "Transcript" : {
+
+    },
+    "Trends" : {
+
+    },
+    "True Airspeed" : {
+
+    },
+    "True airspeed" : {
+
+    },
+    "True course" : {
+
+    },
+    "True heading" : {
+
+    },
+    "Try Again" : {
+
+    },
+    "Turns" : {
+
+    },
+    "Type" : {
+
+    },
+    "Type of aircraft, as C172" : {
+
+    },
+    "Type or say a field, a town or a route in the search above. Wingtip plans from where you are: the route, the checkpoints you'll see from the air, the nav log and a weather brief, all on one strip." : {
+
+    },
+    "Types the Planner Has Figures for" : {
+
+    },
+    "URGENT" : {
+
+    },
+    "Undo" : {
+
+    },
+    "Undo %@" : {
+
+    },
+    "Update to %@" : {
+
+    },
+    "Updated %@" : {
+
+    },
+    "Use Confirmed Figures" : {
+
+    },
+    "Use It" : {
+
+    },
+    "Use These Words" : {
+
+    },
+    "Use This Plan" : {
+
+    },
+    "Use return leg" : {
+
+    },
+    "Use this plan" : {
+
+    },
+    "VFR Flight Not Recommended" : {
+
+    },
+    "VFR Waypoints" : {
+
+    },
+    "VOR Check" : {
+
+    },
+    "Variation" : {
+
+    },
+    "Verdict: %@" : {
+
+    },
+    "Version" : {
+
+    },
+    "Void It" : {
+
+    },
+    "Voided" : {
+
+    },
+    "Waiting for the position" : {
+
+    },
+    "Waiting for their name as on their certificate" : {
+
+    },
+    "Waiting for your position" : {
+
+    },
+    "Waiting on the briefing…" : {
+
+    },
+    "Waypoint" : {
+
+    },
+    "Waypoints and Navaids" : {
+
+    },
+    "Weather When I Land" : {
+
+    },
+    "Weather at ${airport}" : {
+
+    },
+    "Weather at an Airport" : {
+
+    },
+    "Weight & Balance" : {
+
+    },
+    "What Is Due" : {
+
+    },
+    "What it says and until when, in plain words" : {
+
+    },
+    "What the radio is saying: open the log" : {
+
+    },
+    "What to Do · General, No Airplane Picked" : {
+
+    },
+    "What was done, and by whom" : {
+
+    },
+    "What was found" : {
+
+    },
+    "What you see at this place, kept for you from now on." : {
+
+    },
+    "What you see there" : {
+
+    },
+    "When you plan to leave; the Brief opens on that hour." : {
+
+    },
+    "Where" : {
+
+    },
+    "Where to, or ask" : {
+
+    },
+    "Where to?" : {
+
+    },
+    "Where you are, at %@, the examiner says: divert. Pick a field, and work out the magnetic heading, ground speed, time and fuel to it from the chart and the forecast wind." : {
+
+    },
+    "Which NOTAM?" : {
+
+    },
+    "Which airplane?" : {
+
+    },
+    "Which airport?" : {
+
+    },
+    "Which applies first" : {
+
+    },
+    "Which approach?" : {
+
+    },
+    "Why It Matters" : {
+
+    },
+    "Why This Altitude" : {
+
+    },
+    "Why This Altitude?" : {
+
+    },
+    "Why, and what to change" : {
+
+    },
+    "Wind" : {
+
+    },
+    "Wind Arrows" : {
+
+    },
+    "Wind correction" : {
+
+    },
+    "Wingtip Maps" : {
+
+    },
+    "Wingtip Maps wasn't listening to the radio." : {
+
+    },
+    "Wingtip Maps · a planning aid: check the charts, NOTAMs and an official briefing before flight." : {
+
+    },
+    "Within" : {
+
+    },
+    "Within 24 calendar months" : {
+
+    },
+    "Within 5° of the line between the two" : {
+
+    },
+    "Within the weight and the envelope" : {
+
+    },
+    "Write It" : {
+
+    },
+    "Write a Squawk" : {
+
+    },
+    "Write it on the iPhone, from the flight manual." : {
+
+    },
+    "Write the %@" : {
+
+    },
+    "Writing %lld of %lld…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Writing %1$lld of %2$lld…"
+          }
+        }
+      }
+    },
+    "Writing the glance…" : {
+
+    },
+    "Writing the words…" : {
+
+    },
+    "Writing…" : {
+
+    },
+    "You are here" : {
+
+    },
+    "You are here, tracking %@ true" : {
+
+    },
+    "You asked: %@" : {
+
+    },
+    "You set figures for %@ while signed out. Save them with your airplanes?" : {
+
+    },
+    "You took" : {
+
+    },
+    "Your Airplane in the Day's Air" : {
+
+    },
+    "Your Airplanes" : {
+
+    },
+    "Your Certificate" : {
+
+    },
+    "Your Determination" : {
+
+    },
+    "Your ETA" : {
+
+    },
+    "Your Estimates" : {
+
+    },
+    "Your Flight" : {
+
+    },
+    "Your Flight Instructor Certificate" : {
+
+    },
+    "Your Instructor" : {
+
+    },
+    "Your Next Lesson" : {
+
+    },
+    "Your Read Back" : {
+
+    },
+    "Your airplane in the day's air" : {
+
+    },
+    "Your airplane's cruise speed and fuel burn are taken as its figures at its cruise power at 6,000 ft on a standard day, a row of its handbook's cruise table." : {
+
+    },
+    "Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This can't be undone." : {
+
+    },
+    "Your endorsements and reviews are kept with your account." : {
+
+    },
+    "Your flights are kept with your account, on every device." : {
+
+    },
+    "Your instructor, %@, reviews the flights you put to them from their phone." : {
+
+    },
+    "Your logbook and currency are kept with your account." : {
+
+    },
+    "Your name" : {
+
+    },
+    "Your place on the strip couldn't be worked out: %@" : {
+
+    },
+    "Your plan is made from the logbook kept with your account." : {
+
+    },
+    "Your question" : {
+
+    },
+    "Your read back, as said" : {
+
+    },
+    "Your students are let go. What you signed stays on record." : {
+
+    },
+    "Yours" : {
+
+    },
+    "active now" : {
+
+    },
+    "adsb.lol is busy; asking again…" : {
+
+    },
+    "adsb.lol's flight history can't be read now, so only flights followed in this app are listed." : {
+
+    },
+    "and %lld more" : {
+
+    },
+    "as filed" : {
+
+    },
+    "crosses" : {
+
+    },
+    "from %@" : {
+
+    },
+    "ft" : {
+
+    },
+    "h" : {
+
+    },
+    "icing %@" : {
+
+    },
+    "length not listed" : {
+
+    },
+    "nm" : {
+
+    },
+    "not known" : {
+
+    },
+    "tfr.faa.gov did not answer. Check it before flight." : {
+
+    },
+    "to" : {
+
+    },
+    "turbulence %@" : {
+
+    },
+    "°" : {
+
+    },
+    "·" : {
+
+    },
+    "—" : {
+
+    },
+    "“%@”" : {
+
+    },
+    "“%@” · Check" : {
+
+    },
+    "• %@" : {
+
+    }
   },
   "version" : "1.0"
 }

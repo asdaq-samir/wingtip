@@ -1,177 +1,63 @@
 import Foundation
 
 // The planner's and the gateway's answers the in-flight, traffic and
-// route-editing screens read (services/planner/openapi.json, the
-// gateway's services/gateway/openapi.json), Codable by hand as Models.swift
-// has them: the planner's in its snake case through Planner.snakeCase,
-// every property the document lets it leave out an optional.
+// route-editing screens read, generated from their OpenAPI documents
+// (Generated/, scripts/build/api-models-apps.sh): the names the app uses
+// are typealiases here, with what the app adds as extensions. The
+// planner's are read in its snake case through Planner.snakeCase.
 
 /// A point of an airplane's track today (TrailPoint): when, s since 1970,
 /// where, and its height, none on the ground.
-struct TrailPoint: Codable, Equatable, Sendable {
-    let t: Double
-    let lat: Double
-    let lon: Double
-    var altFt: Double?
-}
+typealias TrailPoint = APITrailPoint
+/// The field a tracked airplane took off from today, and when.
+typealias FlightDeparted = APIFlightDeparted
+/// A US airplane's record in the FAA's registry (AircraftRegistration).
+/// The owner's town, never the street.
+typealias FAARecord = APIAircraftRegistration
+/// An airplane being tracked: what it is and who flies it, where it took
+/// off from and its track today.
+typealias FlightDetail = APIFlightDetail
+/// A field one of an airplane's flights began or ended at.
+typealias PastFlightField = APIPastFlightField
+/// Where and when an airplane last landed.
+typealias FlightArrival = APIFlightArrival
+/// An airplane's state now, for the alerts set on it.
+typealias FlightStatus = APIFlightStatus
+/// One of an airplane's flights found: off and on, s since 1970.
+typealias PastFlightSummary = APIPastFlightSummary
+typealias PastFlights = APIPastFlights
+/// A report of a past flight.
+typealias PastFlightPoint = APIPastFlightPoint
+typealias PastFlight = APIPastFlight
+/// Where each airplane is based, by ICAO address.
+typealias AircraftBases = APIAircraftBases
+/// Airplanes found by name: those in the air, and the FAA's record of
+/// one named by its N-number where none is.
+typealias TrafficFound = APITrafficFound
+/// A flight number's scheduled route, from Virtual Radar Server's route
+/// database: not the flight plan filed.
+typealias RouteAirport = APIRouteAirport
+typealias FlightRoute = APIFlightRoute
+/// A procedure's fix as the chart sets it: its altitudes, the least and
+/// the most, and its roles (IAF, FAF…).
+typealias ProcedureFix = APIProcedureFix
+typealias ProcedureDrawing = APIProcedureDrawing
 
-/// The field a tracked airplane took off from today, and when (FlightDeparted).
-struct FlightDeparted: Codable, Equatable, Sendable {
-    let at: Double
-    let ident: String
-    var name: String?
-}
-
-/// A US airplane's record in the FAA's registry (AircraftRegistration),
-/// the parts its card shows. The owner's town, never the street.
-struct FAARecord: Codable, Equatable, Sendable {
-    let nNumber: String
-    var aircraftType: String?
-    var airworthiness: String?
-    var airworthinessDate: String?
-    var city: String?
-    var coOwners: Int?
-    var country: String?
-    var engine: String?
-    var engineType: String?
-    var expires: String?
-    var fractional: Bool?
-    var horsepower: Int?
-    var manufacturer: String?
-    var modeSHex: String?
-    var model: String?
-    var owner: String?
-    var ownerType: String?
-    var seats: Int?
-    var standing: String?
-    var state: String?
-    var status: String?
-    var thrustLb: Int?
-    var year: Int?
-}
-
-/// An airplane being tracked (FlightDetail): what it is and who flies it,
-/// where it took off from and its track today.
-struct FlightDetail: Codable, Equatable, Sendable {
-    let hex: String
-    var departed: FlightDeparted?
-    var description: String?
-    var `operator`: String?
-    var registration: String?
-    var type: String?
-    var year: String?
-    var faa: FAARecord?
-    var trail: [TrailPoint]?
-}
-
-/// A field one of an airplane's flights began or ended at (PastFlightField).
-struct PastFlightField: Codable, Hashable, Sendable {
-    let ident: String
-    var city: String?
-    var name: String?
-    var region: String?
-}
-
-/// Where and when an airplane last landed (FlightArrival).
-struct FlightArrival: Codable, Equatable, Sendable {
-    let at: Double
-    let ident: String
-    var city: String?
-    var name: String?
-    var region: String?
-}
-
-/// An airplane's state now, for the alerts set on it (FlightStatus).
-struct FlightStatus: Codable, Equatable, Sendable {
-    let hex: String
-    var airborne: Bool?
-    var aircraft: TrafficAircraft?
-    var arrived: FlightArrival?
-    var departed: PastFlightField?
-    var heardS: Double?
-}
-
-/// One of an airplane's flights found (PastFlightSummary): off and on,
-/// s since 1970.
-struct PastFlightSummary: Codable, Hashable, Sendable, Identifiable {
-    let id: Int
-    let inAir: Bool
-    let landed: Bool
-    let maxAltFt: Double
-    let off: Double
-    let on: Double
-    var origin: PastFlightField?
-    var destination: PastFlightField?
-
+extension PastFlightSummary: Identifiable, Hashable {
     /// Back where it left from: a local flight.
     var local: Bool { !inAir && origin != nil && origin?.ident == destination?.ident }
+
+    func hash(into hasher: inout Hasher) { hasher.combine(id) }
 }
 
-struct PastFlights: Codable, Equatable, Sendable {
-    let hex: String
-    var flights: [PastFlightSummary]?
-    var nextUntil: String?
-    var registration: String?
-    var type: String?
-    var unreadDays: Int?
+extension PastFlightField: Hashable {
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(ident)
+        hasher.combine(name)
+    }
 }
 
-/// A report of a past flight (PastFlightPoint).
-struct PastFlightPoint: Codable, Equatable, Sendable {
-    let t: Double
-    let lat: Double
-    let lon: Double
-    var altFt: Double?
-    var gsKt: Double?
-    var trackDeg: Double?
-    var vrateFpm: Double?
-}
-
-struct PastFlight: Codable, Equatable, Sendable {
-    let id: Int
-    let points: [PastFlightPoint]
-}
-
-/// Where each airplane is based (AircraftBases), by ICAO address.
-struct AircraftBases: Codable, Equatable, Sendable {
-    var based: [String: PastFlightField?]
-    var pending: [String]
-}
-
-/// Airplanes found by name (TrafficFound): those in the air, and the
-/// FAA's record of one named by its N-number where none is.
-struct TrafficFound: Codable, Equatable, Sendable {
-    var aircraft: [TrafficAircraft]
-    /// False where adsb.lol could not be asked yet: what can be shown is.
-    var checked: Bool?
-    var registered: FAARecord?
-    var source: String?
-}
-
-/// A flight number's scheduled route (FlightRoute), from Virtual Radar
-/// Server's route database: not the flight plan filed.
-struct RouteAirport: Codable, Equatable, Sendable {
-    let ident: String
-    var location: String?
-    var name: String?
-}
-
-struct FlightRoute: Codable, Equatable, Sendable {
-    var airports: [RouteAirport]
-    var plausible: Bool?
-}
-
-/// A procedure's fix as the chart sets it (ProcedureFix): its altitudes,
-/// the least and the most, and its roles (IAF, FAF…).
-struct ProcedureFix: Codable, Equatable, Sendable, Identifiable {
-    let ident: String
-    let lat: Double
-    let lon: Double
-    var maxFt: Int?
-    var minFt: Int?
-    var missed: Bool?
-    var roles: [String]?
-
+extension ProcedureFix: Identifiable {
     var id: String { ident }
 
     /// The chart's altitude in words, as an approach chart sets it (the
@@ -180,34 +66,25 @@ struct ProcedureFix: Codable, Equatable, Sendable, Identifiable {
     /// "at or above 2,400 ft", "between 3,000 and 4,000 ft". Which of the
     /// four it is, and its lines top first, are the engine's
     /// `altitude_lines`, as the web app draws them; the words are the
-    /// app's.
-    var charted: String? {
-        // The answer's type is generated from the engine's contract
-        // (EngineContract.swift): which crossing it is, and each line's
-        // feet, underlined or overlined, the top line first.
-        let set: EngineAltitudeLinesAnswer? = try? Engine.call("altitude_lines", json: ["min_ft": minFt, "max_ft": maxFt])
-        guard let set, let crossing = set.crossing, let top = set.lines.first else { return nil }
-        let feet = { (ft: Double) in "\(Int(ft).formatted()) ft" }
+    /// app's. Nil for a fix the chart gives no altitude; thrown where the
+    /// engine cannot answer.
+    func charted() throws -> String? {
+        let set = try Engine.altitudeLines(minFt: minFt.map(Double.init), maxFt: maxFt.map(Double.init))
+        guard let crossing = set.crossing, let top = set.lines.first else { return nil }
+        let feet = { (ft: Double) in Format.altitude(ft) }
         switch crossing {
-        case .at: return "at \(feet(top.ft))"
-        case .between: return "between \(Int(set.lines.last?.ft ?? top.ft).formatted()) and \(feet(top.ft))"
-        case .atOrAbove: return "at or above \(feet(top.ft))"
-        case .atOrBelow: return "at or below \(feet(top.ft))"
+        case "at": return "at \(feet(top.ft))"
+        case "between": return "between \(Format.grouped(set.lines.last?.ft ?? top.ft)) and \(feet(top.ft))"
+        case "at_or_above": return "at or above \(feet(top.ft))"
+        case "at_or_below": return "at or below \(feet(top.ft))"
+        default: return nil
         }
     }
 }
 
-struct ProcedureDrawing: Codable, Equatable, Sendable {
-    let airport: String
-    let id: String
-    let kind: String
-    let name: String
-    var transition: String?
-    var fixes: [ProcedureFix]
-}
-
-/// One line of the checkpoints' notes as they are written
-/// (CheckpointNoteMessage): "start", one "checkpoint" each, "error", "done".
+/// One line of the checkpoints' notes as they are written: "start", one
+/// "checkpoint" each, "error", "done". The planner's document does not
+/// describe the stream's lines, so this one is the app's.
 struct NoteLine: Codable, Equatable, Sendable {
     let type: String
     var count: Int?
@@ -222,36 +99,14 @@ struct NoteLine: Codable, Equatable, Sendable {
 /// Flight Service, where the gateway has it connected (FlightServiceStatus).
 typealias FlightServiceStatus = GWFlightServiceStatus
 
-/// A flight plan as the gateway files it (FlightPlanFilingRequest), its
-/// items as FAA Form 7233-4 writes them (AIM Appendix 4).
-struct FlightPlanFilingRequest: Codable, Equatable, Sendable {
-    var rules: String
-    var aircraftId: String
-    var aircraftType: String
-    var departure: String
-    var departureTime: String
-    var cruisingSpeed: String
-    var cruisingLevel: String
-    var route: String
-    var destination: String
-    var eetMinutes: Int
-    var enduranceMinutes: Int
-    var personsOnBoard: Int?
-}
+/// A flight plan as the gateway files it, its items as FAA Form 7233-4
+/// writes them (AIM Appendix 4).
+typealias FlightPlanFilingRequest = GWFlightPlanFilingRequest
 
 /// A saved flight's flown track (TrackDto): t in ms since 1970, GPS
 /// altitude in feet.
-struct SavedTrackPoint: Codable, Equatable, Sendable {
-    let t: Int64
-    let lat: Double
-    let lon: Double
-    var altFt: Double?
-}
-
-struct SavedTrack: Codable, Equatable, Sendable {
-    var points: [SavedTrackPoint]
-    var source: String
-}
+typealias SavedTrackPoint = GWTrackPointDto
+typealias SavedTrack = GWTrackDto
 
 extension Planner {
     static func flight(_ hex: String) async throws -> FlightDetail {
@@ -288,39 +143,28 @@ extension Planner {
         try await fetch(ProcedureDrawing.self, "/api/airport/\(ident)/procedures/\(id)", ["transition": transition])
     }
 
-    struct NoteRoute: Encodable {
-        let departureIdent: String
-        let destinationIdent: String
-        let stops: [String]
-    }
-
-    struct NoteSave: Encodable {
-        let departureIdent: String
-        let destinationIdent: String
-        let stops: [String]
-        let lat: Double
-        let lon: Double
-        let description: String
-    }
-
     /// One "how to spot it" line per checkpoint, as they are written: each
     /// a billed call, so asked for only on the pilot's tap.
-    static func describeCheckpoints(dep: String, dest: String, stops: [String]) -> AsyncThrowingStream<NoteLine, any Error> {
-        lines({ try await request("POST", "/api/checkpoint-notes/generate", json: NoteRoute(departureIdent: dep, destinationIdent: dest, stops: stops), csrf: true) }) {
+    /// Claude's, so nothing is asked while the server's Claude features
+    /// are off (ServerFeatures): the stream ends empty.
+    static func describeCheckpoints(dep: String, dest: String, stops: [String],
+                                    claudeOn: Bool = ServerFeatures.claudeOnNow) -> AsyncThrowingStream<NoteLine, any Error> {
+        guard claudeOn else { return AsyncThrowingStream { $0.finish() } }
+        let ask = APIGenerateNotesRequest(departureIdent: dep, destinationIdent: dest, stops: stops)
+        return lines({ try await request("POST", "/api/checkpoint-notes/generate", json: ask, csrf: true) }) {
             try snakeCase.decode(NoteLine.self, from: $0)
         }
     }
 
     /// A pilot's own note on a checkpoint, saved.
     static func saveNote(dep: String, dest: String, stops: [String], lat: Double, lon: Double, text: String) async throws {
-        let note = NoteSave(departureIdent: dep, destinationIdent: dest, stops: stops, lat: lat, lon: lon, description: text)
+        let note = APICheckpointNoteRequest(departureIdent: dep, description: text, destinationIdent: dest, lat: lat, lon: lon, stops: stops)
         _ = try await data(for: request("POST", "/api/checkpoint-notes", json: note, csrf: true), ok: 200...299)
     }
 
     /// Every note of the pilot's own forgotten; how many.
     static func forgetNotes() async throws -> Int {
-        struct Answer: Decodable { let removed: Int }
-        return try snakeCase.decode(Answer.self, from: try await data(for: request("DELETE", "/api/checkpoint-notes/mine", json: nil, csrf: true))).removed
+        try snakeCase.decode(APIPilotNotesForgotten.self, from: try await data(for: request("DELETE", "/api/checkpoint-notes/mine", json: nil, csrf: true))).removed
     }
 }
 
@@ -332,8 +176,7 @@ extension Gateway {
 
     /// Filed, Flight Service's reference for it.
     static func file(_ plan: FlightPlanFilingRequest) async throws -> String {
-        struct Filed: Decodable { let reference: String }
-        return try await send(Filed.self, "POST", "/api/flight-service/flight-plans", json: plan).reference
+        try await send(GWFlightPlanFiled.self, "POST", "/api/flight-service/flight-plans", json: plan).reference
     }
 
     /// Flight Service's standard briefing for the flight, as its text.
@@ -342,15 +185,15 @@ extension Gateway {
     }
 
     /// A saved flight's flown track; nil where none is kept.
-    static func track(_ flight: Int64) async throws -> SavedTrack? {
+    static func track(_ flight: Int) async throws -> SavedTrack? {
         try await read(SavedTrack.self, "/api/flights/\(flight)/track", none: [204, 404])
     }
 
-    static func saveTrack(_ flight: Int64, _ track: SavedTrack) async throws {
+    static func saveTrack(_ flight: Int, _ track: SavedTrack) async throws {
         try await send("PUT", "/api/flights/\(flight)/track", json: track)
     }
 
-    static func deleteTrack(_ flight: Int64) async throws {
+    static func deleteTrack(_ flight: Int) async throws {
         try await send("DELETE", "/api/flights/\(flight)/track")
     }
 }

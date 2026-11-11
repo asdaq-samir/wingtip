@@ -29,14 +29,14 @@ async function messagesTo(address: string): Promise<string[]> {
   const mail = await inbox();
   const res = await mail.get("/api/v1/search", { params: { query: `to:"${address}"` } });
   expect(res.ok(), `the inbox answered ${res.status()}`).toBe(true);
-  const { messages } = await res.json() as { messages: { ID: string }[] };
+  const { messages } = (await res.json()) as { messages: { ID: string }[] };
   await mail.dispose();
-  return messages.map(m => m.ID);
+  return messages.map((m) => m.ID);
 }
 
 async function linkIn(id: string): Promise<URL> {
   const mail = await inbox();
-  const { Text } = await (await mail.get(`/api/v1/message/${id}`)).json() as { Text: string };
+  const { Text } = (await (await mail.get(`/api/v1/message/${id}`)).json()) as { Text: string };
   await mail.dispose();
   const link = Text.match(/\S+\/api\/auth\/magic-link\/verify\?token=\S+/)?.[0];
   if (!link) throw new Error(`no sign-in link in message ${id}: ${Text}`);
@@ -55,7 +55,7 @@ async function linkIn(id: string): Promise<URL> {
  */
 export async function signInByEmail(page: Page, address: string) {
   await openLinkFor(page, address);
-  await page.getByRole("dialog").getByRole("button", { name: "Sign in" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true }).click();
 }
 
 /** Asks for a link for `address` and opens it: the planner, with its
@@ -66,19 +66,20 @@ export async function openLinkFor(page: Page, address: string): Promise<string> 
   if (!(await console.isVisible())) await openConsole(page);
   // The account is Personal's, at the owner's ask (AccountMenu).
   await openAccount(page);
-  await console.getByRole("button", { name: "Sign in" }).click();
+  await console.getByRole("button", { name: "Sign in", exact: true }).click();
   await page.getByLabel("Email address").fill(address);
-  await page.getByRole("button", { name: "Send sign-in link" }).click();
-  // The dialog's own status line: a toast is a status too (sonner's),
+  await page.getByRole("button", { name: "Send Link" }).click();
+  // The dialog's own status line: a toast is a status too (Base UI's),
   // and on the plan page the planner's progress toast is often up.
   await expect(page.getByRole("dialog").getByRole("status")).toContainText(`Check ${address}`);
 
   let id: string | undefined;
-  await expect.poll(async () => (id = (await messagesTo(address)).find(m => !before.has(m))),
-    { message: `a sign-in email to ${address}` }).toBeTruthy();
+  await expect
+    .poll(async () => (id = (await messagesTo(address)).find((m) => !before.has(m))), { message: `a sign-in email to ${address}` })
+    .toBeTruthy();
   const link = await linkIn(id!);
   const path = link.pathname + link.search;
   await page.goto(path);
-  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
   return path;
 }

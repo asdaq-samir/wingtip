@@ -35,7 +35,7 @@ struct AirportExtrasTests {
         #expect(services.food?.first?.walkMin == 10 && services.airframeRepair == "major")
         #expect(AirportWords.fuelNames(services.fuelTypes ?? []) == "100LL, Jet A")
         #expect(AirportWords.away(services.food![0]) == "10 min walk")
-        let drive = NearbyPlace(name: "Inn", kind: "hotel", lat: 0, lon: 0, distanceM: 3219, walkMin: nil, phone: nil, website: nil)
+        let drive = NearbyPlace(distanceM: 3219, kind: "hotel", lat: 0, lon: 0, name: "Inn", phone: nil, walkMin: nil, website: nil)
         #expect(AirportWords.away(drive) == "2.0 mi")
     }
 
@@ -80,7 +80,7 @@ struct AirportExtrasTests {
 
     // MARK: Addresses
 
-    @Test func picturesGoThroughTheGatewayOnce() {
+    @Test func picturesGoThroughTheGatewayOnce() throws {
         let host = Config.gateway.absoluteString
         // The photos' paths are the gateway's already; the planner's own are rewritten.
         #expect(Planner.address(of: "/api/planner/airport-aerial/KDLH.jpg").absoluteString == host + "/api/planner/airport-aerial/KDLH.jpg")
@@ -89,13 +89,16 @@ struct AirportExtrasTests {
         #expect(Planner.platePicturePath(cycle: "2610", ident: "C81", procedure: "R24") == "/api/approach-plate/2610/C81/R24.png")
     }
 
-    @Test func theTabsStackSaysWhatItHolds() {
+    @Test func theTabsStackSaysWhatItHolds() throws {
         #expect(AirportRoute("KDLH") == .airport("KDLH"))
         let held = AirportRoute.airspace(lat: 42.31721, lon: -88.09054)
         #expect(AirportRoute(held.text) == held && held.heldPoint?.latitude == 42.31721)
         #expect(AirportRoute("~recents") == .list(.recents))
         let near = AirportRoute.nearFrom(lat: 42.3, lon: -88.4, label: "Woodstock, IL")
         #expect(AirportRoute(near.text) == near)
+        // Find Nearby's fields of a kind, and a kind it does not know as typed.
+        #expect(AirportRoute("%food") == .nearby(.food) && AirportRoute.nearby(.training).text == "%training")
+        #expect(AirportRoute("%gas") == .airport("%gas"))
         // Not a point: a field's ident, as typed.
         #expect(AirportRoute("@nowhere") == .airport("@nowhere"))
         #expect(AirportRoute("KDLH").heldPoint == nil)
@@ -103,7 +106,7 @@ struct AirportExtrasTests {
 
     // MARK: Words
 
-    @Test func theRadioAsPilotsSayIt() {
+    @Test func theRadioAsPilotsSayIt() throws {
         let tower = AirportWords.frequencyLine(type: "TWR", description: "TWR")
         #expect(tower.name == "Tower" && tower.kind == .tower && tower.detail == nil)
         let approach = AirportWords.frequencyLine(type: "APP", description: "MINNEAPOLIS APP/DEP")
@@ -113,7 +116,7 @@ struct AirportExtrasTests {
         #expect(AirportWords.mhz(120.7) == "120.7" && AirportWords.mhz(122.95) == "122.95" && AirportWords.mhz(124.475) == "124.475")
     }
 
-    @Test func runwaysAndWind() {
+    @Test func runwaysAndWind() throws {
         #expect(AirportWords.surfaceName("ASPH-G") == "asphalt" && AirportWords.surfaceName("Gravel/Dirt") == "gravel" && AirportWords.surfaceName(nil) == nil)
         #expect(AirportWords.runwayNumber("06") == "6" && AirportWords.runwayNumber("09L") == "9L" && AirportWords.runwayNumber("0") == "0")
         let wind = RunwayWind(crosswindKt: 6, end: "27", gustCrosswindKt: 9, headwindKt: 10, inUse: true)
@@ -130,9 +133,9 @@ struct AirportExtrasTests {
         #expect(AirportWords.windLine(dirTrueDeg: nil, speedKt: nil, gustKt: nil) == "Not reported")
     }
 
-    @Test func figuresAndTimes() {
-        #expect(AirportWords.grouped(10162) == "10,162" && AirportWords.grouped(1234567) == "1,234,567" && AirportWords.grouped(500) == "500")
-        #expect(AirportWords.feet(1428) == "1,428 ft" && AirportWords.feet(nil) == "—")
+    @Test func figuresAndTimes() throws {
+        #expect(Format.grouped(10162) == "10,162" && Format.grouped(1234567) == "1,234,567" && Format.grouped(500) == "500")
+        #expect(Format.altitude(1428) == "1,428 ft" && Format.altitude(nil) == "—")
         #expect(AirportWords.compassPoint(44) == "NE" && AirportWords.compassPoint(350) == "N" && AirportWords.compassPoint(-90) == "W")
         #expect(AirportWords.degreesMinutes(lat: 42.3172, lon: -88.0905) == "N42°19.0′ W088°05.4′")
         // 59.96 minutes is the next degree, never 60.0.
@@ -143,10 +146,10 @@ struct AirportExtrasTests {
         #expect(AirportWords.observed("not a time") == nil)
         #expect(AirportWords.faaWords("CHICAGO CLASS B. ACTIVE MON-FRI") == "Chicago Class B. Active Mon-Fri")
         #expect(AirportWords.faaWords("Already written") == "Already written")
-        #expect(AirportWords.minimumsLine(VfrMinimums(visibilitySm: 3, clearOfClouds: false, belowFt: 500, aboveFt: 1000, horizontalFt: 5280)) == "3 sm, 500 below, 1,000 above, 1 sm horizontal")
+        #expect(AirportWords.minimumsLine(VfrMinimums(aboveFt: 1000, belowFt: 500, clearOfClouds: false, horizontalFt: 5280, visibilitySm: 3)) == "3 sm, 500 below, 1,000 above, 1 sm horizontal")
     }
 
-    @Test func chartsInTheirGroups() {
+    @Test func chartsInTheirGroups() throws {
         let charts = [
             TerminalChart(kind: "APD", name: "AIRPORT DIAGRAM", url: "a"), TerminalChart(kind: "IAP", name: "ILS RWY 27", url: "b"),
             TerminalChart(kind: "ODP", name: "TAKEOFF MINIMUMS", url: "c"), TerminalChart(kind: "XYZ", name: "SOMETHING", url: "d"),
@@ -157,7 +160,7 @@ struct AirportExtrasTests {
         #expect(groups.last?.charts.map(\.url) == ["d"])
     }
 
-    @Test func aMilitaryFieldIsOneToKeepOutOf() {
+    @Test func aMilitaryFieldIsOneToKeepOutOf() throws {
         var place = AirportPlace(frequencies: [], ident: "KSKF", kind: "large", lat: 29.38, lon: -98.58, name: "Kelly Field", runways: [], towered: false)
         place.military = "military"
         #expect(AirportHead.restriction(place) == "Military, permission required")
@@ -170,7 +173,7 @@ struct AirportExtrasTests {
 
     // MARK: The map
 
-    @Test func theWebMapsZoom() {
+    @Test func theWebMapsZoom() throws {
         // The whole world across 256 points is zoom 0; half of it, zoom 1.
         #expect(MapExtras.zoom(longitudeDelta: 360, width: 256) == 0)
         #expect(abs(MapExtras.zoom(longitudeDelta: 180, width: 256) - 1) < 1e-9)
@@ -192,7 +195,17 @@ struct AirportExtrasTests {
         #expect(shelf.isFavorite("KDLH") && shelf.favorites.map(\.ident) == ["KDLH", "C81"])
         shelf.moveFavorites(from: IndexSet(integer: 1), to: 0)
         #expect(shelf.favorites.map(\.ident) == ["C81", "KDLH"])
-        shelf.toggleFavorite(dlh)
+        // Taken off, it is one system Undo from coming back.
+        let undo = UndoManager()
+        undo.groupsByEvent = false
+        undo.beginUndoGrouping()
+        shelf.toggleFavorite(dlh, undo: undo)
+        undo.endUndoGrouping()
+        #expect(!shelf.isFavorite("KDLH"))
+        #expect(undo.undoActionName == "Remove Favorite")
+        undo.undo()
+        #expect(shelf.favorites.map(\.ident) == ["C81", "KDLH"])
+        undo.redo()
         #expect(!shelf.isFavorite("KDLH"))
         shelf.opened(dlh)
         shelf.opened(c81)

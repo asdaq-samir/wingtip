@@ -1,20 +1,25 @@
 /**
  * The shapes the API returns.
  *
- * Everything either server sends is generated from its own OpenAPI
+ * Everything a server sends is generated from its own OpenAPI
  * document by `npm run types` -- the Python planner's from
- * services/planner/openapi.json into ./schema.d.ts, this app's Spring
+ * services/planner/openapi.json into ./schema.d.ts, the assistant
+ * service's (every Claude call) from services/assistant/openapi.json into
+ * ./assistant-schema.d.ts, this app's Spring
  * Boot endpoints from services/gateway/openapi.json into
  * ./gateway-schema.d.ts -- and re-exported here under the names the pages
- * use, so a field renamed in services/planner/app/schemas.py or in a
+ * use, so a field renamed in services/planner/app/schemas/ or in a
  * Java DTO is a compile error at every call site rather than a silent
  * `undefined` at runtime. What is written by hand below is only what
  * no server schema describes: the page's own compositions.
  */
 import type { components } from "./schema";
+import type { components as AssistantComponents } from "./assistant-schema";
 import type { components as GatewayComponents } from "./gateway-schema";
+import type { OwnFigureValues } from "../airplane/figures";
 
 type Schemas = components["schemas"];
+type Assistant = AssistantComponents["schemas"];
 type Gateway = GatewayComponents["schemas"];
 
 // ---------------------------------------------------------------------
@@ -45,9 +50,6 @@ export type TopOfClimb = Schemas["TopOfClimb"];
 /** Where a leg's descent starts (TOD), to what and at what rate. */
 export type TopOfDescent = Schemas["TopOfDescent"];
 export type Totals = Schemas["Totals"];
-/** A field with the airplane's fuel a flight short of it can land at, and
- *  the stops one such flight is offered (wingtip.fuelstops). */
-export type FuelStop = Schemas["FuelStop"];
 export type FuelStopSuggestion = Schemas["FuelStopSuggestion"];
 export type AltitudeBreakdown = Schemas["AltitudeBreakdown"];
 export type AltitudeSegment = Schemas["AltitudeSegment"];
@@ -82,6 +84,9 @@ export type DataCycle = Schemas["DataCycle"];
  *  alternate (14 CFR 91.169(b)), the pilot's alternate checked against its
  *  minimums at its ETA (91.169(c)), and the nearest fields that will do. */
 export type Alternates = Schemas["Alternates"];
+/** Under IFR, the forecast icing on each leg at the altitude flown
+ *  (wingtip.icing_forecast). */
+export type IcingForecast = Schemas["IcingForecast"];
 export type AlternateCheck = Schemas["AlternateCheck"];
 
 export type ChartInfo = Schemas["ChartInfo"];
@@ -110,29 +115,30 @@ export type ProcedureSummary = Schemas["ProcedureSummary"];
 export type ProcedureDrawing = Schemas["ProcedureDrawing"];
 export type PlateOverlay = Schemas["PlateOverlay"];
 export type ProcedureFix = Schemas["ProcedureFix"];
-export type ProcedureMissedLeg = Schemas["ProcedureMissedLeg"];
 export type ChartPages = Schemas["ChartPages"];
 /** The mock oral's question, its answer graded, and what each is asked with. */
-export type OralQuestion = Schemas["OralQuestion"];
-export type OralQuestionRequest = Schemas["OralQuestionRequest"];
+export type OralQuestion = Assistant["OralQuestion"];
+export type OralQuestionRequest = Assistant["OralQuestionRequest"];
+/** A photographed page sent, and read and checked (the assistant's app.documents). */
+export type ReadAsk = Assistant["ReadAsk"];
+export type DocumentRead = Assistant["DocumentRead"];
 export type ClearanceAsk = Schemas["ClearanceAsk"];
 export type ClearancePlaces = Schemas["ClearancePlaces"];
-export type ClearanceWords = Schemas["ClearanceWords"];
-export type OralGrade = Schemas["OralGrade"];
-export type OralGradeRequest = Schemas["OralGradeRequest"];
-export type OralCitation = Schemas["OralCitation"];
-export type AirportPin = Schemas["AirportPin"];
+/** "When should I go?": the hours and the windows (app.window). */
+export type DepartureWindowAsk = Schemas["DepartureWindowAsk"];
+export type DepartureWindow = Schemas["DepartureWindow"];
+export type WindowHour = Schemas["WindowHour"];
+/** A flight logged from the app's own track: the draft entry and its reasons (app.routers.logbook_draft). */
+export type LogbookDraftAsk = Schemas["LogbookDraftAsk"];
+export type LogbookDraft = Schemas["LogbookDraft"];
+export type DepartureWindowRun = Schemas["Window"];
+export type OralGrade = Assistant["OralGrade"];
+export type OralGradeRequest = Assistant["OralGradeRequest"];
+export type OralCitation = Assistant["OralCitation"];
+export type AirportPin = Schemas["AirportInView"];
 export type AirportsInView = Schemas["AirportsInView"];
-export type WaypointsInView = Schemas["WaypointsInView"];
-/** The Class B, C and D in the map's view, and the VORs and fixes
- *  (AirspaceLayer, NavaidsLayer). */
-export type AirspaceVolume = Schemas["AirspaceVolume"];
-export type AirspaceInView = Schemas["AirspaceInView"];
-export type VorPin = Schemas["VorPin"];
-export type FixPin = Schemas["FixPin"];
-export type NavaidsInView = Schemas["NavaidsInView"];
+/** The cycle's overlay tiles' archive (lib/map/sources/overlayTiles). */
 export type OverlayTiles = Schemas["OverlayTiles"];
-export type ModelComparisonEntry = Schemas["ModelComparisonEntry"];
 export type ModelComparison = Schemas["ModelComparison"];
 export type Status = Schemas["Status"];
 export type RetrainStarted = Schemas["RetrainStarted"];
@@ -150,6 +156,8 @@ export type Tfr = Schemas["Tfr"];
 export type Tfrs = Schemas["Tfrs"];
 /** The fields nearest a position: how far, which way, the longest runway. */
 export type NearestAirports = Schemas["NearestAirports"];
+/** The emergency assistant's fields, wind aloft and airplane (features/emergency/emergency). */
+export type EmergencyFields = Schemas["EmergencyFields"];
 /** The map's Stops: the fields with fuel, food, repair or a flight school. */
 export type StopFields = Schemas["StopFields"];
 export type StopField = Schemas["StopField"];
@@ -160,11 +168,30 @@ export type PlacesFound = Schemas["PlacesFound"];
 export type RouteProfile = Schemas["RouteProfile"];
 export type AirspaceAt = Schemas["AirspaceAt"];
 export type WeatherMap = Schemas["WeatherMap"];
+/** The radar and satellite loop (wingtip.weather_loop). */
+export type WeatherLoop = Schemas["WeatherLoop"];
+export type LoopFrame = Schemas["LoopFrame"];
+export type ForecastRunAsk = Schemas["ForecastRunAsk"];
+export type ForecastRun = Schemas["ForecastRun"];
 export type WeatherArea = Schemas["WeatherArea"];
 export type MapPirep = Schemas["MapPirep"];
 export type StationWind = Schemas["StationWind"];
 /** What is ahead of own ship (wingtip.alerts). */
 export type AlertsAhead = Schemas["AlertsAhead"];
+// What the FAA's SWIM feeds say now (app.routers.live, lib/liveReports).
+export type ItwsAlerts = Schemas["ItwsAlerts"];
+/** What the in-flight copilot reads round the airplane (GET /api/copilot/around). */
+export type CopilotAround = Schemas["CopilotAround"];
+export type ItwsProduct = Schemas["ItwsProduct"];
+export type SaaStatuses = Schemas["SaaStatuses"];
+export type SaaStatus = Schemas["SaaStatus"];
+export type AirportRvr = Schemas["AirportRvr"];
+export type RunwayRvr = Schemas["RunwayRvr"];
+export type AirportAtis = Schemas["AirportAtis"];
+export type FlowAtAirports = Schemas["FlowAtAirports"];
+export type FlowProgram = Schemas["FlowProgram"];
+export type DepartureEvents = Schemas["DepartureEvents"];
+export type DepartureEvent = Schemas["DepartureEvent"];
 export type AheadAlert = Schemas["AheadAlert"];
 /** The airplanes ADS-B receivers hear near a point (wingtip.traffic). */
 export type Traffic = Schemas["Traffic"];
@@ -181,6 +208,8 @@ export type AircraftRegistration = Schemas["AircraftRegistration"];
 export type FlightRoute = Schemas["FlightRoute"];
 /** The deployment's browser key for Google's map tiles (routers/basemaps). */
 export type GoogleMaps = Schemas["GoogleMaps"];
+/** The FAA's Digital Obstacle File in a box, tallest first (routers/terrain). */
+export type Obstacles = Schemas["Obstacles"];
 export type AirspaceBand = Schemas["AirspaceBand"];
 export type VfrMinimums = Schemas["VfrMinimums"];
 /** `available` is false where the planner has no Docker API to talk
@@ -188,38 +217,42 @@ export type VfrMinimums = Schemas["VfrMinimums"];
 export type DevServices = Schemas["DevServices"];
 export type DevServiceStarted = Schemas["DevServiceStarted"];
 
-/** Which airplane the nav log is computed for: a stock profile by
- *  name, optionally with a pilot's own airplane's speeds and fuel
- *  burns, climb and cruise, laid over it (and its id, so a saved
- *  flight records it). */
-export interface AircraftChoice {
+/** Which airplane the nav log is computed for: a stock profile by name
+ *  (or "own", lib/airplane's OWN_AIRPLANE), with a pilot's own airplane's
+ *  figures laid over it -- speeds, burns, fuel, ceiling, climb rate, start
+ *  and taxi fuel, glide ratio, empty weight and moment, each where set
+ *  (OwnFigureValues) -- and its id, so a saved flight records it. */
+export interface AircraftChoice extends OwnFigureValues {
   profile: string;
   label: string;
-  cruiseTasKt?: number;
-  fuelBurnGph?: number;
-  /** The power the cruise figures are at, in percent. */
-  cruisePowerPct?: number;
-  climbTasKt?: number;
-  climbFuelBurnGph?: number;
-  usableFuelGal?: number;
-  /** The airplane's own service ceiling, ft, over its profile's, where the
-   *  pilot has set one for their N-number. */
-  serviceCeilingFt?: number;
   aircraftId?: number;
   /** An airplane picked by its N-number from the FAA's registry, flown on
    *  its type's stock profile: its N-number, for its own place in the
    *  picker (aircraftKey). */
   tail?: string;
+  /** No airplane picked (preferences' NO_AIRPLANE): no profile (""), and no airplane figure. */
+  none?: boolean;
 }
 /** One line of the per-checkpoint description stream. */
-export type CheckpointDescriptionMessage = Schemas["CheckpointNoteMessage"];
+export type CheckpointDescriptionMessage = Assistant["CheckpointNoteMessage"];
 /** The nav log on screen, sent to be told in words (the Brief's narrative,
  *  POST /api/briefing/narrative): checked on arrival, a field the prompt
  *  cannot read a 422 naming it. */
-export type NarrativeRequest = Schemas["NarrativeRequest"];
+export type NarrativeRequest = Assistant["NarrativeRequest"];
 /** One line of the narrative's stream: text as Claude writes it, then the
  *  whole briefing, or why there is none. */
-export type NarrativeMessage = Schemas["NarrativeMessage"];
+export type NarrativeMessage = Assistant["NarrativeMessage"];
+/** The flight's NOTAMs ranked by the engine with a line on each (the
+ *  Brief's NOTAMs that matter, POST /api/words/notams/ranked). */
+export type RankedNotams = Assistant["RankedNotams"];
+export type RankedNotam = Assistant["RankedLine"];
+/** A trip in the pilot's words worked into a proposal (POST
+ *  /api/trip-plan): the ask, one line of its stream, the proposal and a
+ *  leg of it, which the FPL loads on the pilot's tap. */
+export type TripAsk = Assistant["TripAsk"];
+export type TripMessage = Assistant["TripMessage"];
+export type TripProposal = Assistant["TripProposal"];
+export type TripLeg = Assistant["TripLeg"];
 export type CheckpointNoteSaved = Schemas["CheckpointNoteSaved"];
 
 /** What the nav log stream's "altitude" message carries -- the generated
@@ -297,14 +330,23 @@ export type DeviceCode = Gateway["DeviceCode"];
  *  fuel check. */
 export type Aircraft = Gateway["AircraftDto"];
 export type AircraftRequest = Gateway["AircraftRequest"];
+/** An airplane's own handbook figures on its record, each null where not given. */
+export type OwnFigures = Gateway["OwnFigures"];
+/** An airplane's handbook figures as its pilot confirmed them from a photo. */
+export type HandbookFigures = Gateway["HandbookFigures"];
 /** A VOR check for IFR as the pilot records it (14 CFR 91.171(d)). */
 export type VorCheckRequest = Gateway["VorCheckRequest"];
 export type InspectionsRequest = Gateway["InspectionsRequest"];
 export type Inspections = Gateway["InspectionsDto"];
-export type ChecklistDto = Gateway["ChecklistDto"];
 export type Squawk = Gateway["SquawkDto"];
 export type SquawkRequest = Gateway["SquawkRequest"];
 export type Reminders = Gateway["RemindersDto"];
+/** An airplane's due item: an AD's status (14 CFR 91.417(a)(2)(v)) or another. */
+export type DueItem = Gateway["DueItemDto"];
+export type DueItemRequest = Gateway["DueItemRequest"];
+/** What falls due for the pilot and their airplanes (GET /api/paperwork). */
+export type Paperwork = Gateway["PaperworkDto"];
+export type Due = Gateway["DueDto"];
 export type LogbookImportResult = Gateway["LogbookImportResult"];
 export type FlightPlanFilingRequest = Gateway["FlightPlanFilingRequest"];
 export type FlightServiceStatus = Gateway["FlightServiceStatus"];
@@ -318,6 +360,9 @@ export type SpeedFieldReport = Gateway["FieldReport"];
  *  filed nav log, fetched one flight at a time. */
 export type FlightSummary = Gateway["FlightSummaryDto"];
 export type Flight = Gateway["FlightDto"];
+/** A saved flight's share, and a flight shared with whoever has its link (FlightShareController). */
+export type FlightShare = Gateway["FlightShareDto"];
+export type SharedFlight = Gateway["SharedFlightDto"];
 /** A flight's flown track as saved to the account (lib/track). */
 export type SavedTrack = Gateway["TrackDto"];
 /** POST /api/flights body -- files (replacing any previous one) a nav

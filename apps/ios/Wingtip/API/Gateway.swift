@@ -1,15 +1,7 @@
 import Foundation
 
-/// The pilot, as the gateway knows them (PilotDto).
-struct Pilot: Codable, Equatable, Sendable {
-    var id: Int64?
-    var email: String?
-    var displayName: String?
-    var fullName: String?
-    var homeBase: String?
-    var phone: String?
-    var developer: Bool?
-}
+/// The pilot, as the gateway knows them (PilotDto, generated).
+typealias Pilot = GWPilotDto
 
 /// The gateway's calls, by hand: its OpenAPI document gives them "*/*"
 /// bodies, which a generated client would hand over raw. URLSession keeps
@@ -20,6 +12,10 @@ enum Gateway {
         let config = URLSessionConfiguration.default
         config.httpCookieAcceptPolicy = .always
         config.httpShouldSetCookies = true
+        // Kept in the App Group's cookie jar, so the Currency Status widget
+        // reads the gateway as the signed-in pilot (WidgetStore.cookies);
+        // on the phone still, in the app's own group.
+        config.httpCookieStorage = WidgetStore.cookies
         // A cache of the answers the gateway and the planner say may be
         // kept (Cache-Control: the chart's tiles for a cycle, the fields and
         // airspace of a box, a field's card for minutes), so a view come
@@ -98,15 +94,13 @@ enum Gateway {
     /// Apple's identity token from the system's sheet, checked by the
     /// gateway against this app's bundle id (AppleNativeSignInController).
     static func signInWithApple(identityToken: String) async throws {
-        struct Token: Encodable { let identityToken: String }
-        try await send("POST", "/api/auth/apple/native", json: Token(identityToken: identityToken), ok: 200...200)
+        try await send("POST", "/api/auth/apple/native", json: GWAppleToken(identityToken: identityToken), ok: 200...200)
     }
 
     /// A sign-in link emailed to the pilot; the gateway answers 202
     /// whether or not the address is known.
     static func requestMagicLink(email: String) async throws {
-        struct Request: Encodable { let email: String }
-        try await send("POST", "/api/auth/magic-link", json: Request(email: email))
+        try await send("POST", "/api/auth/magic-link", json: GWMagicLinkRequest(email: email))
     }
 
     /// The link's one-time token, posted as the website's page posts it.

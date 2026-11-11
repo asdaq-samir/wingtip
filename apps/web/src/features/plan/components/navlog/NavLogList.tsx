@@ -1,10 +1,15 @@
+import NavLogAge from "./NavLogAge";
+import { useAirplaneChosen } from "../../../../lib/preferences";
 import { Fragment, type CSSProperties, type KeyboardEvent, type ReactNode } from "react";
 import { cn } from "cn";
-import { placeName } from "../../../../lib/radio";
+import { Badge } from "../../../../components/ui/badge";
+import { zoneName } from "../../../../lib/format";
+import { placeName } from "../../lib/radio";
+import { wantPlace } from "../../../../lib/navigation/wanted";
 import { TEXT } from "../../../../lib/text";
 import { altFt, bearing, etaAt, one, windAloft } from "../../format";
 import { PointMark } from "./PointMark";
-import { isLegPoint, legOf, rowPoint, type NavLogRow } from "./rows";
+import { flownNmOf, isLegPoint, legOf, procedureOf, rowPoint, type NavLogRow } from "./rows";
 
 /** The rail's middle, across the row: the row's own 6 and half the
  *  mark's column (2.125 rem). */
@@ -28,7 +33,8 @@ function windOf(row: NavLogRow): string | null {
 function airwayOf(row: NavLogRow): string | null {
   const airway = legOf(row)?.airway;
   if (!airway) return null;
-  const mea = airway.mea_ft != null ? `MEA ${altFt(airway.mea_ft)}` : airway.gnss_mea_ft != null ? `GNSS MEA ${altFt(airway.gnss_mea_ft)}` : null;
+  const mea =
+    airway.mea_ft != null ? `MEA ${altFt(airway.mea_ft)}` : airway.gnss_mea_ft != null ? `GNSS MEA ${altFt(airway.gnss_mea_ft)}` : null;
   return [airway.id, mea, airway.moca_ft != null ? `MOCA ${altFt(airway.moca_ft)}` : null].filter(Boolean).join(" · ");
 }
 
@@ -41,7 +47,7 @@ function railOf(rows: NavLogRow[]): { wind: string | null; airway: string | null
   let windBefore: string | null = null;
   let airwayBefore: string | null = null;
   let altitudeBefore: number | null = null;
-  return rows.map(row => {
+  return rows.map((row) => {
     const wind = windOf(row);
     const changed = wind !== null && wind !== windBefore ? wind : null;
     if (wind !== null) windBefore = wind;
@@ -49,9 +55,12 @@ function railOf(rows: NavLogRow[]): { wind: string | null; airway: string | null
     const joined = route !== null && route !== airwayBefore ? route : null;
     airwayBefore = route;
     const field = row.kind === "departure" || row.kind === "destination" || (row.kind === "stop" && row.airport.kind !== "fix");
-    const legAltitude = isLegPoint(row) ? row.point.altitude_ft : legOf(row)?.altitude_ft ?? null;
-    const altitude = field ? `field ${altFt("airport" in row ? row.airport.elevation_ft : null)} ft`
-      : legAltitude !== null && (isLegPoint(row) || legAltitude !== altitudeBefore) ? `${altFt(legAltitude)} ft` : "";
+    const legAltitude = isLegPoint(row) ? row.point.altitude_ft : (legOf(row)?.altitude_ft ?? null);
+    const altitude = field
+      ? `field ${altFt("airport" in row ? row.airport.elevation_ft : null)} ft`
+      : legAltitude !== null && (isLegPoint(row) || legAltitude !== altitudeBefore)
+        ? `${altFt(legAltitude)} ft`
+        : "";
     if (legAltitude !== null) altitudeBefore = legAltitude;
     return { wind: changed, airway: joined, altitude };
   });
@@ -74,7 +83,20 @@ function railOf(rows: NavLogRow[]): { wind: string | null; airway: string | null
  * does, and opens its note under it -- the leg's working and the
  * checkpoint's description (NavLogView's `note`) -- as the table's did.
  */
-export function NavLogList({ rows, label, numberOf, weather, isSelected, onSelect, onDeselect, flying, selectedRef, flyingRef, depart, note }: {
+export function NavLogList({
+  rows: allRows,
+  label,
+  numberOf,
+  weather,
+  isSelected,
+  onSelect,
+  onDeselect,
+  flying,
+  selectedRef,
+  flyingRef,
+  depart,
+  note,
+}: {
   rows: NavLogRow[];
   /** The table's name: "Navigation log from C81 to KDLH". */
   label: string;
@@ -98,145 +120,240 @@ export function NavLogList({ rows, label, numberOf, weather, isSelected, onSelec
   note: (row: NavLogRow, selected: boolean) => ReactNode;
 }) {
   const from = depart || new Date().toISOString();
+  // No airplane picked: each leg's course, miles and altitude, which no
+  // airplane changes; not its heading (the wind's correction is at the
+  // airplane's speed), minutes, groundspeed, arrival or the tops of climb
+  // and descent (the owner, 2026-11-08: "don't assume").
+  const airplane = useAirplaneChosen();
+  const rows = airplane ? allRows : allRows.filter((r) => !isLegPoint(r));
   const rail = railOf(rows);
   return (
-    <div role="table" aria-label={label} className="relative pt-1 pb-2" data-testid="navlog-list">
-      {/* The columns' names, for a screen reader: on screen each figure is
+    <>
+      {/* Its age where it is the one kept on this device (lib/kept). */}
+      <NavLogAge />
+      <div role="table" aria-label={label} className="relative pt-1 pb-2" data-testid="navlog-list">
+        {/* The columns' names, for a screen reader: on screen each figure is
           said by its place and its unit. */}
-      <div role="rowgroup" className="sr-only">
-        <div role="row">
-          {["Waypoint", "Arrival time", "Magnetic heading", "Distance", "Time en route", "Altitude", "Groundspeed"].map(name => (
-            <span key={name} role="columnheader">{name}</span>
-          ))}
+        <div role="rowgroup" className="sr-only">
+          <div role="row">
+            {["Waypoint", "Arrival time", "Magnetic heading", "Distance", "Time en route", "Altitude", "Groundspeed"].map((name) => (
+              <span key={name} role="columnheader">
+                {name}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
-      {/* The right-hand column's names over it, as a paper log's heads
+        {/* The right-hand column's names over it, as a paper log's heads
           are: the clock time over the groundspeed, each row's two lines,
           so each row's groundspeed is its figure alone under "GS kt" and
           they line up as the times do; it was "GS 102" on every row (the
           design review, 2026-10-28, the owner's "I want all"). The screen
           reader's names are the row group's above. */}
-      <div aria-hidden="true" className={cn("grid grid-cols-[2.125rem_minmax(0,1fr)_auto] gap-x-2.5 px-1.5 pb-0.5 text-right text-muted-foreground", TEXT.note)} data-testid="navlog-list-heads">
-        <span className="col-start-3">ETA</span>
-        <span className="col-start-3">GS kt</span>
-      </div>
-      <div role="rowgroup">
-        {rows.map((row, at) => {
-          const leg = legOf(row);
-          const selected = isSelected(row);
-          const first = at === 0, last = at === rows.length - 1;
-          const { wind, airway, altitude } = rail[at]!;
-          const name = row.kind === "toc" ? "Top of climb" : row.kind === "tod" ? "Top of descent"
-            : "airport" in row && row.airport.kind !== "fix" ? `${row.airport.ident} · ${placeName(row.airport.name, row.airport.ident)}`
-              : rowPoint(row).name;
-          const heading = leg ? leg.magnetic_heading_deg : null;
-          const select = () => (selected ? onDeselect() : onSelect(row));
-          const keys = (event: KeyboardEvent) => {
-            if (event.target !== event.currentTarget) return;
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              select();
-            }
-          };
-          const isFlying = at === flying;
-          return (
-            <Fragment key={row.key}>
-              {wind && !first && (
-                <div aria-hidden="true" className="relative flex h-7 items-center pl-[3.125rem]">
-                  <span className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
-                  <span className={cn("rounded-full border border-cyan-200 bg-cyan-50 px-2 py-0.5 font-semibold text-cyan-800 dark:border-cyan-900 dark:bg-cyan-950 dark:text-cyan-200", TEXT.note)} data-testid="navlog-wind-change">
-                    Wind {wind}
-                  </span>
-                </div>
-              )}
-              {airway && (
-                // Under IFR along an airway, where it is joined or its
-                // altitudes change: the route column of a paper IFR log.
-                <div aria-hidden="true" className="relative flex h-7 items-center pl-[3.125rem]">
-                  <span className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
-                  <span className={cn("rounded-full border border-border bg-background px-2 py-0.5 font-semibold text-foreground tabular-nums", TEXT.note)} data-testid="navlog-airway">
-                    {airway}
-                  </span>
-                </div>
-              )}
-              <div className="relative">
-                {/* The rail, from the mark before to the mark after, under
-                    this row's own mark. */}
-                {rows.length > 1 && (
-                  <span
-                    aria-hidden="true" className={cn("absolute w-0.5 -translate-x-1/2 bg-border", RAIL)}
-                    style={{ top: first ? MARK_MIDDLE : 0, ...(last ? { height: MARK_MIDDLE } : { bottom: 0 }) } as CSSProperties}
-                  />
-                )}
-                <div
-                  role="row" tabIndex={0} ref={selected ? selectedRef : isFlying ? flyingRef : undefined}
-                  onClick={select} onKeyDown={keys}
-                  data-kind={row.kind} data-selected={selected || undefined} data-flying={isFlying || undefined}
-                  data-expanded={selected} aria-current={selected || undefined}
-                  className={cn(
-                    "relative grid cursor-pointer grid-cols-[2.125rem_minmax(0,1fr)_auto] items-start gap-x-2.5 rounded-xl px-1.5 py-2 outline-none",
-                    "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
-                    "hover:bg-foreground/5 focus-visible:bg-foreground/5 active:bg-foreground/8",
-                    isFlying && "bg-tint/12 hover:bg-tint/12",
-                    selected && "rounded-b-none bg-foreground/8 hover:bg-foreground/8 focus-visible:bg-foreground/8",
-                  )}
-                >
-                  <span className="relative row-span-2 flex justify-center pt-0.5">
-                    <PointMark row={row} number={numberOf(row)} weather={weather} />
-                  </span>
-                  <span role="rowheader" className={cn("min-w-0 font-medium text-foreground [overflow-wrap:anywhere]", TEXT.row)}>{name}</span>
-                  <span role="cell" className={cn("text-right font-semibold text-foreground tabular-nums", TEXT.row)} data-testid="navlog-row-eta">
-                    {etaAt(from, row.minutesFlown)}
-                  </span>
-                  {/* Grey, and the text's own colour on the selection's tint,
-                      where grey fell under 4.5:1 (the iPhone audit's P15). */}
-                  <span className={cn("col-start-2 tabular-nums", selected ? "text-foreground" : "text-muted-foreground", TEXT.detail, row.kind !== "departure" && leg && !leg.wind && "italic")}>
-                    {row.kind === "departure" ? (
-                      <>
-                        <span role="cell" /><span role="cell" /><span role="cell" />
-                        <span role="cell">{altitude.replace(/^field/, "Field")}</span>
-                      </>
-                    ) : (
-                      <>
-                        <span role="cell" className="font-semibold text-foreground">
-                          {heading !== null && (
-                            <svg
-                              viewBox="0 0 16 16" aria-hidden="true"
-                              className="mr-1 inline-block size-3 align-[-1px]" style={{ transform: `rotate(${Math.round(heading)}deg)` }}
-                            >
-                              <path d="M8 1.5 12.5 13 8 10.5 3.5 13z" fill="currentColor" />
-                            </svg>
-                          )}
-                          {leg ? bearing(leg.magnetic_heading_deg) : "—"}
-                        </span>
-                        <span aria-hidden="true"> · </span>
-                        <span role="cell">{leg ? `${one(leg.distance_nm)} nm` : "—"}</span>
-                        <span aria-hidden="true"> · </span>
-                        <span role="cell">{leg ? (leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min`) : "—"}</span>
-                        {altitude && <span aria-hidden="true"> · </span>}
-                        <span role="cell">{altitude}</span>
-                      </>
-                    )}
-                  </span>
-                  <span role="cell" className={cn("text-right tabular-nums", selected ? "text-foreground" : "text-muted-foreground", TEXT.note)} data-testid="navlog-row-gs">
-                    {row.kind === "departure" ? "Takeoff" : leg?.groundspeed_kt != null ? Math.round(leg.groundspeed_kt) : ""}
-                  </span>
-                </div>
-                {selected && (
-                  // Its note: the leg's working and the checkpoint's
-                  // description, a row of its own so a tap in it does not
-                  // put the row away, in the selection's tint with it.
-                  // Twelve under it: the note's field reaches nine past its
-                  // box for a finger (DescriptionCell's label).
-                  <div role="row" className="rounded-b-xl bg-foreground/8 pr-2 pb-3 pl-[3.125rem]">
-                    <div role="cell" aria-colspan={7} className={cn("text-foreground/70", TEXT.detail)}>{note(row, selected)}</div>
+        <div
+          aria-hidden="true"
+          className={cn("grid grid-cols-[2.125rem_minmax(0,1fr)_auto] gap-x-2.5 px-1.5 pb-0.5 text-right text-muted-foreground", TEXT.note)}
+          data-testid="navlog-list-heads"
+        >
+          {/* The clock's zone, once over the column (the FPL audit's A19). */}
+          {airplane && <span className="col-start-3">ETA {zoneName()}</span>}
+          {airplane && <span className="col-start-3">GS kt</span>}
+        </div>
+        <div role="rowgroup">
+          {rows.map((row, at) => {
+            const leg = legOf(row);
+            const selected = isSelected(row);
+            const first = at === 0,
+              last = at === rows.length - 1;
+            const { wind, airway, altitude } = rail[at]!;
+            const name =
+              row.kind === "toc"
+                ? "Top of climb"
+                : row.kind === "tod"
+                  ? "Top of descent"
+                  : "airport" in row && row.airport.kind !== "fix"
+                    ? `${row.airport.ident} · ${placeName(row.airport.name, row.airport.ident)}`
+                    : rowPoint(row).name;
+            const field = "airport" in row && row.airport.kind !== "fix" ? row.airport.ident : null;
+            const heading = leg ? leg.magnetic_heading_deg : null;
+            const select = () => (selected ? onDeselect() : onSelect(row));
+            const keys = (event: KeyboardEvent) => {
+              if (event.target !== event.currentTarget) return;
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                select();
+              }
+            };
+            const isFlying = at === flying;
+            return (
+              <Fragment key={row.key}>
+                {wind && !first && (
+                  <div aria-hidden="true" className="relative flex h-7 items-center pl-12.5">
+                    <span className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
+                    <Badge
+                      variant="outline"
+                      className={cn("h-auto bg-background font-semibold", TEXT.note)}
+                      data-testid="navlog-wind-change"
+                    >
+                      Wind {wind}
+                    </Badge>
                   </div>
                 )}
-              </div>
-            </Fragment>
-          );
-        })}
+                {airway && (
+                  // Under IFR along an airway, where it is joined or its
+                  // altitudes change: the route column of a paper IFR log.
+                  <div aria-hidden="true" className="relative flex h-7 items-center pl-12.5">
+                    <span className={cn("absolute inset-y-0 w-0.5 -translate-x-1/2 bg-border", RAIL)} />
+                    <Badge
+                      variant="outline"
+                      className={cn("h-auto bg-background font-semibold tabular-nums", TEXT.note)}
+                      data-testid="navlog-airway"
+                    >
+                      {airway}
+                    </Badge>
+                  </div>
+                )}
+                <div className="relative">
+                  {/* The rail, from the mark before to the mark after, under
+                    this row's own mark. */}
+                  {rows.length > 1 && (
+                    <span
+                      aria-hidden="true"
+                      className={cn("absolute w-0.5 -translate-x-1/2 bg-border", RAIL)}
+                      style={{ top: first ? MARK_MIDDLE : 0, ...(last ? { height: MARK_MIDDLE } : { bottom: 0 }) } as CSSProperties}
+                    />
+                  )}
+                  <div
+                    role="row"
+                    tabIndex={0}
+                    ref={selected ? selectedRef : isFlying ? flyingRef : undefined}
+                    onClick={select}
+                    onKeyDown={keys}
+                    data-kind={row.kind}
+                    data-selected={selected || undefined}
+                    data-flying={isFlying || undefined}
+                    data-expanded={selected}
+                    aria-current={selected || undefined}
+                    className={cn(
+                      "relative grid cursor-pointer grid-cols-[2.125rem_minmax(0,1fr)_auto] items-start gap-x-2.5 rounded-xl px-1.5 py-2 outline-none",
+                      "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring",
+                      "hover:bg-foreground/5 focus-visible:bg-foreground/5 active:bg-foreground/8",
+                      isFlying && "bg-tint/12 hover:bg-tint/12",
+                      selected && "rounded-b-none bg-foreground/8 hover:bg-foreground/8 focus-visible:bg-foreground/8",
+                    )}
+                  >
+                    <span className="relative row-span-2 flex justify-center pt-0.5">
+                      <PointMark row={row} number={numberOf(row)} weather={weather} />
+                    </span>
+                    <span role="rowheader" className={cn("min-w-0 font-medium text-foreground [overflow-wrap:anywhere]", TEXT.row)}>
+                      {field ? (
+                        // The field's name opens its card, as it does on the
+                        // map and in the route's list (tap what you see,
+                        // docs/navigation.md); the rest of the row selects it.
+                        <button
+                          type="button"
+                          data-testid="navlog-field-open"
+                          aria-label={`${name}: open the airport`}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            wantPlace(field);
+                          }}
+                          className="relative text-left text-tint after:absolute after:-inset-y-2 after:inset-x-0 after:content-['']"
+                        >
+                          {name}
+                        </button>
+                      ) : (
+                        name
+                      )}
+                    </span>
+                    <span
+                      role="cell"
+                      className={cn("text-right font-semibold text-foreground tabular-nums", TEXT.row)}
+                      data-testid="navlog-row-eta"
+                    >
+                      {airplane ? etaAt(from, row.minutesFlown) : null}
+                    </span>
+                    {/* Grey, and the text's own colour on the selection's tint,
+                      where grey fell under 4.5:1 (the iPhone audit's P15). */}
+                    <span
+                      className={cn(
+                        "col-start-2 tabular-nums",
+                        selected ? "text-foreground" : "text-muted-foreground",
+                        TEXT.detail,
+                        row.kind !== "departure" && leg && !leg.wind && "italic",
+                      )}
+                    >
+                      {row.kind === "departure" ? (
+                        <>
+                          <span role="cell" />
+                          <span role="cell" />
+                          <span role="cell" />
+                          <span role="cell">{altitude.replace(/^field/, "Field")}</span>
+                        </>
+                      ) : (
+                        <>
+                          <span role="cell" className="font-semibold text-foreground">
+                            {heading !== null && (
+                              <svg
+                                viewBox="0 0 16 16"
+                                aria-hidden="true"
+                                className="mr-1 inline-block size-3 align-[-1px]"
+                                style={{ transform: `rotate(${Math.round(heading)}deg)` }}
+                              >
+                                <path d="M8 1.5 12.5 13 8 10.5 3.5 13z" fill="currentColor" />
+                              </svg>
+                            )}
+                            {leg
+                              ? bearing(airplane ? (leg.magnetic_heading_deg ?? leg.magnetic_course_deg) : leg.magnetic_course_deg)
+                              : "—"}
+                          </span>
+                          <span aria-hidden="true"> · </span>
+                          {/* With a procedure's miles where the leg ends (procedureOf),
+                            named, so the miles over the groundspeed come to the minutes. */}
+                          <span role="cell" data-testid="navlog-row-dist">
+                            {leg ? `${one(flownNmOf(row)!)} nm` : "—"}
+                            {procedureOf(row) && <span className="whitespace-nowrap"> incl. {procedureOf(row)!.word}</span>}
+                          </span>
+                          <span aria-hidden="true"> · </span>
+                          <span role="cell">
+                            {!airplane ? null : leg ? (leg.ete_min === null ? "unflyable" : `${one(leg.ete_min)} min`) : "—"}
+                          </span>
+                          {altitude && <span aria-hidden="true"> · </span>}
+                          <span role="cell">{altitude}</span>
+                        </>
+                      )}
+                    </span>
+                    <span
+                      role="cell"
+                      className={cn("text-right tabular-nums", selected ? "text-foreground" : "text-muted-foreground", TEXT.note)}
+                      data-testid="navlog-row-gs"
+                    >
+                      {row.kind === "departure"
+                        ? airplane
+                          ? "Takeoff"
+                          : ""
+                        : airplane && leg?.groundspeed_kt != null
+                          ? Math.round(leg.groundspeed_kt)
+                          : ""}
+                    </span>
+                  </div>
+                  {selected && (
+                    // Its note: the leg's working and the checkpoint's
+                    // description, a row of its own so a tap in it does not
+                    // put the row away, in the selection's tint with it.
+                    // Twelve under it: the note's field reaches nine past its
+                    // box for a finger (DescriptionCell's label).
+                    <div role="row" className="rounded-b-xl bg-foreground/8 pr-2 pb-3 pl-12.5">
+                      <div role="cell" aria-colspan={7} className={cn("text-foreground/70", TEXT.detail)}>
+                        {note(row, selected)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </Fragment>
+            );
+          })}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

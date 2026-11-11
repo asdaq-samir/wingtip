@@ -1,18 +1,30 @@
 import { Suspense, type ReactNode } from "react";
-import { ChartArea, Sparkles } from "lucide-react";
+import { ICON } from "../../../../lib/icons";
 import { cn } from "cn";
 import RoundButton from "../../../../components/RoundButton";
+import { TEXT } from "../../../../lib/text";
+import { useClaudeOn } from "../../../../lib/subscription";
 import { LocalDuration } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
-import { LOCAL_MINUTES } from "../../hooks/usePlanWorkspace";
+import { LOCAL_MINUTES } from "../../hooks/planAddress";
 
 /** The route's chips: the airplane, the altitude and the time
  *  (`flightInputs`), a local flight's time aloft, and the route's buttons --
  *  the Profile, the AI brief and Share (`share`). */
+
+/** On a desktop's side panel the route box's small buttons carry their
+ *  word beside the glyph, where there is the room (docs/design/icons.md,
+ *  "Small buttons have words"; the UI audit, 2026-11-09); on a phone the
+ *  glyph alone, its word its name to VoiceOver, the row as decision 0029
+ *  keeps it. */
+const WORDED = "lg:pointer-fine:w-auto lg:pointer-fine:gap-1 lg:pointer-fine:px-2";
+const WORD = cn("hidden font-medium lg:pointer-fine:inline", TEXT.detail);
+
 export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWorkspaceModel; flightInputs: ReactNode; share: ReactNode }) {
-  const {
-    altitudeMark, briefMark, changeLocalMin, localMin, openBrief, openProfile, profileReady, routed, s,
-  } = vm;
+  const { altitudeMark, briefMark, changeLocalMin, localMin, openBrief, openProfile, profileReady, routed, s } = vm;
+  // "AI brief" only where Claude writes some of it (lib/subscription): off,
+  // the Brief is the engine's alone and is called just that.
+  const brief = useClaudeOn() ? "AI brief" : "Brief";
   return (
     <div className="flex w-full min-w-0 flex-wrap items-center gap-x-1 gap-y-4">
       {/* On the narrowest panels (iPhone SE, the iPad slide-over) the row
@@ -23,9 +35,7 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
           (the iOS audit's P1, 24 Oct: twelve left them 2 points over each
           other). */}
       {/* The chips' room while their code comes (routePanel). */}
-      <Suspense fallback={<span className="h-9 w-48" aria-hidden="true" />}>
-      {flightInputs}
-      </Suspense>
+      <Suspense fallback={<span className="h-9 w-48" aria-hidden="true" />}>{flightInputs}</Suspense>
       {s.local && (
         <Suspense fallback={<span className="h-8 w-20 shrink-0" aria-hidden="true" />}>
           <LocalDuration minutes={localMin} options={LOCAL_MINUTES} onChange={changeLocalMin} />
@@ -56,6 +66,10 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
           17. Where the row wraps, the lines' gap keeps them apart (above).
           Back on this line at the owner's ask (2026-10-25), the sheet edge
           to edge for the room (MapPanel's HALF_INSET). */}
+      {/* In points, not rem: iOS's bar buttons keep their size at any text
+          size, and at the owner's 19.65 px these grew to 39 with 15 between,
+          29 more than at 16, and wrapped onto a line of their own (the FPL
+          audit's A3). */}
       <div className="ml-auto flex shrink-0 items-center gap-3 pl-3.5" data-testid="route-actions">
         {/* The Profile -- the route from the side, its altitude's wheel and
             its dry run -- where the nav log's button was, the nav log in
@@ -64,18 +78,28 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             to the more button"). */}
         {profileReady && (
           <RoundButton
-            label={altitudeMark === "caution" ? "Profile, your altitude has a caution" : altitudeMark === "tight" ? "Profile, your altitude is tight" : "Profile"}
-            onClick={openProfile} className="size-8" data-testid="route-profile"
+            label={
+              altitudeMark === "caution"
+                ? "Profile, your altitude has a caution"
+                : altitudeMark === "tight"
+                  ? "Profile, your altitude is tight"
+                  : "Profile"
+            }
+            onClick={openProfile}
+            className={cn("size-[32px]", WORDED)}
+            data-testid="route-profile"
           >
             <span className="relative">
-              <ChartArea className="size-[1.125rem]" strokeWidth={2} />
+              <ICON.profile className="size-[18px]" strokeWidth={2} />
               {altitudeMark && (
                 <span
-                  aria-hidden="true" data-testid={altitudeMark === "caution" ? "own-altitude-flag" : "tight-altitude-flag"}
+                  aria-hidden="true"
+                  data-testid={altitudeMark === "caution" ? "own-altitude-flag" : "tight-altitude-flag"}
                   className="absolute -top-0.5 -right-1 size-2 rounded-full bg-caution"
                 />
               )}
             </span>
+            <span className={WORD}>Profile</span>
           </RoundButton>
         )}
         {/* The AI's brief, a card over FPL (BriefCard) -- its verdict, its
@@ -86,18 +110,24 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             both the same thing", 2026-11-04). */}
         {routed && (
           <RoundButton
-            label={briefMark ? `AI brief, ${briefMark === "stop" ? "warning" : "caution"}` : "AI brief"} onClick={openBrief} className="size-8"
-            data-testid="route-brief" data-finding={briefMark ?? undefined} data-tip="brief"
+            label={briefMark ? `${brief}, ${briefMark === "stop" ? "warning" : "caution"}` : brief}
+            onClick={openBrief}
+            className={cn("size-[32px]", WORDED)}
+            data-testid="route-brief"
+            data-finding={briefMark ?? undefined}
+            data-tip="brief"
           >
             <span className="relative">
-              <Sparkles className="size-[1.125rem]" strokeWidth={2} />
+              <ICON.brief className="size-[18px]" strokeWidth={2} />
               {briefMark && (
                 <span
-                  aria-hidden="true" data-testid="route-brief-mark"
+                  aria-hidden="true"
+                  data-testid="route-brief-mark"
                   className={cn("absolute -top-0.5 -right-1 size-2 rounded-full", briefMark === "stop" ? "bg-destructive" : "bg-caution")}
                 />
               )}
             </span>
+            <span className={WORD}>Brief</span>
           </RoundButton>
         )}
         {/* Not before there is a route, at the owner's ask ("the share

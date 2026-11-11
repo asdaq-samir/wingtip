@@ -1,4 +1,4 @@
-import MapKit
+@preconcurrency import MapKit
 import UIKit
 
 /// What the map draws of the airplanes tracked and the flights flown, and
@@ -11,6 +11,12 @@ struct FlightLayer {
     var path: [PathPoint] = []
     var past: [PathPoint] = []
     var flown: [PathPoint] = []
+    /// The glide ring about own ship (InFlight, the engine's glide_ring),
+    /// its outline; empty with none.
+    var glide: [CLLocationCoordinate2D] = []
+    /// The emergency assistant's line from the airplane to the field
+    /// picked (Emergency), while it is open; empty otherwise.
+    var emergency: [CLLocationCoordinate2D] = []
     var onTraffic: ((TrafficAircraft) -> Void)?
     /// The pilot dragged the map off the airplane followed.
     var onDragged: (() -> Void)?
@@ -23,6 +29,12 @@ final class HeightPolyline: MKPolyline {
 
 /// The white casing under a flown path, so it holds over any chart colour.
 final class CasingPolyline: MKPolyline {}
+
+/// The still-air glide ring about own ship, dashed as the web app's.
+final class GlidePolyline: MKPolyline {}
+
+/// The emergency assistant's line to the field picked.
+final class EmergencyPolyline: MKPolyline {}
 
 /// The ring round the airplane tracked, as the web app's TrafficLayer
 /// draws it.
@@ -58,11 +70,27 @@ final class FlightMapLayer: NSObject {
     private var lines: [String: [MKPolyline]] = [:]
     private var drawn: [String: [PathPoint]] = [:]
     private var centred: CLLocationCoordinate2D?
+    private var glideLine: GlidePolyline?
+    private var glideDrawn: [CLLocationCoordinate2D] = []
+    private var emergencyLine: EmergencyPolyline?
+    private var emergencyDrawn: [CLLocationCoordinate2D] = []
     private weak var map: MKMapView?
+    /// FIS-B's NEXRAD from the cockpit's receiver, under the flights.
+    private var nexrad: NexradMapLayer?
+    /// The radar and satellite loop, just above the chart (WeatherLoopLayer).
+    private var weatherLoop: WeatherLoopLayer?
+    /// The advisory areas the dry run's forecast run is in (ForecastRun).
+    private var forecastAreas: ForecastRunMapLayer?
 
     func attach(_ map: MKMapView) {
         self.map = map
         map.register(TrackedRingView.self, forAnnotationViewWithReuseIdentifier: TrackedRingView.reuse)
+        nexrad = MainActor.assumeIsolated { NexradMapLayer() }
+        if let nexrad { MainActor.assumeIsolated { nexrad.attach(map) } }
+        weatherLoop = MainActor.assumeIsolated { WeatherLoopLayer() }
+        if let weatherLoop { MainActor.assumeIsolated { weatherLoop.attach(map) } }
+        forecastAreas = MainActor.assumeIsolated { ForecastRunMapLayer() }
+        if let forecastAreas { MainActor.assumeIsolated { forecastAreas.attach(map) } }
     }
 
     func update(_ map: MKMapView, _ next: FlightLayer) {
@@ -85,6 +113,32 @@ final class FlightMapLayer: NSObject {
         draw("path", next.path, on: map)
         draw("past", next.past, on: map, fit: true)
         draw("flown", next.flown, on: map, fit: true)
+        drawGlide(next.glide, on: map)
+        drawEmergency(next.emergency, on: map)
+    }
+
+    /// The line to the field picked, drawn again only where it moved.
+    private func drawEmergency(_ path: [CLLocationCoordinate2D], on map: MKMapView) {
+        guard !ChartMap.samePath(path, emergencyDrawn) else { return }
+        emergencyDrawn = path
+        if let emergencyLine { map.removeOverlay(emergencyLine) }
+        emergencyLine = nil
+        guard path.count >= 2 else { return }
+        let line = EmergencyPolyline(coordinates: path, count: path.count)
+        map.addOverlay(line, level: .aboveLabels)
+        emergencyLine = line
+    }
+
+    /// The glide ring, drawn again only where it moved.
+    private func drawGlide(_ ring: [CLLocationCoordinate2D], on map: MKMapView) {
+        guard !ChartMap.samePath(ring, glideDrawn) else { return }
+        glideDrawn = ring
+        if let glideLine { map.removeOverlay(glideLine) }
+        glideLine = nil
+        guard ring.count >= 2 else { return }
+        let line = GlidePolyline(coordinates: ring, count: ring.count)
+        map.addOverlay(line, level: .aboveLabels)
+        glideLine = line
     }
 
     /// A path in its heights' colours over a white casing, drawn again
@@ -111,6 +165,26 @@ final class FlightMapLayer: NSObject {
     }
 
     func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
+        if let nexrad, let renderer = MainActor.assumeIsolated({ nexrad.renderer(for: overlay) }) { return renderer }
+        if let weatherLoop, let renderer = MainActor.assumeIsolated({ weatherLoop.renderer(for: overlay) }) { return renderer }
+        if let forecastAreas, let renderer = MainActor.assumeIsolated({ forecastAreas.renderer(for: overlay) }) { return renderer }
+        if let ring = overlay as? GlidePolyline {
+            // Dashed in the tint, as the web app's ring: what the airplane
+            // reaches in still air, not a boundary to fly by.
+            let renderer = MKPolylineRenderer(polyline: ring)
+            renderer.strokeColor = UIColor.systemBlue.withAlphaComponent(0.85)
+            renderer.lineWidth = 2
+            renderer.lineDashPattern = [8, 6]
+            return renderer
+        }
+        if let line = overlay as? EmergencyPolyline {
+            // In the problem's red, solid: the way to the field picked.
+            let renderer = MKPolylineRenderer(polyline: line)
+            renderer.strokeColor = UIColor(WingtipInk.problem)
+            renderer.lineWidth = 4
+            renderer.lineCap = .round
+            return renderer
+        }
         if let casing = overlay as? CasingPolyline {
             let renderer = MKPolylineRenderer(polyline: casing)
             renderer.strokeColor = UIColor.white.withAlphaComponent(0.85)

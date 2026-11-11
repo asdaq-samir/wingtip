@@ -1,68 +1,32 @@
 import CoreLocation
 import SwiftUI
 
-/// The sheets and alerts of the flight's extras, over the tabs: an
-/// airplane's card, a hold, a pilot's flown
-/// track; and the alerts that ask for a point's altitude or a fix off it.
+/// The alerts of the flight's extras: a point's altitude, a fix off it,
+/// a procedure's fix's crossing altitude, and what the engine refused of
+/// one. The cards it once held (an airplane, a hold, a flown track, a leg)
+/// are Navigator's, as every card is.
 @MainActor
 @Observable
 final class FlightUI {
     static let shared = FlightUI()
 
-    enum Card: Identifiable, Equatable {
-        case airplane(String)
-        case hold(String)
-        case flown(Int64, String)
-
-        var id: String {
-            switch self {
-            case .airplane(let hex): return "airplane:\(hex)"
-            case .hold(let fix): return "hold:\(fix)"
-            case .flown(let id, _): return "flown:\(id)"
-            }
-        }
-    }
-
-    var card: Card?
     /// The point whose altitude is asked for.
     var altitudeAt: String?
     /// The point a fix is made off.
     var fixFrom: String?
     /// A procedure's fix whose crossing altitude is asked for.
     var crossAt: String?
-}
-
-/// The sheets over the tabs, as Maps stacks a place's card over its
-/// own: half way up with the map live above, all the way up on a drag.
-struct FlightSheets: ViewModifier {
-    /// On iPad the inspector holds them (SplitLayout), not a sheet.
-    @Environment(\.splitLayout) private var split
-
-    func body(content: Content) -> some View {
-        @Bindable var ui = FlightUI.shared
-        content
-            .sheet(item: split ? .constant(nil) : $ui.card, onDismiss: {
-                // Its card put away, the airplane is no longer tracked.
-                if case .airplane = FlightUI.shared.card {} else { Tracking.shared.track(nil) }
-            }) { card in
-                Group {
-                    switch card {
-                    case .airplane(let hex): AirplaneCard(hex: hex)
-                    case .hold(let fix): HoldSheet(fix: fix)
-                    case .flown(let id, let title): FlownTrackView(flight: id, title: title)
-                    }
-                }
-                .presentationDetents([.medium, .large])
-                .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-            }
-            .modifier(PointAlerts())
-    }
+    /// What the engine refused of a figure typed into one of the alerts,
+    /// said in an alert of its own rather than the figure dropped unsaid.
+    var problem: String?
 }
 
 /// The alerts that ask for one figure or two, as iOS asks: a point's own
 /// altitude, a fix off a point (its course and distance), and a
 /// procedure's fix's crossing altitude.
 struct PointAlerts: ViewModifier {
+    /// Whether this view is the top of the stack, the one that presents.
+    let active: Bool
     @Environment(Plan.self) private var plan
     @State private var typed = ""
     @State private var course = ""
@@ -74,7 +38,9 @@ struct PointAlerts: ViewModifier {
             .alert(ui.altitudeAt.map { "Altitude at \($0)" } ?? "Altitude", isPresented: shown(\.altitudeAt), presenting: ui.altitudeAt) { ident in
                 TextField(PointAltitude.isWaypoint(ident, course: plan.course) ? "FL-045 as 045" : "Feet", text: $typed).keyboardType(.numberPad)
                 Button("Set") {
-                    if let feet = PointAltitude.feet(typed, waypoint: PointAltitude.isWaypoint(ident, course: plan.course)) { plan.setAltitude(at: ident, feet: feet) }
+                    if let feet = refused({ try PointAltitude.feet(typed, waypoint: PointAltitude.isWaypoint(ident, course: plan.course)) }) {
+                        plan.setAltitude(at: ident, feet: feet)
+                    }
                     typed = ""
                 }
                 if plan.extras.altitudes[ident.uppercased()] != nil {
@@ -88,7 +54,7 @@ struct PointAlerts: ViewModifier {
                 TextField("Course, as 090", text: $course).keyboardType(.numberPad)
                 TextField("Distance, nm", text: $distance).keyboardType(.decimalPad)
                 Button("Add") {
-                    if let ident = PointAltitude.frd(from: from, course: course, distance: distance) { plan.insertFix(ident, after: from) }
+                    if let ident = refused({ try PointAltitude.frd(from: from, course: course, distance: distance) }) { plan.insertFix(ident, after: from) }
                     course = ""; distance = ""
                 }
                 Button("Cancel", role: .cancel) { course = ""; distance = "" }
@@ -98,7 +64,7 @@ struct PointAlerts: ViewModifier {
             .alert(ui.crossAt.map { "Cross \($0) at" } ?? "Cross at", isPresented: shown(\.crossAt), presenting: ui.crossAt) { fix in
                 TextField("Feet", text: $typed).keyboardType(.numberPad)
                 Button("Set") {
-                    if let feet = PointAltitude.feet(typed, waypoint: false) { plan.setCrossing(at: fix, feet: feet) }
+                    if let feet = refused({ try PointAltitude.feet(typed, waypoint: false) }) { plan.setCrossing(at: fix, feet: feet) }
                     typed = ""
                 }
                 if plan.extras.crossings[fix.uppercased()] != nil {
@@ -108,17 +74,31 @@ struct PointAlerts: ViewModifier {
             } message: { _ in
                 Text("The altitude ATC gave you to cross it at, in feet above sea level.")
             }
+            .alert("Couldn't Read That", isPresented: shown(\.problem), presenting: ui.problem) { _ in
+                Button("OK", role: .cancel) {}
+            } message: { problem in
+                Text(problem)
+            }
+    }
+
+    /// What was typed, read; where the engine refused, nil and the reason
+    /// in FlightUI.problem.
+    private func refused<T>(_ body: () throws -> T?) -> T? {
+        do { return try body() } catch {
+            FlightUI.shared.problem = error.localizedDescription
+            return nil
+        }
     }
 
     /// Whether one of the alerts is up, its subject set; put away, cleared.
     private func shown(_ subject: ReferenceWritableKeyPath<FlightUI, String?>) -> Binding<Bool> {
-        Binding(get: { FlightUI.shared[keyPath: subject] != nil }, set: { if !$0 { FlightUI.shared[keyPath: subject] = nil } })
+        Binding(get: { active && FlightUI.shared[keyPath: subject] != nil }, set: { if !$0 { FlightUI.shared[keyPath: subject] = nil } })
     }
 
     /// A waypoint's is flown to it; an airport's is what a flight landing
     /// there comes down to; with the planner's cautions on the pilot's own.
     private func altitudeMessage(_ ident: String) -> String {
-        let cautions = plan.altitude?.cautions.filter { $0.toIdent.uppercased() == ident.uppercased() }.flatMap(\.reasons) ?? []
+        let cautions = plan.altitude?.cautions?.filter { $0.toIdent.uppercased() == ident.uppercased() }.flatMap(\.reasons) ?? []
         let base = PointAltitude.isWaypoint(ident, course: plan.course) ? "Flown to it at this altitude; the rest of the route as planned."
             : "Where a flight landing here comes down to, in feet above sea level."
         return ([base] + cautions).joined(separator: "\n")
@@ -131,29 +111,23 @@ enum PointAltitude {
     /// feet (045 for 4,500), an airport's in feet. A VFR altitude, under
     /// Class A's floor at 18,000 ft MSL (14 CFR 71.33, 91.135), as the
     /// planner takes one (PlanQuery.own_altitudes).
-    static func feet(_ typed: String, waypoint: Bool) -> Int? {
+    /// Nil for what is not an altitude; thrown where the engine refuses.
+    static func feet(_ typed: String, waypoint: Bool) throws -> Int? {
         let digits = typed.filter(\.isNumber)
         guard !digits.isEmpty, digits.count <= (waypoint ? 3 : 5), let figure = Int(digits) else { return nil }
         let feet = waypoint ? figure * 100 : figure
-        return feet > 0 && feet < 18_000 ? feet : nil
+        return try Altitudes.allowed(Double(feet)) ? feet : nil
     }
 
     /// A course of 000 to 360, out to 999 nm, as the planner takes a
     /// fix/radial/distance (wingtip.fixes.parse_frd): what is typed read as
     /// the engine's `frd_read` reads one, and written again as its
-    /// `frd_write` writes it.
-    struct Frd: Decodable {
-        let base: String
-        let course: Double
-        let distanceNm: Double
-    }
-
-    static func frd(from: String, course: String, distance: String) -> String? {
+    /// `frd_write` writes it. Nil for what is not one; thrown where the
+    /// engine refuses.
+    static func frd(from: String, course: String, distance: String) throws -> String? {
         let typed = "\(from)/\(course.filter(\.isNumber))/\(distance.trimmingCharacters(in: .whitespaces))"
-        let read: Frd?
-        do { read = try Engine.call("frd_read", json: ["text": typed], decoder: Planner.snakeCase) } catch { read = nil }
-        guard let read else { return nil }
-        return RouteExtras.frd(read.base, courseDeg: Int(read.course), nm: read.distanceNm)
+        guard let read = try Engine.frdRead(text: typed) else { return nil }
+        return try RouteExtras.frd(read.base, courseDeg: Int(read.course), nm: read.distanceNm)
     }
 
     /// Whether a point of the route is a waypoint rather than a field: a
@@ -181,69 +155,6 @@ struct DirectStrip: View {
     }
 }
 
-/// What can be done at a point of the route, in one order and one set of
-/// words wherever its menu is (the web app's PointMenuItems): Direct To,
-/// Set Altitude, a fix off it, a hold, Remove.
-struct RoutePointMenu: View {
-    @Environment(Plan.self) private var plan
-    @Environment(OwnShip.self) private var ownShip
-    @Environment(DryRun.self) private var dryRun
-    let ident: String
-    /// Where it is in the route: the departure, a stop or the destination.
-    var role: Role = .stop
-
-    enum Role { case departure, stop, destination }
-
-    var body: some View {
-        Menu {
-            Text(ident)
-            if role != .departure {
-                Button {
-                    if plan.extras.direct == ident { plan.cancelDirect() } else { plan.directTo(ident, from: dryRun.fix ?? ownShip.fix) }
-                } label: {
-                    Label(plan.extras.direct == ident ? "Fly as Planned" : "Direct To", systemImage: "arrow.up.right")
-                }
-                Button { FlightUI.shared.altitudeAt = ident } label: {
-                    Label(plan.extras.altitudes[ident.uppercased()].map { "Set Altitude… (\($0.formatted()) ft)" } ?? "Set Altitude…", systemImage: "arrow.up.and.down")
-                }
-            }
-            Button { FlightUI.shared.fixFrom = ident } label: { Label("Create a Fix from Here…", systemImage: "scope") }
-            Button { FlightUI.shared.card = .hold(ident) } label: {
-                Label(plan.hold(at: ident) == nil ? "Hold Here…" : "Change Hold…", systemImage: "repeat")
-            }
-            if role == .stop {
-                Divider()
-                Button(role: .destructive) {
-                    plan.stops.removeAll { $0 == ident }
-                    plan.plan()
-                } label: { Label("Remove", systemImage: "trash") }
-            }
-        } label: {
-            HStack {
-                Text(ident).font(.body.monospaced()).foregroundStyle(.primary)
-                Spacer()
-                if let feet = plan.extras.altitudes[ident.uppercased()] {
-                    Text("\(feet.formatted()) ft").font(.footnote.monospacedDigit()).foregroundStyle(.tint)
-                }
-                if plan.hold(at: ident) != nil { Image(systemName: "repeat").foregroundStyle(.tint) }
-                if plan.extras.direct == ident { Image(systemName: "arrow.up.right").foregroundStyle(.tint) }
-                Image(systemName: "ellipsis.circle").foregroundStyle(.tint)
-            }
-        }
-        .accessibilityLabel(spoken)
-    }
-
-    /// The row's glyphs in words: "KHIB, four thousand five hundred feet,
-    /// hold set, flown direct: more".
-    private var spoken: String {
-        var parts = [ident]
-        if let feet = plan.extras.altitudes[ident.uppercased()] { parts.append(SpokenFigures.feet(Double(feet))) }
-        if plan.hold(at: ident) != nil { parts.append("hold set") }
-        if plan.extras.direct == ident { parts.append("flown direct") }
-        return parts.joined(separator: ", ") + ": more"
-    }
-}
-
 /// FPL's section for the route's own edits: the Direct to, its ends'
 /// menus, the holds set, the procedures' fixes, and the pages of the
 /// flight in the air.
@@ -257,8 +168,8 @@ struct RouteExtrasSection: View {
                 RoutePointMenu(ident: plan.dep, role: .departure)
                 RoutePointMenu(ident: plan.dest, role: .destination)
                 ForEach(plan.extras.holds) { hold in
-                    Button { FlightUI.shared.card = .hold(hold.fix) } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                    Button { Navigator.shared.push(.hold(hold.fix)) } label: {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text("Hold at \(hold.fix)").foregroundStyle(.primary)
                             Text(hold.words).font(.footnote).foregroundStyle(.secondary)
                         }
@@ -266,25 +177,26 @@ struct RouteExtrasSection: View {
                 }
                 .onDelete { at in at.map { plan.extras.holds[$0].fix }.forEach { plan.setHold(at: $0, nil) } }
                 ForEach(plan.procedures) { pick in
-                    NavigationLink(value: "fixes:\(pick.ident):\(pick.id)") {
+                    NavigationLink(value: SheetPage.flight("fixes:\(pick.ident):\(pick.id)")) {
                         LabeledContent("\(pick.name) fixes", value: plan.extras.procedureDirect["\(pick.ident):\(pick.id)"].map { "Direct \($0)" } ?? pick.ident)
                     }
                 }
             } header: {
                 Text("Route")
             }
-            Section("In flight") {
-                NavigationLink(value: "nearest") { Label("Nearest for a diversion", systemImage: "airplane.arrival") }
-                NavigationLink(value: "notes") { Label("Checkpoint notes", systemImage: "text.bubble") }
-                NavigationLink(value: "file") { Label("File flight plan", systemImage: "doc.text") }
+            Section("In Flight") {
+                // The one Nearest list, with Divert (NearestView).
+                NavigationLink(value: SheetPage.screen(.nearest)) { Label("Nearest for a Diversion", systemImage: WingtipIcon.nearest) }
+                NavigationLink(value: SheetPage.flight("notes")) { Label("Checkpoint Notes", systemImage: "text.bubble") }
+                NavigationLink(value: SheetPage.flight("file")) { Label("File Flight Plan", systemImage: WingtipIcon.send) }
             }
         }
     }
 }
 
 /// The pages FPL opens by name beyond its own (its navigationDestination's
-/// default): a procedure's fixes, nearest for a diversion, the checkpoints'
-/// notes and filing with Flight Service.
+/// default): a procedure's fixes, the checkpoints' notes and filing with
+/// Flight Service.
 struct FlightPage: View {
     let name: String
 
@@ -294,7 +206,6 @@ struct FlightPage: View {
             ProcedureFixesView(ident: parts.count > 1 ? parts[1] : "", id: parts.count > 2 ? parts[2] : "")
         } else {
             switch name {
-            case "nearest": DiversionView()
             case "notes": CheckpointNotesView()
             case "file": FlightServiceView()
             default: EmptyView()
@@ -318,12 +229,16 @@ struct HoldSheet: View {
     @State private var legMin = 1.0
     @State private var legNm = 4.0
     @State private var length = "2T"
+    @State private var problem: String?
+    /// The form as it opened, so Cancel asks only after an edit.
+    @State private var opened: String?
+    @State private var askingCancel = false
 
     static let legMinutes = [1.0, 1.5, 2, 3]
     static let legMiles = [2.0, 3, 4, 5, 10]
 
-    /// Put away, whether a sheet (iPhone) or the inspector (iPad) holds it.
-    private func dismiss() { FlightUI.shared.card = nil }
+    /// Done: back where it was opened from, a card's stack or the plan.
+    private func dismiss() { Navigator.shared.finish(.hold(fix)) }
     static let lengths = ["1T", "2T", "3T", "4T", "10M", "15M", "20M", "30M"]
 
     /// "2 turns", "1 turn", "10 min".
@@ -336,59 +251,72 @@ struct HoldSheet: View {
     /// The leg flown to it, for the course and the altitude it is reached at.
     private var legIn: Leg? { plan.legs.first { $0.to.uppercased() == fix.uppercased() } }
 
+    /// An edit form, as HIG Sheets has one: Cancel at the leading edge,
+    /// Add or Change at the trailing, nothing changed until it is tapped.
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    Picker("The course is", selection: $inbound) {
-                        Text("Inbound").tag(true)
-                        Text("Outbound").tag(false)
-                    }
-                    .pickerStyle(.segmented)
-                    LabeledContent("Course") {
-                        TextField("270", text: $course).keyboardType(.numberPad).multilineTextAlignment(.trailing).font(.body.monospacedDigit())
-                    }
-                    Picker("Turns", selection: $right) {
-                        Text("Right").tag(true)
-                        Text("Left").tag(false)
-                    }
-                    .pickerStyle(.segmented)
+        Form {
+            Section {
+                Picker("The course is", selection: $inbound) {
+                    Text("Inbound").tag(true)
+                    Text("Outbound").tag(false)
                 }
-                Section {
-                    Picker("Legs by", selection: $timed) {
-                        Text("Time").tag(true)
-                        Text("Distance").tag(false)
+                .pickerStyle(.segmented)
+                LabeledContent("Course") {
+                    TextField("270", text: $course).keyboardType(.numberPad).multilineTextAlignment(.trailing).font(.body.monospacedDigit())
+                }
+                Picker("Turns", selection: $right) {
+                    Text("Right").tag(true)
+                    Text("Left").tag(false)
+                }
+                .pickerStyle(.segmented)
+            }
+            Section {
+                Picker("Legs by", selection: $timed) {
+                    Text("Time").tag(true)
+                    Text("Distance").tag(false)
+                }
+                .pickerStyle(.segmented)
+                if timed {
+                    Picker("Leg time", selection: $legMin) {
+                        ForEach(Self.legMinutes, id: \.self) { Text("\(String(format: "%g", $0)) min").tag($0) }
                     }
-                    .pickerStyle(.segmented)
-                    if timed {
-                        Picker("Leg time", selection: $legMin) {
-                            ForEach(Self.legMinutes, id: \.self) { Text("\(String(format: "%g", $0)) min").tag($0) }
-                        }
-                    } else {
-                        Picker("Leg distance", selection: $legNm) {
-                            ForEach(Self.legMiles, id: \.self) { Text("\(String(format: "%g", $0)) nm").tag($0) }
-                        }
-                    }
-                    Picker("Hold for", selection: $length) {
-                        ForEach(Self.lengths, id: \.self) { Text(Self.lengthWords($0)).tag($0) }
+                } else {
+                    Picker("Leg distance", selection: $legNm) {
+                        ForEach(Self.legMiles, id: \.self) { Text("\(String(format: "%g", $0)) nm").tag($0) }
                     }
                 }
-                Section {
-                    Button(was == nil ? "Add Hold" : "Change Hold") { set() }
-                        .disabled(degrees == nil)
-                    if was != nil {
-                        Button("Remove Hold", role: .destructive) { plan.setHold(at: fix, nil); dismiss() }
-                    }
+                Picker("Hold for", selection: $length) {
+                    ForEach(Self.lengths, id: \.self) { Text(Self.lengthWords($0)).tag($0) }
+                }
+                if let problem {
+                    Text("The leg time for this altitude couldn't be worked out: \(problem)").foregroundStyle(WingtipInk.caution)
                 }
             }
-            .navigationTitle("Hold at \(fix)")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { Button { dismiss() } label: { Image(systemName: "xmark") }.accessibilityLabel("Close") }
+            if was != nil {
+                Section {
+                    Button("Remove Hold", role: .destructive) { plan.setHold(at: fix, nil); dismiss() }
+                }
             }
-            .onAppear(perform: fill)
+        }
+        .navigationTitle("Hold at \(fix)")
+        .navigationBarTitleDisplayMode(.inline)
+        // Cancel is the form's way out, asking first after an edit.
+        .formGuard(edited: edited)
+        .toolbar {
+            FormCancel(edited: edited, cancel: { dismiss() }, asking: $askingCancel)
+            ToolbarItem(placement: .confirmationAction) {
+                Button(was == nil ? "Add" : "Change") { set() }.disabled(degrees == nil)
+            }
+        }
+        .onAppear {
+            fill()
+            if opened == nil { opened = formKey }
         }
     }
+
+    /// Everything the form holds, one line, to tell an edit.
+    private var formKey: String { "\(course)|\(inbound)|\(right)|\(timed)|\(legMin)|\(legNm)|\(length)" }
+    private var edited: Bool { opened.map { $0 != formKey } ?? false }
 
     private var degrees: Int? {
         let digits = course.filter(\.isNumber)
@@ -413,7 +341,9 @@ struct HoldSheet: View {
             let magnetic = ((leg.trueCourseDeg - leg.magneticVariationDeg).truncatingRemainder(dividingBy: 360) + 360).truncatingRemainder(dividingBy: 360)
             let rounded = Int(magnetic.rounded()) % 360
             course = String(format: "%03d", rounded == 0 ? 360 : rounded)
-            legMin = Hold.legMinutes(altitudeFt: leg.altitudeFt)
+            // Where the engine refuses, the minute the form starts on
+            // stands and the reason shows under it.
+            do { legMin = try Hold.legMinutes(altitudeFt: leg.altitudeFt); problem = nil } catch { problem = error.localizedDescription }
         }
     }
 
@@ -446,35 +376,38 @@ struct ProcedureFixesView: View {
             if let drawing, let pick {
                 let direct = plan.extras.procedureDirect["\(ident):\(id)"]
                 Section {
-                    ForEach(drawing.fixes.filter { $0.missed != true }) { fix in
-                        VStack(alignment: .leading, spacing: 6) {
+                    ForEach(drawing.fixes.filter { !$0.missed }) { fix in
+                        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                             HStack {
                                 Text(fix.ident).font(.headline.monospaced())
-                                if let roles = fix.roles, !roles.isEmpty { Text(roles.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary) }
+                                if !fix.roles.isEmpty { Text(fix.roles.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary) }
                                 Spacer()
                                 if let own = plan.extras.crossings[fix.ident.uppercased()] {
-                                    Text("\(own.formatted()) ft").font(.subheadline.monospacedDigit()).foregroundStyle(.tint)
-                                } else if let charted = fix.charted {
-                                    Text(charted).font(.subheadline).foregroundStyle(.secondary)
+                                    Text(Format.altitude(Double(own))).font(.subheadline.monospacedDigit()).foregroundStyle(.tint)
+                                } else {
+                                    switch Result(catching: { try fix.charted() }) {
+                                    case .success(let charted?): Text(charted).font(.subheadline).foregroundStyle(.secondary)
+                                    case .success(nil): EmptyView()
+                                    case .failure: Text("Altitude not read").font(.subheadline).foregroundStyle(WingtipInk.caution)
+                                    }
                                 }
                             }
                             HStack {
                                 Button(direct == fix.ident ? "Fly \(pick.name) as Charted" : "Direct To \(fix.ident)") {
                                     plan.setProcedureDirect(pick, fix: direct == fix.ident ? nil : fix.ident)
                                 }
-                                .buttonStyle(.bordered)
+                                .glassButton()
                                 Button("Cross at…") { FlightUI.shared.crossAt = fix.ident }
-                                    .buttonStyle(.bordered)
+                                    .glassButton()
                             }
                         }
                     }
                 }
             } else {
-                Text(problem ?? "Fetching its fixes…").foregroundStyle(problem == nil ? Color.secondary : Color.red)
+                Text(problem ?? "Fetching its fixes…").foregroundStyle(problem == nil ? Color.secondary : WingtipInk.problem)
             }
         }
         .navigationTitle(pick?.name ?? id)
-        .navigationBarTitleDisplayMode(.inline)
         .task {
             guard let pick else { return }
             do { drawing = try await Planner.procedure(ident, id: id, transition: pick.transition) } catch { problem = error.localizedDescription }

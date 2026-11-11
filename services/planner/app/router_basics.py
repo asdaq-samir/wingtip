@@ -1,5 +1,6 @@
 """What every router starts from: the route's idents, the airports
 behind them, and the on-disk paths a corridor's data lives at."""
+
 import logging
 import re
 from dataclasses import dataclass
@@ -12,11 +13,9 @@ from wingtip import airports, airways, fixes, geo, places, weather
 from wingtip.config import PROCESSED_DIR  # noqa: F401  (re-exported for the routers)
 from wingtip.config import corridor_paths as paths  # noqa: F401  (the routers' name for it)
 
-from .planning import StillComputing
+from wingtip.planning import StillComputing
 
 log = logging.getLogger(__name__)
-
-DEFAULT_AIRCRAFT = "c172"
 
 #: How many stops a route may make between its ends: each is a flight of
 #: its own to read the chart along and plan. Sixteen, where it was eight:
@@ -36,8 +35,8 @@ SAME_PLACE_NM = 0.1
 #: weather: the airport search, as a pilot types each letter, and the
 #: aircraft picker. Never an answer with a METAR or a TFR in it, which
 #: change within the hour; nor a route's, whose course starts the chart's
-#: reads; nor anything of one pilot's. PlannerProxyController passes the
-#: header on for these paths alone, and the CDN keeps by it
+#: reads; nor anything of one pilot's. The gateway passes the header on
+#: for the routes marked so (app.gateway's SHARED) alone, and the CDN keeps by it
 #: (infra/cloudformation/template.yaml).
 SHARED_CACHE = "public, max-age=300, s-maxage=3600"
 
@@ -53,6 +52,19 @@ CHART_CACHE = "public, max-age=60"
 #: so kept that long in a browser and as long as the CDN keeps anything (a
 #: day, its policy's most), and never asked for again in between.
 DIAGRAM_CACHE = f"public, max-age={28 * 24 * 3600}, immutable"
+
+
+def near_points(near: str) -> tuple:
+    """ "42.2,-88.1;46.8,-92.2" as ((42.2, -88.1), (46.8, -92.2)); what is
+    not a pair of numbers left out."""
+    points = []
+    for pair in near.split(";"):
+        try:
+            lat, lon = (float(v) for v in pair.split(","))
+        except ValueError:
+            continue
+        points.append((lat, lon))
+    return tuple(points)
 
 
 def route_key(dep: str, dest: str) -> tuple:
@@ -85,7 +97,7 @@ def position_of(ident: str) -> dict | None:
     if not (-90 <= lat <= 90 and -180 <= lon <= 180):
         return None
     # The altitude the airplane is at, for its climb or level start (app.
-    # routers.plan's departure_elevation); none where the GPS gave none.
+    # wingtip.flight_plan's departure_elevation); none where the GPS gave none.
     altitude = float(match[3]) if match[3] else None
     return {"name": "Present position", "lat": lat, "lon": lon, "elevation_ft": None, "fix": True, "altitude_ft": altitude}
 
@@ -222,13 +234,13 @@ class Route:
         out, start = [], 0
         for i, hop in enumerate(self.hops):
             if hop.lands or i == len(self.hops) - 1:
-                out.append(Route(self.idents[start:i + 2], self.airports[start:i + 2]))
+                out.append(Route(self.idents[start : i + 2], self.airports[start : i + 2]))
                 start = i + 1
         return out
 
     @property
     def hops(self) -> list["Route"]:
-        return [Route(self.idents[i:i + 2], self.airports[i:i + 2]) for i in range(len(self.idents) - 1)]
+        return [Route(self.idents[i : i + 2], self.airports[i : i + 2]) for i in range(len(self.idents) - 1)]
 
     @property
     def length_nm(self) -> float:
@@ -243,8 +255,12 @@ class Route:
 
 def _endpoint(ident: str, airport: dict) -> dict:
     return {
-        "ident": ident, "name": airport["name"], "lat": airport["lat"], "lon": airport["lon"],
-        "elevation_ft": airport.get("elevation_ft"), "kind": "fix" if airport.get("fix") else "airport",
+        "ident": ident,
+        "name": airport["name"],
+        "lat": airport["lat"],
+        "lon": airport["lon"],
+        "elevation_ft": airport.get("elevation_ft"),
+        "kind": "fix" if airport.get("fix") else "airport",
     }
 
 
@@ -337,9 +353,12 @@ def _is_place(ident: str) -> bool:
 def _published(segment: "airways.Segment") -> dict:
     """An airway segment's published altitudes, as a hop carries them."""
     return {
-        "id": segment.airway, "from": segment.from_ident,
-        "mea_ft": segment.mea_ft, "gnss_mea_ft": segment.gnss_mea_ft,
-        "moca_ft": segment.moca_ft, "maa_ft": segment.maa_ft,
+        "id": segment.airway,
+        "from": segment.from_ident,
+        "mea_ft": segment.mea_ft,
+        "gnss_mea_ft": segment.gnss_mea_ft,
+        "moca_ft": segment.moca_ft,
+        "maa_ft": segment.maa_ft,
     }
 
 
@@ -362,7 +381,8 @@ def ndjson(lines, on_error) -> StreamingResponse:
     line instead, and the page ends with a message rather than a spinner.
     """
     return StreamingResponse(
-        _ending_in_an_error_line(lines, on_error), media_type="application/x-ndjson",
+        _ending_in_an_error_line(lines, on_error),
+        media_type="application/x-ndjson",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 

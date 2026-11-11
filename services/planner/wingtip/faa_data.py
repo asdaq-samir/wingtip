@@ -10,6 +10,7 @@ every 56 days -- so they're downloaded and cached under data/raw/ rather
 than re-fetched every notebook run: ensure_nasr_file() downloads a file
 that is missing, and refresh_editions() a newer edition of one there.
 """
+
 import csv
 import io
 import json
@@ -110,10 +111,7 @@ def download_and_extract(url: str, dest_dir: Path, retries: int = 3, only: Itera
             members = zf.namelist() if wanted is None else [m for m in zf.namelist() if Path(m).name in wanted]
             zf.extractall(dest_dir, members=members)
 
-    with_retries(
-        attempt, describe=f"Download of {url}", retries=retries,
-        transient=(requests.RequestException, zipfile.BadZipFile),
-    )
+    with_retries(attempt, describe=f"Download of {url}", retries=retries, transient=(requests.RequestException, zipfile.BadZipFile))
 
 
 def _is_icloud_evicted(path: Path) -> bool:
@@ -215,7 +213,8 @@ _EDITIONS = {
         # The .shp last, which wingtip.airspace keys its parse on: its
         # companions are in place before it.
         ("Shape_Files/Class_Airspace.shx", "Shape_Files/Class_Airspace.dbf", "Shape_Files/Class_Airspace.shp"),
-        None, r'href="([^"]*class_airspace_shape_files\.zip)"',
+        None,
+        r'href="([^"]*class_airspace_shape_files\.zip)"',
     ),
     # The obstacles, on their own 56-day edition and page.
     "DOF": (("DOF.DAT",), DOF_INDEX_URL, r'href="(https://aeronav\.faa\.gov/Obst_Data/DOF_\d+\.zip)"'),
@@ -384,18 +383,14 @@ def military_fields(cache_dir) -> dict:
 def _private_of(path: str, _mtime: float) -> frozenset:
     df = _read_apt_base_cached(path, _mtime)
     df = df[(df["FACILITY_USE_CODE"] == "PR") & ~df["OWNERSHIP_TYPE_CODE"].isin(MILITARY_OWNERS)]
-    return frozenset(
-        ident.strip().upper() for ident in [*df["ARPT_ID"], *df["ICAO_ID"]] if isinstance(ident, str) and ident.strip()
-    )
+    return frozenset(ident.strip().upper() for ident in [*df["ARPT_ID"], *df["ICAO_ID"]] if isinstance(ident, str) and ident.strip())
 
 
 @once(maxsize=2)
 def _towered_of(path: str, _mtime: float) -> frozenset:
     df = _read_apt_base_cached(path, _mtime)
     df = df[df["TWR_TYPE_CODE"].fillna("").str.strip().str.upper().str.startswith("ATCT")]
-    return frozenset(
-        ident.strip().upper() for ident in [*df["ARPT_ID"], *df["ICAO_ID"]] if isinstance(ident, str) and ident.strip()
-    )
+    return frozenset(ident.strip().upper() for ident in [*df["ARPT_ID"], *df["ICAO_ID"]] if isinstance(ident, str) and ident.strip())
 
 
 def towered_fields(cache_dir) -> frozenset:
@@ -499,8 +494,15 @@ def airport_contact(ident: str, cache_dir) -> dict:
 
 #: NASR's repair codes a pilot reads as service: "NONE" and blank are none.
 _REPAIRS = {"MAJOR": "major", "MINOR": "minor"}
-NO_SERVICES = {"fuel_types": [], "landing_fee": None, "tie_down": False, "hangar": False,
-               "airframe_repair": None, "powerplant_repair": None, "oxygen": False}
+NO_SERVICES = {
+    "fuel_types": [],
+    "landing_fee": None,
+    "tie_down": False,
+    "hangar": False,
+    "airframe_repair": None,
+    "powerplant_repair": None,
+    "oxygen": False,
+}
 
 
 @once(maxsize=2)
@@ -544,16 +546,29 @@ def airport_services(ident: str, cache_dir) -> dict:
 # (lib/frequencies) name them; the rest -- emergency, military command
 # posts, operations, dispatch, the navaids' own -- are left off.
 _FREQUENCY_USES = {
-    "CTAF": "CTAF", "UNICOM": "UNICOM",
-    "LCL/P": "TWR", "LCL/S": "TWR",
-    "GND/P": "GND", "GND/S": "GND",
-    "CD/P": "CLD", "CD/S": "CLD", "CD": "CLD",
-    "ATIS": "ATIS", "D-ATIS": "ATIS",
-    "APCH/P DEP/P": "A/D", "APCH/S DEP/S": "A/D", "APCH/P DEP/P IC": "A/D",
-    "APCH/P": "APP", "APCH/S": "APP", "APCH/P IC": "APP",
-    "DEP/P": "DEP", "DEP/S": "DEP",
+    "CTAF": "CTAF",
+    "UNICOM": "UNICOM",
+    "LCL/P": "TWR",
+    "LCL/S": "TWR",
+    "GND/P": "GND",
+    "GND/S": "GND",
+    "CD/P": "CLD",
+    "CD/S": "CLD",
+    "CD": "CLD",
+    "ATIS": "ATIS",
+    "D-ATIS": "ATIS",
+    "APCH/P DEP/P": "A/D",
+    "APCH/S DEP/S": "A/D",
+    "APCH/P DEP/P IC": "A/D",
+    "APCH/P": "APP",
+    "APCH/S": "APP",
+    "APCH/P IC": "APP",
+    "DEP/P": "DEP",
+    "DEP/S": "DEP",
     # Who to call before a Class B, C or a TRSA, and its sector.
-    "CLASS B": "APP", "CLASS C": "APP", "TRSA": "APP",
+    "CLASS B": "APP",
+    "CLASS C": "APP",
+    "TRSA": "APP",
 }
 #: The civil aviation VHF band, MHz: what a light airplane's radio tunes.
 _VHF = (118.0, 137.0)
@@ -601,12 +616,16 @@ def _frequencies_of(path: str, _mtime: float, base: str, _base_mtime: float) -> 
         # Class B's or C's own words where it is one.
         approach = kind in ("APP", "DEP", "A/D")
         call = (row["PRIMARY_APPROACH_RADIO_CALL"] if approach else row["TOWER_OR_COMM_CALL"]).strip()
-        words = " ".join(w for w in (
-            {"CLASS B": "Class B", "CLASS C": "Class C", "TRSA": "TRSA"}.get(use, ""),
-            _name_case(use) if kind == "RCO" else "",
-            _name_case(call) if kind in ("APP", "DEP", "A/D", "TWR", "GND", "CLD") else "",
-            _sector_case(row["SECTORIZATION"], idents),
-        ) if w)
+        words = " ".join(
+            w
+            for w in (
+                {"CLASS B": "Class B", "CLASS C": "Class C", "TRSA": "TRSA"}.get(use, ""),
+                _name_case(use) if kind == "RCO" else "",
+                _name_case(call) if kind in ("APP", "DEP", "A/D", "TWR", "GND", "CLD") else "",
+                _sector_case(row["SECTORIZATION"], idents),
+            )
+            if w
+        )
         entries = by_id.setdefault(row["SERVICED_FACILITY"].strip().upper(), [])
         entry = {"type": kind, "description": words or None, "frequency_mhz": mhz}
         if entry not in entries:
@@ -617,20 +636,28 @@ def _frequencies_of(path: str, _mtime: float, base: str, _base_mtime: float) -> 
     # alone (Madison's 120.1, both "MADISON EAST" and "CLASS C").
     for entries in by_id.values():
         ctaf = {e["frequency_mhz"] for e in entries if e["type"] == "CTAF"}
-        approach = {e["frequency_mhz"] for e in entries if e["type"] in ("A/D", "DEP") or (
-            e["type"] == "APP" and not (e["description"] or "").startswith(("Class", "TRSA")))}
+        approach = {
+            e["frequency_mhz"]
+            for e in entries
+            if e["type"] in ("A/D", "DEP") or (e["type"] == "APP" and not (e["description"] or "").startswith(("Class", "TRSA")))
+        }
         for e in entries:
             if e["type"] == "CTAF" and any(u["type"] == "UNICOM" and u["frequency_mhz"] == e["frequency_mhz"] for u in entries):
                 e["description"] = "CTAF/UNICOM"
-        entries[:] = [e for e in entries if not (
-            (e["type"] == "UNICOM" and e["frequency_mhz"] in ctaf)
-            or ((e["description"] or "").startswith(("Class", "TRSA")) and e["frequency_mhz"] in approach))]
+        entries[:] = [
+            e
+            for e in entries
+            if not (
+                (e["type"] == "UNICOM" and e["frequency_mhz"] in ctaf)
+                or ((e["description"] or "").startswith(("Class", "TRSA")) and e["frequency_mhz"] in approach)
+            )
+        ]
     for arpt_id, icao_id in zip(apt["ARPT_ID"], apt["ICAO_ID"]):
         if isinstance(icao_id, str) and icao_id.strip() and isinstance(arpt_id, str) and arpt_id.strip().upper() in by_id:
             by_id.setdefault(icao_id.strip().upper(), by_id[arpt_id.strip().upper()])
     no_icao = frozenset(
-        a.strip().upper() for a, i in zip(apt["ARPT_ID"], apt["ICAO_ID"])
-        if isinstance(a, str) and not (isinstance(i, str) and i.strip()))
+        a.strip().upper() for a, i in zip(apt["ARPT_ID"], apt["ICAO_ID"]) if isinstance(a, str) and not (isinstance(i, str) and i.strip())
+    )
     return by_id, no_icao
 
 
@@ -750,10 +777,7 @@ def _charted_open_airports(path: str, _mtime: float) -> tuple:
     and the route's own two fields are the route's (py-spy on the live
     planner, 2026-10-28)."""
     df = _read_apt_base_cached(path, _mtime)
-    df = df[
-        df["SITE_TYPE_CODE"].map(_SITE_TYPE_NAMES).isin(CHARTED_FACILITY_TYPES)
-        & (df["ARPT_STATUS"] == "O")
-    ]
+    df = df[df["SITE_TYPE_CODE"].map(_SITE_TYPE_NAMES).isin(CHARTED_FACILITY_TYPES) & (df["ARPT_STATUS"] == "O")]
     lat = df["LAT_DECIMAL"].astype(float)
     lon = df["LONG_DECIMAL"].astype(float)
     fields = pd.DataFrame(
@@ -773,19 +797,17 @@ def _charted_open_airports(path: str, _mtime: float) -> tuple:
             ],
         }
     )
-    return (fields, lat.to_numpy(), lon.to_numpy(), df["ARPT_ID"].str.upper().to_numpy(dtype=object),
-            df["ICAO_ID"].fillna("").str.upper().to_numpy(dtype=object))
+    return (
+        fields,
+        lat.to_numpy(),
+        lon.to_numpy(),
+        df["ARPT_ID"].str.upper().to_numpy(dtype=object),
+        df["ICAO_ID"].fillna("").str.upper().to_numpy(dtype=object),
+    )
 
 
 # APT_BASE encodes the facility type as a single letter.
-_SITE_TYPE_NAMES = {
-    "A": "AIRPORT",
-    "B": "BALLOONPORT",
-    "C": "SEAPLANE BASE",
-    "G": "GLIDERPORT",
-    "H": "HELIPORT",
-    "U": "ULTRALIGHT",
-}
+_SITE_TYPE_NAMES = {"A": "AIRPORT", "B": "BALLOONPORT", "C": "SEAPLANE BASE", "G": "GLIDERPORT", "H": "HELIPORT", "U": "ULTRALIGHT"}
 
 
 def _in_bbox(lat: pd.Series, lon: pd.Series, bbox: tuple) -> pd.Series:
@@ -906,6 +928,7 @@ def _read_obstacle_cache(dof_dat_path: Path, key: tuple) -> pd.DataFrame | None:
         return None
     try:
         import pyarrow.parquet as pq
+
         table = pq.read_table(path)
     except Exception:  # noqa: BLE001 -- no pyarrow here, or a damaged file: parse instead
         return None
@@ -921,6 +944,7 @@ def _write_obstacle_cache(dof_dat_path: Path, key: tuple, df: pd.DataFrame) -> N
     try:
         import pyarrow as pa
         import pyarrow.parquet as pq
+
         table = pa.Table.from_pandas(df, preserve_index=False)
         metadata = {**(table.schema.metadata or {}), _OBSTACLE_CACHE_KEY: json.dumps(key).encode()}
         pq.write_table(table.replace_schema_metadata(metadata), part)

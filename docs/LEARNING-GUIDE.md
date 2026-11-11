@@ -16,7 +16,7 @@
 
 ## Overview
 
-A teaching document; `README.md` is the reference. This explains *why*
+A teaching document; [`README.md`](README.md) is the index of the reference docs. This explains *why*
 the repo is built the way it is, concept by concept, so you walk away
 able to rebuild something like it yourself. Each section introduces an
 idea, then shows exactly where in this repo that idea shows up.
@@ -27,8 +27,10 @@ later as a refresher while you build.
 The project has four layers, each with one job. The Rust engine
 (`engine/`) holds every aviation rule and figure once, with no network,
 no screen and no clock. The planner (`planner` over
-`services/planner/wingtip`, FastAPI) works out a flight: it fetches the data, runs the
-chart model and the assistant, and asks the engine every rule. Spring
+`services/planner/wingtip`, FastAPI) works out a flight: it reads the data the
+`ingest` and `weather` services keep, runs the chart model, and asks the
+engine every rule; the `assistant` service makes every Claude call over
+the planner's figures. Spring
 Boot (`gateway`) is who the pilot is and what they saved, with no aviation
 logic of its own. The apps (web, iOS, Android) get data, keep state and
 draw, and ask the engine the rest. §4 says why it is cut this way.
@@ -41,8 +43,8 @@ in the section noted next to it:
 ```mermaid
 flowchart LR
     subgraph pipeline["§2 ML pipeline"]
-        collect[pipeline-processing<br/>collect] --> engineer[pipeline-processing<br/>engineer-features]
-        engineer --> retrain[pipeline-training<br/>retrain]
+        collect[retrain job<br/>collect] --> engineer[retrain job<br/>engineer-features]
+        engineer --> retrain[retrain job<br/>retrain]
         retrain --> registry[model_registry<br/>evaluate / promote]
     end
     run["§3 retrain<br/>(the training run: the row above, in order)"] -.-> collect
@@ -55,7 +57,12 @@ flowchart LR
     apps([web · iOS · Android]) --> gateway
     apps --> engine
 
-    planner -->|"§5 the written briefing<br/>(Anthropic SDK)"| claude([Claude API])
+    gateway --> assistant["§5 assistant<br/>(every Claude call)"]
+    assistant -->|figures| planner
+    assistant -->|"Anthropic SDK"| claude([Claude API])
+    ingest["ingest<br/>(SWIM, adsb.fi)"] --> stores[("the stores<br/>live · weather")]
+    weatherSvc["weather<br/>(METAR, TAF, GFS)"] --> stores
+    stores --> planner
 
 ```
 
@@ -129,10 +136,10 @@ Six instructions cover almost everything you'll see here:
 `CMD` vs `ENTRYPOINT`: `ENTRYPOINT` is the fixed command; anything passed
 to `docker run <image> <args>` (or Compose's `command:`) gets appended as
 arguments to it. `CMD` is the *whole* default command, fully overridable.
-This repo uses `ENTRYPOINT` for the pipeline images specifically so
-`docker compose run --rm pipeline-training retrain` can pass `retrain` as
+This repo uses `ENTRYPOINT` for the jobs' images specifically so
+`docker compose run --rm retrain retrain` can pass `retrain` as
 an argument to a fixed `python3 -m wingtip.pipeline` — see
-[`ml/Dockerfile.training`](../ml/Dockerfile.training).
+[`services/jobs/retrain/Dockerfile`](../services/jobs/retrain/Dockerfile).
 
 ### Multi-stage builds
 
@@ -144,7 +151,7 @@ FROM node:26-slim AS web
 COPY apps/web/ ./
 RUN npx vite build --outDir /web/dist
 
-FROM maven:3.9.16-eclipse-temurin-25 AS build
+FROM maven:3.10.0-eclipse-temurin-25 AS build
 COPY services/gateway/src ./src
 RUN mvn -q package -DskipTests
 
@@ -171,11 +178,11 @@ from its cache.
 
 | Dockerfile | Base | Why it looks like this |
 |---|---|---|
-| [`services/Dockerfile.base`](../services/Dockerfile.base) | `python:3.14-slim` (by digest) | The base the four below are built FROM: wingtip's own requirements (`services/planner/requirements-wingtip.txt`) and its Rust extension (`wingtip_native`, compiled in a stage of its own with Rust copied in, so the base carries the wheel and no toolchain), installed once. Each image names it as the build context `wingtip-base`: compose's `base` service, a bake's `target:base`. Before it, each image built the engine and installed the same requirements itself, the same layers four times over on disk. |
+| [`services/Dockerfile.base`](../services/Dockerfile.base) | `python:3.15-slim` (by digest) | The base the four below are built FROM: wingtip's own requirements (`services/planner/requirements-wingtip.txt`) and its Rust extension (`wingtip_native`, compiled in a stage of its own with Rust copied in, so the base carries the wheel and no toolchain), installed once. Each image names it as the build context `wingtip-base`: compose's `base` service, a bake's `target:base`. Before it, each image built the engine and installed the same requirements itself, the same layers four times over on disk. |
 | [`ml/Dockerfile.ml`](../ml/Dockerfile.ml) | `wingtip-base` | Jupyter and scikit-learn over `wingtip`'s own list, for notebooks 01–03 and 08, and nothing else: the PyTorch, TensorFlow, Spark and sentence-transformers comparison notebooks, and the JDK and CUDA-free torch wheel they needed, went on 2026-11-06, since only scikit-learn reaches a pilot. Carries no source; compose bind-mounts the checkout. |
-| [`ml/Dockerfile.processing`](../ml/Dockerfile.processing) | `wingtip-base` | Deliberately thin: pandas/requests/pyarrow only, no scikit-learn. Mirrors what a SageMaker *Processing Job* container needs. |
-| [`ml/Dockerfile.training`](../ml/Dockerfile.training) | `wingtip-base` | Adds scikit-learn/joblib on top, so it can run every stage: the training run (`python -m wingtip.pipeline run`, compose's `retrain`) runs in it. Kept as a *separate* image from `.processing` rather than one shared image, because Processing and Training are different constructs on AWS with different container contracts — see [Section 2](#2-the-ml-pipeline). |
-| [`services/planner/Dockerfile`](../services/planner/Dockerfile) | `wingtip-base` | FastAPI plus the chart-vision stack (numpy, Pillow, shapely), and the chart model's scikit-learn, pinned to the training image's. Bind-mounts the repo, so a `services/planner/wingtip` edit needs a restart, not a rebuild. |
+| [`services/jobs/retrain/Dockerfile`](../services/jobs/retrain/Dockerfile) | `wingtip-base` | The retrain job: scikit-learn/joblib on top, pinned to the planner's, so it runs every stage, the training run (`python -m wingtip.pipeline run`, compose's `retrain`) among them. A thin processing image beside it, shaped for a SageMaker Processing Job, went with the jobs split (#535): nothing ran it but this run. |
+| [`services/jobs/charts/Dockerfile`](../services/jobs/charts/Dockerfile) | `python:3.15-slim` → `wingtip-base` | The charts job: tippecanoe built from its tagged release in a first stage, its two programs copied on, rasterio and boto3 on top. Renders a chart cycle, packs it into archives, builds the overlay tiles, publishes to S3. |
+| [`services/planner/Dockerfile`](../services/planner/Dockerfile) | `wingtip-base` | FastAPI plus the chart-vision stack (numpy, Pillow, shapely), and the chart model's scikit-learn, pinned to the retrain job's. No tippecanoe and no boto3: what builds and publishes tiles is the charts job's. Bind-mounts the repo, so a `services/planner/wingtip` edit needs a restart, not a rebuild. |
 | [`services/gateway/Dockerfile`](../services/gateway/Dockerfile) | `node:26-slim` → `maven:...` → `eclipse-temurin:25-jre` | Multi-stage, see above. |
 
 ### The images those Dockerfiles produce
@@ -189,11 +196,11 @@ disk. `docker images` on a working copy of this repo shows two kinds.
 the rest exist for building, training or testing.
 
 **The ones pulled, not built.** These look like clutter and are not;
-deleting one only forces a re-download on the next build. `python:3.14-slim`
+deleting one only forces a re-download on the next build. `python:3.15-slim`
 is the base of `wingtip-base`, which is in turn the base of every Python
 image above; each is stored once, which is why image sizes are not
 additive. `node:26-slim` and `maven:...` are build-only and
-never ship. `postgres:18-bookworm` is the database; `postgres:18` and
+never ship. `postgres:18-trixie` is the database; `postgres:18` and
 `testcontainers/ryuk` are started by the JUnit suite ([Section 8](#8-what-gets-tested-and-what-deliberately-doesnt)).
 Intermediate build stages such as `eclipse-temurin:25-jre` do not appear
 in the list at all under the containerd image store.
@@ -205,9 +212,11 @@ repo can reproduce, so deleting one costs rebuild time, never data. The
 thing you must not delete is the named Postgres volume (`pgdata_pg18` in
 `docker-compose.yml`), which holds the application rows — and `docker system prune --volumes`, the command everyone
 reaches for when a disk fills, takes it with everything else.
-[`scripts/dev/docker-tidy.sh`](../scripts/dev/docker-tidy.sh) is the safe version: by default it
-removes stopped containers and build-cache entries unused for seven
-days, never volumes or images; `--aggressive` also removes unused images.
+[`scripts/dev/docker-tidy.sh`](../scripts/dev/docker-tidy.sh) is the safe version: it removes
+images no container uses, build cache unused for a day, and volumes no
+container uses except the named caches and every compose project's own
+(the database's among them), never a container, and says how much it
+freed; `--dry-run` lists what would go.
 
 Two things fill the disk that are not the images. Build cache, which
 `docker system df` under-reports badly (`docker builder prune` shows the
@@ -230,14 +239,14 @@ Per service, four keys matter most:
   type into your browser; the right side is what the app inside actually
   binds to.
 - `environment:` — env vars injected into the container. Notice
-  `${ANTHROPIC_API_KEY:-}` on `planner`: `:-` means
+  `${ANTHROPIC_API_KEY:-}` on `assistant`: `:-` means
   "empty if unset". Its sibling `${VAR:?message}` means "fail immediately
   with this message if unset", and this file used that until it was tried
   from a clean checkout — Compose interpolates the *whole* file before it
   decides which services to start, so one required-variable marker failed
   every command, including `docker compose up gateway` and even
   `docker compose config`. A worked lesson in where a check belongs: the
-  planner's Claude features now find the key missing when they are used,
+  assistant's Claude features now find the key missing when they are used,
   and say so, so the failure reaches only the people using them.
 - `profiles:` — a service with a profile is left out of a plain
   `docker compose up`. `--profile notebooks` includes `ml`, and naming the
@@ -447,7 +456,7 @@ the model serving, without pandas or scikit-learn of its own.
 The five stages run in order, every time, from one command:
 
 ```bash
-docker compose run --rm pipeline-training run    # python -m wingtip.pipeline run
+docker compose run --rm retrain                  # python -m wingtip.pipeline run
 ```
 
 Open `run()` in [`services/planner/wingtip/pipeline.py`](../services/planner/wingtip/pipeline.py).
@@ -487,11 +496,10 @@ and the same one-at-a-time rule, with nothing to run between runs. An
 orchestrator earns its place when there is a schedule, fan-out, retries
 across machines or many pipelines to watch; reach for one then.
 
-`pipeline-processing` and `pipeline-training` stay separate images, and
-each stage still runs alone (`docker compose run --rm pipeline-processing
-collect`): the split mirrors SageMaker's Processing and Training Jobs,
-which is why `retrain()` still reads `SM_CHANNEL_*` and `SM_MODEL_DIR`
-when they are set.
+Each stage still runs alone (`docker compose run --rm retrain
+collect`), and `retrain()` still reads `SM_CHANNEL_*` and `SM_MODEL_DIR`
+when they are set, so the image would serve as a SageMaker Training
+Job's as it is.
 
 ---
 
@@ -506,7 +514,7 @@ and what they saved). Under both, and under every app, is the engine.
 - **The engine** ([`engine/`](../engine/README.md)) is a Rust library
   with no network, no screen and no clock: give it JSON by a rule's
   name (`engine/facade/src/call.rs`), get JSON back. It is a facade over
-  ten crates, each allowed to use only the ones under it, so the
+  eleven crates, each allowed to use only the ones under it, so the
   compiler keeps geography from reaching for the Go / No-Go. The same
   bytes run in the planner (PyO3), in the browser (WebAssembly) and on
   both phones (a C interface), so a pilot's figure is the same offline
@@ -545,8 +553,8 @@ to the training image's.
 ### Select → the checkpoints actually flown
 
 A scored ranking is not a flight plan.
-[`services/planner/wingtip/checkpoints.py`](../services/planner/wingtip/checkpoints.py) is the step between
-them: `select_checkpoints()` walks the model's candidates highest-score
+The engine's [`route/checkpoints.rs`](../engine/crates/route/src/route/checkpoints.rs) is the step between
+them (the planner's `select_checkpoints()` asks it): it walks the model's candidates highest-score
 first and takes each one that sits at least `min_spacing_nm` from
 everything already chosen. On C81→KDLH that turns 206 scored candidates
 into 21 checkpoints and 20 legs, averaging 15.7 nm apart.
@@ -573,14 +581,14 @@ for and fail to see.
 Standard Spring Boot layering, and worth knowing even outside this
 project since it's close to an industry-default shape:
 
-- **Controller** ([`AircraftController.java`](../services/gateway/src/main/java/com/northflyers/wingtip/controller/AircraftController.java)) —
+- **Controller** ([`AircraftController.java`](../services/gateway/src/main/java/app/wingtipmaps/gateway/controller/AircraftController.java)) —
   the HTTP boundary. `@RestController` + `@RequestMapping("/api/aircraft")`;
   each method maps to one route+verb (`@GetMapping`, `@PostMapping`,
   `@PutMapping("/{id}")`, `@DeleteMapping("/{id}")`). Controllers should
   stay thin — this one resolves the signed-in pilot, calls into
   `AircraftService` and wraps the result in a `ResponseEntity`, no
   business logic.
-- **Service** ([`AircraftService.java`](../services/gateway/src/main/java/com/northflyers/wingtip/service/AircraftService.java)) —
+- **Service** ([`AircraftService.java`](../services/gateway/src/main/java/app/wingtipmaps/gateway/service/AircraftService.java)) —
   the actual logic, and where pilot-scoping lives: every lookup goes
   through `findByIdAndPilotId`, so one pilot can never read or edit
   another's aeroplane by guessing an id.
@@ -671,17 +679,15 @@ endpoints, on purpose.
 
 ## 5. The Gen AI layer
 
-Every Claude call in this project is made from `planner` with the
-Anthropic Python SDK directly — no agent framework in between. The
-project once had two (a LangGraph agent served over MCP, with a pgvector
-memory of past briefings, and the same task again in CrewAI, to compare
-the frameworks); the owner removed both on 2026-11-06, because the
-project is a product, not a framework showcase, and every feature they
-offered was one SDK call.
+Every Claude call in this project is made from the `assistant` service
+(`services/assistant`) with the Anthropic Python SDK directly — no agent
+framework in between. The owner's rule (2026-11-06): the project is a
+product, not a framework showcase, and every feature a framework offered
+here was one SDK call.
 
 ### What "an agent" actually means here
 
-The written briefing ([`app/narrative.py`](../services/planner/app/narrative.py),
+The written briefing (the assistant service's [`app/narrative.py`](../services/assistant/app/narrative.py),
 `POST /api/briefing/narrative`) is the clearest case. Everything a pilot
 reads in it — the checkpoints, each leg's legal cruising altitude from
 real terrain/airspace/weather constraints, the dead-reckoning legs with
@@ -703,7 +709,7 @@ whole.
 
 ### When the model does choose: the tool runner
 
-The pilot's assistant ([`app/assistant.py`](../services/planner/app/assistant.py))
+The pilot's assistant ([`app/assistant.py`](../services/assistant/app/assistant.py))
 is the one place the model decides what to do next. It is given the
 planner's own functions as tools (the plan, the weather at a field, the
 briefing, the Go / No-Go, a hold's entry, a diversion) and the SDK's
@@ -726,15 +732,6 @@ what it's already tracked (in a `flyway_schema_history` table) on next
 startup, in version order, once each, forever. Never edit an already-applied
 migration file — add a new one instead; Flyway (like every migration
 tool) assumes each version's content is immutable once it's run anywhere.
-
-A database made before 2026-11-06 may still hold a `nav_log_agent`
-schema — the removed briefing agent's memory and its own small migrations
-table — and the `vector` extension it needed. Nothing reads them. They
-are not dropped by a Flyway migration because they cannot be once the
-database runs on plain `postgres`: dropping a `vector` column or the
-extension loads pgvector's library, which only the old
-`pgvector/pgvector:pg18` image has. Drop them by hand on that image (docs/README.md's
-"Database & migrations" says how).
 
 The pattern Flyway replaces: letting your ORM auto-generate schema
 changes at startup based on what your code currently looks like (JPA's
@@ -855,14 +852,14 @@ step, which leg leaves a checkpoint — are functions of plain objects, so
 [`apps/web/src/features/chart-labels/logic.ts`](../apps/web/src/features/chart-labels/logic.ts) and
 [`apps/web/src/features/plan/format.ts`](../apps/web/src/features/plan/format.ts)
 hold them and `vitest` covers them in under a second with no browser.
-What is left in the components — binding Leaflet layers, rendering rows —
+What is left in the components — binding MapLibre layers, rendering rows —
 is the part where a test would mostly restate the code. The general
 lesson is worth more than the JavaScript: when something is hard to
 test, it is often because a decision and its rendering are tangled
 together, and separating them is what makes both better.
 
 **Rendering still has to be looked at.** A layout fault — the map
-inheriting no height, so Leaflet fits the route against a container it
+inheriting no height, so MapLibre fits the route against a container it
 measured wrong — breaks no pure function and fails no unit test. So
 `apps/web/e2e/` renders the pages in a real browser, at a phone and a desktop
 viewport, and checks what the DOM alone cannot: nothing overflows, the
@@ -876,7 +873,7 @@ method produce a 405 rather than a leaky 500. Booting a database to
 answer those questions would only slow them down.
 
 **Integration points get real infrastructure.**
-[`FlightPersistenceTest`](../services/gateway/src/test/java/com/northflyers/wingtip/FlightPersistenceTest.java)
+[`FlightPersistenceTest`](../services/gateway/src/test/java/app/wingtipmaps/gateway/FlightPersistenceTest.java)
 starts an actual Postgres via Testcontainers, because the things it
 verifies can only be verified against a real database: that Flyway's
 migrations apply in order, that `ddl-auto: validate` agrees the JPA

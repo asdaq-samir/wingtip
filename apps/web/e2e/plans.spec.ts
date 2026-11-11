@@ -1,104 +1,123 @@
 import { test, expect } from "@playwright/test";
-import { slow, settle, sideDrawer, expectDrawerOpen, openTab, openSection, grabberTo, controlsInSight, showTabs, openNavLog, navLogSheet, closeNavLog, closeCard, openProfile } from "./helpers";
+import {
+  closeCard,
+  closeNavLog,
+  controlsInSight,
+  expectDrawerOpen,
+  grabberTo,
+  navLogSheet,
+  openNavLog,
+  openProfile,
+  openSection,
+  openTab,
+  settle,
+  sideDrawer,
+  slow,
+} from "./helpers";
+import { pickAirplane } from "./startState";
+import { fillTime } from "./ariaFields";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
- * What the nav log is computed from: the altitude plans and a pilot's
- * own altitude, a departure time's winds and ETAs, and the airplane
+ * What the nav log is computed from: the altitude plans and a pilot's own altitude, a departure time's winds and ETAs, and the airplane
  * picked in the drawer's header.
  */
 
-test("plan page: the nav log's altitude opens the planner's own reasoning, and the briefing's Cruise Altitude section carries the same steps", { tag: "@smoke" }, async ({ page }) => {
-  // Three re-plans, each allowed 30 s below, inside the default 30 s for
-  // the whole test: 18 s on a quiet machine, and past the limit in a
-  // full run, where the other workers are asking the planner too.
-  test.slow();
-  await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await settle(page);
-  await page.getByTestId("sidebar-trigger-button").click();
-  // The sections start closed: the altitude is in the nav log's own.
-  await openTab(page, "Nav Log");
-  // The cruising altitude arrives with the nav log stream, after the
-  // checkpoints: beside the airplane, the figure in feet to type over, and
-  // the profile's button after it (the owner's pick, 2026-10-20).
-  await controlsInSight(page);
-  const why = page.getByTestId("altitude-why");
-  const input = page.getByTestId("altitude-input");
-  await expect(why).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(60000) });
-  // Hundreds of feet after "FL", at the owner's pick: FL045 for 4,500 ft.
-  await expect(input).toHaveValue(/^FL-\d{3}$/);
-  await openProfile(page);
-  // The Profile card: the route from the side with the wheel of legal
-  // altitudes in its corner, the altitude's figures, the flight rules,
-  // and how it was chosen, folded.
-  const popover = page.getByTestId("profile-card");
-  await expect(popover).toBeVisible();
-  const wheel = popover.getByTestId("altitude-wheel");
-  await expect(wheel).toBeVisible();
-  await expect(wheel).toHaveAttribute("aria-valuetext", /feet, .*Fastest/);
-  await expect(popover.getByTestId("mini-profile")).toBeVisible();
-  await expect(popover.getByTestId("altitude-figures")).toContainText(/\d+[hm]\b/);
-  await expect(popover).toContainText("Floor");
-  await expect(popover).toContainText("Ceiling");
-  await expect(popover).toContainText("14 CFR 91.159");
-  await expect(popover).toContainText("Checked as well");
-  // A step down the wheel, as VoiceOver's adjustable control steps it:
-  // flown once it rests, its plan where it is one's, else as the pilot's own.
-  const was = Number(await wheel.getAttribute("aria-valuenow"));
-  await wheel.focus();
-  await page.keyboard.press("ArrowDown");
-  await expect.poll(async () => Number(await wheel.getAttribute("aria-valuenow"))).toBeLessThan(was);
-  await expect(page).toHaveURL(/[?&](altitude_ft|altitude_choice)=/, { timeout: slow(10000) });
-  await closeCard(page, "profile-close");
-  await expect(popover).toHaveCount(0);
+test(
+  "plan page: the nav log's altitude opens the planner's own reasoning, and the briefing's Cruise Altitude section carries the same steps",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    // Three re-plans, each allowed 30 s below, inside the default 30 s for the whole test: 18 s on a quiet machine, and past the limit in a
+    // full run, where the other workers are asking the planner too.
+    test.slow();
+    await page.goto("/app/plan?dep=C81&dest=KDLH");
+    await settle(page);
+    await page.getByTestId("sidebar-trigger-button").click();
+    // The sections start closed: the altitude is in the nav log's own.
+    await openTab(page, "Nav Log");
+    // The cruising altitude arrives with the nav log stream, after the
+    // checkpoints: beside the airplane, the figure in feet to type over, and
+    // the profile's button after it (the owner's pick, 2026-10-20).
+    await controlsInSight(page);
+    const why = page.getByTestId("altitude-why");
+    const input = page.getByTestId("altitude-input");
+    await expect(why).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(60000) });
+    // Hundreds of feet after "FL", at the owner's pick: FL045 for 4,500 ft.
+    await expect(input).toHaveValue(/^FL-\d{3}$/);
+    await openProfile(page);
+    // The Profile card: the side view with its slider, the Altitude
+    // Advisor under it (Fastest marked), the flight rules,
+    // and how it was chosen, folded.
+    const popover = page.getByTestId("profile-card");
+    await expect(popover).toBeVisible();
+    const wheel = popover.getByRole("slider", { name: "Cruise altitude" }); // the stock Slider, a step each altitude
+    await expect(wheel).toHaveAttribute("aria-valuetext", /feet, .*(terrain|clear).*Fastest/);
+    await expect(popover.getByTestId("mini-profile")).toBeVisible();
+    const advisor = popover.getByTestId("altitude-advisor");
+    await expect(advisor.locator("[data-flown]")).toContainText(/\d+[hm]\b/); // its time, fuel and wind
+    await expect(popover).toContainText("Floor");
+    await expect(popover).toContainText("Ceiling");
+    await expect(popover).toContainText("14 CFR 91.159");
+    await expect(popover).toContainText("Checked as well");
+    // A step down the slider, as VoiceOver steps it: a preview, nothing
+    // planned till Set flies it, its plan's or as the pilot's own.
+    const feetOf = async () => Number((await wheel.getAttribute("aria-valuetext"))!.replace(/ feet.*$/, "").replace(/,/g, ""));
+    const was = await feetOf();
+    await wheel.focus();
+    await page.keyboard.press("ArrowDown");
+    await expect.poll(feetOf).toBeLessThan(was);
+    await expect(page).not.toHaveURL(/[?&](altitude_ft|altitude_choice)=/);
+    await popover.getByTestId("altitude-set").click();
+    await expect(page).toHaveURL(/[?&](altitude_ft|altitude_choice)=/, { timeout: slow(10000) });
+    await closeCard(page, "profile-close");
+    await expect(popover).toHaveCount(0);
 
-  // An altitude typed beside the airplane, three figures of hundreds of
-  // feet: the whole log at it. Cleared first, as a pilot types over it: the
-  // wheel's step can leave the field showing 035 already (3,000 ft asked,
-  // flown at 3,500 at each leg's nearest legal altitude), and a fill of the
-  // same figure types nothing.
-  await input.fill("");
-  await input.fill("035");
-  await input.press("Enter");
-  await expect(page).toHaveURL(/[?&]altitude_ft=3500/);
-  await expect(why).toHaveAccessibleName(/3,500 feet/, { timeout: slow(30000) });
-  // The log at it: said where the altitude is reached -- a top of climb's
-  // level, or the first leg's where the climb ends before its checkpoint.
-  await openNavLog(page);
-  await expect(navLogSheet(page).getByTestId("navlog-list")).toContainText("3,500 ft", { timeout: slow(30000) });
-  await closeNavLog(page);
-  // No altitude box over FPL's list: the altitude is beside the airplane.
-  await expect(sideDrawer(page).getByTestId("navlog-scroller")).not.toContainText("Cruise altitude");
-  // Back to the default plan from the wheel: its Fastest row, the address
-  // without the altitude or the choice.
-  await openProfile(page);
-  await expect(popover).toBeVisible();
-  // From the plan's menu, under the graph the altitude is dragged on.
-  await popover.getByTestId("altitude-plan").click();
-  await page.getByTestId("altitude-plan-option").filter({ hasText: "Fastest" }).click();
-  await expect(page).not.toHaveURL(/[?&]altitude_ft=/, { timeout: slow(10000) });
-  await expect(page).not.toHaveURL(/[?&]altitude_choice=/);
-  await closeCard(page, "profile-close");
-  // Planned again as the plan, whatever its altitude: with CI's winds
-  // Fastest cruises at the very 3,500 ft typed above, so the figure alone
-  // cannot tell the two apart -- the plan's name in the Brief can.
-  await expect(why).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(30000) });
+    // An altitude typed beside the airplane, three figures of hundreds of
+    // feet: the whole log at it. Cleared first, as a pilot types over it: the
+    // wheel's step can leave the field showing 035 already (3,000 ft asked,
+    // flown at 3,500 at each leg's nearest legal altitude), and a fill of the
+    // same figure types nothing.
+    await input.fill("");
+    await input.fill("035");
+    await input.press("Enter");
+    await expect(page).toHaveURL(/[?&]altitude_ft=3500/);
+    await expect(why).toHaveAccessibleName(/3,500 feet/, { timeout: slow(30000) });
+    // The log at it, where the altitude is reached -- a top of climb's level,
+    // or the first leg's ("3,500 ft" in a phone's list, under a desk's Alt).
+    await openNavLog(page);
+    await expect(navLogSheet(page).getByTestId(/^navlog-(list|table)$/)).toContainText(/3,500/, { timeout: slow(30000) });
+    await closeNavLog(page);
+    // No altitude box over FPL's list: the altitude is beside the airplane.
+    await expect(sideDrawer(page).getByTestId("navlog-scroller")).not.toContainText("Cruise altitude");
+    // Back to the default plan from the Advisor's Fastest row: no altitude or choice.
+    await openProfile(page);
+    await expect(popover).toBeVisible();
+    await popover.getByTestId("altitude-advisor-row").filter({ hasText: "Fastest" }).click();
+    await expect(page).not.toHaveURL(/[?&]altitude_ft=/, { timeout: slow(10000) });
+    await expect(page).not.toHaveURL(/[?&]altitude_choice=/);
+    await closeCard(page, "profile-close");
+    // Planned again as the plan, whatever its altitude: with CI's winds
+    // Fastest cruises at the very 3,500 ft typed above, so the figure alone
+    // cannot tell the two apart -- the plan's name in the Brief can.
+    await expect(why).toHaveAccessibleName(/\d,\d{3} feet|FL\d{3}/, { timeout: slow(30000) });
 
-  // The Brief's Cruise Altitude section carries the same steps, the plan
-  // flown first with its time and fuel, and says the floor and the
-  // ceiling once each, with their reasons (the owner's pick of the
-  // redesign): there is no list over the steps that said them again.
-  const drawer = sideDrawer(page);
-  await openTab(page, "Nav Log");
-  await openSection(page, "Cruise Altitude");
-  const cruise = drawer.locator('[data-title="Cruise Altitude"]');
-  await expect(cruise).toBeVisible();
-  await expect(drawer.getByText("14 CFR 91.159")).toBeVisible();
-  const steps = cruise.getByTestId("altitude-steps").locator('[data-slot="accordion-trigger"]');
-  await expect(steps.first()).toContainText(/^Fastest plan.+(\d+h( \d+m)?|\d+m) · [\d.]+ gal$/);
-  await expect(steps.nth(1)).toContainText(/^FloorTerrain and obstacles, with margin[\d,]+ ft$/);
-  await expect(cruise.getByText(/^(Floor|Ceiling)\b/)).toHaveCount(2);
-  await expect(cruise).not.toContainText("How it was chosen");
-});
+    // The Brief's Cruise Altitude section carries the same steps, the plan
+    // flown first with its time and fuel, and says the floor and the
+    // ceiling once each, with their reasons (the owner's pick of the
+    // redesign): there is no list over the steps that said them again.
+    const drawer = sideDrawer(page);
+    await openTab(page, "Nav Log");
+    await openSection(page, "Cruise Altitude");
+    const cruise = drawer.locator('[data-title="Cruise Altitude"]');
+    await expect(cruise).toBeVisible();
+    await expect(drawer.getByText("14 CFR 91.159")).toBeVisible();
+    const steps = cruise.getByTestId("altitude-steps").locator('[data-slot="accordion-trigger"]');
+    await expect(steps.first()).toContainText(/^Fastest plan.+(\d+h( \d+m)?|\d+m) · [\d.]+ gal$/);
+    await expect(steps.nth(1)).toContainText(/^FloorTerrain and obstacles, with margin[\d,]+ ft$/);
+    await expect(cruise.getByText(/^(Floor|Ceiling)\b/)).toHaveCount(2);
+    await expect(cruise).not.toContainText("How it was chosen");
+  },
+);
 
 test("plan page: a departure time gives every checkpoint its time, and the nav log's line the arrival", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
@@ -117,20 +136,19 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   when.setHours(15, 0, 0, 0);
   const pad = (n: number) => String(n).padStart(2, "0");
   const isoDay = `${when.getFullYear()}-${pad(when.getMonth() + 1)}-${pad(when.getDate())}`;
-  // shadcn's date picker: the day from the calendar in its popover
-  // (the next month's, when the day after tomorrow falls there), then
-  // the time in the box beside it. No native datetime-local control.
+  // The date picker: the day from React Aria's calendar in its popover (the next month's, when the day
+  // after tomorrow falls there), then the time in the box beside it. No native datetime-local control.
   expect(await page.locator('input[type="datetime-local"]').count()).toBe(0);
   await controlsInSight(page);
   await page.getByTestId("depart-date").click();
   const calendar = page.locator('[data-slot="calendar"]');
   await expect(calendar).toBeVisible();
-  const day = calendar.locator(`td[data-day="${isoDay}"] button`);
-  if (await day.count() === 0) await calendar.getByRole("button", { name: /next month/i }).click();
+  const day = calendar.locator(`[data-day="${isoDay}"]:not([data-outside-month])`);
+  if ((await day.count()) === 0) await calendar.getByRole("button", { name: /^next/i }).click();
   await day.click();
   await expect(page).toHaveURL(/[?&]depart=/);
   // The time under the calendar, and Done.
-  await page.getByTestId("depart-time").fill("15:00");
+  await fillTime(page.getByTestId("depart-time"), "15:00");
   await page.getByTestId("depart-done").click();
   await expect(calendar).toHaveCount(0);
   await expect(page.getByTestId("depart-date")).toContainText("15:00");
@@ -172,7 +190,7 @@ test("plan page: a departure time gives every checkpoint its time, and the nav l
   await expect(detail).toContainText("30 min day reserve");
 });
 
-test("plan page: the nav log is computed for an airplane the pilot picks in its own header", { tag: "@smoke" }, async ({ page }) => {
+test("plan page: the nav log is computed for an airplane the pilot picks in its own header", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   // All the way up, which the address keeps (`view`), for the reload below.
@@ -192,15 +210,24 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   // number is typed.
   const hint = page.getByTestId("aircraft-select-hint");
   await expect(hint).toHaveText("N-_____");
-  await expect(picker).toHaveAccessibleName("Airplane, N-number: none picked");
+  await expect(picker).toHaveAccessibleName("Airplane, N-number: none picked; pick one for times and fuel");
   // An N-number typed is added at once, its type looked up behind it (the
   // owner's "You can do the lookup in the background") -- here a made-up
   // Archer, flown on its type's profile once the registry answers -- and
   // the field's end a button to its card.
-  await page.route(url => url.pathname.endsWith("/traffic/find"), route => route.fulfill({ json: {
-    aircraft: [], checked: true, source: "adsb.lol", license: "ODbL 1.0",
-    registered: { n_number: "N181PA", mode_s_hex: "A1B2C3", manufacturer: "Piper", model: "PA-28-181", year: 1999 },
-  } }));
+  await page.route(
+    (url) => url.pathname.endsWith("/traffic/find"),
+    (route) =>
+      route.fulfill({
+        json: {
+          aircraft: [],
+          checked: true,
+          source: "adsb.lol",
+          license: "ODbL 1.0",
+          registered: { n_number: "N181PA", mode_s_hex: "A1B2C3", manufacturer: "Piper", model: "PA-28-181", year: 1999 },
+        },
+      }),
+  );
   await picker.fill("N181PA");
   await picker.press("Enter");
   await expect(picker).toHaveValue("N-181PA");
@@ -211,7 +238,7 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   // Remembered per browser: the same airplane with the plan opened
   // again from its address -- on which the drawer is already open, since
   // the address kept it all the way up. (A reload forgets the route:
-  // lib/freshLoad.)
+  // features/shell/freshLoad.)
   await grabberTo(page, "full");
   await page.goto(page.url());
   await settle(page);
@@ -220,34 +247,43 @@ test("plan page: the nav log is computed for an airplane the pilot picks in its 
   await expect(page.getByTestId("aircraft-input")).toHaveValue("N-181PA");
 });
 
-test("plan page: no legal altitude is the route's own problem: its chip says so at rest, and a mark beside the Nav Log opens to why and the two ways on", async ({ page }) => {
+test("plan page: no legal altitude is the route's own problem: its chip says so at rest, and a mark beside the Nav Log opens to why and the two ways on", async ({
+  page,
+}) => {
   // The planner's answer for Chicago to Las Vegas in a 172, without the
   // minutes of terrain and winds it takes to reach it.
-  await page.route("**/api/planner/navlog**", route => route.fulfill({
-    status: 200, contentType: "application/x-ndjson",
-    body: [
-      { type: "stage", detail: "Planning cruise altitudes…" },
-      {
-        type: "error", retry: false, detail: "No legal VFR cruising altitude 830-858 nm along the route",
-        brief: "Aircraft ceiling restricts mountainous flying",
-        reasons: [
-          "The terrain and obstacles there need 10,600 ft.",
-          "The first westbound VFR altitude above that is 12,500 ft.",
-          "The aircraft's service ceiling stops at 11,700 ft.",
-        ],
-        advice: "Route around the high ground, or set a cruise altitude of your own to plan it anyway.",
-      },
-    ].map(m => JSON.stringify(m)).join("\n") + "\n",
-  }));
+  await page.route("**/api/planner/navlog**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/x-ndjson",
+      body:
+        [
+          { type: "stage", detail: "Planning cruise altitudes…" },
+          {
+            type: "error",
+            retry: false,
+            detail: "No legal VFR cruising altitude 830-858 nm along the route",
+            brief: "Aircraft ceiling restricts mountainous flying",
+            reasons: [
+              "The terrain and obstacles there need 10,600 ft.",
+              "The first westbound VFR altitude above that is 12,500 ft.",
+              "The aircraft's service ceiling stops at 11,700 ft.",
+            ],
+            advice: "Route around the high ground, or set a cruise altitude of your own to plan it anyway.",
+          },
+        ]
+          .map((m) => JSON.stringify(m))
+          .join("\n") + "\n",
+    }),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
 
-  // At rest the route says so, a red mark on its tab in the pill:
-  // nothing over the map.
-  await expect(page.getByTestId("tab-mark-fpl")).toHaveAttribute("data-finding", "stop", { timeout: slow(30000) });
-  await showTabs(page);
-  await expect(page.getByTestId("tab-fpl")).toHaveAccessibleName(/^FPL, warning$/);
+  // The route says so in its own altitude (no tab to mark since the one
+  // search, 2026-11-09): nothing over the map.
+  await controlsInSight(page);
+  await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   await expect(page.locator("[data-problem-banner]")).toHaveCount(0);
-  await expect(page.locator("[data-sonner-toast]", { hasText: "No legal" })).toHaveCount(0);
+  await expect(page.locator("[data-slot=toast]", { hasText: "No legal" })).toHaveCount(0);
   // The figures in the pill, under its profile, at the pilot's ask: the
   // book's time, marked "≈".
   await grabberTo(page, "peek");
@@ -297,7 +333,7 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   // Or a stop: the route's box takes the typing. Once planned again at that
   // altitude: the problem goes and comes back as the plan is made, and a
   // tap while it was gone found nothing -- the tap tried again with it.
-  await expect(page.locator("[data-sonner-toast][data-type=loading]")).toHaveCount(0, { timeout: slow(30000) });
+  await expect(page.locator("[data-slot=toast][data-type=loading]")).toHaveCount(0, { timeout: slow(30000) });
   await expect(async () => {
     if (!(await problem.isVisible())) await openProfile(page);
     await problem.getByTestId("unflyable-add-stop").click({ timeout: 2000 });
@@ -305,28 +341,43 @@ test("plan page: no legal altitude is the route's own problem: its chip says so 
   await expect(sideDrawer(page).getByTestId("route-type")).toBeFocused();
 });
 
-test("plan page: Class B is planned through by default, said with its clearance, and Avoid Class B puts the waypoint round it in the stops", async ({ page }) => {
+test("plan page: Class B is planned through by default, said with its clearance, and Avoid Class B puts the waypoint round it in the stops", async ({
+  page,
+}) => {
   // The owner's pick (2026-10-20): Class B accepted unless avoided. The
   // planner's own plan, with a Class B on the side view at its altitude
   // and the waypoint round it (BEPKE, 6 nm further) put in its answer.
   let asked = "";
-  await page.route(url => url.pathname.endsWith("/planner/navlog"), async route => {
-    asked = new URL(route.request().url()).searchParams.get("class_b_clearance") ?? "";
-    const response = await route.fetch();
-    const body = (await response.text()).split("\n").map(line => {
-      if (!line.trim()) return line;
-      const message = JSON.parse(line);
-      if (message.type === "altitude") message.class_b_detours = [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0 }];
-      return JSON.stringify(message);
-    }).join("\n");
-    await route.fulfill({ response, body });
-  });
-  await page.route(url => url.pathname.includes("/planner/route-profile"), async route => {
-    const response = await route.fetch();
-    const profile = await response.json();
-    profile.airspace = [...profile.airspace, { name: "CHICAGO CLASS B", class: "B", from_nm: 0, to_nm: 20, floor_ft: 0, ceiling_ft: 18000 }];
-    await route.fulfill({ response, json: profile });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/planner/navlog"),
+    async (route) => {
+      asked = new URL(route.request().url()).searchParams.get("class_b_clearance") ?? "";
+      const response = await route.fetch();
+      const body = (await response.text())
+        .split("\n")
+        .map((line) => {
+          if (!line.trim()) return line;
+          const message = JSON.parse(line);
+          if (message.type === "altitude")
+            message.class_b_detours = [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0 }];
+          return JSON.stringify(message);
+        })
+        .join("\n");
+      await route.fulfill({ response, body });
+    },
+  );
+  await page.route(
+    (url) => url.pathname.includes("/planner/route-profile"),
+    async (route) => {
+      const response = await route.fetch();
+      const profile = await response.json();
+      profile.airspace = [
+        ...profile.airspace,
+        { name: "CHICAGO CLASS B", class: "B", from_nm: 0, to_nm: 20, floor_ft: 0, ceiling_ft: 18000 },
+      ];
+      await route.fulfill({ response, json: profile });
+    },
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await controlsInSight(page);
@@ -347,24 +398,31 @@ test("plan page: Class B is planned through by default, said with its clearance,
 test("plan page: Class B avoided with no legal altitude offers the waypoint round it, or allowing the Class B", async ({ page }) => {
   // Midway to Duluth runs over O'Hare, where the Chicago Class B reaches
   // the ground: avoided (class_b=0), the planner names a waypoint round it.
-  await page.route("**/api/planner/navlog**", route => {
+  await page.route("**/api/planner/navlog**", (route) => {
     if (new URL(route.request().url()).searchParams.get("class_b_clearance") === "true") return route.fallback();
     return route.fulfill({
-      status: 200, contentType: "application/x-ndjson",
-      body: JSON.stringify({
-        type: "error", retry: false, detail: "No legal VFR cruising altitude 1-15 nm along the route",
-        reasons: ["The Chicago Class B reaches the ground there; going through it needs a clearance."],
-        advice: "Fly via BEPKE (6 nm further) to stay out of it, or plan it with a Class B clearance.",
-        class_b: true, detours: [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0 }],
-      }) + "\n",
+      status: 200,
+      contentType: "application/x-ndjson",
+      body:
+        JSON.stringify({
+          type: "error",
+          retry: false,
+          detail: "No legal VFR cruising altitude 1-15 nm along the route",
+          reasons: ["The Chicago Class B reaches the ground there; going through it needs a clearance."],
+          advice: "Fly via BEPKE (6 nm further) to stay out of it, or plan it with a Class B clearance.",
+          class_b: true,
+          detours: [{ ident: "BEPKE", kind: "GPS waypoint", added_nm: 5.9, stop_index: 0 }],
+        }) + "\n",
     });
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH&class_b=0");
-  await expect(page.getByTestId("tab-mark-fpl")).toHaveAttribute("data-finding", "stop", { timeout: slow(30000) });
   await controlsInSight(page);
+  await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   const problem = page.getByTestId("route-problem");
   await openProfile(page);
-  await expect(problem.getByRole("listitem")).toHaveText(["The Chicago Class B reaches the ground there; going through it needs a clearance."]);
+  await expect(problem.getByRole("listitem")).toHaveText([
+    "The Chicago Class B reaches the ground there; going through it needs a clearance.",
+  ]);
   // The two ways past it, and no altitude of the pilot's own: under a
   // Class B to the ground there is none.
   await expect(problem.getByTestId("unflyable-fly-via")).toBeVisible();
@@ -381,26 +439,44 @@ test("plan page: Class B avoided with no legal altitude offers the waypoint roun
 test("plan page: no legal altitude's own altitude field takes a tap", async ({ page }) => {
   // Beside the airplane: a tap on the field is the field's, its keyboard
   // coming up.
-  await page.route("**/api/planner/navlog**", route => route.fulfill({
-    status: 200, contentType: "application/x-ndjson",
-    body: JSON.stringify({ type: "error", retry: false, detail: "No legal VFR cruising altitude 830-858 nm along the route",
-      reasons: ["The terrain and obstacles there need 10,600 ft."], advice: "Route around the high ground." }) + "\n",
-  }));
+  await page.route("**/api/planner/navlog**", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/x-ndjson",
+      body:
+        JSON.stringify({
+          type: "error",
+          retry: false,
+          detail: "No legal VFR cruising altitude 830-858 nm along the route",
+          reasons: ["The terrain and obstacles there need 10,600 ft."],
+          advice: "Route around the high ground.",
+        }) + "\n",
+    }),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
-  await expect(page.getByTestId("tab-mark-fpl")).toHaveAttribute("data-finding", "stop", { timeout: slow(30000) });
   await controlsInSight(page);
+  await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/no legal altitude/, { timeout: slow(30000) });
   const field = page.getByTestId("altitude-input");
   await expect(field).toBeVisible();
-  await expect.poll(async () => {
-    const box = (await field.boundingBox())!;
-    return page.evaluate(([x, y]) => (document.elementFromPoint(x, y) as HTMLElement | null)?.dataset.testid ?? null,
-      [box.x + box.width / 2, box.y + box.height / 2]);
-  }, { timeout: 5000 }).toBe("altitude-input");
+  await expect
+    .poll(
+      async () => {
+        const box = (await field.boundingBox())!;
+        return page.evaluate(
+          ([x, y]) => (document.elementFromPoint(x, y) as HTMLElement | null)?.dataset.testid ?? null,
+          [box.x + box.width / 2, box.y + box.height / 2],
+        );
+      },
+      { timeout: 5000 },
+    )
+    .toBe("altitude-input");
   await field.click();
   await expect(field).toBeFocused();
 });
 
-test("plan page: an altitude of the pilot's own that breaks a rule is flown as set and warned, with the rule, beside the airplane", async ({ page }) => {
+test("plan page: an altitude of the pilot's own that breaks a rule is flown as set and warned, with the rule, beside the airplane", async ({
+  page,
+}) => {
   // C81 to KDLH is westbound: 5,500 ft, well over 3,000 ft above the
   // ground, is an eastbound altitude (14 CFR 91.159).
   await page.goto("/app/plan?dep=C81&dest=KDLH&altitude_ft=5500");
@@ -416,7 +492,9 @@ test("plan page: an altitude of the pilot's own that breaks a rule is flown as s
   await expect(cautions).toContainText("(14 CFR 91.159)");
 });
 
-test("an altitude typed is the field's at once: with no route, kept for the route to come; with one, before its log is planned again", async ({ page }) => {
+test("an altitude typed is the field's at once: with no route, kept for the route to come; with one, before its log is planned again", async ({
+  page,
+}) => {
   // The owner's asks ("it's not letting me enter altitude if no route is
   // there"; "as soon as I enter a new altitude, it should not let me
   // wait"): the figure went blank with no route, and back to the one
@@ -437,13 +515,38 @@ test("an altitude typed is the field's at once: with no route, kept for the rout
   await settle(page);
   await controlsInSight(page);
   await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/5,500 feet/, { timeout: slow(60000) });
-  await page.route(url => url.pathname.endsWith("/navlog") && url.searchParams.get("altitude_ft") === "7500", async route => {
-    await new Promise(done => setTimeout(done, 3000));
-    await route.continue().catch(() => {});
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/navlog") && url.searchParams.get("altitude_ft") === "7500",
+    async (route) => {
+      await new Promise((done) => setTimeout(done, 3000));
+      await route.continue().catch(() => {});
+    },
+  );
   await field.fill("75");
   await field.press("Enter");
   await expect(field).toHaveValue("FL-075", { timeout: 1000 });
-  await expect(page.locator("[data-sonner-toast][data-type=loading]")).toHaveCount(0);
+  await expect(page.locator("[data-slot=toast][data-type=loading]")).toHaveCount(0);
   await expect(page.getByTestId("altitude-why")).toHaveAccessibleName(/7,500 feet/);
+});
+
+test("the altitude's figures are taken whole as it is tapped, and its Done flies what is typed", async ({ page }) => {
+  // The FPL audit's A6 (2026-11-08): the caret fell between "FL" and "-",
+  // and iOS's number pad has no Return, so a new altitude was a tap, three
+  // deletes, three figures and a tap elsewhere.
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await page.getByTestId("sidebar-trigger-button").click();
+  await controlsInSight(page);
+  const input = page.getByTestId("altitude-input");
+  await expect(input).toHaveValue(/^FL-\d{3}$/, { timeout: slow(60000) });
+  await input.click();
+  await expect
+    .poll(() => input.evaluate((el: HTMLInputElement) => [el.selectionStart, el.selectionEnd, el.value.length]))
+    .toEqual([3, 6, 6]);
+  await page.keyboard.type("075");
+  await expect(input).toHaveValue("FL-075");
+  await page.getByTestId("altitude-done").click();
+  await expect(page).toHaveURL(/[?&]altitude_ft=7500(&|$)/, { timeout: slow(10000) });
+  await expect(input).not.toBeFocused();
+  await expect(page.getByTestId("altitude-done")).toHaveCount(0);
 });

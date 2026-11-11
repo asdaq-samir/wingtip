@@ -3,7 +3,7 @@ import IconButton from "../../../components/IconButton";
 import { Badge } from "../../../components/ui/badge";
 import { Button } from "../../../components/ui/button";
 import PullDown from "../../../components/PullDown";
-import { MapCard } from "../../../lib/map/MapCard";
+import { MapCard } from "../../../lib/map/cards/MapCard";
 import { isEndpoint, type Point, type Rating } from "../../../lib/api/types";
 import { inkOn } from "../../../lib/scoreScale";
 import { CATEGORIES, COLORS, RATINGS, compassPoint, modelNote, roleOf, sourceOf } from "../logic";
@@ -31,22 +31,29 @@ interface Props {
   canRight?: boolean;
 }
 
-
 /**
- * Everything about the selected point, in one Leaflet popup pinned above
- * it -- the info that used to be a separate tooltip, and the rating/
- * category controls that used to live in the sidebar, combined so
- * there's one place on screen this happens, right where the point is.
+ * Everything about the selected point, in one card in the map's panel
+ * (ChartMap's SheetCard) -- the info that used to be a separate tooltip,
+ * and the rating/category controls that used to live in the sidebar,
+ * combined so there's one place on screen this happens.
  */
 export default function PointPopup({
-  point, place, bearingDeg, departureIdent, onRate, onCategoryChange, onRemove,
-  onLeft, onRight, canLeft = true, canRight = true,
+  point,
+  place,
+  bearingDeg,
+  departureIdent,
+  onRate,
+  onCategoryChange,
+  onRemove,
+  onLeft,
+  onRight,
+  canLeft = true,
+  canRight = true,
 }: Props) {
   // Same row either way -- an endpoint is the first or last stop in the
   // walk, and needs a way off itself just as much as any other point
   // does (this used to be endpoint-only content with no arrows at all,
   // which meant landing on departure via "Start" had no way forward).
-  // The close sits at the row's end, where Leaflet's own would be.
   /** The two steps, drawn either side of the title: the card's heading
    *  reads "back, where you are, forward", which is what a rating pass
    *  is doing. At the icon buttons' one size, 36 with a 20 glyph, their
@@ -54,16 +61,24 @@ export default function PointPopup({
    *  pass moves on a touchscreen, not corner chrome. */
   const stepLeft = (
     <IconButton
-      type="button" label="Step left" variant="outline"
-      onClick={onLeft} disabled={!onLeft || !canLeft} className="flex-shrink-0 rounded-full"
+      type="button"
+      label="Step left"
+      variant="outline"
+      onClick={onLeft}
+      disabled={!onLeft || !canLeft}
+      className="flex-shrink-0 rounded-full"
     >
       <ChevronLeft className="size-5" strokeWidth={3} />
     </IconButton>
   );
   const stepRight = (
     <IconButton
-      type="button" label="Step right" variant="outline"
-      onClick={onRight} disabled={!onRight || !canRight} className="flex-shrink-0 rounded-full"
+      type="button"
+      label="Step right"
+      variant="outline"
+      onClick={onRight}
+      disabled={!onRight || !canRight}
+      className="flex-shrink-0 rounded-full"
     >
       <ChevronRight className="size-5" strokeWidth={3} />
     </IconButton>
@@ -75,13 +90,18 @@ export default function PointPopup({
    *  thing it is, which the category control below already says. */
   const counter = place && <span className="rounded px-0.5">#{place}</span>;
 
-
   if (isEndpoint(point)) {
     return (
       <MapCard
         // Falls back to the ident when this point is not in the current
         // walk, so the card never opens with no title at all.
-        title={<>{stepLeft}{counter || point.ident}{stepRight}</>}
+        title={
+          <>
+            {stepLeft}
+            {counter || point.ident}
+            {stepRight}
+          </>
+        }
         subtitle={
           <span className="flex items-center gap-1.5">
             <Badge variant="secondary">{point.category === "departure" ? "DEP" : "DEST"}</Badge>
@@ -95,14 +115,17 @@ export default function PointPopup({
   const rating = (point as { rating: Rating | null }).rating;
   const category = (point as { category: string }).category;
   const cross = (point as { cross_track_nm: number }).cross_track_nm ?? 0;
-  const options = (CATEGORIES as readonly string[]).includes(category)
-    ? CATEGORIES
-    : [category, ...CATEGORIES];
+  const options = (CATEGORIES as readonly string[]).includes(category) ? CATEGORIES : [category, ...CATEGORIES];
 
   return (
     <MapCard
-
-      title={<>{stepLeft}{counter || category}{stepRight}</>}
+      title={
+        <>
+          {stepLeft}
+          {counter || category}
+          {stepRight}
+        </>
+      }
       subtitle={
         <>
           {point.along_track_nm.toFixed(1)} nm {compassPoint(bearingDeg)} of {departureIdent}
@@ -114,18 +137,12 @@ export default function PointPopup({
         </>
       }
     >
-      {/* No flex-wrap: Leaflet measures a popup's width by briefly
-          forcing everything onto one line, and a row that's still
-          allowed to wrap at that moment gets measured at whatever
-          narrower, wrapped width it happens to collapse to instead of
-          its real one-line width -- pinning this row flat gives it (and
-          so the popup) a stable, correctly-measured width instead. */}
       {/* The drawer's own six (WaypointPanel): 36 by 32, eight apart, so
           each one's 44-point hit area (index.css) meets the next one's
           rather than taking its taps -- four apart they overlapped. The
           row's padding keeps the select's area clear of theirs. */}
       <div className="flex gap-2 py-1.5">
-        {RATINGS.map(r => (
+        {RATINGS.map((r) => (
           <Button
             key={r}
             type="button"
@@ -149,7 +166,13 @@ export default function PointPopup({
       {/* Twelve clear of the button under it (pb-1.5 and the card's six),
           so their hit areas meet rather than overlap. */}
       <div className="flex items-center gap-2 pb-1.5">
-        <PullDown label="Category" value={category} align="start" options={options.map(c => ({ value: c, label: c }))} onChange={onCategoryChange} />
+        <PullDown
+          label="Category"
+          value={category}
+          align="start"
+          options={options.map((c) => ({ value: c, label: c }))}
+          onChange={onCategoryChange}
+        />
       </div>
 
       <Button type="button" size="sm" variant="destructive" onClick={onRemove} className="w-full">

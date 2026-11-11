@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The picked airplane's checklist as the phone read it from the gateway
+/// The picked airplane's checklist as the phone keeps it
 /// (WatchContext.checklist): its sections as a list, each a page of items
 /// to tick. The ticks are this run's, kept on the watch alone; a
 /// section is reset by swiping its row, and every tick goes when the
@@ -75,7 +75,7 @@ struct ChecklistSectionView: View {
                     HStack(alignment: .firstTextBaseline) {
                         Image(systemName: done ? "checkmark.circle.fill" : "circle")
                             .foregroundStyle(done ? Color.green : Color.secondary)
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading) {
                             Text(item.challenge)
                                 .strikethrough(done)
                                 .foregroundStyle(done ? .secondary : .primary)

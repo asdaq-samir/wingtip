@@ -2,7 +2,7 @@
 import type { VfrMinimums } from "./api/types";
 import { callEngine } from "./engine/engine";
 import type { LatLon } from "./geo";
-import { altFt } from "./units";
+import { altFt } from "./format";
 
 export { degreesMinutes } from "./coords";
 
@@ -20,12 +20,12 @@ export function shortAirspaceName(name: string): string {
   return callEngine("short_airspace_name", { name });
 }
 
-
 /** The point an airspace card is for, from the address (`?at=42.3172,
  *  -88.0905`); null where there is none or it is not a place on Earth. */
 export function pointOf(text: string | null): LatLon | null {
   const match = /^(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)$/.exec(text ?? "");
   if (!match) return null;
-  const lat = Number(match[1]), lon = Number(match[2]);
+  const lat = Number(match[1]),
+    lon = Number(match[2]);
   return Math.abs(lat) <= 90 && Math.abs(lon) <= 180 ? { lat, lon } : null;
 }

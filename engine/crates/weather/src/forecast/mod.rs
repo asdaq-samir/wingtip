@@ -1,30 +1,20 @@
 //! A field's weather as the app says it: the flight category a ceiling and
 //! a visibility fall in, where only some of the figures are known (the
 //! web's lib/map/flightCategory, the planner's wingtip.glmp), and an hour of a
-//! TAF read from its change groups (the web's lib/hourly). The TAF's text
-//! is read by each host (the web by metar-taf-parser); what its groups
-//! mean for the hour is decided here, once.
+//! TAF read from its change groups (hours, the web's airport card), and
+//! (#482 phase 2) the weather as the planner reads it: the AWC's national
+//! cache files read into the shapes the weather service stores (awc), and
+//! what they say along a route (route) -- a TAF over a window of time, the
+//! worst forecast near the route, the SIGMETs, PIREPs and G-AIRMETs it
+//! meets -- and the dry run played against the forecast for the hours it
+//! flies (run). The hosts fetch; what the products mean is decided here, once.
 
+pub mod awc;
 pub mod calls;
-
-use crate::metar;
-
-/// The category a ceiling and a visibility fall in, by AIM 7-1-7's bounds
-/// ("Categorical Outlooks"; the worse of the two decides): LIFR "ceiling
-/// less than 500 feet and/or visibility less than 1 mile", IFR 500 to less
-/// than 1,000 ft or 1 to less than 3, MVFR "1,000 to 3,000 feet and/or
-/// visibility 3 to 5 miles inclusive", VFR above both -- statute miles, as
-/// US reports give visibility. The bounds are metar::flight_category's, the
-/// AWC's (AC 00-45H), which this reuses. No ceiling is no limit. With no
-/// visibility only a ceiling under 500 ft decides it, LIFR whatever the
-/// visibility is: over that the visibility could still make it worse, and
-/// a category said then would be a guess.
-pub fn category_of(ceiling_ft: Option<f64>, visibility_sm: Option<f64>) -> Option<&'static str> {
-    match visibility_sm {
-        None => (ceiling_ft.unwrap_or(f64::INFINITY) < 500.0).then_some("LIFR"),
-        Some(_) => metar::flight_category(ceiling_ft, visibility_sm),
-    }
-}
+pub mod field;
+pub mod hours;
+pub mod route;
+pub mod run;
 
 /// A category's place from best to worst, VFR 0 to LIFR 3; -1 for none or
 /// one not known, below them all.
@@ -84,12 +74,12 @@ pub fn hour(prevailing: &Figures, becoming: bool, before: Option<&Figures>, supp
     let mut out = Hour::default();
     let mut category = prevailing.category.as_deref();
     let mut thunder = prevailing.thunder;
-    if let Some(was) = before.filter(|_| becoming) {
-        if rank(was.category.as_deref()) > rank(category) {
-            out.before_worse = true;
-            category = was.category.as_deref();
-            thunder = was.thunder;
-        }
+    if let Some(was) = before.filter(|_| becoming)
+        && rank(was.category.as_deref()) > rank(category)
+    {
+        out.before_worse = true;
+        category = was.category.as_deref();
+        thunder = was.thunder;
     }
     // The gust compared with is the prevailing group's own: a BECMG's wind
     // is the new one from the window's start.
@@ -104,10 +94,11 @@ pub fn hour(prevailing: &Figures, becoming: bool, before: Option<&Figures>, supp
             // only a chance of it.
             out.at_times_chance = false;
         }
-        if let Some(g) = group.figures.gust_kt {
-            if g > gust.unwrap_or(0.0) && g > out.at_times_gust_kt.unwrap_or(0.0) {
-                out.at_times_gust_kt = Some(g);
-            }
+        if let Some(g) = group.figures.gust_kt
+            && g > gust.unwrap_or(0.0)
+            && g > out.at_times_gust_kt.unwrap_or(0.0)
+        {
+            out.at_times_gust_kt = Some(g);
         }
         if group.figures.thunder && !thunder {
             out.at_times_thunder = true;

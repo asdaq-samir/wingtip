@@ -1,6 +1,7 @@
 """The corridor read, kept on disk beside its tiles: a planner that has
 not read the corridor replays a finished read rather than reading it
 again, and a new cycle of tiles is read afresh."""
+
 import numpy as np
 import pytest
 from wingtip import charts, chartvision
@@ -28,10 +29,23 @@ def reads(monkeypatch):
 
     def iter_landmarks(start, end, half_width_nm):
         counted.append(half_width_nm)
-        yield {"block": 0, "blocks": 1, "tiles": 4, "missing": 0, "landmarks": [
-            chartvision.Landmark("water", 43.0, -89.0, np.float64(1200.0), 3.5, np.int64(40),
-                                 extras={"along_track_nm": 50.0, "cross_track_nm": np.float64(0.5)}),
-        ]}
+        yield {
+            "block": 0,
+            "blocks": 1,
+            "tiles": 4,
+            "missing": 0,
+            "landmarks": [
+                chartvision.Landmark(
+                    "water",
+                    43.0,
+                    -89.0,
+                    np.float64(1200.0),
+                    3.5,
+                    np.int64(40),
+                    extras={"along_track_nm": 50.0, "cross_track_nm": np.float64(0.5)},
+                )
+            ],
+        }
 
     monkeypatch.setattr(chartvision, "iter_landmarks_along_route", iter_landmarks)
     return counted
@@ -48,7 +62,7 @@ def test_a_finished_read_is_kept_and_a_planner_that_never_read_it_replays_it(til
     assert reads == [4.0] and first["error"] is None
     assert list(tiles.glob("2026-09-03/detections/C81-KDLH-4nm-r0-*.json"))
 
-    detection._DETECT_JOBS.clear()   # a planner just started
+    detection._DETECT_JOBS.clear()  # a planner just started
     again = _finished(detection.detect_job(KEY, C81, KDLH, 4.0))
 
     assert reads == [4.0]

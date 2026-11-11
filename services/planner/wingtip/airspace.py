@@ -23,6 +23,7 @@ Class-C-to-Class-C route left no legal altitude at all.
 Class E is excluded entirely: VFR overflight needs neither clearance nor
 a radio call, just cloud clearance and visibility minimums.
 """
+
 import pickle
 import struct
 import threading
@@ -32,8 +33,8 @@ import shapefile
 from cachetools import TTLCache
 from shapely import STRtree, from_wkb, points as shapely_points, to_wkb
 from shapely.geometry import LineString, Point, shape as shapely_shape
-from shapely.ops import unary_union
 
+from .engine import ask as engine
 from .faa_data import NASR_INDEX_URL, _is_icloud_evicted, download_and_extract, find_current_cycle_page, find_download_link
 
 CONTROLLED_CLASSES = ("B", "C", "D")
@@ -103,11 +104,7 @@ def ensure_class_airspace_shapefile(cache_dir) -> Path:
         zip_url = find_download_link(cycle_page, r'href="([^"]*class_airspace_shape_files\.zip)"')
         download_and_extract(zip_url, cache_dir)
         if not _shapefile_is_complete(shp_path):
-            evicted = [
-                shp_path.with_suffix(x).name
-                for x in SHAPEFILE_SUFFIXES
-                if _is_icloud_evicted(shp_path.with_suffix(x))
-            ]
+            evicted = [shp_path.with_suffix(x).name for x in SHAPEFILE_SUFFIXES if _is_icloud_evicted(shp_path.with_suffix(x))]
             if evicted:
                 raise RuntimeError(
                     f"iCloud evicted {', '.join(evicted)} from {shp_path.parent} right after "
@@ -163,7 +160,7 @@ _ALL_AIRSPACE_LOCK = threading.Lock()
 # v2: the cached records gained an "ident" field, and a cache written
 # before that has no way to say so -- a new suffix rebuilds rather
 # than reading records that are missing a key every caller now reads.
-# v4: and an "upper_desc", for the map's labels (wingtip.airspace_map).
+# v4: and an "upper_desc", for the map's labels (the phone pack, the overlay tiles).
 # v5: and the "hours_code" and "hours_remark", for the map's cards.
 _CONTROLLED_CACHE_SUFFIX = ".controlled.v5.pkl"
 
@@ -251,11 +248,16 @@ def _read_controlled_cache(shp_path: Path, key: tuple) -> list | None:
         return None
     return [
         {
-            "ident": p.get("ident", ""), "name": p["name"], "class": p["class"],
-            "floor_ft_msl": p["floor_ft_msl"], "ceiling_ft_msl": p.get("ceiling_ft_msl"),
+            "ident": p.get("ident", ""),
+            "name": p["name"],
+            "class": p["class"],
+            "floor_ft_msl": p["floor_ft_msl"],
+            "ceiling_ft_msl": p.get("ceiling_ft_msl"),
             "upper_desc": p.get("upper_desc"),
-            "hours_code": p.get("hours_code"), "hours_remark": p.get("hours_remark"),
-            "bbox": tuple(p["bbox"]), "geometry": from_wkb(p["wkb"]),
+            "hours_code": p.get("hours_code"),
+            "hours_remark": p.get("hours_remark"),
+            "bbox": tuple(p["bbox"]),
+            "geometry": from_wkb(p["wkb"]),
         }
         for p in cached["polygons"]
     ]
@@ -267,11 +269,16 @@ def _write_controlled_cache(shp_path: Path, key: tuple, polygons: list) -> None:
         "key": key,
         "polygons": [
             {
-                "ident": p.get("ident", ""), "name": p["name"], "class": p["class"],
-                "floor_ft_msl": p["floor_ft_msl"], "ceiling_ft_msl": p.get("ceiling_ft_msl"),
+                "ident": p.get("ident", ""),
+                "name": p["name"],
+                "class": p["class"],
+                "floor_ft_msl": p["floor_ft_msl"],
+                "ceiling_ft_msl": p.get("ceiling_ft_msl"),
                 "upper_desc": p.get("upper_desc"),
-                "hours_code": p.get("hours_code"), "hours_remark": p.get("hours_remark"),
-                "bbox": p["bbox"], "wkb": to_wkb(p["geometry"]),
+                "hours_code": p.get("hours_code"),
+                "hours_remark": p.get("hours_remark"),
+                "bbox": p["bbox"],
+                "wkb": to_wkb(p["geometry"]),
             }
             for p in polygons
         ],
@@ -331,11 +338,9 @@ def load_controlled_airspace(shp_path, bbox: tuple) -> list:
     """
     min_lat, min_lon, max_lat, max_lon = bbox
     return [
-        p for p in _load_all_controlled_airspace(shp_path)
-        if not (
-            p["bbox"][3] < min_lat or p["bbox"][1] > max_lat
-            or p["bbox"][2] < min_lon or p["bbox"][0] > max_lon
-        )
+        p
+        for p in _load_all_controlled_airspace(shp_path)
+        if not (p["bbox"][3] < min_lat or p["bbox"][1] > max_lat or p["bbox"][2] < min_lon or p["bbox"][0] > max_lon)
     ]
 
 
@@ -368,7 +373,8 @@ def surface_classes(points: list[tuple[float, float]], shp_path) -> list[str]:
             cls = reaching[j]["class"]
             found[i] = cls if found[i] is None else min(found[i], cls)
     surface_e = [
-        geometry for geometry, (min_lon, min_lat, max_lon, max_lat) in _load_surface_e(shp_path)
+        geometry
+        for geometry, (min_lon, min_lat, max_lon, max_lat) in _load_surface_e(shp_path)
         if not (max_lat < south or min_lat > north or max_lon < west or min_lon > east)
     ]
     in_e = set(STRtree(surface_e).query(where, predicate="within")[0].tolist()) if surface_e else set()
@@ -398,18 +404,26 @@ def own_class_b(polygons: list, start_point, end_point) -> set[str]:
     between them, only the surface area round O'Hare itself being left
     out. A field under a shelf, not in a surface area (Midway under
     Chicago's 3,000), is flown out of under it as before."""
-    return {
-        p["name"] for p in polygons
-        if p["class"] in CLEARANCE_CLASSES and is_own_surface_area(p, start_point, end_point)
-    }
+    return {p["name"] for p in polygons if p["class"] in CLEARANCE_CLASSES and is_own_surface_area(p, start_point, end_point)}
 
 
-def max_airspace_altitude_msl(route_start: tuple, route_end: tuple, shp_path) -> float | None:
-    """The highest altitude the route can cruise at while staying beneath
-    every Class B shelf it laterally passes through, in feet MSL -- i.e.
-    transiting *under* the Bravo rather than requesting a clearance
-    through it, which is the usual choice for a light aircraft. Returns
-    None if the route crosses no Class B at all, which is most routes.
+def airspace_ceiling_profile(route_start: tuple, route_end: tuple, fixes: list, shp_path) -> list:
+    """The airspace ceiling of each leg of the nav log -- the lowest
+    Class B shelf floor the leg between consecutive `fixes` ((lat, lon)
+    pairs, the route's ends included) passes laterally under, or None
+    where it passes under none. Where the whole route's ceiling is the
+    lowest shelf anywhere along it, this is the shelf over each leg, so
+    a route can cruise low under the Bravo by the departure and climb
+    once past it. The route's own surface areas are excluded on the
+    whole route's ends: a leg that
+    starts at the departure begins inside that airport's airspace just
+    as the route does -- and with them the whole Class B they are part
+    of (own_class_b): a route into or out of it is cleared through it.
+
+    A leg's ceiling is the highest it can cruise staying beneath every
+    Class B shelf it laterally passes through -- transiting *under* the
+    Bravo rather than asking for a clearance through it, the usual choice
+    for a light aircraft.
 
     Class C and D impose nothing here. Entering either needs only two-way
     radio communication established, which is routine, so they are
@@ -439,26 +453,6 @@ def max_airspace_altitude_msl(route_start: tuple, route_end: tuple, shp_path) ->
     not the surface -- C81/Grayslake sits laterally under Chicago's Class
     B, whose floor there is a few thousand feet, so it still imposes a
     ceiling exactly as before.
-
-    The same rule as airspace_ceiling_profile, over the route as its one
-    leg -- it was a second copy of the Class B filter and the own-surface
-    exclusion, which had to change in both places.
-    """
-    return airspace_ceiling_profile(route_start, route_end, [route_start, route_end], shp_path)[0]
-
-
-def airspace_ceiling_profile(route_start: tuple, route_end: tuple, fixes: list, shp_path) -> list:
-    """max_airspace_altitude_msl for each leg of the nav log -- the lowest
-    Class B shelf floor the leg between consecutive `fixes` ((lat, lon)
-    pairs, the route's ends included) passes laterally under, or None
-    where it passes under none. Where the whole route's ceiling is the
-    lowest shelf anywhere along it, this is the shelf over each leg, so
-    a route can cruise low under the Bravo by the departure and climb
-    once past it. The route's own surface areas are excluded on the
-    whole route's ends, as in max_airspace_altitude_msl: a leg that
-    starts at the departure begins inside that airport's airspace just
-    as the route does -- and with them the whole Class B they are part
-    of (own_class_b): a route into or out of it is cleared through it.
     """
     from .geo import corridor_bbox
 
@@ -483,30 +477,28 @@ def airspace_ceiling_profile(route_start: tuple, route_end: tuple, fixes: list, 
     return ceilings
 
 
-#: Kept from Class B airspace a route is bent round, as a pilot keeps a
-#: margin from its edge rather than skimming it.
-DETOUR_MARGIN_NM = 1.0
-#: A detour no longer than the route by more than this is offered.
-DETOUR_MAX_ADDED_NM = 40.0
-#: What a fix that is not a VFR waypoint costs in the ranking, in miles:
-#: a VFR pilot flies to the magenta flags on the sectional by eye, and a
-#: GPS fix only where it saves more than this.
-DETOUR_NON_VFR_NM = 10.0
-
-
-#: How many ways round a pilot is offered to choose from.
-DETOUR_CHOICES = 5
-
-#: How far the eased outline _detour_through sorts lines by first may
-#: stray from the Class B's own, in degrees (about 0.1 nm); the real
-#: outline still decides every line near its margin.
-WALL_EASED_DEG = 0.002
-
-#: detour_waypoints by leg and the Class B in its way, bounded. The
-#: airspace changes only with the FAA's chart cycle; six hours is well
+#: detour_waypoints by leg, altitude and the Class B in its way, bounded.
+#: The airspace changes only with the FAA's chart cycle; six hours is well
 #: inside one.
 _DETOURS: TTLCache = TTLCache(maxsize=256, ttl=6 * 3600)
 _DETOURS_LOCK = threading.Lock()
+
+
+def _shelves(polygons: list, own: set) -> list[dict]:
+    """The Class B shelves among `polygons` other than the flight's own
+    (own_class_b), as the engine reads them: floor, ceiling and rings of
+    [lat, lon] (the shapefile's are lon/lat)."""
+    out = []
+    for p in polygons:
+        if p["class"] not in CLEARANCE_CLASSES or p["name"] in own:
+            continue
+        geometry = p["geometry"]
+        rings = []
+        for part in getattr(geometry, "geoms", [geometry]):
+            for ring in (part.exterior, *part.interiors):
+                rings.append([[float(y), float(x)] for x, y in ring.coords])
+        out.append({"floor_ft_msl": p["floor_ft_msl"], "ceiling_ft_msl": p.get("ceiling_ft_msl"), "rings": rings})
+    return out
 
 
 def detour_waypoints(route_start: tuple, route_end: tuple, shp_path, below_ft: float) -> list[dict]:
@@ -514,115 +506,55 @@ def detour_waypoints(route_start: tuple, route_end: tuple, shp_path, below_ft: f
     airspace whose floor is under `below_ft` -- the lowest altitude the
     route can fly there, so a shelf above it is passed under -- the ones
     adding the least distance first, a VFR waypoint (VPBNG, on the
-    sectional) before a GPS fix (wingtip.fixes): at most DETOUR_CHOICES, none
-    further than DETOUR_MAX_ADDED_NM. The route's own surface areas
-    aside, as for the ceiling. Each as {"ident", "kind", "added_nm"}."""
+    sectional) before a GPS fix (wingtip.fixes): the engine's choice
+    (class_b_detours, #482 phase 5), the fixes round the Class B read
+    here. The route's own surface areas aside, as for the ceiling. Each as
+    {"ident", "kind", "added_nm"}."""
     from . import fixes
     from .geo import corridor_bbox
 
-    start_point, end_point = Point(route_start[1], route_start[0]), Point(route_end[1], route_end[0])
-    polygons = load_controlled_airspace(shp_path, corridor_bbox(route_start, route_end, buffer_nm=30.0))
-    own = own_class_b(polygons, start_point, end_point)
-    blocking = [
-        p["geometry"] for p in polygons
-        if p["class"] in CLEARANCE_CLASSES and p["floor_ft_msl"] < below_ft and p["name"] not in own
-    ]
-    if not blocking:
-        return []
-    # The same ways round for every altitude with the same airspace under
-    # it: Atlanta's Class B blocks 8,000 ft and 12,000 ft alike, and each
-    # altitude picked worked them out again (2026-10-21).
-    key = (tuple(route_start), tuple(route_end), tuple(sorted((p["name"], p["floor_ft_msl"], p["geometry"].bounds) for p in polygons
-                                                if p["class"] in CLEARANCE_CLASSES and p["floor_ft_msl"] < below_ft
-                                                and p["name"] not in own)))
+    key = (tuple(route_start), tuple(route_end), below_ft)
     with _DETOURS_LOCK:
         if key in _DETOURS:
             return _DETOURS[key]
-    # Their bounds piece by piece: a union of them all here as well as in
-    # _detour_through was half a second round Atlanta.
-    bounds = [g.bounds for g in blocking]
-    west, south = min(b[0] for b in bounds), min(b[1] for b in bounds)
-    east, north = max(b[2] for b in bounds), max(b[3] for b in bounds)
-    pad = DETOUR_MAX_ADDED_NM / 60.0
-    ways = _detour_through(route_start, route_end, blocking, fixes.within(south - pad, west - pad, north + pad, east + pad))
+    start_point, end_point = Point(route_start[1], route_start[0]), Point(route_end[1], route_end[0])
+    polygons = load_controlled_airspace(shp_path, corridor_bbox(route_start, route_end, buffer_nm=30.0))
+    shelves = _shelves(polygons, own_class_b(polygons, start_point, end_point))
+    if not shelves:
+        return []
+    # The fixes within a degree of the Class B, more than any detour the
+    # engine offers adds; it takes the ones near enough.
+    lats = [pt[0] for shelf in shelves for ring in shelf["rings"] for pt in ring]
+    lons = [pt[1] for shelf in shelves for ring in shelf["rings"] for pt in ring]
+    near = fixes.within(min(lats) - 1.0, min(lons) - 1.0, max(lats) + 1.0, max(lons) + 1.0)
+    ways = engine(
+        "class_b_detours",
+        start=list(route_start),
+        end=list(route_end),
+        below_ft=below_ft,
+        shelves=shelves,
+        fixes=[
+            {"ident": f["ident"], "lat": f["lat"], "lon": f["lon"], "vfr": bool(f.get("vfr")), "kind": f.get("kind") or ""} for f in near
+        ],
+    )
     with _DETOURS_LOCK:
         _DETOURS[key] = ways
     return ways
 
 
 def class_b_entered(route_start: tuple, route_end: tuple, shp_path, altitude_ft: float) -> bool:
-    """Whether a straight leg flown at `altitude_ft` enters Class B -- a
-    piece whose floor is at or under it and whose ceiling is at or over
-    it (14 CFR 91.131: an ATC clearance before entering) -- other than its
-    own fields' (own_class_b), which a flight in or out of them enters
-    anyway. Under a shelf or over the top, it does not."""
+    """Whether a straight leg flown at `altitude_ft` enters Class B other
+    than its own fields' (own_class_b), which a flight in or out of them
+    enters anyway: the engine's (class_b_entered, 14 CFR 91.131), on the
+    shelves read here."""
     from .geo import corridor_bbox
 
     start_point, end_point = Point(route_start[1], route_start[0]), Point(route_end[1], route_end[0])
     polygons = load_controlled_airspace(shp_path, corridor_bbox(route_start, route_end, buffer_nm=2.0))
-    own = own_class_b(polygons, start_point, end_point)
-    leg = LineString([(route_start[1], route_start[0]), (route_end[1], route_end[0])])
-    return any(
-        p["class"] in CLEARANCE_CLASSES and p["name"] not in own
-        and p["floor_ft_msl"] <= altitude_ft and (p.get("ceiling_ft_msl") is None or altitude_ft <= p["ceiling_ft_msl"])
-        and p["geometry"].intersects(leg)
-        for p in polygons
+    shelves = _shelves(polygons, own_class_b(polygons, start_point, end_point))
+    return bool(shelves) and engine(
+        "class_b_entered", start=list(route_start), end=list(route_end), altitude_ft=altitude_ft, shelves=shelves
     )
-
-
-def _detour_through(route_start: tuple, route_end: tuple, blocking: list, candidates: list[dict]) -> list[dict]:
-    """detour_waypoints' choice among `candidates` (fixes, as wingtip.fixes
-    has them) round the `blocking` geometries, lon/lat as the shapefile's.
-
-    Measured and tested whole, not a fix at a time: round Atlanta's Class
-    B some eight thousand fixes are near enough to weigh, and one shapely
-    call per leg to each was two seconds of every altitude a pilot picked
-    on a long route (2026-10-21, KSTL-KJAX)."""
-    import numpy as np
-    import shapely
-
-    from .geo import distance_nm
-
-    # The Class B's arcs as the shapefile draws them are tens of thousands
-    # of points round Atlanta, slow to test thousands of lines against.
-    # Eased to within WALL_EASED_DEG (Douglas-Peucker: no point of either
-    # outline further than that from the other), a wall widened by twice
-    # that holds the real one and one narrowed by as much lies inside it:
-    # a line clear of the wider is clear, one into the narrower is not, and
-    # only the few between are tested against the real wall -- the same
-    # answer, quickly.
-    airspace = unary_union(blocking)
-    margin = DETOUR_MARGIN_NM / 60.0
-    exact = airspace.buffer(margin)
-    eased = airspace.simplify(WALL_EASED_DEG)
-    wider, narrower = eased.buffer(margin + 2 * WALL_EASED_DEG), eased.buffer(margin - 2 * WALL_EASED_DEG)
-    for wall in (exact, wider, narrower):
-        shapely.prepare(wall)
-    direct = distance_nm(*route_start, *route_end)
-    if not candidates:
-        return []
-    lat = np.array([fix["lat"] for fix in candidates], dtype=float)
-    lon = np.array([fix["lon"] for fix in candidates], dtype=float)
-    added = distance_nm(route_start[0], route_start[1], lat, lon) + distance_nm(lat, lon, route_end[0], route_end[1]) - direct
-    near = np.flatnonzero(added <= DETOUR_MAX_ADDED_NM)
-    if not len(near):
-        return []
-    starts = np.repeat([[route_start[1], route_start[0]]], len(near), axis=0)
-    ends = np.repeat([[route_end[1], route_end[0]]], len(near), axis=0)
-    vias = np.column_stack([lon[near], lat[near]])
-    legs = (shapely.linestrings(np.stack([starts, vias], axis=1)), shapely.linestrings(np.stack([vias, ends], axis=1)))
-
-    inbound, outbound = legs
-    blocked = shapely.intersects(narrower, inbound) | shapely.intersects(narrower, outbound)
-    unsure = ~blocked & (shapely.intersects(wider, inbound) | shapely.intersects(wider, outbound))
-    blocked[unsure] = shapely.intersects(exact, inbound[unsure]) | shapely.intersects(exact, outbound[unsure])
-    clear = ~blocked
-    ranked = []
-    for i in near[clear]:
-        fix = candidates[i]
-        rank = float(added[i]) + (0.0 if fix.get("vfr") else DETOUR_NON_VFR_NM)
-        ranked.append((rank, {"ident": fix["ident"], "kind": fix.get("kind", "Fix"), "added_nm": round(float(added[i]), 1)}))
-    return [detour for _, detour in sorted(ranked, key=lambda r: (r[0], r[1]["ident"]))[:DETOUR_CHOICES]]
 
 
 def airspace_transits(route_start: tuple, route_end: tuple, shp_path, fixes: list | None = None) -> list:
@@ -665,13 +597,8 @@ def airspace_transits(route_start: tuple, route_end: tuple, shp_path, fixes: lis
                 "name": p["name"],
                 "class": p["class"],
                 "floor_ft_msl": p["floor_ft_msl"],
-                "requires": (
-                    "ATC clearance" if p["class"] in CLEARANCE_CLASSES
-                    else "two-way radio communication"
-                ),
-                "along_track_nm": round(
-                    along_track_distance_nm(centre.y, centre.x, route_start, route_end), 1
-                ),
+                "requires": ("ATC clearance" if p["class"] in CLEARANCE_CLASSES else "two-way radio communication"),
+                "along_track_nm": round(along_track_distance_nm(centre.y, centre.x, route_start, route_end), 1),
             }
         )
     # Deduplicated by name+class: a Bravo is filed as several shelf

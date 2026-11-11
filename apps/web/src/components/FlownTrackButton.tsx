@@ -3,15 +3,15 @@ import { Route } from "lucide-react";
 import { ListGroup, ListRow } from "./GroupedList";
 import IconButton from "./IconButton";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "./ResponsivePopover";
-import { useFlownTrack } from "../lib/map/flownTrack";
+import { useFlownTrack } from "../lib/map/position/flownTrack";
 
 /**
  * Among the map's buttons while a flown track is on the chart (a saved
  * flight's debrief put it there): what the lines are, and Hide.
  */
 export default function FlownTrackButton() {
-  const track = useFlownTrack(s => s.track);
-  const hide = useFlownTrack(s => s.hide);
+  const track = useFlownTrack((s) => s.track);
+  const hide = useFlownTrack((s) => s.hide);
   const [open, setOpen] = useState(false);
   if (!track) return null;
   return (
@@ -25,15 +25,25 @@ export default function FlownTrackButton() {
         <ListGroup>
           <ListRow title={track.title} description="As flown, from its debrief" />
           <ListRow
-            media={<span className="inline-block h-1 w-5 rounded-full bg-[#1d1d1f] ring-2 ring-white dark:bg-white dark:ring-black" />}
+            media={
+              <span className="inline-block h-1 w-5 rounded-full bg-(--chart-fix-ink) ring-2 ring-white dark:bg-white dark:ring-black" />
+            }
             title="Within the tolerances"
           />
           {/* The ACS's (PA.VI.A): over 3 nm off the route, or 200 ft off the altitude in the cruise. */}
           <ListRow
-            media={<span className="inline-block h-1 w-5 rounded-full bg-[#d70015] ring-2 ring-white" />} title="Outside them"
+            media={<span className="inline-block h-1 w-5 rounded-full bg-(--chart-warning) ring-2 ring-white" />}
+            title="Outside them"
             description="Over 3 nm off the route or 200 ft off the cruise altitude"
           />
-          <ListRow title="Hide the track" onClick={() => { setOpen(false); hide(); }} data-testid="flown-track-hide" />
+          <ListRow
+            title="Hide the track"
+            onClick={() => {
+              setOpen(false);
+              hide();
+            }}
+            data-testid="flown-track-hide"
+          />
         </ListGroup>
       </ResponsivePopoverContent>
     </ResponsivePopover>

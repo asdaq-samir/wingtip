@@ -16,7 +16,7 @@ struct PilotGuideView: View {
 
     var body: some View {
         List {
-            Section("Checkpoint colours") {
+            Section("Checkpoint Colours") {
                 ForEach(Self.buckets, id: \.score) { b in
                     Label {
                         Text(b.words)
@@ -27,25 +27,12 @@ struct PilotGuideView: View {
                     }
                 }
             }
-            Section("Practice") {
-                NavigationLink { DrillView(deck: Drills.lightGun) } label: { row("Light gun signals", "14 CFR 91.125") }
-                NavigationLink { DrillView(deck: Drills.vfrMinimums) } label: { row("VFR weather minimums", "14 CFR 91.155") }
-                NavigationLink { LostCommsView() } label: { row("Lost communications", "14 CFR 91.185: route, altitude, and when to leave") }
-                NavigationLink { HoldingView() } label: { row("Holding entries", "AIM 5-3-8: the entry, and the legs in the wind") }
-            }
+            Section("Practice") { PracticeRows() }
             Section("More") {
                 NavigationLink("Your airplane in the day's air") { AirplaneInTheAirView() }
             }
         }
         .navigationTitle("Guide")
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func row(_ title: String, _ detail: String) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-            Text(detail).font(.footnote).foregroundStyle(.secondary)
-        }
     }
 }
 
@@ -55,7 +42,7 @@ struct AirplaneInTheAirView: View {
         ScrollView {
             // The reference is the planner's (wingtip.performance,
             // CRUISE_REFERENCE_FT, 6,000 ft).
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: WingtipSpace.md) {
                 Text("Your airplane's cruise speed and fuel burn are taken as its figures at its cruise power at 6,000 ft on a standard day, a row of its handbook's cruise table.")
                 Text("Each leg flies them in the forecast air at its altitude, as a density altitude: faster in thinner air at the same power, and slower and thriftier where full throttle can no longer make it. Climbs slow as the air thins, and a warm day lowers the service ceiling.")
                 Text("The nav log gives each leg's TAS, and the altitude's reasoning the rest. A model, within a few percent of most handbooks: yours governs.")
@@ -64,7 +51,6 @@ struct AirplaneInTheAirView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .navigationTitle("Your Airplane in the Day's Air")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 
@@ -77,14 +63,14 @@ struct LampView: View {
 
     private func colour(_ l: Drills.Light) -> Color {
         switch l {
-        case .green: return Color(red: 0.09, green: 0.64, blue: 0.29)
-        case .red: return Color(red: 0.86, green: 0.15, blue: 0.15)
-        case .white: return Color(red: 0.97, green: 0.98, blue: 0.99)
+        case .green: return Color(uiColor: WingtipColor.Signal.green)
+        case .red: return Color(uiColor: WingtipColor.Signal.red)
+        case .white: return Color(uiColor: WingtipColor.Signal.white)
         }
     }
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: WingtipSpace.md) {
             TimelineView(.periodic(from: .now, by: 0.5)) { context in
                 let tick = Int(context.date.timeIntervalSinceReferenceDate * 2) % 2
                 let alternating = colours.count > 1
@@ -120,7 +106,7 @@ struct DrillView: View {
         List {
             if let card = deck.cards.first(where: { $0.id == queue.first }) {
                 Section {
-                    VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.md) {
                         if !card.colours.isEmpty { LampView(colours: card.colours, flashing: card.flashing) }
                         Text(card.prompt).font(.title3.weight(.semibold))
                         if revealed {
@@ -128,11 +114,11 @@ struct DrillView: View {
                             if let detail = card.detail { Text(detail).font(.footnote).foregroundStyle(.secondary) }
                         }
                     }
-                    .padding(.vertical, 6)
+                    .padding(.vertical, WingtipSpace.sm)
                     if revealed {
                         HStack {
-                            Button("Missed It") { answer(card, knew: false) }.buttonStyle(.bordered).frame(maxWidth: .infinity)
-                            Button("Knew It") { answer(card, knew: true) }.buttonStyle(.borderedProminent).frame(maxWidth: .infinity)
+                            Button("Missed It") { answer(card, knew: false) }.glassButton().frame(maxWidth: .infinity)
+                            Button("Knew It") { answer(card, knew: true) }.glassProminentButton().frame(maxWidth: .infinity)
                         }
                     } else {
                         Button("Show the Answer") { revealed = true }
@@ -171,7 +157,6 @@ struct DrillView: View {
             }
         }
         .navigationTitle(deck.title)
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             guard !started else { return }
             started = true
@@ -210,23 +195,29 @@ struct LostCommsView: View {
     @State private var leave: String?
 
     var body: some View {
+        let opening = try? LostComms.opening.get()
+        let routes = opening?.routes ?? []
+        let leaving = Result {
+            try LostComms.leaveLimit(approachFix: approachFix, efc: efc.trimmingCharacters(in: .whitespaces), eta: eta.trimmingCharacters(in: .whitespaces))
+        }
         List {
             Section {
-                Text(LostComms.vfr)
+                ProblemLine(LostComms.opening, "The rule's words")
+                Text(opening?.vfr ?? "")
             }
             Section("Route") {
                 Picker("Which applies first", selection: $route) {
-                    ForEach(LostComms.routes, id: \.key) { r in Text(r.label).tag(r.key) }
+                    ForEach(routes, id: \.key) { r in Text(r.label).tag(r.key) }
                 }
                 .pickerStyle(.segmented)
-                Text(LostComms.routes.first { $0.key == route }?.rule ?? "").font(.subheadline)
+                Text(routes.first { $0.key == route }?.rule ?? "").font(.subheadline)
             }
             Section("Altitude") {
-                Text(LostComms.altitude).font(.subheadline)
+                Text(opening?.altitude ?? "").font(.subheadline)
             }
             LostCommsSegmentsSections(leave: $leave, approachFix: approachFix,
                                       efc: efc.trimmingCharacters(in: .whitespaces), eta: eta.trimmingCharacters(in: .whitespaces))
-            Section("Leaving the clearance limit") {
+            Section("Leaving the Clearance Limit") {
                 Toggle("The limit is a fix an approach begins from", isOn: $approachFix)
                 LabeledContent {
                     TextField("—", text: $efc).multilineTextAlignment(.trailing).monospacedDigit()
@@ -240,11 +231,11 @@ struct LostCommsView: View {
                     Text("Your ETA")
                     Text("From the filed or amended time en route")
                 }
-                Text(leave ?? LostComms.leaveLimit(approachFix: approachFix, efc: efc.trimmingCharacters(in: .whitespaces), eta: eta.trimmingCharacters(in: .whitespaces)))
+                Text(leave ?? (try? leaving.get()) ?? "")
+                if leave == nil { ProblemLine(leaving, "When to leave the limit") }
             }
         }
         .navigationTitle("Lost Communications")
-        .navigationBarTitleDisplayMode(.inline)
     }
 }
 

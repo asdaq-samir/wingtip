@@ -38,13 +38,17 @@ export const MINIMUM_CHOICES: Record<keyof Minimums, number[]> = {
 export function underMinimums(m: Minimums, briefing: Briefing, landings: string[], dest: string): string[] {
   return callEngine("gonogo_under_minimums", {
     minimums: { ceiling_ft: m.ceilingFt, visibility_sm: m.visibilitySm, crosswind_kt: m.crosswindKt, wind_kt: m.windKt },
-    landings, dest, metars: briefing.metars,
+    landings,
+    dest,
+    metars: briefing.metars,
     // Each landing's airport where the briefing has one, so no entry is
     // undefined (the contract's airports map holds airports only).
-    airports: Object.fromEntries(landings.flatMap(i => {
-      const airport = briefing.airports[i];
-      return airport ? [[i, airport] as const] : [];
-    })),
+    airports: Object.fromEntries(
+      landings.flatMap((i) => {
+        const airport = briefing.airports[i];
+        return airport ? [[i, airport] as const] : [];
+      }),
+    ),
     forecast: briefing.forecast,
   });
 }

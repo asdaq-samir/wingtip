@@ -1,0 +1,129 @@
+{
+  "title": "CoachDebrief",
+  "type": "object",
+  "description": "One of the pilot's own debriefed flights, trimmed to what proficiency_plan reads.",
+  "properties": {
+    "kind": {
+      "enum": [
+        "approach",
+        "flight"
+      ],
+      "description": "An approach debriefed (route's approach_debrief) or a flight against its plan (debrief)."
+    },
+    "flown_on": {
+      "type": "string",
+      "description": "YYYY-MM-DD, the pilot's own calendar."
+    },
+    "place": {
+      "type": "string",
+      "description": "Where: the approach's field, or the flight's route (\"KMSN-KJVL\")."
+    },
+    "procedure": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "An approach's procedure as the chart names it (\"ILS Y RWY 08\"); none for a flight."
+    },
+    "elevation_ft": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The field's elevation, ft MSL, for the 500 ft gate (AC 61-98D 2.1.4); without it the gate is not checked."
+    },
+    "profile": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "to_go_nm": {
+            "type": "number"
+          },
+          "alt_ft": {
+            "type": "number"
+          },
+          "off": {
+            "type": "boolean",
+            "description": "Past full scale, or under a minimum, there."
+          }
+        },
+        "required": [
+          "alt_ft",
+          "off"
+        ]
+      },
+      "description": "An approach's profile.track as its debrief gives it."
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ApproachFinding"
+      },
+      "description": "An approach debrief's findings, as worded."
+    },
+    "legs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          },
+          "altitude_within": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "course_within": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "ok"
+        ]
+      },
+      "description": "A flight debrief's legs."
+    },
+    "patterns": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ident": {
+            "type": "string"
+          },
+          "off_ft": {
+            "type": "number",
+            "description": "Its altitude less pattern altitude, ft (+ high)."
+          },
+          "ok": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "ident",
+          "off_ft",
+          "ok"
+        ]
+      },
+      "description": "A flight debrief's pattern entries."
+    }
+  },
+  "required": [
+    "kind",
+    "flown_on"
+  ]
+}

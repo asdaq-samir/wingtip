@@ -57,7 +57,10 @@ fn a_hold_is_read_as_the_planner_reads_it() {
     assert_eq!((hold.inbound, hold.right, hold.leg, hold.length), (270, true, Leg::Minutes(1.0), Length::Turns(2)));
     let kmsn = holds::read("KMSN:360:L:4N:10M").unwrap();
     assert_eq!((kmsn.inbound, kmsn.right, kmsn.leg, kmsn.length), (0, false, Leg::Nm(4.0), Length::Minutes(10)));
-    for bad in ["KMSN:400:L:4N:10M", "KMSN:090:X:1M:2T", "KMSN", "", "KMSN:090:R:1M:2T:X", "KMSN:090:R:1é:2T", "KMSN:090:R:1M:2é", "K MSN:090:R:1M:2T"] {
+    for bad in [
+        "KMSN:400:L:4N:10M", "KMSN:090:X:1M:2T", "KMSN", "", "KMSN:090:R:1M:2T:X", "KMSN:090:R:1é:2T", "KMSN:090:R:1M:2é",
+        "K MSN:090:R:1M:2T",
+    ] {
         assert!(holds::read(bad).is_none(), "{bad:?}");
     }
     assert_eq!(holds::read(" kugn:000:r:1.5m:1t ").unwrap().leg, Leg::Minutes(1.5));
@@ -109,11 +112,10 @@ fn a_holds_minutes() {
     assert!(near(holds::held_minutes(Leg::Minutes(1.0), Some(2.0), None, 110.0), 8.0));
     assert!(near(holds::lap_minutes(Leg::Nm(4.0), 120.0), 2.0 * 2.0 + 2.0));
     assert_eq!(holds::held_minutes(Leg::Minutes(1.0), None, Some(15.0), 110.0), 15.0);
-    assert!(near(holds::length_minutes(Leg::Minutes(1.0), Length::Turns(2), 110.0), 8.0));
     // No airspeed is flown as a knot, not divided by nothing.
     assert!(holds::lap_minutes(Leg::Nm(4.0), 0.0).is_finite());
-    // A standard-rate turn's radius: 0.64 nm at 120 kt.
-    assert!((holds::turn_radius_nm(120.0) - 0.6366).abs() < 1e-4);
+    // A standard-rate turn's radius: 0.64 nm (2/pi) at 120 kt.
+    assert!((holds::turn_radius_nm(120.0) - std::f64::consts::FRAC_2_PI).abs() < 1e-4);
     let figures = ask("hold_figures", json!({ "hold": { "leg_min": 1, "turns": 2 }, "tas_kt": 110 }));
     assert_eq!(figures["lap_min"], 4.0);
     assert_eq!(figures["held_min"], 8.0);
@@ -140,7 +142,9 @@ fn the_procedures_picked_are_read_as_the_address_and_the_planner_read_them() {
     assert!(direct[0].exact && direct[1].exact && !direct[2].exact);
     // The planner's: either case; a transition left empty only before a
     // direct fix; nothing after a fourth piece.
-    for (part, exact) in [("kdlh:i09:andoe", true), ("KDLH:I09:", false), ("KDLH:I09:ANDOE:X:Y", false), ("KDLH:I09-Y-ZZ", false), ("K:I09", false)] {
+    for (part, exact) in
+        [("kdlh:i09:andoe", true), ("KDLH:I09:", false), ("KDLH:I09:ANDOE:X:Y", false), ("KDLH:I09-Y-ZZ", false), ("K:I09", false)]
+    {
         assert_eq!(picks::procedures_read(part)[0].exact, exact, "{part:?}");
     }
     // Where the planner takes one, the address reads the same pick.

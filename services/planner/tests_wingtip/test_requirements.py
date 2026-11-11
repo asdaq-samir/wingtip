@@ -1,4 +1,5 @@
 """Pins that two images must agree on, read from their requirement files."""
+
 import re
 from pathlib import Path
 
@@ -24,7 +25,7 @@ def test_the_image_that_writes_the_model_and_the_one_that_loads_it_pin_the_same_
     # the service would load with a different version. The reader is the
     # planner, which scores in-process since model-service was folded
     # into it.
-    writer = _pins(ROOT / "ml" / "requirements-training.txt")
+    writer = _pins(ROOT / "services" / "jobs" / "retrain" / "requirements.txt")
     reader = _pins(ROOT / "services" / "planner" / "requirements.txt")
     assert {name: writer.get(name) for name in MODEL_RUNTIME} == {name: reader.get(name) for name in MODEL_RUNTIME}
     assert all(writer.get(name) for name in MODEL_RUNTIME)

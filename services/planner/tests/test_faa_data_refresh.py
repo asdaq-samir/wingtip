@@ -2,6 +2,7 @@
 (FAA_DATA_AUTO_REFRESH), not the charts': production draws no charts
 (CHARTS_AUTO_REFRESH=0), and gated on that it never fetched a new NASR
 cycle -- airports, frequencies, navaids, Class B/C/D -- or obstacle file."""
+
 import pytest
 from app import chart_refresh, main
 from wingtip.config import Settings

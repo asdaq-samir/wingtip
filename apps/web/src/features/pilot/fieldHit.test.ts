@@ -10,9 +10,9 @@ import { describe, expect, it } from "vitest";
 // as good: a tap on either lands in it.
 describe("the pilot console's text fields", () => {
   const dir = __dirname;
-  const pages = readdirSync(dir).filter(f => f.endsWith(".tsx"));
+  const pages = readdirSync(dir).filter((f) => f.endsWith(".tsx"));
 
-  it.each(pages)("%s wraps every 32-point field in FieldHit", page => {
+  it.each(pages)("%s wraps every 32-point field in FieldHit", (page) => {
     const source = readFileSync(join(dir, page), "utf8");
     const fields = [...source.matchAll(/<(Input|InputGroup)\b[^>]*?h-8[^>]*>/gs)];
     const wrapped = [...source.matchAll(/<(FieldHit|label)\b[^>]*>\s*(<span>[^<]*<\/span>\s*)?<(Input|InputGroup)\b[^>]*?h-8[^>]*>/gs)];

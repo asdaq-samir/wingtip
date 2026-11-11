@@ -48,7 +48,8 @@ export function useCheckpointNotes(dep: string, dest: string, stops: string[] = 
       // audit's finding). The notes that came before it stay.
       streamFn: ({ signal }) => ended(api.describeCheckpoints(dep, dest, signal, stops), "checkpoint descriptions"),
     }),
-    enabled: false, staleTime: Infinity,
+    enabled: false,
+    staleTime: Infinity,
   });
   // The query's own refetch and flags, not its result, which is new at
   // every render: so was this, and with it the nav log drawn again at
@@ -83,8 +84,8 @@ export function useCheckpointNotes(dep: string, dest: string, stops: string[] = 
   const descriptionError = descriptions.error ? describeError(descriptions.error, "The descriptions could not be written") : null;
   const descriptionProgress = useMemo(() => {
     if (!descriptions.isFetching) return null;
-    const started = (descriptions.data ?? []).find(m => m.type === "start");
-    const done = (descriptions.data ?? []).filter(m => m.type === "checkpoint").length;
+    const started = (descriptions.data ?? []).find((m) => m.type === "start");
+    const done = (descriptions.data ?? []).filter((m) => m.type === "checkpoint").length;
     return { done, total: started && started.type === "start" ? started.count : 0 };
   }, [descriptions.data, descriptions.isFetching]);
 
@@ -93,14 +94,12 @@ export function useCheckpointNotes(dep: string, dest: string, stops: string[] = 
       api.saveCheckpointNote(dep, dest, lat, lon, text, stops),
     onMutate: ({ lat, lon, text }) => {
       const key = descriptionKey(lat, lon);
-      setEdits(current => ({
-        scope, notes: { ...(current.scope === scope ? current.notes : {}), [key]: text },
-      }));
+      setEdits((current) => ({ scope, notes: { ...(current.scope === scope ? current.notes : {}), [key]: text } }));
       return { scope, key, text };
     },
     onError: (_error, _vars, context) => {
       if (!context) return;
-      setEdits(current => {
+      setEdits((current) => {
         if (current.scope !== context.scope || current.notes[context.key] !== context.text) return current;
         const { [context.key]: _failed, ...rest } = current.notes;
         return { scope: current.scope, notes: rest };
@@ -112,10 +111,7 @@ export function useCheckpointNotes(dep: string, dest: string, stops: string[] = 
   // The mutation's own mutateAsync, which keeps its identity, for the same
   // reason.
   const { mutateAsync } = saveNote;
-  const saveDescription = useCallback(
-    (lat: number, lon: number, text: string) => mutateAsync({ lat, lon, text }),
-    [mutateAsync],
-  );
+  const saveDescription = useCallback((lat: number, lon: number, text: string) => mutateAsync({ lat, lon, text }), [mutateAsync]);
 
   return { descriptions: descriptionMap, descriptionError, descriptionProgress, generateDescriptions, saveDescription };
 }

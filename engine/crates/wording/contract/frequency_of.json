@@ -1,0 +1,41 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "The index of the first frequency (with a MHz) of the first of types the field lists, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FrequencyOfInput",
+      "type": "object",
+      "properties": {
+        "frequencies": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/FieldFrequency"
+          }
+        },
+        "types": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "frequencies",
+        "types"
+      ]
+    },
+    "answer": {
+      "title": "FrequencyOfAnswer",
+      "type": [
+        "integer",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

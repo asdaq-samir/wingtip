@@ -2,23 +2,49 @@ import { test, expect, type Page } from "@playwright/test";
 import { library, openConsole, showTabs } from "./helpers";
 
 /**
- * A saved flight's debrief (FlightPage, lib/debrief, lib/track): its page
+ * A saved flight's debrief (FlightPage, features/pilot/debrief, lib/track): its page
  * from the console's Flights, a GPX track log imported against its nav
  * log, kept on the device, then saved to the account. Spring's flight
  * endpoints are mocked; the planner's pattern altitudes are real.
  */
 const A_PILOT = { id: 1, email: "pilot@example.com", displayName: "A Pilot", developer: false };
-const C81 = { lat: 42.3172, lon: -88.0905 }, KUGN = { lat: 42.4222, lon: -87.8679 };
+const C81 = { lat: 42.3172, lon: -88.0905 },
+  KUGN = { lat: 42.4222, lon: -87.8679 };
 const LAKE = { lat: (C81.lat + KUGN.lat) / 2, lon: (C81.lon + KUGN.lon) / 2 };
 
-const checkpoint = (sequenceNo: number, name: string, category: string, at: { lat: number; lon: number }, alongTrackNm: number, leg: boolean) => ({
-  sequenceNo, name, category, ...at, alongTrackNm,
-  legDistanceNm: leg ? 6 : null, trueCourseDeg: leg ? 56 : null, magneticHeadingDeg: leg ? 59 : null,
-  groundspeedKt: leg ? 100 : null, eteMin: leg ? 3.6 : null, fuelGal: leg ? 0.5 : null, altitudeFt: leg ? 2500 : null,
+const checkpoint = (
+  sequenceNo: number,
+  name: string,
+  category: string,
+  at: { lat: number; lon: number },
+  alongTrackNm: number,
+  leg: boolean,
+) => ({
+  sequenceNo,
+  name,
+  category,
+  ...at,
+  alongTrackNm,
+  legDistanceNm: leg ? 6 : null,
+  trueCourseDeg: leg ? 56 : null,
+  magneticHeadingDeg: leg ? 59 : null,
+  groundspeedKt: leg ? 100 : null,
+  eteMin: leg ? 3.6 : null,
+  fuelGal: leg ? 0.5 : null,
+  altitudeFt: leg ? 2500 : null,
 });
 const SUMMARY = {
-  id: 9, departureIdent: "C81", destinationIdent: "KUGN", stops: [], cruiseAltitudeFt: 2500, aircraftTailNumber: null,
-  createdAt: "2026-10-01T12:00:00Z", plannedFor: null, totalDistanceNm: 12, totalEteMin: 7.2, totalFuelGal: 1,
+  id: 9,
+  departureIdent: "C81",
+  destinationIdent: "KUGN",
+  stops: [],
+  cruiseAltitudeFt: 2500,
+  aircraftTailNumber: null,
+  createdAt: "2026-10-01T12:00:00Z",
+  plannedFor: null,
+  totalDistanceNm: 12,
+  totalEteMin: 7.2,
+  totalFuelGal: 1,
   risk: { score: 3, level: "low", factors: ["Under 100 hours in your logbook"] },
 };
 const FLIGHT = {
@@ -37,23 +63,31 @@ function gpx(): string {
   const t0 = Date.parse("2026-10-02T15:00:00Z");
   const points: { t: number; lat: number; lon: number; ft: number }[] = [];
   for (let s = 0; s < 120; s += 5) points.push({ t: t0 + s * 1000, ...C81, ft: 900 });
-  const flight = 12 / 100 * 3600;
+  const flight = (12 / 100) * 3600;
   for (let s = 0; s <= flight; s += 5) {
-    const f = s / flight, nm = 12 * f;
+    const f = s / flight,
+      nm = 12 * f;
     const ft = nm < 1 ? 900 + nm * 1600 : nm > 10 ? 2500 - (nm - 10) * 400 : 2500;
     points.push({ t: t0 + 120_000 + s * 1000, lat: C81.lat + f * (KUGN.lat - C81.lat), lon: C81.lon + f * (KUGN.lon - C81.lon), ft });
   }
   for (let s = 5; s < 120; s += 5) points.push({ t: t0 + 120_000 + flight * 1000 + s * 1000, ...KUGN, ft: 730 });
-  const trkpts = points.map(p => `<trkpt lat="${p.lat}" lon="${p.lon}"><ele>${(p.ft / 3.28084).toFixed(1)}</ele><time>${new Date(p.t).toISOString()}</time></trkpt>`);
+  const trkpts = points.map(
+    (p) =>
+      `<trkpt lat="${p.lat}" lon="${p.lon}"><ele>${(p.ft / 3.28084).toFixed(1)}</ele><time>${new Date(p.t).toISOString()}</time></trkpt>`,
+  );
   return `<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg>${trkpts.join("")}</trkseg></trk></gpx>`;
 }
 
 async function signedIn(page: Page, saved: { body: unknown }[]) {
-  await page.route("**/api/me", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
-  await page.route("**/api/aircraft", route => route.fulfill({ status: 200, contentType: "application/json", body: "[]" }));
-  await page.route("**/api/flights", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([SUMMARY]) }));
-  await page.route("**/api/flights/9", route => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(FLIGHT) }));
-  await page.route("**/api/flights/9/track", async route => {
+  await page.route("**/api/me", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
+  await page.route("**/api/aircraft", (route) => route.fulfill({ status: 200, contentType: "application/json", body: "[]" }));
+  await page.route("**/api/flights", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify([SUMMARY]) }),
+  );
+  await page.route("**/api/flights/9", (route) =>
+    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(FLIGHT) }),
+  );
+  await page.route("**/api/flights/9/track", async (route) => {
     const method = route.request().method();
     if (method === "PUT") {
       saved.push({ body: route.request().postDataJSON() });
@@ -83,11 +117,13 @@ test("a saved flight's page, and its debrief from a GPX track: kept on the devic
   await expect(flightPage.getByRole("heading", { name: "C81 → KUGN" })).toBeVisible();
   // Its way back is to the Flights, the Flights page's own back to
   // Personal stepping aside, as one pushed page covers another.
-  await expect(page.getByRole("button", { name: "Back to Account", exact: true })).toBeHidden();
+  await expect(page.getByRole("button", { name: "Back to Setup", exact: true })).toBeHidden();
   await expect(flightPage).toContainText("Under 100 hours in your logbook");
   await expect(flightPage.getByTestId("flight-open")).toBeVisible();
 
-  await flightPage.getByTestId("debrief-file").setInputFiles({ name: "flight.gpx", mimeType: "application/gpx+xml", buffer: Buffer.from(gpx()) });
+  await flightPage
+    .getByTestId("debrief-file")
+    .setInputFiles({ name: "flight.gpx", mimeType: "application/gpx+xml", buffer: Buffer.from(gpx()) });
   await expect(flightPage.getByTestId("debrief-source")).toContainText("on this device");
   const legs = flightPage.getByTestId("debrief-leg");
   await expect(legs).toHaveCount(2);
@@ -102,7 +138,7 @@ test("a saved flight's page, and its debrief from a GPX track: kept on the devic
 
   // Kept on the device: back to the list and in again, it is still there.
   await page.getByRole("button", { name: "Back to Flights", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Back to Account", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Back to Setup", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /^C81 → KUGN/ }).click();
   await expect(flightPage.getByTestId("debrief-source")).toContainText("on this device");
 
@@ -129,11 +165,11 @@ test("Show on the map draws the flown track over its route, and the map's button
   await expect(page).toHaveURL(/dep=C81/);
   await expect(page).toHaveURL(/dest=KUGN/);
   // Drawn once the route is: near-black where within the tolerances.
-  await expect(page.locator('path[stroke="#1d1d1f"]').first()).toBeAttached({ timeout: 60_000 });
+  await expect(page.locator('path[stroke="#1c1a17"]').first()).toBeAttached({ timeout: 60_000 });
   await page.getByTestId("flown-track-button").click();
   await page.getByTestId("flown-track-hide").click();
   await expect(page.getByTestId("flown-track-button")).toHaveCount(0);
-  await expect(page.locator('path[stroke="#1d1d1f"]')).toHaveCount(0);
+  await expect(page.locator('path[stroke="#1c1a17"]')).toHaveCount(0);
 });
 
 test("a file that is not a track says so where it was imported", async ({ page }) => {
@@ -143,6 +179,8 @@ test("a file that is not a track says so where it was imported", async ({ page }
   await openConsole(page);
   await library(page, "Flights");
   await page.getByRole("button", { name: /^C81 → KUGN/ }).click();
-  await page.getByTestId("debrief-file").setInputFiles({ name: "notes.gpx", mimeType: "application/gpx+xml", buffer: Buffer.from("<gpx><trk/></gpx>") });
+  await page
+    .getByTestId("debrief-file")
+    .setInputFiles({ name: "notes.gpx", mimeType: "application/gpx+xml", buffer: Buffer.from("<gpx><trk/></gpx>") });
   await expect(page.getByTestId("debrief-problem")).toContainText("There is no track in this file.");
 });

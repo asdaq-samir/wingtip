@@ -1,0 +1,57 @@
+{
+  "description": "A SIGMET (valid_from, valid_to) or a G-AIRMET (valid, its snapshot), its area as [lat, lon] points, as the AWC sends it.",
+  "title": "RouteOptionsAdvisory",
+  "type": "object",
+  "properties": {
+    "hazard": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "coords": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "altitude_low_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "valid_from": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "valid_to": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "valid": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "raw": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "coords"
+  ]
+}

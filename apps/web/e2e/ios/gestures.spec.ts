@@ -19,8 +19,12 @@ const PIXEL = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQ
 /** The map opening on Campbell (C81), where the pilot last was, at the
  *  region's zoom. */
 async function openOnC81(page: Page) {
-  await page.addInitScript(() => localStorage.setItem("wingtip.ownship",
-    JSON.stringify({ state: { enabled: false, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 })));
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      "wingtip.ownship",
+      JSON.stringify({ state: { enabled: false, follow: true, lastFix: { lat: 42.325, lon: -88.074 } }, version: 0 }),
+    ),
+  );
 }
 
 /** The middle of the chart the panel leaves in sight: above a sheet
@@ -46,14 +50,17 @@ test("the imagery over the chart comes in under a finger's pan, before it lifts"
   await openOnC81(page);
   // The USGS's imagery stubbed, a tile a pixel, each counted as asked for.
   let asked = 0;
-  await page.route(url => url.hostname === "basemap.nationalmap.gov", route => {
-    asked++;
-    return route.fulfill({ body: PIXEL, contentType: "image/png" });
-  });
+  await page.route(
+    (url) => url.hostname === "basemap.nationalmap.gov",
+    (route) => {
+      asked++;
+      return route.fulfill({ body: PIXEL, contentType: "image/png" });
+    },
+  );
   await page.goto("/app/plan");
   await settle(page);
   await openMapSettings(page);
-  await page.getByTestId("overlay-select").getByRole("radio", { name: "Imagery" }).click();
+  await page.getByTestId("overlay-select").getByRole("button", { name: "Imagery" }).click();
   await page.keyboard.press("Escape");
   await expect.poll(() => asked, { timeout: slow(15_000) }).toBeGreaterThan(0);
   await mapStill(page);
@@ -73,20 +80,10 @@ test("the imagery over the chart comes in under a finger's pan, before it lifts"
 
 test("a pinch brings in the airports of each level it passes, before the fingers lift", async ({ page }) => {
   await openOnC81(page);
-  // Fields with no report across every box asked for: at the region's
-  // zoom none is drawn, from 8 they are -- regional
-  // fields, as a small one's mark waits for 10 since the owner's "Do two
-  // levels up" (2026-10-29, 507308ae: AirportsLayer's SHOWN_FROM).
-  const grid = (url: string, row: (i: number, j: number, lat: number, lon: number) => object) => {
-    const q = new URL(url).searchParams;
-    const [s, w, n, e] = ["south", "west", "north", "east"].map(k => Number(q.get(k)));
-    const out: object[] = [];
-    for (let i = 1; i < 8; i++) for (let j = 1; j < 8; j++) out.push(row(i, j, s! + ((n! - s!) * i) / 8, w! + ((e! - w!) * j) / 8));
-    return out;
-  };
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => route.fulfill({ json: {
-    airports: grid(route.request().url(), (i, j, lat, lon) => ({ ident: `G${i}${j}`, name: "Grid", lat, lon, kind: "medium", flight_category: null, military: null })),
-  } }));
+  // The chart's own fields, from the overlay tiles (the suite's archive
+  // round Chicago, apps/web/e2e/fixtures/overlay-tiles): each kind from
+  // its own level (wingtip.vector_tiles' AIRPORT_MIN_ZOOM), so a pinch in
+  // passes levels that bring in fields not drawn further out.
   await page.goto("/app/plan");
   await settle(page);
   await mapStill(page);
@@ -96,14 +93,20 @@ test("a pinch brings in the airports of each level it passes, before the fingers
   // fields are drawn already.
   await page.evaluate(() => {
     const box = document.querySelector(".maplibregl-map") as unknown as Record<string, unknown>;
-    const key = Object.keys(box).find(k => k.startsWith("__reactFiber"))!;
+    const key = Object.keys(box).find((k) => k.startsWith("__reactFiber"))!;
     let map: { setZoom: (z: number, o: object) => void } | null = null;
     const seen = new Set<unknown>();
-    const walk = (f: { memoizedProps?: { value?: { map?: { setZoom?: unknown } } }; child?: unknown; sibling?: unknown } | null, depth: number) => {
+    const walk = (
+      f: { memoizedProps?: { value?: { map?: { setZoom?: unknown } } }; child?: unknown; sibling?: unknown } | null,
+      depth: number,
+    ) => {
       if (!f || map || depth > 40 || seen.has(f)) return;
       seen.add(f);
       const value = f.memoizedProps?.value;
-      if (value?.map?.setZoom) { map = value.map as typeof map; return; }
+      if (value?.map?.setZoom) {
+        map = value.map as typeof map;
+        return;
+      }
       walk(f.child as typeof f, depth + 1);
       walk(f.sibling as typeof f, depth);
     };
@@ -111,28 +114,34 @@ test("a pinch brings in the airports of each level it passes, before the fingers
     map!.setZoom(7, { animate: false });
   });
   await mapStill(page);
-  // The fields' places on the airports' canvas (AirportCanvas), drawn or
-  // a target for a tap without a mark of their own.
-  const targets = { count: async () => (await airportMarks(page)).length };
-  await expect.poll(() => targets.count(), { timeout: slow(5_000) }).toBe(0);
+  // The fields drawn at the region's level (AirportsGl's probe).
+  const idents = async () => new Set((await airportMarks(page)).map((m) => m.ident));
+  await expect.poll(async () => (await idents()).size, { timeout: slow(15_000) }).toBeGreaterThan(0);
+  const before = await idents();
   // Two fingers spreading from 60 to 180 points apart: three times as
   // close, a level and a half in. Each 6 points out at a step, so the
-  // second step is past the ruler's 10 (lib/map/ruler's STILL_PX): at 3 a
+  // second step is past the ruler's 10 (lib/map/ruler/ruler's STILL_PX): at 3 a
   // step, on a busy runner the fourth came after the ruler's 400 ms hold,
   // the ruler came up and took the pinch (MapRuler), and the map stayed
   // at 7 (run 41014180625; here, the fourth move at 476 ms).
   const at = await chartMiddle(page);
   const touch = await fingers(page);
-  await touch("touchStart", [[at.x - 30, at.y], [at.x + 30, at.y]]);
+  await touch("touchStart", [
+    [at.x - 30, at.y],
+    [at.x + 30, at.y],
+  ]);
   for (let i = 1; i <= 10; i++) {
-    await touch("touchMove", [[at.x - 30 - i * 6, at.y], [at.x + 30 + i * 6, at.y]]);
+    await touch("touchMove", [
+      [at.x - 30 - i * 6, at.y],
+      [at.x + 30 + i * 6, at.y],
+    ]);
     await page.waitForTimeout(30);
   }
   // A pinch, not a ruler.
   await expect(page.getByTestId("map-ruler")).toHaveCount(0);
-  // Still held: the fields' targets drawn for
-  // the level the pinch is at. They waited for the fingers to lift.
-  await expect.poll(() => targets.count(), { timeout: slow(5_000) }).toBeGreaterThan(0);
+  // Still held: fields drawn for the level the pinch is at that were not
+  // drawn at the region's. They waited for the fingers to lift.
+  await expect.poll(async () => [...(await idents())].some((i) => !before.has(i)), { timeout: slow(5_000) }).toBe(true);
   await touch("touchEnd", []);
 });
 
@@ -148,16 +157,27 @@ test("a pinch is left where the fingers leave it, as ForeFlight's is, between th
   const zoom = () => page.getByTestId("gl-map").getAttribute("data-zoom").then(Number);
   const at = await chartMiddle(page);
   const touch = await fingers(page);
-  await touch("touchStart", [[at.x - 30, at.y], [at.x + 30, at.y]]);
+  await touch("touchStart", [
+    [at.x - 30, at.y],
+    [at.x + 30, at.y],
+  ]);
   // From 60 to 82 points apart: under half a level in.
   for (let i = 1; i <= 10; i++) {
-    await touch("touchMove", [[at.x - 30 - i * 1.1, at.y], [at.x + 30 + i * 1.1, at.y]]);
+    await touch("touchMove", [
+      [at.x - 30 - i * 1.1, at.y],
+      [at.x + 30 + i * 1.1, at.y],
+    ]);
     await page.waitForTimeout(30);
   }
   await touch("touchEnd", []);
   await mapStill(page);
   // Left between levels: the zoom not a whole one.
-  await expect.poll(async () => { const z = await zoom(); return Math.abs(z - Math.round(z)); }).toBeGreaterThan(0.01);
+  await expect
+    .poll(async () => {
+      const z = await zoom();
+      return Math.abs(z - Math.round(z));
+    })
+    .toBeGreaterThan(0.01);
 });
 
 test("a pinch draws the course line again at its own width as it zooms, not scaled up and settling back", async ({ page }) => {
@@ -171,36 +191,45 @@ test("a pinch draws the course line again at its own width as it zooms, not scal
   await mapStill(page);
   // How much the map's canvas is scaled by CSS: never, as the WebGL map
   // draws every frame of a pinch itself.
-  const scale = () => page.evaluate(() => {
-    const t = getComputedStyle(document.querySelector(".maplibregl-canvas")!).transform;
-    return t === "none" ? 1 : new DOMMatrixReadOnly(t).a;
-  });
+  const scale = () =>
+    page.evaluate(() => {
+      const t = getComputedStyle(document.querySelector(".maplibregl-canvas")!).transform;
+      return t === "none" ? 1 : new DOMMatrixReadOnly(t).a;
+    });
   const at = await chartMiddle(page);
   const touch = await fingers(page);
   // From 60 to 180 points apart: three times as close, a level and a half in.
-  await touch("touchStart", [[at.x - 30, at.y], [at.x + 30, at.y]]);
+  await touch("touchStart", [
+    [at.x - 30, at.y],
+    [at.x + 30, at.y],
+  ]);
   const seen: number[] = [];
   for (let i = 1; i <= 20; i++) {
-    await touch("touchMove", [[at.x - 30 - i * 3, at.y], [at.x + 30 + i * 3, at.y]]);
+    await touch("touchMove", [
+      [at.x - 30 - i * 3, at.y],
+      [at.x + 30 + i * 3, at.y],
+    ]);
     await page.waitForTimeout(30);
     seen.push(await scale());
   }
   // Still held: the line drawn again as the fingers zoom it, scaled a
   // little at most between two draws (PINCH_REDRAW_MS) -- where it was
   // scaled up to three times until they lifted.
-  expect(Math.max(...seen), `the renderer's scale under the pinch: ${seen.map(s => s.toFixed(2)).join(" ")}`).toBeLessThan(1.2);
+  expect(Math.max(...seen), `the renderer's scale under the pinch: ${seen.map((s) => s.toFixed(2)).join(" ")}`).toBeLessThan(1.2);
   await expect.poll(async () => (await drawn(page, "route-line")).length).toBeGreaterThan(0);
   await touch("touchEnd", []);
 });
 
 test("a pinch out fills the chart's edges with tiles before the fingers lift, under half a level", async ({ page }) => {
   // The owner's notice (2026-10-16): "map is updating fine while panning
-  // but not when zooming in or out". Leaflet asks for a pinch's tiles only
-  // as it crosses half a level; the chart's layers ask as the map moves
-  // (LIVE_TILES), a pinch's frames among them, so a pinch out short of
-  // that fills the edges it bares as it goes. Kept so.
+  // but not when zooming in or out". The chart's raster sources ask for
+  // tiles as the map moves, a pinch's frames among them, so a pinch out
+  // short of half a level fills the edges it bares as it goes. Kept so.
   await openOnC81(page);
-  await page.route(url => url.pathname.startsWith("/api/planner/chart-tile/"), route => route.fulfill({ body: PIXEL, contentType: "image/png" }));
+  await page.route(
+    (url) => url.pathname.startsWith("/api/planner/chart-tile/"),
+    (route) => route.fulfill({ body: PIXEL, contentType: "image/png" }),
+  );
   await page.goto("/app/plan");
   await settle(page);
   await mapStill(page);
@@ -208,7 +237,9 @@ test("a pinch out fills the chart's edges with tiles before the fingers lift, un
   // The WebGL map asks for the tiles a pinch bares as it goes: counted
   // from the chart's first draw.
   let asked = 0;
-  page.on("request", r => { if (r.url().includes("/api/planner/chart-tile/")) asked += 1; });
+  page.on("request", (r) => {
+    if (r.url().includes("/api/planner/chart-tile/")) asked += 1;
+  });
   await expect.poll(() => page.getByTestId("gl-map").getAttribute("data-chart-zoom"), { timeout: slow(15_000) }).not.toBeNull();
   await mapStill(page);
   const before = asked;
@@ -217,9 +248,15 @@ test("a pinch out fills the chart's edges with tiles before the fingers lift, un
   const map = (await page.locator(".maplibregl-map").boundingBox())!;
   const at = { x: map.x + map.width / 2, y: map.y + 120 };
   const touch = await fingers(page);
-  await touch("touchStart", [[at.x - 90, at.y], [at.x + 90, at.y]]);
+  await touch("touchStart", [
+    [at.x - 90, at.y],
+    [at.x + 90, at.y],
+  ]);
   for (let i = 1; i <= 25; i++) {
-    await touch("touchMove", [[at.x - 90 + i, at.y], [at.x + 90 - i, at.y]]);
+    await touch("touchMove", [
+      [at.x - 90 + i, at.y],
+      [at.x + 90 - i, at.y],
+    ]);
     await page.waitForTimeout(30);
   }
   // Still held: the edges it bared asked for already.

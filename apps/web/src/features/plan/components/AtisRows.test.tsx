@@ -10,20 +10,27 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { useAtcRadio } from "../../../lib/atcRadio";
+import { LocalSpeech, speechAnswered } from "../../../test/localSpeech";
 import { AtisRows } from "./AtisRows";
 
-class Quiet {
-  lang = ""; continuous = false; interimResults = false;
-  onresult = null; onerror = null;
+class Quiet extends LocalSpeech {
+  lang = "";
+  continuous = false;
+  interimResults = false;
+  onresult = null;
+  onerror = null;
   onend: (() => void) | null = null;
   start() {}
-  stop() { setTimeout(() => this.onend?.(), 0); }
+  stop() {
+    setTimeout(() => this.onend?.(), 0);
+  }
 }
 
 const PANEL = { label: "GMA 350c", outside: true, lost: false, why: null, instead: null, paused: false };
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.stubGlobal("SpeechRecognition", Quiet);
+  await speechAnswered();
   useAtcRadio.setState({ listening: false, mode: null, input: null, atisStop: null });
 });
 
@@ -33,6 +40,14 @@ afterEach(() => {
 });
 
 describe("Listen to ATIS", () => {
+  test("not offered where the browser has no recognizer (Firefox)", async () => {
+    vi.stubGlobal("SpeechRecognition", undefined);
+    vi.stubGlobal("webkitSpeechRecognition", undefined);
+    await speechAnswered();
+    render(<AtisRows />);
+    expect(screen.queryByTestId("place-atis-listen")).toBeNull();
+  });
+
   test("names the outside input it listens through, and says nothing was heard through it", async () => {
     render(<AtisRows />);
     const row = screen.getByTestId("place-atis-listen");
@@ -41,21 +56,28 @@ describe("Listen to ATIS", () => {
     act(() => useAtcRadio.setState({ input: PANEL }));
     expect(row.textContent).toContain("Tune the ATIS or AWOS; listening through GMA 350c");
     fireEvent.click(row);
-    await waitFor(() => expect(screen.getByTestId("place-atis-problem").textContent)
-      .toBe("Nothing was heard through GMA 350c. Tune the ATIS, check it is sending the radio (an audio panel's recording mode, or the cable) and tap again."));
+    await waitFor(() =>
+      expect(screen.getByTestId("place-atis-problem").textContent).toBe(
+        "Nothing was heard through GMA 350c. Tune the ATIS, check it is sending the radio (an audio panel's recording mode, or the cable) and tap again.",
+      ),
+    );
   });
 
-  test("in Safari, whose recognizer is not known to hear the input, it is named as chosen, the speaker still the sure way", async () => {
+  test("where the recognizer is not known to hear the input (named webkitSpeechRecognition alone), it is named as chosen, the speaker still the sure way", async () => {
     vi.stubGlobal("SpeechRecognition", undefined);
     vi.stubGlobal("webkitSpeechRecognition", Quiet);
+    await speechAnswered();
     render(<AtisRows />);
     const row = screen.getByTestId("place-atis-listen");
     fireEvent.click(row);
     act(() => useAtcRadio.setState({ input: PANEL }));
     expect(row.textContent).toContain("Tune the ATIS or AWOS; GMA 350c chosen, or hold the phone to the speaker");
     fireEvent.click(row);
-    await waitFor(() => expect(screen.getByTestId("place-atis-problem").textContent)
-      .toBe("Nothing was heard. Tune the ATIS, hold the phone to the speaker and tap again."));
+    await waitFor(() =>
+      expect(screen.getByTestId("place-atis-problem").textContent).toBe(
+        "Nothing was heard. Tune the ATIS, hold the phone to the speaker and tap again.",
+      ),
+    );
   });
 
   test("will not listen while the radio or the microphone listens, and says where to stop it, as a notice", async () => {
@@ -67,7 +89,9 @@ describe("Listen to ATIS", () => {
     expect(problem.className).toContain("text-caution-ink");
     act(() => useAtcRadio.setState({ mode: "once" }));
     fireEvent.click(screen.getByTestId("place-atis-listen"));
-    await waitFor(() => expect(screen.getByTestId("place-atis-problem").textContent).toBe("Already listening; tap the microphone to stop it first."));
+    await waitFor(() =>
+      expect(screen.getByTestId("place-atis-problem").textContent).toBe("Already listening; tap the microphone to stop it first."),
+    );
   });
 
   test("gives way to the radio or the microphone started meanwhile, and says so", async () => {
@@ -76,7 +100,9 @@ describe("Listen to ATIS", () => {
     const giveWay = useAtcRadio.getState().atisStop;
     expect(giveWay).toBeTypeOf("function");
     act(() => giveWay!());
-    await waitFor(() => expect(screen.getByTestId("place-atis-problem").textContent).toBe("Stopped for the microphone; tap to listen again."));
+    await waitFor(() =>
+      expect(screen.getByTestId("place-atis-problem").textContent).toBe("Stopped for the microphone; tap to listen again."),
+    );
     expect(useAtcRadio.getState().atisStop).toBeNull();
   });
 });

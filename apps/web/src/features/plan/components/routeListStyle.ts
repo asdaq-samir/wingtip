@@ -1,5 +1,5 @@
 import { cn } from "cn";
-import { GLASS_BUTTON, GLASS_PICKED } from "../../../components/mapChrome";
+import { GLASS_BUTTON, GLASS_PICKED } from "../../../lib/mapChrome";
 import { TEXT } from "../../../lib/text";
 
 // The classes and styles FPL's route list (ProceduresRoute) and its parts
@@ -21,7 +21,7 @@ export const POINT_CARD = cn(
   "has-[[data-dragging]]:opacity-40 has-[[data-over]]:ring-2 has-[[data-over]]:ring-tint",
 );
 /** The room between a card and the next, the course's line across it. */
-export const CARD_GAP = "mb-[1.375rem]";
+export const CARD_GAP = "mb-5.5";
 
 /** A card's runways and procedures, started 20 in, 5 clear of the line
  *  down the marks' column (CardThread), not under the ident's 38 as the
@@ -31,7 +31,9 @@ export const CARD_BODY = "pl-5";
 /** A chip of the procedures' choices (Chips): a glass capsule 32 high,
  *  its 44-point hit area a pseudo-element six round it. */
 export const CHIP = cn(
-  "relative h-8 min-w-11 justify-center rounded-full px-3 font-normal", GLASS_BUTTON, GLASS_PICKED,
+  "relative h-8 min-w-11 justify-center rounded-full px-3 font-normal",
+  GLASS_BUTTON,
+  GLASS_PICKED,
   "after:absolute after:-inset-1.5 after:content-['']",
   TEXT.detail,
 );

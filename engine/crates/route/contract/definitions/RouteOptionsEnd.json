@@ -1,0 +1,19 @@
+{
+  "title": "RouteOptionsEnd",
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "lat",
+    "lon"
+  ]
+}

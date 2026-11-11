@@ -1,0 +1,148 @@
+{
+  "title": "NavLogLeg",
+  "type": "object",
+  "properties": {
+    "from": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "to": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "true_course_deg": {
+      "type": "number"
+    },
+    "distance_nm": {
+      "type": "number"
+    },
+    "altitude_ft": {
+      "type": "number"
+    },
+    "wind": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/NavLogWind"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "wca_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "true_heading_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "magnetic_variation_deg": {
+      "type": "number"
+    },
+    "magnetic_heading_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "magnetic_course_deg": {
+      "type": "number"
+    },
+    "groundspeed_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ete_min": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "fuel_gal": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "tas_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "fuel_burn_gph": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "power_pct": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "oat_c": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "density_altitude_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "climb_min": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "toc": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/NavLogTop"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "tod": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/NavLogTop"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "start_at": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "A pilot's Start At at the fix the leg starts from (wingtip.own_altitude): a descent to the leg's lower altitude begins at that fix and runs on from it at three to one, rather than being done by it (navlog_with_descents)."
+    }
+  },
+  "required": [
+    "distance_nm",
+    "altitude_ft"
+  ],
+  "additionalProperties": true,
+  "description": "A nav log leg (PHAK ch. 16's dead reckoning); null time, ground speed and fuel is an unflyable leg. Members the log does not know (procedure, hold, airway) are carried through."
+}

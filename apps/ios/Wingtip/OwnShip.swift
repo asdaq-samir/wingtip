@@ -26,6 +26,9 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     private(set) var denied = false
     /// What the track runs into in the next minutes, from the planner.
     private(set) var ahead: [AheadAlert] = []
+    /// The ground under the airplane from the packs kept on the phone,
+    /// asked with what is ahead: the glide ring's ground (InFlight).
+    private(set) var groundFt: Double?
 
     private let manager = CLLocationManager()
     private var asking: Task<Void, Never>?
@@ -53,11 +56,22 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     }
 
     func start() {
-        manager.requestWhenInUseAuthorization()
+        // No question at launch (HIG Onboarding, docs/design/ios.md §14):
+        // the position is asked for the first time the pilot wants it, the
+        // position button, Nearest, the emergency assistant or Ready to
+        // Fly (askLocation). Until then the updates simply bring nothing.
         manager.startUpdatingLocation()
         if aheadEvery == nil {
             aheadEvery = Ticker.shared.every(Self.aheadEveryS) { [weak self] in self?.askAhead() }
         }
+    }
+
+    /// The system's question for the position, the first time the pilot
+    /// asks for something that needs it; iOS asks once and ignores the
+    /// rest.
+    func askLocation() {
+        guard manager.authorizationStatus == .notDetermined else { return }
+        manager.requestWhenInUseAuthorization()
     }
 
     func stop() {
@@ -74,8 +88,7 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
             altitudeFt: last.verticalAccuracy >= 0 ? last.altitude * 3.28084 : nil,
             trackDeg: last.course >= 0 ? last.course : nil,
             groundspeedKt: last.speed >= 0 ? last.speed * 1.943844 : nil,
-            accuracyM: last.horizontalAccuracy, at: last.timestamp
-        )
+            accuracyM: last.horizontalAccuracy, at: last.timestamp)
         Task { @MainActor in self.took(fix) }
     }
 
@@ -91,7 +104,11 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
         // The path flown, and the phone's position kept in the background
         // only while flying (the location background mode, project.yml):
         // on the ground the reading stops with the app, as any map's does.
-        let flying = OwnTrail.shared.took(fix)
+        // The flight recorder (the automatic logbook) keeps it in the
+        // background past the flying speed too, until the engine finds
+        // the airplane landed and at rest: 1.1's flight time ends there.
+        let recording = FlightRecorder.shared.took(fix)
+        let flying = OwnTrail.shared.took(fix) || recording
         if manager.allowsBackgroundLocationUpdates != flying { manager.allowsBackgroundLocationUpdates = flying }
     }
 
@@ -103,14 +120,20 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
     /// not answer. The asking is a task of its own, so the next question
     /// cancels one still unanswered.
     private func askAhead() {
-        guard let fix, let track = fix.trackDeg, let gs = fix.groundspeedKt, Flight.underway(gs) else { return }
+        // A refusal asks nothing ahead; the instruments bar says why
+        // (InFlight.problem, from the same fix).
+        guard let fix, let track = fix.trackDeg, let gs = fix.groundspeedKt, (try? Flight.underway(gs)) == true else { return }
         asking?.cancel()
         asking = Task { [weak self] in
             let (lat, lon) = (fix.coordinate.latitude, fix.coordinate.longitude)
             let alerts: [AheadAlert]
+            // The packs' answer is asked either way, for the ground under
+            // the airplane the glide ring stands on, network or none.
+            let offline = CyclePacks.shared.ahead(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt)
+            self?.groundFt = offline?.groundFt
             if let online = try? await Planner.ahead(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt) {
                 alerts = online
-            } else if let offline = CyclePacks.shared.ahead(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt) {
+            } else if let offline {
                 // No planner in the air: the same alerts from the packs kept
                 // for the route (CyclePacks.ahead).
                 alerts = offline.alerts

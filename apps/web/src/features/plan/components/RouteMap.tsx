@@ -1,7 +1,6 @@
 import { memo, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { hm } from "../../../lib/clock";
-import { threeFigures } from "../../../lib/navaid";
+import { feet, hm, threeFigures } from "../../../lib/format";
 import { Badge } from "../../../components/ui/badge";
 import { chartQuery, classBQuery } from "../../../lib/queryClient";
 import { pointName } from "../../../lib/identSchema";
@@ -10,18 +9,19 @@ import type { Candidate, Course, Leg, ProcedureDrawing } from "../../../lib/api/
 import type { BriefingState } from "../hooks/usePlan";
 import { proceduresOf, sameField } from "../../../lib/procedures";
 import type { TrafficPattern } from "../../../lib/trafficPattern";
-import { chipColourOf } from "../../../lib/map/flightCategory";
-import type { RouteWay } from "../../../lib/map/routeWays";
-import { checkpointColour } from "../../../lib/map/chartColors";
+import { chipColourOf } from "../../../lib/map/marks/flightCategory";
+import type { RouteWay } from "../../../lib/map/route/routeWays";
+import { checkpointColour } from "../../../lib/map/marks/chartColors";
 import { useInkLook } from "../../../lib/brand";
-import { MapCard } from "../../../lib/map/MapCard";
-import GlRouteMap, { type GlCandidate, type GlCheckpoint, type GlEndpoint } from "../../../lib/map/gl/GlRouteMap";
+import { MapCard } from "../../../lib/map/cards/MapCard";
+import GlRouteMap, { type GlCandidate, type GlCheckpoint, type GlEndpoint, type GlLeg } from "../map/GlRouteMap";
 import { usePreferences } from "../../../lib/preferences";
 import type { StopKind } from "../../../lib/stopKinds";
-import type { StopPin } from "../../../lib/map/stopPins";
-import { inkOn } from "../../../lib/scoreScale";
-import { feet } from "../../../lib/units";
-import { scoreColor } from "../format";
+import type { StopPin } from "../../../lib/map/marks/stopPins";
+import { inkOn, scoreColor } from "../../../lib/scoreScale";
+import type { NavLogRow, RouteLeg } from "./navlog/rows";
+import { useTerrainView } from "../map/terrain/useTerrainView";
+import { useRouteAloft } from "../hooks/useRouteAloft";
 
 const NO_PATTERNS: TrafficPattern[] = [];
 const NO_POINTS: { lat: number; lon: number }[] = [];
@@ -29,10 +29,11 @@ const NO_POINTS_AT: { ident: string; lat: number; lon: number }[] = [];
 const NO_STOP_FIELDS: StopFieldPin[] = [];
 const NO_PROCEDURES: ProcedureDrawing[] = [];
 const NO_CROSSINGS: Record<string, number> = {};
+const NO_LEGS: RouteLeg[] = [];
 
 /** A field of the map's Stops (StopsCard) pinned while the sheet is open:
  *  the kinds it has, in a row's order (lib/stopKinds). */
-export type StopFieldPin = { ident: string; lat: number; lon: number; kinds: StopKind[] };
+type StopFieldPin = { ident: string; lat: number; lon: number; kinds: StopKind[] };
 
 interface Props {
   course: Course | null;
@@ -69,7 +70,7 @@ interface Props {
    *  of it. */
   procedureCover?: { top: number; bottom: number };
   /** The airport whose card is open, and the way to open one from the
-   *  chart (AirportsLayer) -- or, with null, to put it away. */
+   *  chart (AirportsGl) -- or, with null, to put it away. */
   place: { ident: string; lat: number; lon: number } | null;
   /** The route's departure while it is all there is (no destination yet):
    *  the map brought to it (FitTo), at the owner's screenshot. */
@@ -91,13 +92,21 @@ interface Props {
    *  tap one's row picked in the sheet (StopsCard). */
   stopFields?: StopFieldPin[];
   onPickStopField?: (ident: string) => void;
-  /** The ways FPL's Routes offer beside the route (RouteWaysLayer), a tap one's pick. */
+  /** The ways FPL's Routes offer beside the route (WaysGl), a tap one's pick. */
   ways?: RouteWay[];
   /** The one of them shown (FPL's Routes' card picked), drawn the stronger. */
   wayShown?: string | null;
   onPickWay?: (key: string) => void;
+  /** The route's legs, row to row of the nav log (routeLegs), a tap on
+   *  the course opening the nearest one's sheet (RouteLegCard). */
+  routeLegs?: RouteLeg[];
+  onSelectLeg?: (key: string) => void;
+  /** The leg whose Route Leg sheet is open (the only one cased in green). */
+  selectedLeg?: string | null;
+  /** The nav log's rows, for the route drawn at its altitudes in 3D
+   *  (useRouteAloft). */
+  routeRows?: NavLogRow[];
 }
-
 
 /** What a checkpoint's popup says: the same small card whether the
  *  point was chosen for the route (numbered, in flight order) or is one
@@ -131,7 +140,7 @@ function CheckpointCard({ candidate, number, leg }: { candidate: Candidate; numb
     <MapCard
       // Its dot as the map draws it, numbered in flight order where it is
       // one of the route's, before its name.
-      media={(
+      media={
         <span
           // The number is the checkpoint's place in the flight, which the
           // title no longer carries, so a screen reader hears it here; an
@@ -139,12 +148,12 @@ function CheckpointCard({ candidate, number, leg }: { candidate: Candidate; numb
           role={number === undefined ? undefined : "img"}
           aria-label={number === undefined ? undefined : `Checkpoint ${number}`}
           aria-hidden={number === undefined ? true : undefined}
-          className="grid size-7 shrink-0 place-items-center rounded-full border-[2.5px] border-background text-[0.6875rem] leading-[0.8125rem] font-bold shadow-[0_1px_3px_rgba(0,0,0,.35)] outline outline-1 outline-[rgba(10,20,28,.45)]"
+          className="grid size-7 shrink-0 place-items-center rounded-full border-[2.5px] border-background text-(length:--type-caption) leading-[0.8125rem] font-bold shadow-(--depth-mark) outline outline-1 outline-(color:--chart-shade)/45"
           style={{ backgroundColor: fill, color: inkOn(fill) }}
         >
           {number ?? ""}
         </span>
-      )}
+      }
       // The number on its dot, not again before its name.
       title={candidate.name || "(unnamed)"}
       subtitle={`${candidate.along_track_nm.toFixed(1)} nm along`}
@@ -172,13 +181,15 @@ function CheckpointCard({ candidate, number, leg }: { candidate: Candidate; numb
           {leg.out && (
             <>
               <dt className="text-muted-foreground">On from it</dt>
-              <dd>{`${threeFigures(leg.out.magnetic_heading_deg)}° · ${feet(leg.out.altitude_ft)}${leg.out.groundspeed_kt != null ? ` · ${Math.round(leg.out.groundspeed_kt)} kt` : ""}`}</dd>
+              <dd>{`${leg.out.magnetic_heading_deg != null ? `${threeFigures(leg.out.magnetic_heading_deg)}° · ` : ""}${feet(leg.out.altitude_ft)}${leg.out.groundspeed_kt != null ? ` · ${Math.round(leg.out.groundspeed_kt)} kt` : ""}`}</dd>
             </>
           )}
           {leg.into && (
             <>
               <dt className="text-muted-foreground">Leg to it</dt>
-              <dd>{[`${leg.into.distance_nm.toFixed(1)} nm`, leg.into.ete_min != null && hm(leg.into.ete_min)].filter(Boolean).join(" · ")}</dd>
+              <dd>
+                {[`${leg.into.distance_nm.toFixed(1)} nm`, leg.into.ete_min != null && hm(leg.into.ete_min)].filter(Boolean).join(" · ")}
+              </dd>
             </>
           )}
           <dt className="text-muted-foreground">Reached</dt>
@@ -196,9 +207,14 @@ function CheckpointCard({ candidate, number, leg }: { candidate: Candidate; numb
 function weatherOf(ident: string, briefing: BriefingState): { status: string; category: string | null } {
   const ready = briefing.state === "ready" ? briefing : null;
   const metar = ready?.data.metars[ident];
-  const status = briefing.state === "failed" || ready?.data.weather_unavailable.includes("metars") ? "unavailable"
-    : !ready ? "checking"
-      : metar ? "reported" : "no-report";
+  const status =
+    briefing.state === "failed" || ready?.data.weather_unavailable.includes("metars")
+      ? "unavailable"
+      : !ready
+        ? "checking"
+        : metar
+          ? "reported"
+          : "no-report";
   return { status, category: metar?.flight_category ?? null };
 }
 
@@ -207,9 +223,8 @@ function weatherOf(ident: string, briefing: BriefingState): { status: string; ca
  *  trip's departure is its destination, one chip on the map. */
 function routeAirports(course: Course, each = false) {
   const all = [course.departure, ...(course.stops ?? []), course.destination];
-  return each ? all : all.filter((a, i) => all.findIndex(b => b.ident === a.ident) === i);
+  return each ? all : all.filter((a, i) => all.findIndex((b) => b.ident === a.ident) === i);
 }
-
 
 /** A checkpoint's name as its label shows it, in sentence case (the
  *  design review, 2026-10-28): the chart's name for the place as the
@@ -230,9 +245,11 @@ const labelOf = (c: Pick<Candidate, "waypoint" | "name" | "category">) => {
   const waypoint = (c.waypoint ?? "").replaceAll("_", " ").trim();
   const words = (t: string) => t.split(/\s+/).filter(Boolean).length;
   if (c.name && /[a-z]/.test(c.name) && words(c.name) >= words(waypoint)) return c.name.trim();
-  return (waypoint || c.name || "").split(/\s+/).map(w => (/\d/.test(w) ? w : placeWords(w))).join(" ");
+  return (waypoint || c.name || "")
+    .split(/\s+/)
+    .map((w) => (/\d/.test(w) ? w : placeWords(w)))
+    .join(" ");
 };
-
 
 /**
  * The planned route on the chart, on MapLibre's one WebGL map
@@ -245,99 +262,199 @@ const labelOf = (c: Pick<Candidate, "waypoint" | "name" | "category">) => {
 // Drawn again only when its own props change (memo): the workspace
 // renders at each answer that streams in, and the whole map went with it.
 export default memo(function RouteMap({
-  course, candidates, selected, focus, onSelectCandidate, onSelectPoint,
-  airportWeather, place, start = null, onSelectPlace, legs, heldPoint, onHoldPoint, nearest = null, patterns = NO_PATTERNS, patternFocus = null,
-  procedures = NO_PROCEDURES, procedureFocus = null, procedureCover, crossings = NO_CROSSINGS, directs = "", onProcedureFix, fuelStops = NO_POINTS_AT,
-  stopFields = NO_STOP_FIELDS, onPickStopField, ways, wayShown = null, onPickWay,
+  course,
+  candidates,
+  selected,
+  focus,
+  onSelectCandidate,
+  onSelectPoint,
+  airportWeather,
+  place,
+  start = null,
+  onSelectPlace,
+  legs,
+  heldPoint,
+  onHoldPoint,
+  nearest = null,
+  patterns = NO_PATTERNS,
+  patternFocus = null,
+  procedures = NO_PROCEDURES,
+  procedureFocus = null,
+  procedureCover,
+  crossings = NO_CROSSINGS,
+  directs = "",
+  onProcedureFix,
+  fuelStops = NO_POINTS_AT,
+  stopFields = NO_STOP_FIELDS,
+  onPickStopField,
+  ways,
+  wayShown = null,
+  onPickWay,
+  routeLegs = NO_LEGS,
+  onSelectLeg,
+  selectedLeg,
+  routeRows,
 }: Props) {
   const focusZoom = course?.max_zoom ?? 12;
   // The pattern just picked, its corners and its entry, to bring in.
   const focusedPattern = useMemo(() => {
     const [ident, end] = (patternFocus ?? "").split(":");
-    const p = patterns.find(q => q.ident === ident && q.runway === end);
-    return p ? [...p.legs.flatMap(l => [l.from, l.to]), p.entry.from, p.entry.to] : NO_POINTS;
+    const p = patterns.find((q) => q.ident === ident && q.runway === end);
+    return p ? [...p.legs.flatMap((l) => [l.from, l.to]), p.entry.from, p.entry.to] : NO_POINTS;
   }, [patterns, patternFocus]);
   // The procedure just picked, every line and hold of it, to bring in.
   const focusedProcedure = useMemo(() => {
     const picked = proceduresOf((procedureFocus ?? "").split("@")[0] ?? null)[0];
-    const d = picked && procedures.find(q => sameField(q.airport, picked.ident) && q.id === picked.id && q.transition === picked.transition);
-    return d ? [...d.lines, ...d.holds].flatMap(l => l.points.map(([lat, lon]) => ({ lat, lon }))) : NO_POINTS;
+    const d =
+      picked && procedures.find((q) => sameField(q.airport, picked.ident) && q.id === picked.id && q.transition === picked.transition);
+    return d ? [...d.lines, ...d.holds].flatMap((l) => l.points.map(([lat, lon]) => ({ lat, lon }))) : NO_POINTS;
   }, [procedures, procedureFocus]);
   // The route's airports, one array while the course is the same answer.
   const airports = useMemo(() => (course ? routeAirports(course) : []), [course]);
   // The fields that wear a chip of their own already: the route's own,
   // and the Class B ones while they are on (ClassBGl).
-  const showClassB = usePreferences(s => s.classB);
+  const showClassB = usePreferences((s) => s.classB);
   const { data: classBAirports } = useQuery({ ...classBQuery, enabled: false });
-  const chippedFields = useMemo(() => [
-    ...airports.filter(a => a.kind === "airport"),
-    ...(showClassB ? classBAirports ?? [] : []),
-  ], [airports, showClassB, classBAirports]);
+  const chippedFields = useMemo(
+    () => [...airports.filter((a) => a.kind === "airport"), ...(showClassB ? (classBAirports ?? []) : [])],
+    [airports, showClassB, classBAirports],
+  );
   // And the route's waypoints, which the VFR waypoints' layer leaves to it.
-  const chipped = useMemo(() => new Set([...airports, ...chippedFields].map(a => a.ident)), [airports, chippedFields]);
+  const chipped = useMemo(() => new Set([...airports, ...chippedFields].map((a) => a.ident)), [airports, chippedFields]);
 
   // The route's box, half a degree round it, on the half-degree grid the
   // layer asks in: one question for its reporting fields however the
   // course is answered again.
   const routeBox = useMemo(() => {
     if (!course) return null;
-    const lats = course.course_line.map(p => p[0]), lons = course.course_line.map(p => p[1]);
+    const lats = course.course_line.map((p) => p[0]),
+      lons = course.course_line.map((p) => p[1]);
     const out = (v: number, up: boolean) => (up ? Math.ceil(v * 2) : Math.floor(v * 2)) / 2;
     return {
-      south: out(Math.min(...lats) - 0.5, false), north: out(Math.max(...lats) + 0.5, true),
-      west: out(Math.min(...lons) - 0.5, false), east: out(Math.max(...lons) + 0.5, true),
+      south: out(Math.min(...lats) - 0.5, false),
+      north: out(Math.max(...lats) + 0.5, true),
+      west: out(Math.min(...lons) - 0.5, false),
+      east: out(Math.max(...lons) + 0.5, true),
     };
   }, [course]);
 
   // The course and the plan's first cruise, for a weather area's card.
   const courseLine = (course?.course_line as [number, number][] | undefined) ?? null;
   const cruiseFt = legs[0]?.altitude_ft ?? null;
+  // The route at its altitudes, in 3D only.
+  const aloft = useRouteAloft(useTerrainView().mode, routeRows, courseLine);
 
   // The chosen checkpoints and the candidates they were chosen from, at
   // every zoom, or neither: the settings' VFR Checkpoints. Their dots in
   // their scores' colours, or the Chart ink look's brown
   // (checkpointColour), each with the card a tap opens.
-  const showCheckpoints = usePreferences(s => s.waypoints);
+  const showCheckpoints = usePreferences((s) => s.waypoints);
   const ink = useInkLook();
   const legFacts = useMemo(() => legFactsOf(selected, legs), [selected, legs]);
-  const glCheckpoints = useMemo<GlCheckpoint[]>(() => (!showCheckpoints ? [] : selected.map((c, i) => {
-    const key = `${c.lat},${c.lon}`;
-    return {
-      key, lat: c.lat, lon: c.lon, number: i + 1, name: labelOf(c), colour: checkpointColour(scoreColor(c.predicted_score), ink),
-      card: <CheckpointCard candidate={c} number={i + 1} leg={legFacts.get(key)} />,
-      select: () => onSelectCandidate(c),
-    };
-  })), [showCheckpoints, selected, ink, legFacts, onSelectCandidate]);
-  const glCandidates = useMemo<GlCandidate[]>(() => (!showCheckpoints ? [] : candidates.filter(c => !c.selected).map(c => ({
-    key: `${c.lat},${c.lon}`, lat: c.lat, lon: c.lon, colour: scoreColor(c.predicted_score), card: <CheckpointCard candidate={c} />,
-  }))), [showCheckpoints, candidates]);
+  const glCheckpoints = useMemo<GlCheckpoint[]>(
+    () =>
+      !showCheckpoints
+        ? []
+        : selected.map((c, i) => {
+            const key = `${c.lat},${c.lon}`;
+            return {
+              key,
+              lat: c.lat,
+              lon: c.lon,
+              number: i + 1,
+              name: labelOf(c),
+              colour: checkpointColour(scoreColor(c.predicted_score), ink),
+              card: <CheckpointCard candidate={c} number={i + 1} leg={legFacts.get(key)} />,
+              select: () => onSelectCandidate(c),
+            };
+          }),
+    [showCheckpoints, selected, ink, legFacts, onSelectCandidate],
+  );
+  const glCandidates = useMemo<GlCandidate[]>(
+    () =>
+      !showCheckpoints
+        ? []
+        : candidates
+            .filter((c) => !c.selected)
+            .map((c) => ({
+              key: `${c.lat},${c.lon}`,
+              lat: c.lat,
+              lon: c.lon,
+              colour: scoreColor(c.predicted_score),
+              card: <CheckpointCard candidate={c} />,
+            })),
+    [showCheckpoints, candidates],
+  );
   // The route's departure, stops and destination, drawn at every zoom: an
   // airport's mark in its class of airspace's look, its dot the field's
   // own current METAR's colour, a tap its card; a waypoint flown through
   // the chart's magenta pill, a tap brings the map to it.
-  const glEndpoints = useMemo<GlEndpoint[]>(() => (!course ? [] : routeAirports(course).map(a => ({
-    ident: a.kind === "fix" ? pointName(a.ident) : a.ident, lat: a.lat, lon: a.lon, fix: a.kind === "fix",
-    space: a.airspace_class ?? (showClassB && classBAirports?.some(b => b.ident === a.ident) ? "B" : null),
-    colour: chipColourOf(weatherOf(a.ident, airportWeather)),
-    select: () => (a.kind === "fix" ? onSelectPoint(a.lat, a.lon) : onSelectPlace(a.ident)),
-  }))), [course, airportWeather, onSelectPoint, onSelectPlace, showClassB, classBAirports]);
+  const glEndpoints = useMemo<GlEndpoint[]>(
+    () =>
+      !course
+        ? []
+        : routeAirports(course).map((a) => ({
+            ident: a.kind === "fix" ? pointName(a.ident) : a.ident,
+            lat: a.lat,
+            lon: a.lon,
+            fix: a.kind === "fix",
+            space: a.airspace_class ?? (showClassB && classBAirports?.some((b) => b.ident === a.ident) ? "B" : null),
+            colour: chipColourOf(weatherOf(a.ident, airportWeather)),
+            select: () => (a.kind === "fix" ? onSelectPoint(a.lat, a.lon) : onSelectPlace(a.ident)),
+          })),
+    [course, airportWeather, onSelectPoint, onSelectPlace, showClassB, classBAirports],
+  );
+  // The legs' ends, for the tap on the course to find the nearest leg.
+  const glLegs = useMemo<GlLeg[]>(() => routeLegs.map((l) => ({ key: l.key, from: l.from, to: l.to })), [routeLegs]);
   // The chart alone while there is no route, for the Class B chips' sheets.
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
 
   return (
     <GlRouteMap
-      course={course} chart={course ?? chartOnly ?? null} checkpoints={glCheckpoints} candidates={glCandidates} endpoints={glEndpoints}
-      focus={focus} focusZoom={focusZoom} place={place} onSelectPlace={onSelectPlace} onSelectPoint={onSelectPoint}
-      chipped={chippedFields} routeBox={routeBox} chippedIdents={chipped} courseLine={courseLine} cruiseFt={cruiseFt}
-      legs={legs} start={start} nearest={nearest} heldPoint={heldPoint} onHoldPoint={onHoldPoint}
-      patterns={patterns} focusedPattern={focusedPattern} patternFocus={patternFocus}
-      procedures={procedures} focusedProcedure={focusedProcedure} procedureFocus={procedureFocus} procedureCover={procedureCover}
-      crossings={crossings} directs={directs} onProcedureFix={onProcedureFix}
-      fuelStops={fuelStops} stopFields={stopFields} onPickStopField={onPickStopField}
-      ways={ways} wayShown={wayShown} onPickWay={onPickWay}
+      course={course}
+      chart={course ?? chartOnly ?? null}
+      checkpoints={glCheckpoints}
+      candidates={glCandidates}
+      endpoints={glEndpoints}
+      focus={focus}
+      focusZoom={focusZoom}
+      place={place}
+      onSelectPlace={onSelectPlace}
+      onSelectPoint={onSelectPoint}
+      chipped={chippedFields}
+      routeBox={routeBox}
+      briefing={airportWeather}
+      chippedIdents={chipped}
+      courseLine={courseLine}
+      cruiseFt={cruiseFt}
+      legs={legs}
+      start={start}
+      nearest={nearest}
+      heldPoint={heldPoint}
+      onHoldPoint={onHoldPoint}
+      patterns={patterns}
+      focusedPattern={focusedPattern}
+      patternFocus={patternFocus}
+      procedures={procedures}
+      focusedProcedure={focusedProcedure}
+      procedureFocus={procedureFocus}
+      procedureCover={procedureCover}
+      crossings={crossings}
+      directs={directs}
+      onProcedureFix={onProcedureFix}
+      fuelStops={fuelStops}
+      stopFields={stopFields}
+      onPickStopField={onPickStopField}
+      ways={ways}
+      wayShown={wayShown}
+      onPickWay={onPickWay}
+      routeLegs={glLegs}
+      onSelectLeg={onSelectLeg}
+      selectedLeg={selectedLeg}
+      aloft={aloft}
     />
   );
 });
 
 // The map drawn before the engine is there (MapPage), on this chunk too.
-export { GlBootMap as BootMap } from "../../../lib/map/gl/GlRouteMap";
+export { GlBootMap as BootMap } from "../map/GlRouteMap";

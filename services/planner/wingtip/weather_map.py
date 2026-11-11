@@ -6,26 +6,20 @@ in sight. From the same aviationweather.gov products the briefing reads
 (wingtip.weather's held copies), so the map and the Brief never disagree.
 The radar and the satellite picture are tiles the browser draws itself
 (the Iowa Environmental Mesonet's NEXRAD and GOES mosaics); `radar_valid`
-says when the radar was made.
+says when the radar was made, as the weather service last read it
+(services/weather/app/radar.py).
 """
+
 from __future__ import annotations
 
 import math
-import time
 
-import requests
-
-from . import weather
+from . import weather, weather_store
 
 #: A SIGMET is a flight's for as long as it is valid; a G-AIRMET is a
 #: snapshot valid at its time, three hours apart (wingtip.weather): the one
 #: nearest the time asked for is drawn, within this.
 GAIRMET_NEAREST_S = 90 * 60
-
-#: The radar mosaic's own record of when it was made (IEM's n0q JSON).
-RADAR_META_URL = "https://mesonet.agron.iastate.edu/data/gis/images/4326/USCOMP/n0q_0.json"
-_RADAR_TTL_S = 120
-_radar: dict = {"at": 0.0, "valid": None}
 
 
 def _in_box(coords: list, box: tuple) -> bool:
@@ -52,13 +46,23 @@ def advisories_in(box: tuple, at: float) -> list[dict]:
         if (a["valid_from"] is not None and a["valid_from"] > at) or (a["valid_to"] is not None and a["valid_to"] <= at):
             continue
         kind = (a["type"] or "SIGMET").upper()
-        out.append({
-            "id": f"sigmet-{i}", "kind": "convective" if "CONVECTIVE" in (a["hazard"] or "") or "CONVECTIVE" in kind else (
-                "airmet" if "AIRMET" in kind else "sigmet"),
-            "hazard": a["hazard"], "severity": None, "low_ft": a["altitude_low_ft"], "high_ft": a["altitude_high_ft"],
-            "from_freezing_level": False, "valid_from": a["valid_from"], "valid_to": a["valid_to"], "raw": a["raw"],
-            "coords": [list(c) for c in a["coords"]],
-        })
+        out.append(
+            {
+                "id": f"sigmet-{i}",
+                "kind": "convective"
+                if "CONVECTIVE" in (a["hazard"] or "") or "CONVECTIVE" in kind
+                else ("airmet" if "AIRMET" in kind else "sigmet"),
+                "hazard": a["hazard"],
+                "severity": None,
+                "low_ft": a["altitude_low_ft"],
+                "high_ft": a["altitude_high_ft"],
+                "from_freezing_level": False,
+                "valid_from": a["valid_from"],
+                "valid_to": a["valid_to"],
+                "raw": a["raw"],
+                "coords": [list(c) for c in a["coords"]],
+            }
+        )
     try:
         gairmets = weather._dataset("gairmets")
     except weather.WeatherServiceError:
@@ -72,32 +76,33 @@ def advisories_in(box: tuple, at: float) -> list[dict]:
             continue
         if len(a["coords"]) < 3 or not _in_box(a["coords"], box):
             continue
-        out.append({
-            "id": f"gairmet-{i}", "kind": "gairmet", "hazard": a["hazard"], "severity": a["severity"],
-            "low_ft": a["altitude_low_ft"], "high_ft": a["altitude_high_ft"], "from_freezing_level": a["from_freezing_level"],
-            "valid_from": a["valid"], "valid_to": None, "raw": a["due_to"], "coords": [list(c) for c in a["coords"]],
-        })
+        out.append(
+            {
+                "id": f"gairmet-{i}",
+                "kind": "gairmet",
+                "hazard": a["hazard"],
+                "severity": a["severity"],
+                "low_ft": a["altitude_low_ft"],
+                "high_ft": a["altitude_high_ft"],
+                "from_freezing_level": a["from_freezing_level"],
+                "valid_from": a["valid"],
+                "valid_to": None,
+                "raw": a["due_to"],
+                "coords": [list(c) for c in a["coords"]],
+            }
+        )
     return out
 
 
 def pireps_in(box: tuple, now: float | None = None) -> list[dict]:
-    """The pilot reports of the last PIREP_MAX_AGE_S made in `box`, at or
-    under PIREP_MAX_ALT_FT -- a light airplane's sky (wingtip.weather) --
-    urgent ones last, so they are drawn on top."""
-    now = time.time() if now is None else now
-    south, west, north, east = box
+    """The pilot reports still told made in `box` -- the last 90 minutes,
+    at or under 18,000 ft, a light airplane's sky, the engine's
+    (wingtip.weather.pireps_in_box) -- urgent ones last, so they are drawn
+    on top."""
     try:
-        reports = weather._dataset("pireps")
+        return weather.pireps_in_box(box, now)
     except weather.WeatherServiceError:
         return []
-    found = [
-        {k: v for k, v in r.items() if k != "observed"}
-        for r in reports
-        if r["observed"] is not None and now - r["observed"] <= weather.PIREP_MAX_AGE_S
-        and (r["altitude_ft"] is None or r["altitude_ft"] <= weather.PIREP_MAX_ALT_FT)
-        and south <= r["lat"] <= north and west <= r["lon"] <= east
-    ]
-    return sorted(found, key=lambda r: r["urgent"])
 
 
 def winds_in(box: tuple, altitude_ft: float, fcst_hr: str) -> dict | None:
@@ -122,25 +127,22 @@ def winds_in(box: tuple, altitude_ft: float, fcst_hr: str) -> dict | None:
         if wind is None:
             continue
         temp = weather.temperature_at(weather.temperatures_aloft(lat, lon, fcst_hr), altitude_ft)
-        out.append({
-            "ident": str(code), "lat": round(lat, 4), "lon": round(lon, 4),
-            "dir_true_deg": round(wind["wind_dir_true_deg"]), "speed_kt": round(wind["wind_speed_kt"]),
-            "temp_c": None if temp is None else round(temp),
-        })
+        out.append(
+            {
+                "ident": str(code),
+                "lat": round(lat, 4),
+                "lon": round(lon, 4),
+                "dir_true_deg": round(wind["wind_dir_true_deg"]),
+                "speed_kt": round(wind["wind_speed_kt"]),
+                "temp_c": None if temp is None else round(temp),
+            }
+        )
     return {"altitude_ft": altitude_ft, "period": getattr(stations, "period", None), "stations": out}
 
 
 def radar_valid() -> str | None:
-    """When the radar mosaic the map draws was made, ISO UTC, held two
-    minutes; None where IEM does not answer (the tiles may still draw)."""
-    now = time.time()
-    if now - _radar["at"] < _RADAR_TTL_S:
-        return _radar["valid"]
-    try:
-        resp = requests.get(RADAR_META_URL, timeout=5)
-        resp.raise_for_status()
-        valid = resp.json().get("meta", {}).get("valid")
-    except (requests.RequestException, ValueError):
-        valid = _radar["valid"]
-    _radar.update(at=now, valid=valid)
-    return valid
+    """When the radar mosaic the map draws was made, ISO UTC, as the
+    weather service last read it from IEM's own record of it (every two
+    minutes); None where it has none (the tiles may still draw)."""
+    record = weather_store.read("radar")
+    return (record.data or {}).get("valid") if record else None

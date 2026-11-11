@@ -1,0 +1,60 @@
+{
+  "description": "A field to land at for fuel: its miles from the flight's departure and those it adds to the straight line, the fuel left on landing and the minutes flown to it.",
+  "title": "FuelStop",
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "runway_ft": {
+      "type": "integer"
+    },
+    "elevation_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "fuel_types": {
+      "type": "string"
+    },
+    "from_nm": {
+      "type": "number"
+    },
+    "added_nm": {
+      "type": "number"
+    },
+    "lands_with_gal": {
+      "type": "number"
+    },
+    "minutes": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "ident",
+    "name",
+    "city",
+    "lat",
+    "lon",
+    "runway_ft",
+    "elevation_ft",
+    "fuel_types",
+    "from_nm",
+    "added_nm",
+    "lands_with_gal",
+    "minutes"
+  ]
+}

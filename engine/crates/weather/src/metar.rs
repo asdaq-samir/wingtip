@@ -8,8 +8,6 @@
 //! holds the decoder to the AWC's own decoding of every report in its
 //! current cache and lists where they differ.
 
-use crate::json;
-
 /// A wind group: "27015G25KT", "VRB03KT", "00000KT", "27015MPS".
 #[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub struct Wind {
@@ -62,10 +60,9 @@ pub(crate) fn wind(group: &str) -> Option<Wind> {
     }
     let (body, factor) = if let Some(b) = group.strip_suffix("KT") {
         (b, 1.0)
-    } else if let Some(b) = group.strip_suffix("MPS") {
-        (b, KT_PER_MPS)
     } else {
-        return None;
+        let b = group.strip_suffix("MPS")?;
+        (b, KT_PER_MPS)
     };
     if body.len() < 5 {
         return None;
@@ -138,16 +135,15 @@ fn layer(group: &str) -> Option<Option<Layer>> {
 }
 
 const DESCRIPTORS: [&str; 8] = ["MI", "PR", "BC", "DR", "BL", "SH", "TS", "FZ"];
-const PHENOMENA: [&str; 22] = [
-    "DZ", "RA", "SN", "SG", "IC", "PL", "GR", "GS", "UP", "BR", "FG", "FU", "VA", "DU", "SA", "HZ", "PY", "PO", "SQ", "FC", "SS", "DS",
-];
+const PHENOMENA: [&str; 22] =
+    ["DZ", "RA", "SN", "SG", "IC", "PL", "GR", "GS", "UP", "BR", "FG", "FU", "VA", "DU", "SA", "HZ", "PY", "PO", "SQ", "FC", "SS", "DS"];
 
 /// A present-weather group (FMH-1 ch. 12, present weather): an intensity or VC, then
 /// descriptors and phenomena two letters at a time.
 pub(crate) fn is_weather(group: &str) -> bool {
     let g = group.strip_prefix(['+', '-']).unwrap_or(group);
     let g = g.strip_prefix("VC").unwrap_or(g);
-    if g.is_empty() || g.len() % 2 != 0 || !g.is_ascii() {
+    if g.is_empty() || !g.len().is_multiple_of(2) || !g.is_ascii() {
         return false;
     }
     let pairs: Vec<&str> = (0..g.len()).step_by(2).map(|i| &g[i..i + 2]).collect();
@@ -187,22 +183,24 @@ fn tenths(group: &str) -> Option<(f64, Option<f64>)> {
     }
     let read = |s: &str| {
         let v = s[1..].parse::<f64>().unwrap() / 10.0;
-        if &s[..1] == "1" { -v } else { v }
+        if &s[..1] == "1" {
+            -v
+        } else {
+            v
+        }
     };
     Some((read(&g[..4]), (g.len() == 8).then(|| read(&g[4..]))))
 }
 
-/// The flight category as the AWC sets it from the ceiling and the
-/// visibility (AC 00-45H's flight categories): LIFR under 500 ft or
-/// under a mile; IFR under 1,000 or under 3; MVFR up to 3,000 or up to
-/// 5; else VFR. None where neither is reported.
-pub fn flight_category(ceiling_ft: Option<f64>, visibility_sm: Option<f64>) -> Option<&'static str> {
-    if ceiling_ft.is_none() && visibility_sm.is_none() {
-        return None;
-    }
+/// The bounds of the flight categories with the visibility known (AIM
+/// 7-1-7, "Categorical Outlooks", and AC 00-45H's flight categories; the
+/// worse of the two decides): LIFR a ceiling under 500 ft or under a mile;
+/// IFR under 1,000 or under 3; MVFR 1,000 to 3,000 ft or 3 to 5 miles
+/// inclusive; else VFR. No ceiling (None) is no limit.
+fn category_bounds(ceiling_ft: Option<f64>, visibility_sm: f64) -> &'static str {
     let c = ceiling_ft.unwrap_or(f64::INFINITY);
-    let v = visibility_sm.unwrap_or(f64::INFINITY);
-    Some(if c < 500.0 || v < 1.0 {
+    let v = visibility_sm;
+    if c < 500.0 || v < 1.0 {
         "LIFR"
     } else if c < 1000.0 || v < 3.0 {
         "IFR"
@@ -210,7 +208,7 @@ pub fn flight_category(ceiling_ft: Option<f64>, visibility_sm: Option<f64>) -> O
         "MVFR"
     } else {
         "VFR"
-    })
+    }
 }
 
 /// The ceiling of a report's sky, ft above the ground, and whether it is
@@ -232,15 +230,15 @@ pub fn flight_category(ceiling_ft: Option<f64>, visibility_sm: Option<f64>) -> O
 /// a measured ceiling leaves it known. A vertical visibility given apart
 /// is the obscuration from the surface, under every layer, so it settles
 /// the ceiling.
-pub fn sky_ceiling_of<'a>(layers: impl IntoIterator<Item = (&'a str, Option<f64>)>, vertical_visibility_ft: Option<f64>) -> (Option<f64>, bool) {
+pub fn sky_ceiling_of<'a>(
+    layers: impl IntoIterator<Item = (&'a str, Option<f64>)>, vertical_visibility_ft: Option<f64>,
+) -> (Option<f64>, bool) {
     let mut ceilings = layers.into_iter().filter(|(cover, _)| matches!(*cover, "BKN" | "OVC" | "OVX" | "VV")).peekable();
     if vertical_visibility_ft.is_none() && ceilings.peek().is_some_and(|(_, base)| base.is_none()) {
         return (None, true);
     }
-    let lowest = ceilings
-        .filter_map(|(_, base)| base)
-        .chain(vertical_visibility_ft)
-        .fold(None, |m: Option<f64>, b| Some(m.map_or(b, |m| m.min(b))));
+    let lowest =
+        ceilings.filter_map(|(_, base)| base).chain(vertical_visibility_ft).fold(None, |m: Option<f64>, b| Some(m.map_or(b, |m| m.min(b))));
     (lowest, false)
 }
 
@@ -255,16 +253,26 @@ pub fn sky_ceiling(layers: &[Layer]) -> (Option<f64>, bool) {
     sky_ceiling_of(layers.iter().map(|l| (l.cover.as_str(), l.base_ft_agl)), None)
 }
 
-/// The flight category where the ceiling may not be known: with a
-/// ceiling of no height reported it could be at any height, so only a
-/// visibility under a mile -- LIFR whatever the ceiling -- says it;
-/// anything better is a guess, and VFR from it would call a sky that may
-/// be on the ground good (the audit, 2026-11-06). None then.
+/// The flight category from a ceiling and a visibility, the one rule for
+/// every report, forecast hour and route option (AIM 7-1-7's bounds,
+/// category_bounds), where either may not be known:
+/// - a ceiling of no height reported ("OVC///", `ceiling_unknown`) could
+///   be at any height, so only a visibility under a mile -- LIFR whatever
+///   the ceiling -- says it (the audit, 2026-11-06);
+/// - with no visibility only a ceiling under 500 ft settles it, LIFR
+///   whatever the visibility is; over that the visibility could still make
+///   it worse (the audit, 2026-11-08: the METAR reader once took a missing
+///   visibility as unlimited and called a 5,000 ft ceiling VFR, while the
+///   forecast said none);
+/// - `ceiling_ft` None with the ceiling known is no ceiling, no limit.
+///
+/// None where it is not settled: a category said then would be a guess.
 pub fn flight_category_of(ceiling_ft: Option<f64>, ceiling_unknown: bool, visibility_sm: Option<f64>) -> Option<&'static str> {
-    if ceiling_unknown {
-        return visibility_sm.is_some_and(|v| v < 1.0).then_some("LIFR");
+    match (ceiling_unknown, visibility_sm) {
+        (true, v) => v.is_some_and(|v| v < 1.0).then_some("LIFR"),
+        (false, None) => ceiling_ft.is_some_and(|c| c < 500.0).then_some("LIFR"),
+        (false, Some(v)) => Some(category_bounds(ceiling_ft, v)),
     }
-    flight_category(ceiling_ft, visibility_sm)
 }
 
 /// A visibility in metres (WMO No. 306) in statute miles, as US reports
@@ -363,7 +371,9 @@ pub fn parse(raw: &str) -> Option<Metar> {
             _ if m.wind.is_none() && m.visibility_sm.is_none() && wind(w).is_some() => m.wind = wind(w),
             // A variable direction "250V310" says nothing the figures carry.
             _ if w.len() == 7 && w.as_bytes()[3] == b'V' && w.bytes().filter(u8::is_ascii_digit).count() == 6 => {}
-            _ if m.visibility_sm.is_none() && w.len() == 1 && w.as_bytes()[0].is_ascii_digit()
+            _ if m.visibility_sm.is_none()
+                && w.len() == 1
+                && w.as_bytes()[0].is_ascii_digit()
                 && words.get(i).is_some_and(|n| n.contains('/') && n.ends_with("SM")) =>
             {
                 let whole = w.parse::<f64>().ok();
@@ -404,50 +414,13 @@ pub fn parse(raw: &str) -> Option<Metar> {
                 m.altimeter_inhg = Some(w[1..].parse::<f64>().unwrap() / 100.0);
                 inches = true;
             }
-            _ if w.len() == 5 && w.starts_with('Q') && w[1..].bytes().all(|b| b.is_ascii_digit()) => {
-                if !inches {
-                    m.altimeter_inhg = Some((w[1..].parse::<f64>().unwrap() * INHG_PER_HPA * 100.0).round() / 100.0);
-                }
+            _ if w.len() == 5 && w.starts_with('Q') && w[1..].bytes().all(|b| b.is_ascii_digit()) && !inches => {
+                m.altimeter_inhg = Some((w[1..].parse::<f64>().unwrap() * INHG_PER_HPA * 100.0).round() / 100.0);
             }
             _ => {}
         }
     }
     Some(m)
-}
-
-/// The figures the planner keeps of a report, as JSON with
-/// wingtip.weather's names.
-pub fn to_json(m: &Metar) -> String {
-    let mut out = String::from("{\"station\":");
-    json::string(&mut out, &m.station);
-    out.push_str(",\"speci\":");
-    out.push_str(if m.speci { "true" } else { "false" });
-    out.push_str(",\"wind_dir_true_deg\":");
-    json::opt_number(&mut out, m.wind.and_then(|w| w.dir_true_deg));
-    out.push_str(",\"wind_speed_kt\":");
-    json::opt_number(&mut out, m.wind.map(|w| w.speed_kt));
-    out.push_str(",\"wind_gust_kt\":");
-    json::opt_number(&mut out, m.wind.and_then(|w| w.gust_kt));
-    out.push_str(",\"visibility_sm\":");
-    json::opt_number(&mut out, m.visibility_sm);
-    out.push_str(",\"ceiling_ft\":");
-    json::opt_number(&mut out, m.ceiling_ft());
-    out.push_str(",\"ceiling_unknown\":");
-    out.push_str(if m.ceiling_unknown() { "true" } else { "false" });
-    out.push_str(",\"wx\":");
-    json::string(&mut out, &m.weather.join(" "));
-    out.push_str(",\"temp_c\":");
-    json::opt_number(&mut out, m.temp_c);
-    out.push_str(",\"dewpoint_c\":");
-    json::opt_number(&mut out, m.dewpoint_c);
-    out.push_str(",\"altimeter_in_hg\":");
-    json::opt_number(&mut out, m.altimeter_inhg);
-    out.push_str(",\"flight_category\":");
-    // With no sky or no visibility given, the category is not known.
-    let known = m.sky_reported && m.visibility_sm.is_some();
-    json::opt_string(&mut out, if known { flight_category_of(m.ceiling_ft(), m.ceiling_unknown(), m.visibility_sm) } else { None });
-    out.push('}');
-    out
 }
 
 #[cfg(test)]
@@ -460,7 +433,6 @@ mod tests {
         let m = parse("METAR KXYZ 021355Z AUTO 27005KT 10SM OVC/// 10/05 A2992 RMK AO2").unwrap();
         assert_eq!((m.ceiling_ft(), m.ceiling_unknown()), (None, true));
         assert_eq!(flight_category_of(m.ceiling_ft(), m.ceiling_unknown(), m.visibility_sm), None);
-        assert!(to_json(&m).contains("\"ceiling_unknown\":true,") && to_json(&m).contains("\"flight_category\":null"));
         for sky in ["BKN///", "VV///"] {
             let m = parse(&format!("METAR KXYZ 021355Z AUTO 27005KT 10SM {sky} 10/05 A2992")).unwrap();
             assert!(m.ceiling_unknown(), "{sky}");
@@ -479,6 +451,17 @@ mod tests {
     }
 
     #[test]
+    fn with_no_visibility_only_a_ceiling_under_500_ft_settles_the_category() {
+        // AIM 7-1-7: the worse of ceiling and visibility decides, so with
+        // the visibility missing a 5,000 ft ceiling is no category at all.
+        assert_eq!(flight_category_of(Some(5000.0), false, None), None);
+        assert_eq!(flight_category_of(Some(2000.0), false, None), None);
+        assert_eq!(flight_category_of(Some(499.0), false, None), Some("LIFR"));
+        assert_eq!(flight_category_of(None, false, None), None);
+        assert_eq!(flight_category_of(Some(5000.0), false, Some(10.0)), Some("VFR"));
+    }
+
+    #[test]
     fn a_us_report() {
         let m = parse("METAR KDLH 021355Z 27015G25KT 1 1/2SM -RA BR BKN008 OVC015 M02/M04 A2992 RMK AO2 T10171039").unwrap();
         assert_eq!(m.wind, Some(Wind { dir_true_deg: Some(270.0), speed_kt: 15.0, gust_kt: Some(25.0) }));
@@ -487,7 +470,7 @@ mod tests {
         assert_eq!(m.ceiling_ft(), Some(800.0));
         assert_eq!((m.temp_c, m.dewpoint_c), (Some(-1.7), Some(-3.9)));
         assert_eq!(m.altimeter_inhg, Some(29.92));
-        assert_eq!(flight_category(m.ceiling_ft(), m.visibility_sm), Some("IFR"));
+        assert_eq!(flight_category_of(m.ceiling_ft(), false, m.visibility_sm), Some("IFR"));
     }
 
     #[test]

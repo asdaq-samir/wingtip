@@ -1,0 +1,125 @@
+{
+  "x-call": "wingtip_pilot::aircraft::form::call",
+  "description": "What is wrong with the \"Your Airplane\" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AircraftProblemsInput",
+      "type": "object",
+      "properties": {
+        "tailNumber": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "typeDesignator": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cruiseTasKt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "fuelBurnGph": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "cruisePowerPct": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "climbTasKt": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "climbFuelBurnGph": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "usableFuelGal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "equipment": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "surveillance": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "colour": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": []
+    },
+    "answer": {
+      "title": "AircraftProblemsAnswer",
+      "type": "object",
+      "properties": {
+        "tailNumber": {
+          "type": "string"
+        },
+        "typeDesignator": {
+          "type": "string"
+        },
+        "cruiseTasKt": {
+          "type": "string"
+        },
+        "fuelBurnGph": {
+          "type": "string"
+        },
+        "cruisePowerPct": {
+          "type": "string"
+        },
+        "climbTasKt": {
+          "type": "string"
+        },
+        "climbFuelBurnGph": {
+          "type": "string"
+        },
+        "usableFuelGal": {
+          "type": "string"
+        },
+        "equipment": {
+          "type": "string"
+        },
+        "surveillance": {
+          "type": "string"
+        },
+        "colour": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

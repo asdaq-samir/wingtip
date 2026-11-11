@@ -1,6 +1,7 @@
 """The guards in pytest_guards.py reach every suite, not only tests_wingtip/:
 the planner's app suite (tests/) runs from the same rootdir, whose
 conftest.py imports them (docs/CI.md, "Flaky tests")."""
+
 import subprocess
 import sys
 from pathlib import Path

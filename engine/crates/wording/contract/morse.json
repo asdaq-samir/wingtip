@@ -1,0 +1,28 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "A navaid's ident in Morse code (AIM 1-1-3), the letters two spaces apart.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "MorseInput",
+      "type": "object",
+      "properties": {
+        "ident": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "MorseAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

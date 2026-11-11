@@ -1,40 +1,29 @@
 #!/usr/bin/env bash
-# The phones' types for the engine's answers, generated from its contract
-# (engine/contract/engine.schema.json) by quicktype, as the web's are by
-# json-schema-to-typescript (`npm run types`): the iPhone's
-# apps/ios/Wingtip/Engine/EngineContract.swift and Android's
-# apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/EngineContract.kt,
-# both committed (neither app's build has Node). Run it after changing the
-# schema or ANSWERS below, and commit the two files.
+# The phones' typed calls into the engine, generated from its contract
+# (engine/contract/engine.schema.json), as the web's types are by
+# json-schema-to-typescript (`npm run types`): one function per rule, its
+# input's members as parameters and its answer as a type of the contract,
+# so a rule asked wrongly fails the app's build, not a pilot's screen.
+#
+#   apps/ios/Wingtip/Engine/Generated/EngineContract.swift   the inputs and answers (enum EngineContract)
+#   apps/ios/Wingtip/Engine/Generated/EngineCalls.swift      extension Engine: try Engine.underway(speedKt:)
+#   apps/android/.../engine/generated/EngineContract.kt      object EngineContract
+#   apps/android/.../engine/generated/EngineCalls.kt         Engine.underway(speedKt = ...): Result<Boolean>
+#
+# all committed with a "generated, do not edit" header (neither app's build
+# has Node); CI runs this and fails when the committed files differ. Run it
+# after changing the contract, and commit the four files.
 #
 #   scripts/build/engine-contract-apps.sh
 #
-# Only the answers the apps decode with a generated type are listed: a
-# caller switched from its hand-written Decodable or @Serializable class
-# adds its rule's name here. In Docker, since the owner's Mac has no Node.
+# scripts/build/engine-contract-apps.mjs says how the contract is read. In
+# Docker, since the owner's Mac has no Node.
 set -euo pipefail
 
 here=$(cd "$(dirname "$0")/../.." && pwd)
 docker=${DOCKER:-docker}
-schema=engine/contract/engine.schema.json
-ANSWERS=(traffic_marks alert_fires altitude_lines)
 
-sources=()
-for name in "${ANSWERS[@]}"; do
-  sources+=("$schema#/properties/$name/properties/answer")
-done
-
-"$docker" run --rm -v "$here:/w" -w /w node:24-slim sh -ec '
-  swift=apps/ios/Wingtip/Engine/EngineContract.swift
-  kotlin=apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/EngineContract.kt
-  npx -y quicktype@23.2.6 -s schema -l swift --type-prefix Engine --no-initializers \
-    --struct-or-class struct --protocol equatable --sendable --access-level internal \
-    --density dense -o "$swift" "$@"
-  npx -y quicktype@23.2.6 -s schema -l kotlin --framework kotlinx \
-    --package app.wingtipmaps.android.engine -o "$kotlin" "$@"
-  # quicktype writes a list answer as a typealias of kotlinx JsonArray,
-  # which takes no type argument and does not compile; a caller decodes
-  # List<the element> itself.
-  sed -i "/^typealias [A-Za-z]* = JsonArray</d" "$kotlin"
-' sh "${sources[@]}"
-echo "generated from $schema: ${ANSWERS[*]}"
+"$docker" run --rm -v "$here:/w" -w /w "node:$("$here/scripts/build/toolchain.sh" get nodejs)-slim" \
+  node scripts/build/engine-contract-apps.mjs engine/contract/engine.schema.json \
+  apps/ios/Wingtip/Engine/Generated \
+  apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated

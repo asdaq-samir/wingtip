@@ -1,59 +1,97 @@
 import { test, expect, type Page } from "@playwright/test";
-import { airportMark, airportMarks, clearTheRoute, closeCard, consoleSheet, drawn, expectDrawerClosed, grabberTo, mapStill, openConsole, openMapSettings, openPanel, settle, showTabs, sideDrawer, slow, tapNear, tapTheChart } from "./helpers";
+import {
+  airportMark,
+  airportMarks,
+  clearTheRoute,
+  closeCard,
+  consoleSheet,
+  drawn,
+  expectDrawerClosed,
+  firstRow,
+  grabberTo,
+  mapStill,
+  openConsole,
+  openMapSettings,
+  openPanel,
+  searchAirports,
+  settle,
+  showTabs,
+  sideDrawer,
+  slow,
+  tapNear,
+  tapTheChart,
+} from "./helpers";
 
 /**
- * Airports as places, as Maps has them: a tap on one on the chart opens
- * its card in the panel -- its name, what kind of field it is, the
- * weather there as pilots read it -- with Fly Here, Weather and
- * Frequencies; the card is the address's (?place=) and puts itself away.
+ * Airports as places, as Maps has them: a tap on one on the chart opens its card in the panel -- its name, what kind of field it is, the
+ * weather there as pilots read it -- with Fly Here, Weather and Frequencies; the card is the address's (?place=) and puts itself away.
  */
 
 const card = (page: Page) => sideDrawer(page).getByTestId("place-card");
 
 /** The card's answer for `ident` with its weather as given: its own
- *  report, or none and the nearest station's; its TAF too where the test
- *  gives one, none where it gives null. */
-async function cardWeather(page: Page, ident: string, weather: { metar?: object | null; nearby_metar?: object | null; modelled_weather?: object | null; taf?: string | null }) {
-  await page.route(url => url.pathname.endsWith(`/api/planner/airport/${ident}`), async route => {
-    const answer = await route.fetch();
-    // Nothing modelled unless the test says: NOMADS' hour is not the suite's.
-    await route.fulfill({ response: answer, json: { ...(await answer.json()), weather_unavailable: false, modelled_weather: null, ...weather } });
-  });
+ *  report, or none and the nearest station's; its TAF too where the test gives one, none where it gives null. */
+async function cardWeather(
+  page: Page,
+  ident: string,
+  weather: { metar?: object | null; nearby_metar?: object | null; modelled_weather?: object | null; taf?: string | null },
+) {
+  await page.route(
+    (url) => url.pathname.endsWith(`/api/planner/airport/${ident}`),
+    async (route) => {
+      const answer = await route.fetch();
+      // Nothing modelled unless the test says: NOMADS' hour is not the suite's.
+      await route.fulfill({
+        response: answer,
+        json: { ...(await answer.json()), weather_unavailable: false, modelled_weather: null, ...weather },
+      });
+    },
+  );
 }
 
-test("an airport's card has the field's pictures across its top, its ident over them, how far it is, its actions, its tabs right under them and the weather there", async ({ page }) => {
-  await cardWeather(page, "KDLH", { metar: { raw: "KDLH 102155Z 27008KT 10SM CLR 12/02 A3001", flight_category: "VFR", ceiling_ft: null }, taf: null });
+test("the departure's own card says no distance from itself while the pilot's position is not known", async ({ page }) => {
+  await page.goto("/app/plan?dep=C81&dest=KDLH&place=C81");
+  await settle(page);
+  // Its elevation alone: no "here of C81", as the phones said no "From KMSN 0 nm" (PlaceCard's subtitleOf).
+  await expect(card(page).getByTestId("place-line")).toHaveText(/^Elevation [\d,]+ ft$/);
+});
+
+test("an airport's card has the field's pictures across its top, its ident over them, how far it is, its actions, its tabs right under them and the weather there", async ({
+  page,
+}) => {
+  await cardWeather(page, "KDLH", {
+    metar: { raw: "KDLH 102155Z 27008KT 10SM CLR 12/02 A3001", flight_category: "VFR", ceiling_ft: null },
+    taf: null,
+  });
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
   await settle(page);
   // Half way, as every card opens (the owner's ask).
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
-  // The owner's pick of the redesign (A2): the pictures across the top,
-  // the ident large over them with the name and the town under it.
+  // The owner's pick of the redesign (A2): the pictures across the top, the ident large over them with the name and the town under it.
   await expect(card(page).getByTestId("place-head")).toBeInViewport();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
-  await expect(card(page).getByTestId("place-where")).toHaveText("Duluth International Airport");
+  // The name · the town on one line, the town a link (Apple Maps' place card, 2026-11-10).
+  await expect(card(page).getByTestId("place-where")).toHaveText("Duluth International Airport · Duluth, MN");
   await expect(card(page).getByTestId("place-town")).toHaveText("Duluth, MN");
   await expect(card(page).getByTestId("place-ident")).toHaveCount(0);
-  // Measured from the route's departure while the pilot's own position
-  // is not known.
+  // Measured from the route's departure while the pilot's own position is not known.
   await expect(card(page).getByTestId("place-line")).toHaveText(/^\d+ nm NW of C81 · Elevation [\d,]+ ft$/);
-  // Its share and close on the pictures, the minimized bar's out of the
-  // pill, and the grabber over them.
+  // Its share and close at the title's right; the card the whole sheet, no search over it.
   for (const id of ["place-share", "place-close"]) await expect(card(page).getByTestId(id)).toBeInViewport();
-  await expect(page.getByTestId("tab-close")).toBeHidden();
-  // Its actions in a row under them at half -- no Add Stop for the
-  // route's own destination -- and its tabs right under them, Info open.
-  for (const id of ["fly-here", "place-call", "place-favorite"]) await expect(card(page).getByTestId(id)).toBeInViewport({ ratio: 1 });
+  await expect(firstRow(page)).toBeHidden();
+  // Its four tiles in a row at half -- no Add Stop for the route's destination, Weather last -- Info open.
+  for (const id of ["fly-here", "place-weather-action", "place-call", "place-favorite"])
+    await expect(card(page).getByTestId(id)).toBeInViewport({ ratio: 1 });
   await expect(card(page).getByTestId("place-add-stop")).toHaveCount(0);
   await expect(card(page).getByRole("tab")).toHaveText(["Info", "Weather", "Runways", "Charts"]);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
-  const [actions, bar] = await Promise.all([card(page).getByTestId("place-actions"), card(page).getByRole("tablist")].map(async l => (await l.boundingBox())!));
+  const [actions, bar] = await Promise.all(
+    [card(page).getByTestId("place-actions"), card(page).getByRole("tablist")].map(async (l) => (await l.boundingBox())!),
+  );
   expect(bar.y).toBeGreaterThanOrEqual(actions.y + actions.height);
-  expect(bar.y - (actions.y + actions.height)).toBeLessThanOrEqual(16);
 
-  // Weather: the panel all the way up, the weather's card at the tab's
-  // top, its category in the FAA's colour: with no TAF, a sentence from
-  // the report and Now alone.
+  // Weather: the panel all the way up, the weather's card at the tab's top, its category in the FAA's colour:
+  // with no TAF, a sentence from the report and Now alone.
   await card(page).getByTestId("place-tab-weather").click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   await expect(card(page).getByTestId("place-category")).toBeVisible();
@@ -82,25 +120,6 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
 });
 
-test("down in the pill, an airport's card is its ident over a line of its category, wind and name, on its head's picture blurred", async ({ page }) => {
-  test.skip((page.viewportSize()?.width ?? 0) >= 768, "the pill is a phone's");
-  await cardWeather(page, "KDLH", { metar: { raw: "KDLH 102155Z 27012G18KT 10SM CLR 12/02 A3001", flight_category: "VFR", ceiling_ft: null, wind_dir_true_deg: 270, wind_speed_kt: 12, wind_gust_kt: 18 }, taf: null });
-  await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
-  await settle(page);
-  await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
-  await grabberTo(page, "peek");
-  // The owner's pick (P5): two lines between Share and the close, white
-  // on the picture behind the pill.
-  await expect(page.getByTestId("tab-title-name")).toHaveText("KDLH");
-  await expect(page.getByTestId("tab-title-line")).toHaveText("VFR · 270°T 12G18 · Duluth International Airport");
-  await expect(sideDrawer(page).getByTestId("pill-picture")).toBeVisible();
-  for (const id of ["tab-share", "tab-close"]) await expect(page.getByTestId(id)).toBeInViewport();
-  // Up again, the card's own head, and the pill's picture gone with the pill.
-  await grabberTo(page, "half");
-  await expect(sideDrawer(page).getByTestId("pill-picture")).toHaveCount(0);
-});
-
-
 /** A TAF for KDLH issued this hour, for a day: fair until an FM group in
  *  three hours brings a broken layer at 2,500 ft, 5 sm in rain and gusts
  *  to 22 kt (MVFR), and another three hours on fair again. Its times are
@@ -108,24 +127,36 @@ test("down in the pill, an airport's card is its ident over a line of its catego
 function tafFromNow(now = new Date()): string {
   const two = (n: number) => String(n).padStart(2, "0");
   const hour = Math.floor(now.getTime() / 3_600_000) * 3_600_000;
-  const at = (h: number) => { const d = new Date(hour + h * 3_600_000); return `${two(d.getUTCDate())}${two(d.getUTCHours())}`; };
+  const at = (h: number) => {
+    const d = new Date(hour + h * 3_600_000);
+    return `${two(d.getUTCDate())}${two(d.getUTCHours())}`;
+  };
   return `TAF KDLH ${at(0)}00Z ${at(0)}/${at(24)} 27010KT P6SM SCT050 FM${at(3)}00 29015G22KT 5SM -RA BKN025 FM${at(6)}00 31010KT P6SM SCT040`;
 }
 
-test("the pictures open on the runways, and the Weather tab opens on the forecast in a sentence over the hours, Now first, the flight's landing marked, the reports under them", async ({ page }) => {
+test("the pictures open on the runways, and the Weather tab opens on the forecast in a sentence over the hours, Now first, the flight's landing marked, the reports under them", async ({
+  page,
+}) => {
   await cardWeather(page, "KDLH", {
-    metar: { raw: "KDLH 102155Z 27008KT 10SM CLR 12/02 A3001", flight_category: "VFR", ceiling_ft: null, wind_dir_true_deg: 270, wind_speed_kt: 8 },
+    metar: {
+      raw: "KDLH 102155Z 27008KT 10SM CLR 12/02 A3001",
+      flight_category: "VFR",
+      ceiling_ft: null,
+      wind_dir_true_deg: 270,
+      wind_speed_kt: 8,
+    },
     taf: tafFromNow(),
   });
   // Its aerial too, so the order is the card's and not the photos' absence.
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/KDLH/photos"), route => route.fulfill({
-    json: { aerial_url: "/api/planner/airport-aerial/KDLH.jpg", photo: null },
-  }));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KDLH/photos"),
+    (route) => route.fulfill({ json: { aerial_url: "/api/planner/airport-aerial/KDLH.jpg", photo: null } }),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
   await settle(page);
   // The aerial the first page of the pictures, the runways after it (the
   // owner's ask, 2026-10-29).
-  const pages = card(page).getByTestId("place-head").locator('[data-slot="carousel-item"]');
+  const pages = card(page).getByTestId("place-pictures").locator('[data-slot="carousel-item"]');
   await expect(pages).toHaveCount(2, { timeout: slow(15000) });
   await expect(pages.nth(0).getByTestId("place-aerial")).toHaveCount(1);
   await expect(pages.nth(1).getByTestId("place-runway-sketch")).toBeVisible();
@@ -134,9 +165,10 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   await card(page).getByTestId("place-tab-weather").click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   // The sentence, written from the TAF: when it goes MVFR and what does
-  // it, until when, and the gust (lib/hourly).
-  await expect(card(page).getByTestId("place-forecast-sentence"))
-    .toHaveText(/^Ceilings lowering to 2,500 ft around \d\d:00, MVFR until \d\d:00\. Gusts up to 22 kt\.$/);
+  // it, until when, and the gust (features/plan/lib/hourly).
+  await expect(card(page).getByTestId("place-forecast-sentence")).toHaveText(
+    /^Ceilings lowering to 2,500 ft around \d\d:00, MVFR until \d\d:00\. Gusts up to 22 kt\.$/,
+  );
   // Under it the hours, Now first from the report, then each hour of the
   // TAF, its ceiling and its wind as FPL writes a field's.
   const hours = card(page).getByTestId("place-hour");
@@ -147,8 +179,8 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   await expect(hours.filter({ hasText: "2,500" }).first()).toContainText("15G22");
   // Only the row scrolls sideways, not the card.
   const row = card(page).getByTestId("place-hours");
-  expect(await row.evaluate(el => el.scrollWidth > el.clientWidth)).toBe(true);
-  expect(await card(page).evaluate(el => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
+  expect(await row.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(true);
+  expect(await card(page).evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(1);
   // The route's destination: the hour the flight lands in outlined, once
   // its nav log has the time.
   await expect(card(page).locator("[data-testid=place-hour][data-arrival]")).toContainText(/You\s*\d\d:\d\d/, { timeout: slow(30000) });
@@ -157,9 +189,14 @@ test("the pictures open on the runways, and the Weather tab opens on the forecas
   await expect(card(page).getByTestId("place-weather")).toContainText("KDLH 102155Z 27008KT");
 });
 
-test("a field with no report wears the nearest station's category as \"≈\" within ten statute miles, and none farther; its Weather tab says whose", async ({ page }) => {
+test('a field with no report wears the nearest station\'s category as "≈" within ten statute miles, and none farther; its Weather tab says whose', async ({
+  page,
+}) => {
   const nearby = {
-    ident: "KUGN", distance_nm: 6.2, bearing_deg: 70, near: true,
+    ident: "KUGN",
+    distance_nm: 6.2,
+    bearing_deg: 70,
+    near: true,
     metar: { raw: "KUGN 102152Z 18006KT 10SM BKN025 14/06 A3002", flight_category: "MVFR", observed_at: new Date().toISOString() },
   };
   await cardWeather(page, "C81", { metar: null, nearby_metar: nearby });
@@ -169,7 +206,7 @@ test("a field with no report wears the nearest station's category as \"≈\" wit
   await card(page).getByTestId("place-tab-weather").click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   const chip = card(page).getByTestId("place-category");
-  await expect(chip).toContainText("≈ MVFR",{ timeout: slow(15000) });
+  await expect(chip).toContainText("≈ MVFR", { timeout: slow(15000) });
   // In words to a reader: a role-less span has no name of its own.
   await expect(chip.locator(".sr-only")).toHaveText("About MVFR, from the report of KUGN, another station, not this field's own");
   // The weather's line says whose, and the report is under it.
@@ -193,9 +230,14 @@ test("a field with no report wears the nearest station's category as \"≈\" wit
   await expect(card(page).getByTestId("place-weather-summary")).toContainText("Nearest report KUGN, 12 nm E");
   await expect(card(page).getByTestId("place-category")).toHaveCount(0);
 });
-test("a field with no report wears the category modelled there, before a near station's, and its Weather tab says it is a model's", async ({ page }) => {
+test("a field with no report wears the category modelled there, before a near station's, and its Weather tab says it is a model's", async ({
+  page,
+}) => {
   const nearby = {
-    ident: "KUGN", distance_nm: 6.2, bearing_deg: 70, near: true,
+    ident: "KUGN",
+    distance_nm: 6.2,
+    bearing_deg: 70,
+    near: true,
     metar: { raw: "KUGN 102152Z 18006KT 10SM BKN025 14/06 A3002", flight_category: "MVFR", observed_at: new Date().toISOString() },
   };
   const modelled = { ceiling_ft: 900, visibility_sm: 4, flight_category: "IFR", valid_at: "2026-10-10T22:00:00Z" };
@@ -217,21 +259,32 @@ test("a field with no report wears the category modelled there, before a near st
   await expect(card(page).getByTestId("place-nearby-metar")).toContainText("KUGN 102152Z");
 });
 test("an airport's card calls the field and finds it in Maps, from the FAA's airport file", async ({ page }) => {
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/KDLH"), async route => {
-    const answer = await route.fetch();
-    await route.fulfill({ response: answer, json: { ...await answer.json(), phone: "218-727-2968", address: "4701 Grinden Dr, Duluth, MN 55811" } });
-  });
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/C81"), async route => {
-    const answer = await route.fetch();
-    // And no list of charts at all, as a planner older than the list
-    // answers: the card still draws.
-    await route.fulfill({ response: answer, json: { ...await answer.json(), phone: null, address: null, procedures: undefined } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KDLH"),
+    async (route) => {
+      const answer = await route.fetch();
+      await route.fulfill({
+        response: answer,
+        json: { ...(await answer.json()), phone: "218-727-2968", address: "4701 Grinden Dr, Duluth, MN 55811" },
+      });
+    },
+  );
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/C81"),
+    async (route) => {
+      const answer = await route.fetch();
+      // And no list of charts at all, as a planner older than the list
+      // answers: the card still draws.
+      await route.fulfill({ response: answer, json: { ...(await answer.json()), phone: null, address: null, procedures: undefined } });
+    },
+  );
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
   await expect(card(page).getByTestId("place-call")).toHaveAttribute("href", "tel:218-727-2968", { timeout: slow(15000) });
   await expect(card(page).getByTestId("place-address")).toHaveAttribute(
-    "href", "https://maps.apple.com/?q=Duluth%20International%20Airport&address=4701%20Grinden%20Dr%2C%20Duluth%2C%20MN%2055811");
+    "href",
+    "https://maps.apple.com/?q=Duluth%20International%20Airport&address=4701%20Grinden%20Dr%2C%20Duluth%2C%20MN%2055811",
+  );
 
   // A field the FAA lists no phone for: Call greyed, and Address by where it is.
   await page.goto("/app/plan?place=C81");
@@ -240,7 +293,9 @@ test("an airport's card calls the field and finds it in Maps, from the FAA's air
   await expect(card(page).getByTestId("place-address")).toHaveAttribute("href", /^https:\/\/maps\.apple\.com\/\?q=.+&ll=42\.\d+,-88\.\d+$/);
 });
 
-test("an airport's card keeps one layout whatever the field: a long name in two lines under the ident, a field with no runways to draw saying so", async ({ page }) => {
+test("an airport's card keeps one layout whatever the field: a long name in two lines under the ident, a field with no runways to draw saying so", async ({
+  page,
+}) => {
   const layout = async (ident: string) => {
     await page.goto(`/app/plan?place=${ident}`);
     await settle(page);
@@ -248,25 +303,38 @@ test("an airport's card keeps one layout whatever the field: a long name in two 
     // From the pictures' top, wherever the card has scrolled to: the
     // actions under them, and the name's lines inside them.
     const measure = async () => {
-      const [head, tiles, where] = await Promise.all(["place-head", "fly-here", "place-where"].map(async id => (await card(page).getByTestId(id).boundingBox())!));
+      const [head, tiles, where] = await Promise.all(
+        ["place-head", "fly-here", "place-where"].map(async (id) => (await card(page).getByTestId(id).boundingBox())!),
+      );
       return { tiles: Math.round(tiles.y - head.y), whereFoot: Math.round(where.y + where.height - head.y), head: Math.round(head.height) };
     };
     let last = await measure();
-    await expect.poll(async () => {
-      await page.waitForTimeout(300);
-      const now = await measure();
-      const still = JSON.stringify(now) === JSON.stringify(last);
-      last = now;
-      return still;
-    }, { timeout: slow(10000) }).toBe(true);
+    await expect
+      .poll(
+        async () => {
+          await page.waitForTimeout(300);
+          const now = await measure();
+          const still = JSON.stringify(now) === JSON.stringify(last);
+          last = now;
+          return still;
+        },
+        { timeout: slow(10000) },
+      )
+      .toBe(true);
     return last;
   };
   const short = await layout("C81");
   // A name long enough to need two lines.
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/KORD"), async route => {
-    const answer = await route.fetch();
-    await route.fulfill({ response: answer, json: { ...await answer.json(), name: "Chicago O'Hare International Airport and Its Many Long Words" } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KORD"),
+    async (route) => {
+      const answer = await route.fetch();
+      await route.fulfill({
+        response: answer,
+        json: { ...(await answer.json()), name: "Chicago O'Hare International Airport and Its Many Long Words" },
+      });
+    },
+  );
   const long = await layout("KORD");
   expect(long.tiles).toBe(short.tiles);
   expect(long.head).toBe(short.head);
@@ -276,10 +344,16 @@ test("an airport's card keeps one layout whatever the field: a long name in two 
 
   // No runway the sketch can draw: its page of the pictures there all the
   // same, saying so.
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/3CK"), async route => {
-    const answer = await route.fetch();
-    await route.fulfill({ response: answer, json: { ...await answer.json(), runways: [], airport_diagram_cycle: null, airport_diagram_url: null } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/3CK"),
+    async (route) => {
+      const answer = await route.fetch();
+      await route.fulfill({
+        response: answer,
+        json: { ...(await answer.json()), runways: [], airport_diagram_cycle: null, airport_diagram_url: null },
+      });
+    },
+  );
   const none = await layout("3CK");
   expect(none.tiles).toBe(short.tiles);
   await expect(card(page).getByTestId("place-runway-sketch")).toHaveText("No runways to draw");
@@ -298,30 +372,39 @@ test("the card's scroll runs down to the sheet's foot, over the home indicator's
   }).toPass({ timeout: slow(10_000) });
 });
 
-test("an airport's card has four tabs right under its actions, in sight at half, Info first; a tab takes the panel up, and the open one again, down", async ({ page }) => {
-  // C81 has no airport diagram, and an approach.
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/C81"), async route => {
-    const answer = await route.fetch();
-    await route.fulfill({ response: answer, json: {
-      ...await answer.json(), airport_diagram_url: null, airport_diagram_cycle: null,
-      procedures: [{ kind: "IAP", name: "RNAV (GPS) RWY 24", url: "https://aeronav.faa.gov/d-tpp/2610/05887R24.PDF" }],
-    } });
-  });
+test("an airport's card has four tabs right under its actions, in sight at half, Info first; a tab takes the panel up, and the open one again, down", async ({
+  page,
+}) => {
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/C81"),
+    async (route) => {
+      const answer = await route.fetch();
+      await route.fulfill({
+        response: answer,
+        json: {
+          ...(await answer.json()),
+          airport_diagram_url: null,
+          airport_diagram_cycle: null,
+          procedures: [{ kind: "IAP", name: "RNAV (GPS) RWY 24", url: "https://aeronav.faa.gov/d-tpp/2610/05887R24.PDF" }],
+        },
+      });
+    },
+  );
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  // Opened half way: the pictures, the actions and the tabs' bar whole in
-  // it, at the owner's ask ("bring back the tabs after the buttons").
+  // Opened half way: the actions whole in it, then the pictures and the tabs' bar (Apple Maps' card, 2026-11-10).
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
   await expect(card(page).getByTestId("fly-here")).toBeEnabled({ timeout: slow(15000) });
   await expect(card(page).getByTestId("place-actions")).toBeInViewport({ ratio: 1 });
   const tabs = card(page).getByRole("tab");
   await expect(tabs).toHaveText(["Info", "Weather", "Runways", "Charts"]);
   await expect(card(page).getByTestId("place-tab-radio")).toHaveAttribute("aria-selected", "true");
-  await expect(card(page).getByRole("tablist")).toBeInViewport({ ratio: 1 });
-  // Nothing between the actions and the bar: the weather is its tab's.
+  // No weather summary over the bar: the weather is its tab's.
   await expect(card(page).getByTestId("place-weather-summary")).toHaveCount(0);
 
-  // Runways: the panel all the way up, the pattern and the runways.
+  // All the way up, the bar in sight under the pictures; Runways: the pattern and the runways.
+  await grabberTo(page, "full");
+  await expect(card(page).getByRole("tablist")).toBeInViewport({ ratio: 1 });
   await card(page).getByTestId("place-tab-runways").click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   const runways = card(page).getByRole("tabpanel").getByTestId("place-runways");
@@ -345,9 +428,12 @@ test("an airport's card has four tabs right under its actions, in sight at half,
   await expect(card(page).getByRole("tablist")).toBeVisible();
 });
 
-test("an airport's Info lists its first frequencies, and its title the way to every one; scrolled past the pictures, a bar with the ident keeps the close in sight", async ({ page }) => {
+test("an airport's Info lists its first frequencies, and its title the way to every one; scrolled past the pictures, a bar with the ident keeps the close in sight", async ({
+  page,
+}) => {
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
+  await grabberTo(page, "full"); // the tabs under the pictures, out of a phone's half sheet
   await card(page).getByTestId("place-tab-radio").click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   const rows = card(page).getByTestId("place-frequency");
@@ -357,34 +443,40 @@ test("an airport's Info lists its first frequencies, and its title the way to ev
   await more.click();
   expect(await rows.count()).toBeGreaterThan(3);
   await expect(more).toHaveCount(0);
-  // Down past them to the Details' address, under the frequencies since
-  // the owner's 2026-10-29 ask, the pictures scrolled up out of sight.
+  // Down past them to the Details' address: the card's name and close pinned at its top (Apple Maps' card).
   await card(page).getByTestId("place-address").scrollIntoViewIfNeeded();
-  await expect(card(page).getByTestId("place-head-bar")).toHaveCSS("opacity", "1");
-  await expect(card(page).getByTestId("place-head-bar")).toHaveText("KDLH");
-  await expect(card(page).getByTestId("place-close")).toBeInViewport();
+  await expect(card(page).getByTestId("place-close-pinned")).toBeInViewport({ ratio: 1 });
 });
 
 /** A field's procedures' list, not one procedure's drawing. */
 const isProcedureList = (url: string) => new URL(url).pathname.endsWith("/procedures");
 
 test("the route's Procedures open its destination's card on its approaches, and Nearest is on the map's left", async ({ page }) => {
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/KDLH"), async route => {
-    const answer = await route.fetch();
-    await route.fulfill({ response: answer, json: { ...await answer.json(), procedures: [
-      { kind: "MIN", name: "TAKEOFF MINIMUMS", url: "https://aeronav.faa.gov/d-tpp/2610/NC1TO.PDF" },
-      { kind: "IAP", name: "ILS OR LOC RWY 09", url: "https://aeronav.faa.gov/d-tpp/2610/00125IL9.PDF" },
-      { kind: "IAP", name: "RNAV (GPS) RWY 27", url: "https://aeronav.faa.gov/d-tpp/2610/00125R27.PDF" },
-    ] } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KDLH"),
+    async (route) => {
+      const answer = await route.fetch();
+      await route.fulfill({
+        response: answer,
+        json: {
+          ...(await answer.json()),
+          procedures: [
+            { kind: "MIN", name: "TAKEOFF MINIMUMS", url: "https://aeronav.faa.gov/d-tpp/2610/NC1TO.PDF" },
+            { kind: "IAP", name: "ILS OR LOC RWY 09", url: "https://aeronav.faa.gov/d-tpp/2610/00125IL9.PDF" },
+            { kind: "IAP", name: "RNAV (GPS) RWY 27", url: "https://aeronav.faa.gov/d-tpp/2610/00125R27.PDF" },
+          ],
+        },
+      });
+    },
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
-  // Nearest is Airport's (its pill's second strip), not a button on the
-  // map's left; the map's own buttons stay on its right.
+  // Nearest is the search's own page's (its Nearest section), not a button
+  // on the map's left; the map's own buttons stay on its right.
   await expect(page.locator("[data-map-controls-left]")).toHaveCount(0);
   await showTabs(page);
-  await expect(page.getByTestId("tab-airport")).toBeVisible();
+  await expect(page.getByTestId("search-airports")).toBeVisible();
   const settings = page.locator("[data-map-controls]").getByTestId("map-settings-button");
   const width = page.viewportSize()!.width;
   expect((await settings.boundingBox())!.x).toBeGreaterThan(width / 2);
@@ -393,15 +485,35 @@ test("the route's Procedures open its destination's card on its approaches, and 
   // route all the way up: the route's own Approach charts row went (the
   // owner's "no need for the approach plates section because this can be
   // looked at by selecting the approach").
-  await page.route(url => /\/airport\/KDLH\/procedures/.test(url.pathname), route => route.fulfill({
-    json: isProcedureList(route.request().url())
-      ? { airport: "KDLH", cycle: "261001", stale: false, procedures: [
-        { kind: "approach", id: "I09", name: "ILS OR LOC RWY 09", runway: "RW09", transitions: [], runway_transitions: [] },
-      ] }
-      : { airport: "KDLH", kind: "approach", id: "I09", name: "ILS OR LOC RWY 09", transition: null, cycle: "261001", stale: false, lines: [], holds: [], fixes: [] },
-  }));
+  await page.route(
+    (url) => /\/airport\/KDLH\/procedures/.test(url.pathname),
+    (route) =>
+      route.fulfill({
+        json: isProcedureList(route.request().url())
+          ? {
+              airport: "KDLH",
+              cycle: "261001",
+              stale: false,
+              procedures: [
+                { kind: "approach", id: "I09", name: "ILS OR LOC RWY 09", runway: "RW09", transitions: [], runway_transitions: [] },
+              ],
+            }
+          : {
+              airport: "KDLH",
+              kind: "approach",
+              id: "I09",
+              name: "ILS OR LOC RWY 09",
+              transition: null,
+              cycle: "261001",
+              stale: false,
+              lines: [],
+              holds: [],
+              fixes: [],
+            },
+      }),
+  );
   await grabberTo(page, "full");
-  await sideDrawer(page).getByRole("region", { name: "KDLH · Arrive" }).locator('[data-testid=procedure-kind][data-kind=approach]').click();
+  await sideDrawer(page).getByRole("region", { name: "KDLH · Arrive" }).locator("[data-testid=procedure-kind][data-kind=approach]").click();
   // The pull-down's foot opens the field's whole list (ProcedureMenu).
   await page.getByTestId("procedure-menu-all").click();
   await page.getByTestId("procedure-option").first().click();
@@ -471,20 +583,25 @@ async function airportToTap(page: Page) {
   // marker or control -- asked again while the map is still drawing under
   // a busy runner.
   const find = async () => {
-    const marks = (await airportMarks(page)).filter(m => m.x > 20 && m.y > 20);
-    return page.evaluate(points => {
-      for (const { x, y } of points) {
-        // The chart under it, or a line a tap passes through to the map
-        // (the course line's): no marker, control, popup or panel, which
-        // would take the tap.
-        // The map's canvas answers where nothing is drawn over it.
-        const hit = document.elementFromPoint(x, y);
-        if (hit?.closest(".maplibregl-map") && !hit.closest(
-          ".maplibregl-marker, .maplibregl-ctrl, [data-slot=map-panel], [data-map-controls]",
-        )) return { x, y };
-      }
-      return null;
-    }, marks.map(m => ({ x: m.x, y: m.y })));
+    const marks = (await airportMarks(page)).filter((m) => m.x > 20 && m.y > 20);
+    return page.evaluate(
+      (points) => {
+        for (const { x, y } of points) {
+          // The chart under it, or a line a tap passes through to the map
+          // (the course line's): no marker, control, popup or panel, which
+          // would take the tap.
+          // The map's canvas answers where nothing is drawn over it.
+          const hit = document.elementFromPoint(x, y);
+          if (
+            hit?.closest(".maplibregl-map") &&
+            !hit.closest(".maplibregl-marker, .maplibregl-ctrl, [data-slot=map-panel], [data-map-controls]")
+          )
+            return { x, y };
+        }
+        return null;
+      },
+      marks.map((m) => ({ x: m.x, y: m.y })),
+    );
   };
   await expect.poll(find, { timeout: slow(10000), message: "an airport on the chart with nothing over it" }).not.toBeNull();
   const at = await find();
@@ -503,11 +620,16 @@ test("a Favorite's card names it and the map goes to it before the card's answer
     localStorage.setItem("wingtip.preferences", JSON.stringify({ state: { favoriteAirports: [kept] }, version: 0 }));
   });
   let answer: () => void = () => {};
-  const held = new Promise<void>(go => { answer = go; });
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/KBUR"), async route => {
-    await held;
-    await route.fallback();
+  const held = new Promise<void>((go) => {
+    answer = go;
   });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KBUR"),
+    async (route) => {
+      await held;
+      await route.fallback();
+    },
+  );
   await page.goto("/app/plan?place=KBUR");
   await settle(page);
   await expect(card(page).getByTestId("place-name")).toHaveText("KBUR");
@@ -536,8 +658,10 @@ test("a Favorite's card names it and the map goes to it before the card's answer
 // again where it is.
 test("an airport's card that could not be had says so, and Try again brings it", { tag: "@smoke" }, async ({ page }) => {
   let down = true;
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/KDLH"), route =>
-    (down ? route.fulfill({ status: 502, body: "" }) : route.fallback()));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KDLH"),
+    (route) => (down ? route.fulfill({ status: 502, body: "" }) : route.fallback()),
+  );
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
   await expect(card(page)).toContainText("Could not be looked up", { timeout: slow(30_000) });
@@ -566,11 +690,15 @@ test("an airport tapped on the chart while Setup is up puts Setup away and opens
   await expect(page).toHaveURL(/[?&]place=[A-Z0-9]+/);
   await expect(consoleSheet(page)).toHaveCount(0);
   await expect(card(page).getByTestId("place-name")).not.toBeEmpty();
-  await showTabs(page);
-  await expect(page.getByTestId("tab-airport")).toHaveAttribute("aria-current", "page");
+  // The account page put away for the card, the card the whole sheet; closed, the title row and its button back.
+  await closeCard(page, "place-close");
+  await grabberTo(page, "half");
+  await expect(page.getByTestId("account-button")).toBeVisible();
 });
 
-test("a tap on an airport on the chart opens its card, a tap elsewhere puts it away, and Fly Here makes it the destination", async ({ page }) => {
+test("a tap on an airport on the chart opens its card, a tap elsewhere puts it away, and Fly Here makes it the destination", async ({
+  page,
+}) => {
   await withPrivateFields(page);
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -609,12 +737,29 @@ test("a tap on an airport on the chart opens its card, a tap elsewhere puts it a
 });
 
 test("the airport whose card is open wears a ring round its mark, clear of it on every side, its ident over it", async ({ page }) => {
-  // C81 reporting VFR, so it wears a mark at its card's zoom.
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => route.fulfill({
-    status: 200, contentType: "application/json", body: JSON.stringify({ airports: [
-      { ident: "C81", name: "Campbell", lat: 42.3246, lon: -88.0741, kind: "small", flight_category: "VFR", military: null, airspace_class: "G" },
-    ] }),
-  }));
+  // C81 reporting VFR: its weather's dot on the tiles' mark.
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airports/in-view"),
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          airports: [
+            {
+              ident: "C81",
+              name: "Campbell",
+              lat: 42.3246,
+              lon: -88.0741,
+              kind: "small",
+              flight_category: "VFR",
+              military: null,
+              airspace_class: "G",
+            },
+          ],
+        }),
+      }),
+  );
   await page.goto("/app/plan?place=C81");
   await settle(page);
   // Its card at the pill's size, the chart over it in sight.
@@ -638,77 +783,86 @@ test("the airport whose card is open wears a ring round its mark, clear of it on
   await expect.poll(async () => !!(await ring())).toBe(false);
 });
 
-test("the chart's airports are marked by their airspace -- B, C, D, E, G -- a military field with an M, a private one with an R, each with its weather's dot", async ({ page }) => {
-  // Round C81, at its card's zoom, every class once, and a military field
-  // (shown once the map's Military is on).
-  const field = (ident: string, at: number, airspace_class: string | null, extra = {}) => ({
-    ident, name: ident, lat: 42.30 + at * 0.03, lon: -88.20 + at * 0.05, kind: "medium", flight_category: "VFR", military: null, airspace_class, ...extra,
-  });
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => route.fulfill({
-    status: 200, contentType: "application/json", body: JSON.stringify({ airports: [
-      field("KBBB", 0, "B"), field("KCCC", 1, "C"), field("KDDD", 2, "D"), field("KEEE", 3, "E"),
-      field("KGGG", 4, "G", { flight_category: "IFR" }), field("KMIL", 5, "C", { military: "military" }), field("KUNK", 6, null),
-      field("KPVT", 7, "D", { private: true }),
-    ] }),
-  }));
+test("the chart's airports wear their weather's dot, from the METARs of the fields in view", async ({ page }) => {
+  // The fields are the overlay tiles' (the suite's archive round Chicago);
+  // their weather the planner's reporting fields in view, joined on by
+  // ident (AirportsGl): Campbell VFR, Waukegan IFR.
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airports/in-view"),
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          airports: [
+            { ident: "C81", name: "Campbell", lat: 42.3246, lon: -88.0741, kind: "small", flight_category: "VFR", military: null },
+            {
+              ident: "KUGN",
+              name: "Waukegan National",
+              lat: 42.4222,
+              lon: -87.8679,
+              kind: "medium",
+              flight_category: "IFR",
+              military: null,
+            },
+          ],
+        }),
+      }),
+  );
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  await openMapSettings(page);
-  await page.getByTestId("military-toggle").click();
-  // And the private ones, off by default (the owner, 2026-10-27).
-  await page.getByTestId("private-toggle").click();
-  await page.keyboard.press("Escape");
-  // Each drawn from its airspace, its use and its weather (AirportCanvas,
-  // airportMarkSvg's look; the look itself is the route's own marks', in
-  // classb.spec).
-  const markOf = (ident: string) => airportMark(page, ident);
-  for (const [ident, space] of [["KBBB", "B"], ["KCCC", "C"], ["KDDD", "D"], ["KEEE", "E"], ["KGGG", "G"], ["KMIL", "C"], ["KUNK", ""]]) {
-    await expect.poll(async () => (await markOf(ident!))?.space, { timeout: slow(15000) }).toBe(space);
-  }
-  // The M on a blue disc whatever the airspace over it, and a private
-  // field's R on a magenta one.
-  expect((await markOf("KMIL"))!.use).toBe("military");
-  expect((await markOf("KPVT"))!.use).toBe("private");
-  expect((await markOf("KCCC"))!.use).toBe("");
   // The disc in its METAR's colour: VFR green, IFR red (no report's
   // grey, classb.spec).
-  expect((await markOf("KBBB"))!.weather.toLowerCase()).toBe("#1a7f37");
-  expect((await markOf("KGGG"))!.weather.toLowerCase()).toBe("#b3261e");
+  await expect.poll(async () => (await airportMark(page, "C81"))?.weather.toLowerCase(), { timeout: slow(15000) }).toBe("#1a7f37");
+  await expect.poll(async () => (await airportMark(page, "KUGN"))?.weather.toLowerCase(), { timeout: slow(15000) }).toBe("#b3261e");
+  expect((await airportMark(page, "C81"))!.use).toBe("");
 });
 
 test("the map's Private setting draws the private fields, off by default and kept across a reload", async ({ page }) => {
   // The owner, 2026-10-27: "toggles to show private airports or not", and
-  // "Make private airports hidden by default".
-  const field = (ident: string, at: number, extra = {}) => ({
-    ident, name: ident, lat: 42.30 + at * 0.03, lon: -88.20 + at * 0.05, kind: "medium", flight_category: "VFR",
-    military: null, airspace_class: "D", ...extra,
-  });
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => route.fulfill({
-    status: 200, contentType: "application/json",
-    body: JSON.stringify({ airports: [field("KPUB", 0), field("KPVT", 2, { private: true })] }),
-  }));
-  await page.goto("/app/plan?place=C81");
-  await settle(page);
-  await expect.poll(async () => !!(await airportMark(page, "KPUB")), { timeout: slow(15000) }).toBe(true);
-  expect(await airportMark(page, "KPVT")).toBeFalsy();
+  // "Make private airports hidden by default". Donald Alfred Gade (IL11),
+  // a private field north of Campbell in the suite's overlay tiles, drawn
+  // from the app's level 10 (wingtip.vector_tiles' AIRPORT_MIN_ZOOM): its
+  // card's map brought a level in, round it.
+  const closeIn = async () => {
+    await page.goto("/app/plan?place=IL11");
+    await settle(page);
+    await mapStill(page);
+    const map = (await page.locator(".maplibregl-map").boundingBox())!;
+    const at = await page.evaluate(() => {
+      const panel = document.querySelector('[data-slot="map-panel"]')?.getBoundingClientRect();
+      const m = document.querySelector(".maplibregl-map")!.getBoundingClientRect();
+      if (panel && panel.width > m.width * 0.8) return { x: m.left + m.width / 2, y: m.top + (panel.top - m.top) / 2 };
+      if (panel) return { x: panel.right + (m.right - panel.right) / 2, y: m.top + m.height / 2 };
+      return { x: m.left + m.width / 2, y: m.top + m.height / 2 };
+    });
+    expect(at.x).toBeGreaterThan(map.x);
+    for (let notch = 0; notch < 2; notch++) {
+      await page.mouse.move(at.x, at.y);
+      await page.mouse.wheel(0, -60);
+      await mapStill(page);
+    }
+  };
+  await closeIn();
+  // Other fields drawn round it, it not.
+  await expect.poll(async () => (await airportMarks(page)).length, { timeout: slow(15000) }).toBeGreaterThan(0);
+  expect(await airportMark(page, "IL11")).toBeFalsy();
   await openMapSettings(page);
   await expect(page.getByTestId("private-toggle")).toHaveAttribute("aria-checked", "false");
   await page.getByTestId("private-toggle").click();
   await page.keyboard.press("Escape");
-  await expect.poll(async () => (await airportMark(page, "KPVT"))?.use, { timeout: slow(15000) }).toBe("private");
+  await expect.poll(async () => (await airportMark(page, "IL11"))?.use, { timeout: slow(15000) }).toBe("private");
   // The airport's card kept under the settings', as it was.
-  await expect(page).toHaveURL(/[?&]place=C81/);
-  // Loaded afresh on the same place: a reload starts the page clean, its
-  // place put away, and the chart further out drew KPUB alone of the two.
-  await page.goto("/app/plan?place=C81");
-  await settle(page);
-  await expect.poll(async () => (await airportMark(page, "KPVT"))?.use, { timeout: slow(15000) }).toBe("private");
+  await expect(page).toHaveURL(/[?&]place=IL11/);
+  // Loaded afresh: the setting kept.
+  await closeIn();
+  await expect.poll(async () => (await airportMark(page, "IL11"))?.use, { timeout: slow(15000) }).toBe("private");
 });
 
 test("closer in, the airports that report wear their weather's colour, and a tap on one opens its card", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  const chips = { count: async () => (await airportMarks(page)).filter(m => m.chip).length };
+  const chips = { count: async () => (await airportMarks(page)).filter((m) => m.chip).length };
   await expect(page.locator(".maplibregl-marker", { hasText: "KDLH" }).first()).toBeVisible({ timeout: slow(30000) });
   // At the whole route's zoom on a phone, past the sectional's scale, only
   // the biggest fields that report wear their marks, each with its room
@@ -720,7 +874,7 @@ test("closer in, the airports that report wear their weather's colour, and a tap
   if (page.viewportSize()!.width < 768) {
     await mapStill(page);
     await expect.poll(() => chips.count(), { timeout: slow(20000) }).toBeGreaterThan(0);
-    const at = (await airportMarks(page)).filter(m => m.chip);
+    const at = (await airportMarks(page)).filter((m) => m.chip);
     let nearest = Number.POSITIVE_INFINITY;
     for (let i = 0; i < at.length; i++) {
       for (let j = i + 1; j < at.length; j++) nearest = Math.min(nearest, Math.hypot(at[i]!.x - at[j]!.x, at[i]!.y - at[j]!.y));
@@ -742,14 +896,14 @@ test("closer in, the airports that report wear their weather's colour, and a tap
   await mapStill(page);
   await expect.poll(() => chips.count(), { timeout: slow(20000) }).toBeGreaterThan(0);
   // The route's own airports keep their own chips: none drawn twice.
-  expect((await airportMarks(page)).filter(m => m.chip && m.ident === "C81")).toHaveLength(0);
+  expect((await airportMarks(page)).filter((m) => m.chip && m.ident === "C81")).toHaveLength(0);
 
   // One whose middle nothing else covers, found and tapped again while
   // the map is still settling from the zoom (a CI runner's last frames
   // moved the chip from under the tap).
   await expect(async () => {
-    const drawn = (await airportMarks(page)).filter(m => m.chip);
-    const at = await page.evaluate(marks => {
+    const drawn = (await airportMarks(page)).filter((m) => m.chip);
+    const at = await page.evaluate((marks) => {
       for (const m of marks) {
         const hit = document.elementFromPoint(m.x, m.y);
         if (hit?.matches("canvas.maplibregl-canvas")) return m;
@@ -764,14 +918,32 @@ test("closer in, the airports that report wear their weather's colour, and a tap
 });
 
 test("a tap a little off an airport's mark opens its card, the route's own as any field of the chart's", async ({ page }) => {
-  // One field of the chart's own, Waukegan, some 90 points from the
-  // route's departure at a card's zoom; no other. A tap that near the
-  // route's own field put the card away: only the chart's own were near.
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/in-view"), route => route.fulfill({
-    status: 200, contentType: "application/json", body: JSON.stringify({ airports: [
-      { ident: "KUGN", name: "Waukegan National", lat: 42.4222, lon: -87.8679, kind: "medium", flight_category: "VFR", military: null, airspace_class: "D" },
-    ] }),
-  }));
+  // Waukegan, a field of the chart's own (the overlay tiles), some 90
+  // points from the route's departure at a card's zoom, reporting VFR. A
+  // tap that near the route's own field put the card away: only the
+  // chart's own were near.
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airports/in-view"),
+    (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          airports: [
+            {
+              ident: "KUGN",
+              name: "Waukegan National",
+              lat: 42.4222,
+              lon: -87.8679,
+              kind: "medium",
+              flight_category: "VFR",
+              military: null,
+              airspace_class: "D",
+            },
+          ],
+        }),
+      }),
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KUGN");
   await settle(page);
   await expect(card(page)).toBeVisible({ timeout: slow(15000) });
@@ -782,33 +954,45 @@ test("a tap a little off an airport's mark opens its card, the route's own as an
 
 test("the airport search answers from the phone's own copy, asking the planner nothing as it is typed", async ({ page }) => {
   // The planner's index (wingtip.airports.search_index), two fields of it.
-  await page.route(url => url.pathname.endsWith("/api/planner/airports/index"), route => route.fulfill({ json: { airports: [
-    ["KOSH", "Wittman Regional Airport", "Oshkosh", "WI", 1, "OSH"],
-    ["2WN8", "Oshkosh Sky Ranch Airport", "Omro", "WI", 2],
-  ] } }));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airports/index"),
+    (route) =>
+      route.fulfill({
+        json: {
+          airports: [
+            ["KOSH", "Wittman Regional Airport", "Oshkosh", "WI", 1, "OSH"],
+            ["2WN8", "Oshkosh Sky Ranch Airport", "Omro", "WI", 2],
+          ],
+        },
+      }),
+  );
   const asked: string[] = [];
-  page.on("request", request => { if (request.url().includes("/airports/search")) asked.push(request.url()); });
-  const index = () => page.waitForResponse(response => response.url().includes("/api/planner/airports/index"));
+  page.on("request", (request) => {
+    if (request.url().includes("/airports/search")) asked.push(request.url());
+  });
+  const index = () => page.waitForResponse((response) => response.url().includes("/api/planner/airports/index"));
   // Downloaded once the page is idle; read once the pilot goes to type.
   const downloaded = index();
   await page.goto("/app/plan");
   await settle(page);
   await downloaded;
-  // Out of the tabs alone, on Airport's search.
+  // Out, on the one search.
   await grabberTo(page, "full");
   await showTabs(page);
-  await page.getByTestId("tab-airport").click();
   const search = page.getByTestId("search-airports");
   const read = index();
   await search.click();
   await read;
   await search.pressSequentially("oshk");
-  // Wittman by its town, the bigger field first, as the planner would.
-  await expect(page.getByTestId("search-result")).toHaveText([/KOSH/, /2WN8/]);
-  expect(asked).toEqual([]);
+  // Wittman by its town, the bigger field first, from the browser's own
+  // copy (the waypoints and navaids beside them are the planner's).
+  await expect(searchAirports(page)).toHaveText([/KOSH/, /2WN8/]);
+  expect(asked.filter((url) => !/fixes=true/.test(url))).toEqual([]);
 });
 
-test("with no route the panel is a search bar: Home is set from Favorites, an airport found is starred onto Favorites, and Fly Here flies from Home", async ({ page }) => {
+test("with no route the panel is a search bar: Home is set from Favorites, an airport found is starred onto Favorites, and Fly Here flies from Home", async ({
+  page,
+}) => {
   await page.goto("/app/plan");
   await settle(page);
   // A browser's own Favorites, from nothing.
@@ -816,11 +1000,10 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await page.reload();
   await settle(page);
   const search = page.getByTestId("search-airports");
-  // The pill, as a fresh load opens; out on Airport's search.
+  // The pill, as a fresh load opens; out on the one search.
   await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
   await grabberTo(page, "full");
   await showTabs(page);
-  await page.getByTestId("tab-airport").click();
   await expect(search).toBeVisible();
 
   // Focused, the sheet comes all the way up on Favorites, Home not set yet;
@@ -833,14 +1016,14 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await page.getByTestId("pill-home").click();
   await expect(search).toHaveAttribute("placeholder", "Search for your home airport");
   await search.fill("C81");
-  await page.getByTestId("search-result").filter({ hasText: "C81" }).first().click();
+  await searchAirports(page).filter({ hasText: "C81" }).first().click();
   await expect(page.getByTestId("pill-home")).not.toContainText("Add");
 
   // A word of the town finds the field, the bigger one first; the star
   // on its card makes it a favorite.
   await search.click();
   await search.fill("duluth");
-  const first = page.getByTestId("search-result").first();
+  const first = searchAirports(page).first();
   await expect(first).toContainText("KDLH", { timeout: slow(10000) });
   await first.click();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
@@ -848,7 +1031,7 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(card(page).getByTestId("place-favorite")).toHaveAttribute("aria-pressed", "true");
   await closeCard(page, "place-close");
   await search.click();
-  const kept = page.getByTestId("pill-favorites").getByRole("button", { name: /^KDLH, Class [BCDEG]$/ });
+  const kept = page.getByTestId("pill-favorites").getByRole("button", { name: /^KDLH\b.*Class [BCDEG]$/ });
   await expect(kept).toBeVisible();
 
   // Its tile opens its card, whose Fly Here goes from Home.
@@ -869,7 +1052,7 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(sideDrawer(page)).toHaveAttribute("data-capsule", "true");
   await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
   await grabberTo(page, "half");
-  await expect(page.getByLabel("Departure", { exact: true })).toContainText("C81");
+  await expect(page.getByLabel(/^(\S+, )?Departure$/)).toContainText("C81");
   await clearTheRoute(page);
   await expect(page).not.toHaveURL(/dep=/);
   await expect(sideDrawer(page).getByTestId("route-type")).toBeVisible();
@@ -879,10 +1062,10 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   await expect(sideDrawer(page).getByTestId("panel-tab-enroute")).toBeHidden();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   await showTabs(page);
-  // Another tab picked all the way up stays all the way up (TabBar).
-  await page.getByTestId("tab-airport").click();
+  // The search's own page all the way up, as the sheet was.
+  await search.click();
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
-  await expect(search).toBeVisible();
+  await expect(sideDrawer(page).getByTestId("search-home")).toBeVisible();
 
   // Favorites in full: Edit lets KDLH go.
   await search.click();
@@ -890,13 +1073,15 @@ test("with no route the panel is a search bar: Home is set from Favorites, an ai
   const list = page.getByTestId("favorites-list");
   await expect(list).toContainText("KDLH");
   await list.getByTestId("favorites-edit").click();
-  // Its minus brings out the row's Delete, as iOS's does (SwipeToDelete).
-  await list.getByRole("button", { name: "Remove KDLH from Favorites…", exact: true }).click();
-  await list.getByRole("button", { name: "Remove KDLH from Favorites", exact: true }).click();
+  await list.getByRole("button", { name: "Remove KDLH from Favorites…", exact: true }).click(); // the toast's Undo puts it back
   await expect(list).toContainText("A star on an airport's card adds it here");
+  await page.getByTestId("favorites-undo").click();
+  await expect(list).toContainText("KDLH");
 });
 
-test("an airport's card says which lights a pilot turns on with the mic, and the weather it reads out on so many clicks", async ({ page }) => {
+test("an airport's card says which lights a pilot turns on with the mic, and the weather it reads out on so many clicks", async ({
+  page,
+}) => {
   // 3CK, Lake in the Hills: its Chart Supplement remarks, from the FAA's
   // own airport data, in plain English.
   await page.goto("/app/plan?place=3CK");
@@ -913,21 +1098,24 @@ test("an airport's card says which lights a pilot turns on with the mic, and the
 });
 
 test("a military field's card shows 'permission required' whole in its line, not cut at an ellipsis", async ({ page }) => {
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/KORD"), async route => {
-    const answer = await route.fetch();
-    await route.fulfill({ response: answer, json: { ...await answer.json(), military: "military" } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KORD"),
+    async (route) => {
+      const answer = await route.fetch();
+      await route.fulfill({ response: answer, json: { ...(await answer.json()), military: "military" } });
+    },
+  );
   await page.goto("/app/plan?place=KORD");
   const line = card(page).getByTestId("place-line");
   await expect(line).toContainText("Military, permission required", { timeout: slow(15000) });
   // Whole: nothing of it is past the line's box (a clamp of two lines
   // wraps it where one line would cut it).
-  await expect(line).toHaveJSProperty("scrollHeight", await line.evaluate(el => el.clientHeight));
+  await expect(line).toHaveJSProperty("scrollHeight", await line.evaluate((el) => el.clientHeight));
 });
 
 /**
  * Listen to ATIS on the Weather tab: one broadcast heard through the
- * microphone and read by the engine (lib/atis, read_atis), the runway in
+ * microphone and read by the engine (features/plan/lib/atis, read_atis), the runway in
  * use and the altimeter in one line, the figures under it, the
  * transcript folded. The browser's recognizer is a stand-in saying the
  * broadcast.
@@ -935,19 +1123,32 @@ test("a military field's card shows 'permission required' whole in its line, not
 test("the Weather tab listens to an ATIS and shows the runway in use and the altimeter at a glance", async ({ page }) => {
   await page.addInitScript(() => {
     class Heard {
-      lang = ""; continuous = false; interimResults = false;
-      onresult: ((e: unknown) => void) | null = null; onerror: ((e: unknown) => void) | null = null; onend: (() => void) | null = null;
+      lang = "";
+      continuous = false;
+      interimResults = false;
+      onresult: ((e: unknown) => void) | null = null;
+      onerror: ((e: unknown) => void) | null = null;
+      onend: (() => void) | null = null;
       start() {
-        const said = "Duluth information Charlie, one eight five two zulu, wind two one zero at one two gust one eight, visibility one zero, "
-          + "few clouds at four thousand five hundred, temperature one eight, dew point one two, altimeter two niner niner two, "
-          + "ILS runway two seven approach in use, landing and departing runway two seven, advise on initial contact you have information Charlie";
+        const said =
+          "Duluth information Charlie, one eight five two zulu, wind two one zero at one two gust one eight, visibility one zero, " +
+          "few clouds at four thousand five hundred, temperature one eight, dew point one two, altimeter two niner niner two, " +
+          "ILS runway two seven approach in use, landing and departing runway two seven, advise on initial contact you have information Charlie";
         setTimeout(() => this.onresult?.({ resultIndex: 0, results: [Object.assign([{ transcript: said }], { isFinal: true })] }), 300);
       }
-      stop() { setTimeout(() => this.onend?.(), 50); }
+      stop() {
+        setTimeout(() => this.onend?.(), 50);
+      }
     }
-    Object.assign(window, { SpeechRecognition: Heard, webkitSpeechRecognition: Heard });
+    Object.assign(window, {
+      SpeechRecognition: Object.assign(Heard, { available: async () => "available" }),
+      webkitSpeechRecognition: Heard,
+    });
   });
-  await cardWeather(page, "KDLH", { metar: { raw: "KDLH 102155Z 27008KT 10SM CLR 12/02 A3001", flight_category: "VFR", ceiling_ft: null }, taf: null });
+  await cardWeather(page, "KDLH", {
+    metar: { raw: "KDLH 102155Z 27008KT 10SM CLR 12/02 A3001", flight_category: "VFR", ceiling_ft: null },
+    taf: null,
+  });
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KDLH");
   await settle(page);
   await card(page).getByTestId("place-tab-weather").click();
@@ -962,8 +1163,14 @@ test("the Weather tab listens to an ATIS and shows the runway in use and the alt
   await expect(glance).toContainText("Information C");
   const rows = card(page).getByTestId("place-atis-row");
   await expect(rows).toHaveText([
-    /Information.*C · 1852Z/, /Wind.*210° at 12 kt, gusts 18/, /Visibility.*10 sm/, /Sky.*Few 4,500 ft/,
-    /Temperature.*18 °C, dew point 12 °C/, /Altimeter.*29.92 inHg/, /Approach.*ILS runway 27/, /Runways.*27/,
+    /Information.*C · 1852Z/,
+    /Wind.*210° at 12 kt, gusts 18/,
+    /Visibility.*10 sm/,
+    /Sky.*Few 4,500 ft/,
+    /Temperature.*18 °C, dew point 12 °C/,
+    /Altimeter.*29.92 inHg/,
+    /Approach.*ILS runway 27/,
+    /Runways.*27/,
   ]);
   // The transcript folded under them until asked for.
   await expect(card(page).getByTestId("place-atis-raw")).toBeHidden();

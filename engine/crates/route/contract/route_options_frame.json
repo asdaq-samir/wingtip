@@ -1,0 +1,99 @@
+{
+  "x-call": "wingtip_route::route::options::call",
+  "x-feature": "route-options",
+  "description": "Route options' frame, before the planner reads for it: the grid's corner, cells (0.25 degrees) and samples a cell's side, the highest VFR cruising altitude the airplane reaches either way (14 CFR 91.159 under its ceiling and Class A's 18,000 ft, 71.33), the flight's time, the cruising altitudes the winds are wanted at, the lowest cruise the water's glide is judged from, whether METARs are read (a flight leaving within two hours), the grid's box and the box the fixes and fields are wanted in.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "$ref": "#/definitions/RouteOptionsInput"
+    },
+    "answer": {
+      "title": "RouteOptionsFrameAnswer",
+      "type": "object",
+      "properties": {
+        "lat0": {
+          "type": "number"
+        },
+        "lon0": {
+          "type": "number"
+        },
+        "rows": {
+          "type": "integer"
+        },
+        "cols": {
+          "type": "integer"
+        },
+        "cell_deg": {
+          "type": "number"
+        },
+        "per_cell": {
+          "type": "integer"
+        },
+        "top_ft": {
+          "type": "number"
+        },
+        "window": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "altitudes_ft": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "lowest_cruise_ft": {
+          "type": "number"
+        },
+        "tas_kt": {
+          "type": "number",
+          "description": "The true airspeed the ways are costed at: the airplane's cruise, else with none picked the still-air reference (100 kt), for the host's glide reach of dry land."
+        },
+        "metars": {
+          "type": "boolean"
+        },
+        "bbox": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        },
+        "data_box": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 4,
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "lat0",
+        "lon0",
+        "rows",
+        "cols",
+        "cell_deg",
+        "per_cell",
+        "top_ft",
+        "window",
+        "altitudes_ft",
+        "lowest_cruise_ft",
+        "tas_kt",
+        "metars",
+        "bbox",
+        "data_box"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

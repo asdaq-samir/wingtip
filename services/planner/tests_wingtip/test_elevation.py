@@ -1,5 +1,6 @@
 """wingtip.elevation's on-disk cache: what two lookups at once each fetched
 is kept, and the file is never seen half-written."""
+
 import threading
 
 import numpy as np
@@ -71,7 +72,7 @@ def test_the_ground_at_a_point_is_read_from_its_terrain_tile(tmp_path, monkeypat
     monkeypatch.setattr(elevation, "TERRAIN_TILE_DIR", tmp_path)
     monkeypatch.setattr(elevation, "_TERRAIN_TILES", {})
     lat, lon, zoom = 42.3172, -88.0905, elevation.TERRAIN_TILE_ZOOM
-    n = 2 ** zoom
+    n = 2**zoom
     x = int((lon + 180) / 360 * n)
     y = int((1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n)
     # Terrarium's encoding: (R * 256 + G + B / 256) - 32768 metres.
@@ -128,8 +129,8 @@ def test_a_void_in_a_tile_reads_as_the_ground_beside_it(tmp_path, monkeypatch):
     from PIL import Image
 
     rgb = np.zeros((256, 256, 3), dtype=np.uint8)
-    rgb[:, :] = (128, 100, 0)                  # 100 m
-    rgb[120:136, 120:136] = (0, 0, 0)          # a void
+    rgb[:, :] = (128, 100, 0)  # 100 m
+    rgb[120:136, 120:136] = (0, 0, 0)  # a void
     path = tmp_path / "12" / "1" / "2.png"
     path.parent.mkdir(parents=True)
     Image.fromarray(rgb).save(path)
@@ -138,3 +139,27 @@ def test_a_void_in_a_tile_reads_as_the_ground_beside_it(tmp_path, monkeypatch):
     heights = elevation._terrain_tile(12, 1, 2)
     assert np.isfinite(heights).all()
     assert heights[128, 128] == 100.0
+
+
+def test_a_terrain_tile_is_written_back_in_the_terrarium_encoding_it_was_read_in():
+    """What the map's 3D ground is drawn from (terrain_tile_png): the
+    heights read back to the 256th of a metre the encoding keeps, the
+    lowest ground and a peak alike, and a tile with no height at all the
+    sea's surface, not the encoding's -32,768 m."""
+    heights = np.array([[3.25, -85.75, 0.0], [1690.5, 4421.0, 0.00390625]], dtype=np.float32)
+    rgb = elevation.terrarium_rgb(heights).astype(np.float64)
+    assert np.array_equal(rgb[:, :, 0] * 256 + rgb[:, :, 1] + rgb[:, :, 2] / 256 - 32768, heights)
+    empty = elevation.terrarium_rgb(np.full((2, 2), np.nan))
+    assert (empty[:, :, 0] * 256.0 + empty[:, :, 1] - 32768 == 0).all()
+
+
+def test_a_terrain_tile_png_is_the_cleaned_tile(monkeypatch):
+    import io
+
+    from PIL import Image
+
+    heights = np.full((256, 256), 212.5, dtype=np.float32)
+    monkeypatch.setattr(elevation, "_terrain_tile", lambda z, x, y: heights)
+    rgb = np.asarray(Image.open(io.BytesIO(elevation.terrain_tile_png(11, 509, 758))).convert("RGB")).astype(np.float64)
+    assert rgb.shape == (256, 256, 3)
+    assert np.allclose(elevation.terrarium_m(rgb), 212.5)

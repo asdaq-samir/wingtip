@@ -7,26 +7,27 @@
 # PINNED: an unpinned FastAPI/pandas/etc. drifting between builds is
 # silent version skew, and for the chart model's joblib artifact (below)
 # a model that will not unpickle or mispredicts. Pinned to what
-# python:3.14-slim (this service's own base image) currently resolves.
+# python:3.15-slim (this service's own base image) currently resolves.
 -r requirements-wingtip-charts.txt   # wingtip's own list, charts included: this service draws them
 # Pillow among them is pinned once, 13.0.0, in services/planner/requirements-wingtip-charts.txt.
-fastapi==0.142.2
+fastapi==0.162.2
 uvicorn[standard]==0.54.0
-boto3==1.43.108      # wingtip.charts' S3 publish, used only on AWS
-anthropic==1.11.0   # /api/checkpoint-notes: one Claude call per checkpoint
-solace-pubsubplus==1.11.0   # app.swim: the FAA's SWIM feeds (Solace's broker), where SWIM_* are set
-# Traces to an OTLP collector, only where OTEL_EXPORTER_OTLP_ENDPOINT is
-# set (app.tracing; docker-compose's tracing profile).
-opentelemetry-sdk==1.45.0
-opentelemetry-exporter-otlp-proto-http==1.45.0
-opentelemetry-instrumentation-fastapi==0.66b0
-opentelemetry-instrumentation-requests==0.66b0
+# The FastAPI app's spans (app.tracing); the rest of tracing is wingtip's
+# (requirements-wingtip.txt, wingtip.tracing).
+opentelemetry-instrumentation-fastapi==0.66b2
+# The connector (app.mcp): the official MCP SDK's server and Streamable
+# HTTP transport, the gateway's signed tokens read with PyJWT (the SDK's
+# own dependency, pinned here as app.mcp.auth imports it), and each
+# pilot's tool calls counted with limits' moving window.
+mcp==2.3.0
+PyJWT[crypto]==2.15.1
+limits==5.8.0
 
 # The chart model's runtime (app.chart_scorer loads the promoted
 # model.joblib in this process). A joblib artifact is a pickle of
 # scikit-learn's own objects, so the version that loads it has to match
 # the version that wrote it: pinned exactly as the training image pins
-# them (ml/requirements-training.txt; numpy and pandas come from
+# them (services/jobs/retrain/requirements.txt; numpy and pandas come from
 # services/planner/requirements-wingtip.txt for both), and services/planner/tests_wingtip/test_requirements.py fails if
 # the two differ. Bump both together. Imported on first use, so a
 # planner that never scores pays nothing for them at start. They were

@@ -1,174 +1,183 @@
 <mxfile host="65bd71144e">
     <diagram name="Wingtip Maps - AWS design" id="wingtip-aws">
-        <mxGraphModel dx="2699" dy="2345" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1350" pageHeight="1220" math="0" shadow="0" background="#FFFFFF">
+        <mxGraphModel dx="2699" dy="2527" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1350" pageHeight="1402" math="0" shadow="0" background="#FFFFFF">
             <root>
-                <mxCell id="0"/>
-                <mxCell id="1" parent="0"/>
-                <mxCell id="title" value="Wingtip Maps on AWS — the design (#115, not deployed yet): one server behind CloudFront, about $32 a month. docs/README-AWS.md has the whole of it." style="text;html=1;fontSize=13.5;fontStyle=2;fontColor=#6E6656;align=left;verticalAlign=middle;" vertex="1" parent="1">
-                    <mxGeometry x="20" y="-18" width="1270" height="24" as="geometry"/>
+                <mxCell id="0" />
+                <mxCell id="1" parent="0" />
+                <mxCell id="title" value="Wingtip Maps on AWS — the design (#115, not deployed yet): one server behind CloudFront, about $27 a month. docs/README-AWS.md has the whole of it." style="text;html=1;fontSize=13.5;fontStyle=2;fontColor=#6E6656;align=left;verticalAlign=middle;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="-18" width="1270" height="24" as="geometry" />
                 </mxCell>
                 <mxCell id="box-cicd" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=4;fillColor=none;strokeColor=#B8722A;strokeWidth=1.6;" vertex="1" parent="1">
-                    <mxGeometry x="0" y="20" width="1310" height="195" as="geometry"/>
+                    <mxGeometry x="0" y="20" width="1310" height="195" as="geometry" />
                 </mxCell>
                 <mxCell id="lbl-cicd" value="CI/CD" style="text;html=1;fontSize=12.5;fontStyle=1;fontColor=#B8722A;align=left;verticalAlign=middle;" vertex="1" parent="1">
-                    <mxGeometry x="16" y="32" width="1278" height="18" as="geometry"/>
+                    <mxGeometry x="16" y="32" width="1278" height="18" as="geometry" />
                 </mxCell>
-                <mxCell id="desc-cicd" value="Every push to main runs CI: the tests, the lint and both images, pushed to GHCR. promote.yml then copies the images that passed to ECR and deploys them over SSM, through GitHub's OIDC and the stack's DeployRole, with no stored keys." style="text;html=1;whiteSpace=wrap;fontSize=12.5;fontColor=#6E6656;align=left;verticalAlign=top;" vertex="1" parent="1">
-                    <mxGeometry x="16" y="50" width="1278" height="30" as="geometry"/>
+                <mxCell id="desc-cicd" value="Every push to main runs CI: the tests, the lint and the images, pushed to GHCR. promote.yml then copies the images that passed to ECR and deploys them over SSM, through GitHub's OIDC and the stack's DeployRole, with no stored keys." style="text;html=1;whiteSpace=wrap;fontSize=12.5;fontColor=#6E6656;align=left;verticalAlign=top;" vertex="1" parent="1">
+                    <mxGeometry x="16" y="50" width="1278" height="30" as="geometry" />
                 </mxCell>
-                <mxCell id="gh" value='&lt;b&gt;GitHub&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;git push → main&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#B8722A;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="20" y="95" width="170" height="60" as="geometry"/>
+                <mxCell id="gh" value="&lt;b&gt;GitHub&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;git push → main&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#B8722A;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="95" width="170" height="60" as="geometry" />
                 </mxCell>
-                <mxCell id="gha" value='&lt;b&gt;GitHub Actions&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;CI: test · lint · build&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;images to GHCR&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#B8722A;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="240" y="95" width="180" height="60" as="geometry"/>
+                <mxCell id="gha" value="&lt;b&gt;GitHub Actions&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;CI: test · lint · build&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;images to GHCR&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#B8722A;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="240" y="95" width="180" height="60" as="geometry" />
                 </mxCell>
-                <mxCell id="promote" value='&lt;b&gt;promote.yml&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;promote · push-ecr · deploy&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;GHCR → ECR&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#B8722A;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="470" y="95" width="190" height="60" as="geometry"/>
+                <mxCell id="promote" value="&lt;b&gt;promote.yml&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;promote · push-ecr · deploy&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;GHCR → ECR&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#B8722A;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="470" y="95" width="190" height="60" as="geometry" />
                 </mxCell>
-                <mxCell id="ecr" value='&lt;b&gt;ECR&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;wingtip/gateway&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;wingtip/planner&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#B8722A;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="710" y="95" width="170" height="60" as="geometry"/>
+                <mxCell id="ecr" value="&lt;b&gt;ECR · wingtip/&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;gateway · planner · ingest&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;assistant · weather · charts&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#B8722A;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="710" y="95" width="170" height="60" as="geometry" />
                 </mxCell>
-                <mxCell id="ssm" value='&lt;b&gt;SSM Run Command&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;deploy.sh on the server:&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;pull the images, restart&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#B8722A;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="930" y="95" width="190" height="60" as="geometry"/>
+                <mxCell id="ssm" value="&lt;b&gt;SSM Run Command&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;deploy.sh on the server:&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;pull the images, restart&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#B8722A;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="930" y="95" width="190" height="60" as="geometry" />
                 </mxCell>
                 <mxCell id="e-gh1" value="push" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#B8722A;strokeWidth=1.5;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="gh" target="gha" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
                 <mxCell id="e-gh2" value="passed" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#B8722A;strokeWidth=1.5;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="gha" target="promote" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
                 <mxCell id="e-gh3" value="copy images" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#B8722A;strokeWidth=1.5;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="promote" target="ecr" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
                 <mxCell id="e-gh4" value="deploy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#B8722A;strokeWidth=1.5;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="ecr" target="ssm" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
                 <mxCell id="box-aws" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=4;fillColor=none;strokeColor=#8B6C3E;strokeWidth=1.6;" vertex="1" parent="1">
-                    <mxGeometry x="0" y="250" width="1310" height="690" as="geometry"/>
+                    <mxGeometry x="0" y="250" width="1310" height="872" as="geometry" />
                 </mxCell>
                 <mxCell id="lbl-aws" value="AWS — CloudFormation (infra/cloudformation/template.yaml) provisions everything in this box" style="text;html=1;fontSize=12.5;fontStyle=1;fontColor=#8B6C3E;align=left;verticalAlign=middle;" vertex="1" parent="1">
-                    <mxGeometry x="16" y="262" width="1278" height="18" as="geometry"/>
+                    <mxGeometry x="16" y="262" width="1278" height="18" as="geometry" />
                 </mxCell>
                 <mxCell id="desc-aws" value="One public subnet: the server and the refresh task reach the FAA, NOAA and Anthropic directly, with no NAT gateway." style="text;html=1;whiteSpace=wrap;fontSize=12.5;fontColor=#6E6656;align=left;verticalAlign=top;" vertex="1" parent="1">
-                    <mxGeometry x="16" y="280" width="1278" height="30" as="geometry"/>
+                    <mxGeometry x="16" y="280" width="1278" height="30" as="geometry" />
                 </mxCell>
-                <mxCell id="pilot" value='&lt;b&gt;Pilot&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;web · iPhone · Android&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;dashed=1;dashPattern=4 3;" vertex="1" parent="1">
-                    <mxGeometry x="20" y="320" width="170" height="60" as="geometry"/>
+                <mxCell id="pilot" value="&lt;b&gt;Pilot&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;web · iPhone · Android&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;dashed=1;dashPattern=4 3;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="320" width="170" height="60" as="geometry" />
                 </mxCell>
-                <mxCell id="route53" value='&lt;b&gt;Route 53&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;PublicHost → CloudFront&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;origin.&amp;lt;host&amp;gt; → the server&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;health check every 30 s&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="20" y="420" width="170" height="78" as="geometry"/>
+                <mxCell id="route53" value="&lt;b&gt;Route 53&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;PublicHost → CloudFront&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;origin.&amp;lt;host&amp;gt; → the server&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;health check every 30 s&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="420" width="170" height="78" as="geometry" />
                 </mxCell>
-                <mxCell id="cloudfront" value='&lt;b&gt;CloudFront&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;one distribution on PublicHost (ACM certificate)&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;/tiles/* → S3, a month · /app/assets/* → server, a year&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;chart · airport search · overlay tiles · cycle packs → server,&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;by their own Cache-Control · the rest → server, not cached&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="330" y="310" width="400" height="100" as="geometry"/>
+                <mxCell id="cloudfront" value="&lt;b&gt;CloudFront&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;one distribution on PublicHost (ACM certificate)&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;/tiles/* → S3, a month · /app/assets/* → server, a year&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;chart · airport search · overlay tiles · cycle packs → server,&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;by their own Cache-Control · the rest → server, not cached&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="330" y="310" width="400" height="100" as="geometry" />
                 </mxCell>
-                <mxCell id="tiles" value='&lt;b&gt;S3 chart tiles bucket&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;the raster pyramid, a cycle per path&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;serving.json written last&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="1010" y="320" width="270" height="70" as="geometry"/>
+                <mxCell id="tiles" value="&lt;b&gt;S3 chart tiles bucket&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;one PMTiles archive per kind and density&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;serving.json written last&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="1010" y="320" width="270" height="70" as="geometry" />
                 </mxCell>
                 <mxCell id="box-server" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=3;fillColor=none;strokeColor=#8B6C3E;strokeWidth=1.6;dashed=1;dashPattern=6 4;" vertex="1" parent="1">
-                    <mxGeometry x="260" y="450" width="700" height="270" as="geometry"/>
+                    <mxGeometry x="260" y="450" width="700" height="452" as="geometry" />
                 </mxCell>
                 <mxCell id="lbl-server" value="&lt;b&gt;EC2 server&lt;/b&gt; — t3a.medium on Spot, an Auto Scaling group of one · Amazon Linux 2023 · infra/docker-compose.prod.yml&lt;br&gt;its fixed address (EIP) and data disk (EBS, daily snapshots) taken over by each new server · no SSH, a shell through SSM" style="text;html=1;whiteSpace=wrap;fontSize=11.5;fontColor=#6E6656;align=left;verticalAlign=top;" vertex="1" parent="1">
-                    <mxGeometry x="276" y="458" width="670" height="36" as="geometry"/>
+                    <mxGeometry x="276" y="458" width="670" height="36" as="geometry" />
                 </mxCell>
                 <mxCell id="caddy" value="&lt;b&gt;caddy&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;origin.&amp;lt;host&amp;gt;:443&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;Let's Encrypt&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;404 without the origin secret&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="280" y="520" width="170" height="78" as="geometry"/>
+                    <mxGeometry x="280" y="520" width="170" height="78" as="geometry" />
                 </mxCell>
-                <mxCell id="gateway" value='&lt;b&gt;gateway&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;Spring Boot&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;accounts · sign-in · records&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;public API · mail&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="480" y="520" width="190" height="78" as="geometry"/>
+                <mxCell id="gateway" value="&lt;b&gt;gateway&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;Spring Boot&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;accounts · sign-in · records&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;public API · mail&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="480" y="520" width="190" height="78" as="geometry" />
                 </mxCell>
-                <mxCell id="planner" value='&lt;b&gt;planner&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;FastAPI · works out a flight&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;the engine (wingtip_native) and&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;the chart model in-process&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;FAA data refreshed in place&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="700" y="520" width="240" height="92" as="geometry"/>
+                <mxCell id="planner" value="&lt;b&gt;planner&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;FastAPI · works out a flight&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;the engine (wingtip_native) and&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;the chart model in-process&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;reads the weather and feeds from the store&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="700" y="520" width="240" height="92" as="geometry" />
                 </mxCell>
-                <mxCell id="db" value='&lt;b&gt;db&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;PostgreSQL 18 on the data disk&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;nightly pg_dump → S3 server bucket&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="480" y="635" width="190" height="62" as="geometry"/>
+                <mxCell id="db" value="&lt;b&gt;db&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;PostgreSQL 18 on the data disk&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;nightly pg_dump → S3&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="280" y="640" width="170" height="62" as="geometry" />
                 </mxCell>
-                <mxCell id="server-bucket" value='&lt;b&gt;S3 server bucket&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;backups/ (14 days, versioned)&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;ground_grid/ · models/ (the chart model)&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="1010" y="450" width="270" height="70" as="geometry"/>
+                <mxCell id="assistant" value="&lt;b&gt;assistant&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;every Claude call · 256 MB&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;asks the planner each figure&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1"><mxGeometry x="480" y="640" width="190" height="62" as="geometry" /></mxCell>
+                <mxCell id="store" value="&lt;b&gt;data disk — the shared store (/srv/wingtip/data)&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;live.sqlite (radar, followed airplanes) · NOTAMs · filed routes&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;the weather store · cron hourly: charts-overlays&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#F4F1EA;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1"><mxGeometry x="480" y="740" width="460" height="64" as="geometry" /></mxCell>
+                <mxCell id="ingest" value="&lt;b&gt;ingest&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;SWIM · adsb.fi · 384 MB&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1"><mxGeometry x="480" y="830" width="190" height="52" as="geometry" /></mxCell>
+                <mxCell id="weather" value="&lt;b&gt;weather&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;METAR · TAF · GFS · GLMP · 384 MB&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=13;verticalAlign=middle;spacing=4;" vertex="1" parent="1"><mxGeometry x="700" y="830" width="240" height="52" as="geometry" /></mxCell>
+                <mxCell id="server-bucket" value="&lt;b&gt;S3 server bucket&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;backups/ (14 days, versioned)&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;ground_grid/ · models/ (the chart model)&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="1010" y="450" width="270" height="70" as="geometry" />
                 </mxCell>
-                <mxCell id="secrets" value='&lt;b&gt;Secrets Manager&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;database password · origin secret&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;app secret: Anthropic key, mail login&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="1010" y="540" width="270" height="70" as="geometry"/>
+                <mxCell id="secrets" value="&lt;b&gt;Secrets Manager&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;database password · origin secret&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;app secret: Anthropic key, mail login&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="1010" y="540" width="270" height="70" as="geometry" />
                 </mxCell>
-                <mxCell id="ses" value='&lt;b&gt;SES&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;sign-in mail from MailDomain&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;DKIM records in Route 53&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="1010" y="630" width="270" height="62" as="geometry"/>
+                <mxCell id="ses" value="&lt;b&gt;SES&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;sign-in mail from MailDomain&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;DKIM records in Route 53&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="1010" y="630" width="270" height="62" as="geometry" />
                 </mxCell>
-                <mxCell id="eventbridge" value='&lt;b&gt;EventBridge&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;daily, 08:30 UTC&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="260" y="760" width="180" height="64" as="geometry"/>
+                <mxCell id="eventbridge" value="&lt;b&gt;EventBridge&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;daily, 08:30 UTC&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="260" y="942" width="180" height="64" as="geometry" />
                 </mxCell>
-                <mxCell id="fargate" value="&lt;b&gt;ECS Fargate Spot task&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;python -m wingtip.charts refresh (planner image)&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;a no-op until the FAA's new cycle, then fetches&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;the sheets and publishes the pyramid&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="500" y="750" width="340" height="84" as="geometry"/>
+                <mxCell id="fargate" value="&lt;b&gt;ECS Fargate Spot task&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;the charts job (wingtip/charts): python -m charts refresh&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;a no-op until the FAA's new cycle, then fetches&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;the sheets and publishes the PMTiles archives&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="500" y="932" width="340" height="84" as="geometry" />
                 </mxCell>
-                <mxCell id="monitoring" value='&lt;b&gt;Monitoring&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;CloudWatch logs (a month) and an alarm on the health check&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;SNS email to the owner: app down, backup failed · budget at 80% of $50&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="20" y="860" width="820" height="62" as="geometry"/>
+                <mxCell id="monitoring" value="&lt;b&gt;Monitoring&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;CloudWatch logs (a month) and an alarm on the health check&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;SNS email to the owner: app down, backup failed · budget at 80% of $50&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#8B6C3E;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="1042" width="820" height="62" as="geometry" />
                 </mxCell>
                 <mxCell id="e-pilot-cf" value="HTTPS" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="pilot" target="cloudfront" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
                 <mxCell id="e-r53-cf" value="DNS alias" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=1.0000;exitY=0.3000;exitDx=0;exitDy=0;entryX=0.0000;entryY=0.8500;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;dashed=1;dashPattern=4 3;" parent="1" source="route53" target="cloudfront" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
                 <mxCell id="e-cf-tiles" value="/tiles/*" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=1.0000;exitY=0.4000;exitDx=0;exitDy=0;entryX=0.0000;entryY=0.3000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="cloudfront" target="tiles" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
                 <mxCell id="e-cf-caddy" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=0.1500;exitY=1.0000;exitDx=0;exitDy=0;entryX=0.5000;entryY=0.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="cloudfront" target="caddy" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
                 <mxCell id="e-caddy-gw" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="caddy" target="gateway" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
                 <mxCell id="e-gw-planner" value="/api/planner/*" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=1.0000;exitY=0.5000;exitDx=0;exitDy=0;entryX=0.0000;entryY=0.4200;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="gateway" target="planner" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
-                <mxCell id="e-gw-db" value="JDBC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=0.5000;exitY=1.0000;exitDx=0;exitDy=0;entryX=0.5000;entryY=0.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="gateway" target="db" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                <mxCell id="e-gw-db" value="JDBC" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=0.1000;exitY=1.0000;exitDx=0;exitDy=0;entryX=0.5000;entryY=0.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="gateway" target="db" edge="1">
+                    <mxGeometry relative="1" as="geometry"><Array as="points"><mxPoint x="499" y="620" /><mxPoint x="365" y="620" /></Array></mxGeometry>
                 </mxCell>
+                <mxCell id="e-gw-assistant" value="Claude paths" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=0.6000;exitY=1.0000;exitDx=0;exitDy=0;entryX=0.6000;entryY=0.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="gateway" target="assistant" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+                <mxCell id="e-assistant-planner" value="figures" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=1.0000;exitY=0.5000;exitDx=0;exitDy=0;entryX=0.2500;entryY=1.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="assistant" target="planner" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+                <mxCell id="e-planner-store" value="reads" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=0.7500;exitY=1.0000;exitDx=0;exitDy=0;entryX=0.8696;entryY=0.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="planner" target="store" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+                <mxCell id="e-ingest-store" value="writes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=0.5000;exitY=0.0000;exitDx=0;exitDy=0;entryX=0.2065;entryY=1.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="ingest" target="store" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
+                <mxCell id="e-weather-store" value="writes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=0.5000;exitY=0.0000;exitDx=0;exitDy=0;entryX=0.7174;entryY=1.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="weather" target="store" edge="1"><mxGeometry relative="1" as="geometry" /></mxCell>
                 <mxCell id="e-eb-fargate" value="runs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="eventbridge" target="fargate" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
                 <mxCell id="e-fargate-tiles" value="publishes tiles" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#8B6C3E;strokeWidth=1.5;exitX=1.0000;exitY=0.5000;exitDx=0;exitDy=0;entryX=0.5000;entryY=1.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;" parent="1" source="fargate" target="tiles" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="990" y="792"/>
-                            <mxPoint x="990" y="420"/>
-                            <mxPoint x="1145" y="420"/>
+                            <mxPoint x="990" y="974" />
+                            <mxPoint x="990" y="420" />
+                            <mxPoint x="1145" y="420" />
                         </Array>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="e-ssm-server" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#B8722A;strokeWidth=1.5;exitX=0.3000;exitY=1.0000;exitDx=0;exitDy=0;entryX=0.9571;entryY=0.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;dashed=1;dashPattern=4 3;" parent="1" source="ssm" target="box-server" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="987" y="235"/>
-                            <mxPoint x="930" y="235"/>
+                            <mxPoint x="987" y="235" />
+                            <mxPoint x="930" y="235" />
                         </Array>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="box-out" value="" style="rounded=1;whiteSpace=wrap;html=1;arcSize=4;fillColor=none;strokeColor=#6B4FA0;strokeWidth=1.6;" vertex="1" parent="1">
-                    <mxGeometry x="0" y="980" width="1310" height="150" as="geometry"/>
+                    <mxGeometry x="0" y="1162" width="1310" height="150" as="geometry" />
                 </mxCell>
                 <mxCell id="lbl-out" value="OUTSIDE AWS" style="text;html=1;fontSize=12.5;fontStyle=1;fontColor=#6B4FA0;align=left;verticalAlign=middle;" vertex="1" parent="1">
-                    <mxGeometry x="16" y="992" width="1278" height="18" as="geometry"/>
+                    <mxGeometry x="16" y="1174" width="1278" height="18" as="geometry" />
                 </mxCell>
-                <mxCell id="anthropic" value="&lt;b&gt;Anthropic API&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;the planner's Claude calls: the assistant,&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;the Brief's narrative, words&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#6B4FA0;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="20" y="1030" width="300" height="70" as="geometry"/>
+                <mxCell id="anthropic" value="&lt;b&gt;Anthropic API&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;the assistant's Claude calls: the assistant,&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;the Brief's narrative, words, notes, oral&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#6B4FA0;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="20" y="1212" width="300" height="70" as="geometry" />
                 </mxCell>
-                <mxCell id="faa" value='&lt;b&gt;FAA · NOAA&lt;/b&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;NASR · CIFP · chart sheets · plates&lt;/span&gt;&lt;br&gt;&lt;span style="font-size:11px;color:#6E6656;"&gt;aviationweather.gov · GFS winds aloft&lt;/span&gt;' style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#6B4FA0;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="360" y="1030" width="300" height="70" as="geometry"/>
+                <mxCell id="faa" value="&lt;b&gt;FAA · NOAA&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;NASR · CIFP · chart sheets · plates · SWIM&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;aviationweather.gov · GFS winds aloft · GLMP&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#6B4FA0;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
+                    <mxGeometry x="360" y="1212" width="300" height="70" as="geometry" />
                 </mxCell>
                 <mxCell id="owner" value="&lt;b&gt;The owner's machine&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;the training run (python -m wingtip.pipeline run)&lt;/span&gt;&lt;br&gt;&lt;span style=&quot;font-size:11px;color:#6E6656;&quot;&gt;a new chart model goes to models/ by hand&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#FBF8EF;strokeColor=#6B4FA0;strokeWidth=2;fontColor=#26221B;fontSize=14;verticalAlign=middle;spacing=4;" vertex="1" parent="1">
-                    <mxGeometry x="700" y="1030" width="340" height="70" as="geometry"/>
+                    <mxGeometry x="700" y="1212" width="340" height="70" as="geometry" />
                 </mxCell>
-                <mxCell id="e-planner-out" value="fetches, directly" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#6B4FA0;strokeWidth=1.5;exitX=0.9500;exitY=1.0000;exitDx=0;exitDy=0;entryX=0.7084;entryY=0.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;dashed=1;dashPattern=4 3;" parent="1" source="planner" target="box-out" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
+                <mxCell id="e-planner-out" value="each fetches, directly" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#6B4FA0;strokeWidth=1.5;exitX=0.9500;exitY=1.0000;exitDx=0;exitDy=0;entryX=0.7061;entryY=0.0000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;dashed=1;dashPattern=4 3;" parent="1" source="box-server" target="box-out" edge="1">
+                    <mxGeometry relative="1" as="geometry" />
                 </mxCell>
                 <mxCell id="e-owner-bucket" value="uploaded by hand" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#6B4FA0;strokeWidth=1.5;exitX=1.0000;exitY=0.5000;exitDx=0;exitDy=0;entryX=1.0000;entryY=0.5000;entryDx=0;entryDy=0;fontSize=11;fontColor=#6E6656;labelBackgroundColor=#FFFFFF;endArrow=block;endFill=1;dashed=1;dashPattern=4 3;" parent="1" source="owner" target="server-bucket" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="1295" y="1065"/>
-                            <mxPoint x="1295" y="485"/>
+                            <mxPoint x="1295" y="1247" />
+                            <mxPoint x="1295" y="485" />
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="legend" value="Colors group by section: amber = CI/CD, brown = AWS (provisioned by CloudFormation), violet = outside AWS. Dashed lines cross a section boundary; solid lines stay within one. The dashed box is the one server and what runs on it. Left out of AWS on purpose (docs/README-AWS.md): the pipelines and the training run, Jupyter, dev-services and Mailpit." style="text;html=1;whiteSpace=wrap;fontSize=12;fontColor=#6E6656;align=left;verticalAlign=top;" vertex="1" parent="1">
-                    <mxGeometry x="0" y="1145" width="1310" height="40" as="geometry"/>
+                <mxCell id="legend" value="Colors group by section: amber = CI/CD, brown = AWS (provisioned by CloudFormation), violet = outside AWS. Dashed lines cross a section boundary; solid lines stay within one. The dashed box is the one server and what runs on it. Left out of AWS on purpose (docs/README-AWS.md): the retrain job, Jupyter, dev-services and Mailpit." style="text;html=1;whiteSpace=wrap;fontSize=12;fontColor=#6E6656;align=left;verticalAlign=top;" vertex="1" parent="1">
+                    <mxGeometry x="0" y="1327" width="1310" height="40" as="geometry" />
                 </mxCell>
             </root>
         </mxGraphModel>

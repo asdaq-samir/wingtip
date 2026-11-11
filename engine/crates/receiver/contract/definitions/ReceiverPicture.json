@@ -1,0 +1,137 @@
+{
+  "title": "ReceiverPicture",
+  "description": "What a receiver has said so far: hand it back with the next bytes.",
+  "type": "object",
+  "properties": {
+    "receiver": {
+      "title": "ReceiverState",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The name its ID message gives (Stratux, Sentry, SkyEcho)."
+        },
+        "long_name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stratux": {
+          "type": "boolean"
+        },
+        "heartbeat_at": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "live": {
+          "type": "boolean",
+          "description": "A Heartbeat came in the last 5 s (one a second, GDL 90 3.1)."
+        },
+        "summary": {
+          "type": "string",
+          "description": "One line for the receiver's chip: \"Stratux · 12 targets · GPS\"."
+        },
+        "gps": {
+          "type": "boolean"
+        },
+        "utc_ok": {
+          "type": "boolean"
+        },
+        "battery_low": {
+          "type": "boolean"
+        },
+        "maintenance": {
+          "type": "boolean"
+        },
+        "msl": {
+          "type": "boolean",
+          "description": "Its GPS heights are above MSL (ForeFlight's ID message), else the ellipsoid."
+        },
+        "frames": {
+          "type": "number"
+        },
+        "bad_frames": {
+          "type": "number",
+          "description": "Frames whose CRC did not match, dropped."
+        },
+        "station_lat": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "station_lon": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "station_at": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "long_name",
+        "stratux",
+        "heartbeat_at",
+        "live",
+        "summary",
+        "gps",
+        "utc_ok",
+        "battery_low",
+        "maintenance",
+        "msl",
+        "frames",
+        "bad_frames",
+        "station_lat",
+        "station_lon",
+        "station_at"
+      ]
+    },
+    "ownship": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ReceiverOwnship"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "targets": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ReceiverTarget"
+      }
+    },
+    "texts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ReceiverText"
+      }
+    },
+    "nexrad": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/ReceiverBlock"
+      }
+    }
+  },
+  "required": [
+    "receiver",
+    "ownship",
+    "targets",
+    "texts",
+    "nexrad"
+  ]
+}

@@ -4,7 +4,9 @@ import SwiftUI
 /// should only be picked by n-number"): one of the pilot's own, with the
 /// figures they set, or any N-number typed, looked up in the FAA's
 /// registry for its type and flown on the planner's figures for it. The
-/// types the planner has figures for are listed under them.
+/// types the planner has figures for are listed under them. A page of the
+/// sheet's stack: the route box's Airplane, the one search's types and
+/// Settings open it.
 struct AircraftView: View {
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
@@ -12,91 +14,138 @@ struct AircraftView: View {
     @State private var own: [OwnAircraftRecord] = []
     @State private var typed = ""
     @State private var problem: String?
+    /// Why what was typed could not be flown, said under the field.
+    @State private var tailProblem: String?
 
     var body: some View {
-        NavigationStack {
-            List {
-                // Any airplane in the air, by its callsign, N-number or
-                // address: its card, tracked on the map.
-                Section {
-                    NavigationLink { TrafficFindView() } label: { Label("Find an Airplane", systemImage: "magnifyingglass") }
+        List {
+            // Any airplane in the air, by its callsign, N-number or
+            // address: its card, tracked on the map.
+            Section {
+                NavigationLink { TrafficFindView() } label: { Label("Find an Airplane", systemImage: "magnifyingglass") }
+            }
+            Section("Airplane") {
+                HStack {
+                    TextField("N-number", text: $typed)
+                        .textInputAutocapitalization(.characters).autocorrectionDisabled()
+                        .font(.body.monospaced())
+                        .onSubmit(fly)
+                    // The system's prominent button, never dimmed: what is not
+                    // an N-number is said under the field when Fly is tapped
+                    // (warn, never limit; lib/problems' where it happens).
+                    Button("Fly") { fly() }
+                        .buttonStyle(.borderedProminent)
+                        .buttonBorderShape(.capsule)
                 }
-                Section("Airplane") {
+                ProblemLine(tailProblem)
+                // No airplane: the route's own figures alone, none
+                // assumed (docs/decisions/0011); the plan's start.
+                Button { plan.flyNoAirplane() } label: {
                     HStack {
-                        TextField("N-number", text: $typed)
-                            .textInputAutocapitalization(.characters).autocorrectionDisabled()
-                            .font(.body.monospaced())
-                            .onSubmit(fly)
-                        Button("Fly") { fly() }
-                            .buttonStyle(.borderedProminent)
-                            .disabled(!Registered.isNNumber(typed.uppercased()))
-                    }
-                    if let tail = plan.tail {
-                        LabeledContent("Flying", value: "\(tail) on \(plan.aircraft.uppercased())\(plan.figures.cruiseTasKt == nil ? "" : ", your figures")")
-                        // The figures the planner flies it on, the pilot's to
-                        // set from the handbook, or read off a photo of it.
-                        NavigationLink("Planning figures") { AirplaneFiguresView() }
+                        Text("No Airplane")
+                        Spacer()
+                        if !plan.airplaneChosen && plan.tail == nil {
+                            Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Flying now")
+                        }
                     }
                 }
-                if session.signedIn || !own.isEmpty {
-                    Section("Yours") {
-                        ForEach(own) { airplane in
+                .foregroundStyle(.primary)
+                if let tail = plan.tail {
+                    LabeledContent("Flying") {
+                        // The N-number opens its profile (the owner, 2026-11-09).
+                        TailButton(tail: tail) {
+                            Text(plan.aircraft == Plan.ownAirplane ? "\(tail), on your figures" : "\(tail) on \(plan.aircraft.uppercased())")
+                        }
+                    }
+                    // Every figure the planner flies it on, each with its
+                    // source, the pilot's to set (AirplaneProfileView).
+                    TailButton(tail: tail) { Text("Figures") }
+                }
+                // The airplane's checklists, normal and emergency, kept on
+                // this device by its N-number, else by its type.
+                ChecklistRows(airplane: LocalChecklists.airplane(of: plan))
+            }
+            if session.signedIn || !own.isEmpty {
+                Section("Yours") {
+                    ForEach(own) { airplane in
+                        HStack {
                             Button {
                                 typed = airplane.tailNumber
                                 fly()
                             } label: {
                                 HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
+                                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                         Text(airplane.tailNumber).font(.headline.monospaced())
-                                        Text("\(airplane.typeDesignator) · \(Formats.kt(airplane.cruiseTasKt)) · \(Formats.number(airplane.fuelBurnGph, decimals: 1)) gal/h")
+                                        Text("\(airplane.typeDesignator) · \(Format.speed(airplane.cruiseTasKt)) · \(Format.number(airplane.fuelBurnGph, decimals: 1)) gal/h")
                                             .font(.footnote).foregroundStyle(.secondary)
                                     }
                                     Spacer()
                                     if plan.tail == airplane.tailNumber { Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Flying now") }
                                 }
+                                .contentShape(Rectangle())
                             }
+                            .buttonStyle(.borderless)
                             .foregroundStyle(.primary)
-                        }
-                        // Added, edited and deleted on their own page, with
-                        // each one's checklist, squawks and inspections.
-                        NavigationLink("Your Airplanes") { OwnAircraftListView() }
-                    }
-                }
-                Section("Types the planner has figures for") {
-                    if profiles.isEmpty {
-                        if let problem { ProblemLine(problem) } else { ProgressView() }
-                    }
-                    ForEach(profiles, id: \.name) { profile in
-                        HStack {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(profile.type ?? profile.designator ?? profile.name.uppercased()).font(.headline)
-                                Text("\(Formats.kt(profile.cruiseTasKt)) · \(Formats.number(profile.fuelBurnGph, decimals: 1)) gal/h · ceiling \(Formats.feet(profile.serviceCeilingFt))"
-                                     + (profile.usableFuelGal.map { " · \(Formats.gal($0, decimals: 0)) usable" } ?? ""))
-                                    .font(.footnote).foregroundStyle(.secondary)
+                            // Its profile, a tap apart from flying it, as
+                            // a list's detail button is.
+                            TailButton(tail: airplane.tailNumber) {
+                                Image(systemName: "info.circle").accessibilityLabel("\(airplane.tailNumber) profile")
                             }
-                            Spacer()
-                            if profile.name == plan.aircraft { Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Flying now") }
                         }
-                        .accessibilityElement(children: .combine)
                     }
+                    // Added, edited and deleted on their own page, with
+                    // each one's checklist, squawks and inspections.
+                    NavigationLink("Your Airplanes") { OwnAircraftListView() }
                 }
             }
-            .navigationTitle("Aircraft")
-            .navigationBarTitleDisplayMode(.inline)
-            .task {
-                do { profiles = try await Planner.aircraftProfiles() } catch { problem = error.localizedDescription }
+            Section("Types the Planner Has Figures for") {
+                if profiles.isEmpty {
+                    if let problem {
+                        ProblemLine(problem)
+                    } else {
+                        ForEach(0..<3, id: \.self) { _ in
+                            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                                Text("Airplane type").font(.headline)
+                                Text("Cruise speed · fuel burn · ceiling").font(.subheadline).foregroundStyle(.secondary)
+                            }
+                            .loading("Fetching the types")
+                        }
+                    }
+                }
+                ForEach(profiles, id: \.name) { profile in
+                    HStack {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                            Text(profile.type ?? profile.designator ?? profile.name.uppercased()).font(.headline)
+                            Text("\(Format.speed(profile.cruiseTasKt)) · \(Format.number(profile.fuelBurnGph, decimals: 1)) gal/h · ceiling \(Format.altitude(profile.serviceCeilingFt))"
+                                + (profile.usableFuelGal.map { " · \(Format.fuel($0, decimals: 0)) usable" } ?? ""))
+                                .font(.footnote).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if profile.name == plan.aircraft { Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityLabel("Flying now") }
+                    }
+                    .accessibilityElement(children: .combine)
+                }
             }
-            .task(id: session.signedIn) {
-                own = (try? await Gateway.aircraftRecords()) ?? []
-            }
-            // Back from Your Airplanes with one added or changed.
-            .onAppear { Task { own = (try? await Gateway.aircraftRecords()) ?? [] } }
         }
+        .navigationTitle("Airplane")
+        .task {
+            do { profiles = try await Planner.aircraftProfiles() } catch { problem = error.localizedDescription }
+        }
+        .task(id: session.signedIn) {
+            own = (try? await Gateway.aircraftRecords()) ?? []
+        }
+        // Back from Your Airplanes with one added or changed.
+        .onAppear { Task { own = (try? await Gateway.aircraftRecords()) ?? [] } }
     }
 
     private func fly() {
         let tail = typed.uppercased().trimmingCharacters(in: .whitespaces)
-        guard Registered.isNNumber(tail) else { return }
+        // Flown only as an N-number the engine has read as one; else why not.
+        guard (try? Registered.isNNumber(tail)) == true else {
+            tailProblem = tail.isEmpty ? "Type the airplane's N-number." : "\(tail) isn't an N-number."
+            return
+        }
+        tailProblem = nil
         Task { await plan.fly(tail: tail, own: own, profiles: profiles) }
     }
 }
@@ -104,7 +153,7 @@ struct AircraftView: View {
 #Preview("AircraftView") {
     let plan = Plan()
     plan.tail = "N3429J"
-    return AircraftView()
+    return NavigationStack { AircraftView() }
         .environment(plan)
         .environment(Session())
 }

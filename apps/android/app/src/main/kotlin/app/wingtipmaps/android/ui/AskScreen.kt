@@ -5,10 +5,10 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -16,22 +16,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -42,20 +35,30 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.AssistantClient
-import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
+import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.api.generated.assistant.Context
+import app.wingtipmaps.android.design.Loading
+import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
+import app.wingtipmaps.android.strip.StripModel
+import app.wingtipmaps.android.trip.TripPlannerCard
+import app.wingtipmaps.android.trip.TripPlannerModel
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 
 /** What a pilot asks first, offered while there is nothing to read. */
 val askSuggestions = listOf(
@@ -73,30 +76,26 @@ val askSuggestions = listOf(
  * while the assistant looks something up its own words for that stand
  * under the last bubble, and the answer's text appends as it streams.
  * Phase 0 has no speech path on Android, so a question is typed. Shown
- * full-screen (or in a bottom sheet) from the sparkle button beside the
- * map's buttons, which RootScreen's owner places:
- * `AskScreen(plan, session, ownShip, onClose = { ... })`.
+ * in the one sheet (WingtipSheet), titled Ask with its close, from the
+ * sparkle button beside the map's buttons.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, onClose: () -> Unit, client: AssistantClient = viewModel()) {
+fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantClient = viewModel()) {
     val conversation by client.conversation.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val fix by ownShip.fix.collectAsStateWithLifecycle()
     var question by rememberSaveable { mutableStateOf("") }
     var source by remember { mutableStateOf<AssistantSource?>(null) }
+    // "Plan a trip…": the trip planner in the conversation's place until
+    // closed, as the web's Ask has it.
+    var trip by rememberSaveable { mutableStateOf(false) }
+    val tripModel: TripPlannerModel = viewModel()
     val list = rememberLazyListState()
+    val claude by ClaudeGate.on.collectAsStateWithLifecycle()
 
-    // The context as the app has it: the plan on the page, the airplane's
-    // last fix, and the pilot where one is signed in. The departure time
-    // is the planner's own now: the plan has none of its own.
-    val context = AssistantContext(
-        dep = planState.dep, dest = planState.dest, stops = planState.stops, aircraft = planState.aircraft,
-        altitudeFt = planState.legs.firstOrNull()?.altitudeFt,
-        ownShip = fix?.let { AssistantContext.OwnShipFix(it.lat, it.lon, it.altitudeFt, it.trackDeg, it.groundspeedKt) },
-        pilot = pilot?.let { AssistantContext.PilotRecord(homeBase = it.homeBase) },
-    )
+    // The context as the app has it (StripModel.contextOf).
+    val context = StripModel.contextOf(planState, fix, pilot)
 
     fun send(words: String) {
         if (words.isBlank()) return
@@ -112,69 +111,74 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, onClose: () -> Uni
     DisposableEffect(Unit) { onDispose { client.cancel() } }
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text("Ask") },
-            actions = {
-                IconButton(onClick = onClose) { Icon(Icons.Filled.Close, contentDescription = "Close") }
-            },
-        )
         LazyColumn(
             state = list,
             modifier = Modifier.weight(1f).fillMaxWidth(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(WingtipSpace.Lg),
+            verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md),
         ) {
-            if (conversation.turns.isEmpty()) {
-                item { Suggestions(onAsk = ::send) }
+            if (trip) {
+                item(key = "trip") {
+                    TripPlannerCard(
+                        tripModel,
+                        context = {
+                            Context(
+                                aircraft = context.aircraft, altitudeFt = context.altitudeFt, dep = context.dep, depart = context.depart, dest = context.dest,
+                                stops = context.stops, rules = "vfr",
+                                pilot = context.pilot?.let { Gateway.json.encodeToJsonElement(it).jsonObject },
+                            )
+                        },
+                        onUse = { leg -> with(leg.change) { plan.useLeg(dep, dest, stops, altitudeFt, depart) } },
+                        onSource = { source = AssistantSource(it.id, it.label, it.text) },
+                        onClose = { trip = false },
+                    )
+                }
+            } else if (conversation.turns.isEmpty()) {
+                item { Suggestions(onAsk = ::send, onTrip = if (claude) ({ trip = true }) else null) }
             }
             items(conversation.turns, key = { it.id }) { turn ->
                 TurnBubble(turn, onSource = { source = it })
             }
             conversation.status?.let { status ->
                 item(key = "status") {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+                        Loading(Modifier.size(WingtipSpace.Lg))
                         Text(status, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
         }
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm),
             verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
         ) {
             OutlinedTextField(
                 value = question, onValueChange = { question = it }, modifier = Modifier.weight(1f),
-                placeholder = { Text("Ask about the flight") }, maxLines = 4,
+                placeholder = { Text(stringResource(R.string.ask_about_flight)) }, maxLines = 4,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { send(question) }),
             )
             IconButton(onClick = { send(question) }, enabled = question.isNotBlank()) {
-                Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send", tint = MaterialTheme.colorScheme.primary)
+                Icon(WingtipIcons.send, contentDescription = stringResource(R.string.send), tint = MaterialTheme.colorScheme.primary)
             }
         }
     }
 
-    source?.let { shown ->
-        ModalBottomSheet(onDismissRequest = { source = null }) {
-            Column(Modifier.padding(horizontal = 16.dp).padding(bottom = 32.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(shown.label, style = MaterialTheme.typography.titleMedium)
-                // A fixed-width face, so a METAR's groups line up as pilots read them.
-                Text(shown.text, style = MaterialTheme.typography.bodyMedium, fontFamily = FontFamily.Monospace)
-            }
-        }
-    }
+    source?.let { shown -> SourceDialog(shown, onClose = { source = null }) }
 }
 
 @Composable
-private fun Suggestions(onAsk: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Ask about the flight", style = MaterialTheme.typography.titleMedium)
+private fun Suggestions(onAsk: (String) -> Unit, onTrip: (() -> Unit)?) {
+    Column(verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
+        SectionTitle(stringResource(R.string.ask_about_flight))
         Text(
-            "The figures are the planner's; the assistant puts them in words and shows what it read.",
+            stringResource(R.string.ask_help),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // The first chip, as on the web: the trip planner, Claude's alone,
+        // so not offered while the Claude features are off (ClaudeGate).
+        if (onTrip != null) AssistChip(onClick = onTrip, label = { Text(stringResource(R.string.trip_chip)) })
         askSuggestions.forEach { words ->
             AssistChip(onClick = { onAsk(words) }, label = { Text(words) })
         }
@@ -189,7 +193,7 @@ private fun TurnBubble(turn: AssistantTurn, onSource: (AssistantSource) -> Unit)
     Column(
         Modifier.fillMaxWidth(),
         horizontalAlignment = if (mine) Alignment.End else Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
     ) {
         if (turn.content.isNotEmpty()) {
             Box(
@@ -197,9 +201,9 @@ private fun TurnBubble(turn: AssistantTurn, onSource: (AssistantSource) -> Unit)
                     .widthIn(max = 320.dp)
                     .background(
                         if (mine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        RoundedCornerShape(16.dp),
+                        MaterialTheme.shapes.large,
                     )
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm)
                     .semantics { contentDescription = (if (mine) "You asked: " else "The assistant: ") + turn.content },
             ) {
                 Text(
@@ -208,8 +212,12 @@ private fun TurnBubble(turn: AssistantTurn, onSource: (AssistantSource) -> Unit)
                 )
             }
         }
+        // Where the answer was made, when it was made on the phone.
+        if (turn.onPhone && !mine) {
+            Text(stringResource(R.string.ai_ask_on_phone), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
         if (turn.sources.isNotEmpty()) {
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm)) {
                 turn.sources.forEach { source ->
                     AssistChip(
                         onClick = { onSource(source) },

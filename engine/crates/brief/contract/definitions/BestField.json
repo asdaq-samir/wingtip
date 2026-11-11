@@ -1,0 +1,209 @@
+{
+  "title": "BestField",
+  "type": "object",
+  "description": "One field ranked by best_fields, with its reasons.",
+  "properties": {
+    "ident": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "elevation_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "distance_nm": {
+      "type": "number"
+    },
+    "course_deg": {
+      "type": "number",
+      "description": "The true course to it."
+    },
+    "heading_true_deg": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The heading to fly there, wind corrected; null where the airspeed is not known."
+    },
+    "heading_mag_deg": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The same, magnetic; null without variation_deg."
+    },
+    "groundspeed_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "ete_min": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "reach": {
+      "type": "string",
+      "enum": [
+        "within",
+        "low",
+        "unknown",
+        "beyond"
+      ],
+      "description": "within: over the field at pattern height (1,000 ft, AC 90-66C) or more; low: there, under it; unknown: no glide figures, altitude or elevation, or a diversion."
+    },
+    "reach_nm": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "How far the glide goes over the ground along the course, wind corrected."
+    },
+    "arrive_agl_ft": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "Height over the field on arrival."
+    },
+    "towered": {
+      "type": "boolean"
+    },
+    "private": {
+      "type": "boolean"
+    },
+    "military": {
+      "type": "boolean"
+    },
+    "flight_category": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "runway": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "The end to land on: the POH's distance fits, the crosswind within the demonstrated, the most headwind, the most nearly straight in, the longest.",
+      "properties": {
+        "end": {
+          "type": "string"
+        },
+        "heading_true_deg": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "surface": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "length_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "headwind_kt": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "crosswind_kt": {
+          "type": "number"
+        },
+        "needed_ft": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The POH's short-field landing over 50 ft in the field's air."
+        },
+        "short": {
+          "type": "boolean"
+        },
+        "close": {
+          "type": "boolean"
+        },
+        "crosswind_over": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "end",
+        "heading_true_deg",
+        "surface",
+        "length_ft",
+        "headwind_kt",
+        "crosswind_kt",
+        "needed_ft",
+        "short",
+        "close",
+        "crosswind_over"
+      ]
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "tone": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "caution",
+              "stop"
+            ]
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "tone",
+          "text"
+        ]
+      }
+    }
+  },
+  "required": [
+    "ident",
+    "name",
+    "lat",
+    "lon",
+    "elevation_ft",
+    "distance_nm",
+    "course_deg",
+    "heading_true_deg",
+    "heading_mag_deg",
+    "groundspeed_kt",
+    "ete_min",
+    "reach",
+    "reach_nm",
+    "arrive_agl_ft",
+    "towered",
+    "private",
+    "military",
+    "flight_category",
+    "runway",
+    "reasons"
+  ]
+}

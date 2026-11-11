@@ -16,11 +16,11 @@ struct StripAir: View {
     private var next: StripPoint? { StripData.nextPoint(points, position: position) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            RibbonLine(points: points, position: position).padding(.horizontal, 4)
+        VStack(alignment: .leading, spacing: WingtipSpace.md) {
+            RibbonLine(points: points, position: position).padding(.horizontal, WingtipSpace.xs)
             if let next {
-                HStack(alignment: .firstTextBaseline, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
+                HStack(alignment: .firstTextBaseline, spacing: WingtipSpace.md) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text("Next").condensedCaps(.caption).foregroundStyle(ink.muted)
                         Text(next.name)
                             .font(ChartInk.figure(28))
@@ -28,29 +28,34 @@ struct StripAir: View {
                             .lineLimit(1).minimumScaleFactor(0.7)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    if let leg = next.leg {
-                        VStack(alignment: .trailing, spacing: 2) {
+                    // The heading needs the airplane's airspeed against the
+                    // wind; with no airplane chosen the planner sends none,
+                    // and the strip shows no heading rather than a guess.
+                    if let heading = next.leg?.magneticHeadingDeg {
+                        VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
                             Text("MH").condensedCaps(.caption).foregroundStyle(ink.muted)
-                            Text(String(format: "%03d", Int(leg.magneticHeadingDeg.rounded()))).font(ChartInk.figure(28))
+                            Text(Format.heading(heading)).font(ChartInk.figure(28))
                         }
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("Magnetic heading \(SpokenFigures.degrees(leg.magneticHeadingDeg))")
+                        .accessibilityLabel("Magnetic heading \(SpokenFigures.degrees(heading))")
                     }
-                    if let fix, let at = next.coordinate {
-                        let nm = Flight.nm(from: fix.coordinate, to: at)
-                        VStack(alignment: .trailing, spacing: 2) {
+                    // The miles to go are the engine's (`distance_nm`); where
+                    // it cannot say them, the strip shows none.
+                    if let fix, let at = next.coordinate,
+                       let nm = try? Engine.distanceNm(lat1: fix.coordinate.latitude, lon1: fix.coordinate.longitude, lat2: at.latitude, lon2: at.longitude) {
+                        VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
                             Text("To go").condensedCaps(.caption).foregroundStyle(ink.muted)
-                            Text(Formats.number(nm, decimals: nm < 10 ? 1 : 0)).font(ChartInk.figure(28))
+                            Text(Format.number(nm, decimals: nm < 10 ? 1 : 0)).font(ChartInk.figure(28))
                         }
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("\(SpokenFigures.nauticalMiles(nm)) to go")
                     }
                 }
-                .padding(16)
+                .padding(WingtipSpace.lg)
                 .inkCard()
             }
             FiguresStrip()
-                .padding(.vertical, 8)
+                .padding(.vertical, WingtipSpace.sm)
                 .inkCard()
         }
         .accessibilityIdentifier("strip-air")

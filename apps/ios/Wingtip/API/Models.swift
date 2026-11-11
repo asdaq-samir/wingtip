@@ -9,45 +9,28 @@ import Foundation
 // property is the document's, in camel case through Planner.snakeCase; a
 // field the document marks nullable or leaves out is optional.
 //
-// Still by hand: AirportPin and AheadAlert, which the engine also writes
-// from the cycle packs on the phone (Engine/InView.swift, Engine/Ahead.swift),
-// and ProcedurePick, which is the app's own.
+// Still by hand: ProcedurePick, which is the app's own. AirportPin and
+// AheadAlert, which the engine also writes from the cycle packs on the
+// phone (Engine/InView.swift, Engine/Ahead.swift), are the planner's
+// schemas, read the same way from either.
 
 /// Which chart the map draws and where its tiles are, and each kind of
 /// FAA chart with the zooms it has tiles for.
 typealias ChartInfo = APIChartInfo
 typealias ChartLayer = APIChartLayer
 
-/// A field in the map's view (AirportPin).
-struct AirportPin: Codable, Equatable, Sendable {
-    let ident: String
-    let name: String
-    let lat: Double
-    let lon: Double
-    let kind: String
-    var flightCategory: String?
-    var airspaceClass: String?
-    var military: String?
-    var isPrivate: Bool? = false
-    /// The class of airspace (B, C or D) this field is the primary airport
-    /// of, as the FAA's airspace file names it (the planner's primary_of:
-    /// O'Hare for Chicago's Class B, not Midway), for which mark to keep
-    /// where two would collide (AirportMarks' tiers). Nil for every other
-    /// field.
-    var primaryOf: String?
-    /// Whether the field has a control tower (NASR APT_BASE's TWR_TYPE_CODE
-    /// ATCT and its kinds, the planner's towered and the engine's from the
-    /// pack): the sectional draws it blue and every other field magenta
-    /// (FAA Aeronautical Chart User's Guide, VFR Terms and Symbols,
-    /// Airports). Nil where the answer does not say (the Class B list): the
-    /// mark is then the web's grey for a field not known yet.
-    var towered: Bool?
+/// A field in the map's view (AirportPin): `primaryOf` the class of
+/// airspace (B, C or D) it is the primary airport of (O'Hare for Chicago's
+/// Class B, not Midway), for which mark to keep where two would collide;
+/// `towered` whether it has a control tower (NASR APT_BASE's TWR_TYPE_CODE),
+/// blue on the sectional and every other field magenta (FAA Aeronautical
+/// Chart User's Guide, VFR Terms and Symbols, Airports), nil where the
+/// answer does not say. The map's own list's (/api/airports/in-view), so
+/// a reporting field carries its METAR's parts the marks draw (`weather`,
+/// PinWeather); the packs' answer has none.
+typealias AirportPin = APIAirportInView
 
-    enum CodingKeys: String, CodingKey {
-        case ident, name, lat, lon, kind, flightCategory, airspaceClass, military, primaryOf, towered
-        case isPrivate = "private"
-    }
-
+extension AirportPin {
     /// The fields the map draws, as the web app's AirportsLayer does: the
     /// armed services' (NASR's military, landed at only with the
     /// service's permission) only when asked for, the private ones
@@ -134,28 +117,9 @@ extension RouteTfr: Identifiable {
 /// special-use area or a TFR its track goes into in the next five
 /// minutes, or the ground or an obstacle it comes within 500 ft of in the
 /// next minute. The planner's judgment; the app says it.
-struct AheadAlert: Codable, Equatable, Sendable, Identifiable {
-    let id: String
-    let kind: String
-    let level: String
-    let name: String
-    let need: String
-    let seconds: Double
-    let distanceNm: Double
-    let lat: Double
-    let lon: Double
-    var inside: Bool? = false
-    var airspaceClass: String?
-    var floorFt: Double?
-    var ceilingFt: Double?
-    var clearanceFt: Double?
-    var notamId: String?
+typealias AheadAlert = APIAheadAlert
 
-    enum CodingKeys: String, CodingKey {
-        case id, kind, level, name, need, seconds, distanceNm, lat, lon, inside, floorFt, ceilingFt, clearanceFt, notamId
-        case airspaceClass = "class"
-    }
-}
+extension AheadAlert: Identifiable {}
 
 /// The ways to fly a route, as Maps offers its routes (RouteOptions,
 /// wingtip.route_options): the direct line and the ways round what it meets
@@ -197,18 +161,16 @@ struct ProcedurePick: Codable, Equatable, Sendable, Identifiable {
     var transition: String?
 
     /// As the planner reads it, "KORD:WYNDE3:ZZIPR".
-    var param: String { Self.text([self]) }
+    func param() throws -> String { try Self.text([self]) }
 
     /// Picks as the planner reads them (PlanQuery.procedures), each fix
     /// flown direct, by "FIELD:PROCEDURE" in `direct`, after a fourth
     /// colon: "KELD:I22::BXCMB". The engine's `procedures_write`, as the
-    /// web app writes its address.
-    static func text(_ picks: [ProcedurePick], direct: [String: String] = [:]) -> String {
-        let asked: [[String: String?]] = picks.map {
-            ["ident": $0.ident, "id": $0.id, "transition": $0.transition, "direct": direct["\($0.ident):\($0.id)"]]
-        }
-        let written: String? = try? Engine.call("procedures_write", json: ["picks": asked])
-        return written ?? ""
+    /// web app writes its address; thrown where it cannot.
+    static func text(_ picks: [ProcedurePick], direct: [String: String] = [:]) throws -> String {
+        try Engine.proceduresWrite(picks: picks.map {
+            .init(ident: $0.ident, id: $0.id, transition: $0.transition, direct: direct["\($0.ident):\($0.id)"])
+        })
     }
 }
 

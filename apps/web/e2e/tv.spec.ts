@@ -12,13 +12,18 @@ import { mapStill, settle, slow } from "./helpers";
 test.skip(({ viewport }) => (viewport?.width ?? 0) < 768, "a TV's screen");
 
 /** LG's Back, as webOS sends it with disableBackHistoryAPI on (the webOS shell, in git history). */
-const back = (page: Page) => page.evaluate(() => {
-  const target = document.activeElement ?? document.body;
-  target.dispatchEvent(new KeyboardEvent("keydown", { key: "GoBack", keyCode: 461, bubbles: true, cancelable: true }));
-});
+const back = (page: Page) =>
+  page.evaluate(() => {
+    const target = document.activeElement ?? document.body;
+    target.dispatchEvent(new KeyboardEvent("keydown", { key: "GoBack", keyCode: 461, bubbles: true, cancelable: true }));
+  });
 
 /** The map's zoom, the whole level it rests at (GlMapShell's data-zoom). */
-const mapZoom = (page: Page) => page.getByTestId("gl-map").getAttribute("data-zoom").then(z => Math.round(Number(z ?? NaN)));
+const mapZoom = (page: Page) =>
+  page
+    .getByTestId("gl-map")
+    .getAttribute("data-zoom")
+    .then((z) => Math.round(Number(z ?? NaN)));
 
 test("on a TV the remote's arrows move from control to control, Back closes what is open, and OK zooms the map", async ({ page }) => {
   await page.goto("/app/plan?tv=webos");

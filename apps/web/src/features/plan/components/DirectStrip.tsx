@@ -13,7 +13,9 @@ export default function DirectStrip({ ident, onCancel }: { ident: string; onCanc
       <MoveUpRight className="size-5 shrink-0 text-foreground" aria-hidden="true" />
       <span className={cn("min-w-0 flex-1 truncate font-semibold text-foreground", TEXT.row)}>Direct to {ident}</span>
       <button
-        type="button" onClick={onCancel} data-testid="direct-cancel"
+        type="button"
+        onClick={onCancel}
+        data-testid="direct-cancel"
         className={cn("relative shrink-0 px-1 text-tint after:absolute after:-inset-x-1 after:-inset-y-2.5 after:content-['']", TEXT.row)}
       >
         Cancel

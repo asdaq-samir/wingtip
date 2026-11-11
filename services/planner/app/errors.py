@@ -2,6 +2,7 @@
 answer of 500 or more and every exception no handler caught, the newest
 first, held in memory -- the last RECENT of them since the process
 started. What a pilot hit, without reading the container's log."""
+
 import threading
 import time
 from collections import deque
@@ -56,4 +57,5 @@ class RecordFailures(BaseHTTPMiddleware):
 
 def _status_text(status: int) -> str:
     return {502: "Bad gateway: a source it asks did not answer", 503: "Unavailable", 504: "Still computing past its limit"}.get(
-        status, "Server error")
+        status, "Server error"
+    )

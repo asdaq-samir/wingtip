@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?><ds:tfmDataService xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ds="urn:us:gov:dot:faa:atm:tfm:tfmdataservice" xmlns:fcm="urn:us:gov:dot:faa:atm:tfm:ficommonmessages" xmlns:nxce="urn:us:gov:dot:faa:atm:tfm:tfmdatacoreelements" xmlns:fce="urn:us:gov:dot:faa:atm:tfm:ficommondatatypes" xmlns:frt="urn:us:gov:dot:faa:atm:tfm:rapttimeline" xmlns:fi="urn:us:gov:dot:faa:atm:tfm:flowinformation" xmlns:fm2="urn:us:gov:dot:faa:atm:tfm:ficommonmessages2" xsi:schemaLocation="urn:us:gov:dot:faa:atm:tfm:tfmdataservice TFMData_Service.xsd"><ds:fiOutput><fi:fiMessage refresh="RFRS" sensitivity="A" destinationCodes="ALL" sourceFacility="PCT" sourceTimeStamp="2026-11-08T21:12:48Z" msgType="RSTR">
+<fi:restrictionMessage>
+   <fcm:eventTime>2026-11-08T21:12:00Z</fcm:eventTime>
+   <fcm:entryTime>2026-11-08T21:12:00Z</fcm:entryTime>
+   <fcm:facility>PCT</fcm:facility>
+   <fcm:action>8</fcm:action>
+   <fcm:restrictionId>17128698</fcm:restrictionId>
+   <fcm:restrictedNasElements>PRIVO</fcm:restrictedNasElements>
+   <fcm:startTime>2026-11-08T20:30:00Z</fcm:startTime>
+   <fcm:stopTime>2026-11-08T21:12:00Z</fcm:stopTime>
+   <fcm:airports>IAD</fcm:airports>
+   <fcm:aircraftType>JETS</fcm:aircraftType>
+   <fcm:restrictionType>ARRIVAL</fcm:restrictionType>
+   <fcm:restrictionCategory>MIT</fcm:restrictionCategory>
+   <fcm:mitNumber>270337</fcm:mitNumber>
+   <fcm:mitValue>15</fcm:mitValue>
+   <fcm:reasonText>RWY:Construction</fcm:reasonText>
+   <fcm:qualifier>NONE</fcm:qualifier>
+   <fcm:passback>N</fcm:passback>
+   <fcm:providerStatus>ZNY/0/£</fcm:providerStatus>
+   <fcm:referenceRestrictionEndTime>2026-11-08T21:30:00Z</fcm:referenceRestrictionEndTime>
+   <fcm:referenceRestrictionId>17128360</fcm:referenceRestrictionId>
+</fi:restrictionMessage></fi:fiMessage></ds:fiOutput></ds:tfmDataService>

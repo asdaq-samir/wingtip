@@ -19,6 +19,7 @@ those (FNS's Initial Load) the store is not the whole list for a field.
 Only the United States' own are kept: the feed sends the world's
 international ones too.
 """
+
 from __future__ import annotations
 
 import json
@@ -30,9 +31,13 @@ from datetime import datetime, timezone
 
 import wingtip_native
 
-from .config import get_settings
+from . import stores
+from .config import Settings, get_settings
 
 STORE = get_settings().notam_store
+#: Where the store was kept before NOTAM_STORE moved it (the data
+#: folder's default), taken the first time the new path is opened.
+FORMER = Settings.model_fields["notam_store"].default
 #: How long an ended NOTAM is kept, s: a day, for a briefing read just after.
 KEEP_ENDED_S = 24 * 3600
 
@@ -58,8 +63,7 @@ _db: sqlite3.Connection | None = None
 def _connection() -> sqlite3.Connection:
     global _db
     if _db is None:
-        STORE.parent.mkdir(parents=True, exist_ok=True)
-        _db = sqlite3.connect(STORE, check_same_thread=False)
+        _db = stores.connect(STORE, former=FORMER)
         _db.executescript("""
             CREATE TABLE IF NOT EXISTS notams (
                 id TEXT PRIMARY KEY, icao_id TEXT, location TEXT, icao_location TEXT,
@@ -102,8 +106,10 @@ def _upgrade(db: sqlite3.Connection) -> None:
         else:
             key, fix = f"{icao_location or location} {old}", {}
         db.execute("DELETE FROM notams WHERE id = ? AND EXISTS (SELECT 1 FROM notams WHERE id = ?)", (old, key))
-        db.execute("UPDATE notams SET id = ?, location = COALESCE(?, location), icao_location = COALESCE(?, icao_location)"
-                   " WHERE id = ?", (key, fix.get("location"), fix.get("icao_location"), old))
+        db.execute(
+            "UPDATE notams SET id = ?, location = COALESCE(?, location), icao_location = COALESCE(?, icao_location) WHERE id = ?",
+            (key, fix.get("location"), fix.get("icao_location"), old),
+        )
     db.execute(f"PRAGMA user_version = {STORE_VERSION}")
     db.commit()
 
@@ -154,14 +160,17 @@ def heard(xml: str, now: float | None = None) -> int:
             if n["names"]:
                 # The one it names at its own place: another place's NOTAM
                 # may have the same number.
-                db.execute("UPDATE notams SET ended = 1 WHERE icao_id = ? AND (location = ? OR icao_location = ?)",
-                           (n["names"], n["location"], n["icao_location"]))
+                db.execute(
+                    "UPDATE notams SET ended = 1 WHERE icao_id = ? AND (location = ? OR icao_location = ?)",
+                    (n["names"], n["location"], n["icao_location"]),
+                )
             if n["type"] == "C":
                 # A cancellation is no NOTAM a pilot reads: it ends the one it names.
                 continue
             # The other form of one NOTAM already kept keeps what it has
             # that this one lacks (its ICAO number, its domestic words).
-            db.execute("""
+            db.execute(
+                """
                 INSERT INTO notams (id, icao_id, location, icao_location, classification, issued, starts,
                                     ends, estimated, schedule, text, raw, ended, heard)
                 VALUES (:id, :icao_id, :location, :icao_location, :classification, :issued, :starts,
@@ -173,9 +182,13 @@ def heard(xml: str, now: float | None = None) -> int:
                     estimated = excluded.estimated, schedule = excluded.schedule, text = excluded.text,
                     raw = CASE WHEN raw LIKE '!%' AND excluded.raw NOT LIKE '!%' THEN raw ELSE excluded.raw END,
                     heard = excluded.heard
-            """, {**n, "estimated": int(n["estimated"]), "heard": now})
-        db.execute("DELETE FROM notams WHERE (ends IS NOT NULL AND ends < ?) OR (ended = 1 AND heard < ?)",
-                   (_stamp(now - KEEP_ENDED_S), now - KEEP_ENDED_S))
+            """,
+                {**n, "estimated": int(n["estimated"]), "heard": now},
+            )
+        db.execute(
+            "DELETE FROM notams WHERE (ends IS NOT NULL AND ends < ?) OR (ended = 1 AND heard < ?)",
+            (_stamp(now - KEEP_ENDED_S), now - KEEP_ENDED_S),
+        )
         db.commit()
     return len(found)
 
@@ -207,19 +220,34 @@ def at_fields(fields: list[str], now: float | None = None) -> list[dict]:
         return []
     marks = ",".join("?" * len(places))
     with _LOCK:
-        rows = _connection().execute(f"""
+        rows = (
+            _connection()
+            .execute(
+                f"""
             SELECT id, location, starts, ends, estimated, schedule, text, raw FROM notams
             WHERE ended = 0 AND (ends IS NULL OR ends > ?)
               AND (location IN ({marks}) OR icao_location IN ({marks}))
             ORDER BY starts, id
-        """, (_stamp(now), *places, *places)).fetchall()
+        """,
+                (_stamp(now), *places, *places),
+            )
+            .fetchall()
+        )
     # One NOTAM sent in both forms, each in a message of its own, is two
     # numbers with nothing to tie them but their place, words and times:
     # given once, in the domestic form a briefing reads.
     found: dict[tuple, dict] = {}
     for r in rows:
-        notam = {"id": r[0], "location": r[1], "starts": r[2], "ends": r[3], "estimated": bool(r[4]),
-                 "schedule": r[5], "text": r[6], "raw": r[7]}
+        notam = {
+            "id": r[0],
+            "location": r[1],
+            "starts": r[2],
+            "ends": r[3],
+            "estimated": bool(r[4]),
+            "schedule": r[5],
+            "text": r[6],
+            "raw": r[7],
+        }
         same = (r[1], " ".join((r[6] or "").split()), r[2], r[3])
         if same not in found or (notam["raw"] or "").startswith("!"):
             found[same] = notam

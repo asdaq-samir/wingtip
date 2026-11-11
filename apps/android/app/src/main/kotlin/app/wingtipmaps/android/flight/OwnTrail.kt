@@ -6,7 +6,7 @@ import app.wingtipmaps.android.api.PathPoint
 import app.wingtipmaps.android.api.SavedTrack
 import app.wingtipmaps.android.api.SavedTrackPoint
 import app.wingtipmaps.android.engine.Engine
-import java.io.File
+import app.wingtipmaps.android.engine.generated.underway
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,6 +14,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import java.io.File
 
 /**
  * Own ship's path flown, as ForeFlight's breadcrumbs and the web app's
@@ -27,19 +28,18 @@ import kotlinx.serialization.encodeToString
  * day's flying of it. The figures are the web's and iOS's, to keep the
  * apps' paths the same. The twin of the iOS app's OwnTrail.swift.
  *
- * Whether a speed is flying speed, and the clock, come in so a JVM test
- * holds the keep rules without the native engine.
+ * Whether a speed is flying speed, the distance from the last point
+ * (the engine's `distance_nm`), and the clock come in so a JVM test holds
+ * the keep rules without the native engine.
  */
 class OwnTrail(
     private val file: File,
-    private val underway: (speedKt: Double?) -> Boolean = { speed -> Engine.call<Speed, Boolean>("underway", Speed(speed)) },
+    // Where the engine cannot say (Engine.rule has logged why), the point
+    // is kept: a track with a point too many beats one with a gap.
+    private val underway: (speedKt: Double?) -> Boolean = { speed -> Engine.underway(speed).getOrDefault(true) },
+    private val distance: Geo.Distance = Geo.engineDistance,
     private val nowMs: () -> Long = System::currentTimeMillis,
 ) {
-    /** The `underway` rule's input: a null speed is left out, which the
-     *  engine reads as not known. */
-    @Serializable
-    class Speed(@SerialName("speed_kt") val speedKt: Double?)
-
     private val _points = MutableStateFlow<List<PathPoint>>(emptyList())
     val points: StateFlow<List<PathPoint>> = _points.asStateFlow()
 
@@ -71,7 +71,10 @@ class OwnTrail(
         val last = had.lastOrNull()
         if (last != null) {
             val sinceS = point.t - last.t
-            if (sinceS < STEP_S && Geo.nm(last.lat, last.lon, point.lat, point.lon) < STEP_NM) return true
+            // Where the engine cannot give the distance (Engine.rule has
+            // logged why), the ten seconds alone space the points.
+            val near = distance.nm(last.lat, last.lon, point.lat, point.lon).map { it < STEP_NM }.getOrDefault(true)
+            if (sinceS < STEP_S && near) return true
             _points.value = if (sinceS > NEW_FLIGHT_S) listOf(point) else (had + point).takeLast(MOST)
         } else {
             _points.value = listOf(point)

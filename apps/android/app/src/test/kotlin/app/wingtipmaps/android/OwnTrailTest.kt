@@ -1,23 +1,30 @@
 package app.wingtipmaps.android
 
+import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.flight.OwnTrail
-import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
+import kotlin.math.cos
+import kotlin.math.hypot
 
 /** The path flown's keep rules (OwnTrail), the web's and iOS's: a point
  *  every tenth of a mile or ten seconds at flying speed, none on the
  *  ground, a new flight after ten minutes, at most 5,000 points, and
- *  the file written and read back. Flying speed is given to the test
- *  (the engine's `underway` is not on the JVM): 20 kt and over. */
+ *  the file written and read back. Flying speed and the distance are
+ *  given to the test (the engine's `underway` and `distance_nm` are not
+ *  on the JVM): 20 kt and over, and a flat chart's miles, near enough
+ *  over a tenth of a mile. */
 class OwnTrailTest {
     private var clockMs = 1_700_000_000_000L
     private val file = File.createTempFile("own-trail", ".json").also { it.delete() }
 
-    private fun trail() = OwnTrail(file, underway = { (it ?: 0.0) >= 20.0 }, nowMs = { clockMs })
+    private val flat = Geo.Distance { lat1, lon1, lat2, lon2 -> Result.success(hypot(lat2 - lat1, (lon2 - lon1) * cos(Math.toRadians(lat1))) * 60) }
+
+    private fun trail(distance: Geo.Distance = flat) = OwnTrail(file, underway = { (it ?: 0.0) >= 20.0 }, distance = distance, nowMs = { clockMs })
 
     private fun fix(lat: Double, lon: Double, kt: Double, atMs: Long = clockMs) =
         OwnShip.Fix(lat = lat, lon = lon, altitudeFt = 3500.0, trackDeg = 90.0, groundspeedKt = kt, accuracyM = 5.0, atMs = atMs)
@@ -46,6 +53,18 @@ class OwnTrailTest {
         clockMs += 11_000
         trail.took(fix(42.0, -88.0 + 0.12 / 60 / 0.743, 100.0))
         assertEquals(3, trail.points.value.size)
+    }
+
+    @Test
+    fun withNoDistanceTheTenSecondsAloneSpaceThePoints() {
+        val trail = trail { _, _, _, _ -> Result.failure(IllegalStateException("no engine")) }
+        trail.took(fix(42.0, -88.0, 100.0))
+        clockMs += 2_000
+        trail.took(fix(42.0, -87.9, 100.0))
+        assertEquals(1, trail.points.value.size)
+        clockMs += 9_000
+        trail.took(fix(42.0, -87.9, 100.0))
+        assertEquals(2, trail.points.value.size)
     }
 
     @Test

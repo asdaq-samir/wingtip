@@ -2,6 +2,7 @@
 fastest, the best weather's and the fewest stops', each clear of
 thunderstorms, weather under the pilot's minimums, prohibited areas, TFRs
 and high ground."""
+
 import threading
 from datetime import datetime
 from typing import Annotated
@@ -12,10 +13,12 @@ from wingtip import filed_routes, nearby
 from wingtip import route_options as wingtip_route_options
 
 from .. import prefetch
-from ..router_basics import DEFAULT_AIRCRAFT, load_route, resolve
-from ..planning import aircraft_profile, forecast_hour_for
-from ..schemas import RouteOptions
-from .plan import CruiseTas, ServiceCeiling
+from ..router_basics import load_route, resolve
+from wingtip.aircraft import aircraft_profile
+from wingtip.planning import forecast_hour_for
+from ..schemas.route_options import RouteOptions
+from ..gateway import PUBLIC
+from ..plan_query import CruiseTas, GlideRatio, ServiceCeiling, TaxiFuel
 
 router = APIRouter()
 
@@ -37,6 +40,8 @@ CHIP_WORDS = {"weather": "Avoid Weather", "fastest": "Fastest", "land": "Over La
 #: (wingtip.filed_routes; the owner, 2026-10-27: "Most filed is how you get
 #: most flown").
 FILED_WORDS = "Most Filed"
+
+
 def _same(ident: str) -> str:
     """An ident as the route's box may spell it: KUES and UES alike."""
     s = ident.strip().upper()
@@ -51,8 +56,16 @@ def _chips(found: dict, typed: list[str]) -> list[dict]:
     stops drawn on the map and put in the route's box as it is picked.
     One chip a set of stops; none at all where only the route itself is
     left."""
-    chips = [{"key": "none", "label": "None", "stops": typed, "fuel": [],
-              "crosses": found.get("current", []) if typed else found.get("direct", [])}]
+    # "As typed", the owner's word for what was "None" (2026-11-08).
+    chips = [
+        {
+            "key": "none",
+            "label": "As typed",
+            "stops": typed,
+            "fuel": [],
+            "crosses": found.get("current", []) if typed else found.get("direct", []),
+        }
+    ]
     seen = [[_same(t) for t in typed]]
 
     def add(key: str, words: str, way: dict) -> None:
@@ -60,8 +73,7 @@ def _chips(found: dict, typed: list[str]) -> list[dict]:
         if same in seen:
             return
         seen.append(same)
-        chips.append({"key": key, "label": words,
-                      "stops": way["stops"], "fuel": way["fuel"], "crosses": way.get("crosses", [])})
+        chips.append({"key": key, "label": words, "stops": way["stops"], "fuel": way["fuel"], "crosses": way.get("crosses", [])})
 
     own = found.get("own")
     if own and own.get("landings"):
@@ -92,16 +104,25 @@ def _most_filed(dep: str, dest: str) -> tuple[tuple[list[tuple], list[str]] | No
     return None, []
 
 
-@router.get("/api/route-options")
+@router.get("/api/route-options", openapi_extra=PUBLIC)
 def route_options(
-    dep: str, dest: str,
+    dep: str,
+    dest: str,
     #: The pilot's own route's stops, "KDSM,VPBNG": what it meets is said.
     stops: str = "",
-    aircraft: str = DEFAULT_AIRCRAFT,
+    #: A stock profile's name, or "own" for a pilot's own airplane of no
+    #: stock type on its figures alone; none for no airplane picked: the ways are
+    #: then the route's own, with no minutes, fuel or fuel stops (the
+    #: engine's route_options with a null profile).
+    aircraft: str | None = None,
     cruise_tas_kt: CruiseTas = None,
     fuel_burn_gph: Annotated[float | None, Query(gt=0, le=200)] = None,
     usable_fuel_gal: Annotated[float | None, Query(gt=0, le=2000)] = None,
     service_ceiling_ft: ServiceCeiling = None,
+    #: A pilot's own airplane's start and taxi fuel and glide ratio
+    #: (PlanQuery's), for the fuel stops and the water out of glide.
+    taxi_fuel_gal: TaxiFuel = None,
+    glide_ratio: GlideRatio = None,
     depart: datetime | None = None,
     #: The pilot's own minimums (Settings), never under 14 CFR 91.155's:
     #: none given, the rules' alone.
@@ -114,15 +135,39 @@ def route_options(
     order for the address's `stops`, its fuel stops, and its distance,
     minutes and fuel, from a coarse read the plan then checks leg by leg.
     It only suggests."""
-    key = (dep.upper(), dest.upper(), stops.upper(), aircraft, cruise_tas_kt, fuel_burn_gph, usable_fuel_gal, service_ceiling_ft,
-           depart.isoformat() if depart else None, min_ceiling_ft, min_visibility_sm)
+    key = (
+        dep.upper(),
+        dest.upper(),
+        stops.upper(),
+        aircraft,
+        cruise_tas_kt,
+        fuel_burn_gph,
+        usable_fuel_gal,
+        service_ceiling_ft,
+        taxi_fuel_gal,
+        glide_ratio,
+        depart.isoformat() if depart else None,
+        min_ceiling_ft,
+        min_visibility_sm,
+    )
     with _LOCK:
         kept = _KEPT.get(key) or _KEPT_SHORT.get(key)
     if kept is not None:
         return kept
     start, end = resolve(dep, dest)
-    profile = aircraft_profile(aircraft, cruise_tas_kt=cruise_tas_kt, fuel_burn_gph=fuel_burn_gph,
-                               usable_fuel_gal=usable_fuel_gal, service_ceiling_ft=service_ceiling_ft)
+    profile = (
+        None
+        if aircraft is None
+        else aircraft_profile(
+            aircraft,
+            cruise_tas_kt=cruise_tas_kt,
+            fuel_burn_gph=fuel_burn_gph,
+            usable_fuel_gal=usable_fuel_gal,
+            service_ceiling_ft=service_ceiling_ft,
+            taxi_fuel_gal=taxi_fuel_gal,
+            glide_ratio=glide_ratio,
+        )
+    )
     # The pilot's own route, its points by ident: what it meets, and it with
     # the fuel stops it needs put in (`own`).
     # A route the plan refuses (too many stops, a stop twice over) still
@@ -139,23 +184,25 @@ def route_options(
     # Where there is somewhere to eat at each fuel field the ways weigh
     # (wingtip.nearby, the places kept for it), so a stop with a meal is
     # landed at among chains of as many stops; a field not read yet is
-    # read on the side and taken as having none this time.
-    unread: list[str] = []
-
-    def food(ident: str, lat: float, lon: float) -> bool:
-        has = nearby.food_at(ident)
-        if has is None:
-            unread.append(ident)
-            nearby.read_later(ident, lat, lon)
-        return bool(has)
-
+    # taken as having none this time, and those the ways weighed
+    # (`food_unread`) are read on the side.
     found = wingtip_route_options.options(
         {"ident": dep.upper(), "lat": start["lat"], "lon": start["lon"]},
         {"ident": dest.upper(), "lat": end["lat"], "lon": end["lon"]},
-        profile, depart=depart, fcst_hr=forecast_hour_for(depart),
-        min_ceiling_ft=min_ceiling_ft, min_visibility_sm=min_visibility_sm, current=current if stops.strip() else None,
-        current_idents=current_idents, current_landed=current_landed, filed=filed, food=food,
+        profile,
+        depart=depart,
+        fcst_hr=forecast_hour_for(depart),
+        min_ceiling_ft=min_ceiling_ft,
+        min_visibility_sm=min_visibility_sm,
+        current=current if stops.strip() else None,
+        current_idents=current_idents,
+        current_landed=current_landed,
+        filed=filed,
+        food=nearby.food_at,
     )
+    unread = found.pop("food_unread", None) or []
+    for field in unread:
+        nearby.read_later(field["ident"], field["lat"], field["lon"])
     typed = [s.strip().upper() for s in stops.split(",") if s.strip()]
     chips = _chips(found, typed)
     # The most filed route kept as filed, its airways named, where it

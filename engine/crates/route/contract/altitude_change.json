@@ -1,0 +1,129 @@
+{
+  "x-call": "wingtip_route::navlog::change::call",
+  "description": "A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its climb speed scaled by the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AltitudeChangeInput",
+      "type": "object",
+      "properties": {
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The picked airplane's profile, the same one the nav log takes (NavLogProfile: its cruise_tas_kt, fuel_burn_gph and service_ceiling_ft, and for a climb climb_tas_kt, climb_rate_fpm_sea_level and climb_fuel_burn_gph, wingtip_flight::performance). A climb's ground, minutes and gallons come from its climb figures; with none of them (no climb_tas_kt) the climb is drawn as a step. Null or left out where no airplane is picked: nothing is assumed (the owner, 2026-11-09), a descent keeps its geometry and has no time or fuel."
+        },
+        "along_nm": {
+          "type": "number",
+          "description": "Where the waypoint is along the route, nautical miles from the departure."
+        },
+        "from_ft": {
+          "type": "number",
+          "description": "The altitude flown into the waypoint, feet MSL."
+        },
+        "to_ft": {
+          "type": "number",
+          "description": "The waypoint's own altitude, feet MSL."
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "start_at",
+            "cross_at"
+          ],
+          "description": "start_at: the change begins at the waypoint and runs on from it; cross_at: it is done by the waypoint."
+        },
+        "groundspeed_kt": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The leg's ground speed, knots: a descent's minutes, and with tas_kt the wind a climb's ground speed is scaled by. Null where the leg has none."
+        },
+        "tas_kt": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The leg's cruise true airspeed, knots, for the wind's share of the ground speed."
+        },
+        "fuel_burn_gph": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The leg's cruise burn, gallons an hour: a descent's gallons."
+        },
+        "oat_c": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "The forecast temperature at to_ft, degrees C: the climb is flown that far from a standard day (ISA, PHAK ch. 4). Null for a standard day."
+        }
+      },
+      "required": [
+        "along_nm",
+        "from_ft",
+        "to_ft",
+        "mode"
+      ]
+    },
+    "answer": {
+      "title": "AltitudeChangeAnswer",
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "climb",
+            "descent",
+            "level"
+          ]
+        },
+        "begins_nm": {
+          "type": "number"
+        },
+        "ends_nm": {
+          "type": "number"
+        },
+        "ft_per_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "minutes": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "gallons": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "kind",
+        "begins_nm",
+        "ends_nm",
+        "ft_per_nm",
+        "minutes",
+        "gallons"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

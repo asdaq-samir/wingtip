@@ -1,0 +1,25 @@
+{
+  "title": "LessonFocus",
+  "type": "object",
+  "properties": {
+    "fix": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "segment": {
+      "enum": [
+        "transition",
+        "final",
+        "missed",
+        null
+      ]
+    }
+  },
+  "required": [
+    "fix",
+    "segment"
+  ],
+  "description": "What a lesson's step shows on the map: a fix ringed, a part of the procedure's line drawn over."
+}

@@ -1,0 +1,72 @@
+{
+  "title": "NavLogProfile",
+  "type": "object",
+  "properties": {
+    "cruise_tas_kt": {
+      "type": "number",
+      "description": "At its cruise power at cruise_altitude_ft (else 6,000 ft) on a standard day."
+    },
+    "fuel_burn_gph": {
+      "type": "number"
+    },
+    "service_ceiling_ft": {
+      "type": "number"
+    },
+    "cruise_power_pct": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "cruise_altitude_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "climb_tas_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "climb_fuel_burn_gph": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "climb_rate_fpm_sea_level": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "taxi_fuel_gal": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "usable_fuel_gal": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "supplemental_oxygen": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "pressurized": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": true,
+  "description": "An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none."
+}

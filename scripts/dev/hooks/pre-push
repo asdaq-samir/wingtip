@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # The quick checks, before a push, for the parts of the repo the push
 # changes against origin/main: TypeScript and ESLint for apps/web/, ruff for
-# the Python, `cargo check` for engine/. A type error or a lint failure
+# the Python, `cargo check` for engine/, each changed language's formatter
+# (scripts/dev/format.sh --check), and the generated files and budgets CI
+# checks (the screens, the design tokens, the toolchain versions, the file
+# sizes, the brand guard), each only when the push changes what it covers. A type error or a lint failure
 # then stops on the Mac in seconds rather than in CI minutes later (the
 # owner, 2026-11-06: development faster). The full checks -- the tests --
 # stay with scripts/dev/one-at-a-time.sh and CI; this runs outside the lock,
@@ -17,34 +20,93 @@ if [ -n "${SKIP_HOOKS:-}" ]; then
   exit 0
 fi
 
-here=$(git rev-parse --show-toplevel)
+repo=$(git rev-parse --show-toplevel)
+here=$repo
 PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HOME/.local/bin:$HOME/.cargo/bin
 zero=0000000000000000000000000000000000000000
 
 # The files the pushed commits change against origin/main (from where they
 # left it), for each ref pushed. A deleted ref changes nothing.
+refs=$(cat)
 changed=$(
   while read -r _local_ref local_sha _remote_ref _remote_sha; do
     [ "$local_sha" = "$zero" ] && continue
     base=$(git merge-base origin/main "$local_sha" 2>/dev/null) || continue
     git diff --name-only --diff-filter=d "$base" "$local_sha"
-  done | sort -u
+  done <<<"$refs" | sort -u
 )
+# A path with anything but plain characters (a space, `;`, `$`, a backtick, a
+# quote, a leading `-`) is left out and named: file names reach the tools
+# below as arguments, never through a shell string, but a branch from
+# another contributor can carry any name, so the odd ones are not checked
+# here (CI checks them) rather than trusted.
+safe='^[A-Za-z0-9._@+/][A-Za-z0-9._@+/-]*$'
+odd=$(grep -vE "$safe" <<<"$changed" || true)
+if [ -n "$odd" ]; then
+  echo "pre-push: not checked here, odd file name(s): $(tr '\n' ' ' <<<"$odd" | cut -c1-200)"
+  changed=$(grep -E "$safe" <<<"$changed" || true)
+fi
 if [ -z "$changed" ]; then exit 0; fi
+
+# The commit pushed (the last of the refs, for a push of several), since the
+# checks must read it and not whatever this checkout holds: a push from the
+# main checkout of another branch's commit (`git push origin
+# origin/claude/x:refs/heads/claude/y`) made ruff report E902 "No such file"
+# for every file only the pushed commit has (2026-11-08). When the checkout
+# is not on that commit, or has uncommitted changes to tracked files, the
+# commit is checked out detached into a temporary worktree, removed on exit.
+pushed=$(printf '%s\n' "$refs" | awk -v z="$zero" '$2 != z { sha = $2 } END { print sha }')
+tmp=""
+# shellcheck disable=SC2329  # run by the EXIT trap below
+cleanup() {
+  if [ -n "$tmp" ]; then
+    git -C "$repo" worktree remove --force "$tmp" >/dev/null 2>&1 || rm -rf "$tmp"
+    git -C "$repo" worktree prune
+  fi
+}
+trap cleanup EXIT
+note_tree=""
+if [ -n "$pushed" ] && { [ "$(git -C "$repo" rev-parse HEAD)" != "$pushed" ] || [ -n "$(git -C "$repo" status --porcelain --untracked-files=no)" ]; }; then
+  tmp=$(mktemp -d "${TMPDIR:-/tmp}/wingtip-pre-push.XXXXXX")
+  if git -C "$repo" worktree add -q --detach "$tmp" "$pushed" >/dev/null 2>&1; then
+    here=$tmp
+    # Packages are installed once, in the checkout; the pushed tree reads them.
+    if [ -d "$repo/apps/web/node_modules" ]; then ln -s "$repo/apps/web/node_modules" "$tmp/apps/web/node_modules"; fi
+    note_tree="pushed commit ${pushed:0:9}, in a temporary worktree"
+  else
+    echo "pre-push: could not check out ${pushed:0:9}; checking this working tree instead"
+    rm -rf "$tmp"
+    tmp=""
+  fi
+fi
 
 failed=0
 note() { echo "pre-push: $*"; }
 fail() { echo "pre-push: $* failed"; failed=1; }
+if [ -n "$note_tree" ]; then note "checking the $note_tree"; fi
+
+# Which parts the push touches is scripts/areas.yml's (the table check.sh and
+# CI's changes filter read too), from the pushed tree's own copy. The quick
+# checks below are the web's and the engine's; ruff goes by .py files.
+if command -v python3 >/dev/null; then
+  areas=$(python3 "$here/scripts/areas.py" areas <<<"$changed") || { note "areas.yml unreadable, no quick check run"; areas=""; }
+else
+  note "no python3 here: the web and engine checks are left to CI"
+  areas=""
+fi
+has_area() { grep -qx "$1" <<<"$areas"; }
 
 # --- web: tsc over the project, ESLint over the files changed ---------------
 web_files=$(grep -E '^apps/web/.*\.(ts|tsx|js|jsx|mjs|cjs)$' <<<"$changed" | grep -v '^apps/web/src/lib/engine/pkg/' || true)
-if grep -qE '^apps/web/' <<<"$changed"; then
-  lint=$(cut -c10- <<<"$web_files" | xargs)
+if has_area web; then
+  lint=()
+  while IFS= read -r f; do [ -n "$f" ] && lint+=("${f#apps/web/}"); done <<<"$web_files"
   # The API and engine types are generated, not committed: tsc needs them.
-  web_cmd="npm run -s types >/dev/null && npx tsc --noEmit${lint:+ && npx eslint --no-warn-ignored $lint}"
+  # The files are the script's own arguments ("$@"), after `--`, not text.
+  web_cmd='npm run -s types >/dev/null && npx tsc --noEmit && { [ "$#" -eq 0 ] || npx eslint --max-warnings 0 --no-warn-ignored -- "$@"; }'
   if command -v npx >/dev/null && [ -d "$here/apps/web/node_modules" ]; then
-    note "web: tsc${lint:+, eslint}"
-    (cd "$here/apps/web" && sh -c "$web_cmd") || fail "web"
+    note "web: tsc${lint[0]:+, eslint}"
+    (cd "$here/apps/web" && sh -c "$web_cmd" sh "${lint[@]+"${lint[@]}"}") || fail "web"
   elif [ -z "${PRE_PUSH_WEB_DOCKER:-}" ]; then
     # In Docker the web check took about 12 minutes on a loaded Mac
     # (2026-11-07), and the owner wants no check to hold up a push: without
@@ -55,7 +117,7 @@ if grep -qE '^apps/web/' <<<"$changed"; then
     # if a check has built it; the newest one otherwise (a lock a commit or
     # two older types the same nearly always); else it is built here, once,
     # the way check.sh builds it, and both share it from then on.
-    node=$(tr -d ' \n' < "$here/apps/web/.nvmrc")
+    node=$("$here/scripts/build/toolchain.sh" get nodejs)
     tag=wingtip-check-web:$({ echo "node $node"; cat "$here/apps/web/package.json" "$here/apps/web/package-lock.json"; } | shasum -a 256 | cut -c1-16)
     if ! docker image inspect "$tag" >/dev/null 2>&1; then
       newest=$(docker image ls wingtip-check-web --format '{{.CreatedAt}}|{{.Repository}}:{{.Tag}}' | sort -r | head -1 | cut -d'|' -f2)
@@ -77,10 +139,10 @@ EOF
       fi
     fi
     if [ -n "$tag" ]; then
-      note "web: tsc${lint:+, eslint} in $tag"
+      note "web: tsc${lint[0]:+, eslint} in $tag"
       hide=()
       [ -d "$here/apps/web/node_modules" ] && hide=(--tmpfs /repo/apps/web/node_modules)
-      docker run --rm -v "$here:/repo" "${hide[@]+"${hide[@]}"}" -w /repo/apps/web "$tag" sh -c "$web_cmd" || fail "web"
+      docker run --rm -v "$here:/repo" "${hide[@]+"${hide[@]}"}" -w /repo/apps/web "$tag" sh -c "$web_cmd" sh "${lint[@]+"${lint[@]}"}" || fail "web"
     else
       note "web: skipped, the wingtip-check-web image would not build"
     fi
@@ -92,33 +154,113 @@ fi
 # --- Python: ruff over the files changed, each under its own settings -------
 py_files=$(grep -E '\.py$' <<<"$changed" | grep -v '^services/planner/app/detection\.py$' || true)
 if [ -n "$py_files" ]; then
-  if command -v ruff >/dev/null; then ruff=(ruff)
-  elif command -v uvx >/dev/null; then ruff=(uvx -q ruff)
+  # .tool-versions' ruff, as CI's and format.sh's: the PATH's only at that version.
+  want_ruff=$("$here/scripts/build/toolchain.sh" get ruff)
+  if command -v ruff >/dev/null && [ "$(ruff --version 2>/dev/null)" = "ruff $want_ruff" ]; then ruff=(ruff)
+  elif command -v uvx >/dev/null; then ruff=(uvx -q "ruff@$want_ruff")
   else ruff=()
   fi
   if [ ${#ruff[@]} -gt 0 ]; then
     note "python: ruff on $(wc -l <<<"$py_files" | tr -d ' ') file(s)"
     # .ruff.toml applies to every file: ruff finds the
     # nearest one from each path.
-    (cd "$here" && xargs "${ruff[@]}" check --force-exclude <<<"$py_files") || fail "ruff"
+    (cd "$here" && while IFS= read -r f; do printf '%s\0' "$f"; done <<<"$py_files" \
+      | xargs -0 "${ruff[@]}" check --force-exclude --) || fail "ruff"
   else
     note "python: skipped, no ruff or uvx here"
   fi
 fi
 
 # --- engine: cargo check over the crates CI tests ---------------------------
-if grep -qE '^engine/' <<<"$changed"; then
+if has_area engine; then
   if command -v cargo >/dev/null && cargo --version >/dev/null 2>&1; then
-    # CI's own crate list (ci.yml's test job), so this checks what CI tests;
-    # one target directory for every worktree, so only the first is cold.
-    read -ra pkgs <<<"$(grep -oE 'cargo test --profile ci [^#]*' "$here/.github/workflows/ci.yml" | head -1 | grep -oE -- '-p [a-z0-9-]+' | xargs)"
+    # CI's own crate list (scripts/ci/engine_affected.py --all), so this checks what CI tests;
+    # a target directory per worktree, keyed by its path. One shared by every
+    # worktree failed falsely: Cargo took another worktree's newer build of a
+    # crate of ours, at another path, for this one's (2026-11-08).
+    read -ra pkgs <<<"$(python3 "$here/scripts/ci/engine_affected.py" --all)"
     note "engine: cargo check"
-    CARGO_TARGET_DIR=${WINGTIP_HOOK_CARGO_TARGET:-$HOME/Library/Caches/wingtip-pre-push-cargo} \
-      cargo check -q --manifest-path "$here/engine/Cargo.toml" "${pkgs[@]}" || fail "cargo check"
+    # The directories of worktrees not pushed from in two weeks go (a cold
+    # check at worst).
+    find "$HOME/Library/Caches/wingtip-pre-push-cargo" -mindepth 1 -maxdepth 1 -type d -mtime +14 -exec rm -rf {} + 2>/dev/null || true
+    # Keyed by the lock's hash as well: the same path with another lock gave
+    # a false "cannot find `performance` in `wingtip_flight`" while a clean
+    # target passed (2026-11-08), so a failure is tried once more on a clean
+    # target, and only that second result counts.
+    lockkey=$(shasum -a 256 "$here/engine/Cargo.lock" 2>/dev/null | cut -c1-8)
+    target=${WINGTIP_HOOK_CARGO_TARGET:-$HOME/Library/Caches/wingtip-pre-push-cargo/$(basename "$repo")-$(printf '%s' "$repo" | shasum -a 256 | cut -c1-8)-${lockkey:-nolock}}
+    mkdir -p "$target" && printf '%s\n' "$repo" > "$target/.worktree"   # for tidy-local.sh
+    if ! CARGO_TARGET_DIR=$target cargo check -q --manifest-path "$here/engine/Cargo.toml" "${pkgs[@]}"; then
+      note "engine: cargo check failed; once more on a clean target"
+      rm -rf "$target"
+      CARGO_TARGET_DIR=$target cargo check -q --manifest-path "$here/engine/Cargo.toml" "${pkgs[@]}" || fail "cargo check"
+    fi
   else
     note "engine: skipped, no Rust toolchain here (CI checks it)"
   fi
 fi
+
+# --- the formatters, for the languages the push changes ----------------------
+# scripts/dev/format.sh --check, each language's tool at its pinned version,
+# over that language's whole tree (seconds each). Nothing here runs in
+# Docker: Prettier without node on this machine, and the Java without mvn,
+# are left to CI, as the web's tsc is.
+fmt=()
+grep -qE '^(apps/web/.*\.(ts|tsx|js|jsx|mjs|cjs|css|json|jsonc|md)|scripts/build/.*\.mjs|\.prettierrc\.yaml)$' <<<"$changed" && fmt+=(web)
+grep -qE '(\.py$|^\.ruff\.toml$)' <<<"$changed" && fmt+=(python)
+grep -qE '^engine/.*(\.rs|rustfmt\.toml)$' <<<"$changed" && fmt+=(rust)
+grep -qE '^apps/ios/(.*\.swift|\.swiftformat)$' <<<"$changed" && fmt+=(swift)
+grep -qE '(^apps/android/.*\.kts?$|^\.editorconfig$)' <<<"$changed" && fmt+=(kotlin)
+grep -qE '^services/gateway/(.*\.java|pom\.xml)$' <<<"$changed" && fmt+=(java)
+if [ ${#fmt[@]} -gt 0 ]; then
+  note "format: ${fmt[*]}"
+  "$here/scripts/dev/format.sh" --check --no-docker "${fmt[@]}"
+  case $? in
+    0) ;;
+    2) note "format: a language above was skipped (its tool is not here; CI checks it)" ;;
+    *) fail "format (scripts/dev/format.sh ${fmt[*]} formats them)" ;;
+  esac
+fi
+
+# --- the engine's layering: seconds, the standard library ------------------
+if has_area engine; then
+  note "engine: the crates' layering"
+  out=$(python3 "$here/scripts/ci/engine_layers.py") || { grep "::error" <<<"$out"; fail "engine layers"; }
+fi
+# --- the generated files and the budgets CI holds the tree to ---------------
+# Each a second or two, Python's standard library alone, and each run only
+# when the push changes what it reads or writes: the files it generates, its
+# source, or the script itself. Every one broke CI on 2026-11-10 after
+# pushing clean here, so they stop here first. Without python3 they are
+# left to CI with a note, as the checks above are.
+gen() {   # gen <pattern of the paths it covers> <label> <fix> <command>...
+  local paths=$1 label=$2 fix=$3
+  shift 3
+  grep -qE "$paths" <<<"$changed" || return 0
+  if ! command -v python3 >/dev/null; then
+    note "$label: left to CI (no python3 here)"
+    return 0
+  fi
+  note "$label"
+  out=$("$@" 2>&1) || { tail -n 12 <<<"$out"; fail "$label ($fix)"; }
+}
+gen '^(design/screens\.json$|scripts/build/screens\.|docs/navigation\.md$|apps/web/src/lib/navigation/generated/|apps/ios/Wingtip/Navigation/Generated/|apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/|apps/android/app/src/main/res/xml/shortcuts\.xml$|apps/android/app/src/main/res/values/screens_strings\.xml$)' \
+  "the screens' links are design/screens.json's" "scripts/build/screens.sh writes them" \
+  "$here/scripts/build/screens.sh" --check
+gen '^(design/|scripts/build/design[-_]tokens|apps/web/src/styles/tokens\.css$|apps/web/src/lib/tokens\.ts$|apps/web/src/lib/fixtures/formats\.json$|apps/ios/Wingtip/Design/Generated/|apps/android/app/src/main/kotlin/app/wingtipmaps/android/design/generated/)' \
+  "the design tokens are design/tokens.json's" "scripts/build/design-tokens.sh writes them" \
+  "$here/scripts/build/design-tokens.sh" --check
+# Every place scripts/build/toolchain.py holds to .tool-versions (areas.yml's
+# arch paths for it).
+gen '(^\.tool-versions$|rust-toolchain\.toml$|^engine/.*Cargo\.toml$|^scripts/build/toolchain\.|\.sh$|Dockerfile|docker-compose.*\.yml$|^\.github/workflows/.*\.yml$|^\.devcontainer/devcontainer\.json$|^apps/web/\.nvmrc$|^apps/web/package\.json$|^services/gateway/pom\.xml$|^apps/android/app/build\.gradle\.kts$|^apps/android/gradle/|^services/.*/requirements-dev.*\.txt$|^scripts/dev/format\.sh$|^CLAUDE\.md$|^README\.md$|^docs/[^/]*\.md$|^\.claude/skills/checks/SKILL\.md$)' \
+  "every version is .tool-versions'" "scripts/build/toolchain.sh writes them" \
+  "$here/scripts/build/toolchain.sh" --check
+gen '(\.(ts|tsx|py|rs|swift|kt|java)$|^scripts/ci/file_sizes)' \
+  "the file-size budget" "split the file, or scripts/ci/file_sizes_allow.txt" \
+  python3 "$here/scripts/ci/file_sizes.py" --base origin/main
+gen '(^apps/web/src/.*\.(ts|tsx|css)$|^apps/ios/.*\.swift$|^apps/android/app/src/main/.*\.kt$|^scripts/ci/brand_guard|^design/tokens\.json$)' \
+  "no raw style value outside the design tokens" "use design/tokens.json's" \
+  python3 "$here/scripts/ci/brand_guard.py"
 
 if [ "$failed" -ne 0 ]; then
   echo "pre-push: fix the above, or push anyway with git push --no-verify (or SKIP_HOOKS=1)"

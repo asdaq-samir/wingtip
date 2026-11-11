@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from "react";
-import { Command as CommandPrimitive } from "cmdk";
 import { cn } from "cn";
 import AirportResults from "../../../components/AirportResults";
-import { Popover, PopoverAnchor, PopoverContent } from "../../../components/ui/popover";
+import { CommandField, CommandRoot } from "../../../components/ui/command";
+import { Popover, PopoverContent } from "../../../components/ui/popover";
 import { usePreferences, type RecentAirport } from "../../../lib/preferences";
 import { TEXT } from "../../../lib/text";
 import { useAirportSearch, type AirportSearchRow } from "../../../lib/useAirportSearch";
@@ -20,7 +20,19 @@ const NO_ROWS: AirportSearchRow[] = [];
  * (ProceduresRoute), there being no route box there ("I want to
  * completely get rid of the route box for in the plan").
  */
-export default function CardIdent({ value, label, onCommit, testId, bold = true, placeholder, focused = false, wide = false, onEmpty, suggest = true, fixes = false }: {
+export default function CardIdent({
+  value,
+  label,
+  onCommit,
+  testId,
+  bold = true,
+  placeholder,
+  focused = false,
+  wide = false,
+  onEmpty,
+  suggest = true,
+  fixes = false,
+}: {
   value: string;
   label: string;
   onCommit: (ident: string) => void;
@@ -30,7 +42,7 @@ export default function CardIdent({ value, label, onCommit, testId, bold = true,
   placeholder?: string;
   /** Focused as it is drawn: a stop being added, typed into at once. By a
    *  ref, which runs as the input is put in, not the autoFocus attribute
-   *  (jsx-a11y/no-autofocus, CI's lint); the same where it is asked for. */
+   *  (jsx-a11y-x/no-autofocus, CI's lint); the same where it is asked for. */
   focused?: boolean;
   /** The rest of the card's line, not the ident's width. */
   wide?: boolean;
@@ -45,12 +57,29 @@ export default function CardIdent({ value, label, onCommit, testId, bold = true,
 }) {
   const [draft, setDraft] = useState(value);
   const input = useRef<HTMLInputElement | null>(null);
-  const focusIn = useCallback((el: HTMLInputElement | null) => { input.current = el; el?.focus(); }, []);
-  const keep = useCallback((el: HTMLInputElement | null) => { input.current = el; }, []);
+  // What the suggestions are placed under: the field, or its box with the
+  // copy of its words (Base UI's Positioner takes it as `anchor`).
+  const [anchor, setAnchor] = useState<HTMLElement | null>(null);
+  const focusIn = useCallback(
+    (el: HTMLInputElement | null) => {
+      input.current = el;
+      if (wide) setAnchor(el);
+      el?.focus();
+    },
+    [wide],
+  );
+  const keep = useCallback(
+    (el: HTMLInputElement | null) => {
+      input.current = el;
+      if (wide) setAnchor(el);
+    },
+    [wide],
+  );
   // The airports and waypoints that answer what is typed, under the field,
   // as the route box offers them (the owner, 2026-11-06: "route cards are
   // not showing ... airport suggestion with the search as you type"): the
-  // same search and list, cmdk's arrows and Enter on the field.
+  // same search and list, Base UI's Autocomplete's arrows and Enter on the
+  // field.
   const [typing, setTyping] = useState(false);
   const [dismissed, setDismissed] = useState<string | null>(null);
   const searching = suggest && typing && draft.trim() !== "" && draft !== value;
@@ -65,8 +94,9 @@ export default function CardIdent({ value, label, onCommit, testId, bold = true,
   // Set as a suggestion is taken, so the blur after it puts in nothing
   // more: its draft, read in that blur, is still what was half typed.
   const picked = useRef(false);
-  // Set once an arrow has moved the highlight since the last typing: cmdk
-  // lights the first row by itself, which Return must not take for the pilot.
+  // Set once an arrow has moved the highlight since the last typing: a row
+  // lit by itself (as cmdk lit the first) must not be taken by Return for
+  // the pilot.
   const arrowed = useRef(false);
   const commit = () => {
     setTyping(false);
@@ -93,57 +123,101 @@ export default function CardIdent({ value, label, onCommit, testId, bold = true,
   // characters cut KUGN's N off in the semibold capitals (the owner's
   // screenshot, 2026-11-05).
   const box = (
-    <input
-      value={draft} aria-label={label} data-testid={testId} placeholder={placeholder} ref={focused ? focusIn : keep}
-      autoCapitalize="characters" autoCorrect="off" autoComplete="off" spellCheck={false} enterKeyHint="done"
+    <CommandField
+      aria-label={label}
+      data-testid={testId}
+      placeholder={placeholder}
+      ref={focused ? focusIn : keep}
+      autoCapitalize="characters"
+      autoCorrect="off"
+      autoComplete="off"
+      spellCheck={false}
+      enterKeyHint="done"
       size={1}
-      onChange={e => { picked.current = false; arrowed.current = false; setDraft(e.target.value.toUpperCase()); setTyping(true); }}
-      onFocus={() => { picked.current = false; }}
+      onFocus={() => {
+        picked.current = false;
+      }}
       onBlur={commit}
-      onKeyDown={e => {
+      onKeyDown={(e) => {
         if (e.key === "ArrowDown" || e.key === "ArrowUp") arrowed.current = true;
-        // Return takes a suggestion only once an arrow has chosen it (cmdk's
-        // own Enter on the root, after this); else the typing, and cmdk is
-        // not let to take the row it lit by default.
+        // Return takes a suggestion only once an arrow has chosen it (the
+        // list's own Enter, after this); else the typing, and the list is
+        // not let to take a row lit by itself.
         if (e.key === "Enter") {
           if (open && arrowed.current) return;
+          e.preventBaseUIHandler();
           e.stopPropagation();
           e.currentTarget.blur();
         }
-        if (e.key === "Escape") { setDraft(value); setTyping(false); e.currentTarget.blur(); }
+        if (e.key === "Escape") {
+          e.preventBaseUIHandler();
+          setDraft(value);
+          setTyping(false);
+          e.currentTarget.blur();
+        }
       }}
       className={cn(
         "relative z-10 -my-0.5 min-w-0 rounded-md bg-foreground/8 px-1.5 py-0.5 uppercase outline-none placeholder:font-normal placeholder:normal-case placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring",
-        bold ? "font-semibold" : "font-normal", wide ? "w-full flex-1 py-1.5" : "col-start-1 row-start-1 w-full", TEXT.row,
+        bold ? "font-semibold" : "font-normal",
+        wide ? "w-full flex-1 py-1.5" : "col-start-1 row-start-1 w-full",
+        TEXT.row,
       )}
     />
   );
-  const field = wide ? box : (
-    <span className="inline-grid min-w-0">
-      <span aria-hidden="true" className={cn("invisible col-start-1 row-start-1 -my-0.5 px-1.5 py-0.5 whitespace-pre", draft || !placeholder ? cn("uppercase", bold ? "font-semibold" : "font-normal") : "font-normal", TEXT.row)}>
+  const field = wide ? (
+    box
+  ) : (
+    <span ref={setAnchor} className="inline-grid min-w-0">
+      <span
+        aria-hidden="true"
+        className={cn(
+          "invisible col-start-1 row-start-1 -my-0.5 px-1.5 py-0.5 whitespace-pre",
+          draft || !placeholder ? cn("uppercase", bold ? "font-semibold" : "font-normal") : "font-normal",
+          TEXT.row,
+        )}
+      >
         {(draft || placeholder || "WWW") + " "}
       </span>
       {box}
     </span>
   );
   return (
-    <CommandPrimitive shouldFilter={false} loop className={wide ? "flex min-w-0 flex-1" : "contents"}>
-      <Popover open={open} onOpenChange={next => { if (!next) setDismissed(draft); }}>
-        <PopoverAnchor asChild>{field}</PopoverAnchor>
+    <CommandRoot
+      value={draft}
+      onValueChange={(next) => {
+        picked.current = false;
+        arrowed.current = false;
+        setDraft(next.toUpperCase());
+        setTyping(true);
+      }}
+    >
+      <Popover
+        open={open}
+        onOpenChange={(next) => {
+          if (!next) setDismissed(draft);
+        }}
+      >
+        {field}
         <PopoverContent
-          align="start" sideOffset={6} className="w-72 max-w-[calc(100vw-16px)] gap-0 p-2"
+          anchor={anchor}
+          align="start"
+          sideOffset={6}
+          className="w-72 max-w-[calc(100vw-16px)] gap-0 p-2"
           // The typing stays in the field: a press on a row would take the
           // focus first, and the field's blur put in the half typed.
-          onOpenAutoFocus={e => e.preventDefault()}
-          onPointerDown={e => e.preventDefault()} onMouseDown={e => e.preventDefault()}
+          initialFocus={false}
+          onPointerDown={(e) => e.preventDefault()}
+          onMouseDown={(e) => e.preventDefault()}
           data-testid={`${testId}-suggestions`}
         >
           <AirportResults
-            rows={open ? rows : NO_ROWS} answered={answered}
-            onAirport={airport => pick(airport.ident, airport)} onWaypoint={ident => pick(ident)}
+            rows={open ? rows : NO_ROWS}
+            answered={answered}
+            onAirport={(airport) => pick(airport.ident, airport)}
+            onWaypoint={(ident) => pick(ident)}
           />
         </PopoverContent>
       </Popover>
-    </CommandPrimitive>
+    </CommandRoot>
   );
 }

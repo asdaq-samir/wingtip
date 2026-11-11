@@ -40,8 +40,16 @@ fn c81() -> Value {
 
 fn kdlh() -> Value {
     json!([
-        runway(&[("03", 31.0), ("21", 211.0)], 5719.0, json!({"end": "21", "headwind_kt": 7, "crosswind_kt": -1, "gust_crosswind_kt": null})),
-        runway(&[("09", 91.0), ("27", 271.0)], 10591.0, json!({"end": "27", "headwind_kt": 2, "crosswind_kt": -7, "gust_crosswind_kt": null})),
+        runway(
+            &[("03", 31.0), ("21", 211.0)],
+            5719.0,
+            json!({"end": "21", "headwind_kt": 7, "crosswind_kt": -1, "gust_crosswind_kt": null})
+        ),
+        runway(
+            &[("09", 91.0), ("27", 271.0)],
+            10591.0,
+            json!({"end": "27", "headwind_kt": 2, "crosswind_kt": -7, "gust_crosswind_kt": null})
+        ),
     ])
 }
 
@@ -86,7 +94,9 @@ fn nine_27() -> Value {
 }
 
 fn favoured(ends: Value, metar: Value, variation: f64, recent: Value) -> Value {
-    ask("runway_favoured_end", json!({"ends": ends, "metar": metar, "variation_deg": variation, "recent": recent}))
+    // One runway through runway_with_winds: the end its wind favours.
+    ask("runway_with_winds", json!({"runways": [{"end_headings": ends}], "metar": metar, "variation_deg": variation, "recent": recent}))[0]
+        .clone()
 }
 
 #[test]
@@ -95,8 +105,13 @@ fn the_end_into_the_wind_is_favoured_its_crosswind_signed_and_rounded_as_the_pla
     let w = favoured(nine_27(), json!({"wind_dir_true_deg": 300.0, "wind_speed_kt": 12.0}), -3.0, Value::Null);
     assert_eq!(w, json!({"end": "27", "headwind_kt": 10, "crosswind_kt": 6, "gust_crosswind_kt": null}));
     // Whole numbers, as the planner's Python gives them.
-    let raw = call("runway_favoured_end", &json!({"ends": nine_27(), "metar": {"wind_dir_true_deg": 300.0, "wind_speed_kt": 12.0},
-                                                   "variation_deg": 0.0}).to_string()).unwrap();
+    let raw = call(
+        "runway_with_winds",
+        &json!({"runways": [{"end_headings": nine_27()}], "metar": {"wind_dir_true_deg": 300.0, "wind_speed_kt": 12.0},
+                                                 "variation_deg": 0.0})
+        .to_string(),
+    )
+    .unwrap();
     assert!(raw.contains("\"headwind_kt\":10,"), "{raw}");
     // 040 on 9 (088 true): from the left, and the gust its own.
     let w = favoured(nine_27(), json!({"wind_dir_true_deg": 40.0, "wind_speed_kt": 10.0, "wind_gust_kt": 20.0}), 0.0, Value::Null);
@@ -124,14 +139,19 @@ fn no_wind_without_a_report_a_direction_or_a_runway_heading() {
 #[test]
 fn calm_is_nothing_on_the_first_end_or_on_the_one_the_last_wind_favoured() {
     let calm = json!({"wind_dir_true_deg": 0.0, "wind_speed_kt": 0.0});
-    let raw = call("runway_favoured_end", &json!({"ends": nine_27(), "metar": calm, "variation_deg": 0.0}).to_string()).unwrap();
-    assert_eq!(raw, r#"{"end":"9","headwind_kt":0.0,"crosswind_kt":0.0,"gust_crosswind_kt":null}"#);
+    let raw =
+        call("runway_with_winds", &json!({"runways": [{"end_headings": nine_27()}], "metar": calm, "variation_deg": 0.0}).to_string())
+            .unwrap();
+    assert_eq!(raw, r#"[{"end":"9","headwind_kt":0.0,"crosswind_kt":0.0,"gust_crosswind_kt":null}]"#);
     let w = favoured(nine_27(), calm.clone(), 0.0, json!({"wind_dir_true_deg": 270.0, "wind_speed_kt": 8.0}));
     assert_eq!(w, json!({"end": "27", "headwind_kt": 0.0, "crosswind_kt": 0.0, "gust_crosswind_kt": null, "in_use": true}));
     // with_winds: the one runway the last wind favoured is in use.
     let runways = json!([{"end_headings": [["6", 58.0], ["24", 238.0]]}, {"end_headings": [["9", 88.0], ["27", 268.0]]}]);
-    let out = ask("runway_with_winds", json!({"runways": runways, "metar": calm, "variation_deg": -3.0,
-                                               "recent": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 8.0}}));
+    let out = ask(
+        "runway_with_winds",
+        json!({"runways": runways, "metar": calm, "variation_deg": -3.0,
+                                               "recent": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 8.0}}),
+    );
     assert_eq!(out[0].get("in_use"), None);
     assert_eq!(out[1]["in_use"], json!(true));
     assert_eq!(out[1]["end"], json!("27"));
@@ -141,8 +161,16 @@ fn calm_is_nothing_on_the_first_end_or_on_the_one_the_last_wind_favoured() {
 
 fn field() -> Value {
     json!([
-        runway(&[("09", 90.0), ("27", 270.0)], 6000.0, json!({"end": "27", "headwind_kt": 12, "crosswind_kt": 1, "gust_crosswind_kt": null})),
-        runway(&[("18", 180.0), ("36", 360.0)], 2400.0, json!({"end": "36", "headwind_kt": 0, "crosswind_kt": -12, "gust_crosswind_kt": null})),
+        runway(
+            &[("09", 90.0), ("27", 270.0)],
+            6000.0,
+            json!({"end": "27", "headwind_kt": 12, "crosswind_kt": 1, "gust_crosswind_kt": null})
+        ),
+        runway(
+            &[("18", 180.0), ("36", 360.0)],
+            2400.0,
+            json!({"end": "36", "headwind_kt": 0, "crosswind_kt": -12, "gust_crosswind_kt": null})
+        ),
     ])
 }
 
@@ -220,10 +248,13 @@ fn a_field_with_no_report_goes_by_the_nearest_reports_wind_said_as_that_stations
     // KUGN's 220° at 8 kt: 18° off 24, 48° off 27.
     let p = pick_of(c81(), json!({"station": "KUGN", "distance_nm": 11.1, "dir_true_deg": 220, "speed_kt": 8, "gust_kt": 15}), Value::Null);
     let r = |x: f64| x.round();
-    assert_eq!(p, json!({
-        "ident": "24", "headwind_kt": r(8.0 * 18f64.to_radians().cos()), "crosswind_kt": r(8.0 * (-18f64).to_radians().sin()),
-        "gust_crosswind_kt": r(15.0 * (-18f64).to_radians().sin()), "calm": false, "from": {"ident": "KUGN", "nm": 11.0},
-    }));
+    assert_eq!(
+        p,
+        json!({
+            "ident": "24", "headwind_kt": r(8.0 * 18f64.to_radians().cos()), "crosswind_kt": r(8.0 * (-18f64).to_radians().sin()),
+            "gust_crosswind_kt": r(15.0 * (-18f64).to_radians().sin()), "calm": false, "from": {"ident": "KUGN", "nm": 11.0},
+        })
+    );
 }
 
 #[test]
@@ -231,9 +262,16 @@ fn calm_and_a_variable_wind_pick_the_runway_in_use_or_the_most_used_and_no_wind_
     let p = pick_of(c81(), json!({"station": "KUGN", "distance_nm": 11, "dir_true_deg": null, "speed_kt": 0}), Value::Null);
     assert_eq!((p["ident"].clone(), p["calm"].clone(), p["from"]["ident"].clone()), (json!("6"), json!(true), json!("KUGN")));
     let kept = json!([
-        runway(&[("06", 58.0), ("24", 238.0)], 3573.0, json!({"end": "06", "headwind_kt": 0, "crosswind_kt": 0, "gust_crosswind_kt": null})),
-        runway(&[("09", 88.0), ("27", 268.0)], 3270.0,
-               json!({"end": "27", "headwind_kt": 0, "crosswind_kt": 0, "gust_crosswind_kt": null, "in_use": true})),
+        runway(
+            &[("06", 58.0), ("24", 238.0)],
+            3573.0,
+            json!({"end": "06", "headwind_kt": 0, "crosswind_kt": 0, "gust_crosswind_kt": null})
+        ),
+        runway(
+            &[("09", 88.0), ("27", 268.0)],
+            3270.0,
+            json!({"end": "27", "headwind_kt": 0, "crosswind_kt": 0, "gust_crosswind_kt": null, "in_use": true})
+        ),
     ]);
     let p = pick_of(kept, Value::Null, Value::Null);
     assert_eq!((p["ident"].clone(), p["calm"].clone(), p["in_use"].clone()), (json!("27"), json!(true), json!(true)));
@@ -244,14 +282,20 @@ fn calm_and_a_variable_wind_pick_the_runway_in_use_or_the_most_used_and_no_wind_
     let p = pick_of(c81(), json!({"station": "KUGN", "distance_nm": 11, "dir_true_deg": null, "speed_kt": 6}), Value::Null);
     assert_eq!((p["ident"].clone(), p["calm"].clone(), p["variable_kt"].clone()), (json!("6"), json!(true), json!(6.0)));
     assert_eq!(pick_of(c81(), Value::Null, Value::Null), Value::Null);
-    assert_eq!(pick_of(c81(), json!({"station": "KRFD", "distance_nm": 2, "dir_true_deg": 90, "speed_kt": null}), Value::Null), Value::Null);
+    assert_eq!(
+        pick_of(c81(), json!({"station": "KRFD", "distance_nm": 2, "dir_true_deg": 90, "speed_kt": null}), Value::Null),
+        Value::Null
+    );
 }
 
 #[test]
 fn a_forecasts_wind_is_picked_into_on_its_own_the_report_now_set_aside() {
     let at = 1_790_000_000.0;
     let p = pick_of(kdlh(), json!({"station": "KDLH", "distance_nm": 0, "dir_true_deg": 90, "speed_kt": 12}), json!(at));
-    assert_eq!((p["ident"].clone(), num(&p["headwind_kt"]), p["from"].clone(), num(&p["forecast_at"])), (json!("9"), 12.0, Value::Null, at));
+    assert_eq!(
+        (p["ident"].clone(), num(&p["headwind_kt"]), p["from"].clone(), num(&p["forecast_at"])),
+        (json!("9"), 12.0, Value::Null, at)
+    );
     let p = pick_of(c81(), json!({"station": "KRFD", "distance_nm": 21.4, "dir_true_deg": 270, "speed_kt": 10}), json!(at));
     assert_eq!((p["ident"].clone(), p["from"].clone()), (json!("27"), json!({"ident": "KRFD", "nm": 21.0})));
 }
@@ -261,7 +305,8 @@ fn ends_square_across_the_wind_are_a_tie_the_longer_runway_taking_it() {
     // A wind from 360 straight across 09/27 and its parallel: the sums leave
     // a tailwind of a few 1e-16 on one end, which is no reason to pick it
     // over the longer runway (wingtip.runway_wind rounds them to 9 places).
-    let runways = json!([runway(&[("09", 90.0), ("27", 270.0)], 3000.0, Value::Null), runway(&[("09", 90.0), ("27", 270.0)], 5000.0, Value::Null)]);
+    let runways =
+        json!([runway(&[("09", 90.0), ("27", 270.0)], 3000.0, Value::Null), runway(&[("09", 90.0), ("27", 270.0)], 5000.0, Value::Null)]);
     let mut runways = runways;
     runways[1]["runway_ends"] = json!([{"ident": "27", "heading_true_deg": 270.0}, {"ident": "09", "heading_true_deg": 90.0}]);
     let p = pick_of(runways, json!({"station": "KX", "distance_nm": 3, "dir_true_deg": 0, "speed_kt": 10}), json!(0));
@@ -290,27 +335,53 @@ fn a_pattern_is_joined_on_the_45_from_its_side_and_over_midfield_from_the_other(
     let e = ask("pattern_entry", json!({"end": end, "course_deg": 0}));
     assert_eq!(e["from"], json!("south"));
     assert_eq!(e["pattern_side"], json!(true));
-    assert_eq!(e["words"], json!("From the south, on the pattern's side: join the 45° to the left downwind for runway 27, abeam midfield at pattern altitude."));
+    assert_eq!(
+        e["words"],
+        json!(
+            "From the south, on the pattern's side: join the 45° to the left downwind for runway 27, abeam midfield at pattern altitude."
+        )
+    );
     let e = ask("pattern_entry", json!({"end": end, "course_deg": 180}));
     assert_eq!(e["pattern_side"], json!(false));
     assert!(e["words"].as_str().unwrap().contains("cross midfield 500 ft above pattern altitude, descend to it well clear, and turn back"));
-    assert_eq!(ask("pattern_exit", json!({"traffic": "right"})),
-               json!("Straight out, or a 45° right turn once past the departure end at pattern altitude."));
+    assert_eq!(
+        ask("pattern_exit", json!({"traffic": "right"})),
+        json!("Straight out, or a 45° right turn once past the departure end at pattern altitude.")
+    );
 }
 
 #[test]
 fn the_pattern_altitude_is_the_faas_where_published_and_1000_ft_above_the_field_where_not() {
-    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 742.0, "published_agl_ft": 800.0})),
-               json!({"agl_ft": 800.0, "altitude_ft": 1542, "published": true}));
-    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 727.0})), json!({"agl_ft": 1000.0, "altitude_ft": 1727, "published": false}));
+    assert_eq!(
+        ask("pattern_altitude", json!({"elevation_ft": 742.0, "published_agl_ft": 800.0})),
+        json!({"agl_ft": 800.0, "altitude_ft": 1542, "flown_ft": 1500, "published": true})
+    );
+    assert_eq!(
+        ask("pattern_altitude", json!({"elevation_ft": 727.0})),
+        json!({"agl_ft": 1000.0, "altitude_ft": 1727, "flown_ft": 1700, "published": false})
+    );
     assert_eq!(ask("pattern_altitude", json!({}))["altitude_ft"], Value::Null);
     // Halves to even, as the planner's round.
     assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 812.5}))["altitude_ft"], json!(1812));
 }
 
 #[test]
+fn the_pattern_altitude_flown_is_to_the_nearest_hundred_feet_from_the_unrounded_sum() {
+    // KOSH, 808 ft: 1,808 flown at 1,800; a field at 750 ft is 1,750, a
+    // half, to the even 1,800; 1,749.6 stays 1,700 (not 1,750 then 1,800).
+    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 808.0}))["flown_ft"], json!(1800));
+    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 750.0}))["flown_ft"], json!(1800));
+    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 650.0}))["flown_ft"], json!(1600));
+    assert_eq!(ask("pattern_altitude", json!({"elevation_ft": 749.6}))["flown_ft"], json!(1700));
+    assert_eq!(ask("pattern_altitude", json!({}))["flown_ft"], Value::Null);
+}
+
+#[test]
 fn an_end_is_right_traffic_only_where_the_faa_flags_it() {
-    let ends = ask("runway_ends_traffic", json!({"end_headings": [["05", 50.0], ["23", null], ["H1", null]], "variation_deg": -3.0, "right": ["23"]}));
+    let ends = ask(
+        "runway_ends_traffic",
+        json!({"end_headings": [["05", 50.0], ["23", null], ["H1", null]], "variation_deg": -3.0, "right": ["23"]}),
+    );
     assert_eq!(ends[0], json!({"ident": "05", "heading_true_deg": 50.0, "traffic": "left"}));
     assert_eq!(ends[1]["traffic"], json!("right"));
     assert!(near(num(&ends[1]["heading_true_deg"]), 227.0, 1e-9));
@@ -360,35 +431,26 @@ fn a_runway_shorter_than_the_distance_over_50_ft_and_one_within_safo_19001s_15_p
 fn the_fit_is_the_runway_checks_own_distance() {
     // 270 at 10 straight down 27, a grass runway, a warm low day.
     let f = fit(3000.0, "TURF", json!({"dir_true_deg": 270, "speed_kt": 10}), json!({"temp_c": 30, "altimeter_in_hg": 29.72}));
-    let air = ask("gonogo_field_air", json!({"elevation_ft": 900, "altimeter_in_hg": 29.72, "temp_c": 30}));
-    let d = ask("gonogo_end_distance", json!({"table": c172()["takeoff"], "runway": {"surface": "TURF", "length_ft": 3000},
-                                               "pressure_alt_ft": air["pressure_alt_ft"], "temp_c": air["temp_c"], "weight_lb": 2550,
-                                               "headwind_kt": 10}));
+    let (pressure_alt_ft, temp_c) = wingtip_engine::gonogo::runways::field_air(900.0, Some(29.72), Some(30.0));
+    let d = ask(
+        "gonogo_end_distance",
+        json!({"table": c172()["takeoff"], "runway": {"surface": "TURF", "length_ft": 3000},
+                                               "pressure_alt_ft": pressure_alt_ft, "temp_c": temp_c, "weight_lb": 2550,
+                                               "headwind_kt": 10}),
+    );
     assert_eq!(num(&f["needed_ft"]), num(&d["total_ft"]).round());
     // No weight known: the table's heaviest, the longest distance.
     let heaviest = fit(3000.0, "TURF", Value::Null, json!({"weight_lb": null}));
-    let d = ask("gonogo_end_distance", json!({"table": c172()["takeoff"], "runway": {"surface": "TURF"}, "pressure_alt_ft": 900,
-                                               "temp_c": 15, "weight_lb": null, "headwind_kt": 0}));
+    let d = ask(
+        "gonogo_end_distance",
+        json!({"table": c172()["takeoff"], "runway": {"surface": "TURF"}, "pressure_alt_ft": 900,
+                                               "temp_c": 15, "weight_lb": null, "headwind_kt": 0}),
+    );
     assert_eq!(num(&heaviest["needed_ft"]), num(&d["total_ft"]));
     // No tables: nothing needed, and no demonstrated crosswind: never over.
     let none = fit(3000.0, "ASP", json!({"dir_true_deg": 360, "speed_kt": 30}), json!({"aircraft": {"crosswind": null}}));
     assert_eq!((none["needed_ft"].clone(), none["crosswind_over"].clone()), (Value::Null, json!(false)));
     assert_eq!(wingtip_engine::runway::performance::DISTANCE_MARGIN, 1.15);
-}
-
-#[test]
-fn the_pohs_short_field_table_read_between_its_points_with_its_notes() {
-    // weightBalance.test.ts's cases, the 172S's tables.
-    let t = c172()["takeoff"].clone();
-    let sf = |pa: f64, temp: f64, lb: f64, head: f64, grass: bool| {
-        ask("gonogo_short_field", json!({"table": t, "pressure_alt_ft": pa, "temp_c": temp, "weight_lb": lb, "headwind_kt": head, "grass": grass}))
-    };
-    assert_eq!(sf(0.0, 15.0, 2550.0, 0.0, false), json!({"ground_roll_ft": 960.0, "total_ft": 1635.0, "caveats": []}));
-    assert_eq!(num(&sf(0.0, 10.0, 2550.0, 9.0, false)["ground_roll_ft"]), 835.0);
-    assert_eq!(num(&sf(0.0, 10.0, 2550.0, -2.0, false)["ground_roll_ft"]), 1020.0);
-    let g = sf(0.0, 10.0, 2550.0, 0.0, true);
-    assert_eq!((num(&g["ground_roll_ft"]), num(&g["total_ft"])), (1065.0, 1715.0));
-    assert_eq!(num(&sf(0.0, 0.0, 2475.0, 0.0, false)["ground_roll_ft"]), 805.0);
 }
 
 // --- the traffic pattern's legs (trafficPattern.test.ts, test_pattern.py) ---
@@ -428,8 +490,10 @@ fn a_pattern_is_flown_on_its_ends_side_its_downwind_three_quarters_of_a_mile_out
     let names: Vec<&str> = left["legs"].as_array().unwrap().iter().map(|l| l["name"].as_str().unwrap()).collect();
     assert_eq!(names, ["Upwind", "Crosswind", "Downwind", "Base", "Final"]);
     assert_eq!(left["legs"][4]["to"], json!({"lat": 0.0, "lon": 0.0}));
-    assert_eq!((left["kind"].clone(), left["runway"].clone(), left["traffic"].clone(), left["altitude_ft"].clone()),
-               (json!("arrival"), json!("9"), json!("left"), json!(1800.0)));
+    assert_eq!(
+        (left["kind"].clone(), left["runway"].clone(), left["traffic"].clone(), left["altitude_ft"].clone()),
+        (json!("arrival"), json!("9"), json!("left"), json!(1800.0))
+    );
 }
 
 #[test]
@@ -450,7 +514,9 @@ fn a_pattern_is_joined_on_the_45_abeam_midfield_and_not_drawn_without_a_threshol
 
 #[test]
 fn the_way_out_is_straight_or_a_45_to_the_patterns_side_whichever_is_nearer_the_way_on() {
-    let dep = |toward: Value| ask("departure_pattern", json!({"ident": "KTST", "runway": equator(), "end_ident": "09", "altitude_ft": 1800, "toward": toward}));
+    let dep = |toward: Value| {
+        ask("departure_pattern", json!({"ident": "KTST", "runway": equator(), "end_ident": "09", "altitude_ft": 1800, "toward": toward}))
+    };
     let ahead = dep(json!({"lat": 0, "lon": 2}));
     assert_eq!(ahead["kind"], json!("departure"));
     assert_eq!(ahead["legs"].as_array().unwrap().len(), 1);
@@ -479,7 +545,11 @@ fn side_of(end: (f64, f64), along: f64, p: (f64, f64)) -> f64 {
 fn the_planners_arrival_comes_in_at_45_to_the_downwind_and_lands_on_the_threshold() {
     // test_pattern.py: "5" finds NASR's "05".
     let points: Vec<(f64, f64)> = ask("arrival_circuit", json!({"runway": ugn(), "end_ident": "5"}))["points"]
-        .as_array().unwrap().iter().map(|p| (num(&p[0]), num(&p[1]))).collect();
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| (num(&p[0]), num(&p[1])))
+        .collect();
     let [entry, midfield, downwind_end, _final_start, threshold] = points[..] else { panic!("{points:?}") };
     assert_eq!(threshold, (42.4176, -87.8742));
     let along = bearing((42.4176, -87.8742), (42.4268, -87.8593));
@@ -509,7 +579,7 @@ fn the_planners_departure_leaves_straight_out_or_at_45_toward_the_way_on() {
 #[test]
 fn a_rule_not_known_or_input_not_of_its_shape_is_an_error_not_a_panic() {
     assert!(call("wind_components", "{}").is_err());
-    assert!(call("runway_favoured_end", r#"{"ends": [[1, 2]], "variation_deg": 0}"#).is_err());
+    assert!(call("runway_with_winds", r#"{"runways": [{"end_headings": [[1, 2]]}], "variation_deg": 0}"#).is_err());
     assert!(call("departure_circuit", r#"{"runway": {}, "end_ident": "9", "toward": [1]}"#).is_err());
     assert!(call("runway_end_fit", r#"{"runway": {}, "elevation_ft": 0}"#).is_err());
 }

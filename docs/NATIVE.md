@@ -3,10 +3,8 @@
 Wingtip Maps as a pure SwiftUI app (`apps/ios/`), with no web view: the same
 planner and gateway as the website, and only the screens on the phone.
 The plan, its phases and gates are in the owner's doc "Native iOS
-Transition Plan" (24 October 2026). It is the iOS app: the Capacitor
-shell that wrapped the website went on 2026-11-06, at the owner's word
-("native only, delete the wrappers"). The Android twin, the same engine behind Compose and MapLibre,
-is docs/NATIVE-ANDROID.md.
+Transition Plan" (24 October 2026). The Android twin, the same engine
+behind Compose and MapLibre, is [NATIVE-ANDROID.md](NATIVE-ANDROID.md).
 
 ## What is here
 
@@ -33,7 +31,8 @@ is docs/NATIVE-ANDROID.md.
 - `apps/ios/Wingtip`: the app. `Config` (the host), `Session` (who is signed
   in), `Charts` (which chart, from `/api/chart`, kept for offline),
   `Tiles` (the tile address, the store on disk, the MapKit overlay) and
-  `Views` (the map under the system sheet with the four tabs).
+  `Views` (the map under the system sheet with the plan under the one
+  search, `Search`).
 - `apps/ios/WingtipTests`: Swift Testing.
 
 ## Rules
@@ -74,21 +73,22 @@ is docs/NATIVE-ANDROID.md.
 
 | Rule | Web (the reference) | On the phone | Fixture |
 |---|---|---|---|
-| A pilot's hold as the planner reads it, its legs' minutes by altitude (wingtip.holds; AIM 5-3-8 j.4(a)) | `lib/routeHolds.ts`, `lib/holdEntry.ts` `legMinutes` | the engine: `hold_read`, `hold_write`, `holding_leg_minutes` (`Hold`) | `holds.json` |
+| A pilot's hold as the planner reads it, its legs' minutes by altitude (wingtip.holds; AIM 5-3-8 j.4(a)) | `features/plan/lib/routeHolds.ts`, `lib/holdEntry.ts` `legMinutes` | the engine: `hold_read`, `hold_write`, `holding_leg_minutes` (`Hold`) | `holds.json` |
 | A hold's entry and wind, lost comms' altitudes (AIM 5-3-8; 14 CFR 91.185) | the planner's /api/holding, /api/lost-comms | the engine: `holding`, `lost_comms` (`Engine.holding`, `Engine.lostComms`) | the engine's own tests |
 | The route's procedures, a fix off a point, a fix's charted altitudes | `lib/procedures.ts`, `lib/identSchema.ts` | the engine: `procedures_write`, `frd_read`, `frd_write`, `altitude_lines` | the engine's own tests |
 | The airplane's checklist written as text | `lib/checklist.ts` | the engine: `checklist_read`, `checklist_write` (`ChecklistText`) | `checklist.json` |
-| Flash-card drills: light gun signals (14 CFR 91.125), VFR weather minimums (91.155), Leitner's boxes | `lib/drills.ts` | Swift: `Drills` in `PilotLogic.swift` | `drills.json` |
-| Two-way radio failure, the route and when to leave the clearance limit (14 CFR 91.185(c)(1), (c)(3)) | `lib/lostComms.ts` | Swift: `LostComms` in `PilotLogic.swift` | `lostComms.json` |
-| Flight plan items 15 and 16 (AIM Appendix 4; 14 CFR 91.121(a)(2)) | `lib/flightPlanForm.ts` | Swift: `FilingForm` in `Views/InFlightViews.swift` | `filingForm.json` |
-| Traffic's label and the 1,000 ft "near" (14 CFR 91.159's spacing) | `lib/map/traffic.ts` | the engine: `traffic_marks` (`Traffic.marks`) | `traffic.json` |
+| Flash-card drills: light gun signals (14 CFR 91.125), VFR weather minimums (91.155), Leitner's boxes | `features/pilot/drills.ts` | Swift: `Drills` in `PilotLogic.swift` | `drills.json` |
+| Two-way radio failure, the route and when to leave the clearance limit (14 CFR 91.185(c)(1), (c)(3)) | `features/pilot/lostComms.ts` | Swift: `LostComms` in `PilotLogic.swift` | `lostComms.json` |
+| Flight plan items 15 and 16 (AIM Appendix 4; 14 CFR 91.121(a)(2)) | `features/plan/lib/flightPlanForm.ts` | Swift: `FilingForm` in `Views/InFlightViews.swift` | `filingForm.json` |
+| Traffic's label and the 1,000 ft "near" (14 CFR 91.159's spacing) | `features/plan/map/traffic.ts` | the engine: `traffic_marks` (`Traffic.marks`) | `traffic.json` |
 | A watched airplane in the air, a takeoff or landing watch going off | `lib/aircraftAlerts.ts` | the engine: `airborne_now`, `alert_fires` (`Tracking`) | the engine's own tests |
+| In flight: where the airplane is on its route, the next waypoint and the destination, the desired track, the fuel left; the vertical speed; the glide ring; own ship on an airport diagram (#218) | `navlog/dryRun.ts`, `lib/map/position/glide.ts` | the engine: `in_flight`, `vertical_speed`, `glide_ring`, `diagram_labels`, `diagram_graticule`, `diagram_point` (`InFlight`, `InstrumentsBar`, `DiagramPage`) | the engine's own tests, `InFlightTests` |
 | The dry run, and a GPX or KML track read | `navlog/dryRun.ts`, `lib/track.ts` | the engine: `dry_run`, `read_track`, `thin_track` (`DryRun`, `GPXTrack`) | the engine's own tests |
-| The logbook as CSV, out and in (ForeFlight Logbook Guide v14.0; 61.57(a), (b)) | `lib/logbookCsv.ts` | the engine: `csv_rows`, `logbook_csv_read`, `logbook_csv_write` (`LogbookCSV`) | `logbookCsv.json` |
-| Endorsements' words, the lapse warning (61.197), those in force, ACS codes; a handbook page's figures | `lib/endorsements.ts`, `lib/checkride.ts`, `lib/handbookText.ts` | the engine: `endorsement_render`, `endorsement_lapse`, `endorsements_in_force`, `acs_codes`, `handbook_figures` | the engine's own tests |
-| Runway numbers and calm winds (AIM 7-1-28); the FAA's words, airspace names, special-use limits, frequencies, fuel | `lib/pattern.ts`, `lib/wind.ts`, `lib/advisories.ts`, `lib/frequencies.ts`, `lib/airspace.ts`, `lib/stopServices.ts` | the engine: `gonogo_runway_number`, `runway_calm`, `wind_calm`, `faa_words`, `title_case`, `short_airspace_name`, `sua_altitudes`, `frequency_line`, `fuel_names` (`AirportWords`) | the engine's own tests |
+| The logbook as CSV, out and in (ForeFlight Logbook Guide v14.0; 61.57(a), (b)) | `features/pilot/logbookCsv.ts` | the engine: `csv_rows`, `logbook_csv_read`, `logbook_csv_write` (`LogbookCSV`) | `logbookCsv.json` |
+| Endorsements' words, the lapse warning (61.197), those in force, ACS codes; a handbook page's figures | `lib/endorsements.ts`, `lib/checkride.ts`, `features/plan/lib/handbookText.ts` | the engine: `endorsement_render`, `endorsement_lapse`, `endorsements_in_force`, `acs_codes`, `handbook_figures` | the engine's own tests |
+| Runway numbers and calm winds (AIM 7-1-28); the FAA's words, airspace names, special-use limits, frequencies, fuel | `features/plan/lib/pattern.ts`, `features/plan/lib/wind.ts`, `lib/advisories.ts`, `lib/frequencies.ts`, `lib/airspace.ts`, `lib/stopServices.ts` | the engine: `gonogo_runway_number`, `runway_calm`, `wind_calm`, `faa_words`, `title_case`, `short_airspace_name`, `sua_altitudes`, `frequency_line`, `fuel_names` (`AirportWords`) | the engine's own tests |
 | An ATC clearance heard, read into its items and the route it gives (AIM 4-4-3, 5-2-6; figures AIM 4-2-8, 4-2-9) | `lib/clearance.ts` | the engine: `read_clearance`, `cleared_route` (`Clearance`) | `clearances.json` |
-| An ATIS or AWOS/ASOS broadcast heard, read into its figures (AIM 4-1-13, 7-1-11; JO 7110.65 2-6-6, 2-7-2) | `lib/atis.ts` | the engine: `read_atis` (`Atis`) | `atis.json` |
+| An ATIS or AWOS/ASOS broadcast heard, read into its figures (AIM 4-1-13, 7-1-11; JO 7110.65 2-6-6, 2-7-2) | `features/plan/lib/atis.ts` | the engine: `read_atis` (`Atis`) | `atis.json` |
 | A transmission said to us by its call sign, and where its "direct" sends us (AIM 4-2-4) | `lib/heardCall.ts` | the engine: `our_call`, `direct_of` (`HeardCall`) | `heardCalls.json` |
 | A clearance's places found with no signal, among the kept regions' airports, navaids and fixes (the planner's wingtip.spoken) | `wingtip/spoken.py` | the engine's `spoken.rs` (`Engine.hear` on `CyclePacks.keptPacks`) | the engine's own tests, test_spoken.py's cases |
 
@@ -107,9 +107,10 @@ each with the chips of the figures it rests on; a chip opens the report
 as sent. Every figure is the engine's or the planner's; a model only
 writes the sentences, and never a figure of its own:
 
-- `WordsFor` asks the planner first (`PlannerWords`: `POST
-  /api/words/{weather,risk}` through the gateway's proxy, Claude on the
-  planner, app.ai_words), then this iPhone when the planner fails or
+- `WordsFor` asks the planner first while the Claude features are on
+  (`PlannerWords`: `POST /api/words/{weather,risk}` through the gateway's
+  proxy, Claude in the assistant service; off by default, decision 0035,
+  when it asks only this iPhone), then this iPhone when the planner fails or
   cannot be reached (`OnDeviceWords`: Apple's on-device model,
   FoundationModels on iOS 26 with Apple Intelligence on), and says why
   in plain words when neither can (an older iOS, the model still
@@ -131,6 +132,49 @@ writes the sentences, and never a figure of its own:
   canImport(FoundationModels)` and `#available(iOS 26, *)`, so the app
   builds on an older SDK and runs on iOS 18 without the words.
 
+## Ask and the Brief's glance, with no signal
+
+`Wingtip/OnDevice/` answers Ask in the air with nothing leaving the
+phone, and gives the Brief its glance when the planner's words cannot be
+had. The figures are the engine's on the phone or the planner's as last
+fetched; a model only words them:
+
+- **Where an answer comes from** (`AskRoute`): Ask's menu at its top left
+  picks Automatic (the planner, else this iPhone), The Planner, or On
+  This iPhone, kept as `wingtip.ask.where`. Under Automatic a phone with
+  no path out (`NWPathMonitor`) asks the phone at once, and a planner
+  that fails or errs before its first word is replaced by the phone's
+  answer; one begun stays the planner's. The caption over each answer
+  says who wrote it.
+- **The tools** (`OnDeviceTools`, Foundation Models' `Tool`): the field's
+  METAR, TAF and density altitude; the wind on its runways; the fuel; the
+  glide; the nearest fields from the cycle packs. Each asks the engine
+  (`FieldFigures`, `FlightFigures`: `wind_components`,
+  `pressure_altitude_ft`, `gonogo_density_altitude`, `filed_endurance`,
+  `glide_range`, `best_fields` over `airports_in_view`) or quotes the
+  report as sent, and hands the model `[id] label: words`; each chip
+  ends with its source line. There is no ADS-B (FIS-B) weather on the
+  phone yet, so the reports are the briefing's, with the time they were
+  fetched.
+- **The guard** (`OnDeviceAsk`): a sentence citing an id no tool handed
+  over is dropped (`Words.checked`), and so is one quoting a number not
+  in the figures it cites (`NumberGuard`).
+- **With no model** (an older iOS, Apple Intelligence off, the model
+  still downloading, or nothing kept): `EngineWords` reads the question's
+  words for its topic and says each figure as the engine's own sentence,
+  captioned "The engine on this iPhone" with why.
+- **The Brief's glance** (`BriefSummary`, `BriefSummarySection`): when
+  the Go / No-Go's words are not the planner's, "At a Glance" over it
+  gives the verdict and at most three actions (docs/decisions/0012),
+  guided generation of `BriefGlanceAnswer` from the findings held. The
+  finding must be the verdict's, each action must name a finding acted
+  on and quote only its numbers, or the engine's `Glance` is shown. Say
+  It reads it aloud.
+- `WingtipTests/OnDeviceAskTests` and `OnDeviceRouteTests` hold the
+  engine's figures through the bridge, the tools' calls through
+  `GeneratedContent`, the guided glance parsed from JSON, the guard, the
+  router's falls and the degrade with no model, with the model faked.
+
 ## Apple's guidance, and where the app stands
 
 Apple names no architecture; for SwiftUI it asks for a declarative data
@@ -140,13 +184,17 @@ rules (here the engine) for the rest. The app follows that, and these
 pieces close the gaps a review against Apple's guidance found (the
 owner, 2026-11-03):
 
-- **App Intents** (`Wingtip/Intents/`): plan a trip to a place, the
-  nearest airports, the weather at a field and direct to a place, as
-  Siri, Shortcuts and Spotlight phrases (`WingtipShortcuts`). The airport
+- **App Intents** (`Wingtip/Intents/`): plan a trip to a place, brief a
+  flight to one (the Brief opened through `BriefAsk`), the nearest
+  airports, the weather at a field, direct to a place, and start or stop
+  listening to the radio ("start recording"), as Siri, Shortcuts and
+  Spotlight phrases (`WingtipShortcuts`). The fields Siri suggests are
+  indexed in Spotlight (`AirportSpotlight`, an `IndexedEntity`) and open
+  their card (`OpenAirportIntent`). The airport
   is an App Entity (`AirportEntity`: the kept route's, the Favorites and
   the Recents suggested, the planner's search behind them), so "Plan a
   trip to KLAS in Wingtip Maps" goes in one breath. An intent that needs
-  the app sets `PendingCommand`, which `RootView` applies.
+  the app sets `PendingCommand`, which `RootView` applies (`RootView+Commands.swift`).
 - **Home Screen widgets** (`WingtipWidgets/FlightWidgets.swift`,
   `Wingtip/WidgetFeed.swift`, `Wingtip/Shared/WidgetSnapshot.swift`): the
   next flight's route, figures, Go / No-Go and departure weather on the
@@ -158,21 +206,65 @@ owner, 2026-11-03):
   `?place=`, `?flight=`) opens in the app as a `PendingCommand`, and a GPX
   or KML track from Files or Mail is flown again on the map (the document
   types in project.yml). The sign-in link stays `Session.open`'s.
-- **A Live Activity** (`Wingtip/FlightActivity.swift`, the
-  `WingtipWidgets` extension, `Wingtip/Shared/FlightActivityAttributes`):
+- **A Live Activity** (`Wingtip/Activity/`, `WingtipWidgets/FlightActivityWidget.swift`,
+  `Wingtip/Shared/FlightActivityAttributes` and `FlightActivityLines`):
   a flight in progress on the Lock Screen and in the Dynamic Island with
-  the next checkpoint, the ETA and the fuel, from the dry run or own ship
-  under way with a routed plan.
+  the next fix and the time to it, the ETA, the planned fuel left (only
+  with an airplane picked), the frequency ATC last handed us and the
+  copilot's message, from the app's in-flight models (`InFlight`'s
+  engine answer, `Copilot`, `AtcCopilot`: `FlightActivityContent`). It
+  starts with the dry run or own ship under way with a routed plan, or
+  from the Control Center control (iOS 18's Start Flight toggle,
+  `WingtipWidgets/FlightControl.swift` with `Shared/FlightControlIntent.swift`,
+  a LiveActivityIntent run in the app by `Activity/FlightSwitch.swift`
+  from the route kept on the phone), and ends five minutes after landing.
+  Every word is written by `Format`, compiled into the extension.
+- **In flight** (#218, the owner's option A of 2026-11-08):
+  `Wingtip/InFlight.swift` is the view model each fix (own ship's or the
+  dry run's) is asked of the engine through once -- `in_flight`,
+  `vertical_speed`, `glide_ring` -- and FiguresStrip, both strip layouts,
+  the bar and the map read it. At flying speed `Views/InstrumentsBar.swift`
+  sits over the map under the alerts and the radio: groundspeed, track
+  (magnetic on a route, else marked T), GPS altitude, vertical speed; on
+  the route the next waypoint's distance, time to go and desired track,
+  the distance off course and the destination's arrival in Zulu with the
+  fuel the plan leaves; Nearest (the Nearest list with Divert) one tap
+  away; and "Planning aid · not for navigation". The glide ring is drawn
+  dashed about the airplane (`FlightMapLayer`'s `GlidePolyline`) over the
+  higher of the packs' ground under it (the packs' ahead answer's
+  `ground_ft`, asked with the alerts network or none) and the nearest
+  field. A field's Charts list has Diagram with your position
+  (`Views/DiagramOwnShip.swift`): the FAA's PDF drawn by PDFKit, own ship
+  placed by the diagram's own latitude and longitude marks (the free
+  d-TPP's diagrams have no GeoPDF georeference; KORD's and a few others
+  have no marks, and say so).
+- **A cockpit ADS-B receiver** (`Wingtip/Receiver/`): a Stratux, Sentry,
+  Garmin GDL 39/52 or uAvionix receiver on the Wi-Fi sends GDL 90 to UDP
+  port 4000; `ReceiverListener` (Network.framework) gathers it and once a
+  second the engine reads it (`receiver_read`, `engine/crates/receiver`).
+  Its traffic is drawn ahead of the internet's, merged by ICAO address
+  (`receiver_traffic`, through `Traffic`); a chip on the map says
+  "Stratux · 12 targets · GPS"; a field's FIS-B METAR and TAF show on its
+  card's Weather tab when the weather service has none
+  (`receiver_reports`); FIS-B NEXRAD is drawn over the chart
+  (`receiver_nexrad`, `NexradMapLayer`). Setup's Map section has ADS-B
+  Receiver: Auto or Off. A receiver that only broadcasts to the network
+  is heard once Apple grants the multicast entitlement.
 - **The privacy manifest** (`Wingtip/PrivacyInfo.xcprivacy`): what is
   collected and the required-reason APIs used; the session is cookies in
   `HTTPCookieStorage`, and `UserDefaults` holds no secret.
 - **Strict concurrency** (`SWIFT_STRICT_CONCURRENCY: complete` in
-  project.yml): the compiler's data-race checks as warnings under Swift 5
-  mode; the language mode goes to 6 once a runner's log is clean.
+  project.yml): Swift 6's language mode (`SWIFT_VERSION: "6.0"`), so a
+  data race is a compile error, and every warning is one too
+  (`SWIFT_TREAT_WARNINGS_AS_ERRORS`).
 - **A string catalog** (`Wingtip/Localizable.xcstrings`,
   `SWIFT_EMIT_LOC_STRINGS`): every `Text` gathered at build, so a second
-  language is a column, not a rewrite.
-- **Scene restoration**: the tab a scene was on comes back with it
+  language is a column, not a rewrite. xcodebuild extracts the strings
+  but, unlike Xcode's editor, never writes them back: after a build that
+  adds or drops a string, `scripts/build/ios-strings.sh` syncs the catalog
+  from the build's `.stringsdata` (`xcrun xcstringstool sync`), and CI's
+  iOS job fails with `--check` when the committed one differs.
+- **Scene restoration**: the pages a scene was on come back with it
   (`@SceneStorage` in `RootView`).
 - **A UI smoke test** (`WingtipUITests/LaunchTests`): the app launched
   and its first screen shown, run by the runner with the unit tests.
@@ -183,6 +275,36 @@ owner, 2026-11-03):
   amber mark or the haptics say it), with permission asked in the
   moment the pilot first asks for one. The entitlement is in
   project.yml.
+
+## Checklists and the passenger briefing
+
+Each airplane's checklists (#220; the owner's decision of 2026-11-08:
+free, kept on the device) are two plain texts, normal and emergency,
+kept in UserDefaults by the N-number, else by the type's profile where
+no N-number is picked (`Wingtip/Checklists.swift`, `LocalChecklists`),
+and read by the engine's `checklist_read` (`ChecklistText`); the gateway's
+checklist is no longer asked for. They start empty: "Start from the
+Phases" puts in the headings only, the phases of a handbook's Normal
+Procedures and the emergencies of its Emergency Procedures (GAMA
+Specification No. 1, Sections 4 and 3; `ChecklistPhases`, the same lists
+as the web's and Android's), never a manufacturer's words. Each is
+edited as text and run with its items ticked, a section's "n of m" by its
+title, and Start Over (`Views/ChecklistViews.swift`, `ChecklistModel`).
+They open from the Aircraft tab and from each of the pilot's airplanes;
+the map has no emergency button (the owner, 2026-11-08).
+The watch is sent the normal list.
+
+The Brief's Passenger Briefing (#223, `Wingtip/Passengers.swift`,
+`Views/PassengerBriefingView.swift`) is the FAASTeam's SAFETY briefing
+(FAA Safety Briefing, Jan/Feb 2007 and Jul/Aug 2014), each item with its
+source under it -- 14 CFR 91.107(a)(1) the only one a regulation asks
+for, (a)(2) and (3) the belts fastened, the ACS's PA.II.B.S2 for the
+doors and the propeller -- ticked for the flight (its route and day) and
+kept on the device. Under them, the flight in a few lines for the
+passengers -- the fields by name, leaving on the phone's clock and in
+UTC, about how long in the air, landing, and the destination's weather in
+words where it reports -- sent with the share sheet. The live track for
+passengers waits for the server on AWS.
 
 ## The Apple Watch app
 
@@ -197,7 +319,7 @@ and items, ticked on the wrist, a section reset by a swipe) and Nearest
 
 The watch links no engine (the XCFramework has no watchOS slice) and
 calls no server. The phone (`Wingtip/WatchLink.swift`) sends the
-airplane's checklist, as the gateway gave it, and the pilot's fix as the
+airplane's normal checklist, as kept on the phone, and the pilot's fix as the
 WatchConnectivity application context, and answers the watch's nearest
 question from the planner (`Planner.nearest`; the cycle packs give the
 airspace at a point only, so offline the watch is told the planner is
@@ -224,21 +346,25 @@ The owner's ask (2026-11-03) for a fast app with no workarounds, done in
 these places:
 
 - **Tiles** (`Tiles/ChartTileOverlay`, `TileStore`, `KeepRoute`): the
-  overlay draws 512-point tiles composed from four of the pyramid's
-  256-pixel tiles, so a 3x screen scales a tile 1.5 times instead of 3
-  and needs about 18 of them instead of 55; a composed tile is kept in
-  memory (`TileCache`, 64 MB) in front of the disk store and the network,
-  concurrent loads of one tile are coalesced, and a kept route's tiles
-  bring their parents one and two levels up, so a zoom out is answered
-  from the phone. Each load is a signpost (`app.wingtipmaps.ios`, `tiles`).
+  chart's renderer draws the pyramid's own tiles (below); a decoded tile
+  is kept in memory (`TileCache`, 96 MB, about three screens) in front
+  of the disk store and the network, concurrent loads of one tile are
+  coalesced, the loads of tiles that leave the view are cancelled, and a
+  kept route's tiles bring their parents one and two levels up, so a
+  zoom out is answered from the phone. Decoding (with the day's lift)
+  runs off the main thread, about 7 ms a tile, and drawing a decoded
+  tile on MapKit's drawing threads about 1 ms (measured on the Mac mini,
+  2026-11-08). Each load is a signpost (`app.wingtipmaps.ios`, `tiles`).
 - **Marks** (`Views/ChartMap`, `Views/AirportMarks`): the airports'
   annotations carry display priorities by the field's size
   and airspace, so MapKit drops overlaps rather than drawing them; the
   checkpoints' annotations are diffed, not removed and re-added.
 - **The map's data from the packs** (`PackMapData`, `Views/ChartOverlays`):
   the airports, airspace and navaids in view are asked of the engine's
-  pack readers first and of the planner only where no pack answers, so in
-  flight the map draws with no signal. They are asked again during a
+  pack readers (the airports of the planner where no pack answers; the
+  planner's airspace and navaid in-view answers are gone since the web
+  draws them from the overlay tiles), so in flight the map draws with no
+  signal. They are asked again during a
   pinch, not only once the fingers lift, whenever the view changes level
   or leaves the box already asked for (`ViewFetch`, as the web's
   useGlView), the packs answering at once.
@@ -249,16 +375,20 @@ The web map's look of 2026-11-07/08 (#510, #537, #539, #541-#544) is
 brought over in MapKit's own way, the same result rather than the same
 code:
 
-- **The chart's tiles**: from the 256-pixel pyramid, four to each
-  512-point tile, and by day the web's lift of the chart (`ChartLift`:
-  MapLibre's raster-contrast and -saturation 0.1); at night, dimmed, as
-  printed. Not the @2x pyramid (#510): MapKit lays a tile overlay's
-  picture one pixel to a point whatever its size or its PNG's density,
-  so the 1024-pixel tiles of @2x children (since 2026-11-06) were drawn
-  twice too large from each tile's corner, the chart off the position
-  (Beloit's under O'Hare, measured in the simulator 2026-11-08). The
-  composed tile already has the pixels of one @2x tile; more on a retina
-  screen needs a renderer of the app's own drawing the tiles.
+- **The chart's tiles**: the 512-pixel @2x pyramid (#510) where the
+  layer has it (`scales`), drawn by a renderer of the app's own
+  (`ChartTileRenderer`): each tile's image goes into its own map rect
+  with Core Graphics at full resolution. MapKit's tile overlay could
+  not do it: it lays a tile's picture one pixel to a point whatever its
+  size or density, so @2x tiles were drawn twice too large from each
+  tile's corner (Beloit's under O'Hare, #549) and the 1x chart was a
+  third of a 3x screen's pixels. The renderer picks the level whose
+  tiles are stretched at most 1.5 times over the screen's pixels
+  (`ChartTileMath`: from a whole level on a 3x screen), draws the last
+  level enlarged past the pyramid's end, and covers a tile still loading
+  with the part of the nearest level above it that is in memory. By day
+  the web's lift of the chart (`ChartLift`: MapLibre's raster-contrast
+  and -saturation 0.1); at night, dimmed, as printed.
 - **ForeFlight-style overlays** (`Views/ChartOverlays`, `AirportMarks`):
   the sectional's airport symbols (towered blue, others magenta, R and M
   for private and military, the flight category a pip; `towered` from
@@ -269,14 +399,17 @@ code:
   frequency tag, and the web's colours from `chartColors.ts`,
   `airportMark.ts` and `glStyle.ts`.
 - **Close in, Apple's map**: the chart lies over Apple's map and fades
-  out from Leaflet's 13 to 14 (`ChartFade`), and each field's runways are
+  out from zoom 13 to 14 (`ChartFade`), and each field's runways are
   drawn from the FAA's data at their own width with their numbers turned
   to their true headings (`RunwaySurface`). The runways come from the
   planner's field (`/api/airport/{ident}`: NASR's surveyed ends and
   widths), since the phone packs hold no APT_RWY; the web reads them from
-  the overlay archive. Every runway is drawn in the hard-surface grey:
-  which surfaces count as hard is the planner's rule (HARD_SURFACES), and
-  no answer the phone reads carries it yet.
+  the overlay archive. A soft runway (turf, grass, dirt, gravel) is
+  drawn in the web's olive and the rest in its dark grey, the surface
+  read by the engine's `gonogo_soft_surface`, the rule the short-field
+  figures use. The web's colour follows the planner's HARD_SURFACES
+  instead, so a runway of unknown or water surface is olive there and
+  grey here.
 - **One reveal**: a cover over the map, with Wingtip's mark turning in the
   middle of what the sheet leaves (`MapLoading`; still under Reduce
   Motion), until the chart's tiles and the first overlays are in, at most
@@ -294,18 +427,65 @@ code:
   and `Metrics` subscribes to MetricKit, so launch, hang, battery and
   crash reports come from real phones into the system log.
 
+## Downloads: the chart with no signal
+
+Setup → Chart → Downloads (`Wingtip/Offline/`) keeps a region's chart on
+the phone, as ForeFlight's and Garmin Pilot's downloads do: a sectional
+sheet's coverage ("Chicago", "Twin Cities"), a state, or the map's view,
+picked on a list or on a map of the sheets. The planner cuts each one
+from its cycle's archives (`/api/offline-charts`,
+`wingtip.offline_charts`): one PMTiles file per chart kind and density
+(Sectional, Terminal Area, IFR Low, High and Area; Sharp is the 512-pixel
+@2x tiles, Smaller the 256), each sized before it is fetched (Chicago's
+sectional 583 MB sharp, 206 MB smaller). `DownloadsModel` holds the
+screen; `OfflineDownloads` fetches the files with a background
+URLSession, so they come with the app closed (`OfflineAppDelegate` takes
+iOS's hand-over); `OfflineStore` keeps them under Application Support,
+out of the backup, with `manifest.json`. The region's cycle packs are
+fetched with it (`CyclePacks.keep`), so its airspace and places answer
+with no signal too.
+
+The map reads a tile from a downloaded region first (`TileStore.read`
+asks `OfflineStore.tile`), at the density asked for or else the other,
+then from the tiles it fetched as it went, then the network.
+`PMTilesReader` is the phone's own reader of the format (spec v3): the
+header once, each directory once as it is needed, then the tile's own
+bytes, by ranged reads of the file, never mapped whole (Alaska's
+sectional at 2x is 7 GB). When the planner has the next cycle, a kept
+region offers "Update to" it; on the day the old edition is replaced
+(0901Z on the next one's date) it is said to be expired and kept until
+its update is whole, then removed (`OfflineStore.sweep`; warn, never
+limit). `WingtipTests/OfflineChartsTests` reads an archive the planner's
+writer made, leaf directories and all.
+
+The web app has no Downloads: a browser cannot be relied on to keep
+gigabytes (Safari may clear a site's storage after seven days without a
+visit, and every browser caps it and may evict it under pressure). The service worker keeps the tiles looked at and a route's corridor
+(KeepRoute). A later path for an installed web app would be the same
+archives in the Origin Private File System, with
+`navigator.storage.persist()` asked first, read by the `pmtiles`
+library the overlays already use.
+
 ## Building
 
-The owner's Mac cannot run a current Xcode, so everything happens in
-`.github/workflows/native-ios.yml` on GitHub's macOS runner (free for a
-public repository):
+The Mac mini has Xcode (`.tool-versions`' `xcode`, 27.2 and the iOS 27.2
+SDK), so a build or a test runs there through `scripts/dev/one-at-a-time.sh`
+(CLAUDE.md's table). CI builds it on the Mac mini's runner or GitHub's
+`xcode-27` image (docs/CI.md), through `.github/workflows/native-ios.yml`:
 
-- a pull request, a push to `main` or to a `claude/native-*` branch that
-  touches `apps/ios/`, the web files the app bundles (`apps/web/src/lib/fixtures`,
-  `apps/web/src/lib/acs.json`) or the workflow: XcodeGen, then `xcodebuild test` on
-  the newest iPhone simulator the runner has and on an iPad (a Pro
-  where there is one), for the iPad's own layout, with a picture of
-  each one's first screen kept with the run (`native-ios-screens`);
+- a pull request that touches `apps/ios/`, the engine, the web files the
+  app bundles (`apps/web/src/lib/fixtures`, `apps/web/src/lib/acs.json`)
+  or the workflow: XcodeGen, then `xcodebuild test` on the newest iPhone
+  simulator with `-only-testing` the unit tests (`WingtipTests`) and
+  `CardSmokeTests` (an airport card opened from the search, scrolled with
+  its close in sight, closed back to the search), about ten minutes;
+  DerivedData is restored from main's last build, its inputs stamped by
+  content (`scripts/ci/content-mtimes.py`) so only what changed compiles;
+- every night (`native-ios.yml`, `full`): the whole suite (the launch,
+  flow and accessibility tests, the store shots and the card rule's full
+  suites, `CardRuleTests` and `CardScrollTests`) on the iPhone, the iPad
+  (a Pro where there is one, for the iPad's own layout) and the iPhone
+  Duo, with a picture of each device's first screen (`native-ios-screens`);
 - on `main`, with the App Store Connect key the owner sets (below), the
   app is archived and uploaded to TestFlight.
 

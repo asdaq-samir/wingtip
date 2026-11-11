@@ -2,9 +2,10 @@ import type { AircraftKind } from "./aircraftKind";
 import { NO_FILTER, type AircraftFilter } from "./fbo";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { DEFAULT_FILTERS, type FilterKey, type Filters } from "../features/chart-labels/logic";
+import { DEFAULT_FILTERS, type FilterKey, type Filters } from "./pointFilters";
 import type { AircraftAlert, AircraftAlertKind } from "./aircraftAlerts";
 import type { AircraftChoice } from "./api/types";
+import type { OwnFigureValues } from "./airplane/figures";
 import { NO_MINIMUMS, type Minimums } from "./minimums";
 
 /** What FPL's Routes hold the weather to (Preferences.routeWeather). */
@@ -12,7 +13,7 @@ export type RouteWeather = "personal" | "legal";
 import { sameField } from "./procedures";
 import type { StopPick } from "./stopKinds";
 import type { Load } from "./weightBalance";
-import type { OwnShipLook } from "./map/ownShipLook";
+import type { OwnShipLook } from "./map/position/ownShipLook";
 
 /**
  * Everything remembered per browser, in one zustand store persisted to
@@ -53,10 +54,15 @@ export type ChartNight = "normal" | "dimmed";
  *  Auto turns it on from the phone's light sensor where the browser has
  *  one; On and Off are the pilot's own. */
 export type ChartLight = "auto" | "on" | "off";
-/** The app's look (lib/brand): Glass Cockpit or Chart ink, the two the
- *  owner kept (2026-11-04: "Only keep the glass cockpit and chart ink");
- *  Sectional, Windsock and Clear Sky are gone. */
-export type Brand = "cockpit" | "ink";
+/** The ground under the chart (lib/map/gl/layers/TerrainGl): the chart as
+ *  printed, its relief shaded over it, or the relief stood up in 3D, the
+ *  map tilted with two fingers. */
+export type Terrain = "flat" | "shaded" | "3d";
+/** The app's look (lib/brand): Wingtip, the brand's blue and the
+ *  default (the owner, 2026-11-09), Glass Cockpit or Chart ink (kept
+ *  2026-11-04), or Native, stock out of the box (2026-11-10); Sectional,
+ *  Windsock and Clear Sky are gone. */
+export type Brand = "wingtip" | "cockpit" | "ink" | "native";
 /** The flight rules a route is planned under (the altitude's popover):
  *  VFR, or IFR -- its minimum altitudes, its thousands by direction of
  *  flight and its 45-minute reserve (the planner's wingtip.ifr). */
@@ -72,8 +78,39 @@ export type FlightRules = "vfr" | "ifr";
  *  from the head. In Setup's Layout. */
 export type RouteEdit = "box" | "folded" | "plan";
 
-/** The stock C172 until a pilot picks one of their own. */
-export const DEFAULT_AIRCRAFT: AircraftChoice = { profile: "c172", label: "C172 · Cessna 172" };
+/** The stock Cessna 172 as a pilot picks it, and as the demo flight
+ *  picks it on purpose (lib/demoFlight). Never a default: nothing falls
+ *  back to it (the owner, 2026-11-09: "Nothing assumes a Cessna 172"). */
+export const STOCK_C172: AircraftChoice = { profile: "c172", label: "C172 · Cessna 172" };
+
+/** No airplane picked: no profile at all, so the planner plans with none
+ *  -- the route's own figures, its course, miles, legs, checkpoints,
+ *  weather, airspace and ground, none of which an airplane changes -- and
+ *  every figure that needs one (times, fuel, speeds, glide, tops of climb
+ *  and descent, weight and balance) is left out, not guessed. The owner (2026-11-08):
+ *  "If no airplane is entered, only show the distance and the things you
+ *  can without airplane profile, don't assume." It was a C172 at 40 gal
+ *  usable whose 18.4 gal a pilot could read as their own (the FPL audit's
+ *  A14). */
+export const NO_AIRPLANE: AircraftChoice = { profile: "", label: "", none: true };
+
+/** Whether an airplane has been picked: its figures can be shown. */
+export const airplaneChosen = (aircraft: AircraftChoice): boolean => !aircraft.none;
+
+/** airplaneChosen, for a screen: whether to show what needs an airplane. */
+export const useAirplaneChosen = (): boolean => usePreferences((s) => airplaneChosen(s.aircraft));
+
+/** The stock C172 as the default kept it, not one a pilot picked. */
+function isStockDefault(a: AircraftChoice | undefined): boolean {
+  return (
+    !a ||
+    (a.profile === STOCK_C172.profile &&
+      a.label === STOCK_C172.label &&
+      !a.tail &&
+      a.aircraftId === undefined &&
+      a.cruiseTasKt === undefined)
+  );
+}
 
 interface Preferences {
   /** The base chart: the sectional, or an IFR enroute chart. */
@@ -96,40 +133,44 @@ interface Preferences {
   classB: boolean;
   /** Whether the Class B, C and D are drawn over the chart, each line from
    *  the FAA's own airspace file with its altitudes as the sectional
-   *  prints them (AirspaceLayer). On by default, the owner's pick of the
+   *  prints them (AirspaceGl). On by default, the owner's pick of the
    *  map's looks ("C", 2026-10-29). */
   airspace: boolean;
   /** Whether the VORs are drawn over the chart, and closer in the low
-   *  enroute chart's fixes (NavaidsLayer). On by default, as `airspace`. */
+   *  enroute chart's fixes (NavaidsGl). On by default, as `airspace`. */
   navaids: boolean;
-  /** Whether the temporary flight restrictions are drawn (TfrLayer). On
+  /** Whether the temporary flight restrictions are drawn (TfrGl). On
    *  by default: a pilot must know of every one near the route. */
   tfrs: boolean;
   /** Whether what is ahead of own ship in the air is said over the map
-   *  (lib/map/ahead): airspace, special-use areas and TFRs the track goes
+   *  (lib/map/position/ahead): airspace, special-use areas and TFRs the track goes
    *  into, and the ground or an obstacle it comes near. On by default. */
   alerts: boolean;
   /** Whether those alerts are said aloud as each comes ahead
-   *  (lib/map/speak). Off by default: a phone that starts talking
+   *  (components/speak). Off by default: a phone that starts talking
    *  unasked is a surprise; turned on, it says so. */
   speakAlerts: boolean;
+  /** The in-flight copilot (features/copilot): off, its one message shown,
+   *  or shown and said aloud. Shown by default, said only when asked, as
+   *  the alerts are. */
+  copilotMode: "off" | "on" | "spoken";
   /** Whether the airplanes ADS-B receivers hear about the map are drawn
-   *  (TrafficLayer, from adsb.lol). Off by default: it asks a third
+   *  (TrafficGl, from adsb.lol). Off by default: it asks a third
    *  party every five seconds. */
   traffic: boolean;
   /** Whether the fields the armed services own and keep to themselves
-   *  are drawn (AirportsLayer), at the pilot's ask: off by default, as a
+   *  are drawn (AirportsGl), at the pilot's ask: off by default, as a
    *  civil airplane lands there only with the service's permission (the
    *  planner's `military`). Joint-use fields are always drawn. */
   military: boolean;
-  /** Whether the privately owned fields are drawn (AirportsLayer): off
+  /** Whether the privately owned fields are drawn (AirportsGl): off
    *  by default, at the owner's ask ("Make private airports hidden by
    *  default", 2026-10-27), on at the pilot's, as one is landed at only
    *  with the owner's
    *  permission (NASR APT_BASE's facility use, PR, the planner's
    *  `private`). A field on the route or picked is drawn either way. */
   privateFields: boolean;
-  /** Whether a picked approach's plate is laid on the chart (PlateLayer),
+  /** Whether a picked approach's plate is laid on the chart (PlatesGl),
    *  switched from the approach's pull-down, at the owner's ask. On by
    *  default. */
   plates: boolean;
@@ -155,7 +196,7 @@ interface Preferences {
    *  held by the service worker. Off by default, as it downloads. */
   keepOffline: boolean;
   aircraft: AircraftChoice;
-  /** The figures the pilot set for an N-number (AirplaneFigures), by it:
+  /** The figures the pilot set for an N-number (the airplane's profile), by it:
    *  flown on whenever the N-number is, over its type's profile. */
   tailFigures: Record<string, TailFigures>;
   /** The training map's filters: which points are drawn and walked. */
@@ -163,14 +204,16 @@ interface Preferences {
   /** The navigation bar's edge, once one has been picked; until then
    *  the bottom on a phone and the top from md up. */
   navBar: NavEdge | null;
-  /** The chart in the dark theme (ChartTiles), dimmed unless the pilot
+  /** The chart in the dark theme (ChartGl), dimmed unless the pilot
    *  asks for it as printed. */
   chartNight: ChartNight;
   /** The chart in sunlight (lib/sunlight): from the light sensor, on, or off. */
   chartLight: ChartLight;
+  /** The ground under the chart: flat, shaded or 3D (TerrainGl). */
+  terrain: Terrain;
   /** The app's look: its tint, its typeface and its corners (lib/brand). */
   brand: Brand;
-  /** How own ship is drawn on the chart (lib/map/ownShipLook). */
+  /** How own ship is drawn on the chart (lib/map/position/ownShipLook). */
   ownShipLook: OwnShipLook;
   /** The flight rules every route is planned under, kept: a pilot who
    *  files IFR files it flight after flight. */
@@ -234,6 +277,7 @@ interface Preferences {
   setTfrs: (tfrs: boolean) => void;
   setAlerts: (alerts: boolean) => void;
   setSpeakAlerts: (speakAlerts: boolean) => void;
+  setCopilotMode: (copilotMode: "off" | "on" | "spoken") => void;
   setPlates: (plates: boolean) => void;
   setTraffic: (traffic: boolean) => void;
   setMilitary: (military: boolean) => void;
@@ -252,6 +296,7 @@ interface Preferences {
   setNavBar: (navBar: NavEdge) => void;
   setChartNight: (chartNight: ChartNight) => void;
   setChartLight: (chartLight: ChartLight) => void;
+  setTerrain: (terrain: Terrain) => void;
   setBrand: (brand: Brand) => void;
   setOwnShipLook: (ownShipLook: OwnShipLook) => void;
   setFlightRules: (flightRules: FlightRules) => void;
@@ -288,9 +333,22 @@ export interface RecentAirport {
 /** How many the search bar remembers. */
 const RECENTS = 8;
 
+/** What a browser kept under an older version, brought up to this one
+ *  (the versions are listed where usePreferences is made). */
+export function migratePreferences(kept: unknown, from: number): Preferences {
+  return {
+    ...(kept as object),
+    ...(from < 6 && isStockDefault((kept as { aircraft?: AircraftChoice }).aircraft) ? { aircraft: NO_AIRPLANE } : {}),
+    ...(from < 1 ? { waypoints: false } : {}),
+    ...(from < 2 ? { airspace: true, navaids: true } : {}),
+    ...(from < 3 ? { chartLight: "auto" } : {}),
+    ...(from < 7 && (kept as { brand?: string }).brand !== "ink" ? { brand: "wingtip" } : {}),
+  } as Preferences;
+}
+
 export const usePreferences = create<Preferences>()(
   persist(
-    set => ({
+    (set) => ({
       base: "sec",
       tac: false,
       waypoints: false,
@@ -300,6 +358,7 @@ export const usePreferences = create<Preferences>()(
       tfrs: true,
       alerts: true,
       speakAlerts: false,
+      copilotMode: "on",
       plates: true,
       traffic: false,
       military: false,
@@ -310,14 +369,17 @@ export const usePreferences = create<Preferences>()(
       routeWeather: "personal",
       stopsRadiusNm: 25,
       stopKind: "all",
-      loads: {}, tailFigures: {},
+      loads: {},
+      tailFigures: {},
       keepOffline: false,
-      aircraft: DEFAULT_AIRCRAFT,
+      aircraft: NO_AIRPLANE,
       filters: DEFAULT_FILTERS,
       navBar: null,
       chartNight: "dimmed",
       chartLight: "auto",
-      brand: "cockpit",
+      // Flat, as the chart is printed, until the pilot asks for relief.
+      terrain: "flat",
+      brand: "wingtip",
       // A plane, at the owner's ask, where it was the arrow.
       ownShipLook: "single",
       flightRules: "vfr",
@@ -329,94 +391,102 @@ export const usePreferences = create<Preferences>()(
       favoriteAirports: [],
       recentAircraft: [],
       recentRoutes: [],
-      addRecentRoute: route => set(s => ({
-        recentRoutes: [route, ...s.recentRoutes.filter(r => recentRouteKey(r) !== recentRouteKey(route))].slice(0, RECENTS),
-      })),
-      removeRecentRoute: key => set(s => ({ recentRoutes: s.recentRoutes.filter(r => recentRouteKey(r) !== key) })),
+      addRecentRoute: (route) =>
+        set((s) => ({
+          recentRoutes: [route, ...s.recentRoutes.filter((r) => recentRouteKey(r) !== recentRouteKey(route))].slice(0, RECENTS),
+        })),
+      removeRecentRoute: (key) => set((s) => ({ recentRoutes: s.recentRoutes.filter((r) => recentRouteKey(r) !== key) })),
       clearRecentRoutes: () => set({ recentRoutes: [] }),
       favoriteAircraft: [],
       myAircraft: null,
-      setMyAircraft: myAircraft => set({ myAircraft }),
+      setMyAircraft: (myAircraft) => set({ myAircraft }),
       aircraftFilter: NO_FILTER,
-      setAircraftFilter: change => set(s => ({ aircraftFilter: { ...s.aircraftFilter, ...change } })),
-      addRecentAircraft: aircraft => set(s => ({
-        recentAircraft: [aircraft, ...s.recentAircraft.filter(a => a.hex !== aircraft.hex)].slice(0, RECENTS),
-        // A favourite's name and type kept up to date as it is seen again.
-        favoriteAircraft: s.favoriteAircraft.map(a => (a.hex === aircraft.hex ? aircraft : a)),
-        myAircraft: s.myAircraft?.hex === aircraft.hex ? aircraft : s.myAircraft,
-      })),
-      removeRecentAircraft: hex => set(s => ({ recentAircraft: s.recentAircraft.filter(a => a.hex !== hex) })),
+      setAircraftFilter: (change) => set((s) => ({ aircraftFilter: { ...s.aircraftFilter, ...change } })),
+      addRecentAircraft: (aircraft) =>
+        set((s) => ({
+          recentAircraft: [aircraft, ...s.recentAircraft.filter((a) => a.hex !== aircraft.hex)].slice(0, RECENTS),
+          // A favourite's name and type kept up to date as it is seen again.
+          favoriteAircraft: s.favoriteAircraft.map((a) => (a.hex === aircraft.hex ? aircraft : a)),
+          myAircraft: s.myAircraft?.hex === aircraft.hex ? aircraft : s.myAircraft,
+        })),
+      removeRecentAircraft: (hex) => set((s) => ({ recentAircraft: s.recentAircraft.filter((a) => a.hex !== hex) })),
       clearRecentAircraft: () => set({ recentAircraft: [] }),
-      moveFavoriteAircraft: (from, to) => set(s => {
-        const favoriteAircraft = [...s.favoriteAircraft];
-        const [moved] = favoriteAircraft.splice(from, 1);
-        if (moved) favoriteAircraft.splice(to, 0, moved);
-        return { favoriteAircraft };
-      }),
+      moveFavoriteAircraft: (from, to) =>
+        set((s) => {
+          const favoriteAircraft = [...s.favoriteAircraft];
+          const [moved] = favoriteAircraft.splice(from, 1);
+          if (moved) favoriteAircraft.splice(to, 0, moved);
+          return { favoriteAircraft };
+        }),
       aircraftAlerts: [],
-      setAircraftAlert: alert => set(s => ({
-        aircraftAlerts: [...s.aircraftAlerts.filter(a => !(a.hex === alert.hex && a.kind === alert.kind)), alert],
-      })),
-      removeAircraftAlert: (hex, kind) => set(s => ({ aircraftAlerts: s.aircraftAlerts.filter(a => !(a.hex === hex && a.kind === kind)) })),
-      toggleFavoriteAircraft: aircraft => set(s => ({
-        favoriteAircraft: s.favoriteAircraft.some(a => a.hex === aircraft.hex)
-          ? s.favoriteAircraft.filter(a => a.hex !== aircraft.hex)
-          : [...s.favoriteAircraft, aircraft],
-      })),
-      setBase: base => set({ base }),
-      setTac: tac => set({ tac }),
-      setWaypoints: waypoints => set({ waypoints }),
-      setClassB: classB => set({ classB }),
-      setAirspace: airspace => set({ airspace }),
-      setNavaids: navaids => set({ navaids }),
-      setTfrs: tfrs => set({ tfrs }),
-      setAlerts: alerts => set({ alerts }),
-      setSpeakAlerts: speakAlerts => set({ speakAlerts }),
-      setPlates: plates => set({ plates }),
-      setTraffic: traffic => set({ traffic }),
-      setMilitary: military => set({ military }),
-      setPrivateFields: privateFields => set({ privateFields }),
-      setOverlay: overlay => set({ overlay }),
-      setOverlayStrength: overlayStrength => set({ overlayStrength }),
-      setMinimum: (key, value) => set(s => ({ minimums: { ...s.minimums, [key]: value } })),
-      setRouteWeather: routeWeather => set({ routeWeather }),
-      setStopsRadiusNm: stopsRadiusNm => set({ stopsRadiusNm }),
-      setStopKind: stopKind => set({ stopKind }),
-      setLoad: (aircraft, load) => set(s => ({ loads: { ...s.loads, [aircraft]: load } })),
-      setKeepOffline: keepOffline => set({ keepOffline }),
-      setAircraft: aircraft => set({ aircraft }),
-      setTailFigures: (tail, figures) => set(s => ({ tailFigures: { ...s.tailFigures, [tail.toUpperCase()]: figures } })),
-      setFilter: (key, on) => set(s => ({ filters: { ...s.filters, [key]: on } })),
-      setNavBar: navBar => set({ navBar }),
-      setChartNight: chartNight => set({ chartNight }),
-      setChartLight: chartLight => set({ chartLight }),
-      setBrand: brand => set({ brand }),
-      setOwnShipLook: ownShipLook => set({ ownShipLook }),
-      setFlightRules: flightRules => set({ flightRules }),
-      setRouteEdit: routeEdit => set({ routeEdit }),
-      addRecentAirport: airport => set(s => ({
-        recentAirports: [airport, ...s.recentAirports.filter(a => a.ident !== airport.ident)].slice(0, RECENTS),
-      })),
-      removeRecentAirport: ident => set(s => ({ recentAirports: s.recentAirports.filter(a => a.ident !== ident) })),
+      setAircraftAlert: (alert) =>
+        set((s) => ({ aircraftAlerts: [...s.aircraftAlerts.filter((a) => !(a.hex === alert.hex && a.kind === alert.kind)), alert] })),
+      removeAircraftAlert: (hex, kind) =>
+        set((s) => ({ aircraftAlerts: s.aircraftAlerts.filter((a) => !(a.hex === hex && a.kind === kind)) })),
+      toggleFavoriteAircraft: (aircraft) =>
+        set((s) => ({
+          favoriteAircraft: s.favoriteAircraft.some((a) => a.hex === aircraft.hex)
+            ? s.favoriteAircraft.filter((a) => a.hex !== aircraft.hex)
+            : [...s.favoriteAircraft, aircraft],
+        })),
+      setBase: (base) => set({ base }),
+      setTac: (tac) => set({ tac }),
+      setWaypoints: (waypoints) => set({ waypoints }),
+      setClassB: (classB) => set({ classB }),
+      setAirspace: (airspace) => set({ airspace }),
+      setNavaids: (navaids) => set({ navaids }),
+      setTfrs: (tfrs) => set({ tfrs }),
+      setAlerts: (alerts) => set({ alerts }),
+      setSpeakAlerts: (speakAlerts) => set({ speakAlerts }),
+      setCopilotMode: (copilotMode) => set({ copilotMode }),
+      setPlates: (plates) => set({ plates }),
+      setTraffic: (traffic) => set({ traffic }),
+      setMilitary: (military) => set({ military }),
+      setPrivateFields: (privateFields) => set({ privateFields }),
+      setOverlay: (overlay) => set({ overlay }),
+      setOverlayStrength: (overlayStrength) => set({ overlayStrength }),
+      setMinimum: (key, value) => set((s) => ({ minimums: { ...s.minimums, [key]: value } })),
+      setRouteWeather: (routeWeather) => set({ routeWeather }),
+      setStopsRadiusNm: (stopsRadiusNm) => set({ stopsRadiusNm }),
+      setStopKind: (stopKind) => set({ stopKind }),
+      setLoad: (aircraft, load) => set((s) => ({ loads: { ...s.loads, [aircraft]: load } })),
+      setKeepOffline: (keepOffline) => set({ keepOffline }),
+      setAircraft: (aircraft) => set({ aircraft }),
+      setTailFigures: (tail, figures) => set((s) => ({ tailFigures: { ...s.tailFigures, [tail.toUpperCase()]: figures } })),
+      setFilter: (key, on) => set((s) => ({ filters: { ...s.filters, [key]: on } })),
+      setNavBar: (navBar) => set({ navBar }),
+      setChartNight: (chartNight) => set({ chartNight }),
+      setChartLight: (chartLight) => set({ chartLight }),
+      setTerrain: (terrain) => set({ terrain }),
+      setBrand: (brand) => set({ brand }),
+      setOwnShipLook: (ownShipLook) => set({ ownShipLook }),
+      setFlightRules: (flightRules) => set({ flightRules }),
+      setRouteEdit: (routeEdit) => set({ routeEdit }),
+      addRecentAirport: (airport) =>
+        set((s) => ({ recentAirports: [airport, ...s.recentAirports.filter((a) => a.ident !== airport.ident)].slice(0, RECENTS) })),
+      removeRecentAirport: (ident) => set((s) => ({ recentAirports: s.recentAirports.filter((a) => a.ident !== ident) })),
       clearRecentAirports: () => set({ recentAirports: [] }),
-      setHomeAirport: homeAirport => set({ homeAirport }),
-      moveFavoriteAirport: (from, to) => set(s => {
-        const favoriteAirports = [...s.favoriteAirports];
-        const [moved] = favoriteAirports.splice(from, 1);
-        if (moved) favoriteAirports.splice(to, 0, moved);
-        return { favoriteAirports };
-      }),
-      rememberAirspace: (ident, airspace) => set(s => ({
-        homeAirport: s.homeAirport?.ident === ident ? { ...s.homeAirport, airspace } : s.homeAirport,
-        favoriteAirports: s.favoriteAirports.map(a => (a.ident === ident ? { ...a, airspace } : a)),
-      })),
-      toggleFavoriteAirport: airport => set(s => ({
-        // One field by either of its idents (KLWM, LWM), as the card's star
-        // reads it (PlaceCard), so a star shown filled is taken off.
-        favoriteAirports: s.favoriteAirports.some(a => sameField(a.ident, airport.ident))
-          ? s.favoriteAirports.filter(a => !sameField(a.ident, airport.ident))
-          : [...s.favoriteAirports, airport],
-      })),
+      setHomeAirport: (homeAirport) => set({ homeAirport }),
+      moveFavoriteAirport: (from, to) =>
+        set((s) => {
+          const favoriteAirports = [...s.favoriteAirports];
+          const [moved] = favoriteAirports.splice(from, 1);
+          if (moved) favoriteAirports.splice(to, 0, moved);
+          return { favoriteAirports };
+        }),
+      rememberAirspace: (ident, airspace) =>
+        set((s) => ({
+          homeAirport: s.homeAirport?.ident === ident ? { ...s.homeAirport, airspace } : s.homeAirport,
+          favoriteAirports: s.favoriteAirports.map((a) => (a.ident === ident ? { ...a, airspace } : a)),
+        })),
+      toggleFavoriteAirport: (airport) =>
+        set((s) => ({
+          // One field by either of its idents (KLWM, LWM), as the card's star
+          // reads it (PlaceCard), so a star shown filled is taken off.
+          favoriteAirports: s.favoriteAirports.some((a) => sameField(a.ident, airport.ident))
+            ? s.favoriteAirports.filter((a) => !sameField(a.ident, airport.ident))
+            : [...s.favoriteAirports, airport],
+        })),
     }),
     {
       name: "wingtip.preferences",
@@ -431,20 +501,53 @@ export const usePreferences = create<Preferences>()(
       // 5: the tabs for everyone, the strip and the field over the tabs
       // taken out of Setup (the owner, 2026-11-04: "I like the tab, I
       // don't want the strip or field, remove it from settings").
-      version: 5,
-      migrate: (kept, from) => ({
-        ...(kept as object),
-        ...(from < 1 ? { waypoints: false } : {}),
-        ...(from < 2 ? { airspace: true, navaids: true } : {}),
-        ...(from < 3 ? { chartLight: "auto" } : {}),
-        ...(from < 4 && !["cockpit", "ink"].includes((kept as { brand?: string }).brand ?? "") ? { brand: "cockpit" } : {}),
-      }) as Preferences,
+      // 6: no airplane, not the stock C172, until one is picked (the
+      // owner, 2026-11-08): the C172 kept as the default is let go.
+      // 7: the Wingtip look for every browser, the default now (the
+      // owner, 2026-11-09); Glass Cockpit was the default before, so a
+      // browser that has it never picked it.
+      version: 7,
+      migrate: migratePreferences,
       // The functions are not state; only the values are written.
-      partialize: s => ({
-        base: s.base, tac: s.tac, waypoints: s.waypoints, classB: s.classB, airspace: s.airspace, navaids: s.navaids, tfrs: s.tfrs, alerts: s.alerts, speakAlerts: s.speakAlerts, plates: s.plates, traffic: s.traffic, military: s.military, privateFields: s.privateFields, minimums: s.minimums, routeWeather: s.routeWeather, stopsRadiusNm: s.stopsRadiusNm, stopKind: s.stopKind, loads: s.loads, keepOffline: s.keepOffline, aircraft: s.aircraft, tailFigures: s.tailFigures, filters: s.filters, navBar: s.navBar, chartNight: s.chartNight, chartLight: s.chartLight, brand: s.brand, ownShipLook: s.ownShipLook,
-        flightRules: s.flightRules, routeEdit: s.routeEdit, listenInput: s.listenInput,
-        recentAirports: s.recentAirports, homeAirport: s.homeAirport, favoriteAirports: s.favoriteAirports,
-        recentAircraft: s.recentAircraft, favoriteAircraft: s.favoriteAircraft, myAircraft: s.myAircraft,
+      partialize: (s) => ({
+        base: s.base,
+        tac: s.tac,
+        waypoints: s.waypoints,
+        classB: s.classB,
+        airspace: s.airspace,
+        navaids: s.navaids,
+        tfrs: s.tfrs,
+        alerts: s.alerts,
+        speakAlerts: s.speakAlerts,
+        copilotMode: s.copilotMode,
+        plates: s.plates,
+        traffic: s.traffic,
+        military: s.military,
+        privateFields: s.privateFields,
+        minimums: s.minimums,
+        routeWeather: s.routeWeather,
+        stopsRadiusNm: s.stopsRadiusNm,
+        stopKind: s.stopKind,
+        loads: s.loads,
+        keepOffline: s.keepOffline,
+        aircraft: s.aircraft,
+        tailFigures: s.tailFigures,
+        filters: s.filters,
+        navBar: s.navBar,
+        chartNight: s.chartNight,
+        chartLight: s.chartLight,
+        terrain: s.terrain,
+        brand: s.brand,
+        ownShipLook: s.ownShipLook,
+        flightRules: s.flightRules,
+        routeEdit: s.routeEdit,
+        listenInput: s.listenInput,
+        recentAirports: s.recentAirports,
+        homeAirport: s.homeAirport,
+        favoriteAirports: s.favoriteAirports,
+        recentAircraft: s.recentAircraft,
+        favoriteAircraft: s.favoriteAircraft,
+        myAircraft: s.myAircraft,
         recentRoutes: s.recentRoutes,
         aircraftFilter: s.aircraftFilter,
         aircraftAlerts: s.aircraftAlerts,
@@ -453,10 +556,10 @@ export const usePreferences = create<Preferences>()(
   ),
 );
 
-/** An airplane's own figures, set by the pilot for its N-number from its
- *  handbook (AirplaneFigures): any of them, the type's profile the rest. */
-export type TailFigures = Partial<Pick<AircraftChoice,
-  "cruiseTasKt" | "cruisePowerPct" | "fuelBurnGph" | "usableFuelGal" | "climbTasKt" | "climbFuelBurnGph" | "serviceCeilingFt">>;
+/** An airplane's own figures, set by the pilot for its N-number on this
+ *  device while signed out (the airplane's profile, features/airplane):
+ *  any of them, the type's book the rest; offered to the account at sign-in. */
+type TailFigures = OwnFigureValues;
 
 /** A route planned, as FPL's Recents keep it: its ends, its stops in
  *  order, and when it was planned. */
@@ -480,9 +583,19 @@ export interface RecentRoute {
  *  How the map is drawn stays, the device's. */
 export function forgetPilot() {
   usePreferences.setState({
-    minimums: NO_MINIMUMS, routeWeather: "personal", loads: {}, aircraft: DEFAULT_AIRCRAFT, tailFigures: {},
-    recentAirports: [], homeAirport: null, favoriteAirports: [],
-    recentAircraft: [], favoriteAircraft: [], myAircraft: null, aircraftAlerts: [], recentRoutes: [],
+    minimums: NO_MINIMUMS,
+    routeWeather: "personal",
+    loads: {},
+    aircraft: NO_AIRPLANE,
+    tailFigures: {},
+    recentAirports: [],
+    homeAirport: null,
+    favoriteAirports: [],
+    recentAircraft: [],
+    favoriteAircraft: [],
+    myAircraft: null,
+    aircraftAlerts: [],
+    recentRoutes: [],
   });
 }
 
@@ -506,7 +619,7 @@ export interface KeptAircraft {
  *  lately -- its name and, once it was looked up, where it is: what its
  *  card and the map show at once, before the planner answers. */
 export function useKeptAirport(ident: string | null): RecentAirport | null {
-  return usePreferences(p => (ident
-    ? [p.homeAirport, ...p.favoriteAirports, ...p.recentAirports].find(a => a?.ident === ident) ?? null
-    : null));
+  return usePreferences((p) =>
+    ident ? ([p.homeAirport, ...p.favoriteAirports, ...p.recentAirports].find((a) => a?.ident === ident) ?? null) : null,
+  );
 }

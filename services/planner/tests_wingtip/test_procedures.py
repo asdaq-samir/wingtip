@@ -2,6 +2,7 @@
 read from KBUR's records of the 1 Oct 2026 cycle (services/planner/tests_wingtip/cifp, with the
 navaids and enroute fixes they name) -- the ILS Y RWY 08 via LAX a pilot
 asked to see drawn as ForeFlight draws it."""
+
 import dataclasses
 from datetime import date
 from pathlib import Path
@@ -42,8 +43,12 @@ def test_a_fields_procedures_are_listed_approaches_first_by_their_charts_names()
     assert kinds == sorted(kinds, key=["approach", "arrival", "departure"].index)
     ils = next(p for p in listed if p["id"] == "I08-Y")
     assert ils == {
-        "kind": "approach", "id": "I08-Y", "name": "ILS Y RWY 08", "runway": "08",
-        "transitions": ["LAX", "MIKEI", "SMO", "TOAKS", "VNY", "VTU"], "runway_transitions": [],
+        "kind": "approach",
+        "id": "I08-Y",
+        "name": "ILS Y RWY 08",
+        "runway": "08",
+        "transitions": ["LAX", "MIKEI", "SMO", "TOAKS", "VNY", "VTU"],
+        "runway_transitions": [],
     }
     assert next(p for p in listed if p["id"] == "H08-Y")["name"] == "RNAV (RNP) Y RWY 08"
     janny = next(p for p in listed if p["id"] == "JANNY5")
@@ -61,8 +66,7 @@ def test_a_terminal_ndb_kept_apart_from_its_airports_run_takes_in_no_other_field
     lines = CIFP.read_text(encoding="latin-1").splitlines()
     # Another field's run, its procedures' idents its own ("Z08-Y").
     other = [line[:6] + "KZZZ" + line[10:13] + "Z" + line[14:] for line in lines if line[4:6] == "P " and line[6:10] == "KBUR"]
-    ndb = ("SUSAPNKBURK2 DL    K2003790HO W N46504459W092211778" + " " * 23
-           + "W0010" + " " * 11 + "NARPYKLA" + " " * 25 + "582982108")
+    ndb = "SUSAPNKBURK2 DL    K2003790HO W N46504459W092211778" + " " * 23 + "W0010" + " " * 11 + "NARPYKLA" + " " * 25 + "582982108"
     file = tmp_path / "FAACIFP18"
     file.write_text("\n".join([*lines, *other, ndb]) + "\n", encoding="latin-1")
     monkeypatch.setattr(procedures, "cifp_path", lambda on=None: file)
@@ -72,14 +76,17 @@ def test_a_terminal_ndb_kept_apart_from_its_airports_run_takes_in_no_other_field
     assert near(procedures._airport("KBUR", file).waypoints["DL"], (46.84572, -92.35494))
 
 
-@pytest.mark.parametrize(("kind", "ident", "name"), [
-    ("approach", "I08-Y", "ILS Y RWY 08"),
-    ("approach", "R26LY", "RNAV (GPS) Y RWY 26L"),
-    ("approach", "L08", "LOC RWY 08"),
-    ("approach", "VDM-A", "VOR/DME-A"),
-    ("approach", "RNVA", "RNAV (GPS)-A"),
-    ("arrival", "JANNY5", "JANNY5"),
-])
+@pytest.mark.parametrize(
+    ("kind", "ident", "name"),
+    [
+        ("approach", "I08-Y", "ILS Y RWY 08"),
+        ("approach", "R26LY", "RNAV (GPS) Y RWY 26L"),
+        ("approach", "L08", "LOC RWY 08"),
+        ("approach", "VDM-A", "VOR/DME-A"),
+        ("approach", "RNVA", "RNAV (GPS)-A"),
+        ("arrival", "JANNY5", "JANNY5"),
+    ],
+)
 def test_a_procedure_is_named_as_its_chart_is_titled(kind, ident, name):
     assert procedures.procedure_name(kind, ident) == name
 
@@ -144,16 +151,19 @@ def test_an_unknown_procedure_is_none():
     assert procedures.procedure_drawing("KXYZ", "I08-Y") is None
 
 
-@pytest.mark.parametrize(("code", "first", "second", "limits"), [
-    ("+", 4600, None, (4600, None)),
-    ("-", 9000, None, (None, 9000)),
-    (" ", 3000, None, (3000, 3000)),
-    ("B", 13000, 11000, (11000, 13000)),
-    ("J", 3700, 3000, (3700, None)),
-    ("I", 3000, 2753, (3000, 3000)),
-    ("V", 4020, 4020, (4020, None)),
-    (" ", None, None, (None, None)),
-])
+@pytest.mark.parametrize(
+    ("code", "first", "second", "limits"),
+    [
+        ("+", 4600, None, (4600, None)),
+        ("-", 9000, None, (None, 9000)),
+        (" ", 3000, None, (3000, 3000)),
+        ("B", 13000, 11000, (11000, 13000)),
+        ("J", 3700, 3000, (3700, None)),
+        ("I", 3000, 2753, (3000, 3000)),
+        ("V", 4020, 4020, (4020, None)),
+        (" ", None, None, (None, None)),
+    ],
+)
 def test_altitude_descriptions_are_read_as_arinc_424_codes_them(code, first, second, limits):
     leg = next(iter(procedures._airport("KBUR", CIFP).legs.values()))[0]
     leg = dataclasses.replace(leg, altitude_code=code, altitude1=first, altitude2=second)
@@ -177,18 +187,39 @@ def test_a_speed_says_whether_it_is_at_a_minimum_or_a_maximum():
 
 def _leg(**given) -> procedures.Leg:
     fields = dict(
-        route="I08-Y", transition="", seq=1, fix="FIX", fix_icao="K2", fix_section="EA", description="    ", turn="",
-        path="TF", navaid="", arc_nm=None, theta=None, rho=None, course=None, course_true=False, distance_nm=None,
-        minutes=None, altitude_code="", altitude1=None, altitude2=None, speed_kt=None, speed_code="", center="",
-        center_icao="", center_section="",
+        route="I08-Y",
+        transition="",
+        seq=1,
+        fix="FIX",
+        fix_icao="K2",
+        fix_section="EA",
+        description="    ",
+        turn="",
+        path="TF",
+        navaid="",
+        arc_nm=None,
+        theta=None,
+        rho=None,
+        course=None,
+        course_true=False,
+        distance_nm=None,
+        minutes=None,
+        altitude_code="",
+        altitude1=None,
+        altitude2=None,
+        speed_kt=None,
+        speed_code="",
+        center="",
+        center_icao="",
+        center_section="",
     )
     return procedures.Leg(**{**fields, **given})
 
 
-@pytest.mark.parametrize("code, roles", [
-    ("A", ["IAF"]), ("B", ["IF"]), ("C", ["IAF"]), ("D", ["IAF", "FACF"]),
-    ("I", ["FACF"]), ("F", ["FAF"]), ("M", ["MAP"]), ("E", []),
-])
+@pytest.mark.parametrize(
+    "code, roles",
+    [("A", ["IAF"]), ("B", ["IF"]), ("C", ["IAF"]), ("D", ["IAF", "FACF"]), ("I", ["FACF"]), ("F", ["FAF"]), ("M", ["MAP"]), ("E", [])],
+)
 def test_a_fix_is_named_for_its_waypoint_description(code, roles):
     """ARINC 424-18 5.17: I is the final approach course fix, B the intermediate fix."""
     leg = _leg(description=f"   {code}")
@@ -246,8 +277,11 @@ def test_an_approachs_runway_path_is_its_finals_vertical_angle_to_its_runways_cr
 def test_a_departure_has_no_runway_path():
     drawn = procedures.procedure_drawing("KBUR", "I08-Y", "LAX")
     assert drawn["runway_path"] is not None
-    assert all(procedures.procedure_drawing("KBUR", p["id"])["runway_path"] is None
-               for p in procedures.procedures_at("KBUR")["procedures"] if p["kind"] == "departure")
+    assert all(
+        procedures.procedure_drawing("KBUR", p["id"])["runway_path"] is None
+        for p in procedures.procedures_at("KBUR")["procedures"]
+        if p["kind"] == "departure"
+    )
 
 
 def test_an_approach_says_its_glidepath_its_final_course_and_its_missed_approach_leg_by_leg():

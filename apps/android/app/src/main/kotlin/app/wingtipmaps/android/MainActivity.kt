@@ -1,11 +1,15 @@
 package app.wingtipmaps.android
 
+import android.app.assist.AssistContent
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import app.wingtipmaps.android.ai.ScreenContext
+import app.wingtipmaps.android.plan.KeptPlan
 import app.wingtipmaps.android.ui.RootScreen
 import app.wingtipmaps.android.ui.WingtipTheme
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +28,9 @@ class MainActivity : ComponentActivity() {
     private val pending = MutableStateFlow<Links.Link?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // The launch's splash screen, the same from Android 8 on (the
+        // manifest's Theme.WingtipMaps.Starting), gone as the first frame draws.
+        installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
@@ -36,6 +43,13 @@ class MainActivity : ComponentActivity() {
         if (savedInstanceState == null) open(intent)
     }
 
+    /** What is on the screen for Gemini's "ask about this screen" and the
+     *  system's assistants: the route planned (ScreenContext). */
+    override fun onProvideAssistContent(outContent: AssistContent) {
+        super.onProvideAssistContent(outContent)
+        ScreenContext.fill(outContent, KeptPlan(application).read())
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         open(intent)
@@ -45,7 +59,7 @@ class MainActivity : ComponentActivity() {
         val data = intent?.data ?: return
         when (val link = Links.parse(data.toString())) {
             is Links.SignIn -> session.open(data)
-            is Links.Route, is Links.Place -> pending.value = link
+            is Links.Route, is Links.Place, is Links.Open, is Links.Shared -> pending.value = link
             null -> {}
         }
     }

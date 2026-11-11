@@ -21,8 +21,12 @@ type Nearest = Near | Near[] | null | undefined;
  *  (AirportServices, a list of each) or a field along the route (its
  *  nearest of each) answers it. */
 export type Glanceable = {
-  fuel_types?: string[] | null; courtesy_car?: boolean | null;
-  food?: Nearest; lodging?: Nearest; car?: Nearest; cars?: Nearest;
+  fuel_types?: string[] | null;
+  courtesy_car?: boolean | null;
+  food?: Nearest;
+  lodging?: Nearest;
+  car?: Nearest;
+  cars?: Nearest;
 };
 
 export type GlanceItem = { key: "fuel" | "food" | "bed" | "car"; words: string };
@@ -40,7 +44,9 @@ const nearest = (n: Nearest) => (Array.isArray(n) ? n[0] : n) ?? undefined;
  */
 export function glanceOf(f: Glanceable): GlanceItem[] {
   const out: GlanceItem[] = [];
-  const food = nearest(f.food), bed = nearest(f.lodging), car = nearest(f.car) ?? nearest(f.cars);
+  const food = nearest(f.food),
+    bed = nearest(f.lodging),
+    car = nearest(f.car) ?? nearest(f.cars);
   if ((f.fuel_types ?? []).includes("100LL")) out.push({ key: "fuel", words: "100LL" });
   if (food) out.push({ key: "food", words: `Food ${awayWords(food)}` });
   if (bed) out.push({ key: "bed", words: `Hotel ${awayWords(bed)}` });

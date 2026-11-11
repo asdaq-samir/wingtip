@@ -1,6 +1,7 @@
 """The chart-vision path: the sectional's own tiles, what the detector
 finds in a corridor, and what a pilot marks on it. Nothing here touches
 Overpass, the FAA subscription or the elevation service."""
+
 from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query
@@ -12,24 +13,16 @@ from .. import chart_model
 from ..chart_model import TRAINING_HALF_WIDTH_NM
 from ..router_basics import line, load_route, ndjson, route_key
 from ..detection import detect_job, faa_airports
-from ..schemas import (
-    Classification,
-    DetectBlock,
-    DetectDone,
-    DetectError,
-    Detection,
-    DetectStart,
-    PickDeleted,
-    PickSaved,
-)
+from ..schemas.chart import Classification, DetectBlock, DetectDone, DetectError, Detection, DetectStart, PickDeleted, PickSaved
+from ..gateway import DEVELOPER, SHARED
 
 router = APIRouter()
 
 # Half a chart cycle, in seconds -- how long a browser (or a CDN in
 # front of this app) may keep a tile before asking again, so a new
 # edition reaches a returning pilot within a month of its date.
-# PlannerProxyController forwards Cache-Control for the tile path alone;
-# see its own comment.
+# The gateway forwards Cache-Control only for routes marked SHARED
+# (app.gateway), as the tiles' are.
 _CHART_TILE_MAX_AGE_S = 28 * 24 * 3600
 
 
@@ -44,17 +37,16 @@ def _chart_tile(kind: charts.ChartKind, z: int, x: int, y: int, scale: int = 1) 
         # console for every one, which Lighthouse's best practices count
         # (18 on the planner's first view, 2026-10-10).
         return Response(status_code=204, headers={"Cache-Control": f"public, max-age={_CHART_TILE_MAX_AGE_S}"})
-    return Response(
-        content=png,
-        media_type="image/png",
-        headers={"Cache-Control": f"public, max-age={_CHART_TILE_MAX_AGE_S}"},
-    )
+    return Response(content=png, media_type="image/png", headers={"Cache-Control": f"public, max-age={_CHART_TILE_MAX_AGE_S}"})
 
 
 # Before the plain tile's route, which would take "93@2x" for its y and
 # turn it away as no number.
-@router.get("/api/chart-tile/{kind}/{z}/{x}/{y}@2x.png",
-            responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}})
+@router.get(
+    "/api/chart-tile/{kind}/{z}/{x}/{y}@2x.png",
+    responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}},
+    openapi_extra=SHARED,
+)
 def chart_tile_2x(kind: str, z: int, x: int, y: int) -> Response:
     """The same tile at twice the pixels, 512 on a side, for a 2x or 3x
     screen: drawn from the FAA's sheet at that size, where the browser
@@ -65,8 +57,11 @@ def chart_tile_2x(kind: str, z: int, x: int, y: int) -> Response:
     return _chart_tile(charts.KINDS[kind], z, x, y, scale=2)
 
 
-@router.get("/api/chart-tile/{kind}/{z}/{x}/{y}.png",
-            responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}})
+@router.get(
+    "/api/chart-tile/{kind}/{z}/{x}/{y}.png",
+    responses={200: {"content": {"image/png": {}}}, 204: {"description": "No sheet covers the tile"}},
+    openapi_extra=SHARED,
+)
 def chart_tile(kind: str, z: int, x: int, y: int) -> Response:
     """Any kind of chart by its key (`chart_layers` on the course lists
     them): `sec`, `tac`, `ifr_low`, `ifr_high`, `ifr_area`. What the
@@ -85,10 +80,8 @@ def chart_tile(kind: str, z: int, x: int, y: int) -> Response:
     return _chart_tile(charts.KINDS[kind], z, x, y)
 
 
-@router.get("/api/classify")
-def classify(
-    lat: Annotated[float, Query(ge=-90, le=90)], lon: Annotated[float, Query(ge=-180, le=180)]
-) -> Classification:
+@router.get("/api/classify", openapi_extra=DEVELOPER)
+def classify(lat: Annotated[float, Query(ge=-90, le=90)], lon: Annotated[float, Query(ge=-180, le=180)]) -> Classification:
     """What the chart draws at a point, so a hand-marked checkpoint is
     categorised from the pixels rather than from whatever the dropdown
     happened to be left on."""
@@ -100,15 +93,15 @@ class PickRequest(BaseModel):
     destination_ident: str
     lat: float
     lon: float
-    source: str = "detected"   # "detected" (the CV found it) or "added" (it missed it)
-    role: str | None = None    # "dr" (fly over it) or "visual" (see it abeam); inferred if omitted
+    source: str = "detected"  # "detected" (the CV found it) or "added" (it missed it)
+    role: str | None = None  # "dr" (fly over it) or "visual" (see it abeam); inferred if omitted
     category: str = "water"
     rating: int | None = None  # 1-5, or 0/None for "detected but I would not use it"
     area_m2: float | None = None
     note: str | None = None
 
 
-@router.post("/api/picks")
+@router.post("/api/picks", openapi_extra=DEVELOPER)
 def add_pick(pick: PickRequest) -> PickSaved:
     r = load_route(pick.departure_ident, pick.destination_ident)
 
@@ -141,7 +134,7 @@ def add_pick(pick: PickRequest) -> PickSaved:
     return PickSaved(ok=True, pick=saved, displaced=saved["displaced"], summary=chartlabels.summarise(route))
 
 
-@router.delete("/api/picks")
+@router.delete("/api/picks", openapi_extra=DEVELOPER)
 def remove_pick(dep: str, dest: str, lat: float, lon: float) -> PickDeleted:
     route = chartlabels.route_key(*route_key(dep, dest))
     removed = chartlabels.delete_pick(route, lat, lon)
@@ -156,11 +149,9 @@ def remove_pick(dep: str, dest: str, lat: float, lon: float) -> PickDeleted:
 MAX_HALF_WIDTH_NM = 10.0
 
 
-@router.get("/api/detect/stream")
+@router.get("/api/detect/stream", openapi_extra=DEVELOPER)
 def detect_stream(
-    dep: str,
-    dest: str,
-    half_width_nm: Annotated[float, Query(gt=0, le=MAX_HALF_WIDTH_NM)] = TRAINING_HALF_WIDTH_NM,
+    dep: str, dest: str, half_width_nm: Annotated[float, Query(gt=0, le=MAX_HALF_WIDTH_NM)] = TRAINING_HALF_WIDTH_NM
 ) -> StreamingResponse:
     """Detections as newline-delimited JSON, one line per block; each
     line is one app.schemas.DetectMessage.
@@ -239,13 +230,15 @@ def detect_stream(
             at += len(fresh_blocks)
             for block in fresh_blocks:
                 seen += len(block["landmarks"])
-                yield line(DetectBlock(
-                    block=block["block"],
-                    blocks=block["blocks"],
-                    tiles=block["tiles"],
-                    missing=block["missing"],
-                    detections=[as_detection(landmark) for landmark in block["landmarks"]],
-                ))
+                yield line(
+                    DetectBlock(
+                        block=block["block"],
+                        blocks=block["blocks"],
+                        tiles=block["tiles"],
+                        missing=block["missing"],
+                        detections=[as_detection(landmark) for landmark in block["landmarks"]],
+                    )
+                )
             if done and at >= len(job["blocks"]):
                 if error is not None:
                     # Becomes the stream's error line (see ndjson). The

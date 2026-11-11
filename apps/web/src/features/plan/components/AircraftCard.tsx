@@ -5,18 +5,21 @@ import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { api } from "../../../lib/api/client";
 import type { AircraftRegistration, TrafficAircraft } from "../../../lib/api/types";
-import { useOwnFix } from "../../../lib/map/ownShip";
+import { useOwnFixShown } from "../../../lib/map/position/ownShip";
 import { usePreferences, type KeptAircraft } from "../../../lib/preferences";
-import { pickKeptAircraft, useTabSearch } from "../../../lib/tabSearch";
-import { HomePlane, ListPageHead, PLANE_TILE, PillSection, PillStrip, PlaneMark, SmallMark, SmallTile, StripNote } from "../../../components/Favorites";
+import { pickKeptAircraft, useTabSearch } from "../lib/tabSearch";
+import { ListPageHead, PillSection, PillStrip, SmallMark, SmallTile, StripNote } from "../../../components/Favorites";
+import { HomePlane, PLANE_TILE, PlaneMark } from "../../../components/PlaneMarks";
 import { planeLink } from "../../../lib/flightLink";
 import TabPage from "../../../components/TabPage";
-import { ClearList, SwipeToDelete } from "../../../components/SwipeToDelete";
+import { ClearList, RemovableRow } from "../../../components/RemovableRow";
 import AircraftRow from "./AircraftRow";
 
-import { useTracking } from "../../../lib/map/tracking";
+import { useTracking } from "../../../lib/map/position/tracking";
 import { TEXT } from "../../../lib/text";
 import { aircraftKind, keptKind } from "../../../lib/aircraftKind";
+import { useShownStore } from "../../../lib/shown";
+import RefreshButton from "../../../components/RefreshButton";
 
 /** What is typed waits this long for the next letter before it is asked
  *  about: each search is a request adsb.lol paces (wingtip.traffic). */
@@ -31,11 +34,12 @@ const SEARCH_RETRY_MS = 6_000;
  *  with what is typed (spaces and a registration's hyphen aside). */
 function named(plane: TrafficAircraft, text: string): boolean {
   const bare = text.replace(/-/g, "");
-  return (plane.callsign ?? "").toUpperCase().startsWith(text)
-    || (plane.registration ?? "").replace(/-/g, "").toUpperCase().startsWith(bare)
-    || plane.hex.toUpperCase().startsWith(text);
+  return (
+    (plane.callsign ?? "").toUpperCase().startsWith(text) ||
+    (plane.registration ?? "").replace(/-/g, "").toUpperCase().startsWith(bare) ||
+    plane.hex.toUpperCase().startsWith(text)
+  );
 }
-
 
 /**
  * The Aircraft tab all the way up: a search for one by what a pilot
@@ -45,7 +49,11 @@ function named(plane: TrafficAircraft, text: string): boolean {
  * ask ("Just have recents just like Airports"). A tap tracks one
  * (FlightCard). The traffic is drawn on the map while it is open.
  */
-export default function AircraftCard({ onPick, onPickHex, strip }: {
+export default function AircraftCard({
+  onPick,
+  onPickHex,
+  strip,
+}: {
   onPick: (plane: TrafficAircraft) => void;
   /** The pill's strip (AircraftPill), over the rest before anything is typed. */
   strip: ReactNode;
@@ -55,12 +63,19 @@ export default function AircraftCard({ onPick, onPickHex, strip }: {
 }) {
   // Typed in the Aircraft tab's search field, in the panel's head
   // (PlanWorkspace), as the airport search's is.
-  const typed = useTabSearch(s => s.aircraft);
+  const typed = useTabSearch((s) => s.aircraft);
   const [asked, setAsked] = useState("");
   const wanted = typed.replace(/\s+/g, "").toUpperCase();
   const searching = wanted.length >= 3;
-  const { data: found, isFetching, isError } = useQuery({
-    queryKey: ["trafficFind", asked], queryFn: () => api.trafficFind(asked), enabled: asked.length >= 3, staleTime: 30_000,
+  const {
+    data: found,
+    isFetching,
+    isError,
+  } = useQuery({
+    queryKey: ["trafficFind", asked],
+    queryFn: () => api.trafficFind(asked),
+    enabled: asked.length >= 3,
+    staleTime: 30_000,
     // adsb.lol answers one request every few seconds from the planner's
     // address and turns the rest away; the planner then answers with what
     // it can show without it (`checked` false: the airplanes the map has
@@ -68,7 +83,8 @@ export default function AircraftCard({ onPick, onPickHex, strip }: {
     // the planner's fifteen-second wait (wingtip.traffic BACKOFF_S), three
     // times at most. It was a 503 and "Couldn't search" for N654FL, which
     // the registry knew (seen on 2026-10-11).
-    refetchInterval: query => (query.state.data?.checked === false && query.state.dataUpdateCount <= SEARCH_RETRIES ? SEARCH_RETRY_MS : false),
+    refetchInterval: (query) =>
+      query.state.data?.checked === false && query.state.dataUpdateCount <= SEARCH_RETRIES ? SEARCH_RETRY_MS : false,
     meta: { silent: true },
   });
   // Asked once the typing pauses, and one search at a time: what is typed
@@ -81,19 +97,19 @@ export default function AircraftCard({ onPick, onPickHex, strip }: {
     const later = window.setTimeout(() => setAsked(wanted), TYPING_MS);
     return () => window.clearTimeout(later);
   }, [wanted, asked, isFetching]);
-  const fix = useOwnFix();
+  const fix = useOwnFixShown();
   // My Airplane's Add asked for the pilot's own airplane: the one picked --
   // found, its FAA record, a Favorite, a recent -- is kept as theirs
   // rather than opened, as the airport search's Home is.
-  const pickingMine = useTabSearch(s => s.pickingMine);
+  const pickingMine = useTabSearch((s) => s.pickingMine);
   // The Favorites' Add: the one picked kept as a Favorite, as the airport
   // search's Add keeps a field.
-  const pickingFavorite = useTabSearch(s => s.pickingFavorite);
+  const pickingFavorite = useTabSearch((s) => s.pickingFavorite);
   const picking = pickingMine || pickingFavorite;
   const pickKept = (kept: KeptAircraft) => pickKeptAircraft(kept, onPickHex);
   const pickPlane = (plane: TrafficAircraft) => (picking ? pickKept(keptPlane(plane)) : onPick(plane));
-  const recents = usePreferences(s => s.recentAircraft);
-  const seen = useTracking(s => s.seen);
+  const recents = usePreferences((s) => s.recentAircraft);
+  const seen = useShownStore(useTracking, (s) => s.seen);
   // The airplanes about whose name begins with what is typed: found as it
   // is typed, asking nothing, before adsb.lol's answer for the rest.
   // Three letters at least, as the planner search wants: two match scores
@@ -103,10 +119,15 @@ export default function AircraftCard({ onPick, onPickHex, strip }: {
   const heard = useMemo(() => {
     if (!searching) return [];
     const bare = wanted.replace(/-/g, "");
-    const whole = (p: TrafficAircraft) => (p.callsign ?? "").toUpperCase() === wanted
-      || (p.registration ?? "").replace(/-/g, "").toUpperCase() === bare || p.hex.toUpperCase() === wanted;
-    return seen.map(r => r.plane).filter(plane => named(plane, wanted))
-      .sort((a, b) => Number(whole(b)) - Number(whole(a))).slice(0, 8);
+    const whole = (p: TrafficAircraft) =>
+      (p.callsign ?? "").toUpperCase() === wanted ||
+      (p.registration ?? "").replace(/-/g, "").toUpperCase() === bare ||
+      p.hex.toUpperCase() === wanted;
+    return seen
+      .map((r) => r.plane)
+      .filter((plane) => named(plane, wanted))
+      .sort((a, b) => Number(whole(b)) - Number(whole(a)))
+      .slice(0, 8);
   }, [seen, wanted, searching]);
   const answer = asked === wanted ? found?.aircraft : undefined;
   // adsb.lol could not be asked for this name yet (`checked` false): what
@@ -115,11 +136,11 @@ export default function AircraftCard({ onPick, onPickHex, strip }: {
   // Asked again (refetchInterval above) until its tries are spent.
   const answers = useQueryClient().getQueryState(["trafficFind", asked])?.dataUpdateCount ?? 0;
   const askingAgain = unchecked && answers <= SEARCH_RETRIES;
-  const listed = [...heard, ...(answer ?? []).filter(plane => !heard.some(h => h.hex === plane.hex))];
+  const listed = [...heard, ...(answer ?? []).filter((plane) => !heard.some((h) => h.hex === plane.hex))];
   // None in the air by that name: the FAA's record of a US airplane named
   // by its N-number or address, its card opened all the same (FlightCard:
   // its registration, and its last flight where it flew today).
-  const registered = asked === wanted && !listed.length ? found?.registered ?? null : null;
+  const registered = asked === wanted && !listed.length ? (found?.registered ?? null) : null;
   // Return in the field: the first found, or the search asked now rather
   // than at the pause.
   const submit = () => {
@@ -128,7 +149,9 @@ export default function AircraftCard({ onPick, onPickHex, strip }: {
     else if (!isFetching) setAsked(wanted);
   };
   const submitRef = useRef(submit);
-  useEffect(() => { submitRef.current = submit; });
+  useEffect(() => {
+    submitRef.current = submit;
+  });
   useEffect(() => {
     useTabSearch.setState({ submitAircraft: () => submitRef.current() });
     return () => useTabSearch.setState({ submitAircraft: null });
@@ -142,17 +165,29 @@ export default function AircraftCard({ onPick, onPickHex, strip }: {
       {(searching || heard.length > 0) && (
         // Credited where ADS-B Exchange answered the search, as the
         // map credits whose traffic it draws (wingtip.traffic find_credited).
-        <PillSection title="Found" testId="aircraft-found-section">
+        <PillSection title="Found" testId="aircraft-found-section" right={<RefreshButton card="traffic" label="Refresh the airplanes" />}>
           <ListGroup footer={answer?.length && found?.source === "ADS-B Exchange" ? "Found by ADS-B Exchange." : undefined}>
-            {listed.map(plane => (
-              <AircraftRow key={plane.hex} plane={plane} from={from} ownFt={ownFt} onPick={() => pickPlane(plane)} testId="aircraft-found" />
+            {listed.map((plane) => (
+              <AircraftRow
+                key={plane.hex}
+                plane={plane}
+                from={from}
+                ownFt={ownFt}
+                onPick={() => pickPlane(plane)}
+                testId="aircraft-found"
+              />
             ))}
             {registered && (
               <ListRow
-                media={<PlaneMark small kind={aircraftKind({ faa: registered })} />} data-testid="aircraft-registered"
+                media={<PlaneMark small kind={aircraftKind({ faa: registered })} />}
+                data-testid="aircraft-registered"
                 title={<span className="font-semibold">{registered.n_number}</span>}
-                description={[[registered.manufacturer, registered.model].filter(Boolean).join(" "),
-                  unchecked ? "not yet known whether it is flying" : "not in the air now"].filter(Boolean).join(" · ")}
+                description={[
+                  [registered.manufacturer, registered.model].filter(Boolean).join(" "),
+                  unchecked ? "not yet known whether it is flying" : "not in the air now",
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
                 chevron={!!registered.mode_s_hex}
                 onClick={registered.mode_s_hex ? () => pickKept(keptOf(registered)) : undefined}
               />
@@ -161,9 +196,15 @@ export default function AircraftCard({ onPick, onPickHex, strip }: {
               <ListRow muted title="None in the air by that name is heard now" />
             )}
             {searching && unchecked && (
-              <ListRow title={<span className={cn("text-muted-foreground", TEXT.detail)} data-testid="aircraft-unchecked">
-                {askingAgain ? "adsb.lol is busy; asking again…" : "adsb.lol didn't answer, so whether it is flying is not known. Try again in a moment."}
-              </span>} />
+              <ListRow
+                title={
+                  <span className={cn("text-muted-foreground", TEXT.detail)} data-testid="aircraft-unchecked">
+                    {askingAgain
+                      ? "adsb.lol is busy; asking again…"
+                      : "adsb.lol didn't answer, so whether it is flying is not known. Try again in a moment."}
+                  </span>
+                }
+              />
             )}
             {searching && !answer && isError && asked === wanted && (
               <ListRow title={<span className={cn("text-destructive", TEXT.detail)}>Couldn't search. Try again in a moment.</span>} />
@@ -191,38 +232,59 @@ export default function AircraftCard({ onPick, onPickHex, strip }: {
           favorites filter to stay when it's full"). Asked for an airplane
           to keep, the airplanes opened last in its place to pick it from,
           as the airport search's Home and Add offer theirs. */}
-      {!searching && (picking ? recents.length > 0 && (
-        <PillSection title="Recents" testId="aircraft-recents">
-          <AircraftRecentTiles onPick={pickKept} />
-        </PillSection>
-      ) : strip)}
+      {!searching &&
+        (picking
+          ? recents.length > 0 && (
+              <PillSection title="Recents" testId="aircraft-recents">
+                <AircraftRecentTiles onPick={pickKept} />
+              </PillSection>
+            )
+          : strip)}
     </TabPage>
   );
 }
 
 /** The Aircraft tab's pill, at the owner's ask: the airplanes starred, as
  *  small tiles -- each its name and type -- opening its card. */
-export function AircraftFavoriteStrip({ onOpen, onAddMine, onAddFavorite }: {
+export function AircraftFavoriteStrip({
+  onOpen,
+  onAddMine,
+  onAddFavorite,
+}: {
   onOpen: (hex: string) => void;
   /** My Airplane's Add: the panel up and the search asked for it. */
   onAddMine: () => void;
   /** The Favorites' Add, at the strip's end: the search asked for one. */
   onAddFavorite: () => void;
 }) {
-  const favorites = usePreferences(s => s.favoriteAircraft);
-  const mine = usePreferences(s => s.myAircraft);
+  const favorites = usePreferences((s) => s.favoriteAircraft);
+  const mine = usePreferences((s) => s.myAircraft);
   return (
     <PillStrip testId="pill-aircraft-favorites">
       {/* My Airplane first, with Add until one is kept, as Home is. */}
       <SmallTile
-        mark={<SmallMark icon={<HomePlane kind={mine ? keptKind(mine) : "high"} />} className={PLANE_TILE} />} title="Airplane" detail={mine?.name ?? "Add"}
-        label={mine ? `Airplane, ${mine.name}` : "Add your Airplane"} onClick={mine ? () => onOpen(mine.hex) : onAddMine} testId="pill-aircraft-mine"
+        mark={<SmallMark icon={<HomePlane kind={mine ? keptKind(mine) : "high"} />} className={PLANE_TILE} />}
+        title="Airplane"
+        detail={mine?.name ?? "Add"}
+        label={mine ? `Airplane, ${mine.name}` : "Add your Airplane"}
+        onClick={mine ? () => onOpen(mine.hex) : onAddMine}
+        testId="pill-aircraft-mine"
       />
-      {favorites.map(a => <KeptAircraftTile key={a.hex} aircraft={a} onClick={() => onOpen(a.hex)} testId="pill-aircraft-favorite" />)}
-      <SmallTile
-        mark={<SmallMark icon={<Plus />} className="bg-foreground/8 text-tint" />} title="Add" label="Add a Favorite"
-        onClick={onAddFavorite} testId="pill-aircraft-favorite-add"
-      />
+      {favorites.map((a) => (
+        <KeptAircraftTile key={a.hex} aircraft={a} onClick={() => onOpen(a.hex)} testId="pill-aircraft-favorite" />
+      ))}
+      {/* One Add at a time: with no airplane of the pilot's own, its tile's
+          Add is the strip's, where a second Add tile beside it read as the
+          same twice (the UI audit, 2026-11-09). */}
+      {(mine || favorites.length > 0) && (
+        <SmallTile
+          mark={<SmallMark icon={<Plus />} className="bg-foreground/8 text-tint" />}
+          title="Add"
+          label="Add a Favorite"
+          onClick={onAddFavorite}
+          testId="pill-aircraft-favorite-add"
+        />
+      )}
     </PillStrip>
   );
 }
@@ -232,8 +294,12 @@ export function AircraftFavoriteStrip({ onOpen, onAddMine, onAddFavorite }: {
 function KeptAircraftTile({ aircraft, onClick, testId }: { aircraft: KeptAircraft; onClick: () => void; testId: string }) {
   return (
     <SmallTile
-      mark={<PlaneMark kind={keptKind(aircraft)} />} title={aircraft.name} detail={aircraft.type ?? undefined}
-      label={`${aircraft.name}${aircraft.type ? `, ${aircraft.type}` : ""}`} onClick={onClick} testId={testId}
+      mark={<PlaneMark kind={keptKind(aircraft)} />}
+      title={aircraft.name}
+      detail={aircraft.type ?? undefined}
+      label={`${aircraft.name}${aircraft.type ? `, ${aircraft.type}` : ""}`}
+      onClick={onClick}
+      testId={testId}
     />
   );
 }
@@ -248,7 +314,9 @@ function keptOf(record: AircraftRegistration): KeptAircraft {
  *  (its registration first) and its type. */
 function keptPlane(plane: TrafficAircraft): KeptAircraft {
   return {
-    hex: plane.hex, name: plane.registration ?? plane.callsign ?? plane.hex.toUpperCase(), type: plane.type ?? null,
+    hex: plane.hex,
+    name: plane.registration ?? plane.callsign ?? plane.hex.toUpperCase(),
+    type: plane.type ?? null,
     kind: aircraftKind({ type: plane.type, category: plane.category }),
   };
 }
@@ -259,11 +327,13 @@ function keptPlane(plane: TrafficAircraft): KeptAircraft {
  *  ones to pick from when the search is asked for one to keep. A word of
  *  what is kept while there are none. */
 export function AircraftRecentTiles({ onPick }: { onPick: (kept: KeptAircraft) => void }) {
-  const recents = usePreferences(s => s.recentAircraft);
+  const recents = usePreferences((s) => s.recentAircraft);
   if (!recents.length) return <StripNote>None yet: the airplanes opened are kept here.</StripNote>;
   return (
     <PillStrip testId="pill-aircraft-recents">
-      {recents.map(a => <KeptAircraftTile key={a.hex} aircraft={a} onClick={() => onPick(a)} testId="aircraft-recent" />)}
+      {recents.map((a) => (
+        <KeptAircraftTile key={a.hex} aircraft={a} onClick={() => onPick(a)} testId="aircraft-recent" />
+      ))}
     </PillStrip>
   );
 }
@@ -272,28 +342,51 @@ export function AircraftRecentTiles({ onPick }: { onPick: (kept: KeptAircraft) =
  *  the routes' are: every one, each taken off by a swipe to the left (or a
  *  long press), and Clear for all of them, asked first. */
 export function AircraftRecentsPage({ onBack, onPick }: { onBack: () => void; onPick: (kept: KeptAircraft) => void }) {
-  const recents = usePreferences(s => s.recentAircraft);
-  const removeRecent = usePreferences(s => s.removeRecentAircraft);
-  const clearRecents = usePreferences(s => s.clearRecentAircraft);
+  const recents = usePreferences((s) => s.recentAircraft);
+  const removeRecent = usePreferences((s) => s.removeRecentAircraft);
+  const clearRecents = usePreferences((s) => s.clearRecentAircraft);
   return (
     <TabPage testId="aircraft-recents-list">
       <ListPageHead
-        title="Recents" backLabel="Back to the airplanes" onBack={onBack} testId="aircraft-recents-page"
-        action={recents.length > 0 && <ClearList title="Clear the Recents?" description="The airplanes opened last are forgotten in this browser. Favorites stay." onClear={clearRecents} testId="aircraft-recents-clear" />}
+        title="Recents"
+        backLabel="Back to the airplanes"
+        onBack={onBack}
+        testId="aircraft-recents-page"
+        action={
+          recents.length > 0 && (
+            <ClearList
+              title="Clear the Recents?"
+              description="The airplanes opened last are forgotten in this browser. Favorites stay."
+              onClear={clearRecents}
+              testId="aircraft-recents-clear"
+            />
+          )
+        }
       />
       {recents.length > 0 ? (
         <ListGroup>
-          {recents.map(a => (
-            <SwipeToDelete key={a.hex} label={`Remove ${a.name} from Recents`} onDelete={() => removeRecent(a.hex)} share={planeLink(a)}>
+          {recents.map((a) => (
+            <RemovableRow
+              key={a.hex}
+              name={a.name}
+              label={`Remove ${a.name} from Recents`}
+              onDelete={() => removeRecent(a.hex)}
+              share={planeLink(a)}
+            >
               <ListRow
-                media={<PlaneMark small kind={keptKind(a)} />} data-testid="aircraft-recent"
-                title={<span className="font-semibold">{a.name}</span>} description={a.type ?? undefined}
-                chevron onClick={() => onPick(a)}
+                media={<PlaneMark small kind={keptKind(a)} />}
+                data-testid="aircraft-recent"
+                title={<span className="font-semibold">{a.name}</span>}
+                description={a.type ?? undefined}
+                chevron
+                onClick={() => onPick(a)}
               />
-            </SwipeToDelete>
+            </RemovableRow>
           ))}
         </ListGroup>
-      ) : <p className={cn("px-1 text-muted-foreground", TEXT.note)}>None yet: the airplanes opened are kept here.</p>}
+      ) : (
+        <p className={cn("px-1 text-muted-foreground", TEXT.note)}>None yet: the airplanes opened are kept here.</p>
+      )}
     </TabPage>
   );
 }

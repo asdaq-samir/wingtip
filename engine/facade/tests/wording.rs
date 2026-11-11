@@ -26,7 +26,10 @@ fn faa(t: &str) -> String {
 fn the_faas_capitals_in_sentence_case_keep_the_codes_and_figures() {
     assert_eq!(faa("INTERMITTENT BY NOTAM 4 HOURS IN ADVANCE"), "Intermittent by NOTAM 4 hours in advance");
     assert_eq!(faa("0700 - 2200 LOCAL, MON - FRI; OTHER TIMES BY NOTAM"), "0700 - 2200 local, Mon - Fri; other times by NOTAM");
-    assert_eq!(faa("AIR SPEED LOSS OR GAIN OF 20KTS OR MORE BELOW 2000 FT AGL"), "Air speed loss or gain of 20KTS or more below 2000 ft AGL");
+    assert_eq!(
+        faa("AIR SPEED LOSS OR GAIN OF 20KTS OR MORE BELOW 2000 FT AGL"),
+        "Air speed loss or gain of 20KTS or more below 2000 ft AGL"
+    );
     // A cause made of contractions alone stays as the FAA wrote it.
     assert_eq!(faa("CIG BLW 010 VIS BLW 3SM BR FG"), "CIG BLW 010 VIS BLW 3SM BR FG");
     assert_eq!(faa("Security: VIP movement"), "Security: VIP movement");
@@ -86,7 +89,10 @@ fn a_special_use_areas_limits_as_the_chart_writes_them() {
     assert_eq!(sua(r#"{"floor_ft": 0, "floor_ref": "SFC", "ceiling_ft": 18000, "ceiling_ref": "MSL"}"#), "Surface to 18,000 ft");
     assert_eq!(sua(r#"{"floor_ft": 8000, "floor_ref": "MSL", "ceiling_ft": 18000, "ceiling_ref": "STD"}"#), "8,000 ft to FL180");
     assert_eq!(sua(r#"{"floor_ft": 500, "floor_ref": "AGL", "ceiling_ft": null, "ceiling_ref": null}"#), "500 ft AGL to unstated");
-    assert_eq!(sua(r#"{"floor_ft": 0, "floor_ref": "MSL", "ceiling_ft": 1450, "ceiling_ref": "AGL", "mid_sentence": true}"#), "the surface to 1,450 ft AGL");
+    assert_eq!(
+        sua(r#"{"floor_ft": 0, "floor_ref": "MSL", "ceiling_ft": 1450, "ceiling_ref": "AGL", "mid_sentence": true}"#),
+        "the surface to 1,450 ft AGL"
+    );
     assert_eq!(sua("{}"), "unstated to unstated");
 }
 
@@ -97,7 +103,10 @@ fn a_fields_fuel_and_radio() {
     let line = |t: &str, d: &str| call("frequency_line", &format!("{{\"type\": {t}, \"description\": {d}}}")).unwrap();
     assert_eq!(line(r#""TWR""#, r#""TWR""#), r#"{"name":"Tower","kind":"tower","detail":null}"#);
     assert_eq!(line(r#""UNIC""#, r#""UNICOM""#), r#"{"name":"UNICOM","kind":"traffic","detail":null}"#);
-    assert_eq!(line(r#""A/D""#, r#""MINNEAPOLIS APP/DEP""#), r#"{"name":"Approach and departure","kind":"approach","detail":"Minneapolis APP/DEP"}"#);
+    assert_eq!(
+        line(r#""A/D""#, r#""MINNEAPOLIS APP/DEP""#),
+        r#"{"name":"Approach and departure","kind":"approach","detail":"Minneapolis APP/DEP"}"#
+    );
     assert_eq!(line(r#""ATIS""#, r#""ATIS""#), r#"{"name":"ATIS","kind":"weather","detail":null}"#);
     assert!(line(r#""GCCD""#, r#""GND/CLNC DEL""#).starts_with(r#"{"name":"Ground and clearance","kind":"ground""#));
     assert_eq!(line(r#""POST""#, r#""ANG COMD POST""#), r#"{"name":"ANG comd post","kind":"other","detail":null}"#);
@@ -124,7 +133,8 @@ fn the_ctaf_and_the_kneeboards_list() {
     assert_eq!(knee(&[("ATIS", 135.4, "ATIS"), ("TWR", 118.3, "TWR"), ("UNIC", 122.95, "UNIC")]), r#"[["ATIS",135.4],["TWR",118.3]]"#);
     assert_eq!(knee(&[("TWR", 118.3, "TWR")]), r#"[["TWR",118.3]]"#);
     let of = |types: &str| {
-        call("frequency_of", &format!("{{\"frequencies\": {}, \"types\": {types}}}", freqs(&[("gnd", 121.7, ""), ("ASOS", 119.0, "")]))).unwrap()
+        call("frequency_of", &format!("{{\"frequencies\": {}, \"types\": {types}}}", freqs(&[("gnd", 121.7, ""), ("ASOS", 119.0, "")])))
+            .unwrap()
     };
     assert_eq!(of(r#"["AWOS", "ASOS"]"#), "1");
     assert_eq!(of(r#"["GND"]"#), "0");
@@ -136,7 +146,10 @@ fn class_b_c_and_d_entry_rules_each_with_its_section() {
     let rules = |c: &str| call("airspace_entry_rules", &format!("{{\"class\": {c:?}}}")).unwrap();
     let b = rules("B");
     assert!(b.starts_with(r#"{"rules":[{"rule":"An ATC clearance before you enter","cite":"14 CFR 91.131(a)(1)"}"#), "{b}");
-    assert!(b.contains(r#"above it to 10,000 ft MSL, and within 30 nm of its primary airport","cite":"14 CFR 91.215(b), 91.225(d)""#), "{b}");
+    assert!(
+        b.contains(r#"above it to 10,000 ft MSL, and within 30 nm of its primary airport","cite":"14 CFR 91.215(b), 91.225(d)""#),
+        "{b}"
+    );
     // 91.117(b)'s 200 kt is C's and D's; B's is (c) under it.
     assert!(b.contains(r#""cite":"14 CFR 91.117(a), (c)""#), "{b}");
     assert!(b.ends_with(r#""call":["APP","TWR"]}"#), "{b}");
@@ -159,7 +172,9 @@ fn jot(var: &str) -> String {
 
 #[test]
 fn a_vors_radial_its_morse_and_its_service_volume() {
-    let radial = |var: &str, lat: f64, lon: f64| call("radial_of", &format!("{{\"station\": {}, \"at\": {{\"lat\": {lat}, \"lon\": {lon}}}}}", jot(var))).unwrap();
+    let radial = |var: &str, lat: f64, lon: f64| {
+        call("radial_of", &format!("{{\"station\": {}, \"at\": {{\"lat\": {lat}, \"lon\": {lon}}}}}", jot(var))).unwrap()
+    };
     // Due north of a 2° E VOR is its 358 radial, 178 to fly to it, 30 nm.
     let north = radial("2", JOT.0 + 0.5, JOT.1);
     assert!(north.starts_with(r#"{"radial":358.0,"to_course":178.0,"nm":30.02"#), "{north}");
@@ -168,7 +183,10 @@ fn a_vors_radial_its_morse_and_its_service_volume() {
     assert!(east.starts_with(r#"{"radial":93.8"#), "{east}");
     assert_eq!(radial("null", JOT.0, JOT.1), "null");
     let far = r#"{"ident": "XXX", "lat": 45, "lon": -90, "mag_var": 0}"#;
-    let frd = call("fix_radial_distance", &format!("{{\"at\": {{\"lat\": {}, \"lon\": {}}}, \"stations\": [{far}, {}]}}", JOT.0 + 0.2, JOT.1, jot("2")));
+    let frd = call(
+        "fix_radial_distance",
+        &format!("{{\"at\": {{\"lat\": {}, \"lon\": {}}}, \"stations\": [{far}, {}]}}", JOT.0 + 0.2, JOT.1, jot("2")),
+    );
     assert_eq!(frd.unwrap(), "\"JOT 358° 12 nm\"");
     assert_eq!(call("fix_radial_distance", r#"{"at": {"lat": 41, "lon": -88}, "stations": []}"#).unwrap(), "null");
     assert_eq!(text("morse", r#"{"ident": "JOT"}"#), "·−−−  −−−  −");
@@ -184,7 +202,8 @@ fn a_vors_radial_its_morse_and_its_service_volume() {
 fn the_variation_agrees_with_noaas_calculator() {
     // The rows services/planner/tests_wingtip/test_magnetic.py holds wingtip.magnetic to.
     for (lat, lon, noaa) in [(44.58, -90.14, -2.55629), (42.33, -88.08, -3.89582), (43.02, -89.0, -3.274)] {
-        let at: f64 = call("magnetic_variation", &format!("{{\"lat\": {lat}, \"lon\": {lon}, \"date\": \"2026-09-21\"}}")).unwrap().parse().unwrap();
+        let at: f64 =
+            call("magnetic_variation", &format!("{{\"lat\": {lat}, \"lon\": {lon}, \"date\": \"2026-09-21\"}}")).unwrap().parse().unwrap();
         assert!((at - noaa).abs() < 0.05, "{lat} {lon}: {at} against {noaa}");
     }
     // West and negative east of the agonic line, east and positive west.

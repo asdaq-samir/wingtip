@@ -1,6 +1,7 @@
 """The obstacle table's Parquet cache beside DOF.DAT: a fresh process
 reads it back instead of re-parsing the national text file, and a new
 data cycle rebuilds it."""
+
 import io
 import os
 import zipfile
@@ -17,9 +18,18 @@ def _dof_line(city: str, agl: int = 350) -> str:
     line = [" "] * 130
     fields = {
         "city": city,
-        "lat_deg": "41", "lat_min": "30", "lat_sec": "00.00", "lat_hem": "N",
-        "lon_deg": "093", "lon_min": "40", "lon_sec": "00.00", "lon_hem": "W",
-        "type": "TOWER", "agl": f"{agl:05d}", "amsl": f"{agl + 1100:05d}", "lt": "R",
+        "lat_deg": "41",
+        "lat_min": "30",
+        "lat_sec": "00.00",
+        "lat_hem": "N",
+        "lon_deg": "093",
+        "lon_min": "40",
+        "lon_sec": "00.00",
+        "lon_hem": "W",
+        "type": "TOWER",
+        "agl": f"{agl:05d}",
+        "amsl": f"{agl + 1100:05d}",
+        "lt": "R",
     }
     for name, text in fields.items():
         start, end = faa_data._DOF_COLUMNS[name]
@@ -74,6 +84,7 @@ def test_a_new_dof_cycle_rebuilds_the_cache(tmp_path, monkeypatch):
 
 # --- each NASR file on its own ---
 
+
 def test_a_file_already_there_costs_no_download(tmp_path, monkeypatch):
     (tmp_path / "DOF.DAT").write_text("x")
     monkeypatch.setattr(faa_data, "find_current_cycle_page", lambda url: pytest.fail("scraped the NASR index"))
@@ -89,7 +100,7 @@ def test_an_evicted_airport_file_fails_only_the_airports(tmp_path, monkeypatch):
     (tmp_path / ".APT_BASE.csv.icloud").write_text("placeholder")
     monkeypatch.setattr(faa_data, "find_current_cycle_page", lambda url: "page")
     monkeypatch.setattr(faa_data, "find_download_link", lambda page, pattern: "https://example/APT_CSV.zip")
-    monkeypatch.setattr(faa_data, "download_and_extract", lambda url, dest, **_: None)   # iCloud takes it straight back
+    monkeypatch.setattr(faa_data, "download_and_extract", lambda url, dest, **_: None)  # iCloud takes it straight back
 
     with pytest.raises(RuntimeError, match="iCloud evicted APT_BASE.csv"):
         faa_data.ensure_nasr_file("APT_BASE.csv", tmp_path)
@@ -99,9 +110,7 @@ def test_an_evicted_airport_file_fails_only_the_airports(tmp_path, monkeypatch):
 def test_the_three_together_keep_their_order(tmp_path):
     for name in ("NAV_BASE.csv", "APT_BASE.csv", "DOF.DAT"):
         (tmp_path / name).write_text("x")
-    assert faa_data.ensure_nasr_data(tmp_path) == (
-        tmp_path / "NAV_BASE.csv", tmp_path / "APT_BASE.csv", tmp_path / "DOF.DAT",
-    )
+    assert faa_data.ensure_nasr_data(tmp_path) == (tmp_path / "NAV_BASE.csv", tmp_path / "APT_BASE.csv", tmp_path / "DOF.DAT")
 
 
 def test_load_obstacles_is_the_typed_dof_columns_filtered(tmp_path, monkeypatch):
@@ -128,6 +137,7 @@ def test_a_pattern_is_the_faas_where_published_and_1000_ft_where_not(tmp_path):
 def test_no_airport_file_is_the_1000_ft_pattern_not_a_failure(monkeypatch, tmp_path):
     def unreachable(name, cache_dir):
         raise RuntimeError("the FAA is down")
+
     monkeypatch.setattr(faa_data, "ensure_nasr_file", unreachable)
     assert faa_data.pattern_agl_ft("C81", tmp_path) == 1000.0
 
@@ -152,14 +162,17 @@ def test_an_archive_gives_up_only_the_files_the_planner_reads(tmp_path, monkeypa
 
 
 CONTACTS = (
-    "EFF_DATE,SITE_NO,SITE_TYPE_CODE,STATE_CODE,ARPT_ID,CITY,COUNTRY_CODE,TITLE,NAME,"
-    "ADDRESS1,ADDRESS2,TITLE_CITY,STATE,ZIP_CODE,ZIP_PLUS_FOUR,PHONE_NO\n"
-) + """2026/10/01,01353.,A,CA,BUR,BURBANK,US,OWNER,BURBANK-GLENDALE-PASADENA APT,2627 HOLLYWOOD WAY,,BURBANK,CA,91505,,818-840-8840
+    (
+        "EFF_DATE,SITE_NO,SITE_TYPE_CODE,STATE_CODE,ARPT_ID,CITY,COUNTRY_CODE,TITLE,NAME,"
+        "ADDRESS1,ADDRESS2,TITLE_CITY,STATE,ZIP_CODE,ZIP_PLUS_FOUR,PHONE_NO\n"
+    )
+    + """2026/10/01,01353.,A,CA,BUR,BURBANK,US,OWNER,BURBANK-GLENDALE-PASADENA APT,2627 HOLLYWOOD WAY,,BURBANK,CA,91505,,818-840-8840
 2026/10/01,01353.,A,CA,BUR,BURBANK,US,MANAGER,A MANAGER,2627 HOLLYWOOD WAY,,BURBANK,CA,91505,,818-840-8830
 2026/10/01,00103.,A,AL,0J0,ABBEVILLE,US,MANAGER,A MANAGER,PO BOX 427,101 E. WASHINGTON ST,ABBEVILLE,AL,36310,,334-585-6444
 2026/10/01,00104.,A,AL,0J1,SOMEWHERE,US,OWNER,A COUNTY,P.O. BOX 9,,SOMEWHERE,AL,36000,,
 2026/10/01,00105.,A,MN,0J2,ELSEWHERE,US,MANAGER,A MANAGER,1ST AVE NE,,ELSEWHERE,MN,55000,,
 """
+)
 
 
 def test_a_fields_contact_is_its_managers_phone_and_street_by_either_ident(tmp_path):
@@ -167,8 +180,11 @@ def test_a_fields_contact_is_its_managers_phone_and_street_by_either_ident(tmp_p
     (tmp_path / "APT_BASE.csv").write_text("ARPT_ID,ICAO_ID,TPA\nBUR,KBUR,\n0J0,,\n0J1,,\n0J2,,\n")
     # The manager's, before the owner's that comes first in the file; no
     # names; the FAA's capitals as an address is written.
-    assert faa_data.airport_contact("KBUR", tmp_path) == faa_data.airport_contact("bur", tmp_path) == {
-        "phone": "818-840-8830", "address": "2627 Hollywood Way, Burbank, CA 91505"}
+    assert (
+        faa_data.airport_contact("KBUR", tmp_path)
+        == faa_data.airport_contact("bur", tmp_path)
+        == {"phone": "818-840-8830", "address": "2627 Hollywood Way, Burbank, CA 91505"}
+    )
     # A box number is no street: the second line is.
     assert faa_data.airport_contact("0J0", tmp_path)["address"] == "101 E. Washington St, Abbeville, AL 36310"
     # Neither, where the FAA lists none.
@@ -190,45 +206,55 @@ def test_a_contacts_file_that_is_no_utf8_is_still_read(tmp_path):
 def test_no_contacts_file_is_a_card_without_them_not_a_failure(monkeypatch, tmp_path):
     def unreachable(name, cache_dir):
         raise RuntimeError("the FAA is down")
+
     monkeypatch.setattr(faa_data, "ensure_nasr_file", unreachable)
     assert faa_data.airport_contact("KBUR", tmp_path) == {"phone": None, "address": None}
 
 
-_FRQ_HEADER = ('"EFF_DATE","FACILITY","FAC_NAME","FACILITY_TYPE","ARTCC_OR_FSS_ID","CPDLC","TOWER_HRS","SERVICED_FACILITY",'
-               '"SERVICED_FAC_NAME","SERVICED_SITE_TYPE","LAT_DECIMAL","LONG_DECIMAL","SERVICED_CITY","SERVICED_STATE",'
-               '"SERVICED_COUNTRY","TOWER_OR_COMM_CALL","PRIMARY_APPROACH_RADIO_CALL","FREQ","SECTORIZATION","FREQ_USE","REMARK"\n')
+_FRQ_HEADER = (
+    '"EFF_DATE","FACILITY","FAC_NAME","FACILITY_TYPE","ARTCC_OR_FSS_ID","CPDLC","TOWER_HRS","SERVICED_FACILITY",'
+    '"SERVICED_FAC_NAME","SERVICED_SITE_TYPE","LAT_DECIMAL","LONG_DECIMAL","SERVICED_CITY","SERVICED_STATE",'
+    '"SERVICED_COUNTRY","TOWER_OR_COMM_CALL","PRIMARY_APPROACH_RADIO_CALL","FREQ","SECTORIZATION","FREQ_USE","REMARK"\n'
+)
 
 
 def _frq(facility, served, freq, use, tower_call="", approach_call="", sector=""):
-    return (f'"2026/10/01","{facility}","X","NON-ATCT","","","","{served}","X","AIRPORT",0,0,"X","IN","US",'
-            f'"{tower_call}","{approach_call}","{freq}","{sector}","{use}",""\n')
+    return (
+        f'"2026/10/01","{facility}","X","NON-ATCT","","","","{served}","X","AIRPORT",0,0,"X","IN","US",'
+        f'"{tower_call}","{approach_call}","{freq}","{sector}","{use}",""\n'
+    )
 
 
 def test_a_fields_frequencies_are_the_faas_as_the_chart_supplement_lists_them(tmp_path):
-    (tmp_path / "FRQ.csv").write_text(_FRQ_HEADER + "".join([
-        # Salem (I83): its CTAF and UNICOM on one frequency, Louisville's
-        # approach, and its UHF, which a light airplane cannot tune.
-        _frq("I83", "I83", "123.0", "CTAF"),
-        _frq("I83", "I83", "123.0", "UNICOM"),
-        _frq("SDF", "I83", "123.675", "APCH/P DEP/P", approach_call="LOUISVILLE"),
-        _frq("SDF", "I83", "327.0", "APCH/P DEP/P", approach_call="LOUISVILLE"),
-        # Duluth: tower, ground, ATIS, its own UNICOM, a sectored approach,
-        # and what is not a pilot's to call -- the emergency frequency, a
-        # command post, the VORTAC's own -- left off.
-        _frq("DLH", "DLH", "118.3", "LCL/P", tower_call="DULUTH", approach_call="MINNEAPOLIS"),
-        _frq("DLH", "DLH", "121.9", "GND/P", tower_call="DULUTH", approach_call="MINNEAPOLIS"),
-        _frq("DLH", "DLH", "124.1", "ATIS", tower_call="DULUTH"),
-        _frq("DLH", "DLH", "122.95", "UNICOM"),
-        _frq("DLH", "DLH", "125.45", "APCH/P DEP/P", approach_call="DULUTH", sector="360-179"),
-        _frq("DLH", "DLH", "121.5", "EMERG", tower_call="DULUTH"),
-        _frq("DLH", "DLH", "139.9", "ANG COMD POST", tower_call="DULUTH"),
-        _frq("DLH", "DLH", "112.6/73X", "DLH VORTAC"),
-        _frq("PRINCETON", "DLH", "122.5", "DULUTH RCO", tower_call="DULUTH"),
-        # Madison's Class C frequency is its approach's east sector: once.
-        _frq("MSN", "MSN", "120.1", "APCH/P DEP/P", approach_call="MADISON", sector="EAST"),
-        _frq("MSN", "MSN", "120.1", "CLASS C", approach_call="MADISON", sector="EAST"),
-        _frq("MSN", "MSN", "132.0", "CLASS C", approach_call="MADISON", sector="SOUTH"),
-    ]))
+    (tmp_path / "FRQ.csv").write_text(
+        _FRQ_HEADER
+        + "".join(
+            [
+                # Salem (I83): its CTAF and UNICOM on one frequency, Louisville's
+                # approach, and its UHF, which a light airplane cannot tune.
+                _frq("I83", "I83", "123.0", "CTAF"),
+                _frq("I83", "I83", "123.0", "UNICOM"),
+                _frq("SDF", "I83", "123.675", "APCH/P DEP/P", approach_call="LOUISVILLE"),
+                _frq("SDF", "I83", "327.0", "APCH/P DEP/P", approach_call="LOUISVILLE"),
+                # Duluth: tower, ground, ATIS, its own UNICOM, a sectored approach,
+                # and what is not a pilot's to call -- the emergency frequency, a
+                # command post, the VORTAC's own -- left off.
+                _frq("DLH", "DLH", "118.3", "LCL/P", tower_call="DULUTH", approach_call="MINNEAPOLIS"),
+                _frq("DLH", "DLH", "121.9", "GND/P", tower_call="DULUTH", approach_call="MINNEAPOLIS"),
+                _frq("DLH", "DLH", "124.1", "ATIS", tower_call="DULUTH"),
+                _frq("DLH", "DLH", "122.95", "UNICOM"),
+                _frq("DLH", "DLH", "125.45", "APCH/P DEP/P", approach_call="DULUTH", sector="360-179"),
+                _frq("DLH", "DLH", "121.5", "EMERG", tower_call="DULUTH"),
+                _frq("DLH", "DLH", "139.9", "ANG COMD POST", tower_call="DULUTH"),
+                _frq("DLH", "DLH", "112.6/73X", "DLH VORTAC"),
+                _frq("PRINCETON", "DLH", "122.5", "DULUTH RCO", tower_call="DULUTH"),
+                # Madison's Class C frequency is its approach's east sector: once.
+                _frq("MSN", "MSN", "120.1", "APCH/P DEP/P", approach_call="MADISON", sector="EAST"),
+                _frq("MSN", "MSN", "120.1", "CLASS C", approach_call="MADISON", sector="EAST"),
+                _frq("MSN", "MSN", "132.0", "CLASS C", approach_call="MADISON", sector="SOUTH"),
+            ]
+        )
+    )
     (tmp_path / "APT_BASE.csv").write_text("ARPT_ID,ICAO_ID,TPA\nI83,,\nDLH,KDLH,\nMSN,KMSN,\n")
     assert faa_data.airport_frequencies("I83", tmp_path) == [
         {"type": "CTAF", "description": "CTAF/UNICOM", "frequency_mhz": 123.0},
@@ -237,19 +263,24 @@ def test_a_fields_frequencies_are_the_faas_as_the_chart_supplement_lists_them(tm
     duluth = faa_data.airport_frequencies("KDLH", tmp_path)
     assert duluth == faa_data.airport_frequencies("dlh", tmp_path)
     assert [(f["type"], f["frequency_mhz"], f["description"]) for f in duluth] == [
-        ("TWR", 118.3, "Duluth"), ("GND", 121.9, "Duluth"), ("ATIS", 124.1, None), ("UNICOM", 122.95, None),
-        ("A/D", 125.45, "Duluth 360-179"), ("RCO", 122.5, "Duluth RCO"),
+        ("TWR", 118.3, "Duluth"),
+        ("GND", 121.9, "Duluth"),
+        ("ATIS", 124.1, None),
+        ("UNICOM", 122.95, None),
+        ("A/D", 125.45, "Duluth 360-179"),
+        ("RCO", 122.5, "Duluth RCO"),
     ]
     assert [(f["type"], f["frequency_mhz"], f["description"]) for f in faa_data.airport_frequencies("KMSN", tmp_path)] == [
-        ("A/D", 120.1, "Madison east"), ("APP", 132.0, "Class C Madison south"),
+        ("A/D", 120.1, "Madison east"),
+        ("APP", 132.0, "Class C Madison south"),
     ]
     assert faa_data.airport_frequencies("ZZZ", tmp_path) is None
 
 
 def test_a_sector_keeps_its_airport_idents_and_lowers_its_words(tmp_path):
-    (tmp_path / "FRQ.csv").write_text(_FRQ_HEADER + "".join([
-        _frq("BUR", "BUR", "119.0", "APCH/P DEP/P", approach_call="SOCAL", sector="KBUR 050 EAST"),
-    ]))
+    (tmp_path / "FRQ.csv").write_text(
+        _FRQ_HEADER + "".join([_frq("BUR", "BUR", "119.0", "APCH/P DEP/P", approach_call="SOCAL", sector="KBUR 050 EAST")])
+    )
     (tmp_path / "APT_BASE.csv").write_text("ARPT_ID,ICAO_ID,TPA\nBUR,KBUR,\n")
     assert faa_data.airport_frequencies("BUR", tmp_path)[0]["description"] == "Socal KBUR 050 east"
 
@@ -258,7 +289,8 @@ def test_several_fields_frequencies_are_read_from_one_look_at_the_file(tmp_path,
     (tmp_path / "FRQ.csv").write_text(_FRQ_HEADER + _frq("I83", "I83", "123.0", "CTAF"))
     (tmp_path / "APT_BASE.csv").write_text("ARPT_ID,ICAO_ID,TPA\nI83,,\n")
     assert faa_data.airport_frequencies_for(["i83", "ZZZ"], tmp_path) == {
-        "I83": [{"type": "CTAF", "description": None, "frequency_mhz": 123.0}]}
+        "I83": [{"type": "CTAF", "description": None, "frequency_mhz": 123.0}]
+    }
     calls = []
     monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda *a: calls.append(a) or (_ for _ in ()).throw(OSError("out")))
     assert faa_data.airport_frequencies_for(["A", "B", "C"], tmp_path) == {}
@@ -268,6 +300,7 @@ def test_several_fields_frequencies_are_read_from_one_look_at_the_file(tmp_path,
 def test_no_frequency_file_is_the_callers_own_list_not_a_failure(monkeypatch, tmp_path):
     def unreachable(name, cache_dir):
         raise RuntimeError("the FAA is down")
+
     monkeypatch.setattr(faa_data, "ensure_nasr_file", unreachable)
     assert faa_data.airport_frequencies("I83", tmp_path) is None
 
@@ -295,11 +328,22 @@ def test_a_fields_services_are_the_faas_as_the_chart_supplement_lists_them(tmp_p
         "ARPT_ID,ICAO_ID,FUEL_TYPES,LNDG_FEE_FLAG,TRNS_STRG_TIE_FLAG,TRNS_STRG_HGR_FLAG,AIRFRAME_REPAIR_SER_CODE,"
         "PWR_PLANT_REPAIR_SER,BOTTLED_OXY_TYPE,BULK_OXY_TYPE\n"
         "HYS,KHYS,\"100LL,A\",N,Y,Y,MAJOR,MINOR,NONE,LOW\n"
-        "0J1,,,,,,NONE,,,\n")
+        "0J1,,,,,,NONE,,,\n"
+    )
     monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda name, cache_dir: tmp_path / name)
-    assert faa_data.airport_services("KHYS", tmp_path) == faa_data.airport_services("hys", tmp_path) == {
-        "fuel_types": ["100LL", "A"], "landing_fee": False, "tie_down": True, "hangar": True,
-        "airframe_repair": "major", "powerplant_repair": "minor", "oxygen": True}
+    assert (
+        faa_data.airport_services("KHYS", tmp_path)
+        == faa_data.airport_services("hys", tmp_path)
+        == {
+            "fuel_types": ["100LL", "A"],
+            "landing_fee": False,
+            "tie_down": True,
+            "hangar": True,
+            "airframe_repair": "major",
+            "powerplant_repair": "minor",
+            "oxygen": True,
+        }
+    )
     # A landing fee the FAA does not say of is not known, not none.
     assert faa_data.airport_services("0J1", tmp_path) == faa_data.NO_SERVICES
     assert faa_data.airport_services("ZZZ", tmp_path) == faa_data.NO_SERVICES
@@ -310,56 +354,84 @@ def _route_airports_as_before(apt_csv_path, bbox, exclude_idents=()) -> pd.DataF
     kept once per file: the whole table filtered on every call -- the
     oracle the kept one must match."""
     df = faa_data._read_apt_base(apt_csv_path)
-    df = df[df["SITE_TYPE_CODE"].map(faa_data._SITE_TYPE_NAMES).isin(faa_data.CHARTED_FACILITY_TYPES)
-            & (df["ARPT_STATUS"] == "O")]
+    df = df[df["SITE_TYPE_CODE"].map(faa_data._SITE_TYPE_NAMES).isin(faa_data.CHARTED_FACILITY_TYPES) & (df["ARPT_STATUS"] == "O")]
     df["lat"] = df["LAT_DECIMAL"].astype(float)
     df["lon"] = df["LONG_DECIMAL"].astype(float)
     df = df[faa_data._in_bbox(df["lat"], df["lon"], bbox)]
     excluded = {i.strip().upper() for i in exclude_idents}
     if excluded:
         df = df[~(df["ARPT_ID"].str.upper().isin(excluded) | df["ICAO_ID"].fillna("").str.upper().isin(excluded))]
-    return pd.DataFrame({
-        "osm_id": df["ARPT_ID"], "osm_type": "faa_airport", "category": "airport",
-        "name": df["ARPT_NAME"].str.title() + " (" + df["ARPT_ID"] + ")",
-        "lat": df["lat"], "lon": df["lon"], "bbox_area_m2": 0.0,
-        "tags": [{"arpt_id": a, "city": c if isinstance(c, str) else "", "use": u}
-                 for a, c, u in zip(df["ARPT_ID"], df["CITY"], df["FACILITY_USE_CODE"])],
-    }).reset_index(drop=True)
+    return pd.DataFrame(
+        {
+            "osm_id": df["ARPT_ID"],
+            "osm_type": "faa_airport",
+            "category": "airport",
+            "name": df["ARPT_NAME"].str.title() + " (" + df["ARPT_ID"] + ")",
+            "lat": df["lat"],
+            "lon": df["lon"],
+            "bbox_area_m2": 0.0,
+            "tags": [
+                {"arpt_id": a, "city": c if isinstance(c, str) else "", "use": u}
+                for a, c, u in zip(df["ARPT_ID"], df["CITY"], df["FACILITY_USE_CODE"])
+            ],
+        }
+    ).reset_index(drop=True)
 
 
 def _apt_base(path, rows) -> None:
-    pd.DataFrame([
-        {"ARPT_ID": a, "ICAO_ID": icao, "ARPT_NAME": name, "CITY": city, "SITE_TYPE_CODE": kind,
-         "ARPT_STATUS": status, "LAT_DECIMAL": lat, "LONG_DECIMAL": lon, "FACILITY_USE_CODE": "PU"}
-        for a, icao, name, city, kind, status, lat, lon in rows
-    ]).to_csv(path, index=False)
+    pd.DataFrame(
+        [
+            {
+                "ARPT_ID": a,
+                "ICAO_ID": icao,
+                "ARPT_NAME": name,
+                "CITY": city,
+                "SITE_TYPE_CODE": kind,
+                "ARPT_STATUS": status,
+                "LAT_DECIMAL": lat,
+                "LONG_DECIMAL": lon,
+                "FACILITY_USE_CODE": "PU",
+            }
+            for a, icao, name, city, kind, status, lat, lon in rows
+        ]
+    ).to_csv(path, index=False)
 
 
 def test_the_route_airports_kept_per_file_are_those_filtered_on_every_call(tmp_path):
     path = tmp_path / "APT_BASE.csv"
-    _apt_base(path, [
-        ("C81", None, "CAMPBELL", "GRAYSLAKE", "A", "O", 42.3246, -88.0741),
-        ("UGN", "KUGN", "WAUKEGAN NATL", "WAUKEGAN", "A", "O", 42.4222, -87.8679),
-        ("IL01", None, "SOME HELIPORT", None, "H", "O", 42.30, -88.00),
-        ("3CK", None, "LAKE IN THE HILLS", "LAKE IN THE HILLS", "A", "CI", 42.2068, -88.3230),
-        ("ENW", "KENW", "KENOSHA RGNL", "KENOSHA", "A", "O", 42.5957, -87.9278),
-        ("DLH", "KDLH", "DULUTH INTL", "DULUTH", "A", "O", 46.8421, -92.1936),
-    ])
-    for bbox, exclude in [((42.0, -88.5, 42.7, -87.5), ()), ((42.0, -88.5, 42.7, -87.5), ("kugn", " C81 ")),
-                          ((46.0, -93.0, 47.0, -92.0), ("DLH",)), ((0.0, 0.0, 1.0, 1.0), ())]:
-        pd.testing.assert_frame_equal(faa_data.load_route_airports(path, bbox, exclude),
-                                      _route_airports_as_before(path, bbox, exclude))
+    _apt_base(
+        path,
+        [
+            ("C81", None, "CAMPBELL", "GRAYSLAKE", "A", "O", 42.3246, -88.0741),
+            ("UGN", "KUGN", "WAUKEGAN NATL", "WAUKEGAN", "A", "O", 42.4222, -87.8679),
+            ("IL01", None, "SOME HELIPORT", None, "H", "O", 42.30, -88.00),
+            ("3CK", None, "LAKE IN THE HILLS", "LAKE IN THE HILLS", "A", "CI", 42.2068, -88.3230),
+            ("ENW", "KENW", "KENOSHA RGNL", "KENOSHA", "A", "O", 42.5957, -87.9278),
+            ("DLH", "KDLH", "DULUTH INTL", "DULUTH", "A", "O", 46.8421, -92.1936),
+        ],
+    )
+    for bbox, exclude in [
+        ((42.0, -88.5, 42.7, -87.5), ()),
+        ((42.0, -88.5, 42.7, -87.5), ("kugn", " C81 ")),
+        ((46.0, -93.0, 47.0, -92.0), ("DLH",)),
+        ((0.0, 0.0, 1.0, 1.0), ()),
+    ]:
+        pd.testing.assert_frame_equal(faa_data.load_route_airports(path, bbox, exclude), _route_airports_as_before(path, bbox, exclude))
     # A new file version is read again, not the one kept.
     _apt_base(path, [("C81", None, "CAMPBELL", "GRAYSLAKE", "A", "CI", 42.3246, -88.0741)])
     os.utime(path, (1, 1))
     assert faa_data.load_route_airports(path, (42.0, -88.5, 42.7, -87.5)).empty
 
 
-@pytest.mark.skipif(not (Path(__file__).resolve().parents[3] / "data/raw/faa_nasr/APT_BASE.csv").exists(),
-                    reason="needs the FAA's APT_BASE.csv on disk")
+@pytest.mark.skipif(
+    not (Path(__file__).resolve().parents[3] / "data/raw/faa_nasr/APT_BASE.csv").exists(), reason="needs the FAA's APT_BASE.csv on disk"
+)
 def test_the_route_airports_kept_per_file_match_on_the_real_table():
     path = Path(__file__).resolve().parents[3] / "data/raw/faa_nasr/APT_BASE.csv"
-    for bbox, exclude in [((41.5, -89.5, 43.3, -87.5), ("KORD", "KMKE")), ((38.5, -94.0, 41.8, -90.0), ("STL",)),
-                          ((60.0, -152.0, 65.0, -145.0), ()), ((24.0, -125.0, 50.0, -66.0), ("C81",))]:
-        pd.testing.assert_frame_equal(faa_data.load_route_airports(path, bbox, exclude),
-                                      _route_airports_as_before(path, bbox, exclude))
+    for bbox, exclude in [
+        ((41.5, -89.5, 43.3, -87.5), ("KORD", "KMKE")),
+        ((38.5, -94.0, 41.8, -90.0), ("STL",)),
+        ((60.0, -152.0, 65.0, -145.0), ()),
+        ((24.0, -125.0, 50.0, -66.0), ("C81",)),
+    ]:
+        pd.testing.assert_frame_equal(faa_data.load_route_airports(path, bbox, exclude), _route_airports_as_before(path, bbox, exclude))

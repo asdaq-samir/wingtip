@@ -1,0 +1,31 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The Aviation Weather Center's national gairmets cache file (XML) read into the shape the weather store keeps: The G-AIRMET areas a VFR flight is told of: [{hazard (words), severity, due_to, valid_at, valid, issued, altitude_low_ft, from_freezing_level, altitude_high_ft, coords}].",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "AwcGairmetsReadInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "AwcGairmetsReadAnswer",
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -16,10 +16,10 @@ index of where each airport's records lie, and the fixes, navaids and
 NDBs that are not an airport's own. An airport's procedures are read
 from its own run of records when asked for.
 """
+
 from __future__ import annotations
 
 import logging
-import math
 import os
 import re
 import shutil
@@ -29,6 +29,7 @@ from datetime import date
 from pathlib import Path
 
 from . import data_cycles, geo
+from .engine import ask as engine
 from .config import DATA_DIR
 from .faa_data import download_and_extract
 from .single_flight import once
@@ -47,13 +48,36 @@ KINDS = {"D": "departure", "E": "arrival", "F": "approach"}
 #: An approach's kind by its identifier's first letter (ARINC 424-18
 #: 5.10, as the FAA codes them: "I08-Y" is the ILS Y to runway 08).
 APPROACH_TYPES = {
-    "B": "LOC/BC", "D": "VOR/DME", "G": "IGS", "H": "RNAV (RNP)", "I": "ILS", "J": "GLS", "L": "LOC", "N": "NDB",
-    "P": "GPS", "Q": "NDB/DME", "R": "RNAV (GPS)", "S": "VOR", "T": "TACAN", "U": "SDF", "V": "VOR", "X": "LDA",
+    "B": "LOC/BC",
+    "D": "VOR/DME",
+    "G": "IGS",
+    "H": "RNAV (RNP)",
+    "I": "ILS",
+    "J": "GLS",
+    "L": "LOC",
+    "N": "NDB",
+    "P": "GPS",
+    "Q": "NDB/DME",
+    "R": "RNAV (GPS)",
+    "S": "VOR",
+    "T": "TACAN",
+    "U": "SDF",
+    "V": "VOR",
+    "X": "LDA",
 }
 #: A circling approach's, by its first three ("VDM-A" is the VOR/DME-A).
 CIRCLING_TYPES = {
-    "VOR": "VOR", "VDM": "VOR/DME", "RNV": "RNAV (GPS)", "NDB": "NDB", "NDM": "NDB/DME", "LOC": "LOC", "LBC": "LOC/BC",
-    "LDA": "LDA", "GPS": "GPS", "TAC": "TACAN", "SDF": "SDF",
+    "VOR": "VOR",
+    "VDM": "VOR/DME",
+    "RNV": "RNAV (GPS)",
+    "NDB": "NDB",
+    "NDM": "NDB/DME",
+    "LOC": "LOC",
+    "LBC": "LOC/BC",
+    "LDA": "LDA",
+    "GPS": "GPS",
+    "TAC": "TACAN",
+    "SDF": "SDF",
 }
 
 #: Legs that end at their fix, and the ones that hold at it (ARINC 424-18
@@ -66,25 +90,14 @@ HOLDS = {"HA", "HF", "HM"}
 FROM_FIX = {"FA", "FC", "FD", "FM"}
 OPEN = {"CA", "CD", "CI", "CR", "VA", "VD", "VI", "VM", "VR"}
 
-#: How long a leg with no end is drawn: about a turn's worth at a light
-#: airplane's speed, enough to show which way it goes.
+#: How a leg is drawn -- an RF or AF leg's arc, a hold's racetrack at a
+#: light airplane's 120 kt (AIM 5-3-8), a procedure turn (AIM 5-4-9), an
+#: open leg's length and a climb's at 200 ft a nm (FAA Order 8260.3) -- is
+#: the engine's (engine/crates/procedures/src/paths.rs: procedure_arc,
+#: procedure_hold, procedure_turn, procedure_climb_nm,
+#: procedure_hold_leg_nm, #482 phase 4b); this reads the CIFP and walks
+#: its legs.
 OPEN_LEG_NM = 2.0
-#: The climb a leg flown to an altitude (CA, VA, FA) is drawn at, ft a nm:
-#: the standard 200 a departure and a missed approach are designed for
-#: (FAA Order 8260.3), so the turn after it comes where an airplane
-#: climbing at that gradient reaches the altitude -- a missed approach's
-#: "climb to 3,000 then turn" turned two miles out, a third of the way
-#: (the audit of 2026-10-21, Duluth's ILS 09). Kept within these.
-CLIMB_FT_PER_NM = 200.0
-CLIMB_LEG_NM = (1.0, 15.0)
-#: A hold drawn at a light airplane's speed: a one-minute leg (AIM 5-3-8,
-#: at or below 14,000 ft MSL) and standard-rate turns (3° a second) at
-#: 120 knots -- two miles on each leg, and turns 0.64 nm round. Charts
-#: draw holds to no scale; this is one a light airplane would fly, not a
-#: jet's at the 200 KIAS a hold below 6,000 ft MSL may be flown at (AIM
-#: 5-3-8, table 5-3-1).
-HOLD_SPEED_KT = 120.0
-HOLD_TURN_NM = HOLD_SPEED_KT * (120 / 3600) / (2 * math.pi)
 
 _LOCK = threading.Lock()
 
@@ -151,10 +164,11 @@ def cifp_stale(path: Path, on: date | None = None) -> bool:
 
 # --- the records -----------------------------------------------------------
 
+
 def _col(rec: str, first: int, last: int) -> str:
     """Columns `first` to `last` of a record, as ARINC 424 numbers them
     (from 1, both ends in)."""
-    return rec[first - 1:last]
+    return rec[first - 1 : last]
 
 
 def _angle(text: str, degrees: int) -> float | None:
@@ -163,7 +177,7 @@ def _angle(text: str, degrees: int) -> float | None:
     text = text.strip()
     if len(text) != 1 + degrees + 6 or text[0] not in "NSEW":
         return None
-    d, m, s = int(text[1:1 + degrees]), int(text[1 + degrees:3 + degrees]), int(text[3 + degrees:]) / 100
+    d, m, s = int(text[1 : 1 + degrees]), int(text[1 + degrees : 3 + degrees]), int(text[3 + degrees :]) / 100
     value = d + m / 60 + s / 3600
     return -value if text[0] in "SW" else value
 
@@ -208,6 +222,7 @@ def _feet(text: str) -> int | None:
 class Leg:
     """One leg of a procedure, as its primary record codes it (ARINC
     424-18 4.1.9.1)."""
+
     route: str
     transition: str
     seq: int
@@ -244,21 +259,33 @@ class Leg:
         course = _col(rec, 71, 74).strip()
         held = _col(rec, 75, 78).strip()
         return cls(
-            route=_col(rec, 20, 20), transition=_col(rec, 21, 25).strip(), seq=int(_col(rec, 27, 29) or 0),
-            fix=_col(rec, 30, 34).strip(), fix_icao=_col(rec, 35, 36), fix_section=_col(rec, 37, 38),
-            description=_col(rec, 40, 43), turn=_col(rec, 44, 44).strip(), path=_col(rec, 48, 49),
+            route=_col(rec, 20, 20),
+            transition=_col(rec, 21, 25).strip(),
+            seq=int(_col(rec, 27, 29) or 0),
+            fix=_col(rec, 30, 34).strip(),
+            fix_icao=_col(rec, 35, 36),
+            fix_section=_col(rec, 37, 38),
+            description=_col(rec, 40, 43),
+            turn=_col(rec, 44, 44).strip(),
+            path=_col(rec, 48, 49),
             navaid=_col(rec, 51, 54).strip(),
             arc_nm=int(_col(rec, 57, 62)) / 1000 if _col(rec, 57, 62).strip().isdigit() else None,
-            theta=_tenths(_col(rec, 63, 66)), rho=_tenths(_col(rec, 67, 70)),
+            theta=_tenths(_col(rec, 63, 66)),
+            rho=_tenths(_col(rec, 67, 70)),
             # "0789" is 078.9° magnetic; "264T" 264° true (5.26).
             course=(int(course[:3]) if course.endswith("T") and course[:3].isdigit() else _tenths(course)),
             course_true=course.endswith("T"),
             # A hold's leg: "0050" five miles, "T010" one minute (5.27).
-            distance_nm=_tenths(held), minutes=_tenths(held[1:]) if held.startswith("T") else None,
-            altitude_code=_col(rec, 83, 83), altitude1=_feet(_col(rec, 85, 89)), altitude2=_feet(_col(rec, 90, 94)),
+            distance_nm=_tenths(held),
+            minutes=_tenths(held[1:]) if held.startswith("T") else None,
+            altitude_code=_col(rec, 83, 83),
+            altitude1=_feet(_col(rec, 85, 89)),
+            altitude2=_feet(_col(rec, 90, 94)),
             speed_kt=int(_col(rec, 100, 102)) if _col(rec, 100, 102).strip().isdigit() else None,
             speed_code=_col(rec, 118, 118).strip(),
-            center=_col(rec, 107, 111).strip(), center_icao=_col(rec, 113, 114), center_section=_col(rec, 115, 116),
+            center=_col(rec, 107, 111).strip(),
+            center_icao=_col(rec, 113, 114),
+            center_section=_col(rec, 115, 116),
             vertical_angle=_vertical_angle(_col(rec, 103, 106)),
         )
 
@@ -293,6 +320,7 @@ def altitude_limits(leg: Leg) -> tuple[int | None, int | None]:
 
 
 # --- the file's index ------------------------------------------------------
+
 
 @dataclass
 class _Index:
@@ -375,6 +403,7 @@ def _records(ident: str, path: Path) -> tuple[str, list[str]] | None:
 class _Airport:
     """An airport's own records: its place and variation, its terminal
     waypoints, NDBs and runways, and its procedures' legs."""
+
     ident: str
     place: tuple[float, float] | None
     variation: float
@@ -429,6 +458,7 @@ def _fix_place(airport: _Airport, ident: str, icao: str, section: str, index: _I
 
 # --- what a procedure is called ---------------------------------------------
 
+
 def procedure_name(kind: str, ident: str) -> str:
     """A procedure's name as its chart is titled: "I08-Y" is "ILS Y RWY
     08", "VDM-A" "VOR/DME-A"; an arrival or departure is its own
@@ -477,14 +507,19 @@ def procedures_at(ident: str, on: date | None = None) -> dict | None:
         kind = KINDS[sub]
         transitions = sorted({leg.transition for leg in legs if leg.transition and _transition_role(kind, leg) == "transition"})
         runways = sorted({leg.transition for leg in legs if _transition_role(kind, leg) == "runway"})
-        found.append({
-            "kind": kind, "id": proc, "name": procedure_name(kind, proc), "runway": _runway_of(kind, proc),
-            "transitions": transitions, "runway_transitions": runways,
-        })
+        found.append(
+            {
+                "kind": kind,
+                "id": proc,
+                "name": procedure_name(kind, proc),
+                "runway": _runway_of(kind, proc),
+                "transitions": transitions,
+                "runway_transitions": runways,
+            }
+        )
     order = {"approach": 0, "arrival": 1, "departure": 2}
     found.sort(key=lambda p: (order[p["kind"]], p["runway"] or "", p["name"]))
     return {"airport": airport.ident, "cycle": cifp_cycle(path), "stale": cifp_stale(path, on), "procedures": found}
-
 
 
 def airport_place(ident: str, on: date | None = None) -> tuple[float, float] | None:
@@ -494,68 +529,32 @@ def airport_place(ident: str, on: date | None = None) -> tuple[float, float] | N
     airport = _airport(ident, cifp_path(on))
     return airport.place if airport else None
 
+
 # --- drawing it -------------------------------------------------------------
+
+
+def _points(answer: list) -> list:
+    return [(float(lat), float(lon)) for lat, lon in answer]
+
 
 def _arc(center: tuple[float, float], start: tuple[float, float], end: tuple[float, float], turn: str) -> list:
     """Points along an arc round `center` from `start` to `end`, turning
-    right (clockwise) or left, a point every five degrees."""
-    radius = geo.distance_nm(*center, *end)
-    a = geo.bearing_deg(*center, *start)
-    b = geo.bearing_deg(*center, *end)
-    sweep = (b - a) % 360 if turn == "R" else -((a - b) % 360)
-    steps = max(2, int(abs(sweep) / 5) + 1)
-    return [geo.destination_point(*center, (a + sweep * i / steps) % 360, radius) for i in range(1, steps + 1)]
+    right (clockwise) or left: the engine's procedure_arc."""
+    return _points(engine("procedure_arc", center=list(center), start=list(start), end=list(end), turn="R" if turn == "R" else "L"))
 
 
 def _hold(fix: tuple[float, float], inbound: float, turn: str, leg_nm: float) -> list:
-    """A holding pattern's racetrack at `fix`, its inbound leg on the
-    true course `inbound` ending at the fix and its turns to the right or
-    the left (AIM 5-3-8): the fix, the turn out, the outbound leg, the
-    turn in, and back to the fix."""
-    side = 90 if turn != "L" else -90
-    sweep = 180 if side > 0 else -180
-    r = HOLD_TURN_NM
-    entry = geo.destination_point(*fix, (inbound + 180) % 360, leg_nm)
-    first = geo.destination_point(*fix, (inbound + side) % 360, r)
-    second = geo.destination_point(*entry, (inbound + side) % 360, r)
-    out_start = geo.destination_point(*fix, (inbound + side) % 360, 2 * r)
-    out_end = geo.destination_point(*out_start, (inbound + 180) % 360, leg_nm)
-    turn_out = [geo.destination_point(*first, (inbound - side + sweep * i / 36) % 360, r) for i in range(37)]
-    turn_in = [geo.destination_point(*second, (inbound + side + sweep * i / 36) % 360, r) for i in range(37)]
-    return [fix, *turn_out, out_start, out_end, *turn_in, entry, fix]
-
-
-#: A procedure turn as a light airplane flies it, nm: outbound from the fix
-#: on the final's reciprocal, about where a plate draws its barb (El
-#: Dorado's ILS 22, some four miles out from LADOS), then a minute on the
-#: turn's 45° course before the 180° turn back, inside the 10 NM a
-#: procedure turn is kept within unless the chart says otherwise (AIM 5-4-9).
-PT_OUTBOUND_NM = 4.0
-PT_LEG_NM = 2.0
+    """A holding pattern's racetrack at `fix` (AIM 5-3-8): the engine's
+    procedure_hold."""
+    return _points(
+        engine("procedure_hold", fix=list(fix), inbound_deg=float(inbound), turn="L" if turn == "L" else "R", leg_nm=float(leg_nm))
+    )
 
 
 def _procedure_turn(fix: tuple[float, float], inbound: float, pt_course: float) -> list:
-    """A 45°/180° procedure turn at `fix` (AIM 5-4-9): out from the fix on
-    the reciprocal of the final's true course `inbound`, onto the turn's
-    true course `pt_course` (the chart's barb), a 180° turn toward the
-    final's side, and back on the reciprocal of `pt_course` to meet the
-    final's course, and in to the fix."""
-    out = (inbound + 180) % 360
-    barb = ((pt_course - out + 540) % 360) - 180
-    sign = -1 if barb > 0 else 1
-    r = HOLD_TURN_NM
-    a = geo.destination_point(*fix, out, PT_OUTBOUND_NM)
-    b = geo.destination_point(*a, pt_course, PT_LEG_NM)
-    center = geo.destination_point(*b, (pt_course + 90 * sign) % 360, r)
-    arc = [geo.destination_point(*center, (pt_course - 90 * sign + sign * 180 * i / 18) % 360, r) for i in range(19)]
-    back = (pt_course + 180) % 360
-    end = arc[-1]
-
-    def off(s: float) -> float:
-        to = geo.destination_point(*fix, out, s)
-        return geo.angle_between(geo.bearing_deg(*end, *to), back)
-    meet = min((s / 20 for s in range(10, 200)), key=off)
-    return [fix, a, b, *arc, geo.destination_point(*fix, out, meet), fix]
+    """A 45°/180° procedure turn at `fix` (AIM 5-4-9): the engine's
+    procedure_turn."""
+    return _points(engine("procedure_turn", fix=list(fix), inbound_deg=float(inbound), pt_course_deg=float(pt_course)))
 
 
 def _inbound_at(lines: list, place: tuple[float, float]) -> float | None:
@@ -611,8 +610,11 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
         runs.setdefault((leg.route, leg.transition), []).append(leg)
     roles = {key: _transition_role(kind, run[0]) for key, run in runs.items()}
     wanted = (transition or "").upper()
-    order = {"approach": ("transition", "final"), "arrival": ("transition", "common", "runway"),
-             "departure": ("runway", "common", "transition")}[kind]
+    order = {
+        "approach": ("transition", "final"),
+        "arrival": ("transition", "common", "runway"),
+        "departure": ("runway", "common", "transition"),
+    }[kind]
     chosen = [key for role in order for key, r in roles.items() if r == role and (r != "transition" or key[1] == wanted)]
 
     lines, holds, fixes = [], [], {}
@@ -642,12 +644,9 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
             pos = airport.runways.get(_opposite_end(key[1])) or airport.runways.get(key[1]) or airport.place
 
         def climb_nm(leg: Leg) -> float:
-            """How far a leg flown to its altitude goes: from the altitude
-            known at its start, at CLIMB_FT_PER_NM; OPEN_LEG_NM where either
-            is not known."""
-            if leg.altitude1 is None or known_ft is None or leg.altitude1 <= known_ft:
-                return OPEN_LEG_NM
-            return min(CLIMB_LEG_NM[1], max(CLIMB_LEG_NM[0], (leg.altitude1 - known_ft) / CLIMB_FT_PER_NM))
+            """How far a leg flown to its altitude goes, from the altitude
+            known at its start: the engine's procedure_climb_nm."""
+            return float(engine("procedure_climb_nm", altitude_ft=leg.altitude1, known_ft=known_ft))
 
         for leg in runs[key]:
             place = _fix_place(airport, leg.fix, leg.fix_icao, leg.fix_section, index)
@@ -670,25 +669,30 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
                     # Round the arc's centre fix (RF), or the DME's navaid (AF).
                     rf = leg.path == "RF"
                     center = _fix_place(
-                        airport, leg.center if rf else leg.navaid, leg.center_icao if rf else "", leg.center_section if rf else "", index,
+                        airport, leg.center if rf else leg.navaid, leg.center_icao if rf else "", leg.center_section if rf else "", index
                     )
                     points.extend(_arc(center, start, place, leg.turn) if center else [place])
                 else:
                     points.append(place)
             elif leg.path in HOLDS and place and course is not None:
                 minutes = leg.minutes if leg.minutes is not None else (None if leg.distance_nm else 1.0)
-                leg_nm = HOLD_SPEED_KT * minutes / 60 if minutes is not None else leg.distance_nm
-                holds.append({
-                    "fix": leg.fix, "turn": leg.turn or "R", "inbound_deg": round(course), "missed": missed, "leg_nm": round(leg_nm, 2),
-                    "points": _hold(place, course, leg.turn, leg_nm),
-                })
+                leg_nm = engine("procedure_hold_leg_nm", minutes=minutes, distance_nm=leg.distance_nm)
+                holds.append(
+                    {
+                        "fix": leg.fix,
+                        "turn": leg.turn or "R",
+                        "inbound_deg": round(course),
+                        "missed": missed,
+                        "leg_nm": round(leg_nm, 2),
+                        "points": _hold(place, course, leg.turn, leg_nm),
+                    }
+                )
                 if not points:
                     points = [place]
             elif leg.path in FROM_FIX and place and course is not None:
                 if not points or points[-1] != place:
                     points.append(place)
-                length = (leg.distance_nm if leg.path == "FC" and leg.distance_nm
-                          else climb_nm(leg) if leg.path == "FA" else OPEN_LEG_NM)
+                length = leg.distance_nm if leg.path == "FC" and leg.distance_nm else climb_nm(leg) if leg.path == "FA" else OPEN_LEG_NM
                 points.append(geo.destination_point(*place, course, length))
             elif leg.path == "PI" and place and course is not None:
                 # A procedure turn at the fix, drawn once the final's course
@@ -705,16 +709,27 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
             low, high = altitude_limits(leg)
             if (low is not None or high is not None) and not leg.missed_approach_point:
                 known_ft = low if low is not None else high
-            if (kind == "approach" and leg.missed_approach_point and leg.vertical_angle and place
-                    and leg.altitude1 is not None and leg.fix.startswith("RW")):
+            if (
+                kind == "approach"
+                and leg.missed_approach_point
+                and leg.vertical_angle
+                and place
+                and leg.altitude1 is not None
+                and leg.fix.startswith("RW")
+            ):
                 # The path the final comes down, placed for the debrief to
                 # measure a track against: its angle into a runway's
                 # threshold, crossed at the MAP's coded altitude -- the
                 # threshold's elevation and its crossing height (ARINC 424-18
                 # 5.70; the chart's GS/VDA and TCH). KBUR's ILS 08: 3.00° to
                 # 787 ft at RW08. None where the MAP is not a runway's.
-                runway_path = {"deg": abs(leg.vertical_angle), "fix": leg.fix, "lat": round(place[0], 6),
-                               "lon": round(place[1], 6), "ft": leg.altitude1}
+                runway_path = {
+                    "deg": abs(leg.vertical_angle),
+                    "fix": leg.fix,
+                    "lat": round(place[0], 6),
+                    "lon": round(place[1], 6),
+                    "ft": leg.altitude1,
+                }
             if kind == "approach" and leg.missed_approach_point:
                 # The rest is the missed approach, drawn dashed from here,
                 # its climb from about the field's elevation.
@@ -733,8 +748,16 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
         inbound = _inbound_at(lines, place)
         if inbound is not None:
             barb = ((pt_course - (inbound + 180) + 540) % 360) - 180
-            holds.append({"fix": ident, "turn": "L" if barb > 0 else "R", "inbound_deg": round(inbound), "missed": was_missed,
-                          "kind": "procedure turn", "points": _procedure_turn(place, inbound, pt_course)})
+            holds.append(
+                {
+                    "fix": ident,
+                    "turn": "L" if barb > 0 else "R",
+                    "inbound_deg": round(inbound),
+                    "missed": was_missed,
+                    "kind": "procedure turn",
+                    "points": _procedure_turn(place, inbound, pt_course),
+                }
+            )
 
     # Where a straight-in approach lands: its runway's threshold, where its
     # missed approach point is short of it (a VOR's or a LOC's MAP a mile
@@ -744,11 +767,17 @@ def procedure_drawing(ident: str, procedure: str, transition: str | None = None,
     if kind == "approach" and final_course is None:
         final_course = _final_course_between(fixes, airport.variation)
     return {
-        "airport": airport.ident, "kind": kind, "id": procedure.upper(), "name": procedure_name(kind, procedure.upper()),
-        "glidepath_deg": glidepath, "final_course_deg": None if final_course is None else round(final_course) % 360 or 360,
+        "airport": airport.ident,
+        "kind": kind,
+        "id": procedure.upper(),
+        "name": procedure_name(kind, procedure.upper()),
+        "glidepath_deg": glidepath,
+        "final_course_deg": None if final_course is None else round(final_course) % 360 or 360,
         "missed_legs": missed_legs,
         "threshold": None if threshold is None else [round(threshold[0], 6), round(threshold[1], 6)],
-        "transition": wanted or None, "cycle": cifp_cycle(path), "stale": cifp_stale(path, on),
+        "transition": wanted or None,
+        "cycle": cifp_cycle(path),
+        "stale": cifp_stale(path, on),
         "lines": [{**ln, "points": [[round(p[0], 6), round(p[1], 6)] for p in ln["points"]]} for ln in lines],
         "holds": [{**h, "points": [[round(p[0], 6), round(p[1], 6)] for p in h["points"]]} for h in holds],
         "fixes": list(fixes.values()),
@@ -783,8 +812,12 @@ def _missed_leg(leg: Leg, variation: float) -> dict:
     if leg.course is not None:
         course = round(leg.course if not leg.course_true else _magnetic(leg.course, variation)) % 360 or 360
     return {
-        "path": leg.path, "fix": leg.fix or None, "course_deg": course, "turn": leg.turn if leg.turn in ("L", "R") else None,
-        "min_ft": low, "max_ft": high,
+        "path": leg.path,
+        "fix": leg.fix or None,
+        "course_deg": course,
+        "turn": leg.turn if leg.turn in ("L", "R") else None,
+        "min_ft": low,
+        "max_ft": high,
     }
 
 
@@ -793,11 +826,21 @@ def _note_fix(fixes: dict, leg: Leg, place: tuple[float, float], missed: bool) -
     and the limits it is crossed at last -- a transition's fix where the
     final starts is labelled with the final's -- and its speed limit."""
     low, high = altitude_limits(leg)
-    at = fixes.setdefault(leg.fix, {
-        "ident": leg.fix, "lat": round(place[0], 6), "lon": round(place[1], 6), "roles": [],
-        "min_ft": None, "max_ft": None, "speed_kt": None, "speed_limit": None, "missed": missed,
-        "vertical_angle_deg": None,
-    })
+    at = fixes.setdefault(
+        leg.fix,
+        {
+            "ident": leg.fix,
+            "lat": round(place[0], 6),
+            "lon": round(place[1], 6),
+            "roles": [],
+            "min_ft": None,
+            "max_ft": None,
+            "speed_kt": None,
+            "speed_limit": None,
+            "missed": missed,
+            "vertical_angle_deg": None,
+        },
+    )
     if leg.vertical_angle is not None and not missed:
         at["vertical_angle_deg"] = abs(leg.vertical_angle)
     for role in _fix_roles(leg):
@@ -821,7 +864,7 @@ def _fix_roles(leg: Leg) -> list[str]:
     with a hold, D also the final approach course fix), an intermediate
     fix (B), the final approach course fix (I), the final approach fix,
     the missed approach point; and a hold where its leg holds."""
-    roles = {
-        "A": ["IAF"], "B": ["IF"], "C": ["IAF"], "D": ["IAF", "FACF"], "I": ["FACF"], "F": ["FAF"], "M": ["MAP"],
-    }.get(leg.description[3:4], [])
+    roles = {"A": ["IAF"], "B": ["IF"], "C": ["IAF"], "D": ["IAF", "FACF"], "I": ["FACF"], "F": ["FAF"], "M": ["MAP"]}.get(
+        leg.description[3:4], []
+    )
     return [*roles, "hold"] if leg.path in HOLDS else roles

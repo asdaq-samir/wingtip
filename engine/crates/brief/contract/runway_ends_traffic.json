@@ -1,0 +1,70 @@
+{
+  "x-call": "wingtip_brief::runway::calls::call",
+  "description": "Each end's ident, true heading and traffic (right where its key is in `right`, else left, 14 CFR 91.126(b)(1)).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RunwayEndsTrafficInput",
+      "type": "object",
+      "properties": {
+        "end_headings": {
+          "$ref": "#/definitions/EndHeadings"
+        },
+        "variation_deg": {
+          "type": "number"
+        },
+        "right": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Ends' keys flown with right traffic."
+        }
+      },
+      "required": [
+        "variation_deg"
+      ]
+    },
+    "answer": {
+      "title": "RunwayEndsTrafficAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ident": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "heading_true_deg": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "traffic": {
+            "type": "string",
+            "enum": [
+              "left",
+              "right"
+            ]
+          }
+        },
+        "required": [
+          "ident",
+          "heading_true_deg",
+          "traffic"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

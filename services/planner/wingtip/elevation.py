@@ -8,6 +8,7 @@ sequential connection, so lookups are parallelized with a thread pool and
 cached to disk (keyed by lat/lon rounded to ~1m) -- a fresh run over ~230
 candidates takes several minutes the first time and is instant after.
 """
+
 import csv
 import io
 import math
@@ -40,7 +41,9 @@ def _fetch_elevation_m(lat: float, lon: float, retries: int = 3) -> float:
         return float(resp.json()["value"])
 
     return with_retries(
-        attempt, describe=f"EPQS query for ({lat}, {lon})", retries=retries,
+        attempt,
+        describe=f"EPQS query for ({lat}, {lon})",
+        retries=retries,
         transient=(requests.RequestException, KeyError, ValueError, TypeError),
     )
 
@@ -138,9 +141,9 @@ def _fetch_many(keys: list, max_workers: int) -> dict:
 
     if failed:
         points = ", ".join(f"({lat}, {lon})" for lat, lon in failed)
-        raise RuntimeError(
-            f"EPQS elevation lookup failed for {len(failed)} point(s) after retry: {points}"
-        ) from next(iter(failed.values()))
+        raise RuntimeError(f"EPQS elevation lookup failed for {len(failed)} point(s) after retry: {points}") from next(
+            iter(failed.values())
+        )
 
     return results
 
@@ -263,10 +266,7 @@ def get_elevations_m(points: list, cache_path: Path = DEFAULT_CACHE_PATH, max_wo
 
 
 def elevation_prominence_m(
-    candidates: list,
-    radius_nm: float = RING_RADIUS_NM,
-    bearings_deg: tuple = RING_BEARINGS_DEG,
-    cache_path: Path = DEFAULT_CACHE_PATH,
+    candidates: list, radius_nm: float = RING_RADIUS_NM, bearings_deg: tuple = RING_BEARINGS_DEG, cache_path: Path = DEFAULT_CACHE_PATH
 ) -> list:
     """For each (lat, lon) in `candidates`, return elevation at that point
     minus the mean elevation of a ring of points `radius_nm` away in
@@ -418,6 +418,34 @@ def _terrain_tile(z: int, x: int, y: int) -> np.ndarray:
     with _TERRAIN_LOCK:
         _TERRAIN_TILES[(z, x, y)] = heights
     return heights
+
+
+def terrarium_rgb(heights_m: np.ndarray) -> np.ndarray:
+    """Heights in metres written back in the terrarium encoding
+    (terrarium_m's: height = R * 256 + G + B / 256 - 32768), as 8-bit RGB:
+    what a map's raster-dem source decodes (MapLibre's `terrarium`). A
+    height none could be read for is the sea's surface, 0."""
+    v = np.clip(np.nan_to_num(heights_m, nan=0.0), -32767.0, 32767.0) + 32768.0
+    whole = np.floor(v)
+    r = np.floor(whole / 256)
+    g = whole - r * 256
+    b = np.floor((v - whole) * 256)
+    return np.stack([r, g, b], axis=-1).astype(np.uint8)
+
+
+def terrain_tile_png(z: int, x: int, y: int) -> bytes:
+    """A terrain tile as the map draws its relief and 3D ground from: the
+    tile _terrain_tile reads and cleans -- its voids filled, its spikes
+    gone, the sea floor the sea's surface (terrarium_m) -- written again as
+    a terrarium PNG. The tiles as AWS publishes them put a pit 32 km deep
+    under every void (the Everglades', the Navajo Nation's, 2026-11-02),
+    which a 3D map would draw as such. Raises requests.RequestException
+    where the tile cannot be fetched."""
+    from PIL import Image
+
+    out = io.BytesIO()
+    Image.fromarray(terrarium_rgb(_terrain_tile(z, x, y)), "RGB").save(out, "PNG")
+    return out.getvalue()
 
 
 def ground_m(lat: float, lon: float, zoom: int = TERRAIN_TILE_ZOOM) -> float:

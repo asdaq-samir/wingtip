@@ -44,6 +44,9 @@ pub struct ShortField {
     pub ground_roll_ft: Vec<Vec<Vec<f64>>>,
     pub total_50ft_ft: Vec<Vec<Vec<f64>>>,
     pub grass_ground_roll_pct: f64,
+    pub headwind_kt_per_10pct: Option<f64>,
+    pub tailwind_kt_per_10pct: Option<f64>,
+    pub tailwind_max_kt: Option<f64>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -52,7 +55,7 @@ pub struct Distances {
     pub total_ft: f64,
     /// What could not be had from the table: beyond its altitudes or
     /// temperatures (where its edge is taken), heavier than its heaviest
-    /// weight (where that weight's is taken), or a tailwind past ten.
+    /// weight (where that weight's is taken), a tailwind past the POH's figures, or no wind correction in the airplane's profile.
     pub caveats: Vec<&'static str>,
 }
 
@@ -135,15 +138,28 @@ pub fn short_field(table: &ShortField, pressure_alt_ft: f64, temp_c: f64, weight
     };
     let mut roll = read(&table.ground_roll_ft);
     let mut total = read(&table.total_50ft_ft);
-    // The Cessna 172S POH's notes to its takeoff and landing charts
+    // The POH's own notes to its charts for the wind -- the Cessna 172S's
     // (figures 5-5 and 5-11): "Decrease distances 10% for each 9 knots
     // headwind. For operation with tail winds up to 10 knots, increase
-    // distances by 10% for each 2 knots." The one table set in
-    // data/aircraft is the 172S's; another handbook's notes differ, and
-    // are to come with its tables.
-    let factor = if headwind_kt >= 0.0 { 1.0 - 0.1 * (headwind_kt / 9.0) } else { 1.0 + 0.1 * (-headwind_kt / 2.0) };
-    if headwind_kt < -10.0 {
-        caveats.push("the POH gives no figures for a tailwind over 10 kt");
+    // distances by 10% for each 2 knots." -- as the profile's table
+    // carries them. A table without them has no correction: no credit for
+    // a headwind, and a tailwind said, never another airplane's notes.
+    let factor = if headwind_kt >= 0.0 {
+        match table.headwind_kt_per_10pct.filter(|k| *k > 0.0) {
+            Some(per) => 1.0 - 0.1 * (headwind_kt / per),
+            None => 1.0,
+        }
+    } else {
+        match table.tailwind_kt_per_10pct.filter(|k| *k > 0.0) {
+            Some(per) => 1.0 + 0.1 * (-headwind_kt / per),
+            None => {
+                caveats.push("the wind correction is not in this airplane's profile");
+                1.0
+            }
+        }
+    };
+    if table.tailwind_max_kt.is_some_and(|max| -headwind_kt > max) {
+        caveats.push("the POH gives no figures for a tailwind this strong");
     }
     roll *= factor;
     total *= factor;
@@ -185,14 +201,14 @@ pub fn field_air(elevation_ft: f64, altimeter_in_hg: Option<f64>, temp_c: Option
 /// caller must tell from a fit (its length_ft is None) and never read as
 /// "within" (14 CFR 91.103(b): the runway lengths are among what a pilot
 /// must know).
-pub fn end_distance(table: &ShortField, runway: Option<&Runway>, air: (f64, f64), weight_lb: Option<f64>, headwind_kt: f64)
-                    -> (Distances, bool) {
+pub fn end_distance(
+    table: &ShortField, runway: Option<&Runway>, air: (f64, f64), weight_lb: Option<f64>, headwind_kt: f64,
+) -> (Distances, bool) {
     let heaviest = table.weights_lb.iter().copied().fold(f64::NEG_INFINITY, f64::max);
     let d = short_field(table, air.0, air.1, weight_lb.unwrap_or(heaviest), headwind_kt, soft_surface(runway));
     let over = runway.and_then(|r| r.length_ft).is_some_and(|length| d.total_ft > length);
     (d, over)
 }
-
 
 /// "Close": a runway with less than 15 per cent to spare over the
 /// distance needed. For a landing it is the FAA's margin: "an additional
@@ -256,8 +272,10 @@ pub struct FieldReport {
 /// `table` for it (None where the profile has none) and its demonstrated
 /// crosswind, the weight (None, the table's heaviest), the field's air and
 /// the reported wind.
-pub fn end_fit(table: Option<&ShortField>, demonstrated_kt: Option<f64>, runway: &Runway, heading_true_deg: Option<f64>,
-               wind: Option<&FitWind>, field: &FieldReport, weight_lb: Option<f64>) -> EndFit {
+pub fn end_fit(
+    table: Option<&ShortField>, demonstrated_kt: Option<f64>, runway: &Runway, heading_true_deg: Option<f64>, wind: Option<&FitWind>,
+    field: &FieldReport, weight_lb: Option<f64>,
+) -> EndFit {
     // Along and across the end (wingtip.runway_wind.components_kt): none with
     // no wind. A variable one (VRB, reported with no direction, AIM 7-1-28)
     // may blow straight across, so all of it, gusts included, is

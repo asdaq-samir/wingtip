@@ -28,6 +28,7 @@ checkpoint before anyone knows it is called Nepco Lake; names are a
 cross-check to run afterwards against OSM/FAA, not something to block a
 pilot on.
 """
+
 from __future__ import annotations
 
 import math
@@ -184,7 +185,7 @@ def _colour_table() -> np.ndarray:
             g, b = np.meshgrid(np.arange(256, dtype=np.int16), np.arange(256, dtype=np.int16), indexing="ij")
             for red in range(256):
                 r = np.full_like(g, red)
-                row = table[red << 16:(red + 1) << 16].reshape(256, 256)
+                row = table[red << 16 : (red + 1) << 16].reshape(256, 256)
                 for test, bit in _COLOUR_BITS.items():
                     row |= np.where(test(r, g, b), bit, 0).astype(np.uint8)
             _COLOUR_TABLE = table
@@ -267,13 +268,9 @@ GRATICULE_HALF_WIDTH_PX = 3
 
 LINEAR_PALETTE = (
     PaletteClass(
-        "river", _river_line, min_area_px=12,
-        min_extent_px=MIN_RIVER_EXTENT_PX, max_half_width_px=MAX_LINE_HALF_WIDTH_PX, base_score=4.3,
+        "river", _river_line, min_area_px=12, min_extent_px=MIN_RIVER_EXTENT_PX, max_half_width_px=MAX_LINE_HALF_WIDTH_PX, base_score=4.3
     ),
-    PaletteClass(
-        "road_or_rail", _dark_line, min_area_px=12,
-        min_extent_px=MIN_LINE_EXTENT_PX, base_score=3.6, graticule_ink=True,
-    ),
+    PaletteClass("road_or_rail", _dark_line, min_area_px=12, min_extent_px=MIN_LINE_EXTENT_PX, base_score=3.6, graticule_ink=True),
 )
 
 _COLOUR_BITS.update({spec.test: 1 << i for i, spec in enumerate(PALETTE + LINEAR_PALETTE)})
@@ -293,7 +290,7 @@ def metres_per_pixel(lat: float, zoom: int = DEFAULT_ZOOM) -> float:
     """Ground resolution at this latitude -- web mercator stretches with
     latitude, so a pixel is not a fixed distance and blob areas would be
     overstated in the north without this."""
-    return EARTH_CIRCUMFERENCE_M * math.cos(math.radians(lat)) / ((2 ** zoom) * TILE_PX)
+    return EARTH_CIRCUMFERENCE_M * math.cos(math.radians(lat)) / ((2**zoom) * TILE_PX)
 
 
 def corridor_tiles(start: tuple, end: tuple, half_width_nm: float, zoom: int = DEFAULT_ZOOM) -> list:
@@ -311,10 +308,7 @@ def corridor_tiles(start: tuple, end: tuple, half_width_nm: float, zoom: int = D
     while True:
         for side in (-90.0, 0.0, 90.0):
             bearing = bearing_deg(current[0], current[1], end[0], end[1]) + side
-            offset = (
-                current if side == 0.0
-                else destination_point(current[0], current[1], bearing, half_width_nm)
-            )
+            offset = current if side == 0.0 else destination_point(current[0], current[1], bearing, half_width_nm)
             px, py = latlon_to_global_px(offset[0], offset[1], zoom)
             tiles.add((int(px // TILE_PX), int(py // TILE_PX)))
         if travelled >= total_nm:
@@ -353,7 +347,7 @@ class Mosaic:
     """A stitched block of chart tiles plus where it sits in the world."""
 
     pixels: np.ndarray  # (h, w, 3) uint8
-    origin_px: tuple    # global pixel coords of the top-left corner
+    origin_px: tuple  # global pixel coords of the top-left corner
     zoom: int
     #: True where a tile was actually pasted. A tile the FAA publishes
     #: no sheet for -- open water, Canada, the gap either side of an
@@ -393,10 +387,10 @@ class Mosaic:
         step, half = GRATICULE_STEP_DEG, GRATICULE_HALF_WIDTH_PX
         for k in range(math.ceil(south / step), math.floor(north / step) + 1):
             row = round(latlon_to_global_px(k * step, west, self.zoom)[1] - self.origin_px[1])
-            out[max(0, row - half):row + half + 1, :] = True
+            out[max(0, row - half) : row + half + 1, :] = True
         for k in range(math.ceil(west / step), math.floor(east / step) + 1):
             col = round(latlon_to_global_px(north, k * step, self.zoom)[0] - self.origin_px[0])
-            out[:, max(0, col - half):col + half + 1] = True
+            out[:, max(0, col - half) : col + half + 1] = True
         return out
 
     def colour(self, test) -> np.ndarray:
@@ -454,8 +448,8 @@ def build_mosaic(tiles: list, zoom: int = DEFAULT_ZOOM, max_workers: int = 8) ->
                 missing += 1
                 continue
             px, py = (x - x0) * TILE_PX, (y - y0) * TILE_PX
-            canvas[py:py + TILE_PX, px:px + TILE_PX] = np.asarray(image)
-            covered[py:py + TILE_PX, px:px + TILE_PX] = True
+            canvas[py : py + TILE_PX, px : px + TILE_PX] = np.asarray(image)
+            covered[py : py + TILE_PX, px : px + TILE_PX] = True
 
     return Mosaic(
         pixels=canvas,
@@ -512,10 +506,7 @@ def detect_landmarks(mosaic: Mosaic, palette=PALETTE) -> list:
         big = sizes >= spec.min_area_px
         if spec.max_area_px is not None:
             big &= sizes <= spec.max_area_px
-        keep = [
-            int(i) + 1 for i in np.nonzero(big)[0]
-            if spec.max_box_fill is None or sizes[i] <= spec.max_box_fill * _box_area(boxes[i])
-        ]
+        keep = [int(i) + 1 for i in np.nonzero(big)[0] if spec.max_box_fill is None or sizes[i] <= spec.max_box_fill * _box_area(boxes[i])]
         if not keep:
             continue
 
@@ -539,7 +530,7 @@ def detect_landmarks(mosaic: Mosaic, palette=PALETTE) -> list:
                     category=spec.name,
                     lat=lat,
                     lon=lon,
-                    area_m2=float(sizes[label - 1]) * m_per_px ** 2,
+                    area_m2=float(sizes[label - 1]) * m_per_px**2,
                     score=spec.base_score,
                     pixels=int(sizes[label - 1]),
                 )
@@ -623,7 +614,7 @@ def tile_blocks(tiles: list, max_span: int = MAX_BLOCK_TILES) -> list:
     blocks, start = [], 0
     stride = max(1, max_span - 1)
     while start < len(columns):
-        window = columns[start:start + max_span]
+        window = columns[start : start + max_span]
         block = [(x, y) for x in window for y in by_x[x]]
         if block:
             blocks.append(block)
@@ -638,15 +629,10 @@ def _dedupe(landmarks: list, within_nm: float = DEDUPE_NM) -> list:
     keeping the largest -- that is the block that saw more of it."""
     kept = []
     for landmark in sorted(landmarks, key=lambda candidate: -candidate.area_m2):
-        if any(
-            k.category == landmark.category
-            and distance_nm(k.lat, k.lon, landmark.lat, landmark.lon) < within_nm
-            for k in kept
-        ):
+        if any(k.category == landmark.category and distance_nm(k.lat, k.lon, landmark.lat, landmark.lon) < within_nm for k in kept):
             continue
         kept.append(landmark)
     return kept
-
 
 
 # How many course steps either side of a crossing's middle its marker may
@@ -658,7 +644,6 @@ SNAP_STEPS = 6
 # has width, and a pilot clicking a crossing does not hit the exact
 # pixel; 3 px at zoom 12 is a bit over 100 m.
 CROSSING_TOLERANCE_PX = 3
-
 
 
 def great_circle_pixels(start: tuple, end: tuple, zoom: int = DEFAULT_ZOOM) -> np.ndarray:
@@ -697,9 +682,7 @@ def great_circle_pixels(start: tuple, end: tuple, zoom: int = DEFAULT_ZOOM) -> n
     steps = max(2, int(math.hypot(x1 - x0, y1 - y0)))
 
     t = np.linspace(0.0, 1.0, steps + 1)
-    points = (
-        np.sin((1 - t)[:, None] * omega) * a + np.sin(t[:, None] * omega) * b
-    ) / math.sin(omega)
+    points = (np.sin((1 - t)[:, None] * omega) * a + np.sin(t[:, None] * omega) * b) / math.sin(omega)
 
     lat = np.degrees(np.arcsin(np.clip(points[:, 2], -1.0, 1.0)))
     lon = np.degrees(np.arctan2(points[:, 1], points[:, 0]))
@@ -707,9 +690,7 @@ def great_circle_pixels(start: tuple, end: tuple, zoom: int = DEFAULT_ZOOM) -> n
     return np.column_stack([px, py]) * TILE_PX
 
 
-def linear_crossings(
-    mosaic: Mosaic, start: tuple, end: tuple, palette=LINEAR_PALETTE, course_px=None
-) -> list:
+def linear_crossings(mosaic: Mosaic, start: tuple, end: tuple, palette=LINEAR_PALETTE, course_px=None) -> list:
     """Where the course crosses linear chart features, as Landmarks.
 
     A blob centroid is the wrong answer for anything linear. The centroid
@@ -736,10 +717,7 @@ def linear_crossings(
     # class per block, about 900,000 Python iterations to examine 29 small
     # images, which was the entire reason reading a route took 30 seconds
     # when the tiles were already cached and fetching them took 0.05 s.
-    inside = (
-        (local[:, 0] >= 0) & (local[:, 0] < mosaic.pixels.shape[1])
-        & (local[:, 1] >= 0) & (local[:, 1] < mosaic.pixels.shape[0])
-    )
+    inside = (local[:, 0] >= 0) & (local[:, 0] < mosaic.pixels.shape[1]) & (local[:, 1] >= 0) & (local[:, 1] < mosaic.pixels.shape[0])
     indices = np.nonzero(inside)[0]
     if not len(indices):
         return []
@@ -788,8 +766,7 @@ def linear_crossings(
             # symbol or speckle -- and no crossing.
             middle = len(group) // 2
             snapped = None
-            for i in sorted(range(max(0, middle - SNAP_STEPS), min(len(group), middle + SNAP_STEPS + 1)),
-                            key=lambda i: abs(i - middle)):
+            for i in sorted(range(max(0, middle - SNAP_STEPS), min(len(group), middle + SNAP_STEPS + 1)), key=lambda i: abs(i - middle)):
                 snapped = _nearest_mask_pixel(mask, group[i][1], group[i][2], CROSSING_TOLERANCE_PX, lines)
                 if snapped is not None:
                     break
@@ -806,7 +783,7 @@ def linear_crossings(
                     lon=lon,
                     # A crossing has no area; the linework under it stands
                     # in for how prominent the feature is on the chart.
-                    area_m2=float(weight) * m_per_px ** 2,
+                    area_m2=float(weight) * m_per_px**2,
                     score=spec.base_score,
                     pixels=weight,
                     extras={"crossing": True, "width_px": len(group)},
@@ -889,22 +866,22 @@ class _Lines:
             return self.thin_whole[label]
         r = LINE_THICKNESS_WINDOW_PX + int(self.spec.max_half_width_px) + 1
         y0, x0 = max(0, cy - r), max(0, cx - r)
-        crop = self.labelled[y0:cy + r + 1, x0:cx + r + 1] == label
+        crop = self.labelled[y0 : cy + r + 1, x0 : cx + r + 1] == label
         depth = ndimage.distance_transform_edt(np.pad(crop, 1))[1:-1, 1:-1]
-        inner = depth[max(0, cy - LINE_THICKNESS_WINDOW_PX - y0):cy + LINE_THICKNESS_WINDOW_PX + 1 - y0,
-                      max(0, cx - LINE_THICKNESS_WINDOW_PX - x0):cx + LINE_THICKNESS_WINDOW_PX + 1 - x0]
+        inner = depth[
+            max(0, cy - LINE_THICKNESS_WINDOW_PX - y0) : cy + LINE_THICKNESS_WINDOW_PX + 1 - y0,
+            max(0, cx - LINE_THICKNESS_WINDOW_PX - x0) : cx + LINE_THICKNESS_WINDOW_PX + 1 - x0,
+        ]
         return float(inner.max(initial=0)) <= self.spec.max_half_width_px
 
     def accept(self, window, lo_y: int, lo_x: int, cx: int, cy: int):
         """`window` (the mask from (lo_y, lo_x)) less what is no line,
         for a crossing at (cx, cy)."""
         height, width = window.shape
-        labels = self.labelled[lo_y:lo_y + height, lo_x:lo_x + width]
+        labels = self.labelled[lo_y : lo_y + height, lo_x : lo_x + width]
         for label in np.unique(labels[window]):
             label = int(label)
-            if not self._is_line(label) or (
-                self.spec.max_half_width_px is not None and not self._thin_at(label, cx, cy)
-            ):
+            if not self._is_line(label) or (self.spec.max_half_width_px is not None and not self._thin_at(label, cx, cy)):
                 window = window & (labels != label)
         return window
 
@@ -922,10 +899,7 @@ def _course_windows(mask, points, indices, radius: int = CROSSING_TOLERANCE_PX) 
     on_block = (ys >= 0) & (ys < height) & (xs >= 0) & (xs < width)
     set_pixels = mask[np.clip(ys, 0, height - 1), np.clip(xs, 0, width - 1)] & on_block
     counts = set_pixels.sum(axis=(1, 2))
-    return [
-        (int(indices[i]), int(points[i, 0]), int(points[i, 1]), int(counts[i]))
-        for i in np.nonzero(counts)[0]
-    ]
+    return [(int(indices[i]), int(points[i, 0]), int(points[i, 1]), int(counts[i])) for i in np.nonzero(counts)[0]]
 
 
 def _nearest_mask_pixel(mask, cx: int, cy: int, radius: int, lines: _Lines | None = None):
@@ -964,13 +938,7 @@ def _group_hits(hits: list, separation: int = CROSSING_SEPARATION_PX) -> list:
     return groups
 
 
-def iter_landmarks_along_route(
-    start: tuple,
-    end: tuple,
-    half_width_nm: float = 1.0,
-    zoom: int = DEFAULT_ZOOM,
-    margin_nm: float = 5.0,
-):
+def iter_landmarks_along_route(start: tuple, end: tuple, half_width_nm: float = 1.0, zoom: int = DEFAULT_ZOOM, margin_nm: float = 5.0):
     """Everything the chart draws inside the route corridor, a block at a
     time.
 
@@ -1004,7 +972,7 @@ def iter_landmarks_along_route(
             return True
         offset = max(1.0, abs(cross_nm) / ON_COURSE_NM)
         m_per_px = metres_per_pixel(landmark.lat, zoom)
-        return landmark.area_m2 >= spec.min_area_px * m_per_px ** 2 * offset ** 2
+        return landmark.area_m2 >= spec.min_area_px * m_per_px**2 * offset**2
 
     # Ordered by how far along the route each block sits, so a caller
     # streaming these fills the map from the departure end. tile_blocks
@@ -1115,9 +1083,4 @@ def classify_point(lat: float, lon: float, zoom: int = DEFAULT_ZOOM) -> dict:
     # Ties break by CLASSIFY_ORDER, which runs specific before generic.
     best = max(scores, key=lambda n: (scores[n][0], -CLASSIFY_ORDER.index(n)))
     count, matched = scores[best]
-    return {
-        "category": best,
-        "rgb": [int(v) for v in matched],
-        "matched_pixels": count,
-        "considered": {n: scores[n][0] for n in scores},
-    }
+    return {"category": best, "rgb": [int(v) for v in matched], "matched_pixels": count, "considered": {n: scores[n][0] for n in scores}}

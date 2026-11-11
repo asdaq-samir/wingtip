@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { contrast, over, parseColour, tokensOf, type Linear } from "./contrast";
 
-const css = readFileSync(new URL("../index.css", import.meta.url), "utf8");
+const css = readFileSync(new URL("../styles/tokens.css", import.meta.url), "utf8");
 
 const colour = (v: string): Linear => {
   const c = parseColour(v);
@@ -30,10 +30,15 @@ describe("contrast", () => {
   });
 });
 
-describe("the night theme's tokens (index.css .dark)", () => {
+describe("the night theme's tokens (styles/tokens.css .dark)", () => {
   const dark = tokensOf(css, ".dark");
   const light = tokensOf(css, ":root");
-  const t = (name: string) => colour(dark[name] ?? light[name] ?? "");
+  // A token that names another (the ring is the tint's) read as that one.
+  const t = (name: string): Linear => {
+    const value = dark[name] ?? light[name] ?? "";
+    const named = /^var\((--[\w-]+)\)$/.exec(value)?.[1];
+    return named ? t(named) : colour(value);
+  };
 
   it("is the cockpit palette's navy", () => {
     expect(dark["--background"]).toBe("#0b1422");
@@ -42,8 +47,16 @@ describe("the night theme's tokens (index.css .dark)", () => {
 
   const surfaces = ["--background", "--card", "--popover", "--muted"];
   const words = [
-    "--foreground", "--muted-foreground", "--tint", "--caution", "--go", "--go-ink",
-    "--destructive", "--procedure", "--airspace-blue-text", "--airspace-magenta-text",
+    "--foreground",
+    "--muted-foreground",
+    "--tint",
+    "--caution",
+    "--go",
+    "--go-ink",
+    "--destructive",
+    "--procedure",
+    "--airspace-blue-text",
+    "--airspace-magenta-text",
   ];
   for (const word of words) {
     for (const surface of surfaces) {

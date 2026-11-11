@@ -6,25 +6,6 @@ use super::picks::{self, Pick};
 use super::points;
 use crate::json::{self, Value};
 
-/// The names this module answers.
-pub const NAMES: [&str; 15] = [
-    "hold_read",
-    "holds_read",
-    "hold_write",
-    "hold_length_read",
-    "hold_length_write",
-    "hold_figures",
-    "procedures_read",
-    "procedures_write",
-    "runways_read",
-    "altitude_lines",
-    "point_kind",
-    "frd_read",
-    "frd_write",
-    "bare_field",
-    "same_field",
-];
-
 fn text<'a>(name: &str, v: &'a Value, key: &str) -> Result<&'a str, String> {
     v.get(key).and_then(Value::as_str).ok_or_else(|| format!("{name}: \"{key}\" is missing or not a string"))
 }
@@ -126,7 +107,7 @@ fn opt_str_json(out: &mut String, s: Option<&str>) {
     json::opt_string(out, s);
 }
 
-/// The rule `name` (one of NAMES) worked on `v`.
+/// The rule `name` worked on `v`, as its contract file (crates/route/contract) names it.
 pub fn answer(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     match name {

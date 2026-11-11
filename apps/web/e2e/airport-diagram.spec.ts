@@ -1,11 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settle, settled, sideDrawer, slow } from "./helpers";
+import { settle, settled, sideDrawer, slow } from "./helpers";
 
 // A route's handler still running as the test ends -- the Recents and
 // Saved planned ahead at idle ask the planner then -- found the page
 // closed and failed the test (navlog-fit.spec, CI, 2026-10-28): the
 // handlers taken off, their errors let go, as each test ends.
-test.afterEach(async ({ page }) => { await page.unrouteAll({ behavior: "ignoreErrors" }); });
+test.afterEach(async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+});
 
 /**
  * An airport's diagram in its card, a row as the Chart Supplement's is
@@ -27,7 +29,10 @@ const card = (page: Page) => sideDrawer(page).getByTestId("place-card");
 /** No photos of the field, so its runways are the card's one picture
  *  (PhotoHead) -- the first page where it has photos (places.spec). */
 async function noPhotos(page: Page) {
-  await page.route(url => /\/api\/planner\/airport\/[^/]+\/photos$/.test(url.pathname), route => route.fulfill({ status: 404, json: { detail: "No photos" } }));
+  await page.route(
+    (url) => /\/api\/planner\/airport\/[^/]+\/photos$/.test(url.pathname),
+    (route) => route.fulfill({ status: 404, json: { detail: "No photos" } }),
+  );
 }
 
 /** The card's Charts tab, which takes the panel all the way up. */
@@ -37,18 +42,27 @@ async function toCharts(page: Page) {
 }
 
 async function withDiagram(page: Page, picture: "drawn" | "missing", pdf = true) {
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/KDLH"), async route => {
-    const answer = await route.fetch();
-    const place = await answer.json();
-    // A report of its own, so the card wears its weather's chip whatever
-    // aviationweather.gov says of KDLH today.
-    const metar = { raw: "KDLH 102155Z 27008KT 10SM CLR 12/02 A3001", flight_category: "VFR" };
-    await route.fulfill({ response: answer, json: { ...place, metar, weather_unavailable: false, airport_diagram_url: pdf ? PDF : null, airport_diagram_cycle: "2610" } });
-  });
-  await page.route(url => url.pathname.includes("/api/planner/airport-diagram/"), route =>
-    (picture === "drawn"
-      ? route.fulfill({ status: 200, contentType: "image/svg+xml", body: SHEET })
-      : route.fulfill({ status: 404, contentType: "application/json", body: '{"detail":"No airport diagram"}' })));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KDLH"),
+    async (route) => {
+      const answer = await route.fetch();
+      const place = await answer.json();
+      // A report of its own, so the card wears its weather's chip whatever
+      // aviationweather.gov says of KDLH today.
+      const metar = { raw: "KDLH 102155Z 27008KT 10SM CLR 12/02 A3001", flight_category: "VFR" };
+      await route.fulfill({
+        response: answer,
+        json: { ...place, metar, weather_unavailable: false, airport_diagram_url: pdf ? PDF : null, airport_diagram_cycle: "2610" },
+      });
+    },
+  );
+  await page.route(
+    (url) => url.pathname.includes("/api/planner/airport-diagram/"),
+    (route) =>
+      picture === "drawn"
+        ? route.fulfill({ status: 200, contentType: "image/svg+xml", body: SHEET })
+        : route.fulfill({ status: 404, contentType: "application/json", body: '{"detail":"No airport diagram"}' }),
+  );
 }
 
 test("an airport's card has its diagram as a row, and a tap shows it full screen, in the app", async ({ page }) => {
@@ -84,51 +98,35 @@ test("an airport's card has its diagram as a row, and a tap shows it full screen
   await expect(card(page)).toBeVisible();
 });
 
-test("the card's runways are a page of the pictures across its top, the FAA's diagram cropped to them, its elevation in its details, the same all the way up", async ({ page }) => {
+test("the card's runways are a page of its pictures under its title and actions, the FAA's diagram cropped to them, its elevation in its details", async ({
+  page,
+}) => {
   await withDiagram(page, "drawn");
   await withChartPages(page);
   await noPhotos(page);
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
-  // Half way, as every card opens, as Maps opens a place: the pictures
-  // across its top (the owner's pick of the redesign, A2).
+  // Half way, as every card opens; no picture over its top, its pictures
+  // lower in it (the owner, 2026-11-09).
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
   const sketch = card(page).getByTestId("place-runway-sketch");
   // KDLH's runways, named for a screen reader.
   await expect(sketch).toHaveAttribute("aria-label", /^KDLH runways .*09\/27.*, north up\./, { timeout: slow(15000) });
-  // The ident over the pictures, and under it with nothing to measure
+  // The ident at the top, and under it with nothing to measure
   // from only the elevation (places.spec has the distance).
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   await expect(card(page).getByTestId("place-line")).toHaveText(/^Elevation [\d,]+ ft$/);
   await expect(sketch.getByTestId("place-diagram-runways")).toHaveAttribute("src", "/api/planner/airport-diagram/2610/runways/KDLH.png");
   await expect(card(page).getByTestId("place-elevation")).toContainText(/^Elevation[\d,]+ ft$/);
-  const layout = async () => {
-    const [head, box, call] = await Promise.all([
-      card(page).getByTestId("place-head"), sketch, card(page).getByTestId("place-call"),
-    ].map(async l => (await l.boundingBox())!));
-    // Inside the pictures, the actions under them.
-    expect(box.y).toBeGreaterThanOrEqual(head.y - 0.5);
-    expect(box.y + box.height).toBeLessThanOrEqual(head.y + head.height + 0.5);
-    expect(head.y + head.height).toBeLessThanOrEqual(call.y);
-    return [Math.round(box.y - head.y), Math.round(call.y - head.y)];
-  };
-  const half = await layout();
-  // All the way up, the same head, the owner's "the top half stay the
-  // same as half card".
-  await grabberTo(page, "full");
-  await expect.poll(() => layout()).toEqual(half);
-
-  // A tap shows the picture alone, the name and buttons gone and the
-  // full-screen button in their place (the owner's ask, 2026-11-02); a
-  // tap again brings them back.
-  const shade = card(page).getByTestId("place-name").locator("..");
-  await sketch.click();
-  await expect(shade).toHaveCSS("opacity", "0");
-  await expect(card(page).getByTestId("place-close").locator("..")).toHaveCSS("opacity", "0");
-  await sketch.click();
-  await expect(shade).toHaveCSS("opacity", "1");
-  await expect(card(page).getByTestId("place-diagram-open")).toHaveCount(0);
-  await sketch.click();
+  // The title, then the actions, then the pictures lower in the card.
+  const [name, call, pictures] = await Promise.all(
+    [card(page).getByTestId("place-name"), card(page).getByTestId("place-call"), card(page).getByTestId("place-pictures")].map(
+      async (l) => (await l.boundingBox())!,
+    ),
+  );
+  expect(name.y).toBeLessThan(call.y);
+  expect(call.y).toBeLessThan(pictures.y);
+  // A click on the runways' page opens its lightbox.
   await card(page).getByTestId("place-diagram-open").click();
   await expect(page.getByTestId("airport-diagram-viewer").getByRole("heading", { name: "KDLH airport diagram" })).toBeVisible();
 });
@@ -166,22 +164,37 @@ test("where the picture cannot be had and the FAA gives no PDF, the row says the
  *  booklet gives a field's, each a sheet. */
 async function withChartPages(page: Page) {
   const asked: string[] = [];
-  await page.route(url => url.pathname.endsWith("/api/planner/faa-chart"), route => {
-    asked.push(new URL(route.request().url()).searchParams.get("url") ?? "");
-    return route.fulfill({ json: { pages: [1, 2].map(n => ({ source: "dtpp", edition: "2610", pdf: "EC3TO.PDF", page: n, width: 1937, height: 2970 })) } });
-  });
-  await page.route(url => url.pathname.includes("/api/planner/faa-chart/page/"), route =>
-    route.fulfill({ status: 200, contentType: "image/svg+xml", body: SHEET }));
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/faa-chart"),
+    (route) => {
+      asked.push(new URL(route.request().url()).searchParams.get("url") ?? "");
+      return route.fulfill({
+        json: { pages: [1, 2].map((n) => ({ source: "dtpp", edition: "2610", pdf: "EC3TO.PDF", page: n, width: 1937, height: 2970 })) },
+      });
+    },
+  );
+  await page.route(
+    (url) => url.pathname.includes("/api/planner/faa-chart/page/"),
+    (route) => route.fulfill({ status: 200, contentType: "image/svg+xml", body: SHEET }),
+  );
   return asked;
 }
 
 test("the Charts tab's charts and the Chart Supplement open in the app, the field's own pages of a booklet", async ({ page }) => {
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/KDLH"), async route => {
-    const answer = await route.fetch();
-    await route.fulfill({ response: answer, json: { ...await answer.json(),
-      chart_supplement_url: "https://aeronav.faa.gov/afd/03Sep2026/nc_161_03SEP2026.pdf",
-      procedures: [{ kind: "MIN", name: "TAKEOFF MINIMUMS", url: "https://aeronav.faa.gov/d-tpp/2610/NC1TO.PDF" }] } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/KDLH"),
+    async (route) => {
+      const answer = await route.fetch();
+      await route.fulfill({
+        response: answer,
+        json: {
+          ...(await answer.json()),
+          chart_supplement_url: "https://aeronav.faa.gov/afd/03Sep2026/nc_161_03SEP2026.pdf",
+          procedures: [{ kind: "MIN", name: "TAKEOFF MINIMUMS", url: "https://aeronav.faa.gov/d-tpp/2610/NC1TO.PDF" }],
+        },
+      });
+    },
+  );
   const asked = await withChartPages(page);
   await page.goto("/app/plan?place=KDLH");
   await settle(page);
@@ -205,21 +218,24 @@ test("the Charts tab's charts and the Chart Supplement open in the app, the fiel
 test("the card's sketch draws a runway's turf green, C81's south-west 1,000 ft of its 06/24", async ({ page }) => {
   // The planner's answer as it reads the FAA's remarks ("SW 1000 FT
   // TURF-GRVL."), whatever this stack's remarks file says.
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/C81"), async route => {
-    const answer = await route.fetch();
-    const place = await answer.json();
-    for (const runway of place.runways) runway.turf = runway.ends === "06/24" ? [{ end: "06", from_ft: 0, to_ft: 1000 }] : [];
-    await route.fulfill({ response: answer, json: { ...place, airport_diagram_url: null, airport_diagram_cycle: null } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/C81"),
+    async (route) => {
+      const answer = await route.fetch();
+      const place = await answer.json();
+      for (const runway of place.runways) runway.turf = runway.ends === "06/24" ? [{ end: "06", from_ft: 0, to_ft: 1000 }] : [];
+      await route.fulfill({ response: answer, json: { ...place, airport_diagram_url: null, airport_diagram_cycle: null } });
+    },
+  );
   await page.goto("/app/plan?place=C81");
   await settle(page);
   const turf = card(page).getByTestId("runway-sketch").locator("[data-turf]");
   await expect(turf).toHaveCount(1, { timeout: slow(15000) });
   // From 06's end, south-west of the field, a little over a quarter of
   // the runway's length.
-  const [x1, y1, x2, y2] = await turf.evaluate(line => ["x1", "y1", "x2", "y2"].map(a => Number(line.getAttribute(a))));
+  const [x1, y1, x2, y2] = await turf.evaluate((line) => ["x1", "y1", "x2", "y2"].map((a) => Number(line.getAttribute(a))));
   const runway = card(page).getByTestId("runway-sketch").locator("g").first().locator("line").first();
-  const [ax, ay, bx, by] = await runway.evaluate(line => ["x1", "y1", "x2", "y2"].map(a => Number(line.getAttribute(a))));
+  const [ax, ay, bx, by] = await runway.evaluate((line) => ["x1", "y1", "x2", "y2"].map((a) => Number(line.getAttribute(a))));
   expect(x1).toBeCloseTo(ax, 1);
   expect(y1).toBeCloseTo(ay, 1);
   expect(Math.hypot(x2 - x1, y2 - y1) / Math.hypot(bx - ax, by - ay)).toBeCloseTo(1000 / 3573, 1);
@@ -229,7 +245,8 @@ test("the card's sketch draws a runway's turf green, C81's south-west 1,000 ft o
   // Each end's number just past it, at the pilot's ask: 06 beyond the
   // south-west end, 24 beyond the north-east.
   const sketch = card(page).getByTestId("runway-sketch");
-  const number = async (end: string) => sketch.locator(`[data-runway-end="${end}"]`).evaluate(t => [Number(t.getAttribute("x")), Number(t.getAttribute("y"))]);
+  const number = async (end: string) =>
+    sketch.locator(`[data-runway-end="${end}"]`).evaluate((t) => [Number(t.getAttribute("x")), Number(t.getAttribute("y"))]);
   const [x06, y06] = await number("06");
   const [x24, y24] = await number("24");
   expect(x06).toBeLessThan(ax);
@@ -242,12 +259,14 @@ test("the card's sketch draws a runway's turf green, C81's south-west 1,000 ft o
   await expect(sketch.locator("[data-runway-end]")).toHaveCount(4);
 });
 
-
 test("a field the FAA draws no diagram for has the row all the same, showing the card's sketch of its runways", async ({ page }) => {
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/C81"), async route => {
-    const answer = await route.fetch();
-    await route.fulfill({ response: answer, json: { ...await answer.json(), airport_diagram_url: null, airport_diagram_cycle: null } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/C81"),
+    async (route) => {
+      const answer = await route.fetch();
+      await route.fulfill({ response: answer, json: { ...(await answer.json()), airport_diagram_url: null, airport_diagram_cycle: null } });
+    },
+  );
   await page.goto("/app/plan?place=C81");
   await settle(page);
   await toCharts(page);
@@ -271,16 +290,18 @@ test("a field the FAA draws no diagram for has the row all the same, showing the
 });
 
 test("a tap on the card's sketch of a field the FAA draws no diagram for shows the sketch full screen", async ({ page }) => {
-  await page.route(url => url.pathname.endsWith("/api/planner/airport/C81"), async route => {
-    const answer = await route.fetch();
-    await route.fulfill({ response: answer, json: { ...await answer.json(), airport_diagram_url: null, airport_diagram_cycle: null } });
-  });
+  await page.route(
+    (url) => url.pathname.endsWith("/api/planner/airport/C81"),
+    async (route) => {
+      const answer = await route.fetch();
+      await route.fulfill({ response: answer, json: { ...(await answer.json()), airport_diagram_url: null, airport_diagram_cycle: null } });
+    },
+  );
   await noPhotos(page);
   await page.goto("/app/plan?place=C81");
   await settle(page);
   const thumbnail = card(page).getByTestId("place-runway-sketch");
   await expect(thumbnail).toHaveAccessibleName(/Runways sketch$/);
-  await thumbnail.click();
   await card(page).getByTestId("place-diagram-open").click();
   const viewer = page.getByTestId("airport-sketch-viewer");
   await expect(viewer.getByRole("heading", { name: "C81 runways" })).toBeVisible();
@@ -288,7 +309,7 @@ test("a tap on the card's sketch of a field the FAA draws no diagram for shows t
   // Not the Runways tab, which the tap used to open: the card still half
   // way, on its first tab.
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
-  await expect(card(page).getByTestId("place-tab-runways")).not.toHaveAttribute("data-state", "active");
+  await expect(card(page).getByTestId("place-tab-runways")).not.toHaveAttribute("data-active");
   await viewer.getByTestId("airport-sketch-close").click();
   await expect(viewer).toHaveCount(0);
 });

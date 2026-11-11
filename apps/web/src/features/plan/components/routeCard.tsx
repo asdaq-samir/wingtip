@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { cn } from "cn";
 import { ROUTE_LINE } from "./routeListStyle";
-import { colourOf } from "../../../lib/map/flightCategory";
+import { colourOf } from "../../../lib/map/marks/flightCategory";
 import { AirportMark } from "./navlog/PointMark";
 
 /**
@@ -22,14 +22,17 @@ export function CardThread({ first, last }: { first: boolean; last: boolean }) {
   if (first && last) return null;
   return (
     <span
-      aria-hidden="true" style={ROUTE_LINE}
+      aria-hidden="true"
+      style={ROUTE_LINE}
       className={cn("absolute left-[calc(1.625rem-1px)] -z-10 w-0.5", first ? "top-8" : "top-0", last ? "h-8" : "-bottom-[1.375rem]")}
     />
   );
 }
 
 /** A card's mark on a disc of the card's fill, hiding the line under it. */
-export const CardMark = ({ children }: { children: ReactNode }) => <span className="grid place-items-center rounded-full bg-card">{children}</span>;
+export const CardMark = ({ children }: { children: ReactNode }) => (
+  <span className="grid place-items-center rounded-full bg-card">{children}</span>
+);
 
 /** An empty card's mark: the airport symbol, no airspace or weather yet,
  *  faded, on the grey disc an airport's mark has (PointMenu's face). */

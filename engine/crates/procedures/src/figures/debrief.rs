@@ -17,7 +17,7 @@
 //! track's (TrackDto: `t` in ms since 1970, GPS altitude in feet).
 
 use crate::geo::{angle_between, bearing_deg, distance_nm};
-use crate::json;
+use crate::{json, sort::StableSort};
 
 /// PA.VI.A's tolerances: S7's altitude, and its heading applied to the
 /// ground track; S5's distance from the planned route; S6's time at each
@@ -132,21 +132,24 @@ fn place(c: &Checkpoint) -> (f64, f64) {
 
 /// Ground speed at each point, knots: over at least ten seconds round it,
 /// which a one-second GPS's jitter would otherwise make a mess of.
-fn ground_speeds(points: &[Point]) -> Vec<f64> {
+/// The logbook drawn from a track (pilot::autolog) reads them too.
+pub fn ground_speeds(points: &[Point]) -> Vec<f64> {
     let last = points.len().saturating_sub(1);
     (0..points.len())
         .map(|i| {
             let (mut j, mut k) = (i, i);
             while points[k].t - points[j].t < 10_000.0 && (j > 0 || k < last) {
-                if j > 0 {
-                    j -= 1;
-                }
+                j = j.saturating_sub(1);
                 if k < last {
                     k += 1;
                 }
             }
             let hours = (points[k].t - points[j].t) / 3_600_000.0;
-            if hours > 0.0 { nm(at(&points[j]), at(&points[k])) / hours } else { 0.0 }
+            if hours > 0.0 {
+                nm(at(&points[j]), at(&points[k])) / hours
+            } else {
+                0.0
+            }
         })
         .collect()
 }
@@ -213,7 +216,7 @@ struct Grade {
 /// MSL, by ident (the planner's own, wingtip.pattern's).
 pub fn debrief(checkpoints: &[Checkpoint], points: &[Point], patterns: &[(String, f64)]) -> Option<Debrief> {
     let mut cps = checkpoints.to_vec();
-    cps.sort_by_key(|c| c.sequence_no);
+    cps.stable_sort_by_key(|c| c.sequence_no);
     let runs = airborne(points);
     if cps.len() < 2 || runs.is_empty() {
         return None;
@@ -308,45 +311,49 @@ pub fn debrief(checkpoints: &[Checkpoint], points: &[Point], patterns: &[(String
             let since_leg_start = along - from.along_track_nm;
             let (to_field, from_field) = (cps[b].along_track_nm - along, along - cps[a].along_track_nm);
             // Course: not over the fields, nor in the turn onto a leg.
-            if let Some(course) = to.true_course_deg {
-                if from_field > 2.0 && to_field > 2.0 && since_leg_start > 1.0 {
-                    let (mut j, mut k) = (i, i);
-                    while points[k].t - points[j].t < 20_000.0 && (j > start || k < end) {
-                        if j > start {
-                            j -= 1;
-                        }
-                        if k < end {
-                            k += 1;
-                        }
+            if let Some(course) = to.true_course_deg
+                && from_field > 2.0
+                && to_field > 2.0
+                && since_leg_start > 1.0
+            {
+                let (mut j, mut k) = (i, i);
+                while points[k].t - points[j].t < 20_000.0 && (j > start || k < end) {
+                    if j > start {
+                        j -= 1;
                     }
-                    if k > j {
-                        let off = angle_between(bearing_deg(points[j].lat, points[j].lon, points[k].lat, points[k].lon), course);
-                        g.course_w += weight;
-                        if off <= COURSE_DEG {
-                            g.course_in += weight;
-                        }
+                    if k < end {
+                        k += 1;
                     }
-                    if g.worst_off.is_none_or(|w| right.abs() > w.abs()) {
-                        g.worst_off = Some(right);
+                }
+                if k > j {
+                    let off = angle_between(bearing_deg(points[j].lat, points[j].lon, points[k].lat, points[k].lon), course);
+                    g.course_w += weight;
+                    if off <= COURSE_DEG {
+                        g.course_in += weight;
                     }
+                }
+                if g.worst_off.is_none_or(|w| right.abs() > w.abs()) {
+                    g.worst_off = Some(right);
                 }
             }
             // Altitude: in the cruise, and not in a step to a new one.
             let planned = to.altitude_ft;
             let stepped = best > a && cps[best].altitude_ft != planned && since_leg_start < 3.0;
             let mut off_line = right.abs() > OFF_ROUTE_NM && from_field > 2.0 && to_field > 2.0;
-            if let (Some(alt), Some(planned)) = (p.alt_ft, planned) {
-                if cruise_from <= p.t && p.t <= cruise_to && !stepped {
-                    let dev = alt - planned;
-                    g.alt_w += weight;
-                    if dev.abs() <= ALTITUDE_FT {
-                        g.alt_in += weight;
-                    } else {
-                        off_line = true;
-                    }
-                    if g.worst_alt.is_none_or(|w| dev.abs() > w.abs()) {
-                        g.worst_alt = Some(dev);
-                    }
+            if let (Some(alt), Some(planned)) = (p.alt_ft, planned)
+                && cruise_from <= p.t
+                && p.t <= cruise_to
+                && !stepped
+            {
+                let dev = alt - planned;
+                g.alt_w += weight;
+                if dev.abs() <= ALTITUDE_FT {
+                    g.alt_in += weight;
+                } else {
+                    off_line = true;
+                }
+                if g.worst_alt.is_none_or(|w| dev.abs() > w.abs()) {
+                    g.worst_alt = Some(dev);
                 }
             }
             line.push(LinePoint { lat: p.lat, lon: p.lon, off: off_line });
@@ -497,8 +504,14 @@ pub fn to_json(d: &Debrief, marked: bool) -> String {
         json::string(out, &l.from);
         field(out, false, "to");
         json::string(out, &l.to);
-        for (key, v) in [("planned_alt_ft", l.planned_alt_ft), ("altitude_within", l.altitude_within), ("worst_alt_ft", l.worst_alt_ft),
-                         ("course_deg", l.course_deg), ("course_within", l.course_within), ("worst_off_nm", l.worst_off_nm)] {
+        for (key, v) in [
+            ("planned_alt_ft", l.planned_alt_ft),
+            ("altitude_within", l.altitude_within),
+            ("worst_alt_ft", l.worst_alt_ft),
+            ("course_deg", l.course_deg),
+            ("course_within", l.course_within),
+            ("worst_off_nm", l.worst_off_nm),
+        ] {
             field(out, false, key);
             json::opt_number(out, v);
         }
@@ -588,8 +601,17 @@ pub fn to_json(d: &Debrief, marked: bool) -> String {
 /// The tolerances the debrief holds the flight to, for the page's headings.
 pub fn tolerances_json() -> String {
     let mut out = String::new();
-    for (i, (key, v)) in [("altitude_ft", ALTITUDE_FT), ("course_deg", COURSE_DEG), ("off_route_nm", OFF_ROUTE_NM),
-                          ("eta_min", ETA_MIN), ("pattern_nm", PATTERN_NM), ("pattern_ft", PATTERN_FT)].iter().enumerate() {
+    for (i, (key, v)) in [
+        ("altitude_ft", ALTITUDE_FT),
+        ("course_deg", COURSE_DEG),
+        ("off_route_nm", OFF_ROUTE_NM),
+        ("eta_min", ETA_MIN),
+        ("pattern_nm", PATTERN_NM),
+        ("pattern_ft", PATTERN_FT),
+    ]
+    .iter()
+    .enumerate()
+    {
         field(&mut out, i == 0, key);
         json::number(&mut out, *v);
     }
@@ -602,7 +624,7 @@ pub fn tolerances_json() -> String {
 /// first, as the planner does.
 pub fn answer_json(checkpoints: &[Checkpoint], points: &[Point], patterns: &[(String, f64)]) -> String {
     let mut sorted = points.to_vec();
-    sorted.sort_by(|a, b| a.t.total_cmp(&b.t));
+    sorted.stable_sort_by(|a, b| a.t.total_cmp(&b.t));
     let mut out = String::from("{\"debrief\":");
     match debrief(checkpoints, &sorted, patterns) {
         Some(d) => out.push_str(&to_json(&d, true)),

@@ -1,29 +1,28 @@
 import SwiftUI
+import UIKit
 
 /// The rows an airport's card is made of, as the web app's are
 /// (FrequencyRow, RunwayRow, StopServices): a glyph on a coloured badge,
 /// the name, a line under it, and the figure a pilot looks for at the
 /// right in the text's own colour.
 
-/// The badges' colours, the web app's (lib/rowBadges).
+/// The badges' colours (design/tokens.json color.badge), the web app's too.
 enum Badge {
-    static func hex(_ rgb: UInt32) -> Color { Color(uiColor: UIColor(hex: rgb)) }
-
-    static let tower = hex(0x2465b8)
-    static let ground = hex(0x0f766e)
-    static let weather = hex(0x0284c7)
-    static let approach = hex(0x5b5bd6)
-    static let traffic = hex(0xc2410c)
-    static let other = hex(0x6b7280)
-    static let runway = hex(0x3f4652)
-    static let chart = hex(0x475569)
-    static let rule = hex(0x64748b)
-    static let hazard = hex(0xb42318)
-    static let lights = hex(0xa16207)
-    static let fuel = hex(0xb45309)
-    static let car = hex(0x2563eb)
-    static let food = hex(0xbe185d)
-    static let lodging = hex(0x7e3fb8)
+    static let tower = Color(uiColor: WingtipColor.Badge.tower)
+    static let ground = Color(uiColor: WingtipColor.Badge.ground)
+    static let weather = Color(uiColor: WingtipColor.Badge.weather)
+    static let approach = Color(uiColor: WingtipColor.Badge.approach)
+    static let traffic = Color(uiColor: WingtipColor.Badge.traffic)
+    static let other = Color(uiColor: WingtipColor.Badge.other)
+    static let runway = Color(uiColor: WingtipColor.Badge.runway)
+    static let chart = Color(uiColor: WingtipColor.Badge.chart)
+    static let rule = Color(uiColor: WingtipColor.Badge.rule)
+    static let hazard = Color(uiColor: WingtipColor.Badge.hazard)
+    static let lights = Color(uiColor: WingtipColor.Badge.lights)
+    static let fuel = Color(uiColor: WingtipColor.Badge.fuel)
+    static let car = Color(uiColor: WingtipColor.Badge.car)
+    static let food = Color(uiColor: WingtipColor.Badge.food)
+    static let lodging = Color(uiColor: WingtipColor.Badge.lodging)
 }
 
 /// A glyph on a rounded square of colour, as Settings' rows have them.
@@ -39,7 +38,7 @@ struct RowBadge: View {
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.white)
             .frame(width: side, height: side)
-            .background(colour, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .background(colour, in: RoundedRectangle(cornerRadius: WingtipRadius.badge, style: .continuous))
             .accessibilityHidden(true)
     }
 }
@@ -52,9 +51,9 @@ struct CardRow<Value: View>: View {
     @ViewBuilder var value: () -> Value
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: WingtipSpace.md) {
             if let badge { badge }
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text(title)
                 if let detail, !detail.isEmpty { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
             }
@@ -95,6 +94,8 @@ struct FrequencyRowView: View {
                 // Figure by figure, as a frequency is read on the radio.
                 .accessibilityLabel(frequency.frequencyMhz.map(SpokenFigures.frequency) ?? "no frequency")
         }
+        // Held: Copy (FrequencyActions).
+        .frequencyActions(frequency.frequencyMhz.map(AirportWords.mhz))
     }
 }
 
@@ -108,15 +109,15 @@ struct RunwayRowView: View {
 
     var body: some View {
         let heading = (runway.runwayEnds ?? []).compactMap(\.headingTrueDeg).first
-        HStack(spacing: 12) {
+        HStack(spacing: WingtipSpace.md) {
             ZStack {
-                RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Badge.runway)
+                RoundedRectangle(cornerRadius: WingtipRadius.badge, style: .continuous).fill(Badge.runway)
                 RoundedRectangle(cornerRadius: 1).fill(.white).frame(width: side / 5.6, height: side * 0.64)
                     .rotationEffect(.degrees(heading ?? 0))
             }
             .frame(width: side, height: side)
             .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                 Text("Runway \(runway.ends ?? "—")")
                 let detail = AirportWords.runwayDetail(runway)
                 if !detail.isEmpty { Text(detail).font(.subheadline).foregroundStyle(.secondary) }
@@ -125,8 +126,8 @@ struct RunwayRowView: View {
                 }
             }
             Spacer(minLength: 8)
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(runway.lengthFt.map { "\(AirportWords.grouped(Double($0))) ft" } ?? "—").fontWeight(.semibold).monospacedDigit()
+            VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
+                Text(Format.altitude(runway.lengthFt.map(Double.init))).fontWeight(.semibold).monospacedDigit()
                     .accessibilityLabel(runway.lengthFt.map { "\(SpokenFigures.feet(Double($0))) long" } ?? "length not listed")
                 if let width = runway.widthFt {
                     Text("\(width) ft wide").font(.footnote).foregroundStyle(.secondary)
@@ -135,6 +136,44 @@ struct RunwayRowView: View {
             }
         }
         .accessibilityElement(children: .combine)
+        // Held, the runway's details as iOS previews a row: each end's
+        // true heading and pattern side as the planner sends them
+        // (wingtip.pattern; 14 CFR 91.126(b)(1) for the side), and Copy.
+        .contextMenu {
+            Button { UIPasteboard.general.string = RunwayDetails.words(runway) } label: { Label("Copy", systemImage: WingtipIcon.copy) }
+        } preview: {
+            RunwayDetails(runway: runway)
+        }
+    }
+}
+
+/// A runway's details, the preview of its row held: its ends, each one's
+/// true heading and which side its pattern is flown, its length, width
+/// and surface, and the wind across it now, as the planner gives them.
+struct RunwayDetails: View {
+    let runway: Runway
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+            Text("Runway \(runway.ends ?? "—")").font(.headline)
+            ForEach(runway.runwayEnds ?? [], id: \.ident) { end in
+                LabeledContent("Runway \(end.ident)") {
+                    Text([end.headingTrueDeg.map { "\(Format.heading($0))T" }, end.traffic.map { "\($0) traffic" }]
+                        .compactMap { $0 }.joined(separator: " · "))
+                }
+            }
+            Text(Self.words(runway)).font(.subheadline).foregroundStyle(.secondary)
+            if let wind = runway.wind { Text(AirportWords.runwayWind(wind)).font(.subheadline) }
+        }
+        .padding(WingtipSpace.lg)
+        .frame(width: 320, alignment: .leading)
+    }
+
+    /// The runway in one line: its ends, length by width, and surface.
+    static func words(_ runway: Runway) -> String {
+        let size = [runway.lengthFt.map { Format.altitude(Double($0)) }, runway.widthFt.map { "\($0) ft wide" }].compactMap { $0 }.joined(separator: " × ")
+        let detail = AirportWords.runwayDetail(runway)
+        return ["Runway \(runway.ends ?? "—")", size, detail].filter { !$0.isEmpty }.joined(separator: ", ")
     }
 }
 
@@ -189,15 +228,19 @@ struct RunwaySketch: View {
 /// One of the card's actions, as Maps' place card has them: a glyph over
 /// its name on a rounded pane, the first in the tint.
 struct CardActionLabel: View {
-    let title: String
-    let systemImage: String
+    /// The action, whose one name and glyph every card uses (CardAction).
+    let action: CardAction
+
+    init(_ action: CardAction) { self.action = action }
 
     var body: some View {
-        VStack(spacing: 4) {
-            Image(systemName: systemImage).font(.title3)
-            Text(title).font(.caption.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
+        VStack(spacing: WingtipSpace.xs) {
+            Image(systemName: action.systemImage).font(WingtipType.heading)
+                // Fly Here and Direct To bounce as they are taken.
+                .symbolBounce(on: action == .flyHere || action == .directTo ? Feel.shared.directTo : 0)
+            Text(action.title).font(WingtipType.tabBar.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity, minHeight: 44)
+        .frame(maxWidth: .infinity, minHeight: WingtipSize.tapTarget)
     }
 }
 
@@ -223,7 +266,7 @@ struct StopServicesSections: View {
                 }
                 let field = onTheField(s)
                 if !field.isEmpty {
-                    Section("On the field") {
+                    Section("On the Field") {
                         ForEach(field, id: \.title) { row in
                             CardRow(badge: RowBadge(systemImage: row.symbol, colour: row.colour), title: row.title, detail: row.detail) {
                                 if let value = row.value { Text(value).foregroundStyle(.secondary) }
@@ -243,7 +286,12 @@ struct StopServicesSections: View {
                     Button("Try Again") { Task { await load() } }
                 }
             } else {
-                Section("Services") { ProgressView("Fetching the services…") }
+                Section("Fuel") {
+                    ForEach(0..<2, id: \.self) { _ in
+                        CardRow(badge: RowBadge(systemImage: "fuelpump", colour: Badge.fuel), title: "The fuel sold on the field")
+                            .loading("Fetching the services")
+                    }
+                }
             }
         }
         .task(id: ident) { await load() }
@@ -295,16 +343,16 @@ struct StopServicesSections: View {
 private enum PreviewData {
     static let runways = [
         Runway(closed: false, ends: "09/27", lengthFt: 10162, lighted: true, runwayEnds: [RunwayEnd(headingTrueDeg: 92, ident: "09", lat: 46.8415, lon: -92.2140),
-                            RunwayEnd(headingTrueDeg: 272, ident: "27", lat: 46.8425, lon: -92.1733, traffic: "right")],
+                                                                                          RunwayEnd(headingTrueDeg: 272, ident: "27", lat: 46.8425, lon: -92.1733, traffic: "right")],
                surface: "ASPH", widthFt: 150, wind: RunwayWind(crosswindKt: 4, end: "27", headwindKt: 9)),
         Runway(closed: false, ends: "03/21", lengthFt: 5719, lighted: true, runwayEnds: [RunwayEnd(headingTrueDeg: 33, ident: "03", lat: 46.8355, lon: -92.2005),
-                            RunwayEnd(headingTrueDeg: 213, ident: "21", lat: 46.8490, lon: -92.1880)],
+                                                                                         RunwayEnd(headingTrueDeg: 213, ident: "21", lat: 46.8490, lon: -92.1880)],
                surface: "ASPH", widthFt: 150),
     ]
 }
 
 #Preview("RowBadge") {
-    HStack(spacing: 12) {
+    HStack(spacing: WingtipSpace.md) {
         RowBadge(systemImage: "building.columns", colour: Badge.tower)
         RowBadge(systemImage: "cloud.sun", colour: Badge.weather)
         RowBadge(systemImage: "fuelpump", colour: Badge.fuel)
@@ -340,11 +388,11 @@ private enum PreviewData {
 }
 
 #Preview("CardActionLabel") {
-    HStack(spacing: 8) {
-        Button {} label: { CardActionLabel(title: "Fly Here", systemImage: "location.north.line") }.buttonStyle(.borderedProminent)
-        Button {} label: { CardActionLabel(title: "Add Stop", systemImage: "mappin.and.ellipse") }.buttonStyle(.bordered)
-        Button {} label: { CardActionLabel(title: "Call", systemImage: "phone") }.buttonStyle(.bordered)
-        Button {} label: { CardActionLabel(title: "Address", systemImage: "map") }.buttonStyle(.bordered)
+    HStack(spacing: WingtipSpace.sm) {
+        Button {} label: { CardActionLabel(.flyHere) }.glassProminentButton()
+        Button {} label: { CardActionLabel(.addStop) }.glassButton()
+        Button {} label: { CardActionLabel(.call) }.glassButton()
+        Button {} label: { CardActionLabel(.address) }.glassButton()
     }
     .padding()
 }

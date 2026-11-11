@@ -1,0 +1,46 @@
+# The planner's layers, held by import-linter (`lint-imports`, run from
+# this directory by scripts/dev/check.sh's py and planner areas and by CI):
+#
+#   app.main        wires the routers into the one FastAPI app
+#   app.routers.*   one per area of the API: each parses, calls and returns
+#   the rest of app the work the routers share (plan_query, route_briefing,
+#                   dev_services, gonogo, window, ...) and the schemas
+#   wingtip         the library: FAA and weather data, the engine's rules
+#
+# A router that needs another's work asks the module that does it, never
+# the other router; nothing under the routers imports them; and wingtip
+# knows nothing of the service it is used by. The generated modules
+# (app/generated) are held to their generators elsewhere.
+[importlinter]
+root_packages =
+    app
+    wingtip
+include_external_packages = False
+
+[importlinter:contract:wingtip-below-app]
+name = wingtip never imports app
+type = forbidden
+source_modules =
+    wingtip
+forbidden_modules =
+    app
+
+[importlinter:contract:routers-independent]
+name = no router imports another
+type = independence
+modules =
+    app.routers.*
+
+[importlinter:contract:nothing-imports-routers]
+name = only app.main imports the routers
+type = forbidden
+source_modules =
+    app.*
+forbidden_modules =
+    app.routers
+ignore_imports =
+    app.main -> app.routers.*
+# A module that imports app.main (app.openapi, which writes its document)
+# reaches the routers through it, as it should: only a direct import from
+# one counts.
+allow_indirect_imports = True

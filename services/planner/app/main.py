@@ -5,7 +5,7 @@ them.
 This is the human-facing surface of everything else in the project. The
 chart reader finds what the sectional draws along the course, the chart
 model scores it (wingtip.chartmodel, loaded by app.chart_scorer),
-wingtip.checkpoints narrows them to the handful worth flying, and wingtip.navlog turns those into legs
+the engine's checkpoints_select narrows them to the handful worth flying, and wingtip.navlog turns those into legs
 with real wind and magnetic variation -- but none of that is inspectable
 from a JSON response. Seeing the checkpoints on the sectional is the only
 way to judge whether they are findable in the air, which is the question
@@ -13,19 +13,23 @@ the whole model exists to answer.
 
 Split of responsibility, and why it falls this way:
 
-- The pipeline images train and promote the chart model
-  (wingtip.chartmodel, wingtip.model_registry); this service only loads
+- The retrain job (services/jobs/retrain) trains and promotes the chart
+  model (wingtip.chartmodel, wingtip.model_registry); this service only loads
   the promoted one and scores with it (app.chart_scorer), with the same
   pinned scikit-learn. It was a model-service container of its own
   until 2026-11-06.
 - This service owns everything route-shaped: reading the chart along
   it, scoring what it finds, computing the nav log, and drawing it.
+- The charts job (services/jobs/charts) renders a cycle's tiles and
+  builds the map's overlay tiles; this service serves them, and draws a
+  tile on request only where the job has not drawn it yet.
 
 The endpoints live in app.routers, one module per concern; the work they
 share -- resolving a route, scoring it, the nav-log arithmetic, the
 corridor read -- is in the modules next to this one, and every shape
 they send is a model in app.schemas.
 """
+
 import csv
 import logging
 import threading
@@ -33,24 +37,36 @@ import time
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-from fastapi.openapi.utils import get_openapi
 from fastapi.responses import JSONResponse
-from pydantic import TypeAdapter
 from wingtip import (
-    airspace, altitude, charts, faa_data, fixes, geocode, nearby, places, publications, registry, remarks, sua, water, weather,
+    airspace,
+    altitude,
+    charts,
+    faa_data,
+    fixes,
+    geocode,
+    nearby,
+    places,
+    publications,
+    registry,
+    remarks,
+    sua,
+    water,
+    weather,
 )
-from wingtip import airspace_at, congested, data_cycles
-from wingtip import cycle_pack
-from wingtip import vector_tiles
-from wingtip import traffic as traffic_data
+from wingtip import airspace_at, congested, cycle_pack, data_cycles
 from wingtip import airports as airport_table
 
-from . import chart_model, chart_refresh, errors, swim, tracing
+from . import chart_model, chart_refresh, errors, mcp, openapi_document, tracing
+from .chart_cycle import check as chart_cycle
+from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
-from .planning import StillComputing
-from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, oral, plan
-from .routers import assistant, clearance, figures, gonogo, narrative, packs, route_options, system, traffic, weather_map, words
-from .schemas import STREAM_MESSAGES, Index
+from wingtip.aircraft import UnknownAircraft
+from wingtip.planning import StillComputing
+from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
+from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words
+from .routers import engine as engine_router, forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
+from .schemas.common import Index
 from .settings import get_settings
 
 # Nothing else in the process configured logging, so every log.info() in
@@ -71,9 +87,10 @@ logging.basicConfig(level=get_settings().log_level)
 
 log = logging.getLogger(__name__)
 
-# Inside the datasets' own five-minute time-to-live, so a held copy is
-# replaced before a request could find it stale.
-WEATHER_REFRESH_S = 240
+# How often the loop below looks at what is due (the chart cycle, the
+# FAA's editions, the registry). The weather is the weather service's
+# (services/weather), which keeps it in the store the planner reads.
+LOOP_EVERY_S = 240
 # How often the FAA's files are checked for a new edition.
 EDITIONS_CHECK_EVERY_S = 6 * 3600
 #: Whether the FAA's aircraft registry is downloaded and read here
@@ -90,26 +107,11 @@ FAA_DATA_AUTO_REFRESH = get_settings().faa_data_auto_refresh
 #: planner holds, once a cycle: on, but on a test stack, which reads the
 #: files themselves and need not write 400 MB a run.
 CYCLE_PACK = get_settings().cycle_pack
-#: Whether the map's overlay tiles (wingtip.vector_tiles) are built here
-#: from the cycle pack, once a cycle: on wherever the pack is, as a
-#: minute or two of tippecanoe once a cycle; its own switch to leave the
-#: pack without them.
-OVERLAY_TILES = get_settings().overlay_tiles
 # Set once the reference data below is loaded: the health probe reports
 # it, so a test run against a fresh stack can wait for a planner that
 # answers at full speed rather than one still parsing airspace under
 # its first requests.
 WARM = threading.Event()
-def _ensure_overlay_tiles() -> None:
-    """The map's overlay tiles of the cycle pack built where they are not
-    (wingtip.vector_tiles.ensure); a failure leaves the archive there was,
-    and the next start or new edition tries again."""
-    if not OVERLAY_TILES:
-        return
-    try:
-        vector_tiles.ensure(altitude.DEFAULT_FAA_CACHE_DIR)
-    except Exception:  # noqa: BLE001 -- the map asks the in-view endpoints meanwhile
-        log.exception("overlay tiles not built")
 
 
 def _prepare_corridor_charts() -> None:
@@ -133,8 +135,7 @@ def _prepare_corridor_charts() -> None:
             # the daily refresh fetching the rest -- and a stack started
             # from nothing with that refresh off, CI's, had no IFR chart
             # for the tests that switch to one.
-            charts.prepare_for_bbox((min(lons), min(lats), max(lons), max(lats)),
-                                    kinds=("sec", "tac", "ifr_low", "ifr_area"))
+            charts.prepare_for_bbox((min(lons), min(lats), max(lons), max(lats)), kinds=("sec", "tac", "ifr_low", "ifr_area"))
 
 
 def check_faa_editions(last_check: float) -> float:
@@ -158,7 +159,7 @@ def check_faa_editions(last_check: float) -> float:
             if CYCLE_PACK:
                 cycle_pack.ensure(altitude.DEFAULT_FAA_CACHE_DIR)
                 cycle_pack.ensure_phone()
-                _ensure_overlay_tiles()
+                chart_refresh.ask_for_overlays()
     except Exception:  # noqa: BLE001 -- the FAA's index out of reach: the next check tries again
         log.warning("FAA editions not checked", exc_info=True)
     return checked
@@ -208,8 +209,12 @@ def _warm_reference_data() -> None:
         # profile, 2026-10-23).
         ("patterns", lambda: faa_data.pattern_agl_ft("KJFK", altitude.DEFAULT_FAA_CACHE_DIR)),
         # And its charted, open fields, a route's checkpoint candidates.
-        ("route airports", lambda: faa_data.load_route_airports(
-            faa_data.ensure_nasr_file("APT_BASE.csv", altitude.DEFAULT_FAA_CACHE_DIR), (0.0, 0.0, 0.0, 0.0))),
+        (
+            "route airports",
+            lambda: faa_data.load_route_airports(
+                faa_data.ensure_nasr_file("APT_BASE.csv", altitude.DEFAULT_FAA_CACHE_DIR), (0.0, 0.0, 0.0, 0.0)
+            ),
+        ),
         ("charts", _prepare_corridor_charts),
     ):
         try:
@@ -280,19 +285,21 @@ def _warm_reference_data() -> None:
             cycle_pack.ensure_phone()
         except Exception:  # noqa: BLE001 -- the files are read as they were; the next start tries again
             log.exception("cycle pack not built")
-        _ensure_overlay_tiles()
+        # Its overlay tiles are the charts job's to build (app.chart_refresh).
+        chart_refresh.ask_for_overlays()
 
     if chart_refresh.AUTO_REFRESH:
         chart_refresh.maybe_refresh()
+    chart_cycle.maybe_stage_next()
 
     # And the chart's lakes and towns, read once a cycle under the
     # sectionals on disk (app.landmarks), so a new route's corridor read
     # takes them from there in under half the time. In a thread of its
-    # own: a first build is many minutes, and the weather below is kept
-    # warm meanwhile. Imported here, not at the top, so a planner with it
+    # own: a first build is many minutes. Imported here, not at the top, so a planner with it
     # off (LANDMARKS_BUILD=0, infra/docker-compose.ci.yml) never loads the reader.
     def _build_landmarks() -> None:
         from . import landmarks
+
         try:
             built = landmarks.build_on_disk()
             if built:
@@ -303,16 +310,10 @@ def _warm_reference_data() -> None:
     if get_settings().landmarks_build:
         threading.Thread(target=_build_landmarks, name="landmark-cells", daemon=True).start()
 
-    # Then keep the weather warm: the METAR/TAF/SIGMET files and the
-    # winds product are fetched again every few minutes, inside their
-    # own time-to-live, so no pilot's request ever pays for a download
-    # -- on a slow aviationweather.gov day the first plan after an
-    # expiry was observed waiting close to a minute. While the planner is
-    # in use (weather.in_use: asked in the last quarter of an hour), and
-    # each only if it has changed: it downloaded all eight every four
-    # minutes round the clock, nobody planning. A refresh that fails is
-    # logged and the held copies go on being served. Once an hour, the
-    # chart cycle is checked (app.chart_refresh decides what that starts).
+    # Then, once an hour, the chart cycle is checked (app.chart_refresh
+    # decides what that starts). The weather is not this loop's: the
+    # weather service (services/weather) fetches it on its own schedule
+    # into the store the planner reads (wingtip.weather_store, #535).
     last_cycle_check = time.time()
     # The FAA's files a new edition at a time (check_faa_editions): checked
     # now, and four times a day.
@@ -342,25 +343,24 @@ def _warm_reference_data() -> None:
                 registry.refresh()
             except Exception:  # noqa: BLE001 -- the next check tries again; the held copy is served
                 log.warning("aircraft registry not refreshed", exc_info=True)
-        time.sleep(WEATHER_REFRESH_S)
-        try:
-            if weather.in_use():
-                weather.refresh()
-                log.info("weather refreshed")
-        except Exception:  # noqa: BLE001 -- the next tick tries again; requests serve what is held
-            log.warning("weather refresh failed", exc_info=True)
-        if chart_refresh.AUTO_REFRESH and time.time() - last_cycle_check >= chart_refresh.CHECK_EVERY_S:
+        time.sleep(LOOP_EVERY_S)
+        if time.time() - last_cycle_check >= chart_refresh.CHECK_EVERY_S:
             last_cycle_check = time.time()
-            chart_refresh.maybe_refresh()
+            if chart_refresh.AUTO_REFRESH:
+                chart_refresh.maybe_refresh()
+            # The next cycle, staged ahead of its date (CHARTS_CYCLE_AUTO).
+            chart_cycle.maybe_stage_next()
 
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     threading.Thread(target=_warm_reference_data, name="reference-data-warm-up", daemon=True).start()
-    # The FAA's terminal radar through SWIM, where it is set up (app.swim).
-    swim.start()
-    # The airplanes followed, their flights recorded card open or not.
-    traffic_data.start_following()
+    # The live feeds (the FAA's SWIM radar, NOTAMs and flight plans, and
+    # the followed airplanes' adsb.fi rounds) are read by ingest
+    # (services/ingest) into the stores the planner reads: none here. What
+    # is watched here is whether they, and the weather service's
+    # products, are still coming in (app.feeds): a check a minute.
+    threading.Thread(target=feeds_watch.watch_forever, name="feed-watch", daemon=True).start()
     yield
 
 
@@ -384,43 +384,65 @@ async def _weather_service_error(request: Request, exc: weather.WeatherServiceEr
 
 @app.exception_handler(StillComputing)
 async def _still_computing(request: Request, exc: StillComputing):
-    # A computation for this route has run past its limit (app.planning):
+    # A computation for this route has run past its limit (wingtip.planning):
     # a 504 that says what it is still waiting on, and that asking again
     # in a minute gets the answer it goes on to cache.
     errors.record_for(request, 504, str(exc))
     return JSONResponse(status_code=504, content={"detail": str(exc)})
 
 
+@app.exception_handler(UnknownAircraft)
+async def _unknown_aircraft(request: Request, exc: UnknownAircraft):
+    # A profile asked by a name no stock one goes by (wingtip.aircraft): the
+    # request's fault, a 422 with its words, from every endpoint alike.
+    return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
 @app.get("/")
 def index() -> Index:
-    """This service has no pages. The front end is built into the Spring
-    Boot gateway's jar and served from there, which is also the only
-    thing that calls this -- so this answers a health probe and says
-    where the UI went."""
+    """This service has no pages. The front end is built into the Spring Boot gateway's jar and served
+    from there, which is also the only thing that calls this -- so this answers a health probe and
+    says where the UI went."""
     return Index(service="planner", ui="served by the gateway at /app", warm=WARM.is_set())
 
 
-for module in (plan, chart, briefing, notes, devml, system, classb, devservices, airports, airspace_router, oral, traffic, basemaps,
-               route_options, gonogo, figures, clearance, packs, assistant, words, narrative, weather_map):
+for module in (
+    plan,
+    chart,
+    briefing,
+    notes,
+    devml,
+    system,
+    classb,
+    devservices,
+    airports,
+    airspace_router,
+    traffic,
+    basemaps,
+    route_options,
+    gonogo,
+    figures,
+    clearance,
+    packs,
+    words,
+    weather_map,
+    weather_loop,
+    forecast_run,
+    pilot,
+    live,
+    feeds,
+    terrain,
+    window,
+    emergency,
+    copilot,
+    engine_router,
+    logbook_draft,
+    notam_rank,
+    offline,
+    coach,
+    mcp,
+):
     app.include_router(module.router)
 
 
-def _openapi() -> dict:
-    """FastAPI's own document, plus the NDJSON stream message unions. No
-    route returns those, so FastAPI would never publish them, and apps/web/
-    needs them typed as much as any JSON response."""
-    if app.openapi_schema:
-        return app.openapi_schema
-    document = get_openapi(title=app.title, version=app.version, routes=app.routes)
-    components = document.setdefault("components", {}).setdefault("schemas", {})
-    for name, union in STREAM_MESSAGES.items():
-        piece = TypeAdapter(union).json_schema(
-            mode="serialization", ref_template="#/components/schemas/{model}",
-        )
-        components.update(piece.pop("$defs", {}))
-        components[name] = piece
-    app.openapi_schema = document
-    return document
-
-
-app.openapi = _openapi
+app.openapi = openapi_document.with_streams(app)

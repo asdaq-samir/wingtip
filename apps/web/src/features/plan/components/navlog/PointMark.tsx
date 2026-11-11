@@ -1,13 +1,12 @@
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { cn } from "cn";
 import { useInkLook } from "../../../../lib/brand";
-import { WAYPOINT_MAGENTA, checkpointColour } from "../../../../lib/map/chartColors";
-import { colourOf } from "../../../../lib/map/flightCategory";
-import { AIRPORT_MARK, airportMarkSvg } from "../../../../lib/map/airportMark";
+import { WAYPOINT_MAGENTA, checkpointColour } from "../../../../lib/map/marks/chartColors";
+import { colourOf } from "../../../../lib/map/marks/flightCategory";
+import { AIRPORT_MARK, airportMarkSvg } from "../../../../lib/map/marks/airportMark";
 import type { AirspaceClass } from "../../../../lib/preferences";
-import { inkOn } from "../../../../lib/scoreScale";
+import { inkOn, scoreColor } from "../../../../lib/scoreScale";
 import { TEXT } from "../../../../lib/text";
-import { scoreColor } from "../../format";
 import type { NavLogRow } from "./rows";
 
 /**
@@ -19,7 +18,12 @@ import type { NavLogRow } from "./rows";
  * through its magenta diamond, and an airport its mark (its airspace's
  * symbol, its weather in the middle), as Nearest's rows lead with it.
  */
-export function PointMark({ row, number, weather, airportSize = AIRPORT_MARK }: {
+export function PointMark({
+  row,
+  number,
+  weather,
+  airportSize = AIRPORT_MARK,
+}: {
   row: NavLogRow;
   /** An airport's mark smaller than the map's, inside FPL's glass button
    *  (ProceduresRoute), at the owner's ask ("Make the airport symbol a bit
@@ -37,8 +41,12 @@ export function PointMark({ row, number, weather, airportSize = AIRPORT_MARK }: 
     const fill = checkpointColour(scoreColor(row.cp.predicted_score), ink);
     return (
       <span
-        aria-hidden="true" data-mark="checkpoint"
-        className={cn("grid size-6 shrink-0 place-items-center rounded-full border-2 border-background font-bold tracking-tight shadow-[0_1px_3px_rgba(0,0,0,.35)] outline outline-1 outline-[rgba(10,20,28,.45)]", TEXT.caption)}
+        aria-hidden="true"
+        data-mark="checkpoint"
+        className={cn(
+          "grid size-6 shrink-0 place-items-center rounded-full border-2 border-background font-bold tracking-tight shadow-(--depth-mark) outline outline-1 outline-(color:--chart-shade)/45",
+          TEXT.caption,
+        )}
         style={{ backgroundColor: fill, color: inkOn(fill) }}
       >
         {number}
@@ -51,8 +59,9 @@ export function PointMark({ row, number, weather, airportSize = AIRPORT_MARK }: 
     // look's own in it.
     return (
       <span
-        aria-hidden="true" data-mark={row.kind}
-        className="grid size-6 shrink-0 place-items-center rounded-[5px] border-[1.5px] border-course bg-white text-[#1c1a17]"
+        aria-hidden="true"
+        data-mark={row.kind}
+        className="grid size-6 shrink-0 place-items-center rounded-sm border-[1.5px] border-course bg-white text-(color:--chart-fix-ink)"
       >
         <Arrow className="size-4" strokeWidth={2.5} />
       </span>
@@ -61,22 +70,37 @@ export function PointMark({ row, number, weather, airportSize = AIRPORT_MARK }: 
   if (row.kind === "stop" && row.airport.kind === "fix") {
     return (
       <span aria-hidden="true" data-mark="waypoint" className="grid size-6 shrink-0 place-items-center">
-        <svg viewBox="0 0 12 12" className="size-3.5" fill={WAYPOINT_MAGENTA}><path d="M6 0.5 11.5 6 6 11.5 0.5 6z" /></svg>
+        <svg viewBox="0 0 12 12" className="size-3.5" fill={WAYPOINT_MAGENTA}>
+          <path d="M6 0.5 11.5 6 6 11.5 0.5 6z" />
+        </svg>
       </span>
     );
   }
   const { airport } = row;
-  return <AirportMark airspaceClass={airport.airspace_class ?? null} colour={weather(airport.ident) ?? colourOf(null)} size={airportSize} />;
+  return (
+    <AirportMark airspaceClass={airport.airspace_class ?? null} colour={weather(airport.ident) ?? colourOf(null)} size={airportSize} />
+  );
 }
 
 /** An airport's mark -- its airspace's symbol, its weather in the middle --
  *  as the map draws it, for a nav log row's and for a field in FPL's route
  *  before there is a plan (its card's airspace and weather): a departure
  *  typed alone was a plain dot (the owner's screenshot, 2026-10-23). */
-export function AirportMark({ airspaceClass, colour, size = AIRPORT_MARK }: { airspaceClass: AirspaceClass | null; colour: string; size?: number }) {
+export function AirportMark({
+  airspaceClass,
+  colour,
+  size = AIRPORT_MARK,
+}: {
+  airspaceClass: AirspaceClass | null;
+  colour: string;
+  size?: number;
+}) {
   return (
     <span
-      aria-hidden="true" data-mark="airport" className="block shrink-0 [&>svg]:size-full" style={{ width: size, height: size }}
+      aria-hidden="true"
+      data-mark="airport"
+      className="block shrink-0 [&>svg]:size-full"
+      style={{ width: size, height: size }}
       dangerouslySetInnerHTML={{ __html: airportMarkSvg(airspaceClass, colour, null, "overflow-visible") }}
     />
   );

@@ -1,19 +1,22 @@
 import CoreLocation
 import Foundation
 
-/// The figures of flying a planned route from where the airplane is, as
-/// the web app's dry run works them out (navlog/dryRun.ts dryRunAt): how
-/// far along the course line the position is, what is left to the next
-/// landing, the time at the groundspeed now, and the fuel burnt so far
-/// taken off what the planner required. Arithmetic on the planner's
-/// figures, no rule of its own.
+/// The small figures of a flight the screens share: whether the airplane
+/// is at flying speed (the engine's), which side of north the compass
+/// points, and the miles and bearing between two points for a list's
+/// sorting. Own ship's place on its route for the instruments and the
+/// strips -- the next waypoint, off the line, the fuel burnt -- is the
+/// engine's `in_flight` (InFlight); `route_position` (Position below) is
+/// the same projection for a position the ribbon and the Live Activity
+/// are given.
 enum Flight {
     /// Whether a groundspeed is flying speed, by the engine's rule
     /// (motion/glide.rs underway, AIRBORNE_KT 40 kt, the debrief's
     /// airborne line), the web's and OwnTrail's same: the app keeps no
-    /// figure of its own for it.
-    static func underway(_ groundspeedKt: Double?) -> Bool {
-        (try? Engine.call("underway", json: ["speed_kt": groundspeedKt])) ?? false
+    /// figure of its own for it. Throws where the engine cannot answer,
+    /// rather than reading as "on the ground".
+    static func underway(_ groundspeedKt: Double?) throws -> Bool {
+        try Engine.underway(speedKt: groundspeedKt)
     }
 
     /// Which side of true north the compass points, from the planner's
@@ -25,80 +28,28 @@ enum Flight {
         deg < 0 ? ("W", "west") : ("E", "east")
     }
 
-    struct Left: Equatable, Sendable {
-        /// Miles along the course line to the position's nearest point.
-        let alongNm: Double
-        let totalNm: Double
-        var leftNm: Double { max(0, totalNm - alongNm) }
+    /// Where the airplane is along the route, the engine's `route_position`
+    /// (motion/along.rs), the very answer Android's ribbon asks: the miles
+    /// along the line, to go and off it, whether it is on the route (within
+    /// 3 nm, the debrief's tolerance, ACS PA.VI.A.S5), the leg it is on and
+    /// how far along it, and the fuel the plan's legs have burnt by there.
+    /// The engine's answer (Engine/Generated); `leg` is an index, given as
+    /// a number by the contract.
+    typealias Position = EngineContract.RoutePositionAnswer
+
+    /// Where `position` is along the course line, with the legs' miles and
+    /// fuel where given; nil with no line to be on, thrown where the
+    /// engine refuses.
+    static func position(_ position: CLLocationCoordinate2D, line: [CLLocationCoordinate2D], legs: [Leg] = []) throws -> Position? {
+        try Engine.routePosition(at: .init(lat: position.latitude, lon: position.longitude),
+                                 line: line.map { [$0.latitude, $0.longitude] },
+                                 legs: legs.map { .init(distanceNm: $0.distanceNm, fuelGal: $0.fuelGal) })
     }
 
-    /// Where on the course line the position is: the nearest point on the
-    /// line's segments, measured along the line from its start.
-    static func along(_ position: CLLocationCoordinate2D, line: [CLLocationCoordinate2D]) -> Left? {
-        guard line.count >= 2 else { return nil }
-        var best: (distance: Double, along: Double)?
-        var cursor = 0.0
-        let lengths = zip(line, line.dropFirst()).map { nm(from: $0, to: $1) }
-        for (i, (a, b)) in zip(line, line.dropFirst()).enumerated() {
-            // The nearest point on the segment, on a flat patch of the earth
-            // round it, which a leg of a few miles is.
-            let scale = cos(a.latitude * .pi / 180)
-            let ax = a.longitude * scale, ay = a.latitude, bx = b.longitude * scale, by = b.latitude
-            let px = position.longitude * scale, py = position.latitude
-            let dx = bx - ax, dy = by - ay
-            let t = dx == 0 && dy == 0 ? 0 : max(0, min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)))
-            let near = CLLocationCoordinate2D(latitude: a.latitude + (b.latitude - a.latitude) * t, longitude: a.longitude + (b.longitude - a.longitude) * t)
-            let off = nm(from: position, to: near)
-            if best == nil || off < best!.distance { best = (off, cursor + lengths[i] * t) }
-            cursor += lengths[i]
-        }
-        guard let best else { return nil }
-        return Left(alongNm: best.along, totalNm: cursor)
-    }
-
-    /// The fuel the legs burn up to `alongNm` miles along the route, each
-    /// leg's own burn spread over its miles.
-    static func burnt(legs: [Leg], alongNm: Double) -> Double {
-        var left = alongNm, gal = 0.0
-        for leg in legs {
-            guard left > 0 else { break }
-            let share = min(1, left / max(leg.distanceNm, 0.001))
-            gal += (leg.fuelGal ?? 0) * share
-            left -= leg.distanceNm
-        }
-        return gal
-    }
-
-    /// How far off the line the position is, nm, to the nearest point.
-    static func off(_ position: CLLocationCoordinate2D, line: [CLLocationCoordinate2D]) -> Double {
-        guard let left = along(position, line: line) else { return .infinity }
-        let at = point(alongNm: left.alongNm, line: line)
-        return nm(from: position, to: at)
-    }
-
-    /// The point `alongNm` miles along the line.
-    static func point(alongNm: Double, line: [CLLocationCoordinate2D]) -> CLLocationCoordinate2D {
-        var left = alongNm
-        for (a, b) in zip(line, line.dropFirst()) {
-            let length = nm(from: a, to: b)
-            if left <= length || length == 0 {
-                let t = length == 0 ? 0 : max(0, min(1, left / length))
-                return CLLocationCoordinate2D(latitude: a.latitude + (b.latitude - a.latitude) * t, longitude: a.longitude + (b.longitude - a.longitude) * t)
-            }
-            left -= length
-        }
-        return line.last ?? CLLocationCoordinate2D()
-    }
-
-    static func nm(from a: CLLocationCoordinate2D, to b: CLLocationCoordinate2D) -> Double {
-        CLLocation(latitude: a.latitude, longitude: a.longitude).distance(from: CLLocation(latitude: b.latitude, longitude: b.longitude)) / 1852
-    }
-
-    /// The true bearing from one point to the other, the great circle's
-    /// initial course.
-    static func bearing(from a: CLLocationCoordinate2D, to b: CLLocationCoordinate2D) -> Double {
-        let lat1 = a.latitude * .pi / 180, lat2 = b.latitude * .pi / 180, dLon = (b.longitude - a.longitude) * .pi / 180
-        let y = sin(dLon) * cos(lat2), x = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(dLon)
-        return (atan2(y, x) * 180 / .pi + 360).truncatingRemainder(dividingBy: 360)
+    /// The same along the route's own points, those with no place left
+    /// out: the leg an index into `points`.
+    static func position(_ position: CLLocationCoordinate2D, points: [CLLocationCoordinate2D?]) throws -> Position? {
+        try Engine.routePosition(at: .init(lat: position.latitude, lon: position.longitude),
+                                 points: points.map { p in p.map { [$0.latitude, $0.longitude] } })
     }
 }

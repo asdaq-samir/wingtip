@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What's Here: the airspace over a point held on the map (here/). -->
+<resources>
+    <string name="whats_here">What\'s Here</string>
+    <string name="airspace_here">Airspace Here</string>
+    <string name="here_ground">%1$s · ground %2$s</string>
+    <string name="mode_c_veil">In a Mode C veil</string>
+    <string name="mode_c_veil_line">%1$s from %2$s: a transponder with altitude reporting and ADS-B Out from the surface to 10,000 ft (91.215, 91.225).</string>
+    <string name="tfrs">TFRs</string>
+    <string name="tfrs_none">None here now or to come</string>
+    <string name="tfrs_unavailable">tfr.faa.gov did not answer. Check it before flight.</string>
+    <string name="tfr_in_force">In force now</string>
+    <string name="tfr_to_come">To come</string>
+    <string name="band_speed">%1$d kt at most (91.117)</string>
+</resources>

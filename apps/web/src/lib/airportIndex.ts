@@ -10,7 +10,7 @@ import type { AirportSearchRow } from "./useAirportSearch";
  *  the idents straight after the size. */
 type Entry = [ident: string, name: string, town: string, state: string, size: number, ...rest: (number | string)[]];
 
-export interface AirportIndex {
+interface AirportIndex {
   rows: Entry[];
   /** Each row's latitude and longitude; NaN where the index does not say. */
   lat: Float64Array;
@@ -36,10 +36,10 @@ export function indexOf(rows: Entry[]): AirportIndex {
   const placed = (row: Entry) => typeof row[5] === "number";
   return {
     rows,
-    lat: Float64Array.from(rows, row => (placed(row) ? row[5] as number : NaN)),
-    lon: Float64Array.from(rows, row => (placed(row) ? row[6] as number : NaN)),
+    lat: Float64Array.from(rows, (row) => (placed(row) ? (row[5] as number) : NaN)),
+    lon: Float64Array.from(rows, (row) => (placed(row) ? (row[6] as number) : NaN)),
     names: rows.map(([, name]) => name.toUpperCase()),
-    keys: rows.map(row => [row[0].toUpperCase(), ...(row.slice(placed(row) ? 7 : 5) as string[])]),
+    keys: rows.map((row) => [row[0].toUpperCase(), ...(row.slice(placed(row) ? 7 : 5) as string[])]),
     words: rows.map(([, name, town]) => ` ${name} ${town}`.toUpperCase()),
   };
 }
@@ -47,7 +47,8 @@ export function indexOf(rows: Entry[]): AirportIndex {
 /** How far a row is from the nearest of `near`, as an order: squared
  *  degrees, the longitude's shrunk by the latitude's cosine. */
 function nearness(index: AirportIndex, row: number, near: readonly { lat: number; lon: number }[]): number {
-  const lat = index.lat[row]!, lon = index.lon[row]!;
+  const lat = index.lat[row]!,
+    lon = index.lon[row]!;
   if (!near.length || Number.isNaN(lat)) return 0;
   let least = Infinity;
   for (const p of near) {
@@ -68,18 +69,28 @@ function nearness(index: AirportIndex, row: number, near: readonly { lat: number
  * by their idents (the owner's ask, 2026-10-22). On the phone, at once,
  * where each letter's question waited on the planner.
  */
-export function searchIndex(index: AirportIndex, typed: string, limit = 8, near: readonly { lat: number; lon: number }[] = []): AirportSearchRow[] {
+export function searchIndex(
+  index: AirportIndex,
+  typed: string,
+  limit = 8,
+  near: readonly { lat: number; lon: number }[] = [],
+): AirportSearchRow[] {
   const query = typed.trim().toUpperCase();
   if (!query) return [];
   const ranked: [number, number, number, number, string, number][] = [];
   const word = ` ${query}`;
   for (let row = 0; row < index.rows.length; row++) {
     const keys = index.keys[row]!;
-    const rank = keys.includes(query) ? 0
-      : keys.some(key => key.startsWith(query)) ? 1
-        : index.words[row]!.includes(word) ? 2 : -1;
+    const rank = keys.includes(query) ? 0 : keys.some((key) => key.startsWith(query)) ? 1 : index.words[row]!.includes(word) ? 2 : -1;
     if (rank >= 0) {
-      ranked.push([rank, index.rows[row]![4], index.names[row]!.startsWith(query) ? 0 : 1, nearness(index, row, near), index.rows[row]![0], row]);
+      ranked.push([
+        rank,
+        index.rows[row]![4],
+        index.names[row]!.startsWith(query) ? 0 : 1,
+        nearness(index, row, near),
+        index.rows[row]![0],
+        row,
+      ]);
     }
   }
   ranked.sort((a, b) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2] || a[3] - b[3] || (a[4] < b[4] ? -1 : a[4] > b[4] ? 1 : 0));
@@ -150,6 +161,15 @@ export function useAirportIndex(enabled = true, wanted = false): AirportIndex | 
 let warming: Promise<unknown> | null = null;
 let reading: Promise<AirportIndex> | null = null;
 
+/** The download and the read forgotten, as a page load starts without
+ *  them: for the tests, which each start as a fresh page, without
+ *  importing the whole module graph again (vi.resetModules), which a busy
+ *  run took past the hook's ten seconds to do (2026-11-10). */
+export function forgetAirportIndex() {
+  warming = null;
+  reading = null;
+}
+
 async function read(): Promise<AirportIndex> {
   await warming?.catch(() => {});
   reading = api.airportIndex().then(({ airports }) => indexOf(airports as Entry[]));
@@ -157,7 +177,11 @@ async function read(): Promise<AirportIndex> {
 }
 
 function warm(): Promise<boolean> {
-  if (reading) return reading.then(() => true, () => true);
+  if (reading)
+    return reading.then(
+      () => true,
+      () => true,
+    );
   warming = api.warmAirportIndex();
   return warming.then(() => true);
 }

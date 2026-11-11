@@ -1,0 +1,99 @@
+{
+  "x-call": "wingtip_weather::forecast::calls::call",
+  "description": "The lowest forecast ceiling and visibility among the TAF stations near a route over a window, each station's own worst kept (14 CFR 91.155's cloud clearance is held to them).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TafsAlongRouteInput",
+      "type": "object",
+      "properties": {
+        "tafs": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "from": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon], degrees."
+        },
+        "to": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2,
+          "description": "[lat, lon], degrees."
+        },
+        "corridor_nm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "start": {
+          "type": "number"
+        },
+        "end": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "tafs",
+        "from",
+        "to",
+        "start"
+      ]
+    },
+    "answer": {
+      "title": "TafsAlongRouteAnswer",
+      "type": "object",
+      "properties": {
+        "min_ceiling_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "min_visibility_sm": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "ceiling_unknown_at": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stations": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "required": [
+        "min_ceiling_ft",
+        "min_visibility_sm",
+        "ceiling_unknown_at",
+        "stations"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

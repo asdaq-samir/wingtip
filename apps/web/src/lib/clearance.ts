@@ -12,7 +12,7 @@
  * reader for the web app, the planner and the phones, held to
  * fixtures/clearances.json as this module's tests are. What stays here
  * is the tokenizer and the place words, which the pilot's own commands
- * (lib/pilotCommand) and the readback check (lib/readback) read with.
+ * (components/pilotCommand) and the readback check (lib/readback) read with.
  */
 import type { ClearanceFound, ClearanceFoundProcedure, ClearanceItem, ClearanceRoute, HeardToken } from "./engine/contract";
 import { callEngine, type EngineAnswer } from "./engine/engine";
@@ -34,7 +34,7 @@ export type Token = HeardToken;
  *  zero" the words and 210 (AIM 4-2-8, 4-2-9), as the shared engine's
  *  tokenizer reads them (clearance.rs tokens, the rule `tokens`): the
  *  clearance reader's own words, which the pilot's commands
- *  (lib/pilotCommand) are read with too. */
+ *  (components/pilotCommand) are read with too. */
 export function tokens(text: string): Token[] {
   return callEngine("tokens", { text });
 }
@@ -73,12 +73,12 @@ export interface Found {
  *  places, the SID and STAR said. */
 export function placesAsked(c: Clearance) {
   const named = (kind: "departure" | "arrival") => {
-    const p = c.route.find(item => item.kind === kind);
+    const p = c.route.find((item) => item.kind === kind);
     return p && p.kind === kind ? { name: p.name, number: p.number, transition: p.transition } : null;
   };
   return {
     limit: c.limit,
-    route: c.route.flatMap(item => (item.kind === "places" ? [item.said] : [])),
+    route: c.route.flatMap((item) => (item.kind === "places" ? [item.said] : [])),
     departure: named("departure"),
     arrival: named("arrival"),
   };
@@ -100,7 +100,7 @@ export function clearedRoute(text: string, found: Found, planned: ClearanceRoute
 }
 
 /** The route cleared held against the one filed. */
-export interface RouteDifference {
+interface RouteDifference {
   same: boolean;
   /** Each way it differs ("to KHIB instead of KDLH", "adds GEP"), none
    *  where it is the same. */
@@ -118,19 +118,21 @@ export interface RouteDifference {
  * read before the route goes in.
  */
 export function routeDifference(
-  planned: { stops: string[]; dest: string }, cleared: { stops: string[]; dest: string }, typed: TypedProcedure[] = [],
+  planned: { stops: string[]; dest: string },
+  cleared: { stops: string[]; dest: string },
+  typed: TypedProcedure[] = [],
 ): RouteDifference {
   const parts: string[] = [];
   if (cleared.dest !== planned.dest && cleared.dest) {
     parts.push(planned.dest ? `to ${cleared.dest} instead of ${planned.dest}` : `to ${cleared.dest}`);
   }
-  const added = cleared.stops.filter(s => !planned.stops.includes(s));
-  const dropped = planned.stops.filter(s => !cleared.stops.includes(s));
+  const added = cleared.stops.filter((s) => !planned.stops.includes(s));
+  const dropped = planned.stops.filter((s) => !cleared.stops.includes(s));
   if (added.length && dropped.length) parts.push(`${added.join(" ")} instead of ${dropped.join(" ")}`);
   else if (added.length) parts.push(`adds ${added.join(" ")}`);
   else if (dropped.length) parts.push(`leaves out ${dropped.join(" ")}`);
   else if (parts.length === 0 && cleared.stops.join(" ") !== planned.stops.join(" ")) parts.push("the same points in another order");
-  if (typed.length) parts.push(`with the ${typed.map(t => t.name).join(" and ")}`);
+  if (typed.length) parts.push(`with the ${typed.map((t) => t.name).join(" and ")}`);
   if (parts.length === 0) return { same: true, parts, words: "The same route as you filed." };
   return { same: false, parts, words: `${parts.join("; ")}.` };
 }

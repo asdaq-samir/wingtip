@@ -38,20 +38,27 @@ interface NarrativeInput {
  * nav log's.
  */
 export function useNarrative({ dep, dest, planKey, nav, legs, whole }: NarrativeInput) {
-  const request: NarrativeRequest | null = nav && nav.altitude_ft !== null && nav.flown !== null ? {
-    departure_ident: dep, destination_ident: dest, aircraft_name: nav.aircraft.name,
-    altitude_ft: nav.altitude_ft, altitude_selection: nav.altitude_selection, flown: nav.flown, legs,
-  } : null;
+  const request: NarrativeRequest | null =
+    nav && nav.altitude_ft !== null && nav.flown !== null
+      ? {
+          departure_ident: dep,
+          destination_ident: dest,
+          aircraft_name: nav.aircraft?.name ?? "no airplane picked",
+          altitude_ft: nav.altitude_ft,
+          altitude_selection: nav.altitude_selection,
+          flown: nav.flown,
+          legs,
+        }
+      : null;
   // The nav log's own key, not a few fields of it: this one left out the
   // departure time, the choice of plan, Load and the airplane's own
   // numbers, and held the leg count, which changes while legs stream --
   // so a narrative could be shown, or printed, beside a different log.
   const query = useQuery({
     queryKey: ["narrative", ...planKey],
-    queryFn: streamedQuery({
-      streamFn: ({ signal }: { signal: AbortSignal }) => ended(api.narrative(request!, signal), "narrative"),
-    }),
-    enabled: false, staleTime: Infinity,
+    queryFn: streamedQuery({ streamFn: ({ signal }: { signal: AbortSignal }) => ended(api.narrative(request!, signal), "narrative") }),
+    enabled: false,
+    staleTime: Infinity,
     // Said in its own tab, where it was asked for (BriefNarrative).
     meta: { silent: true },
   });
@@ -65,19 +72,21 @@ export function useNarrative({ dep, dest, planKey, nav, legs, whole }: Narrative
   const generateNarrative = useCallback(() => {
     // Only a whole log: the request carries its legs, and a narrative of
     // half of them would be kept for this key as if it were the whole.
-    if (!whole) { showError("The nav log isn't fully loaded yet", "The narrative is written from the whole nav log: ask again once every leg is in."); return; }
+    if (!whole) {
+      showError("The nav log isn't fully loaded yet", "The narrative is written from the whole nav log: ask again once every leg is in.");
+      return;
+    }
     void refetch().then(() => queryClient.invalidateQueries({ queryKey: subscriptionQuery.queryKey }));
   }, [whole, refetch, queryClient]);
   // The same object while its stream is, for the same reason.
-  const narrative = useMemo(
-    () => narrativeOf(query.data, query.error, query.isFetching), [query.data, query.error, query.isFetching]);
+  const narrative = useMemo(() => narrativeOf(query.data, query.error, query.isFetching), [query.data, query.error, query.isFetching]);
 
   return { narrative, generateNarrative };
 }
 
 function narrativeOf(data: NarrativeMessage[] | undefined, error: Error | null, loading: boolean): Narrative {
   const chunks = data ?? [];
-  const done = chunks.find(m => m.type === "done");
-  const text = done && done.type === "done" ? done.briefing : chunks.map(m => (m.type === "delta" ? m.text : "")).join("");
+  const done = chunks.find((m) => m.type === "done");
+  const text = done && done.type === "done" ? done.briefing : chunks.map((m) => (m.type === "delta" ? m.text : "")).join("");
   return { text: text || null, error: error ? describeError(error) : null, loading };
 }

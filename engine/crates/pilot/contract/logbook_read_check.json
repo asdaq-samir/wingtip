@@ -1,0 +1,376 @@
+{
+  "x-call": "wingtip_pilot::documents::call",
+  "x-assistant": true,
+  "description": "A paper logbook page as read off a photograph, each row a draft of the gateway's logbook entry with what to check (14 CFR 61.51(b): the date, total time, where from and to, the airplane; each kind of time no longer than the flight; dual and solo not overlapping, 61.51(d); approaches and holds with instrument time, 61.51(g)(1), 61.57(c); night landings with night time, 61.57(b); cross-country with a landing elsewhere, 61.1), and the page's own totals against its rows.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "LogbookReadCheckInput",
+      "type": "object",
+      "properties": {
+        "rows": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "title": "LogbookRowRead",
+            "type": "object",
+            "properties": {
+              "date": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "YYYY-MM-DD."
+              },
+              "aircraft_type": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "aircraft_id": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "from": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "to": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "via": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              },
+              "total": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "night": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "cross_country": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "dual": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Dual received."
+              },
+              "solo": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "instrument_actual": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "instrument_simulated": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "day_landings": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "night_landings": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Night landings to a full stop."
+              },
+              "approaches": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "holding": {
+                "type": [
+                  "boolean",
+                  "null"
+                ]
+              },
+              "remarks": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          },
+          "description": "The page's rows, in order."
+        },
+        "page_totals": {
+          "title": "LogbookPageTotals",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "total": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "night": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "cross_country": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "dual": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "solo": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "instrument_actual": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "instrument_simulated": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "day_landings": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "night_landings": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "approaches": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "description": "The page's \"total this page\" row, where it has one."
+        },
+        "today": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The caller's date, YYYY-MM-DD: a row dated after it is wrong."
+        }
+      }
+    },
+    "answer": {
+      "title": "LogbookReadCheck",
+      "type": "object",
+      "properties": {
+        "rows": {
+          "type": "array",
+          "items": {
+            "title": "LogbookRowCheck",
+            "type": "object",
+            "properties": {
+              "entry": {
+                "title": "LogbookEntryDraft",
+                "type": "object",
+                "properties": {
+                  "flownOn": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "description": "YYYY-MM-DD; null where no date was read."
+                  },
+                  "aircraft": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "aircraftType": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "route": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "totalHours": {
+                    "type": "number"
+                  },
+                  "nightHours": {
+                    "type": "number"
+                  },
+                  "crossCountryHours": {
+                    "type": "number"
+                  },
+                  "dayLandings": {
+                    "type": "number"
+                  },
+                  "nightLandings": {
+                    "type": "number"
+                  },
+                  "remarks": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "dualHours": {
+                    "type": "number"
+                  },
+                  "soloHours": {
+                    "type": "number"
+                  },
+                  "instrumentHours": {
+                    "type": "number"
+                  },
+                  "toweredLandings": {
+                    "type": "number"
+                  },
+                  "distanceNm": {
+                    "type": "number"
+                  },
+                  "longestLegNm": {
+                    "type": "number"
+                  },
+                  "approaches": {
+                    "type": "number"
+                  },
+                  "holding": {
+                    "type": "boolean"
+                  },
+                  "tracking": {
+                    "type": "boolean"
+                  },
+                  "airHours": {
+                    "type": "number"
+                  },
+                  "touchAndGoes": {
+                    "type": "number"
+                  },
+                  "fromTrack": {
+                    "type": "boolean"
+                  },
+                  "flightId": {
+                    "type": "null"
+                  }
+                },
+                "description": "The gateway's LogbookEntryRequest, as the page gives it.",
+                "required": [
+                  "flownOn",
+                  "aircraft",
+                  "aircraftType",
+                  "route",
+                  "totalHours",
+                  "nightHours",
+                  "crossCountryHours",
+                  "dayLandings",
+                  "nightLandings",
+                  "remarks",
+                  "dualHours",
+                  "soloHours",
+                  "instrumentHours",
+                  "toweredLandings",
+                  "distanceNm",
+                  "longestLegNm",
+                  "approaches",
+                  "holding",
+                  "tracking",
+                  "airHours",
+                  "touchAndGoes",
+                  "fromTrack",
+                  "flightId"
+                ]
+              },
+              "flags": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/DocumentFlag"
+                }
+              }
+            },
+            "required": [
+              "entry",
+              "flags"
+            ]
+          }
+        },
+        "flags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/DocumentFlag"
+          },
+          "description": "The page's: its totals against its rows."
+        }
+      },
+      "required": [
+        "rows",
+        "flags"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

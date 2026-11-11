@@ -5,6 +5,7 @@ corridors are built and how far their labels have come -- and the one
 pipeline action offered from here, a retrain: the training run
 (`python -m wingtip.pipeline run`) as a container the dev-services
 sidecar starts."""
+
 import json
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -16,9 +17,11 @@ from wingtip import chartlabels, charts, checkpoint_notes, data_cycles, model_re
 from wingtip.terrain import DEFAULT_FAA_CACHE_DIR
 
 from .. import chart_model, chart_refresh, errors
+from ..chart_cycle import check as chart_cycle_check
+from ..feeds import watch as feeds_watch
 from ..router_basics import PROCESSED_DIR, paths
 from ..settings import CHARTS_REFRESH_WINDOW, CHARTS_REFRESH_WORKERS, get_settings
-from ..schemas import (
+from ..schemas.system import (
     ChartModelSnapshot,
     ChartRefreshStarted,
     CorridorStatus,
@@ -35,7 +38,8 @@ from ..schemas import (
     WeatherDataset,
 )
 
-from . import devservices
+from .. import dev_services
+from ..gateway import DEVELOPER
 
 router = APIRouter()
 
@@ -63,12 +67,14 @@ def _gateway_status() -> tuple[ServiceStatus, ServiceStatus]:
     """The gateway's liveness, and its readiness -- which includes the
     database, so that is the database's row -- each as up only on a
     200: a 503 from the actuator is a running process saying no."""
+
     def ask(path: str) -> ServiceStatus:
         try:
             resp = requests.get(f"{GATEWAY_URL}/actuator/health/{path}", timeout=PROBE_TIMEOUT_S)
             return ServiceStatus(up=resp.ok, detail=f"HTTP {resp.status_code}")
         except requests.RequestException as err:
             return ServiceStatus(up=False, detail=str(err).split("\n")[0][:160])
+
     return ask("liveness"), ask("readiness")
 
 
@@ -88,9 +94,12 @@ def _current_model() -> ModelSnapshot | None:
     if metrics is None:
         return None
     return ModelSnapshot(
-        model_type=metrics.get("model_type"), trained_at=metrics.get("trained_at"),
-        cv_mae=metrics.get("cv_mae"), held_out_mae=metrics.get("held_out_mae"),
-        n_labeled=metrics.get("n_labeled"), n_features=len(metrics.get("feature_cols", [])),
+        model_type=metrics.get("model_type"),
+        trained_at=metrics.get("trained_at"),
+        cv_mae=metrics.get("cv_mae"),
+        held_out_mae=metrics.get("held_out_mae"),
+        n_labeled=metrics.get("n_labeled"),
+        n_features=len(metrics.get("feature_cols", [])),
     )
 
 
@@ -108,17 +117,21 @@ def _versions() -> list[ModelVersion]:
         metrics = _read_metrics(directory)
         if metrics is None:
             continue
-        out.append(ModelVersion(
-            name=directory.name, model_type=metrics.get("model_type"),
-            trained_at=metrics.get("trained_at"), cv_mae=metrics.get("cv_mae"),
-        ))
+        out.append(
+            ModelVersion(
+                name=directory.name,
+                model_type=metrics.get("model_type"),
+                trained_at=metrics.get("trained_at"),
+                cv_mae=metrics.get("cv_mae"),
+            )
+        )
     return out
 
 
 def _corridors() -> list[CorridorStatus]:
     out = []
     for features in sorted(PROCESSED_DIR.glob("features_*.parquet")):
-        slug = features.stem[len("features_"):]
+        slug = features.stem[len("features_") :]
         dep, _, dest = slug.partition("_")
         if not dep or not dest:
             continue
@@ -129,11 +142,16 @@ def _corridors() -> list[CorridorStatus]:
             with candidates.open() as f:
                 n_candidates = max(sum(1 for _ in f) - 1, 0)
         route = chartlabels.route_key(dep, dest)
-        out.append(CorridorStatus(
-            departure_ident=dep, destination_ident=dest, candidates=n_candidates,
-            features_built_at=_mtime(features), labels=chartlabels.summarise(route),
-            notes=checkpoint_notes.places(route),
-        ))
+        out.append(
+            CorridorStatus(
+                departure_ident=dep,
+                destination_ident=dest,
+                candidates=n_candidates,
+                features_built_at=_mtime(features),
+                labels=chartlabels.summarise(route),
+                notes=checkpoint_notes.places(route),
+            )
+        )
     return out
 
 
@@ -156,6 +174,7 @@ def _weather_datasets() -> list[WeatherDataset]:
 # compose container, not a one-off `compose run`: the sidecar sees only the
 # former, and the console reads "is a run going" from it.
 BY_HAND = "docker compose up retrain"
+CHARTS_BY_HAND = "docker compose run --rm charts"
 RUN_GOING = "A training run is going already; follow it in Performance."
 
 
@@ -166,8 +185,12 @@ def _last_run() -> PipelineRun | None:
     if run is None:
         return None
     return PipelineRun(
-        run_id=run.get("run_id"), state=run.get("state"), stage=run.get("stage"),
-        started_at=run.get("started_at"), finished_at=run.get("finished_at"), error=run.get("error"),
+        run_id=run.get("run_id"),
+        state=run.get("state"),
+        stage=run.get("stage"),
+        started_at=run.get("started_at"),
+        finished_at=run.get("finished_at"),
+        error=run.get("error"),
         stages=[PipelineStage(**s) for s in run.get("stages", []) if isinstance(s, dict) and "name" in s and "state" in s],
     )
 
@@ -195,7 +218,7 @@ def _pipeline_status() -> PipelineStatus:
     is going: the file still shows the last run until the new one has
     written its first line, and says "running" for ever after a run
     whose container was stopped part-way."""
-    container = devservices.service_state(devservices.RETRAIN_SERVICE)
+    container = dev_services.service_state(dev_services.RETRAIN_SERVICE)
     last = _last_run()
     if container == "running":
         if last is None or last.state != "running":
@@ -211,7 +234,7 @@ def _pipeline_status() -> PipelineStatus:
     return PipelineStatus(startable=detail is None, last_run=last, detail=detail)
 
 
-@router.get("/api/status")
+@router.get("/api/status", openapi_extra=DEVELOPER)
 def status() -> Status:
     """One snapshot of the whole stack, for Settings' Dev tab. The
     network probes run side by side so a service that is down costs one
@@ -225,38 +248,47 @@ def status() -> Status:
         data_cycles.warn_if_out_of_date(cycles)
         return Status(
             checked_at=datetime.now(tz=timezone.utc).isoformat(),
-            services={
-                "gateway": gateway.result()[0],
-                "db": gateway.result()[1],
-            },
+            services={"gateway": gateway.result()[0], "db": gateway.result()[1]},
             faa_files=_faa_files(),
             weather=_weather_datasets(),
-            charts={**charts.status(), "refresh_window": CHARTS_REFRESH_WINDOW, "refresh_workers": CHARTS_REFRESH_WORKERS},
-            model={"current": _current_model(), "versions": _versions(),
-                   "chart": _chart_model()},
+            charts={
+                **charts.status(),
+                "refresh_window": CHARTS_REFRESH_WINDOW,
+                "refresh_workers": CHARTS_REFRESH_WORKERS,
+                "next": chart_cycle_check.status(),
+            },
+            model={"current": _current_model(), "versions": _versions(), "chart": _chart_model()},
             pipeline=pipeline.result().model_copy(update={"training": _training()}),
             corridors=_corridors(),
             recent_errors=errors.recent(),
             data_cycles=cycles,
+            feeds=feeds_watch.snapshot_or_none(),
         )
 
 
-@router.post("/api/charts/refresh")
+@router.post("/api/charts/refresh", openapi_extra=DEVELOPER)
 def refresh_charts() -> ChartRefreshStarted:
-    """Fetch and render the FAA's current chart cycle now, in a
-    subprocess of the planner's own -- the same job it runs daily by
-    itself. `started` is False when one is already running."""
-    return ChartRefreshStarted(started=chart_refresh.refresh_now(), current_cycle=charts.current_cycle())
+    """Fetch and render the FAA's current chart cycle now, and the
+    overlay tiles where due: the charts job's container (services/jobs/
+    charts), started through the dev-services sidecar -- the same job the
+    hourly check starts. `started` is False when it is already running;
+    without the sidecar the answer says how to run it by hand."""
+    started = chart_refresh.refresh_now()
+    if started is None:
+        raise HTTPException(
+            501, f"The charts job starts through the dev-services sidecar, which this planner has none of. By hand: {CHARTS_BY_HAND}"
+        )
+    return ChartRefreshStarted(started=started, current_cycle=charts.current_cycle())
 
 
-@router.post("/api/retrain")
+@router.post("/api/retrain", openapi_extra=DEVELOPER)
 def retrain() -> RetrainStarted:
     """Starts one training run (`python -m wingtip.pipeline run`): the
     chart model (retrain, evaluate, promote) and the landmark model where
     it has the ratings (collect, engineer features, retrain, evaluate,
     promote), each promoted only if it beats the one serving. The run is
     compose's `retrain` container, started through the dev-services
-    sidecar, the one door onto Docker (routers/devservices.py). This
+    sidecar, the one door onto Docker (app/dev_services.py). This
     service has no scikit-learn of its own on purpose (see
     requirements.txt), so it cannot train in-process; without the
     sidecar the answer says how to run it by hand.
@@ -270,13 +302,13 @@ def retrain() -> RetrainStarted:
     if training is not None and not training.ready:
         raise HTTPException(409, training.message)
     # Before the table is written: a run going now is training on it.
-    if devservices.service_state(devservices.RETRAIN_SERVICE) == "running":
+    if dev_services.service_state(dev_services.RETRAIN_SERVICE) == "running":
         raise HTTPException(409, RUN_GOING)
     try:
         chart_model.write_training_table()
     except (OSError, ValueError, RuntimeError) as err:
         raise HTTPException(500, f"The chart model's training table could not be written: {err}") from err
-    response = devservices._sidecar("POST", f"/services/{devservices.RETRAIN_SERVICE}/start")
+    response = dev_services.ask("POST", f"/services/{dev_services.RETRAIN_SERVICE}/start")
     if response is None:
         raise HTTPException(501, f"Retraining starts through the dev-services sidecar, which this planner has none of. By hand: {BY_HAND}")
     if response.status_code != 200:

@@ -2,16 +2,36 @@
 //! starting "#" a section, every other line an item, its challenge and its
 //! response split by a dash or a run of dots, as a printed checklist sets
 //! them ("Fuel selector -- Both", "Mixture ..... Rich"). What the editor
-//! shows and what it saves (the gateway's ChecklistDto). An item before
-//! any section is in "Checklist". The gateway's limits are the text's: 40
-//! characters a section's title, 80 a challenge or a response, counted in
-//! UTF-16 code units as Java counts them. The app writes none of its own:
+//! shows and what each app keeps on the device (#220). An item before
+//! any section is in "Checklist". Its limits, which the gateway's stored
+//! copy had: 40 characters a section's title, 80 a challenge or a
+//! response, counted in UTF-16 code units as Java counted them. The app writes none of its own:
 //! the flight manual's is the airplane's.
 //!
 //! The web app's lib/checklist, moved here whole.
 
 use super::js;
 use crate::json;
+
+/// The headings a list can start from, with nothing under them: the order
+/// of a pilot's operating handbook's Normal Procedures (GAMA Specification
+/// No. 1, Section 4), each phase a checklist is run at, as the FAA's
+/// Airplane Flying Handbook (FAA-H-8083-3C, chapter 2) has a pilot fly by
+/// checklist from preflight to securing. The items are the pilot's, from
+/// their own airplane's handbook. The web's lib/checklists, the iPhone's
+/// Checklists.swift and Android's Checklists.kt each kept a copy (#482).
+pub const NORMAL_PHASES: [&str; 13] = [
+    "Preflight inspection", "Before starting engine", "Starting engine", "Before takeoff", "Takeoff", "Climb", "Cruise", "Descent",
+    "Before landing", "Landing", "After landing", "Shutdown", "Securing the airplane",
+];
+
+/// The emergencies a handbook's Emergency Procedures cover (GAMA
+/// Specification No. 1, Section 3), in its order.
+pub const EMERGENCY_PHASES: [&str; 12] = [
+    "Engine failure on the takeoff roll", "Engine failure right after takeoff", "Engine failure in flight",
+    "Emergency landing without engine power", "Precautionary landing with engine power", "Ditching", "Engine fire during start",
+    "Engine fire in flight", "Electrical fire in flight", "Cabin fire", "Electrical power failure", "Inadvertent icing",
+];
 
 pub struct Item {
     pub challenge: String,
@@ -115,7 +135,7 @@ pub fn read(text: &str) -> Vec<Section> {
     sections
 }
 
-/// The checklist as ChecklistDto's JSON, `{"sections": [{"title", "items":
+/// The checklist as JSON, `{"sections": [{"title", "items":
 /// [{"challenge", "response"}]}]}`, a response null where there is none.
 pub fn to_json(sections: &[Section]) -> String {
     let mut out = String::from("{\"sections\":[");
@@ -157,4 +177,46 @@ pub fn write(sections: &[Section]) -> String {
         })
         .collect::<Vec<_>>()
         .join("\n\n")
+}
+/// Words that say nothing of which emergency a heading is.
+const FILLER: [&str; 9] = ["in", "the", "on", "a", "an", "of", "with", "without", "after"];
+
+/// The words of a heading as compared: lowercase, the filler left out,
+/// each cut to its first four letters so "failure" meets "fail" and
+/// "fires" "fire".
+fn keys(title: &str) -> Vec<String> {
+    title
+        .to_lowercase()
+        .split(|c: char| !c.is_alphanumeric())
+        .filter(|w| !w.is_empty() && !FILLER.contains(w))
+        .map(|w| w.chars().take(4).collect::<String>())
+        .collect()
+}
+
+/// Which of a checklist's section `titles` is the one for `want` (one of
+/// EMERGENCY_PHASES, say, "Engine failure in flight"), as the pilot may
+/// have written it ("ENGINE FAILURE DURING FLIGHT", "Engine fail -
+/// in flight"): one with the phase's first two words, what the emergency
+/// is ("engine failure", not "engine fire"), and of those the one sharing
+/// the most of the rest, the first of equals; None where none has them. A
+/// heading is the pilot's own, from their airplane's handbook, so it is
+/// matched, not required.
+pub fn section_for(titles: &[String], want: &str) -> Option<usize> {
+    let wanted = keys(want);
+    let head = &wanted[..wanted.len().min(2)];
+    if head.is_empty() {
+        return None;
+    }
+    let mut best: Option<(usize, usize)> = None;
+    for (index, title) in titles.iter().enumerate() {
+        let have = keys(title);
+        if !head.iter().all(|w| have.contains(w)) {
+            continue;
+        }
+        let shared = wanted.iter().filter(|w| have.contains(w)).count();
+        if best.is_none_or(|(_, b)| shared > b) {
+            best = Some((index, shared));
+        }
+    }
+    best.map(|(index, _)| index)
 }

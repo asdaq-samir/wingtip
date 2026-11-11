@@ -15,7 +15,7 @@ export function RowBadge({ colour, children }: { colour: string; children: React
   return (
     <span
       aria-hidden="true"
-      className="grid size-7 shrink-0 place-items-center rounded-[7px] text-white [&_svg]:size-[18px]"
+      className="grid size-7 shrink-0 place-items-center rounded-(--radius-badge) text-white [&_svg]:size-[18px]"
       style={{ backgroundColor: colour }}
     >
       {children}
@@ -26,5 +26,9 @@ export function RowBadge({ colour, children }: { colour: string; children: React
 /** A chart's badge: the FAA's charts and the Chart Supplement, on every
  *  card that lists them. */
 export function ChartBadge() {
-  return <RowBadge colour={BADGE.chart}><FileText /></RowBadge>;
+  return (
+    <RowBadge colour={BADGE.chart}>
+      <FileText />
+    </RowBadge>
+  );
 }

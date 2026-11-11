@@ -1,0 +1,82 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "How an airport diagram's page matches the ground, from its latitude and longitude labels placed on the page (points from its top left): the coordinate along lat_on_x's axis is a * lat + b, along the other c * lon + d; north_deg which way north points, clockwise from the page's top. Null with fewer than two of either, their scales more than 15% apart, or a mirrored page (wingtip.publications _graticule's check).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "DiagramGraticuleInput",
+      "type": "object",
+      "properties": {
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string"
+              },
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "text",
+              "x",
+              "y"
+            ]
+          }
+        }
+      },
+      "required": [
+        "labels"
+      ]
+    },
+    "answer": {
+      "title": "DiagramGraticuleAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "lat_on_x": {
+              "type": "boolean"
+            },
+            "a": {
+              "type": "number"
+            },
+            "b": {
+              "type": "number"
+            },
+            "c": {
+              "type": "number"
+            },
+            "d": {
+              "type": "number"
+            },
+            "north_deg": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat_on_x",
+            "a",
+            "b",
+            "c",
+            "d",
+            "north_deg"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

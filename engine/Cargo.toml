@@ -3,7 +3,8 @@
 # on the planner and the phones, and its Python face (bindings/py,
 # wingtip_native), which the planner imports, and its C face for the
 # phones (bindings/ffi, wingtip-ffi), and its WebAssembly for the web app
-# (bindings/wasm, wingtip-wasm).
+# (bindings/wasm, wingtip-wasm); and the tool that writes the engine's
+# contract from each rule's own contract file (contract/gen).
 [workspace]
 members = [
     "facade",
@@ -17,11 +18,23 @@ members = [
     "crates/brief",
     "crates/route",
     "crates/pilot",
+    "crates/altitude",
+    "crates/inflight",
+    "crates/receiver",
     "bindings/py",
     "bindings/ffi",
     "bindings/wasm",
+    "contract/gen",
 ]
-resolver = "2"
+resolver = "3"
+
+# No warning is let stand (the owner, 2026-11-09): every crate's rustc
+# warnings are errors, here for every build and not only CI's. Clippy's
+# are made errors where it runs (ci.yml's engine job,
+# `cargo clippy --workspace --all-targets -- -D warnings`). Each member
+# takes these with `[lints] workspace = true`.
+[workspace.lints.rust]
+warnings = "deny"
 
 [profile.release]
 lto = true

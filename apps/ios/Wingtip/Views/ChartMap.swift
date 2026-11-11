@@ -1,4 +1,4 @@
-import MapKit
+@preconcurrency import MapKit
 import SwiftUI
 
 /// The map: the FAA chart as its ground over Apple's map, own ship on it,
@@ -10,43 +10,11 @@ import SwiftUI
 /// A procedure's path, told from the course line by its class.
 final class ProcedurePolyline: MKPolyline {}
 
-/// The dry run's airplane: a blue arrow in a white casing, as the web app
-/// draws own ship, turned to its track.
-final class PlaneAnnotation: MKPointAnnotation {
-    var heading: Double = 0
-}
-
-final class PlaneMarkView: MKAnnotationView {
-    static let reuse = "plane"
-    private let arrow = UIImageView(image: UIImage(systemName: "location.north.fill"))
-
-    override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
-        super.init(annotation: annotation, reuseIdentifier: reuseIdentifier)
-        frame = CGRect(x: 0, y: 0, width: 28, height: 28)
-        arrow.frame = bounds.insetBy(dx: 3, dy: 3)
-        arrow.contentMode = .scaleAspectFit
-        arrow.tintColor = UIColor.systemBlue
-        backgroundColor = NightPalette.markFill
-        layer.cornerRadius = 14
-        layer.borderWidth = 1
-        layer.borderColor = UIColor(white: 0.1, alpha: 0.4).cgColor
-        addSubview(arrow)
-        displayPriority = .required
-        isEnabled = false
-        // Not a button, but VoiceOver finds it on the map and says which
-        // way it points.
-        isAccessibilityElement = true
-        accessibilityTraits = .image
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) { nil }
-
-    func turn(to degrees: Double) {
-        arrow.transform = CGAffineTransform(rotationAngle: degrees * .pi / 180)
-        accessibilityLabel = "The airplane, heading \(SpokenFigures.degrees(degrees))"
-    }
-}
+/// The thin edge round the course's magenta, so it keeps its contrast on
+/// the chart (the web's route-edge). The green casing is drawn only on the
+/// leg whose sheet is open (RouteLegLayer), as ForeFlight shows it on a
+/// selected course (the owner, 2026-11-09).
+final class CourseEdgePolyline: MKPolyline {}
 
 struct ChartMap: UIViewRepresentable {
     let template: TileTemplate?
@@ -80,6 +48,9 @@ struct ChartMap: UIViewRepresentable {
     /// A held finger's pin, the waypoints, the Class B fields and the
     /// plates (MapExtras.swift).
     var extras = MapExtrasInput()
+    /// The route's legs, the one open and the tap that opens one
+    /// (RouteLegLayer).
+    var routeLegs = RouteLegInput()
     /// Dark appearance and Setup's Chart at night, for the chart's dimming
     /// and the course's night magenta (NightPalette).
     @Environment(\.colorScheme) var colorScheme
@@ -87,6 +58,10 @@ struct ChartMap: UIViewRepresentable {
     /// Setup's Military fields and Private fields.
     @AppStorage(MapExtrasInput.Keys.military) var militaryFields = false
     @AppStorage(MapExtrasInput.Keys.privateFields) var privateFields = false
+    /// Settings' Airport Weather, and the plan's part of the marks: the ↓
+    /// fields and the airplane's crosswind (FieldWeatherState).
+    var airportWeather = AirportWeatherSetting()
+    var fieldWeather = FieldWeatherInput()
     /// The legs a hazard tapped in the Brief is on (HazardLegsViews.swift).
     var hazardLegs: HazardLegs?
     /// The height the sheet covers at the foot of the map now: the map
@@ -131,10 +106,10 @@ struct ChartMap: UIViewRepresentable {
             try? await Task.sleep(for: Self.revealCap)
             coordinator.reveal()
         }
-        context.coordinator.locations.requestWhenInUseAuthorization()
         let flight = FlightMapLayer()
         flight.attach(map)
         context.coordinator.flight = flight
+        context.coordinator.legLayer.attach(map)
         return map
     }
 
@@ -146,6 +121,7 @@ struct ChartMap: UIViewRepresentable {
         context.coordinator.open(map, bottomInset: bottomInset)
         context.coordinator.onRegion = onRegion
         context.coordinator.useFields(military: militaryFields, privateFields: privateFields, on: map)
+        context.coordinator.weather.update(map, choice: airportWeather.choice, input: fieldWeather, zoom: Coordinator.zoom(of: map))
         context.coordinator.show(traffic, ownFt: ownFt, on: map)
         context.coordinator.flight?.update(map, flight)
         context.coordinator.extras.update(map, extras, tiles: context.coordinator.overlay)
@@ -166,7 +142,10 @@ struct ChartMap: UIViewRepresentable {
         // night: a change of either draws the chart again from the store.
         let lift = shade == 0
         if let template, context.coordinator.overlay?.template != template || context.coordinator.overlay?.lift != lift {
-            if let current = context.coordinator.overlay { map.removeOverlay(current) }
+            if let current = context.coordinator.overlay {
+                context.coordinator.tilesStopped()
+                map.removeOverlay(current)
+            }
             let overlay = ChartTileOverlay(template: template, minZoom: minZoom, maxZoom: maxZoom, lift: lift)
             let coordinator = context.coordinator
             overlay.onTile = { coordinator.chartTile() }
@@ -227,8 +206,13 @@ struct ChartMap: UIViewRepresentable {
         if context.coordinator.courseShown != course {
             context.coordinator.courseShown = course
             if let line = context.coordinator.courseLine { map.removeOverlay(line) }
+            if let edge = context.coordinator.courseEdge { map.removeOverlay(edge) }
+            context.coordinator.courseEdge = nil
             context.coordinator.courseLine = nil
             if let course, course.coordinates.count >= 2 {
+                let edge = CourseEdgePolyline(coordinates: course.coordinates, count: course.coordinates.count)
+                map.addOverlay(edge, level: .aboveLabels)
+                context.coordinator.courseEdge = edge
                 let line = MKPolyline(coordinates: course.coordinates, count: course.coordinates.count)
                 map.addOverlay(line, level: .aboveLabels)
                 context.coordinator.courseLine = line
@@ -237,11 +221,12 @@ struct ChartMap: UIViewRepresentable {
                 map.setVisibleMapRect(line.boundingMapRect, edgePadding: Self.routePadding(in: map), animated: MapMotion.animated)
             }
         }
+        context.coordinator.legLayer.update(map, routeLegs, night: shade > 0, below: context.coordinator.courseEdge)
     }
 
     /// Whether two paths are the same points, to the metre: a procedure's
     /// line is left on the map while its path has not changed.
-    static func samePath(_ a: [CLLocationCoordinate2D], _ b: [CLLocationCoordinate2D]) -> Bool {
+    nonisolated static func samePath(_ a: [CLLocationCoordinate2D], _ b: [CLLocationCoordinate2D]) -> Bool {
         a.count == b.count && zip(a, b).allSatisfy { abs($0.latitude - $1.latitude) < 1e-5 && abs($0.longitude - $1.longitude) < 1e-5 }
     }
 
@@ -276,6 +261,7 @@ struct ChartMap: UIViewRepresentable {
     final class Coordinator: NSObject, MKMapViewDelegate {
         var overlay: ChartTileOverlay?
         var courseLine: MKPolyline?
+        var courseEdge: CourseEdgePolyline?
         var courseShown: Course?
         var hazardLines: [HazardPolyline] = []
         var hazardShown: HazardLegs?
@@ -292,6 +278,8 @@ struct ChartMap: UIViewRepresentable {
         /// The route's fields (its ends and stops): drawn whatever the
         /// zoom, never dropped for another (AirportAnnotation.priority).
         var routeIdents: Set<String> = []
+        /// Whether the checkpoints' names show at the zoom now.
+        var checkpointNames = false
         var onAirport: ((String) -> Void)?
 
         /// The checkpoints' marks brought to `checkpoints`: a new one
@@ -319,35 +307,49 @@ struct ChartMap: UIViewRepresentable {
         var setRouteAway: ((Bool) -> Void)?
         var fitted = 0
         var flight: FlightMapLayer?
-        let locations = CLLocationManager()
+        let legLayer = RouteLegLayer()
         private var followed = false
         private var fetching: Task<Void, Never>?
         private var shown: [String: AirportAnnotation] = [:]
         let extras = MapExtrasState()
+        /// The fields' weather on their marks (FieldWeatherState).
+        let weather = FieldWeatherState()
         /// The chart's renderer and the course's, kept to restyle when
         /// the appearance or the setting changes; MapKit asks for a
         /// renderer once per overlay.
-        private var tiles: NightTileRenderer?
+        private var tiles: ChartTileRenderer?
         private var courseRenderer: MKPolylineRenderer?
+        private var edgeRenderer: MKPolylineRenderer?
         private var shade: CGFloat = 0
+
+        /// The chart's renderer let go, its loads stopped, as its overlay
+        /// is taken off for another.
+        func tilesStopped() {
+            tiles?.stop()
+            tiles = nil
+        }
 
         func dim(_ shade: CGFloat) {
             guard shade != self.shade else { return }
             self.shade = shade
             tiles?.shade = shade
-            courseRenderer?.strokeColor = NightPalette.course(night: shade > 0)
+            courseRenderer?.strokeColor = NightPalette.course
+            edgeRenderer?.strokeColor = NightPalette.routeEdge(night: shade > 0)
+            edgeRenderer?.setNeedsDisplay()
             courseRenderer?.setNeedsDisplay()
         }
 
-        func mapView(_ mapView: MKMapView, annotationView view: MKAnnotationView, calloutAccessoryControlTapped control: UIControl) {
-            MainActor.assumeIsolated { extras.calloutTapped(view) }
-        }
+        /// The course's two strokes, points, as the web draws them where a
+        /// pilot reads a leg (glStyle's widths at zoom 10): the magenta core
+        /// and the thin edge round it.
+        static let courseWidth: CGFloat = 4.5, edgeWidth: CGFloat = 6.5
 
         func mapView(_ mapView: MKMapView, rendererFor overlay: any MKOverlay) -> MKOverlayRenderer {
             if let renderer = flight?.renderer(for: overlay) { return renderer }
+            if let renderer = MainActor.assumeIsolated({ legLayer.renderer(for: overlay) }) { return renderer }
             if let renderer = MainActor.assumeIsolated({ overlays.renderer(for: overlay) }) { return renderer }
             if let chart = overlay as? ChartTileOverlay {
-                let renderer = NightTileRenderer(tileOverlay: chart)
+                let renderer = ChartTileRenderer(chart: chart)
                 renderer.shade = shade
                 renderer.alpha = ChartFade.alpha(zoom: Self.zoom(of: mapView))
                 tiles = renderer
@@ -355,6 +357,15 @@ struct ChartMap: UIViewRepresentable {
             }
             if let tiles = overlay as? MKTileOverlay { return MKTileOverlayRenderer(tileOverlay: tiles) }
             if let plate = overlay as? PlateMapOverlay { return PlateRenderer(overlay: plate) }
+            if let edge = overlay as? CourseEdgePolyline {
+                let renderer = MKPolylineRenderer(polyline: edge)
+                renderer.strokeColor = NightPalette.routeEdge(night: shade > 0)
+                renderer.lineWidth = Self.edgeWidth
+                renderer.lineJoin = .round
+                renderer.lineCap = .round
+                edgeRenderer = renderer
+                return renderer
+            }
             if let hazard = overlay as? HazardPolyline {
                 // The legs a hazard tapped in the Brief is on, wide in
                 // amber under the course (HazardLegsViews.swift).
@@ -369,7 +380,7 @@ struct ChartMap: UIViewRepresentable {
                 // A procedure's path in the chart's procedure violet, as
                 // the web app draws a picked one.
                 let renderer = MKPolylineRenderer(polyline: procedure)
-                renderer.strokeColor = UIColor(red: 0.36, green: 0.36, blue: 0.84, alpha: 1)
+                renderer.strokeColor = WingtipColor.Chart.procedure
                 renderer.lineWidth = 3
                 renderer.lineJoin = .round
                 return renderer
@@ -378,9 +389,9 @@ struct ChartMap: UIViewRepresentable {
                 // The web app's magenta course line, the night's lighter
                 // one over a dimmed chart.
                 let renderer = MKPolylineRenderer(polyline: line)
-                renderer.strokeColor = NightPalette.course(night: shade > 0)
+                renderer.strokeColor = NightPalette.course
                 courseRenderer = renderer
-                renderer.lineWidth = 3
+                renderer.lineWidth = Self.courseWidth
                 renderer.lineJoin = .round
                 renderer.lineCap = .round
                 return renderer
@@ -404,7 +415,9 @@ struct ChartMap: UIViewRepresentable {
             if let extra = MainActor.assumeIsolated({ extras.view(for: annotation, on: mapView) }) { return extra }
             if let overlay = MainActor.assumeIsolated({ overlays.view(for: annotation, on: mapView) }) { return overlay }
             if annotation is CheckpointAnnotation {
-                return mapView.dequeueReusableAnnotationView(withIdentifier: CheckpointMarkView.reuse, for: annotation)
+                let view = mapView.dequeueReusableAnnotationView(withIdentifier: CheckpointMarkView.reuse, for: annotation)
+                (view as? CheckpointMarkView)?.showName(checkpointNames)
+                return view
             }
             guard annotation is AirportAnnotation else { return nil }
             let view = mapView.dequeueReusableAnnotationView(withIdentifier: AirportMarkView.reuse, for: annotation)
@@ -542,6 +555,18 @@ struct ChartMap: UIViewRepresentable {
             MainActor.assumeIsolated {
                 let zoom = Self.zoom(of: mapView)
                 tiles?.alpha = ChartFade.alpha(zoom: zoom)
+                // The chart's loads of tiles gone out of view stopped.
+                if mapView.visibleMapRect.width > 0 {
+                    tiles?.keep(visible: mapView.visibleMapRect, zoomScale: MKZoomScale(Double(mapView.bounds.width) / mapView.visibleMapRect.width))
+                }
+                // The checkpoints' names in with the zoom (CheckpointAnnotation).
+                let names = zoom >= CheckpointAnnotation.namesFromZoom
+                if names != checkpointNames {
+                    checkpointNames = names
+                    for case let mark as CheckpointAnnotation in mapView.annotations {
+                        (mapView.view(for: mark) as? CheckpointMarkView)?.showName(names)
+                    }
+                }
                 let scale = SectionalSymbol.scale(zoom: zoom)
                 if abs(scale - symbolScale) > 0.02 {
                     symbolScale = scale
@@ -550,6 +575,7 @@ struct ChartMap: UIViewRepresentable {
                     }
                 }
                 overlays.moved(mapView, chart: overlay, live: true)
+                weather.moved(mapView, zoom: zoom)
                 let view = ViewBox(mapView.region)
                 guard liveAirports.wants(view, zoom: zoom) else { return }
                 let wide = view.widened
@@ -587,11 +613,12 @@ struct ChartMap: UIViewRepresentable {
                 extras.regionChanged(mapView)
                 overlays.moved(mapView, chart: overlay, live: false)
                 overlays.runways(mapView, fields: shownPins, chart: overlay)
+                weather.rested(mapView)
             }
             fetching?.cancel()
             let region = mapView.region
-            let corner = CLLocation(latitude: region.center.latitude + region.span.latitudeDelta / 2, longitude: region.center.longitude + region.span.longitudeDelta / 2)
-            onRegion?(region.center, corner.distance(from: CLLocation(latitude: region.center.latitude, longitude: region.center.longitude)) / 1852)
+            let (c, span) = (region.center, region.span) // The miles to the corner the engine's (distance_nm), else the last kept.
+            if let nm = try? Engine.distanceNm(lat1: c.latitude, lon1: c.longitude, lat2: c.latitude + span.latitudeDelta / 2, lon2: c.longitude + span.longitudeDelta / 2) { onRegion?(c, nm) }
             fetching = Task { [weak self, weak mapView] in
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled, let self, let mapView else { return }
@@ -629,7 +656,10 @@ struct ChartMap: UIViewRepresentable {
             // asked for its one airplane, a screen of traffic a screen of
             // calls at every report (Session2's profile, 2026-11-03).
             let ordered = Array(fresh.values)
-            let drawn = Traffic.marks(ordered, ownFt: ownFt)
+            // Where the engine refuses, the airplanes are drawn with no
+            // tag; Traffic's own check of the same report shows why
+            // (marksProblem, beside the credit).
+            let drawn = (try? Traffic.marks(ordered, ownFt: ownFt)) ?? []
             for (i, plane) in ordered.enumerated() {
                 let its = i < drawn.count ? drawn[i] : nil
                 if let mark = trafficShown[plane.hex] {
@@ -666,7 +696,11 @@ struct ChartMap: UIViewRepresentable {
         @MainActor
         private func showFields(on map: MKMapView) {
             let kept = AirportPin.shown(pins, military: fieldUse.military, privateFields: fieldUse.privateFields)
-            show(kept.map { AirportAnnotation($0, onRoute: routeIdents.contains($0.ident)) }, on: map)
+            show(kept.map { pin in
+                let field = AirportAnnotation(pin, onRoute: routeIdents.contains(pin.ident))
+                field.weather = weather.mark(pin.ident)
+                return field
+            }, on: map)
         }
 
         /// The marks drawn again as the route changes, for which stand on

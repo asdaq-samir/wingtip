@@ -6,7 +6,7 @@
 - **[What it costs](#what-it-costs)**
 - **[Rehearse it locally](#rehearse-it-locally)**
 - **[The first deploy](#the-first-deploy)** — [Before anything (the owner)](#before-anything-the-owner) · [The stack](#the-stack) · [The images and the server](#the-images-and-the-server) · [Mail](#mail) · [The first chart cycle](#the-first-chart-cycle) · [The chart model](#the-chart-model)
-- **[Running it](#running-it)** — [Deploys](#deploys) · [On the server](#on-the-server) · [Chart cycles](#chart-cycles) · [Backups and restore](#backups-and-restore) · [A replaced server](#a-replaced-server) · [Teardown](#teardown)
+- **[Running it](#running-it)** — [Deploys](#deploys) · [On the server](#on-the-server) · [Chart cycles](#chart-cycles) · [Backups and restore](#backups-and-restore) · [A new server](#a-new-server) · [Teardown](#teardown)
 - **[Gotchas](#gotchas)**
 
 ## The design
@@ -14,18 +14,29 @@
 The app runs on one small server behind CloudFront. What is the same for
 every pilot is drawn ahead of time and served from the edge.
 
+**Status:** written and checked, not deployed. The template passes
+`cfn-lint`, every image builds, and the server's files are checked in CI
+(the `infra` job); what remains is the owner's AWS account and domain,
+then `aws cloudformation deploy` ([The first deploy](#the-first-deploy),
+issue #115).
+
+![The AWS design](architecture-aws.svg)
+
 The expensive parts of the old design, an ALB, RDS, a NAT gateway, VPC
 endpoints and Fargate services running all month, cost about $200–250
 a month for a planner nobody was using yet. This design costs a fifth of
 that (below), and the map is faster: tiles come from the nearest
-CloudFront edge, not from a planner drawing them on request.
+CloudFront edge, kept there from the planner reading them out of a
+pyramid drawn ahead of time, not drawing them on request.
 
 ### What runs where
 
 ```
 pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                    │
-                   ├─ /tiles/*        ──▶ S3 tiles bucket       cached a month (immutable, cycle in the path)
+                   ├─ /tiles/*        ──▶ S3 tiles bucket       serving.json and the archives, read by the planner
+                   ├─ /api/planner/chart-tile/*
+                   │                  ──▶ the server            a tile out of its archive, cached (cycle, revision in the address)
                    ├─ /app/assets/*   ──▶ the server            cached a year (fingerprinted)
                    ├─ the chart, the airport search, the stock aircraft
                    │                  ──▶ the server            cached by their own header: a minute, an hour
@@ -35,15 +46,23 @@ pilot ──HTTPS──▶ CloudFront  (app.example.com, ACM certificate)
                         EC2 t3a.medium on Spot, a group of one (Amazon Linux 2023,
                         infra/docker-compose.prod.yml), its fixed address and data disk
                         taken over by whichever server is running
-                          caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process) ─▶ Anthropic
-                                     │
+                          caddy ─▶ gateway ─▶ planner (the chart model and the engine in-process)
+                                     │    ▲
+                                     │    └── assistant (every Claude call, 256 MB; off, decision 0035) ─▶ Anthropic
+                                     ├──▶ assistant (the Claude paths)
                                      └──▶ db (Postgres 18, on the data disk)
+                          ingest (the FAA's SWIM feeds, the followed airplanes, 384 MB) ─▶ SQLite
+                          weather (METARs, TAFs, advisories, the GFS's winds, GLMP, TFRs, 384 MB)
+                                     ─▶ the weather store; both on the data disk, which the planner reads
                           nightly pg_dump ─▶ S3 server bucket (14 days)
 
-EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: python -m wingtip.charts refresh
+EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: the charts job (services/jobs/charts), refresh
    a no-op until the FAA's new cycle, then fetches every sheet, draws the
-   pyramid (1.5 million tiles) and publishes it to the tiles bucket,
-   serving.json last, so every browser moves to the new cycle at once
+   pyramid (1.5 million tiles), packs each kind into one PMTiles archive
+   per density and publishes them to the tiles bucket, serving.json last,
+   so every planner moves to the new cycle at once
+server cron, hourly ─▶ docker compose run --rm charts-overlays
+   the map's overlay tiles, built where the planner's new cycle pack has none
 ```
 
 - **One domain for everything** (`PublicHost`), so the gateway's Secure
@@ -53,8 +72,9 @@ EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: python -m wingtip.charts 
   the tiles and the app's files, three answers: the chart the map draws
   (a minute), the airport search as a pilot types, and the stock
   aircraft (an hour each). Each says so itself (`app.router_basics` in the
-  planner), the gateway passes the header on for those paths alone
-  (`PlannerProxyController`), and CloudFront keys them by path and query
+  planner), the gateway passes the header on for the routes the planner
+  marks `SHARED` alone (`app.gateway`, read by the gateway's
+  `UpstreamRoutes`), and CloudFront keys them by path and query
   string, never by cookie. Everything with weather in it (the fields in
   view, an airport's card, the Class B list, the airspace at a point), a
   route's answers, and anything of one pilot's is `no-store`, which
@@ -68,8 +88,11 @@ EventBridge, daily 08:30 UTC ─▶ Fargate Spot task: python -m wingtip.charts 
   SSM Run Command. The server's role can pull its own images, read its
   own secrets and write its own backups, and nothing else.
 - **The planner no longer draws tiles** (`CHARTS_AUTO_REFRESH=0`,
-  `CHART_TILES_URL`). It still reads the chart for checkpoints, from the
-  sheets under each route, fetched the first time a route needs them
+  `CHART_TILES_URL`): it reads each one out of the published archive by
+  a range request through CloudFront (`wingtip.tile_archive`, the
+  archive's header and directory read once and kept), and CloudFront
+  keeps what it answers. It still reads the chart for checkpoints, from
+  the sheets under each route, fetched the first time a route needs them
   and kept on the server's disk.
 - **The planner keeps the FAA's data current** (`FAA_DATA_AUTO_REFRESH`,
   on): four times a day it looks for a new edition of the NASR files
@@ -114,7 +137,7 @@ Prices in us-east-1, October 2026, at today's traffic:
 | EC2 t3a.medium on Spot, all month (on demand: $27.45) | ~$10, as Spot's price moves |
 | Its public IPv4 address | $3.65 |
 | 20 GB system disk and 30 GB data disk, gp3 | $4.00 |
-| S3 tiles: 1.5 million uploads a cycle ($7.50 per 56 days), 0.73 million more for the 512-pixel "@2x" tiles phones draw ($3.70), and up to three cycles stored (about 25 GB more a cycle with the @2x tiles) | ~$7.50 |
+| S3 tiles: a few dozen archives a cycle (cents; they were 2.2 million tile uploads, about $11), and up to three cycles stored (some 36 GB a cycle with the @2x tiles) | ~$2.50 |
 | Secrets Manager, three secrets | $1.20 |
 | Route 53 hosted zone | $0.50 |
 | Daily snapshots of the data disk, seven kept | ~$1 |
@@ -122,13 +145,12 @@ Prices in us-east-1, October 2026, at today's traffic:
 | ECR, CloudWatch logs, backups, the Fargate Spot refresh (under $1 a cycle) | ~$1.50 |
 | CloudFront | $0 within the always-free 1 TB and 10 million requests |
 | SES | $0.10 per 1,000 sign-in emails |
-| **Total** | **about $32** |
+| **Total** | **about $27** |
 
 With `ServerPricing=on-demand`, for a server AWS never takes back, it
-is about $46, or about $36 with a one-year Savings Plan. The next
-saving after Spot is the tiles' upload bill: one
-PMTiles archive per chart kind in place of 1.5 million files would take
-it to cents, at the cost of a PMTiles reader in the map.
+is about $41, or about $31 with a one-year Savings Plan. The next
+saving after Spot was the tiles' upload bill, and the archives (#535)
+took it to cents, the reader in the planner rather than the map.
 
 The template's `BudgetEmail` sets an alarm at 80% of $50 a month.
 
@@ -140,8 +162,9 @@ from this checkout, no source mounted, and Caddy demanding CloudFront's
 secret header. Stand-ins replace what only AWS has:
 
 - **CloudFront** is a Caddy (`cdn`) on https://localhost:9443. It serves
-  `/tiles/*` from a local chart pyramid laid out as the S3 bucket is,
-  and sends everything else to the origin with the secret header.
+  `/tiles/*` from a local tile cache laid out as the S3 bucket is
+  (serving.json and the archives), and sends everything else to the
+  origin with the secret header.
 - **SES** is a Mailpit on http://localhost:9025, where the sign-in links
   arrive.
 - **The data disk** is a folder of its own, empty at first, so the
@@ -161,7 +184,7 @@ certificate accepted (`ignoreHTTPSErrors`):
 ```bash
 docker run --rm --network wingtip-prod_default -v "$PWD/apps/web:/w" -w /w \
   -e BASE_URL=https://cdn:9443 -e MAILPIT_URL=http://mailpit:8025 \
-  mcr.microsoft.com/playwright:v1.55.1-noble \
+  mcr.microsoft.com/playwright:v1.65.0-noble \
   npx playwright test --config playwright.rehearsal.config.ts --workers=2
 ```
 
@@ -288,7 +311,7 @@ and by its own rules when not. It is trained on the Mac, by the
 development console's Retrain or by hand:
 
 ```bash
-docker compose run --rm pipeline-training run
+docker compose run --rm retrain
 ```
 
 which promotes it into `data/models/chart/current` only if it beats the
@@ -328,7 +351,8 @@ docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml ps
 docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml logs -f --tail 100 gateway
 ```
 
-`/srv/wingtip` is the data disk: `data` the planner's data folder,
+`/srv/wingtip` is the data disk: `data` the data folder the planner shares
+with ingest, weather and the assistant,
 `postgres` the database, `repo` this repository. Never edit
 `/srv/wingtip/.env`; `deploy.sh` writes it.
 
@@ -347,9 +371,16 @@ docker compose --env-file /srv/wingtip/.env -f infra/docker-compose.prod.yml log
   aws logs tail /wingtip/server --region us-east-1 --follow --log-stream-name-prefix wingtip-gateway
   ```
 
-- **Errors on pilots' phones** are in the gateway's stream as `client
-  error [...]` lines (`ClientErrorController`, `lib/errorReports`): the
-  message, the stack and the page's path, nothing of the pilot's.
+- **Faults on pilots' devices** (the web's uncaught errors, the iPhone's
+  MetricKit diagnostics, Android's exit reasons and crashes) are kept 30
+  days in the `diagnostics` table, read by the developer at `GET
+  /api/diagnostics`, and logged in the gateway's stream as `web|ios|android
+  <version> [<kind>] ...` lines (`DiagnosticsController`): the signature
+  and the scrubbed stack, nothing of the pilot's.
+- **A service down or a feed stale** is mailed to `APP_ALERT_EMAILS` (the
+  developers where unset) by the gateway's minute check, and logged as
+  `ALERT` and `RECOVERED` lines in its stream: what is watched, and after
+  how long, is in [OPERATIONS.md](OPERATIONS.md).
 
 ### Chart cycles
 

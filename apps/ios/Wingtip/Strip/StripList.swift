@@ -15,6 +15,8 @@ struct StripList: View {
     let onDebrief: () -> Void
     @Environment(\.chartInk) private var ink
     @State private var unfolded = false
+    /// A checkpoint dot's paper casing, in points: its line's width, drawn outside the dot.
+    private static let casing: CGFloat = 3
 
     var body: some View {
         if let first = points.first, let last = points.last, first.kind == .departure, points.count >= 2 {
@@ -24,8 +26,8 @@ struct StripList: View {
             ZStack(alignment: .topLeading) {
                 // The timeline's line: 4 points of magenta at the left,
                 // each entry's dot on it.
-                RoundedRectangle(cornerRadius: 2).fill(ink.magenta).frame(width: 4).padding(.leading, 7).padding(.vertical, 12)
-                VStack(alignment: .leading, spacing: 8) {
+                RoundedRectangle(cornerRadius: 2).fill(ink.magenta).frame(width: 4).padding(.leading, WingtipSpace.sm).padding(.vertical, WingtipSpace.md)
+                VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                     StripFieldCard(point: first, atLabel: "leaving", clearance: true, plates: false,
                                    onOpen: onField, onPlates: onPlates, onClearance: onClearance)
                     ForEach(Array(fold.rows.enumerated()), id: \.offset) { _, row in
@@ -55,28 +57,29 @@ struct StripList: View {
     /// and distance under it (the nav log's figures), its minutes at the
     /// right; a tap opens the leg.
     private func checkpoint(_ point: StripPoint, number: Int?) -> some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
             Circle().fill(ink.brown).frame(width: 14, height: 14)
-                .overlay(Circle().strokeBorder(ink.paper, lineWidth: 3).padding(-3))
-                .padding(.leading, 2).padding(.top, 15)
+                // The paper casing drawn outside the dot, as wide as its own line.
+                .overlay(Circle().strokeBorder(ink.paper, lineWidth: Self.casing).padding(-Self.casing))
+                .padding(.leading, WingtipSpace.xxs).padding(.top, WingtipSpace.lg)
             Button {
                 if let leg = point.leg { onLeg(leg) }
             } label: {
-                HStack(spacing: 12) {
-                    VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: WingtipSpace.md) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text("\(number.map { "\($0). " } ?? "")\(point.name)")
                             .font(ChartInk.text.weight(.medium)).lineLimit(1)
                         if let leg = point.leg {
-                            Text("MH \(String(format: "%03d", Int(leg.magneticHeadingDeg.rounded()))) · \(Int(leg.distanceNm.rounded())) NM")
+                            Text("MH \(leg.magneticHeadingDeg.map(Format.heading) ?? Format.none) · \(Format.distance(leg.distanceNm))")
                                 .font(ChartInk.note.monospacedDigit()).foregroundStyle(ink.muted)
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     if let ete = point.leg?.eteMin {
-                        Text(StripData.duration(ete)).font(ChartInk.detail.monospacedDigit()).foregroundStyle(ink.muted)
+                        Text(Format.duration(ete)).font(ChartInk.detail.monospacedDigit()).foregroundStyle(ink.muted)
                     }
                 }
-                .padding(.horizontal, 4).padding(.vertical, 6)
+                .padding(.horizontal, WingtipSpace.xs).padding(.vertical, WingtipSpace.sm)
                 .frame(minHeight: 44)
             }
             .buttonStyle(.plain)
@@ -86,11 +89,11 @@ struct StripList: View {
 
     /// "N more checkpoints", a tap unfolds them.
     private func foldRow(_ hidden: Int) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: WingtipSpace.md) {
             Circle().fill(ink.paper).frame(width: 8, height: 8)
                 .overlay(Circle().strokeBorder(ink.brown, lineWidth: 2))
-                .padding(.leading, 5)
-            Button("\(hidden) more checkpoints") { withAnimation(.easeOut(duration: 0.3)) { unfolded = true } }
+                .padding(.leading, WingtipSpace.xs)
+            Button("\(hidden) more checkpoints") { withAnimation(Motion.animation(.default)) { unfolded = true } }
                 .font(ChartInk.text.weight(.semibold))
                 .frame(minHeight: 44)
                 .buttonStyle(.plain)
@@ -101,21 +104,21 @@ struct StripList: View {
     /// After the destination: the debrief, once a track is flown -- the
     /// saved flight's own page reads it (FlownTrackView's DebriefSections).
     private var after: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
             Circle().fill(ink.paper).frame(width: 14, height: 14)
                 .overlay(Circle().strokeBorder(ink.magenta, lineWidth: 2))
-                .padding(.leading, 2).padding(.top, 15)
+                .padding(.leading, WingtipSpace.xxs).padding(.top, WingtipSpace.lg)
             Button(action: onDebrief) {
-                HStack(spacing: 10) {
+                HStack(spacing: WingtipSpace.md) {
                     Image(systemName: "flag.checkered").foregroundStyle(ink.tint).accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                         Text("Debrief").font(ChartInk.text.weight(.semibold))
                         Text("After the flight, from its saved track").font(ChartInk.note).foregroundStyle(ink.muted)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     Image(systemName: "chevron.right").foregroundStyle(ink.tint).accessibilityHidden(true)
                 }
-                .padding(14)
+                .padding(WingtipSpace.md)
                 .frame(minHeight: 44)
             }
             .buttonStyle(.plain)
@@ -148,12 +151,12 @@ struct StripFieldCard: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Circle().fill(ink.field).frame(width: 18, height: 18).padding(.top, 16)
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top, spacing: 8) {
+        HStack(alignment: .top, spacing: WingtipSpace.md) {
+            Circle().fill(ink.field).frame(width: 18, height: 18).padding(.top, WingtipSpace.lg)
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
+                HStack(alignment: .top, spacing: WingtipSpace.sm) {
                     Button { onOpen(point.name) } label: {
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text(point.name).font(ChartInk.text.weight(.bold)).foregroundStyle(ink.tint)
                             if !point.longName.isEmpty {
                                 Text(point.longName).font(ChartInk.detail).foregroundStyle(ink.muted).lineLimit(1)
@@ -166,8 +169,8 @@ struct StripFieldCard: View {
                     .accessibilityHint("Opens the field's card")
                     Spacer(minLength: 0)
                     if let minutes = point.minutesFlown {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(Formats.time(Date().addingTimeInterval(minutes * 60)))
+                        VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
+                            Text(Format.time(Date().addingTimeInterval(minutes * 60)))
                                 .font(ChartInk.text.weight(.semibold).monospacedDigit())
                             Text(atLabel).font(ChartInk.note).foregroundStyle(ink.muted)
                         }
@@ -177,11 +180,11 @@ struct StripFieldCard: View {
                 if let detail {
                     Text(detail).font(ChartInk.detail).foregroundStyle(ink.ink.opacity(0.8))
                 } else if let ground = point.leg?.groundMin, point.kind == .stop, ground > 0 {
-                    Text("\(StripData.duration(ground)) on the ground").font(ChartInk.detail).foregroundStyle(ink.ink.opacity(0.8))
+                    Text("\(Format.duration(ground)) on the ground").font(ChartInk.detail).foregroundStyle(ink.ink.opacity(0.8))
                 }
                 chips
             }
-            .padding(14)
+            .padding(WingtipSpace.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .inkCard()
         }
@@ -195,20 +198,30 @@ struct StripFieldCard: View {
         let radio = place.map { StripData.radioChips($0.frequencies, towered: $0.towered) } ?? []
         if !radio.isEmpty || clearance || plates {
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: WingtipSpace.sm) {
                     ForEach(radio, id: \.label) { chip in
                         Button(chip.label) { onOpen(point.name) }
-                            .buttonStyle(.inkChip)
                             .accessibilityLabel(chip.words)
+                            .frequencyActions(FrequencyCopy.figure(in: chip.words))
+                            .contentShape(.interaction, Rectangle().inset(by: -WingtipSpace.sm))
                     }
                     if clearance {
-                        Button("Clearance", action: onClearance).buttonStyle(.inkChip).accessibilityLabel("The clearance card")
+                        Button("Clearance", action: onClearance).accessibilityLabel("The clearance card")
+                            .contentShape(.interaction, Rectangle().inset(by: -WingtipSpace.sm))
                     }
                     if plates {
-                        Button("Plates") { onPlates(point.name) }.buttonStyle(.inkChip).accessibilityLabel("The approach plates")
+                        Button("Plates") { onPlates(point.name) }.accessibilityLabel("The approach plates")
+                            .contentShape(.interaction, Rectangle().inset(by: -WingtipSpace.sm))
                     }
                 }
-                .padding(.vertical, 6)
+                // The system's bordered capsule buttons, small (the owner,
+                // 2026-11-10: stock over the hand-built ink chips), each
+                // with a 44-point hit area round its 28 points: the button
+                // does not grow, and the 8-point gap lets the areas meet.
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .controlSize(.small)
+                .padding(.vertical, WingtipSpace.sm)
             }
         }
     }

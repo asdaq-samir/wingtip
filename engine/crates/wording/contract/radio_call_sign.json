@@ -1,0 +1,34 @@
+{
+  "x-call": "wingtip_wording::wording::answer",
+  "description": "The airplane's call sign as spoken: its make and its registration, the N dropped (AIM 4-2-4), or a blank for the registration.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RadioCallSignInput",
+      "type": "object",
+      "properties": {
+        "make": {
+          "type": "string"
+        },
+        "tail": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "make"
+      ]
+    },
+    "answer": {
+      "title": "RadioCallSignAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

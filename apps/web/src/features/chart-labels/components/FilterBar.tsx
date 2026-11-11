@@ -11,9 +11,27 @@ interface Props {
 // a point: a group each, the two choices a row each, said in words --
 // "DR" alone was the only name the role had.
 const AXES: [string, [FilterKey, string][]][] = [
-  ["Role", [["dr", "On course (DR)"], ["visual", "Off course (visual)"]]],
-  ["Source", [["detected", "Found on the chart"], ["added", "Added by hand"]]],
-  ["Status", [["rated", "Rated"], ["unrated", "Not rated yet"]]],
+  [
+    "Role",
+    [
+      ["dr", "On course (DR)"],
+      ["visual", "Off course (visual)"],
+    ],
+  ],
+  [
+    "Source",
+    [
+      ["detected", "Found on the chart"],
+      ["added", "Added by hand"],
+    ],
+  ],
+  [
+    "Status",
+    [
+      ["rated", "Rated"],
+      ["unrated", "Not rated yet"],
+    ],
+  ],
 ];
 
 /** Which waypoints to show and count -- the body of the waypoint
@@ -30,8 +48,11 @@ export default function FilterBar({ filters, onChange, counts }: Props) {
         <ListGroup key={axis} title={axis}>
           {keys.map(([key, label]) => (
             <ListRow
-              key={key} title={label} value={counts[key]} data-testid={`filter-${key}`}
-              checkbox={{ checked: filters[key], onChange: checked => onChange(key, checked) }}
+              key={key}
+              title={label}
+              value={counts[key]}
+              data-testid={`filter-${key}`}
+              checkbox={{ checked: filters[key], onChange: (checked) => onChange(key, checked) }}
             />
           ))}
         </ListGroup>

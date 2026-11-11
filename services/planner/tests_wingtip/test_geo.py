@@ -152,6 +152,7 @@ def test_corridor_bbox_padding():
 # the oracle they are pinned against. It is a test dependency only
 # (requirements-dev.txt) and ships in no service image.
 
+
 def _pygeodesy():
     return pytest.importorskip("pygeodesy.sphericalTrigonometry").LatLon
 
@@ -161,11 +162,7 @@ def _random_cases(n, seed):
     for _ in range(n):
         lat1 = rng.uniform(25, 49)
         lon1 = rng.uniform(-124, -67)
-        yield (
-            (lat1, lon1),
-            (lat1 + rng.uniform(-3, 3), lon1 + rng.uniform(-3, 3)),
-            (lat1 + rng.uniform(-3, 3), lon1 + rng.uniform(-3, 3)),
-        )
+        yield ((lat1, lon1), (lat1 + rng.uniform(-3, 3), lon1 + rng.uniform(-3, 3)), (lat1 + rng.uniform(-3, 3), lon1 + rng.uniform(-3, 3)))
 
 
 def test_it_matches_an_independent_implementation():
@@ -174,10 +171,8 @@ def test_it_matches_an_independent_implementation():
         a, b, p = LatLon(*start), LatLon(*end), LatLon(*point)
         assert distance_nm(*start, *end) == pytest.approx(a.distanceTo(b, radius=EARTH_RADIUS_NM), abs=1e-6)
         assert bearing_deg(*start, *end) == pytest.approx(a.initialBearingTo(b), abs=1e-6)
-        assert cross_track_distance_nm(*point, start, end) == pytest.approx(
-            p.crossTrackDistanceTo(a, b, radius=EARTH_RADIUS_NM), abs=1e-6)
-        assert along_track_distance_nm(*point, start, end) == pytest.approx(
-            p.alongTrackDistanceTo(a, b, radius=EARTH_RADIUS_NM), abs=1e-6)
+        assert cross_track_distance_nm(*point, start, end) == pytest.approx(p.crossTrackDistanceTo(a, b, radius=EARTH_RADIUS_NM), abs=1e-6)
+        assert along_track_distance_nm(*point, start, end) == pytest.approx(p.alongTrackDistanceTo(a, b, radius=EARTH_RADIUS_NM), abs=1e-6)
 
 
 def test_the_array_form_is_the_scalar_form():
@@ -238,14 +233,15 @@ _MERCATOR_HALF_WORLD_M = 20037508.342789244
 
 def test_tiles_match_projs_web_mercator():
     from pyproj import Transformer
+
     to_3857 = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
     rng = random.Random(31)
     for _ in range(300):
         lat, lon, zoom = rng.uniform(-85, 85), rng.uniform(-180, 180), rng.randint(0, 16)
         mx, my = to_3857.transform(lon, lat)
         x, y = tile_xy(lat, lon, zoom)
-        assert x == pytest.approx((mx + _MERCATOR_HALF_WORLD_M) / (2 * _MERCATOR_HALF_WORLD_M) * 2 ** zoom, abs=1e-7)
-        assert y == pytest.approx((_MERCATOR_HALF_WORLD_M - my) / (2 * _MERCATOR_HALF_WORLD_M) * 2 ** zoom, abs=1e-7)
+        assert x == pytest.approx((mx + _MERCATOR_HALF_WORLD_M) / (2 * _MERCATOR_HALF_WORLD_M) * 2**zoom, abs=1e-7)
+        assert y == pytest.approx((_MERCATOR_HALF_WORLD_M - my) / (2 * _MERCATOR_HALF_WORLD_M) * 2**zoom, abs=1e-7)
         assert tile_lat_lon(x, y, zoom) == pytest.approx((lat, lon), abs=1e-9)
 
 

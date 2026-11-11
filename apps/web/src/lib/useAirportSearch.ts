@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
 import { searchIndex, useAirportIndex } from "./airportIndex";
-import { useOwnShipNear } from "./map/ownShip";
+import { useOwnShipNear } from "./map/position/ownShip";
 
 /** 100ms, not on every keystroke -- a lookup this app already treats
  *  as cheap server-side (an index of idents and words) still isn't worth
@@ -54,7 +54,10 @@ export function useAirportSearch(text: string, enabled = true, fixes = false) {
   // re-renders for much besides typing (map moves, weather, sheet drags).
   const local = useMemo(() => {
     if (!index || !typed) return null;
-    const near = by.split(";").map(pair => pair.split(",").map(Number)).filter(p => p.length === 2 && p.every(Number.isFinite))
+    const near = by
+      .split(";")
+      .map((pair) => pair.split(",").map(Number))
+      .filter((p) => p.length === 2 && p.every(Number.isFinite))
       .map(([lat, lon]) => ({ lat: lat!, lon: lon! }));
     return searchIndex(index, typed, 8, near);
   }, [index, typed, by]);

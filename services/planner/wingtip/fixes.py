@@ -6,19 +6,21 @@ VORs, DMEs and NDBs: a pilot flies over RFD as over any waypoint.
 
 The table is read once, on first use, and held: seventy thousand rows,
 asked for by ident."""
+
 from __future__ import annotations
 
 import bisect
 import csv
 import json
 import math
-import re
 import threading
+import time
 from pathlib import Path
 
 import wingtip_native
 
 from . import faa_data, geo, magnetic
+from .engine import ask as engine
 from .config import DATA_DIR
 
 FAA_CACHE_DIR = DATA_DIR / "raw" / "faa_nasr"
@@ -53,7 +55,7 @@ VOR_KINDS = ("VORTAC", "VOR/DME", "VOR")
 #: (VOT), the fan markers or a marine beacon, which no route flies to.
 NAVAID_KINDS = ("VORTAC", "VOR/DME", "VOR", "DME", "TACAN", "NDB/DME", "NDB")
 
-_TABLE: "_Table | None" = None
+_TABLE: _Table | None = None
 _LOCK = threading.Lock()
 
 
@@ -86,8 +88,12 @@ def read_rows(path: Path):
             if use == "VFR" and not vfr:
                 kind = "Helicopter route waypoint" if "HELICOPTER ROUTE" in charts else "Uncharted VFR waypoint"
             yield {
-                "ident": ident, "lat": lat, "lon": lon, "kind": kind,
-                "vfr": vfr, "state": (row.get("STATE_CODE") or "").strip() or None,
+                "ident": ident,
+                "lat": lat,
+                "lon": lon,
+                "kind": kind,
+                "vfr": vfr,
+                "state": (row.get("STATE_CODE") or "").strip() or None,
                 # On the IFR low-altitude enroute chart: the intersections
                 # of the airways below 18,000 ft that the map shows close
                 # in (enroute_fixes_within), not the approaches' and
@@ -134,8 +140,14 @@ def _read_navaids(path: Path) -> dict[str, list[dict]]:
             except (KeyError, TypeError, ValueError):
                 continue
             navaid = {
-                "ident": ident, "lat": lat, "lon": lon, "kind": kind, "vfr": False, "navaid": True,
-                "name": (row.get("NAME") or "").strip().title() or None, "freq": (row.get("FREQ") or "").strip() or None,
+                "ident": ident,
+                "lat": lat,
+                "lon": lon,
+                "kind": kind,
+                "vfr": False,
+                "navaid": True,
+                "name": (row.get("NAME") or "").strip().title() or None,
+                "freq": (row.get("FREQ") or "").strip() or None,
                 "state": (row.get("STATE_CODE") or "").strip() or None,
                 "mag_var": _station_variation(row),
                 # For its card: the station's height (ELEV, ft MSL), its
@@ -151,8 +163,7 @@ def _read_navaids(path: Path) -> dict[str, list[dict]]:
             }
             held = table.setdefault(ident, [])
             here = next(
-                (i for i, other in enumerate(held) if geo.distance_nm(lat, lon, other["lat"], other["lon"]) < SAME_FACILITY_NM),
-                None,
+                (i for i, other in enumerate(held) if geo.distance_nm(lat, lon, other["lat"], other["lon"]) < SAME_FACILITY_NM), None
             )
             if here is None:
                 held.append(navaid)
@@ -211,8 +222,7 @@ def _table(cache_dir=FAA_CACHE_DIR) -> _Table:
             fix_path = faa_data.ensure_nasr_file("FIX_BASE.csv", cache_dir)
             nav_path = faa_data.ensure_nasr_file("NAV_BASE.csv", cache_dir)
             _TABLE = _Table(
-                _read(fix_path), _read_navaids(nav_path),
-                source=tuple((path, path.stat().st_mtime) for path in (fix_path, nav_path)),
+                _read(fix_path), _read_navaids(nav_path), source=tuple((path, path.stat().st_mtime) for path in (fix_path, nav_path))
             )
         return _TABLE
 
@@ -261,7 +271,7 @@ def search_fixes(query: str, limit: int = 5) -> list[dict]:
         return []
     table = _table()
     hits = []
-    for ident in table.idents[bisect.bisect_left(table.idents, query):]:
+    for ident in table.idents[bisect.bisect_left(table.idents, query) :]:
         if not ident.startswith(query):
             break
         hits.append(table.by_ident[ident])
@@ -276,29 +286,11 @@ def within(south: float, west: float, north: float, east: float) -> list[dict]:
     (bottom, left), (top, right) = _cell(south, west), _cell(north, east)
     return [
         fix
-        for lat_cell in range(bottom, top + 1) for lon_cell in range(left, right + 1)
+        for lat_cell in range(bottom, top + 1)
+        for lon_cell in range(left, right + 1)
         for fix in cells.get((lat_cell, lon_cell), ())
         if south <= fix["lat"] <= north and west <= fix["lon"] <= east
     ]
-
-
-def vors_within(south: float, west: float, north: float, east: float) -> list[dict]:
-    """The VORs, VOR/DMEs and VORTACs in service inside the box, by
-    ident, for the map's VOR marks."""
-    return sorted(
-        (f for f in within(south, west, north, east) if f.get("navaid") and f["kind"] in VOR_KINDS),
-        key=lambda f: f["ident"],
-    )
-
-
-def enroute_fixes_within(south: float, west: float, north: float, east: float) -> list[dict]:
-    """The fixes on the low-altitude enroute chart inside the box, by
-    ident, for the map's fix marks. Not the VFR waypoints, which the map
-    draws as the sectional's diamonds of their own."""
-    return sorted(
-        (f for f in within(south, west, north, east) if f.get("enroute_low") and not f["vfr"]),
-        key=lambda f: f["ident"],
-    )
 
 
 _REMARKS: tuple[float, dict[tuple[str, str], list[str]]] | None = None
@@ -389,8 +381,15 @@ def frd_point(ident: str, near: tuple = (), locate=None) -> dict | None:
     variation = navaid["mag_var"] if radial else magnetic.magnetic_variation_deg(fix["lat"], fix["lon"])
     lat, lon = geo.destination_point(fix["lat"], fix["lon"], (course + variation) % 360, distance)
     return {
-        "ident": frd_ident(base, course, distance), "lat": lat, "lon": lon, "kind": "Your point", "vfr": False,
-        "base": base, "course_deg": course, "distance_nm": distance, "radial": radial,
+        "ident": frd_ident(base, course, distance),
+        "lat": lat,
+        "lon": lon,
+        "kind": "Your point",
+        "vfr": False,
+        "base": base,
+        "course_deg": course,
+        "distance_nm": distance,
+        "radial": radial,
     }
 
 
@@ -416,22 +415,22 @@ def frd_near(lat: float, lon: float, max_nm: float = NEAR_NM) -> dict | None:
     frd_point turns it back (a VOR's own variation, the model's for any
     other), to the degree, and its distance to a tenth of a mile; so it
     comes back to within a few hundredths of a mile of where it was
-    dropped. None with no fix within `max_nm`."""
+    dropped. None with no fix within `max_nm`. The choice and the
+    figures are the engine's (frd_near, the one route options names its
+    turns by); the fixes round the point are read here."""
     dlat = max_nm / 60
     dlon = max_nm / (60 * max(0.1, math.cos(math.radians(lat))))
     around = [
-        (geo.distance_nm(fix["lat"], fix["lon"], lat, lon), fix)
-        for fix in within(lat - dlat, lon - dlon, lat + dlat, lon + dlon)
-        if re.fullmatch(r"[A-Z0-9]{2,5}", fix["ident"])
+        {
+            "ident": f["ident"],
+            "lat": f["lat"],
+            "lon": f["lon"],
+            "navaid": bool(f.get("navaid")),
+            "vfr": bool(f.get("vfr")),
+            "kind": f.get("kind") or "",
+            "mag_var": f.get("mag_var"),
+        }
+        for f in within(lat - dlat, lon - dlon, lat + dlat, lon + dlon)
     ]
-    around = [(nm, fix) for nm, fix in around if 0.05 <= nm <= max_nm]
-    if not around:
-        return None
-    known = [(nm, fix) for nm, fix in around if fix.get("navaid") or fix.get("vfr")]
-    nm, fix = min(known or around, key=lambda pair: pair[0])
-    radial = bool(fix.get("navaid")) and fix["kind"] in RADIAL_KINDS and fix.get("mag_var") is not None
-    variation = fix["mag_var"] if radial else magnetic.magnetic_variation_deg(fix["lat"], fix["lon"])
-    course = round((geo.bearing_deg(fix["lat"], fix["lon"], lat, lon) - variation) % 360) % 360
-    distance = round(float(nm), 1)
-    point = {"base": fix["ident"], "course_deg": course, "distance_nm": distance, "radial": radial}
-    return {**point, "ident": frd_ident(fix["ident"], course, distance), "name": frd_title(point)}
+    point = engine("frd_near", lat=lat, lon=lon, max_nm=max_nm, now_s=time.time(), fixes=around)
+    return None if point is None else {**point, "name": frd_title(point)}

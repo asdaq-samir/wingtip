@@ -3,22 +3,28 @@ import { Check, Copy } from "lucide-react";
 import { cn } from "cn";
 import { Button } from "../../components/ui/button";
 import { words } from "../../lib/api/words";
-import type { Debrief } from "../../lib/debrief";
+import type { Debrief } from "./debrief";
 import { pilotQuery, trainingQuery } from "../../lib/queryClient";
 import { useCopied } from "../../lib/share";
 import { TEXT } from "../../lib/text";
-import WordsSection from "../plan/components/briefing/WordsSection";
-import { wordsState } from "../plan/components/briefing/wordsState";
+import WordsSection from "../../components/WordsSection";
+import { wordsState } from "../../lib/wordsState";
+import { useClaudeOn } from "../../lib/subscription";
 
 /** The debrief as the words are asked of it: its figures -- the legs,
  *  the checkpoints, the patterns, the notes -- without the flown line
  *  and the profile, thousands of points that say nothing a sentence can
  *  use and would be sent with every ask. */
 const forWords = (d: Debrief) => ({
-  takeoff: d.takeoff, landing: d.landing, flown_min: d.flownMin, planned_min: d.plannedMin,
+  takeoff: d.takeoff,
+  landing: d.landing,
+  flown_min: d.flownMin,
+  planned_min: d.plannedMin,
   legs: d.legs.map(({ ok: _ok, ...leg }) => leg),
   passes: d.passes.map(({ landed: _landed, lateMin: _late, ok: _ok, ...pass }) => pass),
-  patterns: d.patterns.map(({ offFt: _off, ok: _ok, ...pattern }) => pattern), has_altitude: d.hasAltitude, notes: d.notes,
+  patterns: d.patterns.map(({ offFt: _off, ok: _ok, ...pattern }) => pattern),
+  has_altitude: d.hasAltitude,
+  notes: d.notes,
 });
 
 /**
@@ -27,30 +33,49 @@ const forWords = (d: Debrief) => ({
  * (WordsSection), and for a pilot with an instructor the line written
  * for them. The app has no way to send an instructor a note on its own
  * -- a solo cross-country review asks for one with a flight, not this --
- * so the line is copied for them instead.
+ * so the line is copied for them instead. Claude writes it, so it is not
+ * there while the deployment keeps Claude off (lib/subscription, the
+ * owner's 2026-11-10 decision); the engine's debrief figures above stay.
  */
-export default function DebriefWords({ flightId, debrief }: { flightId: number; debrief: Debrief }) {
+export default function DebriefWords(props: { flightId: number; debrief: Debrief }) {
+  return useClaudeOn() ? <WrittenDebrief {...props} /> : null;
+}
+
+function WrittenDebrief({ flightId, debrief }: { flightId: number; debrief: Debrief }) {
   const body = forWords(debrief);
   const query = useQuery({
     queryKey: ["words", "debrief", flightId, body],
     queryFn: ({ signal }) => words.debrief(body, signal),
-    staleTime: 10 * 60_000, meta: { silent: true },
+    staleTime: 10 * 60_000,
+    meta: { silent: true },
   });
   const { data: pilot } = useQuery(pilotQuery);
   const { data: training } = useQuery({ ...trainingQuery, enabled: !!pilot });
-  const hasInstructor = !!training?.instructors.some(l => l.accepted);
+  const hasInstructor = !!training?.instructors.some((l) => l.accepted);
   const [copied, setCopied] = useCopied();
   const note = query.data?.instructor_note ?? null;
   return (
     <WordsSection title="What to practise next" testId="debrief-words" state={wordsState(query)}>
       {note && hasInstructor && (
         <div className="flex flex-col gap-2 pt-2" data-testid="debrief-instructor-note">
-          <p className={cn("tabular-nums", TEXT.prose)}><span className="font-semibold">For your instructor: </span>{note}</p>
+          <p className={cn("tabular-nums", TEXT.prose)}>
+            <span className="font-semibold">For your instructor: </span>
+            {note}
+          </p>
           <Button
-            variant="outline" size="sm" className="self-start" data-testid="debrief-copy-note"
-            onClick={() => void navigator.clipboard?.writeText(note).then(() => setCopied("note")).catch(() => {})}
+            variant="outline"
+            size="sm"
+            className="self-start"
+            data-testid="debrief-copy-note"
+            onClick={() =>
+              void navigator.clipboard
+                ?.writeText(note)
+                .then(() => setCopied("note"))
+                .catch(() => {})
+            }
           >
-            {copied === "note" ? <Check /> : <Copy />}{copied === "note" ? "Copied" : "Copy for your instructor"}
+            {copied === "note" ? <Check /> : <Copy />}
+            {copied === "note" ? "Copied" : "Copy for your instructor"}
           </Button>
         </div>
       )}

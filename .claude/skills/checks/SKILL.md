@@ -1,14 +1,16 @@
 ---
 name: checks
-description: Run the checks that cover a change in this repo, on the owner's Mac (in containers, since it has no npm or pytest) or in CI, and read failures correctly. Use after editing code and before saying anything works, before committing, and whenever a test, a build or the running stack fails. Covers web (tsc, eslint, vitest), services/planner/wingtip and the Python services, the Spring Boot app, OpenAPI types, the running stack, Playwright, the iPhone audit and WebKit.
+description: Run the checks that cover a change in this repo, on the owner's Mac (in containers, since it has no npm or pytest) or in CI, and read failures correctly. Use for the end-of-wave validation on the integration branch, before opening pull requests, before saying a feature works, and whenever a test, a build or the running stack fails. During a wave of code changes, only a compile or type check runs (CLAUDE.md, Branches). Covers web (tsc, eslint, vitest), services/planner/wingtip and the Python services, the Spring Boot app, OpenAPI types, the running stack, Playwright, the iPhone audit and WebKit.
 ---
 
 # Checks
 
 CLAUDE.md says what to run for each part of the repo; this says how to run it here.
 
+**When (the owner, 2026-11-08, a standing rule):** code first, validation at the end. While a wave of code changes is being written, run only a compile or type check of what changed. Run the full checks below once, at the end of the wave, on `claude/integration`, where every finished branch has been merged. Fix what they find there, then open the grouped pull requests. Sections below that say "before pushing" mean before those pull requests.
+
 **Where you are running matters:**
-- **In CI (GitHub's runners):** the workflow sets up node, Python 3.14 and Java 25. Run CLAUDE.md's commands directly, after `pip install -r requirements-dev.txt` (or `requirements-dev-wingtip.txt` for wingtip's suite) in that directory, and skip sections 3 and 4.
+- **In CI (GitHub's runners):** the workflow sets up node, Python 3.15 and Java 25. Run CLAUDE.md's commands directly, after `pip install -r requirements-dev.txt` (or `requirements-dev-wingtip.txt` for wingtip's suite) in that directory, and skip sections 3 and 4.
 - **On the owner's Mac:** it has no node, npm, pytest or ruff, so everything runs in a container from the repo root. Chain every step with `&&` so that one failure stops the rest. Report exit codes, never an "OK" marker found with grep: an old marker can look like a new pass.
 
 ## 1. What the change needs
@@ -27,29 +29,31 @@ CLAUDE.md says what to run for each part of the repo; this says how to run it he
 **On the Mac, use `scripts/dev/check.sh`.** `scripts/dev/check.sh all-changed` runs every area the branch touches (`git diff origin/main...` plus the uncommitted files, mapped as CI's changes filter maps them), in parallel, each in its own turn of `scripts/dev/one-at-a-time.sh`, each area's log shown whole when it ends. `scripts/dev/check.sh web py engine …` runs named areas: `web`, `py` (services/planner/wingtip and tests_wingtip), `planner`, `engine` (CI's `cargo test --profile ci` line), `java`, `ios` and `android` (both on the host). It prints `check: <area> exit <code> in <n>s` per area and exits non-zero if any failed. `scripts/dev/check.sh --areas < paths` prints the areas without running anything.
 
 It is fast because nothing starts cold after the first run on the Mac, in any worktree:
-- `wingtip-check-web:<hash of apps/web/.nvmrc, package.json and package-lock>`: node with web's packages at `/node_modules`, found by walking up from `/repo/apps/web`. A worktree's own `apps/web/node_modules`, if it has one, is hidden behind an empty one.
+- `wingtip-check-web:<hash of the Node version (.tool-versions), package.json and package-lock>`: node with web's packages at `/node_modules`, found by walking up from `/repo/apps/web`. A worktree's own `apps/web/node_modules`, if it has one, is hidden behind an empty one.
 - `wingtip-check-py-<dir>:<hash>`: python with that directory's requirements-dev (followed through `-r`) and the wingtip_native wheel built from this `engine/`, rebuilt when either changes.
-- Volumes: `wingtip-cargo-registry`, `wingtip-cargo-git`, `wingtip-cargo-target-tests-1.89-<arch>` (the engine tests' build; each worktree is mounted at its own path, so its own crates are never taken for another's), `wingtip-check-raw` (the FAA files the Python tests fetch into `data/raw`), `fp-m2`. BuildKit's caches `wingtip-npm`, `wingtip-uv` and the wheel's target.
-- The phones' engine (xcframework, Android's `app/engine`) under `~/Library/Caches/wingtip-checks`, keyed by the engine's files; Xcode's DerivedData per worktree; Gradle's `~/.gradle`.
+- Volumes: `wingtip-cargo-registry`, `wingtip-cargo-git`, `wingtip-cargo-target-tests-1.99-<arch>` (the engine tests' build; each worktree is mounted at its own path, so its own crates are never taken for another's), `wingtip-check-raw` (the FAA files the Python tests fetch into `data/raw`), `fp-m2`. BuildKit's caches `wingtip-npm`, `wingtip-uv` and the wheel's target.
+- The engine for each app (wasm, xcframework, Android's `app/engine`, the planner's wheel) in the engine store, `~/Library/Caches/wingtip/engine/<hash>`, keyed by the engine's files; Rust through sccache; Xcode's compilation cache; Gradle's build cache in `~/.gradle` (docs/LOCAL-DEV.md, "Shared build caches").
 
 `scripts/build/build-engine-wasm.sh` stays apart: a clean build in its pinned image, so the committed `.wasm` is reproducible. Run it after an engine change, as before. Removing any image or volume above costs one cold run, nothing more.
 
+**Formatting is `scripts/dev/format.sh`** (all six languages, or `web python rust swift kotlin java`; `--check` to only report). It pins each tool and fetches what the Mac lacks (Prettier through Docker's node, ruff through uvx, SwiftFormat and ktlint as checksummed release binaries); CI runs each language's `--check` in that language's job, and the pre-push hook those a push changes. A `--check` failure is fixed by running it without `--check` and committing what it wrote, never by hand.
+
 The commands below are what it runs, for reading a failure or running one by hand.
 
-**Web.** These are CI's steps; node 26 matches `apps/web/.nvmrc`.
+**Web.** These are CI's steps; node 26 is `.tool-versions`' (`apps/web/.nvmrc` is written from it).
 ```sh
-docker run --rm -v "$PWD":/repo -w /repo/apps/web node:26-slim sh -c 'npm run -s types && npx tsc --noEmit && npx eslint . && npx vitest run'
+docker run --rm -v "$PWD":/repo -w /repo/apps/web node:26-slim sh -c 'npm run -s types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx vitest run'
 ```
 
-**Python.** This mirrors CI: Python 3.14, the suite's requirements installed with uv, and a cache volume that brings a repeat run down to under a minute. Both suites run from `-w /repo/services/planner`: `requirements-dev-wingtip.txt` with `ruff check wingtip tests_wingtip && pytest tests_wingtip/`, or `requirements-dev.txt` with `ruff check app tests && pytest tests/`.
+**Python.** This mirrors CI: Python 3.15, the suite's requirements installed with uv, and a cache volume that brings a repeat run down to under a minute. Both suites run from `-w /repo/services/planner`: `requirements-dev-wingtip.txt` with `ruff check wingtip tests_wingtip && pytest tests_wingtip/`, or `requirements-dev.txt` with `ruff check app tests && pytest tests/`.
 ```sh
-docker run --rm -v "$PWD":/repo -v fp-uv-cache:/root/.cache/uv -w /repo/services/planner python:3.14-slim sh -c 'pip install -q uv && uv pip install --system -q -r requirements-dev.txt && ruff check app tests && pytest tests/ -q -p no:cacheprovider'
+docker run --rm -v "$PWD":/repo -v fp-uv-cache:/root/.cache/uv -w /repo/services/planner python:3.15-slim sh -c 'pip install -q uv && uv pip install --system -q -r requirements-dev.txt && ruff check app tests && pytest tests/ -q -p no:cacheprovider'
 ```
 The planner's OpenAPI document comes from the same container: `python -m app.openapi` in `services/planner`.
 
 **Java.** Java 25 is required. The socket mount and the host override are what let Testcontainers start Postgres. The anonymous `target` volume keeps any stray host build output out of the run. `fp-m2` caches Maven's downloads, so never prune it.
 ```sh
-docker run --rm -v "$PWD/services/gateway":/build -v /build/target -v fp-m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal -w /build maven:3.9-eclipse-temurin-25 mvn -B test
+docker run --rm -v "$PWD/services/gateway":/build -v /build/target -v fp-m2:/root/.m2 -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal -w /build maven:3.10-eclipse-temurin-25 mvn -B test
 ```
 To rewrite `services/gateway/openapi.json`, run the same command with `-e WRITE_OPENAPI=1 … mvn -B test -Dtest=OpenApiDocumentTest`.
 
@@ -73,7 +77,7 @@ docker compose up -d
 scripts/dev/one-at-a-time.sh "session: <spec>" docker run --rm --network host -v "$PWD/apps/web":/w -w /w \
   -e BASE_URL=http://localhost:8080 -e MAILPIT_URL=http://localhost:8025 \
   -e MAILPIT_UI_AUTH="$(grep '^MAILPIT_UI_AUTH=' .env | cut -d= -f2-)" \
-  mcr.microsoft.com/playwright:v1.55.1-noble npx playwright test e2e/<spec>.spec.ts --reporter=list
+  mcr.microsoft.com/playwright:v1.65.0-noble npx playwright test e2e/<spec>.spec.ts --reporter=list
 ```
 - The image tag must equal `@playwright/test` in `apps/web/package.json`. Change both together.
 - Reach the stack at `localhost`, as CI does: the browser counts it as a secure origin and gives the page a position. Over `host.docker.internal` it is not one, and every test that taps the location arrow fails ("No position over this connection"). Four dry-run tests failed that way on 2026-10-19 and passed over `localhost`.

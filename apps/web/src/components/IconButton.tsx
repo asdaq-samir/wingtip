@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState, type ComponentProps, type MouseEvent, type PointerEvent } from "react";
+import type { ComponentProps } from "react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import { EXPANDED_BUTTON } from "../lib/expandedButton";
+import { EXPANDED_BUTTON } from "./expandedButton";
+import { usePopups } from "./popupsChunk";
 
-interface Props extends ComponentProps<typeof Button> {
+type Props = ComponentProps<typeof Button> & {
   /** Names the button once: the tooltip's text and the accessible name. */
   label: string;
-}
+};
 
 /**
  * Every icon-only button in this app: a stock shadcn Button at
@@ -20,8 +20,8 @@ interface Props extends ComponentProps<typeof Button> {
  * needs another size writes their own button instead" -- which is what
  * the training map's popup did with three of them. A shared component
  * that is rigid about the wrong thing is not shared for long. It
- * composes like the Button itself -- `asChild` around a Link inside, a
- * `PopoverTrigger`/`SheetTrigger asChild` outside -- because every
+ * composes like the Button itself -- `render` with a Link inside, a
+ * `PopoverTrigger`/`SheetTrigger render` outside -- because every
  * other prop, `ref` included, lands on the Button.
  *
  * A button that has opened something -- `aria-expanded` true: a
@@ -34,52 +34,11 @@ interface Props extends ComponentProps<typeof Button> {
  * label was the screen reader's alone: a sparkle or a wand meant
  * nothing to a sighted pilot on a phone.
  */
-export default function IconButton({
-  label, variant = "ghost", size = "icon", className, children, onFocus,
-  onPointerDown, onPointerUp, onPointerCancel, onPointerLeave, onClick, ...props
-}: Props) {
-  const [open, setOpen] = useState(false);
-  const pressTimer = useRef<number | undefined>(undefined);
-  const hideTimer = useRef<number | undefined>(undefined);
-  const labelShown = useRef(false);
-  useEffect(() => () => { window.clearTimeout(pressTimer.current); window.clearTimeout(hideTimer.current); }, []);
-  const endPress = () => window.clearTimeout(pressTimer.current);
-  return (
-    <Tooltip open={open} onOpenChange={setOpen}>
-      <TooltipTrigger asChild>
-        <Button
-          variant={variant} size={size} aria-label={label} className={cn(EXPANDED_BUTTON, className)}
-          // The tooltip opens on a pointer, never on focus: a sheet
-          // opening focuses its first control, and the tooltip that
-          // popped up over it took the Escape meant for the sheet. The
-          // accessible name is the label either way.
-          onFocus={e => { onFocus?.(e); e.preventDefault(); }}
-          onPointerDown={(e: PointerEvent<HTMLButtonElement>) => {
-            onPointerDown?.(e);
-            if (e.pointerType !== "touch") return;
-            labelShown.current = false;
-            endPress();
-            pressTimer.current = window.setTimeout(() => {
-              labelShown.current = true;
-              setOpen(true);
-              window.clearTimeout(hideTimer.current);
-              hideTimer.current = window.setTimeout(() => setOpen(false), 1500);
-            }, 500);
-          }}
-          onPointerUp={(e: PointerEvent<HTMLButtonElement>) => { onPointerUp?.(e); endPress(); }}
-          onPointerCancel={(e: PointerEvent<HTMLButtonElement>) => { onPointerCancel?.(e); endPress(); }}
-          onPointerLeave={(e: PointerEvent<HTMLButtonElement>) => { onPointerLeave?.(e); endPress(); }}
-          onClick={(e: MouseEvent<HTMLButtonElement>) => {
-            // The release of a long press read the label; it is not a tap.
-            if (labelShown.current) { labelShown.current = false; e.preventDefault(); return; }
-            onClick?.(e);
-          }}
-          {...props}
-        >
-          {children}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
-    </Tooltip>
-  );
+export default function IconButton(props: Props) {
+  // Its tooltip is on the popups' chunk (popupsChunk): until that is in,
+  // the button alone, named the same.
+  const popups = usePopups();
+  if (popups) return <popups.IconTip {...props} />;
+  const { label, variant = "ghost", size = "icon", className, ...rest } = props;
+  return <Button variant={variant} size={size} aria-label={label} className={cn(EXPANDED_BUTTON, className)} {...rest} />;
 }

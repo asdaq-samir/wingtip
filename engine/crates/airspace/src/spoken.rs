@@ -15,8 +15,8 @@
 //! are shown as said, not found.
 
 use crate::clearance::{Found, FoundPlaces};
-use crate::json;
 use crate::pack::Pack;
+use crate::{json, sort::StableSort};
 
 /// A place a clearance may name.
 #[derive(Clone, Debug, PartialEq)]
@@ -54,7 +54,20 @@ pub fn sound(word: &str) -> String {
     if s.is_empty() {
         return s;
     }
-    for (spelled, said) in [("PH", "F"), ("CK", "K"), ("GH", "G"), ("SCH", "SK"), ("TH", "T"), ("WR", "R"), ("KN", "N"), ("X", "KS"), ("Q", "K"), ("Z", "S"), ("C", "K"), ("DG", "J")] {
+    for (spelled, said) in [
+        ("PH", "F"),
+        ("CK", "K"),
+        ("GH", "G"),
+        ("SCH", "SK"),
+        ("TH", "T"),
+        ("WR", "R"),
+        ("KN", "N"),
+        ("X", "KS"),
+        ("Q", "K"),
+        ("Z", "S"),
+        ("C", "K"),
+        ("DG", "J"),
+    ] {
         s = s.replace(spelled, said);
     }
     let mut chars = s.chars();
@@ -214,15 +227,15 @@ pub fn point(said: &str, places: &[Place]) -> Option<Found> {
     let spaced = words.join(" ").to_uppercase();
     let wanted: Vec<&Place> = places.iter().filter(|p| kind.is_none_or(|k| p.what == k)).collect();
     let exact: Vec<&&Place> = wanted.iter().filter(|p| p.ident.to_uppercase() == joined).collect();
-    if let Some(p) = exact.first() {
-        if p.what != "fix" {
-            return Some(row(said, p, true));
-        }
+    if let Some(p) = exact.first()
+        && p.what != "fix"
+    {
+        return Some(row(said, p, true));
     }
-    if kind == Some("airport") {
-        if let Some(a) = airport_named(&words, places) {
-            return Some(row(said, a, true));
-        }
+    if kind == Some("airport")
+        && let Some(a) = airport_named(&words, places)
+    {
+        return Some(row(said, a, true));
     }
     if let Some(p) = wanted.iter().find(|p| p.name.as_deref().is_some_and(|n| name_words(n) == spaced)) {
         return Some(row(said, p, true));
@@ -239,7 +252,7 @@ pub fn point(said: &str, places: &[Place]) -> Option<Found> {
         .map(|p| (alike(&joined, &p.ident).max(alike(&joined, p.name.as_deref().unwrap_or(""))), closer(&joined, &p.ident), *p))
         .collect();
     // Stable, as Python's sorted: of equals, the nearer stays first.
-    scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap().then(b.1.partial_cmp(&a.1).unwrap()));
+    scored.stable_sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap().then(b.1.partial_cmp(&a.1).unwrap()));
     match scored.first() {
         Some((s, _, p)) if *s >= ALIKE => Some(row(said, p, false)),
         _ => None,
@@ -255,13 +268,13 @@ pub fn points(said: &str, places: &[Place]) -> Vec<Found> {
     while i < words.len() {
         let mut took = false;
         for j in (i + 1..=words.len()).rev() {
-            if let Some(found) = point(&words[i..j].join(" "), places) {
-                if found.sure || j == i + 1 {
-                    out.push(found);
-                    i = j;
-                    took = true;
-                    break;
-                }
+            if let Some(found) = point(&words[i..j].join(" "), places)
+                && (found.sure || j == i + 1)
+            {
+                out.push(found);
+                i = j;
+                took = true;
+                break;
             }
         }
         if !took {
@@ -312,8 +325,15 @@ pub fn places_of(pack: &Pack) -> Vec<Place> {
     let table = |name: &str| pack.section(name).and_then(|b| std::str::from_utf8(b).ok()).and_then(json::table);
     let num = |s: &str| s.trim().parse::<f64>().ok();
     if let Some(t) = table("airports") {
-        let (id, icao, site, name, lat, lon, status) =
-            (t.col("ARPT_ID"), t.col("ICAO_ID"), t.col("SITE_TYPE_CODE"), t.col("ARPT_NAME"), t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"), t.col("ARPT_STATUS"));
+        let (id, icao, site, name, lat, lon, status) = (
+            t.col("ARPT_ID"),
+            t.col("ICAO_ID"),
+            t.col("SITE_TYPE_CODE"),
+            t.col("ARPT_NAME"),
+            t.col("LAT_DECIMAL"),
+            t.col("LONG_DECIMAL"),
+            t.col("ARPT_STATUS"),
+        );
         for r in &t.rows {
             let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(String::as_str).unwrap_or("");
             if get(site) != "A" || get(status) == "CI" {
@@ -325,7 +345,8 @@ pub fn places_of(pack: &Pack) -> Vec<Place> {
         }
     }
     if let Some(t) = table("navaids") {
-        let (id, kind, name, status, lat, lon) = (t.col("NAV_ID"), t.col("NAV_TYPE"), t.col("NAME"), t.col("NAV_STATUS"), t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"));
+        let (id, kind, name, status, lat, lon) =
+            (t.col("NAV_ID"), t.col("NAV_TYPE"), t.col("NAME"), t.col("NAV_STATUS"), t.col("LAT_DECIMAL"), t.col("LONG_DECIMAL"));
         for r in &t.rows {
             let get = |c: Option<usize>| c.and_then(|c| r.get(c)).map(String::as_str).unwrap_or("");
             if !NAVAID_KINDS.contains(&get(kind)) || !get(status).starts_with("OPERATIONAL") {
@@ -354,7 +375,7 @@ pub fn by_nearness(mut places: Vec<Place>, near: &[(f64, f64)]) -> Vec<Place> {
     }
     let squeeze = (near.iter().map(|p| p.0).sum::<f64>() / near.len() as f64).to_radians().cos();
     let d = |p: &Place| near.iter().map(|(la, lo)| (p.lat - la).powi(2) + ((p.lon - lo) * squeeze).powi(2)).fold(f64::INFINITY, f64::min);
-    places.sort_by(|a, b| d(a).partial_cmp(&d(b)).unwrap());
+    places.stable_sort_by(|a, b| d(a).partial_cmp(&d(b)).unwrap());
     places
 }
 

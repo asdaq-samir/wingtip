@@ -35,7 +35,9 @@ for (const path of ["/app/dev"] as const) {
     // tiles that came back drawn.
     const kinds = () => page.getByTestId("gl-map").getAttribute("data-chart-kinds");
     let tacDrawn = 0;
-    page.on("response", r => { if (/\/tac\/\d+\//.test(r.url()) && r.ok()) tacDrawn += 1; });
+    page.on("response", (r) => {
+      if (/\/tac\/\d+\//.test(r.url()) && r.ok()) tacDrawn += 1;
+    });
     await expect.poll(kinds, { timeout: slow(15000) }).toBe("sec");
 
     // Wheel-zoom in over the departure marker, well past the sectional's
@@ -84,17 +86,19 @@ for (const path of ["/app/dev"] as const) {
     await settle(page);
     const kinds = () => page.getByTestId("gl-map").getAttribute("data-chart-kinds");
     let ifrDrawn = 0;
-    page.on("response", r => { if (/\/ifr_low\/\d+\//.test(r.url()) && r.ok()) ifrDrawn += 1; });
+    page.on("response", (r) => {
+      if (/\/ifr_low\/\d+\//.test(r.url()) && r.ok()) ifrDrawn += 1;
+    });
     await expect.poll(kinds, { timeout: slow(15000) }).toBe("sec");
 
     await openMapSettings(page);
-    await page.getByTestId("base-chart-select").getByRole("radio", { name: "IFR low" }).click();
+    await page.getByTestId("base-chart-select").getByRole("button", { name: "IFR low" }).click();
     // The terminal sheet's row is the IFR area chart over the IFR charts.
     await expect(page.getByTestId("map-settings").getByText("IFR Area Charts")).toBeVisible();
     await expect.poll(kinds, { timeout: slow(10000) }).toBe("ifr_low");
     await expect.poll(() => ifrDrawn, { timeout: slow(45000) }).toBeGreaterThan(0);
 
-    await page.getByTestId("base-chart-select").getByRole("radio", { name: "Sectional" }).click();
+    await page.getByTestId("base-chart-select").getByRole("button", { name: "Sectional" }).click();
     await expect.poll(kinds, { timeout: slow(10000) }).toBe("sec");
     await expect(page.getByTestId("map-settings").getByText("Terminal Area Charts")).toBeVisible();
   });

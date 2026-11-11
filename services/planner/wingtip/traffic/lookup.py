@@ -1,4 +1,5 @@
 """One airplane, found by what a pilot knows it by: callsign, registration or ICAO address."""
+
 from __future__ import annotations
 
 import re
@@ -148,8 +149,11 @@ def _asked(text: str, adsbx_tried: bool = False) -> tuple[list[dict], dict]:
     for by, value in tries:
         credit = ADSB_LOL_SOURCE
         try:
-            found = [a for a in (_aircraft(e) for e in _paced(FIND_URL.format(by=by, value=value)).get("ac") or []
-                                 if isinstance(e, dict)) if a is not None]
+            found = [
+                a
+                for a in (_aircraft(e) for e in _paced(FIND_URL.format(by=by, value=value)).get("ac") or [] if isinstance(e, dict))
+                if a is not None
+            ]
         except TrafficUnavailable:
             if adsbx_tried:
                 raise

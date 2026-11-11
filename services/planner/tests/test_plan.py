@@ -4,42 +4,59 @@ selection and the per-leg wind lookup. What this proves is the contract
 -- that a real leg dict validates as a Leg (including the `from` alias),
 that /api/plan and /api/checkpoints serialise, and that the nav-log
 stream's lines are the messages app.schemas declares."""
+
 import pytest
-from fastapi.testclient import TestClient
 from wingtip import altitude as altitude_module
 from wingtip import navlog
 
 from app import checkpoint_scoring
 from app.main import app
 
-from .conftest import select_cruise_altitude_stub
+from .conftest import AirplaneClient, select_cruise_altitude_stub
 
-client = TestClient(app)
+client = AirplaneClient(app)
 
 CANDIDATES = [
-    {"id": "water@42.35000,-88.09000", "category": "water", "name": "Lake", "lat": 42.35, "lon": -88.09,
-     "predicted_score": 4.4, "along_track_nm": 3.9},
-    {"id": "town@42.60000,-88.40000", "category": "town", "name": "Town", "lat": 42.6, "lon": -88.4,
-     "predicted_score": 3.9, "along_track_nm": 22.0},
+    {
+        "id": "water@42.35000,-88.09000",
+        "category": "water",
+        "name": "Lake",
+        "lat": 42.35,
+        "lon": -88.09,
+        "predicted_score": 4.4,
+        "along_track_nm": 3.9,
+    },
+    {
+        "id": "town@42.60000,-88.40000",
+        "category": "town",
+        "name": "Town",
+        "lat": 42.6,
+        "lon": -88.4,
+        "predicted_score": 3.9,
+        "along_track_nm": 22.0,
+    },
 ]
 
 
-def _leg(start, end, altitude_ft, profile, fcst_hr="06") -> dict:
-    """What wingtip.navlog.assemble_leg returns, minus the live winds call."""
-    return {
-        "true_course_deg": 320.0, "distance_nm": 10.0, "altitude_ft": altitude_ft,
-        "wind": {"wind_dir_true_deg": 270.0, "wind_speed_kt": 15.0},
-        "wca_deg": -6.0, "true_heading_deg": 314.0, "magnetic_variation_deg": -3.0,
-        "magnetic_heading_deg": 317.0, "groundspeed_kt": 105.0, "ete_min": 5.7, "fuel_gal": 0.8,
-        "tas_kt": 111.4, "fuel_burn_gph": 8.5, "power_pct": 65.0, "oat_c": 4.0, "density_altitude_ft": 4600,
-    }
+def _wind(lat, lon, altitude_ft, fcst_hr="06") -> dict:
+    """The wind every leg is flown in, minus the live winds call."""
+    return {"wind_dir_true_deg": 270.0, "wind_speed_kt": 15.0}
+
+
+def _air(monkeypatch, wind=_wind):
+    """The air the nav log's legs are flown in (wingtip.navlog's lookups),
+    the engine working the legs out of it: `wind`, 4 degC aloft and 3
+    degrees west variation."""
+    monkeypatch.setattr(navlog, "wind_at_altitude", wind)
+    monkeypatch.setattr(navlog, "temperature_at_altitude", lambda lat, lon, altitude_ft, fcst_hr="06": 4.0)
+    monkeypatch.setattr(navlog, "magnetic_variation_deg", lambda lat, lon, on=None: -3.0)
 
 
 @pytest.fixture(autouse=True)
 def _stubbed_world(monkeypatch, altitude):
     monkeypatch.setattr(checkpoint_scoring, "score", lambda dep, dest: [dict(c) for c in CANDIDATES])
     monkeypatch.setattr(altitude_module, "select_cruise_altitude", select_cruise_altitude_stub(altitude))
-    monkeypatch.setattr(navlog, "assemble_leg", _leg)
+    _air(monkeypatch)
 
 
 def test_checkpoints_marks_the_selected_candidates():
@@ -67,10 +84,10 @@ def test_plan_returns_legs_with_from_and_to_and_totals():
     # legal altitude here, so all four are the same plan.
     assert [o["kind"] for o in body["altitude_options"]] == ["lowest", "highest", "fastest", "economical"]
     assert body["altitude_choice"] == "fastest"
-    assert body["altitude_options"][0]["steps"] == [
-        {"from": "C81", "to": "KDLH", "altitude_ft": 4500.0, "distance_nm": 30.0},
-    ]
-    assert "total_min" not in body["altitude_options"][2]   # it only ever repeated ete_min
+    (step,) = body["altitude_options"][0]["steps"]
+    assert (step["from"], step["to"], step["altitude_ft"]) == ("C81", "KDLH", 4500.0)
+    assert step["distance_nm"] == pytest.approx(sum(leg["distance_nm"] for leg in legs), abs=0.2)
+    assert "total_min" not in body["altitude_options"][2]  # it only ever repeated ete_min
 
 
 def test_plan_flies_the_plan_the_pilot_chose():
@@ -96,8 +113,7 @@ def test_plan_flies_a_route_with_no_legal_altitude_anyway(monkeypatch, altitude)
     # The owner's "I don't want to put hard limits on anything": the lowest
     # altitude over the 2,200 ft floor on the westbound course, 2,500 ft,
     # flown as an altitude of the planner's own, no plan picked.
-    monkeypatch.setattr(altitude_module, "select_cruise_altitude",
-                        select_cruise_altitude_stub({**altitude, "recommended_ft": None}))
+    monkeypatch.setattr(altitude_module, "select_cruise_altitude", select_cruise_altitude_stub({**altitude, "recommended_ft": None}))
 
     resp = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH"})
 
@@ -117,7 +133,7 @@ def test_navlog_streams_altitude_then_legs_then_done(messages):
     assert types.index("altitude") < types.index("leg")
     legs = [m for m in lines if m["type"] == "leg"]
     assert legs[0]["from"] == "C81" and legs[0]["wind"]["wind_speed_kt"] == 15.0
-    assert lines[-1]["totals"]["distance_nm"] == 10.0 * len(legs)
+    assert lines[-1]["totals"]["distance_nm"] == pytest.approx(sum(leg["distance_nm"] for leg in legs), abs=0.1)
     altitude = next(m for m in lines if m["type"] == "altitude")
     assert [o["kind"] for o in altitude["options"]] == ["lowest", "highest", "fastest", "economical"]
     assert altitude["flown"] == "fastest" and altitude["altitude_ft"] == 4500.0
@@ -129,13 +145,14 @@ def test_a_departure_time_picks_the_winds_forecast_period(monkeypatch, messages)
     # The forecast period each leg's winds are read for.
     asked = []
 
-    def leg(start, end, altitude_ft, profile, fcst_hr="06"):
+    def wind(lat, lon, altitude_ft, fcst_hr="06"):
         asked.append(fcst_hr)
-        return _leg(start, end, altitude_ft, profile, fcst_hr)
+        return _wind(lat, lon, altitude_ft, fcst_hr)
 
-    monkeypatch.setattr(navlog, "assemble_leg", leg)
+    _air(monkeypatch, wind)
     # No product's header to hand: the period by hours ahead.
     from wingtip import weather
+
     monkeypatch.setattr(weather, "winds_period", lambda fcst_hr="06": None)
     soon = (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat()
     later = (datetime.now(timezone.utc) + timedelta(hours=14)).isoformat()
@@ -160,7 +177,7 @@ def test_the_winds_product_is_the_one_whose_for_use_window_holds_the_departure(m
     1400-2100Z, the 12-hour 2100-0600Z, the 24-hour 0600-1800Z."""
     from datetime import datetime, timezone
 
-    from app import planning
+    from wingtip import planning
     from wingtip import weather
 
     periods = {
@@ -177,7 +194,7 @@ def test_the_winds_product_is_the_one_whose_for_use_window_holds_the_departure(m
 
 
 def test_totals_say_when_the_plan_was_made_and_the_winds_it_flies(messages, monkeypatch):
-    from app import planning
+    from wingtip import planning
     from wingtip import weather
 
     period = {"valid_at": "2026-09-22T18:00:00Z", "use_from": "2026-09-22T14:00:00Z", "use_to": "2026-09-22T21:00:00Z"}
@@ -197,7 +214,7 @@ def test_totals_say_when_the_plan_was_made_and_the_winds_it_flies(messages, monk
 def test_totals_carry_the_fuel_check(messages, monkeypatch):
     from datetime import datetime, timezone
 
-    from app import planning
+    from wingtip import planning
 
     # No departure time is now: here noon in Chicago (17:00 UTC), by day.
     monkeypatch.setattr(planning, "now", lambda: datetime(2026, 9, 22, 17, 0, tzinfo=timezone.utc))
@@ -207,13 +224,16 @@ def test_totals_carry_the_fuel_check(messages, monkeypatch):
     # legs' own fuel (the first leg's climb from the field included);
     # the profile holds 40 usable.
     assert t["reserve_min"] == 30 and t["reserve_gal"] == 4.25 and t["night"] is False
-    assert t["taxi_gal"] == 1.4    # the C172S handbook's start, taxi and takeoff allowance
+    assert t["taxi_gal"] == 1.4  # the C172S handbook's start, taxi and takeoff allowance
     assert t["fuel_required_gal"] == round(t["fuel_gal"] + 1.4 + 4.25, 1)
     assert t["usable_fuel_gal"] == 40 and t["fuel_margin_gal"] == round(40 - t["fuel_required_gal"], 1)
-    # The climb from the 900 ft field to 4,500 ft is on the first leg.
+    # The climb from the 900 ft field to 4,500 ft is flown on its legs: the
+    # first, 2 nm to the lake the stub puts beside the field, is climb all
+    # the way, and the climb tops out on the second; no leg after it climbs.
     legs = [m for m in lines if m["type"] == "leg"]
-    assert legs[0]["climb_min"] > 0 and legs[1]["climb_min"] == 0
-    assert legs[0]["ete_min"] > legs[1]["ete_min"] and legs[0]["fuel_gal"] > legs[1]["fuel_gal"]
+    assert legs[0]["climb_min"] == pytest.approx(legs[0]["ete_min"], abs=0.1)
+    assert 0 < legs[1]["climb_min"] < legs[1]["ete_min"]
+    assert all(leg["climb_min"] == 0 for leg in legs[2:])
 
     # A pilot's own tanks, too small: the margin goes negative.
     short = messages(client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH", "usable_fuel_gal": 5}))[-1]
@@ -242,10 +262,19 @@ def test_navlog_flies_the_chosen_plan_and_says_so(messages):
 
 
 def test_navlog_flies_a_pilots_own_aeroplane_over_a_stock_profile(messages):
-    resp = client.get("/api/navlog", params={
-        "dep": "C81", "dest": "KDLH", "aircraft": "pa28", "cruise_tas_kt": 118, "fuel_burn_gph": 9.9,
-        "climb_tas_kt": 79, "climb_fuel_burn_gph": 13.2, "cruise_power_pct": 65,
-    })
+    resp = client.get(
+        "/api/navlog",
+        params={
+            "dep": "C81",
+            "dest": "KDLH",
+            "aircraft": "pa28",
+            "cruise_tas_kt": 118,
+            "fuel_burn_gph": 9.9,
+            "climb_tas_kt": 79,
+            "climb_fuel_burn_gph": 13.2,
+            "cruise_power_pct": 65,
+        },
+    )
 
     assert resp.status_code == 200
     aircraft = next(m for m in messages(resp) if m["type"] == "altitude")["aircraft"]
@@ -253,7 +282,7 @@ def test_navlog_flies_a_pilots_own_aeroplane_over_a_stock_profile(messages):
     assert aircraft["cruise_tas_kt"] == 118 and aircraft["fuel_burn_gph"] == 9.9
     assert aircraft["climb_tas_kt"] == 79 and aircraft["climb_fuel_burn_gph"] == 13.2
     assert aircraft["cruise_power_pct"] == 65
-    assert aircraft["service_ceiling_ft"] == 14100   # the profile's own, untouched
+    assert aircraft["service_ceiling_ft"] == 14100  # the profile's own, untouched
 
 
 def test_a_stock_profile_says_the_power_its_cruise_is_at(messages):
@@ -276,8 +305,7 @@ def test_navlog_flies_the_economical_plan_when_asked(messages):
 
 
 def test_navlog_flies_a_route_with_no_legal_altitude_anyway(monkeypatch, altitude, messages):
-    monkeypatch.setattr(altitude_module, "select_cruise_altitude",
-                        select_cruise_altitude_stub({**altitude, "recommended_ft": None}))
+    monkeypatch.setattr(altitude_module, "select_cruise_altitude", select_cruise_altitude_stub({**altitude, "recommended_ft": None}))
 
     lines = messages(client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH"}))
 
@@ -287,13 +315,14 @@ def test_navlog_flies_a_route_with_no_legal_altitude_anyway(monkeypatch, altitud
 
 # --- the altitude outcome, decided once ---
 
+
 def _no_winds(monkeypatch):
     from wingtip.weather import WeatherServiceError
 
     def fail(*args, **kwargs):
         raise WeatherServiceError("aviationweather.gov winds-06 unavailable: timed out")
 
-    monkeypatch.setattr(navlog, "assemble_leg", fail)
+    _air(monkeypatch, fail)
 
 
 def test_navlog_at_a_pilots_own_altitude_streams_it_then_its_legs(messages):
@@ -328,9 +357,9 @@ def test_plan_without_winds_is_a_502(monkeypatch):
 
 
 def test_each_outcome_of_the_altitude_resolver(monkeypatch, altitude):
-    from app.planning import aircraft_profile
+    from wingtip.aircraft import aircraft_profile
     from app.router_basics import load_route
-    from app.routers.plan import Flown, NoWinds, resolve_altitude
+    from wingtip.flight_plan import Flown, NoWinds, resolve_altitude
 
     r = load_route("C81", "KDLH")
     fix_list = navlog.fixes(r.dep_ident, r.dest_ident, r.start, r.end, [])
@@ -342,9 +371,9 @@ def test_each_outcome_of_the_altitude_resolver(monkeypatch, altitude):
     typed = resolve_altitude(r, fix_list, profile, "c172", 3500.0, "lowest")
     assert isinstance(typed, Flown) and typed.choice is None and len(typed.options) == 4
 
-    monkeypatch.setattr(altitude_module, "select_cruise_altitude",
-                        select_cruise_altitude_stub({**altitude, "recommended_ft": None}))
-    from app import planning
+    monkeypatch.setattr(altitude_module, "select_cruise_altitude", select_cruise_altitude_stub({**altitude, "recommended_ft": None}))
+    from wingtip import planning
+
     planning._ALTITUDE_CACHE.clear()
     planning._PLANS_CACHE.clear()
     anyway = resolve_altitude(r, fix_list, profile, "c172", None, "lowest")
@@ -364,7 +393,7 @@ def test_a_plan_whose_scoring_hangs_answers_within_the_bound(monkeypatch):
     read now."""
     import threading
 
-    from app.routers import plan as plan_router
+    from wingtip import flight_plan
 
     release = threading.Event()
 
@@ -373,7 +402,7 @@ def test_a_plan_whose_scoring_hangs_answers_within_the_bound(monkeypatch):
         return []
 
     monkeypatch.setattr(checkpoint_scoring, "score", slow_read)
-    monkeypatch.setattr(plan_router, "COMPUTE_LIMIT_S", 0.3)
+    monkeypatch.setattr(flight_plan, "COMPUTE_LIMIT_S", 0.3)
     try:
         resp = client.get("/api/plan", params={"dep": "C81", "dest": "KDLH"})
     finally:
@@ -405,14 +434,34 @@ def test_no_altitude_says_where_and_why_in_a_pilots_words():
     """Chicago to Las Vegas in a 172: the Rockies' floor over the climb
     the aeroplane has, not the whole route's highest floor beside its
     lowest ceiling and a query parameter to supply."""
-    from app import planning
+    from wingtip import planning
 
-    selection = {"segments": [
-        {"from_nm": 0.0, "to_nm": 150.0, "floor_ft": 2500.0, "service_ceiling_ft": 14000.0, "airspace_ceiling_ft": 3000.0,
-         "band_ceiling_ft": 3000.0, "course_magnetic_deg": 255.0, "eastbound": False, "candidates_ft": [2500.0]},
-        {"from_nm": 980.0, "to_nm": 1040.0, "floor_ft": 13700.0, "service_ceiling_ft": 14000.0, "airspace_ceiling_ft": None,
-         "band_ceiling_ft": 14000.0, "course_magnetic_deg": 255.0, "eastbound": False, "candidates_ft": []},
-    ]}
+    selection = {
+        "segments": [
+            {
+                "from_nm": 0.0,
+                "to_nm": 150.0,
+                "floor_ft": 2500.0,
+                "service_ceiling_ft": 14000.0,
+                "airspace_ceiling_ft": 3000.0,
+                "band_ceiling_ft": 3000.0,
+                "course_magnetic_deg": 255.0,
+                "eastbound": False,
+                "candidates_ft": [2500.0],
+            },
+            {
+                "from_nm": 980.0,
+                "to_nm": 1040.0,
+                "floor_ft": 13700.0,
+                "service_ceiling_ft": 14000.0,
+                "airspace_ceiling_ft": None,
+                "band_ceiling_ft": 14000.0,
+                "course_magnetic_deg": 255.0,
+                "eastbound": False,
+                "candidates_ft": [],
+            },
+        ]
+    }
 
     why = planning.no_altitude(selection)
 
@@ -428,7 +477,7 @@ def test_no_altitude_says_where_and_why_in_a_pilots_words():
     assert why["brief"] == "Ceiling 14,000 ft: terrain 1,010 nm along needs 14,500"
     assert planning.no_altitude(selection, where="540 nm past KDLH")["brief"] == "Ceiling 14,000 ft: terrain 540 nm past KDLH needs 14,500"
     # One message for /api/plan's 422.
-    detail = planning.no_altitude_detail(selection)
+    detail = planning.no_altitude(selection)["detail"]
     assert detail.startswith("No legal VFR cruising altitude 980-1040 nm along the route. The terrain")
     assert "altitude_ft" not in detail
 
@@ -437,7 +486,7 @@ def test_no_altitude_names_the_class_b_and_what_it_takes():
     """Midway to Duluth: the straight line runs over O'Hare, where the
     Chicago Class B reaches the ground. It said "The airspace over it
     stops at 0 ft"."""
-    from app import planning
+    from wingtip import planning
 
     selection = {
         "airspace_transits": [
@@ -445,10 +494,28 @@ def test_no_altitude_names_the_class_b_and_what_it_takes():
             {"name": "CHICAGO CLASS B", "class": "B", "floor_ft_msl": 3600.0, "along_track_nm": 11.3},
         ],
         "segments": [
-            {"from_nm": 0.0, "to_nm": 1.0, "floor_ft": 1700.0, "service_ceiling_ft": 12600.0, "airspace_ceiling_ft": None,
-             "band_ceiling_ft": 12600.0, "course_magnetic_deg": 332.0, "eastbound": False, "candidates_ft": [2500.0]},
-            {"from_nm": 1.0, "to_nm": 15.0, "floor_ft": 1700.0, "service_ceiling_ft": 12600.0, "airspace_ceiling_ft": 0.0,
-             "band_ceiling_ft": 0.0, "course_magnetic_deg": 332.0, "eastbound": False, "candidates_ft": []},
+            {
+                "from_nm": 0.0,
+                "to_nm": 1.0,
+                "floor_ft": 1700.0,
+                "service_ceiling_ft": 12600.0,
+                "airspace_ceiling_ft": None,
+                "band_ceiling_ft": 12600.0,
+                "course_magnetic_deg": 332.0,
+                "eastbound": False,
+                "candidates_ft": [2500.0],
+            },
+            {
+                "from_nm": 1.0,
+                "to_nm": 15.0,
+                "floor_ft": 1700.0,
+                "service_ceiling_ft": 12600.0,
+                "airspace_ceiling_ft": 0.0,
+                "band_ceiling_ft": 0.0,
+                "course_magnetic_deg": 332.0,
+                "eastbound": False,
+                "candidates_ft": [],
+            },
         ],
     }
 
@@ -462,7 +529,8 @@ def test_no_altitude_names_the_class_b_and_what_it_takes():
     # The waypoint round it, when there is one.
     via = {"ident": "VPDVB", "kind": "VFR waypoint", "added_nm": 6.2}
     assert planning.no_altitude(selection, via=via)["advice"] == (
-        "Fly via VPDVB (6 nm further) to stay out of it, or plan it with a Class B clearance.")
+        "Fly via VPDVB (6 nm further) to stay out of it, or plan it with a Class B clearance."
+    )
 
     # A shelf above the ground says where it starts, and the altitude
     # under it is the band's own: any 500 ft below the cruising-altitude
@@ -481,7 +549,7 @@ def test_a_local_flight_is_its_time_aloft_at_cruise_burn_with_the_fuel_check(mon
     the burn gives, the day reserve with no departure time at noon."""
     from datetime import datetime, timezone
 
-    from app import planning
+    from wingtip import planning
 
     monkeypatch.setattr(planning, "now", lambda: datetime(2026, 9, 22, 17, 0, tzinfo=timezone.utc))
     resp = client.get("/api/local-flight", params={"dep": "C81", "dest": "C81", "duration_min": 90})
@@ -514,10 +582,16 @@ def test_without_checkpoints_the_legs_run_point_to_point_and_nothing_is_scored(m
 def test_an_altitude_the_pilot_set_is_checked_against_the_band_and_warned_not_refused():
     """A pilot's own altitude is flown as set; what is wrong with it is
     said, with the rule each breaks."""
-    from app import planning
+    from wingtip import planning
 
-    band = {"floor_ft": 3200.0, "hemispheric_rule_from_ft": 3800.0, "eastbound": False, "airspace_ceiling_ft": 8000.0,
-            "service_ceiling_ft": 13000.0, "cloud_ceiling_ft": 7000.0}
+    band = {
+        "floor_ft": 3200.0,
+        "hemispheric_rule_from_ft": 3800.0,
+        "eastbound": False,
+        "airspace_ceiling_ft": 8000.0,
+        "service_ceiling_ft": 13000.0,
+        "cloud_ceiling_ft": 7000.0,
+    }
     selection = {"segments": [{**band, "from_nm": 0.0, "to_nm": 10.0}, {**band, "from_nm": 10.0, "to_nm": 20.0}]}
     at = lambda ft: [{"altitude_ft": ft}, {"altitude_ft": ft}]  # noqa: E731
 
@@ -525,12 +599,14 @@ def test_an_altitude_the_pilot_set_is_checked_against_the_band_and_warned_not_re
     assert planning.own_altitude_caution(selection, at(4500.0), ("C81", "VPBNG")) is None
     # 5,500 westbound, above 3,000 ft over the ground: off the rule.
     assert planning.own_altitude_caution(selection, at(5500.0), ("C81", "VPBNG")) == {
-        "from_ident": "C81", "to_ident": "VPBNG", "altitude_ft": 5500.0,
-        "reasons": ["Westbound above 3,800 ft flies even thousands plus 500 (14 CFR 91.159)"],
+        "from_ident": "C81",
+        "to_ident": "VPBNG",
+        "altitude_ft": 5500.0,
+        "reasons": ["Westbound more than 3,000 ft above the ground flies even thousands plus 500: fly 4,500 or 6,500 ft (14 CFR 91.159)"],
     }
     # Under the floor: under the rule too, so that alone.
     assert planning.own_altitude_caution(selection, at(3000.0), ("C81", "VPBNG"))["reasons"] == [
-        "Under the 3,200 ft the terrain and obstacles need (14 CFR 91.119)",
+        "Under the 3,200 ft the terrain and obstacles need (14 CFR 91.119)"
     ]
     # Into the clouds' clearance and the Class B over it, each said once.
     assert planning.own_altitude_caution(selection, at(8500.0), ("C81", "VPBNG"))["reasons"] == [
@@ -564,7 +640,7 @@ def test_an_altitude_the_pilot_set_under_ifr_is_checked_against_ifr_rules():
     """Under IFR a pilot's own altitude is warned under the minimum IFR
     altitude (91.177(a)) and off the thousands its direction takes
     (91.179(b)) -- ATC may assign otherwise, so a warning, never a refusal."""
-    from app import planning
+    from wingtip import planning
 
     band = {"floor_ft": 4100.0, "eastbound": True, "service_ceiling_ft": 13000.0, "obstacle_clearance_ft": 2000.0}
     selection = {"rules": "ifr", "segments": [{**band, "from_nm": 0.0, "to_nm": 10.0}]}
@@ -572,30 +648,39 @@ def test_an_altitude_the_pilot_set_under_ifr_is_checked_against_ifr_rules():
 
     assert planning.own_altitude_caution(selection, at(5000.0), ("C81", "KDLH")) is None
     assert planning.own_altitude_caution(selection, at(6000.0), ("C81", "KDLH"))["reasons"] == [
-        "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)",
+        "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)"
     ]
     assert planning.own_altitude_caution(selection, at(3000.0), ("C81", "KDLH"))["reasons"] == [
-        "Under the 4,100 ft minimum IFR altitude: 2,000 ft over the highest obstacle within 4 nm (14 CFR 91.177(a))",
+        "Under the 4,100 ft minimum IFR altitude: 2,000 ft over the highest obstacle within 4 nm (14 CFR 91.177(a)(2))"
     ]
     assert planning.own_altitude_caution(selection, at(5500.0), ("C81", "KDLH"))["reasons"] == [
-        "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)",
+        "Eastbound under IFR flies odd thousands, unless ATC assigns otherwise (14 CFR 91.179)"
     ]
 
 
 def test_no_ifr_altitude_says_the_minimum_ifr_altitude_and_the_service_ceiling():
     """A C172 direct from Rocky Mountain Metro to Aspen under IFR: the
     minimum IFR altitude over the Rockies is past what it climbs to."""
-    from app import planning
+    from wingtip import planning
 
-    stuck = {"from_nm": 0.0, "to_nm": 90.0, "floor_ft": 16300.0, "band_ceiling_ft": 11800.0,
-             "service_ceiling_ft": 11800.0, "course_magnetic_deg": 235.7, "eastbound": False, "candidates_ft": [],
-             "mountainous": True, "obstacle_clearance_ft": 2000.0}
+    stuck = {
+        "from_nm": 0.0,
+        "to_nm": 90.0,
+        "floor_ft": 16300.0,
+        "band_ceiling_ft": 11800.0,
+        "service_ceiling_ft": 11800.0,
+        "course_magnetic_deg": 235.7,
+        "eastbound": False,
+        "candidates_ft": [],
+        "mountainous": True,
+        "obstacle_clearance_ft": 2000.0,
+    }
     why = planning.no_altitude({"rules": "ifr", "segments": [stuck]}, ("KBJC", "KASE"), where="45 nm past KBJC")
     assert why["title"] == "No IFR cruising altitude 0-90 nm out of KBJC toward KASE"
     assert why["brief"] == "Ceiling 11,800 ft: the minimum IFR altitude 45 nm past KBJC is 16,300"
     assert why["reasons"] == [
         "The minimum IFR altitude there is 16,300 ft: 2,000 ft over the highest obstacle within 4 nm"
-        " over a mountainous area (14 CFR 91.177(a)).",
+        " over a mountainous area (14 CFR 91.177(a)(2)).",
         "The first westbound IFR altitude above that is 18,000 ft.",
         "The aircraft's service ceiling stops at 11,800 ft.",
     ]
@@ -609,8 +694,8 @@ def test_under_ifr_the_fuel_on_to_the_alternate_is_flown_before_the_reserve(mess
     filed = messages(client.get("/api/navlog", params={**params, "alternate": "KMSN"}))[-1]["totals"]
     leg = filed["alternate"]
     assert without["alternate"] is None
-    # The leg in its winds, as every leg here is stubbed (_leg): 10 nm, 0.8 gal.
-    assert leg["ident"] == "KMSN" and leg["distance_nm"] == 10.0 and leg["fuel_gal"] == 0.8 and not leg["still_air"]
+    # The leg in its winds, as every leg here is stubbed (_air).
+    assert leg["ident"] == "KMSN" and leg["distance_nm"] > 50 and leg["fuel_gal"] > 0 and not leg["still_air"]
     assert filed["fuel_required_gal"] == round(filed["fuel_gal"] + filed["taxi_gal"] + leg["fuel_gal"] + filed["reserve_gal"], 1)
     # Under VFR an alternate means nothing to the fuel.
     vfr = messages(client.get("/api/navlog", params={"dep": "C81", "dest": "KDLH", "alternate": "KMSN"}))[-1]["totals"]
@@ -620,7 +705,7 @@ def test_under_ifr_the_fuel_on_to_the_alternate_is_flown_before_the_reserve(mess
 def test_an_airplanes_own_ceiling_is_flown_over_its_profiles():
     """The pilot's own service ceiling for their N-number (the owner's
     "give users a way to change these specs"): the profile's otherwise."""
-    from app.planning import aircraft_profile
+    from wingtip.aircraft import aircraft_profile
 
     assert aircraft_profile("pa28140cruiser")["service_ceiling_ft"] == 10950
     assert aircraft_profile("pa28140cruiser", service_ceiling_ft=14300)["service_ceiling_ft"] == 14300

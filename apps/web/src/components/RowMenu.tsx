@@ -1,12 +1,10 @@
-import { useRef, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Ellipsis } from "lucide-react";
-import { cn } from "cn";
 import RoundButton from "./RoundButton";
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from "./ui/context-menu";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { loadPopups, usePopups } from "./popupsChunk";
 
 /** One of a row's actions: Share, Clear, Delete… */
-export interface RowAction {
+interface RowAction {
   label: string;
   icon: ReactNode;
   onSelect: () => void;
@@ -14,8 +12,30 @@ export interface RowAction {
   destructive?: boolean;
   /** It opens a question of its own (Delete's), which keeps the focus. */
   asks?: boolean;
+  /** Its name to a screen reader, where that is more than the word:
+   *  "Remove KDLH from Recents". */
+  spoken?: string;
   testId?: string;
 }
+
+export interface RowMenuProps {
+  /** The •••'s name to a screen reader, "More for C81 to KDLH": not the row's own name first, which a search for the row by its name also found. */
+  label: string;
+  actions: RowAction[];
+  testId?: string;
+  children: ReactNode;
+}
+
+/** The row's own box, lifted while its held menu is open (RowMenuImpl).
+ *  No iOS callout over a long press: the menu is the row's own. */
+export const ROW_LIFT =
+  "group/row flex items-center gap-1 pr-2 transition-[background-color,box-shadow,transform] [-webkit-touch-callout:none]";
+
+/** The •••: with a mouse, shown as the row is pointed at or has the focus
+ *  in it, as Base UI's own context-menu example has it; to a finger always
+ *  there, its long press the same menu. */
+export const ROW_MORE =
+  "pointer-fine:opacity-0 pointer-fine:group-hover/row:opacity-100 pointer-fine:group-focus-within/row:opacity-100 pointer-fine:data-popup-open:opacity-100";
 
 /**
  * A list's row as Maps' Recents set one (the owner's screenshot,
@@ -25,65 +45,26 @@ export interface RowAction {
  * ContextMenu, the row lifted white over the list while that menu is
  * open, as Maps lifts it.
  */
-export default function RowMenu({ label, actions, testId, children }: {
-  /** The •••'s name to a screen reader, "More for C81 to KDLH": not the row's own name first, which a search for the row by its name also found. */
-  label: string;
-  actions: RowAction[];
-  testId?: string;
-  children: ReactNode;
-}) {
-  // An action that asks (Delete) opens its question once the menu has
-  // closed, the focus left to the question: opened as the item was
-  // picked, the closing menu's own focus and dismiss handling crossed the
-  // question's opening, which a desktop's Dialog took as a click away and
-  // a phone's sheet never showed (flights.spec, CI on both, 2026-10-28).
-  const pending = useRef<(() => void) | null>(null);
-  const afterClose = (event: Event) => {
-    const run = pending.current;
-    if (!run) return;
-    pending.current = null;
-    event.preventDefault();
-    // After the menu's own clean-up, not in it: opened from inside it, the
-    // question came up under the menu's aria-hidden over the rest of the
-    // page, there but out of reach to VoiceOver and to a search by role.
-    setTimeout(run, 0);
-  };
-  // A press in a menu is the menu's own: portalled out of the sheet in the
-  // page but inside it in React's tree, it went on up to the map sheet's
-  // head, whose drag (useDetentDrag) took the finger, and a tap on Delete
-  // on a phone left the menu open with Delete only focused (flights.spec,
-  // half the runs on the phone project). As PhoneSheetContent stops its own.
-  const ownPress = (event: { stopPropagation: () => void }) => event.stopPropagation();
-  const items = (Item: typeof DropdownMenuItem | typeof ContextMenuItem) => actions.map(a => (
-    <Item key={a.label} onSelect={() => { if (a.asks) pending.current = a.onSelect; else a.onSelect(); }} variant={a.destructive ? "destructive" : "default"} data-testid={a.testId}>
-      {a.icon} {a.label}
-    </Item>
-  ));
+export default function RowMenu(props: RowMenuProps) {
+  // The menus are on the popups' chunk (popupsChunk): until it is in, the
+  // row and its •••, a tap on which opens the menu once it is.
+  const popups = usePopups();
+  const [asked, setAsked] = useState(false);
+  if (popups) return <popups.RowMenuImpl {...props} defaultOpen={asked} />;
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <div className={cn(
-          // No iOS callout over a long press: the menu is the row's own.
-          "flex items-center gap-1 pr-2 transition-[background-color,box-shadow,transform] [-webkit-touch-callout:none]",
-          "data-[state=open]:relative data-[state=open]:z-10 data-[state=open]:scale-[1.02] data-[state=open]:rounded-2xl data-[state=open]:bg-card data-[state=open]:shadow-xl",
-        )}>
-          <div className="min-w-0 flex-1">{children}</div>
-          {/* Not modal: as a modal menu over the sheet, a pick on a phone
-              was now and then left unanswered, the menu open with its item
-              focused (flights.spec, one run in four), and Delete's question
-              came up under its aria-hidden. Escape and a tap away still
-              close it. */}
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <RoundButton label={label} data-testid={testId}>
-                <Ellipsis className="size-5" aria-hidden="true" />
-              </RoundButton>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-48" onCloseAutoFocus={afterClose} onPointerDown={ownPress}>{items(DropdownMenuItem)}</DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </ContextMenuTrigger>
-      <ContextMenuContent className="min-w-48" onCloseAutoFocus={afterClose} onPointerDown={ownPress}>{items(ContextMenuItem)}</ContextMenuContent>
-    </ContextMenu>
+    <div className={ROW_LIFT}>
+      <div className="min-w-0 flex-1">{props.children}</div>
+      <RoundButton
+        label={props.label}
+        className={ROW_MORE}
+        data-testid={props.testId}
+        onClick={() => {
+          setAsked(true);
+          void loadPopups();
+        }}
+      >
+        <Ellipsis className="size-5" aria-hidden="true" />
+      </RoundButton>
+    </div>
   );
 }

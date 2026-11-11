@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?><ns7:AIXMBasicMessage xmlns:ns7="http://www.aixm.aero/schema/5.1/message" xmlns:ns1="http://www.opengis.net/gml/3.2" xmlns:ns2="http://www.w3.org/1999/xlink" xmlns:ns3="http://www.aixm.aero/schema/5.1" xmlns:ns4="http://www.isotc211.org/2005/gco" xmlns:ns5="http://www.isotc211.org/2005/gmd" xmlns:ns6="http://www.isotc211.org/2005/gts" ns1:id="SU_aixmBasicMessage">
+    <ns1:name>SU_AIXM</ns1:name>
+    <ns1:boundedBy xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/>
+    <ns7:hasMember>
+        <ns3:Airspace ns1:id="SU_airspace">
+            <ns1:boundedBy xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/>
+            <ns3:timeSlice>
+                <ns3:AirspaceTimeSlice ns1:id="SU_airspaceTimeSlice">
+                    <ns1:validTime/>
+                    <ns3:interpretation>SNAPSHOT</ns3:interpretation>
+                    <ns3:designator>W136C</ns3:designator>
+                    <ns3:geometryComponent>
+                        <ns3:AirspaceGeometryComponent ns1:id="SU_airspaceGeometryComponent_0">
+                            <ns3:theAirspaceVolume>
+<ns3:AirspaceVolume ns1:id="SU_schedule_airspaceVolume_0_ManualLimits">
+    <ns3:upperLimit>3000</ns3:upperLimit>
+    <ns3:lowerLimit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/>
+</ns3:AirspaceVolume>
+                            </ns3:theAirspaceVolume>
+                        </ns3:AirspaceGeometryComponent>
+                    </ns3:geometryComponent>
+                    <ns3:activation>
+                        <ns3:AirspaceActivation ns1:id="SU_airspaceActivation">
+                            <ns3:status>ACTIVE</ns3:status>
+                        </ns3:AirspaceActivation>
+                    </ns3:activation>
+                    <ns3:extension>
+                        <ns3:SAAManualAltitudeActiveTypeExtension ns1:id="SU_SAAManualAltitudeActiveTypeExtension_0">
+                            <ns3:saaManualActiveType>A</ns3:saaManualActiveType>
+                        </ns3:SAAManualAltitudeActiveTypeExtension>
+                    </ns3:extension>
+                    <ns3:extension>
+                        <ns3:SAAManualAltitudeExtension ns1:id="SU_SAAManualAltitudeExtension_0">
+                            <ns3:saaManualHighAltitude>3000</ns3:saaManualHighAltitude>
+                            <ns3:saaManualLowAltitude xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/>
+                        </ns3:SAAManualAltitudeExtension>
+                    </ns3:extension>
+                </ns3:AirspaceTimeSlice>
+            </ns3:timeSlice>
+        </ns3:Airspace>
+    </ns7:hasMember>
+</ns7:AIXMBasicMessage>

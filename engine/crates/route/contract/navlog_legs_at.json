@@ -1,0 +1,70 @@
+{
+  "x-call": "wingtip_route::navlog::calls::call",
+  "description": "The legs flown at the altitude target_ft picked on the wheel: each leg at it where legal, else at its nearest legal altitude (the lower on a tie), with their climbs.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "NavLogLegsAtInput",
+      "type": "object",
+      "properties": {
+        "fixes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogFix"
+          }
+        },
+        "segments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogSegment"
+          }
+        },
+        "profile": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/NavLogProfile"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: \"don't assume\")."
+        },
+        "departure_elevation_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "air": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/NavLogLegAir"
+          }
+        },
+        "target_ft": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "fixes",
+        "segments",
+        "profile",
+        "air",
+        "target_ft"
+      ]
+    },
+    "answer": {
+      "title": "NavLogLegsAtAnswer",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/NavLogLeg"
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

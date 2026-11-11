@@ -31,7 +31,7 @@ async function frames(page: Page, move: () => Promise<void>): Promise<Frame[]> {
         const r = document.querySelector(`[data-slot=map-panel] ${selector}`)?.getBoundingClientRect();
         return r && r.height > 0 ? { top: r.top - panel.top, bottom: r.bottom - panel.top } : null;
       };
-      w.__frames.push({ height: panel.height, bar: at("[data-testid=tab-bar]"), figures: at("[data-testid=flight-line]") });
+      w.__frames.push({ height: panel.height, bar: at("[role=search]"), figures: at("[data-testid=flight-line]") });
       if (performance.now() - t0 < 1200) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
@@ -53,7 +53,8 @@ test("on a phone the tabs move with the sheet from the pill to half way and back
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
   for (const key of ["ArrowUp", "ArrowDown"] as const) {
     const seen = await frames(page, () => step(page, key));
-    const first = seen[0]!, last = seen[seen.length - 1]!;
+    const first = seen[0]!,
+      last = seen[seen.length - 1]!;
     expect(first.bar).not.toBeNull();
     expect(last.bar).not.toBeNull();
     // Part of the way between the two sizes, part of the way between the

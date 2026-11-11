@@ -9,6 +9,7 @@ downloaded once, a megabyte, and kept. Addresses come from the Census
 Bureau's own geocoder, asked when what is typed starts with a number. Both
 are the US government's, free and keyless.
 """
+
 from __future__ import annotations
 
 import csv
@@ -157,8 +158,9 @@ def find_addresses(query: str, limit: int = 4) -> list:
     if kept and time.monotonic() < kept[0]:
         return kept[1][:limit]
     try:
-        resp = requests.get(GEOCODER_URL, headers=HEADERS, timeout=8, params={
-            "address": query.strip(), "benchmark": "Public_AR_Current", "format": "json"})
+        resp = requests.get(
+            GEOCODER_URL, headers=HEADERS, timeout=8, params={"address": query.strip(), "benchmark": "Public_AR_Current", "format": "json"}
+        )
         resp.raise_for_status()
         matches = resp.json().get("result", {}).get("addressMatches", [])
     except (requests.RequestException, ValueError) as err:
@@ -166,7 +168,8 @@ def find_addresses(query: str, limit: int = 4) -> list:
         return kept[1][:limit] if kept else []
     found = [
         {"label": _address_label(m["matchedAddress"]), "lat": m["coordinates"]["y"], "lon": m["coordinates"]["x"]}
-        for m in matches[:limit] if m.get("matchedAddress") and m.get("coordinates")
+        for m in matches[:limit]
+        if m.get("matchedAddress") and m.get("coordinates")
     ]
     with _LOCK:
         if len(_ADDRESSES) >= ADDRESS_CACHE_MAX:

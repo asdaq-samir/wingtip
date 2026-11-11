@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { sameField } from "../../../lib/procedures";
-import { useSearchParam } from "../../../lib/useSearchParam";
+import { useSearchParam } from "../lib/useSearchParam";
 
 /**
  * The stops the pilot put in from the planner's fuel stops (FPL's Add fuel
@@ -10,10 +10,11 @@ import { useSearchParam } from "../../../lib/useSearchParam";
  * the field, not its spelling (UES is KUES).
  */
 export function useFuelStops(): (ident: string) => boolean {
-  const raw = useSearchParam("fuel") ?? "", stops = useSearchParam("stops") ?? "";
+  const raw = useSearchParam("fuel") ?? "",
+    stops = useSearchParam("stops") ?? "";
   return useMemo(() => {
     // Still a stop: one taken out and typed in again by hand is the pilot's.
-    const fuel = raw.split(",").filter(f => f && stops.split(",").some(s => sameField(s, f)));
-    return (ident: string) => fuel.some(f => sameField(f, ident));
+    const fuel = raw.split(",").filter((f) => f && stops.split(",").some((s) => sameField(s, f)));
+    return (ident: string) => fuel.some((f) => sameField(f, ident));
   }, [raw, stops]);
 }

@@ -1,0 +1,67 @@
+package app.wingtipmaps.gateway.dto;
+
+import app.wingtipmaps.gateway.domain.Flight;
+import java.time.Instant;
+import java.util.List;
+import org.jspecify.annotations.Nullable;
+
+/** One row of a pilot's own flight list -- the totals, not the
+ *  per-checkpoint detail ({@link FlightDto} carries that, for one
+ *  flight at a time). */
+public record FlightSummaryDto(
+        Long id,
+        String departureIdent,
+        String destinationIdent,
+        /* The airports it lands at on the way, in order. */
+        List<String> stops,
+        @Nullable String aircraftTailNumber,
+        @Nullable Integer cruiseAltitudeFt,
+        @Nullable Double totalDistanceNm,
+        @Nullable Double totalEteMin,
+        @Nullable Double totalFuelGal,
+        @Nullable Instant plannedFor,
+        Instant createdAt,
+        /* The pilot's risk assessment, as saved with it; null without one. */
+        @Nullable RiskAssessmentDto risk,
+        /* The altitudes the pilot set at its points ("VPBNG:4500"); null
+         *  where the planner's own were flown. */
+        @Nullable String altitudes,
+        /* The other picks it was planned with, as the planner's address
+         *  writes them; null for none. */
+        @Nullable String picks,
+        /* The pilot's own name for it; null where it is shown by its route. */
+        @Nullable String name,
+        /* The pilot's notes on it; null for none. */
+        @Nullable String notes,
+        /* Its link, where the pilot shares it (POST /api/flights/{id}/share);
+         *  null where it is not shared, and always for anyone but its pilot. */
+        @Nullable FlightShareDto share) {
+
+    public static FlightSummaryDto of(Flight f) {
+        return of(f, null);
+    }
+
+    /** The row with its share, as its own pilot's list has it. */
+    public static FlightSummaryDto of(Flight f, @Nullable FlightShareDto share) {
+        return new FlightSummaryDto(
+                f.getId(),
+                f.getDepartureIdent(),
+                f.getDestinationIdent(),
+                f.getStops(),
+                f.getAircraft() == null ? null : f.getAircraft().getTailNumber(),
+                f.getCruiseAltitudeFt(),
+                f.getTotalDistanceNm(),
+                f.getTotalEteMin(),
+                f.getTotalFuelGal(),
+                f.getPlannedFor(),
+                f.getCreatedAt(),
+                f.getRiskScore() == null
+                        ? null
+                        : new RiskAssessmentDto(f.getRiskScore(), f.getRiskLevel(), f.getRiskFactors()),
+                f.getOwnAltitudes(),
+                f.getPicks(),
+                f.getName(),
+                f.getNotes(),
+                share);
+    }
+}

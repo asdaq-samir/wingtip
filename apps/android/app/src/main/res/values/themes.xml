@@ -6,4 +6,18 @@
      Compose's (ui/Theme.kt). -->
 <resources>
     <style name="Theme.WingtipMaps" parent="Theme.Material3.DayNight.NoActionBar" />
+
+    <!-- The launch, a splash screen on every Android the app runs on:
+         AndroidX's SplashScreen (core-splashscreen), the system's own on
+         Android 12 and later and the same drawn by the library on 8 to 11
+         (MainActivity's installSplashScreen). The brand's ground
+         (design/tokens.json color.brand.launch, launch-night) with the
+         mark in the middle (docs/brand/mark.svg, 288 dp with the ring
+         inside the 192 dp circle the system keeps), both from
+         scripts/build/app-icons.sh; then the theme above. -->
+    <style name="Theme.WingtipMaps.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_mark</item>
+        <item name="postSplashScreenTheme">@style/Theme.WingtipMaps</item>
+    </style>
 </resources>

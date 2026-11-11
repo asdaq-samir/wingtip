@@ -1,16 +1,16 @@
-import { Suspense, lazy, useId, useState } from "react";
-import { format } from "date-fns";
+import { Suspense, lazy, useState } from "react";
+import { clockTime, localDay, monthSlashDay, weekdayShort } from "../../../../lib/format";
 import { CalendarIcon, ChevronDown } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
 
-/** The month grid is react-day-picker, which is not small and is only
- *  ever seen inside this popover -- so it arrives with the popover
- *  rather than with the page. */
-const Calendar = lazy(() => import("../../../../components/ui/calendar").then(m => ({ default: m.Calendar })));
-import { Input } from "../../../../components/ui/input";
+/** The month grid and the time field are React Aria's, only ever seen
+ *  inside this popover -- so they arrive with the popover rather than
+ *  with the page. */
+const DayCalendar = lazy(() => import("../../../../components/ui/calendar").then((m) => ({ default: m.DayCalendar })));
+const TimeField = lazy(() => import("../../../../components/ui/date-field").then((m) => ({ default: m.TimeField })));
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../../components/ResponsivePopover";
 import { cn } from "cn";
-import { CHIP_TEXT, GLASS_BUTTON } from "../../../../components/mapChrome";
+import { CHIP_TEXT, GLASS_BUTTON } from "../../../../lib/mapChrome";
 import { TEXT } from "../../../../lib/text";
 
 interface Props {
@@ -56,9 +56,9 @@ function shortWhen(date: Date): string {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const days = Math.round((new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() - today.getTime()) / 86_400_000);
-  const time = format(date, "HH:mm");
+  const time = clockTime(date);
   if (days === 0) return time;
-  return `${days > 0 && days < 7 ? format(date, "EEE") : format(date, "M/d")} ${time}`;
+  return `${days > 0 && days < 7 ? weekdayShort(date) : monthSlashDay(date)} ${time}`;
 }
 
 /**
@@ -71,7 +71,14 @@ function shortWhen(date: Date): string {
  * whole hour), a new time keeps the day.
  */
 export default function DepartPicker({
-  value, onChange: change, look = "chip", label = "Departure", testId = "depart-date", leavesNow = true, earliest, latest,
+  value,
+  onChange: change,
+  look = "chip",
+  label = "Departure",
+  testId = "depart-date",
+  leavesNow = true,
+  earliest,
+  latest,
 }: Props) {
   const [open, setOpen] = useState(false);
   // A pick outside its range, brought inside: said under the time, where
@@ -83,17 +90,21 @@ export default function DepartPicker({
     setHeld(kept !== ms);
     change(Number.isNaN(ms) || kept === ms ? iso : new Date(kept).toISOString());
   };
-  const timeId = useId();
   const parsed = value ? new Date(value) : undefined;
   const date = parsed && !Number.isNaN(parsed.getTime()) ? parsed : undefined;
-  const time = date ? format(date, "HH:mm") : "";
+  const time = date ? clockTime(date) : "";
   return (
     <ResponsivePopover open={open} onOpenChange={setOpen}>
       <ResponsivePopoverTrigger asChild>
         {look === "time" ? (
           <button
-            type="button" aria-label={`${label}, ${date ? shortWhen(date) : "now"}: change`} data-testid={testId}
-            className={cn("relative flex shrink-0 items-center gap-0.5 font-semibold text-tint tabular-nums after:absolute after:-inset-2.5 after:content-['']", TEXT.detail)}
+            type="button"
+            aria-label={`${label}, ${date ? shortWhen(date) : "now"}: change`}
+            data-testid={testId}
+            className={cn(
+              "relative flex shrink-0 items-center gap-0.5 font-semibold text-tint tabular-nums after:absolute after:-inset-2.5 after:content-['']",
+              TEXT.detail,
+            )}
           >
             {date ? shortWhen(date) : "Now"}
             <ChevronDown className="size-4" aria-hidden />
@@ -103,8 +114,11 @@ export default function DepartPicker({
             // A chip of glass, as Maps' filter chips are: the time in the
             // text's colour, not a button's tint, at a note's 13 (TEXT), as
             // the airplane beside it (FlightInputs).
-            variant="outline" size="sm" className={cn("rounded-full px-2.5 font-normal pointer-coarse:px-1.5", GLASS_BUTTON, CHIP_TEXT)}
-            aria-label={`${label} date`} data-testid={testId}
+            variant="outline"
+            size="sm"
+            className={cn("rounded-full px-2.5 font-normal pointer-coarse:px-1.5", GLASS_BUTTON, CHIP_TEXT)}
+            aria-label={`${label} date`}
+            data-testid={testId}
           >
             {!date && <CalendarIcon className="text-muted-foreground" />}
             {date ? shortWhen(date) : "Now"}
@@ -118,47 +132,57 @@ export default function DepartPicker({
           {/* Sized like the grid it stands in for, so the popover does
               not jump once it arrives. */}
           <Suspense fallback={<div className="h-[21rem] w-[17rem]" />}>
-            <Calendar
-              mode="single" required selected={date} defaultMonth={date} captionLayout="dropdown"
-              disabled={[
-                ...(earliest != null ? [{ before: new Date(new Date(earliest).setHours(0, 0, 0, 0)) }] : []),
-                ...(latest != null ? [{ after: new Date(latest) }] : []),
-              ]}
-              onSelect={day => onChange(instantAt(day, time || nextHour()))}
+            <DayCalendar
+              aria-label={label}
+              value={date ? localDay(date) : null}
+              captionLayout="dropdown"
+              min={earliest != null ? localDay(new Date(earliest)) : undefined}
+              max={latest != null ? localDay(new Date(latest)) : undefined}
+              onChange={(day) => onChange(instantAt(new Date(`${day}T00:00`), time || nextHour()))}
             />
           </Suspense>
           {/* The time once a day is picked -- picking one gives it the
-              next whole hour -- and the way back to about now. The stock
-              Input keeps 16px below md so a phone does not zoom on it. */}
+              next whole hour -- and the way back to about now: React
+              Aria's time field, hours and minutes on the 24-hour clock,
+              16px below md so a phone does not zoom on it, its 44 a band
+              round it (ui/date-field). */}
           <div className="flex items-center gap-2 px-3">
             {date && (
-              // Wrapped, so a finger 6 above or below the 32-point field is
-              // still the field's: 44, as every control, without growing it.
-              <label className="-my-1.5 flex py-1.5" htmlFor={timeId}>
-              <Input
-                id={timeId}
-                type="time"
-                value={time}
-                onChange={e => { if (e.target.value) onChange(instantAt(date, e.target.value)); }}
-                aria-label={`${label} time`}
-                className="h-8 w-28 appearance-none bg-background [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
-                data-testid="depart-time"
-              />
-              </label>
+              <Suspense fallback={<div className="h-8 w-28" />}>
+                <TimeField
+                  value={time}
+                  onChange={(hhmm) => {
+                    if (hhmm) onChange(instantAt(date, hhmm));
+                  }}
+                  aria-label={`${label} time`}
+                  className="h-8 w-28 bg-background"
+                  data-testid="depart-time"
+                />
+              </Suspense>
             )}
             {leavesNow && (
               <Button
-                type="button" variant="ghost" size="sm" className="text-tint"
-                onClick={() => { onChange(""); setOpen(false); }} disabled={!date} data-testid="depart-clear"
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-tint"
+                onClick={() => {
+                  onChange("");
+                  setOpen(false);
+                }}
+                disabled={!date}
+                data-testid="depart-clear"
               >
                 Leave now
               </Button>
             )}
-            <Button type="button" size="sm" onClick={() => setOpen(false)} data-testid="depart-done">Done</Button>
+            <Button type="button" size="sm" onClick={() => setOpen(false)} data-testid="depart-done">
+              Done
+            </Button>
           </div>
           {held && earliest != null && latest != null && (
             <p className={cn("px-3 text-caution-ink", TEXT.note)} role="status" data-testid="depart-range">
-              From landing, {format(new Date(earliest), "HH:mm")}, to a day after.
+              From landing, {clockTime(new Date(earliest))}, to a day after.
             </p>
           )}
         </div>

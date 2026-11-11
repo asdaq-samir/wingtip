@@ -90,9 +90,17 @@ install -d -o 1000 -g 1000 "$GRID"
 aws s3 sync --quiet "s3://$SERVER_BUCKET/ground_grid/" "$GRID/" || true
 
 cd "$REPO"
-docker compose --env-file "$ENV_FILE" -f infra/docker-compose.prod.yml pull --quiet
+# The jobs' profile too, so the charts job's image is this commit's.
+docker compose --env-file "$ENV_FILE" -f infra/docker-compose.prod.yml --profile jobs pull --quiet
 docker compose --env-file "$ENV_FILE" -f infra/docker-compose.prod.yml up -d --remove-orphans
 docker image prune -f > /dev/null
+
+# The map's overlay tiles (the charts job's `overlays`, services/jobs/charts):
+# hourly, a no-op until the planner has written a new cycle pack, then a
+# minute or two of tippecanoe. Written on every deploy, so a server keeps
+# the entry the repository says.
+echo "40 * * * * root cd $REPO && docker compose --env-file $ENV_FILE -f infra/docker-compose.prod.yml run --rm charts-overlays >> /var/log/wingtip-overlays.log 2>&1" \
+  > /etc/cron.d/wingtip-overlays
 
 # No grid yet: built once in the background (some forty minutes, a row of
 # terrain tiles at a time, carrying on where a stopped one left off), then

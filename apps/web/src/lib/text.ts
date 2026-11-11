@@ -1,3 +1,5 @@
+import { TYPE_CLASS, TYPE_POINTS } from "./tokens";
+
 /**
  * The app's text sizes, by what the words are: as iOS sets them on a
  * touch screen -- a row's name 17 points, the line under it 15, a note
@@ -13,60 +15,69 @@
  * length and worked with a finger, which is the test the 44-point hit
  * areas in index.css go by too. All in rem, so all of it grows with
  * the text size. Class strings rather than theme utilities, so `cn`
- * knows each for a font size and keeps it beside a colour.
+ * knows each for a font size and keeps it beside a colour; the sizes are
+ * design/tokens.json's type roles, written as classes by
+ * scripts/build/design-tokens.sh (lib/tokens TYPE_CLASS).
  */
 export const TEXT = {
-  /** A name set over a card's picture (PhotoHead), with font-bold: iOS's
+  /** A card's name at its top (CardTitle), with font-bold: iOS's
    *  Title 1, 28 on 34, as Maps sets a place's over its photos. */
-  hero: "text-[1.75rem] leading-[2.125rem]",
+  hero: TYPE_CLASS.hero,
   /** A card's name -- an airport's, the airspace's, Nearest's, a console
    *  page's -- with font-bold: 22 on 28 (iOS Title 2), the same with a
    *  mouse. */
-  card: "text-[1.375rem] leading-7",
+  card: TYPE_CLASS.card,
   /** A drawer's or a sheet's own title, with font-semibold: 17, and 16 with a mouse. */
-  title: "text-base pointer-coarse:text-[1.0625rem]",
+  title: TYPE_CLASS.title,
   /** A section's title in the planning panel's tabs, with font-semibold:
    *  20 on its 25 leading (iOS Title 3), and 18 with a mouse -- above a
    *  row's 17, where the same size in a heavier weight read as one more
    *  row (the tabs' content audit, 2026-10-07). */
-  heading: "text-lg pointer-coarse:text-[1.25rem] pointer-coarse:leading-[1.5625rem]",
+  heading: TYPE_CLASS.heading,
   /** A row's name and its value, a section's title: 17, 14. */
-  row: "text-sm pointer-coarse:text-[1.0625rem]",
+  row: TYPE_CLASS.row,
   /** The line under a row's name: 15, 12. */
-  detail: "text-xs pointer-coarse:text-[0.9375rem]",
+  detail: TYPE_CLASS.detail,
   /** What is read rather than scanned -- a section's summary, a
    *  paragraph, the message where rows will be: 15, 14. */
-  prose: "text-sm pointer-coarse:text-[0.9375rem]",
+  prose: TYPE_CLASS.prose,
   /** A section's line of help, a group's heading and its note, a key: 13, 12. */
-  note: "text-xs pointer-coarse:text-[0.8125rem]",
+  note: TYPE_CLASS.note,
   /** A chip's category inside a column the width of the star, with
    *  font-bold: iOS's Caption 2, 11 on 13, the same with a mouse. */
-  caption: "text-[0.6875rem] leading-[0.8125rem]",
+  caption: TYPE_CLASS.caption,
   /** The tab bar's words: iOS's Footnote, 13 on 17, two sizes up from its
    *  tab bar's Caption 2, at the owner's asks ("make the label font and icon
    *  size a bit bigger so it fits nicely"; the tabs to "pop out more",
    *  2026-10-22). */
-  tab: "text-[0.8125rem] leading-[1.0625rem]",
+  tab: TYPE_CLASS.tab,
   /** The tab bar's words: 12, a size under the 13 they were, for a
    *  slimmer bar with room round its tabs (the owner, 2026-11-04: 49
    *  points "seems too congested and small"), on iOS's own 16 for 12
    *  (Caption 1, 12/16; the iOS audit's P3). 14 failed the audit on every
    *  screen with the tabs; the tab is 50 tall, so the bar keeps its height. */
-  tabBar: "text-[0.75rem] leading-[1rem]",
+  tabBar: TYPE_CLASS.tabBar,
   /** A figure's name, an ident, a chip's word in the display face
    *  (index.css --display: Barlow Condensed in the Chart ink look, the
    *  body's own face in the others): a note's 13 on 17, semibold, in
    *  capitals spaced a tenth of an em, as the ink canvas sets a figure's
    *  label (2026-11-04). */
-  label: "font-display text-[0.8125rem] leading-[1.0625rem] font-semibold uppercase tracking-[0.1em]",
+  label: TYPE_CLASS.label,
   /** A figure in the Chart ink look (FigureStrip): 26 on 31, bold, in
    *  tabular figures -- the Flying screen's size (FLYING_FIGURE), a
    *  weight up, in the text face. */
-  figure: "text-[1.625rem] leading-[1.9375rem] font-bold tabular-nums",
+  figure: TYPE_CLASS.figure,
   /** A word button's words (the strip layout's): the display face's
    *  capitals, semibold, spaced 0.08em; its size the button's own. */
-  word: "font-display font-semibold uppercase tracking-[0.08em]",
+  word: TYPE_CLASS.word,
 } as const;
+
+/** A section's title, the one look every section of a tab, card and
+ *  sheet has (SectionTitle): 20 points in Title Case (18 with a mouse),
+ *  medium -- the owner's 20-point section titles (decision 0021), not
+ *  bold and not capitals ("Section labels don't need to be bold or all
+ *  caps", 2026-10-23). */
+export const SECTION_TITLE = `font-medium text-foreground ${TEXT.heading}`;
 
 /** A group's heading, as iOS's grouped lists set one: a note's size,
  *  semibold, in capitals, spaced out and grey. Over a list's box
@@ -77,7 +88,7 @@ export const GROUP_HEADING = `font-semibold uppercase tracking-wide text-muted-f
 /** The sizes of text drawn in points rather than by class (the runway
  *  sketch's numbers in an SVG): TEXT.caption's 11 and TEXT.row's 17 as
  *  a touch screen sets them. */
-export const TEXT_POINTS = { caption: 11, row: 17 } as const;
+export const TEXT_POINTS = { caption: TYPE_POINTS.caption, row: TYPE_POINTS.row } as const;
 
 /** A figure pinned at the map panel's foot (FlightLine, FigureStrip), its
  *  value, unit and name small at half and their own size at the pill and
@@ -85,9 +96,11 @@ export const TEXT_POINTS = { caption: 11, row: 17 } as const;
  *  two; the owner, 2026-11-05), each with its iOS leading at either end (the audit's P3: 15
  *  on 20 to 20 on 25, 11 on 13 to 13 on 18), eased between as the size
  *  is. */
-const GROW_SMALL = "text-[length:calc(0.6875rem+0.0625rem*var(--sheet-progress,1))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.6875rem+0.125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))]";
+const GROW_SMALL =
+  "text-[length:calc(0.6875rem+0.0625rem*var(--sheet-progress,1))] leading-[calc(0.8125rem+0.1875rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.6875rem+0.125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(0.8125rem+0.3125rem*var(--sheet-progress,1))]";
 export const GROW_FIGURE = {
-  value: "text-[length:calc(0.75rem+0.375rem*var(--sheet-progress,1))] leading-[calc(1rem+0.75rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.9375rem+0.3125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(1.25rem+0.3125rem*var(--sheet-progress,1))]",
+  value:
+    "text-[length:calc(0.75rem+0.375rem*var(--sheet-progress,1))] leading-[calc(1rem+0.75rem*var(--sheet-progress,1))] pointer-coarse:text-[length:calc(0.9375rem+0.3125rem*var(--sheet-progress,1))] pointer-coarse:leading-[calc(1.25rem+0.3125rem*var(--sheet-progress,1))]",
   unit: GROW_SMALL,
   name: GROW_SMALL,
 };
@@ -97,7 +110,7 @@ export const GROW_FIGURE = {
  *  31, its unit 14 and its name 12 on 16, as the canvas draws the Flying
  *  screen (2026-11-03). */
 export const FLYING_FIGURE = {
-  value: "text-[1.625rem] leading-[1.9375rem]",
-  unit: "text-[0.875rem] leading-[1.125rem]",
+  value: "text-(length:--type-figure) leading-[1.9375rem]",
+  unit: "text-sm leading-[1.125rem]",
   name: "text-xs leading-4",
 };

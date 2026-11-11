@@ -1,0 +1,614 @@
+{
+  "x-call": "wingtip_pilot::documents::call",
+  "x-assistant": true,
+  "description": "A handbook's performance and weight and balance figures as read off a photographed page (POH sections 5 and 6), put in the app's units (knots, feet, pounds, inches, gallons) and checked, as items for the pilot to confirm: each against the band light airplanes' handbooks give (14 CFR 1.1's small airplane, 12,500 lb), and against the others (more power, more speed and burn; the distance over 50 ft no shorter than the ground roll; thinner air, longer distances, FAA-H-8083-25C chapter 11; weight times arm the moment; the CG envelope closed, at least three corners, sides not crossing; usable fuel no more than the total). Asked again with only the confirmed items, its handbook and profile are what is saved.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "HandbookReadCheckInput",
+      "type": "object",
+      "properties": {
+        "speed_unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "kt",
+            "mph",
+            "kmh",
+            null
+          ],
+          "description": "The speeds' unit as printed; knots where none."
+        },
+        "cruise_speed_kind": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "tas",
+            "ias",
+            "cas",
+            null
+          ],
+          "description": "What the cruise table's speeds are: true, indicated or calibrated; true where none."
+        },
+        "distance_unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "ft",
+            "m",
+            null
+          ],
+          "description": "The takeoff and landing distances' unit."
+        },
+        "weight_unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "lb",
+            "kg",
+            null
+          ],
+          "description": "The weights' unit."
+        },
+        "arm_unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "in",
+            "cm",
+            "mm",
+            null
+          ],
+          "description": "The arms' unit."
+        },
+        "fuel_unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "gal",
+            "l",
+            null
+          ],
+          "description": "The fuel quantities' unit (US gallons or litres)."
+        },
+        "burn_unit": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "enum": [
+            "gph",
+            "lph",
+            "pph",
+            null
+          ],
+          "description": "The fuel burns' unit; pounds an hour are taken as avgas, 6 lb a gallon."
+        },
+        "cruise": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "title": "HandbookCruiseRead",
+            "type": "object",
+            "properties": {
+              "altitude_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "Pressure altitude."
+              },
+              "power_pct": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "rpm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "tas": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "In speed_unit."
+              },
+              "burn": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "In burn_unit."
+              }
+            }
+          },
+          "description": "The cruise performance table's rows."
+        },
+        "climb": {
+          "title": "HandbookClimbRead",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "speed": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Best rate of climb speed, Vy, indicated, in speed_unit."
+            },
+            "rate_fpm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "burn": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "In burn_unit."
+            }
+          }
+        },
+        "glide": {
+          "title": "HandbookGlideRead",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "speed": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Best glide speed, indicated, in speed_unit."
+            },
+            "ratio": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Feet forward for each foot down."
+            }
+          }
+        },
+        "takeoff": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/HandbookDistanceRead"
+          },
+          "description": "The takeoff distance table's rows."
+        },
+        "landing": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/HandbookDistanceRead"
+          },
+          "description": "The landing distance table's rows."
+        },
+        "empty": {
+          "title": "HandbookEmptyRead",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "weight": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "In weight_unit."
+            },
+            "arm": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "In arm_unit."
+            },
+            "moment": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "As printed."
+            },
+            "moment_divisor": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "What the printed moment is divided by (1,000 for \"moment/1000\"); 1 where none."
+            }
+          }
+        },
+        "max_takeoff_weight": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "In weight_unit."
+        },
+        "envelope": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "title": "HandbookCornerRead",
+            "type": "object",
+            "properties": {
+              "arm": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "In arm_unit."
+              },
+              "weight": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "description": "In weight_unit."
+              }
+            }
+          },
+          "description": "The CG envelope's corners, going round."
+        },
+        "fuel": {
+          "title": "HandbookFuelRead",
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "total": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "In fuel_unit."
+            },
+            "usable": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "In fuel_unit."
+            }
+          }
+        }
+      }
+    },
+    "answer": {
+      "title": "HandbookReadCheck",
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "title": "HandbookItem",
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string",
+                "description": "\"cruise.2\", \"climb\", \"envelope\": what the pilot confirms."
+              },
+              "group": {
+                "type": "string",
+                "enum": [
+                  "cruise",
+                  "climb",
+                  "glide",
+                  "takeoff",
+                  "landing",
+                  "empty",
+                  "weight",
+                  "envelope",
+                  "fuel"
+                ]
+              },
+              "title": {
+                "type": "string"
+              },
+              "figures": {
+                "type": "array",
+                "items": {
+                  "title": "HandbookFigure",
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string",
+                      "description": "Where it is in the read: \"cruise.2.tas\"."
+                    },
+                    "label": {
+                      "type": "string"
+                    },
+                    "value": {
+                      "type": "number",
+                      "description": "As read."
+                    },
+                    "unit": {
+                      "type": "string",
+                      "description": "As read."
+                    },
+                    "app_value": {
+                      "type": "number"
+                    },
+                    "app_unit": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "path",
+                    "label",
+                    "value",
+                    "unit",
+                    "app_value",
+                    "app_unit"
+                  ]
+                }
+              },
+              "flags": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/definitions/DocumentFlag"
+                }
+              }
+            },
+            "required": [
+              "key",
+              "group",
+              "title",
+              "figures",
+              "flags"
+            ]
+          }
+        },
+        "handbook": {
+          "title": "HandbookFigures",
+          "type": "object",
+          "properties": {
+            "cruise": {
+              "type": "array",
+              "items": {
+                "title": "HandbookCruise",
+                "type": "object",
+                "properties": {
+                  "altitude_ft": {
+                    "type": "number"
+                  },
+                  "power_pct": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "rpm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "tas_kt": {
+                    "type": "number"
+                  },
+                  "burn_gph": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "altitude_ft",
+                  "power_pct",
+                  "rpm",
+                  "tas_kt",
+                  "burn_gph"
+                ]
+              }
+            },
+            "climb_speed_kias": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "climb_rate_fpm": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "climb_burn_gph": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "glide_speed_kias": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "glide_ratio": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "takeoff": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HandbookDistance"
+              }
+            },
+            "landing": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/HandbookDistance"
+              }
+            },
+            "empty_weight_lb": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "empty_arm_in": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "max_takeoff_weight_lb": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "envelope": {
+              "type": "array",
+              "items": {
+                "title": "HandbookCorner",
+                "type": "object",
+                "properties": {
+                  "arm_in": {
+                    "type": "number"
+                  },
+                  "weight_lb": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "arm_in",
+                  "weight_lb"
+                ]
+              }
+            },
+            "fuel_total_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "usable_fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "cruise",
+            "climb_speed_kias",
+            "climb_rate_fpm",
+            "climb_burn_gph",
+            "glide_speed_kias",
+            "glide_ratio",
+            "takeoff",
+            "landing",
+            "empty_weight_lb",
+            "empty_arm_in",
+            "max_takeoff_weight_lb",
+            "envelope",
+            "fuel_total_gal",
+            "usable_fuel_gal"
+          ],
+          "description": "Every figure in the app's units, for the airplane's record."
+        },
+        "profile": {
+          "title": "HandbookProfile",
+          "type": "object",
+          "properties": {
+            "cruise_tas_kt": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "fuel_burn_gph": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "cruise_power_pct": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "cruise_from": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The cruise item the cruise figures come from."
+            },
+            "climb_fuel_burn_gph": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "usable_fuel_gal": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "cruise_tas_kt",
+            "fuel_burn_gph",
+            "cruise_power_pct",
+            "cruise_from",
+            "climb_fuel_burn_gph",
+            "usable_fuel_gal"
+          ],
+          "description": "The airplane form's figures: the cruise row at the cruise reference altitude (6,000 ft, within 1,000 ft) and the power nearest 65%, free of wrong flags."
+        }
+      },
+      "required": [
+        "items",
+        "handbook",
+        "profile"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

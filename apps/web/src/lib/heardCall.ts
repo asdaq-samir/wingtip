@@ -32,7 +32,7 @@ export function directOf(text: string): string | null {
 }
 
 /** A transmission heard, and what it asks of us. */
-export interface Call {
+interface Call {
   forUs: boolean;
   direct: string | null;
   clearance: Clearance;

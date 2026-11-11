@@ -8,6 +8,7 @@ chart model's features -- were 4.8 s of a new reader's start, every
 first new route after the pool had been let go (measured 2026-10-07),
 where app.detection's are 3.8. (And app.landmarks, which imports no
 more than app.detection does.)"""
+
 import logging
 
 from . import detection, landmarks

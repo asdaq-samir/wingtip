@@ -1,27 +1,33 @@
 // First: the browser's kept "vfr." keys renamed "wingtip." before any
-// store below reads its own (lib/storageRename).
-import "./lib/storageRename";
+// store below reads its own (features/shell/storageRename).
+import "./features/shell/storageRename";
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { createBrowserRouter, Navigate, redirect, RouterProvider } from "react-router-dom";
+import { createBrowserRouter, Navigate, redirect } from "react-router";
+import { RouterProvider } from "react-router/dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { chartQuery, courseQuery, overlayTilesQuery, queryClient } from "./lib/queryClient";
+import { chartQuery, courseQuery, flightsQuery, overlayTilesQuery, queryClient } from "./lib/queryClient";
+import { api } from "./lib/api/client";
+import { flushPendingDeletes } from "./lib/pendingDeletes";
 import { routeOf, stopsOf } from "./lib/identSchema";
 import AppToaster from "./components/AppToaster";
 import { BrandLook } from "./lib/brand";
 import ErrorAlert from "./components/ErrorAlert";
 import PageError from "./components/PageError";
-import { TooltipProvider } from "./components/ui/tooltip";
 import { registerSW } from "virtual:pwa-register";
-import { followDynamicType } from "./lib/dynamicType";
-import { keepAddressThroughReload, startFresh } from "./lib/freshLoad";
+import { followDynamicType } from "./features/shell/dynamicType";
+import { prepareAnnouncer } from "./lib/announce";
+import { keepAddressThroughReload, startFresh } from "./features/shell/freshLoad";
 import { installErrorReports, reportOf, sendReport } from "./lib/errorReports";
 import { startSpeedReports } from "./lib/speed";
+import { startLongTaskReports } from "./lib/longTasks";
 import { startLoadLog } from "./lib/loadLog";
 import MapPage from "./features/shell/MapPage";
 import { prefetchRouteMap } from "./features/plan/routeMapChunk";
 import { prefetchRouteBox } from "./features/plan/routeBoxChunk";
+import { prefetchShareMenu } from "./features/plan/shareMenuChunk";
+import { loadPopups } from "./components/popupsChunk";
 import "./index.css";
 // Barlow, the face of both looks (lib/brand), in the first stylesheet
 // rather than fetched once the app has drawn: drawn first in the system's
@@ -35,18 +41,26 @@ import "@fontsource/barlow/latin-600.css";
 import "@fontsource/barlow/latin-700.css";
 import { startTv, tvPlatform } from "./lib/tv";
 import { loadEngine } from "./lib/engine/engine";
+import { preconnectTiles, preloadFirstLoad } from "./lib/preloads";
+import { usePreferences } from "./lib/preferences";
+import { takeSharedLinkFromAddress } from "./features/shared-flight";
 
 // The shared Rust engine (lib/engine), asked for first: the rules it
 // works out (the hold's entry, lost comms, the diversion, the debrief)
-// answer synchronously. The first render no longer waits for it: the
-// parts that ask it while they render are behind an engine gate
-// (lib/engine/engineGate, the workspace in MapPage), so the shell paints
-// while the .wasm comes. index.html preloads it beside the scripts.
+// answer synchronously. The first render does not wait for it: the
+// search, the sheet and the chart draw at once, and each part that asks
+// it while it renders waits in its place (lib/engine/engineGate; a route
+// named in the address, which it reads, behind MapPage's boot map).
+// index.html preloads it beside the scripts.
 const engineLoaded = loadEngine();
 
 // The reader's text size from the iPhone's Settings, before the first
 // render, so the page is never drawn at the wrong size first.
 followDynamicType();
+
+// The screen reader's two live regions (lib/announce), in the page before
+// any alert is said into them, so the first one is heard.
+prepareAnnouncer();
 
 // On a Samsung or LG TV (the TV shells, in git history; lib/tv), the page made for its remote and
 // its distance, before the first render.
@@ -57,14 +71,19 @@ if (tv) startTv(tv);
 // fetched while the page draws.
 prefetchRouteMap();
 prefetchRouteBox();
+// The menus, popovers and tooltips (popupsChunk), and the route's menu.
+void loadPopups().catch(() => {});
+prefetchShareMenu();
 
-// What goes wrong on the pilot's device, to the owner's log
+// What goes wrong on the pilot's device, to the gateway's diagnostics
 // (lib/errorReports): before anything else can throw.
 installErrorReports();
 
 // How fast the page is on this device, for the speed trend (lib/speed):
 // Core Web Vitals, nothing of the pilot's, once the page is idle.
 startSpeedReports();
+// How long the main thread was busy, beside them (lib/longTasks).
+startLongTaskReports();
 // When the map's layers show at each load, for Setup's Log.
 startLoadLog();
 
@@ -79,7 +98,7 @@ startLoadLog();
 // is away, and the app brought back showed the build it was left on
 // until a minute after. The check is one small request for sw.js. That
 // reload keeps the route on screen; a person's starts clean
-// (lib/freshLoad).
+// (features/shell/freshLoad).
 // Registered once the page has loaded, not during it: the worker's
 // install fetches every chunk it precaches (2.7 MB), which competed
 // with the map, its tiles and the planner on a cold start and after
@@ -135,10 +154,7 @@ const router = createBrowserRouter(
     // redirect rather than a component, since the router's own
     // `redirect` is the one place a query string can be carried over
     // before anything renders.
-    {
-      path: "label",
-      loader: ({ request }) => redirect(`/dev${new URL(request.url).search}`),
-    },
+    { path: "label", loader: ({ request }) => redirect(`/dev${new URL(request.url).search}`) },
     { path: "settings", element: <Navigate to="/plan" replace /> },
   ],
   { basename: "/app" },
@@ -161,16 +177,28 @@ const router = createBrowserRouter(
  */
 // The chart the map is drawn on, asked for now too: a map with no route
 // waits on nothing else (and draws from the last answer kept, meanwhile).
-void queryClient.prefetchQuery({ ...chartQuery, meta: { silent: true } });
+// Its tiles' server connected to, and the faces asked for, meanwhile
+// (lib/preloads): from the chart kept from the last load, and again from
+// the first answer where none was kept.
+preloadFirstLoad(queryClient.getQueryData(chartQuery.queryKey), usePreferences.getState().overlay);
+void queryClient
+  .prefetchQuery({ ...chartQuery, meta: { silent: true } })
+  .then(() => preconnectTiles(queryClient.getQueryData(chartQuery.queryKey)));
 // And the overlay tiles' archive's name, for the map's vector source; with
 // it, the archive's header and root directory (its first 16 KB, one range
 // request), so the map's first overlay tile goes straight to its bytes
-// (lib/map/overlayTiles warmOverlayArchive). The module is the map
+// (lib/map/sources/overlayTiles warmOverlayArchive). The module is the map
 // chunk's, asked for here on its own.
-void queryClient.fetchQuery(overlayTilesQuery)
-  .then(tiles => import("./lib/map/overlayTiles").then(m => m.warmOverlayArchive(tiles)))
-  .catch(() => { /* no archive: the map asks the in-view endpoints */ });
+void queryClient
+  .fetchQuery(overlayTilesQuery)
+  .then((tiles) => import("./lib/map/sources/overlayTiles").then((m) => m.warmOverlayArchive(tiles)))
+  .catch(() => {
+    /* no archive yet: the map adds the overlays once there is one */
+  });
 
+// A shared flight's link is a preview first: its route taken off the
+// address before anything plans it (features/shared-flight).
+takeSharedLinkFromAddress();
 const opening = new URLSearchParams(window.location.search);
 const openingDep = opening.get("dep")?.trim().toUpperCase();
 const openingDest = opening.get("dest")?.trim().toUpperCase();
@@ -190,11 +218,19 @@ else prefetchCourse();
 // A chunk that will not load -- the deploy after this page's own replaced
 // it, or no signal -- loads the page again, once a minute at most, as
 // Vite's own guide does: past that it falls to the route's PageError.
-window.addEventListener("vite:preloadError", event => {
+window.addEventListener("vite:preloadError", (event) => {
   let last = 0;
-  try { last = Number(sessionStorage.getItem("wingtip.chunkReload")) || 0; } catch { /* storage refused: reload once */ }
+  try {
+    last = Number(sessionStorage.getItem("wingtip.chunkReload")) || 0;
+  } catch {
+    /* storage refused: reload once */
+  }
   if (Date.now() - last < 60_000) return;
-  try { sessionStorage.setItem("wingtip.chunkReload", String(Date.now())); } catch { /* as above */ }
+  try {
+    sessionStorage.setItem("wingtip.chunkReload", String(Date.now()));
+  } catch {
+    /* as above */
+  }
   event.preventDefault();
   window.location.reload();
 });
@@ -202,39 +238,48 @@ window.addEventListener("vite:preloadError", event => {
 // A render React could not finish takes the page down: reported too.
 // Drawn without waiting for the engine (above); an engine that failed to
 // load is reported, and the gated parts stay their placeholders.
-const render = () => ReactDOM.createRoot(document.getElementById("root")!, {
-  onUncaughtError: error => { sendReport(reportOf("render", error)); console.error(error); },
-}).render(
-  <React.StrictMode>
-    {/* Light, dark, or the OS's own choice -- the settings' Theme
+const render = () =>
+  ReactDOM.createRoot(document.getElementById("root")!, {
+    onUncaughtError: (error) => {
+      sendReport(reportOf("render", error));
+      console.error(error);
+    },
+  }).render(
+    <React.StrictMode>
+      {/* Light, dark, or the OS's own choice -- the settings' Theme
         sets it, next-themes keeps it and puts the `dark` class on
         <html>, which is what every colour token in index.css keys off
         (and what the Toaster below already reads). */}
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="wingtip.theme" disableTransitionOnChange>
-    <QueryClientProvider client={queryClient}>
-      {/* One instance for the whole app, the same as sonner's own
-          Toaster below -- every icon-only button's own Tooltip shares
-          this one delay/grouping context (hover one, then another
-          shows instantly) instead of each re-running its own
-          default-delay timer independently. */}
-      <TooltipProvider>
-        <RouterProvider router={router} />
-        <AppToaster />
-        {/* Inside the provider too: its close is the app's CloseButton,
-            whose Tooltip outside one threw and blanked the page the
-            first time an alert opened on a phone. */}
-        <ErrorAlert />
-        <BrandLook />
-      </TooltipProvider>
-    </QueryClientProvider>
-    </ThemeProvider>
-  </React.StrictMode>,
-);
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="wingtip.theme" disableTransitionOnChange>
+        <QueryClientProvider client={queryClient}>
+          {/* No tooltip provider: each tooltip opens at once (its trigger's
+          delay 0, popups/IconTip), as the provider's did, and the
+          provider would bring Base UI's tooltips into the first load
+          (popupsChunk). */}
+          <>
+            <RouterProvider router={router} />
+            <AppToaster />
+            <ErrorAlert />
+            <BrandLook />
+          </>
+        </QueryClientProvider>
+      </ThemeProvider>
+    </React.StrictMode>,
+  );
 // And the face in before the first render, so no word is drawn in another
 // first; never held more than 400 ms for it, the system's face then.
 const faceLoaded = Promise.race([
-  Promise.all(["400", "500", "600", "700"].map(weight => document.fonts.load(`${weight} 1rem Barlow`))),
-  new Promise(resolve => setTimeout(resolve, 400)),
+  Promise.all(["400", "500", "600", "700"].map((weight) => document.fonts.load(`${weight} 1rem Barlow`))),
+  new Promise((resolve) => setTimeout(resolve, 400)),
 ]);
-void engineLoaded.catch(error => { sendReport(reportOf("error", error)); console.error(error); });
+void engineLoaded.catch((error) => {
+  sendReport(reportOf("error", error));
+  console.error(error);
+});
 void faceLoaded.then(render, render);
+
+// The deletes whose Undo was still up when the tab was last closed, sent
+// now (lib/pendingDeletes); the lists fetched again once any is.
+void flushPendingDeletes({ flight: api.flights.remove }).then((sent) => {
+  if (sent) void queryClient.invalidateQueries({ queryKey: flightsQuery.queryKey });
+});

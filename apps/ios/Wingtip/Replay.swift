@@ -155,8 +155,11 @@ final class Replay {
             let (a, b) = i + 1 < plain.count ? (plain[i], plain[i + 1]) : (plain[i - 1], plain[i])
             let hours = (b.t - a.t) / 3600
             guard hours > 0 else { continue }
-            out[i].gsKt = Flight.nm(from: a.coordinate, to: b.coordinate) / hours
-            out[i].trackDeg = Flight.bearing(from: a.coordinate, to: b.coordinate)
+            // The engine's great circle (`distance_nm`, `bearing_deg`);
+            // where it cannot say, the point keeps none and the strip
+            // shows no speed or track for it.
+            out[i].gsKt = (try? Engine.distanceNm(lat1: a.lat, lon1: a.lon, lat2: b.lat, lon2: b.lon)).map { $0 / hours }
+            out[i].trackDeg = try? Engine.bearingDeg(lat1: a.lat, lon1: a.lon, lat2: b.lat, lon2: b.lon)
         }
         // A point at the same second as the next takes the one before's.
         for i in out.indices.dropFirst() where out[i].gsKt == nil {

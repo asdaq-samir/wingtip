@@ -1,5 +1,9 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
+export { closeProfile, openProfile, pressDryRunStart } from "./dryRun";
+import { planFromSearch } from "./oneSearch";
+export { emptyPlan, firstRow, searchAirports, showPlan, showSearch, showTraffic } from "./oneSearch";
+
 /**
  * What the browser suite's specs share: the two pages, the waits CI
  * doubles, and the drawer opened and closed the way the stock
@@ -16,7 +20,8 @@ export function noTips() {
   localStorage.setItem("wingtip.tips", JSON.stringify({ state: { seen: ["*"] }, version: 0 }));
   // The route's VFR checkpoints on, as a student has them: off by default
   // (lib/preferences), and most specs read the route through them.
-  if (!localStorage.getItem("wingtip.preferences")) localStorage.setItem("wingtip.preferences", JSON.stringify({ state: { waypoints: true }, version: 1 }));
+  if (!localStorage.getItem("wingtip.preferences"))
+    localStorage.setItem("wingtip.preferences", JSON.stringify({ state: { waypoints: true }, version: 1 }));
 }
 
 /** An explicit wait, doubled in CI: playwright.config.ts doubles the
@@ -40,30 +45,14 @@ export async function settle(page: Page) {
  *  `data-panel`: peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
 
-/** The tab bar's tabs in sight: the sheet's first row at half and all the
- *  way up, minimized to the tab up's name over a card (TabBar), tapped to
- *  show them all. Not in the pill, which is one row (MapPanel): the sheet
- *  half way for them. */
+/** The first row in sight: the sheet's, static over a card, at the pill
+ *  too. */
 export async function showTabs(page: Page) {
-  // From the sheet at rest: settling to the pill it keeps the half's
-  // layout, tabs and all, until it lands (MapPanel), and tabs seen then
-  // were gone a moment later under the route's figures.
+  // From the sheet at rest (settling to the pill it keeps the half's layout until it lands, MapPanel). The
+  // first row: the one search, scoped to the traffic or Nearest where one is up; or the developer's places.
   await settled(sideDrawer(page));
-  // An airport's or an airplane's card over its pictures has its own
-  // share and close out of the pill, the minimized bar left out over it
-  // (MapPanel's ownHead): its bar is the pill's.
-  if (await sideDrawer(page).locator("[data-picture-head]").isVisible()) await grabberTo(page, "peek");
-  const title = page.getByTestId("tab-title");
-  // The minimized line can turn back into the tabs by itself as it is
-  // tapped -- the card it named put away by the step before -- so the tap
-  // is tried, and what is asked is the tabs in sight.
-  // Tapped again until the tabs show: a tap can land as the card it named
-  // is put away by the step before.
-  await expect(async () => {
-    if (await title.isVisible()) await title.click({ timeout: 2000 }).catch(() => {});
-    await expect(title).toBeHidden({ timeout: 1500 });
-  }).toPass({ timeout: 15_000 });
-  if (!(await page.getByTestId("tab-bar").isVisible())) await grabberTo(page, "half");
+  const first = page.getByTestId("search-airports").or(page.getByTestId("aircraft-search")).or(page.getByTestId("nearest-from"));
+  if (!(await first.or(page.getByTestId("dev-tabs")).first().isVisible())) await grabberTo(page, "half");
 }
 
 /** The panel's head in sight: half way, with the route's box and its
@@ -75,10 +64,9 @@ export async function openPanel(page: Page) {
   // Once it has come to rest: on its way down to the pill it is not the
   // capsule yet, and was taken for one out already.
   await settled(panel);
-  if (await panel.getAttribute("data-capsule") === null) return;
+  if ((await panel.getAttribute("data-capsule")) === null) return;
   await grabberTo(page, "half");
 }
-
 
 /** The route cleared, by the route box's own ✕ (the menu's Clear went,
  *  the owner, 2026-10-27). */
@@ -107,7 +95,7 @@ export async function grabberTo(page: Page, state: "peek" | "half" | "full") {
     // Not pressed again once it has moved: a press that took long to land
     // on a busy page, pressed twice, went on past the size asked for.
     await expect(async () => {
-      if (await size() !== now) return;
+      if ((await size()) !== now) return;
       await grabber.focus();
       await page.keyboard.press(RANK[state] > RANK[now] ? "ArrowUp" : "ArrowDown");
       await expect.poll(size, { timeout: 4000 }).not.toBe(now);
@@ -126,7 +114,7 @@ export async function grabberTo(page: Page, state: "peek" | "half" | "full") {
 export async function inSheet(page: Page, locator: Locator) {
   const panel = sideDrawer(page);
   await locator.waitFor();
-  const under = await locator.evaluate(el => {
+  const under = await locator.evaluate((el) => {
     const sheet = el.closest("[data-slot=map-panel]");
     if (!sheet || sheet.getAttribute("data-panel") === "full") return false;
     const box = sheet.getBoundingClientRect();
@@ -151,6 +139,8 @@ export async function controlsInSight(page: Page) {
   await closeBrief(page);
   await grabberTo(page, "full");
   await settled(panel);
+  // With no route the search's page is up: Plan a Flight, the empty box.
+  await planFromSearch(page);
 }
 
 /** FPL's Brief, a card over the route (BriefCard), from the chips' Brief:
@@ -159,14 +149,16 @@ export async function openBrief(page: Page) {
   const card = sideDrawer(page).getByTestId("brief-card");
   if (await card.isVisible().catch(() => false)) return;
   await openPanel(page);
-  await sideDrawer(page).getByTestId("route-brief").click({ timeout: slow(30000) });
+  await sideDrawer(page)
+    .getByTestId("route-brief")
+    .click({ timeout: slow(30000) });
   await expect(card).toBeVisible();
 }
 
-/** The Brief put away, by the minimized tab bar's close or, wider, its
- *  own (closeCard), which go back one at a time: from a page to the
+/** The Brief put away, by its own close (closeCard), which goes back
+ *  one at a time: from a page to the
  *  Brief's cards (BriefGlance), then FPL's route and nav log again. */
-export async function closeBrief(page: Page) {
+async function closeBrief(page: Page) {
   const card = sideDrawer(page).getByTestId("brief-card");
   if (!(await card.isVisible().catch(() => false))) return;
   if (!(await card.getByTestId("brief-glance").isVisible())) {
@@ -189,18 +181,15 @@ async function panelFull(page: Page) {
   await settled(panel);
 }
 
-/** The console out -- the tab bar's Settings -- half way at the least: at
- *  the pill, Settings picked keeps the pill (its quick controls), and the
- *  tab tapped again opens it, as every tab's does. */
+/** The console out, all the way up: the account button (in the title row,
+ *  gone all the way up) opens the account page (Setup) itself. At the pill,
+ *  where the developer's page rests, the page is under the pill's edge. */
 export async function openConsole(page: Page) {
   await showTabs(page);
-  const settings = page.getByTestId("setup-button");
-  await settings.click();
-  // Setup is the panel's on every screen and both pages (MapPage), which
-  // at the pill is out of sight.
-  // Opened at the pill's size, Setup's pill; all the way up for the rest.
-  await expect(settings).toHaveAttribute("aria-current", "page");
+  if (!(await page.getByTestId("account-button").isVisible())) await grabberTo(page, "half");
+  await page.getByTestId("account-button").click();
   await grabberTo(page, "full");
+  await expect(page.getByTestId("console-sheet")).toBeVisible();
 }
 
 /** Setup's page all the way out, its Controls on top (QuickControls):
@@ -218,12 +207,12 @@ export async function pickControl(page: Page, control: "nav-bar-select" | "theme
   await page.getByTestId(item).click();
 }
 
-/** The map's settings: the sheet of the map's own button, first among
- *  the map's buttons (MapSettingsButton), as Maps' map button holds its
- *  map's. Escape puts it away. */
+/** The map's settings: its button's card in the sheet (MapSettingsButton),
+ *  as Apple Maps' Choose Map card is. Escape puts it away. */
 export async function openMapSettings(page: Page) {
   // The map's buttons are under a phone's sheet all the way up: the pill.
-  if ((page.viewportSize()?.width ?? 0) < 768 && await sideDrawer(page).getAttribute("data-panel") === "full") await grabberTo(page, "peek");
+  if ((page.viewportSize()?.width ?? 0) < 768 && (await sideDrawer(page).getAttribute("data-panel")) === "full")
+    await grabberTo(page, "peek");
   await page.locator("[data-map-controls]").getByTestId("map-settings-button").click();
   await expect(page.getByTestId("map-settings")).toBeVisible();
 }
@@ -246,24 +235,25 @@ export async function beforeTheRoute(page: Page, change: () => Promise<void>) {
 export async function expandConsole(page: Page) {
   const sheet = page.getByTestId("console-sheet");
   if ((await sheet.getAttribute("data-detent")) !== "medium") return;
-  if (await sheet.evaluate(el => !!el.closest('[data-slot="map-panel"]'))) {
+  if (await sheet.evaluate((el) => !!el.closest('[data-slot="map-panel"]'))) {
     await grabberTo(page, "full");
     await expect(sheet).toHaveAttribute("data-detent", "large");
-    await sideDrawer(page).evaluate(el => Promise.all(el.getAnimations({ subtree: true }).map(a => a.finished.catch(() => undefined))));
+    await sideDrawer(page).evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished.catch(() => undefined))));
     return;
   }
   // Once it has slid in.
-  await sheet.evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)));
+  await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
   const box = (await sheet.boundingBox())!;
   const away = (await sheet.getAttribute("data-edge")) === "top" ? 1 : -1;
-  const x = box.x + box.width / 2, y = box.y + 20;
+  const x = box.x + box.width / 2,
+    y = box.y + 20;
   await page.mouse.move(x, y);
   await page.mouse.down();
   await page.mouse.move(x, y + away * 100, { steps: 5 });
   await page.mouse.move(x, y + away * 400, { steps: 10 });
   await page.mouse.up();
   await expect(sheet).toHaveAttribute("data-detent", "large");
-  await sheet.evaluate(el => Promise.all(el.getAnimations().map(a => a.finished)));
+  await sheet.evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished)));
 }
 
 /** The console's title, a menu of roles -- Pilot, Developer for whoever
@@ -285,10 +275,7 @@ export async function roleMenu(page: Page) {
     await trigger.click();
     await expect(page.getByRole("menu")).toBeVisible();
   }
-  return {
-    pilot: page.getByRole("menuitemradio", { name: "Pilot" }),
-    developer: page.getByRole("menuitemradio", { name: "Developer" }),
-  };
+  return { pilot: page.getByRole("menuitemradio", { name: "Pilot" }), developer: page.getByRole("menuitemradio", { name: "Developer" }) };
 }
 
 /** Escape until the console is away: a menu open in it takes the first. */
@@ -310,7 +297,7 @@ export const consoleSheet = (page: Page) => page.getByTestId("console-sheet");
 export async function library(scope: Page | Locator, section: "Airplanes" | "Flights" | "Logbook" | "Minimums") {
   await consolePage(scope, "Account");
   const list = scope.getByTestId("library-section");
-  const back = scope.getByRole("button", { name: "Back to Account", exact: true });
+  const back = scope.getByRole("button", { name: "Back to Setup", exact: true });
   await expect(list.or(back)).toBeVisible();
   if (!(await list.isVisible())) await back.click();
   await list.getByRole("button", { name: new RegExp(`^${section}`) }).click();
@@ -323,7 +310,7 @@ export async function expectDrawerClosed(page: Page) {
   // height, over what a tap next would be aimed at. The panel's own
   // easing, not what is in it: a button's easing in the body, put out of
   // sight on the way, can stay unfinished (settled).
-  await sideDrawer(page).evaluate(el => Promise.all(el.getAnimations().map(a => a.finished.catch(() => undefined))));
+  await sideDrawer(page).evaluate((el) => Promise.all(el.getAnimations().map((a) => a.finished.catch(() => undefined))));
 }
 
 /** Out: all the way up. */
@@ -366,16 +353,21 @@ export async function settled(locator: Locator) {
   // iPad audit of "no legal altitude, opened" to its six-minute timeout
   // three times running on PR #238. Waited out, the test goes on with the
   // page as it is, as it would a moment later.
-  await locator.evaluate(el => Promise.race([
-    Promise.all(el.getAnimations({ subtree: true })
-      .filter(a => a.effect?.getTiming().iterations !== Infinity)
-      .filter(a => {
-        const target = a.effect instanceof KeyframeEffect ? a.effect.target : null;
-        return !target || target.checkVisibility({ contentVisibilityAuto: true });
-      })
-      .map(a => a.finished.catch(() => undefined))),
-    new Promise(done => window.setTimeout(done, 5000)),
-  ]));
+  await locator.evaluate((el) =>
+    Promise.race([
+      Promise.all(
+        el
+          .getAnimations({ subtree: true })
+          .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+          .filter((a) => {
+            const target = a.effect instanceof KeyframeEffect ? a.effect.target : null;
+            return !target || target.checkVisibility({ contentVisibilityAuto: true });
+          })
+          .map((a) => a.finished.catch(() => undefined)),
+      ),
+      new Promise((done) => window.setTimeout(done, 5000)),
+    ]),
+  );
 }
 
 /** The panel's box once it is out and done moving: measured 300 ms
@@ -430,12 +422,17 @@ export async function openTab(page: Page, name: keyof typeof PHASE_OF | PhaseTab
   // The tabs are past the half panel's foot, which ends at the flight's
   // line: all the way out, as a finger drags it, to reach them.
   await panelFull(page);
-  const phase: PhaseTab = name in PHASE_OF ? PHASE_OF[name as keyof typeof PHASE_OF] : name as PhaseTab;
+  const phase: PhaseTab = name in PHASE_OF ? PHASE_OF[name as keyof typeof PHASE_OF] : (name as PhaseTab);
   if (phase === "Preflight") {
-    await page.route(url => url.pathname.endsWith("/api/planner/briefing/narrative"), route => route.fulfill({
-      status: 200, contentType: "application/x-ndjson",
-      body: JSON.stringify({ type: "done", briefing: "A test narrative." }) + "\n",
-    }));
+    await page.route(
+      (url) => url.pathname.endsWith("/api/planner/briefing/narrative"),
+      (route) =>
+        route.fulfill({
+          status: 200,
+          contentType: "application/x-ndjson",
+          body: JSON.stringify({ type: "done", briefing: "A test narrative." }) + "\n",
+        }),
+    );
   }
   // On the Brief's cards (BriefGlance), the page's card; then its tab.
   await briefPage(page, phase);
@@ -455,36 +452,23 @@ export async function openNavLog(page: Page) {
   // In the route's menu since the Profile took its button (the owner,
   // 2026-11-04).
   if (!(await sheet.isVisible())) {
-    await sideDrawer(page).getByTestId("share-route").click({ timeout: slow(60_000) });
+    await sideDrawer(page)
+      .getByTestId("share-route")
+      .click({ timeout: slow(60_000) });
     await page.getByTestId("route-navlog").click();
   }
   await expect(sheet).toBeVisible();
   return sheet;
 }
 
-/** The side view, a card over FPL, with the altitude's wheel in its
- *  corner: opened at rest from the route's Profile button, beside the AI
- *  brief's (the owner, 2026-11-04). */
-export async function openProfile(page: Page) {
-  await openPanel(page);
-  const card = page.getByTestId("profile-card");
-  if (!(await card.isVisible())) await sideDrawer(page).getByTestId("route-profile").click({ timeout: slow(60_000) });
-  await expect(card).toBeVisible();
-  return card;
-}
-
-/** The side view's card put away: its close, kept for a keyboard and a
- *  screen reader (CardClose), as the nav log's is. */
-export async function closeProfile(page: Page) {
-  await page.getByTestId("profile-close").focus();
-  await page.keyboard.press("Enter");
-  await expect(page.getByTestId("profile-card")).toHaveCount(0);
-}
-
 /** The nav log's card over FPL (the owner's "make Navlog open like brief
  *  does"), and what scrolls in it. */
 export const navLogSheet = (page: Page) => page.getByTestId("navlog-sheet");
-export const navLogScroller = (page: Page) => page.getByTestId("navlog-scroller").filter({ has: navLogSheet(page) }).last();
+export const navLogScroller = (page: Page) =>
+  page
+    .getByTestId("navlog-scroller")
+    .filter({ has: navLogSheet(page) })
+    .last();
 
 /** The nav log's card put away, FPL under it again: its close, kept for a
  *  keyboard and a screen reader (CardClose), the tab bar's Back's twin. */
@@ -520,11 +504,13 @@ export async function openSection(page: Page, title: string) {
   // The legs, FPL's own: the nav log all the way up.
   if (title === "Legs") {
     await openTab(page, "Nav Log");
-    await expect(async () => { await panel.locator('[data-title="Legs"]').first().scrollIntoViewIfNeeded({ timeout: 2000 }); }).toPass({ timeout: 10000 });
+    await expect(async () => {
+      await panel.locator('[data-title="Legs"]').first().scrollIntoViewIfNeeded({ timeout: 2000 });
+    }).toPass({ timeout: 10000 });
     return;
   }
   await openBrief(page);
-  const here = panel.locator(`[role="tabpanel"][data-state="active"] [data-title="${title}"]`).first();
+  const here = panel.locator(`[role="tabpanel"]:not([inert]) [data-title="${title}"]`).first();
   if (!(await here.isVisible().catch(() => false))) {
     await briefPage(page, "Preflight");
     // Round the phases again until it is on one: a section drawn once the
@@ -536,18 +522,26 @@ export async function openSection(page: Page, title: string) {
       for (const phase of PHASES) {
         const tab = panelTabs(page).getByRole("tab", { name: phase, exact: true });
         if ((await tab.getAttribute("aria-selected")) !== "true") await tab.click();
-        if (await here.waitFor({ timeout: 3000 }).then(() => true, () => false)) return;
+        if (
+          await here.waitFor({ timeout: 3000 }).then(
+            () => true,
+            () => false,
+          )
+        )
+          return;
       }
       throw new Error(`no "${title}" section on any of the Brief's pages yet`);
     }).toPass({ timeout: slow(60_000) });
   }
   // A section drawn again as its tab's content arrives can be detached
   // between finding it and scrolling to it: tried until it holds still.
-  await expect(async () => { await here.scrollIntoViewIfNeeded({ timeout: 2000 }); }).toPass({ timeout: 10000 });
-  // A folded one -- Preflight's under its checks -- opened.
-  if ((await here.getAttribute("data-state")) === "closed") {
+  await expect(async () => {
+    await here.scrollIntoViewIfNeeded({ timeout: 2000 });
+  }).toPass({ timeout: 10000 });
+  // A folded one -- Preflight's under its checks -- opened; one laid open in a tab has no fold.
+  if ((await here.getAttribute("data-slot")) !== "open-section" && (await here.getAttribute("data-open")) === null) {
     await here.locator('[data-slot="accordion-trigger"]').first().click();
-    await expect(here).toHaveAttribute("data-state", "open");
+    await expect(here).toHaveAttribute("data-open", "");
   }
 }
 
@@ -556,11 +550,20 @@ export async function openSection(page: Page, title: string) {
  *  moving the map to keep the route clear of the panel, moves it after
  *  the page looks settled. */
 export async function mapStill(page: Page) {
-  await expect.poll(() => page.getByTestId("gl-map").first().evaluate(async map => {
-    const before = (map as HTMLElement).dataset.moving;
-    await new Promise(r => setTimeout(r, 300));
-    return before === undefined && (map as HTMLElement).dataset.moving === undefined;
-  }), { timeout: slow(10000) }).toBe(true);
+  await expect
+    .poll(
+      () =>
+        page
+          .getByTestId("gl-map")
+          .first()
+          .evaluate(async (map) => {
+            const before = (map as HTMLElement).dataset.moving;
+            await new Promise((r) => setTimeout(r, 300));
+            return before === undefined && (map as HTMLElement).dataset.moving === undefined;
+          }),
+      { timeout: slow(10000) },
+    )
+    .toBe(true);
 }
 
 /** A tap on the chart itself, somewhere nothing else is: not a marker,
@@ -570,29 +573,51 @@ export async function tapTheChart(page: Page) {
   // Once the map is still: a spot found empty in a move had a field's
   // chip slide under it before the tap (KCWI, on CI's desktop).
   await mapStill(page);
-  const at = await page.locator(".maplibregl-map").first().evaluate(map => {
-    const r = map.getBoundingClientRect();
-    // Clear of every mark by more than a near miss (a 44-point target),
-    // which a tap there would select: the markers', and those drawn on the
-    // canvas -- the airports, the VORs and fixes, the checkpoints -- each a
-    // mark's 26 across round where its probe says it is (useGlProbe).
-    const marks = [...map.querySelectorAll(".maplibregl-marker")].map(m => m.getBoundingClientRect());
-    for (const probe of map.querySelectorAll<HTMLElement>("[data-airport-marks], [data-navaid-marks], [data-checkpoint-marks]")) {
-      const name = probe.dataset.glProbe!;
-      for (const m of JSON.parse(probe.getAttribute(`data-${name}`) ?? "[]") as { x: number; y: number }[]) {
-        marks.push(new DOMRect(r.left + m.x - 13, r.top + m.y - 13, 26, 26));
+  const at = await page
+    .locator(".maplibregl-map")
+    .first()
+    .evaluate((map) => {
+      const r = map.getBoundingClientRect();
+      // Clear of every mark by more than a near miss (a 44-point target),
+      // which a tap there would select: the markers', and those drawn on the
+      // canvas -- the airports, the VORs and fixes, the checkpoints -- each a
+      // mark's 26 across round where its probe says it is (useGlProbe).
+      const marks = [...map.querySelectorAll(".maplibregl-marker")].map((m) => m.getBoundingClientRect());
+      for (const probe of map.querySelectorAll<HTMLElement>("[data-airport-marks], [data-navaid-marks], [data-checkpoint-marks]")) {
+        const name = probe.dataset.glProbe!;
+        for (const m of JSON.parse(probe.getAttribute(`data-${name}`) ?? "[]") as { x: number; y: number }[]) {
+          marks.push(new DOMRect(r.left + m.x - 13, r.top + m.y - 13, 26, 26));
+        }
       }
-    }
-    const clear = (x: number, y: number) => marks.every(m => x < m.left - 30 || x > m.right + 30 || y < m.top - 30 || y > m.bottom + 30);
-    for (let fy = 0.85; fy > 0.1; fy -= 0.1) {
-      for (let fx = 0.15; fx < 0.9; fx += 0.1) {
-        const x = r.left + r.width * fx, y = r.top + r.height * fy;
-        const hit = document.elementFromPoint(x, y);
-        if (hit && map.contains(hit) && clear(x, y) && hit.matches("canvas.maplibregl-canvas")) return { x, y };
+      // And clear of the course, whose legs a tap within 22 opens (RouteGl's
+      // route-legs probe: each leg's ends on the screen).
+      const legs = (
+        JSON.parse(map.querySelector("[data-route-legs]")?.getAttribute("data-route-legs") ?? "[]") as {
+          legs: { ends: [number, number][] }[];
+        }[]
+      )
+        .flatMap((row) => row.legs)
+        .map((l) => l.ends.map(([x, y]) => ({ x: r.left + x, y: r.top + y })));
+      const offLine = (x: number, y: number) =>
+        legs.every(([a, b]) => {
+          const dx = b!.x - a!.x,
+            dy = b!.y - a!.y,
+            l2 = dx * dx + dy * dy;
+          const t = l2 ? Math.max(0, Math.min(1, ((x - a!.x) * dx + (y - a!.y) * dy) / l2)) : 0;
+          return Math.hypot(x - (a!.x + t * dx), y - (a!.y + t * dy)) > 30;
+        });
+      const clear = (x: number, y: number) =>
+        offLine(x, y) && marks.every((m) => x < m.left - 30 || x > m.right + 30 || y < m.top - 30 || y > m.bottom + 30);
+      for (let fy = 0.85; fy > 0.1; fy -= 0.1) {
+        for (let fx = 0.15; fx < 0.9; fx += 0.1) {
+          const x = r.left + r.width * fx,
+            y = r.top + r.height * fy;
+          const hit = document.elementFromPoint(x, y);
+          if (hit && map.contains(hit) && clear(x, y) && hit.matches("canvas.maplibregl-canvas")) return { x, y };
+        }
       }
-    }
-    return null;
-  });
+      return null;
+    });
   expect(at, "somewhere on the chart with nothing on it").not.toBeNull();
   await page.mouse.click(at!.x, at!.y);
 }
@@ -617,39 +642,43 @@ export async function tapNear(page: Page, mark: Locator | (() => Promise<{ x: nu
       const box = (await mark.boundingBox())!;
       middle = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     }
-    const at = await page.evaluate(([x, y]) => {
-      // Then a ring of points 14 and 18 out: what is drawn round a route's
-      // field -- its traffic pattern, from the first plan since the planner
-      // picks its runway -- covered all seven fixed ones round C81 on CI's
-      // runners (places.spec, both projects, three tries of three).
-      const ring: number[][] = [[0, 16], [-16, 0], [0, -16], [-11, 11], [-11, -11], [11, 11], [11, -11]];
-      for (const r of [14, 18]) for (let a = 0; a < 360; a += 30) ring.push([Math.round(r * Math.sin(a * Math.PI / 180)), Math.round(r * Math.cos(a * Math.PI / 180))]);
-      for (const [dx, dy] of ring) {
-        const hit = document.elementFromPoint(x! + dx!, y! + dy!);
-        if (hit?.matches("canvas.maplibregl-canvas")) return { x: x! + dx!, y: y! + dy! };
-      }
-      return null;
-    }, [middle.x, middle.y]);
+    const at = await page.evaluate(
+      ([x, y]) => {
+        // Then a ring of points 14 and 18 out: what is drawn round a route's
+        // field -- its traffic pattern, from the first plan since the planner
+        // picks its runway -- covered all seven fixed ones round C81 on CI's
+        // runners (places.spec, both projects, three tries of three).
+        const ring: number[][] = [
+          [0, 16],
+          [-16, 0],
+          [0, -16],
+          [-11, 11],
+          [-11, -11],
+          [11, 11],
+          [11, -11],
+        ];
+        for (const r of [14, 18])
+          for (let a = 0; a < 360; a += 30)
+            ring.push([Math.round(r * Math.sin((a * Math.PI) / 180)), Math.round(r * Math.cos((a * Math.PI) / 180))]);
+        for (const [dx, dy] of ring) {
+          const hit = document.elementFromPoint(x! + dx!, y! + dy!);
+          if (hit?.matches("canvas.maplibregl-canvas")) return { x: x! + dx!, y: y! + dy! };
+        }
+        return null;
+      },
+      [middle.x, middle.y],
+    );
     expect(at, "the chart beside the mark, nothing else there").not.toBeNull();
     await page.mouse.click(at!.x, at!.y);
     await expect(page).toHaveURL(opens, { timeout: 2000 });
   }).toPass({ timeout: slow(20_000) });
 }
 
-/** A card put away by its way back: on a phone with the sheet up, the
- *  minimized tab bar's close (TabBar), which goes back one card -- no Back,
- *  at the owner's ask ("close button should behave as the back button");
- *  elsewhere the card's own close. */
+/** A card put away by its way back: its own close in its head, inline
+ *  with its name (CardClose), which goes back one card -- no Back, at the
+ *  owner's ask ("close button should behave as the back button"). */
 export async function closeCard(page: Page, closeTestId: string) {
-  const bar = page.getByTestId("tab-close");
-  if (await bar.isVisible()) {
-    await bar.click();
-    return;
-  }
-  // Else the card's own close, out of sight but for a keyboard (CardClose).
-  const close = page.getByTestId(closeTestId);
-  await close.focus();
-  await page.keyboard.press("Enter");
+  await page.getByTestId(closeTestId).click();
 }
 
 /** The console's Personal tab, where who is signed in and the mode are
@@ -671,47 +700,51 @@ export async function consolePage(scope: Page | Locator, name: "Account" | "Guid
     return;
   }
   // Back to the page's list from a page open on it, by its close.
-  const back = scope.getByRole("button", { name: "Back to Account", exact: true });
+  const back = scope.getByRole("button", { name: "Back to Setup", exact: true });
   if (await back.isVisible()) await back.click();
   if (name !== "Account") await setup.getByRole("button", { name: new RegExp(`^${name}`) }).click();
 }
 
-/** Airport's search bar, in sight: on the Airport tab, its pill's one row
- *  or its head half way (FPL is the tab a fresh load opens on). */
-/** A tab's one strip set to show one of its lists -- FPL's Saved or
- *  Recents, Airport's Favorites, Recents or Nearest, Aircraft's Favorites,
- *  Recents or a question -- from the filter menu at its heading's right
- *  (StripSection). */
-export async function stripShows(page: Page, menu: "fpl-strip-shows" | "airport-strip-shows" | "aircraft-question", item: string) {
+/** A strip set to show one of its lists -- the flights' Saved or Recents
+ *  (the one search's own page), the traffic's Favorites, Recents or a
+ *  question -- from the filter menu at its heading's right (StripSection). */
+export async function stripShows(page: Page, menu: "fpl-strip-shows" | "aircraft-question", item: string) {
   await sideDrawer(page).getByTestId(menu).click();
   await page.getByTestId(item).click();
 }
 
+/** The one search, in sight: the sheet's first row, at every height. */
 export async function airportSearch(page: Page) {
   const search = page.getByTestId("search-airports");
   if (await search.isVisible()) return search;
   await showTabs(page);
-  await page.getByTestId("tab-airport").click();
   await expect(search).toBeVisible();
   return search;
 }
 
-
 /** A chart airport as the map drew it (AirportsGl's probe,
  *  `data-airport-marks`): its ident, where it is on the page, whether it
  *  wears its mark (`chip`) and the mark's airspace, use and weather colour. */
-export interface DrawnAirport {
-  ident: string; x: number; y: number; chip: boolean; space: string; use: string; weather: string;
+interface DrawnAirport {
+  ident: string;
+  x: number;
+  y: number;
+  chip: boolean;
+  space: string;
+  use: string;
+  weather: string;
 }
 
 /** Every chart airport drawn now, on the page's own pixels: the Class B,
  *  C and D fields' canvas and the others' (AirportsLayer). */
 export async function airportMarks(page: Page): Promise<DrawnAirport[]> {
-  return page.evaluate(() => [...document.querySelectorAll<HTMLElement>("[data-airport-marks]")].flatMap(c => {
-    const r = c.closest(".maplibregl-map")!.getBoundingClientRect();
-    const drawn = JSON.parse(c.getAttribute("data-airport-marks") ?? "[]") as { x: number; y: number }[];
-    return drawn.map(m => ({ ...m, x: m.x + r.left, y: m.y + r.top }));
-  })) as Promise<DrawnAirport[]>;
+  return page.evaluate(() =>
+    [...document.querySelectorAll<HTMLElement>("[data-airport-marks]")].flatMap((c) => {
+      const r = c.closest(".maplibregl-map")!.getBoundingClientRect();
+      const drawn = JSON.parse(c.getAttribute("data-airport-marks") ?? "[]") as { x: number; y: number }[];
+      return drawn.map((m) => ({ ...m, x: m.x + r.left, y: m.y + r.top }));
+    }),
+  ) as Promise<DrawnAirport[]>;
 }
 
 /** The VFR waypoints drawn on the map (WaypointsGl's probe), in the page's own points. */
@@ -730,23 +763,26 @@ export async function waypointMarks(page: Page): Promise<{ ident: string; x: num
 
 /** One chart airport drawn, by its ident; null while it is not. */
 export async function airportMark(page: Page, ident: string): Promise<DrawnAirport | null> {
-  return (await airportMarks(page)).find(m => m.ident === ident) ?? null;
+  return (await airportMarks(page)).find((m) => m.ident === ident) ?? null;
 }
 
-
-/** A card's own close in the map's sheet: on a phone the tab bar's, which
- *  names the card and goes back one level (SheetCard, barNamed); from md up
- *  the card's own, by its test id. */
+/** A card's own close in the map's sheet, by its test id: in its head on
+ *  every screen, the tabs over it static (TabBar). */
 export function cardClose(page: Page, testId: string) {
-  return (page.viewportSize()?.width ?? 0) < 768 ? page.getByTestId("tab-close") : page.getByTestId(testId);
+  return page.getByTestId(testId);
 }
 
 /** What a map layer has drawn now, as its probe records it (useGlProbe):
  *  each feature's fields and, for a point or an area, where it is on the
  *  map in the map's own points. */
 export async function drawn(page: Page, name: string): Promise<Record<string, unknown>[]> {
-  return page.evaluate(n => [...document.querySelectorAll<HTMLElement>(`[data-gl-probe="${n}"]`)]
-    .flatMap(p => JSON.parse(p.getAttribute(`data-${n}`) ?? "[]") as Record<string, unknown>[]), name);
+  return page.evaluate(
+    (n) =>
+      [...document.querySelectorAll<HTMLElement>(`[data-gl-probe="${n}"]`)].flatMap(
+        (p) => JSON.parse(p.getAttribute(`data-${n}`) ?? "[]") as Record<string, unknown>[],
+      ),
+    name,
+  );
 }
 
 /** The level of the chart's tiles the map draws now (ChartGl's

@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { openMapSettings, openSetup, settle, consolePage } from "./helpers";
 
 /**
- * What the planner is not (lib/planningAid, lib/dataSources): said in About and at the
+ * What the planner is not (components/planningAid, components/dataSources): said in About and at the
  * briefing's foot, not in a dialog to accept before the map, at the
  * owner's ask ("no aviation app does that").
  */
@@ -34,9 +34,11 @@ test("a fresh device opens straight onto the map, and About says what the planne
   const traffic = about.getByTestId("about-source").filter({ hasText: "adsb.lol" });
   await expect(traffic).toContainText("ODbL 1.0");
   await expect(traffic).toHaveAttribute("href", /opendatacommons\.org/);
-  await expect(about.getByTestId("about-source").filter({ hasText: "FAA sectional" })).toContainText("Public domain");
+  await expect(about.getByTestId("about-source").filter({ hasText: "FAA aeronautical charts" })).toContainText("Public domain");
   await expect(about).not.toContainText("OpenStreetMap");
   await expect(about.getByTestId("legal-privacy")).toHaveAttribute("href", "/app/privacy.html");
+  // The demo flight a reviewer can open, the phones' too (lib/demoFlight).
+  await expect(about.getByTestId("about-demo-flight")).toHaveAttribute("href", "/app/plan?dep=KMSN&dest=KOSH");
 });
 
 // The traffic's source credited under the map's settings beside the

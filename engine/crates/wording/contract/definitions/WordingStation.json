@@ -1,0 +1,30 @@
+{
+  "title": "WordingStation",
+  "description": "A VOR as the planner sends one; with no mag_var it gives no radials.",
+  "type": "object",
+  "properties": {
+    "ident": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "mag_var": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "description": "The station's magnetic variation, degrees east."
+    }
+  },
+  "required": [
+    "lat",
+    "lon"
+  ]
+}

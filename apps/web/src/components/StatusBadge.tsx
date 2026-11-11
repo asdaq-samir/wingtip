@@ -22,7 +22,12 @@ const TONES: Record<Tone, string> = {
  * pills, dark badges and badges filled in their colour, LIFR's magenta
  * 3.2:1 under its white letters.
  */
-export default function StatusBadge({ tone, color, className, children }: {
+export default function StatusBadge({
+  tone,
+  color,
+  className,
+  children,
+}: {
   tone?: Tone;
   color?: string;
   className?: string;
@@ -31,7 +36,8 @@ export default function StatusBadge({ tone, color, className, children }: {
   return (
     <Badge variant="outline" className={cn("gap-1.5 font-normal", className)}>
       <span
-        aria-hidden className={cn("inline-block size-2.5 shrink-0 rounded-full", tone && TONES[tone])}
+        aria-hidden
+        className={cn("inline-block size-2.5 shrink-0 rounded-full", tone && TONES[tone])}
         style={color ? { backgroundColor: color } : undefined}
       />
       {children}

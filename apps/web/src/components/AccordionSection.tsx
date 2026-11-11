@@ -29,8 +29,16 @@ import { SectionsOpen } from "./sectionLayout";
  * sections run one under another there, each under its title, at the
  * owner's ask ("Make the subtabs into sections").
  */
-export default function AccordionSection({ title, description, aside, summary, children, ...props }: {
-  title: string; description?: string;
+export default function AccordionSection({
+  title,
+  description,
+  aside,
+  summary,
+  children,
+  ...props
+}: {
+  title: string;
+  description?: string;
   /** Beside the title, shown folded or open: what a folded section
    *  must say without being opened (the briefing's VFR-not-recommended). */
   aside?: ReactNode;
@@ -48,15 +56,22 @@ export default function AccordionSection({ title, description, aside, summary, c
       // tab of them -- the weather's five, the airports' lists -- drew all
       // of its length on opening.
       <section
-        aria-labelledby={titleId} data-slot="open-section" data-title={title}
-        className={cn("border-b py-4 last:border-b-0 [contain-intrinsic-size:auto_24rem] [content-visibility:auto] print:[content-visibility:visible]", TEXT.prose)}
+        aria-labelledby={titleId}
+        data-slot="open-section"
+        data-title={title}
+        className={cn(
+          "border-b py-4 last:border-b-0 [contain-intrinsic-size:auto_24rem] [content-visibility:auto] print:[content-visibility:visible]",
+          TEXT.prose,
+        )}
       >
         {/* The heading its title alone, the flag beside it: inside it, a
             flag's words ("Risk raised") became part of the heading's name. */}
         <div className={cn("mb-2 flex flex-wrap items-center gap-x-2 gap-y-1", TEXT.row)}>
           {/* At the strips' titles' size and weight (PillSection), not bold,
               at the owner's ask ("Section labels don't need to be bold"). */}
-          <h3 id={titleId} className={cn("font-medium", TEXT.title)}>{title}</h3>
+          <h3 id={titleId} className={cn("font-medium", TEXT.title)}>
+            {title}
+          </h3>
           {aside}
         </div>
         {description && <div className={cn("text-muted-foreground", TEXT.note)}>{description}</div>}
@@ -76,8 +91,9 @@ export default function AccordionSection({ title, description, aside, summary, c
           to the trigger under it, but for the aside's own; it underlines
           and fades with the trigger, as its words did inside it. */}
       <AccordionTrigger
-        aria-labelledby={titleId} aria-describedby={summary ? summaryId : undefined}
-        label={(
+        aria-labelledby={titleId}
+        aria-describedby={summary ? summaryId : undefined}
+        label={
           <span
             className={cn(
               "pointer-events-none col-start-1 row-start-1 flex min-w-0 flex-col gap-0.5 self-start py-4 pr-6 text-left font-semibold",
@@ -90,10 +106,12 @@ export default function AccordionSection({ title, description, aside, summary, c
               {aside && <span className="pointer-events-auto inline-flex">{aside}</span>}
             </span>
             {summary && (
-              <span id={summaryId} className={cn("font-normal text-muted-foreground", TEXT.prose)} data-slot="section-summary">{summary}</span>
+              <span id={summaryId} className={cn("font-normal text-muted-foreground", TEXT.prose)} data-slot="section-summary">
+                {summary}
+              </span>
             )}
           </span>
-        )}
+        }
       />
       <AccordionContent className={TEXT.prose}>
         {description && <div className={cn("text-muted-foreground", TEXT.note)}>{description}</div>}

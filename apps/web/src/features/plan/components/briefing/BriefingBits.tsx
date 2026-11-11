@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 import { cn } from "cn";
 import { OctagonAlert, TriangleAlert } from "lucide-react";
-import { GROUP_HEADING, TEXT } from "../../../../lib/text";
-import { passLine, type TfrWhen } from "../../../../lib/passTimes";
+import { TEXT } from "../../../../lib/text";
+import SectionTitle from "../../../../components/SectionTitle";
+import { passLine, type TfrWhen } from "../../lib/passTimes";
 import { FINDING_TONE } from "../../../../lib/findings";
 import { TFR_WORDS } from "./briefingWords";
 
@@ -20,7 +21,7 @@ export function BriefingNarrativePrintBlock({ text }: { text: string | null }) {
   // On paper only, at paper's own 14: no finger, no type scale.
   return (
     <div className="hidden break-inside-avoid-page border-b border-border px-4 py-3 print:block print:break-inside-avoid">
-      <h2 className={GROUP_HEADING}>Narrative</h2>
+      <SectionTitle>Narrative</SectionTitle>
       <p className={cn("mt-2 text-muted-foreground", TEXT.detail)}>{text}</p>
     </div>
   );
@@ -51,5 +52,9 @@ export function Flag({ finding, testId, children }: { finding: "stop" | "caution
 
 /** A section's line while what it shows is still coming, or failed. */
 export function Pending({ children }: { children: ReactNode }) {
-  return <p className="text-muted-foreground" role="status">{children}</p>;
+  return (
+    <p className="text-muted-foreground" role="status">
+      {children}
+    </p>
+  );
 }

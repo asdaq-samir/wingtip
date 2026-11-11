@@ -10,7 +10,12 @@ import { errorIdOf } from "../lib/fieldError";
  * alert, by the field the pilot is looking at -- where the row's words
  * stay what the field is.
  */
-export default function RowField({ id, error, wide, children }: {
+export default function RowField({
+  id,
+  error,
+  wide,
+  children,
+}: {
   id: string;
   error: string | undefined;
   /** A text box across the group, its message at the start. */
@@ -20,7 +25,11 @@ export default function RowField({ id, error, wide, children }: {
   return (
     <Field data-invalid={!!error || undefined} className={cn("gap-1", !wide && "w-auto items-end")}>
       {children}
-      {error && <FieldError id={errorIdOf(id)} className={cn(!wide && "max-w-44 text-right")}>{error}</FieldError>}
+      {error && (
+        <FieldError id={errorIdOf(id)} className={cn(!wide && "max-w-44 text-right")}>
+          {error}
+        </FieldError>
+      )}
     </Field>
   );
 }

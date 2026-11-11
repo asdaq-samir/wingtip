@@ -28,8 +28,8 @@ use super::{Drawing, RunwayPath, FT_PER_NM};
 use crate::figures::debrief::{airborne, Point};
 use crate::figures::words::{alt_ft, grouped, js_num, js_round_f, to_fixed};
 use crate::geo::distance_nm;
-use crate::json;
 use crate::motion::rad;
+use crate::{json, sort::StableSort};
 
 /// How near a fix the track has to come, nm off the course through it, to
 /// have flown over it -- the app's own figure for "it went that way", a
@@ -116,8 +116,7 @@ pub fn guidance_of(id: &str) -> Guidance {
     let b = id.as_bytes();
     let upper = |c: u8| c.is_ascii_uppercase();
     // /^(RNV|GPS)-?[A-Z]$/: a circling RNAV or GPS approach.
-    if (id.starts_with("RNV") || id.starts_with("GPS"))
-        && ((b.len() == 4 && upper(b[3])) || (b.len() == 5 && b[3] == b'-' && upper(b[4])))
+    if (id.starts_with("RNV") || id.starts_with("GPS")) && ((b.len() == 4 && upper(b[3])) || (b.len() == 5 && b[3] == b'-' && upper(b[4])))
     {
         return Guidance::Gps;
     }
@@ -189,7 +188,7 @@ fn finding(tone: Tone, text: String) -> Finding {
 
 /// Stop first, then caution, ok and info, each kind in the order found.
 fn ordered(mut findings: Vec<Finding>) -> Vec<Finding> {
-    findings.sort_by_key(|f| f.tone);
+    findings.stable_sort_by_key(|f| f.tone);
     findings
 }
 
@@ -368,10 +367,11 @@ fn path_of(d: &Drawing, frame: &Frame) -> Option<Path> {
             final_from = Some(ll.len().saturating_sub(1));
         }
         for &(lat, lon) in &line.points {
-            if let Some(&(a, b)) = ll.last() {
-                if (a - lat).abs() < 1e-5 && (b - lon).abs() < 1e-5 {
-                    continue;
-                }
+            if let Some(&(a, b)) = ll.last()
+                && (a - lat).abs() < 1e-5
+                && (b - lon).abs() < 1e-5
+            {
+                continue;
             }
             ll.push((lat, lon));
         }
@@ -460,7 +460,11 @@ fn pass_of(path: &Path, v: usize, xy: &[Xy], from: usize, to: usize, first: bool
             near.push(Cross { i, u: 0.0, right: d });
         }
     }
-    if first { near.first().copied() } else { near.last().copied() }
+    if first {
+        near.first().copied()
+    } else {
+        near.last().copied()
+    }
 }
 
 /// Where a point is against the way in between two vertices: how far
@@ -481,7 +485,7 @@ fn against(path: &Path, p: Xy, va: usize, vb: usize) -> Against {
         let (bx, by) = (b.x - a.x, b.y - a.y);
         let len2 = bx * bx + by * by;
         let (px, py) = (p.x - a.x, p.y - a.y);
-        let t = if len2 > 0.0 { ((px * bx + py * by) / len2).max(0.0).min(1.0) } else { 0.0 };
+        let t = if len2 > 0.0 { ((px * bx + py * by) / len2).clamp(0.0, 1.0) } else { 0.0 };
         let right = if len2 > 0.0 { (by * px - bx * py) / len2.sqrt() } else { px.hypot(py) };
         let away = (px - t * bx).hypot(py - t * by);
         if away < best.away {
@@ -633,10 +637,10 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
     // is flown before it counts.
     let mut passes: Vec<Pass> = vec![Pass { fix: faf, i: faf_cross.i, u: faf_cross.u }];
     for k in (0..faf).rev() {
-        if let Some(last) = pass_of(&path, path.fixes[k].v, &xy, attempt.from, passes[0].i, false) {
-            if last.i <= passes[0].i {
-                passes.insert(0, Pass { fix: k, i: last.i, u: last.u });
-            }
+        if let Some(last) = pass_of(&path, path.fixes[k].v, &xy, attempt.from, passes[0].i, false)
+            && last.i <= passes[0].i
+        {
+            passes.insert(0, Pass { fix: k, i: last.i, u: last.u });
         }
     }
     // Fixes after the final approach fix (step-downs, the MAP), forward.
@@ -682,10 +686,10 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
     }
     let faf_alt = alt_at(points, faf_cross.i, faf_cross.u);
     let faf_limit = path.fixes[faf].min_ft.or(path.fixes[faf].max_ft);
-    if let (Some(alt), Some(limit)) = (faf_alt, faf_limit) {
-        if alt - limit > MATCH_FT {
-            return None;
-        }
+    if let (Some(alt), Some(limit)) = (faf_alt, faf_limit)
+        && alt - limit > MATCH_FT
+    {
+        return None;
     }
 
     let faf_along = path.cum[faf_v];
@@ -836,10 +840,11 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
             }
         }
         let floor_here = floor_at(pass.i);
-        if let (Some(a), Some(floor)) = (alt, floor_here) {
-            if floor - a > 0.0 && under.is_none_or(|u| floor - a > u) {
-                under = Some(floor - a);
-            }
+        if let (Some(a), Some(floor)) = (alt, floor_here)
+            && floor - a > 0.0
+            && under.is_none_or(|u| floor - a > u)
+        {
+            under = Some(floor - a);
         }
         crossings_out.push(FixCrossing {
             ident: fix.ident.clone(),
@@ -869,10 +874,13 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
         }
         // The final approach fix's "at" altitude is the glide slope's intercept
         // where there is a glidepath, crossed lower on it (ARINC 424-18 5.29 "I").
-        if let (Some(max), Some(a)) = (fix.max_ft, alt) {
-            if a - max > 0.0 && !is_map && !(pass.fix == faf && gp.is_some()) {
-                findings.push(finding(Tone::Stop, format!("At {}: {} ft above {}", fix.ident, grouped(js_round_f(a - max)), alt_ft(Some(max)))));
-            }
+        if let (Some(max), Some(a)) = (fix.max_ft, alt)
+            && a - max > 0.0
+            && !is_map
+            && !(pass.fix == faf && gp.is_some())
+        {
+            findings
+                .push(finding(Tone::Stop, format!("At {}: {} ft above {}", fix.ident, grouped(js_round_f(a - max)), alt_ft(Some(max)))));
         }
     }
 
@@ -910,13 +918,15 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
             i += 1;
         }
         if let (Some(high), Some(low)) = (high, low) {
-            let said = |ft: f64| format!("{} ft {}", grouped((js_round_f(ft / 10.0) * 10.0).abs()), if ft >= 0.0 { "above" } else { "below" });
+            let said =
+                |ft: f64| format!("{} ft {}", grouped((js_round_f(ft / 10.0) * 10.0).abs()), if ft >= 0.0 { "above" } else { "below" });
             findings.push(finding(Tone::Info, format!("Glidepath ({}°): from {} to {} it", to_fixed(gp.deg, 2), said(high), said(low))));
             if under_nm > 0.0 {
                 findings.push(finding(Tone::Stop, format!("Below the glide slope's full scale for {} nm", to_fixed(under_nm.max(0.1), 1))));
             }
             if over_nm > 0.0 {
-                findings.push(finding(Tone::Caution, format!("Above the glide slope's full scale for {} nm", to_fixed(over_nm.max(0.1), 1))));
+                findings
+                    .push(finding(Tone::Caution, format!("Above the glide slope's full scale for {} nm", to_fixed(over_nm.max(0.1), 1))));
             }
         }
     }
@@ -926,10 +936,10 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
     let mut lowest_ft: Option<f64> = None;
     let mut i = faf_cross.i + 1;
     while i <= end_at && i < points.len() {
-        if let Some(a) = points[i].alt_ft {
-            if lowest_ft.is_none_or(|l| a < l) {
-                lowest_ft = Some(a);
-            }
+        if let Some(a) = points[i].alt_ft
+            && lowest_ft.is_none_or(|l| a < l)
+        {
+            lowest_ft = Some(a);
         }
         i += 1;
     }
@@ -943,7 +953,10 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
     if let Some(landed) = landed_at {
         let s = map_t.map(|t| (points[landed].t - t) / 1000.0);
         (outcome, seconds_after_map) = (Outcome::Landed, s);
-        findings.push(finding(Tone::Info, s.map_or_else(|| "Landed".to_owned(), |s| format!("Landed {} s after the MAP", js_num(js_round_f(s))))));
+        findings.push(finding(
+            Tone::Info,
+            s.map_or_else(|| "Landed".to_owned(), |s| format!("Landed {} s after the MAP", js_num(js_round_f(s)))),
+        ));
     } else if let Some(climb) = climb_at {
         let s = map_t.map(|t| (points[climb].t - t) / 1000.0);
         (outcome, seconds_after_map) = (Outcome::Missed, s);
@@ -969,7 +982,10 @@ pub fn debrief(d: &Drawing, points: &[Point], attempt: Option<Attempt>, minimums
     }
     let side = |r: f64| if r >= 0.0 { "right" } else { "left" };
     if stretches.is_empty() && guidance != Guidance::Other {
-        findings.push(finding(Tone::Ok, format!("Within full scale all the way, {} nm {} at most", to_fixed(worst_right.abs(), 1), side(worst_right))));
+        findings.push(finding(
+            Tone::Ok,
+            format!("Within full scale all the way, {} nm {} at most", to_fixed(worst_right.abs(), 1), side(worst_right)),
+        ));
     } else if guidance == Guidance::Other {
         findings.push(finding(Tone::Info, format!("Course: {} nm {} of it at most", to_fixed(worst_right.abs(), 1), side(worst_right))));
     }
@@ -1099,7 +1115,7 @@ pub fn find_approaches(drawings: &[Drawing], points: &[Point], picked: Option<&s
     // approach fix are one, the best kept and the rest named with it. As
     // good laterally (within 0.05 nm), the one picked for the flight wins,
     // then one whose glidepath the track came down (within GLIDEPATH_FIT_FT).
-    found.sort_by(|a, b| a.faf_at.partial_cmp(&b.faf_at).unwrap_or(std::cmp::Ordering::Equal));
+    found.stable_sort_by(|a, b| a.faf_at.partial_cmp(&b.faf_at).unwrap_or(std::cmp::Ordering::Equal));
     let followed = |f: &Debrief| f.glidepath_fit_ft.is_some_and(|ft| ft <= GLIDEPATH_FIT_FT);
     let is_picked = |f: &Debrief| picked.is_some_and(|p| f.id == p);
     let beats = |f: &Debrief, g: &Debrief| {

@@ -1,0 +1,387 @@
+import { useMemo } from "react";
+import { create } from "zustand";
+import { createJSONStorage, persist } from "zustand/middleware";
+import { browserStorage } from "../../storage";
+import { useShownStore } from "../../shown";
+
+/**
+ * Own ship: the phone's position on the chart, from the browser's
+ * geolocation, watched while `enabled` and kept centred while
+ * `follow`. A zustand store: the map draws it (OwnShipGl), the map's
+ * location arrow switches it (MyPositionButton), and both are remembered per browser (the position
+ * itself is not), so a pilot who turned it on at the desk has it on in
+ * the air.
+ *
+ * The browser grants geolocation only to a secure origin (https, or
+ * localhost): over plain http on the Wi-Fi it is simply unavailable,
+ * and the arrow says so when tapped rather than doing nothing (see
+ * HttpsConnectorConfig for the port that fixes that).
+ */
+/** A fix this far out, or more, is the phone's approximate position, not a
+ *  GPS's: a GPS fix reports tens of metres, and iOS and Android with
+ *  Precise Location off give a position good to a mile or more. The
+ *  chart, the glide ring, Direct-To and what is ahead all start from it,
+ *  so the pilot is told (MyPositionButton). */
+export const APPROXIMATE_M = 1000;
+
+export interface Fix {
+  lat: number;
+  lon: number;
+  accuracyM: number;
+  /** True heading from the GPS, degrees, or null while stationary. */
+  headingDeg: number | null;
+  speedKt: number | null;
+  /** The GPS's altitude, feet MSL, where it gives one (a phone does). */
+  altitudeFt: number | null;
+  at: number;
+}
+
+interface OwnShip {
+  enabled: boolean;
+  /** Turned on by the page itself (locateOnOpen, positionNow) rather than
+   *  by the pilot: the map finding where it is, not a start of flying
+   *  (features/readyToFly's prompt asks only at the pilot's own start). */
+  byPage: boolean;
+  /** Flown by the planned flight's dry run, not the GPS (simulateFix):
+   *  everything that follows own ship -- the map, the glide ring, what is
+   *  ahead -- follows it as it would a pilot flying the route. */
+  simulated: boolean;
+  follow: boolean;
+  fix: Fix | null;
+  error: string | null;
+  /** Bumped by a tap on the location arrow that starts following: the
+   *  map flies to the position, closing in on it (OwnShipGl). */
+  recentred: number;
+  /** The zoom that recentre asked for, or null for the arrow's own close
+   *  in (OwnShipGl's LOCAL_ZOOM). */
+  recentreZoom: number | null;
+  /** Where the position last was, to a few hundred feet, kept in this
+   *  browser: the planner opens there (GlMapShell), the region's chart
+   *  already drawn, rather than on the whole country until a fix comes
+   *  and then all over again where it is. */
+  lastFix: { lat: number; lon: number } | null;
+  setEnabled: (enabled: boolean) => void;
+  setFollow: (follow: boolean) => void;
+  /** Follow, and bring the map to the position: at `zoom`, or a local
+   *  one. */
+  recentre: (zoom?: number) => void;
+  /** Bumped by the location arrow's other face in a dry run, the whole
+   *  route: the map fits the route again (GlMapShell), and stops following. */
+  routeAsked: number;
+  showRoute: () => void;
+  /** A route is on the map and not all of it in sight, clear of the
+   *  panel (GlMapShell): the location arrow offers it back. */
+  routeOutOfView: boolean;
+  /** A route is on the map (GlMapShell): the location arrow then only goes
+   *  between the position and the whole route. */
+  routeDrawn: boolean;
+}
+
+/** Where the planner opens on the pilot's position: the region a flight
+ *  from here goes to, some 100 nm across a phone -- the zoom from which
+ *  the Class D rings and every airport are drawn (glStyle's AIRSPACE_FROM,
+ *  AirportsGl's FROM_ZOOM), at the owner's ask (2026-11-04: "make the
+ *  current position zoom level the same as class D airports"); at 7 the
+ *  position opened on a chart with the Class B and C alone. */
+export const OPEN_ZOOM = 8;
+/** Where a map with no route and no position opens: the lower 48, whole
+ *  on a phone, as Maps opens on the country before it knows where you are. */
+export const COUNTRY_ZOOM = 4;
+
+export function ownShipAvailable(): boolean {
+  return typeof navigator !== "undefined" && "geolocation" in navigator && window.isSecureContext;
+}
+
+/**
+ * Own ship's position near enough for the planner page as a whole -- the
+ * map fitted to Nearest's fields with it -- drawn again only as the
+ * airplane moves a hundredth of a degree (some 0.6 nm), not at every
+ * fix; what measures from it (an airport card's distance, Favorites')
+ * reads the fix itself. The whole planner subscribed to the fix and drew
+ * again at each one, about once a second in the air, and a route asked
+ * for meanwhile was started over behind each draw -- Fly Here's route
+ * took 4.4 to 5.9 s to appear at a phone's speed with the GPS moving,
+ * 2.7 to 3.5 without (measured 2026-10-08). The position given is the
+ * fix as it was when it last moved that far. Null while own ship is off
+ * or has no fix.
+ */
+export function useOwnShipNear(): { lat: number; lon: number } | null {
+  const at = useOwnShip((o) => (o.enabled && o.fix ? `${o.fix.lat.toFixed(2)},${o.fix.lon.toFixed(2)}` : null));
+  return useMemo(() => {
+    const fix = at === null ? null : useOwnShip.getState().fix;
+    return fix ? { lat: fix.lat, lon: fix.lon } : null;
+  }, [at]);
+}
+
+/** Own ship's fix while it is on, what every distance from the airplane is
+ *  measured from; null while it is off. */
+export function useOwnFix() {
+  return useOwnShip((o) => (o.enabled ? o.fix : null));
+}
+
+/** The same, read only while in sight (lib/shown): a fix a
+ *  second is a render a second, which a tab kept hidden does without,
+ *  reading the fix again as it is back. */
+export function useOwnFixShown() {
+  return useShownStore(useOwnShip, (o) => (o.enabled ? o.fix : null));
+}
+
+/** Own ship as it was before a dry run took it over, to give back
+ *  (simulateFix); above the store, which reads it as it saves. */
+let beforeSimulation: { enabled: boolean; follow: boolean } | null = null;
+let watchId: number | null = null;
+// Started by the page itself (locateOnOpen) rather than by a tap: a
+// refusal then is no error to show, own ship just goes off again.
+let quiet = false;
+
+function stopWatching() {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
+}
+
+function startWatching(set: (patch: Partial<OwnShip>) => void) {
+  if (!ownShipAvailable() || watchId !== null) return;
+  watchId = navigator.geolocation.watchPosition(
+    (position) => applyFix(set, position),
+    (err) =>
+      failed(
+        set,
+        err.code === err.PERMISSION_DENIED
+          ? "Location access was refused; allow it for this site in the browser's settings."
+          : err.message || "No position yet.",
+      ),
+    { enableHighAccuracy: true, maximumAge: 1000, timeout: 20000 },
+  );
+}
+
+/** A fix from the browser into own ship. */
+function applyFix(set: (patch: Partial<OwnShip>) => void, position: GeolocationPosition) {
+  // A dry run is flying own ship: the GPS waits until it ends.
+  if (useOwnShip.getState().simulated) return;
+  quiet = false;
+  const { latitude, longitude, accuracy, heading, speed, altitude } = position.coords;
+  set({
+    lastFix: { lat: Math.round(latitude * 1000) / 1000, lon: Math.round(longitude * 1000) / 1000 },
+    error: null,
+    fix: {
+      lat: latitude,
+      lon: longitude,
+      accuracyM: accuracy,
+      headingDeg: heading === null || Number.isNaN(heading) ? null : heading,
+      speedKt: speed === null || Number.isNaN(speed) ? null : speed * 1.943844,
+      altitudeFt: altitude === null || Number.isNaN(altitude) ? null : altitude * 3.28084,
+      at: position.timestamp,
+    },
+  });
+}
+
+/** No fix: said where own ship is, or, when the page asked by itself
+ *  (locateOnOpen), own ship quietly off again. */
+function failed(set: (patch: Partial<OwnShip>) => void, message: string) {
+  if (quiet) {
+    quiet = false;
+    stopWatching();
+    set({ enabled: false, fix: null, error: null });
+    return;
+  }
+  set({ error: message });
+}
+
+export const useOwnShip = create<OwnShip>()(
+  persist(
+    (set) => ({
+      enabled: false,
+      byPage: false,
+      simulated: false,
+      follow: true,
+      fix: null,
+      error: null,
+      recentred: 0,
+      recentreZoom: null,
+      lastFix: null,
+      setEnabled: (enabled) => {
+        if (enabled && !ownShipAvailable()) return;
+        if (enabled) {
+          set({ enabled: true, byPage: quiet, error: null });
+          startWatching(set);
+        } else {
+          // The last position kept, drawn grey (OwnShipGl); everything
+          // that measures from own ship reads it only while it is on.
+          stopWatching();
+          // The page's own start, if it was one, ends here: the next on
+          // is the pilot's.
+          quiet = false;
+          set({ enabled: false, error: null });
+        }
+      },
+      setFollow: (follow) => set({ follow }),
+      recentre: (zoom) => set((s) => ({ follow: true, recentred: s.recentred + 1, recentreZoom: zoom ?? null })),
+      routeAsked: 0,
+      showRoute: () => set((s) => ({ routeAsked: s.routeAsked + 1 })),
+      routeOutOfView: false,
+      routeDrawn: false,
+    }),
+    {
+      name: "wingtip.ownship",
+      // Written only when what is kept changes (lib/storage): the store is
+      // set at every GPS fix. The last position kept is to a thousandth of
+      // a degree, so a write a hundred metres or so.
+      storage: createJSONStorage(() => browserStorage),
+      // A dry run's own ship is not kept: what the pilot had before it is.
+      partialize: (s) => ({
+        enabled: s.simulated ? (beforeSimulation?.enabled ?? false) : s.enabled,
+        follow: s.simulated ? (beforeSimulation?.follow ?? true) : s.follow,
+        lastFix: s.lastFix,
+      }),
+      // Remembered on: watching starts with the page, so the position
+      // is there when the map is, and the browser's own permission
+      // prompt (if it still has one to show) comes up at once rather
+      // than after a tap. Remembered on but unavailable here (plain
+      // http), it is off until the switch is reachable again.
+      onRehydrateStorage: () => (state) => {
+        if (!state?.enabled) return;
+        if (ownShipAvailable()) startWatching((patch) => useOwnShip.setState(patch));
+        else useOwnShip.setState({ enabled: false });
+      },
+    },
+  ),
+);
+
+/** How often the dry run reports a fix to own ship, ms: four a second, as
+ *  a GPS might, not every frame -- each fix moves what follows own ship.
+ *  Own ship glides from one to the next over it (OwnShipGl). */
+export const SIMULATED_FIX_MS = 250;
+
+/** The zoom a dry run starts at, on its airplane: some fifty miles across
+ *  a phone, the route's checkpoints and fields round it named, at the
+ *  owner's ask ("When play is pressed it should also zoom into plane on
+ *  the route"). */
+const DRY_RUN_ZOOM = 10;
+
+/** A point of the planned flight's dry run (features/plan/map/pastFlight's). */
+interface SimulatedPoint {
+  t: number;
+  lat: number;
+  lon: number;
+  alt_ft?: number | null;
+  gs_kt?: number | null;
+  track_deg?: number | null;
+}
+
+/**
+ * Own ship flown by the dry run, as if a pilot were flying the route, at
+ * the owner's ask ("simulate with the current location plane as if a
+ * pilot was flying the route"): on, followed, the GPS set aside, each
+ * point a fix -- the plan's true course as its track, its ground speed
+ * and the profile's height -- reported as a GPS's would be (to 5 m, so
+ * nothing calls it approximate). Never kept as the pilot's last position.
+ */
+export function simulateFix(point: SimulatedPoint) {
+  const s = useOwnShip.getState();
+  if (!s.simulated) {
+    beforeSimulation = { enabled: s.enabled, follow: s.follow };
+    stopWatching();
+    useOwnShip.setState((s) => ({
+      simulated: true,
+      enabled: true,
+      follow: true,
+      error: null,
+      recentred: s.recentred + 1,
+      recentreZoom: DRY_RUN_ZOOM,
+    }));
+  }
+  useOwnShip.setState({
+    fix: {
+      lat: point.lat,
+      lon: point.lon,
+      accuracyM: 5,
+      headingDeg: point.track_deg ?? null,
+      speedKt: point.gs_kt ?? null,
+      // The flight's own clock, not the page's: a climb read over these
+      // (what is ahead's vertical speed) is the plan's, whatever the
+      // replay's speed.
+      altitudeFt: point.alt_ft ?? null,
+      at: point.t * 1000,
+    },
+  });
+}
+
+/** The dry run over: own ship as the pilot had it, the GPS watched again
+ *  if it was on. */
+export function endSimulation() {
+  if (!useOwnShip.getState().simulated) return;
+  const was = beforeSimulation ?? { enabled: false, follow: true };
+  beforeSimulation = null;
+  useOwnShip.setState({ simulated: false, enabled: was.enabled, follow: was.follow, fix: null, error: null });
+  if (was.enabled && ownShipAvailable()) startWatching((patch) => useOwnShip.setState(patch));
+}
+
+/**
+ * The planner opened: the map on the pilot's position, as Maps opens on
+ * yours -- own ship on and the map brought to it (OwnShipGl) -- by
+ * default, at the owner's ask (2026-11-04: "By default load the sheet on
+ * current location"): on a first visit the browser asks as the page
+ * opens, where before it waited for the location arrow (Apple's
+ * guidelines' ask-when-needed, and a mark against the page in
+ * Lighthouse's best practices, both now the owner's call). Not where
+ * this site has been refused, which is not asked again; and quietly: a
+ * refusal now leaves own ship off, the map on the country, with no error
+ * over it (a tap on the arrow still says why).
+ */
+export async function locateOnOpen() {
+  if (!ownShipAvailable()) return;
+  const permission =
+    (await navigator.permissions
+      ?.query({ name: "geolocation" })
+      .then((status) => status.state)
+      .catch(() => "prompt" as const)) ?? "prompt";
+  if (permission === "denied") return;
+  const { enabled, setEnabled, recentre } = useOwnShip.getState();
+  if (!enabled) {
+    quiet = true;
+    setEnabled(true);
+  }
+  recentre(OPEN_ZOOM);
+}
+
+/**
+ * Own ship's position now, for Fly Here's Direct-To, without keeping the
+ * pilot waiting: the fix there is at once; with own ship on and its first
+ * fix still coming, that fix for a moment at most. Off, it is turned on
+ * -- quietly, as on opening (locateOnOpen): a refusal leaves it off, with
+ * no error over the map -- for the next Fly Here, and this one goes on
+ * without it. Turned on here, it does not follow: the map is the route's
+ * to fit. It waited six seconds for a first fix, and Fly Here with it.
+ */
+export async function positionNow(waitMs = 1500): Promise<Fix | null> {
+  const ship = useOwnShip.getState();
+  if (ship.enabled && ship.fix) return ship.fix;
+  if (!ownShipAvailable()) return null;
+  if (!ship.enabled) {
+    void navigator.permissions
+      ?.query({ name: "geolocation" })
+      .then((status) => {
+        if (status.state === "denied" || useOwnShip.getState().enabled) return;
+        quiet = true;
+        ship.setFollow(false);
+        ship.setEnabled(true);
+      })
+      .catch(() => undefined);
+    return null;
+  }
+  return new Promise((resolve) => {
+    let stop = () => {};
+    const timer = window.setTimeout(() => {
+      stop();
+      resolve(null);
+    }, waitMs);
+    stop = useOwnShip.subscribe((s) => {
+      if (!s.fix && s.enabled && !s.error) return;
+      window.clearTimeout(timer);
+      stop();
+      resolve(s.enabled ? s.fix : null);
+    });
+  });
+}

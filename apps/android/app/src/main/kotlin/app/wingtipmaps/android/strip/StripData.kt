@@ -3,21 +3,20 @@ package app.wingtipmaps.android.strip
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.Pilot
-import app.wingtipmaps.android.flight.Geo
-import java.time.Instant
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.routePosition
+import app.wingtipmaps.android.format.Format
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-import kotlin.math.max
-import kotlin.math.min
-import kotlin.math.roundToInt
 
 /**
  * The strip's figures and words apart from its screens: the flight as
  * rows in time from the plan the planner streamed (Plan.State), the
  * ribbon's points, where the airplane is along them, the pilot's
- * initials, and the formats the web app's strip writes (stripData.ts,
- * lib/clock, lib/units, identSchema's routeName). Every figure here is the
+ * initials and the route's name (stripData.ts, identSchema's routeName);
+ * every figure is written by Format. Every figure here is the
  * planner's; this file only orders them and writes them out. Pure, so it
  * is held on the JVM (StripDataTest).
  */
@@ -112,39 +111,19 @@ object StripData {
     }
 
     /**
-     * Where the airplane is along the route, for the ribbon: the nearest
-     * vertex of the planner's course line is found, the distance along
-     * the line to it taken as the distance flown, and that laid against
-     * the legs' own miles to give the leg and how far along it -- a
-     * glance, not navigation (the web's positionAlong is the same kind of
-     * glance over the nav log's points, which this app's legs do not carry
-     * coordinates for). Null with no fix or no line.
+     * Where the airplane is along the route, for the ribbon: the leg it is
+     * on and how far along it, the engine's `route_position` (the nearest
+     * point of the planner's course line, laid against the legs' own
+     * miles), the very answer the iPhone's strip asks -- a glance, not
+     * navigation. Null with no fix or no line.
      */
-    fun positionAlong(line: List<List<Double>>, legs: List<Leg>, lat: Double?, lon: Double?): Position? {
-        if (lat == null || lon == null || line.size < 2 || legs.isEmpty()) return null
-        var nearest = 0
-        var least = Double.MAX_VALUE
-        line.forEachIndexed { i, p ->
-            if (p.size < 2) return@forEachIndexed
-            val d = Geo.nm(lat, lon, p[0], p[1])
-            if (d < least) { least = d; nearest = i }
-        }
-        var flown = 0.0
-        for (i in 1..nearest) {
-            val a = line[i - 1]
-            val b = line[i]
-            if (a.size >= 2 && b.size >= 2) flown += Geo.nm(a[0], a[1], b[0], b[1])
-        }
-        var start = 0.0
-        legs.forEachIndexed { i, leg ->
-            val end = start + leg.distanceNm
-            if (flown <= end || i == legs.lastIndex) {
-                val along = if (leg.distanceNm > 0) (flown - start) / leg.distanceNm else 0.0
-                return Position(i, min(1.0, max(0.0, along)))
-            }
-            start = end
-        }
-        return null
+    fun positionAlong(line: List<List<Double>>, legs: List<Leg>, lat: Double?, lon: Double?): Result<Position?> {
+        if (lat == null || lon == null) return Result.success(null)
+        return Engine.routePosition(
+            at = EngineContract.RoutePositionInputAt(lat, lon),
+            line = line.filter { it.size >= 2 },
+            legs = legs.map { EngineContract.RoutePositionInputLegsItem(it.distanceNm, it.fuelGal) },
+        ).map { at -> at?.let { Position(it.leg.toInt(), it.legFraction) } }
     }
 
     /** The pilot's initials from their name ("Asdaq Samir" is AS), or the
@@ -160,33 +139,10 @@ object StripData {
         return if (address.isNullOrEmpty()) "" else address[0].uppercase()
     }
 
-    /** A duration as the web app writes every one, "1h 5m", "45m", "3h",
-     *  "0m" (lib/clock duration, the narrow style). */
-    fun duration(minutes: Double): String {
-        val whole = minutes.roundToInt()
-        val h = whole / 60
-        val m = whole % 60
-        return when {
-            h > 0 && m > 0 -> "${h}h ${m}m"
-            h > 0 -> "${h}h"
-            else -> "${m}m"
-        }
-    }
-
-    /** The clock at an instant, "14:10", in the phone's zone. */
-    fun clockTime(epochMs: Long, zone: ZoneId = ZoneId.systemDefault()): String =
-        DateTimeFormatter.ofPattern("HH:mm", Locale.US).format(Instant.ofEpochMilli(epochMs).atZone(zone))
-
     /** The clock some minutes after leaving, or null for a leg that
      *  cannot be flown. */
     fun timeAt(leaveMs: Long, minutes: Double?, zone: ZoneId = ZoneId.systemDefault()): String? =
-        minutes?.let { clockTime(leaveMs + (it * 60_000).toLong(), zone) }
-
-    /** The altitude as the app writes it everywhere, "FL-045", and "FL-___"
-     *  with none yet, three blanks to fill (lib/units
-     *  flightLevel; the owner's pick, knowingly beside the FAA's usage). */
-    fun flightLevel(ft: Double?): String =
-        if (ft == null) "FL-___" else "FL-" + String.format(Locale.US, "%03d", (ft / 100).roundToInt())
+        minutes?.let { Format.clock(leaveMs + (it * 60_000).toLong(), zone) }
 
     /** The route by its points, "C81 → KJVL → KDLH"; one airport to itself
      *  "KDLH local" (identSchema's routeName). */
@@ -200,32 +156,25 @@ object StripData {
         if (!state.routed) return null
         return listOfNotNull(
             routeName(state.dep, state.dest, state.stops),
-            state.aircraft.uppercase(),
-            state.legs.firstOrNull()?.altitudeFt?.let(::flightLevel),
+            state.aircraft.uppercase().ifEmpty { null },
+            state.legs.firstOrNull()?.altitudeFt?.let(Format::cruiseAltitude),
             "leaving now",
         ).joinToString(" · ")
     }
 
-    /** A frequency's megahertz as the cards write them, "118.3", "121.75"
-     *  (lib/frequencies mhzText). */
-    fun mhzText(value: Double): String = String.format(Locale.US, "%.3f", value).replace(Regex("""0{1,2}$"""), "")
-
     /** The ribbon's figures at the right: the time aloft and the fuel. */
     fun ribbonFigures(state: Plan.State): String = listOfNotNull(
-        state.totals?.eteMin?.let(::duration),
-        state.totals?.fuelGal?.let { String.format(Locale.US, "%.1f gal", it) },
+        state.totals?.eteMin?.let(Format::duration),
+        state.totals?.fuelGal?.let(Format::fuel),
     ).joinToString(" · ")
 
-    /** The checkpoint row's figures, "MH 318 · 24 NM". */
-    fun legFigures(leg: Leg): String =
-        String.format(Locale.US, "MH %03d · %.0f NM", ((leg.magneticHeadingDeg.roundToInt() % 360) + 360) % 360, leg.distanceNm)
-
-    /** The screens the field's chips offer, each handled as typed: how a
-     *  pilot finds the rest without tabs (the web's stripSuggestions). */
-    fun suggestions(state: Plan.State): List<String> = if (state.routed) {
-        listOf("Brief me", "Weather at ${state.dest}", "Nav log", "Routes", "Altitude", "Procedures", "Stops", "Nearest fuel",
-            "File flight plan", "Dry run", "Clearance", "My airplane", "Saved flights")
-    } else {
-        listOf("Nearest fuel", "Nearest airports", "Saved flights", "Favorites", "Recents", "My airplane", "Logbook", "Settings")
+    /** The checkpoint row's figures, "MH 318 · 24.0 nm". The heading needs
+     *  the airplane's airspeed against the wind: with no airplane chosen the
+     *  planner sends none, and the row writes the leg's magnetic course,
+     *  "MC 312 · 24.0 nm" (decision 0011). */
+    fun legFigures(leg: Leg): String {
+        val heading = leg.magneticHeadingDeg
+        val first = if (heading != null) "MH ${Format.headingFigures(heading)}" else "MC ${Format.headingFigures(leg.magneticCourseDeg)}"
+        return "$first · ${Format.distance(leg.distanceNm)}"
     }
 }

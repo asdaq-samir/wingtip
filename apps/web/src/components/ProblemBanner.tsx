@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { Alert } from "./ui/alert";
 import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
-import { GLASS } from "./mapChrome";
+import { GLASS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 import { useSystemProblems } from "../lib/problems";
 
@@ -20,26 +20,31 @@ import { useSystemProblems } from "../lib/problems";
  * folded to lines the panel had to stop short of.
  */
 export default function ProblemBanner() {
-  const problems = useSystemProblems(s => s.problems);
+  const problems = useSystemProblems((s) => s.problems);
   const [open, setOpen] = useState(false);
   if (problems.length === 0) return null;
-  const retries = problems.filter(p => p.retry);
+  const retries = problems.filter((p) => p.retry);
   const title = problems.length === 1 ? problems[0]!.title : `${problems.length} problems`;
   // The glass round the Alert, which is clear: its own card colour
   // outranked the glass on the same element, and it read white.
   return (
-    <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-problem-banner="">
+    <div className={cn(GLASS, "appear pointer-events-auto w-fit max-w-full rounded-(--radius-banner)")} data-problem-banner="">
       {/* A row of its own, 44 tall as a list's row is: the line and its
           Retry, not a control grown to its hit area. */}
       <Alert
-        variant="destructive" role="status"
-        className="flex min-h-11 items-center gap-2 rounded-[22px] border-transparent bg-transparent py-1 pr-1 pl-3 text-destructive-ink *:[svg]:translate-y-0"
+        variant="destructive"
+        role="status"
+        className="flex min-h-11 items-center gap-2 rounded-(--radius-banner) border-transparent bg-transparent py-1 pr-1 pl-3 text-destructive-ink *:[svg]:translate-y-0"
       >
         <CircleAlert className="shrink-0" />
         {/* The one line, a tap opening each problem under it where there
-            are several: shadcn's Collapsible (Radix), the list beside the
+            are several: shadcn's Collapsible (Base UI's), the list beside the
             button that opens it rather than inside it. */}
-        <Collapsible open={open} onOpenChange={setOpen} className={cn("flex min-w-0 flex-1 flex-col self-stretch font-medium", TEXT.detail)}>
+        <Collapsible
+          open={open}
+          onOpenChange={setOpen}
+          className={cn("flex min-w-0 flex-1 flex-col self-stretch font-medium", TEXT.detail)}
+        >
           <CollapsibleTrigger
             data-testid="problem-banner-title"
             // The line's whole height, so its 44-point hit area is its own:
@@ -49,17 +54,22 @@ export default function ProblemBanner() {
             <span className={cn("block max-w-full", !open && "truncate")}>{title}</span>
           </CollapsibleTrigger>
           {problems.length > 1 && (
-            <CollapsibleContent asChild>
-              <ul className="list-disc pb-1 pl-4">
-                {problems.map(p => <li key={p.id} data-problem-item="">{p.title}</li>)}
-              </ul>
+            <CollapsibleContent render={<ul className="list-disc pb-1 pl-4" />}>
+              {problems.map((p) => (
+                <li key={p.id} data-problem-item="">
+                  {p.title}
+                </li>
+              ))}
             </CollapsibleContent>
           )}
         </Collapsible>
         {retries.length > 0 && (
           <Button
-            type="button" size="sm" variant="ghost" className="shrink-0 rounded-full text-tint"
-            onClick={() => retries.forEach(p => p.retry!())}
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="shrink-0 rounded-full text-tint"
+            onClick={() => retries.forEach((p) => p.retry!())}
           >
             Try again
           </Button>

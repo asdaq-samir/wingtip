@@ -1,0 +1,35 @@
+{
+  "title": "OwnShipFix",
+  "type": "object",
+  "properties": {
+    "lat": {
+      "type": "number"
+    },
+    "lon": {
+      "type": "number"
+    },
+    "heading_deg": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "speed_kt": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "altitude_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "lat",
+    "lon"
+  ],
+  "description": "Own ship as the GPS has it."
+}

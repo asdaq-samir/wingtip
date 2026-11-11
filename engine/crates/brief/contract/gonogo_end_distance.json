@@ -1,0 +1,81 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The distances on a runway and whether they are over its length.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoEndDistanceInput",
+      "type": "object",
+      "properties": {
+        "table": {
+          "$ref": "#/definitions/ShortFieldTable"
+        },
+        "runway": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Runway"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pressure_alt_ft": {
+          "type": "number"
+        },
+        "temp_c": {
+          "type": "number"
+        },
+        "weight_lb": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "headwind_kt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "table",
+        "pressure_alt_ft",
+        "temp_c",
+        "headwind_kt"
+      ]
+    },
+    "answer": {
+      "title": "GonogoEndDistanceAnswer",
+      "type": "object",
+      "properties": {
+        "ground_roll_ft": {
+          "type": "number"
+        },
+        "total_ft": {
+          "type": "number",
+          "description": "Over a 50 ft obstacle."
+        },
+        "caveats": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, a tailwind past the POH's figures, or no wind correction in the airplane's profile."
+        },
+        "over": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "ground_roll_ft",
+        "total_ft",
+        "caveats",
+        "over"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

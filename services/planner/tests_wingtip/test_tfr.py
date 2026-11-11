@@ -1,38 +1,15 @@
-"""Temporary flight restrictions from tfr.faa.gov, without the network:
-the shapes and the NOTAMs' details stubbed with the site's own shapes."""
+"""Temporary flight restrictions as the weather service stores them
+(services/weather/app/tfr.py, whose tests read the site's own shapes and
+XNOTAM files): which are near a route, in force during it, or over a
+point, and a list kept through an outage."""
+
 from datetime import datetime, timedelta, timezone
 
 import pytest
 
-from wingtip import tfr
+from wingtip import tfr, weather_store
 
-# A trimmed copy of the site's detail_6_6654.xml: a fire-fighting TFR,
-# its times in UTC, one area from the surface to 10,000 ft MSL.
-DETAIL = b"""<XNOTAM-Update><Group><Add><Not>
-  <dateEffective>2026-10-01T16:00:00</dateEffective><dateExpire>2026-10-15T02:00:00</dateExpire>
-  <codeTimeZone>UTC</codeTimeZone>
-  <txtDescrPurpose>TO PROVIDE A SAFE ENVIRONMENT FOR FIRE FIGHTING ACFT OPS</txtDescrPurpose>
-  <TfrNot><codeType>91.137(a)(2)</codeType><TFRAreaGroup><aseTFRArea>
-    <codeDistVerUpper>ALT</codeDistVerUpper><valDistVerUpper>10000</valDistVerUpper><uomDistVerUpper>FT</uomDistVerUpper>
-    <codeDistVerLower>ALT</codeDistVerLower><valDistVerLower>0</valDistVerLower><uomDistVerLower>FT</uomDistVerLower>
-  </aseTFRArea></TFRAreaGroup></TfrNot>
-</Not></Add></Group></XNOTAM-Update>"""
-
-
-def test_a_notams_detail_is_its_times_rule_purpose_and_altitudes():
-    assert tfr.parse_detail(DETAIL) == {
-        "effective": "2026-10-01T16:00:00Z", "expires": "2026-10-15T02:00:00Z",
-        "rule": "relief aircraft operations (91.137(a)(2))",
-        "purpose": "To provide a safe environment for fire fighting acft ops",
-        "floor_ft": 0.0, "floor_ref": "MSL", "ceiling_ft": 10000.0, "ceiling_ref": "MSL",
-    }
-
-
-def test_a_height_above_the_ground_or_a_flight_level_is_said_so():
-    agl = DETAIL.replace(b"<codeDistVerUpper>ALT", b"<codeDistVerUpper>HEI").replace(b">10000<", b">400<")
-    assert tfr.parse_detail(agl)["ceiling_ref"] == "AGL"
-    fl = DETAIL.replace(b">10000<", b">910<").replace(b"<uomDistVerUpper>FT", b"<uomDistVerUpper>FL")
-    assert tfr.parse_detail(fl)["ceiling_ft"] == 91000.0
+T0 = 1791126000.0  # 2026-10-04T14:20:00Z
 
 
 def _square(lat, lon, half=0.05):
@@ -40,17 +17,27 @@ def _square(lat, lon, half=0.05):
     return [[list(c) for c in corners + corners[:1]]]
 
 
+def _tfr(notam_id: str, title: str, kind: str, square: list, **detail) -> dict:
+    return {
+        "notam_id": notam_id,
+        "title": title,
+        "kind": kind,
+        "state": None,
+        "geometry": {"type": "MultiPolygon", "coordinates": [square]},
+        **detail,
+    }
+
+
 @pytest.fixture
-def two_tfrs(monkeypatch):
+def two_tfrs():
     """One on a route from (42, -88) north to (43, -88), one 60 nm off it."""
-    monkeypatch.setattr(tfr, "_shapes", lambda: [
-        {"properties": {"NOTAM_KEY": "6/1-1-FDC-F", "TITLE": "ON IT", "LEGAL": "SECURITY", "LAST_MODIFICATION_DATETIME": "1"},
-         "geometry": {"type": "Polygon", "coordinates": _square(42.5, -88.0)}},
-        {"properties": {"NOTAM_KEY": "6/2-1-FDC-F", "TITLE": "FAR OFF", "LEGAL": "HAZARDS", "LAST_MODIFICATION_DATETIME": "1"},
-         "geometry": {"type": "Polygon", "coordinates": _square(42.5, -86.6)}},
-    ])
-    monkeypatch.setattr(tfr, "_detail", lambda notam_id, modified: {
-        "effective": "2026-10-06T23:00:00Z", "expires": "2026-10-07T01:00:00Z"})
+    times = {"effective": "2026-10-06T23:00:00Z", "expires": "2026-10-07T01:00:00Z"}
+    weather_store.write(
+        "tfrs",
+        [_tfr("6/1", "ON IT", "Security", _square(42.5, -88.0), **times), _tfr("6/2", "FAR OFF", "Hazards", _square(42.5, -86.6), **times)],
+        fetched_at=datetime.now(timezone.utc).timestamp(),
+        until=None,
+    )
 
 
 def test_a_tfr_the_route_goes_through_during_the_flight_is_told(two_tfrs):
@@ -72,63 +59,20 @@ def test_the_tfrs_over_a_point_are_those_that_hold_it(two_tfrs):
     assert tfr.at_point(44.0, -88.0) == []
 
 
-def test_the_time_the_shapes_were_fetched_is_kept_for_the_maps_age(monkeypatch):
-    """The map's settings say how old its TFRs are: when tfr.faa.gov was
-    last asked, not when the page was."""
-    from unittest.mock import Mock
-
-    monkeypatch.setattr(tfr, "_SHAPES", tfr.TTLCache(maxsize=1, ttl=tfr.SHAPES_TTL_S))
-    monkeypatch.setattr(tfr, "_FETCHED_AT", None)
-    monkeypatch.setattr(tfr.time, "time", lambda: 1791126000.0)
-    monkeypatch.setattr(tfr.requests, "get", lambda *a, **kw: Mock(json=lambda: {"features": []}, raise_for_status=lambda: None))
+def test_with_no_list_ever_stored_it_is_unavailable():
     assert tfr.fetched_at() is None
-    assert tfr._shapes() == [] and tfr.fetched_at() == 1791126000.0
-
-
-def test_a_failed_refresh_serves_the_last_list_and_leaves_out_the_ended(monkeypatch):
-    """A momentary outage of tfr.faa.gov used to leave the map and the
-    briefing with no TFRs after ten minutes; the last list is served on,
-    its age kept, less any TFR whose NOTAM has expired since."""
-    import requests
-    from unittest.mock import Mock
-
-    clock = [1791126000.0]
-    monkeypatch.setattr(tfr, "_SHAPES", tfr.TTLCache(maxsize=1, ttl=tfr.SHAPES_TTL_S, timer=lambda: clock[0]))
-    monkeypatch.setattr(tfr, "_FETCHED_AT", None)
-    monkeypatch.setattr(tfr, "_HELD", None)
-    monkeypatch.setattr(tfr, "_RETRY_AT", 0.0)
-    monkeypatch.setattr(tfr.time, "time", lambda: clock[0])
-    features = [{"properties": {"NOTAM_KEY": "6/1-1-FDC-F", "TITLE": "ON IT", "LAST_MODIFICATION_DATETIME": "1"},
-                 "geometry": {"type": "Polygon", "coordinates": _square(42.5, -88.0)}}]
-    monkeypatch.setattr(tfr.requests, "get", lambda *a, **kw: Mock(json=lambda: {"features": features},
-                                                                   raise_for_status=lambda: None))
-    assert tfr._shapes() == features
-
-    def down(*a, **kw):
-        raise requests.ConnectionError("no route to host")
-
-    monkeypatch.setattr(tfr.requests, "get", down)
-    clock[0] += tfr.SHAPES_TTL_S + 60
-    assert tfr._shapes() == features
-    assert tfr.fetched_at() == 1791126000.0
-
-    # Served from the held list, one past its expiry is left out.
-    monkeypatch.setattr(tfr, "_detail", lambda notam_id, modified: {"expires": "2026-10-07T01:00:00Z"})
-    assert tfr.all_tfrs() == []
-    monkeypatch.setattr(tfr, "_detail", lambda notam_id, modified: {"expires": None})
-    assert [t["notam_id"] for t in tfr.all_tfrs()] == ["6/1"]
-
-
-def test_with_no_list_ever_fetched_a_failure_is_unavailable(monkeypatch):
-    import requests
-
-    monkeypatch.setattr(tfr, "_SHAPES", tfr.TTLCache(maxsize=1, ttl=tfr.SHAPES_TTL_S))
-    monkeypatch.setattr(tfr, "_HELD", None)
-    monkeypatch.setattr(tfr, "_RETRY_AT", 0.0)
-
-    def down(*a, **kw):
-        raise requests.ConnectionError("no route to host")
-
-    monkeypatch.setattr(tfr.requests, "get", down)
     with pytest.raises(tfr.TfrUnavailable):
-        tfr._shapes()
+        tfr.all_tfrs()
+
+
+def test_a_list_kept_through_an_outage_leaves_out_the_ended(monkeypatch):
+    """A momentary outage of tfr.faa.gov leaves the service's last list in
+    the store, its age kept; past the time the service would have read it
+    again, any TFR whose NOTAM has expired since is left out."""
+    on_it = _tfr("6/1", "ON IT", "Security", _square(42.5, -88.0), expires="2026-10-07T01:00:00Z")
+    open_ended = _tfr("6/3", "UNTIL FURTHER NOTICE", "Security", _square(42.5, -88.0), expires=None)
+    weather_store.write("tfrs", [on_it, open_ended], fetched_at=T0, until=None)
+    weather_store.write_attempt("tfrs", T0 + tfr.SHAPES_TTL_S, "tfr.faa.gov did not answer")
+    monkeypatch.setattr(tfr.time, "time", lambda: T0 + tfr.SHAPES_TTL_S + 60)
+    assert [t["notam_id"] for t in tfr.all_tfrs()] == ["6/3"]
+    assert tfr.fetched_at() == T0 and tfr.failing()

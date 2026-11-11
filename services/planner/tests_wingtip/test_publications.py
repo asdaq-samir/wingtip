@@ -1,4 +1,5 @@
 """The FAA's airport diagrams and Chart Supplement pages, by edition."""
+
 import ctypes
 import io
 from datetime import date
@@ -32,7 +33,7 @@ AFD = b"""<airports><location><airport><aptid>DLH</aptid><pages><pdf>nc_161_03SE
 def test_the_cycles_are_named_as_the_faa_names_them():
     assert publications.dtpp_cycle(date(2026, 10, 3)) == "2610"
     assert publications.dtpp_cycle(date(2026, 9, 30)) == "2609"
-    assert publications.dtpp_cycle(date(2027, 1, 1)) == "2613"    # a year of thirteen
+    assert publications.dtpp_cycle(date(2027, 1, 1)) == "2613"  # a year of thirteen
     assert publications.dcs_edition(date(2026, 10, 3)) == "03Sep2026"
     assert publications.dcs_edition(date(2026, 10, 29)) == "29Oct2026"
 
@@ -92,10 +93,13 @@ def test_the_diagram_is_drawn_once_a_cycle_by_either_ident_and_kept(monkeypatch,
 
     assert publications.airport_diagram_cycle("KDLH", on) == "2610"
     path = publications.airport_diagram_png("KDLH", "2610", on)
-    image = Image.open(path)
+    # Read and closed at once: a file Pillow was left holding was a
+    # ResourceWarning, an error under the suite's warnings filter.
+    with Image.open(path) as image:
+        mode, size = image.mode, image.size
     # Grey, DIAGRAM_SCALE times the PDF's points.
     scale = publications.DIAGRAM_SCALE
-    assert (image.mode, image.size) == ("L", (396 * scale, 594 * scale))
+    assert (mode, size) == ("L", (396 * scale, 594 * scale))
     assert publications.airport_diagram_png("DLH", "2610", on) == path
     assert asked == ["https://aeronav.faa.gov/d-tpp/2610/00125AD.PDF"]
 
@@ -144,7 +148,6 @@ def test_pdfium_draws_one_pdf_at_a_time(monkeypatch):
     assert most == 1
 
 
-
 def _pdf_with(pages: list) -> bytes:
     """A PDF of `pages` d-TPP-sized pages, each with its text set on it:
     a page's text one string at (40, 500), or [(text, x, y), ...]."""
@@ -189,7 +192,8 @@ def test_a_booklets_pages_are_the_ones_naming_the_field_and_a_charts_its_own(mon
     assert [p["page"] for p in publications.chart_pages("https://aeronav.faa.gov/d-tpp/2610/00245IL19.PDF", "KMSN", on)] == [1, 2, 3]
     # Drawn, a page at a time, and kept.
     path = publications.chart_page_png("dtpp", "2610", "EC3TO.PDF", 3, on)
-    assert Image.open(path).size == (387 * scale, 594 * scale)
+    with Image.open(path) as image:
+        assert image.size == (387 * scale, 594 * scale)
     assert publications.chart_page_png("dtpp", "2610", "EC3TO.PDF", 9, on) is None
 
 
@@ -197,8 +201,12 @@ def test_only_the_faas_charts_in_force_are_read(monkeypatch, tmp_path):
     monkeypatch.setattr(publications, "CACHE_DIR", tmp_path)
     monkeypatch.setattr(publications.requests, "get", lambda url, **kw: pytest.fail(f"asked for {url}"))
     on = date(2026, 10, 3)
-    for url in ("https://example.com/d-tpp/2610/X.PDF", "https://aeronav.faa.gov/d-tpp/2609/X.PDF",
-                "https://aeronav.faa.gov/d-tpp/2610/../secret.PDF", "https://aeronav.faa.gov/d-tpp/2610/X.exe"):
+    for url in (
+        "https://example.com/d-tpp/2610/X.PDF",
+        "https://aeronav.faa.gov/d-tpp/2609/X.PDF",
+        "https://aeronav.faa.gov/d-tpp/2610/../secret.PDF",
+        "https://aeronav.faa.gov/d-tpp/2610/X.exe",
+    ):
         assert publications.chart_pages(url, "KMSN", on) is None
     assert publications.chart_page_png("dtpp", "2609", "X.PDF", 1, on) is None
     assert publications.chart_page_png("elsewhere", "2610", "X.PDF", 1, on) is None
@@ -227,7 +235,6 @@ def test_the_faa_not_answering_is_told_from_a_chart_it_does_not_have(monkeypatch
     assert publications.chart_pages(gone, "KMSN", on) is None
     assert publications.chart_pages(gone, "KMSN", on) is None
     assert asked.count(gone) == 1
-
 
 
 def test_a_diagram_is_cropped_to_its_runways_placed_by_its_own_labels():

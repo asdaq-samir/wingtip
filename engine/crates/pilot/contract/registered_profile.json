@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_pilot::aircraft::calls::call",
+  "description": "The stock profile an airplane the FAA's registry names flies on, or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "RegisteredProfileInput",
+      "type": "object",
+      "properties": {
+        "manufacturer": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "model": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "year": {
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "RegisteredProfileAnswer",
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

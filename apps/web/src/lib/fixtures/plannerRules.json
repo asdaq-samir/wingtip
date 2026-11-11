@@ -1,5 +1,5 @@
 {
- "_note": "The planner's rules moved into the engine (#482 phase 0): each case's answer is the one the planner's own Python gave before the move (wingtip.airspace_at, wingtip.notams, app.exposure, wingtip.weather, app.gonogo.words), written by it. engine/facade/tests/planner_rules.rs asks the engine each by name.",
+ "_note": "The planner's rules moved into the engine (#482 phase 0): each case's answer is the one the planner's own Python gave before the move (wingtip.airspace_at, wingtip.notams, app.exposure, wingtip.weather, app.gonogo.words), written by it; worstBurnPerNm, fuelStopNeed and patternFlown are app.routers.plan's worst_burn_per_nm, fuel_stops_of's figures and field_pattern_ft (2026-11-09), worked from its code as it was. engine/facade/tests/planner_rules.rs asks the engine each by name. reportCategory's ceilings of 500 ft and over are asked with 10 sm since 2026-11-08: with the visibility missing they are no category (AIM 7-1-7, one rule with flight_category), as its last case says.",
  "airspaceColumn": [
   {
    "ground_ft": 780.0,
@@ -12355,88 +12355,6 @@
    "ceiling_ft": 100
   }
  ],
- "reportCategory": [
-  {
-   "ceiling_ft": null,
-   "visibility_sm": null,
-   "category": null
-  },
-  {
-   "ceiling_ft": 499,
-   "visibility_sm": null,
-   "category": "LIFR"
-  },
-  {
-   "ceiling_ft": 500,
-   "visibility_sm": null,
-   "category": "IFR"
-  },
-  {
-   "ceiling_ft": 999,
-   "visibility_sm": 10,
-   "category": "IFR"
-  },
-  {
-   "ceiling_ft": 1000,
-   "visibility_sm": null,
-   "category": "MVFR"
-  },
-  {
-   "ceiling_ft": 3000,
-   "visibility_sm": null,
-   "category": "MVFR"
-  },
-  {
-   "ceiling_ft": 3001,
-   "visibility_sm": null,
-   "category": "VFR"
-  },
-  {
-   "ceiling_ft": null,
-   "visibility_sm": 0.5,
-   "category": "LIFR"
-  },
-  {
-   "ceiling_ft": null,
-   "visibility_sm": 1,
-   "category": "IFR"
-  },
-  {
-   "ceiling_ft": null,
-   "visibility_sm": 2.9,
-   "category": "IFR"
-  },
-  {
-   "ceiling_ft": null,
-   "visibility_sm": 3,
-   "category": "MVFR"
-  },
-  {
-   "ceiling_ft": null,
-   "visibility_sm": 5,
-   "category": "MVFR"
-  },
-  {
-   "ceiling_ft": null,
-   "visibility_sm": 5.01,
-   "category": "VFR"
-  },
-  {
-   "ceiling_ft": 5000,
-   "visibility_sm": 10,
-   "category": "VFR"
-  },
-  {
-   "ceiling_ft": 3100,
-   "visibility_sm": 5,
-   "category": "MVFR"
-  },
-  {
-   "ceiling_ft": 800,
-   "visibility_sm": 6,
-   "category": "IFR"
-  }
- ],
  "words": [
   {
    "n": null,
@@ -12446,7 +12364,7 @@
    "to_fixed0": null,
    "to_fixed2": null,
    "grouped": null,
-   "alt_ft": "—",
+   "alt_ft": "\u2014",
    "flight_level": "FL----"
   },
   {
@@ -12789,6 +12707,401 @@
    "grouped": "-1",
    "alt_ft": "-1",
    "flight_level": "FL-000"
+  }
+ ],
+ "worstBurnPerNm": [
+  {
+   "legs": [
+    {
+     "distance_nm": 100.0,
+     "fuel_gal": 7.0
+    },
+    {
+     "distance_nm": 50.0,
+     "fuel_gal": 5.0
+    }
+   ],
+   "over_nm": 50.0,
+   "worst": 0.1
+  },
+  {
+   "legs": [
+    {
+     "distance_nm": 100.0,
+     "fuel_gal": 7.0
+    },
+    {
+     "distance_nm": 50.0,
+     "fuel_gal": 5.0
+    }
+   ],
+   "over_nm": 1000.0,
+   "worst": 0.08
+  },
+  {
+   "legs": [
+    {
+     "distance_nm": 120.0,
+     "fuel_gal": 8.6
+    },
+    {
+     "distance_nm": 140.0,
+     "fuel_gal": 11.2
+    },
+    {
+     "distance_nm": 160.0,
+     "fuel_gal": 10.9
+    },
+    {
+     "distance_nm": 90.0,
+     "fuel_gal": 7.4
+    }
+   ],
+   "over_nm": 200.0,
+   "worst": 0.07615384615384614
+  },
+  {
+   "legs": [
+    {
+     "distance_nm": 120.0,
+     "fuel_gal": 8.6
+    },
+    {
+     "distance_nm": 140.0,
+     "fuel_gal": 11.2
+    },
+    {
+     "distance_nm": 160.0,
+     "fuel_gal": 10.9
+    },
+    {
+     "distance_nm": 90.0,
+     "fuel_gal": 7.4
+    }
+   ],
+   "over_nm": 75.5,
+   "worst": 0.08222222222222221
+  },
+  {
+   "legs": [
+    {
+     "distance_nm": 10.0,
+     "fuel_gal": null
+    }
+   ],
+   "over_nm": 5.0,
+   "worst": null
+  },
+  {
+   "legs": [],
+   "over_nm": 5.0,
+   "worst": null
+  },
+  {
+   "legs": [
+    {
+     "distance_nm": 0.0,
+     "fuel_gal": 1.0
+    }
+   ],
+   "over_nm": 5.0,
+   "worst": null
+  }
+ ],
+ "fuelStopNeed": [
+  {
+   "totals": {
+    "fuel_margin_gal": -6.4,
+    "usable_fuel_gal": 40.0,
+    "distance_nm": 510.0,
+    "fuel_gal": 38.1,
+    "ete_min": 262.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 4.5,
+    "rules": "vfr",
+    "night": true
+   },
+   "legs": [
+    {
+     "distance_nm": 120.0,
+     "fuel_gal": 8.6
+    },
+    {
+     "distance_nm": 140.0,
+     "fuel_gal": 11.2
+    },
+    {
+     "distance_nm": 160.0,
+     "fuel_gal": 10.9
+    },
+    {
+     "distance_nm": 90.0,
+     "fuel_gal": 7.4
+    }
+   ],
+   "start": {
+    "lat": 46.8421,
+    "lon": -92.1936
+   },
+   "end": {
+    "lat": 38.7487,
+    "lon": -90.37
+   },
+   "depart_s": 1790000000.0,
+   "need": {
+    "fuel_per_nm": 0.07736210870556018,
+    "min_per_nm": 0.5319914036970279,
+    "usable_gal": 40.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 4.5
+   }
+  },
+  {
+   "totals": {
+    "fuel_margin_gal": -6.4,
+    "usable_fuel_gal": 40.0,
+    "distance_nm": 510.0,
+    "fuel_gal": 38.1,
+    "ete_min": 262.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 6.8,
+    "rules": "ifr",
+    "night": false
+   },
+   "legs": [
+    {
+     "distance_nm": 120.0,
+     "fuel_gal": 8.6
+    },
+    {
+     "distance_nm": 140.0,
+     "fuel_gal": 11.2
+    },
+    {
+     "distance_nm": 160.0,
+     "fuel_gal": 10.9
+    },
+    {
+     "distance_nm": 90.0,
+     "fuel_gal": 7.4
+    }
+   ],
+   "start": {
+    "lat": 46.8421,
+    "lon": -92.1936
+   },
+   "end": {
+    "lat": 38.7487,
+    "lon": -90.37
+   },
+   "depart_s": 1790000000.0,
+   "need": {
+    "fuel_per_nm": 0.07736210870556018,
+    "min_per_nm": 0.5319914036970279,
+    "usable_gal": 40.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 6.8
+   }
+  },
+  {
+   "totals": {
+    "fuel_margin_gal": 2.0,
+    "usable_fuel_gal": 40.0,
+    "distance_nm": 510.0,
+    "fuel_gal": 38.1,
+    "ete_min": 262.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 4.5,
+    "rules": "vfr",
+    "night": true
+   },
+   "legs": [
+    {
+     "distance_nm": 120.0,
+     "fuel_gal": 8.6
+    },
+    {
+     "distance_nm": 140.0,
+     "fuel_gal": 11.2
+    },
+    {
+     "distance_nm": 160.0,
+     "fuel_gal": 10.9
+    },
+    {
+     "distance_nm": 90.0,
+     "fuel_gal": 7.4
+    }
+   ],
+   "start": {
+    "lat": 46.8421,
+    "lon": -92.1936
+   },
+   "end": {
+    "lat": 38.7487,
+    "lon": -90.37
+   },
+   "depart_s": 1790000000.0,
+   "need": null
+  },
+  {
+   "totals": {
+    "distance_nm": 510.0,
+    "fuel_gal": null,
+    "ete_min": null,
+    "fuel_margin_gal": null,
+    "usable_fuel_gal": null
+   },
+   "legs": [
+    {
+     "distance_nm": 510.0,
+     "fuel_gal": null
+    }
+   ],
+   "start": {
+    "lat": 46.8421,
+    "lon": -92.1936
+   },
+   "end": {
+    "lat": 38.7487,
+    "lon": -90.37
+   },
+   "depart_s": 1790000000.0,
+   "need": null
+  },
+  {
+   "totals": {
+    "fuel_margin_gal": -6.4,
+    "usable_fuel_gal": 40.0,
+    "distance_nm": 760.0,
+    "fuel_gal": 55.0,
+    "ete_min": 380.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 4.5,
+    "rules": "vfr",
+    "night": false
+   },
+   "legs": [
+    {
+     "distance_nm": 380.0,
+     "fuel_gal": 26.0
+    },
+    {
+     "distance_nm": 380.0,
+     "fuel_gal": 29.0
+    }
+   ],
+   "start": {
+    "lat": 39.4779,
+    "lon": -88.2792
+   },
+   "end": {
+    "lat": 41.6045,
+    "lon": -71.4239
+   },
+   "depart_s": 1782050400.0,
+   "need": {
+    "fuel_per_nm": 0.07236842105263158,
+    "min_per_nm": 0.5,
+    "usable_gal": 40.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 4.5
+   }
+  },
+  {
+   "totals": {
+    "fuel_margin_gal": -6.4,
+    "usable_fuel_gal": 40.0,
+    "distance_nm": 760.0,
+    "fuel_gal": 55.0,
+    "ete_min": 380.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 4.5,
+    "rules": "vfr",
+    "night": false
+   },
+   "legs": [
+    {
+     "distance_nm": 380.0,
+     "fuel_gal": 26.0
+    },
+    {
+     "distance_nm": 380.0,
+     "fuel_gal": 29.0
+    }
+   ],
+   "start": {
+    "lat": 39.4779,
+    "lon": -88.2792
+   },
+   "end": {
+    "lat": 41.6045,
+    "lon": -71.4239
+   },
+   "depart_s": 1798221600.0,
+   "need": {
+    "fuel_per_nm": 0.07236842105263158,
+    "min_per_nm": 0.5,
+    "usable_gal": 40.0,
+    "taxi_gal": 1.4,
+    "reserve_gal": 6.75
+   }
+  }
+ ],
+ "patternFlown": [
+  {
+   "elevation_ft": 808.0,
+   "published_agl_ft": null,
+   "flown_ft": 1800
+  },
+  {
+   "elevation_ft": 750.0,
+   "published_agl_ft": null,
+   "flown_ft": 1800
+  },
+  {
+   "elevation_ft": 650.0,
+   "published_agl_ft": null,
+   "flown_ft": 1600
+  },
+  {
+   "elevation_ft": 749.6,
+   "published_agl_ft": null,
+   "flown_ft": 1700
+  },
+  {
+   "elevation_ft": 742.0,
+   "published_agl_ft": 800.0,
+   "flown_ft": 1500
+  },
+  {
+   "elevation_ft": 5355.0,
+   "published_agl_ft": 1000.0,
+   "flown_ft": 6400
+  },
+  {
+   "elevation_ft": null,
+   "published_agl_ft": null,
+   "flown_ft": null
+  },
+  {
+   "elevation_ft": -210.0,
+   "published_agl_ft": null,
+   "flown_ft": 800
+  }
+ ],
+ "alternateWindow": [
+  {
+   "eta": 1800000000.0,
+   "for": "destination",
+   "start": 1799996400.0,
+   "end": 1800003600.0
+  },
+  {
+   "eta": 1800000000.0,
+   "for": "alternate",
+   "start": 1800000000.0,
+   "end": 1800000000.0
   }
  ]
 }

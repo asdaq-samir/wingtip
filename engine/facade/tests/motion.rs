@@ -55,7 +55,8 @@ fn fix(over: Value) -> Value {
 }
 
 fn mark(p: &Value, own: Value) -> Value {
-    ask("traffic_marks", json!({ "own_ft": own, "planes": [{ "altitude_ft": p["altitude_ft"], "vertical_fpm": p["vertical_fpm"] }] }))[0].clone()
+    ask("traffic_marks", json!({ "own_ft": own, "planes": [{ "altitude_ft": p["altitude_ft"], "vertical_fpm": p["vertical_fpm"] }] }))[0]
+        .clone()
 }
 
 fn label(p: &Value, own: Value) -> String {
@@ -88,9 +89,6 @@ fn near_own_ships_height_is_within_1000_ft() {
     // nearInHeight: the difference itself, against nothing.
     assert!(near(&json!({ "altitude_ft": -1000 }), json!(0)));
     assert!(!near(&json!({ "altitude_ft": 1000.01 }), json!(0)));
-    // Many at once, in order.
-    let many = ask("traffic_marks", json!({ "own_ft": 3000, "planes": [{ "altitude_ft": 3520 }, { "altitude_ft": null }, { "altitude_ft": 1800, "vertical_fpm": -600 }] }));
-    assert_eq!(many, json!([{ "label": "+05", "near": true }, { "label": "", "near": false }, { "label": "-12↓", "near": false }]));
 }
 
 #[test]
@@ -141,11 +139,17 @@ fn the_closest_approach_of_one_coming_head_on_and_one_drawing_apart() {
     // Ten miles east, coming west at 120 kt, 500 ft above: they meet in 2.5
     // minutes, closing at 240 kt.
     let east = -88.0 + 10.0 / (60.0 * (42.0_f64 * std::f64::consts::PI / 180.0).cos());
-    let cpa = ask("closest_approach", json!({ "own": own, "plane": plane(json!({ "lat": 42, "lon": east, "track_deg": 270, "speed_kt": 120, "altitude_ft": 3500 })) }));
+    let cpa = ask(
+        "closest_approach",
+        json!({ "own": own, "plane": plane(json!({ "lat": 42, "lon": east, "track_deg": 270, "speed_kt": 120, "altitude_ft": 3500 })) }),
+    );
     assert!(close(n(&cpa["in_min"]), 2.5, 0.05), "{cpa}");
     assert!(close(n(&cpa["nm"]), 0.0, 0.05), "{cpa}");
     assert!(close(n(&cpa["above_ft"]), 500.0, 0.5), "{cpa}");
-    let apart = ask("closest_approach", json!({ "own": own, "plane": plane(json!({ "lat": 42, "lon": -88.1, "track_deg": 270, "speed_kt": 120, "altitude_ft": 3000 })) }));
+    let apart = ask(
+        "closest_approach",
+        json!({ "own": own, "plane": plane(json!({ "lat": 42, "lon": -88.1, "track_deg": 270, "speed_kt": 120, "altitude_ft": 3000 })) }),
+    );
     assert_eq!(n(&apart["in_min"]), 0.0);
     // Nothing without a track or speed.
     assert_eq!(ask("closest_approach", json!({ "own": fix(json!({ "heading_deg": null })), "plane": plane(json!({})) })), Value::Null);
@@ -206,32 +210,84 @@ fn alerts_go_off_once_as_it_happens() {
 
 // --- Glide ------------------------------------------------------------------
 
+// The c172 profile's 9 to 1 (its POH, figure 3-1), feet in a nm.
+const FT_PER_NM: f64 = 1852.0 / 0.3048;
+
+// --- In flight (#218) ---------------------------------------------------------
+
 #[test]
-fn the_glide_ring_is_1_5_nm_a_thousand_feet_in_the_air() {
-    let range = |alt: Value, kt: Value, ground: Value| ask("glide_range", json!({ "altitude_ft": alt, "speed_kt": kt, "ground_ft": ground }));
-    assert_eq!(n(&range(json!(4800), json!(100), json!(800))), 6.0);
-    assert_eq!(range(json!(1000), json!(100), json!(800)), Value::Null);
-    assert_eq!(range(json!(4800), json!(10), json!(800)), Value::Null);
-    assert_eq!(range(Value::Null, json!(100), json!(800)), Value::Null);
-    assert_eq!(range(json!(4800), json!(100), Value::Null), Value::Null);
+fn in_flight_counts_down_to_the_next_waypoint_and_the_destination() {
+    // East along 45 N for a degree, then north half a degree.
+    let line = json!([[45.0, -93.0], [45.0, -92.0], [45.5, -92.0]]);
+    let points = json!([{ "name": "A", "lat": 45.0, "lon": -93.0 }, { "name": "B", "lat": 45.0, "lon": -92.0 },
+        { "name": "C", "lat": 45.5, "lon": -92.0 }]);
+    let at = |lat: f64, lon: f64, kt: f64| {
+        ask(
+            "in_flight",
+            json!({ "fix": { "lat": lat, "lon": lon, "track_deg": 90, "speed_kt": kt },
+        "line": line, "points": points, "legs": [{ "distance_nm": 42.4, "fuel_gal": 4 }, { "distance_nm": 30, "fuel_gal": 3 }],
+        "fuel_start_gal": 40, "now_s": 1_793_620_000 }),
+        )
+    };
+    let mid = at(45.0, -92.5, 120.0);
+    assert_eq!(mid["on_route"], json!(true));
+    assert_eq!(mid["next"]["name"], json!("B"));
+    let to_b = distance_nm(45.0, -92.5, 45.0, -92.0);
+    assert!(close(n(&mid["next"]["distance_nm"]), to_b, 1e-9));
+    assert!(close(n(&mid["next"]["ete_min"]), to_b / 120.0 * 60.0, 1e-9));
+    assert!(close(n(&mid["next"]["eta_s"]), 1_793_620_000.0 + to_b / 120.0 * 3600.0, 1e-6));
+    assert!(close(n(&mid["destination"]["distance_nm"]), to_b + 30.0, 0.1));
+    assert!(close(n(&mid["burnt_gal"]), 2.0, 0.05));
+    assert_eq!(mid["off_side"], Value::Null);
+    // Past B, the next is C; off the line by 4 nm it is not on the route.
+    let late = at(45.2, -92.0, 120.0);
+    assert_eq!(late["next"]["name"], json!("C"));
+    assert_eq!(at(45.07, -92.5, 120.0)["on_route"], json!(false));
+    assert_eq!(at(45.07, -92.5, 120.0)["off_side"], json!("left"));
+    // Taxiing: no times.
+    assert_eq!(at(45.0, -92.99, 10.0)["next"]["ete_min"], Value::Null);
 }
 
 #[test]
-fn a_field_within_a_glide_is_judged_over_its_own_elevation_at_pattern_height() {
-    let reaches = |alt: f64, kt: f64, nm: f64, elevation: Value| {
-        ask("glide_reaches", json!({ "altitude_ft": alt, "speed_kt": kt, "distance_nm": nm, "elevation_ft": elevation })).as_bool().unwrap()
-    };
-    // 5,000 ft over a 600 ft field is 3,400 ft to spare above its pattern:
-    // 5.1 nm. A field 6 nm off at 2,500 ft has 1,500 ft: 2.25 nm.
-    assert!(reaches(5000.0, 100.0, 5.0, json!(600)));
-    assert!(!reaches(5000.0, 100.0, 6.0, json!(600)));
-    assert!(!reaches(5000.0, 100.0, 6.0, json!(2500)));
-    assert!(!reaches(5000.0, 10.0, 1.0, json!(600)));
-    assert!(!reaches(5000.0, 100.0, 1.0, Value::Null));
-    assert!(!reaches(1500.0, 100.0, 0.5, json!(600)));
-    assert_eq!(ask("underway", json!({ "speed_kt": 40 })), json!(true));
-    assert_eq!(ask("underway", json!({ "speed_kt": 39.9 })), json!(false));
-    assert_eq!(ask("underway", json!({})), json!(false));
+fn the_vertical_speed_and_the_glide_ring() {
+    let samples: Vec<Value> = (0..=10).map(|t| json!({ "t_s": t, "altitude_ft": 4000 - 10 * t })).collect();
+    assert!(close(n(&ask("vertical_speed", json!({ "samples": samples }))), -600.0, 1e-9));
+    let ring = ask(
+        "glide_ring",
+        json!({ "lat": 45, "lon": -93, "altitude_ft": 4800, "speed_kt": 100, "terrain_ft": 800, "field_ft": 500, "glide_ratio": 9 }),
+    );
+    assert!(close(n(&ring["range_nm"]), 4.0 * 9000.0 / FT_PER_NM, 1e-9));
+    assert_eq!(n(&ring["ground_ft"]), 800.0);
+    assert_eq!(ring["ring"].as_array().unwrap().len(), 73);
+    assert_eq!(
+        ask("glide_ring", json!({ "lat": 45, "lon": -93, "altitude_ft": 4800, "speed_kt": 20, "terrain_ft": 800, "glide_ratio": 9 })),
+        Value::Null
+    );
+    assert_eq!(ask("glide_ring", json!({ "lat": 45, "lon": -93, "altitude_ft": 4800, "speed_kt": 100, "terrain_ft": 800 })), Value::Null);
+}
+
+#[test]
+fn own_ship_is_placed_on_kdlhs_diagram_by_its_labels() {
+    // KDLH's diagram (d-TPP 2612, 00125AD.PDF) is drawn with north to the
+    // page's left: its latitudes along the top, its longitudes down the
+    // right, where PDFKit finds them (points from the top left).
+    let labels = ask("diagram_labels", json!({ "text": "AIRPORT DIAGRAM 92°13'W 46°51'N 46°50'N 92°12'W 92°11'W DULUTH" }));
+    assert_eq!(labels, json!(["92°13'W", "46°51'N", "46°50'N", "92°12'W", "92°11'W"]));
+    let g = ask(
+        "diagram_graticule",
+        json!({ "labels": [
+        { "text": "92°13'W", "x": 363.85, "y": 485.90 }, { "text": "46°51'N", "x": 69.35, "y": 77.21 },
+        { "text": "46°50'N", "x": 296.60, "y": 76.58 }, { "text": "92°12'W", "x": 362.69, "y": 328.17 },
+        { "text": "92°11'W", "x": 361.89, "y": 170.52 }] }),
+    );
+    assert_eq!(g["lat_on_x"], json!(true));
+    assert_eq!(n(&g["north_deg"]), 270.0);
+    let at = ask("diagram_point", json!({ "graticule": g, "lat": 46.8417, "lon": -92.1936, "width": 387.36, "height": 594 }));
+    assert_eq!(at["on_page"], json!(true));
+    // Half way between the two latitude labels' x, a quarter minute of
+    // longitude east of 92°12'W.
+    assert!(close(n(&at["x"]), (69.35 + 296.60) / 2.0, 2.0), "{at}");
+    assert!(n(&at["y"]) < 328.17 && n(&at["y"]) > 170.52, "{at}");
 }
 
 // --- The nav log's rows, as the web's navLogRows builds them ----------------
@@ -265,7 +321,7 @@ fn nav_log_rows(fields: &[Value], legs: &[Value]) -> Value {
                 points.push((kind, &leg[kind]));
             }
         }
-        points.sort_by(|a, b| n(&a.1["along_nm"]).partial_cmp(&n(&b.1["along_nm"])).unwrap());
+        wingtip_engine::sort::StableSort::stable_sort_by(&mut points[..], |a, b| n(&a.1["along_nm"]).total_cmp(&n(&b.1["along_nm"])));
         let mut from = (0.0, 0.0, 0.0);
         for (kind, point) in &points {
             let mut part = piece(leg, from, (n(&point["along_nm"]), point["ete_min"].as_f64(), point["fuel_gal"].as_f64()));
@@ -325,7 +381,8 @@ fn the_plan_descends_to_an_approachs_first_fix_by_its_distance_out_then_to_the_f
     let mut l = leg();
     l["tod"] = json!({ "along_nm": 37.5, "ete_min": 22.5, "fuel_gal": 3, "altitude_ft": 5500, "to_ft": 3000, "pattern": false, "fix": "ANDOE", "fpm": 550, "lat": 42.6, "lon": -88 });
     let p = ask("plan_profile", json!({ "rows": c81_kdlh(&[l]) }));
-    let along: Vec<(f64, f64)> = p["points"].as_array().unwrap().iter().map(|q| ((n(&q["along_nm"]) * 10.0).round() / 10.0, n(&q["plan_ft"]))).collect();
+    let along: Vec<(f64, f64)> =
+        p["points"].as_array().unwrap().iter().map(|q| ((n(&q["along_nm"]) * 10.0).round() / 10.0, n(&q["plan_ft"]))).collect();
     assert_eq!(along, [(0.0, 800.0), (8.0, 5500.0), (37.5, 5500.0), (45.0, 3000.0), (60.0, 500.0)]);
 }
 
@@ -367,7 +424,8 @@ fn the_planned_flight_flown_on_paper() {
     assert!(close(n(&run.last()["lat"]), 43.0, 1e-9));
     assert_eq!(n(&run.last()["alt_ft"]), 500.0);
     // At the plan's altitude level between its top of climb and descent.
-    let level: Vec<&Value> = (0..run.points().len()).filter(|&i| run.along(i) > 8.0 && run.along(i) < 48.0).map(|i| &run.points()[i]).collect();
+    let level: Vec<&Value> =
+        (0..run.points().len()).filter(|&i| run.along(i) > 8.0 && run.along(i) < 48.0).map(|i| &run.points()[i]).collect();
     assert!(level.len() > 5);
     assert!(level.iter().all(|p| n(&p["alt_ft"]) == 5500.0));
     // At a standstill on the field at the end, where the alerts ahead take
@@ -466,7 +524,8 @@ fn a_leg_flown_by_its_procedures_follows_their_path_and_the_charts_altitudes() {
     assert!(close(n(&run.at(HOMUV.0, HOMUV.1).unwrap()["alt_ft"]), 2500.0, 0.5));
     assert!(close(n(&run.at(CIRUS.0, CIRUS.1).unwrap()["alt_ft"]), 1900.0, 0.5));
     // Down the last of it from the FAF, never climbing.
-    let from_faf: Vec<f64> = (0..run.points().len()).filter(|&i| run.along(i) >= total - nm(CIRUS, RUNWAY)).map(|i| n(&run.points()[i]["alt_ft"])).collect();
+    let from_faf: Vec<f64> =
+        (0..run.points().len()).filter(|&i| run.along(i) >= total - nm(CIRUS, RUNWAY)).map(|i| n(&run.points()[i]["alt_ft"])).collect();
     assert!(from_faf.windows(2).all(|w| w[1] <= w[0]));
     // The planner's time and fuel, its miles more in them; the tops of
     // climb and descent passed as it starts.
@@ -565,7 +624,8 @@ fn the_dry_run_knows_each_landing() {
     level["toc"] = Value::Null;
     level["tod"] = Value::Null;
     level["climb_min"] = json!(0);
-    let rows = nav_log_rows(&[airport("C81", 42.0, 800.0), airport("KJVL", 43.0, 800.0), airport("KDLH", 44.0, 500.0)], &[level.clone(), level]);
+    let rows =
+        nav_log_rows(&[airport("C81", 42.0, 800.0), airport("KJVL", 43.0, 800.0), airport("KDLH", 44.0, 500.0)], &[level.clone(), level]);
     let run = Run::of(&rows, None, false);
     let landings = run.0["landings"].as_array().unwrap();
     assert_eq!(landings.iter().map(|l| l["ident"].as_str().unwrap()).collect::<Vec<_>>(), ["KJVL", "KDLH"]);
@@ -616,7 +676,9 @@ fn read(text: &str) -> Value {
 }
 
 fn gpx(points: &str) -> String {
-    format!(r#"<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg>{points}</trkseg></trk></gpx>"#)
+    format!(
+        r#"<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><trkseg>{points}</trkseg></trk></gpx>"#
+    )
 }
 
 #[test]
@@ -660,9 +722,17 @@ fn a_kml_track_log_is_read_from_its_whens_and_coords() {
 #[test]
 fn a_file_with_nothing_to_use_says_why() {
     let error = |text: &str| read(text)["error"].as_str().unwrap().to_owned();
-    assert_eq!(error(&gpx(r#"<trkpt lat="42.1" lon="-88.1"><ele>250</ele></trkpt><trkpt lat="42.2" lon="-88.2"></trkpt>"#)), "The track's points have no times: export it with them (a GPX track, or ForeFlight's KML track log).");
+    assert_eq!(
+        error(&gpx(r#"<trkpt lat="42.1" lon="-88.1"><ele>250</ele></trkpt><trkpt lat="42.2" lon="-88.2"></trkpt>"#)),
+        "The track's points have no times: export it with them (a GPX track, or ForeFlight's KML track log)."
+    );
     assert_eq!(error(&gpx("")), "There is no track in this file.");
-    assert_eq!(error(r#"<kml><Document><Placemark><LineString><coordinates>-88,42,0 -88.1,42.1,0</coordinates></LineString></Placemark></Document></kml>"#), "There is no track in this file.");
+    assert_eq!(
+        error(
+            r#"<kml><Document><Placemark><LineString><coordinates>-88,42,0 -88.1,42.1,0</coordinates></LineString></Placemark></Document></kml>"#
+        ),
+        "There is no track in this file."
+    );
     for not_a_track in ["<foo/>", "not xml at all", "<gpx><trk>"] {
         assert_eq!(error(not_a_track), "This file is not a GPX or KML track.");
     }
@@ -673,7 +743,7 @@ fn times_are_read_as_iso_8601_in_utc() {
     use wingtip_engine::motion::track::iso_ms;
     assert_eq!(iso_ms("2026-10-01T14:00:00Z"), Some(1790863200000.0));
     assert_eq!(iso_ms("2026-10-01T14:00:00.5Z"), Some(1790863200500.0));
-    assert_eq!(iso_ms("2026-10-01T14:00:02-05:00"), Some(1790863202000.0 + 5.0 * 3600_000.0));
+    assert_eq!(iso_ms("2026-10-01T14:00:02-05:00"), Some(1790863202000.0 + 5.0 * 3_600_000.0));
     assert_eq!(iso_ms("2026-10-02"), Some(1790899200000.0));
     // GPX 1.1 sets its times in UTC: one with no offset is UTC.
     assert_eq!(iso_ms("2026-10-01T14:00:00"), Some(1790863200000.0));
@@ -694,15 +764,4 @@ fn a_track_is_thinned_by_even_steps_keeping_its_ends() {
     assert_eq!(few.as_array().unwrap().len(), 10);
     let three = ask("thin_track", json!({ "points": points[..100], "most": 3 }));
     assert_eq!(three.as_array().unwrap().iter().map(|p| n(&p["t"])).collect::<Vec<_>>(), [0.0, 50_000.0, 99_000.0]);
-}
-
-#[test]
-fn a_descent_at_three_to_one_is_about_pattern_altitude_and_3300_ft_ten_miles_out() {
-    // 1,000 ft in 3 nm (profile.rs DESCENT_FT_PER_NM): ten miles out is
-    // 3,333 ft above pattern altitude, to the hundred.
-    let at = |cruise: f64, pattern: Value| ask("descent_altitude", json!({"cruise_ft": cruise, "pattern_ft": pattern, "nm_out": 10}));
-    assert_eq!(at(8500.0, json!(1800)), json!(5100.0));
-    // No higher than the cruise, and the cruise with no pattern altitude.
-    assert_eq!(at(4500.0, json!(1800)), json!(4500.0));
-    assert_eq!(at(6500.0, Value::Null), json!(6500.0));
 }

@@ -1,0 +1,32 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "How the approach is flown, by its CIFP id (ARINC 424-18 5.10): \"localizer\", \"gps\" or \"other\".",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachGuidanceInput",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "answer": {
+      "title": "ApproachGuidanceAnswer",
+      "enum": [
+        "localizer",
+        "gps",
+        "other"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

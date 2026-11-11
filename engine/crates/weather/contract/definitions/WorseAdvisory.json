@@ -1,0 +1,33 @@
+{
+  "title": "WorseAdvisory",
+  "description": "A SIGMET, AIRMET or G-AIRMET in one reading (AIM 7-1-6).",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "What names the advisory from one reading to the next: its text as sent, or its hazard, severity and altitudes."
+    },
+    "kind": {
+      "type": "string",
+      "description": "\"SIGMET\", \"Convective SIGMET\", \"AIRMET\" or \"G-AIRMET\", as the app words it."
+    },
+    "hazard": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Its hazard as sent (\"IFR\", \"TURB\", \"ICE\")."
+    },
+    "on_route": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Whether the briefing places it on the route."
+    }
+  },
+  "required": [
+    "key",
+    "kind"
+  ]
+}

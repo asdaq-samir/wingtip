@@ -1,21 +1,29 @@
 import type { Totals } from "../../lib/api/types";
 import type { Flown } from "./components/navlog/dryRun";
 import { decimalHours, etaAt, one } from "./format";
-import { duration } from "../../lib/clock";
+import { duration, NOT_KNOWN, spokenDistance, spokenDuration, spokenFuel } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 
 /** One of the flight's figures: its name over it, its unit after it. */
-export interface Figure {
-  name: string; value: string; unit?: string; testId?: string;
+interface Figure {
+  name: string;
+  value: string;
+  unit?: string;
+  testId?: string;
   /** Red: the fuel required past what the tanks hold. */
   alert?: boolean;
+  /** The figure as a screen reader says it, its name and its value in
+   *  full words (lib/format's spoken forms): "Distance, one hundred two
+   *  point four nautical miles", where "Dist 102.4 nm" was read as
+   *  letters. Of the exact figure, whichever is shown. */
+  said: string;
 }
 
-export interface TripInput {
+interface TripInput {
   totals: Totals | null;
   /** Before the nav log's totals: the course's distance and the book
    *  cruise speed and burn over it (see FlightLine). */
-  estimate?: { distanceNm: number; cruiseTasKt: number | null; fuelBurnGph: number | null } | null;
+  estimate?: { distanceNm: number; cruiseTasKt: number | null; fuelBurnGph: number | null; taxiFuelGal?: number | null } | null;
   local: boolean;
   /** The route's destination, the To of a route with no stops. */
   destination: string;
@@ -49,12 +57,16 @@ export function nextLanding(totals: Totals | null, destination: string, hop = 0)
  *  flight under way has burnt, and the flights the tanks fall short on. */
 function stripFuel(totals: Totals | null, hop = 0, burntGal: number | null = null) {
   return callEngine("strip_fuel", {
-    fuel_required_gal: totals?.fuel_required_gal ?? null, fuel_margin_gal: totals?.fuel_margin_gal ?? null,
-    hops: (totals?.hops ?? []).map(h => ({
-      departure: h.departure, destination: h.destination,
-      fuel_required_gal: h.totals.fuel_required_gal ?? null, fuel_margin_gal: h.totals.fuel_margin_gal ?? null,
+    fuel_required_gal: totals?.fuel_required_gal ?? null,
+    fuel_margin_gal: totals?.fuel_margin_gal ?? null,
+    hops: (totals?.hops ?? []).map((h) => ({
+      departure: h.departure,
+      destination: h.destination,
+      fuel_required_gal: h.totals.fuel_required_gal ?? null,
+      fuel_margin_gal: h.totals.fuel_margin_gal ?? null,
     })),
-    hop, burnt_gal: burntGal,
+    hop,
+    burnt_gal: burntGal,
   });
 }
 
@@ -63,18 +75,36 @@ function stripFuel(totals: Totals | null, hop = 0, burntGal: number | null = nul
  *  distance, time and fuel required to it -- exact or (`whole`) each
  *  rounded as far as it goes: distance and fuel up to whole ones, the
  *  time in decimal hours. Up, so none is ever said short of what it is. */
-export function tripFigures({ totals, estimate, local, destination, depart = "", arrival = false, toDestination = false, flown = null }: TripInput, whole: boolean): Figure[] {
+export function tripFigures(
+  { totals, estimate, local, destination, depart = "", arrival = false, toDestination = false, flown = null }: TripInput,
+  whole: boolean,
+): Figure[] {
   const guessed = !totals && !local && estimate ? guess(estimate) : null;
   const from = depart || new Date().toISOString();
   if (guessed) {
     const { distanceNm, minutes, required } = guessed;
     return [
-      { name: "To", value: destination || "—", testId: "navlog-to" },
-      { name: "Dist", value: whole ? `${Math.ceil(distanceNm)}` : one(distanceNm), unit: "nm" },
+      { name: "To", value: destination || "—", testId: "navlog-to", said: `To ${destination || NOT_KNOWN}` },
+      {
+        name: "Dist",
+        value: whole ? `${Math.ceil(distanceNm)}` : one(distanceNm),
+        unit: "nm",
+        said: `Distance, ${spokenDistance(distanceNm)}`,
+      },
       arrival
-        ? { name: "ETA", value: etaAt(from, minutes), testId: "navlog-eta" }
-        : { name: "ETE", value: minutes == null ? "—" : `≈${whole ? decimalHours(minutes) : guessed.time}`, testId: "navlog-ete" },
-      { name: "Fuel", value: required == null ? "—" : `≈${whole ? Math.ceil(required) : one(required)}`, unit: required == null ? undefined : "gal" },
+        ? { name: "ETA", value: etaAt(from, minutes), testId: "navlog-eta", said: `Arrival, ${etaAt(from, minutes)}` }
+        : {
+            name: "ETE",
+            value: minutes == null ? "—" : `≈${whole ? decimalHours(minutes) : guessed.time}`,
+            testId: "navlog-ete",
+            said: `Time en route, ${minutes == null ? NOT_KNOWN : `about ${spokenDuration(minutes)}`}`,
+          },
+      {
+        name: "Fuel",
+        value: required == null ? "—" : `≈${whole ? Math.ceil(required) : one(required)}`,
+        unit: required == null ? undefined : "gal",
+        said: `Fuel required, ${required == null ? NOT_KNOWN : `about ${spokenFuel(required)}`}`,
+      },
     ];
   }
   const landing = nextLanding(totals, destination, flown?.hop);
@@ -87,8 +117,8 @@ export function tripFigures({ totals, estimate, local, destination, depart = "",
   // A dry run's left from where the airplane is: to the hop's landing, or
   // the last's, its arrival from the run's moment.
   const left = flown ? (toDestination ? flown.last : flown.next) : null;
-  const distance = left ? left.nm : leg?.distance_nm ?? null;
-  const minutes = left ? left.min : leg?.ete_min ?? null;
+  const distance = left ? left.nm : (leg?.distance_nm ?? null);
+  const minutes = left ? left.min : (leg?.ete_min ?? null);
   const time = minutes === null ? "—" : whole ? decimalHours(minutes) : duration(minutes);
   const strip = stripFuel(totals, flown?.hop ?? 0, flown ? flown.burntGal : null);
   const required = strip.required_gal;
@@ -99,15 +129,28 @@ export function tripFigures({ totals, estimate, local, destination, depart = "",
   // caught before the owner took them out ("Remove fuel required at the
   // bottom of arrival"): the figure says it now, its breakdown which.
   const short = strip.short.length > 0;
-  const fuelFigure = { name: "Fuel", value: fuel ?? "—", unit: fuel === null ? undefined : "gal", testId: fuel === null ? undefined : "navlog-fuel", alert: short };
-  const to = { name: "To", value: next.to || "—", testId: "navlog-to" };
-  if (local) return [to, { name: "Aloft", value: time, testId: "navlog-ete" }, fuelFigure];
+  const fuelFigure = {
+    name: "Fuel",
+    value: fuel ?? "—",
+    unit: fuel === null ? undefined : "gal",
+    testId: fuel === null ? undefined : "navlog-fuel",
+    alert: short,
+    said: `Fuel required, ${spokenFuel(required)}${short ? ", more than the tanks hold" : ""}`,
+  };
+  const to = { name: "To", value: next.to || "—", testId: "navlog-to", said: `To ${next.to || NOT_KNOWN}` };
+  const timeSaid = minutes === null ? NOT_KNOWN : spokenDuration(minutes);
+  if (local) return [to, { name: "Aloft", value: time, testId: "navlog-ete", said: `Time aloft, ${timeSaid}` }, fuelFigure];
+  // The destination's arrival after the stops' time on the ground too
+  // (Totals.ground_min); the time en route is the air's.
+  const eta = leg ? etaAt(start, minutes === null ? null : minutes + (toDestination && !flown ? (leg.ground_min ?? 0) : 0)) : "—";
   return [
     to,
-    distance !== null ? { name: "Dist", value: whole ? `${Math.ceil(distance)}` : one(distance), unit: "nm" } : { name: "Dist", value: "—" },
-    // The destination's arrival after the stops' time on the ground too
-    // (Totals.ground_min); the time en route is the air's.
-    arrival ? { name: "ETA", value: leg ? etaAt(start, minutes === null ? null : minutes + (toDestination && !flown ? leg.ground_min ?? 0 : 0)) : "—", testId: "navlog-eta" } : { name: "ETE", value: time, testId: "navlog-ete" },
+    distance !== null
+      ? { name: "Dist", value: whole ? `${Math.ceil(distance)}` : one(distance), unit: "nm", said: `Distance, ${spokenDistance(distance)}` }
+      : { name: "Dist", value: "—", said: `Distance, ${NOT_KNOWN}` },
+    arrival
+      ? { name: "ETA", value: eta, testId: "navlog-eta", said: `Arrival, ${eta === "—" ? NOT_KNOWN : eta}` }
+      : { name: "ETE", value: time, testId: "navlog-ete", said: `Time en route, ${timeSaid}` },
     fuelFigure,
   ];
 }
@@ -116,18 +159,23 @@ export function tripFigures({ totals, estimate, local, destination, depart = "",
  *  between two landings, or the whole route with no stops -- "C81 → KMSN". */
 export function shortFlights(totals: Totals | null): { name: string; shortGal: number }[] {
   if (!totals) return [];
-  return stripFuel(totals).short.map(s => ({ name: s.name, shortGal: s.short_gal }));
+  return stripFuel(totals).short.map((s) => ({ name: s.name, shortGal: s.short_gal }));
 }
 
 /** The figures from the airplane's book alone (FlightLine's `estimate`):
  *  the distance as the course has it, and at cruise speed with no wind
  *  the time, and the fuel required at the cruise burn over that time with
- *  the start and taxi allowance and the night or IFR reserve, so it is
- *  never short -- the engine's (fuel_estimate) -- each marked "≈", none of
- *  the nav log's climb, wind or legs in it. */
-function guess({ distanceNm, cruiseTasKt, fuelBurnGph }: { distanceNm: number; cruiseTasKt: number | null; fuelBurnGph: number | null }) {
-  const { minutes, required_gal: required } = callEngine("fuel_estimate", { distance_nm: distanceNm, cruise_tas_kt: cruiseTasKt, fuel_burn_gph: fuelBurnGph });
-  // Written as the nav log's own time is once it is in (lib/clock duration): this
+ *  the airplane's own start and taxi allowance (none where its profile
+ *  has none) and the night or IFR reserve -- the engine's (fuel_estimate)
+ *  -- each marked "≈", none of the nav log's climb, wind or legs in it. */
+function guess({ distanceNm, cruiseTasKt, fuelBurnGph, taxiFuelGal }: NonNullable<TripInput["estimate"]>) {
+  const { minutes, required_gal: required } = callEngine("fuel_estimate", {
+    distance_nm: distanceNm,
+    cruise_tas_kt: cruiseTasKt,
+    fuel_burn_gph: fuelBurnGph,
+    taxi_fuel_gal: taxiFuelGal ?? null,
+  });
+  // Written as the nav log's own time is once it is in (lib/format duration): this
   // one rounded its minutes on their own, and 119.6 read "1h 60m".
   return { minutes, distanceNm, required, time: minutes == null ? "—" : duration(minutes) };
 }

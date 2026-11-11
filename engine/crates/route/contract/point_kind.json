@@ -1,0 +1,36 @@
+{
+  "x-call": "wingtip_route::route::answers::answer",
+  "description": "What a route point typed is: a fix, the pilot's own point (fix-radial-distance), or null.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "PointKindInput",
+      "type": "object",
+      "properties": {
+        "text": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "text"
+      ]
+    },
+    "answer": {
+      "title": "PointKindAnswer",
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "fix",
+        "own",
+        null
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -1,5 +1,5 @@
 {
-  "about": "Two-way radio failure under IFR, 14 CFR 91.185: the route in the rule's order (c)(1), and when to leave the clearance limit (c)(3). Web: lib/lostComms.ts. iOS: LostComms in PilotLogic.swift.",
+  "about": "Two-way radio failure under IFR, 14 CFR 91.185: the route in the rule's order (c)(1), and when to leave the clearance limit (c)(3). Web: features/pilot/lostComms.ts. iOS: LostComms in PilotLogic.swift.",
   "routes": [
     {
       "key": "assigned",

@@ -14,9 +14,20 @@ import { TEXT } from "../lib/text";
  * it.
  */
 export function SelectableRow({
-  selected, flying = false, estimated = false, expands = false, onSelect, scrollRef, kind, children,
+  selected,
+  flying = false,
+  estimated = false,
+  expands = false,
+  onSelect,
+  scrollRef,
+  kind,
+  onHover,
+  children,
 }: {
   selected: boolean;
+  /** A mouse on the row, or off it: what it is lit on the map (the nav
+   *  log's leg). A finger has no hover. */
+  onHover?: (on: boolean) => void;
   /** The row the dry run is flying to (the nav log's): the tint's own
    *  blue behind it, as the place a run is at, under the selection's grey. */
   flying?: boolean;
@@ -39,14 +50,19 @@ export function SelectableRow({
   return (
     <TableRow
       ref={scrollRef}
+      // Its role said outright, as the phone's list (NavLogList) says its
+      // rows', so one query finds a row in either.
+      role="row"
       onClick={onSelect}
+      onPointerEnter={onHover && ((e) => e.pointerType === "mouse" && onHover(true))}
+      onPointerLeave={onHover && ((e) => e.pointerType === "mouse" && onHover(false))}
       tabIndex={0}
       data-selected={selected || undefined}
       data-flying={flying || undefined}
       data-kind={kind}
       aria-current={selected || undefined}
       data-expanded={expands ? selected : undefined}
-      onKeyDown={e => {
+      onKeyDown={(e) => {
         // The row's own keys, not a button's inside it (Dev's inline
         // rating buttons sit in the note row below, but a control in
         // this row must keep its own Space/Enter).
@@ -100,7 +116,11 @@ export function NoteRow({ selected, colSpan, children }: { selected: boolean; co
         // a hair under WCAG's 4.5 for 12px type (and /40 was 4.46). On
         // the selection's tint, the training list's grey words: muted
         // on it is 3.9:1. To a finger at the rows' own 15 (lib/text.ts).
-        className={cn("py-1 pr-2 pl-4 text-left pointer-coarse:py-2", TEXT.detail, selected ? "text-foreground/70" : "bg-muted/20 text-muted-foreground")}
+        className={cn(
+          "py-1 pr-2 pl-4 text-left pointer-coarse:py-2",
+          TEXT.detail,
+          selected ? "text-foreground/70" : "bg-muted/20 text-muted-foreground",
+        )}
         colSpan={colSpan}
       >
         {/* The row's width, wrapped in it, and none of its own (w-0

@@ -12,7 +12,7 @@ import { TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
  *   all the way up, and the open one tapped again up there takes it back
  *   half way, as the route's tabs do (PanelTabs).
  * - CardTabPanel: a tab's content, spaced as every card's is.
- * - useCardTab (lib/cardTab): the tab picked, kept for each airport while
+ * - useCardTab (features/plan/lib/cardTab): the tab picked, kept for each airport while
  *   the page is open: back from a card over it, the same tab.
  */
 
@@ -22,12 +22,22 @@ import { TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
  *  finger. */
 const SEGMENTED = "w-full group-data-[orientation=horizontal]/tabs:h-9 pointer-coarse:group-data-[orientation=horizontal]/tabs:h-11";
 
-export interface CardTabSpec<T extends string> {
+interface CardTabSpec<T extends string> {
   value: T;
   label: ReactNode;
 }
 
-export function CardTabBar<T extends string>({ tabs, value, onPick, testIdPrefix, disabled, raise, barRef, className }: {
+export function CardTabBar<T extends string>({
+  tabs,
+  value,
+  onPick,
+  testIdPrefix,
+  disabled,
+  raise,
+  barRef,
+  className,
+  activateOnFocus,
+}: {
   tabs: readonly CardTabSpec<T>[];
   value: T;
   /** A tab picked, by a tap or the keyboard. */
@@ -41,19 +51,39 @@ export function CardTabBar<T extends string>({ tabs, value, onPick, testIdPrefix
   raise?: { onExpand: () => void; onLower: () => void };
   barRef?: RefObject<HTMLDivElement | null>;
   className?: string;
+  /** The tab shown as the arrow keys reach it, where every tab's content
+   *  is already in hand (one answer fills them all): the APG's automatic
+   *  activation, for panels shown with no delay. Base UI's Tabs wait for
+   *  Enter or Space unless asked (docs/design/web.md, gap 5); the Tabs
+   *  root's onValueChange is then what picks it. */
+  activateOnFocus?: boolean;
 }) {
-  // Which tab was open as this one was pressed: Radix picks a tab on the
-  // press, before the click, so the click alone cannot tell "the open one
-  // tapped again".
+  // Which tab was open as this one was pressed, read at the click: the
+  // tab is picked by then (Base UI's on its click, ahead of this one), so
+  // the click alone cannot tell "the open one tapped again".
   const openWhenPressed = useRef<T | null>(null);
   const isUp = () => barRef?.current?.closest("[data-panel]")?.getAttribute("data-panel") === "full";
   return (
-    <TabsList ref={barRef} className={cn(SEGMENTED, className)}>
-      {tabs.map(t => (
+    <TabsList ref={barRef} activateOnFocus={activateOnFocus} className={cn(SEGMENTED, className)}>
+      {tabs.map((t) => (
         <TabsTrigger
-          key={t.value} value={t.value} className="pointer-coarse:text-[0.9375rem]" disabled={disabled} data-testid={`${testIdPrefix}-${t.value}`}
-          onPointerDown={() => { openWhenPressed.current = value; }} onKeyDown={() => { openWhenPressed.current = value; }}
-          onPointerCancel={() => { openWhenPressed.current = null; }} onBlur={() => { openWhenPressed.current = null; }}
+          key={t.value}
+          value={t.value}
+          className="pointer-coarse:text-(length:--type-detail)"
+          disabled={disabled}
+          data-testid={`${testIdPrefix}-${t.value}`}
+          onPointerDown={() => {
+            openWhenPressed.current = value;
+          }}
+          onKeyDown={() => {
+            openWhenPressed.current = value;
+          }}
+          onPointerCancel={() => {
+            openWhenPressed.current = null;
+          }}
+          onBlur={() => {
+            openWhenPressed.current = null;
+          }}
           onClick={() => {
             // Read once and cleared: a click with no press before it
             // (VoiceOver's activate, a switch) must not find an earlier
@@ -77,5 +107,9 @@ export function CardTabBar<T extends string>({ tabs, value, onPick, testIdPrefix
 /** A tab's content in a card: the space under the bar, and between its
  *  groups, every card's. */
 export function CardTabPanel({ value, className, children }: { value: string; className?: string; children: ReactNode }) {
-  return <TabsContent value={value} className={cn("space-y-5 pt-4", className)}>{children}</TabsContent>;
+  return (
+    <TabsContent value={value} className={cn("space-y-5 pt-4", className)}>
+      {children}
+    </TabsContent>
+  );
 }

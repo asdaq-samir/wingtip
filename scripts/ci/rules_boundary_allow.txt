@@ -1,0 +1,65 @@
+# What scripts/ci/rules_boundary.py finds outside the engine and is not an
+# aviation rule, as "<path> <count>" with why. A rule found here is moved
+# into the engine (engine/README.md) and its line taken out; issue #482
+# lists what is still to move.
+
+# The owner's FL-045 way of writing a cruise altitude (2026-11-04): how a
+# figure is written stays with each app (CLAUDE.md). The web's flightLevel
+# moved from lib/units.ts to lib/format/figures.ts in the lib regroup; it
+# writes the altitude it is given and decides nothing (the engine's
+# words_flight_level writes it the same way for the phones and the planner).
+apps/web/src/lib/format/figures.ts 1
+services/planner/app/gonogo/words.py 1
+
+# A typed wrapper over the engine's wind_triangle, not a copy of it.
+apps/web/src/lib/diversion.ts 1
+
+# The airport card's hours: a day of hourly rows, a display span.
+apps/web/src/features/plan/lib/hourly.ts 1
+
+# How far back the instructor's page lists what they signed: 14 CFR
+# 61.189(c)'s three years of an instructor's own records, which the gateway
+# keeps (records are its job, not a figure a flight is planned by).
+services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 1
+
+# How often the web asks the planner again for the SWIM feeds' live
+# reports (react-query's staleTime and refetchInterval): a minute, as the
+# feeds are made (RVR each minute, AIM 7-1-13), a polling cadence. What a
+# report means for the flight is the engine's (rvr_check, the Go / No-Go).
+apps/web/src/lib/liveReports.ts 1
+
+# The sphere's figures where they are deliberately the host's own: the
+# planner's wingtip.geo (pyproj, which the engine's core::geo is held to)
+# and the web map's lib/geo (MapLibre's drawing between frames). The phones
+# ask the engine's distance_nm, bearing_deg and destination.
+services/planner/wingtip/geo.py 1
+apps/web/src/lib/geo.ts 1
+
+# The planner's wingtip/, scanned since 2026-11-10. Readers' and caches'
+# own bounds, not a figure a flight is planned by: the towns looked for
+# round a point (wider than the engine's 91.119(b) radius, so none at its
+# edge is missed); the sea floor in the terrain tiles (below Badwater
+# Basin a pixel is the sea's); the most an RVR system reports, as its feed
+# is read; how long the special use airspace set is served while the
+# service is down (a NASR cycle); the obstacle file's own threshold for an
+# obstacle that counts (faa_data); where a recorded track is taken to
+# start at a field; how far a station's report is said of a field (a
+# design choice, its comment says so).
+services/planner/wingtip/congested.py 1
+services/planner/wingtip/elevation.py 1
+services/planner/wingtip/rvr.py 1
+services/planner/wingtip/sua.py 1
+services/planner/wingtip/terrain_view.py 1
+services/planner/wingtip/traffic/flights.py 1
+services/planner/wingtip/weather.py 1
+# How far off each hop's line an obstacle is drawn on the side view
+# (PROFILE_OBSTACLE_NM, a nautical mile): a display width, not a margin.
+# The legal margins over obstacles (14 CFR 91.119, 91.177) are the
+# altitude floors' own, with their wider read (terrain's OBSTACLE_READ_NM).
+services/planner/wingtip/profile.py 1
+# Still to move into the engine (#482): how long a D-ATIS is the
+# airport's, a coded course reversal's turn and an open leg's drawn
+# length (the engine draws the rest of a procedure's legs).
+services/planner/wingtip/datis.py 1
+services/planner/wingtip/procedure_paths.py 1
+services/planner/wingtip/procedures.py 1

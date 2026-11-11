@@ -13,6 +13,8 @@
 
 pub mod debrief;
 pub mod diversion;
+pub mod endurance;
+pub mod glide;
 pub mod holding;
 pub mod lost_comms;
 pub mod strip;

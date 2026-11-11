@@ -18,15 +18,6 @@ pub struct Minimums {
     pub wind_kt: Option<f64>,
 }
 
-/// The choices each minimum is picked from (menus, not sliders), the
-/// web's MINIMUM_CHOICES: the native app's menus read the same.
-pub const MINIMUM_CHOICES: [(&str, &[i64]); 4] = [
-    ("ceiling_ft", &[1000, 1500, 2000, 2500, 3000, 4000, 5000]),
-    ("visibility_sm", &[3, 4, 5, 6, 8, 10]),
-    ("crosswind_kt", &[5, 8, 10, 12, 15, 17, 20]),
-    ("wind_kt", &[10, 15, 20, 25, 30, 35]),
-];
-
 // A runway's wind and the crosswind it is judged by are the runway
 // module's (crate::runway::wind, lib/wind), shared with the runway pick,
 // the runway fit and the check.
@@ -39,8 +30,9 @@ pub use crate::runway::wind::{runway_crosswind_kt, steady_or_gust_kt, RunwayWind
 /// component, may blow across any of them, so all of it, gusts included,
 /// is taken as crosswind, with no end (`reported`, the field's METAR's
 /// speed and gust). Each runway is (closed, its wind).
-pub fn best_crosswind(runways: &[(bool, Option<RunwayWind>)], reported: Option<(Option<f64>, Option<f64>)>)
-                      -> Option<(Option<String>, f64)> {
+pub fn best_crosswind(
+    runways: &[(bool, Option<RunwayWind>)], reported: Option<(Option<f64>, Option<f64>)>,
+) -> Option<(Option<String>, f64)> {
     let open: Vec<&Option<RunwayWind>> = runways.iter().filter(|(closed, _)| !closed).map(|(_, w)| w).collect();
     let winds: Vec<&RunwayWind> = open.iter().filter_map(|w| w.as_ref()).collect();
     let Some(first) = winds.first() else {
@@ -90,17 +82,17 @@ pub struct Weather {
 pub fn under_minimums(m: &Minimums, w: &Weather) -> Vec<String> {
     let mut reasons = Vec::new();
     let ceiling = |reasons: &mut Vec<String>, at: &str, ft: Option<f64>| {
-        if let (Some(min), Some(ft)) = (m.ceiling_ft, ft) {
-            if ft < min {
-                reasons.push(format!("{at} ceiling {} ft, under your {} ft", alt_ft(Some(ft)), alt_ft(Some(min))));
-            }
+        if let (Some(min), Some(ft)) = (m.ceiling_ft, ft)
+            && ft < min
+        {
+            reasons.push(format!("{at} ceiling {} ft, under your {} ft", alt_ft(Some(ft)), alt_ft(Some(min))));
         }
     };
     let visibility = |reasons: &mut Vec<String>, at: &str, sm: Option<f64>| {
-        if let (Some(min), Some(sm)) = (m.visibility_sm, sm) {
-            if sm < min {
-                reasons.push(format!("{at} visibility {} sm, under your {} sm", js_num(sm), js_num(min)));
-            }
+        if let (Some(min), Some(sm)) = (m.visibility_sm, sm)
+            && sm < min
+        {
+            reasons.push(format!("{at} visibility {} sm, under your {} sm", js_num(sm), js_num(min)));
         }
     };
     for field in &w.landings {
@@ -109,25 +101,25 @@ pub fn under_minimums(m: &Minimums, w: &Weather) -> Vec<String> {
             ceiling(&mut reasons, ident, metar.ceiling_ft);
             visibility(&mut reasons, ident, metar.visibility_sm);
             let wind = steady_or_gust_kt(metar.wind_speed_kt.unwrap_or(0.0), metar.wind_gust_kt);
-            if let Some(most) = m.wind_kt {
-                if wind > most {
-                    // `gust ? "12G22" : "12"`: a gust of 0 is not said.
-                    let reported = match metar.wind_gust_kt {
-                        Some(gust) if gust != 0.0 && !gust.is_nan() => format!("{}G{}", js_opt(metar.wind_speed_kt), js_num(gust)),
-                        _ => js_opt(metar.wind_speed_kt),
-                    };
-                    reasons.push(format!("{ident} wind {reported} kt, over your {} kt", js_num(most)));
-                }
+            if let Some(most) = m.wind_kt
+                && wind > most
+            {
+                // `gust ? "12G22" : "12"`: a gust of 0 is not said.
+                let reported = match metar.wind_gust_kt {
+                    Some(gust) if gust != 0.0 && !gust.is_nan() => format!("{}G{}", js_opt(metar.wind_speed_kt), js_num(gust)),
+                    _ => js_opt(metar.wind_speed_kt),
+                };
+                reasons.push(format!("{ident} wind {reported} kt, over your {} kt", js_num(most)));
             }
         }
         let crosswind = best_crosswind(&field.runways, field.metar.map(|r| (r.wind_speed_kt, r.wind_gust_kt)));
-        if let (Some(most), Some((end, kt))) = (m.crosswind_kt, crosswind) {
-            if kt > most {
-                reasons.push(match end {
-                    None => format!("{ident} variable wind {} kt, which may all be crosswind, over your {} kt", js_num(kt), js_num(most)),
-                    Some(end) => format!("{ident} crosswind {} kt on its best runway ({end}), over your {} kt", js_num(kt), js_num(most)),
-                });
-            }
+        if let (Some(most), Some((end, kt))) = (m.crosswind_kt, crosswind)
+            && kt > most
+        {
+            reasons.push(match end {
+                None => format!("{ident} variable wind {} kt, which may all be crosswind, over your {} kt", js_num(kt), js_num(most)),
+                Some(end) => format!("{ident} crosswind {} kt on its best runway ({end}), over your {} kt", js_num(kt), js_num(most)),
+            });
         }
     }
     if let Some((ft, sm)) = w.dest_forecast {

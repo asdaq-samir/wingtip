@@ -24,25 +24,23 @@ struct Hold: Codable, Hashable, Sendable, Identifiable {
 
     /// The legs' minutes where none is picked: a minute at or below
     /// 14,000 ft MSL, a minute and a half above (AIM 5-3-8 j.4(a)), the
-    /// engine's `holding_leg_minutes`. A minute where it cannot answer,
-    /// which is only for an altitude that is no number.
-    static func legMinutes(altitudeFt: Double) -> Double {
-        let minutes: Double? = try? Engine.call("holding_leg_minutes", json: ["altitude_ft": altitudeFt])
-        return minutes ?? 1
+    /// engine's `holding_leg_minutes`; thrown where it cannot answer.
+    static func legMinutes(altitudeFt: Double) throws -> Double {
+        try Engine.holdingLegMinutes(altitudeFt: altitudeFt)
     }
 
     private static func figure(_ value: Double) -> String { String(format: "%g", value) }
 
     /// As the planner reads it, the course in three figures, 000 for north
     /// (the engine's `hold_write`): legs of 4 nm and 10 minutes held where
-    /// neither is set, as the pages open on.
-    var text: String {
-        var hold = self
-        hold.inbound = ((inbound % 360) + 360) % 360
-        if hold.legMin != nil { hold.legNm = nil } else if hold.legNm == nil { hold.legNm = 4 }
-        if hold.turns != nil { hold.minutes = nil } else if hold.minutes == nil { hold.minutes = 10 }
-        let written: String? = try? Engine.call("hold_write", ["hold": hold], encoder: Planner.snakeEncoder)
-        return written ?? ""
+    /// neither is set, as the pages open on. Thrown where the engine
+    /// cannot write it, so no route is planned with the hold left out.
+    func text() throws -> String {
+        let legMin = self.legMin
+        let legNm = legMin != nil ? nil : (self.legNm ?? 4)
+        let minutes = turns != nil ? nil : (self.minutes ?? 10)
+        return try Engine.holdWrite(hold: .init(fix: fix, inbound: Double(((inbound % 360) + 360) % 360), right: right, legMin: legMin,
+                                                legNm: legNm, turns: turns.map(Double.init), minutes: minutes.map(Double.init)))
     }
 
     /// "Right turns · 270° inbound · 1 min legs · 2 turns", north as 360°.
@@ -50,14 +48,26 @@ struct Hold: Codable, Hashable, Sendable, Identifiable {
         let course = inbound % 360 == 0 ? 360 : inbound % 360
         let leg = legMin.map { "\(Self.figure($0)) min legs" } ?? "\(Self.figure(legNm ?? 4)) nm legs"
         let length = turns.map { "\($0) \($0 == 1 ? "turn" : "turns")" } ?? "\(minutes ?? 10) min"
-        return "\(right ? "Right" : "Left") turns · \(String(format: "%03d", course))° inbound · \(leg) · \(length)"
+        return "\(right ? "Right" : "Left") turns · \(Format.heading(Double(course))) inbound · \(leg) · \(length)"
     }
 
     /// One read back from its text, or nil for one that is not, as the
     /// planner reads it (the engine's `hold_read`; wingtip.holds, the web
-    /// app's lib/routeHolds, apps/web/src/lib/fixtures/holds.json).
-    static func parse(_ text: String) -> Hold? {
-        do { return try Engine.call("hold_read", ["text": text], decoder: Planner.snakeCase) } catch { return nil }
+    /// app's lib/routeHolds, apps/web/src/lib/fixtures/holds.json); thrown
+    /// where the engine cannot answer.
+    static func parse(_ text: String) throws -> Hold? {
+        try Engine.holdRead(text: text).map(Hold.init)
+    }
+
+    init(fix: String, inbound: Int, right: Bool, legMin: Double?, legNm: Double?, turns: Int?, minutes: Int?) {
+        self.fix = fix; self.inbound = inbound; self.right = right
+        self.legMin = legMin; self.legNm = legNm; self.turns = turns; self.minutes = minutes
+    }
+
+    /// The engine's reading of one (EngineContract.RouteHold), as the app keeps it.
+    init(_ read: EngineContract.RouteHold) {
+        self.init(fix: read.fix, inbound: read.inbound, right: read.right, legMin: read.legMin, legNm: read.legNm,
+                  turns: read.turns, minutes: read.minutes)
     }
 }
 
@@ -77,6 +87,9 @@ struct RouteExtras: Equatable, Sendable {
     /// Feet MSL by point: a waypoint's is flown to it, an airport's is
     /// what a flight landing there comes down to.
     var altitudes: [String: Int] = [:]
+    /// The points whose altitude change begins there (Start At); the rest
+    /// are done by the point (Cross At), as a waypoint's altitude always was.
+    var starts: Set<String> = []
     var holds: [Hold] = []
     /// Feet MSL ATC gave to cross a procedure's fix at.
     var crossings: [String: Int] = [:]
@@ -93,14 +106,17 @@ struct RouteExtras: Equatable, Sendable {
 
     /// The nav log's query for them, only the ones set: the procedures
     /// written again only where one is flown direct, "KELD:I22::BXCMB"
-    /// (PlanQuery.procedures: the fix after a fourth colon).
-    func query(procedures: [ProcedurePick]) -> [String: String?] {
+    /// (PlanQuery.procedures: the fix after a fourth colon). Thrown where
+    /// the engine cannot write a hold or a procedure.
+    func query(procedures: [ProcedurePick]) throws -> [String: String?] {
         var query: [String: String?] = [:]
         if let altitudes = Self.pairs(altitudes) { query["altitudes"] = altitudes }
         if let crossings = Self.pairs(crossings) { query["crossings"] = crossings }
-        if !holds.isEmpty { query["holds"] = holds.map(\.text).joined(separator: ",") }
+        let started = starts.filter { altitudes[$0] != nil }.sorted()
+        if !started.isEmpty { query["altitude_starts"] = started.joined(separator: ",") }
+        if !holds.isEmpty { query["holds"] = try holds.map { try $0.text() }.joined(separator: ",") }
         if !procedureDirect.isEmpty, !procedures.isEmpty {
-            query["procedures"] = ProcedurePick.text(procedures, direct: procedureDirect)
+            query["procedures"] = try ProcedurePick.text(procedures, direct: procedureDirect)
         }
         return query
     }
@@ -119,18 +135,21 @@ struct RouteExtras: Equatable, Sendable {
     /// (wingtip.fixes.frd_ident): "VPBNG/090/30", the engine's `frd_write` --
     /// the course to the degree, 000 for north, the distance to a tenth of
     /// a mile.
-    static func frd(_ base: String, courseDeg: Int, nm: Double) -> String {
-        let written: String? = try? Engine.call("frd_write", json: ["base": base, "course": courseDeg, "distance_nm": nm])
-        return written ?? ""
+    static func frd(_ base: String, courseDeg: Int, nm: Double) throws -> String {
+        try Engine.frdWrite(base: base, course: Double(courseDeg), distanceNm: nm)
     }
 
     /// Where a point goes into the route so it bends it least: after the
     /// point whose leg it adds the fewest miles to (the web app's
-    /// bestStopIndex), as an index into the stops.
-    static func bestStopIndex(_ points: [CLLocationCoordinate2D], at: CLLocationCoordinate2D) -> Int {
+    /// bestStopIndex), as an index into the stops. The miles are the
+    /// engine's (`distance_nm`); thrown where it cannot say them.
+    static func bestStopIndex(_ points: [CLLocationCoordinate2D], at: CLLocationCoordinate2D) throws -> Int {
+        func nm(_ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) throws -> Double {
+            try Engine.distanceNm(lat1: a.latitude, lon1: a.longitude, lat2: b.latitude, lon2: b.longitude)
+        }
         var best = 0, added = Double.infinity
         for i in 0..<max(0, points.count - 1) {
-            let more = Flight.nm(from: points[i], to: at) + Flight.nm(from: at, to: points[i + 1]) - Flight.nm(from: points[i], to: points[i + 1])
+            let more = try nm(points[i], at) + nm(at, points[i + 1]) - nm(points[i], points[i + 1])
             if more < added { best = i; added = more }
         }
         return best
@@ -160,6 +179,7 @@ extension Plan {
         extras.was = was
         extras.direct = ident
         extras.procedureDirect = [:]
+        Feel.tap(.directTo)
         plan()
     }
 
@@ -181,6 +201,7 @@ extension Plan {
         extras.was = was
         extras.direct = ident
         extras.procedureDirect = [:]
+        Feel.tap(.directTo)
         plan()
     }
 
@@ -193,9 +214,12 @@ extension Plan {
 
     func hold(at fix: String) -> Hold? { extras.holds.first { $0.fix.uppercased() == fix.uppercased() } }
 
-    /// A point's own altitude, or (nil) the plan's again.
-    func setAltitude(at ident: String, feet: Int?) {
-        extras.altitudes[ident.uppercased()] = feet
+    /// A point's own altitude, or (nil) the plan's again, its climb or
+    /// descent begun at the point (Start At) or done by it (Cross At).
+    func setAltitude(at ident: String, feet: Int?, mode: LegAltitudeMode = .crossAt) {
+        let key = ident.uppercased()
+        extras.altitudes[key] = feet
+        if feet != nil, mode == .startAt { extras.starts.insert(key) } else { extras.starts.remove(key) }
         plan()
     }
 
@@ -239,7 +263,16 @@ extension Plan {
     func drop(_ ident: String, at point: CLLocationCoordinate2D, then: Drop, from fix: OwnShip.Fix?) {
         guard let course else { return }
         let ends = [course.departure] + (course.stops ?? []) + [course.destination]
-        let index = min(stops.count, RouteExtras.bestStopIndex(ends.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }, at: point))
+        // Where the engine cannot say the miles, the point goes in last,
+        // before the destination, still in the route for the pilot to move.
+        let best: Int
+        do {
+            best = try RouteExtras.bestStopIndex(ends.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) }, at: point)
+        } catch {
+            Log.engine.error("distance_nm: \(error.localizedDescription, privacy: .public)")
+            best = stops.count
+        }
+        let index = min(stops.count, best)
         if then == .direct {
             let was = extras.was ?? current
             if let fix { dep = RouteExtras.position(fix) }
@@ -247,6 +280,7 @@ extension Plan {
             extras.was = was
             extras.direct = ident
             extras.procedureDirect = [:]
+            Feel.tap(.directTo)
         } else {
             stops.insert(ident, at: index)
         }

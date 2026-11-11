@@ -1,5 +1,5 @@
 {
-  "about": "A flight plan's item 15 and 16 as FAA Form 7233-4 writes them (AIM Appendix 4; FL at and above 18,000 ft, 14 CFR 91.121(a)(2)). Route cases name which stops are airways; no procedures. Web: lib/flightPlanForm.ts. iOS: FilingForm in InFlightViews.swift.",
+  "about": "A flight plan's item 15 and 16 as FAA Form 7233-4 writes them (AIM Appendix 4; FL at and above 18,000 ft, 14 CFR 91.121(a)(2)). Route cases name which stops are airways; no procedures. Web: features/plan/lib/flightPlanForm.ts. iOS: FilingForm in InFlightViews.swift.",
   "cruisingSpeed": [
     {
       "tasKt": 0,
@@ -145,6 +145,61 @@
         "V18"
       ],
       "item": "V18 MEI"
+    }
+  ],
+  "endurance": [
+    {
+      "fuelGal": 40,
+      "burnGph": 9,
+      "minutes": 266
+    },
+    {
+      "fuelGal": 53,
+      "burnGph": 8.4,
+      "minutes": 378
+    },
+    {
+      "fuelGal": 40,
+      "burnGph": 0,
+      "minutes": null
+    }
+  ],
+  "dateOfFlight": [
+    {
+      "depart": "2026-11-09T14:00:00.000Z",
+      "today": "2026-11-08T22:00:00.000Z",
+      "item": "DOF/261109"
+    },
+    {
+      "depart": "2026-11-08T14:00:00.000Z",
+      "today": "2026-11-08T01:00:00.000Z",
+      "item": null
+    }
+  ],
+  "rnav": [
+    {
+      "airways": [
+        "V191",
+        "T263"
+      ],
+      "rnav": true
+    },
+    {
+      "airways": [
+        "Q100"
+      ],
+      "rnav": true
+    },
+    {
+      "airways": [
+        "V191",
+        "J34"
+      ],
+      "rnav": false
+    },
+    {
+      "airways": [],
+      "rnav": false
     }
   ]
 }

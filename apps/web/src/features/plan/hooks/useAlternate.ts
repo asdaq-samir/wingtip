@@ -1,15 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
 import type { Alternates } from "../../../lib/api/types";
-import { useSearchParam } from "../../../lib/useSearchParam";
+import { useSearchParam } from "../lib/useSearchParam";
 
 export interface AlternateWhere {
   /** The destination, its ident. */
   dest: string;
   /** The ETA there, an ISO instant; null before the nav log has one. */
   eta: string | null;
-  /** The airplane's cruise speed, the way on to an alternate flown at it. */
-  tasKt: number;
+  /** The airplane's cruise speed, the way on to an alternate flown at it;
+   *  null with no airplane, and no alternate is timed (no stock speed). */
+  tasKt: number | null;
 }
 
 /** The alternate filed (the address's `alternate`, per route), and the
@@ -18,8 +19,9 @@ export function useAlternate({ dest, eta, tasKt }: AlternateWhere) {
   const filed = useSearchParam("alternate") ?? "";
   const query = useQuery({
     queryKey: ["alternate", dest, eta, tasKt, filed],
-    queryFn: () => api.alternate(dest, eta!, tasKt, filed),
-    enabled: !!dest && !!eta, staleTime: 5 * 60_000,
+    queryFn: () => api.alternate(dest, eta!, tasKt!, filed),
+    enabled: !!dest && !!eta && tasKt != null,
+    staleTime: 5 * 60_000,
     // Said in its own section, where it was asked for.
     meta: { silent: true },
   });
@@ -32,7 +34,9 @@ export function useAlternate({ dest, eta, tasKt }: AlternateWhere) {
 export function alternateFinding(data: Alternates | undefined): { finding: "caution" | "stop"; detail: string } | null {
   if (!data || !data.destination.required) return null;
   if (!data.alternate) return { finding: "caution", detail: "An alternate is required (14 CFR 91.169): file one in Weather" };
-  if (data.alternate.good === false) return { finding: "stop", detail: `${data.alternate.ident} is under its alternate minimums at the ETA there` };
-  if (data.alternate.good === null) return { finding: "caution", detail: `${data.alternate.ident}: ${data.alternate.reasons[0] ?? "check it"}` };
+  if (data.alternate.good === false)
+    return { finding: "stop", detail: `${data.alternate.ident} is under its alternate minimums at the ETA there` };
+  if (data.alternate.good === null)
+    return { finding: "caution", detail: `${data.alternate.ident}: ${data.alternate.reasons[0] ?? "check it"}` };
   return null;
 }

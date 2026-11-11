@@ -1,12 +1,13 @@
-import { useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "./GroupedList";
 import type { MapLayerAges } from "../lib/api/types";
-import { useMinuteClock, zuluTime } from "../lib/clock";
+import { zuluTime } from "../lib/format";
+import { useMinuteClock } from "../lib/useMinuteClock";
 import { cycleWarning, dayWords } from "../lib/dataCycles";
 import { savedWords, useSaved } from "../lib/fromCache";
-import { ageWords, mapAgesQuery, useLayerAges } from "../lib/map/layerAges";
+import { useOnline } from "../lib/kept/useOnline";
+import { ageWords, mapAgesQuery, staleWords, useLayerAges } from "../lib/map/sources/layerAges";
 import { TEXT } from "../lib/text";
 
 /**
@@ -18,15 +19,18 @@ import { TEXT } from "../lib/text";
  * each source the planner downloads -- the METARs, TAFs, AIRMETs and
  * SIGMETs, G-AIRMETs, PIREPs, winds aloft and TFRs -- with when its copy
  * was fetched and, where the source is not answering, to when the copy
- * held is used by its product's own validity (wingtip.weather); and the
- * traffic, as the map last heard it. Asked again each minute while open.
+ * held is used by its product's own validity (wingtip.weather), and where
+ * one has stopped coming in past its usual cadence -- the NOTAMs, the
+ * radar and satellite frames among them -- that it is not updating (the
+ * planner's feed watch, app.feeds.status_rows); and the traffic, as the
+ * map last heard it. Asked again each minute while open.
  */
 export default function StatusPanel() {
   const now = useMinuteClock();
   const online = useOnline();
   // What the page is showing from the service worker's cache, said here
   // and never on the map (lib/fromCache).
-  const saved = savedWords(Object.values(useSaved(s => s.saved)), now);
+  const saved = savedWords(Object.values(useSaved((s) => s.saved)), now);
   // The map's settings ask the same question (useLayerAges), one answer
   // for both.
   const { data, isError } = useQuery(mapAgesQuery);
@@ -35,19 +39,31 @@ export default function StatusPanel() {
     <div className="space-y-5 pb-1" data-testid="status-panel">
       <ListGroup title="Connection">
         <ListRow
-          title="This phone" value={online ? "Online" : "Offline"} data-testid="status-connection"
+          title="This phone"
+          value={online ? "Online" : "Offline"}
+          data-testid="status-connection"
           description={saved ? <span className={TEXT.detail}>{saved}</span> : undefined}
         />
       </ListGroup>
 
       <ListGroup title="Weather and TFRs">
-        {data?.sources?.length ? data.sources.map(s => (
-          <ListRow
-            key={s.name} title={s.name} data-testid="status-source"
-            value={ageWords(s.fetched_at ? Date.parse(s.fetched_at) : null, now) ?? "Not yet"}
-            description={s.failing ? <span className={cn("text-destructive-ink", TEXT.detail)}>{failingWords(s)}</span> : undefined}
-          />
-        )) : (
+        {data?.sources?.length ? (
+          data.sources.map((s) => (
+            <ListRow
+              key={s.name}
+              title={s.name}
+              data-testid="status-source"
+              value={ageWords(s.fetched_at ? Date.parse(s.fetched_at) : null, now) ?? "Not yet"}
+              description={
+                s.failing || s.stale ? (
+                  <span className={cn("text-destructive-ink", TEXT.detail)}>
+                    {s.failing ? failingWords(s) : staleWords(s.fetched_at, now)}
+                  </span>
+                ) : undefined
+              }
+            />
+          ))
+        ) : (
           <ListRow muted title={isError ? "The planner could not be reached" : "Checking…"} data-testid="status-sources-none" />
         )}
       </ListGroup>
@@ -58,11 +74,15 @@ export default function StatusPanel() {
           nothing were wrong, so this is where a pilot checks. */}
       {!!data?.data_cycles?.length && (
         <ListGroup title="FAA Data">
-          {data.data_cycles.map(c => {
+          {data.data_cycles.map((c) => {
             const warning = cycleWarning(c);
             return (
               <ListRow
-                key={c.key} title={c.name} value={dayWords(c.edition)} data-testid="status-data-cycle" data-cycle={c.state}
+                key={c.key}
+                title={c.name}
+                value={dayWords(c.edition)}
+                data-testid="status-data-cycle"
+                data-cycle={c.state}
                 description={warning ? <span className={cn("text-destructive-ink", TEXT.detail)}>{warning}</span> : undefined}
               />
             );
@@ -86,20 +106,4 @@ function failingWords(s: MapLayerAges["sources"][number]): string {
   return until.getTime() > Date.now()
     ? `Not answering: the last copy is used until ${zuluTime(until)}`
     : "Not answering: the last copy has run out";
-}
-
-/** Whether the browser has a network, said again as it comes and goes. */
-function useOnline(): boolean {
-  return useSyncExternalStore(
-    change => {
-      window.addEventListener("online", change);
-      window.addEventListener("offline", change);
-      return () => {
-        window.removeEventListener("online", change);
-        window.removeEventListener("offline", change);
-      };
-    },
-    () => navigator.onLine,
-    () => true,
-  );
 }

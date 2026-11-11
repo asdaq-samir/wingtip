@@ -1,23 +1,9 @@
-//! The aircraft rules as crate::call answers them, JSON in and out; the
-//! names and their inputs are listed in call.rs with the others.
+//! The aircraft rules as crate::call answers them, JSON in and out; each
+//! name and its input are in its file in crates/pilot/contract.
 
 use super::filters::{self, Filter, Heard, Plane};
 use super::registry;
 use crate::json::{self, Value};
-
-/// The names this module answers.
-pub const NAMES: [&str; 10] = [
-    "traffic_kind",
-    "emitter_category",
-    "altitude_band",
-    "operator_of",
-    "in_emergency",
-    "squawk_meaning",
-    "field_relation",
-    "traffic_matches",
-    "n_number",
-    "registered_profile",
-];
 
 type R<T> = Result<T, String>;
 
@@ -67,11 +53,18 @@ pub fn call(name: &str, v: &Value) -> R<String> {
     let mut out = String::new();
     match name {
         "traffic_kind" => json::string(&mut out, filters::kind_of(opt_str(name, v, "category")?)),
-        "altitude_band" => json::opt_string(&mut out, filters::band_of(opt_num(name, v, "altitude_ft")?)),
-        "operator_of" => json::opt_string(&mut out, filters::operator_of(opt_str(name, v, "callsign")?).as_deref()),
         "emitter_category" => json::opt_string(&mut out, filters::emitter(opt_str(name, v, "category")?)),
         "in_emergency" => flag(&mut out, filters::in_emergency(opt_str(name, v, "squawk")?, emergency_sent(v))),
         "squawk_meaning" => json::opt_string(&mut out, filters::squawk_meaning(opt_str(name, v, "squawk")?)),
+        // How far round an airport its traffic is asked for: AROUND_NM and
+        // RELATION_NM, which field_relation judges by.
+        "traffic_reach" => {
+            out.push_str("{\"around_nm\":");
+            json::number(&mut out, filters::AROUND_NM);
+            out.push_str(",\"relation_nm\":");
+            json::number(&mut out, filters::RELATION_NM);
+            out.push('}');
+        }
         "field_relation" => {
             let p = object(name, v, "plane")?;
             let f = object(name, v, "field")?;

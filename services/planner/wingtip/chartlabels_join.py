@@ -8,6 +8,7 @@ the training page's picks, at routecsv.SAME_PLACE_NM.
 It once also carried the older OSM-anchored ratings over to detections,
 for a bootstrap set; those ratings are the landmark model's alone now.
 """
+
 from __future__ import annotations
 
 from .geo import distance_nm

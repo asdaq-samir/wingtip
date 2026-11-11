@@ -1,7 +1,7 @@
 //! The runway rules by name (crate::call lists them): each reads its input
 //! as the planner's and the web's own objects in snake_case -- a runway as
 //! the planner sends one (`runway_ends`, `wind`), a METAR's wind, a POH's
-//! ShortField -- and answers JSON, None where the name is not one of them.
+//! ShortField -- and answers JSON.
 
 use super::circuit::{self, CircuitEnd, CircuitRunway, Pattern, Point};
 use super::performance::{self, FieldReport, FitWind};
@@ -12,10 +12,11 @@ use crate::json::{self, Value};
 
 type R<T> = Result<T, String>;
 
-/// The rule `name` on `v`; None where the name is not a runway rule.
-pub fn call(name: &str, v: &Value) -> Option<R<String>> {
+/// The rule `name` on `v`, as the runway rules' contract files
+/// (crates/brief/contract) name it to the dispatcher.
+pub fn call(name: &str, v: &Value) -> R<String> {
     let i = In { name };
-    Some(match name {
+    match name {
         "wind_components" => (|| {
             let (from, kt, heading) = (i.num(v, "from_deg")?, i.num(v, "kt")?, i.num(v, "heading_deg")?);
             let mut out = String::from("{\"headwind_kt\":");
@@ -30,13 +31,12 @@ pub fn call(name: &str, v: &Value) -> Option<R<String>> {
         "wind_calm" => i.opt_num(v, "speed_kt").map(|s| wind::is_calm(s).to_string()),
         "runway_calm" => runway_wind_of(i, v).map(|w| wind::calm_on_runway(&w).to_string()),
         "runway_end_heading" => (|| {
-            let h = wind::end_heading_true_deg(i.opt_str(v, "ident")?.as_deref(), i.opt_num(v, "heading_true_deg")?, i.num(v, "variation_deg")?);
+            let h = wind::end_heading_true_deg(
+                i.opt_str(v, "ident")?.as_deref(),
+                i.opt_num(v, "heading_true_deg")?,
+                i.num(v, "variation_deg")?,
+            );
             Ok(opt_number(h))
-        })(),
-        "runway_favoured_end" => (|| {
-            let ends = end_headings(i, v, "ends")?;
-            let found = wind::favoured_end(&ends, reported(i, v, "metar")?.as_ref(), i.num(v, "variation_deg")?, recent(i, v)?);
-            Ok(favoured_json(found.as_ref()))
         })(),
         "runway_with_winds" => (|| {
             let runways = i.list(v, "runways")?.iter().map(|r| end_headings(i, r, "end_headings")).collect::<R<Vec<_>>>()?;
@@ -85,6 +85,10 @@ pub fn call(name: &str, v: &Value) -> Option<R<String>> {
             // A whole number of feet, as the planner's int.
             out.push_str(",\"altitude_ft\":");
             out.push_str(&altitude.map_or("null".to_owned(), whole));
+            // To the hundred feet, as the planner flies down to it.
+            let (elevation, published_agl) = (i.opt_num(v, "elevation_ft")?, i.opt_num(v, "published_agl_ft")?);
+            out.push_str(",\"flown_ft\":");
+            out.push_str(&pick::pattern_altitude_flown(elevation, published_agl).map_or("null".to_owned(), whole));
             out.push_str(&format!(",\"published\":{published}}}"));
             Ok(out)
         })(),
@@ -108,7 +112,7 @@ pub fn call(name: &str, v: &Value) -> Option<R<String>> {
         "runway_end_fit" => end_fit_rule(i, v),
         "traffic_pattern" => (|| {
             let r = circuit_runway(i, v)?;
-            Ok(pattern_json(i, v, circuit::arrival(&r, &i.str(v, "end_ident")?).as_ref())?)
+            pattern_json(i, v, circuit::arrival(&r, &i.str(v, "end_ident")?).as_ref())
         })(),
         "departure_pattern" => (|| {
             let r = circuit_runway(i, v)?;
@@ -116,7 +120,7 @@ pub fn call(name: &str, v: &Value) -> Option<R<String>> {
                 None => None,
                 Some(t) => Some((i.num(t, "lat")?, i.num(t, "lon")?)),
             };
-            Ok(pattern_json(i, v, circuit::departure(&r, &i.str(v, "end_ident")?, toward).map(|(p, _)| p).as_ref())?)
+            pattern_json(i, v, circuit::departure(&r, &i.str(v, "end_ident")?, toward).map(|(p, _)| p).as_ref())
         })(),
         "arrival_circuit" => (|| {
             let r = circuit_runway(i, v)?;
@@ -141,8 +145,8 @@ pub fn call(name: &str, v: &Value) -> Option<R<String>> {
                 }
             })
         })(),
-        _ => return None,
-    })
+        _ => Err(format!("the engine has no rule called {name:?}")),
+    }
 }
 
 fn number(n: f64) -> String {
@@ -183,7 +187,7 @@ fn runway_wind_of(i: In, v: &Value) -> R<RunwayWind> {
 }
 
 /// A runway's ends as [ident, true heading], either null.
-fn end_headings(i: In, v: &Value, key: &str) -> R<Vec<(Option<String>, Option<f64>)>> {
+pub(super) fn end_headings(i: In, v: &Value, key: &str) -> R<Vec<(Option<String>, Option<f64>)>> {
     i.list(v, key)?
         .iter()
         .map(|pair| match pair.as_array() {
@@ -206,15 +210,13 @@ fn end_headings(i: In, v: &Value, key: &str) -> R<Vec<(Option<String>, Option<f6
 
 /// A METAR's wind, None for none (null, missing or empty, as Python's
 /// truth takes it).
-fn reported(i: In, v: &Value, key: &str) -> R<Option<Reported>> {
+pub(super) fn reported(i: In, v: &Value, key: &str) -> R<Option<Reported>> {
     match i.obj(v, key)? {
-        Some(m @ Value::Object(members)) if !members.is_empty() => {
-            Ok(Some(Reported {
-                dir_true_deg: i.opt_num(m, "wind_dir_true_deg")?,
-                speed_kt: i.opt_num(m, "wind_speed_kt")?,
-                gust_kt: i.opt_num(m, "wind_gust_kt")?,
-            }))
-        }
+        Some(m @ Value::Object(members)) if !members.is_empty() => Ok(Some(Reported {
+            dir_true_deg: i.opt_num(m, "wind_dir_true_deg")?,
+            speed_kt: i.opt_num(m, "wind_speed_kt")?,
+            gust_kt: i.opt_num(m, "wind_gust_kt")?,
+        })),
         _ => Ok(None),
     }
 }
@@ -223,9 +225,7 @@ fn reported(i: In, v: &Value, key: &str) -> R<Option<Reported>> {
 /// calm one; None for none.
 fn recent(i: In, v: &Value) -> R<Option<(f64, f64)>> {
     match i.obj(v, "recent")? {
-        Some(r @ Value::Object(members)) if !members.is_empty() => {
-            Ok(Some((i.num(r, "wind_dir_true_deg")?, i.num(r, "wind_speed_kt")?)))
-        }
+        Some(r @ Value::Object(members)) if !members.is_empty() => Ok(Some((i.num(r, "wind_dir_true_deg")?, i.num(r, "wind_speed_kt")?))),
         _ => Ok(None),
     }
 }

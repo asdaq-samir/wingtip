@@ -15,6 +15,7 @@ navaid network, and DOF obstacle height/lighting data lets "tower"
 candidates be filtered to ones actually significant enough to matter
 from the air, rather than every generic man_made=tower OSM tag.
 """
+
 import numpy as np
 import pandas as pd
 import requests
@@ -30,11 +31,7 @@ OVERPASS_URL = "https://overpass-api.de/api/interpreter"
 # 504 Gateway Timeout for minutes at a time under load (a retrain's
 # collect step died that way three attempts running on 2026-09-21),
 # and the same query on a mirror usually goes through.
-OVERPASS_URLS = (
-    OVERPASS_URL,
-    "https://overpass.kumi.systems/api/interpreter",
-    "https://lz4.overpass-api.de/api/interpreter",
-)
+OVERPASS_URLS = (OVERPASS_URL, "https://overpass.kumi.systems/api/interpreter", "https://lz4.overpass-api.de/api/interpreter")
 
 # category -> (Overpass tag filter clause, predicate on the element's tags dict)
 # Each category is one entry, but its rule is written twice in it: as the
@@ -56,13 +53,8 @@ CANDIDATE_SPECS = {
     # intermittent!=yes excludes seasonal/dry water bodies -- not a
     # reliable visual checkpoint if it might be empty when you fly over.
     "lake_or_pond": (
-        '["natural"="water"]["intermittent"!="yes"]'
-        '["water"!~"^(river|stream|canal|ditch)$"]',
-        lambda t: (
-            t.get("natural") == "water"
-            and t.get("intermittent") != "yes"
-            and t.get("water") not in _RIVERINE_WATER
-        ),
+        '["natural"="water"]["intermittent"!="yes"]["water"!~"^(river|stream|canal|ditch)$"]',
+        lambda t: t.get("natural") == "water" and t.get("intermittent") != "yes" and t.get("water") not in _RIVERINE_WATER,
     ),
     "reservoir": (
         '["water"="reservoir"]["intermittent"!="yes"]',
@@ -133,8 +125,7 @@ def _post_overpass_query(query: str, retries: int = 3) -> dict:
         return resp.json()
 
     return with_retries(
-        attempt, describe="Overpass query", retries=retries, backoff_s=5.0,
-        transient=(requests.RequestException, ValueError),
+        attempt, describe="Overpass query", retries=retries, backoff_s=5.0, transient=(requests.RequestException, ValueError)
     )
 
 
@@ -350,15 +341,8 @@ def find_line_crossings(ways: list, route_start: tuple, route_end: tuple) -> pd.
             if (ct1 < 0) == (ct2 < 0):
                 continue
             t = abs(ct1) / (abs(ct1) + abs(ct2))
-            lat, lon = _lerp_point(
-                (geometry[i]["lat"], geometry[i]["lon"]),
-                (geometry[i + 1]["lat"], geometry[i + 1]["lon"]),
-                t,
-            )
-            if any(
-                distance_nm(lat, lon, kept_lat, kept_lon) < MIN_CROSSING_SEPARATION_NM
-                for kept_lat, kept_lon in crossings
-            ):
+            lat, lon = _lerp_point((geometry[i]["lat"], geometry[i]["lon"]), (geometry[i + 1]["lat"], geometry[i + 1]["lon"]), t)
+            if any(distance_nm(lat, lon, kept_lat, kept_lon) < MIN_CROSSING_SEPARATION_NM for kept_lat, kept_lon in crossings):
                 continue
             crossings.append((lat, lon))
 
@@ -394,9 +378,7 @@ def query_major_highways(bbox: tuple, retries: int = 3, timeout_s: int = 60) -> 
     min_lat, min_lon, max_lat, max_lon = bbox
     bbox_str = f"{min_lat},{min_lon},{max_lat},{max_lon}"
     query = (
-        f'[out:json][timeout:{timeout_s}];\n'
-        f'way["highway"~"^(motorway|trunk|primary|secondary)$"]({bbox_str});\n'
-        f"out body;\n>;\nout skel qt;"
+        f'[out:json][timeout:{timeout_s}];\nway["highway"~"^(motorway|trunk|primary|secondary)$"]({bbox_str});\nout body;\n>;\nout skel qt;'
     )
     elements = _post_overpass_query(query, retries).get("elements", [])
     highway_ways = [el for el in elements if el["type"] == "way"]
@@ -493,11 +475,7 @@ def query_wind_turbines(bbox: tuple, retries: int = 3, timeout_s: int = 60) -> p
     """
     min_lat, min_lon, max_lat, max_lon = bbox
     bbox_str = f"{min_lat},{min_lon},{max_lat},{max_lon}"
-    query = (
-        f'[out:json][timeout:{timeout_s}];\n'
-        f'node["power"="generator"]["generator:source"="wind"]({bbox_str});\n'
-        f"out;"
-    )
+    query = f'[out:json][timeout:{timeout_s}];\nnode["power"="generator"]["generator:source"="wind"]({bbox_str});\nout;'
     elements = _post_overpass_query(query, retries).get("elements", [])
     rows = [
         {"osm_id": el["id"], "lat": el["lat"], "lon": el["lon"], "name": el.get("tags", {}).get("name")}
@@ -522,18 +500,11 @@ def find_wind_farms(turbine_df: pd.DataFrame, cluster_distance_nm: float = 1.0) 
         return pd.DataFrame(columns=_WIND_FARM_COLUMNS)
 
     turbine_df = turbine_df.reset_index(drop=True)
-    turbine_df = turbine_df.assign(
-        cluster_id=cluster_points(turbine_df["lat"], turbine_df["lon"], cluster_distance_nm)
-    )
+    turbine_df = turbine_df.assign(cluster_id=cluster_points(turbine_df["lat"], turbine_df["lon"], cluster_distance_nm))
 
     rows = []
     for _, group in turbine_df.groupby("cluster_id"):
-        bounds = {
-            "minlat": group["lat"].min(),
-            "minlon": group["lon"].min(),
-            "maxlat": group["lat"].max(),
-            "maxlon": group["lon"].max(),
-        }
+        bounds = {"minlat": group["lat"].min(), "minlon": group["lon"].min(), "maxlat": group["lat"].max(), "maxlon": group["lon"].max()}
         names = group["name"].dropna()
         farm_name = names.mode().iloc[0] if not names.empty else f"Wind Farm ({len(group)} turbines)"
         rows.append(

@@ -7,6 +7,9 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
+import { MANIFEST } from "./vite-plugins/manifest.ts";
+import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
 
 // Under docker-compose.yml's web-build watch, VITE_PUBLISH_DIR names the
 // directory the gateway serves (apps/web/dist). A phone that loaded the
@@ -24,6 +27,7 @@ import { VitePWA } from "vite-plugin-pwa";
 // worker's precache is this build's files alone, since STAGING holds
 // nothing else. Unset (the image's build, CI), vite writes dist as usual.
 const publishDir = process.env.VITE_PUBLISH_DIR;
+
 const STAGING = ".dist-next";
 const PUBLISHED = ".published.json";
 const STALE_MS = 60 * 60 * 1000;
@@ -32,13 +36,14 @@ type Published = { files: string[]; replacedAt?: number }[];
 function filesUnder(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { recursive: true, withFileTypes: true })
-    .filter(e => e.isFile())
-    .map(e => relative(dir, join(e.parentPath, e.name)));
+    .filter((e) => e.isFile())
+    .map((e) => relative(dir, join(e.parentPath, e.name)));
 }
 
 // What a page asks for first goes in last: index.html names the entry
 // chunk, and the service worker names every file it precaches.
-const moveOrder = (file: string) => (file === "index.html" ? 2 : /^(sw\.js|registerSW\.js|manifest\.webmanifest|[^/]+\.html)$/.test(file) ? 1 : 0);
+const moveOrder = (file: string) =>
+  file === "index.html" ? 2 : /^(sw\.js|registerSW\.js|manifest\.webmanifest|[^/]+\.html)$/.test(file) ? 1 : 0;
 
 function publishBuild(staging: string, served: string, now = Date.now()) {
   const files = filesUnder(staging).sort((a, b) => moveOrder(a) - moveOrder(b));
@@ -46,16 +51,14 @@ function publishBuild(staging: string, served: string, now = Date.now()) {
   const ledger = join(served, PUBLISHED);
   // The first build into a directory without a ledger: whatever is there
   // is the build this one replaces.
-  let builds: Published = existsSync(ledger)
-    ? JSON.parse(readFileSync(ledger, "utf8"))
-    : [{ files: filesUnder(served) }];
+  let builds: Published = existsSync(ledger) ? JSON.parse(readFileSync(ledger, "utf8")) : [{ files: filesUnder(served) }];
   for (const file of files) {
     mkdirSync(dirname(join(served, file)), { recursive: true });
     renameSync(join(staging, file), join(served, file));
   }
   for (const build of builds) build.replacedAt ??= now;
-  builds = [...builds.filter(b => now - (b.replacedAt ?? now) < STALE_MS), { files }];
-  const keep = new Set(builds.flatMap(b => b.files));
+  builds = [...builds.filter((b) => now - (b.replacedAt ?? now) < STALE_MS), { files }];
+  const keep = new Set(builds.flatMap((b) => b.files));
   for (const file of filesUnder(served)) {
     if (file !== PUBLISHED && !keep.has(file)) rmSync(join(served, file));
   }
@@ -78,14 +81,16 @@ const publish: Plugin = {
   },
 };
 
-// The page reader's files (lib/readPage), from node_modules into the
+// The page reader's files (features/airplane/lib/readPage), from node_modules into the
 // build's tesseract/ under their own names, where tesseract.js asks for
 // them: its worker, its engine for each kind of WebAssembly a browser has
 // (it picks one), and its English (the integer "best" model, 2.9 MB).
 const require = createRequire(import.meta.url);
 const TESSERACT_FILES: [string, string][] = [
   ["worker.min.js", "tesseract.js/dist/worker.min.js"],
-  ...["lstm", "simd-lstm", "relaxedsimd-lstm"].map(k => [`tesseract-core-${k}.wasm.js`, `tesseract.js-core/tesseract-core-${k}.wasm.js`] as [string, string]),
+  ...["lstm", "simd-lstm", "relaxedsimd-lstm"].map(
+    (k) => [`tesseract-core-${k}.wasm.js`, `tesseract.js-core/tesseract-core-${k}.wasm.js`] as [string, string],
+  ),
   ["eng.traineddata.gz", "@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz"],
 ];
 const tesseractFiles: Plugin = {
@@ -95,24 +100,6 @@ const tesseractFiles: Plugin = {
     for (const [name, from] of TESSERACT_FILES) {
       this.emitFile({ type: "asset", fileName: `tesseract/${name}`, source: readFileSync(require.resolve(from)) });
     }
-  },
-};
-
-// The shared engine's WebAssembly (lib/engine), asked for by the page's
-// <head> as the scripts are: main.tsx waits for it before the first
-// render, and found only once the entry script ran it was a round trip
-// after the scripts instead of beside them. `crossorigin` as fetch()
-// asks it (same-origin, credentials), so the fetch takes the preload.
-const preloadEngine: Plugin = {
-  name: "preload-engine",
-  apply: "build",
-  transformIndexHtml: {
-    order: "post",
-    handler(_html, ctx) {
-      const file = Object.keys(ctx.bundle ?? {}).find(f => /(^|\/)wingtip-engine-[^/]*\.wasm$/.test(f));
-      if (!file) return [];
-      return [{ tag: "link", attrs: { rel: "preload", href: `/app/${file}`, as: "fetch", type: "application/wasm", crossorigin: "anonymous" }, injectTo: "head" }];
-    },
   },
 };
 
@@ -139,6 +126,7 @@ const markFromCache = {
 // front door on another port.
 export default defineConfig({
   plugins: [
+    warningsFail,
     publish,
     tesseractFiles,
     preloadEngine,
@@ -150,7 +138,9 @@ export default defineConfig({
     // Not the stock shadcn wrappers (components/ui), which hand their
     // props to Radix and gain nothing from a memo: 25.6 KB of the first
     // load, measured per file with and without it (the 20 Oct audit).
-    babel({ exclude: [/\/components\/ui\//], presets: [reactCompilerPreset()] }),
+    // node_modules named again: an exclude replaces the plugin's default,
+    // and without it the compiler ran over react-dom and MapLibre too.
+    babel({ exclude: [/[/\\]node_modules[/\\]/, /\/components\/ui\//], presets: [reactCompilerPreset()] }),
     tailwindcss(),
     // The app in the air: a service worker (Workbox, generated at
     // build) that keeps the app shell, every chart tile the map has
@@ -169,28 +159,7 @@ export default defineConfig({
       // latest build at once, not a question. The cost is a reload
       // under whoever is on the page at that moment.
       registerType: "autoUpdate",
-      manifest: {
-        // The name on the Home Screen is the short one: iOS cuts a long
-        // name under the icon.
-        name: "Wingtip Maps", short_name: "Wingtip",
-        description: "The map for flying: every airport and airspace on the chart, and the route, checkpoints and nav log when you go.",
-        start_url: "/app/plan", scope: "/app/", display: "standalone",
-        background_color: "#ffffff", theme_color: "#ffffff",
-        icons: [
-          // The app icon (docs/brand/appicon.svg) rendered to PNG: rounded
-          // for the installers that show it as it is (Android's 192 and
-          // 512), full bleed for the ones that mask it themselves (the
-          // maskable 512; iOS's 180, linked from index.html). Beside the
-          // manifest, under /app/ with the rest of the build: the page's
-          // own links get the base put in front of them (index.html), the
-          // manifest's do not, and "/icon-192.png" asked the server's root,
-          // which answered 401 -- no icon to install with, and an error
-          // in the console Lighthouse counts.
-          { src: "icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
-          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-          { src: "icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
-        ],
-      },
+      manifest: MANIFEST,
       workbox: {
         navigateFallback: "/app/index.html",
         navigateFallbackAllowlist: [/^\/app\//],
@@ -208,7 +177,11 @@ export default defineConfig({
         // only for a glyph they hold, the developer's pages (77 KB), and the
         // page reader's 15 MB (tesseract/), kept by tesseract.js itself.
         // Asked for when needed, as any request.
-        globIgnores: ["**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2", "**/{DevPanel,TrainWorkspace}-*.js", "tesseract/**"],
+        globIgnores: [
+          "**/inter-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2",
+          "**/{DevPanel,TrainWorkspace}-*.js",
+          "tesseract/**",
+        ],
         runtimeCaching: [
           {
             // Google's map tiles and its map services (OverlayTiles):
@@ -370,7 +343,8 @@ export default defineConfig({
             // asked again behind it, at the pilot's ask for a fast app:
             // a route opened again draws before the network answers.
             urlPattern: ({ url, request }) =>
-              request.method === "GET" && /^\/api\/planner\/(course|checkpoints|waypoints\/in-view|aircraft-profiles|chart)$/.test(url.pathname),
+              request.method === "GET" &&
+              /^\/api\/planner\/(course|checkpoints|waypoints\/in-view|aircraft-profiles|chart)$/.test(url.pathname),
             handler: "StaleWhileRevalidate",
             options: {
               cacheName: "planner-steady",
@@ -411,20 +385,26 @@ export default defineConfig({
     // the served directory from there whole (publishBuild, above).
     outDir: publishDir ? STAGING : "dist",
     emptyOutDir: true,
+    // A warning fails the build (vite-plugins/strictBuild.ts).
+    chunkSizeWarningLimit: CHUNK_SIZE_LIMIT,
     // The libraries in chunks of their own, so that a change to this
     // app's code (most deploys) leaves React, the map and the query
     // client with the same hashed names -- and so still in the
     // browser's cache, where WebMvcConfig lets hashed assets live for
     // a year.
-    rollupOptions: {
+    rolldownOptions: {
+      ...strictRolldown,
       output: {
-        manualChunks(id: string) {
-          // The map's engine (lib/map/gl), with the map's own chunk (routeMapChunk).
-          if (id.includes("node_modules/maplibre-gl/")) return "maplibre";
-          // TanStack's query client alone: its table (the nav log's and the
-          // kneeboard's, both lazy) stays with them, out of the first load.
-          if (/node_modules\/(react|react-dom|react-router|react-router-dom|@tanstack\/(react-query|query-core)|scheduler)\//.test(id)) return "react";
-          return undefined;
+        // Rolldown's groups, which replaced its deprecated manualChunks:
+        // each named chunk takes the modules its test matches.
+        codeSplitting: {
+          groups: [
+            // The map's engine (lib/map/gl), with the map's own chunk (routeMapChunk).
+            { name: "maplibre", test: /node_modules\/maplibre-gl\// },
+            // TanStack's query client alone: its table (the nav log's and the
+            // kneeboard's, both lazy) stays with them, out of the first load.
+            { name: "react", test: /node_modules\/(react|react-dom|react-router|@tanstack\/(react-query|query-core)|scheduler)\// },
+          ],
         },
       },
     },
@@ -460,7 +440,7 @@ export default defineConfig({
   test: {
     environment: "node",
     exclude: ["**/node_modules/**", "e2e/**"],
-    setupFiles: ["src/lib/engine/vitestSetup.ts", "src/test/guards.ts"],
+    setupFiles: ["src/test/storage.ts", "src/test/animations.ts", "src/lib/engine/vitestSetup.ts", "src/test/guards.ts"],
     sequence: { shuffle: true },
     dangerouslyIgnoreUnhandledErrors: false,
   },

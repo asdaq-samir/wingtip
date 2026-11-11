@@ -1,0 +1,219 @@
+{
+  "title": "RouteOptionsInput",
+  "type": "object",
+  "properties": {
+    "dep": {
+      "$ref": "#/definitions/RouteOptionsEnd"
+    },
+    "dest": {
+      "$ref": "#/definitions/RouteOptionsEnd"
+    },
+    "profile": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/RouteOptionsProfile"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The airplane; missing or null for none picked: the ways are then costed in still air, with no minutes, fuel or fuel stops."
+    },
+    "depart_s": {
+      "type": "number"
+    },
+    "now_s": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "min_ceiling_ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "min_visibility_sm": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "current": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "number"
+        },
+        "minItems": 2,
+        "maxItems": 2
+      }
+    },
+    "current_idents": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "current_landed": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "boolean"
+      }
+    },
+    "filed": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "points": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "idents": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "points",
+        "idents"
+      ]
+    },
+    "night": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "Night at either end (14 CFR 91.151's 45 minutes) as the host judged it; missing or null, the engine judges it over the flight's window (sun.rs)."
+    },
+    "terrain_ft": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "number"
+      }
+    },
+    "water_far": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "tafs": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/RouteOptionsReport"
+      }
+    },
+    "metars": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/RouteOptionsReport"
+      }
+    },
+    "sigmets": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/RouteOptionsAdvisory"
+      }
+    },
+    "gairmets": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/RouteOptionsAdvisory"
+      }
+    },
+    "sua": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/RouteOptionsArea"
+      }
+    },
+    "tfrs": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/RouteOptionsArea"
+      }
+    },
+    "winds": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/RouteOptionsStation"
+      }
+    },
+    "fields": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/RouteOptionsField"
+      }
+    },
+    "food": {
+      "type": [
+        "boolean",
+        "null"
+      ]
+    },
+    "fixes": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "$ref": "#/definitions/RouteOptionsFix"
+      }
+    }
+  },
+  "required": [
+    "dep",
+    "dest",
+    "depart_s"
+  ]
+}

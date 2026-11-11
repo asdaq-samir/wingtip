@@ -13,14 +13,15 @@ options:
   generateEmptyDirectories: true
 settings:
   base:
-    # Swift 5 language mode under the Swift 6 compiler, with the compiler's
-    # complete concurrency checking on (Apple's direction for new code,
-    # where a data race is a diagnostic): in this mode the checks are
-    # warnings, which CI's log shows; the language mode goes to 6, where
-    # they are errors, once a run is clean (the owner's ask, 2026-11-03,
-    # after the review of the app against Apple's guidance).
-    SWIFT_VERSION: "5.0"
+    # Swift 6 language mode with complete concurrency checking, where a
+    # data race is a compile error (Apple's direction for new code; the
+    # owner's ask, 2026-11-03, made so once a run was clean, 2026-11-09).
+    SWIFT_VERSION: "6.0"
     SWIFT_STRICT_CONCURRENCY: complete
+    # No warnings anywhere: every target's warning is an error (the owner,
+    # 2026-11-09), Swift's and clang's alike, so none piles up unread.
+    SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
+    GCC_TREAT_WARNINGS_AS_ERRORS: YES
     # Every Text and LocalizedStringResource gathered into the string
     # catalog (Wingtip/Localizable.xcstrings) at build, Apple's way of
     # localising since Xcode 15: English today, another language a column.
@@ -65,7 +66,15 @@ targets:
         CFBundleDisplayName: Wingtip Maps
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
-        UILaunchScreen: {}
+        # The launch screen: the mark on the app's own ground, light or
+        # dark with the phone, as Apple asks a launch screen to look like
+        # the first screen rather than a splash (HIG, Launching). Both are
+        # drawn by scripts/build/app-icons.sh from docs/brand/mark.svg and
+        # design/tokens.json's color.brand.launch and launch-night.
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+          UIImageName: LaunchMark
+          UIImageRespectsSafeAreaInsets: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
@@ -79,16 +88,32 @@ targets:
         WingtipHost: $(WINGTIP_HOST)
         NSLocationWhenInUseUsageDescription: Wingtip Maps shows your airplane on the chart and plans from where you are.
         # A clearance read on the radio, heard by Apple's recognizer on the
-        # phone where it can be (ClearanceListener).
-        NSMicrophoneUsageDescription: Wingtip Maps listens to the radio to show what ATC says, tell you when ATC calls you, and enter a clearance's route for you to check.
-        NSSpeechRecognitionUsageDescription: Wingtip Maps turns what ATC says on the radio into words, on your iPhone where it can.
+        # iPhone only (ClearanceListener's requiresOnDeviceRecognition); where
+        # it cannot be, voice is not offered and neither is asked for.
+        NSMicrophoneUsageDescription: Wingtip Maps listens to the radio to show what ATC says, tell you when ATC calls you, and enter a clearance's route for you to check. Nothing it hears is recorded or sent.
+        NSSpeechRecognitionUsageDescription: Wingtip Maps turns what ATC says on the radio into words on your iPhone. Speech is recognised on the device and never leaves it.
+        # A page photographed with the document camera (Documents/
+        # DocumentScanner): a handbook's performance or weight and balance
+        # page, a paper logbook page or a clearance copied down, read for
+        # the pilot to confirm item by item. The photo library is reached
+        # through the system's picker, which needs no permission.
+        NSCameraUsageDescription: Wingtip Maps photographs a handbook page, a logbook page or a clearance you wrote down, to read its figures for you to check.
         # The radio heard on with the phone locked, as the owner asked
         # (2026-11-02): the microphone kept open (ClearanceListener); and
         # the position read on while the airplane is flying (OwnShip),
         # for the alerts ahead and the path flown (OwnTrail); and CloudKit's
         # silent pushes, so another device's records (Records) sync before
-        # the app is opened.
-        UIBackgroundModes: [audio, location, remote-notification]
+        # the app is opened; and iOS's background refresh, for the route's
+        # weather watched after the Brief (WeatherWatch, its one task).
+        UIBackgroundModes: [audio, location, remote-notification, fetch]
+        BGTaskSchedulerPermittedIdentifiers: [app.wingtipmaps.weather-watch]
+        # Apple's Private Cloud Compute as the AI's fallback after the
+        # on-device model (AppleModels, the owner's "Yes to AI cloud",
+        # 2026-11-09). NO until Apple assigns the account the Private Cloud
+        # Compute entitlement (developer.apple.com/private-cloud-compute:
+        # the Small Business Program, under 2 million first-time
+        # downloads); then YES, with the entitlement in Wingtip.entitlements.
+        WingtipPrivateCloudCompute: false
         NSLocalNetworkUsageDescription: With Traffic on, Wingtip Maps listens on the cockpit's Wi-Fi for an ADS-B receiver (Stratux, SkyEcho, Sentry).
         # A flight in progress on the Lock Screen and in the Dynamic Island
         # (FlightActivity, the WingtipWidgets extension): the next
@@ -98,7 +123,16 @@ targets:
         # A track file (GPX, KML) opened from Files or Mail is flown again
         # on the map (Links, RootView): the app is a viewer of both, so
         # they show it in Open In; the types declared here, as neither
-        # is a system one.
+        # is a system one. A file is read once and flown, never edited
+        # where it lies, so it is opened as a copy, not in place (what iOS
+        # did with the key unset; set to say so, as the build asks).
+        LSSupportsOpeningDocumentsInPlace: false
+        # The app's own scheme, wingtipmaps://plan?open=<screen>, for a
+        # Shortcut or another app to open a screen (design/screens.json);
+        # the site's address opens the same screens as a universal link.
+        CFBundleURLTypes:
+          - CFBundleURLName: app.wingtipmaps.screens
+            CFBundleURLSchemes: [wingtipmaps]
         CFBundleDocumentTypes:
           - CFBundleTypeName: GPS Exchange Format
             CFBundleTypeRole: Viewer
@@ -108,6 +142,23 @@ targets:
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate
             LSItemContentTypes: [com.google.earth.kml]
+          # The app's own flight file (FlightFile, Save as File): opened
+          # from Files, AirDrop or Mail into the Shared Flight preview,
+          # never planned without the pilot's Use This Plan.
+          - CFBundleTypeName: Wingtip Flight
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Owner
+            LSItemContentTypes: [app.wingtipmaps.flight]
+        # The Wingtip flight file, the type this app owns and exports
+        # (UTType.wingtipFlight): JSON holding the shared flight's plain
+        # link and the nav log.
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: app.wingtipmaps.flight
+            UTTypeDescription: Wingtip Flight
+            UTTypeConformsTo: [public.json, public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [wingtip]
+              public.mime-type: [application/vnd.wingtipmaps.flight+json]
         UTImportedTypeDeclarations:
           - UTTypeIdentifier: com.topografix.gpx
             UTTypeDescription: GPS Exchange Format
@@ -143,9 +194,11 @@ targets:
         # iOS 15 and later want this entitlement for it.
         com.apple.developer.usernotifications.time-sensitive: true
         # The Home Screen widgets' snapshot of the next flight (WidgetFeed,
-        # FlightWidget in WingtipWidgets): one App Group the app writes and
-        # the extension reads, which the owner turns on for both app ids in
-        # the developer account.
+        # FlightWidget in WingtipWidgets), the saved flights and fields their
+        # settings offer (WidgetStore), and the gateway session's cookies
+        # the Currency Status widget reads with: one App Group the app
+        # writes and the extension reads, which the owner turns on for both
+        # app ids in the developer account.
         com.apple.security.application-groups: [group.app.wingtipmaps]
     settings:
       base:
@@ -153,6 +206,9 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: NO
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        # No global accent colour: the system's own (systemBlue) is the
+        # Native look's, and the brand looks set theirs at the root at run
+        # time (Look.swift's lookTint: SwiftUI's tint and the window's).
         ENABLE_USER_SCRIPT_SANDBOXING: NO
   # The Live Activity (WingtipWidgets/WingtipWidgets.swift): a flight in
   # progress on the Lock Screen and in the Dynamic Island, drawn by this
@@ -165,6 +221,16 @@ targets:
       - path: WingtipWidgets
         excludes: ["Info.plist", "WingtipWidgets.entitlements"]
       - path: Wingtip/Shared
+      # The design tokens (scripts/build/design-tokens.sh): the flight
+      # categories' colours, the same as the app's.
+      - path: Wingtip/Design/Generated/Tokens.swift
+      # The tokens' inks as SwiftUI colours, and every figure written as
+      # the app writes it (formats.json): the Live Activity's words.
+      - path: Wingtip/Design/Ink.swift
+      - path: Wingtip/Format/Format.swift
+      # The gateway's host, for the weather and currency widgets' own asks
+      # (WidgetFetch), read from this extension's Info.plist (WingtipHost).
+      - path: Wingtip/Config.swift
     entitlements:
       path: WingtipWidgets/WingtipWidgets.entitlements
       properties:
@@ -173,6 +239,7 @@ targets:
       path: WingtipWidgets/Info.plist
       properties:
         CFBundleDisplayName: Wingtip Maps
+        WingtipHost: $(WINGTIP_HOST)
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
@@ -208,6 +275,10 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: $(WINGTIP_BUNDLE_ID).watchkitapp
         GENERATE_INFOPLIST_FILE: NO
+        # The small master on the chart's green (WingtipWatch/Assets.xcassets,
+        # scripts/build/app-icons.sh): the watch draws its icon small and
+        # round, where the full icon's lake and road are lost.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SKIP_INSTALL: YES
         TARGETED_DEVICE_FAMILY: "4"
   WingtipWatchTests:
@@ -273,6 +344,19 @@ schemes:
         WINGTIP_HOST: $(WINGTIP_HOST)
     archive:
       config: Release
+  # The app and its unit tests alone, for a pull request (native-ios.yml's
+  # unit_only): -only-testing:WingtipTests on the Wingtip scheme still
+  # compiled and linked WingtipUITests (run 42929115521), which no pull
+  # request runs. Same targets otherwise, so the DerivedData is shared.
+  WingtipUnit:
+    build:
+      targets:
+        Wingtip: all
+        WingtipWidgets: all
+        WingtipTests: [test]
+    test:
+      config: Debug
+      targets: [WingtipTests]
   # The watch app on its own, for a watch simulator paired with an iPhone
   # one (xcodebuild -destination "platform=watchOS Simulator,name=…");
   # the Wingtip scheme builds it as the app's embedded companion.

@@ -1,9 +1,9 @@
 [package]
 name = "wingtip-route"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 publish = false
-description = "The route and what flies it: the pilot's own points, holds and procedures picked, the things that move (traffic, the glide, the profile and its dry run, a flown track) and instrument approaches taught and debriefed"
+description = "The route and what flies it: the pilot's own points, holds and procedures picked, the ways to fly it (route options, fuel stops, ways round high ground and Class B), the things that move (traffic, the glide, the profile and its dry run, a flown track) and instrument approaches taught and debriefed"
 
 [lib]
 name = "wingtip_route"
@@ -12,4 +12,17 @@ name = "wingtip_route"
 # plain Rust, so the phones carry it as it is.
 [dependencies]
 wingtip-core = { path = "../core" }
+wingtip-flight = { path = "../flight" }
+wingtip-weather = { path = "../weather", optional = true }
 wingtip-procedures = { path = "../procedures" }
+
+# Route options (route::options, and the weather it reads onto its grid)
+# are the planner's alone: the web never asks them, and they were 153 KB
+# of the .wasm (771 to 924 KB, #482 phase 5), so the wasm build
+# (bindings/wasm) leaves them out.
+[features]
+default = ["options"]
+options = ["dep:wingtip-weather"]
+
+[lints]
+workspace = true

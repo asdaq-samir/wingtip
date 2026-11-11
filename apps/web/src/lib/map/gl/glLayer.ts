@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, type ReactNode, useEffectEvent } from "react";
 import { prefersReducedMotion } from "../../motion";
 import type { GeoJSONSource, LayerSpecification, Map as MlMap, MapGeoJSONFeature, MapMouseEvent, SourceSpecification } from "maplibre-gl";
 
@@ -39,15 +39,14 @@ export interface GlMapApi {
   /** A tap on the chart itself, nothing within reach: what puts a card
    *  away (an airport's, which the page holds). */
   addMiss: (miss: (event: MapMouseEvent) => void) => () => void;
-  /** A card in the map's sheet (SheetCard), as a tap on the Leaflet map
-   *  opens one; null puts it away. */
+  /** A card in the map's sheet (SheetCard), for what a tap on the map
+   *  opens; null puts it away. */
   openCard: (card: ReactNode | null) => void;
-  /** Whether the cycle's overlay tiles are in the map's first style
-   *  (glOverlays): its airspace, airports, navaids, fixes and runways
-   *  drawn per tile from the archive, so a layer of them asks the planner
-   *  nothing for the view and only adds its taps, its filters and its
-   *  probes; none where the planner has no archive, and each asks the
-   *  in-view endpoints as before. */
+  /** Whether the map has the cycle's overlay tiles (glOverlays): its
+   *  airspace, airports, navaids, fixes and runways drawn per tile from
+   *  the archive, a layer of them adding only its taps, its filters and
+   *  its probes. False until the archive's name has come (the planner
+   *  builds it once a cycle); the layers draw nothing till then. */
   overlays: boolean;
 }
 
@@ -67,7 +66,7 @@ const unclaimed = new WeakMap<MlMap, Set<string>>();
 const parked = new WeakSet<MlMap>();
 const addedOf = (map: MlMap) => {
   let kept = added.get(map);
-  if (!kept) added.set(map, kept = new Map());
+  if (!kept) added.set(map, (kept = new Map()));
   return kept;
 };
 
@@ -117,14 +116,16 @@ export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecificati
     const kept = addedOf(map);
     const left = unclaimed.get(map);
     for (const [id, source] of Object.entries(sources)) {
-      const key = `s:${id}`, as = JSON.stringify(source);
+      const key = `s:${id}`,
+        as = JSON.stringify(source);
       if (map.getSource(id) && kept.has(key) && kept.get(key) !== as) removeSource(map, id);
       if (!map.getSource(id)) map.addSource(id, source);
       kept.set(key, as);
       left?.delete(key);
     }
     for (const layer of layers) {
-      const key = `l:${layer.id}`, as = JSON.stringify(layer);
+      const key = `l:${layer.id}`,
+        as = JSON.stringify(layer);
       if (map.getLayer(layer.id) && kept.get(key) !== as) map.removeLayer(layer.id);
       if (!map.getLayer(layer.id)) map.addLayer(layer, under && map.getLayer(under) ? under : slotId(slot));
       kept.set(key, as);
@@ -148,12 +149,15 @@ export function useGlLayer(slot: Slot, sources: Record<string, SourceSpecificati
 
 /** How long a layer of what changes over the chart -- weather, traffic,
  *  TFRs -- takes to fade in as its first data comes, rather than snap on. */
-export const FADE_IN_MS = 250;
+const FADE_IN_MS = 250;
 
 /** Each layer type's opacities, the paint a fade sets. */
 const OPACITIES: Partial<Record<LayerSpecification["type"], string[]>> = {
-  fill: ["fill-opacity"], line: ["line-opacity"], circle: ["circle-opacity", "circle-stroke-opacity"],
-  symbol: ["icon-opacity", "text-opacity"], raster: ["raster-opacity"],
+  fill: ["fill-opacity"],
+  line: ["line-opacity"],
+  circle: ["circle-opacity", "circle-stroke-opacity"],
+  symbol: ["icon-opacity", "text-opacity"],
+  raster: ["raster-opacity"],
 };
 
 /** The layers (useGlLayer's, called before this) clear as they are added,
@@ -169,7 +173,8 @@ export function useGlFadeIn(layers: LayerSpecification[], shown: boolean) {
     const each = (paint: (id: string, prop: string, to: unknown) => void) => {
       for (const layer of spec.current) {
         if (!map.getLayer(layer.id)) continue;
-        for (const prop of OPACITIES[layer.type] ?? []) paint(layer.id, prop, (layer.paint as Record<string, unknown> | undefined)?.[prop] ?? 1);
+        for (const prop of OPACITIES[layer.type] ?? [])
+          paint(layer.id, prop, (layer.paint as Record<string, unknown> | undefined)?.[prop] ?? 1);
       }
     };
     const set = (id: string, k: string, v: unknown) => map.setPaintProperty(id, k as Parameters<MlMap["setPaintProperty"]>[1], v as never);
@@ -190,7 +195,9 @@ export function useGlFadeIn(layers: LayerSpecification[], shown: boolean) {
       // Drawn clear once before the fade, or MapLibre has nothing to ease from.
       if (shown) {
         map.once("render", fade);
-        return () => { map.off("render", fade); };
+        return () => {
+          map.off("render", fade);
+        };
       }
     }
     if (shown) fade();
@@ -209,42 +216,40 @@ export function useGlData(source: string, data: GeoJSON.GeoJSON | null) {
 export function useGlPaint(layers: string[], paint: Record<string, unknown>) {
   const { map } = useGlMap();
   const key = JSON.stringify(paint);
+  const ids = layers.join();
   useEffect(() => {
     const values = JSON.parse(key) as Record<string, unknown>;
-    for (const id of layers) {
+    for (const id of ids.split(",")) {
       if (!map.getLayer(id)) continue;
       for (const [k, v] of Object.entries(values)) map.setPaintProperty(id, k as Parameters<MlMap["setPaintProperty"]>[1], v as never);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- by value
-  }, [map, key, layers.join()]);
+    // By value: the paint by its JSON, the layers by their names.
+  }, [map, key, ids]);
 }
 
 /** A tap on this layer's features while mounted; the handler is read at
  *  the tap, so a new one each render costs nothing. */
 export function useGlTap(layers: string[], reach: number, rank: number, onTap: GlTap["onTap"]) {
   const { addTap } = useGlMap();
-  const handler = useRef(onTap);
-  useEffect(() => { handler.current = onTap; });
+  const handler = useEffectEvent(onTap);
   const ids = layers.join();
-  useEffect(() => addTap({ layers: ids.split(","), reach, rank, onTap: (f, e) => handler.current(f, e) }), [addTap, ids, reach, rank]);
+  useEffect(() => addTap({ layers: ids.split(","), reach, rank, onTap: (f, e) => handler(f, e) }), [addTap, ids, reach, rank]);
 }
 
 /** A tap on the chart that found nothing, while mounted. */
 export function useGlMiss(onMiss: (event: MapMouseEvent) => void) {
   const { addMiss } = useGlMap();
-  const handler = useRef(onMiss);
-  useEffect(() => { handler.current = onMiss; });
-  useEffect(() => addMiss(e => handler.current(e)), [addMiss]);
+  const handler = useEffectEvent(onMiss);
+  useEffect(() => addMiss((e) => handler(e)), [addMiss]);
 }
 
 export const EMPTY: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 /** A picture that stretches to fit its text (icon-text-fit), its corners
  *  `inset` px each way kept as drawn. */
-export interface Stretch { inset: number }
-
-/** The images each map has, or is drawing, by id. */
-const images = new WeakMap<MlMap, Map<string, Promise<void>>>();
+export interface Stretch {
+  inset: number;
+}
 
 /** A picture ready for addImage: drawn, and its density and stretch. */
 export interface DrawnImage {
@@ -257,10 +262,12 @@ export interface DrawnImage {
  *  cannot be drawn. */
 export function drawSvg(svg: string, stretch?: Stretch): Promise<DrawnImage | null> {
   const ratio = Math.max(1, Math.min(3, Math.ceil(window.devicePixelRatio || 1)));
-  return new Promise(resolve => {
-    const w = Number(/width="([\d.]+)"/.exec(svg)?.[1] ?? 24), h = Number(/height="([\d.]+)"/.exec(svg)?.[1] ?? 24);
+  return new Promise((resolve) => {
+    const w = Number(/width="([\d.]+)"/.exec(svg)?.[1] ?? 24),
+      h = Number(/height="([\d.]+)"/.exec(svg)?.[1] ?? 24);
     const sized = svg
-      .replace(`width="${w}"`, `width="${w * ratio}"`).replace(`height="${h}"`, `height="${h * ratio}"`)
+      .replace(`width="${w}"`, `width="${w * ratio}"`)
+      .replace(`height="${h}"`, `height="${h * ratio}"`)
       .replace(/^<svg (?!xmlns)/, `<svg xmlns="http://www.w3.org/2000/svg" `);
     const image = new Image(w * ratio, h * ratio);
     image.onload = () => {
@@ -278,29 +285,4 @@ export function drawSvg(svg: string, stretch?: Stretch): Promise<DrawnImage | nu
     image.onerror = () => resolve(null);
     image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(sized)}`;
   });
-}
-
-/**
- * The marks' pictures from their own SVG markup -- the same markup the
- * Leaflet map's markers and canvases draw (airportMark, icons) -- drawn
- * once each at the screen's density and given to the map by id, for a
- * symbol layer's `icon-image`. Settles once every one is in, so a layer
- * gives its features after their pictures (a feature drawn before its
- * picture is in is left without it until its tile is laid out again).
- */
-export function addSvgImages(map: MlMap, wanted: Iterable<[id: string, svg: () => string, stretch?: Stretch]>): Promise<void> {
-  let kept = images.get(map);
-  if (!kept) images.set(map, kept = new Map());
-  const waits: Promise<void>[] = [];
-  for (const [id, svg, stretch] of wanted) {
-    let wait = kept.get(id);
-    if (!wait) {
-      wait = drawSvg(svg(), stretch).then(drawn => {
-        if (drawn && map.style && !map.hasImage(id)) map.addImage(id, drawn.image, drawn.options);
-      });
-      kept.set(id, wait);
-    }
-    waits.push(wait);
-  }
-  return Promise.all(waits).then(() => {});
 }

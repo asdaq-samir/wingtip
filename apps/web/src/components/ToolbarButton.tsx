@@ -1,7 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "cn";
 import { Button } from "./ui/button";
-import { EXPANDED_BUTTON } from "../lib/expandedButton";
+import { EXPANDED_BUTTON } from "./expandedButton";
 
 /**
  * A drawer header's action: its icon with a short word under it, as an
@@ -13,11 +13,13 @@ import { EXPANDED_BUTTON } from "../lib/expandedButton";
  * DropdownMenuTrigger `asChild` outside it, `ref` and every other prop
  * on the button; ringed while what it opened is open.
  */
-export default function ToolbarButton({ icon, text, label, className, ...props }: ComponentProps<typeof Button> & {
-  icon: ReactNode;
-  text: string;
-  label?: string;
-}) {
+export default function ToolbarButton({
+  icon,
+  text,
+  label,
+  className,
+  ...props
+}: ComponentProps<typeof Button> & { icon: ReactNode; text: string; label?: string }) {
   return (
     <Button
       variant="ghost"
@@ -30,7 +32,7 @@ export default function ToolbarButton({ icon, text, label, className, ...props }
         // To a finger too, as an iOS tab bar's words are (10), where a
         // button's own words are 17 there -- and there on iOS's leading
         // for 11, 13, where the mouse's stays tight under the icon.
-        "h-auto min-w-11 flex-col gap-0.5 px-1.5 py-1 text-[0.6875rem] pointer-coarse:text-[0.6875rem] leading-none pointer-coarse:leading-[0.8125rem] font-medium [&_svg:not([class*='size-'])]:size-5",
+        "h-auto min-w-11 flex-col gap-0.5 px-1.5 py-1 text-(length:--type-caption) pointer-coarse:text-(length:--type-caption) leading-none pointer-coarse:leading-[0.8125rem] font-medium [&_svg:not([class*='size-'])]:size-5",
         EXPANDED_BUTTON,
         className,
       )}

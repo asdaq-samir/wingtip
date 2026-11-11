@@ -18,9 +18,9 @@ struct ReplaySection: View {
     var body: some View {
         @Bindable var replay = replay
         Section {
-            HStack(spacing: 12) {
+            HStack(spacing: WingtipSpace.md) {
                 Button { replay.playing ? replay.pause() : play() } label: {
-                    Image(systemName: replay.playing ? "pause.fill" : "play.fill").frame(width: 32, height: 32)
+                    Image(systemName: replay.playing ? "pause.fill" : "play.fill").symbolSwap().frame(width: 32, height: 32)
                         // The 44-point hit area round the 32-point glyph, which does not grow.
                         .contentShape(Rectangle().inset(by: -6))
                 }
@@ -29,18 +29,14 @@ struct ReplaySection: View {
                     Image(systemName: "stop.fill").frame(width: 32, height: 32)
                         .contentShape(Rectangle().inset(by: -6))
                 }
-                    .disabled(replay.at == nil)
-                    .accessibilityLabel("Stop the replay")
+                .disabled(replay.at == nil)
+                .accessibilityLabel("Stop the replay")
                 Spacer()
-                // A discrete setting: a segmented control, not a slider.
-                Picker("Replay speed", selection: $replay.speed) {
-                    ForEach(Replay.speeds, id: \.self) { Text("\(Int($0))×").tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .frame(maxWidth: 180)
+                // A discrete setting, the dry run's own control.
+                SpeedPicker(name: "Replay speed", speed: $replay.speed)
             }
             .buttonStyle(.borderless)
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                 HStack {
                     Text(replay.here.map { Self.clock($0.t) } ?? "Altitude, ft · ground speed, kt").foregroundStyle(.secondary)
                     Spacer()
@@ -77,8 +73,8 @@ struct ReplaySection: View {
     /// "3,000 ft · 108 kt · NE", as the web app's replay says it: the height
     /// to the 100 ft, as the map's airplane carries it.
     static func figures(_ here: Replay.Point) -> String {
-        let height = here.altFt.map { "\((Int(($0 / 100).rounded()) * 100).formatted()) ft" } ?? "—"
-        let speed = here.gsKt.map { "\(Int($0.rounded())) kt" } ?? "—"
+        let height = Format.altitude(here.altFt.map { ($0 / 100).rounded() * 100 })
+        let speed = Format.speed(here.gsKt)
         let heading = here.trackDeg.map { " · " + AirportWords.compassPoint($0) } ?? ""
         return "\(height) · \(speed)\(heading)"
     }

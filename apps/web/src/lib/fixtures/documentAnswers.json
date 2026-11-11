@@ -1,0 +1,1805 @@
+{
+ "about": "What POST /api/read-document answers (the assistant's DocumentRead) for documents.json's pages, the engine's checks computed by the engine itself: for the apps' tests of their review screens, which decode these as the server sends them. Regenerate after a rule changes.",
+ "handbook": {
+  "kind": "poh-performance",
+  "model": "claude-opus-5-5",
+  "handbook": {
+   "speed_unit": "kt",
+   "cruise_speed_kind": "tas",
+   "distance_unit": "ft",
+   "weight_unit": "lb",
+   "arm_unit": "in",
+   "fuel_unit": "gal",
+   "burn_unit": "gph",
+   "cruise": [
+    {
+     "altitude_ft": 4000,
+     "power_pct": 65,
+     "rpm": 2450,
+     "tas": 110,
+     "burn": 8.6
+    },
+    {
+     "altitude_ft": 6000,
+     "power_pct": 55,
+     "rpm": 2300,
+     "tas": 104,
+     "burn": 7.4
+    },
+    {
+     "altitude_ft": 6000,
+     "power_pct": 65,
+     "rpm": 2450,
+     "tas": 113,
+     "burn": 8.5
+    },
+    {
+     "altitude_ft": 6000,
+     "power_pct": 75,
+     "rpm": 2600,
+     "tas": 120,
+     "burn": 9.6
+    },
+    {
+     "altitude_ft": 8000,
+     "power_pct": 65,
+     "rpm": 2500,
+     "tas": 116,
+     "burn": 8.4
+    }
+   ],
+   "climb": {
+    "speed": 74,
+    "rate_fpm": 700,
+    "burn": 11
+   },
+   "glide": {
+    "speed": 68,
+    "ratio": 9
+   },
+   "takeoff": [
+    {
+     "pressure_altitude_ft": 0,
+     "temp_c": 0,
+     "ground_roll": 845,
+     "over_obstacle": 1510
+    },
+    {
+     "pressure_altitude_ft": 0,
+     "temp_c": 20,
+     "ground_roll": 935,
+     "over_obstacle": 1665
+    },
+    {
+     "pressure_altitude_ft": 2000,
+     "temp_c": 0,
+     "ground_roll": 1010,
+     "over_obstacle": 1805
+    }
+   ],
+   "landing": [
+    {
+     "pressure_altitude_ft": 0,
+     "temp_c": 0,
+     "ground_roll": 545,
+     "over_obstacle": 1290
+    },
+    {
+     "pressure_altitude_ft": 0,
+     "temp_c": 20,
+     "ground_roll": 585,
+     "over_obstacle": 1335
+    }
+   ],
+   "empty": {
+    "weight": 1680,
+    "arm": 39.5,
+    "moment": 66.36,
+    "moment_divisor": 1000
+   },
+   "max_takeoff_weight": 2450,
+   "envelope": [
+    {
+     "arm": 35,
+     "weight": 1500
+    },
+    {
+     "arm": 35,
+     "weight": 1950
+    },
+    {
+     "arm": 41,
+     "weight": 2450
+    },
+    {
+     "arm": 47.3,
+     "weight": 2450
+    },
+    {
+     "arm": 47.3,
+     "weight": 1500
+    },
+    {
+     "arm": 35,
+     "weight": 1500
+    }
+   ],
+   "fuel": {
+    "total": 56,
+    "usable": 53
+   }
+  },
+  "handbook_check": {
+   "items": [
+    {
+     "key": "cruise.0",
+     "group": "cruise",
+     "title": "4,000 ft, 65%",
+     "figures": [
+      {
+       "path": "cruise.0.altitude_ft",
+       "label": "Pressure altitude",
+       "value": 4000.0,
+       "unit": "ft",
+       "app_value": 4000.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "cruise.0.power_pct",
+       "label": "Power",
+       "value": 65.0,
+       "unit": "%",
+       "app_value": 65.0,
+       "app_unit": "%"
+      },
+      {
+       "path": "cruise.0.rpm",
+       "label": "RPM",
+       "value": 2450.0,
+       "unit": "rpm",
+       "app_value": 2450.0,
+       "app_unit": "rpm"
+      },
+      {
+       "path": "cruise.0.tas",
+       "label": "True airspeed",
+       "value": 110.0,
+       "unit": "kt",
+       "app_value": 110.0,
+       "app_unit": "kt"
+      },
+      {
+       "path": "cruise.0.burn",
+       "label": "Fuel burn",
+       "value": 8.6,
+       "unit": "gph",
+       "app_value": 8.6,
+       "app_unit": "gph"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "cruise.1",
+     "group": "cruise",
+     "title": "6,000 ft, 55%",
+     "figures": [
+      {
+       "path": "cruise.1.altitude_ft",
+       "label": "Pressure altitude",
+       "value": 6000.0,
+       "unit": "ft",
+       "app_value": 6000.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "cruise.1.power_pct",
+       "label": "Power",
+       "value": 55.0,
+       "unit": "%",
+       "app_value": 55.0,
+       "app_unit": "%"
+      },
+      {
+       "path": "cruise.1.rpm",
+       "label": "RPM",
+       "value": 2300.0,
+       "unit": "rpm",
+       "app_value": 2300.0,
+       "app_unit": "rpm"
+      },
+      {
+       "path": "cruise.1.tas",
+       "label": "True airspeed",
+       "value": 104.0,
+       "unit": "kt",
+       "app_value": 104.0,
+       "app_unit": "kt"
+      },
+      {
+       "path": "cruise.1.burn",
+       "label": "Fuel burn",
+       "value": 7.4,
+       "unit": "gph",
+       "app_value": 7.4,
+       "app_unit": "gph"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "cruise.2",
+     "group": "cruise",
+     "title": "6,000 ft, 65%",
+     "figures": [
+      {
+       "path": "cruise.2.altitude_ft",
+       "label": "Pressure altitude",
+       "value": 6000.0,
+       "unit": "ft",
+       "app_value": 6000.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "cruise.2.power_pct",
+       "label": "Power",
+       "value": 65.0,
+       "unit": "%",
+       "app_value": 65.0,
+       "app_unit": "%"
+      },
+      {
+       "path": "cruise.2.rpm",
+       "label": "RPM",
+       "value": 2450.0,
+       "unit": "rpm",
+       "app_value": 2450.0,
+       "app_unit": "rpm"
+      },
+      {
+       "path": "cruise.2.tas",
+       "label": "True airspeed",
+       "value": 113.0,
+       "unit": "kt",
+       "app_value": 113.0,
+       "app_unit": "kt"
+      },
+      {
+       "path": "cruise.2.burn",
+       "label": "Fuel burn",
+       "value": 8.5,
+       "unit": "gph",
+       "app_value": 8.5,
+       "app_unit": "gph"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "cruise.3",
+     "group": "cruise",
+     "title": "6,000 ft, 75%",
+     "figures": [
+      {
+       "path": "cruise.3.altitude_ft",
+       "label": "Pressure altitude",
+       "value": 6000.0,
+       "unit": "ft",
+       "app_value": 6000.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "cruise.3.power_pct",
+       "label": "Power",
+       "value": 75.0,
+       "unit": "%",
+       "app_value": 75.0,
+       "app_unit": "%"
+      },
+      {
+       "path": "cruise.3.rpm",
+       "label": "RPM",
+       "value": 2600.0,
+       "unit": "rpm",
+       "app_value": 2600.0,
+       "app_unit": "rpm"
+      },
+      {
+       "path": "cruise.3.tas",
+       "label": "True airspeed",
+       "value": 120.0,
+       "unit": "kt",
+       "app_value": 120.0,
+       "app_unit": "kt"
+      },
+      {
+       "path": "cruise.3.burn",
+       "label": "Fuel burn",
+       "value": 9.6,
+       "unit": "gph",
+       "app_value": 9.6,
+       "app_unit": "gph"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "cruise.4",
+     "group": "cruise",
+     "title": "8,000 ft, 65%",
+     "figures": [
+      {
+       "path": "cruise.4.altitude_ft",
+       "label": "Pressure altitude",
+       "value": 8000.0,
+       "unit": "ft",
+       "app_value": 8000.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "cruise.4.power_pct",
+       "label": "Power",
+       "value": 65.0,
+       "unit": "%",
+       "app_value": 65.0,
+       "app_unit": "%"
+      },
+      {
+       "path": "cruise.4.rpm",
+       "label": "RPM",
+       "value": 2500.0,
+       "unit": "rpm",
+       "app_value": 2500.0,
+       "app_unit": "rpm"
+      },
+      {
+       "path": "cruise.4.tas",
+       "label": "True airspeed",
+       "value": 116.0,
+       "unit": "kt",
+       "app_value": 116.0,
+       "app_unit": "kt"
+      },
+      {
+       "path": "cruise.4.burn",
+       "label": "Fuel burn",
+       "value": 8.4,
+       "unit": "gph",
+       "app_value": 8.4,
+       "app_unit": "gph"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "climb",
+     "group": "climb",
+     "title": "Climb",
+     "figures": [
+      {
+       "path": "climb.speed",
+       "label": "Climb speed (Vy)",
+       "value": 74.0,
+       "unit": "kt",
+       "app_value": 74.0,
+       "app_unit": "KIAS"
+      },
+      {
+       "path": "climb.rate_fpm",
+       "label": "Rate of climb",
+       "value": 700.0,
+       "unit": "fpm",
+       "app_value": 700.0,
+       "app_unit": "fpm"
+      },
+      {
+       "path": "climb.burn",
+       "label": "Climb fuel burn",
+       "value": 11.0,
+       "unit": "gph",
+       "app_value": 11.0,
+       "app_unit": "gph"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "glide",
+     "group": "glide",
+     "title": "Glide",
+     "figures": [
+      {
+       "path": "glide.speed",
+       "label": "Best glide speed",
+       "value": 68.0,
+       "unit": "kt",
+       "app_value": 68.0,
+       "app_unit": "KIAS"
+      },
+      {
+       "path": "glide.ratio",
+       "label": "Glide ratio",
+       "value": 9.0,
+       "unit": "to 1",
+       "app_value": 9.0,
+       "app_unit": "to 1"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "takeoff.0",
+     "group": "takeoff",
+     "title": "Takeoff at 0 ft, 0 °C",
+     "figures": [
+      {
+       "path": "takeoff.0.pressure_altitude_ft",
+       "label": "Pressure altitude",
+       "value": 0.0,
+       "unit": "ft",
+       "app_value": 0.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "takeoff.0.temp_c",
+       "label": "Temperature",
+       "value": 0.0,
+       "unit": "°C",
+       "app_value": 0.0,
+       "app_unit": "°C"
+      },
+      {
+       "path": "takeoff.0.ground_roll",
+       "label": "Ground roll",
+       "value": 845.0,
+       "unit": "ft",
+       "app_value": 845.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "takeoff.0.over_obstacle",
+       "label": "Over a 50 ft obstacle",
+       "value": 1510.0,
+       "unit": "ft",
+       "app_value": 1510.0,
+       "app_unit": "ft"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "takeoff.1",
+     "group": "takeoff",
+     "title": "Takeoff at 0 ft, 20 °C",
+     "figures": [
+      {
+       "path": "takeoff.1.pressure_altitude_ft",
+       "label": "Pressure altitude",
+       "value": 0.0,
+       "unit": "ft",
+       "app_value": 0.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "takeoff.1.temp_c",
+       "label": "Temperature",
+       "value": 20.0,
+       "unit": "°C",
+       "app_value": 20.0,
+       "app_unit": "°C"
+      },
+      {
+       "path": "takeoff.1.ground_roll",
+       "label": "Ground roll",
+       "value": 935.0,
+       "unit": "ft",
+       "app_value": 935.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "takeoff.1.over_obstacle",
+       "label": "Over a 50 ft obstacle",
+       "value": 1665.0,
+       "unit": "ft",
+       "app_value": 1665.0,
+       "app_unit": "ft"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "takeoff.2",
+     "group": "takeoff",
+     "title": "Takeoff at 2,000 ft, 0 °C",
+     "figures": [
+      {
+       "path": "takeoff.2.pressure_altitude_ft",
+       "label": "Pressure altitude",
+       "value": 2000.0,
+       "unit": "ft",
+       "app_value": 2000.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "takeoff.2.temp_c",
+       "label": "Temperature",
+       "value": 0.0,
+       "unit": "°C",
+       "app_value": 0.0,
+       "app_unit": "°C"
+      },
+      {
+       "path": "takeoff.2.ground_roll",
+       "label": "Ground roll",
+       "value": 1010.0,
+       "unit": "ft",
+       "app_value": 1010.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "takeoff.2.over_obstacle",
+       "label": "Over a 50 ft obstacle",
+       "value": 1805.0,
+       "unit": "ft",
+       "app_value": 1805.0,
+       "app_unit": "ft"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "landing.0",
+     "group": "landing",
+     "title": "Landing at 0 ft, 0 °C",
+     "figures": [
+      {
+       "path": "landing.0.pressure_altitude_ft",
+       "label": "Pressure altitude",
+       "value": 0.0,
+       "unit": "ft",
+       "app_value": 0.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "landing.0.temp_c",
+       "label": "Temperature",
+       "value": 0.0,
+       "unit": "°C",
+       "app_value": 0.0,
+       "app_unit": "°C"
+      },
+      {
+       "path": "landing.0.ground_roll",
+       "label": "Ground roll",
+       "value": 545.0,
+       "unit": "ft",
+       "app_value": 545.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "landing.0.over_obstacle",
+       "label": "Over a 50 ft obstacle",
+       "value": 1290.0,
+       "unit": "ft",
+       "app_value": 1290.0,
+       "app_unit": "ft"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "landing.1",
+     "group": "landing",
+     "title": "Landing at 0 ft, 20 °C",
+     "figures": [
+      {
+       "path": "landing.1.pressure_altitude_ft",
+       "label": "Pressure altitude",
+       "value": 0.0,
+       "unit": "ft",
+       "app_value": 0.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "landing.1.temp_c",
+       "label": "Temperature",
+       "value": 20.0,
+       "unit": "°C",
+       "app_value": 20.0,
+       "app_unit": "°C"
+      },
+      {
+       "path": "landing.1.ground_roll",
+       "label": "Ground roll",
+       "value": 585.0,
+       "unit": "ft",
+       "app_value": 585.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "landing.1.over_obstacle",
+       "label": "Over a 50 ft obstacle",
+       "value": 1335.0,
+       "unit": "ft",
+       "app_value": 1335.0,
+       "app_unit": "ft"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "empty",
+     "group": "empty",
+     "title": "Empty weight",
+     "figures": [
+      {
+       "path": "empty.weight",
+       "label": "Empty weight",
+       "value": 1680.0,
+       "unit": "lb",
+       "app_value": 1680.0,
+       "app_unit": "lb"
+      },
+      {
+       "path": "empty.arm",
+       "label": "Arm",
+       "value": 39.5,
+       "unit": "in",
+       "app_value": 39.5,
+       "app_unit": "in"
+      },
+      {
+       "path": "empty.moment",
+       "label": "Moment",
+       "value": 66.36,
+       "unit": "as read",
+       "app_value": 66.36,
+       "app_unit": "as read"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "weight",
+     "group": "weight",
+     "title": "Maximum takeoff weight",
+     "figures": [
+      {
+       "path": "max_takeoff_weight",
+       "label": "Maximum takeoff weight",
+       "value": 2450.0,
+       "unit": "lb",
+       "app_value": 2450.0,
+       "app_unit": "lb"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "envelope",
+     "group": "envelope",
+     "title": "CG envelope",
+     "figures": [
+      {
+       "path": "envelope.0.arm",
+       "label": "Arm",
+       "value": 35.0,
+       "unit": "in",
+       "app_value": 35.0,
+       "app_unit": "in"
+      },
+      {
+       "path": "envelope.0.weight",
+       "label": "Weight",
+       "value": 1500.0,
+       "unit": "lb",
+       "app_value": 1500.0,
+       "app_unit": "lb"
+      },
+      {
+       "path": "envelope.1.arm",
+       "label": "Arm",
+       "value": 35.0,
+       "unit": "in",
+       "app_value": 35.0,
+       "app_unit": "in"
+      },
+      {
+       "path": "envelope.1.weight",
+       "label": "Weight",
+       "value": 1950.0,
+       "unit": "lb",
+       "app_value": 1950.0,
+       "app_unit": "lb"
+      },
+      {
+       "path": "envelope.2.arm",
+       "label": "Arm",
+       "value": 41.0,
+       "unit": "in",
+       "app_value": 41.0,
+       "app_unit": "in"
+      },
+      {
+       "path": "envelope.2.weight",
+       "label": "Weight",
+       "value": 2450.0,
+       "unit": "lb",
+       "app_value": 2450.0,
+       "app_unit": "lb"
+      },
+      {
+       "path": "envelope.3.arm",
+       "label": "Arm",
+       "value": 47.3,
+       "unit": "in",
+       "app_value": 47.3,
+       "app_unit": "in"
+      },
+      {
+       "path": "envelope.3.weight",
+       "label": "Weight",
+       "value": 2450.0,
+       "unit": "lb",
+       "app_value": 2450.0,
+       "app_unit": "lb"
+      },
+      {
+       "path": "envelope.4.arm",
+       "label": "Arm",
+       "value": 47.3,
+       "unit": "in",
+       "app_value": 47.3,
+       "app_unit": "in"
+      },
+      {
+       "path": "envelope.4.weight",
+       "label": "Weight",
+       "value": 1500.0,
+       "unit": "lb",
+       "app_value": 1500.0,
+       "app_unit": "lb"
+      },
+      {
+       "path": "envelope.5.arm",
+       "label": "Arm",
+       "value": 35.0,
+       "unit": "in",
+       "app_value": 35.0,
+       "app_unit": "in"
+      },
+      {
+       "path": "envelope.5.weight",
+       "label": "Weight",
+       "value": 1500.0,
+       "unit": "lb",
+       "app_value": 1500.0,
+       "app_unit": "lb"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "fuel",
+     "group": "fuel",
+     "title": "Fuel",
+     "figures": [
+      {
+       "path": "fuel.total",
+       "label": "Total fuel",
+       "value": 56.0,
+       "unit": "gal",
+       "app_value": 56.0,
+       "app_unit": "gal"
+      },
+      {
+       "path": "fuel.usable",
+       "label": "Usable fuel",
+       "value": 53.0,
+       "unit": "gal",
+       "app_value": 53.0,
+       "app_unit": "gal"
+      }
+     ],
+     "flags": []
+    }
+   ],
+   "handbook": {
+    "cruise": [
+     {
+      "altitude_ft": 4000.0,
+      "power_pct": 65.0,
+      "rpm": 2450.0,
+      "tas_kt": 110.0,
+      "burn_gph": 8.6
+     },
+     {
+      "altitude_ft": 6000.0,
+      "power_pct": 55.0,
+      "rpm": 2300.0,
+      "tas_kt": 104.0,
+      "burn_gph": 7.4
+     },
+     {
+      "altitude_ft": 6000.0,
+      "power_pct": 65.0,
+      "rpm": 2450.0,
+      "tas_kt": 113.0,
+      "burn_gph": 8.5
+     },
+     {
+      "altitude_ft": 6000.0,
+      "power_pct": 75.0,
+      "rpm": 2600.0,
+      "tas_kt": 120.0,
+      "burn_gph": 9.6
+     },
+     {
+      "altitude_ft": 8000.0,
+      "power_pct": 65.0,
+      "rpm": 2500.0,
+      "tas_kt": 116.0,
+      "burn_gph": 8.4
+     }
+    ],
+    "climb_speed_kias": 74.0,
+    "climb_rate_fpm": 700.0,
+    "climb_burn_gph": 11.0,
+    "glide_speed_kias": 68.0,
+    "glide_ratio": 9.0,
+    "takeoff": [
+     {
+      "pressure_altitude_ft": 0.0,
+      "temp_c": 0.0,
+      "ground_roll_ft": 845.0,
+      "over_obstacle_ft": 1510.0
+     },
+     {
+      "pressure_altitude_ft": 0.0,
+      "temp_c": 20.0,
+      "ground_roll_ft": 935.0,
+      "over_obstacle_ft": 1665.0
+     },
+     {
+      "pressure_altitude_ft": 2000.0,
+      "temp_c": 0.0,
+      "ground_roll_ft": 1010.0,
+      "over_obstacle_ft": 1805.0
+     }
+    ],
+    "landing": [
+     {
+      "pressure_altitude_ft": 0.0,
+      "temp_c": 0.0,
+      "ground_roll_ft": 545.0,
+      "over_obstacle_ft": 1290.0
+     },
+     {
+      "pressure_altitude_ft": 0.0,
+      "temp_c": 20.0,
+      "ground_roll_ft": 585.0,
+      "over_obstacle_ft": 1335.0
+     }
+    ],
+    "empty_weight_lb": 1680.0,
+    "empty_arm_in": 39.5,
+    "max_takeoff_weight_lb": 2450.0,
+    "envelope": [
+     {
+      "arm_in": 35.0,
+      "weight_lb": 1500.0
+     },
+     {
+      "arm_in": 35.0,
+      "weight_lb": 1950.0
+     },
+     {
+      "arm_in": 41.0,
+      "weight_lb": 2450.0
+     },
+     {
+      "arm_in": 47.3,
+      "weight_lb": 2450.0
+     },
+     {
+      "arm_in": 47.3,
+      "weight_lb": 1500.0
+     }
+    ],
+    "fuel_total_gal": 56.0,
+    "usable_fuel_gal": 53.0
+   },
+   "profile": {
+    "cruise_tas_kt": 113.0,
+    "fuel_burn_gph": 8.5,
+    "cruise_power_pct": 65.0,
+    "cruise_from": "cruise.2",
+    "climb_fuel_burn_gph": 11.0,
+    "usable_fuel_gal": 53.0
+   }
+  },
+  "logbook": null,
+  "logbook_check": null,
+  "clearance": null,
+  "notes": [],
+  "unreadable": null
+ },
+ "misread": {
+  "kind": "weight-balance",
+  "model": "claude-opus-5-5",
+  "handbook": {
+   "cruise_speed_kind": "ias",
+   "cruise": [
+    {
+     "altitude_ft": 6000,
+     "power_pct": 65,
+     "tas": 113,
+     "burn": 8.5
+    },
+    {
+     "altitude_ft": 6000,
+     "power_pct": 75,
+     "tas": 108,
+     "burn": 9.6
+    },
+    {
+     "altitude_ft": 8000,
+     "power_pct": 65
+    }
+   ],
+   "glide": {
+    "speed": 68,
+    "ratio": 0.9
+   },
+   "takeoff": [
+    {
+     "pressure_altitude_ft": 0,
+     "temp_c": 15,
+     "ground_roll": 1665,
+     "over_obstacle": 935
+    }
+   ],
+   "empty": {
+    "weight": 1680,
+    "arm": 39.5,
+    "moment": 63.36,
+    "moment_divisor": 1000
+   },
+   "max_takeoff_weight": 2450,
+   "envelope": [
+    {
+     "arm": 35,
+     "weight": 1500
+    },
+    {
+     "arm": 35,
+     "weight": 1950
+    },
+    {
+     "arm": 47.3,
+     "weight": 2450
+    },
+    {
+     "arm": 41,
+     "weight": 2450
+    },
+    {
+     "arm": 47.3,
+     "weight": 1500
+    }
+   ],
+   "fuel": {
+    "total": 53,
+    "usable": 56
+   }
+  },
+  "handbook_check": {
+   "items": [
+    {
+     "key": "cruise.0",
+     "group": "cruise",
+     "title": "6,000 ft, 65%",
+     "figures": [
+      {
+       "path": "cruise.0.altitude_ft",
+       "label": "Pressure altitude",
+       "value": 6000.0,
+       "unit": "ft",
+       "app_value": 6000.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "cruise.0.power_pct",
+       "label": "Power",
+       "value": 65.0,
+       "unit": "%",
+       "app_value": 65.0,
+       "app_unit": "%"
+      },
+      {
+       "path": "cruise.0.tas",
+       "label": "True airspeed",
+       "value": 113.0,
+       "unit": "kt",
+       "app_value": 113.0,
+       "app_unit": "kt"
+      },
+      {
+       "path": "cruise.0.burn",
+       "label": "Fuel burn",
+       "value": 8.5,
+       "unit": "gph",
+       "app_value": 8.5,
+       "app_unit": "gph"
+      }
+     ],
+     "flags": [
+      {
+       "level": "wrong",
+       "field": null,
+       "says": "The table's speeds read as indicated airspeeds; the airplane's profile flies true airspeed (KTAS)."
+      }
+     ]
+    },
+    {
+     "key": "cruise.1",
+     "group": "cruise",
+     "title": "6,000 ft, 75%",
+     "figures": [
+      {
+       "path": "cruise.1.altitude_ft",
+       "label": "Pressure altitude",
+       "value": 6000.0,
+       "unit": "ft",
+       "app_value": 6000.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "cruise.1.power_pct",
+       "label": "Power",
+       "value": 75.0,
+       "unit": "%",
+       "app_value": 75.0,
+       "app_unit": "%"
+      },
+      {
+       "path": "cruise.1.tas",
+       "label": "True airspeed",
+       "value": 108.0,
+       "unit": "kt",
+       "app_value": 108.0,
+       "app_unit": "kt"
+      },
+      {
+       "path": "cruise.1.burn",
+       "label": "Fuel burn",
+       "value": 9.6,
+       "unit": "gph",
+       "app_value": 9.6,
+       "app_unit": "gph"
+      }
+     ],
+     "flags": [
+      {
+       "level": "wrong",
+       "field": null,
+       "says": "The table's speeds read as indicated airspeeds; the airplane's profile flies true airspeed (KTAS)."
+      },
+      {
+       "level": "check",
+       "field": null,
+       "says": "At 6,000 ft, 75% reads less speed or less fuel than 65%: more power gives more of both."
+      }
+     ]
+    },
+    {
+     "key": "cruise.2",
+     "group": "cruise",
+     "title": "8,000 ft, 65%",
+     "figures": [
+      {
+       "path": "cruise.2.altitude_ft",
+       "label": "Pressure altitude",
+       "value": 8000.0,
+       "unit": "ft",
+       "app_value": 8000.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "cruise.2.power_pct",
+       "label": "Power",
+       "value": 65.0,
+       "unit": "%",
+       "app_value": 65.0,
+       "app_unit": "%"
+      }
+     ],
+     "flags": [
+      {
+       "level": "wrong",
+       "field": null,
+       "says": "No altitude, true airspeed or fuel burn was read."
+      }
+     ]
+    },
+    {
+     "key": "glide",
+     "group": "glide",
+     "title": "Glide",
+     "figures": [
+      {
+       "path": "glide.speed",
+       "label": "Best glide speed",
+       "value": 68.0,
+       "unit": "kt",
+       "app_value": 68.0,
+       "app_unit": "KIAS"
+      },
+      {
+       "path": "glide.ratio",
+       "label": "Glide ratio",
+       "value": 0.9,
+       "unit": "to 1",
+       "app_value": 0.9,
+       "app_unit": "to 1"
+      }
+     ],
+     "flags": [
+      {
+       "level": "wrong",
+       "field": null,
+       "says": "The glide ratio reads 0.9 to 1: an airplane glides farther than it falls."
+      }
+     ]
+    },
+    {
+     "key": "takeoff.0",
+     "group": "takeoff",
+     "title": "Takeoff at 0 ft, 15 °C",
+     "figures": [
+      {
+       "path": "takeoff.0.pressure_altitude_ft",
+       "label": "Pressure altitude",
+       "value": 0.0,
+       "unit": "ft",
+       "app_value": 0.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "takeoff.0.temp_c",
+       "label": "Temperature",
+       "value": 15.0,
+       "unit": "°C",
+       "app_value": 15.0,
+       "app_unit": "°C"
+      },
+      {
+       "path": "takeoff.0.ground_roll",
+       "label": "Ground roll",
+       "value": 1665.0,
+       "unit": "ft",
+       "app_value": 1665.0,
+       "app_unit": "ft"
+      },
+      {
+       "path": "takeoff.0.over_obstacle",
+       "label": "Over a 50 ft obstacle",
+       "value": 935.0,
+       "unit": "ft",
+       "app_value": 935.0,
+       "app_unit": "ft"
+      }
+     ],
+     "flags": [
+      {
+       "level": "wrong",
+       "field": null,
+       "says": "The distance over 50 ft (935 ft) reads shorter than the ground roll (1,665 ft) it includes."
+      }
+     ]
+    },
+    {
+     "key": "empty",
+     "group": "empty",
+     "title": "Empty weight",
+     "figures": [
+      {
+       "path": "empty.weight",
+       "label": "Empty weight",
+       "value": 1680.0,
+       "unit": "lb",
+       "app_value": 1680.0,
+       "app_unit": "lb"
+      },
+      {
+       "path": "empty.arm",
+       "label": "Arm",
+       "value": 39.5,
+       "unit": "in",
+       "app_value": 39.5,
+       "app_unit": "in"
+      },
+      {
+       "path": "empty.moment",
+       "label": "Moment",
+       "value": 63.36,
+       "unit": "as read",
+       "app_value": 63.36,
+       "app_unit": "as read"
+      }
+     ],
+     "flags": [
+      {
+       "level": "wrong",
+       "field": null,
+       "says": "Weight × arm / 1,000 is 66.4, but the moment reads 63.4: one of the three is misread."
+      }
+     ]
+    },
+    {
+     "key": "weight",
+     "group": "weight",
+     "title": "Maximum takeoff weight",
+     "figures": [
+      {
+       "path": "max_takeoff_weight",
+       "label": "Maximum takeoff weight",
+       "value": 2450.0,
+       "unit": "lb",
+       "app_value": 2450.0,
+       "app_unit": "lb"
+      }
+     ],
+     "flags": []
+    },
+    {
+     "key": "envelope",
+     "group": "envelope",
+     "title": "CG envelope",
+     "figures": [
+      {
+       "path": "envelope.0.arm",
+       "label": "Arm",
+       "value": 35.0,
+       "unit": "in",
+       "app_value": 35.0,
+       "app_unit": "in"
+      },
+      {
+       "path": "envelope.0.weight",
+       "label": "Weight",
+       "value": 1500.0,
+       "unit": "lb",
+       "app_value": 1500.0,
+       "app_unit": "lb"
+      },
+      {
+       "path": "envelope.1.arm",
+       "label": "Arm",
+       "value": 35.0,
+       "unit": "in",
+       "app_value": 35.0,
+       "app_unit": "in"
+      },
+      {
+       "path": "envelope.1.weight",
+       "label": "Weight",
+       "value": 1950.0,
+       "unit": "lb",
+       "app_value": 1950.0,
+       "app_unit": "lb"
+      },
+      {
+       "path": "envelope.2.arm",
+       "label": "Arm",
+       "value": 47.3,
+       "unit": "in",
+       "app_value": 47.3,
+       "app_unit": "in"
+      },
+      {
+       "path": "envelope.2.weight",
+       "label": "Weight",
+       "value": 2450.0,
+       "unit": "lb",
+       "app_value": 2450.0,
+       "app_unit": "lb"
+      },
+      {
+       "path": "envelope.3.arm",
+       "label": "Arm",
+       "value": 41.0,
+       "unit": "in",
+       "app_value": 41.0,
+       "app_unit": "in"
+      },
+      {
+       "path": "envelope.3.weight",
+       "label": "Weight",
+       "value": 2450.0,
+       "unit": "lb",
+       "app_value": 2450.0,
+       "app_unit": "lb"
+      },
+      {
+       "path": "envelope.4.arm",
+       "label": "Arm",
+       "value": 47.3,
+       "unit": "in",
+       "app_value": 47.3,
+       "app_unit": "in"
+      },
+      {
+       "path": "envelope.4.weight",
+       "label": "Weight",
+       "value": 1500.0,
+       "unit": "lb",
+       "app_value": 1500.0,
+       "app_unit": "lb"
+      }
+     ],
+     "flags": [
+      {
+       "level": "wrong",
+       "field": null,
+       "says": "The envelope's sides cross: its corners are out of order. Read them going round."
+      }
+     ]
+    },
+    {
+     "key": "fuel",
+     "group": "fuel",
+     "title": "Fuel",
+     "figures": [
+      {
+       "path": "fuel.total",
+       "label": "Total fuel",
+       "value": 53.0,
+       "unit": "gal",
+       "app_value": 53.0,
+       "app_unit": "gal"
+      },
+      {
+       "path": "fuel.usable",
+       "label": "Usable fuel",
+       "value": 56.0,
+       "unit": "gal",
+       "app_value": 56.0,
+       "app_unit": "gal"
+      }
+     ],
+     "flags": [
+      {
+       "level": "wrong",
+       "field": null,
+       "says": "The usable fuel (56 gal) reads more than the total (53 gal)."
+      }
+     ]
+    }
+   ],
+   "handbook": {
+    "cruise": [
+     {
+      "altitude_ft": 6000.0,
+      "power_pct": 65.0,
+      "rpm": null,
+      "tas_kt": 113.0,
+      "burn_gph": 8.5
+     },
+     {
+      "altitude_ft": 6000.0,
+      "power_pct": 75.0,
+      "rpm": null,
+      "tas_kt": 108.0,
+      "burn_gph": 9.6
+     }
+    ],
+    "climb_speed_kias": null,
+    "climb_rate_fpm": null,
+    "climb_burn_gph": null,
+    "glide_speed_kias": 68.0,
+    "glide_ratio": 0.9,
+    "takeoff": [
+     {
+      "pressure_altitude_ft": 0.0,
+      "temp_c": 15.0,
+      "ground_roll_ft": 1665.0,
+      "over_obstacle_ft": 935.0
+     }
+    ],
+    "landing": [],
+    "empty_weight_lb": 1680.0,
+    "empty_arm_in": 39.5,
+    "max_takeoff_weight_lb": 2450.0,
+    "envelope": [
+     {
+      "arm_in": 35.0,
+      "weight_lb": 1500.0
+     },
+     {
+      "arm_in": 35.0,
+      "weight_lb": 1950.0
+     },
+     {
+      "arm_in": 47.3,
+      "weight_lb": 2450.0
+     },
+     {
+      "arm_in": 41.0,
+      "weight_lb": 2450.0
+     },
+     {
+      "arm_in": 47.3,
+      "weight_lb": 1500.0
+     }
+    ],
+    "fuel_total_gal": 53.0,
+    "usable_fuel_gal": 56.0
+   },
+   "profile": {
+    "cruise_tas_kt": null,
+    "fuel_burn_gph": null,
+    "cruise_power_pct": null,
+    "cruise_from": null,
+    "climb_fuel_burn_gph": null,
+    "usable_fuel_gal": 56.0
+   }
+  },
+  "logbook": null,
+  "logbook_check": null,
+  "clearance": null,
+  "notes": [
+   "The bottom row is cut off."
+  ],
+  "unreadable": null
+ },
+ "logbook": {
+  "kind": "logbook-page",
+  "model": "claude-opus-5-5",
+  "handbook": null,
+  "handbook_check": null,
+  "logbook": {
+   "rows": [
+    {
+     "date": "2026-10-03",
+     "aircraft_type": "C172",
+     "aircraft_id": "N12345",
+     "from": "KANE",
+     "to": "KSTC",
+     "total": 1.4,
+     "cross_country": 1.4,
+     "solo": 1.4,
+     "day_landings": 1
+    },
+    {
+     "date": "2026-10-03",
+     "aircraft_type": "C172",
+     "aircraft_id": "N12345",
+     "from": "KSTC",
+     "to": "KANE",
+     "total": 1.3,
+     "night": 0.8,
+     "cross_country": 1.3,
+     "solo": 1.3,
+     "night_landings": 1
+    },
+    {
+     "date": "2026-10-10",
+     "aircraft_type": "C172",
+     "aircraft_id": "N12345",
+     "from": "KANE",
+     "to": "KANE",
+     "via": [
+      "KFCM"
+     ],
+     "total": 1.6,
+     "dual": 1.6,
+     "instrument_simulated": 1.0,
+     "approaches": 2,
+     "holding": true,
+     "day_landings": 3,
+     "remarks": "ILS 10R, RNAV 28R; hold at FGT"
+    }
+   ],
+   "page_totals": {
+    "total": 4.3,
+    "night": 0.8,
+    "cross_country": 2.7,
+    "dual": 1.6,
+    "solo": 2.7,
+    "instrument_simulated": 1.0,
+    "day_landings": 4,
+    "night_landings": 1,
+    "approaches": 2
+   }
+  },
+  "logbook_check": {
+   "rows": [
+    {
+     "entry": {
+      "flownOn": "2026-10-03",
+      "aircraft": "N12345",
+      "aircraftType": "C172",
+      "route": "KANE KSTC",
+      "totalHours": 1.4,
+      "nightHours": 0.0,
+      "crossCountryHours": 1.4,
+      "dayLandings": 1.0,
+      "nightLandings": 0.0,
+      "remarks": null,
+      "dualHours": 0.0,
+      "soloHours": 1.4,
+      "instrumentHours": 0.0,
+      "toweredLandings": 0.0,
+      "distanceNm": 0.0,
+      "longestLegNm": 0.0,
+      "approaches": 0.0,
+      "holding": false,
+      "tracking": false,
+      "airHours": 0.0,
+      "touchAndGoes": 0.0,
+      "fromTrack": false,
+      "flightId": null
+     },
+     "flags": []
+    },
+    {
+     "entry": {
+      "flownOn": "2026-10-03",
+      "aircraft": "N12345",
+      "aircraftType": "C172",
+      "route": "KSTC KANE",
+      "totalHours": 1.3,
+      "nightHours": 0.8,
+      "crossCountryHours": 1.3,
+      "dayLandings": 0.0,
+      "nightLandings": 1.0,
+      "remarks": null,
+      "dualHours": 0.0,
+      "soloHours": 1.3,
+      "instrumentHours": 0.0,
+      "toweredLandings": 0.0,
+      "distanceNm": 0.0,
+      "longestLegNm": 0.0,
+      "approaches": 0.0,
+      "holding": false,
+      "tracking": false,
+      "airHours": 0.0,
+      "touchAndGoes": 0.0,
+      "fromTrack": false,
+      "flightId": null
+     },
+     "flags": []
+    },
+    {
+     "entry": {
+      "flownOn": "2026-10-10",
+      "aircraft": "N12345",
+      "aircraftType": "C172",
+      "route": "KANE KFCM KANE",
+      "totalHours": 1.6,
+      "nightHours": 0.0,
+      "crossCountryHours": 0.0,
+      "dayLandings": 3.0,
+      "nightLandings": 0.0,
+      "remarks": "ILS 10R, RNAV 28R; hold at FGT",
+      "dualHours": 1.6,
+      "soloHours": 0.0,
+      "instrumentHours": 1.0,
+      "toweredLandings": 0.0,
+      "distanceNm": 0.0,
+      "longestLegNm": 0.0,
+      "approaches": 2.0,
+      "holding": true,
+      "tracking": false,
+      "airHours": 0.0,
+      "touchAndGoes": 0.0,
+      "fromTrack": false,
+      "flightId": null
+     },
+     "flags": []
+    }
+   ],
+   "flags": []
+  },
+  "clearance": null,
+  "notes": [],
+  "unreadable": null
+ },
+ "logbookWrong": {
+  "kind": "logbook-page",
+  "model": "claude-opus-5-5",
+  "handbook": null,
+  "handbook_check": null,
+  "logbook": {
+   "rows": [
+    {
+     "date": "2026-12-01",
+     "aircraft_id": "N12345",
+     "from": "KANE",
+     "to": "KSTC",
+     "total": 1.2,
+     "night": 1.5,
+     "day_landings": 1
+    },
+    {
+     "date": "2026-02-30",
+     "aircraft_id": "N12345",
+     "from": "KANE",
+     "to": "KSTC",
+     "total": 1.0,
+     "dual": 1.0,
+     "solo": 1.0,
+     "day_landings": 1
+    },
+    {
+     "aircraft_id": "N12345",
+     "from": "KANE",
+     "to": "KANE",
+     "total": 1.0,
+     "cross_country": 1.0,
+     "approaches": 1,
+     "night_landings": 2
+    }
+   ],
+   "page_totals": {
+    "total": 3.5
+   }
+  },
+  "logbook_check": {
+   "rows": [
+    {
+     "entry": {
+      "flownOn": "2026-12-01",
+      "aircraft": "N12345",
+      "aircraftType": null,
+      "route": "KANE KSTC",
+      "totalHours": 1.2,
+      "nightHours": 1.5,
+      "crossCountryHours": 0.0,
+      "dayLandings": 1.0,
+      "nightLandings": 0.0,
+      "remarks": null,
+      "dualHours": 0.0,
+      "soloHours": 0.0,
+      "instrumentHours": 0.0,
+      "toweredLandings": 0.0,
+      "distanceNm": 0.0,
+      "longestLegNm": 0.0,
+      "approaches": 0.0,
+      "holding": false,
+      "tracking": false,
+      "airHours": 0.0,
+      "touchAndGoes": 0.0,
+      "fromTrack": false,
+      "flightId": null
+     },
+     "flags": [
+      {
+       "level": "wrong",
+       "field": "flownOn",
+       "says": "2026-12-01 is after today."
+      },
+      {
+       "level": "wrong",
+       "field": "nightHours",
+       "says": "The night (1.5 h) reads longer than the flight (1.2 h)."
+      }
+     ]
+    },
+    {
+     "entry": {
+      "flownOn": null,
+      "aircraft": "N12345",
+      "aircraftType": null,
+      "route": "KANE KSTC",
+      "totalHours": 1.0,
+      "nightHours": 0.0,
+      "crossCountryHours": 0.0,
+      "dayLandings": 1.0,
+      "nightLandings": 0.0,
+      "remarks": null,
+      "dualHours": 1.0,
+      "soloHours": 1.0,
+      "instrumentHours": 0.0,
+      "toweredLandings": 0.0,
+      "distanceNm": 0.0,
+      "longestLegNm": 0.0,
+      "approaches": 0.0,
+      "holding": false,
+      "tracking": false,
+      "airHours": 0.0,
+      "touchAndGoes": 0.0,
+      "fromTrack": false,
+      "flightId": null
+     },
+     "flags": [
+      {
+       "level": "wrong",
+       "field": "flownOn",
+       "says": "\"2026-02-30\" is not a date."
+      },
+      {
+       "level": "wrong",
+       "field": "soloHours",
+       "says": "Dual (1 h) and solo (1 h) add to more than the flight: solo is alone aboard (14 CFR 61.51(d))."
+      }
+     ]
+    },
+    {
+     "entry": {
+      "flownOn": null,
+      "aircraft": "N12345",
+      "aircraftType": null,
+      "route": "KANE KANE",
+      "totalHours": 1.0,
+      "nightHours": 0.0,
+      "crossCountryHours": 1.0,
+      "dayLandings": 0.0,
+      "nightLandings": 2.0,
+      "remarks": null,
+      "dualHours": 0.0,
+      "soloHours": 0.0,
+      "instrumentHours": 0.0,
+      "toweredLandings": 0.0,
+      "distanceNm": 0.0,
+      "longestLegNm": 0.0,
+      "approaches": 1.0,
+      "holding": false,
+      "tracking": false,
+      "airHours": 0.0,
+      "touchAndGoes": 0.0,
+      "fromTrack": false,
+      "flightId": null
+     },
+     "flags": [
+      {
+       "level": "wrong",
+       "field": "flownOn",
+       "says": "No date was read (14 CFR 61.51(b)(1)(i))."
+      },
+      {
+       "level": "check",
+       "field": "nightLandings",
+       "says": "Night landings with no night time (14 CFR 61.57(b))."
+      },
+      {
+       "level": "check",
+       "field": "approaches",
+       "says": "Approaches with no instrument time: they count when flown by instruments (14 CFR 61.51(g)(1), 61.57(c))."
+      },
+      {
+       "level": "check",
+       "field": "crossCountryHours",
+       "says": "Cross-country time on a flight back to where it departed with no stop: it takes a landing elsewhere (14 CFR 61.1)."
+      }
+     ]
+    }
+   ],
+   "flags": [
+    {
+     "level": "check",
+     "field": "totalHours",
+     "says": "The page's total time total reads 3.5; its rows add to 3.2."
+    }
+   ]
+  },
+  "clearance": null,
+  "notes": [],
+  "unreadable": null
+ },
+ "clearance": {
+  "kind": "clearance",
+  "model": "claude-opus-5-5",
+  "handbook": null,
+  "handbook_check": null,
+  "logbook": null,
+  "logbook_check": null,
+  "clearance": {
+   "written": "C KDLH\nRV / GOPHER / AF\nM 3000 E 7000 10\nDEP 125.35\nSQ 4521",
+   "said": "Cleared to KDLH via radar vectors GOPHER then as filed, maintain 3000, expect 7000 10 minutes after departure, departure frequency 125.35, squawk 4521."
+  },
+  "notes": [],
+  "unreadable": null
+ }
+}

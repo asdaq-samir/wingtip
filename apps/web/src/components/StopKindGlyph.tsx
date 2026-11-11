@@ -1,5 +1,6 @@
 import { cn } from "cn";
 import { STOP_KINDS, type StopKind } from "../lib/stopKinds";
+import { CHART } from "../lib/tokens";
 
 /**
  * A kind of stop's round mark -- fuel's pump, food's fork and knife,
@@ -12,9 +13,23 @@ import { STOP_KINDS, type StopKind } from "../lib/stopKinds";
 export default function StopKindGlyph({ kind, className }: { kind: StopKind; className?: string }) {
   const { colour, paths } = STOP_KINDS[kind];
   return (
-    <span aria-hidden="true" className={cn("grid size-5 shrink-0 place-items-center rounded-full", className)} style={{ background: colour }}>
-      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" className="size-[58%]">
-        {paths.map(d => <path key={d} d={d} />)}
+    <span
+      aria-hidden="true"
+      className={cn("grid size-5 shrink-0 place-items-center rounded-full", className)}
+      style={{ background: colour }}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={CHART.casing}
+        strokeWidth={2.4}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="size-[58%]"
+      >
+        {paths.map((d) => (
+          <path key={d} d={d} />
+        ))}
       </svg>
     </span>
   );

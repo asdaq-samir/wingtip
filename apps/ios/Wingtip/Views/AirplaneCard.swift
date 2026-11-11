@@ -1,4 +1,3 @@
-import Charts
 import CoreLocation
 import SwiftUI
 
@@ -14,10 +13,9 @@ enum FlightWords {
         }.joined(separator: " ")
     }
 
-    /// "2 h 13 min", "41 min".
+    /// How long, as every duration is written (Format.duration): "2h 13m", "41m".
     static func lasted(_ seconds: Double) -> String {
-        let minutes = Int((seconds / 60).rounded())
-        return minutes >= 60 ? "\(minutes / 60) h \(minutes % 60) min" : "\(minutes) min"
+        Format.duration(seconds / 60)
     }
 
     /// A field's town as FlightAware writes it under the ident: "Skyhaven,
@@ -54,14 +52,16 @@ enum FlightWords {
     /// (AIM 6-4-2), 7700 an emergency (AIM 6-2-2) -- the engine's
     /// `squawk_meaning`, the web's and Android's.
     static func squawk(_ code: String?) -> String? {
-        do { return try Engine.call("squawk_meaning", json: ["squawk": code]) as String? } catch { return nil }
+        // Words beside the code, which is shown as sent either way
+        // (a refusal is logged by Engine.rule).
+        (try? Engine.squawkMeaning(squawk: code)) ?? nil
     }
 
     /// Feet against own ship's: "500 ft above", "1,200 ft below", "level".
     static func against(_ feet: Double) -> String {
         let rounded = Int((feet / 100).rounded()) * 100
         if rounded == 0 { return "level" }
-        return "\(abs(rounded).formatted()) ft \(rounded > 0 ? "above" : "below")"
+        return "\(Format.altitude(Double(abs(rounded)))) \(rounded > 0 ? "above" : "below")"
     }
 }
 
@@ -73,6 +73,7 @@ enum FlightWords {
 /// receivers: for knowing what is about, not for avoiding it.
 struct AirplaneCard: View {
     let hex: String
+    @Environment(\.undoManager) private var undoManager
     @State private var detail: FlightDetail?
     @State private var route: FlightRoute?
     @State private var flights: [PastFlightSummary] = []
@@ -80,6 +81,8 @@ struct AirplaneCard: View {
     @State private var based: PastFlightField?
     @State private var fetchingMore = false
     @State private var problem: String?
+    /// Its latest tower departure event in a line (LiveWords.departureLine).
+    @State private var towerLine: String?
     private var tracking: Tracking { Tracking.shared }
 
     private var plane: TrafficAircraft? { tracking.hex == hex.lowercased() ? tracking.latest : nil }
@@ -97,101 +100,102 @@ struct AirplaneCard: View {
     private var link: URL { Config.gateway.appending(path: "/app/plan").appending(queryItems: [URLQueryItem(name: "flight", value: hex)]) }
 
     var body: some View {
-        NavigationStack {
-            List {
-                Section {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(detail?.description.map(FlightWords.nameCase) ?? detail?.type ?? plane?.type ?? name).font(.title3.weight(.semibold))
-                        if let op = detail?.operator { Text(FlightWords.nameCase(op)).foregroundStyle(.secondary) }
-                    }
-                    HStack(spacing: 10) {
-                        Button {
-                            if let kept { tracking.toggleFavorite(kept) }
-                        } label: {
-                            Label(tracking.isFavorite(hex) ? "Favorite" : "Add to Favorites", systemImage: tracking.isFavorite(hex) ? "star.fill" : "star")
-                        }
-                        .disabled(kept == nil)
-                        // Nothing to follow where it is not heard now.
-                        Button {
-                            tracking.follow.toggle()
-                        } label: {
-                            Label(tracking.follow && plane != nil ? "Following" : "Follow", systemImage: "scope")
-                        }
-                        .disabled(plane == nil)
-                        Menu {
-                            Toggle("Tell me when it takes off", isOn: watchBinding(.takeoff))
-                            Toggle("Tell me when it lands", isOn: watchBinding(.land))
-                        } label: {
-                            Label("Alert", systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell")
-                        }
-                        ShareLink(item: link, subject: Text(name)) { Label("Share", systemImage: "square.and.arrow.up") }
-                    }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.bordered)
-                    .font(.body)
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: WingtipSpace.xs) {
+                    Text(detail?.description.map(FlightWords.nameCase) ?? detail?.type ?? plane?.type ?? name).font(.title3.weight(.semibold))
+                    if let op = detail?.operator { Text(FlightWords.nameCase(op)).foregroundStyle(.secondary) }
                 }
-                if let plane {
-                    Section("Now") { NowFlightRow(plane: plane, detail: detail, route: route?.plausible == false ? nil : route) }
+                HStack(spacing: WingtipSpace.md) {
+                    Button { if let kept { tracking.toggleFavorite(kept, undo: undoManager) } } label: {
+                        Label(tracking.isFavorite(hex) ? "Favorite" : "Add to Favorites", systemImage: tracking.isFavorite(hex) ? "star.fill" : "star")
+                    }
+                    .disabled(kept == nil)
+                    // Nothing to follow where it is not heard now.
+                    Button {
+                        tracking.follow.toggle()
+                    } label: {
+                        Label(tracking.follow && plane != nil ? "Following" : "Follow", systemImage: "scope")
+                    }
+                    .disabled(plane == nil)
+                    Menu {
+                        Toggle("Tell me when it takes off", isOn: watchBinding(.takeoff))
+                        Toggle("Tell me when it lands", isOn: watchBinding(.land))
+                    } label: {
+                        Label("Alert", systemImage: tracking.watching(hex, .takeoff) || tracking.watching(hex, .land) ? "bell.fill" : "bell").symbolSwap()
+                    }
+                    ShareLink(item: link, subject: Text(name)) { Label("Share", systemImage: "square.and.arrow.up") }
                 }
-                Section(plane != nil ? "Earlier" : "Last flights") {
-                    if history == nil, problem == nil {
-                        Text("Fetching its flights…").foregroundStyle(.secondary)
+                .labelStyle(.iconOnly)
+                .glassButton()
+                .font(.body)
+            }
+            if let plane {
+                Section("Now") {
+                    NowFlightRow(plane: plane, detail: detail, route: route?.plausible == false ? nil : route)
+                    if let towerLine {
+                        Label(towerLine, systemImage: "building.columns").font(.subheadline).foregroundStyle(.secondary)
                     }
-                    ForEach(flights.filter { !(plane != nil && $0.inAir) }) { flight in
-                        NavigationLink(value: flight) { PastFlightRow(flight: flight, type: detail?.type ?? plane?.type ?? history?.type) }
-                    }
-                    if history != nil, flights.isEmpty {
-                        Text("No flights heard in the last six weeks").foregroundStyle(.secondary)
-                    }
-                    if let unread = history?.unreadDays, unread > 0 {
-                        Text(unread >= 7 ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
-                             : "\(unread == 1 ? "One day" : "\(unread) days") could not be read from adsb.lol just now, so their flights are missing.")
+                }
+            }
+            Section(plane != nil ? "Earlier" : "Last flights") {
+                if history == nil, problem == nil {
+                    Text("Fetching its flights…").foregroundStyle(.secondary)
+                }
+                ForEach(flights.filter { !(plane != nil && $0.inAir) }) { flight in
+                    NavigationLink(value: flight) { PastFlightRow(flight: flight, type: detail?.type ?? plane?.type ?? history?.type) }
+                }
+                if history != nil, flights.isEmpty {
+                    Text("No flights heard in the last six weeks").foregroundStyle(.secondary)
+                }
+                if let unread = history?.unreadDays, unread > 0 {
+                    Text(unread >= 7 ? "adsb.lol's flight history can't be read now, so only flights followed in this app are listed."
+                        : "\(unread == 1 ? "One day" : "\(unread) days") could not be read from adsb.lol just now, so their flights are missing.")
+                        .font(.footnote).foregroundStyle(.secondary)
+                }
+                if history?.nextUntil != nil {
+                    Button(fetchingMore ? "Fetching earlier flights…" : "Show earlier flights") { Task { await more() } }
+                        .disabled(fetchingMore)
+                }
+                ProblemLine(problem)
+            }
+            Section("Airplane") {
+                if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model)) }
+                if let op = detail?.operator { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
+                LabeledContent("Registration") { RegistrationText(detail?.registration ?? plane?.registration) }
+                LabeledContent("Type", value: [detail?.type ?? plane?.type, detail?.year].compactMap { $0 }.joined(separator: " · ").nonEmpty ?? "—")
+                LabeledContent("ICAO address", value: hex.uppercased())
+                LabeledContent("Callsign", value: plane?.callsign ?? "—")
+                if let based { LabeledContent("Based at", value: [based.ident, FlightWords.place(based)].compactMap { $0 }.joined(separator: " · ")) }
+            }
+            if let route {
+                // Its flight number's scheduled route, not the flight
+                // plan filed, which the FAA does not publish openly.
+                Section("Scheduled Route") {
+                    VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                        Text(route.airports.map(\.ident).joined(separator: " → ")).font(.headline)
+                        Text([route.airports.compactMap { $0.location ?? $0.name }.joined(separator: " to "),
+                              route.plausible == false ? "not where it is flying now" : nil].compactMap { $0 }.joined(separator: " · "))
                             .font(.footnote).foregroundStyle(.secondary)
                     }
-                    if history?.nextUntil != nil {
-                        Button(fetchingMore ? "Fetching earlier flights…" : "Show earlier flights") { Task { await more() } }
-                            .disabled(fetchingMore)
-                    }
-                    ProblemLine(problem)
-                }
-                Section("Airplane") {
-                    if let model = detail?.description { LabeledContent("Model", value: FlightWords.nameCase(model)) }
-                    if let op = detail?.operator { LabeledContent("Operator", value: FlightWords.nameCase(op)) }
-                    LabeledContent("Registration", value: detail?.registration ?? plane?.registration ?? "—")
-                    LabeledContent("Type", value: [detail?.type ?? plane?.type, detail?.year].compactMap { $0 }.joined(separator: " · ").nonEmpty ?? "—")
-                    LabeledContent("ICAO address", value: hex.uppercased())
-                    LabeledContent("Callsign", value: plane?.callsign ?? "—")
-                    if let based { LabeledContent("Based at", value: [based.ident, FlightWords.place(based)].compactMap { $0 }.joined(separator: " · ")) }
-                }
-                if let route {
-                    // Its flight number's scheduled route, not the flight
-                    // plan filed, which the FAA does not publish openly.
-                    Section("Scheduled route") {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(route.airports.map(\.ident).joined(separator: " → ")).font(.headline)
-                            Text([route.airports.compactMap { $0.location ?? $0.name }.joined(separator: " to "),
-                                  route.plausible == false ? "not where it is flying now" : nil].compactMap { $0 }.joined(separator: " · "))
-                                .font(.footnote).foregroundStyle(.secondary)
-                        }
-                    }
-                }
-                if let faa = detail?.faa { FAARecordSection(faa: faa) }
-            }
-            .navigationTitle(name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    // The card's own close, whether a sheet (iPhone) or the
-                    // inspector (iPad) holds it.
-                    Button { FlightUI.shared.card = nil } label: { Image(systemName: "xmark") }.accessibilityLabel("Close")
                 }
             }
-            .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight) }
-            .task(id: hex) { await load() }
-            .task(id: plane?.callsign) {
-                guard let callsign = plane?.callsign?.trimmingCharacters(in: .whitespaces), !callsign.isEmpty else { return }
-                route = try? await Planner.flightRoute(callsign: callsign, lat: plane?.lat, lon: plane?.lon)
-            }
+            if let faa = detail?.faa { FAARecordSection(faa: faa) }
+        }
+        .navigationTitle(name)
+        // A flown flight's card, pushed in this one.
+        .navigationDestination(for: PastFlightSummary.self) { flight in PastFlightCard(hex: hex, flight: flight) }
+        .task(id: hex) { await load() }
+        // Its latest tower departure event, by the ident it files
+        // under: its callsign, else its registration (the web's FlightCard).
+        .task(id: plane?.callsign ?? detail?.registration ?? plane?.registration) {
+            let ident = (plane?.callsign ?? detail?.registration ?? plane?.registration)?.trimmingCharacters(in: .whitespaces) ?? ""
+            guard ident.count >= 2 else { towerLine = nil; return }
+            towerLine = LiveWords.departureLine((try? await Planner.liveDepartures(ident))?.first)
+        }
+        .task(id: plane?.callsign) {
+            guard let callsign = plane?.callsign?.trimmingCharacters(in: .whitespaces), !callsign.isEmpty else { return }
+            route = try? await Planner.flightRoute(callsign: callsign, lat: plane?.lat, lon: plane?.lon)
         }
     }
 
@@ -221,7 +225,7 @@ struct AirplaneCard: View {
         fetchingMore = true
         if let page = try? await Planner.pastFlights(hex, until: until, before: flights.last?.off) {
             history = page
-            flights += (page.flights ?? []).filter { f in !flights.contains { $0.id == f.id } }
+            flights += page.flights.filter { f in !flights.contains { $0.id == f.id } }
         }
         fetchingMore = false
     }
@@ -243,11 +247,11 @@ struct NowFlightRow: View {
     @Environment(OwnShip.self) private var ownShip
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack {
-                Circle().fill(.green).frame(width: 8, height: 8)
+                Circle().fill(WingtipInk.go).frame(width: 8, height: 8)
                 Text(started.map { "In the air · \(FlightWords.lasted(Date().timeIntervalSince1970 - $0))" } ?? "In the air")
-                    .font(.subheadline.weight(.semibold)).foregroundStyle(.green)
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(WingtipInk.go)
                 Spacer()
                 if let type = detail?.type ?? plane.type { Text(type).font(.subheadline).foregroundStyle(.secondary) }
             }
@@ -269,11 +273,11 @@ struct NowFlightRow: View {
                 // sign of it.
                 Text("Squawk \(squawk)\(FlightWords.squawk(squawk).map { " · \($0)" } ?? "")")
                     .font(.subheadline.monospacedDigit())
-                    .foregroundStyle(FlightWords.squawk(squawk) != nil ? Color.red : Color.secondary)
+                    .foregroundStyle(FlightWords.squawk(squawk) != nil ? WingtipInk.problem : Color.secondary)
                     .accessibilityLabel("Squawk \(SpokenFigures.digits(squawk))\(FlightWords.squawk(squawk).map { ", \($0)" } ?? "")")
             }
-            if let fix = ownShip.fix {
-                Text(fromYou(fix)).font(.subheadline).foregroundStyle(.secondary)
+            if let fix = ownShip.fix, let from = fromYou(fix) {
+                Text(from).font(.subheadline).foregroundStyle(.secondary)
             }
         }
         .accessibilityElement(children: .combine)
@@ -285,9 +289,9 @@ struct NowFlightRow: View {
     private var flying: String {
         let rate = plane.verticalFpm ?? 0
         let climb = abs(rate) >= 100 ? "\(rate > 0 ? "↑" : "↓") \((Int((abs(rate) / 100).rounded()) * 100).formatted()) fpm" : "level"
-        let height = plane.altitudeFt.map { "\((Int(($0 / 25).rounded()) * 25).formatted()) ft" } ?? "—"
-        let speed = plane.speedKt.map { "\(Int($0.rounded())) kt" } ?? "—"
-        let track = plane.trackDeg.map { " · \(Formats.degrees($0)) true" } ?? ""
+        let height = Format.altitude(plane.altitudeFt.map { ($0 / 25).rounded() * 25 })
+        let speed = Format.speed(plane.speedKt)
+        let track = plane.trackDeg.map { " · \(Format.heading($0)) true" } ?? ""
         return "\(height) \(climb) · \(speed)\(track)"
     }
 
@@ -299,12 +303,12 @@ struct NowFlightRow: View {
                 plane.trackDeg.map { "track \(SpokenFigures.degrees($0)) true" }].compactMap { $0 }.joined(separator: ", ")
     }
 
-    private func fromYou(_ fix: OwnShip.Fix) -> String {
-        let here = CLLocationCoordinate2D(latitude: plane.lat, longitude: plane.lon)
-        let nm = Flight.nm(from: fix.coordinate, to: here)
-        let bearing = Flight.bearing(from: fix.coordinate, to: here)
-        let height = fix.altitudeFt.flatMap { own in plane.altitudeFt.map { ", " + FlightWords.against($0 - own) } } ?? ""
-        return "\(Formats.nm(nm, decimals: 0)) \(AirportWords.compassPoint(bearing)) of you" + height
+    /// How far and which way, the engine's (`distance_nm`, `bearing_deg`); nil where it cannot say.
+    private func fromYou(_ fix: OwnShip.Fix) -> String? {
+        let (lat, lon) = (fix.coordinate.latitude, fix.coordinate.longitude)
+        guard let nm = try? Engine.distanceNm(lat1: lat, lon1: lon, lat2: plane.lat, lon2: plane.lon),
+              let bearing = try? Engine.bearingDeg(lat1: lat, lon1: lon, lat2: plane.lat, lon2: plane.lon) else { return nil }
+        return "\(Format.distance(nm, decimals: 0)) \(AirportWords.compassPoint(bearing)) of you" + (fix.altitudeFt.flatMap { own in plane.altitudeFt.map { ", " + FlightWords.against($0 - own) } } ?? "")
     }
 }
 
@@ -315,16 +319,16 @@ struct PastFlightRow: View {
     let type: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack {
-                Text(FlightWords.ended(flight)).foregroundStyle(flight.landed || flight.inAir ? Color.green : Color.secondary)
+                Text(FlightWords.ended(flight)).foregroundStyle(flight.landed || flight.inAir ? WingtipInk.go : Color.secondary)
                 Spacer()
                 if let type { Text(type).foregroundStyle(.secondary) }
             }
             .font(.subheadline.weight(.semibold))
             HStack(alignment: .top) {
                 end(flight.origin?.ident ?? "?", FlightWords.place(flight.origin), FlightWords.when(flight.off), trailing: false)
-                Image(systemName: flight.local ? "arrow.clockwise" : "arrow.right").padding(.top, 4)
+                Image(systemName: flight.local ? "arrow.clockwise" : "arrow.right").padding(.top, WingtipSpace.xs)
                 end(flight.inAir ? "Now" : flight.destination?.ident ?? "?", flight.inAir ? nil : FlightWords.place(flight.destination),
                     flight.inAir ? nil : FlightWords.when(flight.on), trailing: true)
             }
@@ -333,7 +337,7 @@ struct PastFlightRow: View {
     }
 
     private func end(_ ident: String, _ place: String?, _ when: String?, trailing: Bool) -> some View {
-        VStack(alignment: trailing ? .trailing : .leading, spacing: 1) {
+        VStack(alignment: trailing ? .trailing : .leading, spacing: WingtipSpace.xxs) {
             Text(ident).font(.headline)
             if let place { Text(place).font(.footnote).foregroundStyle(.secondary).lineLimit(1) }
             if let when { Text(when).font(.footnote) }
@@ -356,19 +360,18 @@ struct PastFlightCard: View {
             Section { PastFlightRow(flight: flight, type: nil) }
             if points.isEmpty {
                 Section("Profile") {
-                    Text(problem ?? "Fetching its track…").foregroundStyle(problem == nil ? Color.secondary : Color.red)
+                    Text(problem ?? "Fetching its track…").foregroundStyle(problem == nil ? Color.secondary : WingtipInk.problem)
                 }
             } else {
                 // Its replay, the airplane flown along it again on the map.
                 ReplaySection(points: Replay.points(points), key: replayKey)
                 Section {
-                    LabeledContent("Highest", value: "\(Int(flight.maxAltFt).formatted()) ft")
+                    LabeledContent("Highest", value: Format.altitude(flight.maxAltFt))
                     LabeledContent("Flown", value: FlightWords.lasted(flight.on - flight.off))
                 }
             }
         }
         .navigationTitle("\(flight.origin?.ident ?? "?") → \(flight.inAir ? "Now" : flight.destination?.ident ?? "?")")
-        .navigationBarTitleDisplayMode(.inline)
         .task(id: flight.id) {
             do {
                 points = try await Planner.pastFlight(hex, id: flight.id).points
@@ -386,76 +389,6 @@ struct PastFlightCard: View {
     private var replayKey: String { "past:\(hex):\(flight.id)" }
 }
 
-/// A flight's height against time and its ground speed where known,
-/// Swift Charts: the replay's moment a cursor across it, with a dot on
-/// each trace where the airplane is, and a finger drawn along it moves
-/// the replay there (the web app's PastFlightChart). The speed is held to
-/// the lower half, so the two read apart where both run level, as the
-/// web app's are.
-struct FlightProfileChart: View {
-    let points: [Replay.Point]
-    /// The replay's airplane, where it is.
-    var cursor: Replay.Point?
-    /// A finger on the profile: the moment under it, s since 1970.
-    var onScrub: ((Double) -> Void)?
-    @State private var picked: Date?
-
-    /// At most this many points drawn: a long flight's thousands of
-    /// reports drawn again with each tick of a replay were the cost, not
-    /// the look.
-    static let drawn = 400
-
-    private var shown: [Replay.Point] {
-        guard points.count > Self.drawn, let last = points.last else { return points }
-        let every = (points.count + Self.drawn - 1) / Self.drawn
-        return Swift.stride(from: 0, to: points.count, by: every).map { points[$0] } + [last]
-    }
-
-    private var top: Double { max(1000, (points.compactMap(\.altFt).max() ?? 0) * 1.25) }
-    private var ktTop: Double { max(1, (points.compactMap(\.gsKt).max() ?? 0) * 2.2) }
-    private func feet(_ kt: Double) -> Double { kt / ktTop * top }
-
-    var body: some View {
-        Chart {
-            ForEach(Array(shown.enumerated()), id: \.offset) { _, point in
-                if let ft = point.altFt {
-                    AreaMark(x: .value("Time", Date(timeIntervalSince1970: point.t)), y: .value("Feet", ft))
-                        .foregroundStyle(.linearGradient(colors: [Color.accentColor.opacity(0.3), Color.accentColor.opacity(0.02)], startPoint: .top, endPoint: .bottom))
-                    LineMark(x: .value("Time", Date(timeIntervalSince1970: point.t)), y: .value("Feet", ft), series: .value("Trace", "Height"))
-                        .foregroundStyle(Color.accentColor)
-                }
-                if let kt = point.gsKt {
-                    LineMark(x: .value("Time", Date(timeIntervalSince1970: point.t)), y: .value("Feet", feet(kt)), series: .value("Trace", "Ground speed"))
-                        .foregroundStyle(Color.orange)
-                }
-            }
-            if let cursor {
-                RuleMark(x: .value("Now", Date(timeIntervalSince1970: cursor.t)))
-                    .foregroundStyle(Color.primary.opacity(0.5))
-                if let ft = cursor.altFt {
-                    PointMark(x: .value("Now", Date(timeIntervalSince1970: cursor.t)), y: .value("Feet", ft))
-                        .foregroundStyle(Color.accentColor).symbolSize(60)
-                }
-                if let kt = cursor.gsKt {
-                    PointMark(x: .value("Now", Date(timeIntervalSince1970: cursor.t)), y: .value("Feet", feet(kt)))
-                        .foregroundStyle(Color.orange).symbolSize(60)
-                }
-            }
-        }
-        .chartYScale(domain: 0...top)
-        .chartYAxisLabel("ft")
-        .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) { _ in AxisGridLine(); AxisValueLabel(format: .dateTime.hour().minute()) } }
-        .chartXSelection(value: $picked)
-        .onChange(of: picked) { _, date in
-            if let date { onScrub?(date.timeIntervalSince1970) }
-        }
-        .accessibilityLabel("Profile, highest \(SpokenFigures.feet(points.compactMap(\.altFt).max() ?? 0))")
-        // Where the replay's airplane is, as the figures over the chart say
-        // it; the slider under the chart is the way to move it by VoiceOver.
-        .accessibilityValue(cursor.map { "\(ReplaySection.clock($0.t)), \(ReplaySection.spoken($0))" } ?? "")
-    }
-}
-
 /// A US airplane's FAA registration: who it is registered to and where,
 /// whether it is in effect and till when, what it is and its engine, and
 /// its airworthiness certificate -- the registry's own record. An owner who
@@ -464,17 +397,17 @@ struct FAARecordSection: View {
     let faa: FAARecord
 
     var body: some View {
-        Section("FAA registration") {
+        Section("FAA Registration") {
             if let owner = faa.owner {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                     Text("Registered to").font(.subheadline.weight(.semibold))
                     Text([owner, faa.ownerType, [faa.city, faa.state].compactMap { $0 }.joined(separator: ", ").nonEmpty,
                           (faa.coOwners ?? 0) > 0 ? "and \(faa.coOwners!) more" : nil, faa.fractional == true ? "fractional" : nil]
-                        .compactMap { $0 }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
+                            .compactMap { $0 }.joined(separator: " · ")).font(.footnote).foregroundStyle(.secondary)
                 }
             }
             LabeledContent(faa.nNumber) {
-                Text(faa.status ?? "—").foregroundStyle(faa.standing == "lapsed" ? Color.red : Color.primary)
+                Text(faa.status ?? "—").foregroundStyle(faa.standing == "lapsed" ? WingtipInk.problem : Color.primary)
             }
             if let expires = faa.expires { LabeledContent("Expires", value: expires) }
             if faa.manufacturer != nil || faa.model != nil {
@@ -495,18 +428,11 @@ struct FAARecordSection: View {
 private enum PreviewData {
     static let plane = TrafficAircraft(altitudeFt: 4500, callsign: "N3429J", hex: "a8c2e1", lat: 46.84, lon: -92.19, registration: "N3429J",
                                        speedKt: 112, squawk: "1200", trackDeg: 215, type: "P28A", verticalFpm: 0)
-    static let faa = FAARecord(nNumber: "N3429J", airworthiness: "Standard", airworthinessDate: "1998-04-02", city: "Duluth",
-                               engine: "Lycoming O-320", engineType: "Reciprocating", expires: "2028-06-30", horsepower: 150,
-                               manufacturer: "Piper", model: "PA-28-140", owner: "Lake Superior Flying Club", ownerType: "Corporation",
-                               seats: 4, standing: "current", state: "MN", status: "Valid", year: 1968)
-    static let detail = FlightDetail(hex: "a8c2e1", departed: FlightDeparted(at: 1_762_180_000, ident: "KDLH", name: "Duluth Intl"),
-                                     description: "PIPER PA-28-140", `operator`: "LAKE SUPERIOR FLYING CLUB", registration: "N3429J",
-                                     type: "P28A", year: "1968", faa: faa)
+    static let faa = FAARecord(airworthiness: "Standard", airworthinessDate: "1998-04-02", city: "Duluth", engine: "Lycoming O-320", engineType: "Reciprocating", expires: "2028-06-30", horsepower: 150, manufacturer: "Piper", model: "PA-28-140", nNumber: "N3429J", owner: "Lake Superior Flying Club", ownerType: "Corporation", seats: 4, standing: "current", state: "MN", status: "Valid", year: 1968)
+    static let detail = FlightDetail(departed: FlightDeparted(at: 1_762_180_000, ident: "KDLH", name: "Duluth Intl"), description: "PIPER PA-28-140", faa: faa, hex: "a8c2e1", operator: "LAKE SUPERIOR FLYING CLUB", registration: "N3429J", type: "P28A", year: "1968")
     static let route = FlightRoute(airports: [RouteAirport(ident: "KDLH", location: "Duluth", name: "Duluth Intl"),
                                               RouteAirport(ident: "KBRD", location: "Brainerd", name: "Brainerd Lakes Rgnl")], plausible: true)
-    static let flight = PastFlightSummary(id: 1, inAir: false, landed: true, maxAltFt: 5500, off: 1_762_000_000, on: 1_762_003_120,
-                                          origin: PastFlightField(ident: "KDLH", city: "Duluth", name: "Duluth Intl", region: "US-MN"),
-                                          destination: PastFlightField(ident: "KBRD", city: "Brainerd", name: "Brainerd Lakes Rgnl", region: "US-MN"))
+    static let flight = PastFlightSummary(destination: PastFlightField(city: "Brainerd", ident: "KBRD", name: "Brainerd Lakes Rgnl", region: "US-MN"), id: 1, inAir: false, landed: true, maxAltFt: 5500, off: 1_762_000_000, on: 1_762_003_120, origin: PastFlightField(city: "Duluth", ident: "KDLH", name: "Duluth Intl", region: "US-MN"))
 }
 
 #Preview("NowFlightRow") {
@@ -518,7 +444,7 @@ private enum PreviewData {
     List {
         PastFlightRow(flight: PreviewData.flight, type: "P28A")
         PastFlightRow(flight: PastFlightSummary(id: 2, inAir: true, landed: false, maxAltFt: 4500, off: 1_762_180_000, on: 1_762_182_400,
-                                                origin: PastFlightField(ident: "KDLH", city: "Duluth", region: "US-MN")), type: "P28A")
+                                                origin: PastFlightField(city: "Duluth", ident: "KDLH", region: "US-MN")), type: "P28A")
     }
 }
 

@@ -8,7 +8,9 @@ import QuickControls from "../../components/QuickControls";
  * their things under it, all the way up (PilotPanel). Setup's page starts
  * with this all the way up too, so a drag up only adds below.
  */
-export default function SetupPill({ testId = "setup-pill" }: {
+export default function SetupPill({
+  testId = "setup-pill",
+}: {
   /** Its own name where Setup's page starts with it all the way up. */
   testId?: string;
 } = {}) {

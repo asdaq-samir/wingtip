@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { Map as GlMap } from "maplibre-gl";
 import { cn } from "cn";
-import { GLASS } from "./mapChrome";
+import { GLASS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 
 /** How long the zoom stays said once the map has stopped zooming. */
@@ -20,9 +20,10 @@ const NICE_NM = [0.25, 0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000];
 /** The bar at the map's middle now: its length in nm and in px. */
 function scaleOf(map: GlMap) {
   const { clientWidth: w, clientHeight: h } = map.getContainer();
-  const a = map.unproject([w / 2, h / 2]), b = map.unproject([w / 2 + BAR_MOST, h / 2]);
+  const a = map.unproject([w / 2, h / 2]),
+    b = map.unproject([w / 2 + BAR_MOST, h / 2]);
   const nmPerPx = a.distanceTo(b) / METRES_PER_NM / BAR_MOST;
-  const nm = [...NICE_NM].reverse().find(n => n / nmPerPx <= BAR_MOST) ?? 0.25;
+  const nm = [...NICE_NM].reverse().find((n) => n / nmPerPx <= BAR_MOST) ?? 0.25;
   return { nm, px: Math.round(nm / nmPerPx) };
 }
 
@@ -56,14 +57,22 @@ export default function ZoomBanner({ map }: { map: GlMap | null }) {
     // keeps its events to itself.
     let fingers = 0;
     let lastInput = 0;
-    const input = () => { lastInput = performance.now(); };
-    const down = () => { fingers += 1; input(); };
-    const up = () => { fingers = Math.max(0, fingers - 1); input(); };
+    const input = () => {
+      lastInput = performance.now();
+    };
+    const down = () => {
+      fingers += 1;
+      input();
+    };
+    const up = () => {
+      fingers = Math.max(0, fingers - 1);
+      input();
+    };
     const own = () => fingers > 0 || performance.now() - lastInput < OWN_MS;
     const say = () => {
       if (!own()) return;
       clearTimeout(timer);
-      // In the app's levels, Leaflet's: MapLibre's zoom is one less (glStyle).
+      // In the app's levels: MapLibre's zoom is one less (glStyle).
       const shown = String(Math.round((map.getZoom() + 1) * 10) / 10);
       if (text.textContent !== shown) text.textContent = shown;
       const { nm, px } = scaleOf(map);
@@ -78,7 +87,9 @@ export default function ZoomBanner({ map }: { map: GlMap | null }) {
     const onEnd = () => {
       if (el.hidden) return;
       clearTimeout(timer);
-      timer = setTimeout(() => { el.hidden = true; }, LINGER_MS);
+      timer = setTimeout(() => {
+        el.hidden = true;
+      }, LINGER_MS);
     };
     const capture = { capture: true, passive: true } as const;
     container.addEventListener("pointerdown", down, capture);
@@ -101,7 +112,10 @@ export default function ZoomBanner({ map }: { map: GlMap | null }) {
   }, [map]);
   return (
     <div
-      ref={box} hidden aria-hidden="true" data-testid="zoom-banner"
+      ref={box}
+      hidden
+      aria-hidden="true"
+      data-testid="zoom-banner"
       className={cn(GLASS, "flex min-h-8 w-fit items-center gap-3 rounded-full px-3 tabular-nums", TEXT.detail)}
     >
       <span className="flex items-baseline gap-1">

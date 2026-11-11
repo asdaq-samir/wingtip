@@ -1,0 +1,114 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "TrafficMarksInput",
+      "type": "object",
+      "properties": {
+        "own_ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "planes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "altitude_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "vertical_fpm": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "lat": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "lon": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "own": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "lat",
+            "lon"
+          ]
+        }
+      },
+      "required": [
+        "planes"
+      ]
+    },
+    "answer": {
+      "title": "TrafficMarksAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "near": {
+            "type": "boolean"
+          },
+          "nm": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "bearing_deg": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "tell": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "label",
+          "near",
+          "nm",
+          "bearing_deg",
+          "tell"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

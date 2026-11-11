@@ -79,19 +79,32 @@ final class AirportShelf {
 
     func isFavorite(_ ident: String) -> Bool { favorites.contains { $0.ident == ident } }
 
-    /// The star: a Favorite added at the end, or taken off.
-    func toggleFavorite(_ airport: KeptAirport) {
-        if let at = favorites.firstIndex(where: { $0.ident == airport.ident }) {
-            favorites.remove(at: at)
+    /// The star: a Favorite added at the end, or taken off -- the taking
+    /// off one Undo away with the window's UndoManager.
+    func toggleFavorite(_ airport: KeptAirport, undo: UndoManager? = nil) {
+        var list = favorites
+        if let at = list.firstIndex(where: { $0.ident == airport.ident }) {
+            list.remove(at: at)
+            setFavorites(list, undo: undo, named: "Remove Favorite")
         } else {
-            favorites.append(airport)
+            list.append(airport)
+            setFavorites(list, undo: nil, named: "")
         }
-        save(favorites, Keys.favorites)
     }
 
-    func removeFavorites(at offsets: IndexSet) {
-        favorites.remove(atOffsets: offsets)
+    func removeFavorites(at offsets: IndexSet, undo: UndoManager? = nil) {
+        var list = favorites
+        list.remove(atOffsets: offsets)
+        setFavorites(list, undo: undo, named: offsets.count == 1 ? "Remove Favorite" : "Remove Favorites")
+    }
+
+    /// The Favorites as `list`, the list before registered as its undo
+    /// (and that undo's own redo) where an UndoManager is given.
+    private func setFavorites(_ list: [KeptAirport], undo: UndoManager?, named name: String) {
+        let before = favorites
+        favorites = list
         save(favorites, Keys.favorites)
+        undo?.register(self, named: name) { $0.setFavorites(before, undo: undo, named: name) }
     }
 
     func moveFavorites(from offsets: IndexSet, to destination: Int) {

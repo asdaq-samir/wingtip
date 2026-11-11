@@ -13,6 +13,7 @@ wingtip_native.call), the very code the web app (lib/wind, lib/pattern) and
 the phones (wt_call) ask; these keep their names and dicts and only carry
 them across.
 """
+
 import json
 
 import wingtip_native
@@ -29,8 +30,7 @@ def end_heading_true_deg(ident: str | None, heading_true_deg: float | None, vari
     """A runway end's true heading: the table's, or its number's magnetic
     heading turned true (variation east positive). None where it has
     neither."""
-    return _ask("runway_end_heading", ident=ident, heading_true_deg=_ends([(ident, heading_true_deg)])[0][1],
-                variation_deg=variation_deg)
+    return _ask("runway_end_heading", ident=ident, heading_true_deg=_ends([(ident, heading_true_deg)])[0][1], variation_deg=variation_deg)
 
 
 def _ends(ends: list) -> list:
@@ -41,26 +41,20 @@ def _ends(ends: list) -> list:
 def _slim(runways: list) -> list:
     """The runways as the engine reads them (pattern.with_traffic's), and
     nothing else of them."""
-    return [{"closed": bool(r.get("closed")), "surface": r.get("surface"), "length_ft": r.get("length_ft"), "wind": r.get("wind") or None,
-             "runway_ends": [{"ident": e.get("ident"), "heading_true_deg": e.get("heading_true_deg")} for e in r.get("runway_ends") or []]}
-            for r in runways]
+    return [
+        {
+            "closed": bool(r.get("closed")),
+            "surface": r.get("surface"),
+            "length_ft": r.get("length_ft"),
+            "wind": r.get("wind") or None,
+            "runway_ends": [{"ident": e.get("ident"), "heading_true_deg": e.get("heading_true_deg")} for e in r.get("runway_ends") or []],
+        }
+        for r in runways
+    ]
 
 
 def _report(metar: dict | None) -> dict | None:
     return {k: metar.get(k) for k in ("wind_dir_true_deg", "wind_speed_kt", "wind_gust_kt")} if metar else None
-
-
-def favoured_end(ends: list, metar: dict | None, variation_deg: float, recent: dict | None = None) -> dict | None:
-    """The end of a runway the reported wind favours -- the most headwind --
-    and its components: {"end", "headwind_kt", "crosswind_kt",
-    "gust_crosswind_kt"}, rounded to the knot, the gust's crosswind where
-    the report has a gust. `ends` is the runway's [(ident, true heading
-    or None)]. Calm is every end at nothing: the end the field's last wind
-    favoured (`recent`, wingtip.weather.recent_wind), the runway in use, said
-    so ("in_use"), else the first one named. None with no report, a
-    variable wind or no end with a heading."""
-    return _ask("runway_favoured_end", ends=_ends(ends), metar=_report(metar), variation_deg=variation_deg,
-                recent=recent or None)
 
 
 def with_winds(runways: list, metar: dict | None, lat: float, lon: float, recent: dict | None = None) -> list:
@@ -68,8 +62,13 @@ def with_winds(runways: list, metar: dict | None, lat: float, lon: float, recent
     the end it favours (`wind`, favoured_end), at a field at (lat, lon);
     `recent`, the field's last wind, for a calm one: the one runway it
     favoured most is the one in use."""
-    winds = _ask("runway_with_winds", runways=[{"end_headings": _ends(r.get("end_headings", []))} for r in runways],
-                 metar=_report(metar), variation_deg=magnetic_variation_deg(lat, lon), recent=recent or None)
+    winds = _ask(
+        "runway_with_winds",
+        runways=[{"end_headings": _ends(r.get("end_headings", []))} for r in runways],
+        metar=_report(metar),
+        variation_deg=magnetic_variation_deg(lat, lon),
+        recent=recent or None,
+    )
     return [{**r, "wind": w} for r, w in zip(runways, winds)]
 
 
@@ -80,7 +79,7 @@ def runway_in_use(runways: list, most_used: bool = False) -> str | None:
     nearly into the wind -- a calm field's runway in use first, ties to
     the runway used most (paved, then the longer). The web's runwayInUse
     (lib/pattern), the same rule, which the page's own pick goes by: the
-    planner picks with it for a first plan (app.routers.plan wind_picks),
+    planner picks with it for a first plan (wingtip.flight_plan wind_picks),
     the page's pick then the same. None with no wind on any runway -- no
     report, or a variable one -- where the page goes by a nearby report's.
     Over pattern.with_traffic's runways: open, with an end that has a

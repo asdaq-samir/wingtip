@@ -7,8 +7,9 @@
 //!   communications' altitudes (14 CFR 91.185), with their words.
 
 pub mod figures;
+pub mod paths;
 
 // The modules below this crate by the names they had when the engine was
 // one crate, so the code reads them as crate::json and so on.
-use wingtip_core::{geo, json};
+use wingtip_core::{geo, json, sort};
 use wingtip_flight::flight;

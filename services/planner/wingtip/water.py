@@ -11,6 +11,7 @@ a lake; "out of glide" where water runs on round it for more than the
 airplane's still-air glide every way, which the engine works out from its
 height over the water (glide_nm).
 """
+
 from __future__ import annotations
 
 import json
@@ -83,40 +84,35 @@ def is_water(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
     return ~shapely.contains_xy(land, lons, lats) | shapely.contains_xy(lakes, lons, lats)
 
 
-def glide_nm(height_ft: float, speed_kt: float) -> float:
+def glide_nm(height_ft: float, speed_kt: float, glide_ratio: float | None) -> float:
     """How far from dry land an engine failure still reaches it, nm: the
-    engine's still-air glide (motion/glide.rs glide_range, the C172S POH's
-    maximum glide of 1.5 nm a thousand feet above the surface, about 9 to
-    1), the one the map's glide ring and the Nearest card use, from
+    engine's still-air glide (motion/glide.rs glide_range) at the
+    airplane's own `glide_ratio` (its profile's, from its POH's Section 3),
+    the one the map's glide ring and the Nearest card use, from
     `height_ft` over the water at `speed_kt`. 14 CFR 91.205(b)(12) draws
     the same line, flotation gear for a flight for hire beyond power-off
     gliding distance from the shore. 0 where the engine gives no glide (too
-    low or too slow to be flying), so all the water is out of reach."""
-    answer = json.loads(wingtip_native.call("glide_range", json.dumps(
-        {"altitude_ft": float(height_ft), "speed_kt": float(speed_kt), "ground_ft": 0.0})))
+    low or too slow to be flying, or no glide ratio in the airplane's
+    profile -- none is assumed), so all the water is out of reach."""
+    answer = json.loads(
+        wingtip_native.call(
+            "glide_range",
+            json.dumps({"altitude_ft": float(height_ft), "speed_kt": float(speed_kt), "ground_ft": 0.0, "glide_ratio": glide_ratio}),
+        )
+    )
     return float(answer) if answer is not None else 0.0
 
 
-def out_of_glide(lat0: float, lon0: float, rows: int, cols: int, cell_deg: float, *,
-                 height_ft: float, speed_kt: float) -> np.ndarray:
-    """For each cell of a grid (its south-west corner at lat0, lon0, `rows`
-    by `cols` cells of `cell_deg`), the share of it, 0 to 1, over water
-    farther from dry land than an airplane `height_ft` over the water at
-    `speed_kt` glides (glide_nm), read every STEP_DEG.
-
-    A WaterUnavailable where the land and lakes could not be had."""
-    return cell_shares(out_of_glide_samples(lat0, lon0, rows, cols, cell_deg, height_ft=height_ft, speed_kt=speed_kt),
-                       rows, cols)
-
-
 def cell_shares(far: np.ndarray, rows: int, cols: int) -> np.ndarray:
-    """out_of_glide_samples' answer as each cell's share out of glide, 0 to 1."""
+    """out_of_glide_samples' answer as each cell's share out of glide, 0 to 1:
+    a cell's share of water farther from dry land than the airplane glides."""
     per = far.shape[0] // rows
     return far.reshape(rows, per, cols, per).mean(axis=(1, 3))
 
 
-def out_of_glide_samples(lat0: float, lon0: float, rows: int, cols: int, cell_deg: float, *,
-                         height_ft: float, speed_kt: float) -> np.ndarray:
+def out_of_glide_samples(
+    lat0: float, lon0: float, rows: int, cols: int, cell_deg: float, *, height_ft: float, speed_kt: float, glide_ratio: float | None = None
+) -> np.ndarray:
     """The same grid read at every sample, `cell_deg` / STEP_DEG of them a
     cell each way (rows from the south, columns from the west): True where
     the sample is water out of glide of dry land. A cell on a shore is part
@@ -124,7 +120,7 @@ def out_of_glide_samples(lat0: float, lon0: float, rows: int, cols: int, cell_de
     though the cell's share says otherwise; a line is judged by these.
 
     A WaterUnavailable where the land and lakes could not be had."""
-    glide = glide_nm(height_ft, speed_kt)
+    glide = glide_nm(height_ft, speed_kt, glide_ratio)
     per = max(1, int(round(cell_deg / STEP_DEG)))
     step = cell_deg / per
     lats = lat0 + (np.arange(rows * per) + 0.5) * step

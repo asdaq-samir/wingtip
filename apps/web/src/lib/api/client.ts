@@ -1,8 +1,121 @@
 import createClient, { type Middleware } from "openapi-fetch";
 import type { paths } from "./schema";
+import type { paths as AssistantPaths } from "./assistant-schema";
 import type { paths as GatewayPaths } from "./gateway-schema";
 import { noteAnswer } from "../fromCache";
-import type { Aircraft, AircraftBases, AssignLessonRequest, LessonProgressRequest, AircraftChoice, AircraftProfiles, AircraftRequest, AirportPhotos, AirportPlace, AirportSearch, AirportServices, ForecastWind, AirportsInView, AirspaceAt, WeatherMap, AirspaceInView, AlertsAhead, Alternates, AltitudeChoice, AppleSignedIn, Briefing, ChartInfo, ChartPages, ChartRefreshStarted, ChecklistDto, CheckpointDescriptionMessage, CheckpointNoteSaved, Checkpoints, ClassBResponse, Classification, Course, Currency, CurrencyDatesRequest, Detour, DeviceCode, DevServices, DevServiceStarted, Flight, FlightDetail, FlightPlanFiled, FlightPlanFilingRequest, FlightRoute, FlightServiceStatus, FlightStatus, FlightSummary, GoogleMaps, InspectionsRequest, Instructor, InstructorRequest, LogbookEntry, LogbookEntryRequest, LogbookImportResult, MapLayerAges, ModelComparison, NarrativeMessage, NarrativeRequest, NavaidsInView, NavLogMessage, OverlayTiles, NearestAirports, OralGrade, OralGradeRequest, OralQuestion, OralQuestionRequest, PastFlight, PastFlights, PickDeleted, PickSaved, Pilot, PilotContactRequest, PlacesFound, PlateOverlay, ProcedureDrawing, ProcedureList, Rating, Reminders, RetrainStarted, Role, RouteProfile, RouteOptions, SavedTrack, SaveFlightRequest, SignRequest, SignInCapabilities, SpeedDay, Squawk, SquawkRequest, Status, StopFields, StreamMessage, Subscription, Tfrs, Totals, Traffic, TrafficFound, Training, VorCheckRequest, WaypointsInView, ClearanceAsk, ClearancePlaces } from "./types";
+import { REQUEST_ID_HEADER, newRequestId } from "./requestId";
+import { airplaneQuery } from "./airplaneQuery";
+import type { AirportAtis, AirportRvr, CopilotAround, DepartureEvents, FlowAtAirports, ItwsAlerts, SaaStatuses } from "./types";
+import type {
+  Aircraft,
+  AircraftBases,
+  AssignLessonRequest,
+  LessonProgressRequest,
+  AircraftChoice,
+  AircraftProfiles,
+  AircraftRequest,
+  OwnFigures,
+  AirportPhotos,
+  AirportPlace,
+  AirportSearch,
+  AirportServices,
+  ForecastWind,
+  AirportsInView,
+  AirspaceAt,
+  WeatherLoop,
+  WeatherMap,
+  AlertsAhead,
+  Alternates,
+  AltitudeChoice,
+  IcingForecast,
+  AppleSignedIn,
+  Briefing,
+  ChartInfo,
+  ChartPages,
+  ChartRefreshStarted,
+  CheckpointDescriptionMessage,
+  CheckpointNoteSaved,
+  Checkpoints,
+  ClassBResponse,
+  Classification,
+  Course,
+  Currency,
+  CurrencyDatesRequest,
+  Detour,
+  DeviceCode,
+  DevServices,
+  DevServiceStarted,
+  Flight,
+  FlightDetail,
+  FlightPlanFiled,
+  FlightPlanFilingRequest,
+  FlightRoute,
+  FlightServiceStatus,
+  FlightStatus,
+  FlightSummary,
+  GoogleMaps,
+  InspectionsRequest,
+  Instructor,
+  InstructorRequest,
+  LogbookEntry,
+  LogbookEntryRequest,
+  LogbookImportResult,
+  MapLayerAges,
+  ModelComparison,
+  NarrativeMessage,
+  NarrativeRequest,
+  NavLogMessage,
+  OverlayTiles,
+  NearestAirports,
+  Obstacles,
+  OralGrade,
+  OralGradeRequest,
+  OralQuestion,
+  OralQuestionRequest,
+  PastFlight,
+  PastFlights,
+  PickDeleted,
+  PickSaved,
+  Pilot,
+  PilotContactRequest,
+  PlacesFound,
+  PlateOverlay,
+  ProcedureDrawing,
+  ProcedureList,
+  Rating,
+  Reminders,
+  RetrainStarted,
+  Role,
+  RouteProfile,
+  RouteOptions,
+  SavedTrack,
+  SaveFlightRequest,
+  SignRequest,
+  SignInCapabilities,
+  SpeedDay,
+  Squawk,
+  SquawkRequest,
+  Status,
+  StopFields,
+  StreamMessage,
+  Subscription,
+  Tfrs,
+  Totals,
+  Traffic,
+  TrafficFound,
+  Training,
+  VorCheckRequest,
+  ClearanceAsk,
+  ClearancePlaces,
+  EmergencyFields,
+  DepartureWindow,
+  DepartureWindowAsk,
+  DueItem,
+  DueItemRequest,
+  Paperwork,
+  LogbookDraft,
+  LogbookDraftAsk,
+} from "./types";
 
 /**
  * Every call the pages make. Both servers' calls go through
@@ -22,8 +135,13 @@ export class ApiError extends Error {
    *  `classB`, Class B airspace is what stops it, and `detours` the
    *  waypoints round it, best first; `brief`, all of it in a few words. */
   constructor(
-    message: string, readonly status: number, readonly reasons: string[] = [], readonly advice: string | null = null,
-    readonly classB = false, readonly detours: Detour[] = [], readonly brief: string | null = null,
+    message: string,
+    readonly status: number,
+    readonly reasons: string[] = [],
+    readonly advice: string | null = null,
+    readonly classB = false,
+    readonly detours: Detour[] = [],
+    readonly brief: string | null = null,
   ) {
     super(message);
     this.name = "ApiError";
@@ -53,10 +171,12 @@ export function csrfHeaders(method: string): Record<string, string> {
  *  a query parameter it could not parse -- sends `detail` as a list of
  *  {loc, msg}, which read "[object Object]" in the toast. */
 export async function detailOf(response: Response): Promise<string> {
-  const body = await response.json().catch(() => ({})) as { detail?: unknown; error?: string };
+  const body = (await response.json().catch(() => ({}))) as { detail?: unknown; error?: string };
   const detail = Array.isArray(body.detail)
-    ? body.detail.map(d => (d && typeof d === "object" && "msg" in d ? String(d.msg) : String(d))).join("; ")
-    : typeof body.detail === "string" ? body.detail : undefined;
+    ? body.detail.map((d) => (d && typeof d === "object" && "msg" in d ? String(d.msg) : String(d))).join("; ")
+    : typeof body.detail === "string"
+      ? body.detail
+      : undefined;
   return detail || body.error || response.statusText || statusWords(response.status);
 }
 
@@ -64,7 +184,7 @@ export async function detailOf(response: Response): Promise<string> {
  *  phone's https address -- a response has no status text at all, and a
  *  502 from the gateway with an empty body read "request failed" on the
  *  map (the owner's screen recording, 2026-10-28). */
-export function statusWords(status: number): string {
+function statusWords(status: number): string {
   if (status === 401) return "Signed out";
   if (status === 403) return "Not allowed";
   if (status === 404) return "Not found";
@@ -81,10 +201,12 @@ export async function failIfNotOk(response: Response): Promise<void> {
   if (!response.ok) throw new ApiError(await detailOf(response), response.status);
 }
 
-/** The two rules above, for an openapi-fetch client. */
+/** The two rules above, for an openapi-fetch client, and each call's
+ *  request id (./requestId). */
 const csrfAndFailures: Middleware = {
   onRequest({ request }) {
     for (const [name, value] of Object.entries(csrfHeaders(request.method))) request.headers.set(name, value);
+    request.headers.set(REQUEST_ID_HEADER, newRequestId());
     return request;
   },
   async onResponse({ request, response }) {
@@ -117,11 +239,22 @@ export class GatewayRequest extends Request {
   }
 }
 
-const planner = createClient<paths>({ baseUrl: "", Request: GatewayRequest });
+export const planner = createClient<paths>({ baseUrl: "", Request: GatewayRequest });
+
+/** A logbook entry's columns kept of one drawn from the app's own track
+ *  (features/logbook-auto), which a typed or imported entry has none of. */
+type TrackColumns = "airHours" | "touchAndGoes" | "fromTrack" | "flightId";
 planner.use(csrfAndFailures);
 
+/** The assistant service's endpoints -- every Claude call: the narrative,
+ *  the checkpoint notes, the mock oral (and ./assistant, ./words) -- typed
+ *  by its own document, at the same /api/planner/... addresses: the
+ *  gateway sends them on to the assistant (PlannerProxyController). */
+const assistant = createClient<AssistantPaths>({ baseUrl: "", Request: GatewayRequest });
+assistant.use(csrfAndFailures);
+
 /** The Spring Boot endpoints, on this same origin. */
-const gateway = createClient<GatewayPaths>({ baseUrl: "" });
+export const gateway = createClient<GatewayPaths>({ baseUrl: "" });
 gateway.use(csrfAndFailures);
 
 /** A schema's shape as openapi-fetch hands it back: every fixed-length
@@ -133,7 +266,7 @@ type Widened<T> = T extends readonly (infer E)[] ? Widened<E>[] : T extends obje
  *  same schema with its tuples restored. Checked, not merely cast: the
  *  call's own response type must be `T` widened, so naming the wrong
  *  schema, or a field the schema has since lost, is a compile error. */
-const data = <T>(result: { data?: Widened<T> }): T => result.data as T;
+export const data = <T>(result: { data?: Widened<T> }): T => result.data as T;
 
 /**
  * Newline-delimited JSON, one line at a time as the bytes arrive: the
@@ -226,7 +359,31 @@ export function describeError(err: unknown, fallback = "request failed"): string
     return "No answer in time";
   }
   const firstLine = err instanceof Error ? err.message.split("\n")[0] : undefined;
+  // An answer with no words of its own but HTTP's reason ("Not Found",
+  // "Bad Gateway"), which the Brief printed raw ("Words unavailable: Not
+  // Found", the UI audit, 2026-11-09): said as what it means to a pilot.
+  if (err instanceof ApiError && firstLine && BARE_REASON.test(firstLine)) {
+    return err.status === 404 ? "Not available yet" : err.status >= 500 ? "The planner is not answering; try again in a moment" : fallback;
+  }
   return firstLine || fallback;
+}
+
+/** HTTP's own reason phrases (RFC 9110, section 15), which say nothing a
+ *  pilot can act on. */
+const BARE_REASON =
+  /^(Not Found|Bad Request|Internal Server Error|Bad Gateway|Service Unavailable|Gateway Time-?out|Unprocessable (Entity|Content)|Forbidden|Unauthorized|Method Not Allowed|Conflict)$/i;
+
+/** Whether the planner could not find a point of the route: its 404,
+ *  which names the ident in quotes ("No airport goes by 'KZZZ'."). The
+ *  route box says it on that point's pill, not the map's problem line
+ *  (the FPL audit's A2): the pilot typed it, the system is not down. */
+export function isUnknownPlace(err: unknown): boolean {
+  return err instanceof ApiError && err.status === 404;
+}
+
+/** The ident an unknown place's 404 names, if it names one. */
+export function unknownPlaceOf(err: unknown): string | null {
+  return isUnknownPlace(err) ? (/'([^']+)'/.exec((err as ApiError).message)?.[1]?.toUpperCase() ?? null) : null;
 }
 
 /** `describeError` for a query's `error` field, which is null while
@@ -235,6 +392,12 @@ export const errorMessage = (err: unknown, fallback: string) => (err ? describeE
 
 /** A route's stops as the planner takes them, "KDSM,KLNK"; none, none. */
 const stopsParam = (stops?: string[]) => (stops?.length ? stops.join(",") : undefined);
+
+/** The airplane the planner plans with: none asked for no airplane picked
+ *  (preferences' NO_AIRPLANE), which it plans with none -- the route's own
+ *  figures, and null for every one that needs an airplane -- rather than
+ *  the stock profile it was asked with before (the owner, 2026-11-09:
+ *  "don't assume"). */
 
 /** The airport index's shape (wingtip.airports.search_index), in its address
  *  so a day's copy in the browser of an older shape is not read as this
@@ -255,7 +418,9 @@ export const api = {
    *  Saved planned ahead), its chart reads queued behind the pilot's own
    *  (the planner's chart_model.READ_AHEAD). */
   checkpoints: (dep: string, dest: string, stops?: string[], signal?: AbortSignal, ahead = false) =>
-    planner.GET("/api/checkpoints", { params: { query: { dep, dest, stops: stopsParam(stops), ahead: ahead || undefined } }, signal }).then(data<Checkpoints>),
+    planner
+      .GET("/api/checkpoints", { params: { query: { dep, dest, stops: stopsParam(stops), ahead: ahead || undefined } }, signal })
+      .then(data<Checkpoints>),
 
   /**
    * The slow half: terrain, the obstacle file, the airspace shapefile
@@ -267,38 +432,50 @@ export const api = {
    * fly, meaningful only without a typed altitude.
    */
   async *navlog(
-    dep: string, dest: string, altitudeFt?: string, aircraft?: AircraftChoice, altitudeChoice?: AltitudeChoice,
-    depart?: string, signal?: AbortSignal, stops?: string[], classBClearance?: boolean, altitudes?: string,
-    checkpoints = true, rules: "vfr" | "ifr" = "vfr", alternate = "", procedures = "", crossings = "", ground = "", holds = "",
-    altitudeNearest = false, runways = "", patterns = "", ahead = false,
+    dep: string,
+    dest: string,
+    altitudeFt?: string,
+    aircraft?: AircraftChoice,
+    altitudeChoice?: AltitudeChoice,
+    depart?: string,
+    signal?: AbortSignal,
+    stops?: string[],
+    classBClearance?: boolean,
+    altitudes?: string,
+    checkpoints = true,
+    rules: "vfr" | "ifr" = "vfr",
+    alternate = "",
+    procedures = "",
+    crossings = "",
+    ground = "",
+    holds = "",
+    altitudeNearest = false,
+    runways = "",
+    patterns = "",
+    ahead = false,
+    altitudeStarts = "",
   ): AsyncGenerator<NavLogMessage> {
     const result = await planner.GET("/api/navlog", {
       params: {
         query: {
-          dep, dest, stops: stopsParam(stops),
+          dep,
+          dest,
+          stops: stopsParam(stops),
           altitude_ft: altitudeFt ? Number(altitudeFt) : undefined,
           // Picked on the wheel: each leg at its nearest legal altitude.
           altitude_nearest: altitudeFt && altitudeNearest ? true : undefined,
           altitude_choice: altitudeChoice && altitudeChoice !== "fastest" ? altitudeChoice : undefined,
-          aircraft: aircraft?.profile,
-          cruise_tas_kt: aircraft?.cruiseTasKt,
-          fuel_burn_gph: aircraft?.fuelBurnGph,
-          usable_fuel_gal: aircraft?.usableFuelGal,
-          climb_tas_kt: aircraft?.climbTasKt,
-          climb_fuel_burn_gph: aircraft?.climbFuelBurnGph,
-          cruise_power_pct: aircraft?.cruisePowerPct,
-          service_ceiling_ft: aircraft?.serviceCeilingFt,
+          ...airplaneQuery(aircraft),
           depart: depart || undefined,
           class_b_clearance: classBClearance || undefined,
           altitudes: altitudes || undefined,
+          altitude_starts: altitudeStarts || undefined, // begun there: Start At
           checkpoints: checkpoints ? undefined : false,
           // Under IFR (the planner's wingtip.ifr); VFR, the default, unsaid.
           rules: rules === "ifr" ? rules : undefined,
           // The IFR alternate filed, whose fuel is in the totals.
           alternate: rules === "ifr" && alternate ? alternate : undefined,
-          // The procedures picked, which the legs are flown by and the
-          // descents planned to.
-          procedures: procedures || undefined,
+          procedures: procedures || undefined, // flown by, descended to
           // The runway each departure picked is left from.
           runways: runways || undefined,
           // With none picked at a field, its runway into the wind, the one
@@ -313,11 +490,11 @@ export const api = {
           // The altitudes given to cross their fixes at.
           crossings: crossings || undefined,
           ground: ground || undefined,
-          // The pilot's holds, flown on the legs leaving their points.
-          holds: holds || undefined,
+          holds: holds || undefined, // flown on the legs leaving their points
         },
       },
-      parseAs: "stream", signal,
+      parseAs: "stream",
+      signal,
     });
     yield* ndjson<NavLogMessage>(result.data as ReadableStream | undefined);
   },
@@ -326,12 +503,33 @@ export const api = {
    *  chart covering it. One call for all thirty rather than one per
    *  marker on hover: the planner has the airspace and both national
    *  weather caches in memory already. */
-  classB: () => planner.GET("/api/class-b").then(data<ClassBResponse>).then(r => r.airports),
-  tfrs: () => planner.GET("/api/tfrs").then(data<Tfrs>).then(r => r.tfrs),
+  classB: () =>
+    planner
+      .GET("/api/class-b")
+      .then(data<ClassBResponse>)
+      .then((r) => r.airports),
+  tfrs: () =>
+    planner
+      .GET("/api/tfrs")
+      .then(data<Tfrs>)
+      .then((r) => r.tfrs),
   /** When the planner fetched the METARs and TFRs the map draws. */
   mapAges: () => planner.GET("/api/map/ages").then(data<MapLayerAges>),
-  nearestAirports: (lat: number, lon: number) =>
-    planner.GET("/api/airports/nearest", { params: { query: { lat, lon, limit: 10 } } }).then(data<NearestAirports>).then(r => r.airports),
+  nearestAirports: (lat: number, lon: number, limit = 10, at?: number) =>
+    planner
+      .GET("/api/airports/nearest", { params: { query: { lat, lon, limit, at } } })
+      .then(data<NearestAirports>)
+      .then((r) => r.airports),
+  /** What the emergency assistant ranks (features/emergency/emergency): the fields round own ship,
+   *  the wind at its altitude and the airplane's glide (its own ratio over its type's, or "own"'s alone). */
+  emergencyFields: (lat: number, lon: number, altitudeFt: number | null, aircraft: string | null, glideRatio: number | null) =>
+    planner
+      .GET("/api/emergency/fields", {
+        params: {
+          query: { lat, lon, altitude_ft: altitudeFt ?? undefined, aircraft: aircraft ?? undefined, glide_ratio: glideRatio ?? undefined },
+        },
+      })
+      .then(data<EmergencyFields>),
   /** The fields round a position with fuel, food, repair or a flight
    *  school, nearest first, for the map's Stops (StopsCard). */
   stopsNear: (lat: number, lon: number, nm: number) =>
@@ -342,7 +540,10 @@ export const api = {
   /** Where a place typed is -- an airport, a town, an address -- for
    *  Nearest to find the fields near it. */
   placesSearch: (q: string) =>
-    planner.GET("/api/places/search", { params: { query: { q } } }).then(data<PlacesFound>).then(r => r.places),
+    planner
+      .GET("/api/places/search", { params: { query: { q } } })
+      .then(data<PlacesFound>)
+      .then((r) => r.places),
 
   /** Which of the services the developer console links to are
    *  running, and whether starting one is possible here at all. */
@@ -351,34 +552,51 @@ export const api = {
   /** Start one, if it is not already up. Already running is a success:
    *  the console asks on every click so the link always works. */
   startDevService: (service: string) =>
-    planner.POST("/api/dev/services/{service}/start", { params: { path: { service } } })
-      .then(data<DevServiceStarted>),
+    planner.POST("/api/dev/services/{service}/start", { params: { path: { service } } }).then(data<DevServiceStarted>),
 
   /** The stock performance profiles the nav log can be computed for. */
   /** Under IFR: the destination's "1-2-3" (14 CFR 91.169(b)) for an ETA,
    *  the pilot's alternate checked at its own (91.169(c)), and the nearest
    *  fields that will do, reached at `tasKt`. */
   alternate: (dest: string, eta: string, tasKt: number, alternate?: string) =>
-    planner.GET("/api/alternate", { params: { query: { dest, eta, tas_kt: tasKt, alternate: alternate || undefined } } })
+    planner
+      .GET("/api/alternate", { params: { query: { dest, eta, tas_kt: tasKt, alternate: alternate || undefined } } })
       .then(data<Alternates>),
+
+  /** Under IFR, the AWC's forecast icing (CIP and FIP, as its GFA draws
+   *  them) on each leg at the altitude flown (wingtip.icing_forecast): the
+   *  nav log's fixes and each leg's altitude, ETE and time on the ground. */
+  icingRoute: (q: { fixes: string; altFt: string; legMin: string; groundMin: string; depart?: string }) =>
+    planner
+      .GET("/api/icing/route", {
+        params: { query: { fixes: q.fixes, alt_ft: q.altFt, leg_min: q.legMin, ground_min: q.groundMin, depart: q.depart || undefined } },
+      })
+      .then(data<IcingForecast>),
 
   /** A flight from one airport back to it, with no stops -- the pattern,
    *  practice approaches: its time aloft at the airplane's burn, and the
    *  fuel check. */
   localFlight: (ident: string, durationMin: number, aircraft?: AircraftChoice, depart?: string, rules: "vfr" | "ifr" = "vfr") =>
-    planner.GET("/api/local-flight", {
-      params: {
-        query: {
-          dep: ident, dest: ident, duration_min: durationMin, aircraft: aircraft?.profile,
-          cruise_tas_kt: aircraft?.cruiseTasKt, fuel_burn_gph: aircraft?.fuelBurnGph, usable_fuel_gal: aircraft?.usableFuelGal,
-          climb_tas_kt: aircraft?.climbTasKt, climb_fuel_burn_gph: aircraft?.climbFuelBurnGph,
-          cruise_power_pct: aircraft?.cruisePowerPct, service_ceiling_ft: aircraft?.serviceCeilingFt, depart: depart || undefined,
-          rules: rules === "ifr" ? rules : undefined,
+    planner
+      .GET("/api/local-flight", {
+        params: {
+          query: {
+            dep: ident,
+            dest: ident,
+            duration_min: durationMin,
+            ...airplaneQuery(aircraft),
+            depart: depart || undefined,
+            rules: rules === "ifr" ? rules : undefined,
+          },
         },
-      },
-    }).then(data<Totals>),
+      })
+      .then(data<Totals>),
 
-  aircraftProfiles: () => planner.GET("/api/aircraft-profiles").then(data<AircraftProfiles>).then(r => r.profiles),
+  aircraftProfiles: () =>
+    planner
+      .GET("/api/aircraft-profiles")
+      .then(data<AircraftProfiles>)
+      .then((r) => r.profiles),
 
   /** The whole stack in one snapshot -- the developer console. */
   status: () => planner.GET("/api/status").then(data<Status>),
@@ -403,22 +621,37 @@ export const api = {
 
   /** `legs`, the nav log's (lib/briefingLegs), places each hazard on its
    *  legs and times it by their ETEs (Briefing's `on_route`). */
-  briefing: (dep: string, dest: string, depart?: string, eteMin?: number, stops?: string[], signal?: AbortSignal,
-    legs?: { fixes: string; legMin: string; groundMin: string } | null) =>
-    planner.GET("/api/briefing", {
-      params: { query: {
-        dep, dest, stops: stopsParam(stops), depart, ete_min: eteMin,
-        ...(legs ? { fixes: legs.fixes, leg_min: legs.legMin, ground_min: legs.groundMin } : {}),
-      } }, signal,
-    }).then(data<Briefing>),
+  briefing: (
+    dep: string,
+    dest: string,
+    depart?: string,
+    eteMin?: number,
+    stops?: string[],
+    signal?: AbortSignal,
+    legs?: { fixes: string; legMin: string; groundMin: string } | null,
+  ) =>
+    planner
+      .GET("/api/briefing", {
+        params: {
+          query: {
+            dep,
+            dest,
+            stops: stopsParam(stops),
+            depart,
+            ete_min: eteMin,
+            ...(legs ? { fixes: legs.fixes, leg_min: legs.legMin, ground_min: legs.groundMin } : {}),
+          },
+        },
+        signal,
+      })
+      .then(data<Briefing>),
 
   /** The chart the map draws, for a map with no route on it yet. */
   chart: () => planner.GET("/api/chart").then(data<ChartInfo>),
 
   /** What the chart draws at a point, so an added pick is categorised from
    *  the pixels rather than from whatever a dropdown was left on. */
-  classify: (lat: number, lon: number) =>
-    planner.GET("/api/classify", { params: { query: { lat, lon } } }).then(data<Classification>),
+  classify: (lat: number, lon: number) => planner.GET("/api/classify", { params: { query: { lat, lon } } }).then(data<Classification>),
 
   savePick: (pick: {
     departure_ident: string;
@@ -453,7 +686,7 @@ export const api = {
    * within the month's cap (PlannerProxyController).
    */
   async *narrative(request: NarrativeRequest, signal?: AbortSignal): AsyncGenerator<NarrativeMessage> {
-    const result = await planner.POST("/api/briefing/narrative", { body: request, parseAs: "stream", signal });
+    const result = await assistant.POST("/api/briefing/narrative", { body: request, parseAs: "stream", signal });
     yield* ndjson<NarrativeMessage>(result.data as ReadableStream | undefined);
   },
 
@@ -463,21 +696,25 @@ export const api = {
    * checkpoint doesn't hold up the ones that already arrived.
    */
   async *describeCheckpoints(
-    dep: string, dest: string, signal?: AbortSignal, stops: string[] = [],
+    dep: string,
+    dest: string,
+    signal?: AbortSignal,
+    stops: string[] = [],
   ): AsyncGenerator<CheckpointDescriptionMessage> {
     // A POST: each checkpoint without a note is a billed Claude call.
-    const result = await planner.POST("/api/checkpoint-notes/generate", {
+    const result = await assistant.POST("/api/checkpoint-notes/generate", {
       body: { departure_ident: dep, destination_ident: dest, stops },
-      parseAs: "stream", signal,
+      parseAs: "stream",
+      signal,
     });
     yield* ndjson<CheckpointDescriptionMessage>(result.data as ReadableStream | undefined);
   },
 
   /** A pilot's own edit to one checkpoint's identification note. */
   saveCheckpointNote: (dep: string, dest: string, lat: number, lon: number, description: string, stops: string[] = []) =>
-    planner.POST("/api/checkpoint-notes", {
-      body: { departure_ident: dep, destination_ident: dest, stops, lat, lon, description },
-    }).then(data<CheckpointNoteSaved>),
+    planner
+      .POST("/api/checkpoint-notes", { body: { departure_ident: dep, destination_ident: dest, stops, lat, lon, description } })
+      .then(data<CheckpointNoteSaved>),
 
   /** How the currently promoted model was actually chosen -- every
    *  algorithm retrain() tried, not just the winner. */
@@ -489,7 +726,9 @@ export const api = {
   airportIndex: () =>
     // Behind what the page needs first: half a megabyte, wanted only when
     // a pilot types.
-    planner.GET("/api/airports/index", { params: { query: { v: INDEX_VERSION } }, priority: "low" }).then(r => r.data as unknown as { airports: unknown[][] }),
+    planner
+      .GET("/api/airports/index", { params: { query: { v: INDEX_VERSION } }, priority: "low" })
+      .then((r) => r.data as unknown as { airports: unknown[][] }),
 
   /** The same answer's bytes, unread, into the browser's cache and the
    *  service worker's, where airportIndex finds them when a pilot types:
@@ -501,8 +740,10 @@ export const api = {
    *  starts with `q`. Empty `q` short-circuits server-side to `[]`, so
    *  this is safe to call on every keystroke including the first. */
   airportSearch: (q: string, fixes = false, near = "") =>
-    planner.GET("/api/airports/search", { params: { query: { q, fixes: fixes || undefined, near: near || undefined } } })
-      .then(data<AirportSearch>).then(r => r.airports),
+    planner
+      .GET("/api/airports/search", { params: { query: { q, fixes: fixes || undefined, near: near || undefined } } })
+      .then(data<AirportSearch>)
+      .then((r) => r.airports),
 
   /** One airport's card: where it is, the airspace over it, its runways
    *  and radio, and the weather there now. Ahead of the chart's tiles,
@@ -511,33 +752,53 @@ export const api = {
    *  near the route (wingtip.spoken). */
   clearancePlaces: (body: ClearanceAsk) => planner.POST("/api/clearance/places", { body }).then(data<ClearancePlaces>),
 
+  /** "When should I go?": the Go / No-Go for each departure hour the
+   *  forecasts reach, and the best windows (the planner's app.window). */
+  departureWindow: (body: DepartureWindowAsk, signal?: AbortSignal) =>
+    planner.POST("/api/departure-window", { body, signal }).then(data<DepartureWindow>),
+  /** The logbook entry a recorded track makes, for the pilot to review
+   *  (the engine's logbook_from_track, the fields and approaches round
+   *  the track found by the planner); nothing saved. */
+  logbookDraft: (body: LogbookDraftAsk, signal?: AbortSignal) =>
+    planner.POST("/api/logbook-draft", { body, signal }).then(data<LogbookDraft>),
+
   /** The mock oral (the planner's app.oral): a question about this
    *  flight, and an answer graded. The developer's, for now. */
   oral: {
-    question: (body: OralQuestionRequest) => planner.POST("/api/oral/question", { body }).then(data<OralQuestion>),
-    grade: (body: OralGradeRequest) => planner.POST("/api/oral/grade", { body }).then(data<OralGrade>),
+    question: (body: OralQuestionRequest) => assistant.POST("/api/oral/question", { body }).then(data<OralQuestion>),
+    grade: (body: OralGradeRequest) => assistant.POST("/api/oral/grade", { body }).then(data<OralGrade>),
   },
   airport: (ident: string) =>
     planner.GET("/api/airport/{ident}", { params: { path: { ident } }, priority: "high" }).then(data<AirportPlace>),
   /** The pictures an airport's card swipes through behind its diagram. */
-  airportPhotos: (ident: string) =>
-    planner.GET("/api/airport/{ident}/photos", { params: { path: { ident } } }).then(data<AirportPhotos>),
+  airportPhotos: (ident: string) => planner.GET("/api/airport/{ident}/photos", { params: { path: { ident } } }).then(data<AirportPhotos>),
   /** The ways to fly a route, for FPL's Routes: the fastest, the best
    *  weather's and the fewest stops', round storms, weather under the
    *  minimums given, prohibited areas, TFRs and high ground; and what the
    *  pilot's own route (`stops`) meets. */
-  routeOptions: (dep: string, dest: string, stops: string, aircraft: AircraftChoice | undefined, depart: string | undefined,
-    minimums: { ceilingFt: number | null; visibilitySm: number | null }) =>
-    planner.GET("/api/route-options", {
-      params: {
-        query: {
-          dep, dest, stops: stops || undefined, aircraft: aircraft?.profile,
-          cruise_tas_kt: aircraft?.cruiseTasKt, fuel_burn_gph: aircraft?.fuelBurnGph, usable_fuel_gal: aircraft?.usableFuelGal,
-          service_ceiling_ft: aircraft?.serviceCeilingFt, depart: depart || undefined,
-          min_ceiling_ft: minimums.ceilingFt ?? undefined, min_visibility_sm: minimums.visibilitySm ?? undefined,
+  routeOptions: (
+    dep: string,
+    dest: string,
+    stops: string,
+    aircraft: AircraftChoice | undefined,
+    depart: string | undefined,
+    minimums: { ceilingFt: number | null; visibilitySm: number | null },
+  ) =>
+    planner
+      .GET("/api/route-options", {
+        params: {
+          query: {
+            dep,
+            dest,
+            stops: stops || undefined,
+            ...airplaneQuery(aircraft),
+            depart: depart || undefined,
+            min_ceiling_ft: minimums.ceilingFt ?? undefined,
+            min_visibility_sm: minimums.visibilitySm ?? undefined,
+          },
         },
-      },
-    }).then(data<RouteOptions>),
+      })
+      .then(data<RouteOptions>),
   /** What the field offers on the ground, for a stop: its own request, as
    *  the places near it take the planner a second or two the first time. */
   airportServices: (ident: string) =>
@@ -548,21 +809,21 @@ export const api = {
     planner.GET("/api/airport/{ident}/forecast-wind", { params: { path: { ident }, query: { at } } }).then(data<ForecastWind | null>),
   /** The field's instrument procedures -- approaches, arrivals and
    *  departures -- from the FAA's CIFP, for the route's Procedures. */
-  procedures: (ident: string) =>
-    planner.GET("/api/airport/{ident}/procedures", { params: { path: { ident } } }).then(data<ProcedureList>),
+  procedures: (ident: string) => planner.GET("/api/airport/{ident}/procedures", { params: { path: { ident } } }).then(data<ProcedureList>),
   /** One of them drawn for the map, with the transition picked. */
   procedure: (ident: string, procedure: string, transition: string | null) =>
-    planner.GET("/api/airport/{ident}/procedures/{procedure}", {
-      params: { path: { ident, procedure }, query: transition ? { transition } : {} },
-    }).then(data<ProcedureDrawing>),
+    planner
+      .GET("/api/airport/{ident}/procedures/{procedure}", {
+        params: { path: { ident, procedure }, query: transition ? { transition } : {} },
+      })
+      .then(data<ProcedureDrawing>),
   /** An approach's plate's plan view placed on the map, where the planner
    *  could place it (wingtip.plates); 404 where it could not. */
   plate: (ident: string, procedure: string) =>
     planner.GET("/api/airport/{ident}/procedures/{procedure}/plate", { params: { path: { ident, procedure } } }).then(data<PlateOverlay>),
   /** The pages of one of the FAA's charts, by its address, drawn by the
    *  planner -- of a booklet, the ones naming `airport`. */
-  faaChart: (url: string, airport: string) =>
-    planner.GET("/api/faa-chart", { params: { query: { url, airport } } }).then(data<ChartPages>),
+  faaChart: (url: string, airport: string) => planner.GET("/api/faa-chart", { params: { query: { url, airport } } }).then(data<ChartPages>),
 
   /** The landing fields inside a box, the biggest first, each with its
    *  METAR's flight category: what the map lays its chips and tap
@@ -571,13 +832,14 @@ export const api = {
    *  (`priority`): over plain http a browser opens six connections to
    *  a host, and on a zoom sixty tiles queued in front of it. */
   airportsInView: (box: { south: number; west: number; north: number; east: number; limit?: number; reporting?: boolean }) =>
-    planner.GET("/api/airports/in-view", { params: { query: box }, priority: "high" })
-      .then(data<AirportsInView>).then(r => r.airports),
+    planner
+      .GET("/api/airports/in-view", { params: { query: box }, priority: "high" })
+      .then(data<AirportsInView>)
+      .then((r) => r.airports),
 
   /** The airspace over a point, from the ground up: the classes in
    *  bands with their minimums, the Mode C veil, special use and TFRs. */
-  airspaceAt: (lat: number, lon: number) =>
-    planner.GET("/api/airspace/at", { params: { query: { lat, lon } } }).then(data<AirspaceAt>),
+  airspaceAt: (lat: number, lon: number) => planner.GET("/api/airspace/at", { params: { query: { lat, lon } } }).then(data<AirspaceAt>),
 
   /** The weather the map draws in a box (vfr.weather_map): the SIGMETs and
    *  G-AIRMETs, the PIREPs, the winds aloft at `altitudeFt`, and when the
@@ -585,14 +847,38 @@ export const api = {
   weatherMap: (box: { south: number; west: number; north: number; east: number }, altitudeFt: number | null) =>
     planner.GET("/api/weather/map", { params: { query: { ...box, altitude_ft: altitudeFt ?? undefined } } }).then(data<WeatherMap>),
 
-  /** What is ahead of own ship in the air (lib/map/ahead): airspace,
+  /** The radar or satellite loop's frames (wingtip.weather_loop), oldest
+   *  first, each with its tile templates. */
+  weatherLoop: (kind: "radar" | "ir" | "visible" | "both") =>
+    planner.GET("/api/weather/loop", { params: { query: { kind } } }).then(data<WeatherLoop>),
+
+  /** What is ahead of own ship in the air (lib/map/position/ahead): airspace,
    *  special-use areas and TFRs its track goes into, the ground and
    *  obstacles it comes near. */
   airspaceAhead: (ask: { lat: number; lon: number; track: number; gs: number; alt?: number; vs: number }) =>
     planner.GET("/api/airspace/ahead", { params: { query: ask } }).then(data<AlertsAhead>),
 
+  /** What the FAA's SWIM feeds say now (lib/liveReports): the ITWS alerts
+   *  at airports, special activity airspace's status, an airport's RVR
+   *  and D-ATIS, the Command Center's programs, a flight's departure. */
+  liveItws: (airports: string[]) =>
+    planner.GET("/api/live/itws", { params: { query: { airports: airports.join(",") } } }).then(data<ItwsAlerts>),
+  liveSaa: (designators: string[]) =>
+    planner.GET("/api/live/saa", { params: { query: { designators: designators.join(",") } } }).then(data<SaaStatuses>),
+  liveRvr: (airport: string) => planner.GET("/api/live/rvr", { params: { query: { airport } } }).then(data<AirportRvr>),
+  liveAtis: (airport: string) => planner.GET("/api/live/atis", { params: { query: { airport } } }).then(data<AirportAtis>),
+  liveFlow: (airports: string[]) =>
+    planner.GET("/api/live/flow", { params: { query: { airports: airports.join(",") } } }).then(data<FlowAtAirports>),
+  liveDepartures: (ident: string) => planner.GET("/api/live/departures", { params: { query: { ident } } }).then(data<DepartureEvents>),
+
+  /** What the in-flight copilot reads (features/copilot): the fields round
+   *  the airplane with their METARs, the areas on the rest of the route
+   *  ("lat,lon;..."), ITWS's alerts at the destination and alternate. */
+  copilotAround: (ask: { lat: number; lon: number; dest: string; alternate?: string; path: string }) =>
+    planner.GET("/api/copilot/around", { params: { query: ask } }).then(data<CopilotAround>),
+
   /** The airplanes ADS-B receivers hear within `radius` nm of a point,
-   *  from adsb.lol's open data (TrafficLayer). */
+   *  from adsb.lol's open data (TrafficGl). */
   traffic: (ask: { lat: number; lon: number; radius: number }) =>
     planner.GET("/api/traffic", { params: { query: ask } }).then(data<Traffic>),
 
@@ -604,8 +890,7 @@ export const api = {
   /** The airplanes in the air a pilot names, by callsign, registration or
    *  ICAO address, to track one (AircraftCard); with none in the air, the
    *  FAA's record of the one named, to open its card all the same. */
-  trafficFind: (q: string) =>
-    planner.GET("/api/traffic/find", { params: { query: { q } } }).then(data<TrafficFound>),
+  trafficFind: (q: string) => planner.GET("/api/traffic/find", { params: { query: { q } } }).then(data<TrafficFound>),
 
   /** A tracked flight's airplane, where it took off and its path today,
    *  and a US airplane's FAA registration. */
@@ -613,12 +898,15 @@ export const api = {
   /** Its last ten flights found, or those before a day (`until`) and a
    *  takeoff (`before`, the last listed): the list's next page. */
   trafficHistory: (hex: string, from?: { until?: string; before?: number }) =>
-    planner.GET("/api/traffic/flight/{hex_id}/history", {
-      params: { path: { hex_id: hex }, query: { until: from?.until, before: from?.before } },
-    }).then(data<PastFlights>),
+    planner
+      .GET("/api/traffic/flight/{hex_id}/history", {
+        params: { path: { hex_id: hex }, query: { until: from?.until, before: from?.before } },
+      })
+      .then(data<PastFlights>),
   /** One of them, its reports, for its track log and its replay. */
   trafficPastFlight: (hex: string, id: number) =>
-    planner.GET("/api/traffic/flight/{hex_id}/history/{flight_id}", { params: { path: { hex_id: hex, flight_id: id } } })
+    planner
+      .GET("/api/traffic/flight/{hex_id}/history/{flight_id}", { params: { path: { hex_id: hex, flight_id: id } } })
       .then(data<PastFlight>),
   trafficFlight: (hex: string) =>
     planner.GET("/api/traffic/flight/{hex_id}", { params: { path: { hex_id: hex } } }).then(data<FlightDetail>),
@@ -630,29 +918,19 @@ export const api = {
   /** The deployment's key for Google's map tiles; a 404 where it has
    *  none (OverlayTiles). */
   googleMaps: () => planner.GET("/api/map/google").then(data<GoogleMaps>),
+  /** The FAA's obstacles in a box, at least 200 ft tall, tallest first:
+   *  what the tilted map stands up over its ground (TerrainGl). */
+  obstacles: (box: { south: number; west: number; north: number; east: number }) =>
+    planner.GET("/api/terrain/obstacles", { params: { query: box } }).then(data<Obstacles>),
 
   /** The route a flight number is scheduled to fly, and whether the
    *  airplane where it is now is on it; null for none known. */
   trafficRoute: (ask: { callsign: string; lat?: number; lon?: number }) =>
     planner.GET("/api/traffic/route", { params: { query: ask } }).then(data<FlightRoute | null>),
 
-  /** The VFR waypoints in the map's view (VPBNG), for its diamonds. */
-  waypointsInView: (box: { south: number; west: number; north: number; east: number }) =>
-    planner.GET("/api/waypoints/in-view", { params: { query: box } }).then(data<WaypointsInView>).then(r => r.waypoints),
-
-  /** The Class B, C and D in the map's view, each one's lines and its
-   *  altitudes, to draw over the chart (AirspaceLayer). */
-  airspaceInView: (box: { south: number; west: number; north: number; east: number; classes?: string }) =>
-    planner.GET("/api/airspace/in-view", { params: { query: box } }).then(data<AirspaceInView>).then(r => r.volumes),
-
-  /** The VORs in the map's view, and with `fixes` the low enroute
-   *  chart's fixes too (NavaidsLayer). */
-  navaidsInView: (box: { south: number; west: number; north: number; east: number }, fixes: boolean) =>
-    planner.GET("/api/navaids/in-view", { params: { query: { ...box, fixes } } }).then(data<NavaidsInView>),
-
   /** The cycle's overlay tiles -- airspace, special use, airports, navaids
    *  and fixes as one PMTiles archive -- by name, zooms and layers, for a
-   *  MapLibre map's source (lib/map/overlayTiles). */
+   *  MapLibre map's source (lib/map/sources/overlayTiles). */
   overlayTiles: () => planner.GET("/api/overlay-tiles").then(data<OverlayTiles>),
 
   /**
@@ -680,7 +958,7 @@ export const api = {
   deviceToken: async (deviceCode: string): Promise<AppleSignedIn | "waiting" | "gone"> => {
     try {
       const { data: answer, response } = await gateway.POST("/api/auth/device/token", { body: { deviceCode } });
-      return response.status === 202 ? "waiting" : answer as AppleSignedIn;
+      return response.status === 202 ? "waiting" : (answer as AppleSignedIn);
     } catch (err) {
       if (err instanceof ApiError && err.status === 410) return "gone";
       throw err;
@@ -767,17 +1045,24 @@ export const api = {
      *  91.411, 91.413, 91.207). */
     inspections: (id: number, request: InspectionsRequest) =>
       gateway.PUT("/api/aircraft/{id}/inspections", { params: { path: { id } }, body: request }).then(data<Aircraft>),
-    /** Its checklist, as its owner wrote it, and that replaced whole. */
-    checklist: (id: number) =>
-      gateway.GET("/api/aircraft/{id}/checklist", { params: { path: { id } } }).then(data<ChecklistDto>),
-    saveChecklist: (id: number, checklist: ChecklistDto) =>
-      gateway.PUT("/api/aircraft/{id}/checklist", { params: { path: { id } }, body: checklist }).then(data<ChecklistDto>),
+    /** Its own handbook figures, only those given added (an inline ask's Save, lib/airplane). */
+    figures: (id: number, figures: OwnFigures) =>
+      gateway.PUT("/api/aircraft/{id}/figures", { params: { path: { id } }, body: figures }).then(data<Aircraft>),
     /** Its squawks, newest first; one written, changed or fixed, or taken out. */
     squawks: (id: number) => gateway.GET("/api/aircraft/{id}/squawks", { params: { path: { id } } }).then(data<Squawk[]>),
     addSquawk: (id: number, squawk: SquawkRequest) =>
       gateway.POST("/api/aircraft/{id}/squawks", { params: { path: { id } }, body: squawk }).then(data<Squawk>),
     updateSquawk: (id: number, squawkId: number, squawk: SquawkRequest) =>
       gateway.PUT("/api/aircraft/{id}/squawks/{squawkId}", { params: { path: { id, squawkId } }, body: squawk }).then(data<Squawk>),
+    /** Its due items -- ADs and the owner's others -- added, changed or
+     *  taken out; they come back with the airplane (dueItems). */
+    addDueItem: (id: number, item: DueItemRequest) =>
+      gateway.POST("/api/aircraft/{id}/due-items", { params: { path: { id } }, body: item }).then(data<DueItem>),
+    updateDueItem: (id: number, itemId: number, item: DueItemRequest) =>
+      gateway.PUT("/api/aircraft/{id}/due-items/{itemId}", { params: { path: { id, itemId } }, body: item }).then(data<DueItem>),
+    removeDueItem: async (id: number, itemId: number): Promise<void> => {
+      await gateway.DELETE("/api/aircraft/{id}/due-items/{itemId}", { params: { path: { id, itemId } } });
+    },
     removeSquawk: async (id: number, squawkId: number): Promise<void> => {
       await gateway.DELETE("/api/aircraft/{id}/squawks/{squawkId}", { params: { path: { id, squawkId } } });
     },
@@ -794,8 +1079,7 @@ export const api = {
    *  whether it is connected, and a flight plan filed in the pilot's name. */
   flightService: {
     status: () => gateway.GET("/api/flight-service").then(data<FlightServiceStatus>),
-    file: (plan: FlightPlanFilingRequest) =>
-      gateway.POST("/api/flight-service/flight-plans", { body: plan }).then(data<FlightPlanFiled>),
+    file: (plan: FlightPlanFilingRequest) => gateway.POST("/api/flight-service/flight-plans", { body: plan }).then(data<FlightPlanFiled>),
   },
 
   /** The web app's speed, a day at a time (SpeedController): the
@@ -817,30 +1101,35 @@ export const api = {
     reminders: () => gateway.GET("/api/logbook/reminders").then(data<Reminders>),
     setReminders: (on: boolean) => gateway.PUT("/api/logbook/reminders", { body: { on } }).then(data<Reminders>),
     /** Flights from a file, those already in the logbook left out. */
-    importAll: (entries: LogbookEntryRequest[]) =>
-      gateway.POST("/api/logbook/import", { body: { entries } }).then(data<LogbookImportResult>),
+    importAll: (entries: Omit<LogbookEntryRequest, TrackColumns>[]) =>
+      gateway
+        .POST("/api/logbook/import", {
+          // A file's flights were not drawn from a track (features/logbook-auto).
+          body: { entries: entries.map((e) => ({ ...e, airHours: 0, touchAndGoes: 0, fromTrack: false, flightId: null })) },
+        })
+        .then(data<LogbookImportResult>),
   },
+
+  /** What falls due for the pilot and their airplanes, soonest first, each
+   *  with its rule (PaperworkController): the Logbook's Coming up. */
+  paperwork: () => gateway.GET("/api/paperwork").then(data<Paperwork>),
 
   /** A student's way to the checkride, beside the logbook. */
   training: {
     get: () => gateway.GET("/api/training").then(data<Training>),
-    setKnowledgeTest: (codes: string[]) =>
-      gateway.PUT("/api/training/knowledge-test", { body: { codes } }).then(data<Training>),
+    setKnowledgeTest: (codes: string[]) => gateway.PUT("/api/training/knowledge-test", { body: { codes } }).then(data<Training>),
     endorse: (code: string, endorsedOn: string) =>
       gateway.PUT("/api/training/endorsements/{code}", { params: { path: { code } }, body: { endorsedOn } }).then(data<Training>),
-    withdraw: (code: string) =>
-      gateway.DELETE("/api/training/endorsements/{code}", { params: { path: { code } } }).then(data<Training>),
+    withdraw: (code: string) => gateway.DELETE("/api/training/endorsements/{code}", { params: { path: { code } } }).then(data<Training>),
     /** Their name as their certificate gives it, which endorsements use. */
     setName: (fullName: string) => gateway.PUT("/api/training/name", { body: { fullName } }).then(data<Training>),
     /** An instructor asked in by address, who is emailed. */
     askInstructor: (email: string) => gateway.POST("/api/training/instructors", { body: { email } }).then(data<Training>),
-    dropInstructor: (id: number) =>
-      gateway.DELETE("/api/training/instructors/{id}", { params: { path: { id } } }).then(data<Training>),
+    dropInstructor: (id: number) => gateway.DELETE("/api/training/instructors/{id}", { params: { path: { id } } }).then(data<Training>),
     /** A saved flight put to an instructor for its solo cross-country review. */
     askReview: (body: { flightId: number; instructorId: number; makeModel: string; flightOn: string; note: string | null }) =>
       gateway.POST("/api/training/reviews", { body }).then(data<Training>),
-    withdrawReview: (id: number) =>
-      gateway.DELETE("/api/training/reviews/{id}", { params: { path: { id } } }).then(data<Training>),
+    withdrawReview: (id: number) => gateway.DELETE("/api/training/reviews/{id}", { params: { path: { id } } }).then(data<Training>),
     /** How far along an approach set them: briefed, flown, its quiz so far. */
     lessonProgress: (id: number, body: LessonProgressRequest) =>
       gateway.POST("/api/training/lessons/{id}/progress", { params: { path: { id } }, body }).then(data<Training>),
@@ -854,8 +1143,7 @@ export const api = {
     stop: () => gateway.DELETE("/api/instructor").then(data<Instructor>),
     accept: (linkId: number) =>
       gateway.POST("/api/instructor/students/{linkId}/accept", { params: { path: { linkId } } }).then(data<Instructor>),
-    leave: (linkId: number) =>
-      gateway.DELETE("/api/instructor/students/{linkId}", { params: { path: { linkId } } }).then(data<Instructor>),
+    leave: (linkId: number) => gateway.DELETE("/api/instructor/students/{linkId}", { params: { path: { linkId } } }).then(data<Instructor>),
     student: (studentId: number) =>
       gateway.GET("/api/instructor/students/{studentId}/training", { params: { path: { studentId } } }).then(data<Training>),
     sign: (studentId: number, body: SignRequest) =>
@@ -871,7 +1159,8 @@ export const api = {
       gateway.DELETE("/api/instructor/students/{studentId}/lessons/{id}", { params: { path: { studentId, id } } }).then(data<Training>),
     /** The track of a flight the student put to them, to debrief its approach. */
     reviewedTrack: (studentId: number, flightId: number) =>
-      gateway.GET("/api/instructor/students/{studentId}/flights/{flightId}/track", { params: { path: { studentId, flightId } } })
+      gateway
+        .GET("/api/instructor/students/{studentId}/flights/{flightId}/track", { params: { path: { studentId, flightId } } })
         .then(data<SavedTrack>),
   },
 
@@ -879,22 +1168,25 @@ export const api = {
   flights: {
     list: () => gateway.GET("/api/flights").then(data<FlightSummary[]>),
     save: (request: SaveFlightRequest) => gateway.POST("/api/flights", { body: request }).then(data<Flight>),
-    remove: async (id: number): Promise<void> => {
-      await gateway.DELETE("/api/flights/{id}", { params: { path: { id } } });
-    },
+    remove: (id: number): Promise<void> => gateway.DELETE("/api/flights/{id}", { params: { path: { id } } }).then(() => undefined),
+    /** Its name and notes changed: null keeps one, blank clears it. */
+    update: (id: number, body: { name: string | null; notes: string | null }) =>
+      gateway.PATCH("/api/flights/{id}", { params: { path: { id } }, body }).then(data<FlightSummary>),
     /** One flight with its nav log, for its debrief. */
     get: (id: number) => gateway.GET("/api/flights/{id}", { params: { path: { id } } }).then(data<Flight>),
     /** Its track as saved to the account, or null where none is. */
     track: (id: number): Promise<SavedTrack | null> =>
-      gateway.GET("/api/flights/{id}/track", { params: { path: { id } } }).then(data<SavedTrack>).catch(err => {
-        if (err instanceof ApiError && err.status === 404) return null;
-        throw err;
-      }),
+      gateway
+        .GET("/api/flights/{id}/track", { params: { path: { id } } })
+        .then(data<SavedTrack>)
+        .catch((err) => {
+          if (err instanceof ApiError && err.status === 404) return null;
+          throw err;
+        }),
     saveTrack: async (id: number, track: SavedTrack): Promise<void> => {
       await gateway.PUT("/api/flights/{id}/track", { params: { path: { id } }, body: track });
     },
-    deleteTrack: async (id: number): Promise<void> => {
-      await gateway.DELETE("/api/flights/{id}/track", { params: { path: { id } } });
-    },
+    deleteTrack: (id: number): Promise<void> =>
+      gateway.DELETE("/api/flights/{id}/track", { params: { path: { id } } }).then(() => undefined),
   },
 };

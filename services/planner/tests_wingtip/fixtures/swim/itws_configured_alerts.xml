@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <itws_msg>
+        <packet_header>
+            <packet_header_msgno>1525902</packet_header_msgno>
+            <packet_header_product>96</packet_header_product>
+            <packet_header_packet_index>2</packet_header_packet_index>
+            <packet_header_packets_in_msg>2</packet_header_packets_in_msg>
+            <packet_header_packetsize>132</packet_header_packetsize>
+        </packet_header>
+        <product_header>
+            <product_header_msg_id>
+                <product_msg_id>9840</product_msg_id>
+                <product_msg_name>Configured Alerts Product</product_msg_name>
+            </product_header_msg_id>
+            <product_header_site_id>0</product_header_site_id>
+            <product_header_node>0</product_header_node>
+            <product_header_byte_count>1132</product_header_byte_count>
+            <product_header_product_type>3</product_header_product_type>
+            <product_header_product_status>0</product_header_product_status>
+            <product_header_itws_sites>ATL</product_header_itws_sites>
+            <product_header_airports>ATL</product_header_airports>
+            <product_header_source_id>ATL</product_header_source_id>
+            <product_header_source_type>1</product_header_source_type>
+            <product_header_acquisition_type>1</product_header_acquisition_type>
+            <product_header_latency_classification>5</product_header_latency_classification>
+            <product_header_latency_start_seconds gregorian="2026-11-09 05:05:42">1794200742</product_header_latency_start_seconds>
+            <product_header_latency_start_milliseconds>678</product_header_latency_start_milliseconds>
+            <product_header_generation_time_seconds gregorian="2026-11-09 05:05:42">1794200742</product_header_generation_time_seconds>
+            <product_header_generation_time_milliseconds>678</product_header_generation_time_milliseconds>
+            <product_header_expiration_time_seconds gregorian="2026-11-09 05:07:42">1794200862</product_header_expiration_time_seconds>
+            <product_header_expiration_time_milliseconds>678</product_header_expiration_time_milliseconds>
+            <product_header_received_time_seconds gregorian="2026-11-09 05:05:42">1794200742</product_header_received_time_seconds>
+            <product_header_received_time_microseconds>734425</product_header_received_time_microseconds>
+            <product_header_enqueue_time_seconds>1794200742</product_header_enqueue_time_seconds>
+            <product_header_enqueue_time_milliseconds>772</product_header_enqueue_time_milliseconds>
+            <product_header_archive_only>0</product_header_archive_only>
+            <product_header_displayable>0</product_header_displayable>
+        </product_header>
+        <configured_alert>
+            <ca_seconds gregorian="2026-11-09 05:05:42" unit="epoch_time">1794200742</ca_seconds>
+            <ca_milliseconds unit="milliseconds">678</ca_milliseconds>
+            <ca_rwy_name>West</ca_rwy_name>
+            <ca_aw_wind_dir unit="degrees">290</ca_aw_wind_dir>
+            <ca_aw_wind_speed unit="knots">8</ca_aw_wind_speed>
+            <ca_aw_gust_speed unit="knots">0</ca_aw_gust_speed>
+            <ca_aw_seconds gregorian="2026-11-09 05:05:42" unit="epoch_time">1794200742</ca_aw_seconds>
+            <ca_aw_milliseconds unit="milliseconds">678</ca_aw_milliseconds>
+            <ca_wind_expiration_seconds unit="epoch_time" gregorian="2026-11-09 05:06:42">1794200802</ca_wind_expiration_seconds>
+            <ca_wind_expiration_milliseconds unit="milliseconds">678</ca_wind_expiration_milliseconds>
+            <ca_radar_impaired>0</ca_radar_impaired>
+            <ca_llwas_impaired>0</ca_llwas_impaired>
+            <ca_num_rwys>10</ca_num_rwys>
+            <ca_rwy_valid_seconds gregorian="2026-11-08 18:28:02" unit="epoch_time">1794162482</ca_rwy_valid_seconds>
+            <ca_rwy_valid_milliseconds unit="milliseconds">211</ca_rwy_valid_milliseconds>
+            <ca_rwy_alert count="1">
+                <ca_ra_region_id>27LA</ca_ra_region_id>
+                <ca_ra_type></ca_ra_type>
+                <ca_ra_value unit="knots">0</ca_ra_value>
+                <ca_ra_first_loc>RWY</ca_ra_first_loc>
+                <ca_ra_last_loc>RWY</ca_ra_last_loc>
+                <ca_ra_llwas_wind_dir unit="degrees">290</ca_ra_llwas_wind_dir>
+                <ca_ra_llwas_wind_speed unit="knots">7</ca_ra_llwas_wind_speed>
+                <ca_ra_num_rbdt_ids>6</ca_ra_num_rbdt_ids>
+            </ca_rwy_alert>
+            <ca_rwy_alert count="2">
+                <ca_ra_region_id>27LD</ca_ra_region_id>
+                <ca_ra_type></ca_ra_type>
+                <ca_ra_value unit="knots">0</ca_ra_value>
+                <ca_ra_first_loc>RWY</ca_ra_first_loc>
+                <ca_ra_last_loc>RWY</ca_ra_last_loc>
+                <ca_ra_llwas_wind_dir unit="degrees">290</ca_ra_llwas_wind_dir>
+                <ca_ra_llwas_wind_speed unit="knots">7</ca_ra_llwas_wind_speed>
+                <ca_ra_num_rbdt_ids>6</ca_ra_num_rbdt_ids>
+            </ca_rwy_alert>
+            <ca_rwy_alert count="3">
+                <ca_ra_region_id>27RA</ca_ra_region_id>
+                <ca_ra_type></ca_ra_type>
+                <ca_ra_value unit="knots">0</ca_ra_value>
+                <ca_ra_first_loc>RWY</ca_ra_first_loc>
+                <ca_ra_last_loc>RWY</ca_ra_last_loc>
+                <ca_ra_llwas_wind_dir unit="degrees">280</ca_ra_llwas_wind_dir>
+                <ca_ra_llwas_wind_speed unit="knots">4</ca_ra_llwas_wind_speed>
+                <ca_ra_num_rbdt_ids>6</ca_ra_num_rbdt_ids>
+            </ca_rwy_alert>
+            <ca_rwy_alert count="4">
+                <ca_ra_region_id>27RD</ca_ra_region_id>
+                <ca_ra_type></ca_ra_type>
+                <ca_ra_value unit="knots">0</ca_ra_value>
+                <ca_ra_first_loc>RWY</ca_ra_first_loc>
+                <ca_ra_last_loc>RWY</ca_ra_last_loc>
+                <ca_ra_llwas_wind_dir unit="degrees">300</ca_ra_llwas_wind_dir>
+                <ca_ra_llwas_wind_speed unit="knots">8</ca_ra_llwas_wind_speed>
+                <ca_ra_num_rbdt_ids>6</ca_ra_num_rbdt_ids>
+            </ca_rwy_alert>
+            <ca_rwy_alert count="5">
+                <ca_ra_region_id>26LA</ca_ra_region_id>
+                <ca_ra_type></ca_ra_type>
+                <ca_ra_value unit="knots">0</ca_ra_value>
+                <ca_ra_first_loc>RWY</ca_ra_first_loc>
+                <ca_ra_last_loc>RWY</ca_ra_last_loc>
+                <ca_ra_llwas_wind_dir unit="degrees">280</ca_ra_llwas_wind_dir>
+                <ca_ra_llwas_wind_speed unit="knots">4</ca_ra_llwas_wind_speed>
+                <ca_ra_num_rbdt_ids>3</ca_ra_num_rbdt_ids>
+            </ca_rwy_alert>
+            <ca_rwy_alert count="6">
+                <ca_ra_region_id>26LD</ca_ra_region_id>
+                <ca_ra_type></ca_ra_type>
+                <ca_ra_value unit="knots">0</ca_ra_value>
+                <ca_ra_first_loc>RWY</ca_ra_first_loc>
+                <ca_ra_last_loc>RWY</ca_ra_last_loc>
+                <ca_ra_llwas_wind_dir unit="degrees">300</ca_ra_llwas_wind_dir>
+                <ca_ra_llwas_wind_speed unit="knots">8</ca_ra_llwas_wind_speed>
+                <ca_ra_num_rbdt_ids>3</ca_ra_num_rbdt_ids>
+            </ca_rwy_alert>
+            <ca_rwy_alert count="7">
+                <ca_ra_region_id>26RA</ca_ra_region_id>
+                <ca_ra_type></ca_ra_type>
+                <ca_ra_value unit="knots">0</ca_ra_value>
+                <ca_ra_first_loc>RWY</ca_ra_first_loc>
+                <ca_ra_last_loc>RWY</ca_ra_last_loc>
+                <ca_ra_llwas_wind_dir unit="degrees">290</ca_ra_llwas_wind_dir>
+                <ca_ra_llwas_wind_speed unit="knots">4</ca_ra_llwas_wind_speed>
+                <ca_ra_num_rbdt_ids>3</ca_ra_num_rbdt_ids>
+            </ca_rwy_alert>
+            <ca_rwy_alert count="8">
+                <ca_ra_region_id>26RD</ca_ra_region_id>
+                <ca_ra_type></ca_ra_type>
+                <ca_ra_value unit="knots">0</ca_ra_value>
+                <ca_ra_first_loc>RWY</ca_ra_first_loc>
+                <ca_ra_last_loc>RWY</ca_ra_last_loc>
+                <ca_ra_llwas_wind_dir unit="degrees">300</ca_ra_llwas_wind_dir>
+                <ca_ra_llwas_wind_speed unit="knots">6</ca_ra_llwas_wind_speed>
+                <ca_ra_num_rbdt_ids>3</ca_ra_num_rbdt_ids>
+            </ca_rwy_alert>
+            <ca_rwy_alert count="9">
+                <ca_ra_region_id>28 A</ca_ra_region_id>
+                <ca_ra_type></ca_ra_type>
+                <ca_ra_value unit="knots">0</ca_ra_value>
+                <ca_ra_first_loc>RWY</ca_ra_first_loc>
+                <ca_ra_last_loc>RWY</ca_ra_last_loc>
+                <ca_ra_llwas_wind_dir unit="degrees">290</ca_ra_llwas_wind_dir>
+                <ca_ra_llwas_wind_speed unit="knots">7</ca_ra_llwas_wind_speed>
+                <ca_ra_num_rbdt_ids>6</ca_ra_num_rbdt_ids>
+            </ca_rwy_alert>
+            <ca_rwy_alert count="10">
+                <ca_ra_region_id>28 D</ca_ra_region_id>
+                <ca_ra_type></ca_ra_type>
+                <ca_ra_value unit="knots">0</ca_ra_value>
+                <ca_ra_first_loc>RWY</ca_ra_first_loc>
+                <ca_ra_last_loc>RWY</ca_ra_last_loc>
+                <ca_ra_llwas_wind_dir unit="degrees">290</ca_ra_llwas_wind_dir>
+                <ca_ra_llwas_wind_speed unit="knots">7</ca_ra_llwas_wind_speed>
+                <ca_ra_num_rbdt_ids>5</ca_ra_num_rbdt_ids>
+            </ca_rwy_alert>
+        </configured_alert>
+    </itws_msg>

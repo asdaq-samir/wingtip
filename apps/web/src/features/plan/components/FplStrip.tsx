@@ -1,6 +1,7 @@
+import { lazy, Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Route } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router";
 import { PillStrip, SmallMark, SmallTile, StripNote, StripSection } from "../../../components/Favorites";
 import { planHrefOf } from "../../../lib/flightLink";
 import { placeOfPoint } from "../../../lib/identSchema";
@@ -8,6 +9,9 @@ import { flightsQuery, pilotQuery } from "../../../lib/queryClient";
 import QueryState from "../../../components/QueryState";
 import { useStripShows } from "../hooks/useStripShows";
 import { RecentRouteTiles } from "./RecentRoutes";
+
+// The sign-in sheet's code with its first tap, not FPL's first load.
+const SignInModal = lazy(() => import("../../../components/SignInModal"));
 
 /** The most the strip shows, newest first; Saved's title opens them all. */
 const STRIP_MOST = 10;
@@ -21,22 +25,33 @@ const STRIP_MOST = 10;
  * be filtered"); the title the list in full. Saved flights are FPL's now,
  * where they were the console's.
  */
-export default function FplStrip({ onAllSaved, onAllRecents }: {
+export default function FplStrip({
+  onAllSaved,
+  onAllRecents,
+}: {
   /** The flights saved in full (FlightsPanel). */
   onAllSaved: () => void;
   /** The routes planned last in full (RecentRoutesPage). */
   onAllRecents: () => void;
 }) {
-  const shows = useStripShows(s => s.fpl);
+  const shows = useStripShows((s) => s.fpl);
   const { data: pilot } = useQuery(pilotQuery);
   return (
     <StripSection
       lists={[
         // Signed out, no list to open: a word of where they would be.
-        { value: "saved", label: "Saved", onMore: pilot ? onAllSaved : undefined, section: "pill-section-saved", testId: "fpl-shows-saved" },
+        {
+          value: "saved",
+          label: "Saved",
+          onMore: pilot ? onAllSaved : undefined,
+          section: "pill-section-saved",
+          testId: "fpl-shows-saved",
+        },
         { value: "recents", label: "Recents", onMore: onAllRecents, section: "route-recents", testId: "fpl-shows-recents" },
       ]}
-      shows={shows} onShow={fpl => useStripShows.setState({ fpl })} menuTestId="fpl-strip-shows"
+      shows={shows}
+      onShow={(fpl) => useStripShows.setState({ fpl })}
+      menuTestId="fpl-strip-shows"
     >
       {shows === "saved" ? <SavedTiles signedIn={!!pilot} /> : <RecentRouteTiles />}
     </StripSection>
@@ -51,24 +66,43 @@ function SavedTiles({ signedIn }: { signedIn: boolean }) {
   const flightsAsked = useQuery({ ...flightsQuery, enabled: signedIn });
   const flights = flightsAsked.data;
   const shown = [...(flights ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, STRIP_MOST);
-  if (!signedIn) return <StripNote>Sign in to keep the flights you plan.</StripNote>;
+  // "Sign in" the way there, a tinted link, where the note was a dead end
+  // (the FPL audit's A21).
+  if (!signedIn)
+    return (
+      <StripNote>
+        <Suspense fallback="Sign in">
+          <SignInModal inline />
+        </Suspense>{" "}
+        to keep the flights you plan.
+      </StripNote>
+    );
   // Could not be fetched: said here, with Try again, as every list says it
   // (QueryState), where the strip was left blank.
-  if (flightsAsked.isError) return <QueryState query={flightsAsked} fetching="Fetching your flights…" failed="Your flights could not be fetched." />;
+  if (flightsAsked.isError)
+    return <QueryState query={flightsAsked} fetching="Fetching your flights…" failed="Your flights could not be fetched." />;
   if (flights && !shown.length) return <StripNote>Plan a route and Save it from Share; it is kept here.</StripNote>;
   return (
     <PillStrip testId="saved-strip">
-      {shown.map(f => {
+      {shown.map((f) => {
         const day = new Date(f.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" });
         // A flight from a position by its coordinates as a GPS writes
         // them (pointName), cut short on the tile and whole to a screen
         // reader, at the owner's pick ("Coordinates, cut short").
-        const dep = placeOfPoint(f.departureIdent), dest = placeOfPoint(f.destinationIdent);
-        const name = `${dep}→${dest}`;
+        const dep = placeOfPoint(f.departureIdent),
+          dest = placeOfPoint(f.destinationIdent);
+        // The pilot's own name for it where it has one (Setup's Flights).
+        const named = f.name?.trim();
+        const name = named || `${dep}→${dest}`;
         return (
           <SmallTile
-            key={f.id} onClick={() => navigate(planHrefOf(f))} testId="saved-flight" title={name} detail={day} wide
-            label={`${dep} to ${dest}${f.stops.length ? ` by ${f.stops.join(", ")}` : ""}, saved ${day}`}
+            key={f.id}
+            onClick={() => navigate(planHrefOf(f))}
+            testId="saved-flight"
+            title={name}
+            detail={day}
+            wide
+            label={`${named ? `${named}, ` : ""}${dep} to ${dest}${f.stops.length ? ` by ${f.stops.join(", ")}` : ""}, saved ${day}`}
             mark={<SmallMark icon={<Route />} className="bg-foreground/8 text-tint" />}
           />
         );

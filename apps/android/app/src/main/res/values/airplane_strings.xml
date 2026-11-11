@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The airplane's own figures (airplane/): its profile by N-number, the
+     inline asks for a missing figure, the glide ring's switch. Labels are
+     Title Case (decision 0021); questions and lines are sentences. -->
+<resources>
+    <string name="own_cruise">Cruise Speed</string>
+    <string name="own_burn">Cruise Burn</string>
+    <string name="own_power">Cruise Power</string>
+    <string name="own_usable">Usable Fuel</string>
+    <string name="own_climb_tas">Climb Speed</string>
+    <string name="own_climb_burn">Climb Burn</string>
+    <string name="own_climb_rate">Climb Rate at Sea Level</string>
+    <string name="own_ceiling">Service Ceiling</string>
+    <string name="own_taxi">Start and Taxi Fuel</string>
+    <string name="own_glide">Glide Ratio</string>
+    <string name="own_empty_weight">Empty Weight</string>
+    <string name="own_empty_moment">Empty Moment</string>
+
+    <string name="ask_cruise">How fast does %1$s cruise, true airspeed?</string>
+    <string name="ask_burn">How much fuel does %1$s burn an hour in cruise?</string>
+    <string name="ask_power">At what power does %1$s cruise?</string>
+    <string name="ask_usable">How much usable fuel does %1$s carry?</string>
+    <string name="ask_climb_tas">How fast does %1$s climb, true airspeed?</string>
+    <string name="ask_climb_burn">How much fuel does %1$s burn an hour in the climb?</string>
+    <string name="ask_climb_rate">How fast does %1$s climb at sea level?</string>
+    <string name="ask_ceiling">What is the service ceiling of %1$s?</string>
+    <string name="ask_taxi">How much fuel does %1$s use to start and taxi?</string>
+    <string name="ask_glide">What is the glide ratio of %1$s, from its handbook\'s maximum glide?</string>
+    <string name="ask_empty_weight">What is the basic empty weight of %1$s?</string>
+    <string name="ask_empty_moment">What is the basic empty moment of %1$s?</string>
+    <string name="ask_edit">Edit %1$s</string>
+    <string name="save">Save</string>
+
+    <string name="source_book">Book</string>
+    <string name="source_handbook">Handbook Photo</string>
+    <string name="source_pilot">You</string>
+    <string name="source_none">Not Given</string>
+    <string name="reset_to_book">Reset to Book Figure</string>
+    <string name="profile_type">Type</string>
+    <string name="profile_no_type">No stock type: planned on its own figures</string>
+    <string name="profile_on_phone">Kept on this phone. Signed in, it is kept with your account.</string>
+    <string name="profile_figures">Figures</string>
+    <string name="profile_airplane">Airplane</string>
+    <string name="profile_problem">The figure could not be saved: %1$s</string>
+
+    <string name="offer_title">Keep your airplanes with your account?</string>
+    <string name="offer_line">The figures you gave %1$s on this phone, kept with your account.</string>
+    <string name="offer_keep">Keep</string>
+
+    <!-- Endurance (the engine's endurance: 14 CFR 91.151(a), 91.167(a)(3)). -->
+    <string name="endurance">Endurance</string>
+    <string name="endurance_dry_tanks">To Dry Tanks</string>
+    <string name="endurance_vfr_day">After VFR Day Reserve</string>
+    <string name="endurance_vfr_night">After VFR Night Reserve</string>
+    <string name="endurance_ifr">After IFR Reserve</string>
+    <string name="endurance_reserve">%1$s reserve</string>
+    <string name="endurance_reserve_below">%1$s reserve, more than the tanks hold</string>
+    <string name="endurance_needs">Needed for the endurance</string>
+
+    <string name="glide_ring">Glide Ring</string>
+    <string name="glide_ring_line">Shown by itself in an emergency</string>
+    <string name="glide_ring_no_airplane">Needs an airplane: choose one on the Airplane tab</string>
+    <string name="glide_ring_no_glide">Needs the glide ratio of %1$s</string>
+</resources>

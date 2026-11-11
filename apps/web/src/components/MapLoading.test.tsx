@@ -8,7 +8,7 @@ afterEach(cleanup);
 const insets = { top: 10, bottom: 300, left: 0 };
 
 describe("MapLoading", () => {
-  it("shows the mark in the middle of what the sheet leaves", () => {
+  it("shows the spinner in the middle of what the sheet leaves", () => {
     render(<MapLoading shown insets={insets} />);
     const mark = screen.getByRole("status", { name: "Loading the map" });
     expect(mark.className).toContain("opacity-100");

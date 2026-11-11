@@ -1,5 +1,18 @@
 import { test, expect, type Page } from "@playwright/test";
-import { consoleSheet, controlsInSight, grabberTo, library, openBrief, openConsole, openMapSettings, openPanel, showTabs, sideDrawer } from "./helpers";
+import {
+  consoleSheet,
+  controlsInSight,
+  grabberTo,
+  library,
+  openBrief,
+  openConsole,
+  openMapSettings,
+  openPanel,
+  showTabs,
+  sideDrawer,
+} from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * "Save this flight", at the head of the briefing drawer's sections, for
@@ -11,11 +24,9 @@ import { consoleSheet, controlsInSight, grabberTo, library, openBrief, openConso
 const A_PILOT = { id: 1, email: "pilot@example.com", displayName: "A Pilot", developer: false };
 
 async function signedIn(page: Page, filed: Record<string, unknown>[], list: object[] = []) {
-  await page.route("**/api/me", route =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
-  await page.route("**/api/aircraft", route =>
-    route.fulfill({ status: 200, contentType: "application/json", body: "[]" }));
-  await page.route("**/api/flights", async route => {
+  await page.route("**/api/me", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(A_PILOT) }));
+  await page.route("**/api/aircraft", (route) => route.fulfill({ status: 200, contentType: "application/json", body: "[]" }));
+  await page.route("**/api/flights", async (route) => {
     if (route.request().method() === "POST") {
       filed.push(route.request().postDataJSON());
       await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ id: filed.length }) });
@@ -32,11 +43,16 @@ async function signedIn(page: Page, filed: Record<string, unknown>[], list: obje
  *  one after (CI and locally, the first test of a fresh worker). The
  *  address the same for two seconds is the plan the page keeps. */
 async function planSettled(page: Page) {
-  await expect.poll(async () => {
-    const was = page.url();
-    await page.waitForTimeout(2000);
-    return was === page.url();
-  }, { timeout: 30_000 }).toBe(true);
+  await expect
+    .poll(
+      async () => {
+        const was = page.url();
+        await page.waitForTimeout(2000);
+        return was === page.url();
+      },
+      { timeout: 30_000 },
+    )
+    .toBe(true);
 }
 
 test("a flight is filed once, whole, and a new plan is offered for saving again", { tag: "@smoke" }, async ({ page }) => {
@@ -73,7 +89,9 @@ test("a flight is filed once, whole, and a new plan is offered for saving again"
   // stay for the session, and a click filed a duplicate of whatever was
   // on screen. (There is no Load: every change plans again.)
   await page.getByTestId("depart-date").click();
-  await page.locator('[data-slot="calendar"] td button').nth(20).click();
+  // The month's last day open to pick: React Aria's days are role=button
+  // cells, not buttons.
+  await page.locator('[data-slot="calendar"] td [role="button"]:not([aria-disabled="true"]):not([data-outside-month])').last().click();
   await page.getByTestId("depart-done").click();
   await expect(page).toHaveURL(/[?&]depart=/);
   await page.getByTestId("share-route").click();
@@ -102,7 +120,7 @@ test("a flight from a present position is filed from that position", async ({ pa
 });
 
 test("signed out, there is nothing to save", async ({ page }) => {
-  await page.route("**/api/me", route => route.fulfill({ status: 401, body: "" }));
+  await page.route("**/api/me", (route) => route.fulfill({ status: 401, body: "" }));
   await page.goto("/app/plan?dep=C81&dest=KDLH&view=briefing");
   await controlsInSight(page);
   // Share showing means the page is not hidden behind a console: while
@@ -118,14 +136,29 @@ test("opening a saved flight puts its route in the header, and Load plans that r
   // The header read the address once. Opening a saved flight changes the
   // address in the page, so the header still showed the old route, and
   // Load quietly re-planned that one instead of the flight.
-  await signedIn(page, [], [{
-    id: 9, departureIdent: "KMSP", destinationIdent: "KDLH", stops: [], cruiseAltitudeFt: 5500, aircraftTailNumber: null,
-    createdAt: "2026-09-20T12:00:00Z", plannedFor: null, totalDistanceNm: 120, totalEteMin: 55, totalFuelGal: 8,
-    altitudes: "KDLH:2400",
-  }]);
+  await signedIn(
+    page,
+    [],
+    [
+      {
+        id: 9,
+        departureIdent: "KMSP",
+        destinationIdent: "KDLH",
+        stops: [],
+        cruiseAltitudeFt: 5500,
+        aircraftTailNumber: null,
+        createdAt: "2026-09-20T12:00:00Z",
+        plannedFor: null,
+        totalDistanceNm: 120,
+        totalEteMin: 55,
+        totalFuelGal: 8,
+        altitudes: "KDLH:2400",
+      },
+    ],
+  );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await openPanel(page);
-  await expect(page.getByLabel("Departure", { exact: true })).toContainText("C81", { timeout: 15_000 });
+  await expect(page.getByLabel(/^(\S+, )?Departure$/)).toContainText("C81", { timeout: 15_000 });
 
   // The console's button is at the end of the route's capsule, lowered.
   await grabberTo(page, "peek");
@@ -141,23 +174,40 @@ test("opening a saved flight puts its route in the header, and Load plans that r
 
   await openPanel(page);
   // Planned at once: there is no Load to press.
-  await expect(page.getByLabel("Departure", { exact: true })).toContainText("KMSP");
+  await expect(page.getByLabel(/^(\S+, )?Departure$/)).toContainText("KMSP");
   await expect(page).toHaveURL(/dep=KMSP/);
   await expect(page).toHaveURL(/altitude_ft=5500/);
   // And at the altitudes the pilot set at its points: Duluth's pattern.
   await expect(page).toHaveURL(/altitudes=KDLH%3A2400/);
 });
 
-test("a saved flight opened from FPL's Saved opens its page, and Open on the map plans it", { tag: "@smoke" }, async ({ page }) => {
+test("a saved flight opened from FPL's Saved opens its page, and Open on the map plans it", async ({ page }) => {
   // The same page as Setup's, outside Setup: its Open on the map was a
   // dialog's close with no dialog round it, which threw as the page was
   // drawn and took the whole planner down.
-  await signedIn(page, [], [{
-    id: 9, departureIdent: "KMSP", destinationIdent: "KDLH", stops: [], cruiseAltitudeFt: 5500, aircraftTailNumber: null,
-    createdAt: "2026-09-20T12:00:00Z", plannedFor: null, totalDistanceNm: 120, totalEteMin: 55, totalFuelGal: 8,
-  }]);
+  await signedIn(
+    page,
+    [],
+    [
+      {
+        id: 9,
+        departureIdent: "KMSP",
+        destinationIdent: "KDLH",
+        stops: [],
+        cruiseAltitudeFt: 5500,
+        aircraftTailNumber: null,
+        createdAt: "2026-09-20T12:00:00Z",
+        plannedFor: null,
+        totalDistanceNm: 120,
+        totalEteMin: 55,
+        totalFuelGal: 8,
+      },
+    ],
+  );
   await page.goto("/app/plan");
-  await grabberTo(page, "half");
+  // The saved flights on the one search's own page, under its Favorites,
+  // Recents and Nearest: all the way up.
+  await grabberTo(page, "full");
   const panel = sideDrawer(page);
   await panel.getByTestId("pill-section-saved-more").click();
   await panel.getByRole("button", { name: /^KMSP → KDLH/ }).click();
@@ -169,11 +219,26 @@ test("a saved flight opened from FPL's Saved opens its page, and Open on the map
 
 test("Edit over the saved flights puts a minus before each, and the minus deletes one once asked", async ({ page }) => {
   const removed: string[] = [];
-  await signedIn(page, [], [{
-    id: 9, departureIdent: "KMSP", destinationIdent: "KDLH", stops: [], cruiseAltitudeFt: 5500, aircraftTailNumber: null,
-    createdAt: "2026-09-20T12:00:00Z", plannedFor: null, totalDistanceNm: 120, totalEteMin: 55, totalFuelGal: 8,
-  }]);
-  await page.route("**/api/flights/*", async route => {
+  await signedIn(
+    page,
+    [],
+    [
+      {
+        id: 9,
+        departureIdent: "KMSP",
+        destinationIdent: "KDLH",
+        stops: [],
+        cruiseAltitudeFt: 5500,
+        aircraftTailNumber: null,
+        createdAt: "2026-09-20T12:00:00Z",
+        plannedFor: null,
+        totalDistanceNm: 120,
+        totalEteMin: 55,
+        totalFuelGal: 8,
+      },
+    ],
+  );
+  await page.route("**/api/flights/*", async (route) => {
     removed.push(route.request().method());
     await route.fulfill({ status: 204, body: "" });
   });
@@ -181,66 +246,86 @@ test("Edit over the saved flights puts a minus before each, and the minus delete
   await showTabs(page);
   await openConsole(page);
   await library(page, "Flights");
-  // Out of Edit, the row opens the flight's page and has no minus (its
-  // Delete is behind it, for a swipe).
+  // Out of Edit, the row opens the flight's page and has no minus.
   await expect(page.getByRole("button", { name: /^Delete .*…$/ })).toHaveCount(0);
 
   await page.getByTestId("flights-edit").click();
   await expect(page.getByTestId("flights-edit")).toHaveText("Done");
   await expect(page.getByRole("link", { name: /KMSP → KDLH/ })).toHaveCount(0);
-  // The minus brings out the row's Delete, as iOS's does, and the Delete
-  // asks first: the flight is the server's.
+  // The minus takes it out at once, with the toast's Undo: nothing is sent
+  // while the Undo is up, and Undo puts it back.
   await page.getByRole("button", { name: "Delete KMSP → KDLH…", exact: true }).click();
-  await page.getByRole("button", { name: "Delete KMSP → KDLH", exact: true }).click();
-  await page.getByRole("button", { name: "Delete flight" }).click();
-  await expect(page.locator("[data-sonner-toast]", { hasText: "Flight Deleted" })).toBeVisible();
-  expect(removed).toEqual(["DELETE"]);
+  await expect(page.getByRole("button", { name: "Delete KMSP → KDLH…", exact: true })).toHaveCount(0);
+  await page.getByTestId("saved-flight-undo").click();
+  await expect(page.getByRole("button", { name: "Delete KMSP → KDLH…", exact: true })).toBeVisible();
+  expect(removed).toEqual([]);
+  // Let go, the Undo gone by itself, the flight is deleted.
+  await page.getByRole("button", { name: "Delete KMSP → KDLH…", exact: true }).click();
+  await expect(page.getByTestId("saved-flight-undo")).toHaveCount(0, { timeout: 15_000 });
+  await expect.poll(() => removed).toEqual(["DELETE"]);
 });
 
-test("a saved flight's ••• and its long press offer Share and Remove alone, as every list's do; Remove asks first", async ({ page }) => {
+test("a saved flight's ••• and its long press offer Edit, Share and Remove, as every list's do; Remove has an Undo", async ({ page }) => {
   const removed: string[] = [];
-  await signedIn(page, [], [{
-    id: 9, departureIdent: "KMSP", destinationIdent: "KDLH", stops: [], cruiseAltitudeFt: 5500, aircraftTailNumber: null,
-    createdAt: "2026-09-20T12:00:00Z", plannedFor: null, totalDistanceNm: 120, totalEteMin: 55, totalFuelGal: 8,
-  }]);
-  await page.route("**/api/flights/*", async route => {
+  await signedIn(
+    page,
+    [],
+    [
+      {
+        id: 9,
+        departureIdent: "KMSP",
+        destinationIdent: "KDLH",
+        stops: [],
+        cruiseAltitudeFt: 5500,
+        aircraftTailNumber: null,
+        createdAt: "2026-09-20T12:00:00Z",
+        plannedFor: null,
+        totalDistanceNm: 120,
+        totalEteMin: 55,
+        totalFuelGal: 8,
+      },
+    ],
+  );
+  await page.route("**/api/flights/*", async (route) => {
     removed.push(route.request().method());
     await route.fulfill({ status: 204, body: "" });
   });
   await page.goto("/app/plan");
-  await grabberTo(page, "half");
+  // The saved flights on the one search's own page, under its Favorites,
+  // Recents and Nearest: all the way up.
+  await grabberTo(page, "full");
   const panel = sideDrawer(page);
   await panel.getByTestId("pill-section-saved-more").click();
   // A right click, as a long press on a phone, brings the same menu up.
   await panel.getByRole("button", { name: /^KMSP → KDLH/ }).click({ button: "right" });
   await expect(page.getByTestId("saved-flight-share")).toBeVisible();
-  // Share and Remove, each with its icon, and nothing else (the owner,
-  // 2026-10-28).
-  await expect(page.getByRole("menuitem")).toHaveText(["Share", "Remove"]);
-  await expect(page.getByRole("menuitem").locator("svg")).toHaveCount(2);
+  // Share and Remove, each with its icon (the owner, 2026-10-28), and
+  // Edit for its name and notes since they can be changed (2026-11-09).
+  await expect(page.getByRole("menuitem")).toHaveText(["Edit", "Share", "Remove"]);
+  await expect(page.getByRole("menuitem").locator("svg")).toHaveCount(3);
   await page.keyboard.press("Escape");
-  // Delete picked from the keyboard, as VoiceOver picks it.
+  // Remove picked from the keyboard, as VoiceOver picks it: gone at once,
+  // the toast's Undo up, and sent once that has gone.
   await panel.getByTestId("saved-flight-more").click();
   // Picked again where the pick went unanswered: on the phone project, one
-  // run in ten, the menu stays open with Delete focused (Radix's menu in
-  // the sheet; not seen by hand).
-  const ask = page.getByRole("button", { name: "Delete flight" });
+  // run in ten, the menu stays open with Remove focused.
+  const undo = page.getByTestId("saved-flight-undo");
   await expect(async () => {
-    if (await ask.isVisible()) return;
+    if (await undo.isVisible()) return;
     if (!(await page.getByTestId("saved-flight-delete").isVisible())) await panel.getByTestId("saved-flight-more").click();
     await page.getByTestId("saved-flight-delete").focus();
     await page.keyboard.press("Enter");
-    await expect(ask).toBeVisible({ timeout: 2000 });
+    await expect(undo).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 30_000 });
-  await ask.click();
+  await expect(undo).toHaveCount(0, { timeout: 15_000 });
   await expect.poll(() => removed).toEqual(["DELETE"]);
 });
 
-test("Print is in the Brief's Share menu; Keep Charts Offline is in the map's menu, which cannot be on over plain http", async ({ page }) => {
+test("Print is in the Brief's Share menu; Keep for the Air is in the map's menu, which cannot be on over plain http", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await controlsInSight(page);
   await openBrief(page);
-  await page.getByTestId("tab-share").click();
+  await page.getByTestId("card-share").click();
   await expect(page.getByTestId("print-briefing")).toBeVisible();
   await page.keyboard.press("Escape");
 

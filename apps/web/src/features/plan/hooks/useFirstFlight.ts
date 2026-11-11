@@ -1,8 +1,8 @@
 import { useCallback, useState } from "react";
 import { api } from "../../../lib/api/client";
-import { positionNow } from "../../../lib/map/ownShip";
+import { positionNow } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
-import { FIRST_FLIGHT, unseen, useTips } from "../../../lib/firstRunTips";
+import { FIRST_FLIGHT, WELCOME, unseen, useTips } from "../../../lib/firstRunTips";
 import type { RouteParts } from "../components/RouteBox";
 
 /**
@@ -17,50 +17,59 @@ import type { RouteParts } from "../components/RouteBox";
  * asks for one (`needsFrom`). Then the route is set as the box sets it
  * (useRouteEdits' setRoute) and the nav log opened over it (`onPlanned`).
  */
-export function useFirstFlight({ routed, onPlan, onPlanned }: {
+export function useFirstFlight({
+  routed,
+  onPlan,
+  onPlanned,
+}: {
   /** Whether there is a route: the card is for a planner with none. */
   routed: boolean;
   onPlan: (parts: RouteParts) => void;
   onPlanned: () => void;
 }) {
-  const seen = useTips(s => s.seen);
-  const see = useTips(s => s.see);
-  const lastDeparture = usePreferences(s => s.recentRoutes[0]?.dep ?? s.homeAirport?.ident ?? null);
+  const seen = useTips((s) => s.seen);
+  const see = useTips((s) => s.see);
+  const lastDeparture = usePreferences((s) => s.recentRoutes[0]?.dep ?? s.homeAirport?.ident ?? null);
   const [needsFrom, setNeedsFrom] = useState(false);
   const [planning, setPlanning] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
-  const shown = !routed && unseen(seen, FIRST_FLIGHT);
+  // After the welcome (features/plan/components/welcome), whose Plan My
+  // Own leads here.
+  const shown = !routed && unseen(seen, FIRST_FLIGHT) && !unseen(seen, WELCOME);
 
   const dismiss = useCallback(() => see(FIRST_FLIGHT), [see]);
 
-  const planIt = useCallback(async (dest: string, from: string | null) => {
-    setProblem(null);
-    setPlanning(true);
-    try {
-      let dep = from;
-      if (!dep) {
-        const fix = await positionNow(4000);
-        if (fix) dep = (await api.nearestAirports(fix.lat, fix.lon))[0]?.ident ?? null;
+  const planIt = useCallback(
+    async (dest: string, from: string | null) => {
+      setProblem(null);
+      setPlanning(true);
+      try {
+        let dep = from;
+        if (!dep) {
+          const fix = await positionNow(4000);
+          if (fix) dep = (await api.nearestAirports(fix.lat, fix.lon))[0]?.ident ?? null;
+        }
+        if (!dep) dep = lastDeparture;
+        if (!dep) {
+          // No position and nothing planned before: the card asks where from.
+          setNeedsFrom(true);
+          return;
+        }
+        if (dep === dest) {
+          setProblem(`${dest} is where you are. Pick somewhere to fly to.`);
+          return;
+        }
+        onPlan({ dep, stops: [], dest });
+        see(FIRST_FLIGHT);
+        onPlanned();
+      } catch {
+        setProblem("The planner could not be reached; check the connection.");
+      } finally {
+        setPlanning(false);
       }
-      if (!dep) dep = lastDeparture;
-      if (!dep) {
-        // No position and nothing planned before: the card asks where from.
-        setNeedsFrom(true);
-        return;
-      }
-      if (dep === dest) {
-        setProblem(`${dest} is where you are. Pick somewhere to fly to.`);
-        return;
-      }
-      onPlan({ dep, stops: [], dest });
-      see(FIRST_FLIGHT);
-      onPlanned();
-    } catch {
-      setProblem("The planner could not be reached; check the connection.");
-    } finally {
-      setPlanning(false);
-    }
-  }, [lastDeparture, onPlan, onPlanned, see]);
+    },
+    [lastDeparture, onPlan, onPlanned, see],
+  );
 
   return { shown, needsFrom, planning, problem, planIt, dismiss };
 }

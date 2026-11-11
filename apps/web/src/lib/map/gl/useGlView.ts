@@ -1,19 +1,19 @@
 import { useEffect, useState } from "react";
 import { aheadOf, within, type Box } from "../view";
 import { useGlMap } from "./glLayer";
-import { leafletZoomOf } from "./glStyle";
+import { appZoomOf } from "./glStyle";
 
 /** The whole level a zoom is at: every layer draws by whole levels
  *  (zoom >= FROM_ZOOM), the same under a pinch as at rest. */
-export const levelOf = (zoom: number) => Math.floor(zoom + 1e-9);
+const levelOf = (zoom: number) => Math.floor(zoom + 1e-9);
 
-export interface GlView {
+interface GlView {
   /** The view and a screen round it on the half-degree grid (aheadOf):
    *  what the overlays ask the planner for, each box asked once and
    *  cached. */
   box: Box;
-  /** The whole level the map is at, in the app's levels (Leaflet's, which
-   *  every layer's FROM_ZOOM is written in: MapLibre's zoom plus one). */
+  /** The whole level the map is at, in the app's levels, which every
+   *  layer's FROM_ZOOM is written in: MapLibre's zoom plus one (glStyle). */
   level: number;
 }
 
@@ -28,22 +28,30 @@ export interface GlView {
  *  answer on screen while the next is fetched (placeholderData). */
 export function useGlView(): GlView {
   const { map } = useGlMap();
-  const [view, setView] = useState<GlView>(() => ({ box: aheadOf(map.getBounds()), level: levelOf(leafletZoomOf(map.getZoom())) }));
+  const [view, setView] = useState<GlView>(() => ({ box: aheadOf(map.getBounds()), level: levelOf(appZoomOf(map.getZoom())) }));
   useEffect(() => {
     let frame = 0;
-    const look = () => setView(was => {
-      const bounds = map.getBounds();
-      const box = within(bounds, was.box) ? was.box : aheadOf(bounds);
-      const level = levelOf(leafletZoomOf(map.getZoom()));
-      return box === was.box && level === was.level ? was : { box, level };
-    });
+    const look = () =>
+      setView((was) => {
+        const bounds = map.getBounds();
+        const box = within(bounds, was.box) ? was.box : aheadOf(bounds);
+        const level = levelOf(appZoomOf(map.getZoom()));
+        return box === was.box && level === was.level ? was : { box, level };
+      });
     const moved = () => {
       if (frame) return;
-      frame = requestAnimationFrame(() => { frame = 0; look(); });
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        look();
+      });
     };
     map.on("move", moved);
     map.on("moveend", look);
-    return () => { map.off("move", moved); map.off("moveend", look); cancelAnimationFrame(frame); };
+    return () => {
+      map.off("move", moved);
+      map.off("moveend", look);
+      cancelAnimationFrame(frame);
+    };
   }, [map]);
   return view;
 }

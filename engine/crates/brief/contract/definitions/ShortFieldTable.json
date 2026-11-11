@@ -1,0 +1,87 @@
+{
+  "title": "ShortFieldTable",
+  "type": "object",
+  "properties": {
+    "pressure_altitudes_ft": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "temperatures_c": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "weights_lb": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      }
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ground_roll_ft": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "total_50ft_ft": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "required": [
+          "ground_roll_ft",
+          "total_50ft_ft"
+        ]
+      },
+      "description": "One per weight, each a grid of altitudes by temperatures."
+    },
+    "grass_ground_roll_pct": {
+      "type": "number"
+    },
+    "headwind_kt_per_10pct": {
+      "description": "The POH's note to the chart: the knots of headwind that take 10% off the distances. Null or missing: no correction for a headwind.",
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "tailwind_kt_per_10pct": {
+      "description": "The POH's note to the chart: the knots of tailwind that add 10% to the distances. Null or missing: no correction, and a caveat with a tailwind.",
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "tailwind_max_kt": {
+      "description": "The strongest tailwind the POH gives figures for, kt; past it a caveat.",
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "pressure_altitudes_ft",
+    "temperatures_c",
+    "weights_lb",
+    "tables",
+    "grass_ground_roll_pct"
+  ],
+  "description": "A POH's short-field takeoff or landing table: at least two altitudes and two temperatures, a grid of them for every weight."
+}

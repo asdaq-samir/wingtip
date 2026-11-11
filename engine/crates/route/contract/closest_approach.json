@@ -1,0 +1,59 @@
+{
+  "x-call": "wingtip_route::motion::call",
+  "description": "When and how near an airplane comes to own ship, both carried on straight, within 10 minutes; null without both tracks and speeds.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ClosestApproachInput",
+      "type": "object",
+      "properties": {
+        "own": {
+          "$ref": "#/definitions/OwnShipFix"
+        },
+        "plane": {
+          "$ref": "#/definitions/TrafficPlane"
+        }
+      },
+      "required": [
+        "own",
+        "plane"
+      ]
+    },
+    "answer": {
+      "title": "ClosestApproachAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "in_min": {
+              "type": "number"
+            },
+            "nm": {
+              "type": "number"
+            },
+            "above_ft": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Its height above own ship's then, ft."
+            }
+          },
+          "required": [
+            "in_min",
+            "nm",
+            "above_ft"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

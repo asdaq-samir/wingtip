@@ -58,7 +58,7 @@ struct NearestView: View {
                     ContentUnavailableView(asking ? "Asking the iPhone…" : "Nearest airports", systemImage: "airplane.circle", description: Text(asking ? "" : "Tap refresh to ask."))
                 } else {
                     List(airports) { airport in
-                        VStack(alignment: .leading, spacing: 2) {
+                        VStack(alignment: .leading) {
                             HStack(alignment: .firstTextBaseline) {
                                 Text(airport.ident).font(.headline)
                                 Spacer()

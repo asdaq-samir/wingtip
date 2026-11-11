@@ -21,11 +21,26 @@ describe("the engine gate", () => {
     function Asks() {
       return <p>{callEngine("holding_leg_minutes", { altitude_ft: 16_000 })} min</p>;
     }
-    render(<EngineGate fallback={<p>waiting</p>}><Asks /></EngineGate>);
+    render(
+      <EngineGate fallback={<p>waiting</p>}>
+        <Asks />
+      </EngineGate>,
+    );
     expect(screen.getByText("waiting")).toBeTruthy();
     expect(screen.queryByText(/min/)).toBeNull();
     await act(() => loadEngine(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "wingtip-engine.wasm"))));
     expect(screen.getByText("1.5 min")).toBeTruthy();
+  });
+
+  test("draws its children at once where it is not wanted (when false)", async () => {
+    const { EngineGate, render, screen } = await freshEngine();
+    render(
+      <EngineGate fallback={<p>waiting</p>} when={false}>
+        <p>drawn</p>
+      </EngineGate>,
+    );
+    expect(screen.getByText("drawn")).toBeTruthy();
+    expect(screen.queryByText("waiting")).toBeNull();
   });
 
   test("a call before the engine is there throws its words, naming the gate", async () => {

@@ -1,4 +1,5 @@
 """app.gonogo.pass_times, with apps/web/src/lib/passTimes.test.ts's cases."""
+
 from datetime import datetime, timezone
 
 from app.gonogo.pass_times import pass_time, sua_when, tfr_when

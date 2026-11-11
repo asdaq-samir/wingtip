@@ -3,13 +3,13 @@ asked it, what only the pilot knows -- their minimums, the loading, the
 risk assessment's ticks, their logbook's currency and their own airplane's
 records -- and the Go / No-Go the planner works out of them with its own
 plan and briefing."""
+
 from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from ..router_basics import DEFAULT_AIRCRAFT
-from ..schemas import AltitudeChoice, FlightRules, Loading
+from ..schemas.common import AltitudeChoice, FlightRules, Loading
 
 Finding = Literal["ok", "caution", "stop", "unknown", "pending"]
 VerdictKey = Literal["weather", "airspace", "altitude", "fuel", "runways", "balance", "risk"]
@@ -50,6 +50,7 @@ class PilotCurrency(BaseModel):
     day_passengers_until: str | None = None
     night_passengers_until: str | None = None
     instrument_current_until: str | None = None
+    instrument_current_from: str | None = None
     ipc_needed_after: str | None = None
     flight_review_until: str | None = None
     medical_expires_on: str | None = None
@@ -113,7 +114,9 @@ class GoNoGoAsk(BaseModel):
     altitude_ft: float | None = None
     altitude_nearest: bool = False
     altitude_choice: AltitudeChoice = "fastest"
-    aircraft: str = DEFAULT_AIRCRAFT
+    #: A stock profile's name, "own" for a pilot's own airplane of no
+    #: stock type; none for no airplane picked (PlanQuery's).
+    aircraft: str | None = None
     cruise_tas_kt: float | None = Field(default=None, gt=0, le=1000)
     fuel_burn_gph: float | None = None
     usable_fuel_gal: float | None = None
@@ -121,12 +124,17 @@ class GoNoGoAsk(BaseModel):
     climb_fuel_burn_gph: float | None = None
     cruise_power_pct: float | None = Field(default=None, ge=40, le=100)
     service_ceiling_ft: float | None = Field(default=None, ge=1000, le=30000)
+    #: As PlanQuery's: its own climb rate, start and taxi fuel and glide.
+    climb_rate_fpm: float | None = Field(default=None, gt=0, le=5000)
+    taxi_fuel_gal: float | None = Field(default=None, ge=0, le=50)
+    glide_ratio: float | None = Field(default=None, gt=1, le=80)
     #: When the flight leaves (UTC when naive); now when not given.
     depart: datetime | None = None
     class_b_clearance: bool = False
     rules: FlightRules = "vfr"
     alternate: str = ""
     altitudes: str = ""
+    altitude_starts: str = ""
     procedures: str = ""
     runways: str = ""
     crossings: str = ""

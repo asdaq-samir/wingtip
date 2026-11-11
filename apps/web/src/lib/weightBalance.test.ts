@@ -1,16 +1,7 @@
 import { describe, expect, it } from "vitest";
 import c172Json from "../../../../data/aircraft/c172.json?raw";
-import type { Loading, ShortField } from "./api/types";
-import { callEngine } from "./engine/engine";
+import type { Loading } from "./api/types";
 import { balance, defaultLoad } from "./weightBalance";
-
-// Two of the engine's names the phones' weight and balance and the runway
-// check ask inside the engine, asked by name through the .wasm.
-const inEnvelope = (envelope: [number, number][], arm: number, weight: number) => callEngine("gonogo_in_envelope", { envelope, arm, weight });
-function shortField(table: ShortField, pressureAltFt: number, tempC: number, weightLb: number, headwindKt: number, grass: boolean) {
-  const d = callEngine("gonogo_short_field", { table, pressure_alt_ft: pressureAltFt, temp_c: tempC, weight_lb: weightLb, headwind_kt: headwindKt, grass });
-  return { groundRollFt: d.ground_roll_ft, totalFt: d.total_ft, caveats: d.caveats };
-}
 
 // The stock profile itself (data/aircraft), the 172S's POH figures in it.
 const c172 = JSON.parse(c172Json);
@@ -33,34 +24,7 @@ describe("weight and balance, the 172S's", () => {
     expect(b.problems).toContain("The baggage, 170 lb in all, is over its 120 lb");
   });
 
-  it("the envelope is the POH's: 35.0 in up to 1,950 lb, 41.0 at 2,550, 47.3 aft", () => {
-    const envelope = loading.envelope as [number, number][];
-    expect(inEnvelope(envelope, 36, 1900)).toBe(true);
-    expect(inEnvelope(envelope, 36, 2500)).toBe(false);
-    expect(inEnvelope(envelope, 47.5, 2000)).toBe(false);
-  });
-
   it("the default load is the sample airplane and a pilot", () => {
     expect(defaultLoad(loading, 40)).toEqual({ emptyWeightLb: 1642, emptyArmIn: 38.12, stationsLb: [170, 0, 0, 0], fuelGal: 40 });
-  });
-});
-
-describe("short-field distances, the 172S's", () => {
-  const takeoff = c172.takeoff as ShortField;
-  const landing = c172.landing as ShortField;
-
-  it("the table at sea level and 15 °C: half way between its 10 and 20", () => {
-    expect(shortField(takeoff, 0, 15, 2550, 0, false)).toEqual({ groundRollFt: 960, totalFt: 1635, caveats: [] });
-  });
-
-  it("a headwind takes a tenth off every 9 kt, a tailwind adds a tenth every 2, grass the ground roll's 15%", () => {
-    expect(shortField(takeoff, 0, 10, 2550, 9, false).groundRollFt).toBe(835);      // 925 less 10%
-    expect(shortField(takeoff, 0, 10, 2550, -2, false).groundRollFt).toBe(1020);    // 925 and 10%
-    expect(shortField(takeoff, 0, 10, 2550, 0, true)).toMatchObject({ groundRollFt: 1065, totalFt: 1715 });
-  });
-
-  it("between its weights, and its one landing table at any weight", () => {
-    expect(shortField(takeoff, 0, 0, 2475, 0, false).groundRollFt).toBe(805);       // between 860 and 745
-    expect(shortField(landing, 2000, 20, 2200, 0, false)).toMatchObject({ groundRollFt: 630, totalFt: 1420 });
   });
 });

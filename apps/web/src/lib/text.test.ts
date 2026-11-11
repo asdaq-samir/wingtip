@@ -6,17 +6,16 @@ import { describe, expect, it } from "vitest";
 // on the phone (the design audit, 2026-10-08).
 const FILES = [
   "features/plan/components/PointAltitudeDialog.tsx",
-  "features/pilot/SignInModal.tsx",
+  "components/SignInModal.tsx",
   "features/pilot/LinkSignIn.tsx",
   "features/plan/components/PlaceCard.tsx",
-  "lib/map/AirportCard.tsx",
   "components/AccordionSection.tsx",
 ];
 
 const SOURCES = import.meta.glob("/src/**/*.tsx", { query: "?raw", import: "default", eager: true }) as Record<string, string>;
 
 describe("the type scale", () => {
-  it.each(FILES)("%s sets no raw text size", file => {
+  it.each(FILES)("%s sets no raw text size", (file) => {
     const source = SOURCES[`/src/${file}`];
     expect(source).toBeDefined();
     expect(source).not.toMatch(/\btext-(xs|sm|base|lg|xl|2xl|3xl)\b/);

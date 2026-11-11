@@ -1,0 +1,56 @@
+import SwiftUI
+
+/// Any screen opened by its name (design/screens.json): a link's `open=`,
+/// a Shortcut, a figure or a row tapped. The one way a page opens by name
+/// on the iPhone and the iPad (the owner's card rule, 2026-11-10): the
+/// plan is the sheet's root, the search is its field, the emergency
+/// assistant is full screen, and every other screen is a card over the
+/// plan (Navigator; the iPad's sidebar or inspector). The switch is over
+/// the generated list, so a screen added there fails the build here
+/// until it opens.
+extension RootView {
+    func openScreen(_ screen: Screen) {
+        let strip = layout == .sheet && layoutName == "strip"
+        if strip, StripSheetView.opens(screen) {
+            ScreenAsk.shared.ask(screen)
+            if detent != .large { detent = .large }
+            return
+        }
+        switch screen {
+        case .fpl:
+            // The plan, the sheet's root.
+            showPlan()
+            if detent == RootView.pill { detent = .half }
+        case .airport:
+            // What the Airport tab was: the search, up with its Favorites,
+            // Recents and Nearest.
+            nav.showPlan()
+            search.presented = true
+        case .favorites:
+            AirportShelf.shared.show(.favorites)
+            show(screen)
+        case .ask: ask(nil)
+        case .emergency: Emergency.shared.open = .link
+        case .airplane, .setup, .brief, .profile, .flights, .navlog, .nearest, .passengers, .checklists, .airplanes,
+             .logbook, .coach, .minimums, .guide, .downloads, .about:
+            show(screen)
+        // A shared flight's preview opens from its link's keys
+        // (PendingCommand.sharedFlight); the name alone names no flight.
+        case .shared: break
+        }
+    }
+
+    /// The screen's card over the plan, the search put away.
+    private func show(_ screen: Screen) {
+        search.close()
+        nav.open(.screen(screen))
+    }
+
+    /// The plan in sight, half way up: where a route Siri or a link set
+    /// is shown.
+    func showPlan() {
+        search.close()
+        nav.showPlan()
+        if layout == .sheet, detent != .half { detent = .half }
+    }
+}

@@ -1,0 +1,59 @@
+{
+  "title": "ReadyItem",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "route, airplane, altitude, charts, packs, briefing, fields, notams, saved, location, battery or receiver."
+    },
+    "finding": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "caution"
+      ],
+      "description": "Never a stop: warn, never limit."
+    },
+    "line": {
+      "type": "string",
+      "description": "One line a pilot acts on."
+    },
+    "detail": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "description": "Where its limit comes from: the FAA schedule, the CFR section, the AIM paragraph, or the app's choice."
+    },
+    "fix": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "set_route",
+        "pick_airplane",
+        "set_altitude",
+        "download_charts",
+        "update_packs",
+        "refresh_weather",
+        "fetch_notams",
+        "save_plan",
+        "allow_location",
+        "connect_receiver",
+        "keep_for_air",
+        null
+      ],
+      "description": "What the app does in place for it; null where nothing on the device fixes it."
+    }
+  },
+  "required": [
+    "key",
+    "finding",
+    "line",
+    "detail",
+    "source",
+    "fix"
+  ],
+  "description": "One thing ready_to_fly checked: whether it is fine, a line to act on and the fix done in place."
+}

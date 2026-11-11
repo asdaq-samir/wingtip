@@ -23,7 +23,7 @@ struct WordsSection: View {
                         .font(.subheadline).foregroundStyle(.secondary)
                 } else {
                     ForEach(Array(said.words.sentences.enumerated()), id: \.offset) { _, sentence in
-                        VStack(alignment: .leading, spacing: 6) {
+                        VStack(alignment: .leading, spacing: WingtipSpace.sm) {
                             Text(sentence.text)
                             chips(sentence, words: said.words)
                         }
@@ -54,9 +54,7 @@ struct WordsSection: View {
                 }
                 .navigationTitle(source.label)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .confirmationAction) { Button("Done") { opened = nil } }
-                }
+                .closeButton { opened = nil }
             }
             .presentationDetents([.medium, .large])
         }
@@ -68,7 +66,7 @@ struct WordsSection: View {
     @ViewBuilder private func chips(_ sentence: WordsSentence, words: Words) -> some View {
         let cited = sentence.sources.compactMap(words.source)
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: WingtipSpace.sm) {
                 ForEach(cited) { source in
                     Button {
                         opened = source
@@ -76,29 +74,26 @@ struct WordsSection: View {
                         Text(source.label).font(.footnote).lineLimit(1)
                             .contentShape(Rectangle().inset(by: -8))
                     }
-                    .buttonStyle(.bordered)
+                    .glassButton()
                     .controlSize(.small)
                     .accessibilityHint("Shows the report as sent")
                 }
             }
-            .padding(.vertical, 2)
+            .padding(.vertical, WingtipSpace.xxs)
         }
         .scrollClipDisabled()
     }
 }
 
 #Preview("WordsSection") {
-    let words = Words(
-        sentences: [
-            WordsSentence(text: "KMSN is VFR now, with a few clouds at 4,500 ft and 10 sm.", sources: ["metar:KMSN"]),
-            WordsSentence(text: "An IFR G-AIRMET lies along the route from 14:00 to 17:00.", sources: ["gairmet:0", "flight:route"]),
-        ],
-        sources: [
-            WordsSource(id: "flight:route", label: "The flight", text: "KMSN to KDLH. 95 minutes in the air."),
-            WordsSource(id: "metar:KMSN", label: "KMSN METAR, VFR", text: "KMSN 031853Z 27008KT 10SM FEW045 12/03 A3012"),
-            WordsSource(id: "gairmet:0", label: "G-AIRMET, IFR", text: "G-AIRMET: IFR. Due to clouds. Valid at 1500Z."),
-        ],
-        model: "claude", unavailable: nil)
+    let words = Words(model: "claude", sentences: [
+        WordsSentence(sources: ["metar:KMSN"], text: "KMSN is VFR now, with a few clouds at 4,500 ft and 10 sm."),
+        WordsSentence(sources: ["gairmet:0", "flight:route"], text: "An IFR G-AIRMET lies along the route from 14:00 to 17:00."),
+    ], sources: [
+        WordsSource(id: "flight:route", label: "The flight", text: "KMSN to KDLH. 95 minutes in the air."),
+        WordsSource(id: "metar:KMSN", label: "KMSN METAR, VFR", text: "KMSN 031853Z 27008KT 10SM FEW045 12/03 A3012"),
+        WordsSource(id: "gairmet:0", label: "G-AIRMET, IFR", text: "G-AIRMET: IFR. Due to clouds. Valid at 1500Z."),
+    ], unavailable: nil)
     List {
         WordsSection(said: SaidWords(words: words, origin: .planner))
         WordsSection(said: SaidWords(words: .none("none", "No words: the planner cannot be reached, and words on this iPhone need iOS 26."), origin: .none))

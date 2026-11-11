@@ -59,6 +59,18 @@ pub struct Weather {
     pub unchecked: Vec<String>,
     /// The worst the forecast says along the route, in words.
     pub worst: Option<String>,
+    /// The terminal weather alerts in force now at the route's airports,
+    /// each in its words with its airport ("ATL: Runway 27L arrival
+    /// microburst alert 40 kt, 3 mile final to runway"): the FAA's ITWS,
+    /// as its controllers relay them (AIM 4-3-7).
+    pub terminal_alerts: Vec<String>,
+    /// The Command Center's programs at the route's airports, in words
+    /// ("Ground stop at EWR"): a ground stop or delay program holds IFR
+    /// flights to the airport (FAA JO 7210.3, chapter 17), so they are a
+    /// finding only under IFR (`ifr`).
+    pub flow_programs: Vec<String>,
+    /// The flight is planned IFR.
+    pub ifr: bool,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -188,6 +200,14 @@ fn weather(w: &Weather) -> (&'static str, String) {
         ("stop", format!("VFR not recommended: {first}"))
     } else if let Some(first) = w.under_minimums.first() {
         ("stop", format!("Under your minimums: {first}"))
+    } else if let Some(first) = w.terminal_alerts.first() {
+        // A caution, not a stop: an alert lasts while the cell does,
+        // minutes (ITWS's products expire three minutes on), so it says
+        // what is there now and the pilot asks again nearer the time. Its
+        // source is said, as the alert is the tower's system's, not a forecast.
+        ("caution", format!("{first} (FAA ITWS, now)"))
+    } else if let (true, Some(first)) = (w.ifr, w.flow_programs.first()) {
+        ("caution", format!("{first} (FAA Command Center)"))
     } else if said(&w.icing) {
         ("caution", w.icing.clone().unwrap_or_default())
     } else if !w.hazards.is_empty() {
@@ -202,6 +222,11 @@ fn weather(w: &Weather) -> (&'static str, String) {
 }
 
 fn airspace(a: &Airspace) -> (&'static str, String) {
+    // An area SFDPS says is active now ("active-now") or cold now
+    // ("cold-now") is said so, its status the FAA's own and newer than
+    // the chart's times of use; one active now comes before one only
+    // scheduled.
+    let live = a.special_use.iter().find(|(_, when)| when == "active-now");
     let active = a.special_use.iter().find(|(_, when)| when == "active");
     let maybe = a.special_use.iter().find(|(_, when)| when == "by-notam" || when == "unknown");
     if a.pending {
@@ -212,6 +237,8 @@ fn airspace(a: &Airspace) -> (&'static str, String) {
         ("stop", format!("TFR {first} in force when you get there"))
     } else if a.unchecked {
         ("caution", "Not checked: see tfr.faa.gov".into())
+    } else if let Some((name, _)) = live {
+        ("caution", format!("{name} active now (FAA SFDPS)"))
     } else if let Some((name, _)) = active {
         ("caution", format!("{name} scheduled in use when you pass"))
     } else if let Some((name, _)) = maybe {
@@ -221,9 +248,13 @@ fn airspace(a: &Airspace) -> (&'static str, String) {
         if a.near != 0.0 {
             parts.push(format!("{} TFR{} near, none in force on the route", js_num(a.near), plural(a.near)));
         }
-        let areas = a.special_use.len() as f64;
+        let cold = a.special_use.iter().filter(|(_, when)| when == "cold-now").count() as f64;
+        let areas = a.special_use.len() as f64 - cold;
         if areas > 0.0 {
             parts.push(format!("{} special-use area{} not scheduled then", js_num(areas), plural(areas)));
+        }
+        if cold > 0.0 {
+            parts.push(format!("{} special-use area{} cold now (FAA SFDPS)", js_num(cold), plural(cold)));
         }
         ("ok", parts.join("; "))
     } else {

@@ -32,18 +32,38 @@ async function routeDrawn(page: Page) {
 const FIXTURE = {
   airports: [
     {
-      ident: "KORD", name: "Chicago O'Hare International Airport",
-      lat: 41.978, lon: -87.908, floor_ft_msl: 0, shelves: 12,
-      flight_category: "IFR", metar: "METAR KORD 221451Z 08014KT 1SM BR OVC004",
-      ceiling_ft: 400, visibility_sm: 1, wind_dir_true_deg: 80, wind_speed_kt: 14,
-      taf: "TAF KORD 221500Z 2215/2318 07012G20KT 2SM", taf_ceiling_ft: 800, taf_visibility_sm: 2,
+      ident: "KORD",
+      name: "Chicago O'Hare International Airport",
+      lat: 41.978,
+      lon: -87.908,
+      floor_ft_msl: 0,
+      shelves: 12,
+      flight_category: "IFR",
+      metar: "METAR KORD 221451Z 08014KT 1SM BR OVC004",
+      ceiling_ft: 400,
+      visibility_sm: 1,
+      wind_dir_true_deg: 80,
+      wind_speed_kt: 14,
+      taf: "TAF KORD 221500Z 2215/2318 07012G20KT 2SM",
+      taf_ceiling_ft: 800,
+      taf_visibility_sm: 2,
     },
     {
-      ident: "KMSP", name: "Minneapolis St Paul International Airport",
-      lat: 44.882, lon: -93.222, floor_ft_msl: 0, shelves: 9,
-      flight_category: null, metar: null,
-      ceiling_ft: null, visibility_sm: null, wind_dir_true_deg: null, wind_speed_kt: null,
-      taf: null, taf_ceiling_ft: null, taf_visibility_sm: null,
+      ident: "KMSP",
+      name: "Minneapolis St Paul International Airport",
+      lat: 44.882,
+      lon: -93.222,
+      floor_ft_msl: 0,
+      shelves: 9,
+      flight_category: null,
+      metar: null,
+      ceiling_ft: null,
+      visibility_sm: null,
+      wind_dir_true_deg: null,
+      wind_speed_kt: null,
+      taf: null,
+      taf_ceiling_ft: null,
+      taf_visibility_sm: null,
     },
   ],
 };
@@ -53,8 +73,10 @@ const FIXTURE = {
  *  actually sees is not the one the call site wrote. Matching on the
  *  tail is what survives that. */
 async function mockClassB(page: Page) {
-  await page.route(url => url.pathname.endsWith("/class-b"), (route: Route) =>
-    route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(FIXTURE) }));
+  await page.route(
+    (url) => url.pathname.endsWith("/class-b"),
+    (route: Route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(FIXTURE) }),
+  );
 }
 
 async function showClassB(page: Page) {
@@ -73,7 +95,7 @@ test("off until asked for: a route does not come covered in them", async ({ page
   // and clutter on a route that does not.
   await page.goto(PLAN);
   await routeDrawn(page);
-  await page.waitForTimeout(500);   // a moment for any chips that were coming
+  await page.waitForTimeout(500); // a moment for any chips that were coming
   await expect(chips(page)).toHaveCount(0);
 });
 
@@ -125,11 +147,10 @@ test("tapping one opens its card in the panel, with Fly Here, as any airport on 
 });
 
 test("a tap a little off one's mark opens its card, as off any airport on the chart", async ({ page }) => {
-  // None of the chart's own fields round O'Hare: a tap near KORD is its or
-  // nobody's. It put the card away, where near any other field it opened
-  // that field's.
+  // A tap near KORD's chip opens O'Hare's card. It put the card away,
+  // where near any other field it opened that field's. (The chart's own
+  // O'Hare, from the overlay tiles, is under the chip, and opens the same.)
   await mockClassB(page);
-  await page.route(url => url.pathname.endsWith("/airports/in-view"), route => route.fulfill({ json: { airports: [] } }));
   await showClassBFirst(page);
   // Chicago Executive's card, O'Hare's chip some 65 points south of it.
   await page.goto("/app/plan?place=KPWK");
@@ -160,11 +181,13 @@ test("on an IFR base, the settings' TAC draws the IFR area chart at a Class B fi
   // The terminal sheet over an IFR chart is the IFR area chart: the
   // Class B row's chart segment says Area there, and that is what draws.
   const areaTiles: string[] = [];
-  page.on("request", r => { if (r.url().includes("/ifr_area/")) areaTiles.push(r.url()); });
+  page.on("request", (r) => {
+    if (r.url().includes("/ifr_area/")) areaTiles.push(r.url());
+  });
   await mockClassB(page);
   await page.goto("/app/dev?dep=C81&dest=KDLH");
   await openMapSettings(page);
-  await page.getByTestId("base-chart-select").getByRole("radio", { name: "IFR low" }).click();
+  await page.getByTestId("base-chart-select").getByRole("button", { name: "IFR low" }).click();
   await page.getByTestId("class-b-toggle").click();
   await expect(page.getByTestId("map-settings").getByText("IFR Area Charts")).toBeVisible();
   await page.getByTestId("tac-toggle").click();

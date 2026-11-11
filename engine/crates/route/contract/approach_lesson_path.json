@@ -1,0 +1,43 @@
+{
+  "x-call": "wingtip_route::approach::calls::call",
+  "description": "The lesson's line, the way in to the runway.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ApproachLessonPathInput",
+      "type": "object",
+      "properties": {
+        "drawing": {
+          "$ref": "#/definitions/ProcedureDrawing"
+        }
+      },
+      "required": [
+        "drawing"
+      ]
+    },
+    "answer": {
+      "title": "ApproachLessonPathAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "lat": {
+            "type": "number"
+          },
+          "lon": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lon"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

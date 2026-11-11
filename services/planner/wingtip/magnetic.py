@@ -19,16 +19,10 @@ magnetic = true - declination (this falls out of "east is least, west is
 best" automatically once the sign is applied consistently -- see
 wingtip.navlog.magnetic_heading_deg).
 """
+
 from datetime import date
 
-import wingtip_native
-
-
-def _decimal_year(day: date) -> float:
-    """The model's own time unit: 2026.5 is mid-2026."""
-    start = date(day.year, 1, 1)
-    days_in_year = (date(day.year + 1, 1, 1) - start).days
-    return day.year + (day - start).days / days_in_year
+from .engine import ask as engine
 
 
 def magnetic_variation_deg(lat: float, lon: float, on: date | None = None) -> float:
@@ -43,5 +37,6 @@ def magnetic_variation_deg(lat: float, lon: float, on: date | None = None) -> fl
     """
     # The engine's own WMM-2025 (wingtip_engine::wmm), the phones' same,
     # held at the edge of the model's life as above; pygeomag stays as
-    # the test's oracle (services/planner/tests_wingtip/test_flight_rules.py).
-    return wingtip_native.declination(lat, lon, _decimal_year(on or date.today()))
+    # the test's oracle (services/planner/tests_wingtip/test_flight_rules.py); the
+    # model's decimal year is worked out from the day by the engine.
+    return engine("magnetic_variation", lat=lat, lon=lon, date=(on or date.today()).isoformat())

@@ -2,15 +2,16 @@
  * The assistant a pilot asks about the flight, in text or by voice
  * (AskCard, RadioLayer's Ask chip): POST /api/planner/assistant through
  * the gateway, the answer streamed back as newline-delimited JSON. The
- * shapes here are written by hand, mirroring planner
- * app/assistant.py: `npm run types` has no schema for it yet, and the
- * planner's OpenAPI document gains it later (then these move to ./types).
+ * shapes here are written by hand, mirroring the assistant service's
+ * app/assistant.py (services/assistant): its stream's events are not in
+ * its OpenAPI document yet (once they are, these move to ./types).
  *
  * The client keeps the conversation: each answer's text goes back as the
  * next `assistant` message and the whole list is sent every time,
  * appended to and never edited (useAsk).
  */
 import { ApiError, csrfHeaders, failIfNotOk, ndjson } from "./client";
+import { requestIdHeaders } from "./requestId";
 
 export interface AssistantMessage {
   role: "user" | "assistant";
@@ -18,7 +19,7 @@ export interface AssistantMessage {
 }
 
 /** What the pilot asked for, as the plan has it (lib/briefPlan). */
-export interface AssistantPlan {
+interface AssistantPlan {
   dep: string;
   dest: string;
   stops: string[];
@@ -28,8 +29,8 @@ export interface AssistantPlan {
   depart: string | null;
 }
 
-/** Where the airplane is (lib/map/ownShip's fix), where the phone has one. */
-export interface AssistantOwnShip {
+/** Where the airplane is (lib/map/position/ownShip's fix), where the phone has one. */
+interface AssistantOwnShip {
   lat: number;
   lon: number;
   altitude_ft: number | null;
@@ -39,8 +40,13 @@ export interface AssistantOwnShip {
 
 /** The pilot's own minimums (lib/minimums) and currency, in words
  *  (useAsk's currencyWords); null where the app knows neither. */
-export interface AssistantPilot {
-  personal_minimums: { ceiling_ft: number | null; visibility_sm: number | null; wind_kt: number | null; crosswind_kt: number | null } | null;
+interface AssistantPilot {
+  personal_minimums: {
+    ceiling_ft: number | null;
+    visibility_sm: number | null;
+    wind_kt: number | null;
+    crosswind_kt: number | null;
+  } | null;
   currency: string[];
 }
 
@@ -49,7 +55,7 @@ export interface AssistantContext extends AssistantPlan {
   pilot: AssistantPilot | null;
 }
 
-export interface AssistantRequest {
+interface AssistantRequest {
   messages: AssistantMessage[];
   context: AssistantContext;
 }
@@ -113,8 +119,10 @@ export async function askAssistant(body: AssistantRequest, onEvent: (event: Assi
   // (above), and the planner's client would refuse one it does not know.
   // The gateway's prefix is written in as GatewayRequest writes it.
   const res = await fetch("/api/planner/assistant", {
-    method: "POST", signal, body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json", Accept: "application/x-ndjson", ...csrfHeaders("POST") },
+    method: "POST",
+    signal,
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json", Accept: "application/x-ndjson", ...csrfHeaders("POST"), ...requestIdHeaders() },
   });
   if (res.status === 401) throw new ApiError("Sign in to ask about the flight", 401);
   await failIfNotOk(res);

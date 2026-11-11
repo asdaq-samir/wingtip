@@ -1,15 +1,13 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settle, settled, sideDrawer } from "./helpers";
+import { grabberTo, openConsole, settle, settled, showSearch, showTraffic, sideDrawer } from "./helpers";
 
 /**
- * The tabs' own pages laid out as one (TabPage), at the owner's ask
- * ("consistent look and feel for all tabs fpl, airport, aircraft and
- * setup"): each had a shell of its own, and they told apart on a switch --
- * Aircraft's strip three points under Airport's, the Recents headed in a
- * list's small capitals under the Favorites' title, sections 32, 20 and 16
- * points apart on Airport, Aircraft and Setup. Measured on every tab's page
- * half way and all the way up: the sections' sides, their headings, the
- * room between them, and where the first one starts under the tab bar.
+ * The sheet's own pages laid out as one (TabPage), at the owner's ask
+ * ("consistent look and feel for all tabs"), kept since the one search
+ * took the tabs' place (2026-11-09): the search's own page, the traffic
+ * and the account page. Measured on each half way and all the way up: the
+ * sections' sides, their headings, and the room between them, from the
+ * sheet's first row (the one search).
  */
 
 test.beforeEach(async ({ page }) => {
@@ -17,58 +15,76 @@ test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     const key = "wingtip.preferences";
     const kept = JSON.parse(localStorage.getItem(key) ?? '{"state":{},"version":1}');
-    kept.state.recentAirports = [{ ident: "KDLH", name: "Duluth International" }, { ident: "C81", name: "Campbell" }];
+    kept.state.recentAirports = [
+      { ident: "KDLH", name: "Duluth International" },
+      { ident: "C81", name: "Campbell" },
+    ];
     kept.state.recentAircraft = [{ hex: "a0b1c2", name: "N123AB", type: "C172" }];
     localStorage.setItem(key, JSON.stringify(kept));
   });
 });
 
-interface Section { heading: string | null; font: string | null; top: number; bottom: number; left: number; right: number }
+interface Section {
+  heading: string | null;
+  font: string | null;
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
 
 /** The tab page in sight and its sections, the outermost in it, in
- *  points from the panel's edges; and where the tab bar ends. */
+ *  points from the panel's edges, the tops from the first row's foot. */
 async function layout(page: Page) {
   const panel = sideDrawer(page);
   await settled(panel);
-  return panel.evaluate(el => {
+  return panel.evaluate((el) => {
     const box = el.getBoundingClientRect();
     const shown = (e: Element) => e.getBoundingClientRect().height > 0;
     const tabPage = [...el.querySelectorAll("[data-panel-body] [data-tab-page]")].find(shown);
-    const bar = el.querySelector('[data-testid="tab-bar"]')!.getBoundingClientRect();
+    const bar = el.querySelector("[role=search]")!.getBoundingClientRect();
     if (!tabPage) return null;
-    const sections = [...tabPage.querySelectorAll("section")].filter(s => {
-      for (let up = s.parentElement; up && up !== tabPage; up = up.parentElement) if (up.tagName === "SECTION") return false;
-      return shown(s);
-    }).map((s): Section => {
-      const b = s.getBoundingClientRect();
-      // A labelled section's heading: its title, or the menu that is its
-      // title (PillSection). A list's own small heading counts too; an
-      // untitled list's first row is no heading (Setup's Pilot details).
-      const heading = s.querySelector(":scope > div:first-child:not([role=group]) :is(h3, button)");
-      const css = heading && getComputedStyle(heading);
-      return {
-        heading: heading?.textContent?.trim() || null,
-        font: css && `${css.fontSize} ${css.fontWeight} ${css.textTransform}`,
-        top: b.top - bar.bottom, bottom: b.bottom - bar.bottom, left: b.left - box.left, right: box.right - b.right,
-      };
-    });
+    const sections = [...tabPage.querySelectorAll("section")]
+      .filter((s) => {
+        for (let up = s.parentElement; up && up !== tabPage; up = up.parentElement) if (up.tagName === "SECTION") return false;
+        return shown(s);
+      })
+      .map((s): Section => {
+        const b = s.getBoundingClientRect();
+        // A labelled section's heading: its title, or the menu that is its
+        // title (PillSection). A list's own small heading counts too; an
+        // untitled list's first row is no heading (Setup's Pilot details).
+        const heading = s.querySelector(":scope > div:first-child:not([role=group]) :is(h3, button)");
+        const css = heading && getComputedStyle(heading);
+        return {
+          heading: heading?.textContent?.trim() || null,
+          font: css && `${css.fontSize} ${css.fontWeight} ${css.textTransform}`,
+          top: b.top - bar.bottom,
+          bottom: b.bottom - bar.bottom,
+          left: b.left - box.left,
+          right: box.right - b.right,
+        };
+      });
     return { sections };
   });
 }
 
-test("every tab's page is laid out as one: its sections' sides, headings and the room between them, and where the first starts", async ({ page }) => {
+test("every page of the sheet is laid out as one: its sections' sides, headings and the room between them", async ({ page }) => {
   await page.goto("/app/plan");
   await settle(page);
   const pages: Record<string, Section[]> = {};
-  for (const [name, tab] of [["FPL", "tab-fpl"], ["Airport", "tab-airport"], ["Aircraft", "tab-aircraft"], ["Setup", "setup-button"]] as const) {
+  const opens: [string, () => Promise<void>][] = [
+    ["Search", () => showSearch(page)],
+    ["Traffic", () => showTraffic(page)],
+    ["Account", () => openConsole(page)],
+  ];
+  for (const [name, open] of opens) {
+    await open();
     for (const size of ["half", "full"] as const) {
-      // FPL with no route shows its Saved strip half way only.
-      if (name === "FPL" && size === "full") continue;
-      await page.getByTestId(tab).click();
       await grabberTo(page, size);
-      // Setup's page is its own chunk: drawn a moment after its tab on a
-      // first visit, so waited for, not read at once.
-      await expect.poll(async () => (await layout(page)) !== null, { message: `${name} ${size}: a tab page` }).toBe(true);
+      // The account page is its own chunk: drawn a moment after the menu's
+      // tap on a first visit, so waited for, not read at once.
+      await expect.poll(async () => (await layout(page)) !== null, { message: `${name} ${size}: a page` }).toBe(true);
       const seen = await layout(page);
       pages[`${name} ${size}`] = seen!.sections;
     }
@@ -81,16 +97,11 @@ test("every tab's page is laid out as one: its sections' sides, headings and the
       expect(Math.round(s.right), `${where} ${s.heading}: right`).toBe(16);
     }
   }
-  // One heading, the Favorites' (PillSection), on every tab.
-  const fonts = new Set(all.flatMap(([, sections]) => sections.filter(s => s.font).map(s => s.font)));
+  // One heading, the Favorites' (PillSection), on every page.
+  const fonts = new Set(all.flatMap(([, sections]) => sections.filter((s) => s.font).map((s) => s.font)));
   expect([...fonts]).toHaveLength(1);
-  // One room between sections, on every tab.
+  // One room between sections, on every page.
   const gaps = all.flatMap(([where, sections]) => sections.slice(1).map((s, i) => ({ where, gap: s.top - sections[i]!.bottom })));
   expect(gaps.length).toBeGreaterThan(2);
   for (const { where, gap } of gaps) expect(Math.abs(gap - gaps[0]!.gap), `${where}: ${gap} apart`).toBeLessThan(1.5);
-  // Airport's and Aircraft's first section, under the same search bar,
-  // as far under the tab bar.
-  for (const size of ["half", "full"]) {
-    expect(Math.abs(pages[`Airport ${size}`]![0]!.top - pages[`Aircraft ${size}`]![0]!.top), size).toBeLessThan(1.5);
-  }
 });

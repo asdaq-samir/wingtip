@@ -17,12 +17,10 @@ import { usePreferences, type ChartLight } from "./preferences";
  * comes on by itself a banner says so with a one-tap Keep off
  * (SunlightBanner).
  *
- * The airspace rings (AirspaceLinesCanvas) draw on a canvas at their
- * style's own weight (chartColors' LINE_CASING and the class's own
- * weights, module constants read at draw time), which no stylesheet
- * reaches: they stay at their width in sunlight until that layer reads
- * the attribute itself. The course (CourseLine) is Leaflet SVG, whose
- * stroke-width the stylesheet sets.
+ * The chart's tiles take it in their raster paint (glStyle chartPaint).
+ * The airspace rings and the course are WebGL lines whose widths are
+ * paint properties (glStyle), which no stylesheet reaches: they stay at
+ * their width in sunlight.
  */
 
 /** Direct sunlight on the screen: full daylight is 10,000 lux and more
@@ -44,7 +42,7 @@ type SensorClass = new (options?: { frequency?: number }) => Sensor;
 export const useSunlightSensor = create<{ bright: boolean }>(() => ({ bright: false }));
 
 /** Whether the sunlight scheme is on, from the setting and the sensor. */
-export function sunlightOn(chartLight: ChartLight, bright: boolean): boolean {
+function sunlightOn(chartLight: ChartLight, bright: boolean): boolean {
   return chartLight === "on" || (chartLight === "auto" && bright);
 }
 
@@ -68,7 +66,10 @@ async function startSensor() {
       const now = was ? lux >= OFF_LUX : lux >= ON_LUX;
       if (now !== was) useSunlightSensor.setState({ bright: now });
     });
-    s.addEventListener("error", () => { s.stop(); sensor = null; });
+    s.addEventListener("error", () => {
+      s.stop();
+      sensor = null;
+    });
     s.start();
     sensor = s;
   } catch {
@@ -86,8 +87,8 @@ function stopSensor() {
  *  "normal") from the setting and the sensor, which runs only while the
  *  setting is Auto. Mounted once, with the map's banners. */
 export function useSunlight() {
-  const chartLight = usePreferences(s => s.chartLight);
-  const bright = useSunlightSensor(s => s.bright);
+  const chartLight = usePreferences((s) => s.chartLight);
+  const bright = useSunlightSensor((s) => s.bright);
   useEffect(() => {
     if (chartLight === "auto") void startSensor();
     else stopSensor();

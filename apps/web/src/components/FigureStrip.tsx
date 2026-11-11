@@ -18,7 +18,11 @@ export interface StripFigure {
  * model's error) and its performance's, at the owner's pick of the dev
  * page's redesign ("redesign the dev similar way").
  */
-export default function FigureStrip({ figures, rounded = figures, testId }: {
+export default function FigureStrip({
+  figures,
+  rounded = figures,
+  testId,
+}: {
   figures: StripFigure[];
   /** Each figure rounded, for the one too wide for its column, as the
    *  flight's figures are (useFigureFit). */
@@ -42,8 +46,15 @@ export default function FigureStrip({ figures, rounded = figures, testId }: {
             {/* Its names and units a grey that reads on the pill's glass. */}
             <dt className={cn(nameType, "truncate text-foreground/65")}>{f.name}</dt>
             <dd ref={i === 0 ? room : undefined} className={cn(valueType, "truncate tabular-nums")} data-testid={f.testId}>
-              <span style={sized("value")} data-fitted={fitted}>{f.value}</span>
-              {f.unit && <span className={cn(unitType, "font-normal text-foreground/65")} style={sized("unit")} data-fitted={fitted}> {f.unit}</span>}
+              <span key={f.value} className="figure-roll" style={sized("value")} data-fitted={fitted}>
+                {f.value}
+              </span>
+              {f.unit && (
+                <span className={cn(unitType, "font-normal text-foreground/65")} style={sized("unit")} data-fitted={fitted}>
+                  {" "}
+                  {f.unit}
+                </span>
+              )}
             </dd>
           </div>
         ))}

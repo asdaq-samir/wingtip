@@ -2,17 +2,16 @@
  * The Brief's and the debrief's plain-language readings, each with the
  * reports it rests on (WordsSection), and the flight watch on the
  * gateway (FlightWatch). The shapes are written by hand, mirroring
- * planner app/ai_words.py for the words and the gateway's
+ * the assistant service's app/words.py for the words and the gateway's
  * FlightWatchController for the watch: `npm run types` has no schema for
  * either yet, and they move to ./types once the documents carry them.
  */
 import { ApiError, csrfHeaders, failIfNotOk } from "./client";
 import type { Source } from "./assistant";
-
-export type { Source };
+import { requestIdHeaders } from "./requestId";
 
 /** One sentence of a reading, with the sources it rests on by id. */
-export interface WordsSentence {
+interface WordsSentence {
   text: string;
   sources: string[];
 }
@@ -25,15 +24,19 @@ export interface WordsAnswer {
   /** Why there are no words -- the model could not be reached -- said in
    *  the section's own small text, never a toast; null where there are. */
   unavailable: string | null;
+  /** The NOTAMs' only: the day (ISO date) the planner first heard the FAA's
+   *  NOTAM feed. Earlier NOTAMs never changed since are not held, so the
+   *  words are of what was heard since, never of every NOTAM in force. */
+  coverage_since?: string | null;
 }
 
-export interface DebriefWordsAnswer extends WordsAnswer {
+interface DebriefWordsAnswer extends WordsAnswer {
   /** A line for the pilot's instructor, where the reading has one. */
   instructor_note: string | null;
 }
 
 /** The route and its time, as /api/briefing is asked (usePlan). */
-export interface WordsRoute {
+interface WordsRoute {
   dep: string;
   dest: string;
   stops: string[];
@@ -44,14 +47,14 @@ export interface WordsRoute {
 /** The weather's, with the flight's time en route and its legs, the
  *  same as the briefing is asked with once the nav log has them
  *  (briefingLegs): null until it does. */
-export interface WeatherWordsRequest extends WordsRoute {
+interface WeatherWordsRequest extends WordsRoute {
   ete_min: number | null;
   fixes: string | null;
   /** Each leg's minutes, comma-joined, as briefingLegs writes them. */
   leg_min: string | null;
 }
 
-export interface RiskWordsRequest {
+interface RiskWordsRequest {
   /** The Go / No-Go as the Brief has it (lib/verdict): its line and each
    *  finding. */
   verdict: { finding: string; words: string; items: { key: string; label: string; finding: string; detail: string }[] };
@@ -61,10 +64,12 @@ export interface RiskWordsRequest {
 /** A POST to the planner through the gateway, its JSON back; the
  *  gateway's prefix written in as GatewayRequest writes it. A plain
  *  fetch, as ./assistant's: the schema has no such path yet. */
-async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
+export async function postJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const res = await fetch(path, {
-    method: "POST", signal, body: JSON.stringify(body),
-    headers: { "Content-Type": "application/json", ...csrfHeaders("POST") },
+    method: "POST",
+    signal,
+    body: JSON.stringify(body),
+    headers: { "Content-Type": "application/json", ...csrfHeaders("POST"), ...requestIdHeaders() },
   });
   // A billed Claude call needs a session, and Spring's 401 carries no body.
   if (res.status === 401) throw new ApiError("Sign in for the words", 401);
@@ -79,7 +84,7 @@ export const words = {
   weather: (request: WeatherWordsRequest, signal?: AbortSignal) => postJson<WordsAnswer>("/api/planner/words/weather", request, signal),
   /** The Go / No-Go read against the pilot's own minimums and currency. */
   risk: (request: RiskWordsRequest, signal?: AbortSignal) => postJson<WordsAnswer>("/api/planner/words/risk", request, signal),
-  /** What a flown flight says to practise next (lib/debrief's answer). */
+  /** What a flown flight says to practise next (features/pilot/debrief's answer). */
   debrief: (debrief: unknown, signal?: AbortSignal) => postJson<DebriefWordsAnswer>("/api/planner/words/debrief", { debrief }, signal),
 };
 
@@ -99,7 +104,8 @@ export const flightWatch = {
   /** Started, or its departure moved: the same POST either way. */
   start: async (flightId: number, departAt: string): Promise<FlightWatch> => {
     const res = await fetch(`/api/flights/${flightId}/watch`, {
-      method: "POST", body: JSON.stringify({ departAt }),
+      method: "POST",
+      body: JSON.stringify({ departAt }),
       headers: { "Content-Type": "application/json", ...csrfHeaders("POST") },
     });
     await failIfNotOk(res);

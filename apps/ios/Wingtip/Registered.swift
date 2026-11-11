@@ -9,68 +9,19 @@ enum Registered {
     /// 14 CFR 47.15(b)'s shape for an N-number: N, then up to five
     /// figures, four and a letter, or three and two letters, the first
     /// figure 1 to 9 and never the letters I or O -- the engine's
-    /// `n_number`, the web app's N_NUMBER. Not one where it cannot answer.
-    static func isNNumber(_ s: String) -> Bool {
-        do { return try Engine.call("n_number", ["text": s]) } catch { return false }
+    /// `n_number`, the web app's N_NUMBER; thrown where it cannot answer.
+    static func isNNumber(_ s: String) throws -> Bool {
+        try Engine.nNumber(text: s)
     }
 
     /// The planner profile for a registered airplane, or nil where the
     /// planner has no figures for its type: the engine's
     /// `registered_profile` (engine/crates/pilot/src/aircraft/registry.rs), the
     /// web app's profileOfRegistered.
-    static func profile(manufacturer: String?, model: String?, year: Int?) -> String? {
-        do {
-            return try Engine.call("registered_profile", json: ["manufacturer": manufacturer, "model": model, "year": year])
-        } catch {
-            return nil
-        }
+    static func profile(manufacturer: String?, model: String?, year: Int?) throws -> String? {
+        try Engine.registeredProfile(manufacturer: manufacturer, model: model, year: year.map(Double.init))
     }
 }
 
-/// The FAA registry's record (AircraftRegistration), the parts the app
-/// uses.
-struct AircraftRegistration: Codable, Equatable, Sendable {
-    let nNumber: String
-    var manufacturer: String?
-    var model: String?
-    var year: Int?
-    var modeSHex: String?
-    var owner: String?
-    var city: String?
-    var state: String?
-    // `n_number` and `mode_s_hex` come through Planner.snakeCase as
-    // nNumber and modeSHex; a key spelt by hand would not match them.
-}
-
-/// The figures the nav log flies an airplane on: the type's, or the
-/// pilot's own where set.
-struct Figures: Codable, Equatable, Sendable {
-    var cruiseTasKt: Double?
-    var fuelBurnGph: Double?
-    var usableFuelGal: Double?
-    var cruisePowerPct: Double?
-    var climbTasKt: Double?
-    var climbFuelBurnGph: Double?
-    var serviceCeilingFt: Double?
-
-    /// The nav log's query for them, only the ones set.
-    var query: [String: String?] {
-        [
-            "cruise_tas_kt": cruiseTasKt.map { String($0) }, "fuel_burn_gph": fuelBurnGph.map { String($0) },
-            "usable_fuel_gal": usableFuelGal.map { String($0) }, "cruise_power_pct": cruisePowerPct.map { String($0) },
-            "climb_tas_kt": climbTasKt.map { String($0) }, "climb_fuel_burn_gph": climbFuelBurnGph.map { String($0) },
-            "service_ceiling_ft": serviceCeilingFt.map { String($0) },
-        ]
-    }
-
-    init(cruiseTasKt: Double? = nil, fuelBurnGph: Double? = nil, usableFuelGal: Double? = nil, cruisePowerPct: Double? = nil, climbTasKt: Double? = nil, climbFuelBurnGph: Double? = nil, serviceCeilingFt: Double? = nil) {
-        self.cruiseTasKt = cruiseTasKt; self.fuelBurnGph = fuelBurnGph; self.usableFuelGal = usableFuelGal
-        self.cruisePowerPct = cruisePowerPct; self.climbTasKt = climbTasKt; self.climbFuelBurnGph = climbFuelBurnGph
-        self.serviceCeilingFt = serviceCeilingFt
-    }
-
-    init(_ own: OwnAircraftRecord) {
-        self.init(cruiseTasKt: own.cruiseTasKt, fuelBurnGph: own.fuelBurnGph, usableFuelGal: own.usableFuelGal, cruisePowerPct: own.cruisePowerPct,
-                  climbTasKt: own.climbTasKt, climbFuelBurnGph: own.climbFuelBurnGph)
-    }
-}
+/// The FAA registry's record (AircraftRegistration), generated.
+typealias AircraftRegistration = APIAircraftRegistration

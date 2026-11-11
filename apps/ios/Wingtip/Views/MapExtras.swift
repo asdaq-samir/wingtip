@@ -20,8 +20,7 @@ enum MapExtras {
     /// A Class B field as the map's airport mark takes it: its ring in
     /// the colour of what it reports now.
     static func pin(_ field: ClassBAirport) -> AirportPin {
-        AirportPin(ident: field.ident, name: field.name, lat: field.lat, lon: field.lon, kind: "large",
-                   flightCategory: field.flightCategory, airspaceClass: "B", military: nil, isPrivate: false)
+        AirportPin(airspaceClass: "B", flightCategory: field.flightCategory, ident: field.ident, kind: "large", lat: field.lat, lon: field.lon, military: nil, name: field.name, isPrivate: false)
     }
 }
 
@@ -46,7 +45,7 @@ final class WaypointAnnotation: NSObject, MKAnnotation {
 final class WaypointMarkView: MKAnnotationView {
     static let reuse = "waypoint"
     /// The sectional's magenta (web lib/useAirspace MAGENTA).
-    static let magenta = UIColor(hex: 0xC0309F)
+    static let magenta = WingtipColor.Chart.waypoint
     private let diamond = UIView()
 
     override init(annotation: (any MKAnnotation)?, reuseIdentifier: String?) {
@@ -112,16 +111,20 @@ final class PlateRenderer: MKOverlayRenderer {
 }
 
 /// What the root view hands the map for these: the pin, the switches
-/// from Setup, the approaches picked, and what a hold or a waypoint's +
-/// does.
+/// from Setup, the approaches picked, and what a hold or a waypoint's
+/// actions do.
 struct MapExtrasInput {
     var held: CLLocationCoordinate2D?
+    /// The field whose card is open, ringed on the chart (SelectedHalo).
+    var selectedField: String?
     var waypoints = false
     var classB = false
     var plates = true
     var approaches: [ProcedurePick] = []
     var onHold: ((CLLocationCoordinate2D) -> Void)?
-    var onWaypointStop: ((String) -> Void)?
+    /// A waypoint's card's action (CardKind.navaid): Direct To, Add to
+    /// Route, Copy.
+    var onWaypoint: ((String, CLLocationCoordinate2D, CardAction) -> Void)?
 
     /// Setup's switches, kept on the device (the web app's preferences:
     /// waypoints and Class B off until a pilot turns them on, plates on).
@@ -144,7 +147,7 @@ struct MapExtrasInput {
 @MainActor
 final class MapExtrasState: NSObject {
     var onHold: ((CLLocationCoordinate2D) -> Void)?
-    var onWaypointStop: ((String) -> Void)?
+    var onWaypoint: ((String, CLLocationCoordinate2D, CardAction) -> Void)?
     private var held: HeldAnnotation?
     private var showWaypoints = false
     private var showClassB = false
@@ -156,7 +159,7 @@ final class MapExtrasState: NSObject {
     private var classBTask: Task<Void, Never>?
     private var plateTask: Task<Void, Never>?
 
-    nonisolated override init() { super.init() }
+    override nonisolated init() { super.init() }
 
     /// A finger held on the map asks what is there, as Maps drops a pin.
     func attach(to map: MKMapView) {
@@ -164,18 +167,34 @@ final class MapExtrasState: NSObject {
         let hold = UILongPressGestureRecognizer(target: self, action: #selector(held(_:)))
         hold.minimumPressDuration = 0.5
         map.addGestureRecognizer(hold)
+        // The airports, checkpoints and traffic in view in VoiceOver's rotor,
+        // and to Siri as what is on the screen (View Annotations).
+        map.accessibilityCustomRotors = MapRotors.rotors(for: map)
+        if #available(iOS 18.4, *) { ChartMapSiri.attach(to: map) }
+        // The held finger for VoiceOver, which cannot hold a point: the
+        // same ask, of the map's centre (Apple's HIG: every gesture has an
+        // accessible way to do the same).
+        map.accessibilityCustomActions = [
+            UIAccessibilityCustomAction(name: "What's Here") { [weak self, weak map] _ in
+                guard let self, let map, let onHold = self.onHold else { return false }
+                onHold(map.centerCoordinate)
+                return true
+            },
+        ]
     }
 
     @objc private func held(_ gesture: UILongPressGestureRecognizer) {
         guard gesture.state == .began, let map = gesture.view as? MKMapView else { return }
         let at = map.convert(gesture.location(in: map), toCoordinateFrom: map)
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        // Maps' pin-drop tap, played by Feel's host as every tap is.
+        Feel.tap(.held)
         onHold?(at)
     }
 
     func update(_ map: MKMapView, _ input: MapExtrasInput, tiles: (any MKOverlay)?) {
         onHold = input.onHold
-        onWaypointStop = input.onWaypointStop
+        onWaypoint = input.onWaypoint
+        AirportMarkView.select(input.selectedField, on: map)
         if let point = input.held {
             if let pin = held {
                 if pin.coordinate.latitude != point.latitude || pin.coordinate.longitude != point.longitude { pin.coordinate = point }
@@ -213,13 +232,9 @@ final class MapExtrasState: NSObject {
     func view(for annotation: any MKAnnotation, on map: MKMapView) -> MKAnnotationView? {
         if let mark = annotation as? WaypointAnnotation {
             let view = map.dequeueReusableAnnotationView(withIdentifier: WaypointMarkView.reuse, for: mark)
-            if onWaypointStop != nil {
-                let add = UIButton(type: .contactAdd)
-                add.accessibilityLabel = "Add as a Stop"
-                view.rightCalloutAccessoryView = add
-            } else {
-                view.rightCalloutAccessoryView = nil
-            }
+            // A waypoint's card is its callout, with the navaid card's
+            // actions under its name, as the web's (CardKind.navaid).
+            view.detailCalloutAccessoryView = actions(for: mark)
             return view
         }
         if annotation is HeldAnnotation {
@@ -232,10 +247,31 @@ final class MapExtrasState: NSObject {
         return nil
     }
 
-    func calloutTapped(_ view: MKAnnotationView) {
-        guard let mark = view.annotation as? WaypointAnnotation else { return }
-        view.setSelected(false, animated: MapMotion.animated)
-        onWaypointStop?(mark.waypoint.ident)
+    /// The navaid card's actions in a row, the first filled: Direct To and
+    /// Add to Route once there is a route, Copy always.
+    private func actions(for mark: WaypointAnnotation) -> UIView {
+        let row = UIStackView()
+        row.axis = .horizontal
+        row.spacing = WingtipSpace.sm
+        for (i, action) in CardKind.navaid.actions.enumerated() {
+            var look: UIButton.Configuration = i == 0 ? .borderedProminent() : .bordered()
+            look.title = action.title
+            look.image = UIImage(systemName: action.systemImage)
+            look.imagePlacement = .top
+            look.imagePadding = WingtipSpace.xs
+            look.buttonSize = .small
+            let button = UIButton(configuration: look, primaryAction: UIAction { [weak self, weak mark] _ in
+                guard let self, let mark else { return }
+                if action == .copy {
+                    UIPasteboard.general.string = mark.waypoint.ident
+                } else {
+                    self.onWaypoint?(mark.waypoint.ident, mark.coordinate, action)
+                }
+            })
+            button.isEnabled = action == .copy || onWaypoint != nil
+            row.addArrangedSubview(button)
+        }
+        return row
     }
 
     private func refreshWaypoints(_ map: MKMapView, after ms: Int) {

@@ -1,6 +1,8 @@
 import { writeFileSync } from "node:fs";
 import { test, type Page } from "@playwright/test";
 import { controlsInSight, noTips, openPanel } from "./helpers";
+import { pickAirplane } from "./startState";
+test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
  * The nightly lab run for the speed trend (ci.yml, SpeedController): the
@@ -36,14 +38,17 @@ async function probes(page: Page) {
   await page.addInitScript(noTips);
   await page.addInitScript(() => {
     const w = window as unknown as { __inp: { t: number; d: number }[]; __long: { t: number; d: number }[]; __search: number | null };
-    w.__inp = []; w.__long = []; w.__search = null;
-    new PerformanceObserver(list => {
+    w.__inp = [];
+    w.__long = [];
+    w.__search = null;
+    new PerformanceObserver((list) => {
       for (const e of list.getEntries() as PerformanceEventTiming[]) if (e.interactionId) w.__inp.push({ t: e.startTime, d: e.duration });
     }).observe({ type: "event", buffered: true, durationThreshold: 16 } as PerformanceObserverInit);
-    new PerformanceObserver(list => { for (const e of list.getEntries()) w.__long.push({ t: e.startTime, d: e.duration }); })
-      .observe({ type: "longtask", buffered: true });
+    new PerformanceObserver((list) => {
+      for (const e of list.getEntries()) w.__long.push({ t: e.startTime, d: e.duration });
+    }).observe({ type: "longtask", buffered: true });
     const look = () => {
-      if (document.querySelector("[data-testid=tab-bar]")) w.__search = performance.now();
+      if (document.querySelector("[data-testid=search-airports]")) w.__search = performance.now();
       else requestAnimationFrame(look);
     };
     requestAnimationFrame(look);
@@ -55,28 +60,35 @@ async function probes(page: Page) {
 const now = (page: Page) => page.evaluate(() => performance.now());
 
 /** The slowest interaction since `from`: the step's INP. */
-const inpSince = (page: Page, from: number) => page.evaluate(f => {
-  const w = window as unknown as { __inp: { t: number; d: number }[] };
-  return Math.max(0, ...w.__inp.filter(e => e.t >= f).map(e => e.d));
-}, from);
+const inpSince = (page: Page, from: number) =>
+  page.evaluate((f) => {
+    const w = window as unknown as { __inp: { t: number; d: number }[] };
+    return Math.max(0, ...w.__inp.filter((e) => e.t >= f).map((e) => e.d));
+  }, from);
 
-const longSince = (page: Page, from: number) => page.evaluate(f => {
-  const w = window as unknown as { __long: { t: number; d: number }[] };
-  return w.__long.filter(e => e.t >= f).reduce((n, e) => n + e.d, 0);
-}, from);
+const longSince = (page: Page, from: number) =>
+  page.evaluate((f) => {
+    const w = window as unknown as { __long: { t: number; d: number }[] };
+    return w.__long.filter((e) => e.t >= f).reduce((n, e) => n + e.d, 0);
+  }, from);
 
 /** When `selector` is first on screen, by the page's clock, looked for
  *  every 16 ms: by timer rather than by frame, since a page the browser
  *  is not drawing for a moment has no frames and would wait for ever. */
-const shownAt = (page: Page, selector: string) => page.evaluate(sel => new Promise<number>((resolve, reject) => {
-  const until = performance.now() + 60_000;
-  const look = () => {
-    if (document.querySelector(sel)) resolve(performance.now());
-    else if (performance.now() > until) reject(new Error(`no ${sel}`));
-    else setTimeout(look, 16);
-  };
-  look();
-}), selector);
+const shownAt = (page: Page, selector: string) =>
+  page.evaluate(
+    (sel) =>
+      new Promise<number>((resolve, reject) => {
+        const until = performance.now() + 60_000;
+        const look = () => {
+          if (document.querySelector(sel)) resolve(performance.now());
+          else if (performance.now() > until) reject(new Error(`no ${sel}`));
+          else setTimeout(look, 16);
+        };
+        look();
+      }),
+    selector,
+  );
 
 const median = (values: number[]) => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)]!;
 
@@ -90,7 +102,7 @@ test("the nightly speed lab", async ({ page }, info) => {
   for (let run = 0; run < RUNS; run++) {
     // Opening the app, and the map's own steps on it.
     await page.goto("/app/plan");
-    await page.getByTestId("tab-bar").first().waitFor({ timeout: 60_000 });
+    await page.getByTestId("search-airports").first().waitFor({ timeout: 60_000 });
     keep("open_app", await page.evaluate(() => (window as unknown as { __search: number }).__search));
     await page.locator("[data-chart-zoom]").first().waitFor({ state: "attached", timeout: 60_000 });
     await page.waitForTimeout(3000);
@@ -121,9 +133,7 @@ test("the nightly speed lab", async ({ page }, info) => {
     await controlsInSight(page);
     await page.locator("[data-testid=navlog-fuel]").first().waitFor({ state: "attached", timeout: 90_000 });
     await page.waitForTimeout(3000);
-    for (const [name, open, shown] of [
-      ["share_menu", () => page.getByTestId("share-route").first().click(), "[role=menu]"],
-    ] as const) {
+    for (const [name, open, shown] of [["share_menu", () => page.getByTestId("share-route").first().click(), "[role=menu]"]] as const) {
       from = await now(page);
       await open();
       await page.locator(shown).first().waitFor();

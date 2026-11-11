@@ -1,0 +1,347 @@
+{
+  "about": "What a pilot's and an airplane's records say, the engine's endorsement_records and inspections_due, which the gateway asks through the planner (POST /api/pilot/endorsements, /api/aircraft/inspections): a solo endorsement good for 90 days (14 CFR 61.87(n), (p)), 61.93(d)(4) and (5) for a solo cross-country, and the inspections in calendar months (91.409(a) and 91.207(d) 12, 91.411(a) and 91.413(a) 24: to the last day of the Nth month after), the 100-hour 100 hours on (91.409(b)) and a VOR check good 30 days within 4 or 6 degrees (91.171). The boundaries: a flight on the 90th day after the endorsement and the day after; an annual on the 5th and on the last day of a month; a check on 29 February. Also the turnaround and the cruise reference (planning_figures) and the E6B's tolerances (workings_right). And AC 61-65K's student endorsements filled in to sign (endorsement_fill, the gateway's EndorsementKind before #482): A.10's words with its blanks filled and no conditions leaving nothing, a blank's spaces closed up and a field it does not take left out; A.8's conditions, which its words lead into, missing; a code no endorsement has is null. dueTone: a paperwork row's tone, past a stop, within 30 days or 10 hours a caution, further off ok (the engine's due_tone).",
+  "endorsements": [
+    {
+      "name": "solo current on its 90th day",
+      "input": {
+        "held": [
+          {
+            "code": "solo-first",
+            "on": "2026-01-01"
+          },
+          {
+            "code": "solo-xc-training",
+            "on": "2026-02-01",
+            "make_model": "C172"
+          },
+          {
+            "code": "pre-solo-flight",
+            "on": "2025-12-20"
+          }
+        ],
+        "flight_on": "2026-04-01"
+      },
+      "answer": {
+        "until": [
+          "2026-04-01",
+          null,
+          null
+        ],
+        "solo_until": "2026-04-01",
+        "checks": [
+          {
+            "rule": "61.93(d)(4)",
+            "label": "A solo cross-country endorsement for the make and model",
+            "met": true,
+            "detail": "Given 1 Feb 2026 for a C172"
+          },
+          {
+            "rule": "61.93(d)(5)",
+            "label": "A solo endorsement current on the day of the flight",
+            "met": true,
+            "detail": "Given 1 Jan 2026"
+          }
+        ]
+      }
+    },
+    {
+      "name": "lapsed the day after, the further 90 days' newer",
+      "input": {
+        "held": [
+          {
+            "code": "solo-first",
+            "on": "2026-01-01"
+          }
+        ],
+        "flight_on": "2026-04-02"
+      },
+      "answer": {
+        "until": [
+          "2026-04-01"
+        ],
+        "solo_until": "2026-04-01",
+        "checks": [
+          {
+            "rule": "61.93(d)(4)",
+            "label": "A solo cross-country endorsement for the make and model",
+            "met": false,
+            "detail": "None on record"
+          },
+          {
+            "rule": "61.93(d)(5)",
+            "label": "A solo endorsement current on the day of the flight",
+            "met": false,
+            "detail": "Given 1 Jan 2026, not within the 90 days before 2 Apr 2026"
+          }
+        ]
+      }
+    },
+    {
+      "name": "the latest of the first and a further one, no flight",
+      "input": {
+        "held": [
+          {
+            "code": "solo-first",
+            "on": "2026-01-01"
+          },
+          {
+            "code": "solo-90",
+            "on": "2026-03-15"
+          },
+          {
+            "code": "class-b",
+            "on": "2026-03-01"
+          }
+        ]
+      },
+      "answer": {
+        "until": [
+          "2026-04-01",
+          "2026-06-13",
+          "2026-05-30"
+        ],
+        "solo_until": "2026-06-13",
+        "checks": []
+      }
+    },
+    {
+      "name": "nothing held",
+      "input": {
+        "held": []
+      },
+      "answer": {
+        "until": [],
+        "solo_until": null,
+        "checks": []
+      }
+    }
+  ],
+  "inspections": [
+    {
+      "input": {
+        "annual_on": "2025-10-05",
+        "elt_on": "2025-10-31",
+        "static_check_on": "2024-02-29",
+        "transponder_check_on": null,
+        "hundred_hour_at_hours": 1234.5,
+        "vor_check": {
+          "on": "2026-11-01",
+          "kind": "AIRBORNE",
+          "error_deg": -5
+        }
+      },
+      "answer": {
+        "hundred_hour_due_at_hours": 1334.5,
+        "vor_check": {
+          "limit_deg": 6,
+          "within": true,
+          "until": "2026-12-01"
+        },
+        "annual_until": "2026-10-31",
+        "elt_until": "2026-10-31",
+        "static_check_until": "2026-02-28",
+        "transponder_check_until": null
+      }
+    },
+    {
+      "input": {
+        "vor_check": {
+          "on": "2026-11-01",
+          "kind": "VOT",
+          "error_deg": 4.5
+        }
+      },
+      "answer": {
+        "hundred_hour_due_at_hours": null,
+        "vor_check": {
+          "limit_deg": 4,
+          "within": false,
+          "until": "2026-12-01"
+        },
+        "annual_until": null,
+        "elt_until": null,
+        "static_check_until": null,
+        "transponder_check_until": null
+      }
+    }
+  ],
+  "planning": {
+    "turnaround_min": 30,
+    "cruise_reference_ft": 6000
+  },
+  "workings": [
+    {
+      "key": "mh",
+      "typed": 359,
+      "answer": 1,
+      "right": true
+    },
+    {
+      "key": "mh",
+      "typed": 358,
+      "answer": 1,
+      "right": false
+    },
+    {
+      "key": "gs",
+      "typed": 103,
+      "answer": 100,
+      "right": true
+    },
+    {
+      "key": "gs",
+      "typed": 103.5,
+      "answer": 100,
+      "right": false
+    },
+    {
+      "key": "fuel",
+      "typed": 4.3,
+      "answer": 4.0,
+      "right": true
+    },
+    {
+      "key": "ete",
+      "typed": 12,
+      "answer": 10,
+      "right": false
+    }
+  ],
+  "vorLimits": [
+    {
+      "kind": "VOT",
+      "limit_deg": 4
+    },
+    {
+      "kind": "REPAIR_STATION",
+      "limit_deg": 4
+    },
+    {
+      "kind": "GROUND",
+      "limit_deg": 4
+    },
+    {
+      "kind": "AIRBORNE",
+      "limit_deg": 6
+    },
+    {
+      "kind": "RADIAL",
+      "limit_deg": 6
+    },
+    {
+      "kind": "DUAL",
+      "limit_deg": 4
+    }
+  ],
+  "fills": [
+    {
+      "name": "A.10 filled, no conditions",
+      "input": {
+        "code": "solo-xc-flight",
+        "student": "Avery B. Student",
+        "fields": {
+          "from": "KUGN",
+          "to": "KUGN",
+          "via": "KRFD,  KJVL",
+          "landings": "KRFD, KJVL and KUGN",
+          "mm": "Cessna 172",
+          "date": "10-14-2026",
+          "extra": "x"
+        }
+      },
+      "answer": {
+        "fields": {
+          "from": "KUGN",
+          "to": "KUGN",
+          "via": "KRFD, KJVL",
+          "landings": "KRFD, KJVL and KUGN",
+          "mm": "Cessna 172",
+          "date": "10-14-2026",
+          "conditions": ""
+        },
+        "missing": [],
+        "text": "I have reviewed the cross-country planning of Avery B. Student. I find the planning and preparation to be correct to make the solo flight from KUGN to KUGN via KRFD, KJVL with landings at KRFD, KJVL and KUGN in a Cessna 172 aircraft on 10-14-2026."
+      }
+    },
+    {
+      "name": "A.8 without its conditions",
+      "input": {
+        "code": "solo-25nm",
+        "student": "Avery B. Student",
+        "fields": {
+          "airport": "KENW"
+        }
+      },
+      "answer": {
+        "fields": {
+          "airport": "KENW",
+          "conditions": ""
+        },
+        "missing": [
+          "Conditions"
+        ],
+        "text": "I certify that Avery B. Student has received the required training of 14 CFR § 61.93(b)(1). I have determined that they are proficient to practice solo takeoffs and landings at KENW. The takeoffs and landings at KENW are subject to the following conditions:"
+      }
+    },
+    {
+      "name": "no such endorsement",
+      "input": {
+        "code": "solo-forever",
+        "student": "Avery B. Student"
+      },
+      "answer": null
+    }
+  ],
+  "dueTone": [
+    {
+      "days_left": -1,
+      "hours_left": null,
+      "tone": "stop"
+    },
+    {
+      "days_left": 0,
+      "hours_left": null,
+      "tone": "caution"
+    },
+    {
+      "days_left": 30,
+      "hours_left": null,
+      "tone": "caution"
+    },
+    {
+      "days_left": 31,
+      "hours_left": null,
+      "tone": "ok"
+    },
+    {
+      "days_left": 40,
+      "hours_left": -5,
+      "tone": "ok"
+    },
+    {
+      "days_left": null,
+      "hours_left": 0,
+      "tone": "stop"
+    },
+    {
+      "days_left": null,
+      "hours_left": -2.5,
+      "tone": "stop"
+    },
+    {
+      "days_left": null,
+      "hours_left": 10,
+      "tone": "caution"
+    },
+    {
+      "days_left": null,
+      "hours_left": 10.5,
+      "tone": "ok"
+    },
+    {
+      "days_left": null,
+      "hours_left": null,
+      "tone": "unknown"
+    }
+  ]
+}

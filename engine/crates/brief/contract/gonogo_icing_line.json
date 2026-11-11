@@ -1,0 +1,53 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "gonogo_icing's finding in a line.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoIcingLineInput",
+      "type": "object",
+      "properties": {
+        "icing": {
+          "type": "object",
+          "properties": {
+            "altitude_ft": {
+              "type": "number"
+            },
+            "freezing_level_ft": {
+              "type": "number"
+            },
+            "at_or_below": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Read as JavaScript reads it: missing, null, false, 0 and \"\" are false."
+            },
+            "reports": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "altitude_ft",
+            "freezing_level_ft"
+          ]
+        }
+      },
+      "required": [
+        "icing"
+      ]
+    },
+    "answer": {
+      "title": "GonogoIcingLineAnswer",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

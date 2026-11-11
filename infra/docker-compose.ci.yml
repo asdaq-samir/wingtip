@@ -59,6 +59,14 @@ services:
     # Where the image serves the page from (APP_STATIC_LOCATION).
     volumes:
       - ./apps/web/dist:/app/static/app:ro
+  # The weather the planner reads (wingtip.weather_store), fetched live
+  # from aviationweather.gov and NOMADS as the planner itself did before
+  # the weather service was split from it (#535): without it the suite's
+  # planner has no METAR, TAF or winds aloft to read.
+  weather:
+    image: wingtip-weather:ci
+    healthcheck:
+      start_interval: 1s
   planner:
     image: wingtip-planner:ci
     depends_on: !reset {}
@@ -71,6 +79,8 @@ services:
       # planner prepares at startup, are all the suite needs. The daily
       # refresh is the local stack's and AWS's job, not a test run's.
       CHARTS_AUTO_REFRESH: "0"
+      # Nor the next cycle's, ahead of its date (CHARTS_CYCLE_AUTO).
+      CHARTS_CYCLE_AUTO: "0"
       # Nor a new edition of the FAA's NASR and obstacle files: the suite
       # reads the edition the image's cache holds.
       FAA_DATA_AUTO_REFRESH: "0"

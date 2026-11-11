@@ -1,0 +1,304 @@
+{
+  "x-call": "wingtip_brief::gonogo::calls::call",
+  "description": "The runway check at each field taken off from or landed at, fields and runways by index: the runway, pressure and density altitude, wind along and across it, and the POH's distances against its length (14 CFR 91.103(b)). Empty without both tables.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "GonogoRunwayChecksInput",
+      "type": "object",
+      "properties": {
+        "aircraft": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "takeoff": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/ShortFieldTable"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "landing": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/definitions/ShortFieldTable"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "crosswind": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "properties": {
+                        "demonstrated_kt": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fields": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "ident": {
+                "type": "string"
+              },
+              "elevation_ft": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "ident"
+            ]
+          }
+        },
+        "metars": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "$ref": "#/definitions/GonogoMetar"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "description": "The briefing's METARs by field ident; null or missing for none."
+        },
+        "airports": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "runways": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "$ref": "#/definitions/Runway"
+                }
+              }
+            }
+          },
+          "description": "The briefing's airports by field ident, each with its runways."
+        },
+        "takeoff_lb": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "landing_lb": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "picks": {
+          "$ref": "#/definitions/GonogoPicks"
+        }
+      }
+    },
+    "answer": {
+      "title": "GonogoRunwayChecksAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "integer",
+            "description": "Index into fields."
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "Departure",
+              "Destination",
+              "Stop"
+            ]
+          },
+          "runway": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "description": "Index into the field's runways."
+          },
+          "end": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "picked": {
+            "type": "boolean"
+          },
+          "pressure_alt_ft": {
+            "type": [
+              "number",
+              "null"
+            ],
+            "description": "Null where the field's elevation is not known (see unchecked)."
+          },
+          "density_alt_ft": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "temp_c": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "reported": {
+            "type": "boolean",
+            "description": "A METAR gave the temperature and altimeter."
+          },
+          "headwind_kt": {
+            "type": "number"
+          },
+          "crosswind_kt": {
+            "type": "number"
+          },
+          "crosswind_over": {
+            "type": "boolean",
+            "description": "Past the POH's demonstrated crosswind."
+          },
+          "grass": {
+            "type": "boolean"
+          },
+          "unchecked": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Why the field's distances were not worked out (distances then empty): its elevation not known."
+          },
+          "distances": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ground_roll_ft": {
+                  "type": "number"
+                },
+                "total_ft": {
+                  "type": "number",
+                  "description": "Over a 50 ft obstacle."
+                },
+                "caveats": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "What could not be had from the table: beyond its altitudes or temperatures, heavier than its heaviest weight, a tailwind past the POH's figures, or no wind correction in the airplane's profile."
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "takeoff",
+                    "landing"
+                  ]
+                },
+                "over": {
+                  "type": "boolean"
+                },
+                "unknown": {
+                  "type": "boolean",
+                  "description": "No runway, or its length not known: whether it fits is not known (14 CFR 91.103(b))."
+                },
+                "beyond": {
+                  "type": "boolean",
+                  "description": "Read past the POH's table: the figures are its edge's, not the airplane's."
+                },
+                "runway": {
+                  "type": [
+                    "integer",
+                    "null"
+                  ]
+                },
+                "end": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "ground_roll_ft",
+                "total_ft",
+                "caveats",
+                "kind",
+                "over",
+                "unknown",
+                "beyond",
+                "runway",
+                "end"
+              ]
+            }
+          }
+        },
+        "required": [
+          "field",
+          "role",
+          "runway",
+          "end",
+          "picked",
+          "pressure_alt_ft",
+          "density_alt_ft",
+          "temp_c",
+          "reported",
+          "headwind_kt",
+          "crosswind_kt",
+          "crosswind_over",
+          "grass",
+          "unchecked",
+          "distances"
+        ]
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -15,7 +15,15 @@ import DepartPicker from "./DepartPicker";
  * and picks the winds forecast period -- shadcn's date picker with a time
  * box (DepartPicker), empty for about now. Changing either re-plans.
  */
-export default function FlightInputs({ aircraftValue, aircraftOptions, onAircraftChange, onTailPick, altitude, depart, onDepartChange }: {
+export default function FlightInputs({
+  aircraftValue,
+  aircraftOptions,
+  onAircraftChange,
+  onTailPick,
+  altitude,
+  depart,
+  onDepartChange,
+}: {
   aircraftValue: string;
   aircraftOptions: { value: string; label: string }[];
   onAircraftChange: (value: string) => void;
@@ -29,35 +37,43 @@ export default function FlightInputs({ aircraftValue, aircraftOptions, onAircraf
   depart: string;
   onDepartChange?: (iso: string) => void;
 }) {
-  const current = shortName(aircraftOptions.find(o => o.value === aircraftValue)?.label ?? "");
+  const current = shortName(aircraftOptions.find((o) => o.value === aircraftValue)?.label ?? "");
   const tailNow = N_NUMBER.test(current) ? current : "";
   const [typed, setTyped] = useState<string | null>(null);
   const shown = typed ?? tailNow;
   const queryClient = useQueryClient();
-  const registered = (tail: string) => queryClient.fetchQuery({
-    queryKey: ["registered", tail], queryFn: () => api.trafficFind(tail), staleTime: 24 * 60 * 60_000, meta: { silent: true },
-  });
+  const registered = (tail: string) =>
+    queryClient.fetchQuery({
+      queryKey: ["registered", tail],
+      queryFn: () => api.trafficFind(tail),
+      staleTime: 24 * 60 * 60_000,
+      meta: { silent: true },
+    });
   // An N-number typed: one of the pilot's own picked, any other added at
   // once, at the owner's ask ("Just show a button to add N number from
-  // here. You can do the lookup in the background"): flown on the profile
-  // in use until the FAA's registry answers, then on its type's where it
-  // has one (profileOfRegistered). No stock profile is a choice (the
-  // owner's "Why is it showing C172?").
+  // here. You can do the lookup in the background"): on no profile until
+  // the FAA's registry answers, then on its type's where it has one
+  // (profileOfRegistered) -- never another airplane's figures meanwhile
+  // (the owner's "Why is it showing C172?"; 2026-11-09, "Nothing assumes
+  // a Cessna 172").
   const commit = () => {
     const tail = (typed ?? "").trim().toUpperCase();
     setTyped(null);
     if (!N_NUMBER.test(tail) || tail === tailNow) return;
-    const mine = aircraftOptions.find(o => shortName(o.label) === tail);
+    const mine = aircraftOptions.find((o) => shortName(o.label) === tail);
     if (mine) {
       onAircraftChange(mine.value);
       return;
     }
-    const now = /^[a-z0-9]+$/.test(aircraftValue) ? aircraftValue : "c172";
-    onTailPick?.(tail, now);
-    void registered(tail).then(found => {
-      const profile = found?.registered ? profileOfRegistered(found.registered) : null;
-      if (profile && profile !== now) onTailPick?.(tail, profile);
-    }).catch(() => { /* the profile in use stands */ });
+    onTailPick?.(tail, "");
+    void registered(tail)
+      .then((found) => {
+        const profile = found?.registered ? profileOfRegistered(found.registered) : null;
+        if (profile) onTailPick?.(tail, profile);
+      })
+      .catch(() => {
+        /* its N-number alone stands, on no profile */
+      });
   };
   return (
     <>
@@ -72,7 +88,12 @@ export default function FlightInputs({ aircraftValue, aircraftOptions, onAircraf
           should be fixed width for 5 letters/numbers", 2026-11-04), where
           "Pick airplane" had set it wider. */}
       <InlineField
-        label="Airplane" testId="aircraft-select" widest="N-888MM" placeholder="" endRoom="w-0" shrink
+        label="Airplane"
+        testId="aircraft-select"
+        widest="N-888MM"
+        placeholder=""
+        endRoom="w-0"
+        shrink
         hint={{ start: "N-", words: "_____" }}
         input={{
           // The N fixed before it, the rest typed, at the owner's ask
@@ -81,13 +102,29 @@ export default function FlightInputs({ aircraftValue, aircraftOptions, onAircraf
           // starts with it. In the field's own text, not a label beside it:
           // iOS keeps a few points inside an input's edge, which set the
           // number apart from it ("N- 654FL" on the owner's phone).
-          autoCapitalize: "characters", autoCorrect: "off", spellCheck: false, value: `N-${shown.replace(/^N-?/, "")}`, "aria-label": shown ? "Airplane, N-number" : "Airplane, N-number: none picked",
-          onChange: e => {
-            const rest = e.target.value.toUpperCase().replace(/^N-?/, "").replace(/[^A-Z0-9]/g, "").slice(0, 5);
+          autoCapitalize: "characters",
+          autoCorrect: "off",
+          spellCheck: false,
+          value: `N-${shown.replace(/^N-?/, "")}`,
+          "aria-label": shown ? "Airplane, N-number" : "Airplane, N-number: none picked; pick one for times and fuel",
+          onChange: (e) => {
+            const rest = e.target.value
+              .toUpperCase()
+              .replace(/^N-?/, "")
+              .replace(/[^A-Z0-9]/g, "")
+              .slice(0, 5);
             setTyped(rest ? `N${rest}` : "");
           },
-          onKeyDown: e => { if (e.key === "Enter") { e.preventDefault(); commit(); (e.target as HTMLInputElement).blur(); } if (e.key === "Escape") setTyped(null); },
-          onBlur: commit, "data-testid": "aircraft-input",
+          onKeyDown: (e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              commit();
+              (e.target as HTMLInputElement).blur();
+            }
+            if (e.key === "Escape") setTyped(null);
+          },
+          onBlur: commit,
+          "data-testid": "aircraft-input",
         }}
         inputClassName="text-foreground"
       />

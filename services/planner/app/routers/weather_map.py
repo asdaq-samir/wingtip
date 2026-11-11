@@ -1,14 +1,16 @@
 """The weather drawn on the map (wingtip.weather_map): the SIGMETs and
 G-AIRMETs, the pilot reports and the winds aloft in the part of the chart
 in sight, at the owner's pick of the canvas's map weather (2026-10-20)."""
+
 import time
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Query
 from wingtip import weather_map
 
-from ..planning import forecast_hour_for
-from ..schemas import WeatherMap
+from wingtip.planning import forecast_hour_for
+from ..schemas.weather_map import WeatherMap
+from ..gateway import PUBLIC
 
 router = APIRouter()
 
@@ -17,12 +19,19 @@ router = APIRouter()
 MAX_SPAN_DEG = 70.0
 
 
-@router.get("/api/weather/map", response_model=WeatherMap, response_model_by_alias=True)
+@router.get("/api/weather/map", response_model=WeatherMap, response_model_by_alias=True, openapi_extra=PUBLIC)
 def weather_on_the_map(
-    south: float = Query(ge=-90, le=90), west: float = Query(ge=-180, le=180),
-    north: float = Query(ge=-90, le=90), east: float = Query(ge=-180, le=180),
-    at: float | None = Query(default=None, ge=0, le=4102444800, allow_inf_nan=False,
-                      description="The time the advisories and winds are for, UNIX seconds; now when none"),
+    south: float = Query(ge=-90, le=90),
+    west: float = Query(ge=-180, le=180),
+    north: float = Query(ge=-90, le=90),
+    east: float = Query(ge=-180, le=180),
+    at: float | None = Query(
+        default=None,
+        ge=0,
+        le=4102444800,
+        allow_inf_nan=False,
+        description="The time the advisories and winds are for, UNIX seconds; now when none",
+    ),
     altitude_ft: float | None = Query(default=None, ge=1000, le=45000, description="The winds aloft's altitude; none, no winds"),
 ) -> WeatherMap:
     """The SIGMETs valid at `at` and the G-AIRMETs nearest it, the PIREPs
@@ -38,6 +47,9 @@ def weather_on_the_map(
     if altitude_ft is not None:
         winds = weather_map.winds_in(box, altitude_ft, forecast_hour_for(datetime.fromtimestamp(when, timezone.utc)))
     return WeatherMap(
-        at=when, advisories=weather_map.advisories_in(box, when), pireps=weather_map.pireps_in(box),
-        winds=winds, radar_valid=weather_map.radar_valid(),
+        at=when,
+        advisories=weather_map.advisories_in(box, when),
+        pireps=weather_map.pireps_in(box),
+        winds=winds,
+        radar_valid=weather_map.radar_valid(),
     )

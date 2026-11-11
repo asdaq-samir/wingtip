@@ -24,7 +24,7 @@ pub fn pass_minutes(legs: &[(f64, Option<f64>)], along_nm: f64) -> Option<f64> {
     for (i, &(leg_nm, ete)) in legs.iter().enumerate() {
         let ete = ete?;
         if along_nm <= distance + leg_nm || i == legs.len() - 1 {
-            let share = if leg_nm > 0.0 { ((along_nm - distance) / leg_nm).max(0.0).min(1.0) } else { 0.0 };
+            let share = if leg_nm > 0.0 { ((along_nm - distance) / leg_nm).clamp(0.0, 1.0) } else { 0.0 };
             return Some(minutes + share * ete);
         }
         distance += leg_nm;
@@ -68,7 +68,7 @@ pub fn window_when(enter: f64, leave: f64, valid_from: Option<f64>, valid_to: Op
     })
 }
 
-pub const DAY_NAMES: [&str; 7] =["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+pub const DAY_NAMES: [&str; 7] = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 /// A clock as the times of use are read on: the day of the week (0
 /// Sunday) and the minute of the day.
@@ -185,17 +185,14 @@ fn ranges_of(clause: &[char]) -> Vec<(u32, u32, bool)> {
 /// A clause of the NOTAM's own times: "OTHER TIMES BY NOTAM", "O/T ...".
 fn other_times(clause: &str) -> bool {
     let c = clause.trim_start();
-    ["OTHER TIMES", "O/T"]
-        .iter()
-        .any(|p| c.starts_with(p) && !word_char(c[p.len()..].chars().next().as_ref()))
+    ["OTHER TIMES", "O/T"].iter().any(|p| c.starts_with(p) && !word_char(c[p.len()..].chars().next().as_ref()))
 }
 
 /// Whether "H24" stands as a word.
 fn h24(text: &str) -> bool {
     let chars: Vec<char> = text.chars().collect();
-    (0..chars.len().saturating_sub(2)).any(|i| {
-        chars[i..i + 3] == ['H', '2', '4'] && !(i > 0 && word_char(chars.get(i - 1))) && !word_char(chars.get(i + 3))
-    })
+    (0..chars.len().saturating_sub(2))
+        .any(|i| chars[i..i + 3] == ['H', '2', '4'] && !(i > 0 && word_char(chars.get(i - 1))) && !word_char(chars.get(i + 3)))
 }
 
 /// Whether a special-use area's published times of use have it in use when

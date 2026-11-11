@@ -1,0 +1,334 @@
+{
+  "about": "What must never break in the air, each case a worked example straight from its FAA source, the expected figure the source's own (never the code's). A case asks one engine rule by name with `input`; `want` is the answer, or the members of it that the source settles; `within` gives a figure's tolerance where the source reads it off a plotter or an E6B (its own rounding), and a figure not in `within` is exact. The engine (engine/facade/tests/flight_critical.rs), the iPhone (WingtipTests/FlightCriticalTests.swift) and Android (androidTest FlightCriticalEngineTest.kt) hold the engine to every case; CI's Flight-critical job runs them on every change.",
+  "cases": [
+    {
+      "name": "The handbook's wind triangle: TC 090, wind 045 at 40 kt, TAS 120 kt",
+      "rule": "wind_triangle",
+      "source": "FAA-H-8083-25C ch. 16, Wind Triangle or Vector Analysis (Figures 16-21 to 16-23): \"the WCA is 14 deg and the wind is from the left; therefore, subtract 14 deg from TC of 090 deg, making the TH 076 deg\"; GS 88 knots",
+      "input": { "tc": 90, "tas": 120, "wind_from_deg": 45, "wind_kt": 40 },
+      "want": { "wca": -14, "th": 76, "gs": 88 },
+      "within": { "wca": 1, "th": 1, "gs": 1 }
+    },
+    {
+      "name": "No wind: the heading is the course and the groundspeed the true airspeed",
+      "rule": "wind_triangle",
+      "source": "FAA-H-8083-25C ch. 16, Wind Triangle or Vector Analysis: \"If there is no wind, the aircraft's ground track is the same as the heading and the GS is the same as the true airspeed\"",
+      "input": { "tc": 270, "tas": 110, "wind_from_deg": 0, "wind_kt": 0 },
+      "want": { "wca": 0, "th": 270, "gs": 110 }
+    },
+    {
+      "name": "The handbook's leg in the nav log: 220 NM at 88 kt is 2:30 and about 20 gallons at 8 gal/hr; 5 deg east variation, east is least",
+      "rule": "navlog_leg",
+      "source": "FAA-H-8083-25C ch. 16: \"If the distance measures 220 NM, divide by the GS of 88 knots, which gives 2.5 hours, or 2:30 ... If fuel consumption is 8 gallons an hour, 8 x 2.5 or about 20 gallons is used\"; variation \"east is least (subtract)\". On the equator so the true course is 090 the whole way.",
+      "input": {
+        "start": { "lat": 0, "lon": 0 },
+        "end": { "lat": 0, "lon": 3.66 },
+        "altitude_ft": 6000,
+        "profile": { "cruise_tas_kt": 120, "fuel_burn_gph": 8 },
+        "wind": { "wind_dir_true_deg": 45, "wind_speed_kt": 40 },
+        "oat_c": null,
+        "variation_deg": 5
+      },
+      "want": {
+        "true_course_deg": 90,
+        "distance_nm": 220,
+        "wca_deg": -14,
+        "true_heading_deg": 76,
+        "magnetic_course_deg": 85,
+        "magnetic_heading_deg": 71,
+        "groundspeed_kt": 88,
+        "ete_min": 150,
+        "fuel_gal": 20
+      },
+      "within": {
+        "true_course_deg": 0.01,
+        "distance_nm": 0.5,
+        "wca_deg": 1,
+        "true_heading_deg": 1,
+        "magnetic_course_deg": 0.01,
+        "magnetic_heading_deg": 1,
+        "groundspeed_kt": 1,
+        "ete_min": 2,
+        "fuel_gal": 0.5
+      }
+    },
+    {
+      "name": "The handbook's fuel: 400 NM at 100 kt in still air is 4 hours, 20 gallons at 5 gal/hr",
+      "rule": "navlog_leg",
+      "source": "FAA-H-8083-25C ch. 16, Fuel Consumption: \"a flight of 400 NM at 100 knots GS takes 4 hours to complete. If an aircraft consumes 5 gallons of fuel per hour, the total fuel consumption is 20 gallons\"",
+      "input": {
+        "start": { "lat": 0, "lon": 0 },
+        "end": { "lat": 0, "lon": 6.655 },
+        "altitude_ft": 6000,
+        "profile": { "cruise_tas_kt": 100, "fuel_burn_gph": 5 },
+        "wind": null,
+        "oat_c": null,
+        "variation_deg": 0
+      },
+      "want": { "distance_nm": 400, "groundspeed_kt": 100, "ete_min": 240, "fuel_gal": 20 },
+      "within": { "distance_nm": 0.5, "groundspeed_kt": 0.01, "ete_min": 0.5, "fuel_gal": 0.05 }
+    },
+    {
+      "name": "No airplane: the leg's course and miles, and no figure that needs one",
+      "rule": "navlog_leg",
+      "source": "The owner, 2026-11-09: no airplane is assumed; FAA-H-8083-25C ch. 16 (groundspeed and fuel need the airplane's true airspeed and burn)",
+      "input": {
+        "start": { "lat": 0, "lon": 0 },
+        "end": { "lat": 0, "lon": 3.66 },
+        "altitude_ft": 6000,
+        "profile": null,
+        "wind": { "wind_dir_true_deg": 45, "wind_speed_kt": 40 },
+        "oat_c": null,
+        "variation_deg": 5
+      },
+      "want": { "true_course_deg": 90, "magnetic_course_deg": 85, "groundspeed_kt": null, "ete_min": null, "fuel_gal": null },
+      "within": { "true_course_deg": 0.01, "magnetic_course_deg": 0.01 }
+    },
+    {
+      "name": "VFR, 179 deg magnetic, above 3,000 ft AGL: odd thousands plus 500",
+      "rule": "legal_cruising_altitudes",
+      "source": "14 CFR 91.159(a)(1): \"On a magnetic course of zero degrees through 179 degrees, any odd thousand foot MSL altitude + 500 feet (such as 3,500, 5,500, or 7,500)\"",
+      "input": { "floor_ft": 4100, "ceiling_ft": 9000, "magnetic_course_deg": 179, "rule_from_ft": 4000 },
+      "want": [5500, 7500]
+    },
+    {
+      "name": "VFR, 180 deg magnetic, above 3,000 ft AGL: even thousands plus 500",
+      "rule": "legal_cruising_altitudes",
+      "source": "14 CFR 91.159(a)(2): \"On a magnetic course of 180 degrees through 359 degrees, any even thousand foot MSL altitude + 500 feet (such as 4,500, 6,500, or 8,500)\"",
+      "input": { "floor_ft": 4100, "ceiling_ft": 9000, "magnetic_course_deg": 180, "rule_from_ft": 4000 },
+      "want": [4500, 6500, 8500]
+    },
+    {
+      "name": "VFR, 359 deg magnetic: still even plus 500, and 000 odd",
+      "rule": "legal_cruising_altitudes",
+      "source": "14 CFR 91.159(a)(1), (2): 180 through 359 degrees even, zero through 179 odd",
+      "input": { "floor_ft": 4100, "ceiling_ft": 9000, "magnetic_course_deg": 359, "rule_from_ft": 4000 },
+      "want": [4500, 6500, 8500]
+    },
+    {
+      "name": "VFR, 000 deg magnetic: odd plus 500",
+      "rule": "legal_cruising_altitudes",
+      "source": "14 CFR 91.159(a)(1)",
+      "input": { "floor_ft": 4100, "ceiling_ft": 9000, "magnetic_course_deg": 0, "rule_from_ft": 4000 },
+      "want": [5500, 7500]
+    },
+    {
+      "name": "IFR, 179 deg magnetic: odd thousands",
+      "rule": "legal_cruising_altitudes",
+      "source": "14 CFR 91.179(b)(1)(i): \"On a magnetic course of zero degrees through 179 degrees, any odd thousand foot MSL altitude (such as 3,000, 5,000, or 7,000)\"",
+      "input": { "floor_ft": 2100, "ceiling_ft": 8000, "magnetic_course_deg": 179, "rules": "ifr" },
+      "want": [3000, 5000, 7000]
+    },
+    {
+      "name": "IFR, 180 deg magnetic: even thousands",
+      "rule": "legal_cruising_altitudes",
+      "source": "14 CFR 91.179(b)(1)(ii): \"On a magnetic course of 180 degrees through 359 degrees, any even thousand foot MSL altitude (such as 2,000, 4,000, or 6,000)\"",
+      "input": { "floor_ft": 2100, "ceiling_ft": 8000, "magnetic_course_deg": 180, "rules": "ifr" },
+      "want": [4000, 6000, 8000]
+    },
+    {
+      "name": "VFR fuel by day: 30 minutes",
+      "rule": "reserve_min",
+      "source": "14 CFR 91.151(a)(1): \"During the day, to fly after that for at least 30 minutes\"",
+      "input": { "ifr": false, "night": false },
+      "want": 30
+    },
+    {
+      "name": "VFR fuel at night: 45 minutes",
+      "rule": "reserve_min",
+      "source": "14 CFR 91.151(a)(2): \"At night, to fly after that for at least 45 minutes\"",
+      "input": { "ifr": false, "night": true },
+      "want": 45
+    },
+    {
+      "name": "IFR fuel, by day too: 45 minutes",
+      "rule": "reserve_min",
+      "source": "14 CFR 91.167(a)(3): \"Fly after that for 45 minutes at normal cruising speed\"",
+      "input": { "ifr": true, "night": false },
+      "want": 45
+    },
+    {
+      "name": "IFR fuel at night: 45 minutes",
+      "rule": "reserve_min",
+      "source": "14 CFR 91.167(a)(3)",
+      "input": { "ifr": true, "night": true },
+      "want": 45
+    },
+    {
+      "name": "Class G at 1,200 ft above the surface: by day 1 sm and clear of clouds",
+      "rule": "vfr_minimums",
+      "source": "14 CFR 91.155(a), Class G \"1,200 feet or less above the surface (regardless of MSL altitude)\": day \"1 statute mile\", \"Clear of clouds\"; night \"3 statute miles\", 500 below, 1,000 above, 2,000 horizontal",
+      "input": { "class": "G", "altitude_ft": 2100, "agl_ft": 1200 },
+      "want": {
+        "day": { "visibility_sm": 1, "below_ft": null, "above_ft": null, "horizontal_ft": null },
+        "night": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 }
+      }
+    },
+    {
+      "name": "Class G just over 1,200 ft above the surface: by day 1 sm, 500 below, 1,000 above, 2,000 horizontal",
+      "rule": "vfr_minimums",
+      "source": "14 CFR 91.155(a), Class G \"More than 1,200 feet above the surface but less than 10,000 feet MSL\": day \"1 statute mile\", night \"3 statute miles\", each 500 below, 1,000 above, 2,000 horizontal",
+      "input": { "class": "G", "altitude_ft": 2101, "agl_ft": 1201 },
+      "want": {
+        "day": { "visibility_sm": 1, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 },
+        "night": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 }
+      }
+    },
+    {
+      "name": "Class G at 10,000 ft MSL, high above the surface: 5 sm, 1,000 below and above, 1 sm horizontal",
+      "rule": "vfr_minimums",
+      "source": "14 CFR 91.155(a), Class G \"More than 1,200 feet above the surface and at or above 10,000 feet MSL\": \"5 statute miles\", \"1,000 feet below\", \"1,000 feet above\", \"1 statute mile horizontal\" (5,280 ft)",
+      "input": { "class": "G", "altitude_ft": 10000, "agl_ft": 4000 },
+      "want": {
+        "day": { "visibility_sm": 5, "below_ft": 1000, "above_ft": 1000, "horizontal_ft": 5280 },
+        "night": { "visibility_sm": 5, "below_ft": 1000, "above_ft": 1000, "horizontal_ft": 5280 }
+      }
+    },
+    {
+      "name": "Class E under 10,000 ft MSL: 3 sm, 500 below, 1,000 above, 2,000 horizontal",
+      "rule": "vfr_minimums",
+      "source": "14 CFR 91.155(a), Class E \"Less than 10,000 feet MSL\": \"3 statute miles\", \"500 feet below\", \"1,000 feet above\", \"2,000 feet horizontal\"",
+      "input": { "class": "E", "altitude_ft": 9999 },
+      "want": {
+        "day": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 },
+        "night": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 }
+      }
+    },
+    {
+      "name": "Class E at 10,000 ft MSL: 5 sm, 1,000 below and above, 1 sm horizontal",
+      "rule": "vfr_minimums",
+      "source": "14 CFR 91.155(a), Class E \"At or above 10,000 feet MSL\": \"5 statute miles\", \"1,000 feet below\", \"1,000 feet above\", \"1 statute mile horizontal\"",
+      "input": { "class": "E", "altitude_ft": 10000 },
+      "want": {
+        "day": { "visibility_sm": 5, "below_ft": 1000, "above_ft": 1000, "horizontal_ft": 5280 },
+        "night": { "visibility_sm": 5, "below_ft": 1000, "above_ft": 1000, "horizontal_ft": 5280 }
+      }
+    },
+    {
+      "name": "Class B: 3 sm and clear of clouds",
+      "rule": "vfr_minimums",
+      "source": "14 CFR 91.155(a), Class B: \"3 statute miles\", \"Clear of Clouds\"",
+      "input": { "class": "B", "altitude_ft": 5000 },
+      "want": {
+        "day": { "visibility_sm": 3, "below_ft": null, "above_ft": null, "horizontal_ft": null },
+        "night": { "visibility_sm": 3, "below_ft": null, "above_ft": null, "horizontal_ft": null }
+      }
+    },
+    {
+      "name": "Class C and D: 3 sm, 500 below, 1,000 above, 2,000 horizontal",
+      "rule": "vfr_minimums",
+      "source": "14 CFR 91.155(a), Class C and Class D: \"3 statute miles\", \"500 feet below\", \"1,000 feet above\", \"2,000 feet horizontal\"",
+      "input": { "class": "D", "altitude_ft": 2500 },
+      "want": {
+        "day": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 },
+        "night": { "visibility_sm": 3, "below_ft": 500, "above_ft": 1000, "horizontal_ft": 2000 }
+      }
+    },
+    {
+      "name": "Class A: no VFR",
+      "rule": "vfr_minimums",
+      "source": "14 CFR 91.155(a), Class A: \"Not Applicable\" (flown under IFR, 91.135; from 18,000 ft MSL, 71.33)",
+      "input": { "class": "E", "altitude_ft": 18000 },
+      "want": null
+    },
+    {
+      "name": "Hold entry, right turns, inbound 360: arriving on 360 is direct",
+      "rule": "hold_entry",
+      "source": "AIM 5-3-8 j.3 and FIG 5-3-8: the 70 deg line through the fix on the holding side; direct entry from sector (c), the 180 deg from 70 deg left of the inbound course to 110 deg right of it (as the course flown to the fix)",
+      "input": { "arrival_deg": 360, "inbound_deg": 360, "turns": "right" },
+      "want": "direct"
+    },
+    {
+      "name": "Hold entry, right turns: 291 is direct, inside the 70 deg line",
+      "rule": "hold_entry",
+      "source": "AIM 5-3-8 j.3, FIG 5-3-8: sector (c), direct",
+      "input": { "arrival_deg": 291, "inbound_deg": 360, "turns": "right" },
+      "want": "direct"
+    },
+    {
+      "name": "Hold entry, right turns: 289 is parallel, past the 70 deg line",
+      "rule": "hold_entry",
+      "source": "AIM 5-3-8 j.3, Parallel Procedure: \"When approaching the holding fix from anywhere in sector (a), the parallel entry procedure\"",
+      "input": { "arrival_deg": 289, "inbound_deg": 360, "turns": "right" },
+      "want": "parallel"
+    },
+    {
+      "name": "Hold entry, right turns: 109 is direct",
+      "rule": "hold_entry",
+      "source": "AIM 5-3-8 j.3, FIG 5-3-8: sector (c), direct",
+      "input": { "arrival_deg": 109, "inbound_deg": 360, "turns": "right" },
+      "want": "direct"
+    },
+    {
+      "name": "Hold entry, right turns: 111 is teardrop",
+      "rule": "hold_entry",
+      "source": "AIM 5-3-8 j.3, Teardrop Procedure: \"When approaching the holding fix from anywhere in sector (b), the teardrop entry procedure\"",
+      "input": { "arrival_deg": 111, "inbound_deg": 360, "turns": "right" },
+      "want": "teardrop"
+    },
+    {
+      "name": "Hold entry, right turns: 179 is teardrop",
+      "rule": "hold_entry",
+      "source": "AIM 5-3-8 j.3, Teardrop Procedure, FIG 5-3-8: sector (b), the 70 deg on the holding side beyond the 110 deg line",
+      "input": { "arrival_deg": 179, "inbound_deg": 360, "turns": "right" },
+      "want": "teardrop"
+    },
+    {
+      "name": "Hold entry, right turns: 181 is parallel",
+      "rule": "hold_entry",
+      "source": "AIM 5-3-8 j.3, Parallel Procedure, FIG 5-3-8: sector (a), the 110 deg on the non-holding side",
+      "input": { "arrival_deg": 181, "inbound_deg": 360, "turns": "right" },
+      "want": "parallel"
+    },
+    {
+      "name": "Hold entry, left turns: the sectors mirrored, 069 is direct",
+      "rule": "hold_entry",
+      "source": "AIM 5-3-8 j, Nonstandard Pattern: \"Entry procedures to a nonstandard pattern are oriented in relation to the 70 degree line on the holding side just as in the standard pattern\"",
+      "input": { "arrival_deg": 69, "inbound_deg": 360, "turns": "left" },
+      "want": "direct"
+    },
+    {
+      "name": "Hold entry, left turns: 071 is parallel",
+      "rule": "hold_entry",
+      "source": "AIM 5-3-8 j, Nonstandard Pattern, and j.3, Parallel Procedure: the standard pattern's sectors mirrored",
+      "input": { "arrival_deg": 71, "inbound_deg": 360, "turns": "left" },
+      "want": "parallel"
+    },
+    {
+      "name": "Hold entry, left turns: 249 is teardrop",
+      "rule": "hold_entry",
+      "source": "AIM 5-3-8 j, Nonstandard Pattern, and j.3, Teardrop Procedure: the standard pattern's sectors mirrored",
+      "input": { "arrival_deg": 249, "inbound_deg": 360, "turns": "left" },
+      "want": "teardrop"
+    },
+    {
+      "name": "Hold entry, left turns: 251 is direct",
+      "rule": "hold_entry",
+      "source": "AIM 5-3-8 j, Nonstandard Pattern, and j.3, Direct Entry Procedure: the standard pattern's sectors mirrored",
+      "input": { "arrival_deg": 251, "inbound_deg": 360, "turns": "left" },
+      "want": "direct"
+    },
+    {
+      "name": "Glide at a ratio of 9: 3,500 ft over the ground is 31,500 ft, 5.18 nm",
+      "rule": "glide_range",
+      "source": "FAA-H-8083-3C ch. 3, Glides (p. 3-21): \"The glide ratio of an airplane is the distance the airplane travels in relation to the altitude it loses. For example, if an airplane travels 10,000 feet forward while descending 1,000 feet, its glide ratio is 10 to 1\"; the international nautical mile, 1,852 m (6,076.12 ft). 3,500 x 9 / 6,076.12 = 5.184 nm",
+      "input": { "altitude_ft": 4500, "ground_ft": 1000, "speed_kt": 68, "glide_ratio": 9 },
+      "want": 5.184,
+      "within": { "": 0.01 }
+    },
+    {
+      "name": "Glide with no glide ratio: none worked out",
+      "rule": "glide_range",
+      "source": "The owner, 2026-11-09: no airplane's figure is assumed",
+      "input": { "altitude_ft": 4500, "ground_ft": 1000, "speed_kt": 68, "glide_ratio": null },
+      "want": null
+    },
+    {
+      "name": "Glide on the ground: none",
+      "rule": "glide_range",
+      "source": "No height above the ground, no glide",
+      "input": { "altitude_ft": 1000, "ground_ft": 1000, "speed_kt": 68, "glide_ratio": 9 },
+      "want": null
+    }
+  ]
+}

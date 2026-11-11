@@ -60,18 +60,7 @@ fn the_glmp_cases_are_the_aims() {
         (Some(499.0), 10.0, "LIFR"),
         (None, 0.9, "LIFR"),
     ] {
-        assert_eq!(forecast::category_of(c, Some(v)), Some(want), "{c:?} ft, {v} sm");
-    }
-}
-
-#[test]
-fn with_a_visibility_it_is_the_metar_readers_category() {
-    // The one set of bounds: a METAR's category (AC 00-45H) wherever the
-    // visibility is known.
-    for c in [None, Some(0.0), Some(499.0), Some(500.0), Some(999.0), Some(1000.0), Some(3000.0), Some(3001.0)] {
-        for v in [0.0, 0.5, 1.0, 2.9, 3.0, 5.0, 5.1, 10.0] {
-            assert_eq!(forecast::category_of(c, Some(v)), metar::flight_category(c, Some(v)));
-        }
+        assert_eq!(metar::flight_category_of(c, false, Some(v)), Some(want), "{c:?} ft, {v} sm");
     }
 }
 
@@ -155,17 +144,21 @@ fn gusts_and_thunder_at_times_only_beyond_the_prevailing() {
 }
 
 #[test]
-fn the_hour_through_the_call() {
+fn the_hours_through_the_call() {
+    // A PROB30 group's IFR with a 28 kt gust: a chance of it at times, the
+    // TAF read by the engine itself (the web's metar-taf-parser no more).
+    let now = 1_793_624_400_000.0; // 2026-11-02T13:00Z
     let answer = ask(
-        "taf_hour",
-        json!({"prevailing": {"category": "VFR", "gust_kt": null, "thunder": false}, "becoming": false,
-               "supplemental": [{"category": "IFR", "gust_kt": 28, "thunder": false, "chance": true}]}),
+        "field_hours",
+        json!({"taf": "TAF KDLH 021120Z 0212/0312 27012KT P6SM BKN040 PROB30 0214/0216 2SM BR OVC008 27028G28KT", "now": now, "count": 2}),
     );
-    assert_eq!(
-        answer,
-        json!({"before_worse": false, "at_times": "IFR", "at_times_gust_kt": 28.0, "at_times_thunder": false, "at_times_chance": true})
-    );
-    assert!(call("taf_hour", "{}").is_err());
+    let hours = answer.as_array().unwrap();
+    assert_eq!(hours.len(), 3);
+    assert_eq!(hours[0]["now"], json!(true));
+    assert_eq!(hours[1]["at_times"], json!("IFR"));
+    assert_eq!(hours[1]["at_times_chance"], json!(true));
+    assert_eq!(hours[1]["at_times_gust_kt"], json!(28.0));
+    assert!(call("field_hours", "{}").is_err());
 }
 
 // --- A report's ceiling and visibility from a host's reader -----------------
@@ -184,7 +177,8 @@ fn a_ceiling_is_the_lowest_broken_overcast_or_obscured_layer() {
 
 #[test]
 fn a_visibility_in_metres_is_read_in_statute_miles() {
-    let vis = |value: f64, unit: &str| ask("ceiling_visibility", json!({"visibility": {"value": value, "unit": unit}}))["visibility_sm"].clone();
+    let vis =
+        |value: f64, unit: &str| ask("ceiling_visibility", json!({"visibility": {"value": value, "unit": unit}}))["visibility_sm"].clone();
     // 1,609.344 m in a statute mile, to the hundredth; 9999 is 10 km or
     // more, the AWC's 6+ (WMO No. 306), as CAVOK is.
     assert_eq!(vis(1600.0, "m"), json!(0.99));
@@ -206,4 +200,27 @@ fn a_ceiling_sent_with_no_height_is_not_known_and_says_only_what_the_visibility_
     assert_eq!(unknown(Value::Null), Value::Null);
     // Not said, as before: no ceiling at 10 SM is VFR.
     assert_eq!(ask("flight_category", json!({"ceiling_ft": null, "ceiling_unknown": false, "visibility_sm": 10})), json!("VFR"));
+}
+
+// --- The service ceiling on the day -------------------------------------------
+
+/// A profile `dev_c` from a standard day (ICAO Doc 7488's 1.98 C a
+/// thousand feet from 15 C) at the GFS's levels.
+fn isa_plus(dev_c: f64) -> Value {
+    json!([3000.0_f64, 6000.0, 9000.0, 12000.0, 18000.0, 24000.0]
+        .iter()
+        .map(|&h| json!([h, 15.0 - 0.0019812 * h + dev_c]))
+        .collect::<Vec<_>>())
+}
+
+// wingtip.performance's test of the Python copy, which this call
+// replaces (services/planner/tests_wingtip/test_performance.py).
+#[test]
+fn the_service_ceiling_comes_down_on_a_warm_day_and_up_on_a_cold_one() {
+    let at = |dev: f64| ask("service_ceiling_on_the_day", json!({"book_ft": 13500, "profile": isa_plus(dev)})).as_f64().unwrap();
+    assert!((at(0.0) - 13500.0).abs() <= 100.0);
+    let (warm, cold) = (at(15.0), at(-10.0));
+    assert!(11500.0 < warm && warm < 12000.0 && 14500.0 < cold && cold < 15000.0, "{warm} {cold}");
+    assert_eq!(warm % 100.0, 0.0);
+    assert_eq!(ask("service_ceiling_on_the_day", json!({"book_ft": 13500, "profile": []})), json!(13500.0));
 }

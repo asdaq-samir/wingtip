@@ -4,19 +4,18 @@ import { cn } from "cn";
 import { Alert } from "./ui/alert";
 import { Button } from "./ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "./ui/collapsible";
-import { GLASS } from "./mapChrome";
+import { GLASS } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
-import { acknowledge, alertTitle, alertWhen, alertWhere, useAhead } from "../lib/map/ahead";
-import { useSpokenAlerts } from "../lib/map/speak";
+import { acknowledge, alertTitle, alertWhen, alertWhere, useAhead } from "../lib/map/position/ahead";
+import { useSpokenAlerts } from "./speak";
+import { useFeelOnNew } from "../lib/haptics";
+import { saaWords } from "../lib/liveReports";
 
 /** A warning's red and a caution's amber, as a cockpit's are. */
-const INK = {
-  warning: "text-destructive-ink",
-  caution: "text-caution-ink",
-} as const;
+const INK = { warning: "text-destructive-ink", caution: "text-caution-ink" } as const;
 
 /**
- * What is ahead of own ship in the air (lib/map/ahead), over the map
+ * What is ahead of own ship in the air (lib/map/position/ahead), over the map
  * where the pilot looks, above the system's problems: the first thing
  * ahead -- a warning before a caution, then the soonest -- with when and
  * how far, and how many more; a tap on the words opens all of them with
@@ -29,6 +28,8 @@ export default function AlertsBanner() {
   const ahead = useAhead();
   // Said aloud too, where the pilot has asked for it.
   useSpokenAlerts(ahead);
+  // And felt, as a new one comes up first (lib/haptics).
+  useFeelOnNew(ahead?.alerts[0]?.id, "warning");
   const [open, setOpen] = useState(false);
   if (!ahead) return null;
   const { alerts, unavailable, failed } = ahead;
@@ -38,18 +39,22 @@ export default function AlertsBanner() {
   const Icon = level === "warning" ? TriangleAlert : CircleAlert;
   const unread = failed ? "No alerts ahead: the planner did not answer" : `Not read for alerts: ${unavailable.join(", ")}`;
   return (
-    <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-[22px]")} data-alerts-banner="">
+    <div className={cn(GLASS, "pointer-events-auto w-fit max-w-full rounded-(--radius-banner)")} data-alerts-banner="">
       <Alert
-        // A warning is said at once to a screen reader; a caution as it can.
-        role={level === "warning" ? "alert" : "status"}
+        // Said to a screen reader once each as it comes (useSpokenAlerts,
+        // lib/announce), not as a live region: the countdown under the
+        // name changes every few seconds and would be read again each time.
+        role="region"
+        aria-label="Alerts ahead"
         className={cn(
-          "flex min-h-11 gap-2 rounded-[22px] border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
+          "flex min-h-11 gap-2 rounded-(--radius-banner) border-transparent bg-transparent py-1 pr-1 pl-3 *:[svg]:translate-y-0",
           // Opened, the sign by the first line rather than the middle.
-          open ? "items-start *:[svg]:mt-[0.6rem]" : "items-center", INK[level],
+          open ? "items-start *:[svg]:mt-[0.6rem]" : "items-center",
+          INK[level],
         )}
       >
         <Icon className="shrink-0" />
-        {/* The first alert, a tap opening the rest under it: Radix's
+        {/* The first alert, a tap opening the rest under it: Base UI's
             disclosure (shadcn's Collapsible), so what opens is beside the
             button that opens it, not inside it, and a screen reader is
             told which it controls. */}
@@ -73,21 +78,36 @@ export default function AlertsBanner() {
             )}
           </CollapsibleTrigger>
           <CollapsibleContent className="flex flex-col gap-1.5 pb-1 text-foreground">
-            {alerts.map(a => (
+            {alerts.map((a) => (
               <div key={a.id} data-alert-item={a.kind}>
-                {a !== first && <p className={cn("font-semibold", INK[a.level])}>{alertTitle(a)}: {alertWhen(a)} · {alertWhere(a)}</p>}
+                {a !== first && (
+                  <p className={cn("font-semibold", INK[a.level])}>
+                    {alertTitle(a)}: {alertWhen(a)} · {alertWhere(a)}
+                  </p>
+                )}
                 <p>{a.need}</p>
+                {/* A special-use area's status now, as SFDPS has it. */}
+                {a.sfdps_active != null && (
+                  <p data-testid="alert-sfdps">
+                    {saaWords({ designator: a.name, active: a.sfdps_active, until: a.sfdps_until ?? null, heard: 0 })}
+                  </p>
+                )}
               </div>
             ))}
             {first && (failed || unavailable.length > 0) && <p className="text-muted-foreground">{unread}.</p>}
-
           </CollapsibleContent>
         </Collapsible>
         {alerts.length > 0 && (
           <Button
-            type="button" size="sm" variant="ghost" className={cn("shrink-0 rounded-full text-tint", open && "self-start")}
+            type="button"
+            size="sm"
+            variant="ghost"
+            className={cn("shrink-0 rounded-full text-tint", open && "self-start")}
             data-testid="alerts-acknowledge"
-            onClick={() => { acknowledge(alerts.map(a => a.id)); setOpen(false); }}
+            onClick={() => {
+              acknowledge(alerts.map((a) => a.id));
+              setOpen(false);
+            }}
           >
             OK
           </Button>

@@ -1,5 +1,5 @@
 {
-  "about": "ATIS and AWOS/ASOS broadcasts as a phone's recognizer writes them, read into their figures (lib/atis readAtis, the engine's read_atis, Atis.read in the native app): AIM 4-1-13's order and JO 7110.65's wind, visibility and altimeter phraseology, figures said one by one (AIM 4-2-7) or written whole by the recognizer, with its slips (niner as nine, 29.92, 18:52). A figure not said is null; the words left over are remarks; raw is the transcript as given.",
+  "about": "ATIS and AWOS/ASOS broadcasts as a phone's recognizer writes them, read into their figures (features/plan/lib/atis readAtis, the engine's read_atis, Atis.read in the native app): AIM 4-1-13's order and JO 7110.65's wind, visibility and altimeter phraseology, figures said one by one (AIM 4-2-7) or written whole by the recognizer, with its slips (niner as nine, 29.92, 18:52). A figure not said is null; the words left over are remarks; raw is the transcript as given.",
   "cases": [
     {
       "name": "A tower's ATIS, said as AIM 4-1-13 orders it",

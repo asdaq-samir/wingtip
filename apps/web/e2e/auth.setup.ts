@@ -30,5 +30,8 @@ setup("the developer signs in from the pilot console, and lands in dev mode", as
   // specs work on their runways and procedures; route-fields.spec folds
   // them as a pilot sees them.
   await page.evaluate(() => localStorage.setItem("wingtip.fieldsOpen", "1"));
+  // No airplane picked, as a pilot starts (the owner, 2026-11-09: nothing
+  // assumes one): a spec that reads an airplane's times, fuel or figures
+  // picks it itself (helpers' pickAirplane).
   await page.context().storageState({ path: DEVELOPER_STATE });
 });

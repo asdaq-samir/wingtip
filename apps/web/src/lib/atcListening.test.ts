@@ -5,20 +5,34 @@
  * reload, the outside input remembered asked for in the same tap before
  * the recognizer starts. lib/listen is a stand-in recording what it was
  * given; the browser's devices are stand-ins as in audioInput.test.
+ *
+ * Deterministic in a shuffled, loaded run: nothing waits on a guessed
+ * number of ticks (each step waits for the state it asserts), each test
+ * stops what it started and lets go of the input, so no timer of one
+ * test's modules (listenOnce's 15 s and 30 s, the hold's 1 s check) fires
+ * in another's, and the timeouts allow for a busy machine.
  */
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 const order: string[] = [];
 const sessions: { onEnded: (error?: string) => void; track?: () => MediaStreamTrack | null; renew: ReturnType<typeof vi.fn> }[] = [];
 
-vi.mock("./listen", async importOriginal => ({
+vi.mock("./listen", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./listen")>()),
-  listen: vi.fn(async (_words: string[], _pattern: unknown, _heard: unknown, onEnded: (error?: string) => void, track?: () => MediaStreamTrack | null) => {
-    order.push("recognizer");
-    const renew = vi.fn();
-    sessions.push({ onEnded, track, renew });
-    return { stop: () => onEnded(), renew };
-  }),
+  listen: vi.fn(
+    async (
+      _words: string[],
+      _pattern: unknown,
+      _heard: unknown,
+      onEnded: (error?: string) => void,
+      track?: () => MediaStreamTrack | null,
+    ) => {
+      order.push("recognizer");
+      const renew = vi.fn();
+      sessions.push({ onEnded, track, renew });
+      return { stop: () => onEnded(), renew };
+    },
+  ),
 }));
 
 const PANEL = { id: "gma", label: "GMA 350c" };
@@ -30,9 +44,15 @@ function stubBrowser() {
     getUserMedia: vi.fn((constraints: { audio: { deviceId?: { exact: string } } }) => {
       order.push("capture");
       const label = constraints.audio.deviceId ? "GMA 350c" : "iPhone Microphone";
-      const track = Object.assign(new EventTarget(), { kind: "audio", readyState: "live", label, getSettings: () => ({ deviceId: "gma" }), stop: vi.fn() });
+      const track = Object.assign(new EventTarget(), {
+        kind: "audio",
+        readyState: "live",
+        label,
+        getSettings: () => ({ deviceId: "gma" }),
+        stop: vi.fn(),
+      });
       const stream = { getAudioTracks: () => [track], getTracks: () => [track] };
-      return new Promise(resolve => pending.push(() => resolve(stream)));
+      return new Promise((resolve) => pending.push(() => resolve(stream)));
     }),
   });
   vi.stubGlobal("navigator", { userAgent: "Mozilla/5.0 (iPhone) Safari/605.1.15", mediaDevices: devices });
@@ -44,21 +64,29 @@ async function load() {
   const { useAtcRadio } = await import("./atcRadio");
   const { usePreferences } = await import("./preferences");
   const audio = await import("./audioInput");
+  loaded = listening;
   return { ...listening, useAtcRadio, usePreferences, audio };
 }
 
-const settle = () => new Promise(resolve => setTimeout(resolve, 0));
+/** Generous for a full, shuffled run on a loaded machine: a test that
+ *  passes takes a fraction of a second. */
+const WAIT = { timeout: 10_000, interval: 5 };
+vi.setConfig({ testTimeout: 30_000 });
+
+/** The listening module a test loaded, so afterEach can stop what it started. */
+let loaded: { stopRadio: () => void } | null = null;
 
 /** The held prompt answered, once the module has asked for it: taken at
  * once, it failed now and then in a full, loaded run (pending empty) when
  * the ask was still a few awaits away. */
 async function answerPrompt() {
-  await vi.waitFor(() => expect(pending.length).toBeGreaterThan(0), { timeout: 2000, interval: 5 });
+  await vi.waitFor(() => expect(pending.length).toBeGreaterThan(0), WAIT);
   pending.shift()!();
 }
 
 beforeEach(() => {
   vi.resetModules();
+  loaded = null;
   order.length = 0;
   sessions.length = 0;
   pending = [];
@@ -66,6 +94,9 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // Whatever is still listening ends here, its timers cleared with it.
+  loaded?.stopRadio();
+  loaded = null;
   vi.unstubAllGlobals();
 });
 
@@ -102,8 +133,7 @@ describe("listening through the input held", () => {
     expect(devices.getUserMedia).toHaveBeenCalledTimes(1);
     expect(sessions[0]!.track?.()).toBeNull();
     await answerPrompt();
-    await settle();
-    expect(sessions[0]!.track?.()?.label).toBe("GMA 350c");
+    await vi.waitFor(() => expect(sessions[0]!.track?.()?.label).toBe("GMA 350c"), WAIT);
     expect(m.useAtcRadio.getState().input).toMatchObject({ label: "GMA 350c", outside: true, lost: false });
     m.stopRadio();
     expect(m.useAtcRadio.getState().input).toBeNull();
@@ -118,11 +148,13 @@ describe("nothing heard", () => {
     m.usePreferences.setState({ listenInput: PANEL });
     await m.listenOnce([]);
     await answerPrompt();
-    await settle();
+    // The input is named once its track is held (lib/audioInput's adopt).
+    await vi.waitFor(() => expect(m.useAtcRadio.getState().input).toMatchObject({ label: "GMA 350c" }), WAIT);
     expect(m.useAtcRadio.getState().pill?.listening).toBe(true);
     sessions[0]!.onEnded();
-    expect(m.useAtcRadio.getState().pill?.error)
-      .toBe("Nothing was heard through GMA 350c. Check it is sending the radio: an audio panel's recording mode, or the cable.");
+    expect(m.useAtcRadio.getState().pill?.error).toBe(
+      "Nothing was heard through GMA 350c. Check it is sending the radio: an audio panel's recording mode, or the cable.",
+    );
   });
 
   test("in Safari, whose recognizer is not known to hear the input held, the words as they were", async () => {
@@ -131,8 +163,7 @@ describe("nothing heard", () => {
     m.usePreferences.setState({ listenInput: PANEL });
     await m.listenOnce([]);
     await answerPrompt();
-    await settle();
-    expect(m.useAtcRadio.getState().input).toMatchObject({ label: "GMA 350c", lost: false });
+    await vi.waitFor(() => expect(m.useAtcRadio.getState().input).toMatchObject({ label: "GMA 350c", lost: false }), WAIT);
     sessions[0]!.onEnded();
     expect(m.useAtcRadio.getState().pill?.error).toBe("Nothing was heard. Tap the microphone and speak, or hold the phone to the speaker.");
   });

@@ -1,5 +1,6 @@
 """wingtip.checkpoint_notes: a pilot's own edit is theirs, the shared note
 is everyone else's, and nothing an edit replaces is lost."""
+
 import threading
 
 from wingtip import checkpoint_notes, routecsv
@@ -27,18 +28,29 @@ def test_a_deleted_pilots_own_notes_go_and_everyone_elses_stay(tmp_path):
 
     assert checkpoint_notes.forget_pilot("42", path=path) == 2
     assert [(n["pilot"], n["description"]) for n in checkpoint_notes.load_notes(ROUTE, path=path)] == [
-        ("", "Shared: the lake with the island"), ("7", "Another pilot's")]
+        ("", "Shared: the lake with the island"),
+        ("7", "Another pilot's"),
+    ]
     assert checkpoint_notes.forget_pilot("42", path=path) == 0
 
 
-def test_an_edit_is_added_and_what_it_replaced_stays(tmp_path):
+def test_an_edit_replaces_the_pilots_earlier_one_at_the_place(tmp_path):
     path = tmp_path / "notes.csv"
     checkpoint_notes.save_note(ROUTE, 45.0, -90.0, "first", path=path)
     checkpoint_notes.save_note(ROUTE, 45.0, -90.0001, "second", path=path)
 
     notes = checkpoint_notes.load_notes(ROUTE, path=path)
-    assert [n["description"] for n in notes] == ["first", "second"]
+    assert [n["description"] for n in notes] == ["second"]
     assert checkpoint_notes.find_note(notes, 45.0, -90.0)["description"] == "second"
+
+
+def test_a_loop_of_saves_keeps_one_row_a_pilot_and_place(tmp_path):
+    path = tmp_path / "notes.csv"
+    for i in range(30):
+        checkpoint_notes.save_note(ROUTE, 45.0, -90.0, f"mine {i}", "42", path=path)
+        checkpoint_notes.save_note(ROUTE, 45.0, -90.0, f"shared {i}", path=path)
+    notes = checkpoint_notes.load_notes(ROUTE, path=path)
+    assert sorted((n["pilot"], n["description"]) for n in notes) == [("", "shared 29"), ("42", "mine 29")]
 
 
 def test_a_row_from_before_pilots_reads_as_the_shared_note(tmp_path):
@@ -89,7 +101,7 @@ def test_an_edit_a_little_off_the_place_is_found_from_either_point(tmp_path):
     point, hiding the newer edit."""
     path = tmp_path / "notes.csv"
     checkpoint_notes.save_note(ROUTE, 45.0, -90.0, "first", path=path)
-    nudged = -90.0 + 0.1 / 42.4          # about 0.1 nm east, inside the same place
+    nudged = -90.0 + 0.1 / 42.4  # about 0.1 nm east, inside the same place
     checkpoint_notes.save_note(ROUTE, 45.0, nudged, "second", path=path)
 
     notes = checkpoint_notes.load_notes(ROUTE, path=path)

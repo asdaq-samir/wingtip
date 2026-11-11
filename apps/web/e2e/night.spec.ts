@@ -16,7 +16,9 @@ test.use({ colorScheme: "dark" });
  *  paint, nothing over the chart touched. */
 const lookOf = (page: Page) => page.getByTestId("gl-map").getAttribute("data-chart-look");
 
-test("in the dark theme the page is the night's navy and only the chart's tiles are dimmed, until Chart at night is Normal", async ({ page }) => {
+test("in the dark theme the page is the night's navy and only the chart's tiles are dimmed, until Chart at night is Normal", async ({
+  page,
+}) => {
   test.setTimeout(slow(60000));
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
@@ -30,7 +32,7 @@ test("in the dark theme the page is the night's navy and only the chart's tiles 
     return { background: s.getPropertyValue("--background").trim(), card: s.getPropertyValue("--card").trim() };
   });
   expect(tokens).toEqual({ background: "#0b1422", card: "#17283a" });
-  expect(await page.locator("body").evaluate(el => getComputedStyle(el).backgroundColor)).toBe("rgb(11, 20, 34)");
+  expect(await page.locator("body").evaluate((el) => getComputedStyle(el).backgroundColor)).toBe("rgb(11, 20, 34)");
 
   // The chart's tiles dimmed, by the map's paint.
   await expect.poll(() => lookOf(page), { timeout: slow(15000) }).toBe("dimmed");
@@ -38,8 +40,8 @@ test("in the dark theme the page is the night's navy and only the chart's tiles 
   // Normal: the chart as printed, and kept so across a reload.
   await openMapSettings(page);
   const night = page.getByTestId("chart-night-select");
-  await expect(night.getByRole("radio", { name: "Dimmed" })).toHaveAttribute("aria-checked", "true");
-  await night.getByRole("radio", { name: "Normal" }).click();
+  await expect(night.getByRole("button", { name: "Dimmed" })).toHaveAttribute("aria-pressed", "true");
+  await night.getByRole("button", { name: "Normal" }).click();
   await expect(html).toHaveAttribute("data-chart-night", "normal");
   await expect.poll(() => lookOf(page)).toBe("normal");
   await page.reload();
@@ -49,7 +51,7 @@ test("in the dark theme the page is the night's navy and only the chart's tiles 
 
   // Back to Dimmed for the next test's sake, and the light theme never dims.
   await openMapSettings(page);
-  await page.getByTestId("chart-night-select").getByRole("radio", { name: "Dimmed" }).click();
+  await page.getByTestId("chart-night-select").getByRole("button", { name: "Dimmed" }).click();
   await page.keyboard.press("Escape");
   await expect(page.getByTestId("map-settings")).toHaveCount(0);
   await openSetup(page);

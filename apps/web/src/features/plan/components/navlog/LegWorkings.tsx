@@ -2,29 +2,37 @@ import { useId, useState } from "react";
 import { Check, X } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import {
-  ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger,
-} from "../../../../components/ResponsivePopover";
+import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../../components/ResponsivePopover";
 import Segmented from "../../../../components/Segmented";
 import { Button } from "../../../../components/ui/button";
 import { Input } from "../../../../components/ui/input";
 import type { Leg } from "../../../../lib/api/types";
-import { ANSWERS, checks, typedNumber, workingsOf, written, type AnswerKey, type Workings } from "../../../../lib/workings";
+import { ANSWERS, checks, typedNumber, workingsOf, written, type AnswerKey, type Workings } from "./workings";
 import { TEXT } from "../../../../lib/text";
 import { FINDING_TONE } from "../../../../lib/findings";
 
 function Worked({ workings }: { workings: Workings }) {
   return (
     <ListGroup>
-      {workings.steps.map(step => (
+      {workings.steps.map((step) => (
         <ListRow key={step.name} title={step.name} description={step.sum} value={step.result} data-testid="working-step" />
       ))}
       {/* The climb the log's time and fuel add, flown at climb speed and
           burn: a row, where it was a footnote. */}
       {workings.climb && (
         <ListRow
-          title="Climb, added" description="At climb speed and burn"
-          value={`${Math.round(workings.climb.min)} min · ${workings.climb.gal.toFixed(1)} gal`} data-testid="working-climb"
+          title="Climb, added"
+          description="At climb speed and burn"
+          value={`${Math.round(workings.climb.min)} min · ${workings.climb.gal.toFixed(1)} gal`}
+          data-testid="working-climb"
+        />
+      )}
+      {workings.procedure && (
+        <ListRow
+          title={workings.procedure.landing ? "Pattern or approach, added" : "Departure, added"}
+          description={`${workings.procedure.nm.toFixed(1)} nm more than the leg's line, at its ground speed`}
+          value={`${Math.round(workings.procedure.min)} min · ${workings.procedure.gal.toFixed(1)} gal`}
+          data-testid="working-procedure"
         />
       )}
     </ListGroup>
@@ -39,11 +47,15 @@ function TryIt({ workings }: { workings: Workings }) {
   const [checked, setChecked] = useState(false);
   return (
     <form
-      className="space-y-3" onSubmit={e => { e.preventDefault(); setChecked(true); }}
+      className="space-y-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        setChecked(true);
+      }}
       aria-label="Work the leg out yourself"
     >
       <ListGroup>
-        {ANSWERS.map(answer => {
+        {ANSWERS.map((answer) => {
           const value = typed[answer.key];
           const number = typedNumber(value);
           // Only the figures typed are marked: a student works them one
@@ -52,22 +64,39 @@ function TryIt({ workings }: { workings: Workings }) {
           const right = marked && checks(answer.key, number, workings.answers[answer.key]);
           return (
             <ListRow
-              key={answer.key} id={`${id}-${answer.key}`}
+              key={answer.key}
+              id={`${id}-${answer.key}`}
               title={answer.label}
               // How each is written, in its row (it was a footnote): the
               // correction signed, the time and fuel the cruise's alone.
-              description={marked && !right ? `Not quite: ${written(answer.key, workings.answers[answer.key])}`
-                : answer.key === "wca" ? "+ right, − left" : answer.key === "ete" || answer.key === "fuel" ? "Cruise only" : undefined}
+              description={
+                marked && !right
+                  ? `Not quite: ${written(answer.key, workings.answers[answer.key])}`
+                  : answer.key === "wca"
+                    ? "+ right, − left"
+                    : answer.key === "ete" || answer.key === "fuel"
+                      ? "Cruise only"
+                      : undefined
+              }
               data-testid={`try-${answer.key}`}
             >
               <span className="flex items-center gap-1.5">
-                {marked && (right
-                  ? <Check className={cn("size-4", FINDING_TONE.ok)} aria-label="Right" />
-                  : <X className={cn("size-4", FINDING_TONE.stop)} aria-label="Not right" />)}
+                {marked &&
+                  (right ? (
+                    <Check className={cn("size-4", FINDING_TONE.ok)} aria-label="Right" />
+                  ) : (
+                    <X className={cn("size-4", FINDING_TONE.stop)} aria-label="Not right" />
+                  ))}
                 <Input
-                  id={`${id}-${answer.key}`} inputMode="decimal" className="h-8 w-20 text-right tabular-nums"
-                  value={value ?? ""} data-testid={`try-${answer.key}-input`}
-                  onChange={e => { setTyped({ ...typed, [answer.key]: e.target.value }); setChecked(false); }}
+                  id={`${id}-${answer.key}`}
+                  inputMode="decimal"
+                  className="h-8 w-20 text-right tabular-nums"
+                  value={value ?? ""}
+                  data-testid={`try-${answer.key}-input`}
+                  onChange={(e) => {
+                    setTyped({ ...typed, [answer.key]: e.target.value });
+                    setChecked(false);
+                  }}
                 />
                 <span className={cn("w-7 text-muted-foreground", TEXT.detail)}>{answer.unit}</span>
               </span>
@@ -76,7 +105,9 @@ function TryIt({ workings }: { workings: Workings }) {
         })}
       </ListGroup>
       <div className="flex justify-end">
-        <Button type="submit" size="sm" data-testid="try-check">Check</Button>
+        <Button type="submit" size="sm" data-testid="try-check">
+          Check
+        </Button>
       </div>
     </form>
   );
@@ -97,20 +128,31 @@ export default function LegWorkings({ leg }: { leg: Leg }) {
     <ResponsivePopover>
       <ResponsivePopoverTrigger asChild>
         <Button
-          type="button" variant="link" size="sm" className={cn("h-auto p-0 text-tint", TEXT.detail)}
-          onClick={e => e.stopPropagation()} data-testid="leg-workings"
+          type="button"
+          variant="link"
+          size="sm"
+          className={cn("h-auto p-0 text-tint", TEXT.detail)}
+          onClick={(e) => e.stopPropagation()}
+          data-testid="leg-workings"
         >
           Show the work
         </Button>
       </ResponsivePopoverTrigger>
       <ResponsivePopoverContent
-        title={`${leg.from} to ${leg.to}, worked out`} className="w-[26rem] max-w-[calc(100vw-2rem)] p-3"
-        align="start" data-testid="leg-workings-content"
+        title={`${leg.from} to ${leg.to}, worked out`}
+        className="w-[26rem] max-w-[calc(100vw-2rem)] p-3"
+        align="start"
+        data-testid="leg-workings-content"
       >
         <div className="space-y-3">
           <Segmented
-            label="Worked out or yours" value={mode} onChange={setMode}
-            options={[{ value: "worked", label: "Worked out" }, { value: "try", label: "Try it" }]}
+            label="Worked out or yours"
+            value={mode}
+            onChange={setMode}
+            options={[
+              { value: "worked", label: "Worked out" },
+              { value: "try", label: "Try it" },
+            ]}
             testId="workings-mode"
           />
           {mode === "worked" ? <Worked workings={workings} /> : <TryIt workings={workings} />}

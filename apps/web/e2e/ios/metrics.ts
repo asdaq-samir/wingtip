@@ -17,10 +17,22 @@ import type { Page } from "@playwright/test";
  */
 
 /** What a finger can tap. */
-export const TAPPABLE = [
-  "a[href]", "button", "input:not([type=hidden])", "select", "textarea", "summary",
-  "[role=button]", "[role=tab]", "[role=checkbox]", "[role=radio]", "[role=switch]",
-  "[role=menuitem]", "[role=option]", "[role=slider]", "[tabindex='0']",
+const TAPPABLE = [
+  "a[href]",
+  "button",
+  "input:not([type=hidden])",
+  "select",
+  "textarea",
+  "summary",
+  "[role=button]",
+  "[role=tab]",
+  "[role=checkbox]",
+  "[role=radio]",
+  "[role=switch]",
+  "[role=menuitem]",
+  "[role=option]",
+  "[role=slider]",
+  "[tabindex='0']",
 ].join(", ");
 
 /** P1's declared exceptions, the pilot's call (2026-09-30): the map's
@@ -30,16 +42,14 @@ export const TAPPABLE = [
  *  control's segments keep iOS's own 32-point track. */
 // The map panel's grabber is the mark of where to drag, as iOS's is: the
 // whole head drags, and tapping it is a keyboard's and VoiceOver's way.
-export const HIT_EXEMPT = [".maplibregl-marker", "[data-slot=tabs-trigger]", "[data-testid=sidebar-trigger-button]"].join(", ");
+const HIT_EXEMPT = [".maplibregl-marker", "[data-slot=tabs-trigger]", "[data-testid=sidebar-trigger-button]"].join(", ");
 
 /** P3's: a marker's number or ident, centred in its dot or chip as a
  *  glyph is (icons.ts), not a line of text. */
-export const LEADING_EXEMPT = ".maplibregl-marker";
+const LEADING_EXEMPT = ".maplibregl-marker";
 
 /** iOS's text styles at the default text size: size → leading. */
-export const IOS_TYPE: Record<number, number> = {
-  11: 13, 12: 16, 13: 18, 15: 20, 16: 21, 17: 22, 20: 25, 22: 28, 28: 34, 34: 41,
-};
+const IOS_TYPE: Record<number, number> = { 11: 13, 12: 16, 13: 18, 15: 20, 16: 21, 17: 22, 20: 25, 22: 28, 28: 34, 34: 41 };
 
 /** Every finite animation on the page run out -- a sheet's slide, a
  *  section opening: measured mid-slide, a control is not where it rests.
@@ -53,12 +63,15 @@ export async function still(page: Page) {
     // only when the page's style is next worked out, and a wait begun
     // before then found none to wait for. CI's landscape phone measured
     // a row's words at 1.1:1, dark on dark, a frame into a theme change.
-    await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+    await new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done)));
     await Promise.race([
-      Promise.all(document.getAnimations()
-        .filter(a => a.effect?.getTiming().iterations !== Infinity)
-        .map(a => a.finished.catch(() => undefined))),
-      new Promise(done => setTimeout(done, 3000)),
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+          .map((a) => a.finished.catch(() => undefined)),
+      ),
+      new Promise((done) => setTimeout(done, 3000)),
     ]);
   });
 }
@@ -68,10 +81,14 @@ export async function still(page: Page) {
  *  moment, which is not the screen's layout. Up to twenty seconds; past
  *  that, P1 looks round a toast that stays rather than at it. */
 export async function quiet(page: Page) {
-  await page.locator("[data-sonner-toast]").first().waitFor({ state: "detached", timeout: 20000 }).catch(() => undefined);
+  await page
+    .locator("[data-slot=toast]")
+    .first()
+    .waitFor({ state: "detached", timeout: 20000 })
+    .catch(() => undefined);
 }
 
-export type HitMiss = { control: string; box: string; lost: number; by: string };
+type HitMiss = { control: string; box: string; lost: number; by: string };
 
 /** P1: every control whose 44 × 44 square, centred on it, is not wholly
  *  its own, by nine elementFromPoint probes. That sees a pseudo-element
@@ -85,86 +102,113 @@ export type HitMiss = { control: string; box: string; lost: number; by: string }
  *  moment and is not the layout, or on a sticky heading a row has
  *  scrolled under. */
 export function hitAreaMisses(page: Page, scope = "body", size = 44): Promise<HitMiss[]> {
-  return page.evaluate(({ scope, size, tappable, exempt }) => {
-    const half = size / 2 - 1;
-    const misses: { control: string; box: string; lost: number; by: string }[] = [];
-    const root = document.querySelector(scope);
-    if (!root) return misses;
-    for (const el of root.querySelectorAll<HTMLElement>(tappable)) {
-      // A tab list is focusable for its arrow keys; its tabs are what is tapped.
-      if (el.getAttribute("role") === "tablist" || el.matches(exempt)) continue;
-      const r = el.getBoundingClientRect();
-      if (r.width < 2 || r.height < 2 || getComputedStyle(el).visibility !== "visible") continue;
-      const own = (hit: Element | null) =>
-        !!hit && (hit === el || el.contains(hit) || (hit.closest("label") as HTMLLabelElement | null)?.control === el);
-      const toast = (hit: Element | null) => !!hit?.closest("[data-sonner-toaster]");
-      // A sticky heading over a row scrolled half under it: the row is
-      // half out of view, as at a scroll container's edge, not covered.
-      const pinned = (hit: Element | null) => {
-        for (let a = hit; a && a !== document.body; a = a.parentElement) if (getComputedStyle(a).position === "sticky") return !a.contains(el);
-        return false;
-      };
-      // A popover or a sheet open over the page covers what is under its
-      // edge, as iOS's do: a row half under it is covered, not crowded.
-      const over = (hit: Element | null) => {
-        const layer = hit?.closest('[data-slot="popover-content"], [data-slot="sheet-content"], [role="dialog"]');
-        return !!layer && !layer.contains(el);
-      };
-      const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
-      if (!own(document.elementFromPoint(cx, cy))) continue;
-      let port = { l: 0, t: 0, r: innerWidth, b: innerHeight };
-      for (let a = el.parentElement; a; a = a.parentElement) {
-        const o = getComputedStyle(a);
-        if (!/auto|scroll|clip|hidden/.test(o.overflowX + o.overflowY)) continue;
-        const b = a.getBoundingClientRect();
-        // A scroller run on up under the panel's head (under-head) is in
-        // view from the head's foot down: what is over that is scrolled
-        // under the head, as under a sticky heading, not covered by it.
-        // Its scroll padding, the head's height resolved: --head-room
-        // itself can be a sum the property does not resolve (PanelTabs').
-        const under = a.classList.contains("under-head") ? parseFloat(o.scrollPaddingTop) || 0 : 0;
-        port = { l: Math.max(port.l, b.left), t: Math.max(port.t, b.top + under), r: Math.min(port.r, b.right), b: Math.min(port.b, b.bottom) };
+  return page.evaluate(
+    ({ scope, size, tappable, exempt }) => {
+      const half = size / 2 - 1;
+      const misses: { control: string; box: string; lost: number; by: string }[] = [];
+      const root = document.querySelector(scope);
+      if (!root) return misses;
+      for (const el of root.querySelectorAll<HTMLElement>(tappable)) {
+        // A tab list is focusable for its arrow keys; its tabs are what is tapped.
+        if (el.getAttribute("role") === "tablist" || el.matches(exempt)) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2 || getComputedStyle(el).visibility !== "visible") continue;
+        const own = (hit: Element | null) =>
+          !!hit && (hit === el || el.contains(hit) || (hit.closest("label") as HTMLLabelElement | null)?.control === el);
+        const toast = (hit: Element | null) => !!hit?.closest("[data-slot=toast-viewport]");
+        // A sticky heading over a row scrolled half under it: the row is
+        // half out of view, as at a scroll container's edge, not covered.
+        const pinned = (hit: Element | null) => {
+          for (let a = hit; a && a !== document.body; a = a.parentElement)
+            if (getComputedStyle(a).position === "sticky") return !a.contains(el);
+          return false;
+        };
+        // A popover or a sheet open over the page covers what is under its
+        // edge, as iOS's do: a row half under it is covered, not crowded.
+        const over = (hit: Element | null) => {
+          const layer = hit?.closest('[data-slot="popover-content"], [data-slot="sheet-content"], [role="dialog"]');
+          return !!layer && !layer.contains(el);
+        };
+        const cx = r.left + r.width / 2,
+          cy = r.top + r.height / 2;
+        if (!own(document.elementFromPoint(cx, cy))) continue;
+        let port = { l: 0, t: 0, r: innerWidth, b: innerHeight };
+        for (let a = el.parentElement; a; a = a.parentElement) {
+          const o = getComputedStyle(a);
+          if (!/auto|scroll|clip|hidden/.test(o.overflowX + o.overflowY)) continue;
+          const b = a.getBoundingClientRect();
+          // A scroller run on up under the panel's head (under-head) is in
+          // view from the head's foot down: what is over that is scrolled
+          // under the head, as under a sticky heading, not covered by it.
+          // Its scroll padding, the head's height resolved: --head-room
+          // itself can be a sum the property does not resolve (PanelTabs').
+          const under = a.classList.contains("under-head") ? parseFloat(o.scrollPaddingTop) || 0 : 0;
+          port = {
+            l: Math.max(port.l, b.left),
+            t: Math.max(port.t, b.top + under),
+            r: Math.min(port.r, b.right),
+            b: Math.min(port.b, b.bottom),
+          };
+        }
+        // A port's right and bottom edges are past it: a probe on one
+        // finds what is beyond (a row cut off at 992 by its list, probed
+        // at 992, found the panel's foot under it).
+        if (cx - half < port.l || cx + half >= port.r || cy - half < port.t || cy + half >= port.b) continue;
+        // Nor one cut off by that edge itself: a row half scrolled under the
+        // sheet's foot, its square a point short of crossing it.
+        if (r.top < port.t - 0.5 || r.bottom > port.b + 0.5) continue;
+        const probes = [
+          [-1, 0],
+          [1, 0],
+          [0, -1],
+          [0, 1],
+          [-1, -1],
+          [1, -1],
+          [-1, 1],
+          [1, 1],
+        ];
+        const takers: string[] = [];
+        const lost = probes.filter(([dx, dy]) => {
+          const hit = document.elementFromPoint(cx + dx * half, cy + dy * half);
+          // A field's disclosure (its arrow, data-disclosure) is tapped
+          // anywhere on the field's lines, its area stretched over them; the
+          // field's symbol beside it is the field's menu, at the owner's ask
+          // ("Use the airport icon as the more button"), so the arrow's left
+          // edge is the symbol's: the arrow is not crowded on the lines.
+          const mark = el.matches("[data-disclosure]") && !!hit?.closest("[data-point-mark]");
+          // A field and its own button at its end (the N-number's, the
+          // altitude's), one pill: where their areas meet, each the other's
+          // neighbour in the one control, not crowding it -- the field's text
+          // the field's, to edit it, the button's round it its own.
+          const pill = el.closest('[data-testid="aircraft-select"], [data-testid="altitude-group"]');
+          const field = !!hit && !!pill && pill.contains(hit);
+          const taken = !own(hit) && !toast(hit) && !pinned(hit) && !over(hit) && !mark && !field;
+          if (taken && hit)
+            takers.push(
+              `${hit.tagName.toLowerCase()}${(hit as HTMLElement).dataset.testid ? `[${(hit as HTMLElement).dataset.testid}]` : ""} "${(hit.getAttribute("aria-label") ?? hit.textContent ?? "").trim().slice(0, 20)}"`,
+            );
+          return taken;
+        }).length;
+        if (!lost) continue;
+        const name = (el.getAttribute("aria-label") ?? el.getAttribute("title") ?? el.textContent ?? "")
+          .trim()
+          .replace(/\s+/g, " ")
+          .slice(0, 40);
+        const id = el.dataset.testid ?? el.dataset.slot ?? [...el.classList].find((c) => c.startsWith("maplibregl-")) ?? "";
+        misses.push({
+          control: `${el.tagName.toLowerCase()}${id ? `[${id}]` : ""} "${name}"`,
+          box: `${Math.round(r.width)}×${Math.round(r.height)}`,
+          lost,
+          by: [...new Set(takers)].join(", "),
+        });
       }
-      // A port's right and bottom edges are past it: a probe on one
-      // finds what is beyond (a row cut off at 992 by its list, probed
-      // at 992, found the panel's foot under it).
-      if (cx - half < port.l || cx + half >= port.r || cy - half < port.t || cy + half >= port.b) continue;
-      // Nor one cut off by that edge itself: a row half scrolled under the
-      // sheet's foot, its square a point short of crossing it.
-      if (r.top < port.t - 0.5 || r.bottom > port.b + 0.5) continue;
-      const probes = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]];
-      const takers: string[] = [];
-      const lost = probes.filter(([dx, dy]) => {
-        const hit = document.elementFromPoint(cx + dx * half, cy + dy * half);
-        // A field's disclosure (its arrow, data-disclosure) is tapped
-        // anywhere on the field's lines, its area stretched over them; the
-        // field's symbol beside it is the field's menu, at the owner's ask
-        // ("Use the airport icon as the more button"), so the arrow's left
-        // edge is the symbol's: the arrow is not crowded on the lines.
-        const mark = el.matches("[data-disclosure]") && !!hit?.closest("[data-point-mark]");
-        // A field and its own button at its end (the N-number's, the
-        // altitude's), one pill: where their areas meet, each the other's
-        // neighbour in the one control, not crowding it -- the field's text
-        // the field's, to edit it, the button's round it its own.
-        const pill = el.closest('[data-testid="aircraft-select"], [data-testid="altitude-group"]');
-        const field = !!hit && !!pill && pill.contains(hit);
-        const taken = !own(hit) && !toast(hit) && !pinned(hit) && !over(hit) && !mark && !field;
-        if (taken && hit) takers.push(`${hit.tagName.toLowerCase()}${(hit as HTMLElement).dataset.testid ? `[${(hit as HTMLElement).dataset.testid}]` : ""} "${(hit.getAttribute("aria-label") ?? hit.textContent ?? "").trim().slice(0, 20)}"`);
-        return taken;
-      }).length;
-      if (!lost) continue;
-      const name = (el.getAttribute("aria-label") ?? el.getAttribute("title") ?? el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 40);
-      const id = el.dataset.testid ?? el.dataset.slot ?? [...el.classList].find(c => c.startsWith("maplibregl-")) ?? "";
-      misses.push({ control: `${el.tagName.toLowerCase()}${id ? `[${id}]` : ""} "${name}"`, box: `${Math.round(r.width)}×${Math.round(r.height)}`, lost, by: [...new Set(takers)].join(", ") });
-    }
-    return misses;
-  }, { scope, size, tappable: TAPPABLE, exempt: HIT_EXEMPT });
+      return misses;
+    },
+    { scope, size, tappable: TAPPABLE, exempt: HIT_EXEMPT },
+  );
 }
 
-export type TypeFinding = {
-  size: number; leading: number | null; want: number | null; where: string; text: string; count: number;
-  face?: string;
-};
+type TypeFinding = { size: number; leading: number | null; want: number | null; where: string; text: string; count: number; face?: string };
 
 /** P2 and P3: visible text off iOS's scale, and text at an iOS size off
  *  that size's leading by more than a pixel -- each kind grouped by size
@@ -173,57 +217,69 @@ export type TypeFinding = {
  *  text clipped to a pixel (a screen reader's alone), and text above or
  *  left of the page, where no scroll reaches, and text kept for a screen
  *  reader (sr-only, whose padding can leave it a box of its own). */
-export function typeFindings(page: Page, scope = "body"): Promise<{ offScale: TypeFinding[]; offLeading: TypeFinding[]; offFace: TypeFinding[] }> {
-  return page.evaluate(({ scope, type, glyphs }) => {
-    const offScale = new Map<string, TypeFinding>(), offLeading = new Map<string, TypeFinding>(), offFace = new Map<string, TypeFinding>();
-    // P16: the app's own face -- the body's -- or its monospace where a
-    // font-mono class asks for one. The map's words were Leaflet's
-    // Helvetica Neue, and every size check passed them.
-    const first = (family: string) => family.split(",")[0].replace(/["']/g, "").trim();
-    const appFace = first(getComputedStyle(document.body).fontFamily);
-    const root = document.querySelector(scope);
-    if (root) {
-      const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-      for (let n = walk.nextNode(); n; n = walk.nextNode()) {
-        const text = (n.textContent ?? "").trim().replace(/\s+/g, " ");
-        const el = n.parentElement;
-        if (!text || !el) continue;
-        const rect = el.getBoundingClientRect();
-        // Nor a figure set smaller to fit its column, as iOS's
-        // adjustsFontSizeToFitWidth sets one (FlightLine's data-fitted):
-        // off the scale by design, on a screen too narrow for it.
-        if (rect.width <= 1 || rect.height <= 1 || rect.right <= 0 || rect.bottom <= 0 || el.closest(".sr-only, [data-fitted]")) continue;
-        const cs = getComputedStyle(el);
-        if (cs.visibility !== "visible" || cs.opacity === "0") continue;
-        const size = Math.round(parseFloat(cs.fontSize) * 100) / 100;
-        const leading = cs.lineHeight === "normal" ? null : Math.round(parseFloat(cs.lineHeight) * 10) / 10;
-        const want = Math.abs(size - Math.round(size)) <= 0.25 ? (type[Math.round(size)] ?? null) : null;
-        let where = el.tagName.toLowerCase();
-        for (let a: HTMLElement | null = el; a; a = a.parentElement) {
-          const leaflet = [...a.classList].find(c => c.startsWith("maplibregl-") && c !== "maplibregl-map");
-          const id = a.dataset.testid ? `#${a.dataset.testid}` : a.dataset.slot ?? leaflet;
-          if (id) { where = id; break; }
+export function typeFindings(
+  page: Page,
+  scope = "body",
+): Promise<{ offScale: TypeFinding[]; offLeading: TypeFinding[]; offFace: TypeFinding[] }> {
+  return page.evaluate(
+    ({ scope, type, glyphs }) => {
+      const offScale = new Map<string, TypeFinding>(),
+        offLeading = new Map<string, TypeFinding>(),
+        offFace = new Map<string, TypeFinding>();
+      // P16: the app's own face -- the body's -- or its monospace where a
+      // font-mono class asks for one. The map's words were Leaflet's
+      // Helvetica Neue, and every size check passed them.
+      const first = (family: string) => family.split(",")[0].replace(/["']/g, "").trim();
+      const appFace = first(getComputedStyle(document.body).fontFamily);
+      const root = document.querySelector(scope);
+      if (root) {
+        const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+          const text = (n.textContent ?? "").trim().replace(/\s+/g, " ");
+          const el = n.parentElement;
+          if (!text || !el) continue;
+          const rect = el.getBoundingClientRect();
+          // Nor a figure set smaller to fit its column, as iOS's
+          // adjustsFontSizeToFitWidth sets one (FlightLine's data-fitted):
+          // off the scale by design, on a screen too narrow for it.
+          if (rect.width <= 1 || rect.height <= 1 || rect.right <= 0 || rect.bottom <= 0 || el.closest(".sr-only, [data-fitted]")) continue;
+          const cs = getComputedStyle(el);
+          if (cs.visibility !== "visible" || cs.opacity === "0") continue;
+          const size = Math.round(parseFloat(cs.fontSize) * 100) / 100;
+          const leading = cs.lineHeight === "normal" ? null : Math.round(parseFloat(cs.lineHeight) * 10) / 10;
+          const want = Math.abs(size - Math.round(size)) <= 0.25 ? (type[Math.round(size)] ?? null) : null;
+          let where = el.tagName.toLowerCase();
+          for (let a: HTMLElement | null = el; a; a = a.parentElement) {
+            const leaflet = [...a.classList].find((c) => c.startsWith("maplibregl-") && c !== "maplibregl-map");
+            const id = a.dataset.testid ? `#${a.dataset.testid}` : (a.dataset.slot ?? leaflet);
+            if (id) {
+              where = id;
+              break;
+            }
+          }
+          const add = (map: Map<string, TypeFinding>, key: string) => {
+            const found = map.get(key);
+            if (found) found.count++;
+            else map.set(key, { size, leading, want, where, text: text.slice(0, 40), count: 1 });
+          };
+          const face = first(cs.fontFamily);
+          if (face !== appFace && !el.closest(".font-mono")) {
+            const key = `${face}|${where}`,
+              found = offFace.get(key);
+            if (found) found.count++;
+            else offFace.set(key, { size, leading, want, where, text: text.slice(0, 40), count: 1, face });
+          }
+          if (want === null) add(offScale, `${size}|${where}`);
+          else if (leading !== null && Math.abs(leading - want) > 1 && !el.closest(glyphs)) add(offLeading, `${size}/${leading}|${where}`);
         }
-        const add = (map: Map<string, TypeFinding>, key: string) => {
-          const found = map.get(key);
-          if (found) found.count++;
-          else map.set(key, { size, leading, want, where, text: text.slice(0, 40), count: 1 });
-        };
-        const face = first(cs.fontFamily);
-        if (face !== appFace && !el.closest(".font-mono")) {
-          const key = `${face}|${where}`, found = offFace.get(key);
-          if (found) found.count++;
-          else offFace.set(key, { size, leading, want, where, text: text.slice(0, 40), count: 1, face });
-        }
-        if (want === null) add(offScale, `${size}|${where}`);
-        else if (leading !== null && Math.abs(leading - want) > 1 && !el.closest(glyphs)) add(offLeading, `${size}/${leading}|${where}`);
       }
-    }
-    return { offScale: [...offScale.values()], offLeading: [...offLeading.values()], offFace: [...offFace.values()] };
-  }, { scope, type: IOS_TYPE, glyphs: LEADING_EXEMPT });
+      return { offScale: [...offScale.values()], offLeading: [...offLeading.values()], offFace: [...offFace.values()] };
+    },
+    { scope, type: IOS_TYPE, glyphs: LEADING_EXEMPT },
+  );
 }
 
-export type RoleFinding = { role: string; text: string; where: string };
+type RoleFinding = { role: string; text: string; where: string };
 
 /** P17: reading text -- a paragraph or a list item at the prose size, 15
  *  to a finger -- and headings in the text's own colour, never in the
@@ -234,7 +290,7 @@ export type RoleFinding = { role: string; text: string; where: string };
  *  a status (role="status"), and red or amber words, which say something
  *  of their own. */
 export function roleFindings(page: Page, scope = "body"): Promise<RoleFinding[]> {
-  return page.evaluate(scope => {
+  return page.evaluate((scope) => {
     const root = document.querySelector(scope);
     if (!root) return [];
     const probe = document.createElement("span");
@@ -246,7 +302,12 @@ export function roleFindings(page: Page, scope = "body"): Promise<RoleFinding[]>
     for (const el of root.querySelectorAll<HTMLElement>("p, li, h1, h2, h3, h4")) {
       const r = el.getBoundingClientRect();
       if (r.width < 2 || r.height < 2 || el.closest(".sr-only")) continue;
-      if (el.closest('[role="status"], [data-slot^="item"], [data-slot="section-summary"], [data-slot="accordion-trigger"], [data-sonner-toaster], .maplibregl-canvas-container')) continue;
+      if (
+        el.closest(
+          '[role="status"], [data-slot^="item"], [data-slot="section-summary"], [data-slot="accordion-trigger"], [data-slot=toast-viewport], .maplibregl-canvas-container',
+        )
+      )
+        continue;
       const cs = getComputedStyle(el);
       // A group's header is grey by design: iOS's small capitals over a
       // grouped list (13, semibold, uppercase), as the settings' are.
@@ -257,7 +318,10 @@ export function roleFindings(page: Page, scope = "body"): Promise<RoleFinding[]>
         let where = el.tagName.toLowerCase();
         for (let a: HTMLElement | null = el; a; a = a.parentElement) {
           const id = a.dataset.testid ? `#${a.dataset.testid}` : a.dataset.slot;
-          if (id) { where = id; break; }
+          if (id) {
+            where = id;
+            break;
+          }
         }
         found.push({ role: heading ? "heading" : "reading", text: (el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 40), where });
       }
@@ -266,7 +330,7 @@ export function roleFindings(page: Page, scope = "body"): Promise<RoleFinding[]>
   }, scope);
 }
 
-export type ComponentFinding = { rule: string; what: string; measured: string };
+type ComponentFinding = { rule: string; what: string; measured: string };
 
 /** P18: the same component at the same size wherever it is -- what the
  *  pilot found differing from one surface to the next, which no check of
@@ -302,19 +366,37 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       const r = el.getBoundingClientRect();
       return r.width > 1 && r.height > 1 && getComputedStyle(el).visibility === "visible" && el.checkVisibility();
     };
-    const name = (el: Element) => (el.getAttribute("aria-label") ?? (el as HTMLElement).dataset?.testid ?? el.getAttribute("data-slot") ?? el.className.toString().split(" ")[0]).slice(0, 40);
-    for (const grab of document.querySelectorAll('[data-slot="console-sheet"] [data-grabber], [data-floating] [data-swipe-handle] > span')) {
+    const name = (el: Element) =>
+      (
+        el.getAttribute("aria-label") ??
+        (el as HTMLElement).dataset?.testid ??
+        el.getAttribute("data-slot") ??
+        el.className.toString().split(" ")[0]
+      ).slice(0, 40);
+    for (const grab of document.querySelectorAll(
+      '[data-slot="console-sheet"] [data-grabber], [data-floating] [data-swipe-handle] > span',
+    )) {
       const r = grab.getBoundingClientRect();
       if (!on(grab) || r.height > 12) continue;
-      if (Math.abs(r.width - 36) > 0.5 || Math.abs(r.height - 5) > 0.5) found.push({ rule: "grabber 36×5", what: "sheet grabber", measured: `${r.width}×${r.height}` });
+      if (Math.abs(r.width - 36) > 0.5 || Math.abs(r.height - 5) > 0.5)
+        found.push({ rule: "grabber 36×5", what: "sheet grabber", measured: `${r.width}×${r.height}` });
     }
     const theme = document.createElement("div");
     theme.className = "rounded-lg";
     document.body.append(theme);
     const radius = parseFloat(getComputedStyle(theme).borderTopLeftRadius);
     theme.remove();
-    const floats = ['[data-slot="sheet-content"][data-side="bottom"]', '[data-slot="console-sheet"]', '[data-slot="map-panel"]', '[data-slot="popover-content"]', '[data-slot="dialog-content"]',
-      '[data-slot="alert-dialog-content"]', ".maplibregl-popup-content", '[data-slot="item-group"].border', "[data-sonner-toast]"].join(", ");
+    const floats = [
+      '[data-slot="sheet-content"][data-side="bottom"]',
+      '[data-slot="console-sheet"]',
+      '[data-slot="map-panel"]',
+      '[data-slot="popover-content"]',
+      '[data-slot="dialog-content"]',
+      '[data-slot="alert-dialog-content"]',
+      ".maplibregl-popup-content",
+      '[data-slot="item-group"].border',
+      "[data-slot=toast]",
+    ].join(", ");
     for (const box of document.querySelectorAll(floats)) {
       if (!on(box)) continue;
       // A sheet from the top of the screen is rounded at its bottom only.
@@ -325,8 +407,15 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       // console) 36, with their far corners round.
       const sheet = box.matches('[data-slot="console-sheet"], [data-floating]');
       // A toast is Apple Maps' banner, a capsule (the toast rewrite, 2026-10-27).
-      const shape = box.matches("[data-capsule], [data-sonner-toast]") ? Math.min(24, box.getBoundingClientRect().height / 2)
-        : box.matches('[data-slot="map-panel"]') ? 24 : sheet ? 36 : box.matches("[data-glass]") ? 28 : radius;
+      const shape = box.matches("[data-capsule], [data-slot=toast]")
+        ? Math.min(24, box.getBoundingClientRect().height / 2)
+        : box.matches('[data-slot="map-panel"]')
+          ? 24
+          : sheet
+            ? 36
+            : box.matches("[data-glass]")
+              ? 28
+              : radius;
       if (Math.abs(r - shape) > 0.5) found.push({ rule: `one radius, ${Math.round(shape)}`, what: name(box), measured: `${r}` });
     }
     for (const button of document.querySelectorAll<HTMLElement>('button, a[data-slot="button"]')) {
@@ -341,14 +430,26 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       // is no photo, is the picture. Nor the Ask row's round 48-point
       // microphone, Stop and Send beside its 48-point field (data-composer),
       // drawn as the canvas's Ask screen at the owner's ask (46502903).
-      if (!svg || !on(button) || button.closest('header, .maplibregl-marker, [data-sonner-toaster], [data-slot="tabs-trigger"], [data-testid="place-runway-sketch"], [data-slot="clear-button"], [data-disclosure], [data-point-mark], [data-picture-head], [data-composer]')) continue;
-      const words = [...button.querySelectorAll("*"), button].some(n => [...n.childNodes].some(c => c.nodeType === 3 && c.textContent!.trim() && !(n as Element).closest(".sr-only")));
+      if (
+        !svg ||
+        !on(button) ||
+        button.closest(
+          'header, .maplibregl-marker, [data-slot=toast-viewport], [data-slot="tabs-trigger"], [data-testid="place-runway-sketch"], [data-slot="clear-button"], [data-disclosure], [data-point-mark], [data-picture-head], [data-composer]',
+        )
+      )
+        continue;
+      const words = [...button.querySelectorAll("*"), button].some((n) =>
+        [...n.childNodes].some((c) => c.nodeType === 3 && c.textContent!.trim() && !(n as Element).closest(".sr-only")),
+      );
       // A button named by words laid over it -- a section's title over its
       // row-wide accordion trigger (AccordionSection) -- has words: it is
       // a row with a chevron, not an icon button.
-      const labelled = (button.getAttribute("aria-labelledby") ?? "").split(/\s+/).some(id => (id && document.getElementById(id)?.textContent?.trim()));
+      const labelled = (button.getAttribute("aria-labelledby") ?? "")
+        .split(/\s+/)
+        .some((id) => id && document.getElementById(id)?.textContent?.trim());
       if (words || labelled || button.getAttribute("role") === "combobox") continue;
-      const b = button.getBoundingClientRect(), g = svg.getBoundingClientRect();
+      const b = button.getBoundingClientRect(),
+        g = svg.getBoundingClientRect();
       const hit = document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2);
       if (!hit || !(hit === button || button.contains(hit))) continue;
       // The close's cross at 24, and the back's chevron, its twin at the
@@ -356,13 +457,18 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       // where the other glyphs span most of theirs.
       const glyph = button.querySelector("svg.lucide-x") ? 24 : 20;
       if (Math.abs(b.width - 36) > 0.5 || Math.abs(b.height - 36) > 0.5 || Math.abs(g.width - glyph) > 0.5) {
-        found.push({ rule: `icon button 36, glyph ${glyph}`, what: name(button), measured: `${Math.round(b.width)}×${Math.round(b.height)}, glyph ${Math.round(g.width)}` });
+        found.push({
+          rule: `icon button 36, glyph ${glyph}`,
+          what: name(button),
+          measured: `${Math.round(b.width)}×${Math.round(b.height)}, glyph ${Math.round(g.width)}`,
+        });
       }
     }
     for (const panel of document.querySelectorAll('[data-slot="map-panel"], [data-slot="sheet-content"], [data-testid="console-sheet"]')) {
       if (!on(panel)) continue;
       const p = panel.getBoundingClientRect();
-      let inset = Infinity, sample = "";
+      let inset = Infinity,
+        sample = "";
       const walk = document.createTreeWalker(panel, NodeFilter.SHOW_TEXT);
       for (let n = walk.nextNode(); n; n = walk.nextNode()) {
         // A tab's word is centred in its fifth of the bar, as in iOS's tab
@@ -379,9 +485,13 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
         const at = document.elementFromPoint(t.left + Math.min(t.width / 2, 4), t.top + t.height / 2);
         if (!at || !(at === n.parentElement || n.parentElement!.contains(at) || at.contains(n.parentElement))) continue;
         let scrolls = false;
-        for (let a = n.parentElement; a && a !== panel; a = a.parentElement) if (a.scrollWidth > a.clientWidth + 1 && /auto|scroll/.test(getComputedStyle(a).overflowX)) scrolls = true;
+        for (let a = n.parentElement; a && a !== panel; a = a.parentElement)
+          if (a.scrollWidth > a.clientWidth + 1 && /auto|scroll/.test(getComputedStyle(a).overflowX)) scrolls = true;
         if (scrolls) continue;
-        if (t.left - p.left < inset) { inset = t.left - p.left; sample = n.textContent!.trim().slice(0, 30); }
+        if (t.left - p.left < inset) {
+          inset = t.left - p.left;
+          sample = n.textContent!.trim().slice(0, 30);
+        }
       }
       if (inset < 14.5) found.push({ rule: "margin 16", what: name(panel), measured: `${Math.round(inset)} at "${sample}"` });
     }
@@ -389,7 +499,8 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       for (const sw of document.querySelectorAll('[data-slot="switch"]')) {
         if (!on(sw)) continue;
         const b = sw.getBoundingClientRect();
-        if (Math.abs(b.width - 51) > 0.5 || Math.abs(b.height - 31) > 0.5) found.push({ rule: "switch 51×31", what: name(sw), measured: `${b.width}×${b.height}` });
+        if (Math.abs(b.width - 51) > 0.5 || Math.abs(b.height - 31) > 0.5)
+          found.push({ rule: "switch 51×31", what: name(sw), measured: `${b.width}×${b.height}` });
       }
     }
     if (matchMedia("(pointer: coarse) and (min-width: 744px) and (min-height: 600px)").matches) {
@@ -398,10 +509,15 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
         // (MapPage's inPanel), at the owner's ask: the panel's, not a sheet.
         if (!on(sheet) || sheet.closest('[data-slot="map-panel"]')) continue;
         const b = sheet.getBoundingClientRect();
-        const w = Math.min(540, innerWidth - 40), h = Math.min(620, innerHeight * 0.85);
+        const w = Math.min(540, innerWidth - 40),
+          h = Math.min(620, innerHeight * 0.85);
         const centred = Math.abs(b.left - (innerWidth - b.right)) <= 1 && Math.abs(b.top - (innerHeight - b.bottom)) <= 1;
         if (Math.abs(b.width - w) > 1 || Math.abs(b.height - h) > 1 || !centred) {
-          found.push({ rule: "P14 form sheet", what: "console", measured: `${Math.round(b.width)}×${Math.round(b.height)} at ${Math.round(b.left)},${Math.round(b.top)}` });
+          found.push({
+            rule: "P14 form sheet",
+            what: "console",
+            measured: `${Math.round(b.width)}×${Math.round(b.height)} at ${Math.round(b.left)},${Math.round(b.top)}`,
+          });
         }
       }
     }
@@ -409,17 +525,18 @@ export function componentFindings(page: Page): Promise<ComponentFinding[]> {
       for (const el of document.querySelectorAll<HTMLElement>("*")) {
         const s = getComputedStyle(el);
         if (!/auto|scroll/.test(s.overflowX) || !on(el)) continue;
-        // What is made to slide: a row's swipe to its Delete
-        // (SwipeToDelete), as iOS's lists slide.
+        // What is made to slide: a strip of hours or of chips across
+        // (data-slides), as iOS's slide.
         if (el.hasAttribute("data-slides")) continue;
-        if (el.scrollWidth - el.clientWidth > 1) found.push({ rule: "no sideways scroll in a panel", what: name(el), measured: `${el.scrollWidth} in ${el.clientWidth}` });
+        if (el.scrollWidth - el.clientWidth > 1)
+          found.push({ rule: "no sideways scroll in a panel", what: name(el), measured: `${el.scrollWidth} in ${el.clientWidth}` });
       }
     }
     return found;
   });
 }
 
-export type ContrastFinding = { text: string; ratio: number; need: number; where: string };
+type ContrastFinding = { text: string; ratio: number; need: number; where: string };
 
 /** P15: every visible word at WCAG's contrast against what is actually
  *  behind it -- 4.5:1, or 3:1 for large type (24, or 18.66 bold) -- in
@@ -430,7 +547,7 @@ export type ContrastFinding = { text: string; ratio: number; need: number; where
  *  (WCAG's own exception), text over the map's tiles or an image, whose
  *  background is not a colour, and a screen reader's own. */
 export function contrastFindings(page: Page, scope = "body"): Promise<ContrastFinding[]> {
-  return page.evaluate(scope => {
+  return page.evaluate((scope) => {
     const canvas = document.createElement("canvas");
     canvas.width = canvas.height = 1;
     const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
@@ -444,10 +561,10 @@ export function contrastFindings(page: Page, scope = "body"): Promise<ContrastFi
     };
     const over = (top: number[], under: number[]) => {
       const a = top[3];
-      return [0, 1, 2].map(i => top[i] * a + under[i] * (1 - a)).concat(1);
+      return [0, 1, 2].map((i) => top[i] * a + under[i] * (1 - a)).concat(1);
     };
     const lum = (c: number[]) => {
-      const [r, g, b] = c.slice(0, 3).map(v => {
+      const [r, g, b] = c.slice(0, 3).map((v) => {
         const s = v / 255;
         return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
       });
@@ -460,7 +577,8 @@ export function contrastFindings(page: Page, scope = "body"): Promise<ContrastFi
     for (let n = walk.nextNode(); n; n = walk.nextNode()) {
       const text = (n.textContent ?? "").trim();
       const el = n.parentElement;
-      if (!text || !el || el.closest(".sr-only, [disabled], [aria-disabled='true'], [data-disabled], .maplibregl-canvas-container")) continue;
+      if (!text || !el || el.closest(".sr-only, [disabled], [aria-disabled='true'], [data-disabled], .maplibregl-canvas-container"))
+        continue;
       const box = el.getBoundingClientRect();
       if (box.width < 2 || box.height < 2) continue;
       const cs = getComputedStyle(el);
@@ -472,7 +590,10 @@ export function contrastFindings(page: Page, scope = "body"): Promise<ContrastFi
       // Up to the first opaque background, every layer on the way, and
       // the opacity the word is drawn at.
       const layers: number[][] = [];
-      let opacity = 1, base: number[] | null = null, unknown = false, drawnOn: number[] | null = null;
+      let opacity = 1,
+        base: number[] | null = null,
+        unknown = false,
+        drawnOn: number[] | null = null;
       // A word drawn over a shape of its own SVG -- a runway's number on the
       // runway, in the pattern diagram -- is read against that shape's
       // fill, not the panel behind the drawing: there it read 1.23:1, navy
@@ -483,20 +604,35 @@ export function contrastFindings(page: Page, scope = "body"): Promise<ContrastFi
         // none is skipped by elementsFromPoint. The last filled shape
         // before the word in the drawing's order whose box holds the
         // word's middle is the one it is painted on.
-        const x = box.left + box.width / 2, y = box.top + box.height / 2;
-        const under = svg && [...svg.querySelectorAll("rect, circle, ellipse, polygon, path")]
-          .filter(e => (e.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0)
-          .filter(e => { const r = e.getBoundingClientRect(); return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom; })
-          .filter(e => { const f = getComputedStyle(e); return f.fill.startsWith("rgb") && parseFloat(f.fillOpacity) >= 0.999 && rgba(f.fill)[3] >= 0.999; })
-          .at(-1);
+        const x = box.left + box.width / 2,
+          y = box.top + box.height / 2;
+        const under =
+          svg &&
+          [...svg.querySelectorAll("rect, circle, ellipse, polygon, path")]
+            .filter((e) => (e.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0)
+            .filter((e) => {
+              const r = e.getBoundingClientRect();
+              return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+            })
+            .filter((e) => {
+              const f = getComputedStyle(e);
+              return f.fill.startsWith("rgb") && parseFloat(f.fillOpacity) >= 0.999 && rgba(f.fill)[3] >= 0.999;
+            })
+            .at(-1);
         if (under) drawnOn = rgba(getComputedStyle(under).fill);
       }
       for (let a: Element | null = el; a; a = a.parentElement) {
         const s = getComputedStyle(a);
         opacity *= parseFloat(s.opacity);
-        if (s.backgroundImage !== "none" || a.classList.contains("maplibregl-map")) { unknown = true; break; }
+        if (s.backgroundImage !== "none" || a.classList.contains("maplibregl-map")) {
+          unknown = true;
+          break;
+        }
         const bg = rgba(s.backgroundColor);
-        if (bg[3] >= 0.999) { base = bg; break; }
+        if (bg[3] >= 0.999) {
+          base = bg;
+          break;
+        }
         if (bg[3] > 0) layers.push(bg);
       }
       // A toast fading in or out is between two states, neither of them its
@@ -504,7 +640,7 @@ export function contrastFindings(page: Page, scope = "body"): Promise<ContrastFi
       // fades one out over 0.2 s before it takes it away, and the course
       // line's, at no opacity under a pointer the map had moved from, read
       // 1:1 on CI's phones.
-      if (unknown || (opacity < 0.99 && el.closest("[data-sonner-toaster], .maplibregl-popup, .maplibregl-popup"))) continue;
+      if (unknown || (opacity < 0.99 && el.closest("[data-slot=toast-viewport], .maplibregl-popup, .maplibregl-popup"))) continue;
       let bg = base ?? [255, 255, 255, 1];
       for (const layer of layers.reverse()) bg = over(layer, bg);
       if (drawnOn) bg = drawnOn;
@@ -514,13 +650,17 @@ export function contrastFindings(page: Page, scope = "body"): Promise<ContrastFi
       const shown = over(fg, bg);
       const [hi, lo] = [lum(shown), lum(bg)].sort((x, y) => y - x);
       const ratio = Math.round(((hi + 0.05) / (lo + 0.05)) * 100) / 100;
-      const size = parseFloat(cs.fontSize), weight = parseFloat(cs.fontWeight);
+      const size = parseFloat(cs.fontSize),
+        weight = parseFloat(cs.fontWeight);
       const need = size >= 24 || (size >= 18.66 && weight >= 700) ? 3 : 4.5;
       if (ratio + 0.005 < need) {
         let where = el.tagName.toLowerCase();
         for (let a: HTMLElement | null = el; a; a = a.parentElement) {
           const id = a.dataset.testid ? `#${a.dataset.testid}` : a.dataset.slot;
-          if (id) { where = id; break; }
+          if (id) {
+            where = id;
+            break;
+          }
         }
         const key = `${where}|${ratio}`;
         if (!found.has(key)) found.set(key, { text: text.slice(0, 32), ratio, need, where });
@@ -541,7 +681,7 @@ export type Insets = { top: number; right: number; bottom: number; left: number 
  *  attributes rewritten to these insets, in place, so the app is
  *  measured with the CSS it ships. */
 export async function emulateSafeArea(page: Page, insets: Insets) {
-  await page.evaluate(insets => {
+  await page.evaluate((insets) => {
     const re = /env\(\s*safe-area-inset-(top|right|bottom|left)\s*(?:,[^()]*(?:\([^()]*\)[^()]*)*)?\)/g;
     const patch = (style: CSSStyleDeclaration) => {
       if (style.cssText.includes("safe-area-inset")) {
@@ -555,7 +695,11 @@ export async function emulateSafeArea(page: Page, insets: Insets) {
       }
     };
     for (const sheet of document.styleSheets) {
-      try { walk(sheet.cssRules); } catch { /* another origin's sheet: not ours */ }
+      try {
+        walk(sheet.cssRules);
+      } catch {
+        /* another origin's sheet: not ours */
+      }
     }
     for (const el of document.querySelectorAll<HTMLElement>("[style*='safe-area-inset']")) patch(el.style);
     // What reads the insets in script (the map panel's sheet, whose
@@ -565,7 +709,7 @@ export async function emulateSafeArea(page: Page, insets: Insets) {
   }, insets);
 }
 
-export type InsetFinding = { control: string; box: string };
+type InsetFinding = { control: string; box: string };
 
 /** P12: controls pinned to the screen that reach into an inset. Pinned:
  *  in a fixed or sticky box with no scroll container between (content
@@ -575,34 +719,43 @@ export type InsetFinding = { control: string; box: string };
  *  run down to the sheet's own edge, over the home indicator's inset
  *  ([data-to-edge], MapPanel's toEdge) -- the bottom inset only. */
 export function outsideSafeArea(page: Page, insets: Insets): Promise<InsetFinding[]> {
-  return page.evaluate(({ insets, tappable }) => {
-    const pinned = (el: HTMLElement) => {
-      for (let a: HTMLElement | null = el; a; a = a.parentElement) {
-        const cs = getComputedStyle(a);
-        if (/fixed|sticky/.test(cs.position)) return true;
-        if (a !== el && /auto|scroll/.test(cs.overflowX + cs.overflowY)) return false;
+  return page.evaluate(
+    ({ insets, tappable }) => {
+      const pinned = (el: HTMLElement) => {
+        for (let a: HTMLElement | null = el; a; a = a.parentElement) {
+          const cs = getComputedStyle(a);
+          if (/fixed|sticky/.test(cs.position)) return true;
+          if (a !== el && /auto|scroll/.test(cs.overflowX + cs.overflowY)) return false;
+        }
+        return false;
+      };
+      const found: { control: string; box: string }[] = [];
+      for (const el of document.querySelectorAll<HTMLElement>(tappable)) {
+        const r = el.getBoundingClientRect();
+        if (r.width < 2 || r.height < 2 || el.closest(".maplibregl-canvas-container") || !pinned(el)) continue;
+        const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+        if (!hit || !(hit === el || el.contains(hit))) continue;
+        const toEdge = !!el.closest("[data-to-edge]");
+        if (
+          r.top >= insets.top &&
+          r.left >= insets.left &&
+          r.right <= innerWidth - insets.right &&
+          (toEdge || r.bottom <= innerHeight - insets.bottom)
+        )
+          continue;
+        const name = (el.getAttribute("aria-label") ?? el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 40);
+        found.push({
+          control: `${el.tagName.toLowerCase()}${el.dataset.testid ? `[${el.dataset.testid}]` : ""} "${name}"`,
+          box: `${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}×${Math.round(r.height)}`,
+        });
       }
-      return false;
-    };
-    const found: { control: string; box: string }[] = [];
-    for (const el of document.querySelectorAll<HTMLElement>(tappable)) {
-      const r = el.getBoundingClientRect();
-      if (r.width < 2 || r.height < 2 || el.closest(".maplibregl-canvas-container") || !pinned(el)) continue;
-      const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-      if (!hit || !(hit === el || el.contains(hit))) continue;
-      const toEdge = !!el.closest("[data-to-edge]");
-      if (r.top >= insets.top && r.left >= insets.left && r.right <= innerWidth - insets.right && (toEdge || r.bottom <= innerHeight - insets.bottom)) continue;
-      const name = (el.getAttribute("aria-label") ?? el.textContent ?? "").trim().replace(/\s+/g, " ").slice(0, 40);
-      found.push({
-        control: `${el.tagName.toLowerCase()}${el.dataset.testid ? `[${el.dataset.testid}]` : ""} "${name}"`,
-        box: `${Math.round(r.left)},${Math.round(r.top)} ${Math.round(r.width)}×${Math.round(r.height)}`,
-      });
-    }
-    return found;
-  }, { insets, tappable: TAPPABLE });
+      return found;
+    },
+    { insets, tappable: TAPPABLE },
+  );
 }
 
-export type KeyboardFinding = { field: string; missing: string };
+type KeyboardFinding = { field: string; missing: string };
 
 /** P19: every field a finger types in says what its keyboard is for, as
  *  iOS's text fields do (HIG, "Text fields"): an `enterkeyhint`, so the
@@ -615,16 +768,31 @@ export function keyboardFindings(page: Page, scope = "body"): Promise<KeyboardFi
   return page.evaluate((scope) => {
     // A date's or a time's field opens iOS's wheels, which have no return
     // key and no AutoFill.
-    const NOT_TYPED = new Set(["checkbox", "radio", "range", "hidden", "file", "button", "submit", "reset", "color", "image", "date", "time", "datetime-local", "month", "week"]);
+    const NOT_TYPED = new Set([
+      "checkbox",
+      "radio",
+      "range",
+      "hidden",
+      "file",
+      "button",
+      "submit",
+      "reset",
+      "color",
+      "image",
+      "date",
+      "time",
+      "datetime-local",
+      "month",
+      "week",
+    ]);
     const out: { field: string; missing: string }[] = [];
     for (const el of document.querySelectorAll<HTMLInputElement>(`${scope} input`)) {
       if (NOT_TYPED.has(el.type)) continue;
       const box = el.getBoundingClientRect();
       if (!box.width || !box.height || el.closest("[inert], [aria-hidden=true], .tab-away")) continue;
-      const missing = [
-        !el.hasAttribute("enterkeyhint") && "enterkeyhint",
-        !el.hasAttribute("autocomplete") && "autocomplete",
-      ].filter(Boolean).join(", ");
+      const missing = [!el.hasAttribute("enterkeyhint") && "enterkeyhint", !el.hasAttribute("autocomplete") && "autocomplete"]
+        .filter(Boolean)
+        .join(", ");
       if (!missing) continue;
       const name = el.getAttribute("aria-label") || el.labels?.[0]?.textContent?.trim() || el.placeholder || el.dataset.testid || el.id;
       out.push({ field: `${el.type} "${(name ?? "").slice(0, 40)}"`, missing });
