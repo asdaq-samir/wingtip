@@ -321,9 +321,14 @@ runner:
 it is the gateway's address and the App Links domain in the manifest.
 The emailed sign-in link is followed only as `https` on that host
 (`Links.parse`), since any app can send MainActivity a link, and only after
-the pilot's yes in a stock alert naming the address this phone asked a
-link for and the account it would sign out of (`SignInDialog`; the
-security audit's M1, 2026-11-10).
+the pilot's yes in a stock alert naming the account the link is for, as
+the gateway says without spending it (`POST /api/auth/magic-link/account`,
+above: "Sign in as a•••@icloud.com?"), and the account it would sign out
+of (`SignInDialog`, `SignInAsk`; the security audit's M1, 2026-11-10).
+Sign In waits for that answer; a used or expired link (404) offers a new
+link to the address this phone asked for in its place, a 429 says to try
+later, and with the gateway out of reach the alert names the address
+asked for, as before.
 `ANDROID_NATIVE_APP_ID` would be the package name, once there is a Play
 lane for it.
 

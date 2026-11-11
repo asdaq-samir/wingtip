@@ -3,6 +3,7 @@ package app.wingtipmaps.android.api
 import android.annotation.SuppressLint
 import android.content.Context
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.api.generated.gateway.LinkAccount
 import app.wingtipmaps.android.api.generated.gateway.MagicLinkRequest
 import app.wingtipmaps.android.map.CloseMap
 import app.wingtipmaps.android.map.OverlayCache
@@ -181,6 +182,16 @@ object Gateway {
     /** The link's one-time token, posted as the website's page posts it;
      *  the gateway answers with the session cookie and a redirect, which
      *  the client follows. */
+    /** Whose a sign-in link is, without spending it: the address masked
+     *  ("a•••@icloud.com"), or null where it is used, expired or unknown
+     *  (the gateway's 404); refused in its words otherwise (a 429). */
+    suspend fun magicLinkAccount(token: String): LinkAccount? {
+        val (body, status) = call("POST", "/api/auth/magic-link/account", form = mapOf("token" to token))
+        if (status == 404) return null
+        if (status != 200) throw Refusal(status, words(body))
+        return json.decodeFromString<LinkAccount>(body)
+    }
+
     suspend fun verifyMagicLink(token: String) {
         send("POST", "/api/auth/magic-link/verify", form = mapOf("token" to token), ok = 200..399)
     }

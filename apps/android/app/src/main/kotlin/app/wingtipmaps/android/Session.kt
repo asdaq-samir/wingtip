@@ -103,7 +103,37 @@ class Session(app: Application) : AndroidViewModel(app) {
      *  screens' (Links, MainActivity). */
     fun open(uri: Uri) {
         val link = Links.parse(uri.toString()) as? Links.SignIn ?: return
-        _signInAsk.value = SignInAsk(link.token, asked.getString(ASKED, null), _pilot.value?.email)
+        _signInAsk.value = SignInAsk(link.token, asked.getString(ASKED, null), _pilot.value?.email, checking = true)
+        // Whose link it is, asked of the gateway without spending it; where
+        // it cannot be reached, the question names the address asked for.
+        viewModelScope.launch {
+            val checked = checkLink(link.token)
+            _signInAsk.value = _signInAsk.value?.takeIf { it.token == link.token }?.let(checked)
+        }
+    }
+
+    /** The gateway's word on a link, as the change it makes to the ask. */
+    private suspend fun checkLink(token: String): (SignInAsk) -> SignInAsk {
+        try {
+            val account = Gateway.magicLinkAccount(token)
+            return { a -> if (account == null) a.copy(checking = false, expired = true) else a.copy(checking = false, account = account.email) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Gateway.Refusal) {
+            val said = if (e.status == 429) "Too many sign-in links were checked from here. Try this one again later." else Problems.say("The sign-in link could not be checked", e)
+            return { a -> a.copy(checking = false, refused = said) }
+        } catch (e: Exception) {
+            Problems.say("The sign-in link could not be checked", e)
+            return { a -> a.copy(checking = false) }
+        }
+    }
+
+    /** An expired link's offer: a new one sent to the address this phone
+     *  asked for. */
+    fun askAgain() {
+        val address = _signInAsk.value?.address ?: return
+        _signInAsk.value = null
+        requestMagicLink(address)
     }
 
     /** The link not followed: nothing changes. */
