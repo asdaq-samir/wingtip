@@ -3,6 +3,7 @@ import { cn } from "cn";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 import { TEXT } from "../lib/text";
 import { SectionsOpen } from "./sectionLayout";
+import SectionTitle from "./SectionTitle";
 
 /**
  * One section of a folded list -- the flight planning drawer's, and
@@ -67,11 +68,10 @@ export default function AccordionSection({
         {/* The heading its title alone, the flag beside it: inside it, a
             flag's words ("Risk raised") became part of the heading's name. */}
         <div className={cn("mb-2 flex flex-wrap items-center gap-x-2 gap-y-1", TEXT.row)}>
-          {/* At the strips' titles' size and weight (PillSection), not bold,
-              at the owner's ask ("Section labels don't need to be bold"). */}
-          <h3 id={titleId} className={cn("font-medium", TEXT.title)}>
-            {title}
-          </h3>
+          {/* Every section's title (SectionTitle), the strips' (PillSection)
+              too, not bold, at the owner's ask ("Section labels don't need
+              to be bold"), where it drew its own at 17 under their 20. */}
+          <SectionTitle id={titleId}>{title}</SectionTitle>
           {aside}
         </div>
         {description && <div className={cn("text-muted-foreground", TEXT.note)}>{description}</div>}

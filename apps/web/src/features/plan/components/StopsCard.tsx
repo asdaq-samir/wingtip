@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { cn } from "cn";
-import { CardClose } from "../../../components/CardHead";
+import { CardClose, CardHeadRow } from "../../../components/CardHead";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import QueryState from "../../../components/QueryState";
 import { ADD_CAPSULE } from "../../../lib/mapChrome";
@@ -191,26 +191,32 @@ export default function StopsCard({
     row.scrollIntoView({ block: "nearest", behavior: prefersReducedMotion() ? "auto" : "smooth" });
   }, [picked, pickedShown]);
   return (
-    // From the panel's corner, as every card is; its list scrolls under its head.
-    <div className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] print:hidden" data-testid="stops-card">
-      {/* Its title row, all of the card in sight at the sheet's smallest size (data-sheet-head). */}
-      <div className="flex items-center gap-3" data-sheet-head="">
-        {/* Its name, and under it at every size, the smallest too, how many
-            it found (the owner, 2026-11-11: "None on the route", "2 stops"). */}
-        <div className="flex min-w-0 flex-col">
-          <h2 className={cn("font-bold tracking-tight", TEXT.card)} data-testid="stops-name">
-            Stops
-          </h2>
-          {data && pending === 0 && (
-            <p className={cn("truncate text-muted-foreground tabular-nums", TEXT.note)} data-testid="card-sub">
-              {fields.length === 0
-                ? along
-                  ? "None on the route"
-                  : `None within ${radius} nm`
-                : `${fields.length} ${fields.length === 1 ? "stop" : "stops"}`}
-            </p>
-          )}
-        </div>
+    // From the panel's corner, as every card is (its room over its head the
+    // grabber's, --pinned-room, as SheetCard's); its list scrolls under its head.
+    <div
+      className="flex min-h-0 flex-1 flex-col px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
+      data-testid="stops-card"
+    >
+      {/* Every card's one head row (CardHeadRow), pinned, all of the card in
+          sight at the sheet's smallest size: its name, and under it at every
+          size how many it found (the owner, 2026-11-11: "None on the route",
+          "2 stops"), the distance menu right after the name and the close at
+          the row's end (CardClose). */}
+      <CardHeadRow
+        name="Stops"
+        nameTestId="stops-name"
+        sub={
+          data && pending === 0
+            ? fields.length === 0
+              ? along
+                ? "None on the route"
+                : `None within ${radius} nm`
+              : `${fields.length} ${fields.length === 1 ? "stop" : "stops"}`
+            : undefined
+        }
+        fit
+        end={<CardClose onClose={onClose} testId="stops-close" />}
+      >
         <PullDown
           label="Where to look"
           value={along ? "route" : `${radius}`}
@@ -229,9 +235,7 @@ export default function StopsCard({
             ...STOP_RADII.map((nm) => ({ value: `${nm}`, label: `Within ${nm} nm`, testId: "stops-distance-option" })),
           ]}
         />
-        {/* Its close at the head's end, inline with its name (CardClose). */}
-        <CardClose onClose={onClose} testId="stops-close" className="ml-auto -mr-1" />
-      </div>
+      </CardHeadRow>
       {/* Sideways past the card's edge, as Maps' filter pills scroll. One
           kind at a time, so the stock ToggleGroup: to VoiceOver a group
           of toggles, the one picked pressed, the arrow keys moving between

@@ -1,12 +1,11 @@
 import { createContext, useContext, useEffect, useEffectEvent, useRef, useState, type ReactNode } from "react";
 import { cn } from "cn";
-import { TEXT } from "../lib/text";
 import { ListRow } from "./GroupedList";
 import { useShown } from "../lib/shown";
 import { holdOpenCard } from "../lib/openCards";
 import { useWantedPage } from "./wantedPage";
 import { useScrollPlace } from "../lib/scrollPlace";
-import { PINNED_HEAD } from "./PinnedHead";
+import { CardHeadRow } from "./CardHead";
 import { PAGE_LINK } from "./pageLink";
 import CloseButton from "./CloseButton";
 import { ConsoleLeave } from "./consoleLeave";
@@ -123,18 +122,21 @@ export function ConsolePages({
           data-testid="console-page"
           className="space-y-4 [animation-duration:var(--motion-page)] animate-in fade-in slide-in-from-right-4 [&:has([data-slot=console-page])>[data-slot=page-head]]:hidden"
         >
-          {/* Its name and close pinned at the top as every card's are (PinnedHead). */}
-          <div className={cn("flex min-h-9 items-center gap-2", PINNED_HEAD)} data-slot="page-head" data-sheet-head="">
-            <h3 ref={title} tabIndex={-1} className={cn("flex-1 font-bold tracking-tight outline-none", TEXT.card)}>
-              {page.title}
-            </h3>
-            <CloseButton
-              label={direct && leave ? "Back to the map" : `Back to ${back}`}
-              className="-mr-1"
-              onClick={shut}
-              data-testid="console-page-close"
-            />
-          </div>
+          {/* Its name and close pinned at the top, every card's one head row
+              (CardHeadRow), its slot the one a page over it hides. */}
+          <CardHeadRow
+            name={page.title}
+            level="h3"
+            nameRef={title}
+            slot="page-head"
+            end={
+              <CloseButton
+                label={direct && leave ? "Back to the map" : `Back to ${back}`}
+                onClick={shut}
+                data-testid="console-page-close"
+              />
+            }
+          />
           {page.content}
         </div>
       ) : (

@@ -1,4 +1,4 @@
-import { useContext, type ReactNode } from "react";
+import { useContext, type ReactNode, type Ref } from "react";
 import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
@@ -28,6 +28,11 @@ export function CardHeadRow({
   end,
   testId,
   hidden = false,
+  level = "h2",
+  nameRef,
+  fit = false,
+  slot,
+  flush = false,
   children,
 }: {
   name: ReactNode;
@@ -44,20 +49,33 @@ export function CardHeadRow({
   /** For a screen reader alone: content that opens with its own field and
    *  close (the airport search's). */
   hidden?: boolean;
+  /** A page's in a card (Settings' pages, a list in full): h3 under the
+   *  card's own h2. */
+  level?: "h2" | "h3";
+  /** The name, for the focus as a page is pushed (ConsolePages). */
+  nameRef?: Ref<HTMLHeadingElement>;
+  /** The name as wide as its words, what goes beside it (`children`) right
+   *  after it and the end at the row's end (the Stops' distance menu). */
+  fit?: boolean;
+  /** PinnedHead's: its slot, and a scroller with no sides of its own. */
+  slot?: string;
+  flush?: boolean;
   children?: ReactNode;
 }) {
+  const Name = level;
   const row = (
     <>
       {leading}
-      <div className={cn("flex min-w-0 flex-1 flex-col", leading && "text-center")}>
-        <h2
+      <div className={cn("flex min-w-0 flex-col", !fit && "flex-1", leading && "text-center")}>
+        <Name
+          ref={nameRef}
           id={nameId}
           tabIndex={-1}
           className={cn("font-bold tracking-tight text-foreground outline-none", wrap ? "break-words" : "truncate", TEXT.card)}
           data-testid={nameTestId}
         >
           {name}
-        </h2>
+        </Name>
         {sub != null && sub !== "" && (
           <p className={cn("text-muted-foreground tabular-nums", wrap ? "break-words" : "truncate", TEXT.note)} data-testid="card-sub">
             {sub}
@@ -65,12 +83,12 @@ export function CardHeadRow({
         )}
       </div>
       {children}
-      {end != null && <div className="-mr-1 flex shrink-0 items-center gap-2.5">{end}</div>}
+      {end != null && <div className={cn("-mr-1 flex shrink-0 items-center gap-2.5", fit && "ml-auto")}>{end}</div>}
     </>
   );
   if (hidden) return <div className="sr-only flex shrink-0 items-center gap-2">{row}</div>;
   return (
-    <PinnedHead testId={testId} className="shrink-0">
+    <PinnedHead testId={testId} slot={slot} flush={flush} className="shrink-0">
       {row}
     </PinnedHead>
   );
