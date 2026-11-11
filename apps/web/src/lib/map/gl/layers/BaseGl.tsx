@@ -10,6 +10,7 @@ import { useGlLayer, useGlMap, useGlPaint, type Slot } from "../glLayer";
 import { appZoomOf, glZoom } from "../glStyle";
 import { useGlView } from "../useGlView";
 import { MapCredits } from "../MapCredits";
+import { useGoogleCredit } from "../googleCredit";
 import { useMapCredit } from "../creditStore";
 
 /** OverlayTiles': how strongly the imagery covers the chart. */
@@ -94,8 +95,8 @@ function useChartDrawnFirst(): boolean {
 export function OverlayGl() {
   const overlay = useShownOverlay();
   const strength = usePreferences((s) => s.overlayStrength);
-  // The map's one row of credits and legal links, with the imagery whose
-  // credit is most of it.
+  // What the sources say of themselves, for Status (MapCredits), with the
+  // imagery whose words are most of it.
   const drawn =
     overlay === "none" ? (
       <CloseBase />
@@ -116,10 +117,7 @@ function Usgs({ opacity }: { opacity: number }) {
   useTiles("overlay-usgs", "imagery", USGS_URL, 16);
   useGlPaint(["overlay-usgs"], { "raster-opacity": opacity });
   useImageryShown("usgs", opacity);
-  useMapCredit(
-    "imagery",
-    'Imagery <a href="https://www.usgs.gov/programs/national-geospatial-program/national-map" target="_blank" rel="noopener">USGS The National Map</a>',
-  );
+  useMapCredit("imagery", "Imagery USGS The National Map");
   return null;
 }
 
@@ -177,8 +175,7 @@ function Google({ kind, opacity }: { kind: "map" | "satellite"; opacity: number 
       map.off("moveend", ask);
     };
   }, [map, google, session]);
-  useMapCredit(
-    "google",
+  useGoogleCredit(
     session ? `<span aria-label="Google Maps" data-testid="google-credit">Google Maps</span>${copyright ? ` · ${copyright}` : ""}` : null,
   );
   if (!google || !session) return null;

@@ -66,7 +66,8 @@ test("the USGS's imagery over the chart, credited, at the strength picked; no Go
   // The map's own layer, not the choice's picture of it.
   const imagery = () => page.getByTestId("gl-map").getAttribute("data-imagery");
   await expect.poll(imagery, { timeout: slow(15000) }).toMatch(/^usgs /);
-  await expect(page.locator(".maplibregl-ctrl-attrib", { hasText: "USGS The National Map" })).toBeVisible();
+  // Its source in Status and About, not in small print on the map (the owner, 2026-11-11).
+  await expect(page.locator(".maplibregl-ctrl-attrib")).toHaveCount(0);
   // Half to begin with, then full; over the base chart and the terminal
   // sheet, on purpose (its slot, BaseGl).
   await expect.poll(imagery).toBe("usgs 0.6");

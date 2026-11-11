@@ -46,6 +46,18 @@ test("the console's About links the three pages", async ({ page }) => {
   }
 });
 
+test("Settings' foot links Privacy, Terms and Legal, and the map's credits row no longer does", async ({ page }) => {
+  await page.goto("/app/plan");
+  await openSetup(page);
+  const foot = page.getByTestId("settings-foot");
+  await expect(foot.getByRole("button")).toHaveText(["Status", "Log", "Guide", "About", "Legal"]);
+  await expect(page.getByTestId("settings-privacy")).toHaveAttribute("href", "/app/privacy.html");
+  await expect(page.getByTestId("settings-terms")).toHaveAttribute("href", "/app/terms.html");
+  await expect(page.locator(".maplibregl-ctrl-attrib a", { hasText: /^(Privacy|Terms|Legal)$/ })).toHaveCount(0);
+  await page.getByTestId("settings-legal").click();
+  await expect(page.getByTestId("about-panel")).toBeVisible();
+});
+
 // Signed out: a signed-in session has no Sign in button to open (signin.spec.ts does the same).
 test.describe("signed out", () => {
   test.use({ storageState: { cookies: [], origins: [] } });

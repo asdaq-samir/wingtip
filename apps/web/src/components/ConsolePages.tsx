@@ -6,6 +6,8 @@ import { useShown } from "../lib/shown";
 import { holdOpenCard } from "../lib/openCards";
 import { useWantedPage } from "./wantedPage";
 import { useScrollPlace } from "../lib/scrollPlace";
+import { PINNED_HEAD } from "./PinnedHead";
+import { PAGE_LINK } from "./pageLink";
 import CloseButton from "./CloseButton";
 import { ConsoleLeave } from "./consoleLeave";
 
@@ -121,7 +123,8 @@ export function ConsolePages({
           data-testid="console-page"
           className="space-y-4 [animation-duration:var(--motion-page)] animate-in fade-in slide-in-from-right-4 [&:has([data-slot=console-page])>[data-slot=page-head]]:hidden"
         >
-          <div className="flex items-center gap-2" data-slot="page-head">
+          {/* Its name and close pinned at the top as every card's are (PinnedHead). */}
+          <div className={cn("flex min-h-9 items-center gap-2", PINNED_HEAD)} data-slot="page-head" data-sheet-head="">
             <h3 ref={title} tabIndex={-1} className={cn("flex-1 font-bold tracking-tight outline-none", TEXT.card)}>
               {page.title}
             </h3>
@@ -218,15 +221,7 @@ export function PageButton({ page, label, testId, children }: { page: string; la
 export function PageLink({ page, children, testId }: { page: string; children: ReactNode; testId?: string }) {
   const pages = useContext(Pages);
   return (
-    <button
-      type="button"
-      onClick={() => pages?.open(page)}
-      data-testid={testId}
-      className={cn(
-        "relative rounded-sm text-tint outline-none after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-        TEXT.detail,
-      )}
-    >
+    <button type="button" onClick={() => pages?.open(page)} data-testid={testId} className={PAGE_LINK}>
       {children}
     </button>
   );
