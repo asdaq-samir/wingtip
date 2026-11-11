@@ -25,9 +25,15 @@ declare module "@tanstack/react-query" {
  * alert, and neither page threads error strings around to say so. The
  * exceptions are marked on the query or mutation itself (`meta`).
  *
- * No retries and no refetch on focus: the planner's calls are chart
- * reads, model inferences and streams of legs, and a pilot switching
- * back to the tab does not want the nav log recomputed under them.
+ * TanStack's own refetch on focus: it asks again only what is stale, so
+ * the map's weather is current when the phone wakes (iOS stops timers
+ * behind the lock), while the nav log, course and checkpoints, fresh for
+ * good (staleTime Infinity), are never recomputed under the pilot.
+ * TanStack's own three retries with its backoff, but only where asking
+ * again could answer differently (`retryable`): one 502 from a planner
+ * warming up after a deploy is no longer a "Try again" line, and a 404
+ * (a place not known) is said at once. The streams -- the nav log, the
+ * chart read, the model's words -- each say `retry: false` themselves.
  *
  * Asked with no connection too ("offlineFirst"), so the service worker's
  * kept answers reach the page in the air; TanStack's "online" paused them
@@ -36,7 +42,7 @@ declare module "@tanstack/react-query" {
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: false, refetchOnWindowFocus: false, networkMode: "offlineFirst" },
+    queries: { retry: (failures, error) => failures < 3 && retryable(error), networkMode: "offlineFirst" },
     mutations: { networkMode: "offlineFirst" },
   },
   queryCache: new QueryCache({
@@ -163,11 +169,11 @@ export const statusQuery = queryOptions({ queryKey: ["status"], queryFn: () => a
 
 /** How this deployment is reached (SIGN_IN, OPEN or CLOSED) and which
  *  sign-ins it offers: asked once, and quiet on failure -- whoever reads
- *  it treats no answer as "not offered". */
+ *  it treats no answer as "not offered", so a 502 while the gateway
+ *  starts is asked again (the default retry) before sign-in is hidden. */
 export const capabilitiesQuery = queryOptions({
   queryKey: ["signInCapabilities"],
   queryFn: () => api.capabilities(),
-  retry: false,
   staleTime: Infinity,
   meta: { silent: true },
 });

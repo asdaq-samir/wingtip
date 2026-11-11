@@ -111,6 +111,8 @@ export function useTraining(dep: string, dest: string) {
     // same-airport address then asked for that corridor's chart read.
     enabled: routeKnown && !!course.data,
     staleTime: Infinity,
+    // The slowest read the page makes: asked again by the pilot, not three times by itself.
+    retry: false,
     // Kept only while the page shows it. The session's own edits live in
     // this component and go with it, so a cached read seen again after
     // DEV was flipped off and on -- or after another route -- showed every

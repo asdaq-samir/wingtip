@@ -262,6 +262,9 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
       initialValue: [] as NavLogMessage[],
     }),
     staleTime: Infinity,
+    // A stream of legs is not asked again by itself: a retry would plan
+    // the whole route over again behind the lines already drawn.
+    retry: false,
     // No legal altitude is the page's to say, with what can be done about
     // it (PlanWorkspace): not the query client's plain toast.
     // Nor a point the planner does not know, the route box's (courseQuery).
@@ -308,6 +311,8 @@ export function usePlan({
     queryKey: ["localFlight", dep, localMin, depart, aircraft.profile, aircraft.fuelBurnGph ?? null, aircraft.usableFuelGal ?? null, rules],
     queryFn: () => api.localFlight(dep, localMin, aircraft, depart || undefined, rules),
     enabled: local,
+    // Worked out from its key alone, so never asked again on focus.
+    staleTime: Infinity,
     placeholderData: keepPreviousData,
   });
 
