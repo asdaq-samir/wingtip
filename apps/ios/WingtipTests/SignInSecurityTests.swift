@@ -34,6 +34,7 @@ struct SignInSecurityTests {
 
     @Test func openingALinkOnlyAsksAndCancelForgetsIt() async {
         let session = Session()
+        session.askLinkAccount = { _ in .email("a•••@icloud.com") }
         await session.open(URL(string: "https://\(Config.host)/api/auth/magic-link/verify?token=abc")!)
         #expect(session.pendingLink?.token == "abc")
         #expect(session.pendingLink?.replacing == nil)
@@ -44,8 +45,33 @@ struct SignInSecurityTests {
     }
 
     @Test func theQuestionNamesTheSessionItWouldReplace() {
-        #expect(!LinkSignInPrompt.message(replacing: nil).contains("signed in as"))
-        #expect(LinkSignInPrompt.message(replacing: "pilot@example.com").contains("You're signed in as pilot@example.com"))
+        let fresh = Session.PendingLink(token: "t", replacing: nil)
+        #expect(!LinkSignInPrompt.message(fresh).contains("signed in as"))
+        let switching = Session.PendingLink(token: "t", replacing: "pilot@example.com")
+        #expect(LinkSignInPrompt.message(switching).contains("You're signed in as pilot@example.com"))
+    }
+
+    @Test func theQuestionNamesTheLinksAccountBeforeItIsSpent() async {
+        let named = Session.PendingLink(token: "t", replacing: nil, account: .email("a•••@icloud.com"))
+        #expect(LinkSignInPrompt.title(named) == "Sign In as a•••@icloud.com?")
+        #expect(LinkSignInPrompt.message(named).contains("signs in to a•••@icloud.com"))
+        #expect(named.usable)
+        let switching = Session.PendingLink(token: "t", replacing: "me@example.com", account: .email("b•••@gmail.com"))
+        #expect(LinkSignInPrompt.message(switching).contains("You're signed in as me@example.com. This link signs in to b•••@gmail.com instead."))
+        // A used or expired link offers no Sign In.
+        let used = Session.PendingLink(token: "t", replacing: nil, account: .expired)
+        #expect(!used.usable && LinkSignInPrompt.title(used) == "Link Expired")
+        #expect(!Session.PendingLink(token: "t", replacing: nil, account: .tooMany).usable)
+        // Asked when the link opens: the masked address is on the question.
+        let session = Session()
+        session.askLinkAccount = { _ in .expired }
+        await session.open(URL(string: "https://\(Config.host)/api/auth/magic-link/verify?token=abc")!)
+        #expect(session.pendingLink?.account == .expired)
+    }
+
+    @Test func theAppleNonceIsHashedAsAppleAsks() {
+        // FIPS 180-2's own example: SHA-256("abc"), as lowercase hex.
+        #expect(Session.hashedNonce("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
     }
 
     // MARK: The session's cookies

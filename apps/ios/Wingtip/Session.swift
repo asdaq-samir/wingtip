@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import Observation
 
@@ -30,9 +31,28 @@ final class Session {
         await ServerFeatures.shared.refresh(signedIn: pilot != nil, developer: pilot?.developer ?? false)
     }
 
-    func signInWithApple(identityToken: String) async {
+    /// The nonce for the next Sign in with Apple, asked as the sign-in
+    /// page opens (Apple's request is made synchronously, so it must be in
+    /// hand) and again after each attempt, which spends it. Nil where it
+    /// could not be asked: the gateway takes a token without one until the
+    /// owner sets APP_APPLE_REQUIRE_NONCE (docs/NATIVE.md).
+    private(set) var appleNonce: String?
+
+    func prepareAppleNonce() async {
+        appleNonce = try? await Gateway.appleNonce()
+    }
+
+    /// What Apple's request carries for a nonce: its SHA-256 as lowercase
+    /// hex, which Apple writes into the token's `nonce` claim and the
+    /// gateway checks against the nonce itself (docs/NATIVE.md).
+    nonisolated static func hashedNonce(_ nonce: String) -> String {
+        SHA256.hash(data: Data(nonce.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+
+    func signInWithApple(identityToken: String, nonce: String?) async {
+        defer { Task { await prepareAppleNonce() } }
         do {
-            try await Gateway.signInWithApple(identityToken: identityToken)
+            try await Gateway.signInWithApple(identityToken: identityToken, nonce: nonce)
             await refresh()
         } catch {
             problem = "Apple's sign-in was not accepted: \(error.localizedDescription)"
@@ -58,12 +78,22 @@ final class Session {
     /// theirs is seen and undone at once ("That's Not Me").
     var signedInByLink: String?
 
-    /// A sign-in link's token and who it would sign out, named in the ask.
+    /// How a link's account is asked (Gateway.linkAccount), or a test's.
+    @ObservationIgnored var askLinkAccount: @Sendable (String) async throws -> Gateway.LinkAccount = { try await Gateway.linkAccount(token: $0) }
+
+    /// A sign-in link's token, whose account it is and who it would sign
+    /// out, named in the ask.
     struct PendingLink: Equatable, Identifiable {
         let token: String
         /// The account signed in now, which the link's would replace.
         let replacing: String?
+        /// Whose the link is, as the gateway masks it; nil where it could
+        /// not be asked (offline), and the ask then says only to open your own.
+        var account: Gateway.LinkAccount?
         var id: String { token }
+        /// A link that can no longer sign in, or can't be asked about this
+        /// hour: no Sign In is offered.
+        var usable: Bool { account != .expired && account != .tooMany }
     }
 
     /// A link opened in the app: only the emailed sign-in link, https on
@@ -74,7 +104,10 @@ final class Session {
     /// 2026-11-10, M1).
     func open(_ url: URL) async {
         guard let token = Self.signInToken(url) else { return }
-        pendingLink = PendingLink(token: token, replacing: pilot?.email)
+        // Whose account it is, asked before the question is put, so the
+        // pilot sees the address before tapping Sign In; nothing is spent.
+        let account = try? await askLinkAccount(token)
+        pendingLink = PendingLink(token: token, replacing: pilot?.email, account: account)
     }
 
     /// The token of an emailed sign-in link, or nil for anything else:

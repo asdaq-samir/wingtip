@@ -94,14 +94,46 @@ enum Gateway {
 
     /// Apple's identity token from the system's sheet, checked by the
     /// gateway against this app's bundle id (AppleNativeSignInController).
-    static func signInWithApple(identityToken: String) async throws {
-        try await send("POST", "/api/auth/apple/native", json: GWAppleToken(identityToken: identityToken), ok: 200...200)
+    static func signInWithApple(identityToken: String, nonce: String?) async throws {
+        try await send("POST", "/api/auth/apple/native", json: GWAppleToken(identityToken: identityToken, nonce: nonce), ok: 200...200)
+    }
+
+    /// A nonce for one Sign in with Apple attempt, issued to this session
+    /// and spent by it (AppleNativeSignInController, the security audit's
+    /// L5): its SHA-256 goes into Apple's request, so a leaked identity
+    /// token cannot be replayed on another session.
+    static func appleNonce() async throws -> String {
+        if csrfToken == nil { _ = try? await me() }
+        return try JSONDecoder().decode(GWAppleNonceAnswer.self, from: try await send("POST", "/api/auth/apple/native/nonce", ok: 200...200)).nonce
     }
 
     /// A sign-in link emailed to the pilot; the gateway answers 202
     /// whether or not the address is known.
     static func requestMagicLink(email: String) async throws {
         try await send("POST", "/api/auth/magic-link", json: GWMagicLinkRequest(email: email))
+    }
+
+    /// Whose account a sign-in link is for, before the pilot says yes
+    /// (MagicLinkAccountController, the security audit's M1): the address
+    /// masked ("a•••@icloud.com"), nothing spent. 404 is a used, expired or
+    /// unknown link alike; 429 the hour's asks used up.
+    enum LinkAccount: Equatable, Sendable {
+        case email(String)
+        case expired
+        case tooMany
+    }
+
+    static func linkAccount(token: String) async throws -> LinkAccount {
+        // The CSRF cookie is written on any of the gateway's answers once
+        // asked for: one GET first where there is none yet.
+        if csrfToken == nil { _ = try? await me() }
+        let (data, status) = try await call("POST", "/api/auth/magic-link/account", form: ["token": token])
+        switch status {
+        case 200: return .email(try JSONDecoder().decode(GWLinkAccount.self, from: data).email)
+        case 404: return .expired
+        case 429: return .tooMany
+        default: throw GatewayRefusal(status: status, words: GatewayRefusal.words(in: data))
+        }
     }
 
     /// The link's one-time token, posted as the website's page posts it.
