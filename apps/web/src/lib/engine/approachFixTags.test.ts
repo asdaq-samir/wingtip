@@ -6,10 +6,7 @@ import KOSH from "../fixtures/approachKosh.json";
 // KOSH's ILS, LOC and RNAV (GPS) RWY 36 as the planner draws them, with the
 // tags the engine answers for each (engine/facade/tests/approach_tags.rs
 // holds them to the plate): the web's module answers the same.
-const fixture = KOSH as unknown as {
-  drawings: Record<string, ApproachFixTagsInput["drawing"]>;
-  tags: Record<string, unknown>;
-};
+const fixture = KOSH as unknown as { drawings: Record<string, ApproachFixTagsInput["drawing"]>; tags: Record<string, unknown> };
 
 describe("an approach's fix tags", () => {
   test.each(Object.keys(fixture.drawings))("%s is tagged as the fixture keeps it", (id) => {
