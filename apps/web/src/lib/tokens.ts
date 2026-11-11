@@ -174,6 +174,8 @@ export const MOTION = {
   sheetMost: 0.35,
   sheetEase: [0, 0, 0.58, 1],
   sheetBackEase: [0.2, 0.9, 0.3, 1],
+  drawer: 0.45,
+  drawerEase: [0.32, 0.72, 0, 1],
   fade: 0.2,
   quick: 0.15,
   page: 0.25,

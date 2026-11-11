@@ -68,7 +68,7 @@ function useCapsule(at: number) {
 // (insets' DRAWER_MS, Base UI's drawer: the owner, 2026-11-11, "Just let the
 // drawer do what it does"). Opening, it shows at its bar's size at once and
 // grows; folding, it shrinks to its bar's size and goes as the bar comes back.
-const DRAWER_MOTION = `${DRAWER_MS}ms cubic-bezier(0.32, 0.72, 0, 1)`;
+const DRAWER_MOTION = `${DRAWER_MS}ms var(--motion-drawer-ease)`;
 const GROW = `width ${DRAWER_MOTION}, height ${DRAWER_MOTION}`;
 const MOVES = { "--grow": GROW, "--fold": `${GROW}, opacity 0s ${DRAWER_MS}ms` } as CSSProperties;
 // Each page's capsule grows out of its own bar, on its own side (the owner,

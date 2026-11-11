@@ -136,7 +136,7 @@ export function SheetDrawer({
                 "[--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)] [--sheet-base:var(--drawer-snap-point-offset)]",
                 // Its ground, edge and shadow fade on the same time as a card comes and goes.
                 ready &&
-                  "transition-[transform,background-color,box-shadow,backdrop-filter] duration-450 ease-[cubic-bezier(0.32,0.72,0,1)]",
+                  "transition-[transform,background-color,box-shadow,backdrop-filter] duration-(--motion-drawer) ease-(--motion-drawer-ease)",
                 "data-swiping:transition-none motion-reduce:transition-none",
                 fromBottom ? cn("bottom-0", UNDER_INDICATOR) : "top-0",
                 look,

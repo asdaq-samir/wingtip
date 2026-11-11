@@ -132,17 +132,17 @@ button,
 
 /* Clear of the map panel (MapPanel): its edge's corner controls sit
    past what the panel covers at rest (MapPage sets the insets), and past
-   the home indicator, moving in the sheet's time (mapChrome's
-   SHEET_SECONDS). */
+   the home indicator, moving on the Drawer's own time and curve
+   (motion.drawer), so they keep pace with the sheet they sit by. */
 .maplibregl-map .maplibregl-ctrl-bottom-left,
 .maplibregl-map .maplibregl-ctrl-bottom-right {
   bottom: max(var(--map-inset-bottom, 0px), env(safe-area-inset-bottom));
-  transition: bottom var(--motion-sheet) var(--motion-sheet-ease);
+  transition: bottom var(--motion-drawer) var(--motion-drawer-ease);
 }
 .maplibregl-map .maplibregl-ctrl-top-left,
 .maplibregl-map .maplibregl-ctrl-top-right {
   top: max(var(--map-inset-top, 0px), env(safe-area-inset-top));
-  transition: top var(--motion-sheet) var(--motion-sheet-ease);
+  transition: top var(--motion-drawer) var(--motion-drawer-ease);
 }
 
 /* With the phone's sheet all the way up, the map's buttons give way,

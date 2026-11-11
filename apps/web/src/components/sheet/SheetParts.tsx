@@ -70,7 +70,7 @@ export interface PartsProps {
  *  nothing followed -- a top sheet's search rode off the screen at the
  *  pill (consoles.spec, 2026-11-10). */
 export const FOLLOW =
-  "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] group-data-swiping/sheet:transition-none motion-reduce:transition-none";
+  "[transform:translateY(calc(-1*(var(--sheet-offset,0px)+var(--sheet-swipe,0px))))] transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) group-data-swiping/sheet:transition-none motion-reduce:transition-none";
 /** The body cut off at a bottom sheet's figures, or past a top sheet's
  *  edge, by the same offset. */
 const CUT_BOTTOM = "[clip-path:inset(0_0_max(0px,calc(var(--sheet-offset,0px)+var(--sheet-swipe,0px)))_0)]";

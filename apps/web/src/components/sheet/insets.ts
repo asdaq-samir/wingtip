@@ -1,11 +1,12 @@
 import type { Drawer } from "@base-ui/react/drawer";
 import { SHEET_MARGIN, type MapInsets, type PanelState } from "../../lib/mapChrome";
-import { SIZE } from "../../lib/tokens";
+import { MOTION, SIZE } from "../../lib/tokens";
 
 /** How long the stock Drawer takes to settle, ms: the time and curve of
- *  Base UI's own drawer demo (450 ms, cubic-bezier(0.32, 0.72, 0, 1)),
- *  which MapPanel's popup class runs, and the map follows the sheet on. */
-export const DRAWER_MS = 450;
+ *  Base UI's own drawer demo (design/tokens.json motion.drawer and
+ *  drawer-ease), which MapPanel's popup class runs, and the map follows
+ *  the sheet on. */
+export const DRAWER_MS = MOTION.drawer * 1000;
 
 /**
  * The sheet's three snap points in the stock Drawer's own units, the same

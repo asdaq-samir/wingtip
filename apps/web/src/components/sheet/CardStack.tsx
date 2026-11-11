@@ -28,7 +28,7 @@ export interface StackProps {
 
 /** A card's drag eased on the Drawer's own curve, never under a finger. */
 const EASE =
-  "transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] data-swiping:transition-none motion-reduce:transition-none";
+  "transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) data-swiping:transition-none motion-reduce:transition-none";
 
 /**
  * A card rises from the screen's foot as it opens and slides back down as
