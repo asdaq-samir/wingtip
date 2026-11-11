@@ -26,10 +26,7 @@ import { keepAddressThroughReload } from "./freshLoad";
  * now: for a page whose lazy part failed (lib/chunkRecovery), which
  * reloads anyway.
  */
-export function takeNewBuildsWhenAway(
-  register: typeof registerSW,
-  reloadPage = () => window.location.reload(),
-): () => Promise<void> {
+export function takeNewBuildsWhenAway(register: typeof registerSW, reloadPage = () => window.location.reload()): () => Promise<void> {
   let waiting = false;
   let reloadDue = false;
   const away = () => document.visibilityState === "hidden";

@@ -105,7 +105,7 @@ describe("useBackCloses", () => {
     const second = holdOpenCard({ close: () => closed.push("KDLH") });
     renderHook(() => useBackCloses(false));
     expect(live()).toHaveLength(1);
-    live()[0].onclose?.();
+    live()[0]?.onclose?.();
     expect(closed).toEqual(["KDLH"]);
     // Made again for the next Back while there is more to close.
     expect(watchers).toHaveLength(2);
