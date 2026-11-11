@@ -1,0 +1,117 @@
+{
+  "_note": "NOTAMs read for a pilot, the engine's notam_read (engine/crates/weather/src/notam_read): each in the form FAA Order JO 7930.2's examples give it (Appendix A; the paragraph in each case's about), with Oshkosh's places and times. The words are worked by hand from the order: its contractions written out (JO 7340.2, TBL 3-3-1), feet MSL unless AGL is stated (4-2-1), times UTC (3-3-2). engine/facade/tests/notam_read.rs asks the engine each case.",
+  "cases": [
+    {
+      "about": "A closed runway (JO 7930.2 5-1-3 c), its window in UTC (4-2-1)",
+      "text": "!OSH 11/041 OSH RWY 18/36 CLSD 2511120900-2511121700",
+      "answer": {
+        "form": "domestic",
+        "number": "11/041",
+        "location": "OSH",
+        "keyword": "RWY",
+        "heading": "Runway",
+        "words": "Runway 18/36 closed.",
+        "starts": "2025-11-12T09:00:00Z",
+        "ends": "2025-11-12T17:00:00Z",
+        "estimated": false,
+        "permanent": false
+      }
+    },
+    {
+      "about": "A PAPI out of service (5-2-1 d) until an estimated end (EST, 4-2-1)",
+      "text": "!OSH 11/052 OSH RWY 27 PAPI U/S 2511101200-2512012359EST",
+      "answer": {
+        "form": "domestic",
+        "number": "11/052",
+        "location": "OSH",
+        "keyword": "RWY",
+        "heading": "Runway",
+        "words": "Runway 27 PAPI out of service.",
+        "starts": "2025-11-10T12:00:00Z",
+        "ends": "2025-12-01T23:59:00Z",
+        "estimated": true,
+        "permanent": false
+      }
+    },
+    {
+      "about": "A crane (5-2-2): its height MSL, as feet are unless stated (4-2-1), and above ground, and where it is from the field",
+      "text": "!OSH 11/060 OSH OBST CRANE (ASN 2025-AGL-1234-NRA) 435800N0883300W (1.2NM SE OSH) 1047FT (210FT AGL) FLAGGED AND LGTD 2511110000-2512312359",
+      "answer": {
+        "form": "domestic",
+        "number": "11/060",
+        "location": "OSH",
+        "keyword": "OBST",
+        "heading": "Obstacle",
+        "words": "Crane (ASN 2025-AGL-1234-NRA) 43°58′00″N 88°33′00″W (1.2 nm southeast of OSH) 1,047 ft MSL (210 ft above ground) flagged and lighted.",
+        "starts": "2025-11-11T00:00:00Z",
+        "ends": "2025-12-31T23:59:00Z",
+        "estimated": false,
+        "permanent": false
+      }
+    },
+    {
+      "about": "A TFR (7-1-5): its place, its area and its altitudes",
+      "text": "!FDC 5/2345 ZMP WI..AIRSPACE OSHKOSH, WI..TEMPORARY FLIGHT RESTRICTIONS WI AN AREA DEFINED AS 3NM RADIUS OF 435904N0883327W (OSH) SFC-3000FT. 2511151400-2511152200",
+      "answer": {
+        "form": "domestic",
+        "number": "5/2345",
+        "location": "ZMP",
+        "keyword": "AIRSPACE",
+        "heading": "Temporary flight restriction",
+        "words": "Oshkosh, WI. Temporary flight restrictions within an area defined as 3 nm radius of 43°59′04″N 88°33′27″W (OSH) surface to 3,000 ft MSL.",
+        "starts": "2025-11-15T14:00:00Z",
+        "ends": "2025-11-15T22:00:00Z",
+        "estimated": false,
+        "permanent": false
+      }
+    },
+    {
+      "about": "An amended approach (7-1-3 i): its codes and its place's name kept",
+      "text": "!FDC 5/1234 OSH IAP WITTMAN RGNL, OSHKOSH, WI. RNAV (GPS) RWY 36, AMDT 2... LPV DA 1095/HAT 300 ALL CATS. TEMPORARY CRANE 1047 MSL 1.2 NM SE OF RWY 36. 2511120000-2602122359EST",
+      "answer": {
+        "form": "domestic",
+        "number": "5/1234",
+        "location": "OSH",
+        "keyword": "IAP",
+        "heading": "Instrument approach",
+        "words": "Wittman Regional, Oshkosh, WI. RNAV (GPS) runway 36, amendment 2... LPV DA 1095/HAT 300 all categories. Temporary crane 1047 MSL 1.2 nm southeast of runway 36.",
+        "starts": "2025-11-12T00:00:00Z",
+        "ends": "2026-02-12T23:59:00Z",
+        "estimated": true,
+        "permanent": false
+      }
+    },
+    {
+      "about": "A taxiway closed between two others (3-3-6), their designators kept",
+      "text": "!OSH 11/070 OSH TWY A BTN TWY B AND TWY C CLSD 2511120000-2511202359",
+      "answer": {
+        "form": "domestic",
+        "number": "11/070",
+        "location": "OSH",
+        "keyword": "TWY",
+        "heading": "Taxiway",
+        "words": "Taxiway A between taxiway B and taxiway C closed.",
+        "starts": "2025-11-12T00:00:00Z",
+        "ends": "2025-11-20T23:59:00Z",
+        "estimated": false,
+        "permanent": false
+      }
+    },
+    {
+      "about": "The ICAO form, read from its items",
+      "text": "A1234/25 NOTAMN Q) KZMP/QMRLC/IV/NBO/A/000/999/4359N08833W005 A) KOSH B) 2511120900 C) 2511121700 EST E) RWY 18/36 CLSD",
+      "answer": {
+        "form": "icao",
+        "number": "A1234/25",
+        "location": "KOSH",
+        "keyword": "RWY",
+        "heading": "Runway",
+        "words": "Runway 18/36 closed.",
+        "starts": "2025-11-12T09:00:00Z",
+        "ends": "2025-11-12T17:00:00Z",
+        "estimated": true,
+        "permanent": false
+      }
+    }
+  ]
+}

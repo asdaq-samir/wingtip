@@ -2446,6 +2446,13 @@ export interface EngineContract {
     answer: NoAltitudeAnswer;
   };
   /**
+   * A NOTAM read for a pilot, beside its text as sent: its keyword (FAA Order JO 7930.2 1-2-1) as a plain heading, or the ICAO Q) code's subject (Appendix B); its words with the FAA's contractions written out (JO 7340.2; JO 7930.2 3-3-1 and TBL 3-3-1) in sentence case, its codes (ILS, PAPI, VOR, RNAV, LPV) and idents kept, runways and taxiways as designated (3-3-5, 3-3-6), heights MSL unless AGL is stated (4-2-1), distances and compass points from a place, coordinates and fix-radial-distances written out; and its start of activity and end of validity in UTC (YYMMDDHHMM, 3-3-2), with EST (an estimate) and PERM (permanent) (4-2-1). A word it does not know is kept as written, never guessed.
+   */
+  notam_read: {
+    input: NotamReadInput;
+    answer: NotamReadAnswer;
+  };
+  /**
    * The NOTAMs of one FAA NOTAM System (FNS) message, AIXM 5.1, as wingtip.notams keeps them: each by its domestic place and number, else its place and ICAO number; `ends` the sooner of its own end and its feature lifetime's. None where the message is not XML.
    */
   notams_fns: {
@@ -8419,6 +8426,52 @@ export interface NoAltitudeAnswer {
   advice: string;
   class_b: boolean;
   detail: string;
+}
+export interface NotamReadInput {
+  /**
+   * The NOTAM as sent: the domestic form ("!OSH 11/041 OSH RWY 18/36 CLSD 2511120900-2511121700") or the ICAO form (Q) A) B) C) E) ...).
+   */
+  text: string;
+  /**
+   * The field's idents (OSH, KOSH), kept as written in its words.
+   */
+  idents?: string[];
+}
+export interface NotamReadAnswer {
+  /**
+   * The form it was read in; text where it is in neither, its words then as sent.
+   */
+  form: "domestic" | "icao" | "text";
+  number: string | null;
+  location: string | null;
+  /**
+   * Its JO 7930.2 keyword (RWY, TWY, AD, OBST, NAV, IAP ...).
+   */
+  keyword: string | null;
+  /**
+   * What it is about, in words: Runway, Taxiway, Obstacle, Instrument approach, Temporary flight restriction ...
+   */
+  heading: string | null;
+  /**
+   * Its words written out in sentence case, ending as a sentence ends.
+   */
+  words: string;
+  /**
+   * Its start of activity, ISO 8601 UTC, from its text.
+   */
+  starts: string | null;
+  /**
+   * Its end of validity, ISO 8601 UTC; null where it is permanent or not given.
+   */
+  ends: string | null;
+  /**
+   * The end is an estimate (EST): it may end sooner.
+   */
+  estimated: boolean;
+  /**
+   * PERM: the condition is permanent, until published.
+   */
+  permanent: boolean;
 }
 export interface NotamsFnsInput {
   text: string;

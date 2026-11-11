@@ -81,8 +81,9 @@ fn day_words(day: i64) -> String {
     format!("{d} {}", MONTHS[(m as usize).saturating_sub(1) % 12])
 }
 
-/// A whole number with thousands set off: "5,500".
-fn grouped(n: i64) -> String {
+/// A whole number with thousands set off: "5,500" (a NOTAM's heights
+/// too, notam_read).
+pub(crate) fn grouped(n: i64) -> String {
     let digits = n.unsigned_abs().to_string();
     let mut out = String::new();
     for (i, c) in digits.chars().enumerate() {

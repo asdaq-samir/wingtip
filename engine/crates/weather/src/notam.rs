@@ -28,7 +28,7 @@ pub struct Notam {
 }
 
 /// "202610270700", "202610270700EST": ISO 8601 UTC, and whether estimated.
-fn utc12(text: &str) -> (Option<String>, bool) {
+pub(crate) fn utc12(text: &str) -> (Option<String>, bool) {
     let b = text.as_bytes();
     if b.len() < 12 || !b[..12].iter().all(u8::is_ascii_digit) {
         return (None, false);

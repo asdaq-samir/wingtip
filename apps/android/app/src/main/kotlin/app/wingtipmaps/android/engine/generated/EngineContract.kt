@@ -7172,6 +7172,56 @@ object EngineContract {
     )
 
     @Serializable
+    data class NotamReadAnswer(
+        /**
+         * The form it was read in; text where it is in neither, its words then as sent.
+         */
+        val form: String,
+        val number: String? = null,
+        val location: String? = null,
+        /**
+         * Its JO 7930.2 keyword (RWY, TWY, AD, OBST, NAV, IAP ...).
+         */
+        val keyword: String? = null,
+        /**
+         * What it is about, in words: Runway, Taxiway, Obstacle, Instrument approach, Temporary flight restriction ...
+         */
+        val heading: String? = null,
+        /**
+         * Its words written out in sentence case, ending as a sentence ends.
+         */
+        val words: String,
+        /**
+         * Its start of activity, ISO 8601 UTC, from its text.
+         */
+        val starts: String? = null,
+        /**
+         * Its end of validity, ISO 8601 UTC; null where it is permanent or not given.
+         */
+        val ends: String? = null,
+        /**
+         * The end is an estimate (EST): it may end sooner.
+         */
+        val estimated: Boolean,
+        /**
+         * PERM: the condition is permanent, until published.
+         */
+        val permanent: Boolean,
+    )
+
+    @Serializable
+    data class NotamReadInput(
+        /**
+         * The NOTAM as sent: the domestic form ("!OSH 11/041 OSH RWY 18/36 CLSD 2511120900-2511121700") or the ICAO form (Q) A) B) C) E) ...).
+         */
+        val text: String,
+        /**
+         * The field's idents (OSH, KOSH), kept as written in its words.
+         */
+        val idents: List<String>? = null,
+    )
+
+    @Serializable
     data class NotamsFnsAnswerItem(
         val id: String,
         @SerialName("icao_id")

@@ -18,31 +18,12 @@
 //! AIRMEN. RWYS 4, 22 CLSD. ... ADVS YOU HAVE INFO I."
 
 use crate::atis::{read, Atis, Layer, Wind};
-use wingtip_weather::metar;
+use wingtip_weather::{contractions, metar};
 
-/// A contraction as said in full (FAA Order JO 7340.2, Contractions):
-/// those a D-ATIS uses for what the spoken reader takes.
+/// A contraction as said in full (FAA Order JO 7340.2, Contractions): the
+/// engine's one table, which a NOTAM's words are read by too.
 fn said(word: &str) -> Option<&'static str> {
-    Some(match word {
-        "RWY" => "runway",
-        "RWYS" => "runways",
-        "APCH" => "approach",
-        "APCHS" => "approaches",
-        "ARR" => "arrival",
-        "ARRS" => "arrivals",
-        "DEP" => "departure",
-        "DEPS" => "departures",
-        "DEPG" | "DEPTG" => "departing",
-        "LNDG" | "LDG" => "landing",
-        "INFO" => "information",
-        "ADVS" => "advise",
-        "CLSD" => "closed",
-        "OTS" => "out of service",
-        "ACFT" => "aircraft",
-        "TWY" | "TWYS" => "taxiway",
-        "SIMUL" => "simultaneous",
-        _ => return None,
-    })
+    contractions::written(word)
 }
 
 /// A runway's side said in full: "30L" is "30 left", as a pilot says it.

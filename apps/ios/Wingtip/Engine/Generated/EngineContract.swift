@@ -7331,6 +7331,34 @@ enum EngineContract {
         }
     }
 
+    struct NotamReadAnswer: Codable, Equatable, Sendable {
+        /// The form it was read in; text where it is in neither, its words then as sent.
+        var form: String
+        var number: String?
+        var location: String?
+        /// Its JO 7930.2 keyword (RWY, TWY, AD, OBST, NAV, IAP ...).
+        var keyword: String?
+        /// What it is about, in words: Runway, Taxiway, Obstacle, Instrument approach, Temporary flight restriction ...
+        var heading: String?
+        /// Its words written out in sentence case, ending as a sentence ends.
+        var words: String
+        /// Its start of activity, ISO 8601 UTC, from its text.
+        var starts: String?
+        /// Its end of validity, ISO 8601 UTC; null where it is permanent or not given.
+        var ends: String?
+        /// The end is an estimate (EST): it may end sooner.
+        var estimated: Bool
+        /// PERM: the condition is permanent, until published.
+        var permanent: Bool
+    }
+
+    struct NotamReadInput: Codable, Equatable, Sendable {
+        /// The NOTAM as sent: the domestic form ("!OSH 11/041 OSH RWY 18/36 CLSD 2511120900-2511121700") or the ICAO form (Q) A) B) C) E) ...).
+        var text: String
+        /// The field's idents (OSH, KOSH), kept as written in its words.
+        var idents: [String]?
+    }
+
     struct NotamsFnsAnswerItem: Codable, Equatable, Sendable {
         var id: String
         var icaoId: String?
