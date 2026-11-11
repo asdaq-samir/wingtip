@@ -55,6 +55,11 @@ These hold on every screen below and win over any reference app.
   field loads on its own chunk when first opened. A new library for a
   screen is weighed against that budget before it is added
   (`docs` memory: web bundle budget; the measure-speed skill).
+- **A drag up below full moves the sheet**, wherever it starts: on a
+  button, a chip or a sideways row as on the body; a tap stays a tap. It
+  is Base UI's Drawer's own arbitration; in the sheet a sideways row
+  never scrolls up and down (index.css), so the Drawer does not hand it
+  the drag (docs/design/rules.md §2).
 - **The engine never holds the page** (2026-11-10). The search, the
   sheet and the map's chart draw at once while the engine's `.wasm`
   comes (`main.tsx` preloads it). Each part that asks the engine while it

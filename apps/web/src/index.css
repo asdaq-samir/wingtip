@@ -735,6 +735,20 @@ body[data-map-sheet]:is([data-map-panel="peek"], [data-map-panel="half"]) [data-
   overflow-y: hidden;
 }
 
+/* And a sideways row only scrolls sideways (the one scrolling rule, at
+   every height): `overflow-x: auto` alone makes the browser compute
+   `overflow-y: auto` too, and a row whose chips' 44-point hit areas or
+   padding reach past it is then a vertical scroller by a few points.
+   Base UI's Drawer gave a drag up that started on one -- an airplane's
+   pill strip, the field's hours, the Brief's departure window -- to that
+   row, and at half the sheet stayed where it was (card-scroll.spec, the
+   airport card, traffic and the Brief, 2026-11-10). Clipped as before;
+   the Drawer's own arbitration now passes it by, a vertical drag moving
+   the sheet and a tap still a tap. */
+[data-panel-body] :is(.overflow-x-auto, .overflow-x-scroll):not(.overflow-y-auto, .overflow-y-scroll, .overflow-auto) {
+  overflow-y: hidden;
+}
+
 /* What floats over the chart -- the map's buttons, its banners, the
    panel's pill -- frosted as Apple's Maps on the web frosts its own: the
    page's ground at 80% over a 15-point blur, a hairline and a soft shade,
