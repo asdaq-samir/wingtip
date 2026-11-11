@@ -39,6 +39,26 @@ struct TilesTests {
         try? FileManager.default.removeItem(at: root)
     }
 
+    @Test func keptTilesLiveOutsideCachesAndOutOfBackups() throws {
+        // The app's own stores: Keep for the Air's under Application
+        // Support, which iOS does not purge; the map's own under Caches.
+        let shared = TileStore()
+        #expect(shared.keptRoot.path.contains("/Library/Application Support/"))
+        #expect(shared.root.path.contains("/Library/Caches/"))
+        let root = FileManager.default.temporaryDirectory.appending(path: "tiles-\(UUID().uuidString)")
+        let store = TileStore(root: root)
+        store.write(Data([1]), cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93)
+        #expect(!store.isKept(cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93))
+        store.write(Data([2]), cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93, kept: true)
+        #expect(store.isKept(cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93))
+        // The kept one is read first.
+        #expect(store.read(cycle: "09-03-2026", kind: "sec", z: 8, x: 62, y: 93) == Data([2]))
+        let values = try store.keptRoot.resourceValues(forKeys: [.isExcludedFromBackupKey])
+        #expect(values.isExcludedFromBackup == true)
+        try? FileManager.default.removeItem(at: root)
+        try? FileManager.default.removeItem(at: store.keptRoot)
+    }
+
     @Test func plannerPathsAreRewrittenUnderTheGatewaysProxy() throws {
         #expect(Config.plannerPath("/api/chart") == "/api/planner/chart")
         #expect(Config.plannerPath("/api/airport/KDLH") == "/api/planner/airport/KDLH")
