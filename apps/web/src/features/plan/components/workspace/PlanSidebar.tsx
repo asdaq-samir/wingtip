@@ -278,7 +278,7 @@ export default function PlanSidebar({
             <Waits>{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</Waits>
           </TabPage>
         ) : (
-          stripsDrawn && <SearchHome vm={vm} model={model} />
+          stripsDrawn && <SearchHome vm={vm} />
         )}
       </TabKept>
     </>
