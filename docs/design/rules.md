@@ -247,8 +247,8 @@ and the one search is still the only field.
   grabber itself be split into two to behave as dots do for carousel?"):
   two short bars side by side, the grabber's width in all, Search's on
   the left and FPL's on the right, the page up's bar the stronger. A tap
-  on the other bar picks its page; a tap on the page up's bar sizes the
-  sheet as the grabber always did, and a drag on either moves the sheet.
+  on the other bar picks its page and leaves the sheet's size; a tap on
+  the page up's bar sizes the sheet as the grabber always did, and a drag on either moves the sheet.
   Each bar is a 44-point tap, the two meeting in the middle; said
   "Search, page 1 of 2", selected or not. Left and Right switch pages,
   Up and Down size the sheet. No row of dots: the first row sits where
@@ -261,8 +261,10 @@ and the one search is still the only field.
   it (Search's leftward from the grabber's middle, FPL's rightward: the
   owner, 2026-11-11, "stay on their sides rather than a shared capsule"),
   about 20 points tall, the other bar staying; it holds about a second and
-  folds back into its bar, the stronger of the two. While a finger drags the pages it
-  names the page it is heading to. It moves as the Drawer does, on its
+  folds back into its bar, the stronger of the two. Each page has its own
+  capsule: a page turned while one is out folds that one back where it is
+  as the other grows, never one capsule crossing the grabber. While a
+  finger drags the pages it names the page it is heading to. It moves as the Drawer does, on its
   own time and curve; under Reduce Motion the name fades in and out with
   no size change. It never moves the sheet or takes a tap, and is not
   read aloud (the bars say the page; a page changed by a swipe is said

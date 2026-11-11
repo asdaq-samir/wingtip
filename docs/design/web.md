@@ -203,6 +203,13 @@ close does.
   (MapPanel). Nothing is held until the slide ends, nothing laid out ahead
   in a transition, nothing raises the sheet on a focus; the keyboard's
   inset and a focused field's scroll are `VirtualKeyboardProvider`'s.
+  The one thing handed over at a slide's end is the map's buttons between
+  the sheet and a card: they move onto a card once its drawer says it has
+  come up (`onOpenChangeComplete`, `sheetTopSlot`'s `useRidingCard`) and
+  back as it starts to close, so they never ride a card off the screen.
+  MapLibre's corner controls move on the Drawer's time and curve too
+  (`motion.drawer` and `motion.drawer-ease` in design/tokens.json, which
+  every web class that runs the Drawer's figures reads).
 - Cards over the sheet are the Drawer's own nested drawers (the owner,
   2026-11-11; `components/sheet/CardStack`): each with its own snap point
   among the sheet's three sizes, its grabber and its swipe, the sheet's
@@ -226,7 +233,16 @@ close does.
   left it at, never lowered and never taken all the way up, a page put
   away leaving it where it is (`e2e/sheet-size.spec.ts`). They are put inside the sheet's popup
   (`Drawer.Portal`'s `container`), outside its corners' clip, placed from
-  the sheet's snap offset to their own. A card's content stays drawn where
+  the sheet's snap offset to their own. A card rises from the screen's
+  foot as it opens and slides back down as it closes, as Base UI's Snap
+  points demo does: its popup off the screen under `[data-starting-style]`
+  and `[data-ending-style]`, the close on
+  `calc(var(--drawer-swipe-strength) * 400ms)` (Base UI writes the snap offset as 0 until it has measured, so
+  without a starting place a card slid from full to half). What the sheet
+  holds fades under a card as Base UI's nested drawers demo has it:
+  opacity 0 under `[data-nested-drawer-open]`, back under
+  `[data-nested-drawer-swiping]`, hidden once faded; its ground, edge and
+  shadow the same on the Drawer's curve (`SheetDrawer`). A card's content stays drawn where
   its caller is (its providers) and is put in its drawer's scroller
   (`useCardFrame`); touches on it are handed to its drawer's viewport
   (`SheetViewport`): Base UI 1.9 gives the viewport its touchstart,
@@ -489,9 +505,14 @@ popup outside the clip of its corners (`SheetDrawer`'s `grabber`), so
 each bar's 44-point hit area reaches over the sheet's edge rather than
 over the field; the first row keeps its room from before the pages. A
 card's grabber stays the plain one. A page change opens the grabber's
-capsule (`useCapsule`, the owner 2026-11-11): its two bars give way to a
-pill with the page's name in it, grown on `--motion-sheet` by CSS
-transitions of its width and height, held a second and folded back;
+capsule (`useCapsule`, the owner 2026-11-11): the page's bar gives way to a
+pill with the page's name in it, one per page anchored at its own bar,
+grown on the Drawer's time and curve (`--motion-drawer-ease`) by CSS
+transitions of its width and height, held a second and folded back; a
+page turned while one is out folds that one where it is as the other
+grows (one capsule moved between the sides jumped across the grabber);
+a tap on the other page's bar turns the page only, the size cycle being
+the bar's that was the page up before the press;
 while the pages move it names the page they are heading to, from
 Embla's own `scroll` progress and `settle` event (`SheetPager`, into the
 small `usePageHeading` store), nothing measured of our own. It is
