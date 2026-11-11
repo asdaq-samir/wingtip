@@ -10,270 +10,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import app.wingtipmaps.gateway.domain.Aircraft;
-import app.wingtipmaps.gateway.domain.DeferredFor;
-import app.wingtipmaps.gateway.domain.Endorsement;
-import app.wingtipmaps.gateway.domain.Flight;
-import app.wingtipmaps.gateway.domain.FlightCheckpoint;
-import app.wingtipmaps.gateway.domain.FlightTrack;
-import app.wingtipmaps.gateway.domain.LogbookEntry;
-import app.wingtipmaps.gateway.domain.MagicLink;
 import app.wingtipmaps.gateway.domain.Pilot;
-import app.wingtipmaps.gateway.domain.Squawk;
-import app.wingtipmaps.gateway.domain.Subscription;
-import app.wingtipmaps.gateway.repository.AircraftRepository;
-import app.wingtipmaps.gateway.repository.EndorsementRepository;
-import app.wingtipmaps.gateway.repository.FlightRepository;
-import app.wingtipmaps.gateway.repository.FlightTrackRepository;
-import app.wingtipmaps.gateway.repository.LogbookRepository;
-import app.wingtipmaps.gateway.repository.MagicLinkRepository;
-import app.wingtipmaps.gateway.repository.PilotRepository;
-import app.wingtipmaps.gateway.repository.SquawkRepository;
-import app.wingtipmaps.gateway.repository.SubscriptionRepository;
 import app.wingtipmaps.gateway.security.MagicLinkAuthenticationToken;
-import com.sun.net.httpserver.HttpServer;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.CopyOnWriteArrayList;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
-import org.springframework.session.FindByIndexNameSessionRepository;
-import org.springframework.session.Session;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.postgresql.PostgreSQLContainer;
 
 /**
- * Deleting an account (App Review 5.1.1(v)), against a real Postgres:
- * what is deleted is decided by the schema's ON DELETE CASCADEs as much
- * as by the code, so every table that holds a pilot's data is counted
- * afterwards -- empty for the deleted pilot, untouched for another.
+ * Deleting an account in the app (App Review 5.1.1(v)), and the copy a
+ * pilot may take away first: every table that holds a pilot's data is
+ * counted afterwards (AccountTestBase.rowsOf) -- empty for the deleted
+ * pilot, untouched for another.
  */
-@SpringBootTest
-@AutoConfigureMockMvc
-@Testcontainers
-class AccountDeletionTest {
-
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer postgres = new PostgreSQLContainer("postgres:18");
-
-    /** The planner, which keeps the pilot's own checkpoint notes. */
-    private static HttpServer planner;
-
-    private static final List<String> plannerAsked = new CopyOnWriteArrayList<>();
-    private static volatile int plannerStatus = 200;
-
-    @Autowired
-    private MockMvc mockMvc;
-
-    @Autowired
-    private PilotRepository pilots;
-
-    @Autowired
-    private AircraftRepository aircraft;
-
-    @Autowired
-    private SquawkRepository squawks;
-
-    @Autowired
-    private FlightRepository flights;
-
-    @Autowired
-    private FlightTrackRepository tracks;
-
-    @Autowired
-    private LogbookRepository logbook;
-
-    @Autowired
-    private EndorsementRepository endorsements;
-
-    @Autowired
-    private MagicLinkRepository magicLinks;
-
-    @Autowired
-    private SubscriptionRepository subscriptions;
-
-    @Autowired
-    private FindByIndexNameSessionRepository<? extends Session> sessions;
-
-    @Autowired
-    private JdbcTemplate jdbc;
-
-    @BeforeAll
-    static void startPlanner() throws IOException {
-        planner = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
-        planner.createContext("/", exchange -> {
-            plannerAsked.add(
-                    exchange.getRequestMethod() + " " + exchange.getRequestURI().getPath() + " pilot="
-                            + exchange.getRequestHeaders().getFirst("X-Pilot-Id"));
-            // The export's training record asks the engine what the
-            // endorsements say; it answers every field its document
-            // requires, as the planner does: under Jackson 3 the generated
-            // model leaves a missing list null rather than empty.
-            byte[] body = (exchange.getRequestURI().getPath().equals("/api/pilot/endorsements")
-                            ? "{\"checks\":[],\"soloUntil\":null,\"until\":[]}"
-                            : "{\"removed\":1}")
-                    .getBytes();
-            exchange.sendResponseHeaders(plannerStatus, body.length);
-            exchange.getResponseBody().write(body);
-            exchange.close();
-        });
-        planner.start();
-    }
-
-    @AfterAll
-    static void stopPlanner() {
-        planner.stop(0);
-    }
-
-    @DynamicPropertySource
-    static void plannerUrl(DynamicPropertyRegistry registry) {
-        registry.add(
-                "planner-service.base-url",
-                () -> "http://127.0.0.1:" + planner.getAddress().getPort());
-    }
-
-    @BeforeEach
-    void reset() {
-        plannerAsked.clear();
-        plannerStatus = 200;
-    }
-
-    /** A pilot with one of everything a pilot can have, and a session. */
-    private Pilot pilotWithEverything() {
-        String email = UUID.randomUUID() + "@example.com";
-        String google = "google-" + UUID.randomUUID();
-        Pilot pilot = pilots.save(new Pilot(email, "Test Pilot", google));
-        Aircraft plane = aircraft.save(
-                new Aircraft(pilot, "N" + email.substring(0, 5), "C172", 110, 8.5, null, null, null, null));
-        Flight flight = flights.save(new Flight(pilot, plane, "C81", "KDLH")
-                .fileNavLog(
-                        List.of(
-                                new FlightCheckpoint(0, "C81", "departure", 42.3172, -88.0905, 0.0)
-                                        .withLeg(4.0, 319.0, 322.0, 116.0, 2.1, 0.3),
-                                new FlightCheckpoint(1, "KDLH", "destination", 46.8421, -92.1936, 323.4)),
-                        2500,
-                        323.6,
-                        171.0,
-                        24.2));
-        tracks.save(new FlightTrack(
-                flight.getId(),
-                "test",
-                "[{\"t\":0,\"lat\":42.3,\"lon\":-88.1},{\"t\":60000,\"lat\":46.8,\"lon\":-92.2}]",
-                2));
-        squawks.save(new Squawk(plane)
-                .set(LocalDate.of(2026, 10, 1), "Landing light out", true, DeferredFor.VFR_DAY, null, null));
-        logbook.save(new LogbookEntry(pilot)
-                .set(LocalDate.of(2026, 10, 1), "N12345", "C172", "C81-KDLH", 2.5, 0, 2.5, 1, 0, null));
-        endorsements.save(new Endorsement(pilot.getId(), "A.1", LocalDate.of(2026, 9, 1)));
-        // An instructor asked in, an endorsement signed for them, and a solo
-        // cross-country put to an instructor (V26) -- themselves, for the
-        // schema's sake.
-        jdbc.update(
-                "INSERT INTO instructor_students (student_id, email, asked_at) VALUES (?, ?, now())",
-                pilot.getId(),
-                "cfi-" + email);
-        jdbc.update(
-                "INSERT INTO signed_endorsements (student_id, code, student_name, fields, text, signature, signed_on, signed_at,"
-                        + " digest) VALUES (?, 'solo-first', 'Test Pilot', '{}'::jsonb, 'I certify', '/s/', ?, now(), repeat('0', 64))",
-                pilot.getId(),
-                LocalDate.of(2026, 10, 1));
-        jdbc.update(
-                "INSERT INTO cross_country_reviews (student_id, instructor_id, flight_id, make_model, flight_on, asked_at)"
-                        + " VALUES (?, ?, ?, 'Cessna 172', ?, now())",
-                pilot.getId(),
-                pilot.getId(),
-                flight.getId(),
-                LocalDate.of(2026, 10, 2));
-        // An approach set them as a lesson (V30), by themselves again.
-        jdbc.update(
-                "INSERT INTO approach_lessons (student_id, instructor_id, airport_ident, procedure_id, procedure_name, created_at,"
-                        + " updated_at) VALUES (?, ?, 'KDLH', 'I09', 'ILS RWY 09', now(), now())",
-                pilot.getId(),
-                pilot.getId());
-        // The free month started, and a written briefing counted against its cap.
-        subscriptions.save(new Subscription(pilot.getId(), Instant.now()));
-        jdbc.update(
-                "INSERT INTO paid_feature_uses (pilot_id, month, feature, uses) VALUES (?, ?, 'NARRATIVE', 1)",
-                pilot.getId(),
-                LocalDate.of(2026, 10, 1));
-        magicLinks.save(new MagicLink(
-                email,
-                UUID.randomUUID().toString().replace("-", ""),
-                Instant.now().plusSeconds(600)));
-        // Two devices by address, and one by Google.
-        signIn(email);
-        signIn(email);
-        signIn(google);
-        return pilot;
-    }
-
-    private <S extends Session> void signIn(String email, FindByIndexNameSessionRepository<S> repository) {
-        S session = repository.createSession();
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(new MagicLinkAuthenticationToken(email));
-        session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-        repository.save(session);
-    }
-
-    private void signIn(String email) {
-        signIn(email, sessions);
-    }
-
-    /** Rows of each table that are the pilot's, by their id and address. */
-    private List<Integer> rowsOf(Pilot pilot) {
-        Long id = pilot.getId();
-        return List.of(
-                jdbc.queryForObject("SELECT count(*) FROM pilots WHERE id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM aircraft WHERE pilot_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM flights WHERE pilot_id = ?", Integer.class, id),
-                jdbc.queryForObject(
-                        "SELECT count(*) FROM flight_checkpoints c JOIN flights f ON f.id = c.flight_id "
-                                + "WHERE f.pilot_id = ?",
-                        Integer.class,
-                        id),
-                jdbc.queryForObject(
-                        "SELECT count(*) FROM flight_tracks t JOIN flights f ON f.id = t.flight_id "
-                                + "WHERE f.pilot_id = ?",
-                        Integer.class,
-                        id),
-                jdbc.queryForObject(
-                        "SELECT count(*) FROM aircraft_squawks s JOIN aircraft a ON a.id = s.aircraft_id "
-                                + "WHERE a.pilot_id = ?",
-                        Integer.class,
-                        id),
-                jdbc.queryForObject("SELECT count(*) FROM logbook_entries WHERE pilot_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM pilot_endorsements WHERE pilot_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM instructor_students WHERE student_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM signed_endorsements WHERE student_id = ?", Integer.class, id),
-                jdbc.queryForObject(
-                        "SELECT count(*) FROM cross_country_reviews WHERE student_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM approach_lessons WHERE student_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM subscriptions WHERE pilot_id = ?", Integer.class, id),
-                jdbc.queryForObject("SELECT count(*) FROM paid_feature_uses WHERE pilot_id = ?", Integer.class, id),
-                jdbc.queryForObject(
-                        "SELECT count(*) FROM magic_links WHERE email = ?", Integer.class, pilot.getEmail()),
-                sessions.findByPrincipalName(pilot.getEmail()).size(),
-                sessions.findByPrincipalName(pilot.getGoogleSubject()).size());
-    }
+class AccountDeletionTest extends AccountTestBase {
 
     @Test
     void deletingAnAccountTakesEverythingThatWasTheirsAndNothingOfAnyoneElses() throws Exception {
@@ -335,7 +83,25 @@ class AccountDeletionTest {
                 .andExpect(jsonPath("$.flights.length()").value(1))
                 .andExpect(jsonPath("$.flights[0].flight.checkpoints.length()").value(2))
                 .andExpect(jsonPath("$.flights[0].track").exists())
-                .andExpect(jsonPath("$.logbook.length()").value(1));
+                .andExpect(jsonPath("$.flights[0].share.url").exists())
+                .andExpect(jsonPath("$.flights[0].watch.flightId").exists())
+                .andExpect(jsonPath("$.logbook.length()").value(1))
+                // What no screen reads back whole (docs/legal/privacy.md, "Export My Data").
+                .andExpect(jsonPath("$.checkpointNotes[0].description").value("Water tower"))
+                .andExpect(jsonPath("$.reminders.on").value(false))
+                .andExpect(jsonPath("$.records.remindersSent[0].what").value("medical"))
+                .andExpect(jsonPath("$.records.subscription.updatedAt").exists())
+                .andExpect(jsonPath("$.records.featureUses[0].feature").value("NARRATIVE"))
+                .andExpect(jsonPath("$.connectedApps.length()").value(2))
+                .andExpect(jsonPath("$.connectedApps[0].app").value("Claude"))
+                .andExpect(jsonPath("$.connectedApps[0].scopes").value("wingtip:read"));
+        // Never a token.
+        String file = mockMvc.perform(
+                        get("/api/me/export").with(authentication(new MagicLinkAuthenticationToken(pilot.getEmail()))))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+        assertThat(file).doesNotContain("secret-token");
     }
 
     @Test

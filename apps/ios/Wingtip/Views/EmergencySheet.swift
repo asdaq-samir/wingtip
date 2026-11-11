@@ -42,10 +42,10 @@ struct EmergencySheet: View {
                     List {
                         if case .success(let call) = mayday { EmergencyCodeTiles(call: call) }
                         EmergencyFieldsSection(fix: fix, ownShipOff: ownShip.denied) { ident in directTo(ident) }
-                        if let guidance = Emergency.guidance(airplaneChosen: plan.airplaneChosen) {
-                            guidanceSection(guidance)
-                        } else {
+                        if plan.airplaneChosen {
                             checklistSection
+                        } else {
+                            guidanceSection(Result { try Emergency.guidance(airplaneChosen: false) ?? [] })
                         }
                         EmergencyRadioSections(mayday: mayday, phoneIdent: model.picked?.ident, phone: model.pickedPhone)
                     }
@@ -90,8 +90,12 @@ struct EmergencySheet: View {
 
     private var sections: [EngineContract.ChecklistSectionsItem] { checklist.checklist.sections }
 
+    /// The engine's pick of the section to open on; a failure is said
+    /// over the checklist, which opens on its first section then.
+    private var sectionFound: Result<Int?, any Error> { Result { try Emergency.section(sections.map(\.title)) } }
+
     private var sectionIndex: Int? {
-        model.sectionPicked ?? Emergency.section(sections.map(\.title)) ?? (sections.isEmpty ? nil : 0)
+        model.sectionPicked ?? (try? sectionFound.get()) ?? (sections.isEmpty ? nil : 0)
     }
 
     private var mayday: Result<Emergency.Mayday, any Error> {
@@ -103,12 +107,14 @@ struct EmergencySheet: View {
     /// 2026-11-09): the engine's emergency_guidance, each item with its
     /// source (AIM 6-1, 6-2, 6-3; FAA-H-8083-3C ch. 18), and the picker for
     /// an airplane -- never an airplane's checklist or figure.
-    @ViewBuilder private func guidanceSection(_ items: [EngineContract.EmergencyGuidanceAnswerItemsItem]) -> some View {
+    @ViewBuilder private func guidanceSection(_ items: Result<[EngineContract.EmergencyGuidanceAnswerItemsItem], any Error>) -> some View {
         // Labelled as general: never an airplane's checklist assumed.
         Section("What to Do · General, No Airplane Picked") {
-            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+            ForEach(Array(((try? items.get()) ?? []).enumerated()), id: \.offset) { _, item in
                 CardRow(title: item.title, detail: "\(item.detail) (\(item.source))")
             }
+            // Where the engine could not give it, said here, never an empty list.
+            ProblemLine(items, "The general guidance")
             PickAirplaneRow(detail: "Its own emergency checklist and glide")
         }
     }
@@ -117,6 +123,9 @@ struct EmergencySheet: View {
     /// as its pilot wrote it), opened at the emergency asked, a menu of
     /// its other sections, each item ticked as it is done. The app writes none.
     @ViewBuilder private var checklistSection: some View {
+        if model.sectionPicked == nil, case .failure = sectionFound {
+            Section { ProblemLine(sectionFound, "The emergency's section") }
+        }
         if let s = sectionIndex, sections.indices.contains(s) {
             Section {
                 ForEach(Array(sections[s].items.enumerated()), id: \.offset) { i, item in

@@ -1321,10 +1321,10 @@ def test_the_faa_radars_airplanes_are_on_the_map_and_a_followed_ones_flight_reco
 
 
 def test_the_faa_radar_is_read_around_the_places_the_map_shows_traffic(clock, monkeypatch):
-    """The radar is wanted around each place the map asked about within a
-    minute, once a place however often it asks, and for the followed
-    airplanes wherever they are (ingest reads no others). The views are
-    written to the live store on the wall clock, which ingest reads them by."""
+    """The radar is wanted around each region (test_traffic_privacy) the map
+    asked about within a minute, once a region however often it asks, and
+    for the followed airplanes wherever they are (ingest reads no others),
+    on the wall clock, which ingest reads them by."""
     wall = {"now": 1791800000.0}
     stand_in(monkeypatch, "_wall", lambda: wall["now"])
     traffic.follow("a3c858")
@@ -1334,9 +1334,9 @@ def test_the_faa_radar_is_read_around_the_places_the_map_shows_traffic(clock, mo
     traffic.near(42.37, -88.13, 30)
     wall["now"] += traffic.LOOKED_S / 2
     traffic.near(33.94, -118.41, 200)
-    assert traffic.radar_wanted() == ([(42.37, -88.13, 30), (33.94, -118.41, traffic.MAX_RADIUS_NM)], {"a3c858"})
+    assert traffic.radar_wanted() == ([(42.5, -88.0, 52), (34.0, -118.0, 250)], {"a3c858"})
     wall["now"] += traffic.LOOKED_S / 2 + 1
-    assert traffic.radar_wanted() == ([(33.94, -118.41, traffic.MAX_RADIUS_NM)], {"a3c858"})
+    assert traffic.radar_wanted() == ([(34.0, -118.0, 250)], {"a3c858"})
     wall["now"] += traffic.LOOKED_S
     assert traffic.radar_wanted() == ([], {"a3c858"})
 

@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 import org.apache.coyote.CloseNowException;
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -130,12 +131,18 @@ public class GlobalExceptionHandler {
      * an aircraft whose tail number the same pilot already has on file
      * ({@code uq_aircraft_pilot_tail}).
      *
-     * @param ex the underlying constraint failure, logged in full server-side
+     * @param ex the underlying constraint failure, logged by the
+     *     constraint's name only: the database's own text quotes the row's
+     *     values (a tail number, an address), and the logs are kept 30 days
+     *     (docs/privacy-inventory.md, "Logs")
      * @return 409, with a message that doesn't leak constraint/SQL internals
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        log.warn("Data integrity violation", ex);
+        String constraint = ex.getCause() instanceof ConstraintViolationException violation
+                ? violation.getConstraintName()
+                : ex.getMostSpecificCause().getClass().getSimpleName();
+        log.warn("Data integrity violation: {}", constraint);
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(new ErrorResponse("That tail number is already registered"));
     }

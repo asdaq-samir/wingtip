@@ -15,24 +15,14 @@ struct FiguresStrip: View {
     /// the destination at the groundspeed now, and the fuel still required.
     private var flying: (leftNm: Double, minutes: Double?, fuelGal: Double?)? {
         guard let progress = InFlight.shared.progress, progress.onRoute else { return nil }
-        let required = (try? Self.fuel(plan.totals, burntGal: progress.burntGal))?.requiredGal
+        let required = (try? StripFuel.of(plan.totals, burntGal: progress.burntGal))?.requiredGal
         return (progress.destination?.distanceNm ?? progress.leftNm, progress.destination?.eteMin, required)
-    }
-
-    /// The engine's answer to strip_fuel.
-    typealias StripFuel = EngineContract.StripFuelAnswer
-
-    /// The strip's fuel from the planner's totals, as the engine works it
-    /// for the three apps: required, less `burntGal`, and where short;
-    /// thrown where the engine cannot answer.
-    static func fuel(_ totals: Totals?, burntGal: Double? = nil) throws -> StripFuel {
-        try Engine.stripFuel(fuelRequiredGal: totals?.fuelRequiredGal, fuelMarginGal: totals?.fuelMarginGal, burntGal: burntGal)
     }
 
     var body: some View {
         // A fuel the engine could not work out is shown as unknown and in
         // the warning's colour, never as fuel enough.
-        let asked = Result { try Self.fuel(plan.totals) }
+        let asked = Result { try StripFuel.of(plan.totals) }
         let fuel = (try? asked.get()) ?? StripFuel(requiredGal: nil, short: [])
         let refused = (try? asked.get()) == nil
         let warn = plan.airplaneChosen && (!fuel.short.isEmpty || refused)

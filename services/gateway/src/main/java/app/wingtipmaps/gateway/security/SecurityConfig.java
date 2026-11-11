@@ -213,8 +213,8 @@ public class SecurityConfig {
                             .requestMatchers("/api/auth/magic-link/**")
                             .permitAll()
                             // The iOS app's native Apple sheet, before any
-                            // session exists (AppleNativeSignInController).
-                            .requestMatchers(HttpMethod.POST, "/api/auth/apple/native")
+                            // session exists, and its nonce (AppleNativeSignInController).
+                            .requestMatchers(HttpMethod.POST, "/api/auth/apple/native/**")
                             .permitAll()
                             // A TV asking for its code and whether it has
                             // been typed in, before it has a session; the

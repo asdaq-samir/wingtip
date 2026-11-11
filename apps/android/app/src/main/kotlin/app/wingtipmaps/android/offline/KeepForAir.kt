@@ -25,9 +25,9 @@ import app.wingtipmaps.android.api.generated.WeatherLoop as LoopAnswer
  * by the plan itself (KeptPlan). Ready to fly counts them on board
  * (`status`, its `kept`), and their ages are the engine's (kept_age).
  *
- * This phone's plan has no alternate of its own and shows no approach
- * plates (only the airport diagram, with the airplane on it), so neither
- * is asked or counted here.
+ * Under IFR the alternate filed is one of the fields (PlanAlternate, the
+ * nav log's leg on to it). This phone shows no approach plates (only the
+ * airport diagram, with the airplane on it), so none is asked or counted.
  */
 object KeepForAir {
     /** What a diagram is about, for the size said before it is kept: a
@@ -37,9 +37,9 @@ object KeepForAir {
      *  and frames together. */
     private const val ANSWERS_BYTES = 150_000L
 
-    /** The route's fields (its places by position are not fields). */
+    /** The route's fields and its alternate (its places by position are not fields). */
     fun fields(plan: Plan.State): List<String> =
-        (listOf(plan.dep) + plan.stops + plan.dest).filter { it.isNotBlank() && !it.startsWith("@") }.distinct()
+        (listOf(plan.dep) + plan.stops + plan.dest + listOfNotNull(plan.totals?.alternate?.ident)).filter { it.isNotBlank() && !it.startsWith("@") }.distinct()
 
     /** The loop the map plays, else the radar's. */
     private fun loopKind(loop: LoopKind): LoopKind = if (loop == LoopKind.OFF) LoopKind.RADAR else loop

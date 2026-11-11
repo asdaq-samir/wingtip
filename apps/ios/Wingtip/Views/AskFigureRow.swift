@@ -20,11 +20,13 @@ struct AskFigureRow: View {
 
     var body: some View {
         Group {
-            switch model.ask(needs, plan: plan) {
-            case .pick?: PickAirplaneRow(detail: pickDetail)
-            case .figure(let figure)?: ask(figure)
-            case .table(let table)?: tableLink(table)
-            case nil: EmptyView()
+            switch Result(catching: { try model.ask(needs, plan: plan) }) {
+            case .success(.pick?): PickAirplaneRow(detail: pickDetail)
+            case .success(.figure(let figure)?): ask(figure)
+            case .success(.table(let table)?): tableLink(table)
+            case .success(nil): EmptyView()
+            // Said where the ask would be, never read as nothing missing.
+            case .failure(let error): ProblemLine(Result<Void, any Error>.failure(error), "What \(name) lacks")
             }
         }
     }

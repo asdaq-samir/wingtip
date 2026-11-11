@@ -94,6 +94,19 @@ def test_a_deleted_account_takes_its_own_notes_and_only_those(monkeypatch, tmp_p
     assert client.delete("/api/checkpoint-notes/mine").status_code == 422
 
 
+def test_a_pilots_own_notes_are_theirs_to_export_and_nobody_elses(monkeypatch, tmp_path):
+    path = tmp_path / "notes.csv"
+    monkeypatch.setattr(checkpoint_notes, "NOTES_PATH", path)
+    checkpoint_notes.save_note("C81->KDLH", 45.0, -90.0, "Shared", path=path)
+    checkpoint_notes.save_note("C81->KDLH", 45.0, -90.0, "Mine", pilot="42", path=path)
+    checkpoint_notes.save_note("C81->KDLH", 45.0, -90.0, "Theirs", pilot="7", path=path)
+
+    resp = client.get("/api/checkpoint-notes/mine", headers={"X-Pilot-Id": "42"})
+    assert resp.status_code == 200
+    assert [n["description"] for n in resp.json()["notes"]] == ["Mine"]
+    assert client.get("/api/checkpoint-notes/mine").status_code == 422
+
+
 def test_a_note_longer_than_500_characters_is_refused(monkeypatch, tmp_path):
     _setup(monkeypatch, tmp_path)
     long = "x" * 501

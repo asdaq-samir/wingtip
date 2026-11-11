@@ -164,7 +164,9 @@ def find_addresses(query: str, limit: int = 4) -> list:
         resp.raise_for_status()
         matches = resp.json().get("result", {}).get("addressMatches", [])
     except (requests.RequestException, ValueError) as err:
-        log.warning("The Census geocoder did not answer for an address: %s", err)
+        # The error's own text carries the URL, and with it the typed address:
+        # only its kind is logged (docs/privacy-inventory.md, the Census row).
+        log.warning("The Census geocoder did not answer for an address: %s", type(err).__name__)
         return kept[1][:limit] if kept else []
     found = [
         {"label": _address_label(m["matchedAddress"]), "lat": m["coordinates"]["y"], "lon": m["coordinates"]["x"]}

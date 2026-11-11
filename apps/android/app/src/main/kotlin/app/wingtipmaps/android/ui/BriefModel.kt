@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.FigureKey
+import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.GoNoGo
@@ -65,7 +66,7 @@ class BriefModel : ViewModel() {
      *  route not planned, and nothing again for the same route. */
     fun brief(plan: Plan.State) {
         if (!plan.routed || plan.totals == null || plan.planning) return
-        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft, AirplaneNow.given(plan.own), plan.holds.joinToString(","), plan.rules).joinToString("|")
+        val route = listOf(plan.dep, plan.stops.joinToString(","), plan.dest, plan.aircraft, AirplaneNow.given(plan.own), plan.holds.joinToString(","), plan.rules, PlanAlternate.of(plan.rules, plan.dest)).joinToString("|")
         if (route == _state.value.route && (_state.value.verdict != null || _state.value.loading)) return
         asking?.cancel()
         _state.value = State(route = route, loading = true)
@@ -101,13 +102,17 @@ class BriefModel : ViewModel() {
     companion object {
         /** The Go / No-Go's question for the route: the pilot's own figures
          *  over the type's book, or the whole of an own airplane, never a
-         *  stock one's. Keep for the Air asks the same (KeepForAir). */
+         *  stock one's, and under IFR the alternate filed (PlanAlternate).
+         *  Keep for the Air asks the same (KeepForAir). */
         fun ask(plan: Plan.State): GoNoGoAsk {
             val g = AirplaneNow.given(plan.own)
             return GoNoGoAsk(
                 dep = plan.dep, dest = plan.dest, stops = plan.stops.joinToString(",").ifEmpty { null },
                 aircraft = AirplaneNow.plannerName(plan.aircraft, plan.own), holds = plan.holds.joinToString(",").ifEmpty { null },
                 rules = plan.rules,
+                // Under IFR, the alternate filed: its fuel in the plan, and
+                // the planner's 91.169 finding of it in the weather's.
+                alternate = PlanAlternate.of(plan.rules, plan.dest),
                 cruiseTasKt = g[FigureKey.CRUISE.key], fuelBurnGph = g[FigureKey.BURN.key], cruisePowerPct = g[FigureKey.POWER.key],
                 usableFuelGal = g[FigureKey.USABLE.key], climbTasKt = g[FigureKey.CLIMB_TAS.key], climbFuelBurnGph = g[FigureKey.CLIMB_BURN.key],
                 climbRateFpm = g[FigureKey.CLIMB_RATE.key], serviceCeilingFt = g[FigureKey.CEILING.key], taxiFuelGal = g[FigureKey.TAXI.key],

@@ -319,6 +319,8 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     EmergencyHost(plan, ownShip)
     SharedFlightHost(shared, plan)
     AirplaneProfileHost(session)
+    // A sign-in link, asked before it is followed.
+    SignInDialog(session)
     ReadyToFlyHost(plan, ownShipOn = ownShip.on, underway = inFlight.underway, onSetRoute = if (stripLayout) null else showPlan)
     AutoLogbookHost(plan, session)
     NextFlightFeed(plan)

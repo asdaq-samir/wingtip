@@ -80,11 +80,12 @@ final class Airplanes {
 
     /// The inputs `need` lacks for the plan's airplane, by name
     /// (airplane_needs): ["airplane"] with none picked; none while its
-    /// type's book is not yet in.
-    func missing(_ need: AirplaneNeed, plan: Plan) -> [String] {
+    /// type's book is not yet in. Thrown where the engine cannot say, so
+    /// the ask says that rather than reading as nothing missing.
+    func missing(_ need: AirplaneNeed, plan: Plan) throws -> [String] {
         guard plan.airplaneChosen else { return ["airplane"] }
         guard let answer = answer(for: plan) else { return [] }
-        return (try? Engine.airplaneNeeds(profile: answer.profile, figure: need.rawValue).missing) ?? []
+        return try Engine.airplaneNeeds(profile: answer.profile, figure: need.rawValue).missing
     }
 }
 

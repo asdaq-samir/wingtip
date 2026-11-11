@@ -14,6 +14,11 @@ from .common import _wall
 #: A recorded track is kept this long, s: the archive's own reach
 #: (ARCHIVE_DAYS), its flights listed with the archive's.
 RECORD_KEEP_S = 30 * 86400.0
+#: An airplane is followed no more this long after its card was last
+#: opened, s: following is for an airplane someone is watching, and an
+#: open-ended list of other people's airplanes recorded for good is not
+#: what the privacy policy promises (docs/privacy-inventory.md, 30 days).
+FOLLOW_KEEP_S = 30 * 86400.0
 
 # An airplane's ICAO address, six hex digits (a TIS-B one's "~" taken off):
 # all its track is kept by. The addresses come from the feeds and from
@@ -41,7 +46,8 @@ def follow(hex_id: str) -> None:
     """An airplane followed from now on: its card opened. Kept in the store,
     so a restart does not forget it: the owner's N3429J, its card opened
     before a restart and nothing heard of it since, was followed no more
-    while the following lived in the planner's memory."""
+    while the following lived in the planner's memory. Each opening starts
+    its FOLLOW_KEEP_S again."""
     key = _key(hex_id)
     if key is not None:
         store.follow(key, _wall())

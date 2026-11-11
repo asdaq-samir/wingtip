@@ -204,8 +204,8 @@ struct MapLookTests {
         let shapes = RunwayShape.of([runway("TURF"), runway("ASPH"), runway("CONC"), runway(nil)])
         #expect(shapes.map(\.soft) == [true, false, false, false])
         let a = CLLocationCoordinate2D(latitude: 42.32, longitude: -88.08), b = CLLocationCoordinate2D(latitude: 42.32, longitude: -88.07)
-        #expect(RunwaySurface.between(a, b, widthFt: 100, soft: true).soft)
-        #expect(!RunwaySurface.between(a, b, widthFt: 100).soft)
+        #expect(RunwaySurface.between(a, b, widthFt: 100, soft: true).soft == true)
+        #expect(RunwaySurface.between(a, b, widthFt: 100).soft == false)
     }
 
     // MARK: Where the map opens

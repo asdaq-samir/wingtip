@@ -4,6 +4,7 @@ import { forgetChecklists } from "../../lib/checklists";
 import { forgetPilot } from "../../lib/preferences";
 import { forgetKeptRecord } from "../keptForAir";
 import { pilotQuery } from "../../lib/queryClient";
+import { forgetPilotCache } from "../../lib/pilotCache";
 
 /** Logging out: the session ended on the server, then the pilot and
  *  everything that was theirs (their airplanes, their flights)
@@ -24,7 +25,7 @@ export function useLogout() {
       // The service worker's copy of their account, airplanes and
       // flights (vite.config.ts, pilot-own), which a start with no
       // signal would otherwise show the next person to pick up the phone.
-      if ("caches" in globalThis) void caches.delete("pilot-own").catch(() => undefined);
+      forgetPilotCache();
       queryClient.setQueryData(pilotQuery.queryKey, null);
       queryClient.removeQueries({ queryKey: ["aircraft"] });
       queryClient.removeQueries({ queryKey: ["flights"] });
