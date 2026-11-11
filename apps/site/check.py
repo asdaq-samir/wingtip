@@ -8,7 +8,10 @@ in seconds.
     python3 apps/site/check.py [DIST]
 
 Paths under /app/ and /api/ are the gateway's (the web app, its legal
-pages, the API), not files of this site, so they are not looked for.
+pages, the API), not files of this site, so they are not looked for;
+nor is /delete-account, the gateway's page for deleting an account
+without the app (DeleteAccountController), which the privacy policy and
+support link to.
 Images under /assets/ are written by scripts/build/app-icons.sh and the
 store framer; one missing is reported, and fails with --strict.
 """
@@ -22,7 +25,7 @@ from urllib.parse import urlsplit
 
 SITE = Path(__file__).resolve().parent
 VOID = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link", "meta", "source", "track", "wbr"}
-GATEWAY = ("/app/", "/api/")
+GATEWAY = ("/app/", "/api/", "/delete-account")
 
 
 class Page(HTMLParser):
