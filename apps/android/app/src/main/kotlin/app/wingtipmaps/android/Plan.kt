@@ -38,11 +38,10 @@ import java.io.IOException
 
 /**
  * The route being planned and what the planner has said of it so far: the
- * course as soon as its ends are found, then the nav log's lines as they
- * stream. The log before a re-plan stays on the page until the new one is
- * whole, as the web app keeps it (usePlan) and the iOS app's Plan.swift
- * does, so the pilot is never looking at a blank list. One State, changed
- * only here and read by the screens (unidirectional data flow).
+ * course once its ends are found, then the nav log's lines as they stream.
+ * The log before a re-plan stays until the new one is whole (as the web's
+ * usePlan and iOS's Plan.swift keep it), so the list is never blank. One
+ * State, changed only here and read by the screens.
  */
 class Plan(app: Application) : AndroidViewModel(app) {
     data class State(
