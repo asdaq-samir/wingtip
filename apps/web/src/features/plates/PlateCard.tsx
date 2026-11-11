@@ -52,7 +52,9 @@ export function PlateCard({ airport, id, viewer: Viewer }: { airport: string; id
               max={1}
               step={0.05}
               onValueChange={(v) => vm.setOpacity(Array.isArray(v) ? v[0]! : v)}
-              thumb={{ "aria-label": "Plate transparency", getAriaValueText: () => `${Math.round(vm.opacity * 100)} percent solid` }}
+              // Base UI's own value text from its format: "65%".
+              format={{ style: "percent" }}
+              thumb={{ "aria-label": "Plate transparency" }}
               data-testid="plate-opacity"
             />
             <Square className="size-5 shrink-0 fill-current text-muted-foreground" aria-label="Solid" />
