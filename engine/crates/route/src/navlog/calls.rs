@@ -139,15 +139,24 @@ fn answer(name: &str, v: &Value) -> R<String> {
             write_objs(with_climbs(&objs(name, v, "legs")?, opt_num(name, v, "start_altitude_ft")?, &p, &Climber::new(&p.airplane))?)
         }
         "navlog_with_descents" => {
-            let end = End {
-                altitude_ft: opt_num(name, v, "end_altitude_ft")?,
-                before_nm: opt_num(name, v, "end_before_nm")?.unwrap_or(0.0),
-                fix: match v.get("end_fix") {
-                    None | Some(Value::Null) => None,
-                    Some(Value::String(s)) => Some(s.clone()),
-                    Some(_) => return Err(format!("{name}: \"end_fix\" is not a string")),
-                },
+            let fix = match v.get("end_fix") {
+                None | Some(Value::Null) => None,
+                Some(Value::String(s)) => Some(s.clone()),
+                Some(_) => return Err(format!("{name}: \"end_fix\" is not a string")),
             };
+            // Down to the pattern, the descent is finished where the
+            // 45-degree entry begins, not over the field: AC 90-66C 11.2
+            // and 11.3 have an arriving airplane level at pattern altitude
+            // well clear of the pattern before entering it
+            // (limits::pattern_entry_start_nm). An approach's is its fix's.
+            let before_nm = opt_num(name, v, "end_before_nm")?.unwrap_or_else(|| {
+                if fix.is_none() {
+                    wingtip_flight::limits::pattern_entry_start_nm()
+                } else {
+                    0.0
+                }
+            });
+            let end = End { altitude_ft: opt_num(name, v, "end_altitude_ft")?, before_nm, fix };
             write_objs(with_descents(&objs(name, v, "legs")?, &objs(name, v, "fixes")?, &end)?)
         }
         "navlog_approach_end" => {

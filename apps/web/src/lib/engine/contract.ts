@@ -2411,7 +2411,7 @@ export interface EngineContract {
     answer: NavLogWithClimbsAnswer;
   };
   /**
-   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged.
+   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude where the 45-degree entry begins, about 1.7 nm before the end (AC 90-66C 11.2, 11.3: level at pattern altitude before entering), to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged.
    */
   navlog_with_descents: {
     input: NavLogWithDescentsInput;
@@ -8238,6 +8238,9 @@ export interface NavLogWithDescentsInput {
   legs: NavLogLeg[];
   fixes: NavLogFix[];
   end_altitude_ft?: number | null;
+  /**
+   * How far before the legs' end the descent is finished, nm: an approach's fix's distance out; where not given, down to a pattern, where the 45-degree entry begins (limits::pattern_entry_start_nm, about 1.7 nm), and 0 with an end_fix.
+   */
   end_before_nm?: number | null;
   end_fix?: string | null;
 }

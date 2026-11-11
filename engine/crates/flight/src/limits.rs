@@ -23,6 +23,32 @@ pub const LOWEST_FT: f64 = 500.0;
 /// steps by 500 ft.
 pub const STEP_FT: f64 = 500.0;
 
+/// The pattern as the engine sketches it (wingtip_brief's runway::circuit
+/// draws it, the nav log descends to it): the downwind three-quarters of
+/// a statute mile out, the middle of the half a mile to a mile FAA-H-8083-
+/// 3C ch. 8 gives, and the 45-degree entry drawn 1.2 nm long to where it
+/// joins the downwind abeam the runway's midpoint (AC 90-66C 11.3:
+/// "Entry to the downwind leg should be at a 45-degree angle abeam the
+/// midpoint of the runway"). Both are a sketch's sizes, not a rule: the
+/// size of a pattern is the pilot's.
+pub const PATTERN_DOWNWIND_NM: f64 = 0.75 * 0.868976;
+pub const PATTERN_ENTRY_NM: f64 = 1.2;
+
+/// How far from the field's centre the 45-degree entry begins, nm (about
+/// 1.7): where a descent to the pattern altitude is to be finished. AC
+/// 90-66C 11.2: "proceed to a point well clear of the pattern before
+/// descending to and entering at pattern altitude"; 11.3: "Arriving
+/// aircraft should be at traffic pattern altitude and allow for
+/// sufficient time to view the entire traffic pattern before entering.
+/// Entries into traffic patterns while descending may create collision
+/// hazards and should be avoided." The entry's start, the downwind's
+/// distance out plus the entry's run across and along, is the least of
+/// it; the pilot levels sooner where the traffic asks.
+pub fn pattern_entry_start_nm() -> f64 {
+    let half = PATTERN_ENTRY_NM * std::f64::consts::FRAC_1_SQRT_2;
+    (PATTERN_DOWNWIND_NM + half).hypot(half)
+}
+
 /// 14 CFR 91.211(a), supplemental oxygen in an airplane without a
 /// pressurised cabin, its cabin at the altitude flown: (a)(1) above
 /// 12,500 ft MSL up to 14,000 ft, the minimum flight crew for any of it

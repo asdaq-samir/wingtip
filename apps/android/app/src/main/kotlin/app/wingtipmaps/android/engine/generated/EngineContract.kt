@@ -6959,6 +6959,9 @@ object EngineContract {
         val fixes: List<EngineContract.NavLogFix>,
         @SerialName("end_altitude_ft")
         val endAltitudeFt: Double? = null,
+        /**
+         * How far before the legs' end the descent is finished, nm: an approach's fix's distance out; where not given, down to a pattern, where the 45-degree entry begins (limits::pattern_entry_start_nm, about 1.7 nm), and 0 with an end_fix.
+         */
         @SerialName("end_before_nm")
         val endBeforeNm: Double? = null,
         @SerialName("end_fix")
