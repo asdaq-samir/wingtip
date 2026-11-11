@@ -846,27 +846,25 @@ def with_holds(r, runs: list[HopRun], outcome: Flown, held: list[vfr_holds.Hold]
     return replace(outcome, legs=[leg for legs in hops for leg in legs], by_hop=tuple(hops) if outcome.by_hop else ())
 
 
-def flown_legs(
-    r,
-    runs: list[HopRun],
-    outcome: Flown,
-    own: dict[str, float] | None = None,
-    drawn: list[tuple[str, dict]] | None = None,
-    ground: dict[str, float] | None = None,
-) -> list:
+def flown_legs(r, runs: list[HopRun], outcome: Flown, asked: Asked) -> list:
     """The legs a pilot flies, with each flight's tops of climb and
     descent placed (the engine's navlog_with_descents): from one landing to the next,
     through any waypoints, down to the pattern at the end of each --
-    `own`, a pilot's own patterns by ident -- or to an approach's first
-    fix, where one is picked for the field (`drawn`, approach_end). The
+    `own_altitudes`, a pilot's own patterns by ident -- or to an approach's first
+    fix, where one is picked for the field (`drawn`, approach_end), and
+    from a Start At point on where one is lower (own_altitude.marked). The
     last leg of each flight but the route's last carries the minutes on
     the ground at the stop it lands at (`ground_min`, ground_min_at), the
     figure the web times the rows after it by."""
-    out, at = [], 0
+    out, at, own, drawn, ground = [], 0, asked.own_altitudes, asked.drawn, asked.ground
     flights = r.flights
     for k, flight in enumerate(flights):
         hops = len(flight.idents) - 1
-        legs = [leg for i, legs in enumerate(outcome.hop_legs[at : at + hops], start=at) for leg in on_airway(legs, r.airports[i + 1])]
+        legs = [
+            leg
+            for i, legs in enumerate(outcome.hop_legs[at : at + hops], start=at)
+            for leg in own_altitude.marked(on_airway(legs, r.airports[i + 1]), runs[i].hop, own, asked.altitude_starts)
+        ]
         fix_list = [fix for j, run in enumerate(runs[at : at + hops]) for fix in (run.fixes if j == 0 else run.fixes[1:])]
         approach = approach_end(flight, drawn or [], legs[-1]["altitude_ft"] if legs else None)
         end = approach or {"end_altitude_ft": pattern_altitude(flight, own)}
@@ -1058,4 +1056,4 @@ def flown_as_picked(r, runs: list[HopRun], outcome: Flown, asked: Asked) -> tupl
     and the Go / No-Go, where the Go / No-Go's copy had missed the
     landing runways."""
     outcome = with_holds(r, runs, with_procedures(r, runs, outcome, asked.drawn, *wind_picks(r, outcome, asked)), asked.holds)
-    return outcome, flown_legs(r, runs, outcome, asked.own_altitudes, asked.drawn, asked.ground)
+    return outcome, flown_legs(r, runs, outcome, asked)

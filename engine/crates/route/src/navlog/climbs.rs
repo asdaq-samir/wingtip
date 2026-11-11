@@ -128,6 +128,13 @@ pub struct End {
 /// and its top of climb (`toc`) is placed too: `fixes`, the fixes the legs
 /// run between, give both a latitude and longitude.
 ///
+/// A leg marked `start_at` (a pilot's Start At at the fix it starts from,
+/// lower than the leg before it) is not reached by that fix: its descent
+/// begins at the fix and runs on from there at three to one, so the leg
+/// before it stays at its level to the fix and carries the top of descent
+/// at its end (the rate at its ground speed). Where a level-off further
+/// on needs the descent to start sooner, it does, as without the mark.
+///
 /// The times and fuel are not changed: the descent is flown at the
 /// cruise's ground speed and burn, and what a pilot saves by taking power
 /// off stays in the tanks.
@@ -173,7 +180,9 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
         None => (f64::INFINITY, None),
         Some(ft) => (ft, Some((ft, level_off, end.fix.is_none(), end.fix.clone()))),
     };
-    let mut tods: Vec<(f64, usize, Binds)> = Vec::new();
+    // Each descent: where it starts, its leg, the altitude it leaves, and
+    // the level-off it binds to.
+    let mut tods: Vec<(f64, usize, f64, Binds)> = Vec::new();
     for i in (0..out.len()).rev() {
         let (altitude, distance) = (altitudes[i], distances[i]);
         let flat = flat_nm.min(distance);
@@ -185,11 +194,22 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
             if (down_nm < distance - flat || i == 0 || altitudes[i - 1] < altitude)
                 && let Some(b) = &binds
             {
-                tods.push((starts[i].max(ends[i] - flat - down_nm), i, b.clone()));
+                tods.push((starts[i].max(ends[i] - flat - down_nm), i, altitude, b.clone()));
             }
         }
         limit_ft += (distance - flat) * ft_per_nm;
-        if altitude <= limit_ft {
+        if i > 0 && out[i].truthy("start_at") && altitudes[i - 1] > altitude {
+            // Start At: the leg's own level binds nothing before its fix.
+            // The descent to it begins at the fix, unless a level-off
+            // further on has the leg before it come down sooner. It is the
+            // leg before's top of descent, at its very end, so this leg
+            // keeps its own for a descent further on (to the pattern, say).
+            let from_ft = altitudes[i - 1];
+            if from_ft <= limit_ft {
+                let level_at = starts[i] + (from_ft - altitude) / ft_per_nm;
+                tods.push((ends[i - 1], i - 1, from_ft, (altitude, level_at, false, None)));
+            }
+        } else if altitude <= limit_ft {
             limit_ft = altitude;
             binds = Some((altitude, starts[i], false, None));
             flat_nm = 0.0;
@@ -209,7 +229,7 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
             tops.push((starts[i] + along, i));
         }
     }
-    for (at, i, (to_ft, level_at, pattern, fix)) in tods.into_iter().rev() {
+    for (at, i, from_ft, (to_ft, level_at, pattern, fix)) in tods.into_iter().rev() {
         let (mut at, mut i) = (at, i);
         if climbs.iter().any(|(a, b)| *a <= at && at < *b) {
             match tops.iter().find(|(t, _)| *t >= at) {
@@ -218,7 +238,6 @@ pub fn with_descents(legs: &[Obj], fixes: &[Obj], end: &End) -> R<Vec<Obj>> {
             }
         }
         let leg = &out[i];
-        let from_ft = altitudes[i];
         let gs = leg.opt("groundspeed_kt")?.unwrap_or(0.0);
         if leg.has("tod") || gs == 0.0 || !leg.has("ete_min") || from_ft <= to_ft || level_at - at < 0.05 {
             continue;

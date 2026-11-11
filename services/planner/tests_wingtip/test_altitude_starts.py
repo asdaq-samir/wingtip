@@ -7,6 +7,7 @@ change begins there."""
 from types import SimpleNamespace
 
 from wingtip import flight_plan as fp
+from wingtip import own_altitude
 
 
 def _altitudes(monkeypatch, starts):
@@ -25,3 +26,17 @@ def test_cross_at_flies_the_hop_into_the_waypoint_at_its_altitude(monkeypatch):
 
 def test_start_at_flies_the_hop_out_of_it_even_into_a_landing(monkeypatch):
     assert _altitudes(monkeypatch, ("VPBNG",)) == [None, 4500.0]
+
+
+def test_a_start_at_hop_has_its_first_leg_marked_for_the_descent_to_begin_there():
+    # own_altitude.marked: the engine's navlog_with_descents starts a Start
+    # At descent at the waypoint, the leg before keeping its level to it.
+    legs = [{"altitude_ft": 3500.0}, {"altitude_ft": 3500.0}]
+    out_of = SimpleNamespace(dep_ident="VPBNG", dest_ident="KDLH")
+    assert own_altitude.marked(legs, out_of, {"VPBNG": 3500.0}, frozenset({"VPBNG"})) == [
+        {"altitude_ft": 3500.0, "start_at": True},
+        {"altitude_ft": 3500.0},
+    ]
+    assert own_altitude.marked(legs, out_of, {"VPBNG": 3500.0}, frozenset()) == legs  # Cross At
+    assert own_altitude.marked(legs, out_of, {}, frozenset({"VPBNG"})) == legs  # no altitude of its own
+    assert own_altitude.marked([], out_of, {"VPBNG": 3500.0}, frozenset({"VPBNG"})) == []

@@ -140,7 +140,7 @@ services/planner/wingtip/cycle_pack.py 908
 services/planner/wingtip/elevation.py 460
 services/planner/wingtip/faa_data.py 982
 services/planner/wingtip/fixes.py 436
-services/planner/wingtip/flight_plan.py 1061
+services/planner/wingtip/flight_plan.py 1059
 services/planner/wingtip/osm.py 522
 services/planner/wingtip/pipeline.py 887
 services/planner/wingtip/planning.py 717

@@ -130,6 +130,13 @@
           "type": "null"
         }
       ]
+    },
+    "start_at": {
+      "type": [
+        "boolean",
+        "null"
+      ],
+      "description": "A pilot's Start At at the fix the leg starts from (wingtip.own_altitude): a descent to the leg's lower altitude begins at that fix and runs on from it at three to one, rather than being done by it (navlog_with_descents)."
     }
   },
   "required": [
