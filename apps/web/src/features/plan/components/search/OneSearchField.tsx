@@ -4,7 +4,7 @@ import { cn } from "cn";
 import ClearButton from "../../../../components/ClearButton";
 import { PANEL_FIELD } from "../../../../components/panelField";
 import { SearchField } from "../../../../components/PanelCapsule";
-import { CommandField } from "../../../../components/ui/command";
+import { CommandClear, CommandField } from "../../../../components/ui/command";
 import { Kbd } from "../../../../components/ui/kbd";
 import { isSearchKey } from "../../../../hooks/use-shortcuts";
 import { useIsDesktop } from "../../../../hooks/use-desktop";
@@ -143,16 +143,9 @@ export default function OneSearchField({
           // the one every field has.
           className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
         />
-        {model.typed && (
-          <ClearButton
-            label="Clear the search"
-            testId="search-clear"
-            onClear={() => {
-              model.setTyped("");
-              inputRef.current?.focus();
-            }}
-          />
-        )}
+        {/* Base UI's own clear: shown while something is typed, the
+            words cleared through the root's onValueChange, the focus kept. */}
+        <CommandClear render={<ClearButton label="Clear the search" testId="search-clear" />} />
         {!model.typed && desktop && !using && <Kbd aria-hidden="true">{searchKeys()}</Kbd>}
         {/* The microphone, the field's trailing button: on-device speech
             only (lib/speechLocal), so none where the browser has no

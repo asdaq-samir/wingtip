@@ -13,7 +13,7 @@ import { Alert, AlertAction, AlertDescription } from "../../../components/ui/ale
 import { PointMenuItems } from "./PointControls";
 import { CONTEXT_MENU, useAfterMenu } from "./pointMenu";
 import { InputGroup } from "../../../components/ui/input-group";
-import { CommandField, CommandRoot } from "../../../components/ui/command";
+import { CommandClear, CommandField, CommandRoot } from "../../../components/ui/command";
 import { Popover, PopoverContent } from "../../../components/ui/popover";
 import type { BaseUIEvent } from "@base-ui/react/types";
 import type { Detour, FuelStopSuggestion } from "../../../lib/api/types";
@@ -524,17 +524,9 @@ export default function RouteBox({
         )}
         data-testid="route-type"
       />
-      {/* What is typed cleared, the field kept, as iOS's fields clear. */}
-      {typed && (
-        <ClearButton
-          label="Clear what is typed"
-          onClear={() => {
-            setTyped("");
-            field.current?.focus();
-          }}
-          className={at === null ? "mr-1" : undefined}
-        />
-      )}
+      {/* What is typed cleared, the field kept, as iOS's fields clear:
+          Base UI's own clear, through the root's onValueChange. */}
+      <CommandClear render={<ClearButton label="Clear what is typed" className={at === null ? "mr-1" : undefined} />} />
     </>
   );
   // An arrow between two points: the one search asked for a stop there (useStopAsked); a plain one either side of an open field.

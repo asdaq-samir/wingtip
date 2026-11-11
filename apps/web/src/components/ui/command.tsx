@@ -113,6 +113,11 @@ function CommandInput({ className, ...props }: AutocompletePrimitive.Input.Props
  *  a card's ident): Base UI's Input with its own props and element. */
 const CommandField = AutocompletePrimitive.Input;
 
+/** The field's clear: Base UI's own, shown while something is typed,
+ *  clearing it through the root's `onValueChange` and keeping the focus
+ *  in the field (drawn as the app's ClearButton by its `render`). */
+const CommandClear = AutocompletePrimitive.Clear;
+
 function CommandList({ className, ...props }: AutocompletePrimitive.List.Props) {
   return (
     <AutocompletePrimitive.List
@@ -198,6 +203,7 @@ function CommandShortcut({ className, ...props }: React.ComponentProps<"span">) 
 
 export {
   Command,
+  CommandClear,
   CommandDialog,
   CommandEmpty,
   CommandField,
