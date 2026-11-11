@@ -27,6 +27,28 @@ export interface SheetPages {
  * keeps its place. Its viewport is clipped, not hidden, so a field focused
  * on the page out of sight never scrolls it sideways under Embla.
  */
+/**
+ * Whether a drag that starts at `target` is the pager's: not where it
+ * starts in a row of the page's own that moves sideways -- a row that
+ * scrolls sideways (Nearest, Favorites), a carousel of its own (Recents'
+ * cards), or what keeps its drags (data-base-ui-swipe-ignore: the altitude
+ * slider, the sortable rows). The owner, 2026-11-11: "I am not able to
+ * scroll the nearest because it swipes to the fpl". Embla's own hook for
+ * it (`watchDrag` as a function), checked up to the pager's root.
+ */
+function pagersDrag(target: EventTarget | null, root: HTMLElement): boolean {
+  for (let el = target instanceof Element ? target : null; el && el !== root; el = el.parentElement) {
+    if (el.getAttribute("aria-roledescription") === "carousel") return false;
+    const ignore = el.getAttribute("data-base-ui-swipe-ignore");
+    if (ignore === "" || ignore === "x") return false;
+    if (el instanceof HTMLElement && el.scrollWidth > el.clientWidth + 1) {
+      const x = getComputedStyle(el).overflowX;
+      if (x === "auto" || x === "scroll") return false;
+    }
+  }
+  return true;
+}
+
 export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: number) => void; drag: boolean; pages: ReactNode[] }) {
   const [api, setApi] = useState<CarouselApi>();
   // The page it opens on, once: a page picked later is scrolled to (below),
@@ -50,7 +72,7 @@ export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: num
   }, [api, at]);
   return (
     <Carousel
-      opts={{ startIndex: start, watchDrag: drag }}
+      opts={{ startIndex: start, watchDrag: drag ? (embla, event) => pagersDrag(event.target, embla.rootNode()) : false }}
       setApi={setApi}
       // The arrow keys are the field's and the lists' here, not the pager's:
       // the split grabber (SheetGrabber's Tabs) steps the pages from the keyboard.
