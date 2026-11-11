@@ -96,14 +96,16 @@ describe("checkpoint notes", () => {
   const key = "43.00000,-89.00000";
 
   test("a note typed before Generate shows at once, and Generate still asks the planner", async () => {
-    // Writing the edit into the stream's own cache made the query count
-    // as fetched, and Generate then did nothing for that route.
+    // The edit in the stream's own cache makes the query count as
+    // fetched: Generate asks whether the stream began, not that.
     vi.mocked(api.saveCheckpointNote).mockResolvedValue(undefined as never);
     vi.mocked(api.describeCheckpoints).mockImplementation(() => notesStream([[44, -90, "the dam"]]));
     const { result } = renderHook(() => usePlan(params), { wrapper });
 
+    // Written into the notes' own cache (an optimistic update), which the
+    // query hands on at its next notification.
     await act(() => result.current.saveDescription(43, -89, "the water tower"));
-    expect(result.current.descriptions[key]).toEqual({ text: "the water tower", source: "saved" });
+    await waitFor(() => expect(result.current.descriptions[key]).toEqual({ text: "the water tower", source: "saved" }));
 
     act(() => result.current.generateDescriptions());
     await waitFor(() => expect(result.current.descriptions["44.00000,-90.00000"]?.text).toBe("the dam"));
@@ -152,7 +154,7 @@ describe("checkpoint notes", () => {
       await first;
     });
 
-    expect(result.current.descriptions[key]).toEqual({ text: "B", source: "saved" });
+    await waitFor(() => expect(result.current.descriptions[key]).toEqual({ text: "B", source: "saved" }));
   });
 
   test("changing the altitude keeps the notes, and asks for nothing", async () => {

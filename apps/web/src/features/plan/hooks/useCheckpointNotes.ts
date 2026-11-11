@@ -51,6 +51,9 @@ export function useCheckpointNotes(dep: string, dest: string, stops: string[] = 
       // way looked finished, and its error line was never shown (the
       // audit's finding). The notes that came before it stay.
       streamFn: ({ signal }) => ended(api.describeCheckpoints(dep, dest, signal, stops), "checkpoint descriptions"),
+      // A run after an edit adds to what is there rather than starting
+      // the cache afresh, which would take the pilot's edits with it.
+      refetchMode: "append",
     }),
     enabled: false,
     staleTime: Infinity,
@@ -74,7 +77,11 @@ export function useCheckpointNotes(dep: string, dest: string, stops: string[] = 
   const descriptionMap = useMemo(() => {
     const map: Record<string, Description> = {};
     for (const m of descriptions.data ?? []) {
-      if (m.type === "checkpoint") map[descriptionKey(m.lat, m.lon)] = { text: m.description ?? "", source: m.source };
+      if (m.type !== "checkpoint") continue;
+      const key = descriptionKey(m.lat, m.lon);
+      // The pilot's own note stays over a line generated after it.
+      if (map[key]?.source === "saved" && m.source !== "saved") continue;
+      map[key] = { text: m.description ?? "", source: m.source };
     }
     return map;
   }, [descriptions.data]);
