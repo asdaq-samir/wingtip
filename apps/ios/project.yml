@@ -344,6 +344,19 @@ schemes:
         WINGTIP_HOST: $(WINGTIP_HOST)
     archive:
       config: Release
+  # The app and its unit tests alone, for a pull request (native-ios.yml's
+  # unit_only): -only-testing:WingtipTests on the Wingtip scheme still
+  # compiled and linked WingtipUITests (run 42929115521), which no pull
+  # request runs. Same targets otherwise, so the DerivedData is shared.
+  WingtipUnit:
+    build:
+      targets:
+        Wingtip: all
+        WingtipWidgets: all
+        WingtipTests: [test]
+    test:
+      config: Debug
+      targets: [WingtipTests]
   # The watch app on its own, for a watch simulator paired with an iPhone
   # one (xcodebuild -destination "platform=watchOS Simulator,name=…");
   # the Wingtip scheme builds it as the app's embedded companion.

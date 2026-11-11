@@ -138,6 +138,13 @@ def ios() -> list[str]:
         errors.append(
             ".github/workflows/native-ios.yml: unit_only must leave out every UI test (`[ \"$UNIT_ONLY\" = true ] || only+=(...)`)"
         )
+    # And builds none: -only-testing still compiles every test target the
+    # scheme holds, so unit_only takes a scheme without WingtipUITests.
+    unit = re.search(r"^  WingtipUnit:\n((?:    .*\n)+)", project, re.M)
+    if not re.search(r"only=\(-only-testing:WingtipTests\) scheme=WingtipUnit\n.*\|\| only\+=\(.*\) scheme=Wingtip\n", workflow):
+        errors.append(".github/workflows/native-ios.yml: unit_only must build the WingtipUnit scheme")
+    elif not unit or "WingtipUITests" in unit.group(1):
+        errors.append("apps/ios/project.yml: the WingtipUnit scheme must hold no WingtipUITests")
     return errors
 
 

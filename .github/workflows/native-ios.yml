@@ -148,10 +148,10 @@ jobs:
             echo "ipad=$(pick iPad)" >> "$GITHUB_OUTPUT"
             echo "duo=$(pick 'iPhone Duo')" >> "$GITHUB_OUTPUT"
           fi
-      # A pull request: the unit tests. Main's push: those and
-      # CardSmokeTests, the one UI smoke (the airport card opened, scrolled
-      # and closed). The launch, flow and accessibility tests, the card
-      # suites and the store shots are the night's.
+      # A pull request: the unit tests, in WingtipUnit, which builds no UI
+      # test. Main's push: those and CardSmokeTests, the one UI smoke (the
+      # airport card opened, scrolled and closed). The launch, flow and
+      # accessibility tests, the card suites and the store shots are the night's.
       - name: Built and tested on the simulator
         env:
           IPHONE: ${{ steps.sim.outputs.iphone }}
@@ -160,13 +160,13 @@ jobs:
         run: |
           host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")
           dest=(-destination "platform=iOS Simulator,id=$IPHONE")
-          only=(-only-testing:WingtipTests)
-          [ "$UNIT_ONLY" = true ] || only+=(-only-testing:WingtipUITests/CardSmokeTests)
+          only=(-only-testing:WingtipTests) scheme=WingtipUnit
+          [ "$UNIT_ONLY" = true ] || only+=(-only-testing:WingtipUITests/CardSmokeTests) scheme=Wingtip
           if [ "$FULL" = true ]; then
-            only=()
+            only=() scheme=Wingtip
             for id in $IPAD $DUO; do dest+=(-destination "platform=iOS Simulator,id=$id"); done
           fi
-          xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -configuration Debug "${dest[@]}" \
+          xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug "${dest[@]}" \
             -derivedDataPath "$RUNNER_TEMP/derived" -resultBundlePath "$RUNNER_TEMP/Wingtip.xcresult" "${only[@]}" \
             CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" \
             test > "$RUNNER_TEMP/xcodebuild.log" 2>&1 || true
