@@ -4,7 +4,6 @@ import { cn } from "cn";
 import { PillSection } from "../../../../components/Favorites";
 import { SheetCard } from "../../../../components/SheetCard";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
-import { EngineGate, WorkingOut } from "../../../../lib/engine/engineGate";
 import { TEXT } from "../../../../lib/text";
 import {
   fieldAlerts,
@@ -27,7 +26,7 @@ const SECTION = "place-notams";
  * closing the field or a runway, and each TFR within 5 nm, at most three,
  * in the problem ink, each in the engine's words (notam_read); a tap shows
  * it in the card's NOTAMs. Nothing where there is none, or while the
- * answer or the engine is on its way.
+ * answer is on its way (the card's content waits for the engine).
  */
 export function PlaceAlerts({ ident, onOpen }: { ident: string; onOpen: () => void }) {
   const { data } = useQuery(fieldNotamsQuery(ident));
@@ -39,26 +38,24 @@ export function PlaceAlerts({ ident, onOpen }: { ident: string; onOpen: () => vo
     requestAnimationFrame(() => document.querySelector(`[data-testid="${SECTION}"]`)?.scrollIntoView({ block: "start" }));
   };
   return (
-    <EngineGate>
-      <ul className="flex flex-col gap-2 pt-3" aria-label="Alerts" data-testid="place-alerts">
-        {alerts.map((n) => (
-          <li key={n.id}>
-            <button
-              type="button"
-              onClick={show}
-              className="flex min-h-11 w-full items-start gap-2 rounded-xl bg-destructive/10 px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              data-testid="place-alert"
-            >
-              <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive-ink" aria-hidden="true" />
-              <span className="flex min-w-0 flex-col">
-                <span className={cn("font-semibold text-destructive-ink", TEXT.row)}>{n.kind === "tfr" ? "TFR Nearby" : "Closed"}</span>
-                <span className={cn("line-clamp-2", TEXT.note)}>{readNotam(n, ident).words}</span>
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </EngineGate>
+    <ul className="flex flex-col gap-2 pt-3" aria-label="Alerts" data-testid="place-alerts">
+      {alerts.map((n) => (
+        <li key={n.id}>
+          <button
+            type="button"
+            onClick={show}
+            className="flex min-h-11 w-full items-start gap-2 rounded-xl bg-destructive/10 px-3 py-2 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            data-testid="place-alert"
+          >
+            <TriangleAlert className="mt-0.5 size-4 shrink-0 text-destructive-ink" aria-hidden="true" />
+            <span className="flex min-w-0 flex-col">
+              <span className={cn("font-semibold text-destructive-ink", TEXT.row)}>{n.kind === "tfr" ? "TFR Nearby" : "Closed"}</span>
+              <span className={cn("line-clamp-2", TEXT.note)}>{readNotam(n, ident).words}</span>
+            </span>
+          </button>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -106,16 +103,15 @@ function NotamRow({ n, ident }: { n: FieldNotam; ident: string }) {
   );
 }
 
-/** The rows, once the engine is there to read them. */
+/** The rows. Each asks the engine as it draws, which a card's content
+ *  waits for (SheetCard's one EngineGate). */
 function NotamRows({ notams, ident }: { notams: FieldNotam[]; ident: string }) {
   return (
-    <EngineGate fallback={<WorkingOut className={cn("text-muted-foreground", TEXT.note)} />}>
-      <ul className="flex flex-col gap-3">
-        {notams.map((n) => (
-          <NotamRow key={n.id} n={n} ident={ident} />
-        ))}
-      </ul>
-    </EngineGate>
+    <ul className="flex flex-col gap-3">
+      {notams.map((n) => (
+        <NotamRow key={n.id} n={n} ident={ident} />
+      ))}
+    </ul>
   );
 }
 
