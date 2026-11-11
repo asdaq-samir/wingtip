@@ -73,7 +73,7 @@ object Planner {
     /** An answer streamed a line at a time (newline-delimited JSON: the
      *  nav log), each line as sent, the empty ones left out. */
     fun lines(path: String, query: Map<String, String?> = emptyMap()): Flow<String> = flow {
-        Gateway.client.newCall(get(path, query)).execute().use { response ->
+        Gateway.streaming.newCall(get(path, query)).execute().use { response ->
             if (response.code != 200) throw Failure(response.code, detail(response.body.string()))
             val source = response.body.source()
             while (true) {

@@ -139,7 +139,7 @@ class Charts(app: Application) : AndroidViewModel(app) {
         withContext(Dispatchers.IO) { runCatching { store.keepOnly(tiles.name) } }
         if (store.hasWhole(tiles.name, tiles.bytes) || !unmetered()) return
         val url = (Config.gateway + Config.plannerPath("/api/overlay-tiles/${tiles.name}.pmtiles")).toHttpUrl()
-        runCatching { store.download(Gateway.client, url, tiles.name, tiles.bytes) }
+        runCatching { store.download(Gateway.streaming, url, tiles.name, tiles.bytes) }
     }
 
     private fun unmetered(): Boolean {

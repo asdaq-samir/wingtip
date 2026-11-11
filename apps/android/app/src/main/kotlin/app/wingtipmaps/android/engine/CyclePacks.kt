@@ -152,7 +152,7 @@ class CyclePacks(private val root: File) {
     private suspend fun fetchPack(cycle: String, region: String): ByteArray? {
         val request = Planner.get("/api/cycle-pack/$cycle/$region.pack")
         return runCatching {
-            Gateway.client.newCall(request).await().use { response ->
+            Gateway.streaming.newCall(request).await().use { response ->
                 if (response.code != 200) null else response.body.bytes()
             }
         }.getOrNull()

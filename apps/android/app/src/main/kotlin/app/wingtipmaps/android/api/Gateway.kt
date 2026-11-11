@@ -27,6 +27,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.File
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -86,8 +87,25 @@ object Gateway {
             // the protocol's own policy, so an answer marked no-store is
             // never kept.
             .cache(Cache(File(app.cacheDir, "answers"), 256L shl 20))
+            // A whole call's limit (the offline audit's gap 8): on the one
+            // bar of a weak link in the air a read fails in seconds into
+            // what is kept, not OkHttp's no limit at all. A write gets
+            // WRITE_TIMEOUT_S (`call`); a stream or a download `streaming`.
+            .callTimeout(READ_TIMEOUT_S, TimeUnit.SECONDS)
             .build()
     }
+
+    /** The client for what takes as long as it takes -- the nav log's and
+     *  the assistant's streams, the packs', charts' and overlays' downloads,
+     *  the account's export -- with no whole-call limit; OkHttp's 10 s
+     *  between bytes still ends one on a dead link. The same pool, cache
+     *  and interceptors as `client`. */
+    val streaming: OkHttpClient by lazy { client.newBuilder().callTimeout(0, TimeUnit.SECONDS).build() }
+
+    /** The whole-call limits: a read, and a write, which may carry a
+     *  scanned page or a track. */
+    const val READ_TIMEOUT_S = 10L
+    const val WRITE_TIMEOUT_S = 60L
 
     /** The gateway's own words for a refusal (ErrorResponse), where it
      *  sent any: "Invalid request" with each field's, or the instructor's
@@ -118,7 +136,9 @@ object Gateway {
      *  Every gateway call goes through here, and is refused through `send`
      *  or `read` in the gateway's own words. */
     suspend fun call(method: String, path: String, json: String? = null, form: Map<String, String>? = null): Pair<String, Int> =
-        client.newCall(request(method, path, json, form)).await().use { response ->
+        client.newCall(request(method, path, json, form)).also { call ->
+            if (method != "GET") call.timeout().timeout(WRITE_TIMEOUT_S, TimeUnit.SECONDS)
+        }.await().use { response ->
             response.body.string() to response.code
         }
 
