@@ -7,11 +7,12 @@
     "approaches": {
       "type": "object",
       "properties": {
-        "any": {
-          "type": "boolean"
-        },
-        "precision": {
-          "type": "boolean"
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The field's instrument approach charts (IAP) by their d-TPP names, \"ILS OR LOC RWY 27\", \"RNAV (GPS) RWY 9\"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a))."
         },
         "alternate_minimums_url": {
           "type": [
@@ -21,10 +22,9 @@
         }
       },
       "required": [
-        "any",
-        "precision"
+        "names"
       ],
-      "description": "The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page."
+      "description": "The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page."
     },
     "forecast": {
       "type": [
@@ -55,9 +55,16 @@
             "string",
             "null"
           ]
+        },
+        "covers": {
+          "type": "boolean",
+          "description": "taf_window's worst.covers: whether the TAF covers the whole window. Missing is taken as not."
         }
       },
-      "description": "The worst its TAF forecasts over the window (taf_window), null where no TAF covers it."
+      "description": "The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.",
+      "required": [
+        "covers"
+      ]
     }
   },
   "required": [

@@ -2117,14 +2117,14 @@ export interface EngineContract {
     answer: IcingForecastRouteAnswer;
   };
   /**
-   * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).
+   * Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility).
    */
   ifr_alternate_check: {
     input: IfrAlternateCheckInput;
     answer: IfrAlternateCheckAnswer;
   };
   /**
-   * Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.
+   * Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast that does not indicate at least 2,000 ft and 3 sm for an hour either side of the ETA (TEMPO and PROB included; a TAF not covering the whole window, a ceiling of unknown height or no visibility does not); no TAF needs one.
    */
   ifr_alternate_destination: {
     input: IfrAlternateDestinationInput;
@@ -7102,21 +7102,27 @@ export interface IcingForecastRouteAnswer {
 export interface IfrAlternateCheckInput {
   ident: string;
   /**
-   * The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+   * The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
    */
   approaches: {
-    any: boolean;
-    precision: boolean;
+    /**
+     * The field's instrument approach charts (IAP) by their d-TPP names, "ILS OR LOC RWY 27", "RNAV (GPS) RWY 9"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a)).
+     */
+    names: string[];
     alternate_minimums_url?: string | null;
   };
   /**
-   * The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+   * The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
    */
   forecast?: {
     ceiling_ft?: number | null;
     ceiling_unknown?: boolean | null;
     visibility_sm?: number | null;
     raw?: string | null;
+    /**
+     * taf_window's worst.covers: whether the TAF covers the whole window. Missing is taken as not.
+     */
+    covers: boolean;
   } | null;
 }
 export interface IfrAlternateCheckAnswer {
@@ -7138,21 +7144,27 @@ export interface IfrAlternateCheckAnswer {
 export interface IfrAlternateDestinationInput {
   ident: string;
   /**
-   * The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+   * The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
    */
   approaches: {
-    any: boolean;
-    precision: boolean;
+    /**
+     * The field's instrument approach charts (IAP) by their d-TPP names, "ILS OR LOC RWY 27", "RNAV (GPS) RWY 9"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a)).
+     */
+    names: string[];
     alternate_minimums_url?: string | null;
   };
   /**
-   * The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+   * The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
    */
   forecast?: {
     ceiling_ft?: number | null;
     ceiling_unknown?: boolean | null;
     visibility_sm?: number | null;
     raw?: string | null;
+    /**
+     * taf_window's worst.covers: whether the TAF covers the whole window. Missing is taken as not.
+     */
+    covers: boolean;
   } | null;
 }
 export interface IfrAlternateDestinationAnswer {
@@ -10350,7 +10362,7 @@ export interface TafWindowAnswer {
   prevailing: TafPeriod | null;
 }
 /**
- * The worst a TAF forecasts in a window, TEMPO and PROB groups included.
+ * The worst a TAF forecasts in a window, TEMPO and PROB groups included, and whether the TAF covers the whole window.
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "WeatherWorst".
@@ -10359,6 +10371,10 @@ export interface WeatherWorst {
   ceiling_ft: number | null;
   ceiling_unknown: boolean;
   visibility_sm: number | null;
+  /**
+   * Whether the prevailing periods (the first line and each FM) cover the whole window without a gap: a TAF ending or beginning inside it says nothing of the rest (14 CFR 91.169(b)(2)(i)).
+   */
+  covers: boolean;
 }
 export interface TafsAlongRouteInput {
   tafs: {}[];
@@ -10887,20 +10903,26 @@ export interface IfrAlternateCheck {
 export interface IfrAlternateIn {
   ident: string;
   /**
-   * The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+   * The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
    */
   approaches: {
-    any: boolean;
-    precision: boolean;
+    /**
+     * The field's instrument approach charts (IAP) by their d-TPP names, "ILS OR LOC RWY 27", "RNAV (GPS) RWY 9"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a)).
+     */
+    names: string[];
     alternate_minimums_url?: string | null;
   };
   /**
-   * The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+   * The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
    */
   forecast?: {
     ceiling_ft?: number | null;
     ceiling_unknown?: boolean | null;
     visibility_sm?: number | null;
     raw?: string | null;
+    /**
+     * taf_window's worst.covers: whether the TAF covers the whole window. Missing is taken as not.
+     */
+    covers: boolean;
   } | null;
 }

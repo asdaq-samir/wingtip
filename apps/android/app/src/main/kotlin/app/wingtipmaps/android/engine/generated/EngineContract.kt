@@ -5319,28 +5319,30 @@ object EngineContract {
     data class IfrAlternateIn(
         val ident: String,
         /**
-         * The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+         * The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
          */
         val approaches: EngineContract.IfrAlternateInApproaches,
         /**
-         * The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+         * The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
          */
         val forecast: EngineContract.IfrAlternateInForecast? = null,
     )
 
     /**
-     * The field's instrument approaches as the d-TPP lists them: any, a precision one (an ILS), its nonstandard alternate minimums page.
+     * The field's instrument approaches as the d-TPP lists them: their names, and its nonstandard alternate minimums page.
      */
     @Serializable
     data class IfrAlternateInApproaches(
-        val any: Boolean,
-        val precision: Boolean,
+        /**
+         * The field's instrument approach charts (IAP) by their d-TPP names, "ILS OR LOC RWY 27", "RNAV (GPS) RWY 9"; the engine decides which are precision (precision_approach: ILS, GLS, PAR, AIM 5-4-5 a.7(a)).
+         */
+        val names: List<String>,
         @SerialName("alternate_minimums_url")
         val alternateMinimumsUrl: String? = null,
     )
 
     /**
-     * The worst its TAF forecasts over the window (taf_window), null where no TAF covers it.
+     * The worst its TAF forecasts over the window (taf_window's worst, with its `covers`), null where the field has no TAF or none says anything of the window.
      */
     @Serializable
     data class IfrAlternateInForecast(
@@ -5351,6 +5353,10 @@ object EngineContract {
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
         val raw: String? = null,
+        /**
+         * taf_window's worst.covers: whether the TAF covers the whole window. Missing is taken as not.
+         */
+        val covers: Boolean,
     )
 
     @Serializable
@@ -10546,7 +10552,7 @@ object EngineContract {
     )
 
     /**
-     * The worst a TAF forecasts in a window, TEMPO and PROB groups included.
+     * The worst a TAF forecasts in a window, TEMPO and PROB groups included, and whether the TAF covers the whole window.
      */
     @Serializable
     data class WeatherWorst(
@@ -10556,6 +10562,10 @@ object EngineContract {
         val ceilingUnknown: Boolean,
         @SerialName("visibility_sm")
         val visibilitySm: Double? = null,
+        /**
+         * Whether the prevailing periods (the first line and each FM) cover the whole window without a gap: a TAF ending or beginning inside it says nothing of the rest (14 CFR 91.169(b)(2)(i)).
+         */
+        val covers: Boolean,
     )
 
     @Serializable
