@@ -83,7 +83,7 @@ describe("the planner before the engine is there", () => {
   test("draws the search and the sheet at once", { timeout: 30_000 }, async () => {
     const { engine, screen } = await drawAt("/plan");
     expect(engine.engineLoaded()).toBe(false);
-    expect(await screen.findByText("Where do you want to fly?", undefined, { timeout: 10_000 })).toBeTruthy();
+    expect(await screen.findByPlaceholderText(/^Search airports/, undefined, { timeout: 10_000 })).toBeTruthy();
     expect(screen.getByText("Skip to the map")).toBeTruthy();
   });
 
@@ -97,7 +97,7 @@ describe("the planner before the engine is there", () => {
         fix: { lat: 42.1, lon: -87.9, accuracyM: 10, speedKt: 0, headingDeg: null, altitudeFt: null, at: Date.now() },
       });
     });
-    expect(await screen.findByText("Where do you want to fly?", undefined, { timeout: 10_000 })).toBeTruthy();
+    expect(await screen.findByPlaceholderText(/^Search airports/, undefined, { timeout: 10_000 })).toBeTruthy();
   });
 
   test("says Working out in a card's place, opened from the address", { timeout: 30_000 }, async () => {

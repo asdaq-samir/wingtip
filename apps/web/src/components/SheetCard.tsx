@@ -1,5 +1,6 @@
 import { isValidElement, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode, useEffectEvent } from "react";
 import { createPortal } from "react-dom";
+import { EngineGate } from "../lib/engine/engineGate";
 import type { Drawer } from "@base-ui/react/drawer";
 import CloseButton from "./CloseButton";
 import { CardHeadRow } from "./CardHead";
@@ -211,7 +212,9 @@ export function SheetCard({
         className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
         data-testid={testId}
       >
-        <CardId.Provider value={id}>{children}</CardId.Provider>
+        <CardId.Provider value={id}>
+          <EngineGate>{children}</EngineGate>
+        </CardId.Provider>
       </div>,
       target,
     );
@@ -237,7 +240,16 @@ export function SheetCard({
         <CardHeadRow name={title} sub={description} nameId={headingId} leading={leading} wrap end={end} hidden={titleHidden} />
       )}
       <CardId.Provider value={id}>
-        <SheetCardHead.Provider value={headSlot}>{children}</SheetCardHead.Provider>
+        {/* A card's content waits for the engine (EngineGate), its head and
+            grabber not: cards are kept drawn from the page's first paint
+            (keepMounted), before the .wasm is in, and what they ask the
+            engine as they draw threw there -- the Nav Log's totals, then the
+            Brief's call sign (radio_call_sign), each "Part of the app didn't
+            load" (the owner's iPhone and firstDraw.test, 2026-11-11). One
+            gate for every card, not one per call. */}
+        <SheetCardHead.Provider value={headSlot}>
+          <EngineGate>{children}</EngineGate>
+        </SheetCardHead.Provider>
       </CardId.Provider>
     </div>,
     target,
