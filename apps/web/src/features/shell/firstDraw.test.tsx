@@ -27,9 +27,11 @@ afterEach(async () => {
   // (routePanelParts' loadRoutePanel), and a test can end before it is in:
   // the last one's import then landed after the environment was torn down,
   // failing the run with every test passed. Each test waits here for the
-  // imports its page started.
+  // imports its page started: a cold transform of the chunk's modules, so
+  // the tests' own 30 s, not a hook's default 10 s, which a busy CI runner
+  // went past.
   await vi.dynamicImportSettled();
-});
+}, 30_000);
 
 /** The page at `address`, drawn from a fresh copy of every module: the
  *  engine's not loaded, and nothing answering on the network. */
