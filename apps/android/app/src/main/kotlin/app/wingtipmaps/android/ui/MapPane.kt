@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import androidx.activity.compose.ReportDrawnWhen
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -249,7 +250,13 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             onPick = onPick,
             onView = onView,
         )
-        MapLoading(shown = !revealed, bottomInset = covered, problem = if (info == null) chartProblem else null, onRetry = charts::load, modifier = Modifier.fillMaxSize())
+        val problem = if (info == null) chartProblem else null
+        MapLoading(shown = !revealed, bottomInset = covered, problem = problem, onRetry = charts::load, modifier = Modifier.fillMaxSize())
+        // The map's part of the launch's "fully drawn" (reportFullyDrawn,
+        // which the system and Macrobenchmark time a cold start to): the
+        // chart shown, or its problem with Retry where it could not load.
+        // The sheet's first content is the other part (Home).
+        ReportDrawnWhen { revealed || problem != null }
         MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd))
         // The receiver heard: "Stratux · 12 targets · GPS"; under it the
         // radar or satellite loop's bar while one is on.

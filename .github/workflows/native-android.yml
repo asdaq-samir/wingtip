@@ -121,7 +121,9 @@ jobs:
   device:
     needs: build
     # The emulator's instrumented tests: the engine held to the shared
-    # fixtures through the app's own bridge (EngineTest). Ten minutes and
+    # fixtures through the app's own bridge (EngineTest), and the release
+    # build, R8's, started and its engine called (ReleaseEngineTest in
+    # :baselineprofile, the benchmarkRelease build). Ten minutes and
     # more, so the night's (the owner, 2026-11-06), and by hand.
     if: github.workflow == 'Native Android' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-26.04
@@ -166,12 +168,18 @@ jobs:
           api-level: 35
           arch: x86_64
           working-directory: apps/android
-          script: ./gradlew --stacktrace --build-cache connectedDebugAndroidTest
+          # The emulator's timings are no phone's, so the startup benchmark
+          # and the profile's generator are left out (docs/NATIVE-ANDROID.md).
+          script: |
+            ./gradlew --stacktrace --build-cache :app:connectedDebugAndroidTest
+            ./gradlew --stacktrace --build-cache :baselineprofile:connectedBenchmarkReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=app.wingtipmaps.android.baselineprofile.ReleaseEngineTest
       - name: The test reports, on failure
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: wingtip-native-device-tests
-          path: apps/android/app/build/reports/androidTests
+          path: |
+            apps/android/app/build/reports/androidTests
+            apps/android/baselineprofile/build/reports/androidTests
           if-no-files-found: ignore
           retention-days: 7

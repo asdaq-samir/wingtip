@@ -1,4 +1,5 @@
-// The native Android app (docs/NATIVE-ANDROID.md): one module, the app.
+// The native Android app (docs/NATIVE-ANDROID.md): the app, and the
+// Baseline Profile's generator, which drives the release build on a device.
 pluginManagement {
     repositories {
         google()
@@ -23,3 +24,4 @@ dependencyResolutionManagement {
 }
 rootProject.name = "WingtipMaps"
 include(":app")
+include(":baselineprofile")

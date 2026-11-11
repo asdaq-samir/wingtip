@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import androidx.activity.compose.ReportDrawn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -105,6 +106,9 @@ internal fun Home(plan: Plan, fix: OwnShip.Fix?, answer: @Composable () -> Unit,
     val recents by memory.recents.collectAsStateWithLifecycle()
     val own by remember(context) { OwnAirplanes.of(context) }.records.collectAsStateWithLifecycle()
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
+    // The sheet's part of the launch's "fully drawn": its first content,
+    // the flight's card, is on screen (the map's part is MapPane's).
+    ReportDrawn()
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(top = WingtipSpace.Sm, bottom = WingtipSpace.Xl)) {
         item(key = "answer") { answer() }
         item(key = "flight") {
