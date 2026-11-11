@@ -14,16 +14,20 @@ import { useNotamMarks, useNotamSheet } from "./notamBadges";
  *  runway, a NOTAM's badge by its name ("Closed") and a tap on it opening
  *  that NOTAM, and each runway's RVR now where the field reports it. */
 export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
+  const marks = useNotamMarks(place.ident, place);
+  // Closed by a NOTAM in force as by the FAA's data: no runway shut to
+  // landing and takeoff is the longest or the best (KORD's 04L/22R, "CLSD
+  // EXC TAX", was badged Best Wind, 2026-11-11).
+  const runways = place.runways.map((r, i) => (marks.runway.get(i)?.severity === "unusable" ? { ...r, closed: true } : r));
   // The longest runway open, what a pilot sizes a field by: a badge on its
   // row (it was a row of the Info tab's Details). None where the field has one.
-  const open = place.runways.filter((r) => !r.closed && r.length_ft != null);
-  const longest = open.length > 1 ? open.reduce((a, b) => (b.length_ft! > a.length_ft! ? b : a)) : null;
+  const open = runways.filter((r) => !r.closed && r.length_ft != null);
+  const longest = open.length > 1 ? runways.indexOf(open.reduce((a, b) => (b.length_ft! > a.length_ft! ? b : a))) : -1;
   // The runway most nearly into the reported wind (AC 90-66C 11.5, the
   // engine's gonogo_runway_in_use over each runway's wind on the end it
   // favours): only where the wind chose it, not a calm field's most used.
-  const inUse = runwayInUse(place.runways);
-  const bestWind = inUse?.byWind ? inUse.runway : null;
-  const marks = useNotamMarks(place.ident, place);
+  const inUse = runwayInUse(runways);
+  const bestWind = inUse?.byWind ? runways.indexOf(inUse.runway) : -1;
   const sheet = useNotamSheet();
   return (
     <div data-testid="place-runways">
@@ -49,8 +53,8 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
               <RunwayRow
                 key={`${r.ends}-${i}`}
                 runway={r}
-                longest={r === longest}
-                bestWind={r === bestWind}
+                longest={i === longest}
+                bestWind={i === bestWind}
                 notam={mark && <NotamBadge mark={mark} kind="runway" />}
                 onClick={mark && (() => sheet.show(mark))}
               />
