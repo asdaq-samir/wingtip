@@ -26,9 +26,22 @@ declare module "@tanstack/react-query" {
  * No retries and no refetch on focus: the planner's calls are chart
  * reads, model inferences and streams of legs, and a pilot switching
  * back to the tab does not want the nav log recomputed under them.
+ *
+ * Asked even with no connection ("offlineFirst"): the request goes to the
+ * service worker, whose kept answers -- Keep for the Air's, the last of
+ * each read -- are the flight's data in the air. TanStack's default
+ * ("online") paused every query asked after the browser's "offline"
+ * event without asking, so the worker was never asked, and a list waited
+ * on a skeleton or drew nothing (the offline audit's gap 1). A request
+ * the worker did not keep fails at once, and is said "No connection" in
+ * place (QueryState, lib/problems). A mutation is sent too, to fail at
+ * once with its alert rather than wait unseen for a connection.
  */
 export const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
+  defaultOptions: {
+    queries: { retry: false, refetchOnWindowFocus: false, networkMode: "offlineFirst" },
+    mutations: { networkMode: "offlineFirst" },
+  },
   queryCache: new QueryCache({
     onError: (error, query) => {
       const silent = query.meta?.silent;

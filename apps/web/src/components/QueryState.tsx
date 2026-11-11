@@ -3,12 +3,17 @@ import { Skeleton } from "./ui/skeleton";
 import { ListRow } from "./GroupedList";
 import { FINDING_TONE } from "../lib/findings";
 import { TEXT } from "../lib/text";
+import { NO_CONNECTION, noConnection } from "../lib/problems";
 
 /** What a query says of itself (TanStack Query's own flags). */
 interface Asked {
   isLoading: boolean;
   isError: boolean;
   isFetching: boolean;
+  error?: unknown;
+  /** "paused": waiting on a connection, which a skeleton would wait on
+   *  for good. */
+  fetchStatus?: "fetching" | "paused" | "idle";
   refetch: () => unknown;
 }
 
@@ -35,10 +40,15 @@ export default function QueryState({
   failed: string;
   row?: boolean;
 }) {
-  if (query.isError && !query.isFetching) {
+  // No connection: said so, not a skeleton for ever (a query paused for
+  // one drew nothing at all) nor "could not be fetched" as if the server
+  // were at fault; asked again by itself once the phone is back
+  // (lib/queryClient's whenBack), and Try again for the pilot meanwhile.
+  const offline = noConnection(query);
+  if ((query.isError && !query.isFetching) || offline) {
     const words = (
       <>
-        {failed}{" "}
+        {offline ? `${NO_CONNECTION}.` : failed}{" "}
         <button
           type="button"
           onClick={() => void query.refetch()}
