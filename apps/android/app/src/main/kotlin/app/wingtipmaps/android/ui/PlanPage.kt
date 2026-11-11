@@ -51,6 +51,7 @@ import app.wingtipmaps.android.ai.AiWordsRow
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.AskFigures
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
+import app.wingtipmaps.android.altitude.PlanAltitudeSection
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.design.ChoiceGroup
@@ -124,8 +125,8 @@ fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onLeg: 
             if (state.routed) item(key = "ready") { Box(pad) { ReadyToFlyRow(plan, onSetRoute = null) } }
             item(key = "route") { Box(pad) { RouteFields(plan, state, dryRun) } }
             item(key = "rules") { Box(pad) { FlightRulesRow(onChanged = { if (state.routed) plan.plan() }) } }
-            // The cruise altitude, under the rules it is picked by (AltitudeRow).
-            item(key = "altitude") { Box(pad) { AltitudeRow(plan, state) } }
+            // The cruise altitude, under the rules it is picked by: the Profile and the Altitude Advisor.
+            item(key = "altitude") { Box(pad) { PlanAltitudeSection(plan, state) } }
             item(key = "problem") {
                 Column(pad) {
                     ProblemLine(state.problem ?: dryRunState.problem)

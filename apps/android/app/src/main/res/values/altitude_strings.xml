@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The altitude's words: the Profile card, its slider, a waypoint's
+     altitude and the Altitude Advisor (the owner's spec, 2026-11-10). -->
+<resources>
+    <string name="profile_card">Profile</string>
+    <!-- The plan's Profile row: the side view, at the altitude flown. -->
+    <string name="profile_row">Side view and altitude, %1$s</string>
+    <string name="profile_needs_route">Plan a route first.</string>
+    <string name="altitude_slider">Altitude</string>
+    <string name="altitude_set">Set</string>
+    <string name="altitude_auto">Auto</string>
+    <!-- A waypoint's altitude sheet's title: "Altitude at KMSN". -->
+    <string name="altitude_at">Altitude at %1$s</string>
+    <string name="altitude_start_at">Start At</string>
+    <string name="altitude_cross_at">Cross At</string>
+    <string name="altitude_plans_own">Use the Plan\'s</string>
+    <string name="altitude_advisor">Altitude Advisor</string>
+    <string name="altitude_fastest">Fastest</string>
+    <string name="altitude_economical">Most Economical</string>
+    <string name="altitude_all">All Altitudes</string>
+    <string name="altitude_legal_only">Legal Altitudes Only</string>
+</resources>

@@ -33,6 +33,7 @@ class SheetPageTest {
         SheetPage.Passengers,
         SheetPage.About,
         SheetPage.Clearance,
+        SheetPage.Profile,
         SheetPage.YourAirplanes,
         SheetPage.Checklist("C172", "NORMAL"),
     )

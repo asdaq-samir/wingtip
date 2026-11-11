@@ -5,6 +5,7 @@ import app.wingtipmaps.android.api.generated.AircraftProfiles
 import app.wingtipmaps.android.api.generated.AirportSearch
 import app.wingtipmaps.android.api.generated.GoNoGo
 import app.wingtipmaps.android.api.generated.GoNoGoAsk
+import app.wingtipmaps.android.api.generated.RouteProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -116,6 +117,12 @@ object Planner {
     suspend fun course(dep: String, dest: String, stops: List<String>): Course =
         Gateway.json.decodeFromString(fetch("/api/course", route(dep, dest, stops)))
 
+    /** The route's side view (/api/route-profile): the ground under it,
+     *  and the airspace it passes through, floor to ceiling, as the web's
+     *  and the iPhone's profiles draw it. */
+    suspend fun routeProfile(dep: String, dest: String, stops: List<String>): RouteProfile =
+        Gateway.json.decodeFromString(fetch("/api/route-profile", route(dep, dest, stops)))
+
     /** The nav log for a route, line by line as the planner sends them
      *  (/api/navlog), under the flight rules picked (the planner's
      *  altitudes by 14 CFR 91.159 or 91.179, or the pilot's own
@@ -132,8 +139,9 @@ object Planner {
         rules: String = "vfr",
         altitudeFt: Double? = null,
         depart: String? = null,
+        altitudes: Map<String, String?> = emptyMap(),
     ): Flow<NavLogMessage> =
-        lines("/api/navlog", navlogQuery(dep, dest, stops, airplane, holds, rules, altitudeFt, depart)).mapNotNull { NavLog.decode(it) }
+        lines("/api/navlog", navlogQuery(dep, dest, stops, airplane, holds, rules, altitudeFt, depart) + altitudes).mapNotNull { NavLog.decode(it) }
 
     /** The nav log's question: the route, the airplane (as
      *  AirplaneNow.plannerQuery asks it), the holds, the rules, and the
