@@ -24203,6 +24203,24 @@
               "title": "Ahead",
               "type": "boolean"
             }
+          },
+          {
+            "description": "The chart cycle the page draws, as the chart tiles carry it: unread here, but in the address, so an answer a browser or service worker kept from last cycle is never taken for this cycle's",
+            "in": "query",
+            "name": "c",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The chart cycle the page draws, as the chart tiles carry it: unread here, but in the address, so an answer a browser or service worker kept from last cycle is never taken for this cycle's",
+              "title": "C"
+            }
           }
         ],
         "responses": {
@@ -24535,6 +24553,24 @@
               "default": "",
               "title": "Stops",
               "type": "string"
+            }
+          },
+          {
+            "description": "The chart cycle the page draws, as the chart tiles carry it: unread here, but in the address, so an answer a browser or service worker kept from last cycle is never taken for this cycle's",
+            "in": "query",
+            "name": "c",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "The chart cycle the page draws, as the chart tiles carry it: unread here, but in the address, so an answer a browser or service worker kept from last cycle is never taken for this cycle's",
+              "title": "C"
             }
           }
         ],

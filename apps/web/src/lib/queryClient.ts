@@ -42,7 +42,9 @@ declare module "@tanstack/react-query" {
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { retry: (failures, error) => failures < 3 && retryable(error), networkMode: "offlineFirst" },
+    // Not in the unit tests, as TanStack's testing guide has it: a failure
+    // a test mocks is the one it means to see, at once.
+    queries: { retry: import.meta.env.MODE === "test" ? false : retryOnServerFailure, networkMode: "offlineFirst" },
     mutations: { networkMode: "offlineFirst" },
   },
   queryCache: new QueryCache({
@@ -135,6 +137,11 @@ function failed(message: string, retry: boolean): string {
   return id;
 }
 
+/** TanStack's own three retries, for what asking again could answer. */
+export function retryOnServerFailure(failures: number, error: unknown): boolean {
+  return failures < 3 && retryable(error);
+}
+
 /** Whether asking again could answer differently: not for what the
  *  request itself got wrong -- a 4xx, a route with no legal altitude
  *  (lib/api/streams) -- where Try again only showed the same toast
@@ -178,15 +185,24 @@ export const capabilitiesQuery = queryOptions({
   meta: { silent: true },
 });
 
+/** The chart cycle the map draws (chartQuery's, or the one kept in this
+ *  browser before it is asked, its initialData), for the course and the
+ *  checkpoints to carry in their key and address as the tiles do: on a
+ *  cycle's first day a route opened again was drawn from the service
+ *  worker's answer kept from the last one, and, never stale here, stood
+ *  all session. Undefined until a chart is known. */
+export const chartCycle = (): string | undefined =>
+  queryClient.getQueryData(chartQuery.queryKey)?.chart_cycle ?? keptChart()?.chart.chart_cycle;
+
 /** A route's course: its airports, any stops among them, and the line
  *  through them, the same answer for as long as the page is open. A
  *  course that fails is the page's first news that the planner is down;
  *  but a point the planner does not know is said on its pill in the
  *  route box (usePlan's `unknownPlace`), not as a system problem. */
-export const courseQuery = (dep: string, dest: string, stops: string[] = []) =>
+export const courseQuery = (dep: string, dest: string, stops: string[] = [], cycle = chartCycle()) =>
   queryOptions({
-    queryKey: ["course", dep, dest, stops.join(",")],
-    queryFn: ({ signal }) => api.course(dep, dest, stops, signal),
+    queryKey: ["course", dep, dest, stops.join(","), cycle],
+    queryFn: ({ signal }) => api.course(dep, dest, stops, signal, cycle),
     staleTime: Infinity,
     meta: { silent: isUnknownPlace },
   });
@@ -200,10 +216,10 @@ export const courseQuery = (dep: string, dest: string, stops: string[] = []) =>
  *  HTTP/1.1 a browser's six connections to the page filled with them --
  *  a card, the next route's course and the tiles waited behind
  *  (2026-10-07). The planner's read goes on and is kept either way. */
-export const checkpointsQuery = (dep: string, dest: string, stops: string[] = []) =>
+export const checkpointsQuery = (dep: string, dest: string, stops: string[] = [], cycle = chartCycle()) =>
   queryOptions({
-    queryKey: ["checkpoints", dep, dest, stops.join(",")],
-    queryFn: ({ signal }) => api.checkpoints(dep, dest, stops, signal),
+    queryKey: ["checkpoints", dep, dest, stops.join(","), cycle],
+    queryFn: ({ signal }) => api.checkpoints(dep, dest, stops, signal, false, cycle),
     staleTime: Infinity,
     // A point not known, the course's to say (courseQuery).
     meta: { silent: isUnknownPlace },

@@ -407,8 +407,11 @@ const INDEX_VERSION = 2;
 export const api = {
   /** The leg itself, through any stops: sub-second, and enough to draw
    *  before any tile is read. */
-  course: (dep: string, dest: string, stops?: string[], signal?: AbortSignal) =>
-    planner.GET("/api/course", { params: { query: { dep, dest, stops: stopsParam(stops) } }, signal }).then(data<Course>),
+  /** `cycle`, the chart's (chartCycle): in the address only, as the tiles'
+   *  `c`, so the service worker's answer kept from last cycle is never
+   *  this cycle's. */
+  course: (dep: string, dest: string, stops?: string[], signal?: AbortSignal, cycle?: string) =>
+    planner.GET("/api/course", { params: { query: { dep, dest, stops: stopsParam(stops), c: cycle } }, signal }).then(data<Course>),
 
   /** Scored candidates and the subset worth flying, hop by hop. Fast --
    *  the model is loaded and the features are already built -- once the
@@ -417,9 +420,9 @@ export const api = {
   /** `ahead`: asked for before the pilot does (PlanWorkspace's Recents and
    *  Saved planned ahead), its chart reads queued behind the pilot's own
    *  (the planner's chart_model.READ_AHEAD). */
-  checkpoints: (dep: string, dest: string, stops?: string[], signal?: AbortSignal, ahead = false) =>
+  checkpoints: (dep: string, dest: string, stops?: string[], signal?: AbortSignal, ahead = false, cycle?: string) =>
     planner
-      .GET("/api/checkpoints", { params: { query: { dep, dest, stops: stopsParam(stops), ahead: ahead || undefined } }, signal })
+      .GET("/api/checkpoints", { params: { query: { dep, dest, stops: stopsParam(stops), ahead: ahead || undefined, c: cycle } }, signal })
       .then(data<Checkpoints>),
 
   /**

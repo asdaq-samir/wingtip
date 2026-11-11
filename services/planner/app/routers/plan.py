@@ -28,7 +28,7 @@ from wingtip.engine import ask as engine
 from wingtip.planning import route_line
 from wingtip.profile import route_profile as side_view
 
-from .. import chart_model, foreflight, prefetch
+from .. import chart_model, cycle_in_address, foreflight, prefetch
 from ..router_basics import CHART_CACHE, line, load_route, ndjson, resolve, resolve_stop, stops_of
 from ..schemas.plan import (
     ChartLayer,
@@ -131,7 +131,7 @@ def route_check(dep: str = "", dest: str = "", stops: str = "") -> RouteChecked:
     return RouteChecked(stops=stops_of(stops))
 
 
-@router.get("/api/course", openapi_extra=PUBLIC)
+@router.get("/api/course", dependencies=[Depends(cycle_in_address.in_address)], openapi_extra=PUBLIC)
 def course(dep: str, dest: str, stops: str = "") -> Course:
     """Just the course line and its endpoints, through any stops.
 
@@ -188,7 +188,7 @@ async def _read_ahead(
     chart_model.READ_AHEAD.set(ahead)
 
 
-@router.get("/api/checkpoints", dependencies=[Depends(_read_ahead)], openapi_extra=PUBLIC)
+@router.get("/api/checkpoints", dependencies=[Depends(_read_ahead), Depends(cycle_in_address.in_address)], openapi_extra=PUBLIC)
 def checkpoints(dep: str, dest: str, stops: str = "") -> Checkpoints:
     """Scored candidates and the subset worth flying, hop by hop along
     the whole route: fast once each hop's chart has been read, a few

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { experimental_streamedQuery as streamedQuery, keepPreviousData, useMutation, useQuery } from "@tanstack/react-query";
 import { api, errorMessage } from "../../../lib/api/client";
-import { courseQuery } from "../../../lib/queryClient";
+import { chartQuery, courseQuery } from "../../../lib/queryClient";
 import { routeOf } from "../../../lib/identSchema";
 import { ended } from "../../../lib/api/streams";
 import type { Course, Detection, Endpoint, LoosePick, PickSaved, Point, Rating, Role } from "../../../lib/api/types";
@@ -100,7 +100,8 @@ export function useTraining(dep: string, dest: string) {
 
   // The previous route's course stays on the map until the new one is
   // charted, so the map is never taken down between routes.
-  const course = useQuery({ ...courseQuery(dep, dest), enabled: routeKnown, placeholderData: keepPreviousData });
+  const { data: cycle } = useQuery({ ...chartQuery, select: (chart) => chart.chart_cycle });
+  const course = useQuery({ ...courseQuery(dep, dest, [], cycle), enabled: routeKnown, placeholderData: keepPreviousData });
   // The chart read, the slowest thing this page does: streamed a block
   // at a time from the departure end, and kept for the route.
   const stream = useQuery({

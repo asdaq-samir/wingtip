@@ -17,7 +17,8 @@ import { useTraining } from "./useTraining";
 
 vi.mock("../../../lib/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../lib/api/client")>()),
-  api: { course: vi.fn(), detect: vi.fn(), savePick: vi.fn(), deletePick: vi.fn(), classify: vi.fn() },
+  // The chart's cycle never answers here: the course is asked with none.
+  api: { course: vi.fn(), detect: vi.fn(), savePick: vi.fn(), deletePick: vi.fn(), classify: vi.fn(), chart: vi.fn(() => new Promise(() => {})) },
 }));
 
 const { api } = await import("../../../lib/api/client");
@@ -124,7 +125,7 @@ describe("useTraining", () => {
     const { result } = renderLabels();
     await loaded(result);
 
-    expect(mockCourse).toHaveBeenCalledWith("C81", "KDLH", [], expect.any(AbortSignal));
+    expect(mockCourse).toHaveBeenCalledWith("C81", "KDLH", [], expect.any(AbortSignal), undefined);
     expect(result.current.course?.departure.ident).toBe("C81");
     expect(result.current.endpoints).toHaveLength(2);
     expect(result.current.detections).toHaveLength(1);

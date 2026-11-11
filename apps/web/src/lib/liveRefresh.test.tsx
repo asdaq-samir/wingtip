@@ -8,7 +8,7 @@ import type { ReactNode } from "react";
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { ApiError } from "./api/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { queryClient } from "./queryClient";
+import { queryClient, retryOnServerFailure } from "./queryClient";
 import { refreshLive, useLiveRefresh } from "./liveRefresh";
 import { Shown } from "./shown";
 
@@ -57,17 +57,15 @@ describe("a live card's refresh", () => {
 });
 
 describe("the query client's defaults", () => {
-  const retry = queryClient.getDefaultOptions().queries!.retry as (failures: number, error: unknown) => boolean;
-
   it("refetches what is stale on focus, TanStack's default", () => {
     expect(queryClient.getDefaultOptions().queries!.refetchOnWindowFocus).toBeUndefined();
   });
 
   it("retries a server's failure up to three times, but never a request it refused", () => {
-    expect(retry(0, new ApiError("Bad gateway", 502))).toBe(true);
-    expect(retry(2, new ApiError("Bad gateway", 502))).toBe(true);
-    expect(retry(3, new ApiError("Bad gateway", 502))).toBe(false);
-    expect(retry(0, new ApiError("Not found", 404))).toBe(false);
-    expect(retry(0, new ApiError("Too many", 429))).toBe(true);
+    expect(retryOnServerFailure(0, new ApiError("Bad gateway", 502))).toBe(true);
+    expect(retryOnServerFailure(2, new ApiError("Bad gateway", 502))).toBe(true);
+    expect(retryOnServerFailure(3, new ApiError("Bad gateway", 502))).toBe(false);
+    expect(retryOnServerFailure(0, new ApiError("Not found", 404))).toBe(false);
+    expect(retryOnServerFailure(0, new ApiError("Too many", 429))).toBe(true);
   });
 });

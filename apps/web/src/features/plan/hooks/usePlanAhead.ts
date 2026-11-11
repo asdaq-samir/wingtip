@@ -6,7 +6,7 @@ import { aircraftKey } from "../../../lib/aircraftChoice";
 import { planHrefOf, recentHrefOf } from "../../../lib/flightLink";
 import { altitudesOf, altitudesParam, routeOf, stopsOf } from "../../../lib/identSchema";
 import { usePreferences } from "../../../lib/preferences";
-import { courseQuery, flightsQuery, queryClient } from "../../../lib/queryClient";
+import { chartCycle, courseQuery, flightsQuery, queryClient } from "../../../lib/queryClient";
 import { sameStops } from "../lib/routeWays";
 import { altitudeChoiceOf, type PlannedRoute } from "./planAddress";
 import { navlogQuery, type PlanParams } from "./usePlan";
@@ -107,7 +107,7 @@ export function usePlanAhead({
         if (showWaypoints) {
           await ask({
             queryKey: ["checkpoints-ahead", dep, dest, via.join(",")],
-            queryFn: () => api.checkpoints(dep, dest, via, undefined, true),
+            queryFn: () => api.checkpoints(dep, dest, via, undefined, true, chartCycle()),
           });
         }
         await ask(navlogQuery(plan, showWaypoints, true));
