@@ -109,7 +109,7 @@ export default function PlanPage({
           icon={<Route />}
           title="Plan a flight"
           action={
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-wrap justify-center gap-2">
               <Button type="button" onClick={toSearch} data-testid="fpl-empty-search">
                 Search
               </Button>
@@ -118,7 +118,12 @@ export default function PlanPage({
               </Button>
             </div>
           }
-          className="pb-2"
+          // At the top under the box, not centred in the sheet's whole
+          // height, its two buttons side by side: at half the box, the
+          // buttons and the flights saved come up in that order, as far as
+          // there is room (the owner, 2026-11-11: "FPL should show the box
+          // and the button and the saved in half card if we have space").
+          className="flex-none px-6 pt-4 pb-2"
         >
           Search for an airport, then Fly Here or Depart From.
         </EmptyState>
