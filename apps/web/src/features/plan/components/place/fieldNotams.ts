@@ -83,7 +83,7 @@ export function headingOf(n: FieldNotam, ident: string): string {
 
 /** A feed's time as a date, one with no zone read as UTC; null where it
  *  is none. */
-function dateOf(iso: string | null | undefined): Date | null {
+export function dateOf(iso: string | null | undefined): Date | null {
   const at = iso ? new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`) : null;
   return at && !Number.isNaN(at.getTime()) ? at : null;
 }
@@ -125,35 +125,9 @@ const CORNER = new Intl.DateTimeFormat("en-US", { month: "2-digit", day: "2-digi
  *  clock in the device's own time, as a pilot writes it on a kneeboard,
  *  the zone not named (the owner, 2026-11-11: "No need to mention time
  *  zone, just say local"). */
-function corner(at: Date, local: boolean): string {
+export function corner(at: Date, local: boolean): string {
   const part = Object.fromEntries(CORNER.formatToParts(at).map((p) => [p.type, p.value]));
   return `${part.month}/${part.day} ${part.hour}:${part.minute}${local ? " local" : ""}`;
-}
-
-/** Its start and end for a row's corner in the device's own time, month/day
- *  and 24 hours, "local" once on the last ("11/10 06:00" over
- *  "11/12 08:32 local"; the owner, 2026-11-11: "Instead of Zulu time make it
- *  local time", then the numeric 24-hour form for "How can we make the
- *  notam date time more compact"; its full card keeps the UTC the NOTAM
- *  gives): the end an estimate with "(est.)", not EST (Eastern time),
- *  "Permanent" where it is PERM
- *  (JO 7930.2 4-2-1), null where none is given. */
-function cornerOf(n: FieldNotam, read: NotamReading): { from: string | null; until: string | null } {
-  const window = windowOf(n, read);
-  const [starts, ends] = [dateOf(window.starts), dateOf(window.ends)];
-  const until = ends ? `${corner(ends, true)}${read.estimated ? " (est.)" : ""}` : read.permanent ? "Permanent" : null;
-  return { from: starts ? corner(starts, !ends) : null, until };
-}
-
-/** Its window on one line in the device's own time, as the corner said it:
- *  "11/10 06:00 – 11/12 08:32 local", "Until 11/12 08:32 local",
- *  "Permanent" (the owner, 2026-11-11: "title(what), when, where, why ...
- *  on different lines"); null where none is given. */
-export function whenLine(n: FieldNotam, read: NotamReading): string | null {
-  const { from, until } = cornerOf(n, read);
-  if (from && until) return `${from} – ${until}`;
-  if (until) return until === "Permanent" ? until : `Until ${until}`;
-  return from ? `From ${from}` : null;
 }
 
 const LOCAL = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });

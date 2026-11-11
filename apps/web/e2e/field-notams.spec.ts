@@ -76,7 +76,10 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   // what with its Active badge, its start and end in the device's own time, and where.
   await expect(one.getByTestId("place-notam-state")).toHaveText("Active");
   await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway 09/27 closed");
-  await expect(one.getByTestId("place-notam-when")).toHaveText(/^11\/1[01] \d\d:\d\d – 11\/12 \d\d:\d\d local$/);
+  // Labelled as ForeFlight's list: since its start, its end and how long is left.
+  await expect(one.getByTestId("place-notam-when")).toHaveText(/^Since11\/1[01] \d\d:\d\dEnds11\/12 \d\d:\d\d local/);
+  await expect(one.getByTestId("place-notam-number")).toHaveText("11/042");
+  await expect(one.getByTestId("place-notam-condition")).toHaveText("closed");
   // No where for a runway's: its what names it (the owner, 2026-11-11).
   await expect(one.getByTestId("place-notam-where")).toHaveCount(0);
   // Said in our words, its own words are left to its full card.

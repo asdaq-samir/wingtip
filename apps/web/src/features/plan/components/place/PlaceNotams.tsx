@@ -16,13 +16,13 @@ import {
   readNotam,
   useFieldNotams,
   whatOf,
-  whenLine,
   whenWords,
   windowOf,
   type FieldNotam,
   type NotamReading,
   type FieldNotams,
 } from "./fieldNotams";
+import { timeLines } from "./notamTimes";
 
 /** The NOTAMs section's test id. */
 const SECTION = "place-notams";
@@ -36,7 +36,7 @@ const SECTION = "place-notams";
  * out stand first.
  */
 function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; clamp: boolean }) {
-  const when = whenLine(n, read);
+  const times = timeLines(n, read);
   return (
     <span className={cn("flex flex-col gap-0.5", n.in_force === false && "text-muted-foreground")}>
       {(!read.what || n.kind === "tfr") && (
@@ -44,9 +44,15 @@ function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; cla
           {read.words}
         </span>
       )}
-      {when && (
-        <span className="text-muted-foreground tabular-nums" data-testid="place-notam-when">
-          {when}
+      {times.length > 0 && (
+        // Labelled, as ForeFlight's list gives them (notamTimes).
+        <span className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums" data-testid="place-notam-when">
+          {times.map((t) => (
+            <span key={t.label} className="contents">
+              <span className="text-muted-foreground">{t.label}</span>
+              <span>{t.value}</span>
+            </span>
+          ))}
         </span>
       )}
       {read.where && (
@@ -141,7 +147,11 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
               wide
               title={
                 <span className="flex items-start justify-between gap-2">
-                  <span data-testid="place-notam-heading">{whatOf(n, ident)}</span>
+                  <span>
+                    <NotamWhat what={whatOf(n, ident)} title={read.title} />
+                    {/* Its number, as a briefer reads it, muted after it. */}
+                    <span className="text-muted-foreground" data-testid="place-notam-number">{` ${n.id}`}</span>
+                  </span>
                   <NotamState n={n} />
                 </span>
               }
@@ -160,6 +170,27 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
         </SheetCard>
       )}
     </>
+  );
+}
+
+/** Its what, the condition after the thing's name in red, as ForeFlight
+ *  reds "OUT OF SERVICE" (the owner's screenshots, 2026-11-11): the name
+ *  is the engine's title, the rest of the engine's what its condition. */
+function NotamWhat({ what, title }: { what: string; title: string | null }) {
+  const named = !!title && what.startsWith(`${title} `);
+  return (
+    <span data-testid="place-notam-heading">
+      {named ? (
+        <>
+          {title}{" "}
+          <span className="text-destructive-ink" data-testid="place-notam-condition">
+            {what.slice(title.length + 1)}
+          </span>
+        </>
+      ) : (
+        what
+      )}
+    </span>
   );
 }
 
@@ -207,6 +238,18 @@ function Unchecked({ data }: { data: FieldNotams | undefined }) {
   ) : null;
 }
 
+/** The NOTAMs by what they are about, the engine's heading (notam_read:
+ *  Runway, Taxiway, Obstacle ...; a TFR's "TFR"), each kind where its
+ *  first NOTAM ranks. */
+function kindsOf(notams: FieldNotam[], ident: string): [string, FieldNotam[]][] {
+  const kinds = new Map<string, FieldNotam[]>();
+  for (const n of notams) {
+    const kind = n.kind === "tfr" ? "TFR" : (readNotam(n, ident).heading ?? "Other");
+    kinds.set(kind, [...(kinds.get(kind) ?? []), n]);
+  }
+  return [...kinds];
+}
+
 /**
  * The field's NOTAMs in its card's Info tab: the engine's first three (its
  * ranking), each read for a pilot (NotamRow), how many in all at the
@@ -229,7 +272,19 @@ export function PlaceNotamsSection({ ident }: { ident: string }) {
         expanded={long ? all : undefined}
         right={count}
       >
-        <NotamRows notams={shown} ident={ident} state={<NotamsState data={data} isError={isError} />} />
+        {all ? (
+          // Every one, under its kind (Runway, Taxiway, Obstacle ...), the
+          // kinds in the order their first NOTAM ranks, as ForeFlight heads
+          // its list's groups (the owner's screenshots, 2026-11-11).
+          kindsOf(shown, ident).map(([kind, group]) => (
+            <div key={kind} className="flex flex-col gap-1" data-testid="place-notams-kind">
+              <span className={cn("px-1 text-muted-foreground", TEXT.note)}>{kind}</span>
+              <NotamRows notams={group} ident={ident} state={null} />
+            </div>
+          ))
+        ) : (
+          <NotamRows notams={shown} ident={ident} state={<NotamsState data={data} isError={isError} />} />
+        )}
         <Unchecked data={data} />
       </PillSection>
     </div>
