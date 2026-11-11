@@ -6,7 +6,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.stereotype.Component;
 
 /**
@@ -22,9 +23,40 @@ import org.springframework.stereotype.Component;
 public class ConnectorGrants {
 
     private final JdbcOperations jdbc;
+    private final OAuth2AuthorizationService authorizations;
 
-    public ConnectorGrants(JdbcOperations jdbc) {
+    public ConnectorGrants(JdbcOperations jdbc, OAuth2AuthorizationService authorizations) {
         this.jdbc = jdbc;
+        this.authorizations = authorizations;
+    }
+
+    /**
+     * Whether the pilot still has a live connection through this client:
+     * one whose tokens are neither revoked (disconnected, or a refresh token
+     * replayed) nor run out, and gone with the account. The planner asks
+     * on every MCP call, since its JWTs are checked by signature alone and
+     * would otherwise outlive both by up to 15 minutes (the security
+     * audit's L4). By V41's index on the pilot, a pilot's few rows.
+     */
+    public boolean live(long pilotId, String clientId) {
+        return jdbc
+                .queryForList(
+                        "SELECT a.id FROM oauth2_authorization a JOIN oauth2_registered_client c"
+                                + " ON c.id = a.registered_client_id WHERE a.principal_name = ? AND c.client_id = ?",
+                        String.class,
+                        Long.toString(pilotId),
+                        clientId)
+                .stream()
+                .map(authorizations::findById)
+                .anyMatch(ConnectorGrants::live);
+    }
+
+    private static boolean live(OAuth2Authorization connection) {
+        return connection != null
+                && ((connection.getAccessToken() != null
+                                && connection.getAccessToken().isActive())
+                        || (connection.getRefreshToken() != null
+                                && connection.getRefreshToken().isActive()));
     }
 
     /**
@@ -58,27 +90,14 @@ public class ConnectorGrants {
         return at == null ? null : at.toInstant();
     }
 
-    /**
-     * The connections whose every code and token has run out, a day after
-     * the last did, each night: a connection unused past its 30-day refresh
-     * token (ConnectorClients) is over, and the privacy policy keeps
-     * nothing past its use (docs/privacy-inventory.md). A row that has not
-     * yet had a code issued is an authorization in progress, and stays.
-     * The consents stay: they are the pilot's standing answer, gone with
-     * the account. How many went.
-     */
-    @Scheduled(cron = "${app.mcp.purge-cron:0 30 3 * * *}", zone = "UTC")
-    public int purgeExpired() {
-        return jdbc.update("DELETE FROM oauth2_authorization"
-                + " WHERE (authorization_code_issued_at IS NOT NULL OR access_token_issued_at IS NOT NULL)"
-                + " AND greatest(coalesce(authorization_code_expires_at, '-infinity'),"
-                + " coalesce(access_token_expires_at, '-infinity'), coalesce(refresh_token_expires_at, '-infinity'))"
-                + " < now() - interval '1 day'");
-    }
 
     /** Ends every connection the pilot made: their tokens stop working at once. */
     public void forget(long pilotId) {
         String principal = Long.toString(pilotId);
+        jdbc.update(
+                "DELETE FROM oauth2_spent_refresh_token WHERE authorization_id IN"
+                        + " (SELECT id FROM oauth2_authorization WHERE principal_name = ?)",
+                principal);
         jdbc.update("DELETE FROM oauth2_authorization WHERE principal_name = ?", principal);
         jdbc.update("DELETE FROM oauth2_authorization_consent WHERE principal_name = ?", principal);
     }

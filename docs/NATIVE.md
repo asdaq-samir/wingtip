@@ -466,6 +466,44 @@ archives in the Origin Private File System, with
 `navigator.storage.persist()` asked first, read by the `pmtiles`
 library the overlays already use.
 
+## Signing in from a link: whose account it is
+
+An emailed sign-in link names no account, and anyone can mail a pilot a
+link to their own (the security audit's M1 and L1, 2026-11-10). Before the
+app spends a link's token, it asks the gateway whose it is and shows it on
+its confirmation sheet ("Sign in as a•••@icloud.com?"):
+
+- `POST /api/auth/magic-link/account`, form body `token=<the link's
+  token>`, with the session's CSRF header as for `/verify`.
+- `200 {"email": "a•••@icloud.com"}`: the link can still sign in, to that
+  address (its first letter and its domain). Nothing is spent; the token
+  still signs in once, by `POST /api/auth/magic-link/verify`.
+- `404`, no body: used, expired or unknown, all alike. Say the link has
+  expired and offer a new one; don't offer Sign in.
+- `429`: 30 asks an hour from one address; say so and let the pilot try
+  later.
+
+## Sign in with Apple: the nonce
+
+An identity token that leaks (a log, a proxy) could otherwise be replayed
+until it expires (the security audit's L5). The gateway ties each token to
+a nonce it issued to this session, used once:
+
+1. `POST /api/auth/apple/native/nonce` (the session's CSRF header) answers
+   `{"nonce": "<43 characters>"}`.
+2. Set `ASAuthorizationAppleIDRequest.nonce` to the nonce's SHA-256 as
+   lowercase hex (`SHA256.hash(data: Data(nonce.utf8))`, each byte `%02x`).
+   Apple writes that into the token's `nonce` claim.
+3. `POST /api/auth/apple/native` with `{"identityToken": ..., "nonce":
+   "<the nonce itself, not its hash>"}`.
+
+The gateway checks the nonce is the one this session was given and the
+token's claim is its hash; a nonce is spent by the attempt, so a failed one
+asks for a new nonce. Today the nonce is optional, so the app as shipped
+keeps signing in; once the app sends it, the owner sets
+`APP_APPLE_REQUIRE_NONCE=true` on the gateway, and a token without one is
+refused. A token that carries a nonce claim is always refused without it.
+
 ## Building
 
 The Mac mini has Xcode (`.tool-versions`' `xcode`, 27.2 and the iOS 27.2

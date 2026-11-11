@@ -821,8 +821,14 @@ data class AircraftRequest (
 )
 
 @Serializable
+data class AppleNonceAnswer (
+    val nonce: String
+)
+
+@Serializable
 data class AppleToken (
-    val identityToken: String
+    val identityToken: String,
+    val nonce: String? = null
 )
 
 @Serializable
@@ -1050,6 +1056,11 @@ data class LessonProgressRequest (
 data class Quiz (
     val answers: List<QuizAnswerDto>,
     val of: Int
+)
+
+@Serializable
+data class LinkAccount (
+    val email: String
 )
 
 @Serializable

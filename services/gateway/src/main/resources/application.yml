@@ -189,6 +189,15 @@ app:
     keystore: ${APP_HTTPS_KEYSTORE:}
     keystore-password: ${APP_HTTPS_KEYSTORE_PASSWORD:changeit}
     port: ${APP_HTTPS_PORT:8443}
+  # The port the routes only other services call (/internal/**) answer on,
+  # and only there (InternalPortConfig): published by no compose file, so
+  # only the compose network reaches it. 0 opens none.
+  internal:
+    port: ${APP_INTERNAL_PORT:8081}
+  # Whether Sign in with Apple from the iOS app must carry its nonce
+  # (AppleNonce, docs/NATIVE.md): off until the app sends one.
+  apple:
+    require-nonce: ${APP_APPLE_REQUIRE_NONCE:false}
   # HSTS on by default (right behind that load balancer); off locally,
   # where a browser must not learn to upgrade the plain port.
   hsts: ${APP_HSTS:true}
@@ -262,15 +271,27 @@ app:
   # Inspector; RedirectUris says the forms); the RSA key, PKCS#8 PEM, its
   # tokens are signed with (blank: one made at start, for a machine of
   # one's own); and the token the planner's tools show to read a pilot's
-  # records (blank: refused).
+  # records (blank: refused, and a gateway with the connector on will not
+  # start). Off unless MCP_ENABLED: then its authorization server, /mcp and
+  # the records routes are all 404s (ConnectorOff), as in production until
+  # the connector launches.
   mcp:
+    enabled: ${MCP_ENABLED:false}
     resource: ${MCP_RESOURCE_URL:}
     redirect-uris: ${MCP_REDIRECT_URIS:https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector_platform_oauth_redirect,https://chatgpt.com/connector/oauth/*,http://localhost,http://127.0.0.1}
     signing-key: ${MCP_SIGNING_KEY:}
     internal-token: ${MCP_INTERNAL_TOKEN:}
+    # Open registration held back (RegistrationLimit): so many an address
+    # an hour; and clients nobody connected through let go this many days
+    # after they registered, each night (ConnectorHousekeeping; "-" off).
+    registrations-per-client-per-hour: ${MCP_REGISTRATIONS_PER_CLIENT_PER_HOUR:10}
+    unused-client-days: ${MCP_UNUSED_CLIENT_DAYS:1}
+    housekeeping-cron: ${MCP_HOUSEKEEPING_CRON:0 45 3 * * *}
   magic-link:
     per-address-per-hour: ${APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR:5}
     per-client-per-hour: ${APP_MAGIC_LINK_PER_CLIENT_PER_HOUR:20}
+    # Asks of whose account a link is for (MagicLinkAccountController).
+    account-per-client-per-hour: ${APP_MAGIC_LINK_ACCOUNT_PER_CLIENT_PER_HOUR:30}
   # The store reviewers' sign-in (ReviewSignIn, docs/store/listing.md
   # "Review access"): with it on, the one review account below may sign
   # in with a fixed code in place of an emailed link, since a reviewer

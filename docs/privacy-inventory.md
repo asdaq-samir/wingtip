@@ -288,9 +288,11 @@ started in `app.main`), whether or not ingest runs:
   flights recorded the same way.
 
 In the gateway, a connection an AI app holds (`oauth2_authorization`)
-whose every code and token has run out is purged the night after
-(`ConnectorGrants.purgeExpired`, 03:30 UTC); the consent stays until the
-pilot deletes their account. Fault reports go after 30 days, speed
+whose every code and token ran out over a day ago is let go each night,
+with the spent refresh tokens' hashes past their 30 days, and a client
+nobody connected through goes with its consents
+(`ConnectorHousekeeping`, 03:45 UTC); a consent otherwise stays until
+the pilot deletes their account. Fault reports go after 30 days, speed
 figures after 400, sign-in links a day after they expire.
 
 ## Kept after an account is deleted

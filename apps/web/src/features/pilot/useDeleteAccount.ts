@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { api } from "../../lib/api/client";
+import { forgetPilotCache } from "../../lib/pilotCache";
 import { showError } from "../../lib/problems";
 
 /** What this device keeps for a pilot -- their preferences, the tracks
@@ -26,6 +27,9 @@ export function useDeleteAccount() {
     mutationFn: api.deleteAccount,
     onSuccess: () => {
       forgetThisDevice();
+      // And the service worker's copy of their account, airplanes and
+      // flights, which a start with no signal would show the next person.
+      forgetPilotCache();
       window.location.assign("/app/plan");
     },
     onError: (err) => showError("Your account was not deleted", err instanceof Error ? err.message : null),

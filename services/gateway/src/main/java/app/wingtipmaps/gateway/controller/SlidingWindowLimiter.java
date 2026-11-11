@@ -25,7 +25,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * trade for a limit that only has to hold back a burst or a runaway day,
  * not account for every call.
  */
-final class SlidingWindowLimiter {
+public final class SlidingWindowLimiter {
 
     /** The proxies whose X-Forwarded-For is believed, as addresses or
      *  CIDR blocks, from GATEWAY_TRUSTED_PROXIES (comma-separated); loopback
@@ -38,13 +38,13 @@ final class SlidingWindowLimiter {
     private final Duration window;
     private final Map<String, Deque<Instant>> recent = new ConcurrentHashMap<>();
 
-    SlidingWindowLimiter(Duration window) {
+    public SlidingWindowLimiter(Duration window) {
         this.window = window;
     }
 
     /** Whether one more request for `key` fits within the window, and if
      *  so, count it. */
-    boolean allow(String key, int limit, Instant now) {
+    public boolean allow(String key, int limit, Instant now) {
         Instant since = now.minus(window);
         if (recent.size() > 10_000) {
             // Forget keys with nothing in the window, so a spray of one-off
@@ -136,7 +136,7 @@ final class SlidingWindowLimiter {
      * the connection's own address is the client, so a phone-mode LAN
      * client cannot rotate it to dodge a limit.
      */
-    static String clientOf(HttpServletRequest request) {
+    public static String clientOf(HttpServletRequest request) {
         ServletRequest received = request;
         while (received instanceof ServletRequestWrapper wrapper) {
             received = wrapper.getRequest();
