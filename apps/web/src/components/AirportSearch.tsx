@@ -2,7 +2,7 @@ import { useEffect, type RefObject } from "react";
 import { Search } from "lucide-react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
-import { Command, CommandEmpty, CommandField } from "./ui/command";
+import { Command, CommandField } from "./ui/command";
 import AirportResults, { AirportRow, PickerGroup } from "./AirportResults";
 import { FavoriteTiles } from "./FavoriteTiles";
 import { usePreferences, type RecentAirport } from "../lib/preferences";
@@ -122,7 +122,7 @@ export default function AirportSearch({
         answered={!typed || answered}
         onAirport={choose}
         onWaypoint={onPick}
-        empty={typed && <CommandEmpty>No {fixes ? "airport or waypoint" : "airport"} matches; Enter keeps what you typed.</CommandEmpty>}
+        empty={typed && `No ${fixes ? "airport or waypoint" : "airport"} matches; Enter keeps what you typed.`}
       >
         {!typed && recents.length > 0 && (
           <PickerGroup heading="Recents">

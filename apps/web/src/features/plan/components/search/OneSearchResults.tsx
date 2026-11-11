@@ -1,7 +1,7 @@
 import { Fragment, type ReactNode } from "react";
 import { BookOpenCheck, Diamond, LocateFixed, MoveUpRight, Plane, Search, Siren, SquareArrowOutUpRight } from "lucide-react";
 import { cn } from "cn";
-import { CommandList, CommandShortcut } from "../../../../components/ui/command";
+import { CommandEmpty, CommandList, CommandShortcut } from "../../../../components/ui/command";
 import { TEXT } from "../../../../lib/text";
 import { PreviewCard, PreviewCardContent, PreviewCardTrigger } from "../../../../components/ui/preview-card";
 import { usePointerHover } from "../../../../hooks/use-pointer-hover";
@@ -226,11 +226,11 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
             <ResultGroup heading={g.heading}>{g.rows}</ResultGroup>
           </Fragment>
         ))}
-        {none && (
-          <p role="status" className={cn("px-1 py-6 text-center text-muted-foreground", TEXT.prose)}>
-            {direct && !typed ? "Type an airport's ident or name." : answered ? "Nothing found." : "Searching…"}
-          </p>
-        )}
+        {/* Base UI's status, kept mounted so VoiceOver hears "Nothing
+            found" as it comes; empty while there are rows. */}
+        <CommandEmpty className={cn("px-1 text-muted-foreground", TEXT.prose)}>
+          {none && (direct && !typed ? "Type an airport's ident or name." : answered ? "Nothing found." : "Searching…")}
+        </CommandEmpty>
       </CommandList>
     </div>
   );

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Diamond, History, Search } from "lucide-react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
-import { CommandGroup, CommandItem, CommandList } from "./ui/command";
+import { CommandEmpty, CommandGroup, CommandItem, CommandList } from "./ui/command";
 import type { RecentAirport } from "../lib/preferences";
 import type { AirportSearchRow } from "../lib/useAirportSearch";
 
@@ -33,15 +33,15 @@ export default function AirportResults({
   onAirport: (airport: RecentAirport) => void;
   onWaypoint: (ident: string) => void;
   className?: string;
-  /** What it says where the search has nothing (CommandEmpty), shown
-   *  only then. */
+  /** What it says where the search has nothing, shown only then, in the
+   *  list's one status (CommandEmpty), which screen readers hear. */
   empty?: ReactNode;
   /** Groups before the search's (PickerGroup). */
   children?: ReactNode;
 }) {
   return (
     <CommandList className={cn("max-h-none overflow-visible", !answered && "opacity-60", className)} aria-busy={!answered}>
-      {rows.length === 0 && empty}
+      <CommandEmpty>{rows.length === 0 && empty}</CommandEmpty>
       {children}
       <SearchRows rows={rows} onAirport={onAirport} onWaypoint={onWaypoint} />
     </CommandList>
