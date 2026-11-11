@@ -5,7 +5,7 @@ Each line of FLAGS is one toolchain's switch, the file that holds it and
 how it must read. A switch missing or turned off fails here, naming the
 file and what to write, so a warning can never again be let stand by a
 config edit nobody noticed. The standard library only; seconds. Run in
-ci.yml's rules-boundary job.
+ci.yml's guards job (scripts/ci/guards.sh).
 
   python3 scripts/ci/warnings_fatal.py
 """
@@ -28,7 +28,7 @@ FLAGS = [
         r'"lint"\s*:\s*"eslint [^"]*--max-warnings 0',
         '"lint": "eslint . --max-warnings 0"',
     ),
-    ("ESLint in CI, no warning", ".github/workflows/ci.yml", r"eslint \. --max-warnings 0", "npx eslint . --max-warnings 0 in test-web"),
+    ("ESLint in CI, no warning", "scripts/ci/guards.sh", r"eslint \. --max-warnings 0", "npx eslint . --max-warnings 0 in web()"),
     (
         "Swift warnings are errors",
         "apps/ios/project.yml",
@@ -67,9 +67,9 @@ FLAGS = [
     ),
     (
         "clippy warnings denied in CI",
-        ".github/workflows/ci.yml",
+        "scripts/ci/guards.sh",
         r"cargo clippy [^\n]*-- -D warnings",
-        "cargo clippy ... -- -D warnings in the test job",
+        "cargo clippy ... -- -D warnings in clippy()",
     ),
     (
         "javac warnings fail the build",
@@ -116,8 +116,11 @@ def pytest_suites() -> list[str]:
 
 
 def ruff_in_ci() -> list[str]:
-    ci = text(".github/workflows/ci.yml")
-    return [] if re.search(r"^\s*- run: ruff check ", ci, re.M) else [".github/workflows/ci.yml: no `ruff check` step"]
+    """ruff over every Python suite, in ci.yml's guards job."""
+    guards = text("scripts/ci/guards.sh")
+    suites = [p.parent.name for p in sorted(ROOT.glob("services/*/requirements-dev*.txt"))]
+    missing = sorted({s for s in suites if not re.search(rf"cd services/{s} && \"\$\{{ruff\[@\]\}}\" check ", guards)})
+    return [f"scripts/ci/guards.sh: no `ruff check` over services/{s}" for s in missing]
 
 
 def main() -> int:

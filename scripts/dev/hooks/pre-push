@@ -174,11 +174,11 @@ fi
 # --- engine: cargo check over the crates CI tests ---------------------------
 if has_area engine; then
   if command -v cargo >/dev/null && cargo --version >/dev/null 2>&1; then
-    # CI's own crate list (ci.yml's test job), so this checks what CI tests;
+    # CI's own crate list (scripts/ci/engine_affected.py --all), so this checks what CI tests;
     # a target directory per worktree, keyed by its path. One shared by every
     # worktree failed falsely: Cargo took another worktree's newer build of a
     # crate of ours, at another path, for this one's (2026-11-08).
-    read -ra pkgs <<<"$(grep -oE 'cargo test --profile ci [^#]*' "$here/.github/workflows/ci.yml" | head -1 | grep -oE -- '-p [a-z0-9-]+' | xargs)"
+    read -ra pkgs <<<"$(python3 "$here/scripts/ci/engine_affected.py" --all)"
     note "engine: cargo check"
     # The directories of worktrees not pushed from in two weeks go (a cold
     # check at worst).

@@ -40,97 +40,63 @@ env:
   PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.65.0-noble
 
 jobs:
-  # The Python suites install with uv (pip was 50 of a suite's 90 s), and
-  # keep no pip cache (6.5 of the Actions cache's 10 GB).
-  test:
+  # The engine's unit tests. On a pull request, the crates it touches,
+  # every crate that uses them and the contract test
+  # (scripts/ci/engine_affected.py); on main's push and at night, every
+  # crate. The committed WebAssembly is what engine/ builds, where its
+  # inputs changed. The engine's lint and layout are the guards job's.
+  test-engine:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, engine-wheel]
-    if: needs.changes.outputs.test-root == 'true'
+    needs: [changes]
+    if: needs.changes.outputs.test-engine == 'true'
     steps:
+      # Two deep: a pull request's checkout is its merge with main, whose
+      # first parent is the main it lands on.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      # The FAA's reference files (data/raw), kept a week at a time: 131 s
-      # fetched against 11 s warm (#452), and no FAA outage fails the suite.
-      - name: The week, for the reference data's cache
-        id: week
-        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        id: raw
+        with:
+          fetch-depth: 2
+      # Cargo's downloads and the ci profile's build, saved by main and the
+      # night (docs/CI.md, rule 4), keyed by the lock and then the sources.
+      - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        id: cargo
         with:
           path: |
-            data/raw/*
-            !data/raw/charts.nosync
-            !data/raw/chart_tiles.nosync
-          key: tests-raw-root-v1-${{ steps.week.outputs.week }}
-          restore-keys: tests-raw-root-v1-
-      # Each cache's miss as a notice, which the budget job lists (and on
-      # main warns of): scripts/ci/ci_budget.py.
-      - if: steps.raw.outputs.cache-hit != 'true'
-        run: echo "::notice title=Cache miss::tests-raw-root (weekly key)"
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
-        with:
-          python-version-file: .tool-versions
-      - run: pip install uv
-      - run: uv pip install --system -r services/planner/requirements-dev-wingtip.txt
-      # wingtip's Rust extension (engine/), built once a run by engine-wheel.
-      - uses: ./.github/actions/engine-wheel
-        with:
-          mode: install
-      # The engine's tests, its crates' layering (engine/README.md), no unused
-      # dependency (cargo-machete), rustfmt and clippy with warnings denied.
-      - run: python3 scripts/ci/engine_layers.py
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        id: machete
-        with:
-          path: ~/.cargo/bin/cargo-machete
-          key: cargo-machete-0.9.2-${{ runner.os }}-${{ runner.arch }}
-      - if: steps.machete.outputs.cache-hit != 'true'
-        run: echo "::notice title=Cache miss::cargo-machete" && cargo install --locked cargo-machete@0.9.2
-      - run: cargo machete engine
-      # The Rust as rustfmt writes it (engine/rustfmt.toml).
-      - run: rustup component add rustfmt && scripts/dev/format.sh --check rust
-      - run: rustup component add clippy && cargo clippy --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings
-      - run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine -p wingtip-core -p wingtip-flight -p wingtip-weather -p wingtip-procedures -p wingtip-radio -p wingtip-airspace -p wingtip-wording -p wingtip-brief -p wingtip-route -p wingtip-pilot -p wingtip-altitude -p wingtip-contract-gen
+            ~/.cargo/registry
+            ~/.cargo/git
+            engine/target
+          key: cargo-test-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/Cargo.lock', 'engine/rust-toolchain.toml') }}-${{ hashFiles('engine/**/*.rs') }}
+          restore-keys: cargo-test-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/Cargo.lock', 'engine/rust-toolchain.toml') }}-
+      - if: steps.cargo.outputs.cache-matched-key == ''
+        run: echo "::notice title=Cache miss::cargo-test"
+      - name: The crates this change touches
+        id: affected
+        run: python3 scripts/ci/engine_affected.py ${{ github.event_name == 'pull_request' && '--base HEAD^1' || '--all' }} --github
+      - run: cargo test --profile ci --manifest-path engine/Cargo.toml ${{ steps.affected.outputs.packages }}
+      - if: steps.affected.outputs.contract == 'true'
+        run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine --test contract
       # The committed WebAssembly must be what engine/ builds, or the browser
       # runs other rules than the planner and the phones.
       - name: The engine's WebAssembly is the committed one
+        if: steps.affected.outputs.wasm == 'true'
         run: |
           scripts/build/build-engine-wasm.sh
           git diff --exit-code --stat apps/web/src/lib/engine/wingtip-engine.wasm || {
             echo "::error title=Engine wasm out of date::apps/web/src/lib/engine/wingtip-engine.wasm is not what engine/ builds: run scripts/build/build-engine-wasm.sh and commit the file."
             exit 1
           }
-      # tippecanoe, for the overlay tiles' archive tests; skipped without it.
-      - name: tippecanoe
-        run: |
-          (sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends tippecanoe) \
-            || echo "::warning title=No tippecanoe::the overlay tiles' archive tests are skipped"
-      - run: ruff check wingtip tests_wingtip
-        working-directory: services/planner
-      # The planner's import contracts (.importlinter) run once, in
-      # test-planner, whose filter takes every change under services/planner.
-      - run: pytest tests_wingtip/ -v
-        working-directory: services/planner
-      # The jobs' own suite (services/jobs): the charts job's commands and
-      # its overlay tiles, over the same wingtip and requirements as above.
-      - run: ruff check charts
-        working-directory: services/jobs
-      - run: pytest charts/tests/ -v
-        working-directory: services/jobs
-      # wingtip's API docs (pdoc imports every module, so one that no longer
-      # imports fails here), after the tests.
-      - name: pdoc (services/planner/wingtip)
-        run: |
-          uv pip install --system pdoc
-          PYTHONPATH=services/planner python -m pdoc services/planner/wingtip -o "$RUNNER_TEMP"/pdoc-wingtip --no-show-source
-      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+      - if: github.event_name != 'pull_request' && steps.cargo.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
-          name: pdoc-wingtip
-          path: ${{ runner.temp }}/pdoc-wingtip
-          retention-days: 30
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            engine/target
+          key: ${{ steps.cargo.outputs.cache-primary-key }}
 
-  # The web front end: tsc, ESLint, Vitest, the build and its first-load
-  # budget, and the generated files (types, the phones' models, tokens,
-  # screens, icons) are the committed ones.
+  # The web front end: the unit tests a change reaches, the build and its
+  # first-load budget, and the generated files (types, the phones' models,
+  # tokens, screens, icons) are the committed ones. Its tsc, ESLint,
+  # Prettier and knip are the guards job's.
   test-web:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
@@ -139,7 +105,10 @@ jobs:
       run:
         working-directory: apps/web
     steps:
+      # Two deep, for Vitest's --changed (below).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 2
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         id: node
         with:
@@ -176,14 +145,11 @@ jobs:
       - name: The app icons are the committed ones
         working-directory: .
         run: scripts/build/app-icons.sh --check
-      - run: npx tsc --noEmit
-      - run: npx eslint . --max-warnings 0
-      # The TypeScript, CSS, JSON and Markdown, and the build scripts'
-      # JavaScript, as Prettier writes them (.prettierrc.yaml).
-      - run: npm run format:check
-      # No unused file, export, type or dependency (knip, apps/web/knip.jsonc).
-      - run: npx knip --no-progress
-      - run: npx vitest run
+      # On a pull request, the tests whose files or imports it changed
+      # (Vitest's --changed, against the main it lands on; a change to the
+      # package or Vite's config runs them all); on main's push and at
+      # night, every test.
+      - run: npx vitest run ${{ github.event_name == 'pull_request' && '--changed HEAD^1 --passWithNoTests' || '' }}
       - run: npx vite build
       # The JavaScript a phone loads before the planner draws, against a
       # budget (scripts/first-load.mjs); raise it only with the reason.
@@ -243,18 +209,19 @@ jobs:
     name: Engine wheel
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
-    if: needs.changes.outputs.docs-only != 'true' || needs.changes.outputs.test-root == 'true' || needs.changes.outputs.python != '[]'
+    # Every change but words alone: the guards' flight-critical imports it.
+    if: needs.changes.outputs.docs-only != 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: ./.github/actions/engine-wheel
         with:
           mode: build
 
-  # The Python services' suites, one leg each where `changes` found its
-  # filter touched (test-planner, test-ingest, test-assistant, test-weather
-  # in scripts/areas.yml): ruff and pytest in services/<service>, on its own
-  # requirements. Each leg keeps the old job's name, so its budget and check
-  # are unchanged; none to run skips the job, which counts as passed.
+  # The Python suites, one leg each where `changes` found its filter
+  # touched (test-planner, test-wingtip, test-jobs, test-ingest,
+  # test-assistant, test-weather in scripts/areas.yml), each on its own
+  # requirements (scripts/ci/python_suite.sh); ruff is the guards job's.
+  # None to run skips the job, which counts as passed.
   test-python:
     name: test-${{ matrix.service }}
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
@@ -264,49 +231,46 @@ jobs:
       fail-fast: false
       matrix:
         service: ${{ fromJSON(needs.changes.outputs.python) }}
-    defaults:
-      run:
-        working-directory: services/${{ matrix.service }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      # The planner's reference data with the charts and tiles, a week at a
-      # time: its first C81-KDLH plans read the corridor's tiles (185 of 215 s
-      # uncached, run 42302178567).
+      # wingtip's and the planner's reference files (data/raw), a week at a
+      # time: 131 s fetched against 11 s warm (#452), and no FAA outage fails
+      # a suite.
+      # The planner's holds the charts and tiles too: its first C81-KDLH
+      # plans read the corridor's tiles (185 of 215 s uncached, run
+      # 42302178567).
       - name: The week, for the reference data's cache
-        if: matrix.service == 'planner'
         id: week
         run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
       - if: matrix.service == 'planner'
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
-        id: raw
+        id: raw-planner
         with:
           path: data/raw
           key: tests-raw-planner-v2-${{ steps.week.outputs.week }}
           restore-keys: tests-raw-planner-v2-
-      - if: matrix.service == 'planner' && steps.raw.outputs.cache-hit != 'true'
-        run: echo "::notice title=Cache miss::tests-raw-planner (weekly key)"
+      - if: matrix.service == 'wingtip'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        id: raw-root
+        with:
+          path: |
+            data/raw/*
+            !data/raw/charts.nosync
+            !data/raw/chart_tiles.nosync
+          key: tests-raw-root-v1-${{ steps.week.outputs.week }}
+          restore-keys: tests-raw-root-v1-
+      - if: (matrix.service == 'planner' && steps.raw-planner.outputs.cache-hit != 'true') || (matrix.service == 'wingtip' && steps.raw-root.outputs.cache-hit != 'true')
+        run: echo "::notice title=Cache miss::tests-raw-${{ matrix.service }} (weekly key)"
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
-      - run: pip install uv
-      - run: uv pip install --system -r requirements-dev.txt
-      # The planner, ingest and weather import wingtip's Rust extension; the
-      # assistant does not (Claude and the planner are stood in for).
+      # All but the assistant import wingtip's Rust extension (Claude and
+      # the planner are stood in for there).
       - if: matrix.service != 'assistant'
         uses: ./.github/actions/engine-wheel
         with:
           mode: install
-      # The assistant's client and tools are generated
-      # (scripts/build/assistant_client.py) and checked.
-      - name: Generated code matches its sources
-        if: matrix.service == 'assistant'
-        run: python ../../scripts/build/assistant_client.py --check
-      - run: ruff check ${{ matrix.service == 'ingest' && 'ingest' || 'app' }} tests
-      # The planner's import contracts (services/planner/.importlinter), for
-      # app and wingtip alike: the one job that runs them.
-      - if: matrix.service == 'planner'
-        run: lint-imports
-      - run: pytest tests/ -v
+      - run: scripts/ci/python_suite.sh ${{ matrix.service }}
 
   # What this run has to do, from what changed: the one job the others wait
   # on, a checkout and a diff. On a pull request, what it changes; on main,
@@ -321,8 +285,8 @@ jobs:
       actions: read
     outputs:
       images: ${{ steps.plan.outputs.images }}
-      test-root: ${{ steps.plan.outputs.test-root }}
       test-web: ${{ steps.plan.outputs.test-web }}
+      test-engine: ${{ steps.plan.outputs.test-engine }}
       test-gateway: ${{ steps.plan.outputs.test-gateway }}
       python: ${{ steps.plan.outputs.python }}
       docs: ${{ steps.plan.outputs.docs }}
@@ -332,12 +296,12 @@ jobs:
       api: ${{ steps.plan.outputs.api }}
       arch: ${{ steps.plan.outputs.arch }}
       site: ${{ steps.plan.outputs.site }}
+      deps: ${{ steps.plan.outputs.deps }}
       docs-only: ${{ steps.docsonly.outputs.only }}
     steps:
+      # The filter block below is generated from scripts/areas.yml (the
+      # guards job checks it is).
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      # The filter block below is generated from scripts/areas.yml.
-      - name: The filters match scripts/areas.yml
-        run: python3 scripts/areas.py check
       # Words only (docs, Markdown, skills, notebooks): no browser suite.
       - name: Only docs?
         id: docsonly
@@ -390,6 +354,17 @@ jobs:
                 - scripts/areas.yml
                 - scripts/areas.py
                 - scripts/dev/format.sh
+              deps:
+                - apps/web/package-lock.json
+                - engine/Cargo.lock
+                - services/*/requirements*.txt
+                - services/jobs/*/requirements.txt
+                - ml/requirements*.txt
+                - services/gateway/pom.xml
+                - apps/android/gradle/libs.versions.toml
+                - apps/ios/project.yml
+                - .github/workflows/*.yml
+                - .github/actions/**
               api:
                 - services/planner/openapi.json
                 - services/assistant/openapi.json
@@ -482,11 +457,9 @@ jobs:
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated/**
                 - apps/ios/Wingtip/Engine/Generated/**
                 - apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated/**
-              test-root:
+              test-wingtip:
                 - services/planner/wingtip/**
                 - engine/**
-                - scripts/build/build-engine-wasm.sh
-                - apps/web/src/lib/engine/wingtip-engine.wasm
                 - services/planner/tests_wingtip/**
                 - services/planner/requirements*.txt
                 - ml/requirements-*.txt
@@ -505,10 +478,6 @@ jobs:
                 - scripts/areas.py
                 - scripts/dev/check.sh
                 - services/planner/.importlinter
-                - services/jobs/**
-                - services/planner/requirements-wingtip*.txt
-                - scripts/ci/engine_layers.py
-                - services/planner/tests_wingtip/fixtures/native/**
               test-planner:
                 - services/planner/**
                 - engine/**
@@ -530,6 +499,20 @@ jobs:
                 - services/planner/requirements-wingtip.txt
                 - services/planner/pytest_guards.py
                 - engine/**
+              test-jobs:
+                - services/jobs/**
+                - services/planner/wingtip/**
+                - services/planner/requirements-wingtip*.txt
+                - services/planner/pytest_guards.py
+                - engine/**
+              test-engine:
+                - engine/**
+                - scripts/ci/engine_layers.py
+                - scripts/ci/engine_affected.py
+                - scripts/build/build-engine-wasm.sh
+                - apps/web/src/lib/engine/wingtip-engine.wasm
+                - apps/web/src/lib/fixtures/**
+                - services/planner/tests_wingtip/fixtures/native/**
               test-gateway:
                 - services/gateway/**
                 - services/assistant/openapi.json
@@ -617,11 +600,11 @@ jobs:
           due = lambda name: everything or name in changed
           images = [{"service": s} for s in IMAGES if due(s)]
           outputs = {"images": json.dumps(images)}
-          for name in ("test-root", "test-web", "test-gateway", "docs", "infra", "api", "arch", "site"):
+          for name in ("test-web", "test-engine", "test-gateway", "docs", "infra", "api", "arch", "site", "deps"):
               outputs[name] = "true" if due(name) else "false"
-          # test-python's legs: the services whose test-<service> filter matched.
-          outputs["python"] = json.dumps([s for s in ("planner", "ingest", "assistant", "weather") if due(f"test-{s}")])
-          # The phones' builds gate a merge: a pull request, or a run
+          # test-python's legs: the suites whose test-<leg> filter matched.
+          outputs["python"] = json.dumps([s for s in ("planner", "wingtip", "jobs", "ingest", "assistant", "weather") if due(f"test-{s}")])
+          # The phones' builds gate a merge (#499): a pull request, or a run
           # started by hand on one's branch. Main's pushes and the nights
           # have native-android.yml and native-ios.yml for them, so they
           # are not run twice there.
@@ -639,16 +622,17 @@ jobs:
   # commit's keys, Postgres and Mailpit (infra/docker-compose.ci.yml). It
   # catches what no unit test can: a lost tap, a drawer that opens empty.
   #
-  # A pull request runs the @smoke and @flight-critical tests on the phone
-  # project, over two shards; the night runs everything over ten. Each shard
-  # pulls its images and restores its caches in the background and starts
-  # each service the moment it can: setup is about a minute and a half.
-  # Not after e2e-images, which it would wait on; it pulls the image the
-  # moment it is pushed.
+  # After merge (docs/CI.md, "The tiers"; the owner, 2026-11-10): main's
+  # push runs the @smoke and @flight-critical tests on the phone project,
+  # over two shards; the night runs everything over ten. A pull request
+  # runs none; a failure on main is one issue (nightly-issue.yml). Each
+  # shard pulls its images and restores its caches in the background and
+  # starts each service the moment it can: setup is about a minute and a
+  # half. Not after e2e-images, which it would wait on; it pulls the image
+  # the moment it is pushed.
   e2e:
     name: e2e (${{ matrix.shard }}/${{ strategy.job-total }})
-    needs: [changes]
-    if: needs.changes.outputs.docs-only != 'true'
+    if: github.event_name != 'pull_request'
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
@@ -663,9 +647,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # The smoke set over two shards on a pull request and main's push
-        # (5-9 min of tests on one, 2026-11-10); everything over ten at
-        # night or by hand.
+        # The smoke set over two shards on main's push (5-9 min of tests on
+        # one, 2026-11-10); everything over ten at night or by hand.
         shard: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]' || '[1, 2]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -730,19 +713,11 @@ jobs:
       # The three images this commit runs, each the one e2e-images built for its
       # key (.github/e2e-keys.sh), nearly always by an earlier commit's run. A
       # new key: pull the last `e2e` image (most of its layers) and then the new
-      # one the moment it is pushed. A fork's or Dependabot's token cannot push,
-      # so there the shard builds from main's registry cache. Once the planner
-      # is warm, the corridor's nav log is asked for, so no test waits on it.
+      # one the moment it is pushed. Once the planner is warm, the corridor's
+      # nav log is asked for, so no test waits on it.
       - name: The stack, in the background
         env:
           REGISTRY: ghcr.io/${{ github.repository }}
-          EVENT: ${{ github.event_name }}
-          # Whether this run's images are shared: built once by build (e2e)
-          # and pulled by every shard. A push, and a pull request from a
-          # branch of this repository, whose token can push them; not a
-          # fork's or Dependabot's, whose token cannot, and whose shards
-          # build what they cannot pull.
-          SHARED: ${{ (github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
           REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
           GH_TOKEN: ${{ github.token }}
@@ -776,11 +751,6 @@ jobs:
             there "$ref:e2e-$2" || built=""
             small
             if [ -z "$built" ]; then
-              if [ "$SHARED" != true ]; then
-                docker buildx bake -f .github/ci-images.hcl "$1" --load || return 1
-                mark "$1 built"
-                return 0
-              fi
               docker pull -q "$ref:e2e" > /dev/null 2>&1
               await "$ref:e2e-$2" || return 1
             fi
@@ -819,7 +789,7 @@ jobs:
           while read -r name key; do
             if [ "$name" != page ]; then
               { fetch "$name" "$key" && start "$name"; } &
-            elif [ "$SHARED" = true ]; then
+            else
               page "$key" &
             fi
           done <<< "$keys"
@@ -894,28 +864,6 @@ jobs:
         with:
           path: apps/web/node_modules
           key: e2e-node-modules-pw1.65.0-${{ hashFiles('apps/web/package-lock.json') }}
-
-      # The page, from this commit's apps/web/, mounted over the gateway
-      # image's, so a page change needs no image. e2e-images builds it once on
-      # a push or this repository's pull request; a fork's builds it here.
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
-        if: ${{ !(github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
-        with:
-          node-version-file: .tool-versions
-      - name: The page, built from this commit
-        if: ${{ !(github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]')) }}
-        working-directory: apps/web
-        # node_modules is always there, a tmpfs mounted above, so whether
-        # the packages are is told by npm's own record of an install: a
-        # change to the lock file (every Dependabot update) misses the
-        # cache, and testing for the folder skipped the install, then
-        # failed on openapi-typescript "not found". npm install, not ci,
-        # which would remove the folder -- a mount point it cannot.
-        run: |
-          [ -f node_modules/.package-lock.json ] || npm install --no-audit --no-fund
-          npm run types
-          npx vite build --outDir dist --emptyOutDir
-          echo "$(($(date +%s) - T0)) the page built" >> /tmp/e2e-out/timeline
 
       # Every piece started, then healthy, then the page served and the
       # planner's own word that it is warm (healthy is not ready).
@@ -1168,10 +1116,8 @@ jobs:
     # GitHub's runner, not LINUX_RUNNER (the Mac mini, Apple silicon): these
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
-    # A push, and a pull request from this repository; not a fork's or
-    # Dependabot's, whose token cannot push.
-    needs: [changes]
-    if: needs.changes.outputs.docs-only != 'true' && (github.event_name != 'pull_request' || (github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]'))
+    # After merge, with e2e (above).
+    if: github.event_name != 'pull_request'
     permissions:
       contents: read
       packages: write
@@ -1272,9 +1218,9 @@ jobs:
         run: docker buildx bake -f .github/ci-images.hcl playwright
 
   # Every image whose inputs changed, in one job by one BuildKit
-  # (.github/images.hcl). On main pushed as `:sha-<commit>`, which Promote
-  # names `latest` once the run passes; a pull request builds without
-  # pushing. The layer cache is in the registry (`:buildcache`, written from
+  # (.github/images.hcl), after merge (docs/CI.md, "The tiers"): on main
+  # pushed as `:sha-<commit>`, which Promote names `latest` once the run
+  # passes; at night built without pushing. The layer cache is in the registry (`:buildcache`, written from
   # main), as the ML images' layers evicted each other from the Actions
   # cache. Each Python image imports its own code last, so a missing
   # dependency fails here.
@@ -1284,7 +1230,7 @@ jobs:
     # images go to AWS's x86 machines, and e2e tests the same images.
     runs-on: ubuntu-26.04
     needs: [changes]
-    if: needs.changes.outputs.images != '[]'
+    if: github.event_name != 'pull_request' && needs.changes.outputs.images != '[]'
     permissions:
       contents: read
       packages: write
@@ -1306,8 +1252,7 @@ jobs:
         env:
           REGISTRY: ghcr.io/${{ github.repository }}
           SHA: ${{ github.sha }}
-          # Written from main only: a pull request (a fork's included)
-          # has no business writing what main's builds read.
+          # Written from main only: a night's build reads it.
           PUSH: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
           IMAGES: ${{ needs.changes.outputs.images }}
         run: |
@@ -1315,12 +1260,12 @@ jobs:
           echo "building ${targets[*]}"
           docker buildx bake -f .github/images.hcl "${targets[@]}"
 
-  # New dependencies against GitHub's advisory database; reports, does
-  # not hold a merge. Not on a pull request of words only.
+  # New dependencies against GitHub's advisory database, on a pull request
+  # that changes a manifest or lock (`changes`' deps filter).
   dependency-review:
     needs: [changes]
     # Needs Advanced Security on a private repository.
-    if: github.event_name == 'pull_request' && !github.event.repository.private && needs.changes.outputs.docs-only != 'true'
+    if: github.event_name == 'pull_request' && !github.event.repository.private && needs.changes.outputs.deps == 'true'
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     permissions:
       contents: read
@@ -1332,113 +1277,102 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: on-failure
 
-  # No new aviation rule outside the engine (CLAUDE.md, #482): a constant
-  # with a regulatory source cited, or an engine rule's name defined again,
-  # outside the engine, past scripts/ci/rules_boundary_allow.txt. And CI's
-  # own rules (docs/CI.md, "Rules"): every test in one tier, warnings
-  # fatal in every toolchain, the workflows small, scripted, pinned and
-  # least-privileged. Seconds, on every change.
-  rules-boundary:
-    name: Rules boundary
+  # The quick checks, on one runner, all started at once
+  # (scripts/ci/guards.sh lists them): no aviation rule outside the engine
+  # (CLAUDE.md, #482); CI's own rules (docs/CI.md, "Rules": every test in
+  # one tier and the tiers in shape, warnings fatal, the workflows small,
+  # scripted, pinned and least-privileged); the links, file sizes,
+  # toolchain versions and brand tokens; each language's lint and layout
+  # where a change touched it (ruff, tsc, ESLint, Prettier, knip, rustfmt,
+  # clippy, cargo-machete); and flight-critical, what must never break in
+  # the air (the owner, 2026-11-09), on every change but words alone: the
+  # engine against the FAA's worked examples and the planner's KMSN-KOSH
+  # nav log. The browser's twin is e2e's @flight-critical test; the
+  # phones' run in their native jobs.
+  guards:
+    name: Guards
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: No aviation rule outside the engine
-        run: python3 scripts/ci/rules_boundary.py
-      # The privacy policy, terms and support page the site serves are
-      # written from docs/legal; one edited without the other is stale.
-      - name: The legal pages match docs/legal
-        run: python3 scripts/build/legal_pages.py --check
-      - name: Every test in one tier
-        run: python3 scripts/ci/test_tiers.py
-      - name: Warnings are errors, everywhere
-        run: python3 scripts/ci/warnings_fatal.py
-      - name: The workflows, small, scripted and least-privileged
-        run: python3 scripts/ci/workflow_rules.py
-
-  # What must never break in the air (the owner, 2026-11-09), on every
-  # change: the engine against worked examples from the FAA's own texts
-  # (apps/web/src/lib/fixtures/flightCritical.json: FAA-H-8083-25C ch. 16,
-  # 14 CFR 91.151, 91.155, 91.159, 91.167, 91.179, AIM 5-3-8) and the
-  # planner's KMSN-KOSH nav log. The browser's twin is e2e's
-  # @flight-critical test; the phones' run in their native jobs.
-  # On every change but words alone (docs/CI.md, "Rules": a small change
-  # gets a small CI).
-  flight-critical:
-    name: Flight-critical
     needs: [changes, engine-wheel]
-    if: needs.changes.outputs.docs-only != 'true'
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    timeout-minutes: 20
+    if: ${{ !cancelled() && needs.changes.result == 'success' && needs.engine-wheel.result != 'failure' }}
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: The engine's worked examples
-        run: cargo test --profile ci --manifest-path engine/Cargo.toml -p wingtip-engine --test flight_critical
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
-      - run: pip install uv && uv pip install --system -r services/planner/requirements-dev.txt
-      # The planner asks the engine every rule (wingtip_native), built by engine-wheel.
-      - uses: ./.github/actions/engine-wheel
+      # uv for the planner's requirements, and its uvx for the pinned ruff
+      # and vulture.
+      - run: pip install -q uv
+      - if: needs.changes.outputs.test-web == 'true'
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        id: node
+        with:
+          node-version-file: .tool-versions
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - if: needs.changes.outputs.test-web == 'true' && steps.node.outputs.cache-hit != 'true'
+        run: echo "::notice title=Cache miss::npm (guards)"
+      # Clippy's and flight-critical's builds, as test-engine keeps its own.
+      - if: needs.changes.outputs.test-engine == 'true' || needs.engine-wheel.result == 'success'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        id: cargo
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/cargo-machete
+            engine/target
+          key: cargo-guards-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/Cargo.lock', 'engine/rust-toolchain.toml') }}-${{ hashFiles('engine/**/*.rs') }}
+          restore-keys: cargo-guards-v1-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('engine/Cargo.lock', 'engine/rust-toolchain.toml') }}-
+      - if: (needs.changes.outputs.test-engine == 'true' || needs.engine-wheel.result == 'success') && steps.cargo.outputs.cache-matched-key == ''
+        run: echo "::notice title=Cache miss::cargo-guards"
+      - if: needs.engine-wheel.result == 'success'
+        uses: ./.github/actions/engine-wheel
         with:
           mode: install
-      - name: The planner's nav log and nearest fields
-        working-directory: services/planner
-        run: pytest tests/test_flight_critical.py -v
-
-  # No source file new or grown past 400 lines (scripts/ci/file_sizes.py),
-  # one version of each toolchain, no raw style value outside the tokens,
-  # no unused Python, and the Python's layout. Seconds.
-  architecture:
-    name: Architecture
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes]
-    if: needs.changes.outputs.arch == 'true'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: No new or grown source file over the budget
+      - name: The guards
         env:
-          BASE: ${{ github.base_ref || 'main' }}
-        run: |
-          git fetch -q --depth=1 origin "$BASE"
-          python3 scripts/ci/file_sizes.py --base FETCH_HEAD
-      - name: Every toolchain at .tool-versions' version
-        run: scripts/build/toolchain.sh --check
-      - name: No raw style value outside the design tokens
-        run: python3 scripts/ci/brand_guard.py
-      - name: No unused Python
-        run: scripts/ci/dead_python.sh
-      - name: The Python's layout
-        run: scripts/dev/format.sh --check python
+          INSTALL: "true"
+          BASE_REF: ${{ github.base_ref || 'main' }}
+          ARCH: ${{ needs.changes.outputs.arch }}
+          SITE: ${{ needs.changes.outputs.site }}
+          WEB: ${{ needs.changes.outputs.test-web }}
+          ENGINE: ${{ needs.changes.outputs.test-engine }}
+          FLIGHT: ${{ needs.engine-wheel.result == 'success' }}
+        run: scripts/ci/guards.sh
+      - if: github.event_name != 'pull_request' && steps.cargo.outputs.cache-primary-key != '' && steps.cargo.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ~/.cargo/bin/cargo-machete
+            engine/target
+          key: ${{ steps.cargo.outputs.cache-primary-key }}
 
-  # The website (apps/site): built, every page parsed, every link found,
-  # nothing from another host.
-  site:
-    name: Website
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes]
-    if: needs.changes.outputs.site == 'true'
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - run: python3 apps/site/build.py
-      - run: python3 apps/site/check.py
-
-  # Every relative link and #anchor in the Markdown resolves; external
-  # links are not fetched.
-  links:
-    name: Doc links
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - name: Relative links and anchors in *.md
-        run: python3 scripts/ci/check_links.py
-
+  # At night: the gateway's Javadoc, the API reference and wingtip's API
+  # docs (pdoc imports every module, so one that no longer imports fails
+  # here).
   docs:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes]
+    needs: [changes, engine-wheel]
     if: needs.changes.outputs.docs == 'true' && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
+        with:
+          python-version-file: .tool-versions
+      - run: pip install -q uv && uv pip install --system -r services/planner/requirements-dev-wingtip.txt pdoc
+      - uses: ./.github/actions/engine-wheel
+        with:
+          mode: install
+      - name: pdoc (services/planner/wingtip)
+        run: PYTHONPATH=services/planner python -m pdoc services/planner/wingtip -o "$RUNNER_TEMP"/pdoc-wingtip --no-show-source
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: pdoc-wingtip
+          path: ${{ runner.temp }}/pdoc-wingtip
+          retention-days: 30
 
       - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78  # v6.2.0
         with:
@@ -1500,8 +1434,10 @@ jobs:
   # merged with the Android app not compiling while its build ran beside
   # CI), where `changes` finds the pull request touches what they build
   # from; skipped, and so passing, otherwise. A pull request's set: Android
-  # compiled, unit-tested and linted; iOS's unit tests and CardSmokeTests on
-  # the iPhone. The rest is each workflow's night (docs/CI.md).
+  # compiled, unit-tested and linted; iOS built and its unit tests
+  # (WingtipTests) on the iPhone. CardSmokeTests is main's push's, in
+  # native-ios.yml's own run, and the rest each workflow's night
+  # (docs/CI.md, "The tiers").
   android:
     name: Native Android
     needs: [changes]
@@ -1513,6 +1449,8 @@ jobs:
     needs: [changes]
     if: needs.changes.outputs.ios == 'true'
     uses: ./.github/workflows/native-ios.yml
+    with:
+      unit_only: true
 
   # Nothing a phone already calls may break: a released app calls these
   # servers for months. oasdiff compares each OpenAPI document with main's
@@ -1773,7 +1711,7 @@ jobs:
   # (scripts/ci/ci_budget.py). Last, after every job; seconds.
   budget:
     name: CI budget
-    needs: [changes, test, test-web, test-gateway, engine-wheel, test-python, e2e, e2e-images, build-images, dependency-review, rules-boundary, flight-critical, architecture, site, links, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, passed]
+    needs: [changes, guards, test-engine, test-web, test-gateway, engine-wheel, test-python, e2e, e2e-images, build-images, dependency-review, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, passed]
     if: ${{ !cancelled() }}
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
@@ -1793,13 +1731,16 @@ jobs:
         run: python3 scripts/ci/ci_budget.py
 
   # The one check main requires (its ruleset); auto-merge-agents.yml merges
-  # on it. Every job here passed or was skipped as not needed. The browser
-  # suite and the image builds report beside it without holding a merge
-  # (the owner, 2026-11-07); a failure there is fixed forward.
+  # on it. Tier 1, about three minutes (the owner, 2026-11-10: "3-minute
+  # gate: browser smoke, images and iPhone UI smoke run after merge"):
+  # every job a pull request runs, each passed or skipped as not needed.
+  # The browser suite and the image builds run after merge on main's push,
+  # and a failure there is one issue (nightly-issue.yml), fixed forward.
+  # scripts/ci/test_tiers.py holds this list to the tiers.
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, engine-wheel, test-python, docs, infra, api-compat, rules-boundary, flight-critical, architecture, links, site, android, ios]
+    needs: [changes, engine-wheel, guards, test-engine, test-web, test-python, test-gateway, infra, api-compat, dependency-review, android, ios]
     if: always()
     steps:
       - name: Every job passed or was not needed

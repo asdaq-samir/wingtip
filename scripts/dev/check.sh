@@ -47,7 +47,7 @@ PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HO
 tool() { "$here/scripts/build/toolchain.sh" get "$1"; }
 RUST=$(tool rust) PYTHON=$(tool python) JAVA=$(tool java) MAVEN=$(tool maven) NODE=$(tool nodejs)
 RUST_IMAGE=rust:$RUST-slim-$(tool debian)
-# CI's (ci.yml's test job).
+# CI's (scripts/ci/guards.sh).
 CARGO_MACHETE=0.9.2
 
 # The areas and the paths that belong to each are scripts/areas.yml's, the
@@ -233,11 +233,12 @@ run_area() {
       docker run --rm -v "$here:/w" -v wingtip-cargo-registry:/usr/local/cargo/registry \
         -v wingtip-cargo-tools:/tools -w /w/engine "$RUST_IMAGE" sh -c \
         "[ -x /tools/bin/cargo-machete ] || cargo install -q --locked cargo-machete@$CARGO_MACHETE --root /tools; /tools/bin/cargo-machete"
-      # Clippy with its warnings denied, then CI's own cargo test line
-      # (ci.yml's test job), so the crates tested here are always the ones
-      # tested there.
+      # Clippy with its warnings denied, then cargo test over every crate CI
+      # tests (scripts/ci/engine_affected.py --all, the list ci.yml's
+      # test-engine runs on main's push), so the crates tested here are
+      # always the ones tested there.
       local cmd
-      cmd=$(grep -oE 'cargo test --profile ci [^#]*' "$here/.github/workflows/ci.yml" | head -1)
+      cmd="cargo test --profile ci --manifest-path engine/Cargo.toml $(python3 "$here/scripts/ci/engine_affected.py" --all)"
       key=$(worktree_key)
       # The target is a volume of this worktree's own, labelled with its path
       # so tidy-local.sh can remove it when the worktree is gone.
