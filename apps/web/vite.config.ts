@@ -138,14 +138,12 @@ export default defineConfig({
     // handler serves a real file as itself), scoped to /app/. Installs
     // only on a secure origin: https, or localhost.
     VitePWA({
-      // "autoUpdate": a new build takes the page over as soon as its
-      // worker has installed -- the page reloads itself, with no prompt
-      // (main.tsx asks the server for a new worker every minute, so an
-      // open page finds one within that). "prompt" was tried, with a
-      // toast offering the reload, and dropped: the pilot wants the
-      // latest build at once, not a question. The cost is a reload
-      // under whoever is on the page at that moment.
-      registerType: "autoUpdate",
+      // "prompt", the plugin's default: a new build's worker waits, as
+      // the browser's own would, and the page takes it only while it is
+      // away, with no question asked (features/shell/newBuild). The
+      // owner wants the latest build without a prompt; "autoUpdate"
+      // gave it, but by reloading under whoever was using the page.
+      registerType: "prompt",
       manifest: MANIFEST,
       workbox: {
         navigateFallback: "/app/index.html",

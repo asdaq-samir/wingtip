@@ -19,6 +19,7 @@ import { registerSW } from "virtual:pwa-register";
 import { followDynamicType } from "./features/shell/dynamicType";
 import { prepareAnnouncer } from "./lib/announce";
 import { keepAddressThroughReload, startFresh } from "./features/shell/freshLoad";
+import { takeNewBuildsWhenAway } from "./features/shell/newBuild";
 import { recoverChunk, useChunkFailure } from "./lib/chunkRecovery";
 import { installErrorReports, reportOf, sendReport } from "./lib/errorReports";
 import { startSpeedReports } from "./lib/speed";
@@ -91,33 +92,14 @@ startLoadLog();
 // The service worker (vite.config.ts): the app shell, the chart tiles
 // the map has drawn or kept ahead, and the planner's answers, held for
 // the air. It registers only on a secure origin (https, or localhost).
-// A new build is taken at once (vite.config.ts, "autoUpdate"): the
-// page reloads itself the moment the new worker has installed. The
-// browser checks for a new worker on its own only on a navigation, so
-// a page kept open -- the phone, all day -- asks every minute, and as
-// it comes back to the front: an iPhone stops a page's timers while it
-// is away, and the app brought back showed the build it was left on
-// until a minute after. The check is one small request for sw.js. That
-// reload keeps the route on screen; a person's starts clean
-// (features/shell/freshLoad).
+// A new build is taken while the app is away, never under the pilot
+// (features/shell/newBuild); that reload keeps the route on screen, a
+// person's starts clean (features/shell/freshLoad).
 // Registered once the page has loaded, not during it: the worker's
 // install fetches every chunk it precaches (2.7 MB), which competed
 // with the map, its tiles and the planner on a cold start and after
 // each deploy.
-registerSW({
-  immediate: false,
-  onRegisteredSW(_url, registration) {
-    if (!registration) return;
-    window.setInterval(() => void registration.update(), 60_000);
-    document.addEventListener("visibilitychange", () => {
-      if (document.visibilityState === "visible") void registration.update();
-    });
-  },
-  onNeedReload() {
-    keepAddressThroughReload();
-    window.location.reload();
-  },
-});
+const takeNewBuild = takeNewBuildsWhenAway(registerSW);
 startFresh();
 
 // Three views, one app -- which is the point of the port. As separate
@@ -241,6 +223,7 @@ window.addEventListener("vite:preloadError", () => {
     entry: document.querySelector<HTMLScriptElement>('script[type="module"][src]')?.src ?? null,
     update: async () => {
       await (await navigator.serviceWorker?.getRegistration())?.update();
+      await takeNewBuild();
     },
     reload: () => {
       keepAddressThroughReload();
