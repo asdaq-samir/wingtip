@@ -1,5 +1,6 @@
 import { dayMonthYear } from "./format/days";
 import type { DataCycle } from "./api/types";
+import { andList } from "./listWords";
 
 /**
  * The FAA data the planner uses, in a pilot's words, where an edition is
@@ -49,6 +50,6 @@ const SHORT: Record<string, string> = {
 export function dataWarning(cycles: readonly DataCycle[] | null | undefined): string | null {
   const names = outOfDate(cycles).map((c) => SHORT[c.key] ?? c.name.toLowerCase());
   if (!names.length) return null;
-  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+  const list = andList(names);
   return `FAA data out of date: ${list}`;
 }

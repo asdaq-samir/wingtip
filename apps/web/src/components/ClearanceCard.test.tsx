@@ -193,7 +193,7 @@ describe("the clearance card", () => {
     fireEvent.change(said, { target: { value: PARTLY.said } });
     expect(state("readback")).toBe("4 of 6 read back");
     const lines = within(screen.getByTestId("clearance-readback-lines"));
-    expect(lines.getByText("Limit, route, expected altitude and frequency read back")).toBeTruthy();
+    expect(lines.getByText("Limit, route, expected altitude, and frequency read back")).toBeTruthy();
     expect(lines.getByText("Altitude: 4,000 ft said, 5,000 ft cleared")).toBeTruthy();
     expect(lines.getByText("Squawk 4512 not read back")).toBeTruthy();
     expect(lines.getAllByLabelText("Differs")).toHaveLength(2);
@@ -201,7 +201,7 @@ describe("the clearance card", () => {
     fireEvent.change(said, { target: { value: readbacks.cases[0]!.said } });
     expect(state("readback")).toBe("Read back in full");
     expect(screen.getByTestId("clearance-readback-lines").textContent).toBe(
-      "Limit, route, altitude, expected altitude, frequency and squawk read back",
+      "Limit, route, altitude, expected altitude, frequency, and squawk read back",
     );
   });
 

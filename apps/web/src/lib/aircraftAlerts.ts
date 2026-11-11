@@ -4,6 +4,7 @@ import { clockTime } from "./format";
 import { compassPoint, saidPoint } from "./compass";
 import { callEngine } from "./engine/engine";
 import { altFt } from "./format";
+import { orList } from "./listWords";
 
 /**
  * What a pilot can ask to be told of an airplane, from its card's Alert,
@@ -161,6 +162,6 @@ export function alertsLine(alerts: AircraftAlert[]): string | null {
           : `comes within ${NEAR_AIRPORT_NM} nm of ${a.airport?.ident ?? "an airport"}`,
   );
   if (!words.length) return null;
-  const listed = words.length === 1 ? words[0] : `${words.slice(0, -1).join(", ")} or ${words.at(-1)}`;
+  const listed = orList(words);
   return `When it ${listed}`;
 }

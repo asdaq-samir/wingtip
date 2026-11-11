@@ -54,7 +54,7 @@ describe("FAA data past its cycle, in words", () => {
       cycle({ key: "cifp", name: "Procedures", kind: "airac", state: "expired" }),
     ];
     expect(outOfDate(stale)).toHaveLength(3);
-    expect(dataWarning(stale)).toBe("FAA data out of date: airports and frequencies, charts and procedures");
+    expect(dataWarning(stale)).toBe("FAA data out of date: airports and frequencies, charts, and procedures");
   });
 
   it("the engine's rule is the shared fixture's, asked from the web", () => {

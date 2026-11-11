@@ -1,4 +1,5 @@
 import type { FigureKey } from "./figures";
+import { andList } from "../listWords";
 
 /**
  * How each airplane figure is named, asked for and bounded on screen. The
@@ -80,5 +81,5 @@ export function readFigure(key: FigureKey, n: number | null): { value: number } 
  *  airplane_needs: loading, takeoff, landing). */
 export function tablesWords(tables: readonly string[]): string {
   const names = tables.map((t) => (t === "loading" ? "loading envelope" : `${t} chart`));
-  return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : (names[0] ?? "");
+  return andList(names);
 }
