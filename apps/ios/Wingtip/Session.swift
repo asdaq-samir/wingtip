@@ -92,8 +92,7 @@ final class Session {
     }
 
     /// The pilot said yes: the token spent, and who it signed in as said.
-    func confirmLink() async {
-        guard let link = pendingLink else { return }
+    func confirmLink(_ link: PendingLink) async {
         pendingLink = nil
         do {
             try await Gateway.verifyMagicLink(token: link.token)

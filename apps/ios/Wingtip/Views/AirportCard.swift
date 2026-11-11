@@ -126,13 +126,14 @@ struct AirportCard: View {
         .task(id: ident) {
             // The pictures are the card's look, not a figure: none where they can't be had.
             async let pictures = try? Planner.photos(ident)
-            async let notices = try KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }
+            async let notices = Self.notices(ident)
             await load()
             photos = await pictures
-            do {
-                notams = try await notices.value
+            switch await notices {
+            case .success(let fresh):
+                notams = fresh
                 notamsProblem = nil
-            } catch {
+            case .failure(let error):
                 notams = nil
                 notamsProblem = "Its NOTAMs couldn't be had, so closures and TFRs aren't shown: \(error.localizedDescription)"
             }
@@ -144,6 +145,11 @@ struct AirportCard: View {
                 if let fresh = try? await KeptForAir.answer(.airports, key: ident, fetch: { try await Planner.place(ident) }) { place = fresh.value }
             }
         }
+    }
+
+    /// The field's NOTAMs, kept for the air, or why they couldn't be had.
+    private static func notices(_ ident: String) async -> Result<APINotamsRanked, any Error> {
+        do { return .success(try await KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }.value) } catch { return .failure(error) }
     }
 
     private func load() async {

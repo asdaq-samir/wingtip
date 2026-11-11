@@ -19,9 +19,7 @@ enum SessionCookies {
 
     /// The cookies in memory, as URLSession keeps them, filled from the
     /// Keychain (or the old jar, moved) when first used.
-    /// HTTPCookieStorage is safe to use from any thread (Foundation's
-    /// docs), which the compiler cannot see of the class.
-    nonisolated(unsafe) static let jar: HTTPCookieStorage = {
+    static let jar: HTTPCookieStorage = {
         // An ephemeral configuration's own store, in memory only; it
         // always has one.
         let jar = URLSessionConfiguration.ephemeral.httpCookieStorage!

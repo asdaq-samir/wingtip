@@ -15,23 +15,23 @@ struct LinkSignInPrompt: ViewModifier {
             .alert(
                 session.pendingLink?.replacing == nil ? "Sign In from This Link?" : "Switch Accounts?",
                 isPresented: Binding(get: { session.pendingLink != nil }, set: { if !$0 { session.cancelLink() } }),
-                presenting: session.pendingLink
-            ) { _ in
-                Button(session.pendingLink?.replacing == nil ? "Sign In" : "Switch") { Task { await session.confirmLink() } }
-                Button("Cancel", role: .cancel) { session.cancelLink() }
+                presenting: session.pendingLink) { link in
+                    // The link the alert was put up for, held here: the
+                    // alert's dismissal clears the pending one first.
+                    Button(link.replacing == nil ? "Sign In" : "Switch") { Task { await session.confirmLink(link) } }
+                    Button("Cancel", role: .cancel) { session.cancelLink() }
             } message: { link in
                 Text(Self.message(replacing: link.replacing))
             }
             .alert(
                 "Signed In",
                 isPresented: Binding(get: { session.signedInByLink != nil }, set: { if !$0 { session.signedInByLink = nil } }),
-                presenting: session.signedInByLink
-            ) { _ in
-                Button("OK", role: .cancel) { session.signedInByLink = nil }
-                Button("That's Not Me", role: .destructive) {
-                    session.signedInByLink = nil
-                    Task { await session.signOut() }
-                }
+                presenting: session.signedInByLink) { _ in
+                    Button("OK", role: .cancel) { session.signedInByLink = nil }
+                    Button("That's Not Me", role: .destructive) {
+                        session.signedInByLink = nil
+                        Task { await session.signOut() }
+                    }
             } message: { email in
                 Text("You're signed in as \(email). Your airplanes, flights and logbook are saved to this account.")
             }

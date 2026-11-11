@@ -43,8 +43,8 @@ struct LegAltitudePopover: View {
     }
 
     var body: some View {
-        let own = try? typedFt?.get()
-        let altitude = own ?? picked ?? currentFt ?? rows.last ?? 0
+        let typedValue = try? typedFt?.get()
+        let altitude = typedValue ?? picked ?? currentFt ?? rows.last ?? 0
         VStack(alignment: .leading, spacing: WingtipSpace.md) {
             Text(ident).font(.headline.monospaced())
             Picker("Altitude", selection: Binding(get: { altitude }, set: { picked = $0; typed = "" })) {
