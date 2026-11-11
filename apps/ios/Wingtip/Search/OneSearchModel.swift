@@ -120,7 +120,8 @@ final class OneSearchModel {
     /// The fields nearest the airplane, for the Nearest group.
     func findNearest(_ fix: OwnShip.Fix?) async {
         guard let at = fix?.coordinate else { return }
-        if let fields = try? await Planner.nearest(lat: at.latitude, lon: at.longitude, limit: 25) { nearest = fields }
+        // With no planner, the packs' fields (PackFields), nearest first.
+        if let found = try? await Planner.nearestOrPacks(lat: at.latitude, lon: at.longitude, limit: 25) { nearest = found.fields }
     }
 
     /// The search put away, what was typed with it.
