@@ -107,14 +107,26 @@ export function windowOf(n: FieldNotam, read: NotamReading): Pick<FieldNotam, "i
   return { in_force: n.in_force, starts: n.starts ?? read.starts, ends: n.ends ?? read.ends };
 }
 
-/** Its start and end for a row's corner, each in UTC as the NOTAM gives
- *  it ("Nov 10 1200Z", "Nov 12 1432Z"): the end an estimate with "EST",
- *  "PERM" where it is permanent (JO 7930.2 4-2-1), null where none is
- *  given. */
+const CORNER = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const CORNER_ZONE = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  timeZoneName: "short",
+});
+
+/** Its start and end for a row's corner in the device's own time, the
+ *  zone named once on the last ("Nov 10, 6:00 AM", "Nov 12, 8:32 AM
+ *  CST"; the owner, 2026-11-11: "Instead of Zulu time make it local
+ *  time"; its full card keeps the UTC the NOTAM gives): the end an
+ *  estimate with "(est.)", "Permanent" where it is PERM (JO 7930.2
+ *  4-2-1), null where none is given. */
 export function cornerOf(n: FieldNotam, read: NotamReading): { from: string | null; until: string | null } {
-  const { starts, ends } = windowOf(n, read);
-  const until = ends ? `${zulu(ends)}${read.estimated ? " EST" : ""}` : read.permanent ? "PERM" : null;
-  return { from: starts ? zulu(starts) : null, until };
+  const window = windowOf(n, read);
+  const [starts, ends] = [dateOf(window.starts), dateOf(window.ends)];
+  const until = ends ? `${CORNER_ZONE.format(ends)}${read.estimated ? " (est.)" : ""}` : read.permanent ? "Permanent" : null;
+  return { from: starts ? (until && ends ? CORNER : CORNER_ZONE).format(starts) : null, until };
 }
 
 const LOCAL = new Intl.DateTimeFormat(undefined, {

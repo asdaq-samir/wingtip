@@ -96,7 +96,7 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
                       data-testid="place-notam-window"
                     >
                       {from && <span className="block">{from}</span>}
-                      {until && <span className="block">{from ? `– ${until}` : `Until ${until}`}</span>}
+                      {until && <span className="block">{from ? `– ${until}` : until === "Permanent" ? until : `Until ${until}`}</span>}
                     </span>
                   )}
                 </span>
