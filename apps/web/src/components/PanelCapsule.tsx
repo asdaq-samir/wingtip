@@ -10,6 +10,7 @@ import { KeptMark, ListPageHead, PillSection, PillStrip, SmallAirportTile } from
 import { placeLink } from "../lib/flightLink";
 import { useAway } from "../lib/useAway";
 import ClearButton from "./ClearButton";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "./ui/input-group";
 import { PANEL_FIELD } from "./panelField";
 
 /**
@@ -70,19 +71,20 @@ export function SearchField({
           on the sheet the grey of iOS's search field, on the glass capsule
           a lighter pane of the glass, no line round it, its 44-point hit
           area its own. The magnifier drawn fine and grey, as SF Symbols'. */}
-      <label
+      <InputGroup
         className={cn(
-          "relative flex h-[2.875rem] min-w-0 flex-1 items-center gap-2 rounded-full px-3.5 text-muted-foreground",
+          "h-[2.875rem] min-w-0 flex-1 gap-2 rounded-full border-0 px-3.5 text-muted-foreground shadow-none has-[[data-slot=input-group-control]:focus-visible]:ring-0",
           PANEL_FIELD,
           TEXT.row,
         )}
       >
-        <Icon className="size-5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
-        <input
+        <InputGroupAddon className="p-0">
+          <Icon className="size-5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
+        </InputGroupAddon>
+        <InputGroupInput
           ref={input}
           type="search"
           enterKeyHint="search"
-          autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
           autoCapitalize={capitals ? "characters" : undefined}
@@ -99,22 +101,27 @@ export function SearchField({
           placeholder={placeholder}
           aria-label={label ?? placeholder}
           data-testid={testId}
-          className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
+          className={cn(
+            "h-full min-w-0 px-0 py-0 text-foreground placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden",
+            TEXT.row,
+          )}
         />
         {/* What is typed cleared inside the field, as iOS's search field
             clears it. */}
         {value && (
-          <ClearButton
-            label="Clear the search"
-            testId="search-clear"
-            onClear={() => {
-              if (onClear) onClear();
-              else onChange("");
-              input.current?.focus();
-            }}
-          />
+          <InputGroupAddon align="inline-end" className="p-0">
+            <ClearButton
+              label="Clear the search"
+              testId="search-clear"
+              onClear={() => {
+                if (onClear) onClear();
+                else onChange("");
+                input.current?.focus();
+              }}
+            />
+          </InputGroupAddon>
         )}
-      </label>
+      </InputGroup>
     </form>
   );
 }
