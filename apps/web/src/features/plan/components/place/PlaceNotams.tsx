@@ -1,11 +1,10 @@
 import { useState, type ReactNode } from "react";
-import { ChevronDown, TriangleAlert } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import { PillSection } from "../../../../components/Favorites";
 import { SheetCard } from "../../../../components/SheetCard";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import { RowBadge } from "../../../../components/RowBadge";
-import { BADGE } from "../../../../lib/rowBadges";
+import { NotamGlyph } from "./NotamGlyph";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
 import {
@@ -83,11 +82,7 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
           return (
             <ListRow
               key={n.id}
-              media={
-                <RowBadge colour={BADGE.hazard}>
-                  <TriangleAlert />
-                </RowBadge>
-              }
+              media={<NotamGlyph keyword={read.keyword} tfr={n.kind === "tfr"} />}
               // Its start and end at the top right, under each other (the
               // owner, 2026-11-11: "For each notam, we should put the start
               // and end on top right corner").

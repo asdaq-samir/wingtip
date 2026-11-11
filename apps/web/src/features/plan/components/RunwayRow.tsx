@@ -15,7 +15,7 @@ import { runwayCrosswindKt } from "../lib/wind";
 /** A runway drawn on its badge, laid along its true heading as the
  *  chart lays it (north up), its centre line dashed; upright where its
  *  heading is not known. */
-function RunwayGlyph({ headingDeg }: { headingDeg: number | null }) {
+export function RunwayGlyph({ headingDeg }: { headingDeg: number | null }) {
   return (
     <RowBadge colour={BADGE.runway}>
       <svg viewBox="-9 -9 18 18" fill="none">
