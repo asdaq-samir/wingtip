@@ -4,7 +4,9 @@ import { cn } from "cn";
 import { PillSection } from "../../../../components/Favorites";
 import { SheetCard } from "../../../../components/SheetCard";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
-import { NotamGlyph } from "./NotamGlyph";
+import { TriangleAlert } from "lucide-react";
+import { RowBadge } from "../../../../components/RowBadge";
+import { BADGE } from "../../../../lib/rowBadges";
 import { Badge } from "../../../../components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../components/ui/collapsible";
 import { TEXT } from "../../../../lib/text";
@@ -127,7 +129,13 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
           return (
             <ListRow
               key={n.id}
-              media={<NotamGlyph keyword={read.keyword} tfr={n.kind === "tfr"} />}
+              // One symbol for every NOTAM, the warning triangle (the owner,
+              // 2026-11-11: "For notam just use the same symbol as you did before").
+              media={
+                <RowBadge colour={BADGE.hazard}>
+                  <TriangleAlert />
+                </RowBadge>
+              }
               // Its what first, by its symbol, whether it is in force at the
               // line's end; its when and where a line each under it (NotamLines).
               wide
