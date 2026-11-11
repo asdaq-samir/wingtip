@@ -411,7 +411,7 @@ export function LessonGl() {
   // The airplane flown from the last fix to this one over a second and a half.
   useEffect(() => {
     if (!flight || flight.path.length === 0) return;
-    const marker = iconMarker(trafficIcon(flight.track, MAP_BLUE, "", null, 0, false))
+    const marker = iconMarker(trafficIcon(flight.track, MAP_BLUE, 0, false))
       .setLngLat([flight.path[0]!.lon, flight.path[0]!.lat])
       .addTo(map);
     const end = flight.path.at(-1)!;

@@ -70,7 +70,9 @@ test(
     // With no own ship, each one's own height, a descent's arrow with it.
     const labels = page.locator(".maplibregl-map").getByText(/^(4,500↓|9,800)/);
     await expect(labels).toHaveCount(2);
-    await expect(marks.first()).toHaveAttribute("style", /rotate\(320deg\)/);
+    // Turned by MapLibre against the map (rotationAlignment "map"), the
+    // flat chart's bearing 0, so the marker's own turn is the track.
+    await expect(page.locator(".maplibregl-marker:has(svg[data-traffic])").first()).toHaveAttribute("style", /rotateZ\(320deg\)/);
     // Credited in Status and About, not on the map (the owner, 2026-11-11).
     await expect(page.locator(".maplibregl-ctrl-attrib")).toHaveCount(0);
     expect(asks.length).toBeGreaterThan(0);

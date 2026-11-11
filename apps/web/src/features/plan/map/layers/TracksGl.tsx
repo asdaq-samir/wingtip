@@ -6,7 +6,7 @@ import type { Course } from "../../../../lib/api/types";
 import { flightQuery } from "../../../../lib/queryClient";
 import { altFt } from "../../../../lib/format";
 import { useFlownTrack } from "../../../../lib/map/position/flownTrack";
-import { TRAFFIC_COLOURS, trafficIcon } from "../../../../lib/map/marks/icons";
+import { TRAFFIC_COLOURS, trafficIcon, trafficTag } from "../../../../lib/map/marks/icons";
 import { useLegHighlight } from "../legHighlight";
 import { useMapHover } from "../../../../lib/map/marks/mapHover";
 import { useOwnFix, SIMULATED_FIX_MS, endSimulation, simulateFix } from "../../../../lib/map/position/ownShip";
@@ -115,8 +115,14 @@ export function LegHoverGl() {
  *  planned flight's dry run -- own ship flown along it (useReplayMarker). */
 export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
   const { map } = useGlMap();
-  const marker = useRef<Marker | null>(null);
+  // The airplane, turned with the map, and its height upright under it.
+  const marker = useRef<{ mark: Marker; tag: Marker } | null>(null);
   useEffect(() => {
+    const drop = () => {
+      marker.current?.mark.remove();
+      marker.current?.tag.remove();
+      marker.current = null;
+    };
     let frame = 0,
       last = performance.now(),
       reported = -Infinity,
@@ -138,16 +144,20 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
         return;
       }
       if (!here) {
-        marker.current?.remove();
-        marker.current = null;
+        drop();
         return;
       }
       const height = here.alt_ft == null ? null : Math.round(here.alt_ft / 100) * 100;
-      const icon = trafficIcon(here.track_deg ?? null, TRAFFIC_COLOURS.far, altFt(height), null, 0, true);
-      if (!marker.current) marker.current = iconMarker(icon).setLngLat([here.lon, here.lat]).addTo(map);
+      const icon = trafficIcon(here.track_deg ?? null, TRAFFIC_COLOURS.far, 0, true);
+      const tag = trafficTag(TRAFFIC_COLOURS.far, altFt(height), null, true);
+      const point: [number, number] = [here.lon, here.lat];
+      if (!marker.current)
+        marker.current = { mark: iconMarker(icon).setLngLat(point).addTo(map), tag: iconMarker(tag).setLngLat(point).addTo(map) };
       else {
-        marker.current.setLngLat([here.lon, here.lat]);
-        setMarkerIcon(marker.current, icon);
+        marker.current.mark.setLngLat(point);
+        marker.current.tag.setLngLat(point);
+        setMarkerIcon(marker.current.mark, icon);
+        setMarkerIcon(marker.current.tag, tag);
       }
       // Kept in sight while it plays, its Play being the pilot's pick
       // (lib/map/gl/pilotCamera); not once they move the map by hand.
@@ -163,8 +173,7 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
     frame = requestAnimationFrame(step);
     return () => {
       cancelAnimationFrame(frame);
-      marker.current?.remove();
-      marker.current = null;
+      drop();
       if (asOwnShip) endSimulation();
     };
   }, [map, asOwnShip]);

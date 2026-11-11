@@ -7,7 +7,7 @@ import { M_PER_NM } from "../../../../lib/geo";
 import { prefersReducedMotion } from "../../../../lib/motion";
 import { clearProblem, raiseProblem } from "../../../../lib/problems";
 import { usePreferences } from "../../../../lib/preferences";
-import { TRAFFIC_COLOURS, trafficIcon } from "../../../../lib/map/marks/icons";
+import { TRAFFIC_COLOURS, trafficIcon, trafficTag } from "../../../../lib/map/marks/icons";
 import { useOwnFix, useOwnShip } from "../../../../lib/map/position/ownShip";
 import { usePastFlight } from "../pastFlight";
 import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendPx } from "../traffic";
@@ -34,18 +34,28 @@ const STALE_MS = 30_000;
 const ADD_PER_STEP = 40;
 
 interface Target {
+  /** The arrow, turned with the map to the airplane's track. */
   marker: Marker;
+  /** Its height and callsign on the same point, upright (trafficTag). */
+  tag: Marker;
   plane: TrafficAircraft;
   at: number;
   shift: { lat: number; lon: number; from: number } | null;
   icon: ReturnType<typeof trafficIcon> | null;
+  words: ReturnType<typeof trafficTag> | null;
   drawn: boolean;
 }
+
+/** Both of a target's marks: the arrow and its words go together. */
+const both = (t: Target, act: (m: Marker) => void) => {
+  act(t.marker);
+  act(t.tag);
+};
 
 /**
  * The airplanes ADS-B receivers hear about the map, drawn
  * bold as the thing on the map that moves most: each the app's own
- * traffic mark (icons.ts trafficIcon) as a MapLibre marker, which the map
+ * traffic mark (icons.ts trafficIcon, its words trafficTag) as MapLibre markers, which the map
  * places in the frame it draws the chart. A tap tracks one (tracking's
  * pick); a tracked airplane's path and a past flight with its replay are
  * drawn under it.
@@ -111,7 +121,7 @@ function Traffic() {
   useEffect(() => {
     const drawn = targets.current;
     return () => {
-      for (const t of drawn.values()) t.marker.remove();
+      for (const t of drawn.values()) both(t, (m) => m.remove());
       drawn.clear();
     };
   }, [map]);
@@ -147,13 +157,14 @@ function Traffic() {
       const held = targets.current.get(plane.hex);
       if (!held) {
         const hexOf = plane.hex;
-        const icon = trafficIcon(plane.track_deg ?? null, TRAFFIC_COLOURS.far, "", null, 0, false);
+        const icon = trafficIcon(plane.track_deg ?? null, TRAFFIC_COLOURS.far, 0, false);
         const marker = iconMarker(icon, { interactive: true }).setLngLat([plane.lon, plane.lat]);
+        const tag = iconMarker(trafficTag(TRAFFIC_COLOURS.far, "", null, false)).setLngLat([plane.lon, plane.lat]);
         marker.getElement().addEventListener("click", (e) => {
           e.stopPropagation();
           useTracking.getState().pick?.(hexOf, targets.current.get(hexOf)?.plane);
         });
-        targets.current.set(plane.hex, { marker, plane, at, shift: null, icon: null, drawn: false });
+        targets.current.set(plane.hex, { marker, tag, plane, at, shift: null, icon: null, words: null, drawn: false });
         continue;
       }
       if (at <= held.at) continue;
@@ -166,7 +177,7 @@ function Traffic() {
     }
     for (const [hex, target] of targets.current) {
       if (!seen.has(hex)) {
-        target.marker.remove();
+        both(target, (m) => m.remove());
         targets.current.delete(hex);
       }
     }
@@ -185,21 +196,27 @@ function Traffic() {
     for (const target of targets.current.values()) {
       const { plane } = target;
       const tracked = plane.hex === hex;
-      const icon = trafficIcon(
-        plane.track_deg ?? null,
-        nearOwnHeight(plane, ownFt) ? TRAFFIC_COLOURS.near : TRAFFIC_COLOURS.far,
-        heights || tracked ? trafficLabel(plane, ownFt) : "",
-        callsigns || tracked ? (plane.callsign ?? plane.registration ?? null) : null,
-        trendPx(plane.speed_kt, plane.lat, view.zoom),
-        tracked,
-      );
+      const colour = nearOwnHeight(plane, ownFt) ? TRAFFIC_COLOURS.near : TRAFFIC_COLOURS.far;
+      const icon = trafficIcon(plane.track_deg ?? null, colour, trendPx(plane.speed_kt, plane.lat, view.zoom), tracked);
       if (icon !== target.icon) {
         target.icon = icon;
         setMarkerIcon(target.marker, icon);
       }
-      const el = target.marker.getElement();
-      el.style.zIndex = tracked ? "2" : "1";
-      el.style.opacity = only && !only.has(plane.hex) && !tracked ? "0.25" : "1";
+      const words = trafficTag(
+        colour,
+        heights || tracked ? trafficLabel(plane, ownFt) : "",
+        callsigns || tracked ? (plane.callsign ?? plane.registration ?? null) : null,
+        tracked,
+      );
+      if (words !== target.words) {
+        target.words = words;
+        setMarkerIcon(target.tag, words);
+      }
+      both(target, (m) => {
+        const el = m.getElement();
+        el.style.zIndex = tracked ? "2" : "1";
+        el.style.opacity = only && !only.has(plane.hex) && !tracked ? "0.25" : "1";
+      });
     }
   }, [merged, ownFt, view.zoom, hex, only]);
 
@@ -233,7 +250,7 @@ function Traffic() {
       for (const [hex, target] of targets.current) {
         const age = (now - target.at) / 1000;
         if (age > CARRY_S) {
-          target.marker.remove();
+          both(target, (m) => m.remove());
           targets.current.delete(hex);
           continue;
         }
@@ -251,15 +268,15 @@ function Traffic() {
           (lat >= b.getSouth() - dLat && lat <= b.getNorth() + dLat && lon >= b.getWest() - dLon && lon <= b.getEast() + dLon);
         if (!inSight) {
           if (target.drawn) {
-            target.marker.remove();
+            both(target, (m) => m.remove());
             target.drawn = false;
           }
           continue;
         }
         if (!target.drawn && (!target.icon || added >= ADD_PER_STEP)) continue;
-        target.marker.setLngLat([lon, lat]);
+        both(target, (m) => m.setLngLat([lon, lat]));
         if (!target.drawn) {
-          fadeInMarker(target.marker.addTo(map));
+          both(target, (m) => fadeInMarker(m.addTo(map)));
           target.drawn = true;
           added += 1;
         }

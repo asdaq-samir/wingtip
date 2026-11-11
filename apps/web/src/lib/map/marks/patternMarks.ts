@@ -22,14 +22,17 @@ const LABEL_TEAL = CHART.patternLabel;
  *  mark. */
 export const PATTERN_WORDS_FROM_ZOOM = 11;
 
-/** An arrowhead the way a leg is flown, at its middle. */
+/** An arrowhead the way a leg is flown, at its middle: turned to the leg's
+ *  true bearing on the chart (MapLibre's map-aligned rotation), so it
+ *  keeps along the leg as the map turns. */
 export function arrowIcon(bearing: number) {
   return divIcon({
     className: "",
     iconSize: [16, 16],
     iconAnchor: [8, 8],
+    rotation: Math.round(bearing),
     html:
-      `<svg viewBox="-8 -8 16 16" width="16" height="16" style="transform:rotate(${Math.round(bearing)}deg)" aria-hidden="true">` +
+      `<svg viewBox="-8 -8 16 16" width="16" height="16" aria-hidden="true">` +
       `<path d="M0 -6 L5 4 L0 1.5 L-5 4 Z" fill="${TEAL}" stroke="${CHART.casing}" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
   });
 }
