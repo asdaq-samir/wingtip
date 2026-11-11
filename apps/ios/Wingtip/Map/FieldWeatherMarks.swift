@@ -146,11 +146,33 @@ enum FieldWeatherMarks {
     static func worse(now: [EngineContract.WorseField], atEta: [EngineContract.WorseField]) -> Set<String> {
         guard !atEta.isEmpty else { return [] }
         if let last = lastWorse, last.now == now, last.atEta == atEta { return last.answer }
-        let answer = try? Engine.weatherWorse(then: .init(metars: nil, advisories: nil, tafs: now),
-                                              now: .init(metars: nil, advisories: nil, tafs: atEta))
-        let worse = Set((answer?.worse ?? []).filter { $0.kind == "taf" }.compactMap(\.ident))
+        let worse: Set<String>
+        do {
+            let answer = try Engine.weatherWorse(then: .init(metars: nil, advisories: nil, tafs: now),
+                                                 now: .init(metars: nil, advisories: nil, tafs: atEta))
+            worse = Set(answer.worse.filter { $0.kind == "taf" }.compactMap(\.ident))
+        } catch {
+            // The map has no line to say it on: no ↓ is drawn, the failure
+            // is logged, and the Brief's forecasts are there in full.
+            Log.app.error("weather_worse refused the map's fields: \(error.localizedDescription, privacy: .public)")
+            worse = []
+        }
         lastWorse = (now, atEta, worse)
         return worse
+    }
+
+    /// The alternates whose forecast at the ETA there is worse than their
+    /// METAR now (AlternateCheck.atEta), each METAR the map's own report of
+    /// the field (FieldWeatherFeed): the same rule as the route's fields,
+    /// asked only for the alternates in view with a report.
+    @MainActor
+    static func worse(alternates atEta: [EngineContract.WorseField], reports: [String: AirportPin]) -> Set<String> {
+        let shown = atEta.filter { reports[$0.ident]?.weather != nil }
+        let now: [EngineContract.WorseField] = shown.compactMap { field in
+            guard let w = reports[field.ident]?.weather else { return nil }
+            return .init(ident: field.ident, ceilingFt: w.ceilingFt, visibilitySm: w.visibilitySm, ceilingUnknown: w.ceilingUnknown, arrival: true)
+        }
+        return worse(now: now, atEta: shown)
     }
 
     // MARK: The airplane

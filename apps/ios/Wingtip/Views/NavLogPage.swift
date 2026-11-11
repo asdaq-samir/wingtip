@@ -45,13 +45,16 @@ struct NavLogPage: View {
                 Section {
                     totals.listRowInsets(EdgeInsets()).listRowBackground(Color.clear)
                 }
+                if let leg = plan.totals?.alternate { AlternateLegRow(leg: leg) }
                 Section("Profile") {
                     // Read only, the ground coloured against the altitude flown
                     // as the Profile card colours it (`profile_clearance`).
-                    ProfileChart(profile: plan.profile, legs: plan.legs, previewFt: nil,
-                                 clearance: plan.altitudeFt.flatMap { ft in plan.profile.flatMap { try? ProfileRules.clearance(altitudeFt: ft, profile: $0, legs: plan.legs) } })
+                    let clear = plan.altitudeFt.flatMap { ft in plan.profile.map { p in Result { try ProfileRules.clearance(altitudeFt: ft, profile: p, legs: plan.legs) } } }
+                    ProfileChart(profile: plan.profile, legs: plan.legs, previewFt: nil, clearance: try? clear?.get())
                         .frame(height: 180)
                         .listRowInsets(EdgeInsets())
+                    // The ground left uncoloured is said, never taken for clear.
+                    if let clear { ProblemLine(clear, "The ground's clearance") }
                 }
                 Section {
                     // The nav log kept, shown with no signal, with its age.
@@ -83,6 +86,30 @@ struct NavLogPage: View {
             .init(label: "Reserve", value: t?.reserveMin.map(Format.navLogTime) ?? "—", spoken: t?.reserveMin.map(SpokenFigures.minutes)),
         ])
         .padding(.horizontal, WingtipSpace.lg)
+    }
+}
+
+/// Under IFR with an alternate filed, the leg on to it (14 CFR
+/// 91.167(a)(2)), as the planner worked it out with the engine's
+/// navlog_alternate_leg: at the route's last altitude in its winds, or in
+/// still air where they could not be read, which it says. With no
+/// airplane, the miles alone.
+struct AlternateLegRow: View {
+    let leg: APIAlternateLeg
+
+    var body: some View {
+        Section("Alternate") {
+            VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
+                Text("On to \(leg.ident)").font(.headline)
+                Text([Format.distance(leg.distanceNm, decimals: 0), Format.cruiseAltitude(leg.altitudeFt),
+                      leg.eteMin.map(Format.navLogTime), leg.fuelGal.map { Format.fuel($0) }].compactMap { $0 }.joined(separator: " · "))
+                    .font(WingtipType.detail.monospacedDigit()).foregroundStyle(.secondary)
+                if leg.stillAir == true {
+                    Text("In still air: the winds there couldn't be read.").font(.footnote).foregroundStyle(WingtipInk.caution)
+                }
+            }
+            .accessibilityElement(children: .combine)
+        }
     }
 }
 

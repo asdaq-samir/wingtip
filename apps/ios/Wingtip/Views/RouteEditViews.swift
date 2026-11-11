@@ -104,6 +104,7 @@ struct DirectStrip: View {
 /// flight in the air.
 struct RouteExtrasSection: View {
     @Environment(Plan.self) private var plan
+    @AppStorage(FlightRules.key) private var rules: FlightRules = .vfr
 
     var body: some View {
         if plan.routed {
@@ -111,6 +112,9 @@ struct RouteExtrasSection: View {
                 DirectStrip()
                 RoutePointMenu(ident: plan.dep, role: .departure)
                 RoutePointMenu(ident: plan.dest, role: .destination)
+                // Under IFR, the alternate after the destination, as the
+                // web files it (14 CFR 91.169).
+                if rules == .ifr { AlternateRow() }
                 ForEach(plan.extras.holds) { hold in
                     Button { Navigator.shared.push(.hold(hold.fix)) } label: {
                         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
@@ -152,6 +156,7 @@ struct FlightPage: View {
             switch name {
             case "notes": CheckpointNotesView()
             case "file": FlightServiceView()
+            case "alternate": AlternatePage()
             default: EmptyView()
             }
         }

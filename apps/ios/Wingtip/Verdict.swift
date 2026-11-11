@@ -78,6 +78,12 @@ final class Verdict {
         // The gateway's currency is the planner's PilotCurrency by name.
         ask.currency = try currency.map { try Engine.recoded($0) }
         ask.ownAirplane = records.first { $0.tailNumber == plan.tail }.map(OwnAirplaneAsk.init)
+        // The rules the nav log was planned under, and under IFR the
+        // alternate filed: the planner then checks the destination and the
+        // alternate (14 CFR 91.169) into the weather's finding.
+        let rules = FlightRules.saved()
+        ask.rules = rules == .ifr ? "ifr" : nil
+        ask.alternate = plan.extras.filedAlternate(rules: rules)
         return ask
     }
 

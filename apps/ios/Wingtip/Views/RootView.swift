@@ -214,6 +214,7 @@ struct RootView: View {
             // airplane's demonstrated crosswind for the wind arrows' red.
             fieldWeather: FieldWeatherInput(
                 worse: FieldWeatherMarks.worse(plan.briefing, fields: Set([plan.dep, plan.dest] + plan.stops).subtracting([""])),
+                alternates: AlternateCheck.shared.atEta,
                 demonstratedKt: FieldWeatherMarks.demonstratedKt(plan)),
             hazardLegs: plan.hazardLegs,
             bottomInset: mapInset,

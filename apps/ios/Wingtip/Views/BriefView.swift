@@ -158,6 +158,9 @@ struct BriefView: View {
                             }
                         }
                     }
+                    // Under IFR, the destination's and the alternate's check
+                    // (91.169), after the forecast, as the web's Brief has it.
+                    AlternateSection(pickAirplane: { PendingCommand.shared.command = .open(.airplane) })
                     let stations = briefing.metars.keys.sorted()
                     if !stations.isEmpty {
                         Section("METARs") {

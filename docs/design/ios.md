@@ -818,6 +818,23 @@ nautical miles". Swift Charts gives Audio Graphs ([HIG Charts][hig-charts]).
 
 ## 5. Brief, Go / No-Go and Ready to Fly
 
+**The alternate, under IFR (2026-11-10, as the web's).** The plan's
+Route section has an **Alternate** row after the destination: the one
+filed (marked "Under minimums" in the problem ink where it is), or "Add
+Alternate" (amber, "Required", where the destination needs one). It
+opens the alternate's page, the same `List` sections the Brief shows
+after its forecast: the destination's check (14 CFR 91.169(b), the
+engine's `ifr_alternate_destination` over the window `ifr_alternate_window`
+gives), the one filed against its minimums at the ETA there (91.169(c),
+`ifr_alternate_check`) with its published minimums' page and Take It
+Off, and the fields that will do, each filed with a tap. All of it is the
+planner's `/api/alternate`, its reasons shown in the engine's words. The
+filed alternate goes to the nav log as `alternate` (the leg on to it,
+`navlog_alternate_leg`, is the nav log's Alternate section and its fuel
+is in the totals, 91.167(a)(2)) and to the Go / No-Go with `rules=ifr`.
+With no airplane the section asks for one (no stock cruise speed), and
+with no nav log yet it says it waits for the ETA.
+
 **Follow:**
 
 - **Weather's way of putting the takeaway first.** "Weather provides a
@@ -1030,7 +1047,9 @@ more, or gusting); it is red only where the field's `least_crosswind` is
 more than the picked airplane's demonstrated crosswind (its POH's, on
 `/api/aircraft-profiles`), and never red with no airplane or no figure. An
 amber ↓ marks a plan's field whose TAF for the pilot's time there is worse
-than its METAR now (`weather_worse`). The weather comes on the map's own
+than its METAR now (`weather_worse`); under IFR the alternates (the one
+filed and those offered) wear it too, their TAF at the ETA there (the
+planner's `/api/alternate`) against the map's own METAR of the field. The weather comes on the map's own
 `/api/airports/in-view` answer (`weather`), the same for every app; the
 shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
 screen reader says each field's category and wind ("KJVL, IFR, wind 220
