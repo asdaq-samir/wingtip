@@ -13,8 +13,10 @@ struct ClearancePhotoRow: View {
 
     var body: some View {
         Group {
-            Button { photographing = true } label: { Label("From a Photo", systemImage: "doc.viewfinder") }
-                .disabled(reader.reading)
+            if DocumentReader.offered {
+                Button { photographing = true } label: { Label("From a Photo", systemImage: "doc.viewfinder") }
+                    .disabled(reader.reading)
+            }
             if reader.reading { ReadingRow() }
             ProblemLine(reader.problem)
         }

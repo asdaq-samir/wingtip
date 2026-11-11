@@ -9,12 +9,15 @@ scripts that keep the owner's Mac tidy. What the services are is
 - **Docker Desktop** with Compose v2. Nothing else is installed natively:
   every service builds its own image, and the checks run in containers.
 - **Git** and **make** (it ships with macOS and every Linux).
-- **An Anthropic API key**, only for the Claude features (the Brief's
-  narrative, checkpoint notes, the words, the assistant, the mock oral).
-  Put `ANTHROPIC_API_KEY=sk-...` in `.env` at the repository's root
-  (gitignored; Compose reads it). Without one those features say the
-  model cannot be reached and everything else works: the key is read
-  with `${ANTHROPIC_API_KEY:-}`, so a missing key fails no command.
+- **No Anthropic API key.** The Claude features (the Brief's narrative,
+  checkpoint notes, the words, the assistant, the mock oral) are off
+  until the subscription is decided
+  ([decision 0035](decisions/0035-claude-off-until-subscription.md)), and
+  the assistant service is not started. To try them, put
+  `ANTHROPIC_API_KEY=sk-...`, `APP_CLAUDE_FEATURES=EVERYONE` and
+  `COMPOSE_PROFILES=claude` in `.env` at the repository's root
+  (gitignored; Compose reads it). The key is read with
+  `${ANTHROPIC_API_KEY:-}`, so a missing key fails no command.
 - **Xcode and XcodeGen**, or **the Android SDK and a JDK 25** (the Android build's, as the gateway's;
   Gradle fetches a Temurin 25 into `~/.gradle/jdks` itself where there is none),
   only for the phone apps ([NATIVE.md](NATIVE.md), [NATIVE-ANDROID.md](NATIVE-ANDROID.md)).
@@ -35,8 +38,8 @@ make dev
    the bar) and that nothing else holds ports 8080 and 8025. A failure is
    a line marked FAIL saying what to do, and nothing is started.
 2. Makes `.env` from `.env.example` when there is none, and says what to
-   fill in: `ANTHROPIC_API_KEY` for the Claude features, your address in
-   `APP_DEVELOPER_EMAILS` for the developer role. Nothing in it is
+   fill in: your address in `APP_DEVELOPER_EMAILS` for the developer
+   role (the Claude features stay off). Nothing in it is
    required.
 3. Builds the images, runs `docker compose up -d --wait` (gateway,
    planner, ingest, weather, assistant, db, mailpit, dev-services) and
@@ -254,10 +257,10 @@ All in `scripts/dev/`, each with its usage at its top.
 | `validate-wave.sh` | The end-of-wave validation on `claude/integration`: every check area, the image builds, the `@smoke` browser specs on a throwaway stack, the iPad tests; one table of what passed |
 | `go-live.sh [branch]` | A branch on the owner's stack for the phone (above) |
 | `tidy-local.sh [--dry-run]` | Removes merged, clean worktrees and branches and stopped scratch containers; never volumes, never a running agent's worktree |
-| `tidy-branches.sh` | Deletes local `worktree-agent-*` branches already on `origin/main` |
-| `docker-tidy.sh` | Reclaims Docker disk, keeping recent build layers and every named volume |
+| `tidy-branches.sh [--dry-run]` | Removes the `~/Developer/wingtip-*` worktrees whose commit is on `origin/claude/integration` or `origin/main`, with nothing uncommitted and untouched for six hours (never `wingtip`, `wingtip-live` or a locked one), then deletes local `worktree-agent-*` branches already on `origin/main` |
+| `docker-tidy.sh [--dry-run]` | Reclaims Docker disk: images no container uses (`docker image prune -a`), build cache unused for 24 hours, and volumes no container uses except the named caches (`wingtip-cargo-*`, `wingtip-npm*`, `wingtip-format-npm`, `wingtip-m2`, `fp-m2`, `wingtip-check-raw`) and the stacks' own (`wingtip_*`, `fpam_*`, the database among them); never a container; prints the space freed |
 | `backup-db.sh`, `install-backup.sh` | The nightly database dump (below) |
-| `install-hooks.sh` | Installs the pre-push hook (tsc and ESLint, ruff, `cargo check` for what a push changes) |
+| `install-hooks.sh` | Installs the pre-push hook (tsc and ESLint, ruff, `cargo check`, the formatters, and the generated-file and budget checks CI runs -- `screens.sh --check`, `design-tokens.sh --check`, `toolchain.sh --check`, `file_sizes.py`, `brand_guard.py` -- each for what a push changes) |
 | `rename-local.sh` | Once, on a Mac that ran the stack before the rename to Wingtip |
 
 ### The nightly database backup

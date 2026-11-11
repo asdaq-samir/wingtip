@@ -5,6 +5,7 @@ import Segmented from "../../components/Segmented";
 import HandbookReview from "./HandbookReview";
 import PhotoSheet from "./PhotoSheet";
 import { useDocumentPhoto, type Confirmed } from "./useDocumentPhoto";
+import { useClaudeOn } from "../../lib/subscription";
 
 const PAGES = [
   { value: "poh-performance", label: "Performance" },
@@ -17,8 +18,18 @@ const PAGES = [
  * reviewed item by item; "Use Confirmed Figures" hands the kept items'
  * figures to the form (`onConfirmed`), which the pilot then saves with
  * the airplane. Nothing is saved from here.
+ * Claude reads the photo, so this is not offered while the deployment keeps
+ * Claude off (lib/subscription, the owner's decision of 2026-11-10).
  */
-export function HandbookPhotoRow({
+export function HandbookPhotoRow(props: {
+  onConfirmed: (figures: Confirmed) => void;
+  /** Confirmed figures are waiting for the form's Save. */
+  pending: boolean;
+}) {
+  return useClaudeOn() ? <ReadHandbookPhoto {...props} /> : null;
+}
+
+function ReadHandbookPhoto({
   onConfirmed,
   pending,
 }: {

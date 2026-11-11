@@ -22,6 +22,7 @@ import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.OwnAirplanes
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.search.FlightCard
 import app.wingtipmaps.android.search.SearchMemory
@@ -69,7 +70,7 @@ internal fun SheetPagesHost(
 /** Nothing typed: the assistant's answer where there is one, the flight's
  *  card, then Favorites, Recents and Nearest, as the search shows them. */
 @Composable
-internal fun Home(plan: Plan, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit) {
+internal fun Home(plan: Plan, fix: OwnShip.Fix?, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit) {
     val context = LocalContext.current
     val state by plan.state.collectAsStateWithLifecycle()
     val search: SearchModel = viewModel()
@@ -84,6 +85,6 @@ internal fun Home(plan: Plan, answer: @Composable () -> Unit, onPick: (SearchPic
         item(key = "flight") {
             FlightCard(state, tail, onOpen = { onPick(SearchPick.Flight) }, modifier = Modifier.padding(horizontal = WingtipSpace.Lg))
         }
-        nothingTyped(favorites, own.values, recents, found.nearest, found.nearestProblem, onPick = onPick)
+        nothingTyped(favorites, own.values, recents, found.nearest, found.nearestProblem, fix, onPick = onPick)
     }
 }

@@ -33,6 +33,8 @@ Companion docs:
 
 - `docs/ios-27.md`: which iOS 27 APIs the app already adopted, and why
   others were left out.
+- `docs/design/rules.md`: the card rule, the scrolling rule and their
+  tests, the one search and the airport weather marks, on all three apps.
 - `docs/navigation.md`: every screen, its link and the taps to reach it.
 - `design/tokens.json`: the one source for colour, type, space, motion
   and haptics.

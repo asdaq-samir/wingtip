@@ -62,6 +62,12 @@ class SearchGroupsTest {
     }
 
     @Test
+    fun noQuestionWhereNoModelCanAnswer() {
+        val actions = SearchGroups.actions("brief", routed = true, hasFix = false, first = null, asked = false)
+        assertEquals(listOf(DoAction.Open(Screen.BRIEF), DoAction.Open(Screen.PASSENGERS)), actions)
+    }
+
+    @Test
     fun directToNeedsThePosition() {
         assertEquals(DoAction.DirectTo("KOSH"), SearchGroups.actions("osh", routed = false, hasFix = true, first = "KOSH").first())
         assertFalse(SearchGroups.actions("osh", routed = false, hasFix = false, first = "KOSH").any { it is DoAction.DirectTo })

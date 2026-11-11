@@ -28,7 +28,7 @@ struct WordsTests {
     static let devices = Words(model: "apple-on-device", sentences: [WordsSentence(sources: ["finding:fuel"], text: "Fuel is enough.")], sources: [figures[1]], unavailable: nil)
 
     @Test func theFacadePicksThePlannersWordsWhenItAnswers() async throws {
-        let said = await WordsFor(planner: Fake(words: Self.planners), device: Fake(words: Self.devices)).said(try Self.ask())
+        let said = await WordsFor(planner: Fake(words: Self.planners), device: Fake(words: Self.devices), claudeOn: { true }).said(try Self.ask())
         #expect(said.origin == .planner)
         #expect(said.words.sentences.map(\.text) == ["KMSN is VFR."])
         #expect(said.origin.caption == "From the planner")
@@ -36,14 +36,14 @@ struct WordsTests {
 
     @Test func theFacadeFallsToThisIphoneWhenThePlannerThrows() async throws {
         let offline = Planner.Failure(status: 0, detail: "no signal")
-        let said = await WordsFor(planner: Fake(words: nil, error: offline), device: Fake(words: Self.devices)).said(try Self.ask())
+        let said = await WordsFor(planner: Fake(words: nil, error: offline), device: Fake(words: Self.devices), claudeOn: { true }).said(try Self.ask())
         #expect(said.origin == .device)
         #expect(said.words.sentences.map(\.text) == ["Fuel is enough."])
         #expect(said.origin.caption == "On this iPhone")
     }
 
     @Test func noWordsSayWhyInPlainLanguageWhenNeitherCan() async throws {
-        let said = await WordsFor(planner: Fake(words: nil), device: Fake(words: nil, error: WordsUnavailable(why: "Words on this iPhone need iOS 26."))).said(try Self.ask())
+        let said = await WordsFor(planner: Fake(words: nil), device: Fake(words: nil, error: WordsUnavailable(why: "Words on this iPhone need iOS 26.")), claudeOn: { true }).said(try Self.ask())
         #expect(said.origin == .none)
         #expect(said.words.sentences.isEmpty)
         #expect(said.words.unavailable == "No words: the planner cannot be reached, and words on this iPhone need iOS 26.")
@@ -53,7 +53,7 @@ struct WordsTests {
     /// reason to ask the device, not an answer with no words.
     @Test func thePlannersUnavailableFallsToThisIphone() async throws {
         let unavailable = Words.none("claude", "The briefer could not be reached.")
-        let said = await WordsFor(planner: Fake(words: unavailable), device: Fake(words: Self.devices)).said(try Self.ask())
+        let said = await WordsFor(planner: Fake(words: unavailable), device: Fake(words: Self.devices), claudeOn: { true }).said(try Self.ask())
         #expect(said.origin == .device)
     }
 

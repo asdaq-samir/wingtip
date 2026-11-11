@@ -9,6 +9,7 @@ import { useCopied } from "../../lib/share";
 import { TEXT } from "../../lib/text";
 import WordsSection from "../../components/WordsSection";
 import { wordsState } from "../../lib/wordsState";
+import { useClaudeOn } from "../../lib/subscription";
 
 /** The debrief as the words are asked of it: its figures -- the legs,
  *  the checkpoints, the patterns, the notes -- without the flown line
@@ -32,9 +33,15 @@ const forWords = (d: Debrief) => ({
  * (WordsSection), and for a pilot with an instructor the line written
  * for them. The app has no way to send an instructor a note on its own
  * -- a solo cross-country review asks for one with a flight, not this --
- * so the line is copied for them instead.
+ * so the line is copied for them instead. Claude writes it, so it is not
+ * there while the deployment keeps Claude off (lib/subscription, the
+ * owner's 2026-11-10 decision); the engine's debrief figures above stay.
  */
-export default function DebriefWords({ flightId, debrief }: { flightId: number; debrief: Debrief }) {
+export default function DebriefWords(props: { flightId: number; debrief: Debrief }) {
+  return useClaudeOn() ? <WrittenDebrief {...props} /> : null;
+}
+
+function WrittenDebrief({ flightId, debrief }: { flightId: number; debrief: Debrief }) {
   const body = forWords(debrief);
   const query = useQuery({
     queryKey: ["words", "debrief", flightId, body],

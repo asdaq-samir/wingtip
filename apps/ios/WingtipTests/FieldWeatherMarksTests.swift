@@ -109,6 +109,13 @@ struct FieldWeatherMarksTests {
         #expect(FieldWeatherMarks.ceilingLine(800, unknown: false) == "CIG 008")
         #expect(FieldWeatherMarks.ceilingLine(nil, unknown: true) == "CIG ///")
         #expect(FieldWeatherMarks.ceilingLine(nil, unknown: false) == nil)
+        // The layer's own cover where the planner sends it (ceiling_cover).
+        #expect(FieldWeatherMarks.ceilingLine(800, unknown: false, cover: "OVC") == "OVC 008")
+        #expect(FieldWeatherMarks.ceilingLine(2500, unknown: false, cover: "BKN") == "BKN 025")
+        #expect(FieldWeatherMarks.ceilingLine(200, unknown: false, cover: "VV") == "VV 002")
+        #expect(FieldWeatherMarks.ceilingLine(nil, unknown: true, cover: "OVC") == "OVC ///")
+        // A cover that makes no ceiling is not one; CIG stands.
+        #expect(FieldWeatherMarks.ceilingLine(800, unknown: false, cover: "SCT") == "CIG 008")
     }
 
     @Test func theStationModelShowsCloseInOrAlways() {

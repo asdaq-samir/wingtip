@@ -8711,6 +8711,53 @@
         "title": "FieldBelowVfr",
         "type": "object"
       },
+      "FieldForecast": {
+        "description": "What the TAF that speaks for a field forecasts at a time asked\n(wingtip.field_forecast): the flight category of the worst it forecasts\nthen, TEMPO and PROB included (AIM 7-1-7; None where it does not settle\nit or does not cover the time), the station and how far it is (None\nfor the field's own).",
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "number"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "enum": [
+                  "VFR",
+                  "MVFR",
+                  "IFR",
+                  "LIFR"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "distance_nm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Distance Nm"
+          },
+          "station": {
+            "title": "Station",
+            "type": "string"
+          }
+        },
+        "required": [
+          "at",
+          "station"
+        ],
+        "title": "FieldForecast",
+        "type": "object"
+      },
       "FlightArrival": {
         "description": "The field an airplane has landed at, and when it was last heard (Unix seconds).",
         "properties": {
@@ -13567,7 +13614,7 @@
         "type": "object"
       },
       "NearestAirport": {
-        "description": "A field near a position: how far and which way (true), its town,\nelevation and longest open runway, and a frequency listed for it\n(None where OurAirports lists none).",
+        "description": "A field near a position: how far and which way (true), its town,\nelevation and longest open runway, and a frequency listed for it\n(None where OurAirports lists none); and what a search's filters read\nof it (wingtip.field_facts): its fuel, its runways' surfaces, an\ninstrument approach, its METAR's wind and visibility, and its\nforecast at the time asked.",
         "properties": {
           "airspace_class": {
             "anyOf": [
@@ -13617,9 +13664,43 @@
             ],
             "title": "Flight Category"
           },
+          "forecast": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FieldForecast"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fuel": {
+            "default": [],
+            "items": {
+              "enum": [
+                "100LL",
+                "Jet A",
+                "UL94"
+              ],
+              "type": "string"
+            },
+            "title": "Fuel",
+            "type": "array"
+          },
           "ident": {
             "title": "Ident",
             "type": "string"
+          },
+          "instrument_approach": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instrument Approach"
           },
           "kind": {
             "enum": [
@@ -13711,10 +13792,68 @@
               }
             ]
           },
+          "runway_surfaces": {
+            "default": [],
+            "items": {
+              "enum": [
+                "paved",
+                "turf",
+                "water",
+                "other"
+              ],
+              "type": "string"
+            },
+            "title": "Runway Surfaces",
+            "type": "array"
+          },
           "towered": {
             "default": false,
             "title": "Towered",
             "type": "boolean"
+          },
+          "visibility_sm": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Visibility Sm"
+          },
+          "wind_dir_true_deg": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Dir True Deg"
+          },
+          "wind_gust_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Gust Kt"
+          },
+          "wind_speed_kt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wind Speed Kt"
           }
         },
         "required": [
@@ -22708,7 +22847,7 @@
     },
     "/api/airports/nearest": {
       "get": {
-        "description": "The landing fields nearest a position -- own ship's, for the map's\nNearest -- the nearest first: how far and which way, each one's\nlongest open runway, a frequency listed for it, its flight category\nwhere it reports, and its class of airspace at the surface, as the\nmap's marks have it.",
+        "description": "The landing fields nearest a position -- own ship's, for the map's\nNearest, and a search's results -- the nearest first: how far and\nwhich way, each one's longest open runway, a frequency listed for it,\nits flight category where it reports, and its class of airspace at\nthe surface, as the map's marks have it; and what a search filters\nby: towered, fuel, runway surfaces, an instrument approach, the\nMETAR's wind and visibility, and with `at` the forecast then.",
         "operationId": "nearest_airports_api_airports_nearest_get",
         "parameters": [
           {
@@ -22743,6 +22882,24 @@
               "minimum": 1,
               "title": "Limit",
               "type": "integer"
+            }
+          },
+          {
+            "description": "A time, s since 1970: each field's forecast then (a search's VFR at...).",
+            "in": "query",
+            "name": "at",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "A time, s since 1970: each field's forecast then (a search's VFR at...).",
+              "title": "At"
             }
           }
         ],

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { library, openConsole, showTabs } from "./helpers";
+import { claudeFeatures } from "./claude";
 
 /**
  * The Logbook's Coach: on the pilot's ask, the engine's proficiency plan
@@ -67,6 +68,7 @@ const PLAN = {
 };
 
 test("the Coach makes a plan from the logbook and puts it in words", async ({ page }) => {
+  await claudeFeatures(page); // the words stubbed below (./claude)
   const asked: Record<string, unknown>[] = [];
   await page.route(
     (url) => url.pathname === "/api/logbook",

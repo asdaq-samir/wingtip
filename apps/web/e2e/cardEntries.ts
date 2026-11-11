@@ -1,6 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { mapStill, searchAirports, settle, showTabs, sideDrawer, slow } from "./helpers";
 import type { Back } from "./cardTable";
+import { noCheckpoints } from "./startState";
 
 /* The ways cardTable's rows open their cards, the stubs they need, and the
  * checks' own probes: where a close went back to, a card's scroller, and
@@ -81,31 +82,55 @@ export async function pick(page: Page, typed: string, row: "airport" | "waypoint
   await rows.first().click();
 }
 
-/** The route's last leg tapped beside its line (route-leg.spec's way). */
+/** A route leg tapped beside its line (route-leg.spec's way: 16 off it,
+ *  inside the finger's 22), at a place on it clear of the route's marks --
+ *  its fields and checkpoints, each a marker of its own whose tap opens
+ *  its own card, and the middle of the last leg is often one. */
 export async function tapLeg(page: Page) {
+  await noCheckpoints(page);
   await go(page, ROUTE);
-  const legs = () =>
-    page
-      .locator(".maplibregl-map")
-      .first()
-      .evaluate((map) => {
-        const r = map.getBoundingClientRect();
-        const rows = JSON.parse(map.querySelector("[data-route-legs]")?.getAttribute("data-route-legs") ?? "[]") as {
-          legs: { ends: number[][] }[];
-        }[];
-        return (rows[0]?.legs ?? []).map((l) => ({
-          a: [r.left + l.ends[0]![0]!, r.top + l.ends[0]![1]!],
-          b: [r.left + l.ends[1]![0]!, r.top + l.ends[1]![1]!],
-        }));
-      });
-  await expect.poll(async () => (await legs()).length, { timeout: slow(30_000) }).toBeGreaterThan(0);
+  const spots = () =>
+    page.evaluate(() => {
+      const map = document.querySelector<HTMLElement>(".maplibregl-map")!;
+      const r = map.getBoundingClientRect();
+      const rows = JSON.parse(map.querySelector("[data-route-legs]")?.getAttribute("data-route-legs") ?? "[]") as {
+        legs: { ends: number[][] }[];
+      }[];
+      // The marks a tap would take: shown, and taking taps (a wind's arrow takes none).
+      const marks = [...map.querySelectorAll<HTMLElement>(".maplibregl-marker")]
+        .filter((m) => m.dataset.declutter !== "hidden" && getComputedStyle(m).pointerEvents !== "none")
+        .map((m) => m.getBoundingClientRect())
+        .filter((b) => b.width > 0);
+      // What of the map is not under the panel: a phone's sheet, a desktop's side panel.
+      const panel = document.querySelector<HTMLElement>('[data-slot="map-panel"]')?.getBoundingClientRect();
+      const under = (x: number, y: number) =>
+        !!panel && x > panel.left - 8 && x < panel.right + 8 && y > panel.top - 8 && y < panel.bottom + 8;
+      const out: { x: number; y: number }[] = [];
+      // The longest legs first: a short one's middle is within a reach of its ends.
+      const legs = (rows[0]?.legs ?? []).map((leg) => ({
+        a: [r.left + leg.ends[0]![0]!, r.top + leg.ends[0]![1]!],
+        b: [r.left + leg.ends[1]![0]!, r.top + leg.ends[1]![1]!],
+      }));
+      legs.sort((p, q) => Math.hypot(q.b[0]! - q.a[0]!, q.b[1]! - q.a[1]!) - Math.hypot(p.b[0]! - p.a[0]!, p.b[1]! - p.a[1]!));
+      for (const { a, b } of legs) {
+        const len = Math.hypot(b[0]! - a[0]!, b[1]! - a[1]!) || 1;
+        const nx = -(b[1]! - a[1]!) / len,
+          ny = (b[0]! - a[0]!) / len;
+        for (const f of [0.5, 0.35, 0.65, 0.2, 0.8]) {
+          const x = a[0]! + (b[0]! - a[0]!) * f + nx * 16,
+            y = a[1]! + (b[1]! - a[1]!) * f + ny * 16;
+          if (x < 8 || x > innerWidth - 8 || y < 8 || y > innerHeight - 8 || under(x, y)) continue;
+          // Clear of each by more than a near miss's reach (22) round its box.
+          if (marks.every((m) => x < m.left - 30 || x > m.right + 30 || y < m.top - 30 || y > m.bottom + 30)) out.push({ x, y });
+        }
+      }
+      return out;
+    });
+  await expect.poll(async () => (await spots()).length, { timeout: slow(30_000) }).toBeGreaterThan(0);
   await expect(async () => {
     await mapStill(page);
-    const { a, b } = (await legs()).at(-1)!;
-    const len = Math.hypot(b[0]! - a[0]!, b[1]! - a[1]!) || 1;
-    const nx = -(b[1]! - a[1]!) / len,
-      ny = (b[0]! - a[0]!) / len;
-    await page.mouse.click((a[0]! + b[0]!) / 2 + nx * 16, (a[1]! + b[1]!) / 2 + ny * 16);
+    const at = (await spots())[0]!;
+    await page.mouse.click(at.x, at.y);
     await expect(page.getByTestId("route-leg-card")).toBeVisible({ timeout: 2_000 });
   }).toPass({ timeout: slow(20_000) });
 }
@@ -117,6 +142,8 @@ export async function expectBack(page: Page, back: Back) {
   if (back === "search-home") await expect(panel.getByTestId("search-home").or(page.getByTestId("search-airports")).first()).toBeVisible();
   if (back === "plan") await expect(panel.getByTestId("route-box").or(panel.getByTestId("route-line")).first()).toBeVisible();
   if (back === "console") await expect(page.getByTestId("console-sheet")).toBeVisible();
+  if (back === "traffic") await expect(page.getByTestId("aircraft-search")).toBeVisible();
+  if (back === "profile") await expect(page.getByTestId("profile-card")).toBeVisible();
 }
 
 /** The scroller of a card: the card itself or the first element in it that scrolls up and down. */

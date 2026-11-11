@@ -3253,14 +3253,21 @@ struct APINearestAirports: Codable, Equatable, Sendable {
 
 /// A field near a position: how far and which way (true), its town,
 /// elevation and longest open runway, and a frequency listed for it
-/// (None where OurAirports lists none).
+/// (None where OurAirports lists none); and what a search's filters read
+/// of it (wingtip.field_facts): its fuel, its runways' surfaces, an
+/// instrument approach, its METAR's wind and visibility, and its
+/// forecast at the time asked.
 // MARK: - APINearestAirport
 struct APINearestAirport: Codable, Equatable, Sendable {
     var airspaceClass: String?
     var bearingDeg, distanceNm: Double
     var elevationFt: Double?
     var flightCategory: String?
-    var ident, kind: String
+    var forecast: APIFieldForecast?
+    var fuel: [String]?
+    var ident: String
+    var instrumentApproach: Bool?
+    var kind: String
     var lat, lon: Double
     var longestRunwayFt: Int?
     var military, municipality: String?
@@ -3268,7 +3275,9 @@ struct APINearestAirport: Codable, Equatable, Sendable {
     var primaryOf: String?
     var isPrivate: Bool?
     var radio: APIInboundRadio?
+    var runwaySurfaces: [String]?
     var towered: Bool?
+    var visibilitySm, windDirTrueDeg, windGustKt, windSpeedKt: Double?
 
     enum CodingKeys: String, CodingKey {
         case airspaceClass
@@ -3276,13 +3285,34 @@ struct APINearestAirport: Codable, Equatable, Sendable {
         case distanceNm
         case elevationFt
         case flightCategory
-        case ident, kind, lat, lon
+        case forecast, fuel, ident
+        case instrumentApproach
+        case kind, lat, lon
         case longestRunwayFt
         case military, municipality, name
         case primaryOf
         case isPrivate = "private"
-        case radio, towered
+        case radio
+        case runwaySurfaces
+        case towered
+        case visibilitySm
+        case windDirTrueDeg
+        case windGustKt
+        case windSpeedKt
     }
+}
+
+/// What the TAF that speaks for a field forecasts at a time asked
+/// (wingtip.field_forecast): the flight category of the worst it forecasts
+/// then, TEMPO and PROB included (AIM 7-1-7; None where it does not settle
+/// it or does not cover the time), the station and how far it is (None
+/// for the field's own).
+// MARK: - APIFieldForecast
+struct APIFieldForecast: Codable, Equatable, Sendable {
+    var at: Double
+    var category: String?
+    var distanceNm: Double?
+    var station: String
 }
 
 /// The frequency a pilot calls a field on, inbound: `kind` "TWR",

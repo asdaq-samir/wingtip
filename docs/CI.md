@@ -2,10 +2,124 @@
 
 What runs, when, and how to move it onto the owner's Mac mini.
 
+## Rules
+
+The owner, 2026-11-10: "how can we make it permanent rule to keep CI
+efficient, using cache, non-redundant testing and latest versions and
+warnings as errors etc." These are those rules (decision
+[0034](decisions/0034-ci-stays-lean.md)); a guard enforces each one a
+script can check, and the rest are for whoever writes a test or a job.
+
+1. **A pull request is green or red in about 10 minutes.** The budget is
+   the run from its first job's start to its last job's end. Each job's
+   budget, in minutes (`BUDGETS` in `scripts/ci/ci_budget.py`): the
+   seconds-long guards (`changes`, `rules-boundary`, `links`, `site`,
+   `architecture`, `api-compat`, `dependency-review`) 1, `infra`,
+   `test-ingest`, `test-assistant`, `test-weather` 2, `flight-critical` 3,
+   `test-gateway`, `test-planner`, the image builds 4, `test`, `test-web`
+   5, each `e2e` shard 8, Android 8, iOS 10. The `budget` job writes
+   every run's table to its summary, and a job over its budget, a job
+   with none, or a run over 10 minutes is a warning on the run.
+   *Guard:* `ci_budget.py` (warns, never fails).
+2. **Every check in exactly one tier**: the pull request (and main's
+   push), after merge on main, or the night. A browser journey (a spec
+   file, or a top-level `describe` in one) has one `@smoke` test; every
+   spec has a `@smoke` or `@flight-critical` test or is listed in
+   `scripts/ci/test_tiers_nightly.txt`; every iOS UI test class is in
+   the pull request's `-only-testing` or the night's full run; and no
+   check command runs in two pull-request jobs. *Guard:* `test_tiers.py`.
+3. **Only what a change touches.** Each job runs behind `changes`' path
+   filter (`scripts/areas.yml`), and a skipped job counts as passed. A
+   pull request of words only (docs, Markdown, skills, notebooks) runs
+   `changes`, `links` and the seconds-long guards, nothing else; a web
+   change never builds the phones (only the fixtures and generated code
+   they read do). *Guard:* `scripts/areas.py check` keeps the filter the
+   table's.
+4. **Cache everything; main and the night save, pull requests read.**
+   Each cache step has an id and, on a miss, says so
+   (`::notice title=Cache miss::<name>`); `budget` lists the misses, and
+   on main, whose saves every pull request reads, a miss is a warning (a
+   key that rotates weekly is expected to miss once a week). *Guard:*
+   `ci_budget.py`.
+5. **Newest versions, warnings fatal.** docs/versions.md's rules: every
+   toolchain and library on its newest stable release, majors too; a
+   held one is listed there with why. A weekly workflow (`versions.yml`)
+   keeps one issue, "Newer versions (weekly)", listing whatever is
+   behind. Warnings are errors in tsc (strict), ESLint (`--max-warnings
+   0`), Swift, Clang, Kotlin, Android lint, Rust, clippy, javac, pytest
+   and ruff. *Guards:* `warnings_fatal.py`; `newest_versions.py` weekly.
+6. **Batch pushes.** Every push to a pull request runs CI again and
+   cancels the run before it: commit as you go, push when the change is
+   whole.
+7. **Never raise a timeout to get green.** A job that runs long is made
+   faster (a cache, a smaller set, a split) or moved to the night; its
+   budget moves only with the reason in the commit.
+8. **No flaky tests.** A pull request retries a browser test once at
+   most (`playwright.config.ts`); a test that passes only on its retry is
+   moved to the night within a day, and the nightly flake hunt keeps it in
+   the one issue "Flaky tests (nightly)" until it is fixed. *Guards:*
+   `test_tiers.py` (retries); `flaky_tests.py` (the issue).
+9. **No live internet in pull-request tests.** Tests read recorded
+   copies, not NOAA, AWC, FAA or adsb.lol; the night's `sources` job asks
+   each live source once whether it still answers
+   (`scripts/ci/sources_answer.py`). Not yet true of the browser suite:
+   its stack's planner and weather service fetch live (below, "Live
+   sources"). *Guard:* `sources` at night.
+10. **A red night comes first.** A scheduled run of CI, Native iOS or
+    Native Android that fails writes its section of one issue, "Nightly CI
+    failed", labelled `ready`, the same morning (`nightly-issue.yml`,
+    `scripts/ci/nightly_issue.py`, one write); it is fixed before new
+    feature work.
+11. **CI runs what the Mac runs.** A step calls `scripts/dev/check.sh`,
+    `scripts/ci/*` or `scripts/build/*`; no logic lives only in YAML. A
+    `run:` over 15 lines is a script waiting to be written: the ones
+    there were when the rule came in are listed in
+    `scripts/ci/workflow_rules_allow.txt`, which only shrinks. *Guard:*
+    `workflow_rules.py`.
+12. **Every failure names what failed.** A job puts the failing test and
+    its first error on the run as an `::error` annotation and uploads its
+    log on failure; no `|| true` hides a check (the few read afterwards
+    are listed, each with why). *Guard:* `workflow_rules.py`
+    (`|| true`).
+13. **A rule is tested once, at the lowest level that can hold it.** An
+    aviation rule is tested in the engine against the shared fixtures
+    (`apps/web/src/lib/fixtures`), which every app's tests read rather
+    than keeping their own copy of a rule's expectations; a screen has
+    unit tests; browser and UI tests prove journeys only. Written policy.
+14. **Least privilege.** Every workflow has a top-level `permissions:`,
+    read-only but for the few that write (listed with why); every action
+    outside the repository is pinned to a commit; no
+    `pull_request_target`; a fork's pull request gets no secrets, and
+    the self-hosted runners serve no fork (the runner variables stay unset
+    while the repository is public, "Where it runs"). *Guard:*
+    `workflow_rules.py`.
+15. **macOS minutes are scarce.** The iOS tests (and TestFlight on main)
+    are the only macOS jobs; anything that can run on Linux does.
+    *Guard:* `workflow_rules.py`.
+16. **Small configuration.** The workflows' lines in all stay within the
+    budget in `workflow_rules_allow.txt`, set at the total on
+    2026-11-10. *Guard:* `workflow_rules.py`.
+
+The guards run in `rules-boundary`, seconds on every change; run them on
+the Mac with `python3 scripts/ci/<name>.py`.
+
+### Live sources
+
+The browser suite's stack (`infra/docker-compose.ci.yml`) turns the
+FAA's downloads off but still reaches, while a test runs: the weather
+service's AWC cache files, NOMADS' GFS winds (the fetch that once timed
+out), SPC, IEM's radar and nowCOAST; the TFRs (tfr.faa.gov); USGS
+elevations (seeded from `apps/web/e2e/fixtures/elevation_cache.csv` for
+the corridor only); adsb.lol traffic. The unit suites have no network
+guard either. Recording these (a fixture mode in the weather service and
+the planner's fetchers, and a socket guard in `pytest_guards.py`) is the
+follow-up that makes rule 9 true.
+
 ## What runs
 
-A pull request is green or red in about fifteen minutes: everything it
-waits on runs at once, and nothing long runs on it. The long suites run
+A pull request's budget is about ten minutes (rule 1; 15.4 in run
+42876898472, 2026-11-10, of which 7 waited on a rerun of Android):
+everything it waits on runs at once, and nothing long runs on it. The long suites run
 at night, when nothing waits on them.
 
 **On a pull request** (and main's push), each job only where the change
@@ -21,8 +135,8 @@ touched what it reads (`changes`; a skipped job counts as passing):
 | `android` | `native-android.yml`: the engine (cached), `testDebugUnitTest lintDebug` with Gradle's caches | 4-6 min (7-10 before the cache) |
 | `ios` | `native-ios.yml`: XcodeGen, then the unit tests (`WingtipTests`) and `CardSmokeTests` on the newest iPhone simulator, DerivedData restored from main | 10-13 min cold, about 6-8 with main's DerivedData (was 18 min, and 42-45 with the iPad and Duo) |
 
-A pull request of docs, Markdown, skills or notebooks only skips the
-browser suite: 1-2 minutes.
+A pull request of docs, Markdown, skills or notebooks skips the browser
+suite, `flight-critical` and `dependency-review` (rule 3): under a minute.
 
 **Every night** (CI at 09:17 UTC, Native iOS at 09:37, Native Android at
 09:47), or by hand (Run workflow):
@@ -187,17 +301,19 @@ change needs; a job it skips counts as passing.
 | `e2e`, `e2e-images` | The browser suite (Playwright, `apps/web/e2e`) against the stack built from the commit (`infra/docker-compose.ci.yml`): the `@smoke` and `@flight-critical` sets over two shards on a pull request, everything over ten at night |
 | `build-images` | Every service image whose inputs changed; each Python image imports its own code as its last step, so a missing dependency fails the build |
 | `android`, `ios` | The phone builds (`native-android.yml`, `native-ios.yml`), when a pull request touches them (above) |
-| `rules-boundary` | No aviation rule outside the engine (below) |
-| `flight-critical` | **Flight-critical**, on every change whatever it touched: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs |
+| `rules-boundary` | No aviation rule outside the engine (below), and CI's own rules: `test_tiers.py`, `warnings_fatal.py`, `workflow_rules.py` ("Rules", above) |
+| `flight-critical` | **Flight-critical**, on every change but words alone: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs |
 | `architecture` | No source file new or grown past 400 lines (below, "The layers") |
 | `links` | Every relative link and `#anchor` in the Markdown resolves (`scripts/ci/check_links.py`) |
 | `api-compat` | No breaking change to an OpenAPI document (below) |
 | `infra` | cfn-lint, shellcheck, `docker compose config` and `caddy validate` over the production files |
-| `dependency-review` | New dependencies' advisories, on a public repository's pull requests |
+| `dependency-review` | New dependencies' advisories, on a public repository's pull requests (not words alone) |
 | `docs` | The gateway's Javadoc, at night |
 | `standards` | Lighthouse and the speed lab against their thresholds, at night |
 | `flake-hunt-python`, `flake-hunt-web`, `flake-report` | The nightly flake hunt (below) |
 | `passed` | "CI passed", the one check a merge waits on |
+| `sources` | At night: the live sources the stack reads still answer (`scripts/ci/sources_answer.py`) |
+| `budget` | Last, never failing: this run's minutes against the budget and its cache misses, in the run's summary (`scripts/ci/ci_budget.py`) |
 
 Images go to GHCR from main; `promote.yml` copies the ones that passed to
 ECR and deploys them ([README-AWS.md](README-AWS.md#deploys)).

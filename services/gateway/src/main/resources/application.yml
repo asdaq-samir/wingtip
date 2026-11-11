@@ -237,9 +237,13 @@ app:
   # proof of concept, at the owner's ask -- the page then says nothing of
   # it, the debrief is everyone's, and the features Claude writes are
   # claude-features' (OFF, DEVELOPERS or EVERYONE, each within the caps).
-  # Every pilot with an account has them for now, at the owner's ask
-  # ("I can offer the AI features to users with an account, no revenue").
-  claude-features: ${APP_CLAUDE_FEATURES:EVERYONE}
+  # OFF by default, and OFF wins over a sold subscription, a developer and
+  # an open machine: no request reaches Anthropic, the assistant service
+  # need not run, and the apps use only on-device models and the engine's
+  # own words. The owner, 2026-11-10: "To keep the cost low, we only add
+  # the claude feature later when we decide about subscription model. For
+  # now just the free siri and gemini." (docs/decisions/0035).
+  claude-features: ${APP_CLAUDE_FEATURES:OFF}
   subscription:
     enabled: ${APP_SUBSCRIPTION_ENABLED:false}
     trial-days: ${APP_SUBSCRIPTION_TRIAL_DAYS:30}

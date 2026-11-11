@@ -76,8 +76,8 @@ doctor() {
   if [ ! -f .env ]; then
     cp .env.example .env
     warn ".env was missing; made it from .env.example. Nothing in it is required."
-    say "      Fill in ANTHROPIC_API_KEY for the Claude features (the Brief's narrative, the assistant);"
-    say "      everything else works without it. Add your address to APP_DEVELOPER_EMAILS for the developer role."
+    say "      The Claude features are off (docs/decisions/0035); .env.example says how to try them."
+    say "      Add your address to APP_DEVELOPER_EMAILS for the developer role."
   else
     ok ".env is there"
   fi

@@ -39,12 +39,12 @@ export const useWelcomeOpen = create<{ open: boolean }>(() => ({ open: false }))
 export const TIPS: TipSpec[] = [
   {
     // After the first flight's card planned a route (useFirstFlight): the
-    // one line that points at the Brief, the card's third step.
+    // one line that points at the Brief, the card's third step. It promises
+    // no Ask: the assistant is off by default (lib/subscription, 2026-11-10).
     id: "brief",
-    title: "Now the AI brief",
+    title: "Now the Brief",
     after: FIRST_FLIGHT,
-    message:
-      "Weather, NOTAMs and what to look at before you go, read for your route and your time: one verdict first, and ask it anything.",
+    message: "Weather, NOTAMs and what to look at before you go, read for your route and your time: one verdict first.",
   },
   {
     id: "route",
@@ -60,7 +60,7 @@ export const TIPS: TipSpec[] = [
     id: "altitude",
     title: "Why this altitude",
     message:
-      "Profile, the button beside the AI brief, shows the flight from the side, how the altitude was chosen and its other plans. Red means no VFR altitude fits; a dot, a rule to check.",
+      "Profile, the button beside the Brief, shows the flight from the side, how the altitude was chosen and its other plans. Red means no VFR altitude fits; a dot, a rule to check.",
   },
   {
     id: "tabs",

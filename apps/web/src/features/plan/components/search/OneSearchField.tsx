@@ -120,6 +120,17 @@ export default function OneSearchField({
               e.preventDefault();
               (e as { preventBaseUIHandler?: () => void }).preventBaseUIHandler?.();
               model.pickIdent(model.typed);
+            } else if (e.key === "Enter" && model.pick && model.typed && !e.currentTarget.getAttribute("aria-activedescendant")) {
+              // Rows that answered after the typing (the planner's lookup on
+              // a slow link) come in with none highlighted: the root's
+              // autoHighlight acts on a change of what is typed, not of the
+              // rows. Enter takes the first, as it would have been.
+              const first = model.airports[0]?.ident ?? model.waypoints[0]?.ident;
+              if (first) {
+                e.preventDefault();
+                (e as { preventBaseUIHandler?: () => void }).preventBaseUIHandler?.();
+                model.pickIdent(first);
+              }
             }
           }}
           className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"

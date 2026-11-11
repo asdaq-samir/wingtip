@@ -39,9 +39,11 @@ from .settings import get_settings
 
 #: Haiku, as the checkpoint notes' CHECKPOINT_NOTE_MODEL: the job is short
 #: sentences over figures already worked out and given whole, not a
-#: judgement -- what does not rest on them is dropped below -- and it is a
-#: quarter of Sonnet's cost. The app is free for now, and a weather watch
-#: asks every half hour.
+#: judgement -- what does not rest on them is dropped below -- and it is
+#: about a twentieth of Sonnet's price: claude-haiku-5-5 is $0.10 / $0.50 a
+#: million tokens in and out against claude-sonnet-5-5's $2 / $10
+#: (Anthropic's price list, 2026-11-10). The app is free for now, and a
+#: weather watch asks every half hour.
 WORDS_MODEL = get_settings().words_model
 #: Medium, as the notes found: at low the same model ran long and wandered
 #: into a pilot's text. Adaptive thinking is on by default on this model

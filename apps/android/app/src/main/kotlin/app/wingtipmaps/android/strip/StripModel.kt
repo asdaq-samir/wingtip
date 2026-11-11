@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.ai.AiOffered
 import app.wingtipmaps.android.api.AssistantClient
 import app.wingtipmaps.android.api.AssistantContext
 import app.wingtipmaps.android.api.Gateway
@@ -137,15 +138,23 @@ class StripModel : ViewModel() {
                 // them; not a place the search knows: a question after all.
                 val found = Planner.search(command.words).firstOrNull()
                 if (found != null) return route(FieldCommand.Route(null, emptyList(), found.ident), plan, pilot, fix)
+                // AICore asked first, so ask() knows whether Nano is here.
+                AiOffered.now()
                 return ask(text, assistant, context)
             }
-            is FieldCommand.Ask -> return ask(command.question, assistant, context)
+            is FieldCommand.Ask -> {
+                AiOffered.now()
+                return ask(command.question, assistant, context)
+            }
         }
     }
 
     /** A question put to the assistant as it is (the search's "Ask: …"),
      *  its answer shown as a card over the sheet's content. */
     fun ask(question: String, assistant: AssistantClient, context: AssistantContext): String? {
+        // No model to ask here (AiOffered: no Gemini Nano, and the Claude
+        // features off): the line is said as not found, not sent anywhere.
+        if (!AiOffered.known()) return "Nothing found for “$question”."
         assistant.ask(question, context)
         _state.update { it.copy(answerShown = true) }
         return null

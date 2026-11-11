@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { settle, sideDrawer, slow, openBrief } from "./helpers";
+import { claudeFeatures } from "./claude";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -25,6 +26,7 @@ async function briefingAs(page: Page, change: (json: Record<string, unknown>) =>
 }
 
 test("the Brief opens on the verdict and at most three one-sentence lines, each unfolding to why it matters", async ({ page }) => {
+  await claudeFeatures(page); // Ask in its place, under the lines (./claude)
   await briefingAs(page, (json) => {
     // Every runway at C81 with 18 kt across, gusting 22: past the 15 kt
     // the C172's POH demonstrates (data/aircraft/c172.json).
