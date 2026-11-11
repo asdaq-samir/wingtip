@@ -7,9 +7,13 @@ import { useMapCredit } from "../gl/creditStore";
  * The airport weather marks' age, said in the map's small print when they
  * are old: a METAR is issued every hour (AC 00-45H), and the marks kept
  * from before a lost connection were drawn as if current, their age only
- * in the Map menu (the offline audit's gap 7). Past STALE_MS the credits
- * read "Field weather 45m old" until a fresh answer comes.
+ * in the Map menu (the offline audit's gap 7). Past STALE_MS the map
+ * says "Field weather 45m old" until a fresh answer comes: a warning on the
+ * map itself while it applies (WeatherAgeBanner), and a row in Status.
  */
+
+/** Its key among the map's credits (creditStore). */
+export const WEATHER_AGE = "field-weather-age";
 
 /** When the marks' weather is old enough to say: half an hour, half a
  *  METAR's hour. */
@@ -26,5 +30,5 @@ export function weatherAgeWords(fetchedAt: number | null, now: number): string |
 export function useWeatherAgeCredit(path: string, updatedAt: number) {
   const now = useMinuteClock();
   const savedAt = useSaved((s) => s.saved[path]);
-  useMapCredit("field-weather-age", weatherAgeWords(savedAt ?? (updatedAt || null), now));
+  useMapCredit(WEATHER_AGE, weatherAgeWords(savedAt ?? (updatedAt || null), now));
 }
