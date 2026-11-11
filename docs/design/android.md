@@ -580,6 +580,13 @@ placement wins, and the difference is noted.
      happen.
   6. The figure strip at the sheet's foot: To, Dist, ETE and Fuel, with
      only To and Dist when there is no airplane (0011).
+  7. **The alternate** (IFR, 2026-11-10; `alternate/`): the route's
+     `SegmentedListItem`s end, under IFR, with the alternate filed (a tap
+     to its airport card, the card rule) or **Add Alternate**, which
+     opens the Brief's Alternate, where the web files one. The filed
+     alternate is kept beside the plan (`PlanAlternate`, with the
+     destination it is for, so a new destination drops it) and goes to
+     the planner's nav log as `alternate`, as the web's address does.
 - **Primary action**:
   - Brief, on the route box's first line, where the owner put it.
   - On a medium or larger window, a `HorizontalFloatingToolbar` over
@@ -625,6 +632,11 @@ placement wins, and the difference is noted.
   4. The streamed lines fill in as they come
      (`api/NavLog.kt`), each with a `LoadingIndicator` until it is
      answered.
+  5. Under IFR with an alternate filed, the leg on to it after the
+     route's legs (`AlternateLegRow`, the same tabular figures): the
+     planner's, from the engine's `navlog_alternate_leg`, its fuel in the
+     totals (14 CFR 91.167(a)(2)), "in still air" where the winds were
+     not had.
 - **Primary action**: Share, in the top bar's actions. Nothing else
   is a primary on a read-only log.
 - **Type**: the figures use `bodyLarge` with tabular figures
@@ -663,7 +675,17 @@ placement wins, and the difference is noted.
        `FilterChip` in a `LazyRow`, single-select)
      - NOTAMs
      - TFRs
-  6. Detail folded under a tap (a `ListItem` that expands).
+  6. Under IFR, **Alternate** (`alternate/AlternateRows`, the web's
+     AlternateSection): the planner's `/api/alternate` at the nav log's
+     ETA and the airplane's cruise (none asked without an airplane, 0011),
+     every rule the engine's (`ifr_alternate_window`,
+     `ifr_alternate_destination`, `ifr_alternate_check`). `ListItem`s:
+     whether the destination needs one (91.169(b)) with its TAF; the one
+     filed, how it stands at its minimums (91.169(c)), its TAF, its own
+     minimums page and Take It Off; then Alternates That Will Do, each
+     filed with a tap and the route planned again. The Go / No-Go is asked
+     with the alternate, so its 91.169 finding is the planner's.
+  7. Detail folded under a tap (a `ListItem` that expands).
 - **Ready to Fly** (`ready/`): a checklist of what is still missing,
   each a `ListItem` with a leading state glyph and a trailing "Fix"
   `TextButton` (`ReadyFixer`), at the top of the Brief when the plan is
@@ -761,7 +783,9 @@ more, or gusting); it is red only where the field's `least_crosswind` is
 more than the picked airplane's demonstrated crosswind (its POH's, on
 `/api/aircraft-profiles`), and never red with no airplane or no figure. An
 amber ↓ marks a plan's field whose TAF for the pilot's time there is worse
-than its METAR now (`weather_worse`). The weather comes on the map's own
+than its METAR now (`weather_worse`), the IFR alternate filed among them:
+its METAR now against its TAF at its own ETA, from the planner's briefing
+of the leg on to it, leaving the destination at its ETA (`map/RouteWorse`). The weather comes on the map's own
 `/api/airports/in-view` answer (`weather`), the same for every app; the
 shared fixture is `apps/web/src/lib/fixtures/airportWeatherMarks.json`. A
 screen reader says each field's category and wind ("KJVL, IFR, wind 220

@@ -178,9 +178,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     LaunchedEffect(glideRatio) { InFlight.shared.glideRatio = glideRatio }
     // The airport weather's barbs, arrows and badges (StationLayer): the
     // arrow red only past the picked airplane's demonstrated crosswind, the
-    // badge at the plan's fields whose TAF is worse by the time there.
+    // badge at the plan's fields whose TAF is worse by the time there,
+    // the alternate's among them.
     val routeWorse: RouteWorse = viewModel()
-    LaunchedEffect(state.dep, state.stops, state.dest, state.depart, state.totals?.eteMin, airportWeather.worse) {
+    LaunchedEffect(state.dep, state.stops, state.dest, state.depart, state.totals?.eteMin, state.totals?.alternate, airportWeather.worse) {
         if (airportWeather.worse) routeWorse.plan(state)
     }
     val worse by routeWorse.idents.collectAsStateWithLifecycle()

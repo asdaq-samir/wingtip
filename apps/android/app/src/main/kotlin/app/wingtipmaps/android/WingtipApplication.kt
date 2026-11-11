@@ -2,6 +2,7 @@ package app.wingtipmaps.android
 
 import android.app.Application
 import app.wingtipmaps.android.ai.OnPhoneAsk
+import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.diagnostics.Diagnostics
 import app.wingtipmaps.android.offline.KeptForAir
@@ -28,6 +29,8 @@ class WingtipApplication : Application() {
         // Ask on the phone (Gemini Nano with the app's own tools): only the
         // application kept, nothing asked of AICore until Ask is used.
         OnPhoneAsk.attach(this)
+        // The IFR alternate filed last: one preference read, for the plan.
+        PlanAlternate.attach(this)
         MapLibre.getInstance(this)
         HttpRequestUtil.setOkHttpClient(Gateway.client)
     }

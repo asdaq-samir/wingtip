@@ -3,7 +3,8 @@ package app.wingtipmaps.android
 import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.lifecycle.ViewModel
+import androidx.core.content.edit
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.Gateway
@@ -25,7 +26,7 @@ import kotlinx.coroutines.launch
  * cookie, kept by CookieStore, is the sign-in itself. The twin of the iOS
  * app's Session.swift, as a ViewModel with its state in flows.
  */
-class Session : ViewModel() {
+class Session(app: Application) : AndroidViewModel(app) {
     private val _pilot = MutableStateFlow<Pilot?>(null)
     val pilot: StateFlow<Pilot?> = _pilot.asStateFlow()
 
@@ -45,6 +46,14 @@ class Session : ViewModel() {
     /** A sign-in link has been asked for and the gateway took the ask. */
     private val _linkSent = MutableStateFlow(false)
     val linkSent: StateFlow<Boolean> = _linkSent.asStateFlow()
+
+    /** A sign-in link opened and waiting for the pilot's yes (SignInDialog). */
+    private val _signInAsk = MutableStateFlow<SignInAsk?>(null)
+    val signInAsk: StateFlow<SignInAsk?> = _signInAsk.asStateFlow()
+
+    /** The address this phone last asked a link for, kept so a link
+     *  opened after the app was closed still names it. */
+    private val asked = app.getSharedPreferences("sign_in", Context.MODE_PRIVATE)
 
     init {
         refresh()
@@ -78,6 +87,7 @@ class Session : ViewModel() {
         viewModelScope.launch {
             try {
                 Gateway.requestMagicLink(email.trim())
+                asked.edit { putString(ASKED, email.trim()) }
                 _problem.value = null
                 _linkSent.value = true
             } catch (e: CancellationException) {
@@ -89,13 +99,36 @@ class Session : ViewModel() {
         }
     }
 
-    /** An App Link opened in the app: the sign-in link's token is verified
-     *  here; any other link is the screens' (Links, MainActivity). */
+    /** An App Link opened in the app: a sign-in link, asked first and
+     *  verified only on the pilot's yes (signIn); any other link is the
+     *  screens' (Links, MainActivity). */
     fun open(uri: Uri) {
         val link = Links.parse(uri.toString()) as? Links.SignIn ?: return
+        _signInAsk.value = SignInAsk(link.token, asked.getString(ASKED, null), _pilot.value?.email)
+    }
+
+    /** The link not followed: nothing changes. */
+    fun declineSignIn() {
+        _signInAsk.value = null
+    }
+
+    /** The pilot's yes: where someone is signed in, that session ended
+     *  and what the phone kept of it forgotten first, as signing out
+     *  does, then the link's token verified. */
+    fun signIn(context: Context) {
+        val ask = _signInAsk.value ?: return
+        _signInAsk.value = null
+        val checklists = ChecklistStore.of(context.applicationContext)
+        val plan = KeptPlan(context.applicationContext as Application)
         viewModelScope.launch {
+            if (ask.current != null) {
+                runCatching { Gateway.signOut() }
+                forget(checklists)
+                plan.clear()
+            }
             try {
-                Gateway.verifyMagicLink(link.token)
+                Gateway.verifyMagicLink(ask.token)
+                asked.edit { remove(ASKED) }
                 _linkSent.value = false
                 load()
             } catch (e: CancellationException) {
@@ -150,6 +183,10 @@ class Session : ViewModel() {
                 _deleting.value = false
             }
         }
+    }
+
+    private companion object {
+        const val ASKED = "asked"
     }
 
     private fun forget(checklists: ChecklistStore) {
