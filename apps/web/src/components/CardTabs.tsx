@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject } from "react";
+import type { ReactNode } from "react";
 import { cn } from "cn";
 import { TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 
@@ -32,7 +32,6 @@ export function CardTabBar<T extends string>({
   onPick,
   testIdPrefix,
   disabled,
-  barRef,
   className,
   activateOnFocus,
 }: {
@@ -44,7 +43,6 @@ export function CardTabBar<T extends string>({
   testIdPrefix: string;
   /** Greyed, as a card's actions are until its answer comes. */
   disabled?: boolean;
-  barRef?: RefObject<HTMLDivElement | null>;
   className?: string;
   /** The tab shown as the arrow keys reach it, where every tab's content
    *  is already in hand (one answer fills them all): the APG's automatic
@@ -54,7 +52,7 @@ export function CardTabBar<T extends string>({
   activateOnFocus?: boolean;
 }) {
   return (
-    <TabsList ref={barRef} activateOnFocus={activateOnFocus} className={cn(SEGMENTED, className)}>
+    <TabsList activateOnFocus={activateOnFocus} className={cn(SEGMENTED, className)}>
       {tabs.map((t) => (
         <TabsTrigger
           key={t.value}

@@ -541,17 +541,12 @@ export default function PlaceCard({
           tapped again there back half way (CardTabBar). */}
       {!(error && !place) && (
         <Tabs value={tab} onValueChange={(next) => setPicked(next as typeof tab)} className="gap-0">
-          <CardTabBar
-            tabs={CARD_TABS}
-            value={tab}
-            onPick={setPicked}
-            activateOnFocus
-            testIdPrefix="place-tab"
-            disabled={!place}
-            barRef={tabsRef}
-            // Pinned directly under the card's head (PINNED_BELOW, plain CSS), frosted as it is, its sections a tap away.
-            className={cn("frost-head sticky z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1", PINNED_BELOW)}
-          />
+          {/* Pinned directly under the card's head (PINNED_BELOW, plain CSS), frosted as it is, edge to edge, the
+              control at the card's margins: on the control itself the -mx-4 kept its 100% width, so it began at
+              the sheet's edge and stopped 32 short of the other, the content showing through (the owner's KORD). */}
+          <div ref={tabsRef} className={cn("frost-head sticky z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1", PINNED_BELOW)}>
+            <CardTabBar tabs={CARD_TABS} value={tab} onPick={setPicked} activateOnFocus testIdPrefix="place-tab" disabled={!place} />
+          </div>
           <CardTabPanel value="radio" className="space-y-0">
             {place && <PlaceInfoTab place={place} where={where} distance={distanceOf(place, measured)} />}
           </CardTabPanel>
