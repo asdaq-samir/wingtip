@@ -6,11 +6,11 @@
  * planner, then the plan in words from the assistant. The plan is the
  * engine's; the words come after it and never hold it up.
  */
-import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
 import type { Currency, LogbookEntry, Training } from "../../../lib/api/types";
 import { localDay } from "../../../lib/format";
+import { keptStore } from "../../../lib/storage";
 import { currencyQuery, pilotQuery, trainingQuery } from "../../../lib/queryClient";
 import { coachApi, type CoachAsk, type ProficiencyPlan } from "./coachApi";
 import { useClaudeOn } from "../../../lib/subscription";
@@ -25,16 +25,11 @@ export const CERTIFICATES: { value: Certificate; label: string }[] = [
   { value: "instrument", label: "Instrument Rated" },
 ];
 
+/** The certificate the pilot said they hold, kept on this device in the
+ *  app's persisted store (keptStore: one store for every caller, a refused
+ *  or full storage kept for the visit). */
 const KEY = "wingtip.coach.certificate";
-
-function stored(): Certificate | null {
-  try {
-    const v = window.localStorage.getItem(KEY);
-    return CERTIFICATES.some((c) => c.value === v) ? (v as Certificate) : null;
-  } catch {
-    return null;
-  }
-}
+const isCertificate = (v: unknown): v is Certificate => CERTIFICATES.some((c) => c.value === v);
 
 /** The certificate a pilot most likely holds, until they say: a student
  *  with endorsements on file, instrument where a check or an approach is
@@ -75,16 +70,10 @@ export function useCoach() {
   const { data: currency } = useQuery(currencyQuery);
   const { data: training } = useQuery(trainingQuery);
   const { data: pilot } = useQuery(pilotQuery);
-  const [chosen, setChosen] = useState<Certificate | null>(stored);
-  const certificate = chosen ?? guessed(entries.data, currency, training);
-  const choose = (c: Certificate) => {
-    setChosen(c);
-    try {
-      window.localStorage.setItem(KEY, c);
-    } catch {
-      /* kept for this visit only */
-    }
-  };
+  const kept = keptStore<Certificate | null>(KEY, null);
+  const chosen = kept((s) => s.value);
+  const certificate = isCertificate(chosen) ? chosen : guessed(entries.data, currency, training);
+  const choose = (c: Certificate) => kept.setState({ value: c });
 
   const plan = useMutation({
     mutationFn: async (): Promise<ProficiencyPlan> => {
