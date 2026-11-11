@@ -10,6 +10,7 @@ import {
   openSidebar,
   PAGES,
   settle,
+  settled,
   showTabs,
   sideDrawer,
   slow,
@@ -276,14 +277,15 @@ for (const path of PAGES) {
     const first = page.locator("[data-map-controls] > div:not([data-map-food]) button").first();
     const firstBox = (await first.boundingBox())!;
     // On the map, flush with its right edge -- the same on both pages: on a
-    // phone at the top right, as Apple Maps on the web has them (the
-    // owner's screenshot, 2026-11-10), at the bottom under a desktop's card.
+    // phone just over the sheet's top, the search's row, riding it as the
+    // radio's button does at the left (the owner, 2026-11-11), at the
+    // bottom under a desktop's card.
     expect(viewport.width - (firstBox.x + firstBox.width)).toBeLessThan(20);
     if (viewport.width < 768) {
+      await settled(page.locator("[data-slot=map-panel]"));
       const sheet = (await page.locator("[data-slot=map-panel]").boundingBox())!;
       const group = (await page.locator("[data-map-controls]").boundingBox())!;
-      expect(group.y + group.height).toBeLessThanOrEqual(sheet.y);
-      expect(group.y).toBeLessThan(80);
+      expect(Math.round(sheet.y - (group.y + group.height))).toBe(24);
     } else {
       expect(firstBox.y).toBeGreaterThan(viewport.height / 2);
       // The mic a button of its own right over the group, at the same edge.

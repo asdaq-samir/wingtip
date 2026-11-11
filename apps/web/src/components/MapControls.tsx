@@ -16,11 +16,12 @@ import { OnSheetTop } from "./sheet/sheetTop";
  * The map's buttons, in one group floating over the chart, as Maps
  * stacks its own: the map's settings, the pilot's own position (the
  * location arrow), and full screen where it works. A zoom toggle, between the whole route and the
- * selected point, went: picking a waypoint brings the map to it. At the
- * top right under a bottom sheet, as Apple Maps on the web has its map
- * and location buttons (the owner's screenshot, 2026-11-10, which moved
- * them from over the sheet's top); over a top sheet at the bottom right,
- * riding its edge.
+ * selected point, went: picking a waypoint brings the map to it. On a
+ * phone's bottom sheet at the right just over its top edge, the search's
+ * row, riding it as the radio's button does at the left (the owner,
+ * 2026-11-11: "keep the top right map button to just above the search bar
+ * on the right"); over a top sheet at the bottom right, riding its edge;
+ * beside a desktop's side panel at the bottom right.
  *
  * Ghost buttons on the group's glass, eight apart inside it, so
  * each one's 44-point hit area (index.css) meets the next one's rather
@@ -66,14 +67,16 @@ function MapControlsDrawn() {
   // foot past the panel's edge. One of the two drawn, never both: the
   // radio's state is the one mic's.
   const onPhone = useIsMobile();
-  // `riding`: on a phone's bottom sheet's top (OnSheetTop), 24 over it.
+  // `riding`: on a phone's bottom sheet's top (OnSheetTop), 24 over it,
+  // its pill widening no further than 5.5rem from the right edge, clear
+  // of the map's buttons riding there (4.75rem with the margin in flight).
   const mic = (riding = false) => (
     <div
       data-map-food=""
       className={cn(
         "z-[1000] flex items-end rounded-4xl p-1",
         riding
-          ? "pointer-events-auto absolute bottom-6 left-[max(0.5rem,env(safe-area-inset-left))] max-w-[min(28rem,calc(100vw-5rem))]"
+          ? "pointer-events-auto absolute bottom-6 left-[max(0.5rem,env(safe-area-inset-left))] max-w-[min(28rem,calc(100vw-6rem))]"
           : onPhone
             ? "absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] max-w-[min(28rem,calc(100vw-5rem))]"
             : // In the column at the right edge: widening to the left into
@@ -103,80 +106,97 @@ function MapControlsDrawn() {
       </div>
     </div>
   );
+  // The group of buttons, one soft card of glass.
+  const group = (
+    <div
+      className={cn(
+        // One soft rounded card of glass round them, as Apple Maps on
+        // the web groups its map button over its location arrow (the
+        // owner's screenshot, 2026-11-10); a button pressed or open a
+        // rounded square in it.
+        "flex flex-col gap-2 rounded-2xl p-1 [&_button]:rounded-xl",
+        flying && FLYING_STACK,
+        GLASS,
+      )}
+    >
+      {flying ? (
+        <>
+          {nearest && (
+            <Button
+              type="button"
+              variant="ghost"
+              aria-label="Nearest airports"
+              data-testid="flying-nearest"
+              className={cn(FLYING_BUTTON, "text-(length:--type-note)")}
+              onClick={nearest}
+            >
+              NRST
+            </Button>
+          )}
+          {direct && (
+            <Button
+              type="button"
+              variant="ghost"
+              aria-label={`Direct to ${direct.to}`}
+              data-testid="flying-direct"
+              className={cn(FLYING_BUTTON, "text-base")}
+              onClick={direct.go}
+            >
+              D→
+            </Button>
+          )}
+          {/* The location arrow, 60 points as the rest: on the airplane,
+            and in a dry run its other face the whole route (the
+            owner's 2026-10-27 asks), which flying mode had put away
+            (the owner's yes to the run's own controls back,
+            2026-11-04). */}
+          <MyPositionButton />
+        </>
+      ) : (
+        <>
+          {/* The map's settings first, as Maps' map button is. */}
+          <MapSettingsButton />
+          <MyPositionButton />
+          {/* While a saved flight's flown track is on the chart. */}
+          <FlownTrackButton />
+          {/* Draws itself only where full screen actually works: a desktop
+            browser and an iPad, never an iPhone. */}
+          <FullscreenButton />
+        </>
+      )}
+    </div>
+  );
   return (
     <>
       {/* z-[1000]: over the map's canvas, its markers and its own
         controls; still inside the map's own stacking context, under the
         panel and every portal. The map's right edge is the screen's, so
-        clear of a landscape phone's notch there.
-        At the top right under a bottom sheet (nav-bottom), as Apple Maps on
-        the web (the owner's screenshot, 2026-11-10); with the sheet at the
-        top, just under its edge at the bottom right, riding it; all the way
-        up they give way (index.css). */}
-      <div
-        data-map-controls=""
-        data-flying={flying || undefined}
-        className="absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:bottom-auto z-[1000] flex flex-col items-end gap-2"
-      >
-        {!onPhone && mic()}
-        <div
-          className={cn(
-            // One soft rounded card of glass round them, as Apple Maps on
-            // the web groups its map button over its location arrow (the
-            // owner's screenshot, 2026-11-10); a button pressed or open a
-            // rounded square in it.
-            "flex flex-col gap-2 rounded-2xl p-1 [&_button]:rounded-xl",
-            flying && FLYING_STACK,
-            GLASS,
-          )}
-        >
-          {flying ? (
-            <>
-              {nearest && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  aria-label="Nearest airports"
-                  data-testid="flying-nearest"
-                  className={cn(FLYING_BUTTON, "text-(length:--type-note)")}
-                  onClick={nearest}
-                >
-                  NRST
-                </Button>
-              )}
-              {direct && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  aria-label={`Direct to ${direct.to}`}
-                  data-testid="flying-direct"
-                  className={cn(FLYING_BUTTON, "text-base")}
-                  onClick={direct.go}
-                >
-                  D→
-                </Button>
-              )}
-              {/* The location arrow, 60 points as the rest: on the airplane,
-                and in a dry run its other face the whole route (the
-                owner's 2026-10-27 asks), which flying mode had put away
-                (the owner's yes to the run's own controls back,
-                2026-11-04). */}
-              <MyPositionButton />
-            </>
-          ) : (
-            <>
-              {/* The map's settings first, as Maps' map button is. */}
-              <MapSettingsButton />
-              <MyPositionButton />
-              {/* While a saved flight's flown track is on the chart. */}
-              <FlownTrackButton />
-              {/* Draws itself only where full screen actually works: a desktop
-                browser and an iPad, never an iPhone. */}
-              <FullscreenButton />
-            </>
-          )}
-        </div>
-      </div>
+        clear of a landscape phone's notch there. On a phone's bottom sheet
+        drawn in the Drawer's popup (OnSheetTop), 24 over its top at the
+        right, level with the radio's button at the left and as it does:
+        following a finger's drag, there over a card's nested drawer as it
+        is, and giving way with the sheet all the way up (index.css). 24
+        over the top clears the map's credit line at the bottom right
+        (googleCredit); the radio's pill stops short of the group. With
+        the sheet at the top, just under its edge at the bottom right,
+        riding it; beside a desktop's side panel at the bottom right. */}
+      <OnSheetTop>
+        {(riding) => (
+          <div
+            data-map-controls=""
+            data-flying={flying || undefined}
+            className={cn(
+              "z-[1000] flex flex-col items-end gap-2",
+              riding
+                ? "pointer-events-auto absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-6"
+                : "absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:bottom-auto",
+            )}
+          >
+            {!onPhone && mic()}
+            {group}
+          </div>
+        )}
+      </OnSheetTop>
       {/* Comms assist, the radio's button (RadioButton), in a glass circle of its own
         at the left, level with the group, where the Stops were (it was
         Fly-in Food before them), at the owner's ask (2026-11-02), alone:

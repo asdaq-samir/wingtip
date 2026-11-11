@@ -271,11 +271,16 @@ gone on every platform.
 
 ## 7. What rides the sheet, and the map's small print (the owner, 2026-11-11)
 
-1. **The radio's button and the first flight's card ride the sheet's
-   top**, 24 points over it at the pill and half, following a finger's
-   drag frame by frame as Apple Maps' buttons do; all the way up they give
-   way. The map's own buttons (Map, My Position) stay at the top right
-   under a bottom sheet, untouched.
+1. **The radio's button, the map's own buttons and the first flight's
+   card ride the sheet's top**, 24 points over it at the pill and half,
+   following a finger's drag frame by frame as Apple Maps' buttons do;
+   all the way up they give way. The radio's button is at the left, the
+   map's buttons (Map, My Position) at the right, just above the search
+   row (the owner, 2026-11-11: "keep the top right map button to just
+   above the search bar on the right"), clear of each other and of the
+   map's credit line, each tap its own 44 points. Over a top sheet they
+   stay at the bottom right, riding its edge; beside a side panel, at
+   the bottom right.
 2. **No row of small print on the map.** Privacy, Terms and Legal are
    links at Settings' foot, after Status, Log, Guide and About (the
    owner: "Can privacy terms etc move next to status log"); Legal is
@@ -294,7 +299,7 @@ gone on every platform.
 | Riding the sheet | `components/sheet/sheetTop` (`OnSheetTop`): a slot in the Drawer's popup just over its top edge (`bottom: 100%`), the popup's corners clipped on an inner box |
 | Settings' foot | `features/pilot/PilotPanel`'s "More" row, `settings-foot`; 44-point hit areas that meet (`PAGE_LINK`), a second line at a large text size |
 | Status | `components/StatusPanel`: FAA Data, On the Map (`lib/map/gl/creditStore`) |
-| Tests | `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the radio 24 over the sheet, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` |
+| Tests | `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the radio and the map's buttons 24 over the sheet and clear of each other, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` |
 
 ## Changing a rule
 

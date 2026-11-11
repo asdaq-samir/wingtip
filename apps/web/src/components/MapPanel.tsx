@@ -85,7 +85,7 @@ const GRABBER = 16;
  * past the pill is refused and lands on the pill. What the stock sheet
  * leaves to its user is a thin layer here: the parts held in sight at its
  * free edge (by the Drawer's own CSS variables, SheetParts), the room over
- * its top where the map's radio button rides it (OnSheetTop), the room it
+ * its top where the radio's and the map's buttons ride it (OnSheetTop), the room it
  * leaves the map (insetsOf, told as it sets off and once it has landed)
  * and its fixed heights (useSheetDetents). The cards over it are its own
  * nested drawers (CardStack); the keyboard's inset is the Drawer's

@@ -1033,7 +1033,7 @@ The owner's rule: a screenshot of another app means ours should show this.
 | All the way up: the title gone, the field pinned with a hairline under it | The field pinned with a hairline under it |
 | Large bold section titles, picture cards sliding sideways, a white card with a question and art | The search's page (`SearchHome`): Favorites, Recents and Nearest titled as every section is, 20 points medium in the text's colour with the chevron in the tint (`PillSection`, decision 0021; owner decision 2026-11-10 (decisions page): one heading style, not Apple's bold); the Recents as picture cards of the sectional round each field (`RecentCards`, the chart's own tile, shadcn Carousel); Plan a Flight, "Where do you want to fly?", the mark as its art (`FlightSummary`) |
 | Sheet's foot: Privacy \| Terms \| Legal \| Imagery, the copyright | `SheetFooter`: Privacy \| Terms \| Legal (About, every data source and licence), "© year Wingtip Maps". No "manage your business" line: no page for schools or clubs exists |
-| One rounded card at the top right: map button over location | `MapControls`: the map's settings, the location arrow, the flown track and full screen in one rounded glass card at the top right under a bottom sheet (bottom right under a top sheet); the map's banners keep clear of it |
+| One rounded card at the top right: map button over location | `MapControls`: the map's settings, the location arrow, the flown track and full screen in one rounded glass card at the right just over a bottom sheet's search row, riding its top as the radio's button does at the left (`OnSheetTop`; the owner, 2026-11-11: "keep the top right map button to just above the search bar on the right"), not at the top right where Apple Maps on the web has it; bottom right under a top sheet or beside the side panel |
 | One round button at the bottom left (Look Around) | The radio's microphone, where it already was |
 | Privacy \| Terms \| Legal \| Imagery at the map's bottom right, over the sheet | `MapCredits`: one MapLibre AttributionControl at the bottom right, riding the sheet's top, Privacy \| Terms \| Legal then each drawn source's credit (imagery, Google, the traffic, the overlay tiles' FAA cycle); gone all the way up, where the footer has them |
 | A place picked: its card is the whole sheet, no search | Any card (a field, an airplane, a point, the Brief, the Map card) hides the search; its ✕ goes back to the search with the query kept |
@@ -1170,7 +1170,7 @@ its reason:
   are the stock way, and each moves as its section is next changed.
 - **Map gestures** (the ruler's two-finger hold, the zoom banner): on
   MapLibre's canvas, where no stock component reaches.
-- **The radio's button and the first flight's card on the sheet's top**
+- **The radio's button, the map's buttons and the first flight's card on the sheet's top**
   (`sheet/sheetTop`, `OnSheetTop`): a portal into a slot in the Drawer's
   popup just over its top edge (`bottom: 100%`), so they move with the
   sheet under a finger and on its curve; the popup's corners are clipped

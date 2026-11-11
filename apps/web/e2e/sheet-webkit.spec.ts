@@ -34,7 +34,7 @@ const at = (page: Page, x: number, y: number) =>
   );
 
 test(
-  "the sheet in WebKit: its heads pinned, nothing over or through them, the radio on its top, Settings at the pill",
+  "the sheet in WebKit: its heads pinned, nothing over or through them, the radio and the map's buttons on its top, Settings at the pill",
   { tag: "@smoke" },
   async ({ page }) => {
     // The home list, all the way up and scrolled: nothing of it above the
@@ -52,16 +52,32 @@ test(
         expect((await at(page, x, y)).inBody, `the list drawn through the head band at ${x},${Math.round(y)}`).toBe(false);
     }
 
-    // The radio's button rides the sheet's top, 24 over it, at half and at the pill.
+    // The radio's button rides the sheet's top, 24 over it at the left, and
+    // the map's buttons the same at the right (the owner, 2026-11-11: "just
+    // above the search bar on the right"), at half and at the pill, clear
+    // of each other, each tap landing on its own.
     const mic = page.getByTestId("mic-circle");
+    const controls = page.locator("[data-map-controls]");
+    const over = async (part: typeof mic) => {
+      const b = (await part.boundingBox())!;
+      return Math.round((await top(page)) - b.y - b.height);
+    };
     for (const size of ["half", "peek"] as const) {
       await grabberTo(page, size);
       await settled(panel(page));
-      await expect
-        .poll(async () => Math.round((await top(page)) - (await mic.boundingBox())!.y - (await mic.boundingBox())!.height), {
-          timeout: slow(5_000),
-        })
-        .toBe(24);
+      await expect.poll(() => over(mic), { timeout: slow(5_000) }).toBe(24);
+      await expect.poll(() => over(controls), { timeout: slow(5_000) }).toBe(24);
+      const [m, c] = [(await mic.boundingBox())!, (await controls.boundingBox())!];
+      expect(m.x + m.width, "the radio clear of the map's buttons").toBeLessThan(c.x);
+      expect(width - (c.x + c.width), "the map's buttons at the right edge").toBeLessThan(20);
+      for (const id of ["map-settings-button", "my-position-button"]) {
+        const b = (await controls.getByTestId(id).boundingBox())!;
+        const hit = await page.evaluate(
+          ([x, y]) => document.elementFromPoint(x, y)?.closest("[data-testid]")?.getAttribute("data-testid"),
+          [b.x + b.width / 2, b.y + b.height / 2] as const,
+        );
+        expect(hit, `${id} takes its own tap`).toBe(id);
+      }
     }
 
     // The airport card, a nested drawer of its own over the sheet: its
