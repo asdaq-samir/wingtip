@@ -22,6 +22,7 @@ import app.wingtipmaps.android.flight.SpokenAlerts
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.map.MapLayersStore
 import app.wingtipmaps.android.map.WeatherLoopRows
+import app.wingtipmaps.android.plates.PlateCardModel
 import app.wingtipmaps.android.receiver.ReceiverSettingRows
 
 /**
@@ -64,7 +65,7 @@ fun MapSettingsRows() {
  * What the map draws over the chart (MapLayersStore, kept across
  * launches), the web's map settings' "On the Map" rows in its words and
  * order: Airspace, VORs and Fixes, Terminal Area Charts, Private Fields,
- * Military Fields.
+ * Military Fields, then Traffic and Approach Plates.
  */
 @Composable
 private fun MapLayerRows() {
@@ -80,8 +81,13 @@ private fun MapLayerRows() {
         SwitchSettingRow(stringResource(R.string.layer_private), layers.privateFields, 3, MAP_ROWS) { store.set(MapLayersStore.Switch.PRIVATE_FIELDS, it) }
         SwitchSettingRow(stringResource(R.string.layer_military), layers.military, 4, MAP_ROWS) { store.set(MapLayersStore.Switch.MILITARY, it) }
         SwitchSettingRow(stringResource(R.string.traffic), trafficOn, 5, MAP_ROWS) { traffic.setOn(it) }
+        // The approach plates on the chart (the web's Plates); turned on,
+        // every plate hidden from its card comes back.
+        val plates = remember(context) { PlateCardModel.of(context) }
+        val look by plates.look.collectAsStateWithLifecycle()
+        SwitchSettingRow(stringResource(R.string.layer_plates), look.shown, 6, MAP_ROWS, plates::setShown)
     }
 }
 
-/** The map's group: its five layers and the traffic. */
-private const val MAP_ROWS = 6
+/** The map's group: its five layers, the traffic and the approach plates. */
+private const val MAP_ROWS = 7

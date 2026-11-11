@@ -13,6 +13,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -32,6 +35,8 @@ import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.live.LiveAirportRows
 import app.wingtipmaps.android.offline.KeptAgeLine
 import app.wingtipmaps.android.offline.KeptForAir
+import app.wingtipmaps.android.plates.APPROACH_CHART
+import app.wingtipmaps.android.plates.ShowPlateButton
 import app.wingtipmaps.android.receiver.ReceiverReports
 import java.util.Locale
 
@@ -53,7 +58,7 @@ enum class AirportSection(@StringRes val title: Int) {
  * TAF, the two in plain words, what the cockpit receiver heard where the
  * weather service has nothing, what SWIM says now -- its frequencies (each
  * copied with a tap), its runways, its approach plates (each
- * opening the FAA's PDF), and its own NOTAMs and the TFRs within 5 nm
+ * opening the FAA's PDF, and laid on the map from the row's end), and its own NOTAMs and the TFRs within 5 nm
  * as sent, the engine's ranking, each with when it is in force. Every figure the
  * planner's, written by Format.
  */
@@ -102,7 +107,11 @@ fun LazyListScope.airportSection(section: AirportSection, place: AirportPlace, s
         }
         AirportSection.APPROACHES -> items(place.procedures.orEmpty()) { p ->
             val context = LocalContext.current
-            Row(p.name, p.kind, pad) { context.startActivity(Intent(Intent.ACTION_VIEW, p.url.toUri())) }
+            // An approach plate laid on the map from its row's end; where it
+            // cannot be placed, the row says so.
+            var placed by remember(place.ident, p.name) { mutableStateOf(true) }
+            val show: (@Composable () -> Unit)? = if (p.kind == APPROACH_CHART) ({ ShowPlateButton(place.ident, p.name) { placed = it } }) else null
+            Row(p.name, if (placed) p.kind else stringResource(R.string.plate_not_placed), pad, trailing = show) { context.startActivity(Intent(Intent.ACTION_VIEW, p.url.toUri())) }
         }
         AirportSection.NOTAMS -> {
             state.notamsProblem?.let { item(key = "notams-problem") { ProblemLine(it, pad) } }

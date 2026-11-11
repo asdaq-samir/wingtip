@@ -23,8 +23,11 @@ import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Square
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.outlined.CropSquare
+import androidx.compose.material.icons.outlined.Map
 import androidx.compose.material.icons.outlined.NearMe
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -81,6 +84,13 @@ object WingtipIcons {
     val radio = Icons.Filled.CellTower
     val airplane = Icons.Filled.Flight
     val setup = Icons.Filled.Settings
+
+    /** An approach plate laid on the map (an airport card's approach's
+     *  Show on Map), and the plate card's transparency slider's ends: an
+     *  empty square for clear, a solid one for solid, as ForeFlight's. */
+    val showOnMap = Icons.Outlined.Map
+    val plateClear = Icons.Outlined.CropSquare
+    val plateSolid = Icons.Filled.Square
 
     /** Fly Here, a new route to the field: the route's own glyph. */
     val flyHere = Icons.Filled.Route

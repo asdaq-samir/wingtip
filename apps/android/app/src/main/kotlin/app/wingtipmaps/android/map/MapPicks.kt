@@ -78,6 +78,11 @@ sealed interface MapPick {
     @Serializable
     data class RouteLeg(val index: Int) : MapPick
 
+    /** An approach plate laid on the chart (PlateLayer), by its field and
+     *  its CIFP identifier: its card's settings (SheetPage.Plate). */
+    @Serializable
+    data class Plate(val ident: String, val procedure: String) : MapPick
+
     companion object {
         private fun text(v: Any?): String? = v?.toString()?.takeIf { it.isNotEmpty() }
         private fun number(v: Any?): Double? = when (v) {

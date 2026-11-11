@@ -22,6 +22,7 @@ class SheetPageTest {
         SheetPage.Thing(MapPick.Here(44.9, -93.2)),
         SheetPage.Thing(MapPick.Point("BAINY", vfr = true, lat = 46.1, lon = -92.4, vors = emptyList())),
         SheetPage.Leg(2),
+        SheetPage.Plate("KOSH", "I36"),
         SheetPage.MapSettings,
         SheetPage.Brief,
         SheetPage.Nearest,
@@ -60,6 +61,7 @@ class SheetPageTest {
     fun aThingTappedOpensItsOneCard() {
         assertEquals(SheetPage.Airport("KOSH"), SheetPage.of(MapPick.Airport("KOSH")))
         assertEquals(SheetPage.Leg(1), SheetPage.of(MapPick.RouteLeg(1)))
+        assertEquals(SheetPage.Plate("KOSH", "I36"), SheetPage.of(MapPick.Plate("KOSH", "I36")))
         assertEquals(SheetPage.Thing(MapPick.Plane("abc")), SheetPage.of(MapPick.Plane("abc")))
     }
 
