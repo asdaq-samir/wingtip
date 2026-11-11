@@ -33,6 +33,8 @@ struct WingtipApp: App {
                 // 20 pt", docs/decisions/0021), drawn by the system rather
                 // than a hand-built title (the owner, 2026-11-10).
                 .headerProminence(.increased)
+                // An emailed sign-in link asks before it signs anyone in.
+                .modifier(LinkSignInPrompt(session: session))
                 .environment(session)
                 .environment(charts)
                 .environment(plan)
@@ -50,6 +52,9 @@ struct WingtipApp: App {
                 .task { await charts.load() }
                 .task { OfflineDownloads.shared.start() }
                 .task { await plan.restore() }
+                // Under IFR, the alternate checked for the plan's ETA, asked
+                // again as the plan or the alternate filed changes (AlternateCheck).
+                .task(id: AlternateCheck.key(for: plan)) { await AlternateCheck.shared.refresh(plan: plan) }
                 // The flight in progress on the Lock Screen and in the
                 // Dynamic Island (FlightActivity, a Live Activity: the
                 // owner's ask, 2026-11-03, as Apple recommends for anything

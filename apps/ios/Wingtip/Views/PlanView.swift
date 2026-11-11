@@ -27,17 +27,7 @@ struct PlanView: View {
     var nearest: [NearestAirport] = []
     var browse: (SearchPick) -> Void = { _ in }
 
-    enum Field { case dep, dest, altitude }
-    @State private var altitude = ""
-
-    /// The hundreds typed, flown; nothing typed, the planner's own pick.
-    private func flyAltitude() {
-        focused = nil
-        let digits = altitude.filter(\.isNumber)
-        plan.ownAltitudeFt = digits.isEmpty ? nil : Double(digits).map { $0 * 100 }
-        Feel.tap(.altitude)
-        plan.plan()
-    }
+    enum Field { case dep, dest }
 
     var body: some View {
         @Bindable var plan = plan
@@ -65,12 +55,7 @@ struct PlanView: View {
                         .font(WingtipType.detail.weight(.semibold)).foregroundStyle(WingtipInk.caution)
                 }
                 if plan.routed {
-                    RouteBoxRow(altitude: $altitude, focused: $focused, open: open, fly: flyAltitude)
-                        .toolbar {
-                            if focused == .altitude {
-                                ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("Fly") { flyAltitude() } }
-                            }
-                        }
+                    RouteBoxRow(open: open)
                 }
             }
             if !plan.routed {

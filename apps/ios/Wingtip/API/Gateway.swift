@@ -12,10 +12,9 @@ enum Gateway {
         let config = URLSessionConfiguration.default
         config.httpCookieAcceptPolicy = .always
         config.httpShouldSetCookies = true
-        // Kept in the App Group's cookie jar, so the Currency Status widget
-        // reads the gateway as the signed-in pilot (WidgetStore.cookies);
-        // on the phone still, in the app's own group.
-        config.httpCookieStorage = WidgetStore.cookies
+        // Kept in the Keychain (SessionCookies), shared with the Currency
+        // Status widget so it reads the gateway as the signed-in pilot.
+        config.httpCookieStorage = SessionCookies.jar
         // A cache of the answers the gateway and the planner say may be
         // kept (Cache-Control: the chart's tiles for a cycle, the fields and
         // airspace of a box, a field's card for minutes), so a view come
@@ -60,6 +59,8 @@ enum Gateway {
     /// `send` or `read` in the gateway's own words.
     static func call(_ method: String, _ path: String, json: (any Encodable)? = nil, form: [String: String]? = nil) async throws -> (Data, Int) {
         let (data, response) = try await session.data(for: request(method, path, json: json, form: form))
+        // A sign-in, a renewed session or a sign-out kept as it happens.
+        SessionCookies.keep()
         return (data, (response as? HTTPURLResponse)?.statusCode ?? 0)
     }
 

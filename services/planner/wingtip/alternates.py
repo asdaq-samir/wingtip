@@ -22,26 +22,27 @@ NEAR_NM = 100.0
 
 @dataclass(frozen=True)
 class Approaches:
-    """A field's instrument approaches as the d-TPP lists them: whether it
-    has any, whether one is a precision approach (an ILS), and its
-    nonstandard alternate minimums' page, where it has one."""
+    """A field's instrument approaches as the d-TPP lists them: their
+    charts' names, and its nonstandard alternate minimums' page, where it
+    has one. Which of them is a precision approach (91.169(c)(1)(i)(A)) is
+    the engine's to say (wingtip_brief::alternates::precision_approach)."""
 
-    any: bool
-    precision: bool
+    names: tuple[str, ...]
     alternate_minimums_url: str | None
 
 
 def approaches(ident: str) -> Approaches:
     charts = publications.terminal_charts(ident)
-    iaps = [c["name"].upper() for c in charts if c["kind"] == "IAP"]
+    iaps = tuple(c["name"] for c in charts if c["kind"] == "IAP")
     page = next((c["url"] for c in charts if c["kind"] == "MIN" and "ALTERNATE" in c["name"].upper()), None)
-    return Approaches(any=bool(iaps), precision=any(name.startswith(("ILS", "GLS", "PAR")) for name in iaps), alternate_minimums_url=page)
+    return Approaches(names=iaps, alternate_minimums_url=page)
 
 
 def _forecast(ident: str, start: float, end: float) -> dict | None:
     """The worst the field's TAF forecasts over [start, end] (wingtip.weather),
-    with the TAF as issued; None where the field has no TAF, or none of
-    its periods covers the window."""
+    with whether it covers the whole window and the TAF as issued; None
+    where the field has no TAF, or none of its periods speaks to the
+    window."""
     station = next((s for s in weather._dataset("tafs") if s["icaoId"] == ident.upper()), None)
     if station is None:
         return None
@@ -49,12 +50,16 @@ def _forecast(ident: str, start: float, end: float) -> dict | None:
     return None if worst is None else {**worst, "raw": station.get("raw")}
 
 
+#: What the engine reads of a TAF's worst over the window (taf_window's).
+_FORECAST_KEYS = ("ceiling_ft", "ceiling_unknown", "visibility_sm", "covers", "raw")
+
+
 def _asked(ident: str, procs: Approaches, forecast: dict | None) -> dict:
     """What the engine reads of a field: its approaches and its forecast."""
     return {
         "ident": ident,
-        "approaches": {"any": procs.any, "precision": procs.precision, "alternate_minimums_url": procs.alternate_minimums_url},
-        "forecast": None if forecast is None else {k: forecast.get(k) for k in ("ceiling_ft", "ceiling_unknown", "visibility_sm", "raw")},
+        "approaches": {"names": list(procs.names), "alternate_minimums_url": procs.alternate_minimums_url},
+        "forecast": None if forecast is None else {k: forecast.get(k) for k in _FORECAST_KEYS},
     }
 
 

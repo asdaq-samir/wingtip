@@ -177,7 +177,7 @@ list is where it was.
 |---|---|---|---|
 | Plan: route box, route list, nav log rows | the sheet (with a route); the search's Your Flight card | 1 → **0** with a route, 1 from the search | Route pills drag to reorder; each point's menu: Change, Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Remove; altitude and departure time chips open popovers; Undo bar under the route after a removal or clear |
 | Figures at the sheet's foot | none | 0 | Fuel opens its breakdown (Add fuel stop); ETE/ETA and To swap; Dist opens the nav log |
-| Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off; Ask chips apply changes |
+| Brief | plan → Brief; search → Do → Brief | 2 | Alternate filed or taken off (iOS too: the Brief's Alternate sections, and the plan's Alternate row under IFR, 1 tap); Ask chips apply changes |
 | Nav log card | plan → ••• → Nav log; Dist tapped; search → Do → Nav Log | 1 | Rows select; a field's name opens its card |
 | Profile | plan → Profile | 2 → **1** with a route | VFR/IFR, altitude in the side view, Dry run |
 | Search results (Airports, Waypoints and Navaids, Airplanes, Do, Ask) | the search field, typed | **new: 1** | -- |
@@ -263,7 +263,7 @@ in the search is not counted.
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
 | Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop; each field of the route opens its card |
-| Nav Log, Profile | the flight's card → Nav Log (or the figures); the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
+| Nav Log, Profile | the flight's card → Nav Log (or the figures); the plan's Profile row, the cruise altitude in the route section, a point's Set Altitude… or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
 | A leg | a leg on the map, a nav log row, or a strip checkpoint: the one leg card | 1 / 2 | Direct, Remove |
 | Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head |
 | Airport card | search → the field; tap it on the map; a list row; the plan's field | 1 + typing (map 1) | Fly Here (with its time), Depart From, Add as Stop, Diagram, Call, Address at its foot; the star; Overview, Weather, Frequencies, Runways, Approaches, NOTAMs under pinned tabs |
@@ -288,7 +288,7 @@ or overflow).
 
 | On | Actions | Web | iOS | Android |
 |---|---|---|---|---|
-| A waypoint of the route | Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Move, Remove, Undo | point menu (all) | point menu (all but Add a Stop After; More Info new) | **⋮ point menu: all but Set Altitude… (a waypoint's altitude is set on the Profile card, Start At or Cross At); Undo row (new)** |
+| A waypoint of the route | Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Move, Remove, Undo | point menu (all) | point menu (all but Add a Stop After; More Info new; Set Altitude… opens the Profile on the point's Start At / Cross At popover, which also takes typed feet) | **⋮ point menu: all but Set Altitude… (a waypoint's altitude is set on the Profile card, Start At or Cross At); Undo row (new)** |
 | The destination | More Info (weather, frequencies, runways, approaches), Brief, Nearest | More Info; Brief on FPL | point menu: More Info, **Brief (new)** | Brief beside Plan; **point menu: More Info, Brief (new)** |
 | The figures | the nav log | **Dist (new)** | **strip (new)** | **strip (new)** |
 | A nav log row | its field's card | **name (new)** | leg detail | leg sheet |

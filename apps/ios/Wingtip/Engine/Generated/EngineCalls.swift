@@ -854,12 +854,12 @@ extension Engine {
         try rule("icing_forecast_route", EngineContract.IcingForecastRouteInput(levelsFt: levelsFt, legs: legs))
     }
 
-    /// Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach, 800 and 2 without; `good` null where the pilot has to look (its own minimums, no approach, no TAF).
+    /// Whether a field will do as the IFR alternate at its ETA (14 CFR 91.169(c)): the standard minimums 600 ft and 2 sm with a precision approach (ILS, GLS, PAR; (c)(1)(i)(A)), 800 and 2 without ((B)); `good` null where the pilot has to look (its own minimums, no approach, no TAF at the ETA, a ceiling of unknown height, no visibility).
     static func ifrAlternateCheck(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = nil) throws -> EngineContract.IfrAlternateCheck {
         try rule("ifr_alternate_check", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast))
     }
 
-    /// Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast an hour either side of the ETA under 2,000 ft and 3 sm, TEMPO and PROB included; no TAF needs one.
+    /// Whether the destination needs an IFR alternate (14 CFR 91.169(b)): no instrument approach, or a forecast that does not indicate at least 2,000 ft and 3 sm for an hour either side of the ETA (TEMPO and PROB included; a TAF not covering the whole window, a ceiling of unknown height or no visibility does not); no TAF needs one.
     static func ifrAlternateDestination(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = nil) throws -> EngineContract.IfrAlternateDestinationAnswer {
         try rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident: ident, approaches: approaches, forecast: forecast))
     }

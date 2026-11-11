@@ -29,17 +29,6 @@ struct DiagramOwnShipView: View {
     /// The white disc behind the airplane, growing with its glyph's text size.
     @ScaledMetric(relativeTo: .title2) private var disc = 30.0
 
-    /// The fix to draw now, nil where it is stale or too coarse: the
-    /// engine's `diagram_fix_usable` (AC 120-76D 11.17.2.3, three seconds;
-    /// 11.17.2.4, 30 m).
-    static func usable(_ fix: OwnShip.Fix?, now: Date) -> OwnShip.Fix? {
-        guard let fix else { return nil }
-        // Where the engine cannot say, the airplane is not drawn: a fix
-        // shown that should not be is the danger here (logged by Engine.rule).
-        let drawn = try? Engine.diagramFixUsable(ageS: now.timeIntervalSince(fix.at), accuracyM: fix.accuracyM)
-        return drawn == true ? fix : nil
-    }
-
     var body: some View {
         NavigationStack {
             Group {
@@ -47,7 +36,7 @@ struct DiagramOwnShipView: View {
                     // Drawn again each second, so a fix that stops coming
                     // takes the airplane off rather than freezing it.
                     TimelineView(.periodic(from: .now, by: 1)) { context in
-                        page(diagram, fix: Self.usable(InFlight.shared.fix, now: context.date))
+                        page(diagram, fix: drawn(InFlight.shared.fix, now: context.date))
                     }
                 } else if let problem {
                     ContentUnavailableView {
@@ -77,14 +66,25 @@ struct DiagramOwnShipView: View {
         .task { await load() }
     }
 
+    /// The fix drawn: none where it is stale or coarse, or where the
+    /// engine cannot say (the note says that, DiagramPage.usable).
+    private func drawn(_ fix: OwnShip.Fix?, now: Date) -> OwnShip.Fix? {
+        try? DiagramPage.usable(fix, now: now)
+    }
+
     /// The line under the page: where the airplane is not drawn, why;
     /// and the planning aid's words with the FAA's credit.
     private func note(_ diagram: DiagramPage) -> String {
         let aid = "FAA · Planning aid, not for navigation"
+        if let problem = diagram.problem { return "\(problem) \(aid)" }
         guard diagram.graticule != nil else { return "This diagram has no latitude and longitude marks to place the airplane by. \(aid)" }
-        guard let fix = Self.usable(InFlight.shared.fix, now: Date()) else { return "Finding your position… \(aid)" }
-        guard let at = diagram.place(fix), at.onPage else { return "You are off this diagram. \(aid)" }
-        return aid
+        let usable = Result { try DiagramPage.usable(InFlight.shared.fix, now: Date()) }
+        if case .failure = usable { return "Your fix couldn't be checked for age and accuracy, so the airplane isn't drawn. \(aid)" }
+        guard let fix = try? usable.get() else { return "Finding your position… \(aid)" }
+        switch Result(catching: { try diagram.place(fix) }) {
+        case .failure: return "Your position couldn't be placed on this diagram. \(aid)"
+        case .success(let at): return at?.onPage == true ? aid : "You are off this diagram. \(aid)"
+        }
     }
 
     private func page(_ diagram: DiagramPage, fix: OwnShip.Fix?) -> some View {
@@ -94,7 +94,7 @@ struct DiagramOwnShipView: View {
                 Image(uiImage: diagram.image)
                     .resizable()
                     .frame(width: fitted.width, height: fitted.height)
-                if let fix, let at = diagram.place(fix), at.onPage {
+                if let fix, let at = try? diagram.place(fix), at.onPage {
                     let k = fitted.width / diagram.size.width
                     Image(systemName: fix.trackDeg == nil ? "circle.fill" : "location.north.fill")
                         .font(WingtipType.card)
@@ -142,7 +142,8 @@ struct DiagramOwnShipView: View {
 
     /// Where the airplane is on the page, as VoiceOver says it.
     private func youAreHere(_ diagram: DiagramPage, fix: OwnShip.Fix?) -> String {
-        guard let fix, let at = diagram.place(fix), at.onPage else { return "You are not on this diagram" }
+        // Where the engine cannot place it, the note under the page says why.
+        guard let fix, let at = try? diagram.place(fix), at.onPage else { return "You are not on this diagram" }
         return fix.trackDeg.map { "You are here, tracking \(Format.spokenHeadingTrue($0))" } ?? "You are here"
     }
 
@@ -166,54 +167,5 @@ struct DiagramOwnShipView: View {
         } catch {
             problem = "The FAA's diagram for \(ident) could not be fetched. \(error.localizedDescription)"
         }
-    }
-}
-
-/// A diagram's first page as a picture, with its graticule from its labels
-/// (nil where it has none the engine can fit).
-struct DiagramPage {
-    typealias Graticule = EngineContract.DiagramGraticuleAnswer
-    typealias Placed = EngineContract.DiagramPointAnswer
-
-    let image: UIImage
-    /// The page in points.
-    let size: CGSize
-    let graticule: Graticule?
-
-    /// Where the fix is on the page, in points from its top left.
-    func place(_ fix: OwnShip.Fix) -> Placed? {
-        guard let g = graticule else { return nil }
-        // Not placed where the engine refuses: the sheet then says the
-        // airplane is off the diagram rather than drawing it anywhere.
-        return try? Engine.diagramPoint(graticule: .init(latOnX: g.latOnX, a: g.a, b: g.b, c: g.c, d: g.d, northDeg: g.northDeg),
-                                        lat: fix.coordinate.latitude, lon: fix.coordinate.longitude,
-                                        width: Double(size.width), height: Double(size.height))
-    }
-
-    /// The PDF's first page drawn three times its size, and its labels
-    /// found: their words by the engine (diagram_labels), where each is
-    /// drawn by PDFKit, the fit by the engine (diagram_graticule).
-    static func read(_ data: Data) -> DiagramPage? {
-        guard let document = PDFDocument(data: data), let page = document.page(at: 0) else { return nil }
-        let box = page.bounds(for: .mediaBox)
-        let image = page.thumbnail(of: CGSize(width: box.width * 3, height: box.height * 3), for: .mediaBox)
-        // A page turned by its /Rotate would need its labels turned too:
-        // the d-TPP's are all upright (0), and another is drawn without
-        // the airplane.
-        guard page.rotation == 0, let text = page.string else { return DiagramPage(image: image, size: box.size, graticule: nil) }
-        // A page whose labels the engine cannot read is drawn without the
-        // airplane, as a page with none is (logged by Engine.rule).
-        let words: [String] = (try? Engine.diagramLabels(text: text)) ?? []
-        var placed: [EngineContract.DiagramGraticuleInputLabelsItem] = []
-        for word in words {
-            for found in document.findString(word, withOptions: .literal) where found.pages.first == page {
-                let at = found.bounds(for: page)
-                // PDFKit's points are from the page's foot; the engine's
-                // from its top left.
-                placed.append(.init(text: word, x: Double(at.midX - box.minX), y: Double(box.maxY - at.midY)))
-            }
-        }
-        let graticule = (try? Engine.diagramGraticule(labels: placed)) ?? nil
-        return DiagramPage(image: image, size: box.size, graticule: graticule)
     }
 }

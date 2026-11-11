@@ -75,11 +75,11 @@ struct RadioCallBanner: View {
 
     var body: some View {
         // A call the engine cannot read shows as heard, with nothing read
-        // out of it (logged by Engine.rule).
-        let clearance = (try? Clearance.read(call.text)) ?? Clearance()
-        // A call the engine cannot read offers no Direct To (logged by
-        // Engine.rule); the words are still shown as heard.
-        let direct = try? HeardCall.directOf(call.text)
+        // out of it and no Direct To, and says so under it (logged by Engine.rule).
+        let read = Result { try Clearance.read(call.text) }
+        let clearance = (try? read.get()) ?? Clearance()
+        let directRead = Result { try HeardCall.directOf(call.text) }
+        let direct = try? directRead.get()
         VStack(alignment: .leading, spacing: WingtipSpace.sm) {
             HStack(alignment: .top, spacing: WingtipSpace.sm) {
                 Image(systemName: "dot.radiowaves.left.and.right").foregroundStyle(accent).accessibilityHidden(true)
@@ -126,6 +126,8 @@ struct RadioCallBanner: View {
                 .buttonBorderShape(.capsule)
             }
             if let problem { ProblemLine(problem) }
+            ProblemLine(read, "What the call asks")
+            ProblemLine(directRead, "A Direct To in it")
         }
         .padding(WingtipSpace.md)
         .floatingGlass(in: floatingCard)
@@ -152,8 +154,7 @@ struct RadioCallBanner: View {
         } catch {
             // No signal: found by the engine among the places of the
             // regions kept for the air.
-            let offline = Engine.hear(call.text, tail: nil, packs: CyclePacks.shared.keptPacks(), near: points,
-                                      dep: plan.dep, stops: plan.stops, dest: plan.dest)
+            let offline = ClearanceLookup.offline(call.text, near: points, dep: plan.dep, stops: plan.stops, dest: plan.dest)
             guard let ident = offline?.directFound?.ident else {
                 problem = "No signal, and “\(said)” is not in the regions kept for the air."
                 return

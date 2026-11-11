@@ -72,12 +72,4 @@ enum WidgetStore {
     private static func decoded<T: Decodable>(_ type: T.Type, _ data: Data?) -> T? {
         data.flatMap { try? JSONDecoder().decode(type, from: $0) }
     }
-
-    /// The cookies the app's gateway session keeps, in the App Group's
-    /// container rather than the app's own, so the Currency Status widget
-    /// reads the gateway as the signed-in pilot, as the app does (Gateway.
-    /// session). They stay on the phone, in the app's own group.
-    static var cookies: HTTPCookieStorage {
-        HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: WidgetSnapshot.suite)
-    }
 }

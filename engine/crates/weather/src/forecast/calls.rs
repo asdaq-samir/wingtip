@@ -195,7 +195,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
                     json::opt_number(&mut out, w.ceiling_ft);
                     out.push_str(&format!(",\"ceiling_unknown\":{},\"visibility_sm\":", w.ceiling_unknown));
                     json::opt_number(&mut out, w.visibility_sm);
-                    out.push('}');
+                    out.push_str(&format!(",\"covers\":{}}}", w.covers));
                 }
                 None => out.push_str("null"),
             }
