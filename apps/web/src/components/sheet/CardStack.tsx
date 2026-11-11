@@ -84,6 +84,7 @@ function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry;
       modal={false}
       swipeDirection={fromBottom ? "down" : "up"}
       snapPoints={onPhone ? snaps.points : undefined}
+      snapToSequentialPoints
       snapPoint={onPhone ? snaps.at[at] : undefined}
       onSnapPointChange={snapped}
       onOpenChange={(open, details) => {
