@@ -20,6 +20,7 @@ public class ConnectorSettings {
     public static final String WRITE = "wingtip:write";
     public static final List<String> SCOPES = List.of(READ, WRITE);
 
+    private final boolean enabled;
     private final String issuer;
     private final String resource;
     private final RedirectUris redirectUris;
@@ -27,6 +28,7 @@ public class ConnectorSettings {
     private final String internalToken;
 
     public ConnectorSettings(
+            @Value("${app.mcp.enabled:false}") boolean enabled,
             @Value("${app.public-base-url:}") String publicBaseUrl,
             @Value("${app.mcp.resource:}") String resource,
             @Value("${app.mcp.redirect-uris:}") List<String> redirectUris,
@@ -43,6 +45,26 @@ public class ConnectorSettings {
         this.redirectUris = new RedirectUris(redirectUris);
         this.signingKey = signingKey;
         this.internalToken = internalToken;
+        this.enabled = enabled;
+        // On, the planner reads pilots' records with this secret; a blank
+        // one would leave the connector half working and saying nothing.
+        if (enabled && internalToken.isBlank()) {
+            throw new IllegalStateException("MCP_ENABLED is on but MCP_INTERNAL_TOKEN (app.mcp.internal-token) is "
+                    + "not set: the planner's connector reads pilots' records with it. Set the same long random "
+                    + "value on the gateway and the planner (scripts/dev/dev.sh doctor writes one into .env), "
+                    + "or turn the connector off.");
+        }
+    }
+
+    /**
+     * Whether the connector is on: its authorization server, /mcp and the
+     * records the planner reads (MCP_ENABLED). Off, every one of its
+     * addresses is a 404 (ConnectorOff) -- in production until the
+     * connector launches, so nobody can register clients or reach its
+     * routes before then (the security audit's M3, 2026-11-10).
+     */
+    public boolean enabled() {
+        return enabled;
     }
 
     public String issuer() {

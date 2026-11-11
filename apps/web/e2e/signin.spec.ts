@@ -92,7 +92,9 @@ test("signed out, the dev page sends you to the planner", async ({ page }) => {
   await closeConsole(page);
 });
 
-test("the emailed link opens the app's own sign-in dialog, over the planner, and a spent link says so", async ({ page }, testInfo) => {
+test("the emailed link opens the app's own sign-in dialog, over the planner, naming its account, and a spent link says so", async ({
+  page,
+}, testInfo) => {
   // It used to open a bare server page with one button. The button
   // stays -- a mail scanner fetching the link must not spend it -- but
   // it is the app's dialog now, and the token never leaves the fragment.
@@ -106,6 +108,8 @@ test("the emailed link opens the app's own sign-in dialog, over the planner, and
   // dialog has the token by then, and checking the address for it was
   // a race the test lost once the page got quicker.)
   await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeVisible();
+  // It names the account the link signs in to, masked, before it is used.
+  await expect(page.getByRole("dialog")).toContainText(`${address[0]}•••${address.slice(address.indexOf("@"))}`);
   // The planner under it, its one search there.
   await expect(page.getByTestId("search-airports")).toBeVisible();
   expect(new URL(page.url()).search).not.toContain("signin");
@@ -121,9 +125,10 @@ test("the emailed link opens the app's own sign-in dialog, over the planner, and
   await page.keyboard.press("Escape");
   await expect(page.getByRole("menu")).toHaveCount(0);
 
+  // Spent: said before anything is pressed, and nothing to press.
   await page.goto(link);
-  await page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(page.getByRole("dialog").getByRole("alert")).toContainText("expired or was already used");
+  await expect(page.getByRole("dialog").getByRole("button", { name: "Sign in", exact: true })).toBeDisabled();
 });
 
 test("a pilot's link lands on the planner, with no dev switch, and the pilot console logs out", async ({ page }, testInfo) => {
