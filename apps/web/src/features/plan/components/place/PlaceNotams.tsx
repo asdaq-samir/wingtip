@@ -83,7 +83,7 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
         className={cn("flex items-start justify-between gap-2 font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")}
         data-testid="place-notam-what"
       >
-        {whatOf(n, ident)}
+        <NotamWhat what={whatOf(n, ident)} clamp={false} />
         <NotamState n={n} />
       </p>
       <p className={TEXT.prose}>
@@ -141,7 +141,7 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
               title={
                 <span className="flex items-start justify-between gap-2">
                   <span>
-                    <NotamWhat what={whatOf(n, ident)} title={read.title} clamp={!read.what} />
+                    <NotamWhat what={whatOf(n, ident)} clamp={!read.what} />
                     {/* Its number, as a briefer reads it, muted after it. */}
                     <span className="text-muted-foreground" data-testid="place-notam-number">{` ${numberOf(n, ident)}`}</span>
                   </span>
@@ -171,22 +171,25 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
   );
 }
 
-/** Its what, the condition after the thing's name in red, as ForeFlight
- *  reds "OUT OF SERVICE" (the owner's screenshots, 2026-11-11): the name
- *  is the engine's title, the rest of the engine's what its condition. */
-function NotamWhat({ what, title, clamp }: { what: string; title: string | null; clamp: boolean }) {
-  const named = !!title && what.startsWith(`${title} `);
+/** The words in red where they stand in a NOTAM's first line, and no
+ *  other (the owner, 2026-11-11: "just the word closed and 'out of service'
+ *  should be red and nothing else of the wording"). */
+const RED = /(\bclosed\b|\bout of service\b)/i;
+
+/** Its first line, "closed" and "out of service" in red where they are in
+ *  it, the rest in the text's colour. */
+function NotamWhat({ what, clamp }: { what: string; clamp: boolean }) {
   return (
     <span className={cn(clamp && "line-clamp-3")} data-testid="place-notam-heading">
-      {named ? (
-        <>
-          {title}{" "}
-          <span className="text-destructive-ink" data-testid="place-notam-condition">
-            {what.slice(title.length + 1)}
+      {what.split(RED).map((part, i) =>
+        // split with a group: every odd part is a match.
+        i % 2 ? (
+          <span key={i} className="text-destructive-ink" data-testid="place-notam-condition">
+            {part}
           </span>
-        </>
-      ) : (
-        what
+        ) : (
+          part
+        ),
       )}
     </span>
   );
