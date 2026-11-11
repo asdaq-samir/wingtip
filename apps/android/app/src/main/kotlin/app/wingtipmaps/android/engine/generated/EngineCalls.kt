@@ -175,6 +175,12 @@ fun Engine.approachFind(drawings: List<EngineContract.ProcedureDrawing>? = null,
     rule("approach_find", EngineContract.ApproachFindInput(drawings = drawings, points = points, picked = picked, minimumsFt = minimumsFt))
 
 /**
+ * The tags an approach's fixes carry on the map with its plate, ForeFlight's way: each fix's crossing altitude and its sense (ARINC 424-18 5.29); at the final approach fix the ILS's glide slope altitude as the CIFP codes it, or an LPV or LNAV/VNAV approach's glidepath altitude worked out from its angle, threshold and TCH (FAA Order 8260.3G formula 2-6-4); at a runway missed approach point its threshold crossing height and touchdown zone elevation (no DA or MDA: the minimums are the plate's alone); and the final approach segment, FAF to MAP.
+ */
+fun Engine.approachFixTags(drawing: EngineContract.ProcedureDrawing): Result<EngineContract.ApproachFixTagsAnswer> =
+    rule("approach_fix_tags", EngineContract.ApproachFixTagsInput(drawing = drawing))
+
+/**
  * How the approach is flown, by its CIFP id (ARINC 424-18 5.10): "localizer", "gps" or "other".
  */
 fun Engine.approachGuidance(id: String? = null): Result<String> =

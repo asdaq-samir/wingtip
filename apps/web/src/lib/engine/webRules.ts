@@ -23,6 +23,7 @@ export const WEB_RULES = [
   "approach_debrief",
   "approach_descent_fpm",
   "approach_find",
+  "approach_fix_tags",
   "approach_guidance",
   "approach_lesson_path",
   "approach_minimums",
