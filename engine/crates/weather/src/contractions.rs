@@ -77,12 +77,18 @@ pub fn written(word: &str) -> Option<&'static str> {
 /// MALSR RWY 23; ... - CTAF"), the remark's first word, before the
 /// systems and the frequency of the legend's "LGT ACTIVATE HIRL Rwy
 /// 07-25 ... - 122.8" form. Read letter by letter it became "Atctvt".
+///
+/// Who works the lights, NASR's joined forms of JO 7340.2's ATC, ATCT,
+/// RDO (radio) and CTL (control): "ATC-CTL" (12 remarks), "RDO-CTL" (20),
+/// "ATCT-CTL" (2) and "ATC CTL" (3), the 2026-10-29 cycle. KDPA's whole
+/// remark is "ATC-CTL", which read letter by letter as "Atc-ctl".
 const LIGHTING: &str = concat!(
-    "ACTVT:activate\n", "ACTVTD:activated\n", "ATCTVT:activate\n", "ACTIVATE:activate\n", "ATCT:the tower\n", "INTST:intensity\n",
-    "INTS:intensity\n", "INCR:increase\n", "DECR:decrease\n", "MED:medium\n", "CONSLY:continuously\n", "OPER:operates\n",
-    "OPRS:operates\n", "LGTG:lighting\n", "DALGT:daylight\n", "NGT:night\n", "SKED:schedule\n", "REQ:request\n", "OT:other times\n",
-    "AFT:after\n", "HRS:hours\n", "ROTG:rotating\n", "RTG:rotating\n", "NSTD:non-standard\n", "TWYS:taxiways\n", "RY:runway\n",
-    "RYS:runways\n", "PRESET:preset\n",
+    "ATC-CTL:controlled by ATC\n", "ATCT-CTL:controlled by the tower\n", "RDO-CTL:radio controlled\n", "RDO-CTLD:radio controlled\n",
+    "BEACON-CTL:beacon controlled\n", "CTL:controlled\n", "ACTVT:activate\n", "ACTVTD:activated\n", "ATCTVT:activate\n",
+    "ACTIVATE:activate\n", "ATCT:the tower\n", "INTST:intensity\n", "INTS:intensity\n", "INCR:increase\n", "DECR:decrease\n",
+    "MED:medium\n", "CONSLY:continuously\n", "OPER:operates\n", "OPRS:operates\n", "LGTG:lighting\n", "DALGT:daylight\n", "NGT:night\n",
+    "SKED:schedule\n", "REQ:request\n", "OT:other times\n", "AFT:after\n", "HRS:hours\n", "ROTG:rotating\n", "RTG:rotating\n",
+    "NSTD:non-standard\n", "TWYS:taxiways\n", "RY:runway\n", "RYS:runways\n", "PRESET:preset\n",
 );
 
 /// A word of a lighting remark written out: its own contractions first,

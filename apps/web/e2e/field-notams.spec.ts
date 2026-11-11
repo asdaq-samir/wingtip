@@ -58,9 +58,12 @@ test("a field's closure leads its card, and its NOTAMs keep their text as sent",
   // The engine's reading: its keyword as a heading, its words written out.
   await expect(one.getByTestId("place-notam-heading")).toHaveText("Runway");
   await expect(one.getByTestId("place-notam-words")).toHaveText("Runway 09/27 closed.");
-  await expect(one).toContainText("In effect now, until Nov 12 1432Z");
-  await one.getByRole("button", { name: "As Sent" }).click();
-  await expect(one.locator("pre")).toHaveText(raw);
+  // A tap opens it in full on a card of its own: its window, as sent.
+  await one.click();
+  const full = page.getByTestId("place-notam-full");
+  await expect(full).toContainText("In effect now, until Nov 12 1432Z");
+  await full.getByRole("button", { name: "As Sent" }).click();
+  await expect(full.locator("pre")).toHaveText(raw);
 });
 
 /** A NOTAM as the planner sends it, the field's, in the engine's order. */

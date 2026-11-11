@@ -136,3 +136,13 @@ fn the_runways_lights_before_their_verb_and_a_nonstandard_beacon() {
     assert_eq!(r.systems.len(), 2);
     assert!(r.systems[1].nonstandard && r.systems[1].pilot_controlled);
 }
+
+#[test]
+fn lights_the_tower_works_are_said_so_not_read_letter_by_letter() {
+    // KDPA's whole remark (NASR APT_RMK.csv, the 2026-10-29 cycle).
+    let r = one("ATC-CTL.");
+    assert!(r.systems.is_empty());
+    assert_eq!(r.notes[0].0, "Controlled by ATC.");
+    assert_eq!(one("RDO-CTL.").notes[0].0, "Radio controlled.");
+    assert_eq!(one("ATC CTL.").notes[0].0, "ATC controlled.");
+}
