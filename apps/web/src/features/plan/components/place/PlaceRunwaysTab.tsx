@@ -10,6 +10,10 @@ import { RunwayRow } from "../RunwayRow";
 /** An airport's card's Runways tab (PlaceCard): its pattern altitude, each
  *  runway, and each runway's RVR now where the field reports it. */
 export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
+  // The longest runway open, what a pilot sizes a field by: a badge on its
+  // row (it was a row of the Info tab's Details). None where the field has one.
+  const open = place.runways.filter((r) => !r.closed && r.length_ft != null);
+  const longest = open.length > 1 ? open.reduce((a, b) => (b.length_ft! > a.length_ft! ? b : a)) : null;
   return (
     <div data-testid="place-runways">
       <ListGroup>
@@ -28,7 +32,7 @@ export function PlaceRunwaysTab({ place }: { place: AirportPlace }) {
           />
         )}
         {place.runways.length ? (
-          place.runways.map((r, i) => <RunwayRow key={`${r.ends}-${i}`} runway={r} />)
+          place.runways.map((r, i) => <RunwayRow key={`${r.ends}-${i}`} runway={r} longest={r === longest} />)
         ) : (
           <ListRow title="None listed" />
         )}

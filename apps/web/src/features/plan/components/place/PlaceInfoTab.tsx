@@ -58,7 +58,7 @@ function CardSection({
 
 /**
  * An airport's card's Info tab (PlaceCard): its frequencies first, then
- * its details -- elevation, airspace and radio, the longest runway, fuel
+ * its details -- elevation, airspace and radio, fuel
  * and its remarks, the address -- its lights, and what it offers on the
  * ground.
  */
@@ -70,8 +70,6 @@ export function PlaceInfoTab({
   /** Its town and state, for the address where the FAA lists none. */
   where: string | null;
 }) {
-  // The longest runway open, for the details: what a pilot sizes a field by.
-  const longest = place.runways.filter((r) => !r.closed && r.length_ft != null).sort((a, b) => b.length_ft! - a.length_ft!)[0] ?? null;
   return (
     <>
       <PlaceAge ident={place.ident} kind="airports" />
@@ -136,13 +134,6 @@ export function PlaceInfoTab({
               </span>
             }
           />
-          {longest && (
-            <ListRow
-              title="Longest runway"
-              data-testid="place-longest-runway"
-              value={<span className="font-semibold text-foreground">{`${longest.ends ?? "—"} · ${feet(longest.length_ft)}`}</span>}
-            />
-          )}
           {/* Where it is on the ground, in Maps: an action of the
               card's until the star took its place (A2). */}
           {/* The address written out, the way to it in Maps, at the

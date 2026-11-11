@@ -1,4 +1,5 @@
 import { ListRow } from "../../../components/GroupedList";
+import { Badge } from "../../../components/ui/badge";
 import type { Runway } from "../../../lib/api/types";
 import { cn } from "cn";
 import { runwayWind, surfaceName } from "../format";
@@ -30,7 +31,16 @@ function RunwayGlyph({ headingDeg }: { headingDeg: number | null }) {
  *  surface and lights, its size, and the reported wind on the end it
  *  favours -- in amber where its crosswind is over the pilot's own
  *  minimum (lib/minimums) -- and any end flown with right traffic. */
-export function RunwayRow({ runway }: { runway: Runway }) {
+export function RunwayRow({
+  runway,
+  longest = false,
+}: {
+  runway: Runway;
+  /** The field's longest runway open, marked with a badge by its name (the
+   *  airport card's Runways tab; the owner, 2026-11-11: "just put a longest
+   *  badge on the runway in runway tab"). */
+  longest?: boolean;
+}) {
   // An end flown with right traffic is said, as the sectional's "RP 23"
   // says it: the rest are left, as every pattern is unless the FAA says.
   const right = (runway.runway_ends ?? []).filter((e) => e.traffic === "right").map((e) => runwayNumber(e.ident));
@@ -49,7 +59,16 @@ export function RunwayRow({ runway }: { runway: Runway }) {
   return (
     <ListRow
       media={<RunwayGlyph headingDeg={heading} />}
-      title={`Runway ${runway.ends ?? "—"}`}
+      title={
+        <span className="flex items-center gap-2">
+          {`Runway ${runway.ends ?? "—"}`}
+          {longest && (
+            <Badge variant="secondary" data-testid="runway-longest">
+              Longest
+            </Badge>
+          )}
+        </span>
+      }
       description={
         (detail || runway.wind) && (
           <>
