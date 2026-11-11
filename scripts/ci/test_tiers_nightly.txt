@@ -94,7 +94,6 @@ switch.spec.ts
 tab-consistency.spec.ts
 terrain.spec.ts
 tiles.spec.ts
-tips.spec.ts
 tracking.spec.ts
 tv-signin.spec.ts
 tv.spec.ts

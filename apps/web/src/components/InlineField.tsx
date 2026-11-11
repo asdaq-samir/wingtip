@@ -1,7 +1,6 @@
 import type { InputHTMLAttributes, ReactNode } from "react";
 import { cn } from "cn";
 import { TEXT } from "../lib/text";
-import { useTipAnchor } from "../lib/tipAnchors";
 
 /**
  * A short field in the route box's row with a glass button at its end --
@@ -30,15 +29,12 @@ export function InlineField({
   inputClassName,
   button,
   endRoom = "w-[1.5625rem]",
-  tip,
 }: {
   /** Grey words after a fixed start the field keeps in its text (the
    *  airplane's "N-"), in the example's style, while nothing is typed
    *  after it: the input's own placeholder shows only while it is empty,
    *  which a fixed start never is. Room kept for it, as for the example. */
   hint?: { start: string; words: string };
-  /** The first-run tip pointed at it (lib/firstRunTips). */
-  tip?: string;
   /** The room kept at its end for its button, so the field does not
    *  widen as one comes: none where it has none (the airplane's, since
    *  its card button went), a dot's for the altitude's caution. */
@@ -60,8 +56,6 @@ export function InlineField({
   /** At its end, shown when it has something to open. */
   button?: ReactNode;
 }) {
-  // Its first-run tip's control (lib/tipAnchors, TipHost).
-  const tipAnchor = useTipAnchor(tip);
   return (
     // A row's size to a finger, but no larger than it is at the owner's
     // 17.88 px text (19 px): at 19.65 the two chips and the route's three
@@ -79,8 +73,6 @@ export function InlineField({
         "pointer-coarse:text-[length:min(1.0625rem,19px)]",
       )}
       data-testid={testId}
-      data-tip={tip}
-      ref={tipAnchor}
     >
       <span aria-hidden="true" className="invisible col-start-1 row-start-1 flex h-0 overflow-hidden">
         <span className={cn("whitespace-pre pr-1.5 pl-2.5 font-semibold", tabular && "tabular-nums")}>{widest}</span>

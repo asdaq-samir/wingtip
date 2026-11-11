@@ -124,7 +124,6 @@ export default function AltitudeGroup({
     <InlineField
       label="Cruise altitude"
       testId="altitude-group"
-      tip="altitude"
       widest="FL-000"
       tabular
       placeholder=""

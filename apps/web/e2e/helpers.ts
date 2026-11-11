@@ -13,7 +13,7 @@ export { emptyPlan, firstRow, searchAirports, showPlan, showSearch, showTraffic 
 
 export const PAGES = ["/app/plan", "/app/dev"] as const;
 
-/** The first-run tips (lib/firstRunTips) marked seen, every one, in the page's
+/** The seen-once keys (lib/firstRunTips: the welcome, the first flight) marked seen, every one, in the page's
  *  storage: for page.evaluate, or page.addInitScript where a spec starts
  *  with none of the suite's saved session. */
 export function noTips() {
@@ -481,7 +481,7 @@ export async function closeNavLog(page: Page) {
 }
 
 /** The planning panel's own tabs. */
-export const panelTabs = (page: Page) => sideDrawer(page).locator('[role="tablist"][data-tip="tabs"]');
+export const panelTabs = (page: Page) => sideDrawer(page).getByTestId("panel-tabs");
 
 const PAGE_OF: Record<PhaseTab, string> = { Preflight: "preflight", Depart: "depart", "En route": "enroute", Arrive: "arrive" };
 

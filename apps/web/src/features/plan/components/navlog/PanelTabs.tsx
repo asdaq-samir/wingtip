@@ -18,7 +18,6 @@ import { GoToTab, LEGS, useTabAsk, type PanelTab } from "./panelTab";
 import { useCardSize } from "../../../../lib/sheetCards";
 import { holdOpenCard } from "../../../../lib/openCards";
 import { sheetScroller } from "../../../../lib/scrollPlace";
-import { useTipAnchor } from "../../../../lib/tipAnchors";
 
 /** The panel's tabs in the order the flight is flown, at the owner's pick
  *  of the redesign ("I like C concept"): Preflight -- the go / no-go and
@@ -87,8 +86,6 @@ export default function PanelTabs({
    *  shows a new one (below). */
   route: string;
 }) {
-  // Its first-run tip's control (lib/tipAnchors, TipHost).
-  const tabsTip = useTipAnchor("tabs");
   // The tabs' contents drawn just after the frame that shows a new route,
   // not in it: the route's box, its figures and the map first, the nav
   // log's rows and the briefing's sections a moment later, in the
@@ -215,8 +212,7 @@ export default function PanelTabs({
           marked by a dot after its word as before. */}
         {tab !== null && (
           <TabsList
-            data-tip="tabs"
-            ref={tabsTip}
+            data-testid="panel-tabs"
             className="mx-4 my-2 w-auto shrink-0 group-data-[orientation=horizontal]/tabs:h-9 pointer-coarse:group-data-[orientation=horizontal]/tabs:h-11 print:hidden"
           >
             {TABS.map((t) => (

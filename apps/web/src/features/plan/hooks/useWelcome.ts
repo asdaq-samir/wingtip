@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FIRST_FLIGHT, WELCOME, useTips, useWelcomeOpen } from "../../../lib/firstRunTips";
+import { FIRST_FLIGHT, WELCOME, useTips } from "../../../lib/firstRunTips";
 import { locateOnOpen, ownShipAvailable } from "../../../lib/map/position/ownShip";
 import { askSearch } from "../../../lib/oneSearch";
 import { permissionState } from "../../../lib/permissions";
@@ -23,7 +23,7 @@ export const NONE = "none";
  * the location, asked only on the pilot's tap with why beside it (the
  * page's own ask waits for the welcome, locateOnOpen). Whichever way it
  * is left -- a button, Skip, Escape, the close -- it is seen for good, as
- * the tips are (Setup's Guide, Show Welcome and Tips Again, brings it back).
+ * the first flight's card is (Setup's Guide, Show Welcome Again, brings it back).
  */
 export function useWelcome({
   onPlan,
@@ -37,7 +37,6 @@ export function useWelcome({
   const [askLocation, setAskLocation] = useState(ownShipAvailable());
 
   useEffect(() => {
-    useWelcomeOpen.setState({ open: true });
     let gone = false;
     // A question the browser has answered already is not asked again.
     void permissionState("geolocation").then((state) => {
@@ -45,7 +44,6 @@ export function useWelcome({
     });
     return () => {
       gone = true;
-      useWelcomeOpen.setState({ open: false });
     };
   }, []);
 

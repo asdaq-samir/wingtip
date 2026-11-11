@@ -425,9 +425,8 @@ card over the map: a destination from the same airport search the
 route's box uses (`useAirportSearch`, through `PanelCapsule`'s field and
 results), and Plan it, which plans from own ship's nearest field, else
 the last departure or Home, else asks where from. Planned, the nav log
-opens, the card is marked seen in the tips store (`lib/firstRunTips`,
-`FIRST_FLIGHT`) and never comes back, and one tip (`brief`, gated
-`after` that key) points at the Brief.
+opens, and the card is marked seen in the seen-once store
+(`lib/firstRunTips`, `FIRST_FLIGHT`) and never comes back.
 
 **Sunlight.** The map's settings' Sunlight (Auto, On, Off;
 `preferences.chartLight`) is a high-contrast scheme for a screen in a

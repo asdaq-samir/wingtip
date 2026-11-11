@@ -9,7 +9,7 @@ import { noTips, roleMenu, consolePage } from "./helpers";
  * mode, Developer the role in the console's title.
  */
 setup("the developer signs in from the pilot console, and lands in dev mode", async ({ page }) => {
-  // The first-run tips seen before the page loads, as every spec starts
+  // The welcome and the first flight seen before the page loads, as every spec starts
   // with them seen (the session saved below).
   await page.addInitScript(noTips);
   await page.goto("/app/plan");
@@ -23,8 +23,9 @@ setup("the developer signs in from the pilot console, and lands in dev mode", as
   await page.keyboard.press("Escape");
   await consolePage(page.getByTestId("console-sheet"), "Guide");
   await page.keyboard.press("Escape");
-  // The first-run tips (lib/firstRunTips) seen, every one: a tip over a control
-  // takes the click a spec meant for it. tips.spec offers them afresh.
+  // The welcome and the first flight's card (lib/firstRunTips) seen: each
+  // over the map takes the click a spec meant for it. welcome.spec and
+  // first-flight.spec offer them afresh.
   await page.evaluate(noTips);
   // FPL's fields opened at first (ProceduresRoute's fieldsOpenAtFirst): the
   // specs work on their runways and procedures; route-fields.spec folds

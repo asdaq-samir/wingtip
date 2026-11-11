@@ -7,7 +7,6 @@ import { FINDING_TONE, type Finding } from "../../../../lib/findings";
 import { TEXT } from "../../../../lib/text";
 import { verdictLine, type VerdictItem, type Where } from "../../../../lib/verdict";
 import { GoToTab, LEGS } from "../navlog/panelTab";
-import { useTipAnchor } from "../../../../lib/tipAnchors";
 
 /** A check the planner does not make, and where the pilot makes it: the
  *  FAA's NOTAM and flow-control feeds need an operator's credentials. */
@@ -57,8 +56,6 @@ export default function BriefChecks({
   /** A section of this page opened, before it is scrolled to. */
   onOpen: (section: string) => void;
 }) {
-  // Its first-run tip's control (lib/tipAnchors, TipHost).
-  const verdictTip = useTipAnchor("verdict");
   const go = useContext(GoToTab);
   const looked = useTicked(flight);
   const tick = usePreflight((s) => s.tick);
@@ -86,8 +83,6 @@ export default function BriefChecks({
         className={cn("flex items-start gap-2 font-semibold", FINDING_TONE[line.finding], TEXT.row)}
         data-testid="verdict-line"
         data-finding={line.finding}
-        data-tip="verdict"
-        ref={verdictTip}
       >
         <FindingIcon finding={line.finding} className="mt-0.5" />
         <span>{line.words}</span>

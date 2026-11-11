@@ -1,85 +1,30 @@
 /**
- * First-run tips, as iOS's TipKit offers them: one at a time, beside the
- * control it is about, once that control is in sight -- what a pilot new
- * to the planner should look for, said once and remembered on this
- * device. Settings, Tips brings them back.
+ * What a pilot has seen once on this device and is not shown again: the
+ * welcome, the first flight's card, the sunlight banner, each a key in one
+ * store kept in the browser. Setup's Guide, Show Welcome Again, clears it.
+ * The pointing first-run tips that also kept their keys here are gone (the
+ * owner, 2026-11-11: "I like the stock behavior"): nothing points at a
+ * control by itself; the welcome and Ready to Fly's prompt say what is new.
  */
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { browserStorage } from "./storage";
 
-export interface TipSpec {
-  /** The control's `data-tip`. */
-  id: string;
-  title: string;
-  message: string;
-  /** Offered only once this key is seen: a tip that follows something
-   *  the pilot did (the first flight's Brief, after the first flight). */
-  after?: string;
-}
-
 /** The first flight's card (FirstFlight), seen once it has planned a
- *  route or been closed: the tips store's key for it. */
+ *  route or been closed: the store's key for it. */
 export const FIRST_FLIGHT = "first-flight";
 
 /** The welcome (features/plan/components/welcome), seen once it has been
  *  finished or skipped: before the first flight's card, and brought back
- *  with the tips by the Guide's Show Welcome and Tips Again. */
+ *  by the Guide's Show Welcome Again. */
 export const WELCOME = "welcome";
 
 /** Whether the welcome is still to be shown on this device: what holds
- *  the page's own asks back (locateOnOpen's location, the tips) until it
- *  has said why. */
+ *  the page's own asks back (locateOnOpen's location) until it has said
+ *  why. */
 export const welcomeDue = () => unseen(useTips.getState().seen, WELCOME);
 
-/** Whether the welcome is on the screen now: no tip is offered over it. */
-export const useWelcomeOpen = create<{ open: boolean }>(() => ({ open: false }));
-
-/** In the order they are offered, each when its control is in sight. */
-export const TIPS: TipSpec[] = [
-  {
-    // After the first flight's card planned a route (useFirstFlight): the
-    // one line that points at the Brief, the card's third step. It promises
-    // no Ask: the assistant is off by default (lib/subscription, 2026-11-10).
-    id: "brief",
-    title: "Now the Brief",
-    after: FIRST_FLIGHT,
-    message: "Weather, NOTAMs and what to look at before you go, read for your route and your time: one verdict first.",
-  },
-  {
-    id: "route",
-    title: "Your route",
-    message: "Type an airport or a waypoint at any arrow. Drag a point to move it; press and hold one to set its altitude or remove it.",
-  },
-  {
-    id: "flight-line",
-    title: "The quick numbers",
-    message: "Distance, time en route, arrival time and fuel, worked out as you plan. Pull the panel up past the line for the detail.",
-  },
-  {
-    id: "altitude",
-    title: "Why this altitude",
-    message:
-      "Profile, the button beside the Brief, shows the flight from the side, how the altitude was chosen and its other plans. Red means no VFR altitude fits; a dot, a rule to check.",
-  },
-  {
-    id: "tabs",
-    title: "Dots mean look here",
-    message: "A red dot on a tab marks something to fix before you go; an amber one, something to look at.",
-  },
-  {
-    id: "verdict",
-    title: "Start with Go / No-Go",
-    message: "Every tab's findings in one list. Tap one to see it in full. The decision stays yours as pilot in command.",
-  },
-  {
-    id: "weather-places",
-    title: "Weather when you are there",
-    message: "Each place along the route, its forecast read for the hour you pass it, from the departure to the destination.",
-  },
-];
-
-/** Seen, every one: what a device that has turned them off keeps. */
+/** Seen, every one: what the browser tests start from. */
 const ALL_SEEN = "*";
 
 export const useTips = create<{ seen: string[]; see: (id: string) => void; reset: () => void }>()(
@@ -89,5 +34,5 @@ export const useTips = create<{ seen: string[]; see: (id: string) => void; reset
   ),
 );
 
-/** Whether a tip is still to be offered. */
+/** Whether a key is still to be shown. */
 export const unseen = (seen: string[], id: string) => !seen.includes(ALL_SEEN) && !seen.includes(id);

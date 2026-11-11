@@ -1,7 +1,6 @@
 import { Suspense, lazy, useState } from "react";
 import { cn } from "cn";
 import { RouteMap } from "../../routeMapChunk";
-import TipHost from "../../../../components/TipHost";
 import FirstFlight from "../FirstFlight";
 import { FlyingHead } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
@@ -147,8 +146,6 @@ export default function PlanMap({ vm }: { vm: PlanWorkspaceModel }) {
           <AssignedLesson key={lessonOpen} id={lessonOpen} aircraft={fitAircraft} onClose={closeLesson} />
         </Suspense>
       )}
-      {/* What to look for, a tip at a time, the first times (lib/firstRunTips). */}
-      <TipHost />
       {/* The welcome first, once (useWelcome); then the first flight's card. */}
       <Suspense fallback={null}>
         <Welcome routed={routed} onPlan={setRoute} onOpened={openNavLogCard} />

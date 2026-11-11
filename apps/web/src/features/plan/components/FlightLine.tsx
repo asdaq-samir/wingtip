@@ -11,7 +11,6 @@ import { Button } from "../../../components/ui/button";
 import { nextLanding, shortFlights, tripFigures } from "../figures";
 import { wantScreen } from "../../../lib/navigation/wanted";
 import type { Flown } from "./navlog/dryRun";
-import { useTipAnchor } from "../../../lib/tipAnchors";
 
 /** What the fuel is made of, from the figure's first tap: its own chunk,
  *  off the first load (scripts/first-load.mjs's budget). */
@@ -95,8 +94,6 @@ export default function FlightLine({
    *  the figure says it is short, as the route box offers it in FPL. */
   fuelStop?: { idents: string[]; add: () => void } | null;
 }) {
-  // Its first-run tip's control (lib/tipAnchors, TipHost).
-  const tipAnchor = useTipAnchor("flight-line");
   const valueType = flying ? FLYING_FIGURE.value : grow ? GROW_VALUE : TEXT.heading;
   const unitType = flying ? FLYING_FIGURE.unit : grow ? GROW_UNIT : TEXT.note;
   const nameType = flying ? FLYING_FIGURE.name : grow ? GROW_NAME : undefined;
@@ -141,7 +138,7 @@ export default function FlightLine({
     // the pilot's ask: the strip keeps the figures, as soon as there are
     // any, and with none yet their names over dashes -- it keeps its
     // place, as the panel's controls do.
-    <div ref={tipAnchor} className="@container/figures relative" data-slot="section-summary" data-tip="flight-line">
+    <div className="@container/figures relative" data-slot="section-summary">
       {/* Each figure centred in its column, at the owner's ask ("Can the
           calculations be center aligned?"), as FigureStrip's are. Two by
           two where the strip is under 16 rem wide, which with every rem

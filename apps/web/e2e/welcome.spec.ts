@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
-import { settle, slow } from "./helpers";
+import { consolePage, openSetup, settle, slow } from "./helpers";
 
 /**
  * The welcome (features/plan/components/welcome, useWelcome): the first
  * time the planner opens on a device with no route, one card (no tour):
  * the airplane, optional (No Airplane the default), Plan a Flight into the
  * one search, and the sample flight, Madison to Oshkosh, opened in one tap
- * with its nav log. Seen, it is not shown again. The suite's session has the tips all seen, the welcome with
- * them; this spec starts with none seen, once, so a reload keeps what it saw.
+ * with its nav log. Seen, it is not shown again, until the Guide's Show Welcome Again. The suite's session has
+ * it seen; this spec starts with none seen, once, so a reload keeps what it saw.
  */
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
@@ -62,4 +62,14 @@ test("Plan a Flight puts the pilot in the one search, and the welcome is seen", 
   await settle(page);
   await page.waitForTimeout(1500);
   await expect(welcome).toHaveCount(0);
+
+  // The Guide offers it again, at its top (the owner's "Tips can move to guide"); no pointing tip comes with it
+  // (the owner, 2026-11-11).
+  await openSetup(page);
+  await consolePage(page.getByTestId("console-sheet"), "Guide");
+  await page.getByTestId("tips-reset").click();
+  await expect(page.getByTestId("tips-reset")).toContainText("Welcome Will Show Again");
+  await page.goto("/app/plan");
+  await settle(page);
+  await expect(welcome).toBeVisible({ timeout: slow(15_000) });
 });
