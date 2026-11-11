@@ -119,8 +119,7 @@ def test_each_flight_climbs_from_its_field_and_comes_down_to_its_own_pattern():
     # The legs at 4,500 ft, the fields at 900: each flight climbs from its
     # own field and tops out once -- C81's on its second leg, past the lake
     # the stub puts 2 nm out, KMSN's on its first -- and each comes down to
-    # 1,900, 2,600 ft at three to one, 7.8 nm, finished where the 45-degree
-    # entry begins 1.7 nm out (AC 90-66C 11.2, 11.3): 9.5 nm from the field.
+    # 1,900, 7.8 nm at three to one plus the 45's 1.7 (AC 90-66C 11.3): 9.5.
     legs = client.get("/api/plan", params=VIA_MADISON).json()["legs"]
 
     assert [leg["from"] for leg in legs if leg["toc"]] == ["Lake", "KMSN"]
