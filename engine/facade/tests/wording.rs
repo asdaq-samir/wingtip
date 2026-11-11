@@ -42,6 +42,14 @@ fn the_faas_capitals_in_sentence_case_keep_the_codes_and_figures() {
     assert_eq!(faa("SEE NOTAMS. THEN MORE!  CLOSED? NO"), "See NOTAMs. Then more!  Closed? No");
     assert_eq!(faa("ÉCOLE CLASS C"), "École Class C");
     assert_eq!(faa("X_CLASS B"), "X_class b");
+    // An approach's title keeps its codes, the plate's card's title (AIM 5-4-5).
+    assert_eq!(faa("ILS OR LOC RWY 36"), "ILS or LOC rwy 36");
+    assert_eq!(faa("RNAV (GPS) Z RWY 36"), "RNAV (GPS) Z rwy 36");
+    assert_eq!(faa("ILS RWY 9R (CAT II - III)"), "ILS rwy 9R (CAT II - III)");
+    assert_eq!(faa("LOC/DME BC RWY 13"), "LOC/DME BC rwy 13");
+    assert_eq!(faa("VOR-A"), "VOR-A");
+    assert_eq!(faa("VOR/DME-C"), "VOR/DME-C");
+    assert_eq!(faa("NDB OR GPS-B"), "NDB or GPS-B");
     assert_eq!(text("faa_words", "{}"), "");
     assert_eq!(text("faa_words", r#"{"text": null}"#), "");
     assert_eq!(call("faa_words", r#"{"texts": ["CHICAGO CLASS B", null, "Mixed"]}"#).unwrap(), r#"["Chicago Class B","","Mixed"]"#);

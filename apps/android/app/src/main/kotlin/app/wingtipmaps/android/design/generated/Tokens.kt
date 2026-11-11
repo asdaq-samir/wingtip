@@ -140,6 +140,9 @@ object WingtipColors {
         /** A pattern leg's name ground, a step darker: white words on it 5.2:1, where the line's teal is 3.95:1 (WCAG 1.4.3). */
         val PatternLabel = Color(0xFF0B7A75)
         const val PATTERN_LABEL_HEX = "#0b7a75"
+        /** An approach's final segment, its final approach fix to its missed approach point, over its plate on the map: the cyan ForeFlight marks it in (the owner's screenshot, 2026-11-11), apart from the procedure's indigo and the course's magenta. A chart colour, so the same in every look and at night. */
+        val FinalApproach = Color(0xFF00B4E6)
+        const val FINAL_APPROACH_HEX = "#00b4e6"
         /** An obstacle under 1,000 ft AGL in the 3D view; a taller one is in the warning red. */
         val Obstacle = Color(0xFF7A1F1F)
         const val OBSTACLE_HEX = "#7a1f1f"

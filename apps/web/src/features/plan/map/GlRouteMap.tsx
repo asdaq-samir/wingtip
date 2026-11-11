@@ -25,7 +25,6 @@ import {
   LessonGl,
   PatternsGl,
   PickedGl,
-  PlatesGl,
   ProceduresGl,
   StopFieldsGl,
   WaysGl,
@@ -39,6 +38,8 @@ import { ForecastRunGl } from "../forecastRun/ForecastRunGl";
 import { TrafficGl } from "./layers/TrafficGl";
 import { WeatherGl } from "./layers/WeatherGl";
 import { WeatherLoopGl } from "../../weather-loop";
+import { PlatesGl } from "../../plates";
+import { FaaChart } from "../components/AirportDiagram";
 import { useWeatherLayers } from "../../../lib/map/sources/weatherLayers";
 import { useGlFit } from "./useGlFit";
 import type { AloftPoint } from "./terrain/geometry";
@@ -201,7 +202,7 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
           {p.onPickWay && p.ways && <WaysGl ways={p.ways} shown={p.wayShown} onPick={p.onPickWay} />}
           <LegHighlightGl course={course} />
           <LegHoverGl />
-          <PlatesGl drawings={p.procedures} />
+          <PlatesGl drawings={p.procedures} viewer={FaaChart} />
           <RouteGl
             course={course}
             checkpoints={p.checkpoints}

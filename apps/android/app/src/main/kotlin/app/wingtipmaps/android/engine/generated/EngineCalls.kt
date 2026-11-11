@@ -589,7 +589,7 @@ fun Engine.faaIds(ident: String): Result<List<String>> =
     rule("faa_ids", EngineContract.FaaIdsInput(ident = ident))
 
 /**
- * The FAA's capitals in sentence case, its codes kept (AIM 3-2-1's "Class B"): one string from text, or each of texts as a list (a null row answers "").
+ * The FAA's capitals in sentence case, its codes kept (AIM 3-2-1's "Class B"; an approach's title as AIM 5-4-5 names it, "ILS or LOC rwy 36"): one string from text, or each of texts as a list (a null row answers "").
  */
 fun Engine.faaWords(text: String? = null, texts: List<String?>? = null): Result<JsonElement> =
     rule("faa_words", EngineContract.FaaWordsInput(text = text, texts = texts))
