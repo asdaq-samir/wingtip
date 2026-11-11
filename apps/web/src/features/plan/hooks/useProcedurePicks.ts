@@ -1,7 +1,6 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import type { SetURLSearchParams } from "react-router";
-import type { PanelState } from "../../../lib/mapChrome";
 import { useIsMobile } from "../../../hooks/use-mobile";
 import { useNavEdge } from "../../../hooks/use-nav-edge";
 import { api } from "../../../lib/api/client";
@@ -25,7 +24,6 @@ import { patched } from "../../../lib/useSearchParamsNow";
 import type { OpenFix } from "../components/FixCard";
 import type { ProcedureAirport, ProceduresAt } from "../components/ProceduresRoute";
 import type { RouteProcedure } from "../components/RouteBox";
-import { panelNow } from "./panelNow";
 import { routeBeforeDirect, type PlannedRoute } from "./planAddress";
 
 /** The procedures drawn, the queries that have answered. */
@@ -42,7 +40,6 @@ export function useProcedurePicks({
   planned,
   searchParams,
   setSearchParams,
-  setPanel,
   procedureAirports,
   crossings,
   patterns,
@@ -50,7 +47,6 @@ export function useProcedurePicks({
   planned: PlannedRoute;
   searchParams: URLSearchParams;
   setSearchParams: SetURLSearchParams;
-  setPanel: (state: PanelState) => void;
   procedureAirports: ProcedureAirport[];
   /** The altitudes ATC gave to cross the procedures' fixes at (`cross`). */
   crossings: Record<string, number>;
@@ -63,14 +59,9 @@ export function useProcedurePicks({
   const pickedProcedures = useMemo(() => proceduresOf(procedureParam), [procedureParam]);
   // The procedure just picked, for the map to go to it once it is drawn.
   const [procedureFocus, setProcedureFocus] = useState<string | null>(null);
-  // The panel's height before the Procedures lowered it (below).
-  const panelBeforeProcedures = useRef<PanelState | null>(null);
   const pickProcedures = useCallback(
     (next: PickedProcedure[], picked: PickedProcedure | null) => {
       if (picked) setProcedureFocus(`${proceduresParam([picked])}@${Date.now()}`);
-      // Added: its sheet put away leaves the panel half way, the procedure
-      // on the map above it.
-      if (picked) panelBeforeProcedures.current = null;
       setSearchParams(
         (prev) => {
           // One direct at a time: sent direct to a procedure's fix, a Direct to
@@ -236,27 +227,14 @@ export function useProcedurePicks({
       ? [...procedureDrawings.filter((d) => !(d.kind === preview.kind && sameField(d.airport, preview.airport))), preview]
       : procedureDrawings;
   }, [procedureDrawings, procedurePreview, previewDrawing]);
-  // On a phone the sheet is half the screen (ProceduresRoute), the map
-  // above it the procedure's: the panel lowered half way while it is out
-  // if it was all the way up over the map, and put back as it was unless
-  // a procedure was added, which is then on the map to be seen.
+  // On a phone their card opens at half whatever it covers
+  // (ProceduresRoute's phoneOpens), the map above it the procedure's; the
+  // sheet under it stays as it was.
   const isMobile = useIsMobile();
-  const setProceduresShown = useCallback(
-    (at: ProceduresAt) => {
-      const open = at !== null;
-      setProceduresAt(at);
-      if (!open) setProcedurePreview(null);
-      if (!isMobile) return;
-      if (open && panelNow.current === "full") {
-        panelBeforeProcedures.current = panelNow.current;
-        setPanel("half");
-      } else if (!open && panelBeforeProcedures.current) {
-        setPanel(panelBeforeProcedures.current);
-        panelBeforeProcedures.current = null;
-      }
-    },
-    [isMobile, setPanel],
-  );
+  const setProceduresShown = useCallback((at: ProceduresAt) => {
+    setProceduresAt(at);
+    if (at === null) setProcedurePreview(null);
+  }, []);
   const openProcedures = useCallback((p: RouteProcedure) => setProceduresShown({ ident: p.ident, kind: p.kind }), [setProceduresShown]);
   // What the sheet covers of the screen, from the navigation bar's edge
   // it comes from, for the map to bring the procedure in clear of it: its

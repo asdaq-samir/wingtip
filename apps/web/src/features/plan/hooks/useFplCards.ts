@@ -18,8 +18,9 @@ import { useOpenScreen } from "./useOpenScreen";
 
 /**
  * The cards over FPL and the lists in full (usePlanWorkspace): the Brief,
- * the nav log, the side view and the map's Stops, each opened at the
- * height FPL is at and put away to the height it had (closeCard); Saved,
+ * a card sizing its own drawer (CardStack); the nav log, the side view and
+ * the map's Stops, pages of the sheet's own body opened at half from the
+ * pill and put away to the sheet's height before them (closeCard); Saved,
  * Nearest and an instructor's lesson. With the Stops' own questions and
  * pins, and the microphone's commands that open them.
  */
@@ -151,11 +152,10 @@ export function useFplCards({
       { replace: true },
     );
   }, [setSearchParams]);
-  // The Brief, from the chips' Brief: half way, as an airport's card opens
-  // from the route (selectPlace), or all the way up where FPL is, and put
-  // away at the height FPL had before it (closeCard), as a card's close does.
-  // At the height FPL is at, all the way up staying so, at the owner's ask
-  // ("Brief opens in half card when clicked on full fpl tab").
+  // The Brief, from the chips' Brief: its own card, opened at the height
+  // FPL is at, half from the pill and all the way up staying so (CardStack,
+  // the owner's "Brief opens in half card when clicked on full fpl tab");
+  // FPL under it stays as it was.
   const openBrief = useCallback(() => {
     setStopsOpen(false);
     setSearchParams(
@@ -164,18 +164,15 @@ export function useFplCards({
       },
       { replace: true },
     );
-    if (panelNow.current !== "full") setPanel("half");
-  }, [setSearchParams, setPanel, setStopsOpen]);
+  }, [setSearchParams, setStopsOpen]);
   const closeBrief = useCallback(() => {
-    closeCard(() =>
-      setSearchParams(
-        (prev) => {
-          return patched(prev, { brief: null });
-        },
-        { replace: true },
-      ),
+    setSearchParams(
+      (prev) => {
+        return patched(prev, { brief: null });
+      },
+      { replace: true },
     );
-  }, [closeCard, setSearchParams]);
+  }, [setSearchParams]);
   // The nav log from the route box's button, a card over FPL as the Brief
   // is, at the height FPL is at (half from the pill), put away to the
   // height it had (closeCard).
@@ -246,7 +243,8 @@ export function useFplCards({
     );
     setPanel("full");
   }, [setSearchParams, setPanel]);
-  // The strip's title opens the list in full, over Airport.
+  // The strip's title opens the list in full, over Airport: its card all
+  // the way up (NearestCard's `opens`).
   const openNearest = useCallback(() => {
     setSearchParams(
       (prev) => {
@@ -254,8 +252,7 @@ export function useFplCards({
       },
       { replace: true },
     );
-    setPanel("full");
-  }, [setSearchParams, setPanel]);
+  }, [setSearchParams]);
   // And its Back, to Airport's start: the list and the place it was from
   // put away.
   const closeNearest = useCallback(() => {

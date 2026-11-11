@@ -13,13 +13,10 @@ import { TEXT } from "../../../lib/text";
  *  value, so the Chart ink look's own magenta reaches it. */
 export const ROUTE_LINE = { backgroundColor: "var(--course)" } as const;
 
-/** A point's card, where the list is cards (RouteListEdit's `cards`):
- *  dimmed while it is dragged, ringed in the tint while one is held over
- *  it (PointGrip's data-dragging and data-over). */
-export const POINT_CARD = cn(
-  "rounded-2xl bg-card py-3 pr-1.5 pl-3 shadow-sm ring-1 ring-black/5 dark:ring-white/10",
-  "has-[[data-dragging]]:opacity-40 has-[[data-over]]:ring-2 has-[[data-over]]:ring-tint",
-);
+/** A point's card, where the list is cards (RouteListEdit's `cards`);
+ *  dimmed while it is dragged by its row (RouteGrid), where it goes the
+ *  stock drop line between the rows. */
+export const POINT_CARD = "rounded-2xl bg-card py-3 pr-1.5 pl-3 shadow-sm ring-1 ring-black/5 dark:ring-white/10";
 /** The room between a card and the next, the course's line across it. */
 export const CARD_GAP = "mb-5.5";
 

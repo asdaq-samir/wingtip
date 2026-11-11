@@ -1,9 +1,9 @@
-import { useCallback, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useLayoutEffect, type CSSProperties, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
 import { closeTopCard } from "../../lib/openCards";
-import { setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
+import { cardOpening, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import type { Detents } from "./insets";
 import { sheetTopRef } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
@@ -14,13 +14,12 @@ export interface StackProps {
   onPhone: boolean;
   fromBottom: boolean;
   detents: Detents;
-  /** The top card's size, the page's (MapPanel's frontmost sheet), and the way to ask for another. */
-  front: PanelState;
-  ask: (size: PanelState) => void;
+  /** The sheet's own size under the cards: what a card opened from it covers. */
+  sheet: PanelState;
   /** Eased only once the sheet has been drawn where it rests (useDrawn). */
   ready: boolean;
-  /** The top card's grabber (SheetGrabber, the plain one), for the page's size. */
-  grabber: ReactNode;
+  /** The top card's grabber (SheetGrabber, the plain one), for its own size. */
+  grabber: (size: PanelState, ask: (size: PanelState) => void) => ReactNode;
   /** The card look: the sheet's own. */
   look: string;
   /** Under the body's glass, the shade the sheet's body has (SheetParts). */
@@ -43,9 +42,12 @@ const EASE =
  * left where it was -- its size, its search, its list and its place in it.
  *
  * Each card has its own snap point among the sheet's three sizes (the
- * owner, 2026-11-11: "Just let the drawer do what it does"): the top
- * card's is the page's size (MapPanel's frontmost sheet), each under it
- * kept at its own (`at`) for when it is on top again. Put on the page inside the
+ * owner, 2026-11-11: "Just let the drawer do what it does"; "each card
+ * sizes its own drawer"), its entry's `at`: it opens at the size its
+ * opener says (`opens`: half from the search or the map), else as high as
+ * what it covers, half at the least (`raise`; the card rule's 2), then
+ * where the pilot drags it or the card asks (useCardSize). The sheet under
+ * it, and each card under it, stay at their own. Put on the page inside the
  * sheet's popup (`host`), so a card is in the sheet for what looks for it
  * there (the browser tests, index.css), and placed from the sheet's snap
  * offset to its own. The keyboard's inset is the Drawer's own
@@ -55,15 +57,36 @@ export function CardStack(p: StackProps & { host: HTMLElement | null }) {
   const stack = useSheetCards((s) => s.stack);
   if (!p.host) return null;
   const top = [...stack].reverse().find((entry) => entry.shown)?.id;
-  return stack.map((entry) => <CardDrawer key={entry.id} entry={entry} top={entry.id === top} {...p} host={p.host!} />);
+  return stack.map((entry, index) => (
+    <CardDrawer
+      key={entry.id}
+      entry={entry}
+      top={entry.id === top}
+      covers={[...stack.slice(0, index)].reverse().find((under) => under.shown)?.at ?? p.sheet}
+      {...p}
+      host={p.host!}
+    />
+  ));
 }
 
-function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry; top: boolean; host: HTMLElement }) {
+function CardDrawer({
+  entry,
+  top,
+  covers,
+  host,
+  ...p
+}: StackProps & { entry: CardEntry; top: boolean; covers: PanelState; host: HTMLElement }) {
   const { id, frame } = entry;
   const slot = useCallback((node: HTMLElement | null) => setCard(id, { slot: node }), [id]);
-  const { onPhone, fromBottom, detents, ask } = p;
-  // The top card at the page's size; one under it at its own, kept.
-  const at = top ? p.front : (entry.at ?? "half");
+  const { onPhone, fromBottom, detents } = p;
+  // Its own snap point, kept in its entry: set as it opens, from then on
+  // the pilot's or the card's (useCardSize).
+  const at = entry.at ?? cardOpening(entry, covers);
+  const unset = entry.at === undefined && entry.shown;
+  useLayoutEffect(() => {
+    if (unset) setCard(id, { at });
+  }, [unset, id, at]);
+  const ask = useCallback((size: PanelState) => setCard(id, { at: size }), [id]);
   // A drag let go: the size nearest the snap point the Drawer picked.
   const snapped = (point: Drawer.Root.SnapPoint | null) => {
     if (point === null || !top) return;
@@ -154,11 +177,11 @@ function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry;
                   className="pointer-events-none absolute inset-x-0 bottom-full"
                 />
               )}
-              {onPhone && fromBottom && top && p.grabber}
+              {onPhone && fromBottom && top && p.grabber(at, ask)}
               <div className="flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]">
                 <CardScroller {...p} pill={onPhone && at === "peek"} raise={() => ask("half")} slot={slot} />
               </div>
-              {!(onPhone && fromBottom) && top && p.grabber}
+              {!(onPhone && fromBottom) && top && p.grabber(at, ask)}
             </Drawer.Popup>
           </SheetViewport>
         </Drawer.Portal>

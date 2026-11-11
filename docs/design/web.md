@@ -186,11 +186,20 @@ close does.
 - Cards over the sheet are the Drawer's own nested drawers (the owner,
   2026-11-11; `components/sheet/CardStack`): each with its own snap point
   among the sheet's three sizes, its grabber and its swipe, the sheet's
-  swipe the card's while one is up, and its own Escape closing it. A card
-  opens at half at the least (all the way up for a search) or as high as
-  what it covers, then is where the pilot puts it; the sheet under it
-  stays where it was, and the page's size is the frontmost sheet's
-  (MapPanel's `useSheetLayers`). They are put inside the sheet's popup
+  swipe the card's while one is up, and its own Escape closing it. Each
+  card sizes its own drawer (the owner, 2026-11-11): its snap point is its
+  entry's `at` in `lib/sheetCards`, set as it opens -- the size its opener
+  says (`opens` on `PanelCard`, `SheetCard`, `CardLayer`: half for an
+  airport, an airplane or a held point, all the way up for Nearest, a past
+  flight or Settings), else as high as what it covers, `raise` (half) at
+  the least -- then where the pilot drags it or the card asks through
+  `useCardSize()` (the stock controlled `snapPoint` and its change, from
+  the card's context or by the `cardId` its own component gives it). The
+  page's `setPanel` sizes the main sheet alone, its `data-panel` the
+  sheet's own under a card too, each card's `data-panel` on its own
+  drawer; what is in sight (the top card's, else the sheet's) is read for
+  `<body>`'s `data-map-panel` and the map's room. No field's focus or
+  typing sizes either. They are put inside the sheet's popup
   (`Drawer.Portal`'s `container`), outside its corners' clip, placed from
   the sheet's snap offset to their own. A card's content stays drawn where
   its caller is (its providers) and is put in its drawer's scroller
@@ -502,12 +511,18 @@ by clicking the map, typing an address or a name, up to 9 stops in all
    (`toast.undo`).
 
 **Stock parts.** The rows: React Aria GridList with `useDragAndDrop` and
-`onReorder`, a `<Button slot="drag">` handle per row, keyboard drag and
-screen reader announcements built in ([React Aria GridList][ra-gridlist],
-[React Aria DnD][ra-dnd]). Wingtip's `SortableRows` uses dnd-kit today;
-**a choice for the owner:** keep dnd-kit or move to the GridList already
-installed with react-aria-components, which would also drop dnd-kit's
-roughly 48 KB (`SortableRows.tsx`'s own note). Each row's menu: Base UI
+`onReorder`, a `<Button slot="drag">` handle per typed point, keyboard
+drag and screen reader announcements built in ([React Aria
+GridList][ra-gridlist], [React Aria DnD][ra-dnd]): FPL's list is
+`procedures/RouteGrid` (the stock audit's W3, the owner 2026-11-11), as
+Favorites' rows are `SortableRows`. Only the typed points are dragged and
+only between them (`getDropOperation`), the move made by `onReorder`'s
+keys; where it will go is the stock `DropIndicator`, a tint line between
+the rows (the owner's pick of the line over a ring round the row). The
+route box's pills are not dragged: a horizontal ListBox's options cannot
+hold the pill's own picker and menu (nested interactive), so a pill is
+moved by its menu's Move Up and Move Down, or by its row in FPL's list.
+Each row's menu: Base UI
 Menu (Direct To, Set Altitude…, Hold Here…, Add a Stop After, Move Up,
 Move Down, Remove). The map's point menu: Base UI Context Menu on desktop
 right-click, the point card on touch. The string: shadcn Input Group.
@@ -517,8 +532,10 @@ right-click, the point card on touch. The string: shadcn Input Group.
 button: every change is saved as it is made, with Undo in place.
 
 **Keyboard and hover.** The rows are a grid with one tab stop; arrows
-between rows; Enter on a handle starts a keyboard drag, arrows move it,
-Enter drops, Escape cancels ([React Aria DnD][ra-dnd]). Move Up and Move
+between rows, Tab through a row's own controls (`keyboardNavigationBehavior`
+"tab", so its text boxes keep their keys); Enter on a handle starts a
+keyboard drag, arrows move it, Enter drops, Escape cancels ([React Aria
+DnD][ra-dnd]). Move Up and Move
 Down in each row's menu are the single-pointer alternative WCAG 2.5.7
 names ([WCAG 2.5.7][wcag-257]); the APG has no drag-and-drop pattern of its
 own ([APG patterns][apg-patterns]). Delete or Backspace on a focused row
@@ -526,9 +543,9 @@ removes it, with Undo in place. On desktop: hovering a row outlines its
 leg on the map; hovering the route line shows a grab cursor where a drag
 will insert a point; right-click opens the point menu.
 
-**Motion.** A dragged row lifts with a shadow; the others move with a
-150 ms transform; a dropped rubber-band line settles with no bounce. None
-under reduced motion.
+**Motion.** The browser's own drag image; the row dragged dimmed and the
+drop line shown where it goes, as React Aria draws them, nothing of our
+own.
 
 **Avoid.** Dragging as the only way to add or reorder (2.5.7); a figure
 worked out in the row component instead of from the engine; blocking an
@@ -1180,8 +1197,9 @@ proposal, not done here.
 2. The manifest has no `id`, `shortcuts`, `screenshots` or
    `description` (section 15).
 3. Done 2026-11-10: the toasts are Base UI's ("The stock parts").
-4. Route rows use dnd-kit; React Aria's GridList, already installed, does
-   keyboard drag with announcements (owner's choice, section 3).
+4. Done 2026-11-11: FPL's route rows are React Aria's GridList with its
+   drag and drop (section 3); the route box's pills are moved by their
+   menu.
 5. Base UI Tabs default to manual activation; the APG prefers automatic
    for panels already loaded (section 2).
 

@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { closeCard, grabberTo, settle, showPlan, showSearch, sideDrawer, slow } from "./helpers";
+import { closeCard, grabberTo, settle, showPlan, showSearch, sideDrawer, slow, frontSheet } from "./helpers";
 
 /**
  * Nearest as a card of the panel's (NearestCard), at the pilot's ask: half
@@ -56,7 +56,7 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   await sideDrawer(page).getByTestId("pill-section-nearest-more").click();
   const card = sideDrawer(page).getByTestId("nearest-card");
   await expect(card).toBeVisible();
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   const rows = card.getByTestId("nearest-airport");
   await expect(rows).toHaveCount(3, { timeout: slow(15000) });
   await expect(rows.nth(2)).toContainText("joint use");
@@ -85,7 +85,7 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   await showPlan(page);
   await expect(card).toHaveCount(0);
   // All the way up still: the route's nav log.
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   await expect(sideDrawer(page).getByTestId("navlog-scroller")).toBeVisible();
 });
 

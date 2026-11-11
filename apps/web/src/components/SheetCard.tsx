@@ -6,7 +6,8 @@ import CloseButton from "./CloseButton";
 import { PinnedHead } from "./PinnedHead";
 import { useCardFrame } from "./sheet/useCardFrame";
 import { holdOpenCard, setCardPill, type OpenCard, type PillHead } from "../lib/openCards";
-import { SheetCardHead } from "../lib/sheetCards";
+import { CardId, SheetCardHead } from "../lib/sheetCards";
+import type { PanelState } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 
 /**
@@ -37,6 +38,8 @@ export function SheetCard({
   closeButton,
   onClose,
   raise = "half",
+  opens,
+  cardId,
   testId,
   returnFocus,
   initialFocus,
@@ -62,7 +65,13 @@ export function SheetCard({
    *  the way out. */
   closeButton?: boolean;
   onClose: () => void;
+  /** The least it opens at: all the way up for a form or Emergency. */
   raise?: "half" | "full";
+  /** The size it opens at whatever it covers (the procedures' at half, the
+   *  map's to be seen over it). */
+  opens?: PanelState;
+  /** Its id among the open cards where its owner sizes it (useCardSize). */
+  cardId?: string;
   testId?: string;
   /** Where the focus goes back to as it is put away: the control that
    *  opened it, where that is known. */
@@ -73,7 +82,8 @@ export function SheetCard({
   finalFocus?: Drawer.Popup.Props["finalFocus"];
   children: ReactNode;
 }) {
-  const id = useId();
+  const ownId = useId();
+  const id = cardId ?? ownId;
   const headingId = `${id}-name`;
   // Its entry among the open cards, for what its content says the pill
   // shows of it (a map card's, MapCard's `pill`).
@@ -154,15 +164,19 @@ export function SheetCard({
     const free = !at || at === document.body || !at.isConnected || !!card?.contains(at);
     return opener?.isConnected && free ? opener : false;
   };
-  const target = useCardFrame({
-    raise,
-    title,
-    testId,
-    labelledBy: headingId,
-    dismiss,
-    initialFocus: initialFocus ?? toName,
-    finalFocus: finalFocus ?? toOpener,
-  });
+  const target = useCardFrame(
+    {
+      raise,
+      opens,
+      title,
+      testId,
+      labelledBy: headingId,
+      dismiss,
+      initialFocus: initialFocus ?? toName,
+      finalFocus: finalFocus ?? toOpener,
+    },
+    id,
+  );
 
   // The name in its own head row, where the content draws it (a map
   // card's, MapCard).
@@ -199,7 +213,9 @@ export function SheetCard({
         )}
         {end != null && <div className="-mr-1 flex shrink-0 items-center">{end}</div>}
       </HeadRow>
-      <SheetCardHead.Provider value={head}>{children}</SheetCardHead.Provider>
+      <CardId.Provider value={id}>
+        <SheetCardHead.Provider value={head}>{children}</SheetCardHead.Provider>
+      </CardId.Provider>
     </div>,
     target,
   );

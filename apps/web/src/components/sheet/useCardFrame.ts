@@ -1,19 +1,22 @@
-import { useId, useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { setCard, useSheetCards, type CardFrame } from "../../lib/sheetCards";
 import { useShown } from "../../lib/shown";
+import type { PanelState } from "../../lib/mapChrome";
 
 /**
  * A card's own nested Drawer over the map's sheet (CardStack), held while
  * the caller draws it: the scroller its content is put into, once the
  * drawer is there. Open while what it is drawn in is in sight (lib/shown):
  * under a page put away (TabKept) it is kept, closed, and opens again as
- * it was when the page is back.
+ * it was when the page is back. `id` is the card's (useCardSize).
  *
  * Held in a layout effect, so the drawer and the content are on the page
  * in the same frame as the tap, never an empty card for a frame.
  */
-export function useCardFrame(frame: CardFrame & { raise?: "half" | "full"; title?: string }): HTMLElement | null {
-  const id = useId();
+export function useCardFrame(
+  frame: CardFrame & { raise?: "half" | "full"; opens?: PanelState; title?: string },
+  id: string,
+): HTMLElement | null {
   const shown = useShown();
   const slot = useSheetCards((s) => s.stack.find((entry) => entry.id === id)?.slot ?? null);
   // The caller's latest, read as the Drawer tells it something.
@@ -21,13 +24,14 @@ export function useCardFrame(frame: CardFrame & { raise?: "half" | "full"; title
   useLayoutEffect(() => {
     latest.current = frame;
   });
-  const { raise, title, testId, label, labelledBy } = frame;
-  const opened = useRef({ raise, shown });
+  const { raise, opens, title, testId, label, labelledBy } = frame;
+  const opened = useRef({ raise, opens, shown });
   useLayoutEffect(() => {
-    const { raise, shown } = opened.current;
+    const { raise, opens, shown } = opened.current;
     const entry = {
       id,
       raise,
+      opens,
       shown,
       slot: null,
       frame: {

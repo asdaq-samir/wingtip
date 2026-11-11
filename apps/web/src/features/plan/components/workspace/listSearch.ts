@@ -21,14 +21,10 @@ export function listSearchOf(vm: PlanWorkspaceModel): ListSearch | null {
 
 /** The traffic's: an airplane by its callsign, registration or address. */
 function aircraftSearch(vm: PlanWorkspaceModel): ListSearch {
-  const { aircraftInput, aircraftTyped, listAway, panel, pickingFavorite, pickingMine, quietFocus, setPanel, upAsTyped, pickView, routed } =
-    vm;
+  const { aircraftInput, aircraftTyped, listAway, pickingFavorite, pickingMine, setPanel, pickView, routed } = vm;
   return {
     value: aircraftTyped,
-    onChange: (aircraft) => {
-      useTabSearch.setState({ aircraft });
-      upAsTyped(aircraft);
-    },
+    onChange: (aircraft) => useTabSearch.setState({ aircraft }),
     inputRef: aircraftInput,
     placeholder: pickingMine
       ? "Search for your airplane"
@@ -38,12 +34,11 @@ function aircraftSearch(vm: PlanWorkspaceModel): ListSearch {
     label: "Find an airplane: callsign, registration or ICAO address",
     testId: "aircraft-search",
     capitals: true,
-    // Up, the list under the field in sight -- not by an Add's focus,
-    // which leaves the panel where it is (focusQuietly).
+    // The list under the field in sight; the sheet stays where the pilot
+    // put it (the owner, 2026-11-11), the keyboard the Drawer's to place.
     onFocus: () => {
       listAway("aircraft-favorites");
       listAway("aircraft-recents");
-      if (panel === "peek" && !quietFocus.current) setPanel("full");
     },
     // Cancel leaves the traffic for the search's own scope again (the plan
     // with a route), the field being the one search's.
@@ -58,7 +53,7 @@ function aircraftSearch(vm: PlanWorkspaceModel): ListSearch {
 
 /** Nearest's: where the nearest fields are measured from. */
 function nearSearch(vm: PlanWorkspaceModel): ListSearch {
-  const { nearTyped, panel, setPanel } = vm;
+  const { nearTyped, setPanel } = vm;
   return {
     value: nearTyped,
     onChange: (near) => useTabSearch.setState({ near }),
@@ -66,9 +61,6 @@ function nearSearch(vm: PlanWorkspaceModel): ListSearch {
     label: "Nearest to: a town, an address or an airport",
     testId: "nearest-from",
     icon: MapPin,
-    onFocus: () => {
-      if (panel === "peek") setPanel("full");
-    },
     onCancel: () => setPanel("peek"),
     onSubmit: () => useTabSearch.getState().submitNear?.(),
     onClear: () => {

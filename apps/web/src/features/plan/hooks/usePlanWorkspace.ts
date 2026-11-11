@@ -303,7 +303,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     approachesOf,
     setApproachesOf,
     selectPlace,
-    openAirportOverFlight,
     closePlace,
     closeFlight,
     selectPlaceOnChart,
@@ -358,7 +357,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     previewProcedure,
     mapProcedures,
     procedureCover,
-  } = useProcedurePicks({ planned, searchParams, setSearchParams, setPanel, procedureAirports, crossings, patterns });
+  } = useProcedurePicks({ planned, searchParams, setSearchParams, procedureAirports, crossings, patterns });
   const directParam = searchParams.get("direct");
   // Where the map is brought to (useMapPins).
   const { placePin, depAlone, startPin, fix, nearOrigin, nearestPoints, measuredFrom } = useMapPins({
@@ -624,10 +623,8 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     searchInput,
     search,
     pickPlace,
-    quietFocus,
     askFor,
     addFromPill,
-    upAsTyped,
     aircraftTyped,
     pickingMine,
     pickingFavorite,
@@ -638,7 +635,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     setHomeAirport,
     toggleFavoriteAirport,
     moveFavoriteAirport,
-  } = useSearchPanel({ view, selectPlace, listAway, panel, setPanel, searchParams, setSearchParams });
+  } = useSearchPanel({ view, selectPlace, listAway, searchParams, setSearchParams });
 
   // The route's close, at the pilot's ask: first it clears the route --
   // the address keeps nothing of it, and its box, the controls and the
@@ -911,7 +908,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     localMin,
     searchParams,
     setSearchParams,
-    setPanel,
     setRoute,
     flyAltitude,
     changeDepart,
@@ -1085,7 +1081,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     nearTyped,
     nearestPoints,
     noApproaches,
-    openAirportOverFlight,
     openLeg,
     openBrief,
     openFix,
@@ -1129,7 +1124,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     profileReady,
     profileShown,
     query,
-    quietFocus,
     removeStop,
     routeEdit,
     routeFolded,
@@ -1199,7 +1193,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     typeStopAt,
     unflyable,
     unflyableBrief,
-    upAsTyped,
     wayLines,
     waypointStops,
     wholeRoute,

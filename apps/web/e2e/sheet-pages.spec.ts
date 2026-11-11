@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settle, settled, sideDrawer } from "./helpers";
+import { grabberTo, settle, settled, sideDrawer, frontSheet } from "./helpers";
 
 /**
  * The sheet's two pages, Search and FPL (the owner, 2026-11-11;
@@ -47,7 +47,7 @@ test("Search to FPL and back, by a swipe and by the grabber's bars, the sheet's 
   // A swipe to FPL: the page moves, the sheet stays half way.
   await swipe(page, "left");
   await expectPage(page, 1);
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   await expect(sideDrawer(page).getByText("Plan a flight")).toBeVisible();
 
   // And back, by the swipe and then by the bars.
@@ -57,10 +57,10 @@ test("Search to FPL and back, by a swipe and by the grabber's bars, the sheet's 
   await expectPage(page, 1);
   await bar(page, 0).click();
   await expectPage(page, 0);
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   // The page up's bar is the grabber: a tap sizes the sheet, the page kept.
   await bar(page, 0).click();
-  await expect(sideDrawer(page)).not.toHaveAttribute("data-panel", "half");
+  await expect(frontSheet(page)).not.toHaveAttribute("data-panel", "half");
   await expectPage(page, 0);
   await grabberTo(page, "half");
   // The keyboard: Right and Left switch the pages, Up and Down size the sheet.
@@ -70,7 +70,7 @@ test("Search to FPL and back, by a swipe and by the grabber's bars, the sheet's 
   await page.keyboard.press("ArrowLeft");
   await expectPage(page, 0);
   await page.keyboard.press("ArrowUp");
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   await expectPage(page, 0);
 });
 
@@ -172,7 +172,7 @@ test("a drag up or down still sizes the sheet on either page", async ({ page }) 
     await page.mouse.down();
     await page.mouse.move(x, grabber.y + 200, { steps: 12 });
     await page.mouse.up();
-    await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+    await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
     await settled(sideDrawer(page));
     await expectPage(page, at);
     await grabberTo(page, "half");

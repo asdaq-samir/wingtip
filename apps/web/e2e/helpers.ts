@@ -40,11 +40,11 @@ export async function settle(page: Page) {
   await page.waitForFunction(() => performance.getEntriesByName("chart-drawn").length > 0, null, { timeout: 1500 }).catch(() => {});
 }
 
-/** The panel over the map (MapPanel): a sheet up from the bottom of a
- *  phone, a card over the chart otherwise. Out or not is its `data-panel`
- *  (the frontmost sheet's): peek at rest, half or full when it is out. */
+/** The panel over the map (MapPanel): a phone's sheet, else a side panel.
+ *  Its `data-panel` is its own size, under a card too (a card's is on its
+ *  own drawer, frontSheet): peek at rest, half or full when it is out. */
 export const sideDrawer = (page: Page) => page.locator('[data-slot="map-panel"]');
-/** The frontmost sheet: the top card's own drawer (sheet/CardStack), else the map's. */
+/** The sheet in front: the top card's own drawer (CardStack), else the map's. */
 export const frontSheet = (page: Page) => page.locator('[data-slot="map-panel"], [data-sheet-card][data-open]').last();
 
 /** The first row in sight: the sheet's, static over a card, at the pill too. */
@@ -78,7 +78,7 @@ export async function clearTheRoute(page: Page) {
 
 const RANK = { peek: 0, half: 1, full: 2 } as const;
 
-/** The frontmost sheet to a height by its grabber (MapPanel's, a card's):
+/** The sheet in front to a height by its grabber (a card's, the map's):
  *  the pill, half and all the way up, a step at a time by its arrow keys,
  *  as a keyboard and VoiceOver move it. Each step waited on. */
 export async function grabberTo(page: Page, state: "peek" | "half" | "full") {
@@ -173,7 +173,7 @@ async function closeBrief(page: Page) {
  *  grabber to the screen's far edge from half; from the pill, the
  *  grabber's arrow keys. */
 async function panelFull(page: Page) {
-  const panel = sideDrawer(page);
+  const panel = frontSheet(page);
   await panel.waitFor();
   if ((await panel.getAttribute("data-panel")) === "full") return;
   // By the grabber, as a keyboard and VoiceOver take it.
@@ -211,7 +211,7 @@ export async function pickControl(page: Page, control: "nav-bar-select" | "theme
  *  as Apple Maps' Choose Map card is. Escape puts it away. */
 export async function openMapSettings(page: Page) {
   // The map's buttons are under a phone's sheet all the way up: the pill.
-  if ((page.viewportSize()?.width ?? 0) < 768 && (await sideDrawer(page).getAttribute("data-panel")) === "full")
+  if ((page.viewportSize()?.width ?? 0) < 768 && (await frontSheet(page).getAttribute("data-panel")) === "full")
     await grabberTo(page, "peek");
   await page.locator("[data-map-controls]").getByTestId("map-settings-button").click();
   await expect(page.getByTestId("map-settings")).toBeVisible();
@@ -305,7 +305,7 @@ export async function library(scope: Page | Locator, section: "Airplanes" | "Fli
 
 /** At rest: only its head in sight. */
 export async function expectDrawerClosed(page: Page) {
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
   // And come to rest there: easing down it is still the half's layout and
   // height, over what a tap next would be aimed at. The panel's own
   // easing, not what is in it: a button's easing in the body, put out of
@@ -315,7 +315,7 @@ export async function expectDrawerClosed(page: Page) {
 
 /** Out: all the way up. */
 export async function expectDrawerOpen(page: Page) {
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
 }
 
 /** Lowering the panel is one shape everywhere: Escape, pressed in it.

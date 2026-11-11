@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { closeSidebarWithTheStockKey, sideDrawer } from "./helpers";
+import { closeSidebarWithTheStockKey, frontSheet } from "./helpers";
 
 /* Where a spec starts from that is not the setup's session as it is. */
 
@@ -39,8 +39,8 @@ export async function noCheckpoints(page: Page) {
  *  spec about the panel's pill and what the map does round it. */
 export async function fromRest(page: Page) {
   if (page.viewportSize()!.width >= 1024) {
-    await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+    await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
     await closeSidebarWithTheStockKey(page);
   }
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
 }

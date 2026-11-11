@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, sideDrawer } from "./helpers";
+import { settle, sideDrawer, frontSheet } from "./helpers";
 
 /**
  * A phone's sheet going from the pill to half way and back keeps what it
@@ -50,7 +50,7 @@ test("on a phone the tabs move with the sheet from the pill to half way and back
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
   await page.goto("/app/plan");
   await settle(page);
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
   for (const key of ["ArrowUp", "ArrowDown"] as const) {
     const seen = await frames(page, () => step(page, key));
     const first = seen[0]!,
@@ -73,7 +73,7 @@ test("on a phone a route's figures stay in sight at the sheet's foot as the pill
   test.skip((page.viewportSize()?.width ?? 0) >= 768, "a phone's sheet");
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "peek");
   await expect(sideDrawer(page).getByTestId("flight-line")).toBeVisible();
   for (const key of ["ArrowUp", "ArrowDown"] as const) {
     const seen = await frames(page, () => step(page, key));

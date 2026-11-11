@@ -326,14 +326,15 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     if (routed) pickView("plan");
   };
 
-  // Focused: the search's own page up, a card over it put away, all the
-  // way up unless an Add asked quietly (useSearchPanel's quietFocus).
+  // Focused: the search's own page up, a card over it put away; the sheet
+  // stays where the pilot put it, the keyboard placed over it by the
+  // Drawer's VirtualKeyboardProvider (the owner, 2026-11-11: "Whenever I
+  // try to type on search bar it takes the card to full screen").
   const focus = () => {
     setFocused(true);
     if (place) selectPlace(null);
     listAway("favorites");
     pickView("search");
-    if (!vm.quietFocus.current) setPanel("full");
   };
   // Cancel: let go, back where a picker asked from, else the plan with a route.
   const cancel = () => {
@@ -382,7 +383,6 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
       setQuery(text);
       setProblem(null);
       if (text && vm.view !== "search") pickView("search");
-      if (text && vm.panel === "peek") setPanel("full");
     },
     pickAirport,
     pickWaypoint,
