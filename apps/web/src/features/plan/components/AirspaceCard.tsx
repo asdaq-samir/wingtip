@@ -150,7 +150,7 @@ export default function AirspaceCard({
     : [];
   return (
     // Half way as a point held on the chart opens it (the card rule's 2).
-    <PanelCard testId="airspace-card" opens="half" cardId={cardId}>
+    <PanelCard testId="airspace-card" cardId={cardId}>
       <CardHead
         // The point itself as the card's name, its name off the nearest
         // fix where it has one: the sheet's own title already says

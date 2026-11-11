@@ -226,7 +226,6 @@ export default function MapPanel(props: Props) {
     host: cardHost,
     onPhone,
     fromBottom: bottomSheet,
-    sheet: props.state,
     ready,
     grabber: (cardSize, cardAsk) => <SheetGrabber label={label} size={cardSize} ask={cardAsk} at={grabberAt} />,
     look: onPhone ? GLASS_SHEET : "bg-background dark:bg-popover",

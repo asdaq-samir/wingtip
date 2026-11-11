@@ -34,7 +34,7 @@ import { useEmergency } from "./useEmergency";
 export default function EmergencySheet() {
   const vm = useEmergency();
   return (
-    <SheetCard title="Emergency" onClose={vm.close} raise="full" testId="emergency-sheet">
+    <SheetCard title="Emergency" onClose={vm.close} fullScreen testId="emergency-sheet">
       <style href="wingtip-emergency-at-once" precedence="default">
         {`[data-testid="emergency-sheet"] { transition: none !important; animation: none !important; }`}
       </style>

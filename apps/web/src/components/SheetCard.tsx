@@ -7,7 +7,6 @@ import { PinnedHead } from "./PinnedHead";
 import { useCardFrame } from "./sheet/useCardFrame";
 import { holdOpenCard, setCardPill, type OpenCard, type PillHead } from "../lib/openCards";
 import { CardId, SheetCardHead } from "../lib/sheetCards";
-import type { PanelState } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
 
 /**
@@ -37,8 +36,7 @@ export function SheetCard({
   action,
   closeButton,
   onClose,
-  raise = "half",
-  opens,
+  fullScreen = false,
   cardId,
   testId,
   returnFocus,
@@ -65,11 +63,9 @@ export function SheetCard({
    *  the way out. */
   closeButton?: boolean;
   onClose: () => void;
-  /** The least it opens at: all the way up for a form or Emergency. */
-  raise?: "half" | "full";
-  /** The size it opens at whatever it covers (the procedures' at half, the
-   *  map's to be seen over it). */
-  opens?: PanelState;
+  /** Emergency, the one card all the way up as it opens (the card rule's 4);
+   *  every other card opens at half. */
+  fullScreen?: boolean;
   /** Its id among the open cards where its owner sizes it (useCardSize). */
   cardId?: string;
   testId?: string;
@@ -165,16 +161,7 @@ export function SheetCard({
     return opener?.isConnected && free ? opener : false;
   };
   const target = useCardFrame(
-    {
-      raise,
-      opens,
-      title,
-      testId,
-      labelledBy: headingId,
-      dismiss,
-      initialFocus: initialFocus ?? toName,
-      finalFocus: finalFocus ?? toOpener,
-    },
+    { fullScreen, title, testId, labelledBy: headingId, dismiss, initialFocus: initialFocus ?? toName, finalFocus: finalFocus ?? toOpener },
     id,
   );
 

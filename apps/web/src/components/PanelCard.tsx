@@ -6,7 +6,6 @@ import { PinnedHead } from "./PinnedHead";
 import RoundButton from "./RoundButton";
 import { closeTopCard, useHeldCard, RouteShareMenu, type CardShare } from "../lib/openCards";
 import { TEXT } from "../lib/text";
-import type { PanelState } from "../lib/mapChrome";
 import type { CardFrame } from "../lib/sheetCards";
 import { CardLayer } from "./sheet/CardLayer";
 
@@ -24,14 +23,11 @@ import { CardLayer } from "./sheet/CardLayer";
  */
 export function PanelCard({
   testId,
-  opens,
   cardId,
   dismiss,
   children,
 }: {
   testId: string;
-  /** The size it opens at (CardLayer): half from the search or the map, a list all the way up. */
-  opens?: PanelState;
   /** Its id where the card's own component sizes it (useCardSize). */
   cardId?: string;
   /** What its drawer tells it (CardLayer's): Escape, a tap outside. */
@@ -61,7 +57,7 @@ export function PanelCard({
   // its room over its first line the grabber's (--pinned-room), which its
   // pinned head reaches up over.
   return (
-    <CardLayer opens={opens} cardId={cardId} dismiss={dismiss}>
+    <CardLayer cardId={cardId} dismiss={dismiss}>
       <div
         ref={card}
         className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"

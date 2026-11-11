@@ -56,7 +56,8 @@ test("Nearest opens as a card half way up, a field over it as a layer, and its c
   await sideDrawer(page).getByTestId("pill-section-nearest-more").click();
   const card = sideDrawer(page).getByTestId("nearest-card");
   await expect(card).toBeVisible();
-  await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
+  // At half, as every card opens (the owner, 2026-11-11).
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   const rows = card.getByTestId("nearest-airport");
   await expect(rows).toHaveCount(3, { timeout: slow(15000) });
   await expect(rows.nth(2)).toContainText("joint use");

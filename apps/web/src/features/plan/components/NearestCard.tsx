@@ -290,9 +290,9 @@ export default function NearestCard({
     if (details.reason === "escape-key" && !details.event.defaultPrevented && closeTopCard()) details.event.preventDefault();
   };
   return (
-    // All the way up as it opens, a list in full; a tap on the chart lowers
+    // At half as it opens, as every card does; a tap on the chart lowers
     // its own drawer to the pill, the list kept (lowerOnMap).
-    <PanelCard testId="nearest-card" opens="full" cardId={cardId} dismiss={lowerOnMap}>
+    <PanelCard testId="nearest-card" cardId={cardId} dismiss={lowerOnMap}>
       <ListPageHead title="Nearest" backLabel="Back to the search" onBack={onBack} testId="nearest-page" />
       <NearAnswers from={from} onFrom={onFrom} />
       <div className="pt-1">

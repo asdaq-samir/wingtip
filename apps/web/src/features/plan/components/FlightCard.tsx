@@ -505,7 +505,7 @@ export default function FlightCard({
   const { data: tower } = useQuery(departuresQuery(plane?.callsign ?? registration));
   const towerLine = departureLine(tower?.events[0]);
   return (
-    <PanelCard testId="flight-card" opens="half" /* half wherever it opens from, as an airport's */>
+    <PanelCard testId="flight-card">
       <CardTitle
         title={name}
         testId="flight-head"

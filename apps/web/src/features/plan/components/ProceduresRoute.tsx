@@ -275,7 +275,6 @@ export default function ProceduresRoute(props: ProceduresRouteProps) {
         onOpenChange={(open) => {
           if (!open) close();
         }}
-        phoneOpens="half"
       >
         <ResponsivePopoverAnchor asChild>
           {/* Its points moved by their grips, where the list changes the route (RouteGrid). */}

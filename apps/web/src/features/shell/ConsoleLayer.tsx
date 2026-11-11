@@ -51,8 +51,8 @@ export default function ConsoleLayer({
     // Its drawer open while it is up (CardLayer reads lib/shown): the
     // sheet's body round it is at rest under Setup (MapPanel's `still`).
     <Shown.Provider value={shown}>
-      {/* All the way up as it opens, from the account button or a link. */}
-      <CardLayer dismiss={dismiss} opens="full">
+      {/* At half as it opens, as every card does, from the account button or a link. */}
+      <CardLayer dismiss={dismiss}>
         <section
           aria-label={label}
           // Named for the suite only while it is up: put away it is there,

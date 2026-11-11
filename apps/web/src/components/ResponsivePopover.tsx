@@ -8,7 +8,6 @@ import { loadPopups, usePopups } from "./popupsChunk";
 import { useIsMobile } from "../hooks/use-mobile";
 import { SheetCard } from "./SheetCard";
 import { TEXT } from "../lib/text";
-import type { PanelState } from "../lib/mapChrome";
 
 /**
  * A popover from `md` up and, on a phone, a card in the map's panel
@@ -26,8 +25,6 @@ type OnPhoneCard = {
   /** The control that opens it, for the focus to go back to. */
   setTrigger: (node: HTMLElement | null) => void;
   trigger: () => HTMLElement | null;
-  /** The size its card opens at, where the caller says (SheetCard's `opens`). */
-  opens?: PanelState;
 };
 
 /** The card's open state on a phone; from `md` up, none (Base UI's). */
@@ -52,16 +49,10 @@ export function ResponsivePopover({
   children,
   open,
   onOpenChange,
-  phoneOpens,
 }: {
   children: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean, details?: CloseDetails) => void;
-  /** On a phone, the size its card opens at whatever it covers (the
-   *  procedures' at half, the map in sight over them); else as high as
-   *  what it covers, half at the least. A search in it keeps the sheet's
-   *  size, the keyboard placed by the Drawer (the owner, 2026-11-11). */
-  phoneOpens?: PanelState;
 }) {
   const isMobile = useIsMobile();
   // Open as the caller says where it says (`open`), else its own, as
@@ -95,7 +86,6 @@ export function ResponsivePopover({
     },
     setTrigger,
     trigger: () => trigger,
-    opens: phoneOpens,
   };
   return <OnPhone.Provider value={phone}>{children}</OnPhone.Provider>;
 }
@@ -242,7 +232,6 @@ export function ResponsivePopoverContent({
       action={action}
       closeButton={closeButton}
       onClose={() => phone.setOpen(false)}
-      opens={phone.opens}
       testId={testId}
       returnFocus={phone.trigger}
       initialFocus={initialFocus}

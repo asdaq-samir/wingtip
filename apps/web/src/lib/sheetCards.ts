@@ -32,13 +32,8 @@ export type CardEntry = {
   id: string;
   /** Its name. */
   title?: string;
-  /** The least it opens at: half where none is said, all the way up for
-   *  a form or Emergency; a page opened in a card opens as high as the card
-   *  it covers (the card rule's 2, CardStack). */
-  raise?: "half" | "full";
-  /** The size it opens at whatever it covers: a card from the search or
-   *  the map at half (the card rule's 2), a list all the way up. */
-  opens?: PanelState;
+  /** Emergency, the one card that opens all the way up (the card rule's 4). */
+  fullScreen?: boolean;
   /** Its own drawer's snap point, set as it opens and then by the pilot's
    *  drag or the card itself (useCardSize). */
   at?: PanelState;
@@ -55,15 +50,13 @@ export const useSheetCards = create<{ stack: CardEntry[] }>(() => ({ stack: [] }
 /** The top card: null with none open. */
 export const topCard = (stack: CardEntry[]): CardEntry | null => [...stack].reverse().find((entry) => entry.shown) ?? null;
 
-const RANK: Record<PanelState, number> = { peek: 0, half: 1, full: 2 };
-
-/** The size a card opens at (CardStack): its opener's (`opens`), else as
- *  high as what it covers -- the card under it, else the sheet -- with
- *  `raise` (half) at the least (the card rule's 2). */
-export function cardOpening(entry: Pick<CardEntry, "opens" | "raise">, covers: PanelState): PanelState {
-  if (entry.opens) return entry.opens;
-  const least = entry.raise ?? "half";
-  return RANK[covers] > RANK[least] ? covers : least;
+/** The size a card opens at (CardStack): half, every card, whatever it
+ *  covers and wherever it is opened from, then where the pilot drags it,
+ *  as Apple Maps opens its cards at the medium detent (the owner,
+ *  2026-11-11: "I thought stock was to open each card medium by
+ *  default"); Emergency alone all the way up (the card rule's 4). */
+export function cardOpening(entry: Pick<CardEntry, "fullScreen">): PanelState {
+  return entry.fullScreen ? "full" : "half";
 }
 
 /** A card's entry changed in place. */

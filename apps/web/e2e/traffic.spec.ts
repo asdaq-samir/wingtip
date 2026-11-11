@@ -146,7 +146,7 @@ test("the traffic is asked about wherever the map is panned, own ship or not, an
     )
     .toBe(true);
   // Zoomed out to a state: asked further than the near regions' 60 nm --
-  // the card's link opens all the way up, so down to its pill first.
+  // the card down to its pill first, the map clear over it.
   await grabberTo(page, "peek");
   const map = (await page.locator(".maplibregl-map").boundingBox())!;
   await page.mouse.move(map.x + map.width / 2, map.y + map.height / 4);

@@ -207,11 +207,11 @@ close does.
   among the sheet's three sizes, its grabber and its swipe, the sheet's
   swipe the card's while one is up, and its own Escape closing it. Each
   card sizes its own drawer (the owner, 2026-11-11): its snap point is its
-  entry's `at` in `lib/sheetCards`, set as it opens -- the size its opener
-  says (`opens` on `PanelCard`, `SheetCard`, `CardLayer`: half for an
-  airport, an airplane or a held point, all the way up for Nearest, a past
-  flight or Settings), else as high as what it covers, `raise` (half) at
-  the least -- then where the pilot drags it or the card asks through
+  entry's `at` in `lib/sheetCards`, set as it opens -- half, every card,
+  whatever it covers (`cardOpening`; the owner, 2026-11-11: "I thought
+  stock was to open each card medium by default"), Emergency alone all the
+  way up (`SheetCard`'s `fullScreen`) -- then where the pilot drags it or
+  the card asks through
   `useCardSize()` (the stock controlled `snapPoint` and its change, from
   the card's context or by the `cardId` its own component gives it). The
   page's `setPanel` sizes the main sheet alone, its `data-panel` the

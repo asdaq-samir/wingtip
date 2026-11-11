@@ -28,7 +28,9 @@ test("the Nav Log, a card of its own, opens at half from the pill and leaves the
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "peek");
 });
 
-test("the nav log opened all the way up stays all the way up, and so does the sheet once it is put away", async ({ page }) => {
+test("the Nav Log opened over the sheet all the way up opens at half, as every card does, and leaves the sheet all the way up", async ({
+  page,
+}) => {
   await page.goto(ROUTE);
   await settle(page);
   await grabberTo(page, "full");
@@ -37,7 +39,8 @@ test("the nav log opened all the way up stays all the way up, and so does the sh
     .click({ timeout: slow(60_000) });
   await page.getByTestId("route-navlog").click();
   await expect(navLogSheet(page)).toBeVisible();
-  await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
+  // Medium, whatever it covers (the owner, 2026-11-11: "I thought stock was to open each card medium by default").
+  await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
   await expect(sideDrawer(page)).toHaveAttribute("data-panel", "full");
   await closeNavLog(page);
   await settled(sideDrawer(page));

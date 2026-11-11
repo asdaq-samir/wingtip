@@ -1,7 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { setCard, useSheetCards, type CardFrame } from "../../lib/sheetCards";
 import { useShown } from "../../lib/shown";
-import type { PanelState } from "../../lib/mapChrome";
 
 /**
  * A card's own nested Drawer over the map's sheet (CardStack), held while
@@ -13,10 +12,7 @@ import type { PanelState } from "../../lib/mapChrome";
  * Held in a layout effect, so the drawer and the content are on the page
  * in the same frame as the tap, never an empty card for a frame.
  */
-export function useCardFrame(
-  frame: CardFrame & { raise?: "half" | "full"; opens?: PanelState; title?: string; open?: boolean },
-  id: string,
-): HTMLElement | null {
+export function useCardFrame(frame: CardFrame & { fullScreen?: boolean; title?: string; open?: boolean }, id: string): HTMLElement | null {
   // A card kept between its openings (`open`, CardLayer's) is shown only
   // while it is open; one drawn only while open is open while drawn.
   const open = frame.open ?? true;
@@ -27,14 +23,13 @@ export function useCardFrame(
   useLayoutEffect(() => {
     latest.current = frame;
   });
-  const { raise, opens, title, testId, label, labelledBy } = frame;
-  const opened = useRef({ raise, opens, shown });
+  const { fullScreen, title, testId, label, labelledBy } = frame;
+  const opened = useRef({ fullScreen, shown });
   useLayoutEffect(() => {
-    const { raise, opens, shown } = opened.current;
+    const { fullScreen, shown } = opened.current;
     const entry = {
       id,
-      raise,
-      opens,
+      fullScreen,
       shown,
       slot: null,
       frame: {

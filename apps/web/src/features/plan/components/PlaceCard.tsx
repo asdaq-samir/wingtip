@@ -452,7 +452,7 @@ export default function PlaceCard({
   return (
     // Half way as it opens, from the map, the search or a list alike (the
     // card rule's 2); its own drawer, sized from here (useCardSize).
-    <PanelCard testId="place-card" opens="half" cardId={cardId}>
+    <PanelCard testId="place-card" cardId={cardId}>
       {place || !error ? (
         <>
           {/* The head and the actions from the first frame, live once the

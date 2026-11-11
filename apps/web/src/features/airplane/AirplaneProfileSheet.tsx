@@ -130,7 +130,6 @@ export default function AirplaneProfileSheet() {
     <SheetCard
       title={vm.tail}
       onClose={vm.close}
-      raise="full"
       testId="airplane-profile"
       // On the figure it was opened for, where it was one.
       initialFocus={() => {

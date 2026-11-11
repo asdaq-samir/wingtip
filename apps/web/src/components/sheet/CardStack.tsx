@@ -14,8 +14,6 @@ export interface StackProps {
    *  Else the side panel's: each covers the panel, nothing to swipe. */
   onPhone: boolean;
   fromBottom: boolean;
-  /** The sheet's own size under the cards: what a card opened from it covers. */
-  sheet: PanelState;
   /** Eased only once the sheet has been drawn where it rests (useDrawn). */
   ready: boolean;
   /** The top card's grabber (SheetGrabber, the plain one), for its own size. */
@@ -43,10 +41,9 @@ const EASE =
  *
  * Each card has its own snap point among the sheet's three sizes (the
  * owner, 2026-11-11: "Just let the drawer do what it does"; "each card
- * sizes its own drawer"), its entry's `at`: it opens at the size its
- * opener says (`opens`: half from the search or the map), else as high as
- * what it covers, half at the least (`raise`; the card rule's 2), then
- * where the pilot drags it or the card asks (useCardSize). The sheet under
+ * sizes its own drawer"), its entry's `at`: it opens at half, every card
+ * (cardOpening; Emergency alone all the way up), then where the pilot
+ * drags it or the card asks (useCardSize). The sheet under
  * it, and each card under it, stay at their own. Put on the page inside the
  * sheet's popup (`host`), so a card is in the sheet for what looks for it
  * there (the browser tests, index.css), and placed from the sheet's snap
@@ -57,25 +54,10 @@ export function CardStack(p: StackProps & { host: HTMLElement | null }) {
   const stack = useSheetCards((s) => s.stack);
   if (!p.host) return null;
   const top = [...stack].reverse().find((entry) => entry.shown)?.id;
-  return stack.map((entry, index) => (
-    <CardDrawer
-      key={entry.id}
-      entry={entry}
-      top={entry.id === top}
-      covers={[...stack.slice(0, index)].reverse().find((under) => under.shown)?.at ?? p.sheet}
-      {...p}
-      host={p.host!}
-    />
-  ));
+  return stack.map((entry) => <CardDrawer key={entry.id} entry={entry} top={entry.id === top} {...p} host={p.host!} />);
 }
 
-function CardDrawer({
-  entry,
-  top,
-  covers,
-  host,
-  ...p
-}: StackProps & { entry: CardEntry; top: boolean; covers: PanelState; host: HTMLElement }) {
+function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry; top: boolean; host: HTMLElement }) {
   const { id, frame } = entry;
   const slot = useCallback((node: HTMLElement | null) => setCard(id, { slot: node }), [id]);
   const { onPhone, fromBottom } = p;
@@ -83,7 +65,7 @@ function CardDrawer({
   const snaps = snapsOf(fromBottom);
   // Its own snap point, kept in its entry: set as it opens, from then on
   // the pilot's or the card's (useCardSize).
-  const at = entry.at ?? cardOpening(entry, covers);
+  const at = entry.at ?? cardOpening(entry);
   const unset = entry.at === undefined && entry.shown;
   useLayoutEffect(() => {
     if (unset) setCard(id, { at });

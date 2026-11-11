@@ -2,7 +2,6 @@ import { useId, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { CardId, type CardFrame } from "../../lib/sheetCards";
 import { Shown, useShown } from "../../lib/shown";
-import type { PanelState } from "../../lib/mapChrome";
 import { useCardFrame } from "./useCardFrame";
 
 /**
@@ -12,7 +11,7 @@ import { useCardFrame } from "./useCardFrame";
  * here, for the caller's providers, and put in the drawer's scroller.
  * Escape is its drawer's: the top card closed (lib/openCards), or the
  * caller's own `dismiss`; a tap on the map leaves it open, the map's own
- * tap deciding. It sizes its own drawer: `opens` as it opens, then
+ * tap deciding. It sizes its own drawer: half as it opens, then
  * useCardSize from its content (or its owner's, by `cardId`).
  *
  * `open`, for a card kept between its openings (the Nav Log, the Profile,
@@ -25,14 +24,12 @@ import { useCardFrame } from "./useCardFrame";
 export function CardLayer({
   label,
   dismiss,
-  opens,
   cardId,
   open,
   children,
 }: {
   label?: string;
   dismiss?: CardFrame["dismiss"];
-  opens?: PanelState;
   cardId?: string;
   open?: boolean;
   children: ReactNode;
@@ -40,7 +37,7 @@ export function CardLayer({
   const fallback = useId();
   const id = cardId ?? fallback;
   const shown = useShown() && open !== false;
-  const slot = useCardFrame({ label, dismiss, opens, open }, id);
+  const slot = useCardFrame({ label, dismiss, open }, id);
   return slot
     ? createPortal(
         <Shown.Provider value={shown}>
