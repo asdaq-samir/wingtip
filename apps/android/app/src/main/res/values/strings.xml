@@ -150,6 +150,14 @@
     <string name="stops">Stops</string>
     <string name="stops_help">Idents, separated by commas</string>
     <string name="plan">Plan</string>
+    <!-- The sheet's carousel (the owner, 2026-11-11): its two pages, the
+         dots' words for TalkBack, and the plan's page with no route. -->
+    <string name="sheet_page_search">Search</string>
+    <string name="sheet_page_fpl">FPL</string>
+    <string name="sheet_page_of">Page %1$d of %2$d, %3$s</string>
+    <string name="plan_a_flight">Plan a Flight</string>
+    <string name="plan_a_flight_line">Search for where you are flying, or see a whole flight first with the sample.</string>
+    <string name="plan_a_flight_search">Search</string>
     <string name="under_reserve">Under the reserve the planner holds the flight to. Fly it with a fuel stop.</string>
 
     <!-- A leg (LegSheet). -->

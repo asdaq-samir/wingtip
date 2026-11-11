@@ -10,12 +10,12 @@ import kotlinx.serialization.json.Json
 
 /**
  * What the docked sheet shows (the card rule, the owner, 2026-11-10):
- * under the one search, what it shows with nothing typed (Home) or the
- * plan; over it, one card for a thing -- a field, an airplane, a fix, a
+ * the carousel's two pages, the one search and what it shows with nothing
+ * typed (Home), and the plan (Plan, the FPL page beside it); over them, one card for a thing -- a field, an airplane, a fix, a
  * VOR, an airspace, traffic, a leg of the route, the map's settings --
  * or a page -- the Brief, Nearest, Ask, Settings and its pages, a
  * checklist -- each with its name and ← where the search was (CardPage).
- * Each is a route of the sheet's NavHost (SheetPagesHost) or, on a wide
+ * Each card is a route of the sheet's NavHost (SheetPagesHost) or, on a wide
  * window, of the detail pane, so the system keeps the stack across a
  * rotation and Back steps down it.
  */
@@ -96,9 +96,9 @@ sealed interface SheetPage {
     @Serializable
     data class Checklist(val airplane: String, val kind: String) : SheetPage
 
-    /** A card or a page, which takes the search's place at the sheet's
-     *  head (or the wide window's detail pane); Home and the plan sit
-     *  under the search. */
+    /** A card or a page, which takes the carousel's place at the sheet's
+     *  head (or the wide window's detail pane); Home and the plan are the
+     *  carousel's pages. */
     val covers: Boolean get() = this != Home && this != Plan
 
     /** The card's stable test id, the same whatever opened it (the card
@@ -133,7 +133,6 @@ internal data class CardRoute(val key: String)
 
 /** The page a back stack entry of the sheet's NavHost shows. */
 internal fun NavBackStackEntry.page(): SheetPage = when {
-    destination.hasRoute<SheetPage.Plan>() -> SheetPage.Plan
     destination.hasRoute<CardRoute>() -> SheetPage.of(toRoute<CardRoute>().key)
     else -> SheetPage.Home
 }
