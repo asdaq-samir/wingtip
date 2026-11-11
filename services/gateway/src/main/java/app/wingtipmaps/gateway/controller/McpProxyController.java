@@ -3,7 +3,6 @@ package app.wingtipmaps.gateway.controller;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.time.Duration;
@@ -76,28 +75,26 @@ public class McpProxyController {
     @RequestMapping(
             value = "/mcp",
             method = {RequestMethod.GET, RequestMethod.POST, RequestMethod.DELETE})
-    public ResponseEntity<StreamingResponseBody> mcp(HttpServletRequest request) {
-        if (request.getContentLengthLong() > BODY_LIMIT) {
+    public ResponseEntity<StreamingResponseBody> mcp(HttpServletRequest request) throws IOException {
+        // Read up to the limit and no further, counting the bytes rather
+        // than trusting Content-Length: a chunked body has none (-1), and
+        // was streamed on to the planner whole (the security audit's L6).
+        byte[] body =
+                "POST".equals(request.getMethod()) ? request.getInputStream().readNBytes((int) BODY_LIMIT + 1) : null;
+        if (body != null && body.length > BODY_LIMIT) {
             return StreamingProxy.error(413, "an MCP request is at most " + (BODY_LIMIT / 1024) + " KB");
         }
-        return forward(request, "/mcp");
+        return forward(request, "/mcp", body);
     }
 
     @GetMapping("/.well-known/oauth-protected-resource/mcp")
     public ResponseEntity<StreamingResponseBody> metadata(HttpServletRequest request) {
-        return forward(request, "/.well-known/oauth-protected-resource/mcp");
+        return forward(request, "/.well-known/oauth-protected-resource/mcp", null);
     }
 
-    private ResponseEntity<StreamingResponseBody> forward(HttpServletRequest request, String path) {
-        HttpRequest.BodyPublisher body = "POST".equals(request.getMethod())
-                ? HttpRequest.BodyPublishers.ofInputStream(() -> {
-                    try {
-                        return request.getInputStream();
-                    } catch (IOException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                })
-                : HttpRequest.BodyPublishers.noBody();
+    private ResponseEntity<StreamingResponseBody> forward(HttpServletRequest request, String path, byte[] bytes) {
+        HttpRequest.BodyPublisher body =
+                bytes != null ? HttpRequest.BodyPublishers.ofByteArray(bytes) : HttpRequest.BodyPublishers.noBody();
         // Long: a GET is the server's stream of messages to the client,
         // open for as long as the client keeps it (the async request
         // timeout, application.yml, is what ends it).
