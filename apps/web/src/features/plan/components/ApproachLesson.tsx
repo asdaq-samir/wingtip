@@ -199,14 +199,9 @@ function Lesson({ input, from }: { input: LessonInput; from?: FromInstructor }) 
   );
 }
 
-/** "3 of 10" over a step, a section's title as every other is
- *  (SectionTitle, 20 points), said as it changes. */
+/** "3 of 10" over a step, a section's title (SectionTitle), said as it changes. */
 const Progress = ({ at, of }: { at: number; of: number }) => (
-  <div aria-live="polite" data-testid="approach-lesson-progress">
-    <SectionTitle>
-      {at + 1} of {of}
-    </SectionTitle>
-  </div>
+  <SectionTitle aria-live="polite" data-testid="approach-lesson-progress">{`${at + 1} of ${of}`}</SectionTitle>
 );
 
 function BriefPage({ input, from, onDone }: { input: LessonInput; from?: FromInstructor; onDone: () => void }) {
