@@ -580,8 +580,7 @@ export default function RouteBox({
       </button>
     );
   return (
-    // The box's own presses are its pills', not the panel's drag. The
-    // list's root (Base UI's Autocomplete) round the box and its
+    // The list's root (Base UI's Autocomplete) round the box and its
     // suggestions: the field moves the highlight with the arrows and takes
     // it with Enter.
     <CommandRoot
@@ -595,7 +594,6 @@ export default function RouteBox({
       {/* eslint-disable-next-line jsx-a11y-x/no-static-element-interactions -- the presses and keys of the pills and the field inside it, caught as they bubble (as cmdk's root caught them). */}
       <div
         className="min-w-0"
-        onPointerDown={(e) => e.stopPropagation()}
         // Delete (or Backspace) on a focused pill takes it out, as its menu
         // does (Pill).
         onKeyDown={(event) => {
@@ -642,7 +640,7 @@ export default function RouteBox({
           >
             {/* The pills in one row that slides sideways under a finger when the route is longer than the box (the
                owner, 2026-11-04), as ForeFlight's flight plan box does; the end faded where it runs on, so a point
-               past it reads as there. A drag up or down on it is the sheet's (useSheetDrag), across is the row's. */}
+               past it reads as there. A drag up or down on it is the sheet's (the Drawer's swipe), across is the row's. */}
             <ScrollArea.Root overflowEdgeThreshold={RUNS_ON_PX} className="min-w-0 flex-1">
               <ScrollArea.Viewport
                 ref={slide}
