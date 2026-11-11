@@ -150,6 +150,7 @@ if on ARCH; then
   start "File sizes" file_sizes
   start "Toolchain" scripts/build/toolchain.sh --check
   start "Brand" python3 scripts/ci/brand_guard.py
+  start "Shared parts" python3 scripts/ci/shared_parts_guard.py
   start "Unused Python" scripts/ci/dead_python.sh
 fi
 on SITE && start "Website" site
