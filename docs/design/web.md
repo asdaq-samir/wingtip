@@ -203,6 +203,13 @@ close does.
   (MapPanel). Nothing is held until the slide ends, nothing laid out ahead
   in a transition, nothing raises the sheet on a focus; the keyboard's
   inset and a focused field's scroll are `VirtualKeyboardProvider`'s.
+  The one thing handed over at a slide's end is the map's buttons between
+  the sheet and a card: they move onto a card once its drawer says it has
+  come up (`onOpenChangeComplete`, `sheetTopSlot`'s `useRidingCard`) and
+  back as it starts to close, so they never ride a card off the screen.
+  MapLibre's corner controls move on the Drawer's time and curve too
+  (`motion.drawer` and `motion.drawer-ease` in design/tokens.json, which
+  every web class that runs the Drawer's figures reads).
 - Cards over the sheet are the Drawer's own nested drawers (the owner,
   2026-11-11; `components/sheet/CardStack`): each with its own snap point
   among the sheet's three sizes, its grabber and its swipe, the sheet's
@@ -226,7 +233,16 @@ close does.
   left it at, never lowered and never taken all the way up, a page put
   away leaving it where it is (`e2e/sheet-size.spec.ts`). They are put inside the sheet's popup
   (`Drawer.Portal`'s `container`), outside its corners' clip, placed from
-  the sheet's snap offset to their own. A card's content stays drawn where
+  the sheet's snap offset to their own. A card rises from the screen's
+  foot as it opens and slides back down as it closes, as Base UI's Snap
+  points demo does: its popup off the screen under `[data-starting-style]`
+  and `[data-ending-style]`, the close on
+  `calc(var(--drawer-swipe-strength) * 400ms)` (Base UI writes the snap offset as 0 until it has measured, so
+  without a starting place a card slid from full to half). What the sheet
+  holds fades under a card as Base UI's nested drawers demo has it:
+  opacity 0 under `[data-nested-drawer-open]`, back under
+  `[data-nested-drawer-swiping]`, hidden once faded; its ground, edge and
+  shadow the same on the Drawer's curve (`SheetDrawer`). A card's content stays drawn where
   its caller is (its providers) and is put in its drawer's scroller
   (`useCardFrame`); touches on it are handed to its drawer's viewport
   (`SheetViewport`): Base UI 1.9 gives the viewport its touchstart,
@@ -411,11 +427,14 @@ address (`/airport/<ID>/<Name>`) ([SkyVector airport][skyvector-airport]).
 
 **Structure, airport card, top to bottom.**
 1. Head (sticky in the panel): ident tile, name, city, the flight
-   category chip and the METAR's age; Share, the star (Favorite) and close
-   (going back one level) at the bar's right.
+   category chip and the METAR's age; Share at the bar's start, the name
+   centred, and close (going back one level) at its end: two buttons at
+   most (the owner, 2026-11-11).
 2. Actions row, one row of equal tiles and no others (the owner,
    2026-11-11): Fly Here (filled, first), Add as Stop (where the field can
-   be one; else the row holds three), Call, Address (`lib/cardActions`;
+   be one; else the row holds three), Call, Favorite (the star, on or off,
+   in Address's place: the address is the town link and the Info tab's
+   row; the owner, 2026-11-11) (`lib/cardActions`;
    `docs/design/icons.md`). Refresh is at the right of the Weather tab's
    first row.
 3. Facts row: elevation, longest runway, the frequencies a pilot needs
@@ -489,9 +508,14 @@ popup outside the clip of its corners (`SheetDrawer`'s `grabber`), so
 each bar's 44-point hit area reaches over the sheet's edge rather than
 over the field; the first row keeps its room from before the pages. A
 card's grabber stays the plain one. A page change opens the grabber's
-capsule (`useCapsule`, the owner 2026-11-11): its two bars give way to a
-pill with the page's name in it, grown on `--motion-sheet` by CSS
-transitions of its width and height, held a second and folded back;
+capsule (`useCapsule`, the owner 2026-11-11): the page's bar gives way to a
+pill with the page's name in it, one per page anchored at its own bar,
+grown on the Drawer's time and curve (`--motion-drawer-ease`) by CSS
+transitions of its width and height, held a second and folded back; a
+page turned while one is out folds that one where it is as the other
+grows (one capsule moved between the sides jumped across the grabber);
+a tap on the other page's bar turns the page only, the size cycle being
+the bar's that was the page up before the press;
 while the pages move it names the page they are heading to, from
 Embla's own `scroll` progress and `settle` event (`SheetPager`, into the
 small `usePageHeading` store), nothing measured of our own. It is
@@ -1158,8 +1182,8 @@ The owner's rule: a screenshot of another app means ours should show this.
 | One round button at the bottom left (Look Around) | The radio's microphone, where it already was |
 | Privacy \| Terms \| Legal \| Imagery at the map's bottom right, over the sheet | `MapCredits`: one MapLibre AttributionControl at the bottom right, riding the sheet's top, Privacy \| Terms \| Legal then each drawn source's credit (imagery, Google, the traffic, the overlay tiles' FAA cycle); gone all the way up, where the footer has them |
 | A place picked: its card is the whole sheet, no search | Any card (a field, an airplane, a point, the Brief, the Map card) hides the search; its ✕ goes back to the search with the query kept |
-| A place card scrolled: its title and ✕ stay in sight | `PinnedHead` (owner decision 2026-11-10: one pinned frosted head, no large title): the card's head is one row, its name, Share and ✕, pinned at the sheet's top under the grabber from the start, the content scrolling under it blurred through its frost (`frost-head`), solid where there is no backdrop-filter and under Reduce Transparency. It replaced a large title folding into a compact bar, which on an iPhone stuck partway down the sheet with the card scrolling above it. Every card with a head has it, one row for all (`CardHeadRow`, the card rule's 8): `SheetCard`'s own (Map card and the cards in the sheet), `CardTitle`'s (airport, airplane), `CardHead`'s (Brief, Nav Log, Profile, Nearest, airspace, past flight); the lists in full (`ListPageHead`) and the Stops' row with its pull-down are their own. The airport card's tabs pin under it, each tab keeping its own place in the scroll (`useTabScroll`) |
-| Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share, the star and ✕, Fly Here (filled), Add as Stop, Call, Address; the pictures as a sliding row |
+| A place card scrolled: its title and ✕ stay in sight | `PinnedHead` (owner decision 2026-11-10: one pinned frosted head, no large title): the card's head is one row, its name, Share and ✕, pinned at the sheet's top under the grabber from the start, the content scrolling under it blurred through its frost (`frost-head`), solid where there is no backdrop-filter and under Reduce Transparency. It replaced a large title folding into a compact bar, which on an iPhone stuck partway down the sheet with the card scrolling above it. Every card with a head has it, one row for all (`CardHeadRow`, the card rule's 8): `SheetCard`'s own (Map card and the cards in the sheet), `CardTitle`'s (airport, airplane), `CardHead`'s (Brief, Nav Log, Profile, Nearest, airspace, past flight); the lists in full (`ListPageHead`), the Stops' row with its pull-down, Settings (`flush`, its scroller unpadded) and its pages (`ConsolePages`) draw the same row, its name and line centred across the card, Share, the star and the card's other buttons at its start and ✕ alone at its end, as Apple Maps' place card (`HeadGrid`; the owner, 2026-11-11: "let's move the title in the middle"); what scrolls under the head (an airport's name and town line, `CardHead`'s `line`) stays left-aligned (owner-reported 2026-11-11: Settings' title was its own, at 17 points under its pages' 22; `scripts/ci/shared_parts_guard.py` now fails a head drawn by hand). The airport card's tabs pin under it, each tab keeping its own place in the scroll (`useTabScroll`) |
+| Place card: big title, "kind · place" with the place a link, Share and ✕, four action tiles, photos sliding | The airport card: the ident, "name · town" with the town a link, Share and ✕, Fly Here (filled), Add as Stop, Call, Favorite; the pictures as a sliding row |
 | Typing: top hit with inline action pills, suggestion rows, places | `OneSearchResults`: one white group, the top hit with Fly Here and Depart From pills, Search Nearby and Ask as suggestions, the match in bold |
 | One search field (the one card rule, 2026-11-10) | The traffic's airplane and Nearest's place are the one search's field scoped to them (`listSearchOf`, OneSearchField's `list`); the route's points, the route box's arrow between two points (a stop there, `useStopAsked`) and the traffic's airport ask it for an airport (`askSearchPick`, AirportPicker), its placeholder what they ask for; the developer's page, with no one search, keeps the picker's own |
 | Questions over the page | Ready to Fly's prompt and a source's report as sent are SheetDialog's: from the bottom on a phone with their ✕, centred from `md` up |

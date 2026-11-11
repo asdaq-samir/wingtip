@@ -89,22 +89,26 @@ export function useNavLogs(
           metarColourOf={metarColour}
         >
           {/* Out of the tabs, drawing nothing: the risk assessment and the
-          Go / No-Go's findings published once, for Save and the tabs' marks. */}
-          <FlightBriefingView
-            part={null}
-            publish
-            nav={s.nav}
-            legs={s.legs}
-            dep={planned.dep}
-            dest={planned.dest}
-            stops={landedStops}
-            briefing={s.briefing}
-            course={course}
-            totals={s.totals}
-            depart={depart}
-            narrativeText={s.narrative.text}
-            problem={unflyableBrief}
-          />
+          Go / No-Go's findings published once, for Save and the tabs' marks;
+          after the engine is in, as it asks it (radio_call_sign) from the
+          page's first paint (firstDraw.test, 2026-11-11). */}
+          <EngineGate>
+            <FlightBriefingView
+              part={null}
+              publish
+              nav={s.nav}
+              legs={s.legs}
+              dep={planned.dep}
+              dest={planned.dest}
+              stops={landedStops}
+              briefing={s.briefing}
+              course={course}
+              totals={s.totals}
+              depart={depart}
+              narrativeText={s.narrative.text}
+              problem={unflyableBrief}
+            />
+          </EngineGate>
           {kneeboard}
         </NavLogView>
       </Suspense>

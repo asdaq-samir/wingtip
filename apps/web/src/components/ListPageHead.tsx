@@ -1,9 +1,7 @@
 import { useEffect, useEffectEvent, type ReactNode } from "react";
-import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import { PinnedHead } from "./PinnedHead";
+import { CardHeadRow } from "./CardHead";
 import { holdOpenCard } from "../lib/openCards";
-import { TEXT } from "../lib/text";
 
 /** A list in full's head, every list's: its name, what acts on the whole
  *  list (Edit, Clear), and at its right the close, which goes back to the
@@ -28,13 +26,17 @@ export function ListPageHead({
 }) {
   const back = useEffectEvent(onBack);
   useEffect(() => holdOpenCard({ close: () => back(), inBar: false }), []);
-  // Its name and close one row pinned at the sheet's top, the list
-  // scrolling under it (PinnedHead; the owner, 2026-11-10).
+  // Every card's one head row (CardHeadRow), pinned at the sheet's top,
+  // the list scrolling under it (the owner, 2026-11-10), its name at a
+  // card's 22 points as Settings' pages' are, where it drew its own at 17.
   return (
-    <PinnedHead testId={testId}>
-      <h3 className={cn("min-w-0 flex-1 truncate font-bold", TEXT.title)}>{title}</h3>
+    <CardHeadRow
+      name={title}
+      level="h3"
+      testId={testId}
+      end={<CloseButton label={backLabel} onClick={onBack} data-testid={testId && `${testId}-close`} />}
+    >
       {action}
-      <CloseButton label={backLabel} onClick={onBack} className="-mr-1" data-testid={testId && `${testId}-close`} />
-    </PinnedHead>
+    </CardHeadRow>
   );
 }

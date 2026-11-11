@@ -51,7 +51,7 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
         <Drawer.Backdrop
           data-slot="sheet-overlay"
           className={cn(
-            "fixed inset-0 z-50 opacity-[calc(1_-_var(--drawer-swipe-progress,0))] transition-opacity duration-450 ease-[cubic-bezier(0.32,0.72,0,1)]",
+            "fixed inset-0 z-50 opacity-[calc(1_-_var(--drawer-swipe-progress,0))] transition-opacity duration-(--motion-drawer) ease-(--motion-drawer-ease)",
             "data-starting-style:opacity-0 data-ending-style:opacity-0 data-swiping:duration-0 data-closed:pointer-events-none",
             DIM,
           )}
@@ -69,7 +69,7 @@ export function PhoneSheetContent({ edge, className, style, children, onPointerD
               // The Drawer's own motion, as Base UI's drawer has it: with the
               // finger as it is swiped, in from and out to its edge on its
               // curve, out the faster the harder it was thrown.
-              "transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] data-swiping:duration-0 data-swiping:select-none",
+              "transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) data-swiping:duration-0 data-swiping:select-none",
               "data-ending-style:duration-[calc(var(--drawer-swipe-strength,1)*400ms)] motion-reduce:transition-none",
               bottom
                 ? "[transform:translateY(var(--drawer-swipe-movement-y))] data-starting-style:[transform:translateY(calc(100%_+_1rem))] data-ending-style:[transform:translateY(calc(100%_+_1rem))]"

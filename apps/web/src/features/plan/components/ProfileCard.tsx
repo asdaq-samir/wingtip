@@ -57,9 +57,16 @@ export default function ProfileCard({
       className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] in-data-[panel=half]:max-h-[calc(100%-max(var(--sheet-offset,0px),-1*var(--sheet-offset,0px)))] print:hidden"
       data-testid="profile-card"
     >
-      <CardHead name={name} sub={sub} line={line} nameTestId="profile-name" onClose={onClose} onShare="profile" closeTestId="profile-close">
-        {corner}
-      </CardHead>
+      <CardHead
+        name={name}
+        sub={sub}
+        line={line}
+        nameTestId="profile-name"
+        onClose={onClose}
+        onShare="profile"
+        closeTestId="profile-close"
+        corner={corner}
+      />
       {cautions.length > 0 && (
         <ul
           className={cn("mt-2 shrink-0 space-y-1 rounded-lg bg-caution-wash px-2.5 py-2 text-caution-ink", TEXT.detail)}

@@ -816,6 +816,8 @@ enum WingtipMotion {
     static let sheetMost: TimeInterval = 0.35
     static let sheetEase = Animation.timingCurve(0, 0, 0.58, 1, duration: 0.3)
     static let sheetBackEase = Animation.timingCurve(0.2, 0.9, 0.3, 1, duration: 0.3)
+    static let drawer: TimeInterval = 0.45
+    static let drawerEase = Animation.timingCurve(0.32, 0.72, 0, 1, duration: 0.3)
     static let fade: TimeInterval = 0.2
     static let quick: TimeInterval = 0.15
     static let page: TimeInterval = 0.25

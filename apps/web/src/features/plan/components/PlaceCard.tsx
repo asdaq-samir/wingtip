@@ -14,7 +14,7 @@ import { CardTabBar, CardTabPanel } from "../../../components/CardTabs";
 import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../lib/cardTab";
 import { useTabScroll } from "../lib/tabScroll";
-import PlaceActions, { PlaceFavorite } from "./place/PlaceActions";
+import PlaceActions from "./place/PlaceActions";
 import PlaceSubtitle from "./place/PlaceSubtitle";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
@@ -233,9 +233,8 @@ export default function PlaceCard({
   // Asked for with the field itself, not after it: they waited for the
   // card's first answer and went 0.6 s after the tap (the 23 Oct timings).
   const { data: photos } = useQuery(photosQuery(ident));
-  // The services asked for with it too: the fuel is the details', the
-  // rest the Services' at the Info tab's foot (StopServices).
-  const { data: services } = useQuery(servicesQuery(ident));
+  // The services asked for with it, for the Info tab's foot (StopServices:
+  // the fuel first in its On the field).
   usePrefetchQuery(servicesQuery(ident));
   const [picture, setPicture] = useState<"aerial" | "photo" | null>(null);
   const [noRunwaysPicture, setNoRunwaysPicture] = useState(false);
@@ -463,7 +462,6 @@ export default function PlaceCard({
             onShare={share}
             closeTestId="place-close"
             shareTestId="place-share"
-            beside={<PlaceFavorite ident={kept?.ident ?? ident} place={place ?? null} />}
             pill={{ line: pillLine || undefined, picture: pillPicture }}
           />
           {/* The pictures' lightboxes (Base UI Dialogs), opened from the
@@ -502,6 +500,7 @@ export default function PlaceCard({
           )}
           <PlaceActions
             place={place ?? null}
+            ident={kept?.ident ?? ident}
             flying={flying}
             onFlyHere={(p) => {
               setFlying(true);
@@ -560,7 +559,7 @@ export default function PlaceCard({
             className={cn("frost-head sticky z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1", PINNED_BELOW)}
           />
           <CardTabPanel value="radio" className="space-y-0">
-            {place && <PlaceInfoTab place={place} where={where} services={services} />}
+            {place && <PlaceInfoTab place={place} where={where} />}
           </CardTabPanel>
           <CardTabPanel value="weather" className="space-y-0">
             <PlaceWeatherTab

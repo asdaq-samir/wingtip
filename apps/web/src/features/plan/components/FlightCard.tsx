@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { BadgeCheck, ChartLine, Crosshair, Fan, IdCard, Plane, Route, Star, UserRound } from "lucide-react";
+import { BadgeCheck, ChartLine, Crosshair, Fan, IdCard, Plane, Route, UserRound } from "lucide-react";
 import { cn } from "cn";
 import { Badge } from "../../../components/ui/badge";
 import { Progress } from "../../../components/ui/progress";
@@ -8,8 +8,7 @@ import { SheetCard } from "../../../components/SheetCard";
 import { CardTitle } from "../../../components/CardTitle";
 import { CardPictures, type CardSlide } from "../../../components/CardPictures";
 import { PhotoSlide } from "../../../components/PictureSlides";
-import { FAVORITE_STAR_ON } from "../../../lib/mapChrome";
-import RoundButton from "../../../components/RoundButton";
+import { FavoriteTile } from "../../../components/FavoriteTile";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { PillSection } from "../../../components/Favorites";
 import { RowBadge } from "../../../components/RowBadge";
@@ -517,9 +516,8 @@ export default function FlightCard({
         closeTestId="flight-close"
         shareTestId="flight-share"
         pill={{ line: pillLine || undefined, picture: photo?.src, tint: !photo }}
-        beside={<FavoriteButton kept={kept} />}
       />
-      <div className="grid grid-cols-3 gap-2 pt-3" data-testid="flight-actions">
+      <div className="grid grid-cols-4 gap-2 pt-3" data-testid="flight-actions">
         {/* Follow filled, the card's first thing to do; nothing to follow
             where it is not heard now: greyed, not pressed. */}
         <TogglePrimitive
@@ -547,6 +545,9 @@ export default function FlightCard({
             if (debriefed) onOpenPast(debriefed.id);
           }}
         />
+        {/* Its star the row's last tile, as the airport card's, the head
+            holding its Share and its close alone (the owner, 2026-11-11). */}
+        <FavoriteButton kept={kept} />
       </div>
       {/* What the pilot asked to be told of it, while it waits. */}
       {waiting && (
@@ -792,25 +793,9 @@ function FaaRegistration({ faa }: { faa: AircraftRegistration }) {
   );
 }
 
-/** The star that adds the airplane to the Aircraft card's Favorites, a
- *  round button beside the card's close, filled in iOS's yellow while it
- *  is one, as the airport card's is: on or off by aria-pressed, the round
- *  button being a tooltip's trigger with its own data-state. */
-function FavoriteButton({ kept, className }: { kept: KeptAircraft | null; className?: string }) {
+/** Favorite, which adds the airplane to the Aircraft card's Favorites. */
+function FavoriteButton({ kept }: { kept: KeptAircraft | null }) {
   const starred = usePreferences((s) => !!kept && s.favoriteAircraft.some((a) => a.hex === kept.hex));
   const toggle = usePreferences((s) => s.toggleFavoriteAircraft);
-  return (
-    <RoundButton
-      label={starred ? "Remove from Favorites" : "Add to Favorites"}
-      aria-pressed={starred}
-      disabled={!kept}
-      onClick={() => {
-        if (kept) toggle(kept);
-      }}
-      className={className}
-      data-testid="flight-favorite"
-    >
-      <Star className={cn("size-5", starred && FAVORITE_STAR_ON)} strokeWidth={2} />
-    </RoundButton>
-  );
+  return <FavoriteTile on={starred} disabled={!kept} onToggle={() => kept && toggle(kept)} testId="flight-favorite" />;
 }

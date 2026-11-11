@@ -143,6 +143,8 @@
   --motion-sheet-most: 0.35s;
   --motion-sheet-ease: cubic-bezier(0, 0, 0.58, 1);
   --motion-sheet-back-ease: cubic-bezier(0.2, 0.9, 0.3, 1);
+  --motion-drawer: 0.45s;
+  --motion-drawer-ease: cubic-bezier(0.32, 0.72, 0, 1);
   --motion-fade: 0.2s;
   --motion-quick: 0.15s;
   --motion-page: 0.25s;

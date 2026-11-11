@@ -975,6 +975,8 @@ object WingtipMotion {
     const val SHEET_MOST_MS = 350
     val SheetEase = CubicBezierEasing(0f, 0f, 0.58f, 1f)
     val SheetBackEase = CubicBezierEasing(0.2f, 0.9f, 0.3f, 1f)
+    const val DRAWER_MS = 450
+    val DrawerEase = CubicBezierEasing(0.32f, 0.72f, 0f, 1f)
     const val FADE_MS = 200
     const val QUICK_MS = 150
     const val PAGE_MS = 250

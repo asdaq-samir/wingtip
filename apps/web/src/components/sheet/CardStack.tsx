@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, type CSSProperties, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
@@ -6,7 +6,7 @@ import { closeTopCard } from "../../lib/openCards";
 import { cardOpening, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import { sizeAt, snapsOf } from "./insets";
 import { UNDER_INDICATOR } from "./SheetDrawer";
-import { sheetTopRef } from "./sheetTopSlot";
+import { cardSettled, sheetTopRef, useRidingCard } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
 
 export interface StackProps {
@@ -28,7 +28,28 @@ export interface StackProps {
 
 /** A card's drag eased on the Drawer's own curve, never under a finger. */
 const EASE =
-  "transition-transform duration-450 ease-[cubic-bezier(0.32,0.72,0,1)] data-swiping:transition-none motion-reduce:transition-none";
+  "transition-transform duration-(--motion-drawer) ease-(--motion-drawer-ease) data-swiping:transition-none motion-reduce:transition-none";
+
+/**
+ * A card rises from the screen's foot as it opens and slides back down as
+ * it closes, as Base UI's own Snap points demo does: its popup off the
+ * screen while the Drawer marks it starting or ending. Base UI writes
+ * --drawer-snap-point-offset as 0 until it has measured, so with no
+ * starting place a new card was drawn all the way up and slid down to half
+ * (the owner, 2026-11-11: "a new card is always transition from full to
+ * half when opening it"), and with no ending place it went in one frame.
+ * Off the screen is the card's own height below where it is drawn, less the
+ * sheet's offset it is drawn in (--sheet-base, SheetDrawer), past the home
+ * indicator (a top sheet's: above it, past the status bar). The close's
+ * time is the demo's: 400 ms at a still finger, shorter after a throw
+ * (--drawer-swipe-strength).
+ */
+const SLIDE = {
+  bottom:
+    "data-starting-style:[transform:translateY(calc(100%_-_var(--sheet-base,0px)_+_env(safe-area-inset-bottom)_+_2px))] data-ending-style:[transform:translateY(calc(100%_-_var(--sheet-base,0px)_+_env(safe-area-inset-bottom)_+_2px))] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)]",
+  // A top sheet's card comes down from the screen's top and goes back up.
+  top: "data-starting-style:[transform:translateY(calc(0px_-_100%_-_var(--sheet-base,0px)_-_env(safe-area-inset-top)_-_2px))] data-ending-style:[transform:translateY(calc(0px_-_100%_-_var(--sheet-base,0px)_-_env(safe-area-inset-top)_-_2px))] data-ending-style:duration-[calc(var(--drawer-swipe-strength)*400ms)]",
+};
 
 /**
  * The cards over the map's sheet, each Base UI's own nested Drawer (the
@@ -52,12 +73,21 @@ const EASE =
  */
 export function CardStack(p: StackProps & { host: HTMLElement | null }) {
   const stack = useSheetCards((s) => s.stack);
+  const riding = useRidingCard();
   if (!p.host) return null;
   const top = [...stack].reverse().find((entry) => entry.shown)?.id;
-  return stack.map((entry) => <CardDrawer key={entry.id} entry={entry} top={entry.id === top} {...p} host={p.host!} />);
+  return stack.map((entry) => (
+    <CardDrawer key={entry.id} entry={entry} top={entry.id === top} riding={entry.id === riding} {...p} host={p.host!} />
+  ));
 }
 
-function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry; top: boolean; host: HTMLElement }) {
+function CardDrawer({
+  entry,
+  top,
+  riding,
+  host,
+  ...p
+}: StackProps & { entry: CardEntry; top: boolean; riding: boolean; host: HTMLElement }) {
   const { id, frame } = entry;
   const slot = useCallback((node: HTMLElement | null) => setCard(id, { slot: node }), [id]);
   const { onPhone, fromBottom } = p;
@@ -71,13 +101,15 @@ function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry;
     if (unset) setCard(id, { at });
   }, [unset, id, at]);
   const ask = useCallback((size: PanelState) => setCard(id, { at: size }), [id]);
+  // Gone, it is no longer up: opened again it comes up anew (sheetTopSlot).
+  useEffect(() => () => cardSettled(id, false), [id]);
   // A drag let go: the size of the snap point the Drawer picked, one of ours.
   const snapped = (point: Drawer.Root.SnapPoint | null) => {
     if (point === null || !top) return;
     const target = sizeAt(fromBottom, point);
     if (target && target !== at) ask(target);
   };
-  const topSlot = onPhone && fromBottom && top;
+  const topSlot = onPhone && fromBottom && riding;
   return (
     <Drawer.Root
       open={entry.shown}
@@ -87,6 +119,8 @@ function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry;
       snapToSequentialPoints
       snapPoint={onPhone ? snaps.at[at] : undefined}
       onSnapPointChange={snapped}
+      // The map's buttons move onto it once it has finished coming up (sheetTopSlot).
+      onOpenChangeComplete={(open) => cardSettled(id, open)}
       onOpenChange={(open, details) => {
         if (open) return;
         // The card on top alone hears it: two cards open are two drawers
@@ -148,12 +182,13 @@ function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry;
                 onPhone &&
                   "[transform:translateY(calc(var(--drawer-snap-point-offset)-var(--sheet-base,0px)+var(--drawer-swipe-movement-y)))] [--sheet-offset:var(--drawer-snap-point-offset)] [--sheet-swipe:var(--drawer-swipe-movement-y)]",
                 onPhone && p.ready && EASE,
+                onPhone && SLIDE[fromBottom ? "bottom" : "top"],
                 // A top sheet's card clear of the status bar.
                 onPhone && !fromBottom && "pt-[env(safe-area-inset-top)]",
                 onPhone && fromBottom && UNDER_INDICATOR,
               )}
             >
-              {/* The map's buttons ride the top card's top, as the sheet's (OnSheetTop). */}
+              {/* The map's buttons ride the top card's top, as the sheet's (OnSheetTop), once it is up. */}
               {topSlot && (
                 <div
                   ref={sheetTopRef}

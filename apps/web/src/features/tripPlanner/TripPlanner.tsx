@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ArrowUp, Check, Square, X } from "lucide-react";
+import { ArrowUp, Check, Square } from "lucide-react";
 import { cn } from "cn";
+import CloseButton from "../../components/CloseButton";
 import IconButton from "../../components/IconButton";
 import { PANEL_FIELD } from "../../components/panelField";
 import SourceChips from "../../components/SourceChips";
@@ -163,19 +164,16 @@ export default function TripPlanner({ onClose }: { onClose: () => void }) {
             <ArrowUp className="size-5" />
           </IconButton>
         )}
-        <IconButton
+        {/* Every panel's close (CloseButton), where it drew its own ✕. */}
+        <CloseButton
           label="Close the trip planner"
-          variant="ghost"
-          size="icon-lg"
-          className="size-12 shrink-0 rounded-full"
+          className="shrink-0"
           onClick={() => {
             clear();
             onClose();
           }}
           data-testid="trip-close"
-        >
-          <X className="size-5" />
-        </IconButton>
+        />
       </div>
     </div>
   );

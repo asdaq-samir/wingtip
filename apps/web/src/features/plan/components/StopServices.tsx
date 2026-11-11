@@ -7,6 +7,7 @@ import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { PillSection } from "../../../components/Favorites";
 import { FirstFew } from "../../../components/FirstFew";
 import QueryState from "../../../components/QueryState";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../components/ui/collapsible";
 import { RowBadge } from "../../../components/RowBadge";
 import type { NearbyPlace } from "../../../lib/api/types";
 import { awayWords, fuelNames, glanceOf, type GlanceItem, type Glanceable } from "../../../lib/stopServices";
@@ -94,14 +95,7 @@ const placeRows = (places: NearbyPlace[], media: ReactNode, testId: string) =>
  * within five miles, nearest first (wingtip.nearby). A place with a phone is
  * a tap that calls it.
  */
-export function StopServices({
-  ident,
-  withoutFuel = false,
-}: {
-  ident: string;
-  /** Its fuel left to the airport card's details, which show it. */
-  withoutFuel?: boolean;
-}) {
+export function StopServices({ ident }: { ident: string }) {
   const asked = useQuery(servicesQuery(ident));
   const s = asked.data;
   // A line while they are fetched, and where they could not be, that they
@@ -120,7 +114,34 @@ export function StopServices({
     .filter(Boolean)
     .join(", ")
     .replace(/^./, (c) => c.toUpperCase());
+  // Its fuel first among what is on the field (the owner, 2026-11-11:
+  // "Fuel should move to on the field section"), from its Chart Supplement
+  // entry, the remarks in plain English as the planner gives them
+  // (wingtip.remarks.service_notes: self-serve, its hours, the FBO's)
+  // folded under it, so a field's paragraph of them (Duluth's) does not
+  // stand between the fuel and the rest.
   const field = [
+    <ListRow
+      key="fuel"
+      media={
+        <RowBadge colour={BADGE.fuel}>
+          <Fuel />
+        </RowBadge>
+      }
+      title="Fuel"
+      value={<span className="font-semibold text-foreground">{s.fuel_types.length ? fuelNames(s.fuel_types) : "None listed"}</span>}
+      data-testid="services-fuel"
+    />,
+    s.fuel_notes.length > 0 && (
+      <Collapsible key="fuel-notes">
+        <CollapsibleTrigger render={<ListRow title="Fuel remarks" chevron data-testid="services-fuel-remarks" />} />
+        <CollapsibleContent>
+          {s.fuel_notes.map((note) => (
+            <ListRow key={note} title={<span className={cn("text-muted-foreground", TEXT.detail)}>{note}</span>} />
+          ))}
+        </CollapsibleContent>
+      </Collapsible>
+    ),
     s.courtesy_car && (
       <ListRow
         key="car"
@@ -195,24 +216,6 @@ export function StopServices({
   const near = s.food.length + s.lodging.length + s.cars.length > 0;
   return (
     <div data-testid="place-services">
-      {!withoutFuel && (
-        <Section title="Fuel">
-          <ListRow
-            media={
-              <RowBadge colour={BADGE.fuel}>
-                <Fuel />
-              </RowBadge>
-            }
-            title={s.fuel_types.length ? fuelNames(s.fuel_types) : <span className="text-muted-foreground">None listed</span>}
-            data-testid="services-fuel"
-          />
-          {/* The remarks in plain English as the planner gives them
-              (wingtip.remarks.service_notes): self-serve, its hours, the FBO's. */}
-          {s.fuel_notes.map((note) => (
-            <ListRow key={note} title={note} />
-          ))}
-        </Section>
-      )}
       {field.length > 0 && <FewSection title="On the field" rows={field} />}
       {s.food.length > 0 && (
         <FewSection

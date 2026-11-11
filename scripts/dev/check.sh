@@ -328,6 +328,9 @@ run_area() {
       # No raw colour, type size, padding or corner outside the design
       # tokens, past the allow-list (seconds).
       python3 "$here/scripts/ci/brand_guard.py"
+      # No card head, section title or close drawn by hand where a shared
+      # component draws it, past the allow-list (seconds).
+      python3 "$here/scripts/ci/shared_parts_guard.py"
       # No unused Python (vulture, with its list of what it cannot see used).
       "$here/scripts/ci/dead_python.sh"
       ;;

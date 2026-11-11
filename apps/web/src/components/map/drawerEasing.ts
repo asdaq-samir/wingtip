@@ -1,9 +1,11 @@
-/** The Drawer's curve, cubic-bezier(0.32, 0.72, 0, 1), as a function of
+import { MOTION } from "../../lib/tokens";
+
+/** The Drawer's curve (design/tokens.json motion.drawer-ease), as a function of
  *  time for the map's own eases (MapLibre takes `easing(t)`), so the map
  *  and the sheet move on one curve. Solved for x by Newton's method, then
  *  bisection where that stalls, as browsers solve a CSS cubic-bezier. */
 export function drawerEasing(t: number): number {
-  const [x1, y1, x2, y2] = [0.32, 0.72, 0, 1];
+  const [x1, y1, x2, y2] = MOTION.drawerEase;
   const at = (a: number, b: number, s: number) => 3 * a * s * (1 - s) ** 2 + 3 * b * s ** 2 * (1 - s) + s ** 3;
   const slope = (a: number, b: number, s: number) => 3 * a * (1 - s) ** 2 + 6 * (b - a) * s * (1 - s) + 3 * (1 - b) * s ** 2;
   if (t <= 0) return 0;

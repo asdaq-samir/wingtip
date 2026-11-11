@@ -16,6 +16,7 @@ import { CUT_TOP, FOLLOW, SHEET_BELOW, SheetParts, type PartsProps } from "./she
 import { SheetGrabber } from "./sheet/SheetGrabber";
 import { CardStack, type StackProps } from "./sheet/CardStack";
 import { SheetDrawer } from "./sheet/SheetDrawer";
+import { useRidingCard } from "./sheet/sheetTopSlot";
 import type { SheetPages } from "./sheet/SheetPager";
 
 interface Props {
@@ -100,6 +101,8 @@ export default function MapPanel(props: Props) {
   const bottomSheet = onPhone && fromBottom;
   const topEntry = useSheetCards((s) => topCard(s.stack));
   const cardsUp = !!topEntry;
+  // The map's buttons ride the sheet's top until a card has finished coming up (sheetTopSlot).
+  const ridingCard = useRidingCard();
   // Where the cards over it are put: inside its popup (CardStack).
   const [cardHost, setCardHost] = useState<HTMLElement | null>(null);
   // The route's figures at half and all the way up; at the pill where they
@@ -272,7 +275,7 @@ export default function MapPanel(props: Props) {
       popup={common}
       look={look}
       grabber={!cardsUp && sheetGrabber}
-      topSlot={!cardsUp}
+      topSlot={ridingCard === null}
       cards={
         // The cards over it, inside its popup: its place.
         <>

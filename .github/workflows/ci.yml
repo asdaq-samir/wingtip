@@ -562,6 +562,8 @@ jobs:
                 - scripts/ci/brand_guard.py
                 - scripts/ci/brand_guard_allow.txt
                 - design/tokens.json
+                - scripts/ci/shared_parts_guard.py
+                - scripts/ci/shared_parts_guard_allow.txt
                 - apps/web/src/*.css
                 - apps/web/src/**/*.css
                 - scripts/ci/dead_python.sh
