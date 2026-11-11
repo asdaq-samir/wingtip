@@ -95,7 +95,7 @@ pub fn wind_arrow(speed_kt: Option<f64>, gust_kt: Option<f64>, crosswind_kt: Opt
     (shown, over)
 }
 
-/// A station model's wind barb: FAA-H-8083-28A, Aviation Weather Handbook,
+/// A station model's wind barb: FAA-H-8083-28B, Aviation Weather Handbook,
 /// 25.2.3.4.5: "Wind is plotted in increments of 5 kt ... Wind speed is
 /// determined by adding the values of the flags (50 kt), barbs (10 kt),
 /// and half-barbs (5 kt) found on the stem. If the wind is calm at the time

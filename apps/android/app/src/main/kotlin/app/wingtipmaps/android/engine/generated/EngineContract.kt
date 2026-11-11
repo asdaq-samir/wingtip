@@ -3022,7 +3022,7 @@ object EngineContract {
     )
 
     /**
-     * One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (AC 00-45H's change groups).
+     * One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (FAA-H-8083-28B 27.4.2.10's change groups).
      */
     @Serializable
     data class FieldHour(
@@ -3057,7 +3057,7 @@ object EngineContract {
         @SerialName("at_times_thunder")
         val atTimesThunder: Boolean,
         /**
-         * The worse weather at times comes only from a PROB group (AC 00-45H).
+         * The worse weather at times comes only from a PROB group (FAA-H-8083-28B 27.4.2.10.3).
          */
         @SerialName("at_times_chance")
         val atTimesChance: Boolean,
@@ -6501,6 +6501,9 @@ object EngineContract {
          * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
          */
         val profile: EngineContract.NavLogProfile? = null,
+        /**
+         * Whether the flight is at night (14 CFR 1.1, after the end of evening civil twilight); null where it has no departure time, which takes the night's 45-minute VFR reserve (91.151(a)(2)).
+         */
         val night: Boolean? = null,
         val rules: String? = null,
         @SerialName("alternate_gal")
@@ -6956,6 +6959,9 @@ object EngineContract {
         val fixes: List<EngineContract.NavLogFix>,
         @SerialName("end_altitude_ft")
         val endAltitudeFt: Double? = null,
+        /**
+         * How far before the legs' end the descent is finished, nm: an approach's fix's distance out; where not given, down to a pattern, where the 45-degree entry begins (limits::pattern_entry_start_nm, about 1.7 nm), and 0 with an end_fix.
+         */
         @SerialName("end_before_nm")
         val endBeforeNm: Double? = null,
         @SerialName("end_fix")
@@ -10008,6 +10014,9 @@ object EngineContract {
 
     @Serializable
     data class TrafficMarksInput(
+        /**
+         * Own ship's height above mean sea level, ft, as the phone's GNSS gives it (iOS CLLocation altitude, Android's MSL altitude).
+         */
         @SerialName("own_ft")
         val ownFt: Double? = null,
         val planes: List<EngineContract.TrafficMarksInputPlanesItem>,
@@ -10028,6 +10037,11 @@ object EngineContract {
         val verticalFpm: Double? = null,
         val lat: Double? = null,
         val lon: Double? = null,
+        /**
+         * The airplane's height is its pressure altitude as sent (29.92 "Hg), not set on an altimeter: own_ft is the phone's GNSS above mean sea level, so the near band is 1,000 ft wider for it (PRESSURE_SLACK_FT, about an inch of mercury, FAA-H-8083-25C ch. 11 Figure 11-3).
+         */
+        @SerialName("pressure_altitude")
+        val pressureAltitude: Boolean? = null,
     )
 
     @Serializable
@@ -10537,7 +10551,7 @@ object EngineContract {
     @Serializable
     data class WeatherWorseItem(
         /**
-         * The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR"): an app tells a key once.
+         * The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR", "metar:KMSN:ceiling-unknown"): an app tells a key once.
          */
         val key: String,
         val kind: String,

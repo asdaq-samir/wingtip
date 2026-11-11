@@ -7,7 +7,7 @@ const airport = (ident: string, elevation: number): Airport =>
   ({ ident, name: ident, lat: 42, lon: -88, elevation_ft: elevation, kind: "airport" }) as Airport;
 
 describe("the plan from the side", () => {
-  it("up from the field to its top of climb, level, down from its top of descent to the pattern a mile out and the field", () => {
+  it("up from the field to its top of climb, level, down from its top of descent to the pattern at its 45-degree entry and the field", () => {
     const leg = {
       distance_nm: 60,
       ete_min: 36,
@@ -24,7 +24,8 @@ describe("the plan from the side", () => {
       { along_nm: 0, plan_ft: 800 },
       { along_nm: 8, plan_ft: 5500 },
       { along_nm: 48, plan_ft: 5500 },
-      { along_nm: 59, plan_ft: 1500 },
+      // Level 1.7236 nm out, where the 45-degree entry begins (AC 90-66C 11.3).
+      { along_nm: 58.27640478071473, plan_ft: 1500 },
       { along_nm: 60, plan_ft: 500 },
     ]);
     expect(marks.map((m) => m.kind)).toEqual(["TOC", "TOD"]);

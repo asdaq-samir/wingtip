@@ -1606,7 +1606,7 @@ export interface EngineContract {
     answer: FaaWordsAnswer;
   };
   /**
-   * A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as AC 00-45H sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
+   * A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as FAA-H-8083-28B 27.4.2.10 sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
    */
   field_hours: {
     input: FieldHoursInput;
@@ -1620,7 +1620,7 @@ export interface EngineContract {
     answer: FieldRelationAnswer;
   };
   /**
-   * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (AC 00-45H).
+   * The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (FAA-H-8083-28B 27.4.1, 24.4.3.8.2).
    */
   field_taf: {
     input: FieldTafInput;
@@ -1718,7 +1718,7 @@ export interface EngineContract {
     answer: FloorCautionAnswer;
   };
   /**
-   * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, AC 00-45H).
+   * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).
    */
   forecast_hour: {
     input: ForecastHourInput;
@@ -1802,7 +1802,7 @@ export interface EngineContract {
     answer: FuelStopsAnswer;
   };
   /**
-   * The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (AC 00-45H).
+   * The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (FAA-H-8083-28B 26.3.1.1).
    */
   gairmet_hazards: {
     input: GairmetHazardsInput;
@@ -1816,7 +1816,7 @@ export interface EngineContract {
     answer: GairmetTitleAnswer;
   };
   /**
-   * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (AC 00-45H).
+   * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (FAA-H-8083-28B 26.3.1.1).
    */
   gairmets_along_route: {
     input: GairmetsAlongRouteInput;
@@ -2334,7 +2334,7 @@ export interface EngineContract {
     answer: NavLogCandidatesAnswer;
   };
   /**
-   * The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
+   * The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), and 45 where `night` is null (no departure time: night cannot be ruled out, so the larger is assumed), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
    */
   navlog_fuel_plan: {
     input: NavLogFuelPlanInput;
@@ -2411,7 +2411,7 @@ export interface EngineContract {
     answer: NavLogWithClimbsAnswer;
   };
   /**
-   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged.
+   * The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude where the 45-degree entry begins, about 1.7 nm before the end (AC 90-66C 11.2, 11.3: level at pattern altitude before entering), to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged.
    */
   navlog_with_descents: {
     input: NavLogWithDescentsInput;
@@ -2607,7 +2607,7 @@ export interface EngineContract {
     answer: PointKindAnswer;
   };
   /**
-   * Pressure altitude from a field's elevation and its altimeter setting, a thousand feet an inch from 29.92 (PHAK ch. 4).
+   * Pressure altitude from a field's elevation and its altimeter setting: the standard atmosphere's height of the setting above 29.92 "Hg, (1 - (setting/29.92)^(1/5.2558797)) x 145,442 ft (ICAO Doc 7488), FAA-H-8083-25C ch. 11 Figure 11-3's conversion factor to within 2 ft (30.10 "Hg: -165).
    */
   pressure_altitude_ft: {
     input: PressureAltitudeFtInput;
@@ -2670,7 +2670,7 @@ export interface EngineContract {
     answer: ProficiencyPlanAnswer;
   };
   /**
-   * The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red within 100 ft of it or above it and yellow within 1,000 ft -- ForeFlight's Hazard Advisor display defaults (ForeFlight Pilot's Guide), not a regulation; the legal minimums over the ground are 14 CFR 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
+   * The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red where they come within less than 500 ft of it or above it (14 CFR 91.119(c)'s 500 ft above the surface and from any structure; exactly 500 ft meets it) and yellow within 1,000 ft (91.119(b)'s height over a congested area, the town not known here) -- the legal floors themselves are 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
    */
   profile_clearance: {
     input: ProfileClearanceInput;
@@ -2929,7 +2929,7 @@ export interface EngineContract {
     answer: SigmetHazardAnswer;
   };
   /**
-   * The SIGMETs in force whose area the route crosses (AC 00-45H).
+   * The SIGMETs in force whose area the route crosses (FAA-H-8083-28B 26.2.4).
    */
   sigmets_along_route: {
     input: SigmetsAlongRouteInput;
@@ -2971,7 +2971,7 @@ export interface EngineContract {
     answer: SuaAltitudesAnswer;
   };
   /**
-   * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (AC 00-45H).
+   * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
    */
   taf_window: {
     input: TafWindowInput;
@@ -3055,7 +3055,7 @@ export interface EngineContract {
     answer: TrafficKindAnswer;
   };
   /**
-   * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
+   * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159), 2,000 ft for an airplane whose height is an uncorrected pressure altitude (pressure_altitude: the two are not on one reference); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
    */
   traffic_marks: {
     input: TrafficMarksInput;
@@ -3139,28 +3139,28 @@ export interface EngineContract {
     answer: VorCheckLimitDegAnswer;
   };
   /**
-   * When a weather report stops counting, Unix seconds UTC, or null where nothing says: a routine METAR an hour after it was observed (AIM 7-1-28, "METAR-hourly"; FMH-1 ch. 2), a SPECI when the next routine report is due, a TAF, the FB winds or an advisory at the end of the valid time its header gives (AC 00-45H).
+   * When a weather report stops counting, Unix seconds UTC, or null where nothing says: a routine METAR an hour after it was observed (AIM 7-1-28, "METAR-hourly"; FMH-1 ch. 2), a SPECI when the next routine report is due, a TAF, the FB winds or an advisory at the end of the valid time its header gives (FAA-H-8083-28B 27.4.1, Table 27-2, 26.2-26.3).
    */
   weather_expires_at: {
     input: WeatherExpiresAtInput;
     answer: WeatherExpiresAtAnswer;
   };
   /**
-   * To when a stored copy may be served when later fetches fail, by its product's own validity (AC 00-45H): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
+   * To when a stored copy may be served when later fetches fail, by its product's own validity (FAA-H-8083-28B 24.4.1, 26.2-26.3, 27.4.1): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
    */
   weather_held_until: {
     input: WeatherHeldUntilInput;
     answer: WeatherHeldUntilAnswer;
   };
   /**
-   * Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (AC 00-45H).
+   * Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (FAA-H-8083-28B 27.4.1).
    */
   weather_in_force: {
     input: WeatherInForceInput;
     answer: WeatherInForceAnswer;
   };
   /**
-   * What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there. A caution, never a limit; each change keyed so an app tells it once.
+   * What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there; and either with a ceiling of unknown height now (OVC///) where it had a known one, a ceiling not known to be high enough (14 CFR 1.1). A caution, never a limit; each change keyed so an app tells it once.
    */
   weather_worse: {
     input: WeatherWorseInput;
@@ -3181,7 +3181,7 @@ export interface EngineContract {
     answer: WindAtAltitudeAnswer;
   };
   /**
-   * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28A, 25.2.3.4.5).
+   * A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28B, 25.2.3.4.5).
    */
   wind_barb: {
     input: WindBarbInput;
@@ -5738,7 +5738,7 @@ export interface FieldHoursInput {
   count?: number | null;
 }
 /**
- * One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (AC 00-45H's change groups).
+ * One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (FAA-H-8083-28B 27.4.2.10's change groups).
  *
  * This interface was referenced by `EngineContract`'s JSON-Schema
  * via the `definition` "FieldHour".
@@ -5767,7 +5767,7 @@ export interface FieldHour {
   at_times_gust_kt: number | null;
   at_times_thunder: boolean;
   /**
-   * The worse weather at times comes only from a PROB group (AC 00-45H).
+   * The worse weather at times comes only from a PROB group (FAA-H-8083-28B 27.4.2.10.3).
    */
   at_times_chance: boolean;
 }
@@ -7879,6 +7879,9 @@ export interface NavLogFuelPlanInput {
    * null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
    */
   profile: NavLogProfile | null;
+  /**
+   * Whether the flight is at night (14 CFR 1.1, after the end of evening civil twilight); null where it has no departure time, which takes the night's 45-minute VFR reserve (91.151(a)(2)).
+   */
   night?: boolean | null;
   rules?: "vfr" | "ifr" | null;
   alternate_gal?: number | null;
@@ -8235,6 +8238,9 @@ export interface NavLogWithDescentsInput {
   legs: NavLogLeg[];
   fixes: NavLogFix[];
   end_altitude_ft?: number | null;
+  /**
+   * How far before the legs' end the descent is finished, nm: an approach's fix's distance out; where not given, down to a pattern, where the 45-degree entry begins (limits::pattern_entry_start_nm, about 1.7 nm), and 0 with an end_fix.
+   */
   end_before_nm?: number | null;
   end_fix?: string | null;
 }
@@ -10497,12 +10503,19 @@ export interface TrafficKindInput {
   category?: string | null;
 }
 export interface TrafficMarksInput {
+  /**
+   * Own ship's height above mean sea level, ft, as the phone's GNSS gives it (iOS CLLocation altitude, Android's MSL altitude).
+   */
   own_ft?: number | null;
   planes: {
     altitude_ft?: number | null;
     vertical_fpm?: number | null;
     lat?: number | null;
     lon?: number | null;
+    /**
+     * The airplane's height is its pressure altitude as sent (29.92 "Hg), not set on an altimeter: own_ft is the phone's GNSS above mean sea level, so the near band is 1,000 ft wider for it (PRESSURE_SLACK_FT, about an inch of mercury, FAA-H-8083-25C ch. 11 Figure 11-3).
+     */
+    pressure_altitude?: boolean | null;
   }[];
   own?: {
     lat: number;
@@ -10729,7 +10742,7 @@ export interface WeatherWorseAnswer {
  */
 export interface WeatherWorseItem {
   /**
-   * The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR"): an app tells a key once.
+   * The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR", "metar:KMSN:ceiling-unknown"): an app tells a key once.
    */
   key: string;
   kind: "metar" | "advisory" | "taf";

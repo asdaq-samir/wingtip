@@ -4,6 +4,12 @@
 //! central angle by the atan2 form of Vincenty's formula for a sphere,
 //! well-conditioned at every distance, so the two agree to a few
 //! micrometres.
+//!
+//! The FAA's data (NASR, the CIFP, the DOF) are on WGS-84, an ellipsoid;
+//! the sphere, 3,440.065 nm (6,371.0 km, the mean radius), is a stated
+//! simplification whose error is accepted: 0.086% on KDLH to KSTL (0.42
+//! nm in 492 nm) and at most about 0.5% anywhere, a few tenths of a mile
+//! over a cross-country leg, inside any figure the nav log rounds to.
 
 use crate::json::{self, Value};
 

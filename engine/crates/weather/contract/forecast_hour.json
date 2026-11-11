@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_weather::forecast::calls::call",
-  "description": "The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, AC 00-45H).",
+  "description": "The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).",
   "type": "object",
   "properties": {
     "input": {

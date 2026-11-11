@@ -119,7 +119,7 @@ def test_each_flight_climbs_from_its_field_and_comes_down_to_its_own_pattern():
     # The legs at 4,500 ft, the fields at 900: each flight climbs from its
     # own field and tops out once -- C81's on its second leg, past the lake
     # the stub puts 2 nm out, KMSN's on its first -- and each comes down to
-    # 1,900, 2,600 ft at three to one, 7.8 nm out, on the leg into the field.
+    # 1,900, 7.8 nm at three to one plus the 45's 1.7 (AC 90-66C 11.3): 9.5.
     legs = client.get("/api/plan", params=VIA_MADISON).json()["legs"]
 
     assert [leg["from"] for leg in legs if leg["toc"]] == ["Lake", "KMSN"]
@@ -127,7 +127,7 @@ def test_each_flight_climbs_from_its_field_and_comes_down_to_its_own_pattern():
     tods = [(leg, leg["tod"]) for leg in legs if leg["tod"]]
     assert [leg["to"] for leg, _ in tods] == ["KMSN", "KDLH"]
     assert all(tod["to_ft"] == 1900.0 and tod["pattern"] for _, tod in tods)
-    assert all(leg["distance_nm"] - tod["along_nm"] == pytest.approx(7.8, abs=0.1) for leg, tod in tods)
+    assert all(leg["distance_nm"] - tod["along_nm"] == pytest.approx(9.5, abs=0.1) for leg, tod in tods)
 
 
 def test_the_stream_runs_through_the_stop_and_ends_on_the_hops_totals(messages):

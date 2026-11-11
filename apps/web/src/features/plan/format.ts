@@ -55,7 +55,7 @@ export function plannedWords(t: Totals | null): string {
 
 /** Whether the winds a plan flies are not for its flight: the departure
  *  (`depart`, an ISO instant, or now where "" or past) outside their
- *  forecast's "for use" period (AC 00-45H, table 5-21) -- past its end as a
+ *  forecast's "for use" period (FAA-H-8083-28B Table 27-2) -- past its end as a
  *  plan for "now" left open all day is, or a later flight's no product
  *  covers. Its headings, times and fuel then out of date. Whether the
  *  winds count is the engine's `weather_in_force`, the rule the planner

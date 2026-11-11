@@ -160,7 +160,8 @@ final class Traffic {
     static func marks(_ planes: [TrafficAircraft], ownFt: Double?, own: CLLocationCoordinate2D? = nil) throws -> [Mark] {
         try Engine.trafficMarks(
             ownFt: ownFt,
-            planes: planes.map { .init(altitudeFt: $0.altitudeFt, verticalFpm: $0.verticalFpm, lat: $0.lat, lon: $0.lon) },
+            planes: planes.map { .init(altitudeFt: $0.altitudeFt, verticalFpm: $0.verticalFpm, lat: $0.lat, lon: $0.lon,
+                                       pressureAltitude: $0.pressureAltitude) },
             own: own.map { .init(lat: $0.latitude, lon: $0.longitude) })
     }
 

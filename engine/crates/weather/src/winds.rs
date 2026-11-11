@@ -1,8 +1,8 @@
 //! A station's winds and temperatures aloft read at one altitude, and the
 //! standard atmosphere's lapse rate carried past its levels. The levels
 //! are the weather service's (the GFS's, at the old FB stations); the
-//! coding of the NWS's FB text is AC 00-45H's Winds and Temperatures Aloft
-//! Forecast.
+//! coding of the NWS's FB text is FAA-H-8083-28B 27.2.1.1.1's FB Wind and
+//! Temperature Aloft Forecast.
 
 use wingtip_core::sort::StableSort;
 
@@ -29,7 +29,7 @@ pub struct WindAt {
 /// The wind at `altitude_ft` from a station's levels, (altitude_ft,
 /// direction or None for light and variable, speed): interpolated between
 /// the levels either side (the direction the short way round), clamped to
-/// the nearest end outside them. A light-and-variable level (AC 00-45H's
+/// the nearest end outside them. A light-and-variable level (FAA-H-8083-28B 27.2.1.1.1's
 /// 9900, no direction) is left out rather than guessed; None where no
 /// level is left -- no wind known, never calm.
 pub fn wind_at_altitude(levels: &[(f64, Option<f64>, f64)], altitude_ft: f64) -> Option<WindAt> {
@@ -70,7 +70,7 @@ pub fn temperature_at(profile: &[(f64, f64)], altitude_ft: f64) -> Option<f64> {
 
 /// Where a temperature profile (altitude_ft, temp_c), lowest first,
 /// crosses 0 C -- the freezing level, at and above which visible moisture
-/// can ice an airframe (FAA-H-8083-28, Aviation Weather Handbook, icing; AC 00-45H's
+/// can ice an airframe (FAA-H-8083-28B 20.3.4, icing between 0 and -20 C; 25.4's
 /// freezing level): `(ft, at_or_below)`, by linear interpolation between
 /// the two levels either side. `at_or_below` where it is at or below 0 C
 /// at the lowest level already: the freezing level is there or lower,
@@ -92,8 +92,8 @@ pub fn freezing_level(profile: &[(f64, f64)]) -> Option<(f64, bool)> {
 /// Which winds period ("06", "12", "24") fits a departure `hours_ahead`
 /// from now where no period's own window can be read to say: the 6-hour
 /// period up to six hours out, the 12-hour to fifteen, the 24-hour beyond
-/// -- where the FB's FOR USE windows ended (AC 00-45H, Winds and
-/// Temperatures Aloft Forecast), which the weather service's GFS periods
+/// -- where the FB's FOR USE windows ended (FAA-H-8083-28B Table 27-2,
+/// Wind and Temperature Aloft Forecast Periods), which the weather service's GFS periods
 /// keep (services/weather/app/gfs.py). None, no departure time, is now.
 pub fn forecast_hour(hours_ahead: Option<f64>) -> &'static str {
     match hours_ahead {

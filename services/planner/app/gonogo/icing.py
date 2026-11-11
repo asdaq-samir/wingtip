@@ -4,7 +4,7 @@ the moisture icing needs is forecast -- cloud along the route, or an icing
 AIRMET or SIGMET over it (the planner's `icing_possible`, wingtip.altitude) --
 with the pilot reports of icing near the route (structural icing needs
 visible moisture at or below 0 °C, the Aviation Weather Handbook,
-FAA-H-8083-28A, Icing). Under VFR the flight stays clear of cloud (14 CFR
+FAA-H-8083-28B ch. 20, Icing). Under VFR the flight stays clear of cloud (14 CFR
 91.155). The rule is the engine's (wingtip_engine::gonogo::icing), asked
 by name through wingtip_native.call."""
 

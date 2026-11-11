@@ -489,7 +489,7 @@ extension Engine {
         try rule("faa_words", EngineContract.FaaWordsInput(text: text, texts: texts))
     }
 
-    /// A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as AC 00-45H sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
+    /// A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as FAA-H-8083-28B 27.4.2.10 sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
     static func fieldHours(metar: [String: JSONValue]? = nil, taf: String? = nil, now: Double, count: Double? = nil) throws -> [EngineContract.FieldHour] {
         try rule("field_hours", EngineContract.FieldHoursInput(metar: metar, taf: taf, now: now, count: count))
     }
@@ -499,7 +499,7 @@ extension Engine {
         try rule("field_relation", EngineContract.FieldRelationInput(plane: plane, field: field))
     }
 
-    /// The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (AC 00-45H).
+    /// The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (FAA-H-8083-28B 27.4.1, 24.4.3.8.2).
     static func fieldTaf(ident: String, at: EngineContract.FieldTafInputAt? = nil, stations: [EngineContract.FieldTafInputStationsItem]) throws -> EngineContract.FieldTafAnswer {
         try rule("field_taf", EngineContract.FieldTafInput(ident: ident, at: at, stations: stations))
     }
@@ -569,7 +569,7 @@ extension Engine {
         try rule("floor_caution", EngineContract.FloorCautionInput(segment: segment, altitudeFt: altitudeFt))
     }
 
-    /// The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, AC 00-45H).
+    /// The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).
     static func forecastHour(hoursAhead: Double? = nil) throws -> String {
         try rule("forecast_hour", EngineContract.ForecastHourInput(hoursAhead: hoursAhead))
     }
@@ -629,7 +629,7 @@ extension Engine {
         try rule("fuel_stops", EngineContract.FuelStopsInput(start: start, end: end, fuelPerNm: fuelPerNm, minPerNm: minPerNm, usableGal: usableGal, taxiGal: taxiGal, reserveGal: reserveGal, groundMin: groundMin, skip: skip, fields: fields))
     }
 
-    /// The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (AC 00-45H).
+    /// The G-AIRMET hazards a VFR flight is told of, code to words, and how near some time of the flight a snapshot (three hours apart) is told, seconds (FAA-H-8083-28B 26.3.1.1).
     static func gairmetHazards() throws -> EngineContract.GairmetHazardsAnswer {
         try rule("gairmet_hazards", EngineContract.GairmetHazardsInput())
     }
@@ -639,7 +639,7 @@ extension Engine {
         try rule("gairmet_title", EngineContract.GairmetTitleInput(hazard: hazard, severity: severity))
     }
 
-    /// The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (AC 00-45H).
+    /// The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (FAA-H-8083-28B 26.3.1.1).
     static func gairmetsAlongRoute(advisories: [[String: JSONValue]], path: [[Double]], start: Double, end: Double) throws -> [[String: JSONValue]] {
         try rule("gairmets_along_route", EngineContract.GairmetsAlongRouteInput(advisories: advisories, path: path, start: start, end: end))
     }
@@ -1009,7 +1009,7 @@ extension Engine {
         try rule("navlog_candidates", EngineContract.NavlogCandidatesInput(segments: segments, legs: legs, profile: profile))
     }
 
-    /// The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
+    /// The fuel required: the airplane's own start, taxi and takeoff allowance (its profile's taxi_fuel_gal; taxi_gal null and left out of the fuel required where its profile has none, never a stock airplane's), the trip, the IFR alternate (14 CFR 91.167(a)(2)) and the reserve, 30 min by day and 45 at night under VFR (91.151(a)), and 45 where `night` is null (no departure time: night cannot be ruled out, so the larger is assumed), 45 under IFR (91.167(a)(3)); and the margin against the usable fuel.
     static func navlogFuelPlan(totalFuelGal: Double? = nil, profile: EngineContract.NavLogProfile? = nil, night: Bool? = nil, rules: String? = nil, alternateGal: Double? = nil) throws -> EngineContract.NavlogFuelPlanAnswer {
         try rule("navlog_fuel_plan", EngineContract.NavlogFuelPlanInput(totalFuelGal: totalFuelGal, profile: profile, night: night, rules: rules, alternateGal: alternateGal))
     }
@@ -1064,7 +1064,7 @@ extension Engine {
         try rule("navlog_with_climbs", EngineContract.NavlogWithClimbsInput(legs: legs, startAltitudeFt: startAltitudeFt, profile: profile))
     }
 
-    /// The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude at the end, to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged.
+    /// The legs with their tops of descent at three to one (333 ft a nm, about a 3 degree path, AIM 2-1-2's VASI glide path) to the pattern altitude where the 45-degree entry begins, about 1.7 nm before the end (AC 90-66C 11.2, 11.3: level at pattern altitude before entering), to an approach's fix end_before_nm short of it, and to a lower leg's altitude by the fix it starts at -- or, for a leg marked start_at (a pilot's Start At), from that fix on, the top of descent at the end of the leg before; the times and fuel unchanged.
     static func navlogWithDescents(legs: [EngineContract.NavLogLeg], fixes: [EngineContract.NavLogFix], endAltitudeFt: Double? = nil, endBeforeNm: Double? = nil, endFix: String? = nil) throws -> [EngineContract.NavLogLeg] {
         try rule("navlog_with_descents", EngineContract.NavlogWithDescentsInput(legs: legs, fixes: fixes, endAltitudeFt: endAltitudeFt, endBeforeNm: endBeforeNm, endFix: endFix))
     }
@@ -1204,7 +1204,7 @@ extension Engine {
         try rule("point_kind", EngineContract.PointKindInput(text: text))
     }
 
-    /// Pressure altitude from a field's elevation and its altimeter setting, a thousand feet an inch from 29.92 (PHAK ch. 4).
+    /// Pressure altitude from a field's elevation and its altimeter setting: the standard atmosphere's height of the setting above 29.92 "Hg, (1 - (setting/29.92)^(1/5.2558797)) x 145,442 ft (ICAO Doc 7488), FAA-H-8083-25C ch. 11 Figure 11-3's conversion factor to within 2 ft (30.10 "Hg: -165).
     static func pressureAltitudeFt(elevationFt: Double, altimeterInhg: Double) throws -> Double {
         try rule("pressure_altitude_ft", EngineContract.PressureAltitudeFtInput(elevationFt: elevationFt, altimeterInhg: altimeterInhg))
     }
@@ -1249,7 +1249,7 @@ extension Engine {
         try rule("proficiency_plan", EngineContract.ProficiencyPlanInput(today: today, entries: entries, flightReviewOn: flightReviewOn, medicalExpiresOn: medicalExpiresOn, ipcOn: ipcOn, ratings: ratings, held: held, debriefs: debriefs, places: places, remindDays: remindDays))
     }
 
-    /// The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red within 100 ft of it or above it and yellow within 1,000 ft -- ForeFlight's Hazard Advisor display defaults (ForeFlight Pilot's Guide), not a regulation; the legal minimums over the ground are 14 CFR 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
+    /// The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red where they come within less than 500 ft of it or above it (14 CFR 91.119(c)'s 500 ft above the surface and from any structure; exactly 500 ft meets it) and yellow within 1,000 ft (91.119(b)'s height over a congested area, the town not known here) -- the legal floors themselves are 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
     static func profileClearance(altitudeFt: Double, alongNm: [Double], groundFt: [Double], obstacles: [EngineContract.ProfileClearanceInputObstaclesItem]? = nil, points: [EngineContract.ProfileClearanceInputPointsItem]? = nil) throws -> EngineContract.ProfileClearanceAnswer {
         try rule("profile_clearance", EngineContract.ProfileClearanceInput(altitudeFt: altitudeFt, alongNm: alongNm, groundFt: groundFt, obstacles: obstacles, points: points))
     }
@@ -1434,7 +1434,7 @@ extension Engine {
         try rule("sigmet_hazard", EngineContract.SigmetHazardInput(hazard: hazard, kind: kind))
     }
 
-    /// The SIGMETs in force whose area the route crosses (AC 00-45H).
+    /// The SIGMETs in force whose area the route crosses (FAA-H-8083-28B 26.2.4).
     static func sigmetsAlongRoute(advisories: [[String: JSONValue]], from: [Double], to: [Double], corridorNm: Double? = nil, now: Double) throws -> [[String: JSONValue]] {
         try rule("sigmets_along_route", EngineContract.SigmetsAlongRouteInput(advisories: advisories, from: from, to: to, corridorNm: corridorNm, now: now))
     }
@@ -1464,7 +1464,7 @@ extension Engine {
         try rule("sua_altitudes", EngineContract.SuaAltitudesInput(floorFt: floorFt, floorRef: floorRef, ceilingFt: ceilingFt, ceilingRef: ceilingRef, midSentence: midSentence))
     }
 
-    /// What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (AC 00-45H).
+    /// What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
     static func tafWindow(fcsts: [EngineContract.TafPeriod], start: Double, end: Double? = nil) throws -> EngineContract.TafWindowAnswer {
         try rule("taf_window", EngineContract.TafWindowInput(fcsts: fcsts, start: start, end: end))
     }
@@ -1524,7 +1524,7 @@ extension Engine {
         try rule("traffic_kind", EngineContract.TrafficKindInput(category: category))
     }
 
-    /// Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
+    /// Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159), 2,000 ft for an airplane whose height is an uncorrected pressure altitude (pressure_altitude: the two are not on one reference); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
     static func trafficMarks(ownFt: Double? = nil, planes: [EngineContract.TrafficMarksInputPlanesItem], own: EngineContract.TrafficMarksInputOwn? = nil) throws -> [EngineContract.TrafficMarksAnswerItem] {
         try rule("traffic_marks", EngineContract.TrafficMarksInput(ownFt: ownFt, planes: planes, own: own))
     }
@@ -1584,22 +1584,22 @@ extension Engine {
         try rule("vor_check_limit_deg", EngineContract.VorCheckLimitDegInput(kind: kind))
     }
 
-    /// When a weather report stops counting, Unix seconds UTC, or null where nothing says: a routine METAR an hour after it was observed (AIM 7-1-28, "METAR-hourly"; FMH-1 ch. 2), a SPECI when the next routine report is due, a TAF, the FB winds or an advisory at the end of the valid time its header gives (AC 00-45H).
+    /// When a weather report stops counting, Unix seconds UTC, or null where nothing says: a routine METAR an hour after it was observed (AIM 7-1-28, "METAR-hourly"; FMH-1 ch. 2), a SPECI when the next routine report is due, a TAF, the FB winds or an advisory at the end of the valid time its header gives (FAA-H-8083-28B 27.4.1, Table 27-2, 26.2-26.3).
     static func weatherExpiresAt(product: String, observed: Double? = nil, lastRoutine: Double? = nil, validTo: Double? = nil) throws -> Double? {
         try rule("weather_expires_at", EngineContract.WeatherExpiresAtInput(product: product, observed: observed, lastRoutine: lastRoutine, validTo: validTo))
     }
 
-    /// To when a stored copy may be served when later fetches fail, by its product's own validity (AC 00-45H): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
+    /// To when a stored copy may be served when later fetches fail, by its product's own validity (FAA-H-8083-28B 24.4.1, 26.2-26.3, 27.4.1): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
     static func weatherHeldUntil(product: String, data: JSONValue? = nil, fetched: Double) throws -> Double? {
         try rule("weather_held_until", EngineContract.WeatherHeldUntilInput(product: product, data: data, fetched: fetched))
     }
 
-    /// Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (AC 00-45H).
+    /// Whether a weather report still counts at now: before it expires (weather_expires_at), and, for a forecast, from when its valid time starts, since a TAF's later hours are not today's weather (FAA-H-8083-28B 27.4.1).
     static func weatherInForce(product: String, now: Double, observed: Double? = nil, lastRoutine: Double? = nil, validFrom: Double? = nil, validTo: Double? = nil) throws -> Bool {
         try rule("weather_in_force", EngineContract.WeatherInForceInput(product: product, now: now, observed: observed, lastRoutine: lastRoutine, validFrom: validFrom, validTo: validTo))
     }
 
-    /// What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there. A caution, never a limit; each change keyed so an app tells it once.
+    /// What counts as a route's weather getting worse from the briefing the pilot had (then) to a later one (now): a field's METAR in a worse flight category, and worse than VFR (AIM 7-1-7); a SIGMET, AIRMET or G-AIRMET newly on the route (AIM 7-1-6); a TAF where the flight lands forecasting a worse category, and worse than VFR, for the flight's time there; and either with a ceiling of unknown height now (OVC///) where it had a known one, a ceiling not known to be high enough (14 CFR 1.1). A caution, never a limit; each change keyed so an app tells it once.
     static func weatherWorse(then: EngineContract.WeatherReading, now: EngineContract.WeatherReading) throws -> EngineContract.WeatherWorseAnswer {
         try rule("weather_worse", EngineContract.WeatherWorseInput(then: then, now: now))
     }
@@ -1614,7 +1614,7 @@ extension Engine {
         try rule("wind_at_altitude", EngineContract.WindAtAltitudeInput(levels: levels, altitudeFt: altitudeFt, altitudes: altitudes))
     }
 
-    /// A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28A, 25.2.3.4.5).
+    /// A station model's wind barb: the wind to the nearest 5 kt in flags (50 kt), barbs (10 kt) and half-barbs (5 kt), a circle for calm (FAA-H-8083-28B, 25.2.3.4.5).
     static func windBarb(speedKt: Double) throws -> EngineContract.WindBarbAnswer {
         try rule("wind_barb", EngineContract.WindBarbInput(speedKt: speedKt))
     }

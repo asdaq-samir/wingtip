@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_weather::forecast::calls::call",
-  "description": "The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (AC 00-45H).",
+  "description": "The TAF that speaks for a field: its own (the station whose ICAO id is the ident, or K and a three-letter ident), else the nearest within 25 nm, the planner's reach past a TAF's 5 sm and 10 sm vicinity (FAA-H-8083-28B 27.4.1, 24.4.3.8.2).",
   "type": "object",
   "properties": {
     "input": {

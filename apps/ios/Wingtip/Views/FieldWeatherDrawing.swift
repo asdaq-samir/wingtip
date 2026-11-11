@@ -41,7 +41,7 @@ struct Feathers: Equatable, Sendable {
 
 /// The station model close in (the "Recommended" artboard): a wind barb
 /// from the side the wind is from, its flags, barbs and half-barbs the
-/// engine's (wind_barb, FAA-H-8083-28A 25.2.3.4.5), a ring for calm, and
+/// engine's (wind_barb, FAA-H-8083-28B 25.2.3.4.5), a ring for calm, and
 /// the visibility and ceiling as two short lines beside the field.
 enum StationModel {
     /// The web map's zoom from which its lines fit beside each field (the

@@ -2,7 +2,7 @@
 //! into the periods the planner reads from the AWC's decoded feed
 //! (wingtip.weather's `_parse_tafs`): each period's start and end, its change
 //! group (FM, TEMPO, BECMG, PROB), wind, visibility, ceiling and weather.
-//! The groups are AC 00-45H's TAF and WMO No. 306's (INTER, used outside
+//! The groups are FAA-H-8083-28B 27.4.2.10's and WMO No. 306's (INTER, used outside
 //! the US, is a TEMPO). services/planner/tests_wingtip/test_parsers.py holds the reader to the
 //! AWC's own decoding of every TAF in its cache and lists where they
 //! differ.
@@ -16,7 +16,7 @@ pub struct Period {
     pub to: i64,
     /// The end of a BECMG's, TEMPO's or PROB's own window as sent: a
     /// BECMG's change is under way until then and holds after it, so its
-    /// `to` runs on to the next prevailing group (AC 00-45H, the TAF).
+    /// `to` runs on to the next prevailing group (FAA-H-8083-28B 27.4.2.10.1, FM).
     pub by: Option<i64>,
     /// "" for the forecast's first part, else FM, TEMPO, BECMG or PROB.
     pub change: String,
@@ -190,7 +190,7 @@ pub fn parse(raw: &str, near: i64) -> Option<Taf> {
         groups.last_mut().unwrap().1.push(w);
     }
     // The prevailing forecast -- the first part, each FM, each BECMG --
-    // holds until the next of them begins (AC 00-45H's TAF: a BECMG's
+    // holds until the next of them begins (WMO No. 306's TAF: a BECMG's
     // change lasts once made), and a BECMG keeps what it does not change;
     // a TEMPO or PROB is for its own hours. A first part a BECMG begins
     // at once has no hours of its own and is left out, as the AWC leaves it.

@@ -45,7 +45,7 @@ export function visibilityWords(sm: number): string {
 }
 
 /** The ceiling as a METAR writes it, its layer's cover and its height in
- *  hundreds of feet AGL in three figures (the station model's, FAA-H-8083-28A
+ *  hundreds of feet AGL in three figures (the station model's, FAA-H-8083-28B
  *  25.2.3.4.6): "OVC 008", "VV 002"; "CIG 008" for a report read before
  *  the cover was kept; "CIG ///" where the lowest broken or overcast layer
  *  came with no height, a ceiling not known (14 CFR 1.1). */

@@ -128,9 +128,11 @@ pub fn margin(
         return None;
     }
     // 91.155(c), (d): the basic VFR minimums in a surface area, the floor
-    // every route is held to (flight::vfr), where the pilot set none.
-    let c_min = own_ceiling_ft.filter(|c| *c > 0.0).unwrap_or(vfr::SURFACE_AREA_CEILING_FT);
-    let v_min = own_visibility_sm.filter(|v| *v > 0.0).unwrap_or(vfr::SURFACE_AREA_VISIBILITY_SM);
+    // every route is held to (flight::vfr), where the pilot set none or set
+    // lower: a pilot's own minimums can only raise the bar, never take the
+    // margin under the rule's.
+    let c_min = own_ceiling_ft.filter(|c| *c > 0.0).map_or(vfr::SURFACE_AREA_CEILING_FT, |c| c.max(vfr::SURFACE_AREA_CEILING_FT));
+    let v_min = own_visibility_sm.filter(|v| *v > 0.0).map_or(vfr::SURFACE_AREA_VISIBILITY_SM, |v| v.max(vfr::SURFACE_AREA_VISIBILITY_SM));
     let c = ceiling_ft.map_or(MARGIN_CAP, |c| c / c_min);
     let v = visibility_sm.map_or(MARGIN_CAP, |v| v / v_min);
     Some(c.min(v).min(MARGIN_CAP))
@@ -249,4 +251,19 @@ pub fn departure_window(input: &Input) -> Answer {
     let hours: Vec<Judged> = input.hours.iter().map(|h| judge(input, h)).collect();
     let windows = windows(&hours);
     Answer { hours, windows }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_pilots_own_minimums_raise_the_margins_bar_never_lower_it() {
+        // 14 CFR 91.155(c), (d): 1,000 ft and 3 sm. A 2,000 ft ceiling and
+        // 6 sm against them is twice; against the pilot's 3,000 and 5,
+        // 0.67; against minimums set lower than the rule's, still twice.
+        assert_eq!(margin(Some(2000.0), Some(6.0), None, None), Some(2.0));
+        assert!((margin(Some(2000.0), Some(6.0), Some(3000.0), Some(5.0)).unwrap() - 2.0 / 3.0).abs() < 1e-9);
+        assert_eq!(margin(Some(2000.0), Some(6.0), Some(500.0), Some(1.0)), Some(2.0));
+    }
 }

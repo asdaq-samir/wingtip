@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_altitude::altitude::calls::call",
-  "description": "The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red within 100 ft of it or above it and yellow within 1,000 ft -- ForeFlight's Hazard Advisor display defaults (ForeFlight Pilot's Guide), not a regulation; the legal minimums over the ground are 14 CFR 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack (\"3,500 ft, terrain within 500 ft near KXYZ\").",
+  "description": "The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red where they come within less than 500 ft of it or above it (14 CFR 91.119(c)'s 500 ft above the surface and from any structure; exactly 500 ft meets it) and yellow within 1,000 ft (91.119(b)'s height over a congested area, the town not known here) -- the legal floors themselves are 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack (\"3,500 ft, terrain within 500 ft near KXYZ\").",
   "type": "object",
   "properties": {
     "input": {

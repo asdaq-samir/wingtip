@@ -274,7 +274,7 @@ class Traffic private constructor(private val context: Context, private val tick
         fun marks(planes: List<TrafficAircraft>, fix: OwnShip.Fix?): Result<List<Mark>> =
             Engine.trafficMarks(
                 fix?.altitudeFt,
-                planes.map { EngineContract.TrafficMarksInputPlanesItem(it.altitudeFt, it.verticalFpm, it.lat, it.lon) },
+                planes.map { EngineContract.TrafficMarksInputPlanesItem(it.altitudeFt, it.verticalFpm, it.lat, it.lon, it.pressureAltitude) },
                 fix?.let { EngineContract.TrafficMarksInputOwn(it.lat, it.lon) },
             )
 

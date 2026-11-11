@@ -98,10 +98,15 @@ pub fn due(
     };
 
     if standing.student {
-        push("solo", "Solo endorsement", "14 CFR 61.87(n), (p)", solo_until(held), None, &|s| match s {
+        // 61.87(n): an endorsement "by an authorized instructor who gave the
+        // training within the 90 days preceding the date of the flight";
+        // (p)(4): it "remains current for solo flight privileges, provided an
+        // authorized instructor updates the student's logbook every 90 days
+        // thereafter". (p)'s other items are the instructor's own limits.
+        push("solo", "Solo endorsement", "14 CFR 61.87(n), (p)(4)", solo_until(held), None, &|s| match s {
             Status::Unknown => "No solo endorsement on record".to_owned(),
-            Status::Lapsed => "Lapsed: solo again only after an instructor's new endorsement (61.87(p))".to_owned(),
-            _ => "Good for 90 days from the instructor's endorsement (61.87(n), (p))".to_owned(),
+            Status::Lapsed => "Lapsed: solo again only after an instructor's new endorsement (61.87(p)(4))".to_owned(),
+            _ => "Good for 90 days from the instructor's endorsement (61.87(n), (p)(4))".to_owned(),
         });
     } else {
         push("flight_review", "Flight review", "14 CFR 61.56(c)", at("flightReviewUntil")?, None, &|s| {

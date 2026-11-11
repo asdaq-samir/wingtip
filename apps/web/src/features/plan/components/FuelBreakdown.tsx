@@ -10,7 +10,9 @@ import { usePreferences } from "../../../lib/preferences";
 /** The reserve's rule, as the planner chose it (wingtip.navlog.fuel_plan). */
 function reserveRule(totals: Totals): string {
   if (totals.rules === "ifr") return "IFR, day or night (14 CFR 91.167)";
-  if (totals.night == null) return "Day VFR, no departure time set (14 CFR 91.151)";
+  // No departure time: night cannot be ruled out, so the engine keeps the
+  // night's 45 minutes (14 CFR 91.151(a)(2)), the larger.
+  if (totals.night == null) return "Night reserve assumed: no departure time set (14 CFR 91.151)";
   return totals.night ? "Night VFR (14 CFR 91.151)" : "Day VFR (14 CFR 91.151)";
 }
 

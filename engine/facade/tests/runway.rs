@@ -343,7 +343,7 @@ fn a_pattern_is_joined_on_the_45_from_its_side_and_over_midfield_from_the_other(
     );
     let e = ask("pattern_entry", json!({"end": end, "course_deg": 180}));
     assert_eq!(e["pattern_side"], json!(false));
-    assert!(e["words"].as_str().unwrap().contains("cross midfield 500 ft above pattern altitude, descend to it well clear, and turn back"));
+    assert!(e["words"].as_str().unwrap().contains("cross midfield at least 500 ft above pattern altitude, descend to it well clear"));
     assert_eq!(
         ask("pattern_exit", json!({"traffic": "right"})),
         json!("Straight out, or a 45° right turn once past the departure end at pattern altitude.")

@@ -47,8 +47,9 @@ SKIP = re.compile(
     r"EngineContract\.(swift|kt)|/tests?/|services/planner/app/detection\.py)"
 )
 
-# A source of an aviation figure, as this repo's comments cite one.
-CITATION = re.compile(r"14 CFR|\bCFR\b|§|\bAIM\b|\bAC \d{2,3}-\d|\bACS\b|FAA Order|\b(61|91|71|73|95|97|135)\.\d{2,3}\b")
+# A source of an aviation figure, as this repo's comments cite one: the
+# FAA's handbooks too (FAA-H-8083-28B took AC 00-45H's place in 2022).
+CITATION = re.compile(r"14 CFR|\bCFR\b|§|\bAIM\b|\bAC \d{2,3}-\d|\bACS\b|FAA Order|FAA-H-\d{4}|\b(61|91|71|73|95|97|135)\.\d{2,3}\b")
 # A constant set to a number: TS/JS const, Swift let/var, Kotlin val/const
 # val, Java static final, a Python module constant.
 CONSTANT = re.compile(

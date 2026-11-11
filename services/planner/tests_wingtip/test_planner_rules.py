@@ -54,11 +54,12 @@ def test_a_tfr_is_in_force_when_its_window_meets_the_span():
 
 def test_the_reserve_is_the_engines():
     profile = {"fuel_burn_gph": 8.0}
-    # 91.151(a): 30 minutes by day, 45 at night; 91.167(a)(3): 45 under IFR.
+    # 91.151(a): 30 minutes by day, 45 at night, and 45 with no time (night
+    # not ruled out); 91.167(a)(3): 45 under IFR.
     assert [
         engine("navlog_fuel_plan", total_fuel_gal=10.0, profile=profile, night=night, rules=rules)["reserve_gal"]
         for rules, night in (("vfr", False), ("vfr", None), ("vfr", True), ("ifr", False))
-    ] == [4.0, 4.0, 6.0, 6.0]
+    ] == [4.0, 6.0, 6.0, 6.0]
 
 
 def test_the_basic_vfr_minimums_are_the_engines():

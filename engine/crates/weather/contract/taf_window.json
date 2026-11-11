@@ -1,6 +1,6 @@
 {
   "x-call": "wingtip_weather::forecast::calls::call",
-  "description": "What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (AC 00-45H).",
+  "description": "What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).",
   "type": "object",
   "properties": {
     "input": {

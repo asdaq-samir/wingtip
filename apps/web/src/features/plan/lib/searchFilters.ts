@@ -55,7 +55,7 @@ export const NO_FILTERS: SearchFilters = {
 export const RUNWAY_STEPS = [2000, 3000, 4000, 5000] as const;
 /** The distances the menu offers, nm. */
 export const WITHIN_STEPS = [10, 25, 50] as const;
-/** The hours ahead "VFR at…" offers: within a TAF's 24 (AC 00-45H). */
+/** The hours ahead "VFR at…" offers: within a TAF's 24 (FAA-H-8083-28B 27.4.1). */
 export const VFR_AT_STEPS = [1, 2, 3, 6, 12] as const;
 /** The fuels and surfaces offered, in the order shown. */
 export const FUELS: readonly Fuel[] = ["100LL", "Jet A", "UL94"];

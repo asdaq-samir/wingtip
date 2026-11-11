@@ -448,8 +448,8 @@ def forecast_hour_for(depart: datetime | None) -> str:
 
     The product whose own "for use" window holds the departure: each of
     the 6-, 12- and 24-hour forecasts is to be used between the FOR USE
-    times its header gives, set by the clock, not by hours ahead (AC
-    00-45H, table 5-21). Planned at 1400Z for 2230Z, eight and a
+    times its header gives, set by the clock, not by hours ahead
+    (FAA-H-8083-28B Table 27-2). Planned at 1400Z for 2230Z, eight and a
     half hours out, the hours-ahead rule flew the 6-hour product (for use
     1400-2100Z) where the 12-hour one (2100-0600Z) applies. The rule by
     hours stays where no header can be read."""

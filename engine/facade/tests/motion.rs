@@ -359,7 +359,7 @@ fn c81_kdlh(legs: &[Value]) -> Value {
 // --- The plan from the side --------------------------------------------------
 
 #[test]
-fn the_plan_climbs_to_its_top_holds_and_descends_to_the_pattern_a_mile_out() {
+fn the_plan_descends_to_the_pattern_by_its_45_degree_entry_ac_90_66c_11_3() {
     let mut l = leg();
     l["toc"]["lat"] = json!(42.1);
     let p = ask("plan_profile", json!({ "rows": c81_kdlh(&[l]) }));
@@ -367,7 +367,7 @@ fn the_plan_climbs_to_its_top_holds_and_descends_to_the_pattern_a_mile_out() {
         norm(&p["points"]),
         norm(&json!([
             { "along_nm": 0, "plan_ft": 800 }, { "along_nm": 8, "plan_ft": 5500 }, { "along_nm": 48, "plan_ft": 5500 },
-            { "along_nm": 59, "plan_ft": 1500 }, { "along_nm": 60, "plan_ft": 500 },
+            { "along_nm": 58.27640478071473, "plan_ft": 1500 }, { "along_nm": 60, "plan_ft": 500 },
         ]))
     );
     assert_eq!(p["marks"].as_array().unwrap().iter().map(|m| m["kind"].as_str().unwrap()).collect::<Vec<_>>(), ["TOC", "TOD"]);

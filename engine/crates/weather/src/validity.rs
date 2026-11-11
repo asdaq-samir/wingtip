@@ -8,7 +8,7 @@
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Product {
     /// A routine METAR: issued every hour (AIM 7-1-28's key, "METAR-hourly";
-    /// AC 00-45H, Aviation Weather Services, its METAR section; the Federal
+    /// FAA-H-8083-28B 24.4.1, Aviation Routine Weather Report; the Federal
     /// Meteorological Handbook No. 1, ch. 2, routine observations), so it
     /// counts until the next routine report is due an hour after it was
     /// observed. Past that the screens call it an old report (the web's
@@ -18,14 +18,14 @@ pub enum Product {
     /// changes (FMH-1 ch. 2, special observations). It changes nothing about when the hour's
     /// routine report is due: it counts until that same time.
     Speci,
-    /// A TAF: for its valid period, the hours its header gives (AC
-    /// 00-45H, its TAF section).
+    /// A TAF: for its valid period, the hours its header gives
+    /// (FAA-H-8083-28B 27.4.1).
     Taf,
     /// The FB winds and temperatures aloft: for the FOR USE window its
-    /// header gives (AC 00-45H, its winds and temperatures aloft section).
+    /// header gives (FAA-H-8083-28B 27.2.1.1.2, Table 27-2).
     WindsAloft,
     /// An AIRMET, a SIGMET or a G-AIRMET snapshot: for its valid time
-    /// (AC 00-45H, its SIGMET, AIRMET and G-AIRMET sections).
+    /// (FAA-H-8083-28B 26.2.4, SIGMETs; 26.3, AIRMETs and G-AIRMETs).
     Advisory,
 }
 

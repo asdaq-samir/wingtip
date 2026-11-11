@@ -187,7 +187,7 @@ fn runway_cost(r: &Ranked) -> u8 {
 }
 
 /// How much the weather counts against a field for a diversion: the
-/// METAR's flight category (AC 00-45H's), IFR 1 and LIFR 2.
+/// METAR's flight category (AIM 7-1-7's), IFR 1 and LIFR 2.
 fn weather_cost(r: &Ranked) -> u8 {
     match r.field.flight_category.as_deref() {
         Some("LIFR") => 2,

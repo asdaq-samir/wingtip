@@ -53,7 +53,7 @@ def _reader(product: str):
 
 def _held_until(product: str):
     """To when a copy may still be served when later fetches fail, by its
-    product's own validity (the engine's weather_held_until; AC 00-45H):
+    product's own validity (the engine's weather_held_until; FAA-H-8083-28B):
     METARs no limit, each report carrying its own time; TAFs and SIGMETs to
     the end of their valid times; PIREPs and G-AIRMETs as long as the
     briefing still tells the newest of them."""

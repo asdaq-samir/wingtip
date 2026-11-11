@@ -10,7 +10,7 @@ use crate::geo;
 pub const NM_PER_SM: f64 = 1609.344 / 1852.0;
 
 /// A TAF is the forecast for the area within 5 statute miles of the
-/// airport's centre (AC 00-45H, Terminal Aerodrome Forecast; NWSI 10-813),
+/// airport's centre (FAA-H-8083-28B 27.4.1; NWSI 10-813),
 /// its "vicinity" (VC) the ring from 5 to 10 sm. The one figure each
 /// reach below starts from.
 pub const TAF_AREA_SM: f64 = 5.0;

@@ -3144,7 +3144,7 @@ enum EngineContract {
         }
     }
 
-    /// One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (AC 00-45H's change groups).
+    /// One hour of a field's weather for the airport card: Now from the METAR, then each whole hour its TAF covers (FAA-H-8083-28B 27.4.2.10's change groups).
     struct FieldHour: Codable, Equatable, Sendable {
         /// The hour's start, ms; Now's the report's time (or now).
         var at: Double
@@ -3162,7 +3162,7 @@ enum EngineContract {
         var atTimes: String?
         var atTimesGustKt: Double?
         var atTimesThunder: Bool
-        /// The worse weather at times comes only from a PROB group (AC 00-45H).
+        /// The worse weather at times comes only from a PROB group (FAA-H-8083-28B 27.4.2.10.3).
         var atTimesChance: Bool
 
         enum CodingKeys: String, CodingKey {
@@ -6614,6 +6614,7 @@ enum EngineContract {
         var totalFuelGal: Double?
         /// null is no airplane picked: the legs' courses, miles, altitudes and air, and every figure that needs an airplane null (the owner, 2026-11-09: "don't assume").
         var profile: EngineContract.NavLogProfile?
+        /// Whether the flight is at night (14 CFR 1.1, after the end of evening civil twilight); null where it has no departure time, which takes the night's 45-minute VFR reserve (91.151(a)(2)).
         var night: Bool?
         var rules: String?
         var alternateGal: Double?
@@ -7140,6 +7141,7 @@ enum EngineContract {
         var legs: [EngineContract.NavLogLeg]
         var fixes: [EngineContract.NavLogFix]
         var endAltitudeFt: Double?
+        /// How far before the legs' end the descent is finished, nm: an approach's fix's distance out; where not given, down to a pattern, where the 45-degree entry begins (limits::pattern_entry_start_nm, about 1.7 nm), and 0 with an end_fix.
         var endBeforeNm: Double?
         var endFix: String?
 
@@ -10217,6 +10219,7 @@ enum EngineContract {
     }
 
     struct TrafficMarksInput: Codable, Equatable, Sendable {
+        /// Own ship's height above mean sea level, ft, as the phone's GNSS gives it (iOS CLLocation altitude, Android's MSL altitude).
         var ownFt: Double?
         var planes: [EngineContract.TrafficMarksInputPlanesItem]
         var own: EngineContract.TrafficMarksInputOwn?
@@ -10238,12 +10241,15 @@ enum EngineContract {
         var verticalFpm: Double?
         var lat: Double?
         var lon: Double?
+        /// The airplane's height is its pressure altitude as sent (29.92 "Hg), not set on an altimeter: own_ft is the phone's GNSS above mean sea level, so the near band is 1,000 ft wider for it (PRESSURE_SLACK_FT, about an inch of mercury, FAA-H-8083-25C ch. 11 Figure 11-3).
+        var pressureAltitude: Bool?
 
         enum CodingKeys: String, CodingKey {
             case altitudeFt = "altitude_ft"
             case verticalFpm = "vertical_fpm"
             case lat
             case lon
+            case pressureAltitude = "pressure_altitude"
         }
     }
 
@@ -10714,7 +10720,7 @@ enum EngineContract {
 
     /// One way the weather got worse.
     struct WeatherWorseItem: Codable, Equatable, Sendable {
-        /// The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR"): an app tells a key once.
+        /// The change and its new state ("metar:KMSN:IFR", "advisory:<key>", "taf:KDLH:MVFR", "metar:KMSN:ceiling-unknown"): an app tells a key once.
         var key: String
         var kind: String
         var ident: String?

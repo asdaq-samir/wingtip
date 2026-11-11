@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 /** The winds aloft's altitude on the map: the plan's cruise, or one of
- *  the FD product's own (AC 00-45H: 3,000 to 39,000 ft), or none. */
+ *  the FD product's own (FAA-H-8083-28B 27.2.1.1.1: 3,000 to 39,000 ft), or none. */
 export type WindsAt = "off" | "plan" | 3000 | 6000 | 9000 | 12000 | 18000;
 
 /** The radar and satellite loop (features/weather-loop): off, the radar,

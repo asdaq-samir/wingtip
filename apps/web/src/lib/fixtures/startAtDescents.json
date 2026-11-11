@@ -1,5 +1,5 @@
 {
-  "about": "A pilot's Start At descent in the nav log (the engine's navlog_with_descents, a leg marked start_at): it begins at the waypoint and runs on at three to one, 333 ft a nm (about the 3 degree glide path a VASI is normally set at, AIM 2-1-2), where Cross At has it done by the waypoint. Every leg is flown at 100 kt over the ground, 8 gal/h, on a course of 045 between the fixes AAA, Lake and BBB; each leg is [distance_nm, altitude_ft, start_at]. 2,000 ft at three to one is 6 nm, 3.6 min at 100 kt: 556 fpm, 550 to the nearest 50. Engine: engine/facade/tests/start_at_descents.rs. Not the web's: it never asks navlog_with_descents, the planner's nav log does, so the web's WebAssembly is built without it (scripts/build/web_rules.py).",
+  "about": "A pilot's Start At descent in the nav log (the engine's navlog_with_descents, a leg marked start_at): it begins at the waypoint and runs on at three to one, 333 ft a nm (about the 3 degree glide path a VASI is normally set at, AIM 2-1-2), where Cross At has it done by the waypoint. Every leg is flown at 100 kt over the ground, 8 gal/h, on a course of 045 between the fixes AAA, Lake and BBB; each leg is [distance_nm, altitude_ft, start_at]. 2,000 ft at three to one is 6 nm, 3.6 min at 100 kt: 556 fpm, 550 to the nearest 50. Engine: engine/facade/tests/start_at_descents.rs. Not the web's: it never asks navlog_with_descents, the planner's nav log does, so the web's WebAssembly is built without it (scripts/build/web_rules.py). Down to a pattern the descent is finished where the 45-degree entry begins, 1.7236 nm from the field (the engine's pattern sketch: the downwind 0.75 sm out, the middle of FAA-H-8083-3C ch. 8's 1/2 to 1 mile, and a 1.2 nm entry to it at 45 degrees; AC 90-66C 11.2 and 11.3: at pattern altitude before entering), so a pattern's top of descent is 6 + 1.7236 nm before the field for 2,000 ft: 52.2764 nm along a 60 nm leg, 52.3 to the tenth, and 36 - 7.7236 x 0.6 = 31.37 min, 31.4.",
   "cases": [
     {
       "name": "Cross At: the step down is done by the waypoint, 6 nm before it",
@@ -14,19 +14,19 @@
       "tods": [{ "along_nm": 60, "altitude_ft": 5500, "to_ft": 3500, "pattern": false, "fpm": 550, "ete_min": 36 }, null]
     },
     {
-      "name": "Start At, then down to a 1,500 ft pattern 6 nm before the field",
+      "name": "Start At, then down to a 1,500 ft pattern 6 nm before the 45-degree entry",
       "legs": [[60, 5500, false], [60, 3500, true]],
       "end_altitude_ft": 1500,
       "tods": [
         { "along_nm": 60, "altitude_ft": 5500, "to_ft": 3500, "pattern": false, "fpm": 550, "ete_min": 36 },
-        { "along_nm": 54, "altitude_ft": 3500, "to_ft": 1500, "pattern": true, "fpm": 550, "ete_min": 32.4 }
+        { "along_nm": 52.3, "altitude_ft": 3500, "to_ft": 1500, "pattern": true, "fpm": 550, "ete_min": 31.4 }
       ]
     },
     {
-      "name": "Start At 6 nm from a 1,500 ft pattern: no room, so the descent to the pattern starts 12 nm out, before the waypoint",
+      "name": "Start At 6 nm from a 1,500 ft pattern: no room, so the descent to the pattern starts 12 nm before the 45-degree entry, before the waypoint",
       "legs": [[60, 5500, false], [6, 3500, true]],
       "end_altitude_ft": 1500,
-      "tods": [{ "along_nm": 54, "altitude_ft": 5500, "to_ft": 1500, "pattern": true, "fpm": 550, "ete_min": 32.4 }, null]
+      "tods": [{ "along_nm": 52.3, "altitude_ft": 5500, "to_ft": 1500, "pattern": true, "fpm": 550, "ete_min": 31.4 }, null]
     },
     {
       "name": "Start At a higher altitude is a climb (with_climbs): no descent",

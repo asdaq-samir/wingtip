@@ -14,7 +14,7 @@ use wingtip_core::sort::StableSort;
 /// Whose forecast a figure is.
 #[derive(Clone, Debug, PartialEq)]
 pub enum Source {
-    /// A TAF (AC 00-45H), its station and how far it is, nm (0 a field's own).
+    /// A TAF (FAA-H-8083-28B 27.4), its station and how far it is, nm (0 a field's own).
     Taf { ident: String, nm: f64 },
     /// The NWS's Gridded LAMP for the hour valid at `valid` (s since 1970):
     /// modelled guidance, not an issued forecast.
@@ -105,9 +105,16 @@ fn modelled_at(s: &Sample) -> Option<Met> {
 
 /// The worse of two readings by category (the forecast's rank), the TAF's
 /// where they are alike: it is the issued forecast, the model guidance.
+/// A TAF's ceiling of unknown height ("OVC///") has no category of its
+/// own, yet it is a ceiling not known to be high enough (14 CFR 1.1
+/// "ceiling"; AIM 7-1-7's VFR needs one above 3,000 ft): it ranks as
+/// MVFR at least here, so a modelled VFR or MVFR does not hide it and
+/// under_vfr's "a ceiling of unknown height" alert fires; a modelled IFR
+/// or LIFR, a definite worse reading, still wins.
 fn worse(taf: Option<Met>, modelled: Option<Met>) -> Met {
+    let taf_rank = |t: &Met| if t.ceiling_unknown { rank(t.category).max(rank(Some("MVFR"))) } else { rank(t.category) };
     match (taf, modelled) {
-        (Some(t), Some(m)) if rank(m.category) > rank(t.category) => m,
+        (Some(t), Some(m)) if rank(m.category) > taf_rank(&t) => m,
         (Some(t), _) => t,
         (None, Some(m)) => m,
         (None, None) => Met::default(),
@@ -136,4 +143,35 @@ pub fn at_field(tafs: &[Value], f: &Field) -> Met {
 pub fn wind_at(s: &Sample) -> Option<WindAt> {
     let period = s.winds.iter().find(|p| p.from <= s.t && s.t < p.to)?;
     winds::wind_at_altitude(&period.levels, s.alt_ft?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn met(category: Option<&'static str>, ceiling_unknown: bool, modelled: bool) -> Met {
+        let source = if modelled { Source::Modelled { valid: 0.0 } } else { Source::Taf { ident: "KXYZ".into(), nm: 0.0 } };
+        Met { category, ceiling_unknown, source: Some(source), ..Met::default() }
+    }
+
+    #[test]
+    fn a_tafs_ceiling_of_unknown_height_is_not_hidden_by_a_modelled_vfr() {
+        // TAF OVC/// 6SM: no category, a ceiling not known to be high
+        // enough (14 CFR 1.1). The model's VFR and MVFR do not replace it.
+        for model in ["VFR", "MVFR"] {
+            let got = worse(Some(met(None, true, false)), Some(met(Some(model), false, true)));
+            assert!(got.ceiling_unknown && matches!(got.source, Some(Source::Taf { .. })), "{model}");
+            assert_eq!(under_vfr_words(&got), vec!["a ceiling of unknown height".to_owned()]);
+        }
+        // A modelled IFR is a definite worse reading.
+        let got = worse(Some(met(None, true, false)), Some(met(Some("IFR"), false, true)));
+        assert_eq!(got.category, Some("IFR"));
+        // A known TAF ceiling still gives way to a worse model.
+        let got = worse(Some(met(Some("VFR"), false, false)), Some(met(Some("MVFR"), false, true)));
+        assert_eq!(got.category, Some("MVFR"));
+    }
+
+    fn under_vfr_words(m: &Met) -> Vec<String> {
+        super::super::checks::under_vfr(m, None)
+    }
 }

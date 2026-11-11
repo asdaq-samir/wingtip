@@ -59,8 +59,8 @@
     "groundspeed_kt": 94.9,
     "magnetic_heading_deg": 253.4,
     "toc_nm": null,
-    "tod_fpm": 550,
-    "tod_nm": 11.4
+    "tod_fpm": 550.0,
+    "tod_nm": 9.7
    },
    {
     "altitude_ft": 2000.0,
