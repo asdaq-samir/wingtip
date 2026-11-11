@@ -1638,6 +1638,41 @@ are gone.
 
 ---
 
+## 18. Speed: Ask, the launch and the sheet (2026-11-10)
+
+The iOS speed audit measured three things; what changed for each:
+
+- **Ask on this iPhone** (8.3 s to an answer, then dropped as "resting on
+  no figure").
+  - The model is not asked when no tool could hand it a figure for the
+    question (`EngineWords.holdsAny`): the engine's words, which say what
+    is missing, come at once (`OnDeviceAsk.answer`).
+  - Apple's model is warmed (`LanguageModelSession.prewarm()`, its name
+    in the iOS 27.2 SDK) when the one search takes focus and when Ask
+    opens, unless the planner will answer (`AskRouter.prewarm`).
+  - The answer streams (`streamResponse`). A sentence is shown once it
+    is finished and has passed the same id and number checks as the
+    whole answer, so every figure is still the engine's from the first
+    word (`StreamedWords`). Words a later failure replaces are withdrawn
+    (`AssistantLine.retract`).
+- **The launch** (3.09 s on the simulator, against the HIG's "launch
+  instantly"; no device number yet).
+  - The kept plan and the kept chart are read and decoded off the main
+    actor (`Plan.restore`, `Charts.load`).
+  - The engine is a static library with no initialisation of its own.
+    The app embeds no dynamic framework, and all 131 linked libraries are
+    the system's, so there is nothing to make static or merge
+    (`MERGED_BINARY_TYPE`).
+  - The 83 MB binary is both simulator slices, unstripped; a device
+    build is one slice, stripped. Judge the launch on a device
+    (MetricKit's `histogrammedTimeToFirstDraw`, `Metrics`).
+- **The sheet's drag.** The sheet's height is kept in RootView's state
+  only until the map shows, the only time the map's opening point and
+  the loading mark read it. A drag after that runs neither the root's
+  body nor the map's update.
+
+---
+
 ## What could not be verified
 
 - **The Maps sheet's detent heights**, and what Maps shows at each
