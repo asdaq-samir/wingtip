@@ -47,6 +47,10 @@ sealed interface SheetPage {
     @Serializable
     data class Leg(val index: Int) : SheetPage
 
+    /** An approach plate on the map: its card, how it is drawn (PlateCard). */
+    @Serializable
+    data class Plate(val ident: String, val procedure: String) : SheetPage
+
     @Serializable
     data object MapSettings : SheetPage
 
@@ -116,6 +120,7 @@ sealed interface SheetPage {
         fun of(pick: MapPick): SheetPage = when (pick) {
             is MapPick.Airport -> Airport(pick.ident)
             is MapPick.RouteLeg -> Leg(pick.index)
+            is MapPick.Plate -> Plate(pick.ident, pick.procedure)
             else -> Thing(pick)
         }
     }

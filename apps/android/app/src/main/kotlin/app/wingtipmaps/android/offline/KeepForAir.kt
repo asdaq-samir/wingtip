@@ -31,8 +31,9 @@ import app.wingtipmaps.android.api.generated.WeatherLoop as LoopAnswer
  * (`status`, its `kept`), and their ages are the engine's (kept_age).
  *
  * Under IFR the alternate filed is one of the fields (PlanAlternate, the
- * nav log's leg on to it). This phone shows no approach plates (only the
- * airport diagram, with the airplane on it), so none is asked or counted.
+ * nav log's leg on to it). The approach plates this phone lays on the
+ * map (PlatesOnMap) are asked for as they are put there, not kept for the
+ * air, so none is asked or counted here.
  */
 object KeepForAir {
     /** What a diagram is about, for the size said before it is kept: a

@@ -202,6 +202,8 @@ class CardRuleTest {
                 listOf(Way.Tap(SheetPage.of(MapPick.Point("BAINY", vfr = true, lat = 46.1, lon = -92.4, vors = emptyList())))),
             ),
             Card("Traffic", SheetPage.Thing(MapPick.Plane("a1b2c3")), listOf(Way.Tap(SheetPage.of(MapPick.Plane("a1b2c3"))))),
+            // An approach plate tapped on the map: its card of settings.
+            Card("Plate", SheetPage.Plate("KOSH", "I36"), listOf(Way.Tap(SheetPage.of(MapPick.Plate("KOSH", "I36"))))),
             Card("Map Settings", SheetPage.MapSettings, listOf(Way.Tap(SheetPage.MapSettings), Way.Typed("map settings"))),
             Card("Brief", SheetPage.Brief, listOf(Way.Link(Screen.BRIEF))),
             Card("Nearest", SheetPage.Nearest, listOf(Way.Link(Screen.NEAREST), Way.Typed("nearest"))),
