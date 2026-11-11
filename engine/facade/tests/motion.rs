@@ -359,25 +359,17 @@ fn c81_kdlh(legs: &[Value]) -> Value {
 // --- The plan from the side --------------------------------------------------
 
 #[test]
-fn the_plan_climbs_to_its_top_holds_and_descends_to_the_pattern_at_its_entry() {
+fn the_plan_descends_to_the_pattern_by_its_45_degree_entry_ac_90_66c_11_3() {
     let mut l = leg();
     l["toc"]["lat"] = json!(42.1);
     let p = ask("plan_profile", json!({ "rows": c81_kdlh(&[l]) }));
-    // Level at pattern altitude where the 45-degree entry begins, before
-    // the pattern (AC 90-66C 11.2, 11.3): the sketch's downwind 0.75 sm
-    // out and its 1.2 nm entry put that 1.7236 nm from the field.
-    let points = p["points"].as_array().unwrap();
-    assert!((n(&points[3]["along_nm"]) - (60.0 - 1.7236)).abs() < 1e-3, "{}", p["points"]);
-    let mut rest = points.clone();
-    rest.remove(3);
     assert_eq!(
-        norm(&Value::Array(rest)),
+        norm(&p["points"]),
         norm(&json!([
             { "along_nm": 0, "plan_ft": 800 }, { "along_nm": 8, "plan_ft": 5500 }, { "along_nm": 48, "plan_ft": 5500 },
-            { "along_nm": 60, "plan_ft": 500 },
+            { "along_nm": 58.27640478071473, "plan_ft": 1500 }, { "along_nm": 60, "plan_ft": 500 },
         ]))
     );
-    assert_eq!(points[3]["plan_ft"], json!(1500.0));
     assert_eq!(p["marks"].as_array().unwrap().iter().map(|m| m["kind"].as_str().unwrap()).collect::<Vec<_>>(), ["TOC", "TOD"]);
     assert_eq!(p["length_nm"], json!(60.0));
 }

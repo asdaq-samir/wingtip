@@ -1343,10 +1343,9 @@ def test_the_faa_radar_is_read_around_the_places_the_map_shows_traffic(clock, mo
 
 def test_pressure_altitudes_are_set_on_the_nearest_altimeter(clock, monkeypatch):
     """The FAA's radar sends pressure altitude (29.92): on a 30.42 day an
-    airplane at about 4,460 ft on the altimeter is sent as 4,000, and read
-    that much below own ship's GPS height level with it. Set on the nearest
-    METAR's altimeter: FAA-H-8083-25C Figure 11-3 gives 30.4 "Hg -440 ft
-    and 30.5 -531, so 30.42 is -458; a GNSS height is left alone."""
+    airplane at about 4,460 ft on the altimeter is sent as 4,000. Set on the
+    nearest METAR's altimeter: FAA-H-8083-25C Figure 11-3 gives 30.4 "Hg
+    -440 ft and 30.5 -531, so 30.42 is -458; a GNSS height is left alone."""
     monkeypatch.setattr(weather, "nearest_report", lambda lat, lon, **kw: {"metar": {"altimeter_in_hg": 30.42}})
     baro = {"hex": "a3c858", "altitude_ft": 4000.0, "pressure_altitude": True}
     gnss = {"hex": "a6ed61", "altitude_ft": 8000.0, "pressure_altitude": False}
