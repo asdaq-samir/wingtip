@@ -16,6 +16,16 @@ function DropdownMenuTrigger({ ...props }: DropdownMenuPrimitive.Trigger.Props) 
   return <DropdownMenuPrimitive.Trigger data-slot="dropdown-menu-trigger" {...props} />;
 }
 
+/** Calls `onHidden` as the menu's anchor goes out of sight: Base UI's
+ *  hide middleware, the Positioner's anchorHidden (data-anchor-hidden),
+ *  which counts a clipping ancestor (the sheet) as out of sight. */
+function AnchorHidden({ hidden, onHidden }: { hidden: boolean; onHidden: () => void }) {
+  React.useEffect(() => {
+    if (hidden) onHidden();
+  }, [hidden, onHidden]);
+  return null;
+}
+
 function DropdownMenuContent({
   className,
   align = "start",
@@ -24,9 +34,13 @@ function DropdownMenuContent({
   sideOffset = 4,
   collisionPadding,
   anchor,
+  onAnchorHidden,
   ...props
 }: DropdownMenuPrimitive.Popup.Props &
-  Pick<DropdownMenuPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset" | "collisionPadding" | "anchor">) {
+  Pick<DropdownMenuPrimitive.Positioner.Props, "align" | "alignOffset" | "side" | "sideOffset" | "collisionPadding" | "anchor"> & {
+    /** Its trigger out of sight while it is open. */
+    onAnchorHidden?: () => void;
+  }) {
   return (
     <DropdownMenuPrimitive.Portal>
       <DropdownMenuPrimitive.Positioner
@@ -37,6 +51,16 @@ function DropdownMenuContent({
         sideOffset={sideOffset}
         collisionPadding={collisionPadding}
         anchor={anchor}
+        render={
+          onAnchorHidden
+            ? (props, state) => (
+                <div {...props}>
+                  {props.children}
+                  <AnchorHidden hidden={state.anchorHidden} onHidden={onAnchorHidden} />
+                </div>
+              )
+            : undefined
+        }
       >
         <DropdownMenuPrimitive.Popup
           data-slot="dropdown-menu-content"
