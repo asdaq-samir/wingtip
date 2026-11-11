@@ -1,5 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "cn";
+import { Toggle } from "@base-ui/react/toggle";
 import { Button } from "./ui/button";
 import { GLASS_BUTTON } from "../lib/mapChrome";
 import { TEXT } from "../lib/text";
@@ -121,25 +122,28 @@ export function CardAction({
       </Button>
     );
   }
-  return (
-    // What a menu's trigger hands its button (DropdownMenuTrigger asChild:
-    // its ref, its pointer and key handlers, aria-expanded) goes on it, so
-    // a tile can open a menu, as the airplane card's Alert does.
-    <Button
-      type="button"
-      variant={filled ? "default" : "secondary"}
-      {...trigger}
-      onClick={onClick}
-      disabled={disabled}
-      data-testid={testId}
-      aria-label={spoken}
-      aria-busy={busy || undefined}
-      aria-pressed={pressed}
-      // "Alt+F", as aria-keyshortcuts names it (lib/shortcutKeys).
-      aria-keyshortcuts={keys}
-      className={look}
-    >
+  // What a menu's trigger hands its button (DropdownMenuTrigger asChild:
+  // its ref, its pointer and key handlers, aria-expanded) goes on it, so
+  // a tile can open a menu, as the airplane card's Alert does.
+  const own = {
+    type: "button" as const,
+    variant: filled ? ("default" as const) : ("secondary" as const),
+    ...trigger,
+    onClick,
+    disabled,
+    "data-testid": testId,
+    "aria-label": spoken,
+    "aria-busy": busy || undefined,
+    // "Alt+F", as aria-keyshortcuts names it (lib/shortcutKeys).
+    "aria-keyshortcuts": keys,
+    className: look,
+  };
+  // A tile that is on or off is Base UI's Toggle (aria-pressed its own).
+  return pressed === undefined ? (
+    <Button {...own}>{face}</Button>
+  ) : (
+    <Toggle pressed={pressed} disabled={disabled} render={<Button {...own} />}>
       {face}
-    </Button>
+    </Toggle>
   );
 }

@@ -2,6 +2,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
 import { Button } from "../../../../../components/ui/button";
+import { Toggle } from "@base-ui/react/toggle";
 import { Slider } from "../../../../../components/ui/slider";
 import Segmented from "../../../../../components/Segmented";
 import type { AltitudeChoice, Detour, Leg, NavLogAltitude } from "../../../../../lib/api/types";
@@ -172,16 +173,14 @@ export function AltitudeProfile({
           <div className="flex shrink-0 gap-2">
             {/* In flight: the preview back to the airplane's own altitude. */}
             {vm.flying && (
-              <Button
-                type="button"
-                size="sm"
-                variant={vm.auto ? "default" : "secondary"}
-                aria-pressed={vm.auto}
-                onClick={() => vm.setAuto(!vm.auto)}
-                data-testid="altitude-auto"
+              // Base UI's Toggle: pressed and aria-pressed its own.
+              <Toggle
+                pressed={vm.auto}
+                onPressedChange={vm.setAuto}
+                render={<Button type="button" size="sm" variant={vm.auto ? "default" : "secondary"} data-testid="altitude-auto" />}
               >
                 Auto
-              </Button>
+              </Toggle>
             )}
             <Button type="button" size="sm" disabled={shownAt === flown} onClick={() => vm.fly(shownAt)} data-testid="altitude-set">
               Set

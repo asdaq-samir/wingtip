@@ -3,6 +3,7 @@ import { Navigation, Route } from "lucide-react";
 import { showError } from "../lib/problems";
 import { cn } from "cn";
 import IconButton from "./IconButton";
+import { Toggle } from "@base-ui/react/toggle";
 import { APPROXIMATE_M, ownShipAvailable, useOwnShip } from "../lib/map/position/ownShip";
 
 /**
@@ -78,25 +79,23 @@ export default function MyPositionButton() {
       setEnabled(false);
     }
   };
-  return (
-    <IconButton
-      label={
-        routeFace
-          ? "Show the whole route"
-          : simulated
-            ? "Follow the airplane"
-            : !enabled
-              ? "Show my position"
-              : follow
-                ? "Hide my position"
-                : "Follow my position"
-      }
-      onClick={tap}
-      aria-pressed={routeFace ? undefined : enabled}
-      data-testid="my-position-button"
-      data-face={routeFace ? "route" : "position"}
-      className="text-tint"
-    >
+  const own = {
+    label: routeFace
+      ? "Show the whole route"
+      : simulated
+        ? "Follow the airplane"
+        : !enabled
+          ? "Show my position"
+          : follow
+            ? "Hide my position"
+            : "Follow my position",
+    onClick: tap,
+    "data-testid": "my-position-button",
+    "data-face": routeFace ? "route" : "position",
+    className: "text-tint",
+  };
+  const face = (
+    <>
       {/* Fine and sharp-cornered, as iOS's own arrow is: lucide's is
           drawn with round joins at 2, a heavier mark than any around it. */}
       {routeFace ? (
@@ -108,6 +107,15 @@ export default function MyPositionButton() {
           className={cn("size-5", following && "fill-current", enabled && !fixed && "animate-pulse")}
         />
       )}
-    </IconButton>
+    </>
+  );
+  // On the route's face a plain button; on the position's, Base UI's
+  // Toggle, pressed while the position shows.
+  return routeFace ? (
+    <IconButton {...own}>{face}</IconButton>
+  ) : (
+    <Toggle pressed={enabled} render={<IconButton {...own} />}>
+      {face}
+    </Toggle>
   );
 }
