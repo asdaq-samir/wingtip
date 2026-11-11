@@ -83,20 +83,19 @@
   }
 }
 
-/* This is a controls app, not a page of text -- a long, still touch
-   on a button, a marker, or a drag handle should start whatever that
-   element does, not iOS/Android's own text-selection loupe or
-   "copy/share" callout popping up over it and swallowing the gesture.
-   Re-enabled on the few elements that are actually text entry. */
-body {
+/* Text is the browser's own: a METAR, a NOTAM, a frequency, a route
+   or a problem line selected with a long press and copied, a link's
+   long press its preview and Copy Link. Only the controls a drag or a
+   long, still touch would select by mistake are kept from it -- a
+   button (the sheet's grabber and its page tabs are buttons too), a
+   tab, and the map with its markers -- so the touch starts what the
+   control does, not the selection loupe or the "copy/share" callout. */
+button,
+[role="button"],
+[role="tab"],
+.maplibregl-map {
   -webkit-touch-callout: none;
   user-select: none;
-}
-input,
-select,
-textarea {
-  -webkit-touch-callout: default;
-  user-select: text;
 }
 
 /* The map's words in the app's own typeface: its credits and anything

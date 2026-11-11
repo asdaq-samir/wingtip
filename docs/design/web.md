@@ -83,6 +83,10 @@ These hold on every screen below and win over any reference app.
   `toast.undo`), the web's stock pattern, and a control's own
   confirmation ("Copied") an anchored Base UI Toast by that control
   (`lib/doneNote`), at the owner's word (2026-11-10).
+- **The browser's defaults stay** (the overrides audit, approved
+  2026-11-11): text is selectable, so a METAR, a NOTAM or a frequency is
+  copied with a long press, and only buttons, tabs and the map take no
+  selection (`index.css`).
 - **Words:** "airplane" (decision 0020), Title Case labels (0021), no
   explanatory footnotes (0019), FAA text in sentence case with its codes
   kept, raw reports as sent.
