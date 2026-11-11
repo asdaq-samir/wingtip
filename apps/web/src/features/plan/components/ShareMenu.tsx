@@ -16,6 +16,7 @@ import { foreflightRoute, type PlanPoint } from "../../../lib/flightPlanFiles";
 import { markPackSent, openInForeFlight, packOrigin, packPath, packSent } from "../lib/foreflightPack";
 import { navLogRows } from "./navlog/rows";
 import { useShareLink } from "../hooks/useShareLink";
+import { refreshLive } from "../../../lib/liveRefresh";
 
 const SHARE_LABEL: Record<"route" | RouteCard, string> = {
   // The route box's is More, a "…", at the owner's ask ("Don't call it
@@ -46,7 +47,7 @@ interface Planned {
  * specific to that card. So printing briefing should only be in brief
  * card"; "printing navlog should be in navlog"): the route box's has the
  * route -- its link, files, ForeFlight, Save and the review, filing and its
- * clear; the Brief's, its link and Print the briefing; the nav log's, its
+ * clear; the Brief's, its link, Print the briefing and Refresh; the nav log's, its
  * link and the nav log printed (the kneeboard card); the profile's, its
  * link.
  *
@@ -320,6 +321,15 @@ export default function ShareMenu({
             <DropdownMenuItem disabled={!routed} onClick={afterMenu(() => window.print())} data-testid="print-briefing">
               <Printer />
               Print the briefing
+            </DropdownMenuItem>
+          )}
+          {/* The Brief's live reports asked again now, as the route's
+              Refresh is in its own menu: the head keeps its two buttons
+              (rules.md). Kept fresh by themselves besides (useLiveRefresh). */}
+          {card === "brief" && (
+            <DropdownMenuItem onClick={() => void refreshLive("brief")} data-testid="brief-refresh">
+              <RotateCw />
+              Refresh
             </DropdownMenuItem>
           )}
           {card === "navlog" && !local && (

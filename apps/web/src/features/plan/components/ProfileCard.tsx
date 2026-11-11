@@ -17,7 +17,7 @@ export default function ProfileCard({
   name,
   sub,
   line,
-  corner,
+  rules,
   cautions = [],
   onClose,
   children,
@@ -30,10 +30,11 @@ export default function ProfileCard({
    *  clearance's verdict (ProfileLine). */
   sub?: ReactNode;
   line: ReactNode;
-  /** At the head's top right: the flight rules, VFR or IFR, with no label
-   *  of its own, at the owner's ask ("Vfr switch can be on the top right
-   *  corner, don't need the label flight rules"). */
-  corner?: ReactNode;
+  /** The flight rules, VFR or IFR, a segmented control at the top of the
+   *  card's content, with no label of its own (the owner's "don't need the
+   *  label flight rules"): the head keeps its two buttons, Share and ✕
+   *  (rules.md; the owner, 2026-11-11). */
+  rules?: ReactNode;
   /** What the pilot's own altitude breaks, the engine's words with their
    *  rules (own_altitude_caution: over the airplane's service ceiling, the
    *  oxygen 14 CFR 91.211(a) asks: (a)(1) the crew past 30 minutes over
@@ -65,8 +66,8 @@ export default function ProfileCard({
         onClose={onClose}
         onShare="profile"
         closeTestId="profile-close"
-        corner={corner}
       />
+      {rules && <div className="mt-2 flex shrink-0 justify-center">{rules}</div>}
       {cautions.length > 0 && (
         <ul
           className={cn("mt-2 shrink-0 space-y-1 rounded-lg bg-caution-wash px-2.5 py-2 text-caution-ink", TEXT.detail)}

@@ -126,11 +126,8 @@ for (const row of CARDS) {
         expect(Math.abs(name!.x + name!.width / 2 - (box!.x + box!.width / 2)), "centred").toBeLessThan(2);
         await expect(head.locator("[data-slot=head-end] button").last()).toHaveAttribute("data-testid", row.close);
         // Two buttons at most: Share (or the route's •••) and ✕ (the owner, 2026-11-11).
-        if (row.not?.headButtons) test.info().annotations.push({ type: "not", description: row.not.headButtons });
-        else {
-          await expect(head.locator("[data-slot=head-end] button")).toHaveCount(1);
-          expect(await head.locator("[data-slot=head-start] button").count()).toBeLessThanOrEqual(1);
-        }
+        await expect(head.locator("[data-slot=head-end] button")).toHaveCount(1);
+        expect(await head.locator("[data-slot=head-start] button").count()).toBeLessThanOrEqual(1);
       });
 
     if (row.fullHeight)

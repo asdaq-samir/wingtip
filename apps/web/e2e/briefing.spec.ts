@@ -160,6 +160,9 @@ test("each card's Share is its own: the Brief's prints the briefing, the nav log
   await openBrief(page);
   await page.getByTestId("card-share").click();
   await expect(menu.getByTestId("print-briefing")).toBeVisible();
+  // Its Refresh in its menu, the head keeping Share and ✕ alone (rules.md).
+  await expect(menu.getByTestId("brief-refresh")).toHaveText("Refresh");
+  await expect(page.getByTestId("brief-card").locator("[data-sheet-head] [data-testid=brief-refresh]")).toHaveCount(0);
   await expect(menu.getByTestId("print-kneeboard")).toHaveCount(0);
   await expect(menu.getByTestId("route-clear")).toHaveCount(0);
   await page.keyboard.press("Escape");
@@ -171,6 +174,7 @@ test("each card's Share is its own: the Brief's prints the briefing, the nav log
   await page.getByTestId("card-share").click();
   await expect(menu.getByTestId("print-kneeboard")).toHaveText("Print the nav log");
   await expect(menu.getByTestId("print-briefing")).toHaveCount(0);
+  await expect(menu.getByTestId("brief-refresh")).toHaveCount(0);
   await expect(menu.getByTestId("route-clear")).toHaveCount(0);
   await page.keyboard.press("Escape");
 });

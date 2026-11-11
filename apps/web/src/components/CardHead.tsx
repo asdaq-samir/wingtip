@@ -14,9 +14,9 @@ import { TEXT } from "../lib/text";
  * pinned at the card's top with the card scrolling under it (PinnedHead),
  * laid out as Apple Maps' place card at its smallest size (HeadGrid; the
  * owner, 2026-11-11, "let's move the title in the middle"): at its start
- * a form's Cancel (`leading`), or the card's Share, its star and what else
- * acts on it (`children`: a refresh, the flight rules, the Stops'
- * distance); its name and the short line under it (`sub`, in sight at the
+ * a form's Cancel (`leading`), or the card's Share (`children`); two
+ * buttons at most with the close (rules.md: a refresh, the flight rules or
+ * a filter goes in the Share menu or the card's content); its name and the short line under it (`sub`, in sight at the
  * smallest size too) centred across the card; and at its end the close
  * alone, or a form's Save (`end`). SheetCard draws it from its props; a
  * card whose content draws its own head (CardHead, CardTitle) draws this
@@ -109,8 +109,9 @@ export function CardHeadRow({
 /**
  * A card's head: its name, the line under it in a note's grey (what it
  * is, not text to read, as the line under a place's name is in Maps),
- * its Share and what else acts on it at the row's start (CardShareButton),
- * and the close alone at its end.
+ * its Share at the row's start (CardShareButton) and the close alone at
+ * its end: two buttons at most (rules.md), what else acts on the card in
+ * its Share menu or its content.
  */
 export function CardHead({
   name,
@@ -122,8 +123,6 @@ export function CardHead({
   onClose,
   onShare,
   closeTestId,
-  corner,
-  children,
 }: {
   name: ReactNode;
   /** A short line under the name in its pinned row, in sight at every size,
@@ -140,11 +139,6 @@ export function CardHead({
   /** Its share, at the row's start (CardShareButton). */
   onShare?: CardShare;
   closeTestId: string;
-  /** At the row's start after its Share (the Brief's refresh). */
-  children?: ReactNode;
-  /** At the row's end before the close, where the owner put it there (the
-   *  Profile's flight rules: "on the top right corner"). */
-  corner?: ReactNode;
 }) {
   // Its name and close one row pinned at the sheet's top, the card
   // scrolling under it (PinnedHead; the owner, 2026-11-10); the line under
@@ -155,15 +149,9 @@ export function CardHead({
         name={name}
         sub={sub}
         nameTestId={nameTestId}
-        end={
-          <>
-            {corner}
-            <CardClose onClose={onClose} onShare={onShare} testId={closeTestId} />
-          </>
-        }
+        end={<CardClose onClose={onClose} onShare={onShare} testId={closeTestId} />}
       >
         <CardShareButton onShare={onShare} />
-        {children}
       </CardHeadRow>
       {line != null && (
         <p className={cn("text-muted-foreground", TEXT.note, lineClassName)} data-testid={lineTestId}>

@@ -200,8 +200,9 @@ export default function StopsCard({
       {/* Every card's one head row (CardHeadRow), pinned, all of the card in
           sight at the sheet's smallest size: its name, and under it at every
           size how many it found (the owner, 2026-11-11: "None on the route",
-          "2 stops"), centred, the distance menu at the row's start and the
-          close at its end (CardClose). */}
+          "2 stops"), centred, and the close at its end (CardClose): two
+          buttons at most (rules.md), so how far to look is the list's own
+          filter, at its top. */}
       <CardHeadRow
         name="Stops"
         nameTestId="stops-name"
@@ -215,26 +216,7 @@ export default function StopsCard({
             : undefined
         }
         end={<CardClose onClose={onClose} testId="stops-close" />}
-      >
-        <PullDown
-          label="Where to look"
-          value={along ? "route" : `${radius}`}
-          align="start"
-          testId="stops-distance"
-          onChange={(value) => {
-            if (value === "route") {
-              onScope("route");
-              return;
-            }
-            setRadius(Number(value));
-            onScope("near");
-          }}
-          options={[
-            ...(route ? [{ value: "route", label: "Along Route", testId: "stops-distance-option" }] : []),
-            ...STOP_RADII.map((nm) => ({ value: `${nm}`, label: `Within ${nm} nm`, testId: "stops-distance-option" })),
-          ]}
-        />
-      </CardHeadRow>
+      />
       {/* Sideways past the card's edge, as Maps' filter pills scroll. One
           kind at a time, so the stock ToggleGroup: to VoiceOver a group
           of toggles, the one picked pressed, the arrow keys moving between
@@ -262,6 +244,28 @@ export default function StopsCard({
         ))}
       </ToggleGroup>
       <div ref={list} className="mt-1.5 min-h-0 flex-1 overflow-y-auto pb-3">
+        {/* How far to look, the list's filter at its top right, as a
+            section's filter menu is (the stock pull-down menu). */}
+        <div className="flex justify-end px-1 pb-2">
+          <PullDown
+            label="Where to look"
+            value={along ? "route" : `${radius}`}
+            align="end"
+            testId="stops-distance"
+            onChange={(value) => {
+              if (value === "route") {
+                onScope("route");
+                return;
+              }
+              setRadius(Number(value));
+              onScope("near");
+            }}
+            options={[
+              ...(route ? [{ value: "route", label: "Along Route", testId: "stops-distance-option" }] : []),
+              ...STOP_RADII.map((nm) => ({ value: `${nm}`, label: `Within ${nm} nm`, testId: "stops-distance-option" })),
+            ]}
+          />
+        </div>
         {!along && !at && (
           <ListGroup>
             <ListRow

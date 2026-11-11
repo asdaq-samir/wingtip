@@ -3,7 +3,7 @@ import { CardHead } from "../../../components/CardHead";
 import PanelTabs from "./navlog/PanelTabs";
 import BriefOverview from "./briefing/BriefOverview";
 import type { PanelTab } from "./navlog/panelTab";
-import RefreshButton from "../../../components/RefreshButton";
+import { useLiveRefresh } from "../../../lib/liveRefresh";
 import { CardLayer } from "../../../components/sheet/CardLayer";
 
 /**
@@ -42,6 +42,9 @@ export default function BriefCard({
   onLegs: () => void;
   route: string;
 }) {
+  // Its live reports kept fresh by themselves (on their timers and as the
+  // card comes back into sight); asked again now from its ••• (ShareMenu).
+  useLiveRefresh("brief");
   // A card of its own over the sheet, the stock Drawer's nested drawer
   // (CardLayer, the owner 2026-11-11), as an airport's card is.
   return (
@@ -66,10 +69,7 @@ export default function BriefCard({
                 onClose={onClose}
                 onShare="brief"
                 closeTestId="brief-close"
-              >
-                {/* The live reports asked again; kept fresh by themselves too. */}
-                <RefreshButton card="brief" label="Refresh the Brief" />
-              </CardHead>
+              />
             </div>
           }
         />

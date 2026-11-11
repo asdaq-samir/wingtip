@@ -53,8 +53,7 @@ export type Check =
   | "position"
   | "desktop"
   | "pill"
-  | "nested"
-  | "headButtons";
+  | "nested";
 
 export interface CardRow {
   name: string;
@@ -191,7 +190,6 @@ export const CARDS: CardRow[] = [
     not: {
       sideways: "no sideways row on its glance",
       position: "its pages are a stack of their own (briefing.spec)",
-      headButtons: "its Refresh beside the route's ••• in its head, the owner to say where it goes (2026-11-11)",
     },
   },
   {
@@ -220,7 +218,6 @@ export const CARDS: CardRow[] = [
       sideways: "its altitude slider is upright",
       position: "nothing opens inside it",
       scroll: "capped to the sheet at each detent, nothing scrolls",
-      headButtons: "its flight rules at the head's top right, where the owner put them, the owner to say where they go (2026-11-11)",
     },
   },
   {
@@ -245,7 +242,6 @@ export const CARDS: CardRow[] = [
     not: {
       position: "nothing opens inside it",
       scroll: "one stubbed field: shorter than the sheet",
-      headButtons: "its distance menu in its head, the owner to say where it goes (2026-11-11)",
     },
   },
   {

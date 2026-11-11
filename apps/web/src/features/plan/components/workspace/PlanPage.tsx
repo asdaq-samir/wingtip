@@ -163,7 +163,7 @@ export default function PlanPage({
             line={briefLine}
             onClose={closeProfileCard}
             cautions={profileCautions}
-            corner={
+            rules={
               !s.local && (
                 <Segmented
                   label="Flight rules"

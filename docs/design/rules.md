@@ -70,7 +70,12 @@ Compose. Nothing here is built by hand where a stock part does it.
    card's 22 centred across the card with its line under it, Share (or
    the route's •••) at its start and ✕ alone at its end -- two buttons at
    most, a star a Favorite tile in the card's action row (the owner,
-   2026-11-11: "all the cards have at most two head buttons") -- as Apple
+   2026-11-11: "all the cards have at most two head buttons"), and what
+   else acts on a card in its ••• menu or its content: the Brief's Refresh
+   in its menu as the route's is, the Stops' distance a filter at its
+   list's top, the Profile's VFR/IFR a segmented control at the top of
+   its content (`CardHead` takes nothing more; cards.spec checks every
+   card) -- as Apple
    Maps' place card at its smallest size (the owner, 2026-11-11: "let's move the title in the
    middle"; `HeadGrid`, the inset each side the wider side's),
    `CardHeadRow` (`CardHead`, `CardTitle`, `SheetCard`,
