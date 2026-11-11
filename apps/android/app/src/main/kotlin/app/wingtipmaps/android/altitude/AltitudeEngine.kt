@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.altitude
 
+import app.wingtipmaps.android.api.generated.AircraftProfile
 import app.wingtipmaps.android.api.generated.NavLogAltitude
 import app.wingtipmaps.android.api.generated.RouteProfile
 import app.wingtipmaps.android.engine.Engine
@@ -46,13 +47,52 @@ object AltitudeEngine {
         )
 
     /** A waypoint's change from the altitude flown into it to `toFt`,
-     *  Start At or Cross At: where it begins and ends; no airplane's
-     *  figures are handed over, so the engine gives its geometry alone. */
-    fun change(waypoint: ProfileModel.Waypoint, toFt: Double, how: PlanAltitudes.How): Result<Change> =
-        Engine.altitudeChange(
-            alongNm = waypoint.alongNm,
-            fromFt = waypoint.legFt,
-            toFt = toFt,
-            mode = if (how == PlanAltitudes.How.START_AT) "start_at" else "cross_at",
+     *  Start At or Cross At: where it begins and ends, and with the picked
+     *  airplane (the planner's altitude line's `aircraft`, as the iPhone's
+     *  ProfileRules.change and the web's LegAltitude take it) the climb's
+     *  time and fuel from its figures and the descent's at the leg's ground
+     *  speed and burn. With no airplane the geometry alone: nothing is
+     *  assumed (decision 0011). An airplane the engine cannot fly a climb
+     *  for is asked again with none, as the web does, so the pilot still
+     *  sees where the change is flown. */
+    fun change(waypoint: ProfileModel.Waypoint, toFt: Double, how: PlanAltitudes.How, airplane: AircraftProfile?): Result<Change> {
+        val ask = { profile: EngineContract.NavLogProfile? ->
+            val leg = waypoint.leg
+            Engine.altitudeChange(
+                profile = profile,
+                alongNm = waypoint.alongNm,
+                fromFt = waypoint.legFt,
+                toFt = toFt,
+                mode = if (how == PlanAltitudes.How.START_AT) "start_at" else "cross_at",
+                groundspeedKt = leg?.groundspeedKt,
+                tasKt = leg?.tasKt,
+                fuelBurnGph = burn(leg?.fuelBurnGph, airplane),
+                oatC = leg?.oatC,
+            )
+        }
+        val profile = airplane?.let(::profileOf) ?: return ask(null)
+        return ask(profile).recoverCatching { ask(null).getOrThrow() }
+    }
+
+    /** The airplane's figures as the engine's nav log reads them
+     *  (`NavLogProfile`), each as the planner sent it. */
+    fun profileOf(airplane: AircraftProfile): EngineContract.NavLogProfile =
+        EngineContract.NavLogProfile(
+            cruiseTasKt = airplane.cruiseTasKt,
+            fuelBurnGph = airplane.fuelBurnGph,
+            serviceCeilingFt = airplane.serviceCeilingFt,
+            cruisePowerPct = airplane.cruisePowerPct,
+            climbTasKt = airplane.climbTasKt,
+            climbFuelBurnGph = airplane.climbFuelBurnGph,
+            climbRateFpmSeaLevel = airplane.climbRateFpmSeaLevel,
+            taxiFuelGal = airplane.taxiFuelGal,
+            usableFuelGal = airplane.usableFuelGal,
+            supplementalOxygen = airplane.supplementalOxygen,
+            pressurized = airplane.pressurized,
         )
+
+    /** The burn a descent is costed at: the leg's, else the airplane's
+     *  cruise burn; none with no airplane, so no fuel is shown. */
+    fun burn(legGph: Double?, airplane: AircraftProfile?): Double? =
+        if (airplane == null) null else legGph ?: airplane.fuelBurnGph
 }

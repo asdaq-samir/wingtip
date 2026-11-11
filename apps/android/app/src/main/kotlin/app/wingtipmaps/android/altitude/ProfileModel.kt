@@ -3,6 +3,7 @@ package app.wingtipmaps.android.altitude
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Plan
+import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.RouteProfile
@@ -81,10 +82,10 @@ class ProfileModel : ViewModel() {
             val total = plan.legs.sumOf { it.distanceNm }
             val scale = if (total > 0) lengthNm / total else 1.0
             var along = 0.0
-            val out = mutableListOf(Waypoint(plan.legs.first().from, 0.0, plan.legs.first().altitudeFt))
-            for (leg in plan.legs) {
+            val out = mutableListOf(Waypoint(plan.legs.first().from, 0.0, plan.legs.first().altitudeFt, plan.legs.first()))
+            for ((i, leg) in plan.legs.withIndex()) {
                 along += leg.distanceNm
-                out += Waypoint(leg.to, along * scale, leg.altitudeFt)
+                out += Waypoint(leg.to, along * scale, leg.altitudeFt, plan.legs.getOrNull(i + 1) ?: leg)
             }
             return out
         }
@@ -103,7 +104,10 @@ class ProfileModel : ViewModel() {
             plan.altitudeFt ?: line.line?.altitudeFt ?: plan.legs.firstOrNull()?.altitudeFt
     }
 
-    /** A waypoint on the side view: its ident, where along it, and the
-     *  altitude its leg in is flown at. */
-    data class Waypoint(val ident: String, val alongNm: Double, val legFt: Double)
+    /** A waypoint on the side view: its ident, where along it, the
+     *  altitude its leg in is flown at, and the leg a change there is
+     *  flown on (the one out of it, else the one into it, as the iPhone's
+     *  ProfileRules.change takes it): its ground speed, true airspeed,
+     *  burn and air, the planner's. */
+    data class Waypoint(val ident: String, val alongNm: Double, val legFt: Double, val leg: Leg? = null)
 }

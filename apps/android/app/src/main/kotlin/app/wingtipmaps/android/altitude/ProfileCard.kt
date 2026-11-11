@@ -113,6 +113,7 @@ fun ProfileCard(plan: Plan, exit: CardExit) {
     tapped?.let { w ->
         LegAltitudeSheet(
             waypoint = w,
+            airplane = altitudes.line?.aircraft,
             steps = steps,
             set = altitudes.points.firstOrNull { it.ident == w.ident },
             onSet = { p ->
