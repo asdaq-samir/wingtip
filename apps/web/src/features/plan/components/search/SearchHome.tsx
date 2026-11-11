@@ -16,8 +16,10 @@ const AskSection = lazy(() => import("../ask/AskCard"));
 /**
  * The one search with nothing typed (the owner's one-search design,
  * 2026-11-09), the sheet's Search page: the assistant's answers where it
- * was asked from here, then Favorites (the airports' and the airplanes'),
- * Recents, Nearest and Find Nearby, each section's title the list in full.
+ * was asked from here, then Nearest and Find Nearby first (the owner,
+ * 2026-11-11: "move nearest and find nearby above favorites"), then
+ * Favorites (the airports' and the airplanes') and Recents, each
+ * section's title the list in full.
  * The flight and the flights saved and planned last are the FPL page's
  * alone (PlanPage), with "Plan a flight" there: the owner, 2026-11-11,
  * "We can remove plan button and saved from search", once the sheet had
@@ -50,6 +52,10 @@ export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
           <AskSection />
         </Suspense>
       )}
+      <PillSection title="Nearest" onMore={openNearest} testId="pill-section-nearest">
+        <NearestStrip fields={nearStrip} located={!!nearOrigin} onOpen={selectPlace} />
+      </PillSection>
+      <FindNearby onFind={findNearby} />
       <PillSection title="Favorites" onMore={() => openList("favorites")} testId="pill-section-favorites">
         {/* Home and the airports, then the Airplane and the airplanes, in one
             row sliding sideways, as Apple Maps' Favorites are (the sheet
@@ -82,10 +88,6 @@ export default function SearchHome({ vm }: { vm: PlanWorkspaceModel }) {
       <PillSection title="Recents" onMore={() => openList("recents")} testId="airport-recents">
         <RecentCards onPick={(airport) => void pickPlace(airport)} />
       </PillSection>
-      <PillSection title="Nearest" onMore={openNearest} testId="pill-section-nearest">
-        <NearestStrip fields={nearStrip} located={!!nearOrigin} onOpen={selectPlace} />
-      </PillSection>
-      <FindNearby onFind={findNearby} />
       <SheetFooter />
     </TabPage>
   );
