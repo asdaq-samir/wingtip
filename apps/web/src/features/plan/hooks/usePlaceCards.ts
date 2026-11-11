@@ -15,12 +15,10 @@ import { useAddressCards, type PanelView } from "./usePanelView";
 export function usePlaceCards({
   searchParams,
   setSearchParams,
-  panel,
   setPanel,
 }: {
   searchParams: URLSearchParams;
   setSearchParams: SetURLSearchParams;
-  panel: PanelState;
   setPanel: (state: PanelState) => void;
 }) {
   // The cards the address holds -- an airport's, the airspace over a
@@ -33,14 +31,6 @@ export function usePlaceCards({
   // FPL's Brief, a card over it (BriefCard): `?brief=1`, kept for FPL as
   // its other cards are (usePanelView).
   const briefOpen = searchParams.get("brief") === "1";
-  // A page of the sheet's own body (the Nav Log, Profile, Stops) put away
-  // puts the sheet back at the height it had before it, as Apple Maps
-  // does (the owner's pick, "Do what Apple Maps does"). Read while no page
-  // or card is open. A card needs none: the sheet under it never moved.
-  const panelBeforeCard = useRef(cardOpen || briefOpen ? "peek" : panel);
-  useEffect(() => {
-    if (!cardOpen && !briefOpen) panelBeforeCard.current = panel;
-  }, [cardOpen, briefOpen, panel]);
   // The tab an airplane's card was opened over from the route box's
   // N-number (openAirplaneCard), and the tab setter, set once the tabs
   // are (usePanelView, in the workspace): its close goes back there, FPL,
@@ -51,13 +41,6 @@ export function usePlaceCards({
   const setBackToView = useCallback((go: (view: PanelView) => void) => {
     backToView.current = go;
   }, []);
-  const closeCard = useCallback(
-    (close: () => void) => {
-      close();
-      setPanel(panelBeforeCard.current);
-    },
-    [setPanel],
-  );
   // The airport's card under the route, the route flown to from it (Fly
   // Here): where the route's close goes back to, as Maps' layers are.
   const [under, setUnder] = useState<string | null>(null);
@@ -77,7 +60,7 @@ export function usePlaceCards({
           // strip or a list all the way up alike, at the owner's ask ("should
           // have the half layout ... that should expand to full, not the
           // other way around").
-          return patched(prev, { place: ident ?? null, at: null, view: ident ? null : undefined });
+          return patched(prev, { place: ident ?? null, at: null });
         },
         { replace: true },
       );
@@ -111,17 +94,18 @@ export function usePlaceCards({
     (ident: string | null) => {
       // A tap on the chart past Nearest's list leaves it: its own drawer
       // lowers itself to the pill (NearestCard's dismiss), the tab kept.
+      // A card closed by a tap on the chart leaves the sheet under it at
+      // the size the pilot left it (the owner, 2026-11-11).
       if (!ident && nearOpen && !place) return;
       selectPlace(ident);
-      if (!ident && (place || heldPoint)) setPanel("peek");
     },
-    [selectPlace, nearOpen, place, heldPoint, setPanel],
+    [selectPlace, nearOpen, place],
   );
   const holdPoint = useCallback(
     (point: { lat: number; lon: number }) => {
       setSearchParams(
         (prev) => {
-          return patched(prev, { at: `${point.lat.toFixed(4)},${point.lon.toFixed(4)}`, place: null, view: null });
+          return patched(prev, { at: `${point.lat.toFixed(4)},${point.lon.toFixed(4)}`, place: null });
         },
         { replace: true },
       );
@@ -134,7 +118,6 @@ export function usePlaceCards({
     cardOpen,
     briefOpen,
     setBackToView,
-    closeCard,
     under,
     setUnder,
     approachesOf,

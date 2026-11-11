@@ -1,15 +1,4 @@
-import {
-  Suspense,
-  lazy,
-  useCallback,
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { showError } from "../../lib/problems";
 import { patched, useSearchParamsNow } from "../../lib/useSearchParamsNow";
 import { Shown } from "../../lib/shown";
@@ -127,24 +116,22 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // How far the panel is out. All the way, on the planner, is the
   // address; resting is this page's own. Opened, the panel rests as its
   // pill (MapPanel).
-  // An address that opens a list -- the Aircraft or Nearest list, Saved,
-  // a tab's Favorites or Recents in full, a past flight's log -- opens all
-  // the way up on it; a field's card, the
-  // airspace at a point or an airplane half way, where every card opens,
-  // as on 2026-10-11 (the owner's "pill to half to full worked really
-  // well").
+  // An address that opens something -- a field's card, the airspace at a
+  // point, an airplane, a past flight's log, the Aircraft or Nearest list,
+  // Saved, a tab's Favorites or Recents -- opens half way, as anything
+  // opened from the pill rises to half to be seen and no further (the
+  // owner, 2026-11-11: "I like the stock behavior"); all the way up only
+  // where the address says the pilot left it so (`view`).
   const [localPanel, setLocalPanel] = useState<PanelState>(() =>
     mode !== "pilot"
       ? "peek"
-      : ["place", "at", "flight"].some((key) => searchParams.has(key))
+      : ["place", "at", "flight", "past", "aircraft", "near", "saved", "list"].some((key) => searchParams.has(key))
         ? "half"
-        : ["past", "aircraft", "near", "saved", "list"].some((key) => searchParams.has(key))
-          ? "full"
-          : // A desktop's side panel out from the start, the search and the
-            // plan in it (the one-search design's Desktop, 2026-11-09).
-            isDesktopNow()
-            ? "half"
-            : "peek",
+        : // A desktop's side panel out from the start, the search and the
+          // plan in it (the one-search design's Desktop, 2026-11-09).
+          isDesktopNow()
+          ? "half"
+          : "peek",
   );
   // The airport index downloaded ahead of the first search, which at rest
   // is out of sight (lib/airportIndex).
@@ -169,15 +156,6 @@ export default function MapPage({ mode }: { mode: Mode }) {
     },
     [mode, briefingInAddress, setSearchParams],
   );
-  // Landed on a list's address, all the way up, as its link asks (above):
-  // the planner's all the way up is the address's (`view`), so said there
-  // once.
-  const landedFull = useRef(localPanel === "full" && !briefingInAddress);
-  useEffect(() => {
-    if (!landedFull.current) return;
-    landedFull.current = false;
-    setPanel("full");
-  }, [setPanel]);
 
   // What the panel covers of the map at rest, for the map to fit a
   // route clear of it and lift its chart credit above it. Kept when it

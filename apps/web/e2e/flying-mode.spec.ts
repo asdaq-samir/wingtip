@@ -30,8 +30,8 @@ test("in flight the next checkpoint is over the map, the buttons are 60 points a
   page,
 }) => {
   await startDryRun(page);
-  // The next checkpoint's card at the top; a dry run keeps the sheet where
-  // it was, its card's controls in sight (a real flight's goes to the pill).
+  // The next checkpoint's card at the top; the sheet stays where it was,
+  // a dry run's or a real flight's alike, the run's card's controls in sight.
   const head = page.getByTestId("flying-head");
   await expect(head).toBeVisible({ timeout: slow(10_000) });
   await expect(head.getByTestId("flying-next-name")).not.toBeEmpty();

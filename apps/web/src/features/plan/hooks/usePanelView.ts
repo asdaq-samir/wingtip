@@ -8,6 +8,7 @@ import { choosePastFlight, clearPastFlight, usePastFlight } from "../map/pastFli
 import { track, useTracking } from "../../../lib/map/position/tracking";
 import { patched } from "../../../lib/useSearchParamsNow";
 import { usePickAirplaneRequest } from "./usePickAirplaneRequest";
+import { riseToSee } from "./panelNow";
 
 /**
  * What the planner's sheet shows under its one search (the owner's
@@ -63,8 +64,9 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
         },
         { replace: true },
       );
-      // A list in full all the way up, as each opened before.
-      setPanel("full");
+      // From the pill up to half, so it is seen; else the sheet stays the
+      // size the pilot left it (the owner, 2026-11-11).
+      riseToSee(setPanel);
     },
     [setSearchParams, setPanel],
   );

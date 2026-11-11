@@ -195,7 +195,12 @@ close does.
   sheet's own under a card too, each card's `data-panel` on its own
   drawer; what is in sight (the top card's, else the sheet's) is read for
   `<body>`'s `data-map-panel` and the map's room. No field's focus or
-  typing sizes either. They are put inside the sheet's popup
+  typing sizes either. The page sizes the main sheet only by Apple Maps'
+  one rule (the owner, 2026-11-11: "I like the stock behavior"):
+  something new opened at the pill rises it to half (`riseToSee` in
+  `features/plan/hooks/panelNow`); otherwise it keeps the size the pilot
+  left it at, never lowered and never taken all the way up, a page put
+  away leaving it where it is (`e2e/sheet-size.spec.ts`). They are put inside the sheet's popup
   (`Drawer.Portal`'s `container`), outside its corners' clip, placed from
   the sheet's snap offset to their own. A card's content stays drawn where
   its caller is (its providers) and is put in its drawer's scroller

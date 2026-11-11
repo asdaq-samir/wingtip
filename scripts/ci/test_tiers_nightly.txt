@@ -81,6 +81,7 @@ search-results.spec.ts
 setup-rows.spec.ts
 sheet-cards.spec.ts
 sheet-drag.spec.ts
+sheet-size.spec.ts
 sheet-turn.spec.ts
 speed-lab.spec.ts
 speed.spec.ts

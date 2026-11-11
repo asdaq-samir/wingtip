@@ -10,7 +10,7 @@ import { positionNow, useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
 import { checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
 import { loadRoutePanel } from "../routePanelParts";
-import { panelNow } from "./panelNow";
+import { panelNow, riseToSee } from "./panelNow";
 import type { PlannedRoute } from "./planAddress";
 import { navlogQuery, type PlanParams } from "./usePlan";
 
@@ -220,8 +220,9 @@ export function useFlyHere({
       flushSync(() => {
         setLoad((n) => n + 1);
         setUnder(to.ident);
-        // The route half way, its profile and figures in sight.
-        if (panelNow.current !== "full") setPanel("half");
+        // The route in sight: half way up from the pill, else where the
+        // pilot left the sheet.
+        riseToSee(setPanel);
         setSearchParams(next, { replace: true, flushSync: true });
       });
     },

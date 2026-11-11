@@ -11,7 +11,7 @@ import { kindsOf, type StopKind } from "../../../lib/stopKinds";
 import { useStopsAlong } from "../lib/stopsAlong";
 import { patched } from "../../../lib/useSearchParamsNow";
 import type { ProceduresAt } from "../components/ProceduresRoute";
-import { panelNow } from "./panelNow";
+import { riseToSee } from "./panelNow";
 import type { PlannedRoute } from "./planAddress";
 import type { PanelView } from "./usePanelView";
 import { useOpenScreen } from "./useOpenScreen";
@@ -19,9 +19,10 @@ import { useOpenScreen } from "./useOpenScreen";
 /**
  * The cards over FPL and the lists in full (usePlanWorkspace): the Brief,
  * a card sizing its own drawer (CardStack); the nav log, the side view and
- * the map's Stops, pages of the sheet's own body opened at half from the
- * pill and put away to the sheet's height before them (closeCard); Saved,
- * Nearest and an instructor's lesson. With the Stops' own questions and
+ * the map's Stops, pages of the sheet's own body; Saved, Nearest and an
+ * instructor's lesson. Each opened from the pill raises the sheet to half
+ * so it is seen, and nothing else sizes the sheet: it keeps the size the
+ * pilot left it at, opening or closing (riseToSee; the owner, 2026-11-11). With the Stops' own questions and
  * pins, and the microphone's commands that open them.
  */
 export function useFplCards({
@@ -32,7 +33,6 @@ export function useFplCards({
   fix,
   fuelStopPins,
   briefOpen,
-  closeCard,
   setViewPick,
   setPanel,
   searchParams,
@@ -51,7 +51,6 @@ export function useFplCards({
   fuelStopPins: { ident: string }[];
   /** FPL's Brief in the address (`brief=1`). */
   briefOpen: boolean;
-  closeCard: (close: () => void) => void;
   setViewPick: (view: PanelView) => void;
   setPanel: (state: PanelState) => void;
   searchParams: URLSearchParams;
@@ -141,7 +140,7 @@ export function useFplCards({
       },
       { replace: true },
     );
-    setPanel("full");
+    riseToSee(setPanel);
   }, [setSearchParams, setPanel]);
   // And back from it to FPL's start, its own Back (FlightsPanel's head).
   const closeSaved = useCallback(() => {
@@ -173,16 +172,16 @@ export function useFplCards({
       { replace: true },
     );
   }, [setSearchParams]);
-  // The nav log from the route box's button, a card over FPL as the Brief
-  // is, at the height FPL is at (half from the pill), put away to the
-  // height it had (closeCard).
+  // The nav log from the route box's button, a page over FPL as the Brief
+  // is, at the height FPL is at (half from the pill), the sheet left there
+  // as it is put away.
   const openNavLogCard = useCallback(() => {
     setStopsOpen(false);
     setNavLogOpen(true);
     setProfileOpen(false);
-    if (panelNow.current !== "full") setPanel("half");
+    riseToSee(setPanel);
   }, [setPanel, setStopsOpen]);
-  const closeNavLogCard = useCallback(() => closeCard(() => setNavLogOpen(false)), [closeCard]);
+  const closeNavLogCard = useCallback(() => setNavLogOpen(false), []);
   // The side view the same way, from its button beside the nav log's, at
   // the owner's ask ("profile view can move next to the navlog button and
   // open like brief and navlog opens instead of the swipe").
@@ -190,11 +189,11 @@ export function useFplCards({
     setStopsOpen(false);
     setProfileOpen(true);
     setNavLogOpen(false);
-    if (panelNow.current !== "full") setPanel("half");
+    riseToSee(setPanel);
   }, [setPanel, setStopsOpen]);
-  const closeProfileCard = useCallback(() => closeCard(() => setProfileOpen(false)), [closeCard]);
-  // The map's Stops, put away to the height FPL had (closeCard).
-  const closeStops = useCallback(() => closeCard(() => setStopsOpen(false)), [closeCard, setStopsOpen]);
+  const closeProfileCard = useCallback(() => setProfileOpen(false), []);
+  // The map's Stops put away, the sheet where it is.
+  const closeStops = useCallback(() => setStopsOpen(false), [setStopsOpen]);
   // Opened: FPL in sight with it, the other cards over FPL and an
   // airport's put away, half way up from the pill, as the Profile opens
   // from its button.
@@ -206,7 +205,7 @@ export function useFplCards({
     setSearchParams((prev) => (prev.get("brief") || prev.get("place") ? patched(prev, { brief: null, place: null }) : prev), {
       replace: true,
     });
-    if (panelNow.current !== "full") setPanel("half");
+    riseToSee(setPanel);
   }, [setStopsOpen, setViewPick, setSearchParams, setPanel]);
   // Find Nearby's tile (the Airport tab): the Stops round the pilot, that
   // kind picked.
@@ -229,11 +228,12 @@ export function useFplCards({
   const pickStopField = useCallback(
     (ident: string) => {
       setStopPicked(ident);
-      if (panelNow.current === "peek") setPanel("half");
+      riseToSee(setPanel);
     },
     [setStopPicked, setPanel],
   );
-  // The legs asked for from the Brief: FPL all the way up in its place.
+  // The legs asked for from the Brief: FPL in its place, the sheet at the
+  // size the pilot left it (half from the pill).
   const showLegs = useCallback(() => {
     setSearchParams(
       (prev) => {
@@ -241,7 +241,7 @@ export function useFplCards({
       },
       { replace: true },
     );
-    setPanel("full");
+    riseToSee(setPanel);
   }, [setSearchParams, setPanel]);
   // The strip's title opens the list in full, over Airport: its card all
   // the way up (NearestCard's `opens`).

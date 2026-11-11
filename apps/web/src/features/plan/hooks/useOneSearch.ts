@@ -20,6 +20,7 @@ import { readQuery } from "../lib/searchFilters";
 import { useEngineReady } from "../../../lib/engine/useEngineReady";
 import { nearOf, useSearchResults } from "./useSearchResults";
 import type { PlanWorkspaceModel } from "./usePlanWorkspace";
+import { riseToSee } from "./panelNow";
 
 /** One airplane the search found: the pilot's own (their record, or one
  *  kept on this device), one the FAA's registry has by the N-number typed,
@@ -232,7 +233,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
       out.push({ key: "direct-first", label: `Direct to ${first.ident}`, kind: "action", run: () => void flyDirect(first.ident) });
     const actions: DoHit[] = [
       { key: "direct", label: "Direct To…", keys: DIRECT_KEY, kind: "action", run: () => (setDirect(true), setQuery("")) },
-      { key: "traffic", label: "Traffic Nearby", kind: "action", run: () => (done(), pickView("traffic"), setPanel("half")) },
+      { key: "traffic", label: "Traffic Nearby", kind: "action", run: () => (done(), pickView("traffic"), riseToSee(setPanel)) },
     ];
     for (const a of actions) if (!typed || finds(typed, a.label)) if (a.key !== "direct" || directTo) out.push(a);
     for (const id of OFFERED) {
@@ -264,7 +265,7 @@ export function useOneSearch(vm: PlanWorkspaceModel) {
     (document.activeElement as HTMLElement | null)?.blur();
     useSearchResults.getState().send(text, near, readQuery(text).filters, (ident) => selectPlace(ident));
     pickView("search");
-    setPanel("half");
+    riseToSee(setPanel);
   };
 
   // The question to the assistant (lib/ask): with a route its answer in

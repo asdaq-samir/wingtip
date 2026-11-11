@@ -44,7 +44,7 @@ import { useVerdict } from "../../../lib/verdict";
 import { mayUse, useEntitlement } from "../../../lib/subscription";
 import type { WorkspaceProps } from "../../shell";
 import { prefetchPilotPanel } from "../routePanelParts";
-import { panelNow } from "./panelNow";
+import { panelNow, riseToSee } from "./panelNow";
 import { altitudeChoiceOf, departureRunways, landingRunways, LOCAL_MINUTES, namesRoute, routeWas, suggestedStopAt } from "./planAddress";
 import { briefMarkOf, marksOf, progressWords, tightLegWords } from "./planWords";
 import { drawnOnly, useProcedurePicks } from "./useProcedurePicks";
@@ -297,7 +297,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     cardOpen,
     briefOpen,
     setBackToView,
-    closeCard,
     under,
     setUnder,
     approachesOf,
@@ -307,7 +306,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     closeFlight,
     selectPlaceOnChart,
     holdPoint,
-  } = usePlaceCards({ searchParams, setSearchParams, panel, setPanel });
+  } = usePlaceCards({ searchParams, setSearchParams, setPanel });
   const {
     place,
     heldPoint,
@@ -557,9 +556,10 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
         },
         { replace: true },
       );
-      // FPL's list in sight, its new row and the hold's sheet with it.
+      // FPL's list in sight, its new row and the hold's sheet with it: up
+      // to half from the pill, else where the pilot left the sheet.
       setViewPick("plan");
-      setPanel("half");
+      riseToSee(setPanel);
       if (then === "hold") setHoldAsk(`${ident}@${Date.now()}`);
     },
     [course, setSearchParams, setPanel, setViewPick],
@@ -603,7 +603,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     fix,
     fuelStopPins,
     briefOpen,
-    closeCard,
     setViewPick,
     setPanel,
     searchParams,
@@ -781,7 +780,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     () => (flyDirectTo ? { to: flyDirectTo, go: () => directToPoint(flyDirectTo) } : null),
     [flyDirectTo, directToPoint],
   );
-  const { flying, done: doneFlying } = useFlyingMode({ routed, setPanel, nearest: flyNearest, direct: flyDirect });
+  const { flying, done: doneFlying } = useFlyingMode({ routed, nearest: flyNearest, direct: flyDirect });
   // The flight handed to the in-flight copilot (features/copilot).
   useCopilotPublish({
     dest: `${planned.dest}`,
@@ -999,7 +998,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     classBClearance,
     clearRoute,
     closeBrief,
-    closeCard,
     closeFlight,
     closeLeg,
     closeLesson,

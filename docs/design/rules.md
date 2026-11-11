@@ -67,6 +67,16 @@ Compose. Nothing here is built by hand where a stock part does it.
     the row or a drag up raises the sheet back to half with the card as it
     was; ✕ there closes the card and the pill then shows the search. With
     no card open the pill is the search, as before.
+11. **The sheet keeps the size the pilot left it at** (the owner,
+    2026-11-11: "I like the stock behavior"). The one size the app gives
+    the main sheet is Apple Maps' rule: something new opened while the
+    sheet is at its smallest size, the pill, rises to half so it can be
+    seen. Nothing lowers the sheet (a card closed, Cancel, a tap on the
+    chart, a flight starting), nothing takes it all the way up (a list,
+    Saved, Favorites, a link), and a page put away (the Nav Log, the
+    Profile, the Stops) leaves it where it is. Cards keep their own
+    opening sizes (2, and the Detents row below): each card's drawer is
+    its own, the sheet under it untouched.
 
 | | Web | iPhone (Apple Maps' way) | Android (Google Maps' way) |
 |---|---|---|---|

@@ -21,7 +21,7 @@ export function listSearchOf(vm: PlanWorkspaceModel): ListSearch | null {
 
 /** The traffic's: an airplane by its callsign, registration or address. */
 function aircraftSearch(vm: PlanWorkspaceModel): ListSearch {
-  const { aircraftInput, aircraftTyped, listAway, pickingFavorite, pickingMine, setPanel, pickView, routed } = vm;
+  const { aircraftInput, aircraftTyped, listAway, pickingFavorite, pickingMine, pickView, routed } = vm;
   return {
     value: aircraftTyped,
     onChange: (aircraft) => useTabSearch.setState({ aircraft }),
@@ -41,11 +41,11 @@ function aircraftSearch(vm: PlanWorkspaceModel): ListSearch {
       listAway("aircraft-recents");
     },
     // Cancel leaves the traffic for the search's own scope again (the plan
-    // with a route), the field being the one search's.
+    // with a route), the field being the one search's; the sheet stays at
+    // the size the pilot left it (the owner, 2026-11-11).
     onCancel: () => {
       useTabSearch.setState({ aircraft: "", pickingMine: false, pickingFavorite: false });
       pickView(routed ? "plan" : "search");
-      setPanel("peek");
     },
     onSubmit: () => useTabSearch.getState().submitAircraft?.(),
   };
@@ -53,7 +53,7 @@ function aircraftSearch(vm: PlanWorkspaceModel): ListSearch {
 
 /** Nearest's: where the nearest fields are measured from. */
 function nearSearch(vm: PlanWorkspaceModel): ListSearch {
-  const { nearTyped, setPanel } = vm;
+  const { nearTyped } = vm;
   return {
     value: nearTyped,
     onChange: (near) => useTabSearch.setState({ near }),
@@ -61,7 +61,9 @@ function nearSearch(vm: PlanWorkspaceModel): ListSearch {
     label: "Nearest to: a town, an address or an airport",
     testId: "nearest-from",
     icon: MapPin,
-    onCancel: () => setPanel("peek"),
+    // Escape only lets the field go (SearchField blurs it): the sheet stays
+    // at the size the pilot left it (the owner, 2026-11-11).
+    onCancel: () => undefined,
     onSubmit: () => useTabSearch.getState().submitNear?.(),
     onClear: () => {
       const clear = useTabSearch.getState().clearNear;

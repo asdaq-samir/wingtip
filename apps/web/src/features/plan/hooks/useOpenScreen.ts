@@ -10,6 +10,7 @@ import { tailOf } from "../../../lib/aircraftChoice";
 import { openAirplaneProfile } from "../../../lib/airplane/profileStore";
 import { usePreferences } from "../../../lib/preferences";
 import type { PanelView } from "./usePanelView";
+import { riseToSee } from "./panelNow";
 
 /** The account page's pages a screen is (the account button's page, which
  *  took Setup's place), as the path of page keys down to it
@@ -90,12 +91,12 @@ export function useOpenScreen({
       // The sheet's two pages (SheetPager, the owner 2026-11-11): FPL the plan's, Search the one search's.
       case "fpl":
         setViewPick("plan");
-        setPanel("half");
+        riseToSee(setPanel);
         return;
       case "search":
       case "airport":
         setViewPick("search");
-        setPanel("half");
+        riseToSee(setPanel);
         return;
       case "airplane": {
         const tail = tailOf(usePreferences.getState().aircraft);
@@ -104,7 +105,7 @@ export function useOpenScreen({
           return;
         }
         setSearchParams((prev) => patched(prev, { aircraft: "1" }), { replace: true });
-        setPanel("half");
+        riseToSee(setPanel);
         return;
       }
       case "brief":
@@ -118,7 +119,7 @@ export function useOpenScreen({
         return;
       case "favorites":
         setSearchParams((prev) => patched(prev, { list: "favorites" }), { replace: true });
-        setPanel("full");
+        riseToSee(setPanel);
         return;
       case "nearest":
         openNearest();
