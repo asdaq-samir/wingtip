@@ -136,6 +136,7 @@ export const WEB_RULES = [
   "navaid_hours",
   "navlog_leg",
   "navlog_totals",
+  "notam_read",
   "our_call",
   "own_ship_hex",
   "passenger_briefing",

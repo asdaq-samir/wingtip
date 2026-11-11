@@ -697,6 +697,21 @@ when empty, decision 0023); a filter row (category, active now / later,
 read); the ranked list (`features/notamRanking`), each NOTAM's plain
 words first and its raw text as sent beneath, folded; pinned first.
 
+**On the airport card** (the Info tab, `place/PlaceNotams`): the
+engine's first three in its order (`notams_ranked`), as every list on
+the card shows three, how many in all at the title's right, and the
+title, "NOTAMs ›", the way to every one on a card over it with the same
+rows. Each row is the engine's reading (`notam_read`, the owner
+2026-11-11: "can we decipher them better?"): its keyword as a heading
+(Runway, Obstacle, Instrument approach, Temporary flight restriction
+...), its words with the FAA's contractions written out (FAA JO 7340.2;
+JO 7930.2 TBL 3-3-1) and its codes kept ("Runway 27 PAPI out of
+service."), heights MSL unless AGL is stated ("1,047 ft MSL (210 ft above
+ground)", JO 7930.2 4-2-1); its window in UTC, as the NOTAM gives it,
+with an estimated end or a permanent one said, and in the device's own
+time with its zone named; and "As Sent" folded. A word the engine does
+not know stays as written.
+
 **Stock parts.** Filters: Base UI Toggle Group or a Menu with checkbox
 items (menus, not sliders); the list: shadcn Item rows; the raw text:
 Base UI Collapsible; Pin and Mark Read in each row's Menu.

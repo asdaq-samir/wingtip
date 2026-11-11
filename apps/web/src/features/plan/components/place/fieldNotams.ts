@@ -1,9 +1,13 @@
-import { queryOptions } from "@tanstack/react-query";
+import { useState } from "react";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { data, planner } from "../../../../lib/api/client";
 import type { components } from "../../../../lib/api/schema";
+import { callEngine, type EngineAnswer } from "../../../../lib/engine/engine";
 
 export type FieldNotams = components["schemas"]["NotamsRanked"];
 export type FieldNotam = FieldNotams["notams"][number];
+/** A NOTAM as the engine reads it for a pilot (notam_read). */
+export type NotamReading = EngineAnswer<"notam_read">;
 
 /**
  * A field's own NOTAMs (the FAA's feed, by any ident it goes by) and the
@@ -23,6 +27,46 @@ export const fieldNotamsQuery = (ident: string) =>
 /** How many alerts lead the card, as Maps' live cards do (the phones'). */
 const ALERTS = 3;
 
+/** How many NOTAMs the card's section shows, the engine's first three
+ *  (its ranking says its top three first, notams_ranked), the title the
+ *  way to the rest, as every list on the card shows three (FirstFew). */
+const FIRST = 3;
+
+/**
+ * The airport card's NOTAMs, its view model: the field's NOTAMs best
+ * first, the first three for the section, and whether the list in full is
+ * open over the card (the owner, 2026-11-11: "Can notams also show as a
+ * list of three like others").
+ */
+export function useFieldNotams(ident: string) {
+  const { data, isError } = useQuery(fieldNotamsQuery(ident));
+  const [listOpen, setListOpen] = useState(false);
+  const notams = data?.notams ?? [];
+  return {
+    data,
+    isError,
+    notams,
+    first: notams.slice(0, FIRST),
+    more: notams.length > FIRST,
+    listOpen,
+    openList: () => setListOpen(true),
+    closeList: () => setListOpen(false),
+  };
+}
+
+/** The field's idents as a NOTAM may write them ("OSH", "KOSH"), kept as
+ *  written in its words. */
+function identsOf(ident: string): string[] {
+  const bare = ident.length === 4 && ident.startsWith("K") ? ident.slice(1) : ident;
+  return [...new Set([ident, bare, `K${bare}`])];
+}
+
+/** The NOTAM read by the engine (notam_read): its heading, its words
+ *  written out, its window. Drawn inside an EngineGate. */
+export function readNotam(n: FieldNotam, ident: string): NotamReading {
+  return callEngine("notam_read", { text: n.raw, idents: identsOf(ident) });
+}
+
 /** What leads the card: each NOTAM the engine marks as closing the field
  *  or a runway, and each TFR near it, in the engine's order, at most
  *  three. Nothing is dropped from the list below them. */
@@ -30,21 +74,57 @@ export function fieldAlerts(answer: FieldNotams | undefined): FieldNotam[] {
   return (answer?.notams ?? []).filter((n) => n.closed || n.kind === "tfr").slice(0, ALERTS);
 }
 
+/** A feed's time as a date, one with no zone read as UTC; null where it
+ *  is none. */
+function dateOf(iso: string | null | undefined): Date | null {
+  const at = iso ? new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`) : null;
+  return at && !Number.isNaN(at.getTime()) ? at : null;
+}
+
 /** "Nov 12 1432Z": a NOTAM's time in UTC with its day, as the FAA's
  *  NOTAMs give their times (AIM 5-1-3); a feed time with no zone is UTC. */
 export function zulu(iso: string): string {
-  const at = new Date(/[zZ]|[+-]\d\d:?\d\d$/.test(iso) ? iso : `${iso}Z`);
-  if (Number.isNaN(at.getTime())) return iso;
+  const at = dateOf(iso);
+  if (!at) return iso;
   const month = at.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
   const hhmm = `${String(at.getUTCHours()).padStart(2, "0")}${String(at.getUTCMinutes()).padStart(2, "0")}Z`;
   return `${month} ${at.getUTCDate()} ${hhmm}`;
 }
 
 /** When it is in force, in words: "In effect now, until Nov 12 1432Z",
- *  "From Nov 12 1200Z", or nothing where the feed gives no times. */
-export function whenWords(n: Pick<FieldNotam, "in_force" | "starts" | "ends">): string | null {
-  const until = n.ends ? `until ${zulu(n.ends)}` : null;
+ *  "From Nov 12 1200Z", or nothing where the feed gives no times. An end
+ *  sent with EST is an estimate, and PERM is permanent (FAA JO 7930.2
+ *  4-2-1), as the engine reads them from the text (notam_read). */
+export function whenWords(
+  n: Pick<FieldNotam, "in_force" | "starts" | "ends">,
+  read?: Pick<NotamReading, "estimated" | "permanent">,
+): string | null {
+  const est = read?.estimated ? " (estimated)" : "";
+  const until = n.ends ? `until ${zulu(n.ends)}${est}` : read?.permanent ? "permanent" : null;
   if (n.in_force) return until ? `In effect now, ${until}` : "In effect now";
-  if (n.starts) return `From ${zulu(n.starts)}${n.ends ? ` ${until}` : ""}`;
+  if (n.starts) return `From ${zulu(n.starts)}${until ? `${n.ends ? " " : ", "}${until}` : ""}`;
   return until ? `In effect ${until}` : null;
+}
+
+/** The feed's times, or where it gave none the NOTAM's own (its
+ *  YYMMDDHHMM-YYMMDDHHMM, read by the engine). */
+export function windowOf(n: FieldNotam, read: NotamReading): Pick<FieldNotam, "in_force" | "starts" | "ends"> {
+  return { in_force: n.in_force, starts: n.starts ?? read.starts, ends: n.ends ?? read.ends };
+}
+
+const LOCAL = new Intl.DateTimeFormat(undefined, {
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+  timeZoneName: "short",
+});
+
+/** The window in the device's own time, its zone named ("Nov 12, 3:00 –
+ *  11:00 AM CST"), beside the UTC the NOTAM gives (JO 7930.2 3-3-2). */
+export function localWords(starts: string | null | undefined, ends: string | null | undefined): string | null {
+  const [from, until] = [dateOf(starts), dateOf(ends)];
+  if (from && until) return LOCAL.formatRange(from, until);
+  if (from) return `From ${LOCAL.format(from)}`;
+  return until ? `Until ${LOCAL.format(until)}` : null;
 }
