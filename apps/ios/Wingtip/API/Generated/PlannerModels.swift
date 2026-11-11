@@ -3691,7 +3691,9 @@ struct APILeg: Codable, Equatable, Sendable {
 /// north up between these latitudes and longitudes, as the plate's own
 /// georeference places it; `fixes` the approach's fixes inside it;
 /// `circling` whether the plate publishes circling minimums, so a pilot
-/// flying the approach may circle to land on another runway.
+/// flying the approach may circle to land on another runway; `page` the
+/// whole page placed (PlatePage), None where its page is turned in the
+/// PDF and so not placed.
 // MARK: - APIPlateOverlay
 struct APIPlateOverlay: Codable, Equatable, Sendable {
     var circling: Bool
@@ -3699,14 +3701,40 @@ struct APIPlateOverlay: Codable, Equatable, Sendable {
     var east: Double
     var fixes: [String]
     var name: String
-    var north, south, west: Double
+    var north: Double
+    var page: APIPlatePage?
+    var south, west: Double
+}
+
+/// An approach plate's whole page placed on the map (wingtip.plate_page):
+/// its picture at /api/approach-plate-page/{cycle}/{ident}/{procedure}.png,
+/// greyscale on white, `width` by `height` pixels, drawn between its four
+/// corners on the ground, which put its plan view where the plate's own
+/// georeference does; the rest of the page goes round it at the same scale
+/// and turn, as ForeFlight lays a plate on its chart. The page may turn a
+/// little from north up (the plate's Lambert projection's meridians lean),
+/// so it is drawn between the four corners, not in a box.
+// MARK: - APIPlatePage
+struct APIPlatePage: Codable, Equatable, Sendable {
+    var bottomLeft, bottomRight: APIPlateCorner
+    var height: Int
+    var topLeft, topRight: APIPlateCorner
+    var width: Int
+}
+
+/// A corner of a plate's page on the ground.
+// MARK: - APIPlateCorner
+struct APIPlateCorner: Codable, Equatable, Sendable {
+    var lat, lon: Double
 }
 
 /// One procedure drawn with the transition picked (wingtip.procedures):
 /// its lines, holds and fixes, from the CIFP of `cycle`.
 // MARK: - APIProcedureDrawing
 struct APIProcedureDrawing: Codable, Equatable, Sendable {
-    var airport, cycle: String
+    var airport: String
+    var approach: APIApproachFacts?
+    var cycle: String
     var finalCourseDeg: Int?
     var fixes: [APIProcedureFix]
     var glidepathDeg: Double?
@@ -3718,6 +3746,42 @@ struct APIProcedureDrawing: Codable, Equatable, Sendable {
     var runwayPath: APIProcedureRunwayPath?
     var stale: Bool?
     var transition: String?
+}
+
+/// What the CIFP says of an approach besides its legs
+/// (wingtip.approach_facts): its runway, the altitudes coded beside its
+/// fixes' limits, and the levels of service it authorises (ARINC 424-19
+/// 5.275, 5.276: "LPV", "LNAV/VNAV", "LNAV", ...). No decision altitude or
+/// MDA: those are the plate's minimums alone.
+// MARK: - APIApproachFacts
+struct APIApproachFacts: Codable, Equatable, Sendable {
+    var coded: [APIApproachCoded]?
+    var levels: [String]?
+    var runway: APIApproachRunway?
+}
+
+/// An altitude a final codes beside a fix's limits (ARINC 424-18 5.29,
+/// its second altitude): `code` "G" or "H" the glide slope's at the final
+/// approach fix, "I" or "J" the glide slope's intercept at the final
+/// approach course fix, "V" the vertical path's at a step-down fix.
+// MARK: - APIApproachCoded
+struct APIApproachCoded: Codable, Equatable, Sendable {
+    var code, fix: String
+    var ft: Int
+}
+
+/// The approach's runway as the CIFP's runway record gives it: its
+/// threshold (`ident` "RW36"), the threshold's elevation (ARINC 424-18
+/// 5.68) and the threshold crossing height (5.67), ft; and its touchdown
+/// zone elevation, ft MSL to a tenth, from NASR (APT_RWY_END's TDZ_ELEV),
+/// None where NASR has none.
+// MARK: - APIApproachRunway
+struct APIApproachRunway: Codable, Equatable, Sendable {
+    var ident: String
+    var lat, lon: Double
+    var tchFt: Int
+    var tdzeFt: Double?
+    var thresholdFt: Int
 }
 
 /// A fix of a drawn procedure: its `roles` on an approach (IAF, IF,

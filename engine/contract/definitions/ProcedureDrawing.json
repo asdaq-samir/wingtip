@@ -192,6 +192,16 @@
           "type": "null"
         }
       ]
+    },
+    "approach": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/ApproachFacts"
+        },
+        {
+          "type": "null"
+        }
+      ]
     }
   },
   "description": "A procedure as the planner draws it from the FAA's CIFP (/api/procedure's answer as it comes); only the members the engine reads."

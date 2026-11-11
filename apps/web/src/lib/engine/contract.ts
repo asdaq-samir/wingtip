@@ -1123,6 +1123,13 @@ export interface EngineContract {
     answer: ApproachFindAnswer;
   };
   /**
+   * The tags an approach's fixes carry on the map with its plate, ForeFlight's way: each fix's crossing altitude and its sense (ARINC 424-18 5.29); at the final approach fix the ILS's glide slope altitude as the CIFP codes it, or an LPV or LNAV/VNAV approach's glidepath altitude worked out from its angle, threshold and TCH (FAA Order 8260.3G formula 2-6-4); at a runway missed approach point its threshold crossing height and touchdown zone elevation (no DA or MDA: the minimums are the plate's alone); and the final approach segment, FAF to MAP.
+   */
+  approach_fix_tags: {
+    input: ApproachFixTagsInput;
+    answer: ApproachFixTagsAnswer;
+  };
+  /**
    * How the approach is flown, by its CIFP id (ARINC 424-18 5.10): "localizer", "gps" or "other".
    */
   approach_guidance: {
@@ -3796,6 +3803,7 @@ export interface ProcedureDrawing {
     | null;
   missed_legs?: ApproachMissedLeg[] | null;
   runway_path?: ApproachRunwayPath | null;
+  approach?: ApproachFacts | null;
 }
 /**
  * A missed approach's coded leg (ARINC 424-18 5.21).
@@ -3834,6 +3842,51 @@ export interface ApproachRunwayPath {
    * Glidepath angle, degrees.
    */
   deg: number;
+}
+/**
+ * What the CIFP says of an approach besides its legs (wingtip.approach_facts): its runway, the altitudes coded beside a fix's limits, and the levels of service authorised.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ApproachFacts".
+ */
+export interface ApproachFacts {
+  runway?: {
+    /**
+     * The CIFP's runway ident, "RW36".
+     */
+    ident: string;
+    lat: number;
+    lon: number;
+    /**
+     * The landing threshold's elevation, ft MSL (the CIFP's runway record, ARINC 424-18 5.68).
+     */
+    threshold_ft: number;
+    /**
+     * The threshold crossing height, ft (ARINC 424-18 5.67).
+     */
+    tch_ft: number;
+    /**
+     * The touchdown zone elevation, ft MSL, to a tenth (NASR APT_RWY_END TDZ_ELEV).
+     */
+    tdze_ft?: number | null;
+  } | null;
+  coded?:
+    | {
+        fix: string;
+        /**
+         * The fix's altitude description (ARINC 424-18 5.29): "G" or "H" the glide slope's altitude at the FAF, "I" or "J" its intercept altitude at the FACF, "V" the vertical path's at a step-down fix.
+         */
+        code: string;
+        /**
+         * That altitude, ft MSL: the record's second altitude.
+         */
+        ft: number;
+      }[]
+    | null;
+  /**
+   * The levels of service the CIFP authorises (ARINC 424-19 5.275, 5.276): "LPV", "LNAV/VNAV", "LNAV", ...
+   */
+  levels?: string[] | null;
 }
 /**
  * A flown track's point.
@@ -4021,6 +4074,76 @@ export interface ApproachFindInput {
   points?: TrackPoint[] | null;
   picked?: string | null;
   minimums_ft?: number | null;
+}
+export interface ApproachFixTagsInput {
+  drawing: ProcedureDrawing;
+}
+export interface ApproachFixTagsAnswer {
+  tags: ApproachFixTag[];
+  /**
+   * The final approach segment, from the FAF to the MAP, for the map to mark.
+   */
+  final: {
+    from: string;
+    to: string;
+    points: [number, number][];
+  } | null;
+}
+/**
+ * One fix's tag on the map with its approach's plate.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "ApproachFixTag".
+ */
+export interface ApproachFixTag {
+  ident: string;
+  lat: number;
+  lon: number;
+  /**
+   * "IAF", "IF", "FACF", "FAF", "MAP", "hold".
+   */
+  roles: string[];
+  /**
+   * On the missed approach alone.
+   */
+  missed: boolean;
+  /**
+   * How the fix is crossed (ARINC 424-18 5.29): at min_ft (= max_ft), at or above min_ft, at or below max_ft, or between them; the FAA charts at or above underlined, at or below overlined.
+   */
+  altitude: {
+    sense: "at" | "at_or_above" | "at_or_below" | "between";
+    min_ft: number | null;
+    max_ft: number | null;
+  } | null;
+  /**
+   * At the final approach fix of an ILS, or of an RNAV approach with LPV or LNAV/VNAV minimums.
+   */
+  vertical: {
+    /**
+     * An ILS's electronic glide slope ("GS") or an RNAV approach's glidepath ("GP").
+     */
+    kind: "glideslope" | "glidepath";
+    /**
+     * Its altitude at the FAF, ft MSL.
+     */
+    ft: number;
+    deg: number | null;
+    /**
+     * "cifp" the CIFP's own (ARINC 424-18 5.29 "G"/"H"); "computed" from the angle, threshold and TCH by FAA Order 8260.3G formula 2-6-4.
+     */
+    source: "cifp" | "computed";
+  } | null;
+  /**
+   * At a missed approach point that is the runway: its threshold elevation, threshold crossing height and touchdown zone elevation. No DA or MDA: those are the plate's alone.
+   */
+  runway: {
+    threshold_ft: number;
+    tch_ft: number;
+    /**
+     * Whole feet, as the plate prints it.
+     */
+    tdze_ft: number | null;
+  } | null;
 }
 export interface ApproachGuidanceInput {
   id?: string | null;
