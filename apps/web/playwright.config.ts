@@ -141,14 +141,23 @@ export default defineConfig({
     {
       name: "mobile",
       dependencies: ["setup"],
-      testIgnore: "**/ios/**",
+      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
       use: { viewport: { width: 390, height: 844 }, storageState: DEVELOPER_STATE },
     },
     {
       name: "desktop",
       dependencies: ["setup"],
-      testIgnore: "**/ios/**",
+      testIgnore: ["**/ios/**", "**/sheet-webkit.spec.ts"],
       use: { viewport: { width: 1280, height: 800 }, storageState: DEVELOPER_STATE },
+    },
+    // The phone's sheet in Safari's engine at an iPhone's size and touch
+    // (sheet-webkit.spec): its one @smoke after merge with mobile's, the
+    // owner's iPhone having found the sheet's bugs Chromium did not.
+    {
+      name: "webkit-phone",
+      dependencies: ["setup"],
+      testMatch: /sheet-webkit\.spec\.ts/,
+      use: { ...devices["iPhone 15 Pro"], storageState: DEVELOPER_STATE },
     },
     ...iosAudit,
   ],

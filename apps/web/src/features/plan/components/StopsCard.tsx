@@ -197,12 +197,10 @@ export default function StopsCard({
     return () => cancelAnimationFrame(frame);
   }, [picked, pickedShown]);
   return (
-    // Up under the panel's head from its corner, as every card is (under-head; one scrolling rule).
-    <div
-      className="under-head flex min-h-0 flex-1 flex-col px-4 [--under-pad:var(--corner-inset,0.75rem)] print:hidden"
-      data-testid="stops-card"
-    >
-      <div className="flex items-center gap-3">
+    // From the panel's corner, as every card is; its list scrolls under its head.
+    <div className="flex min-h-0 flex-1 flex-col px-4 pt-[var(--corner-inset,0.75rem)] print:hidden" data-testid="stops-card">
+      {/* Its title row, all of the card in sight at the sheet's smallest size (data-sheet-head). */}
+      <div className="flex items-center gap-3" data-sheet-head="">
         <h2 className={cn("font-bold tracking-tight", TEXT.card)} data-testid="stops-name">
           Stops
         </h2>

@@ -111,9 +111,9 @@ textarea {
   margin-bottom: 0;
 }
 
-/* The credits' row (lib/map/gl/MapCredits) as Apple Maps on the web sets
-   its Privacy | Terms | Legal | Imagery: small words (the owner's
-   screenshot, 2026-11-10), in the text's colour on the page's, not grey,
+/* Google's credit, the one small print left on the map, while its tiles
+   are drawn (lib/map/gl/MapCredits): small words (the owner's screenshot,
+   2026-11-10), in the text's colour on the page's, not grey,
    so they keep 4.5:1 in every look, Glass Cockpit at night too (a11y.spec). */
 .maplibregl-map .maplibregl-ctrl-attrib {
   background-color: var(--background);
@@ -136,16 +136,6 @@ textarea {
   bottom: max(var(--map-inset-bottom, 0px), env(safe-area-inset-bottom));
   transition: bottom var(--motion-sheet) var(--motion-sheet-ease);
 }
-/* On a phone the credits ride on the sheet's top, as the map's buttons
-   do (--sheet-cover, eased with the sheet): kept on the inset, which
-   moves only once the sheet has turned, the traffic credit was left
-   half way up the map over a sheet down at its tabs (the owner's
-   screenshot, 2026-10-28). */
-body[data-map-sheet] .maplibregl-map .maplibregl-ctrl-bottom-left,
-body[data-map-sheet] .maplibregl-map .maplibregl-ctrl-bottom-right {
-  bottom: max(var(--sheet-cover, var(--map-inset-bottom, 0px)), env(safe-area-inset-bottom));
-  transition: bottom var(--sheet-cover-ease, 0s);
-}
 .maplibregl-map .maplibregl-ctrl-top-left,
 .maplibregl-map .maplibregl-ctrl-top-right {
   top: max(var(--map-inset-top, 0px), env(safe-area-inset-top));
@@ -156,13 +146,9 @@ body[data-map-sheet] .maplibregl-map .maplibregl-ctrl-bottom-right {
    as Maps' do: only a sliver of them showed past its edge. The panel's
    height and shape are on <body> (MapPanel): a :has() there restyled the
    whole page at every change of the attributes it named. */
-/* Their foot rides on the sheet's top (MapPanel's --sheet-cover), eased
-   with the sheet's own curve as it settles (--sheet-cover-ease). */
 [data-map-controls],
 [data-map-food] {
-  transition:
-    opacity var(--motion-fade),
-    bottom var(--sheet-cover-ease, 0s);
+  transition: opacity var(--motion-fade);
 }
 body[data-map-sheet][data-map-panel="full"] :is([data-map-controls], [data-map-food]) {
   opacity: 0;
@@ -656,21 +642,6 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
   inherits: false;
 }
 
-/* A scroller at the top of the map's panel's body, run on up under the
-   panel's head by the head's height (MapPanel's --head-room): its first
-   line starts where it did, and scrolled up its content passes under the
-   head, seen through its frost, as under a sheet's bar on iOS. Its own
-   room over its first line is --under-pad. Out of the panel the room is
-   unset, and this is nothing. */
-@utility under-head {
-  margin-top: calc(-1 * var(--head-room, 0px));
-  padding-top: calc(var(--head-room, 0px) + var(--under-pad, 0px));
-  scroll-padding-top: var(--head-room, 0px);
-  /* And clear of the route's figures pinned at the sheet's foot over it
-     (MapPanel's --foot-room): a row brought into view stops above them. */
-  scroll-padding-bottom: var(--foot-room, 0px);
-}
-
 /* Every card's head in the sheet, one row pinned at its top from the
    start, the content scrolling on under it blurred through its frost (the
    owner, 2026-11-10: "just keep the title on top and content moves under
@@ -700,8 +671,10 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
    have it only toward its closing edge, so the scrollers are no scrollers
    there (overflow hidden, which its arbitration skips); a script, the
    keyboard and a row brought into view still scroll them, and a row
-   focused under the sheet's edge brings it all the way up (MapPanel). */
-body[data-map-sheet]:is([data-map-panel="peek"], [data-map-panel="half"]) [data-panel-body] :is(.overflow-y-auto, .overflow-auto) {
+   focused under the sheet's edge brings it all the way up (MapPanel). The
+   sheet's own scroller (SheetParts' data-sheet-scroll) and a card's. */
+body[data-map-sheet]:is([data-map-panel="peek"], [data-map-panel="half"])
+  :is([data-sheet-scroll], [data-panel-body] :is(.overflow-y-auto, .overflow-auto)) {
   overflow-y: hidden;
 }
 

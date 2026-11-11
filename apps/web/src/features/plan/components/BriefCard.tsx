@@ -56,7 +56,8 @@ export default function BriefCard({
         onLegs={onLegs}
         overview={BriefOverview}
         before={
-          <div className="px-4 pt-[var(--corner-inset,0.75rem)]">
+          // Its room over the name the grabber's, which the pinned head's frost reaches up over (PinnedHead).
+          <div className="px-4 pt-(--pinned-room) [--pinned-room:var(--corner-inset,0.75rem)]">
             <CardHead
               name={name}
               line={line}

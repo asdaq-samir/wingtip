@@ -7,6 +7,8 @@ import AboutPanel from "../../components/AboutPanel";
 import StatusPanel from "../../components/StatusPanel";
 import LoadLogPanel from "../../components/LoadLogPanel";
 import { ConsolePages, PageButton, PageLink, PageRow } from "../../components/ConsolePages";
+import { PAGE_LINK } from "../../components/pageLink";
+import { LEGAL_PAGES } from "../../lib/legal";
 import { PillSection } from "../../components/Favorites";
 import EmptyState from "../../components/EmptyState";
 import { ListGroup } from "../../components/GroupedList";
@@ -195,8 +197,12 @@ function Personal({
           )}
           {/* Status, the guide (its tips with it) and about, links at the
               foot, at the owner's picks: Status every pilot's since
-              2026-11-04 ("a Status sheet next to About and Guide"). */}
-          <nav aria-label="More" className="flex justify-center gap-6 pb-2">
+              2026-11-04 ("a Status sheet next to About and Guide"); and
+              Privacy, Terms and Legal, off the map's credits row (the owner,
+              2026-11-11: "Can privacy terms etc move next to status log").
+              Sixteen apart and the rows 24, so the links' 44-point hit
+              areas meet; a second line at a large text size. */}
+          <nav aria-label="More" className="flex flex-wrap justify-center gap-x-4 gap-y-6 pb-2" data-testid="settings-foot">
             <PageLink page="status" testId="status-link">
               Status
             </PageLink>
@@ -208,6 +214,16 @@ function Personal({
             </PageLink>
             <PageLink page="about" testId="about-link">
               About
+            </PageLink>
+            {LEGAL_PAGES.filter((p) => p.key !== "support").map((p) => (
+              <a key={p.key} href={p.href} target="_blank" rel="noopener" className={PAGE_LINK} data-testid={`settings-${p.key}`}>
+                {p.key === "privacy" ? "Privacy" : "Terms"}
+              </a>
+            ))}
+            {/* About's list of every data source and its licence, as the
+                map's Legal was. */}
+            <PageLink page="about" testId="settings-legal">
+              Legal
             </PageLink>
           </nav>
         </div>

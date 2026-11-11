@@ -1,20 +1,22 @@
 import { useEffect } from "react";
 import { create } from "zustand";
 
-/** The credits each layer owes its source while it is drawn (the imagery's,
- *  Google's, the traffic's), by the layer's own key. */
+/** What each layer drawn says of its source and its currency while it is
+ *  drawn (the imagery's source, the traffic's, the overlay tiles' FAA
+ *  cycle, old field weather), by the layer's own key, in plain words:
+ *  Status lists them (StatusPanel's "On the map"). */
 export const useCredits = create<{ credits: Record<string, string> }>(() => ({ credits: {} }));
 
-/** A layer's credit at the map's foot while it is drawn, as its source's
- *  terms ask; none (null) while it has none to give. */
-export function useMapCredit(key: string, html: string | null) {
+/** A layer's words for Status while it is drawn; none (null) while it has
+ *  none to give. */
+export function useMapCredit(key: string, words: string | null) {
   useEffect(() => {
-    if (!html) return;
-    useCredits.setState((s) => ({ credits: { ...s.credits, [key]: html } }));
+    if (!words) return;
+    useCredits.setState((s) => ({ credits: { ...s.credits, [key]: words } }));
     return () =>
       useCredits.setState((s) => {
         const { [key]: _gone, ...rest } = s.credits;
         return { credits: rest };
       });
-  }, [key, html]);
+  }, [key, words]);
 }

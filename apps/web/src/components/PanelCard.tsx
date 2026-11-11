@@ -6,6 +6,7 @@ import { PinnedHead } from "./PinnedHead";
 import RoundButton from "./RoundButton";
 import { closeTopCard, useHeldCard, RouteShareMenu, type CardShare } from "../lib/openCards";
 import { TEXT } from "../lib/text";
+import { useStartAtTop } from "../lib/scrollPlace";
 
 /**
  * A card in the map's panel, as a place's is in Maps -- an airport's
@@ -13,20 +14,9 @@ import { TEXT } from "../lib/text";
  * nearest the pilot (NearestCard): its head at the top and its sections
  * under it, scrolling. Its top is the panel's corner's (MapPanel's
  * --corner-inset), so its close is where every panel's top-right button
- * is, at the pilot's ask; no scroll bar, as iOS shows none, to move that
- * in from the side.
+ * is, at the pilot's ask.
  */
-export function PanelCard({
-  testId,
-  flush = false,
-  children,
-}: {
-  testId: string;
-  /** Its head a picture from the sheet's very top (PhotoHead), with no
-   *  room over it. */
-  flush?: boolean;
-  children: ReactNode;
-}) {
+export function PanelCard({ testId, children }: { testId: string; children: ReactNode }) {
   // Opened from a marker on the chart with the keys (Enter on it), the
   // focus goes to the card's name, which a screen reader then reads, and
   // back to the marker as the card is put away -- where it stayed on the
@@ -42,19 +32,20 @@ export function PanelCard({
       if (from.isConnected && (!at || at === document.body || node.contains(at))) from.focus({ preventScroll: true });
     };
   }, []);
+  // Opened anew, at its top (the one scrolling rule).
+  useStartAtTop(card);
   // There at once as it opens, still while the sheet moves round it, as a
   // tab's own page is (TabPage), at the owner's ask ("Is the airport and
   // aircraft card same style? Can it be common to other sheets where
   // sheet/content is not moving when viewed?"): it came in faded and up
   // into its place over half a second, an airport's, where an airplane's,
-  // a TabPage, was there at once.
+  // a TabPage, was there at once. Laid out whole in the sheet's one
+  // scroller (SheetParts), its room over its first line the grabber's
+  // (--pinned-room), which its pinned head reaches up over.
   return (
     <div
       ref={card}
-      className={cn(
-        "under-head relative min-h-0 flex-1 overflow-y-auto px-4 pb-[max(1rem,env(safe-area-inset-bottom))] [scrollbar-width:none] print:hidden",
-        flush ? "[--under-pad:0px]" : "[--under-pad:var(--corner-inset,0.75rem)]",
-      )}
+      className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)] print:hidden"
       data-testid={testId}
     >
       {children}

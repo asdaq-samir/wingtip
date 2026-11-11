@@ -5,6 +5,7 @@ import { useKeptAirport } from "../../../lib/preferences";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { shareOrCopy } from "../../../lib/share";
 import { CardHead, PanelCard } from "../../../components/PanelCard";
+import { PINNED_BELOW } from "../../../components/PinnedHead";
 import { CardTitle } from "../../../components/CardTitle";
 import { CardPictures, type CardSlide } from "../../../components/CardPictures";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
@@ -199,8 +200,7 @@ export default function PlaceCard({
   // goes with the route; it is a new card (keyed by its ident) after.
   const [flying, setFlying] = useState(false);
 
-  // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the
-  // card opens on its approaches; each tab its own place in the scroll (useTabScroll).
+  // The tab picked, kept for the airport while the page is open (useCardTab), Charts where the card opens on its approaches; each tab its own place in the scroll (useTabScroll).
   const [tab, setPicked] = useCardTab<CardTab>(`place:${ident}`, "radio", startOn ? "diagrams" : null);
   useTabScroll(tabsRef, tab);
   // A tab picked takes the panel all the way up, as the route's tabs do;
@@ -581,8 +581,8 @@ export default function PlaceCard({
             disabled={!place}
             raise={{ onExpand: raise, onLower }}
             barRef={tabsRef}
-            // Pinned directly under the card's head (PinnedHead's --pinned-head), frosted as it is, its sections a tap away.
-            className="frost-head sticky top-[calc(var(--head-room,0px)-var(--under-pad,0px)+var(--pinned-head,3.5rem))] z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1"
+            // Pinned directly under the card's head (PINNED_BELOW, plain CSS), frosted as it is, its sections a tap away.
+            className={cn("frost-head sticky z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1", PINNED_BELOW)}
           />
           <CardTabPanel value="radio" className="space-y-0">
             {place && <PlaceInfoTab place={place} where={where} services={services} />}

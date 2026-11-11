@@ -8,6 +8,7 @@ import { cycleWarning, dayWords } from "../lib/dataCycles";
 import { savedWords, useSaved } from "../lib/fromCache";
 import { useOnline } from "../lib/kept/useOnline";
 import { ageWords, mapAgesQuery, staleWords, useLayerAges } from "../lib/map/sources/layerAges";
+import { useCredits } from "../lib/map/gl/creditStore";
 import { TEXT } from "../lib/text";
 
 /**
@@ -35,6 +36,11 @@ export default function StatusPanel() {
   // for both.
   const { data, isError } = useQuery(mapAgesQuery);
   const { traffic } = useLayerAges();
+  // What each layer on the map says of its source and its currency -- the
+  // overlay tiles' FAA cycle, the radar loop's source, the traffic's, old
+  // field weather -- where the map's row of small print said it (the
+  // owner, 2026-11-11: the row went, "Yes status works").
+  const onMap = Object.values(useCredits((s) => s.credits));
   return (
     <div className="space-y-5 pb-1" data-testid="status-panel">
       <ListGroup title="Connection">
@@ -87,6 +93,14 @@ export default function StatusPanel() {
               />
             );
           })}
+        </ListGroup>
+      )}
+
+      {onMap.length > 0 && (
+        <ListGroup title="On the Map">
+          {onMap.map((words) => (
+            <ListRow key={words} title={words} data-testid="status-on-map" />
+          ))}
         </ListGroup>
       )}
 

@@ -921,16 +921,16 @@ export default function NavLogView({
           }}
         />
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex shrink-0 flex-col">
           {/* The drawer's name for a screen reader: on screen it is the
               tab's, said once there. */}
           <span className="sr-only" data-testid="drawer-title">
             Flight Planning
           </span>
           {/* The bottom inset clears the home indicator on an installed
-              app, so the last row is not under it. */}
+              app; laid out whole in the sheet's one scroller (SheetParts). */}
           <div
-            className="@container under-head min-h-0 flex-1 overflow-auto pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))]"
+            className="@container pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))]"
             data-testid="navlog-scroller"
           >
             {cardHead && <div className="pt-[var(--corner-inset,0.75rem)] pb-2">{cardHead}</div>}

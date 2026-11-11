@@ -974,7 +974,7 @@ jobs:
         env:
           IOS_AUDIT: ${{ (github.event_name == 'schedule' || inputs.standards) && '1' || '' }}
           SCREENSHOTS: /out/screens
-          PROJECTS: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '' || '--project=mobile --grep "@smoke|@flight-critical"' }}
+          PROJECTS: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '' || '--project=mobile --project=webkit-phone --grep "@smoke|@flight-critical"' }}
           # The JSON report, for the flaky tests below (those that passed
           # on their retry): listed in the nightly issue, not failing the run.
           PLAYWRIGHT_JSON_OUTPUT_NAME: /out/results.json

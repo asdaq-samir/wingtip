@@ -20,7 +20,7 @@ import { GLASS_SHEET, MATERIAL, PILL_RADIUS, SHEET_MARGIN, usePanelDragging, typ
 import { raisedFor, useSheetCards } from "../lib/sheetCards";
 import { FLOAT_PX, insetsOf, type Detents, type SheetTurn } from "./sheet/insets";
 import { useSheetDetents } from "./sheet/useSheetDetents";
-import { useSheetCover } from "./sheet/sheetCover";
+import { sheetTopRef } from "./sheet/sheetTopSlot";
 import { prefersReducedMotion } from "../lib/motion";
 import { useSheetLife } from "./sheet/useSheetLife";
 import { useCardRaise } from "./sheet/useCardRaise";
@@ -57,7 +57,7 @@ interface Props {
    *  the pill its one row. */
   foot?: ReactNode;
   /** The body down to the sheet's own edge, over the home indicator's
-   *  inset (PlaceCard). The inset's height is `--half-foot` to it. */
+   *  inset (PlaceCard). */
   toEdge?: boolean;
   /** The airplane flying the route (useFlyingMode): the first row, the top
    *  row and the controls put away, the pill its foot alone. */
@@ -83,10 +83,10 @@ const GRABBER = 16;
  * throw, picks the snap point and eases there on its own curve; a swipe
  * past the pill is refused and lands on the pill. What the stock sheet
  * leaves to its user is a thin layer here: the parts held in sight at its
- * free edge (by the Drawer's own CSS variables, SheetParts) and the map's
- * buttons riding its top (useSheetCover), the room it leaves the map
- * (insetsOf, told as it sets off and once it has landed), its fixed
- * heights (useSheetDetents), and the keyboard's inset under it.
+ * free edge (by the Drawer's own CSS variables, SheetParts), the room over
+ * its top where the map's radio button rides it (OnSheetTop), the room it
+ * leaves the map (insetsOf, told as it sets off and once it has landed),
+ * its fixed heights (useSheetDetents), and the keyboard's inset under it.
  *
  * From `md` up it is a side panel instead, a plain region at the left the
  * window's height while it is out and its head alone at rest, the map
@@ -124,7 +124,6 @@ export default function MapPanel(props: Props) {
   const atPill = size === "peek" && hasPill;
 
   const [panel, setPanel] = useState<HTMLElement | null>(null);
-  const [head, setHead] = useState<HTMLDivElement | null>(null);
   const [footNode, setFoot] = useState<HTMLDivElement | null>(null);
 
   // A bottom sheet runs on to the screen's edge, under the home indicator
@@ -137,7 +136,6 @@ export default function MapPanel(props: Props) {
     ? windowHeight - keyboard - Math.round(fromBottom ? safe.top : safe.bottom) - SHEET_MARGIN
     : windowHeight - 2 * FLOAT_PX;
   const sizes = useSheetDetents({
-    head,
     foot: footNode,
     size,
     moving,
@@ -148,6 +146,7 @@ export default function MapPanel(props: Props) {
     halfChrome,
     room,
     sideOut: !onPhone,
+    topInset: onPhone && !fromBottom ? Math.round(safe.top) : 0,
   });
   const { detents } = sizes;
 
@@ -231,9 +230,6 @@ export default function MapPanel(props: Props) {
     return () => document.body.removeAttribute("data-map-sheet");
   }, [onPhone]);
 
-  // The map's buttons riding a phone's bottom sheet's top, on its curve.
-  useSheetCover(bottomSheet ? detents[snap] : null);
-
   const panelSize = useMemo(() => ({ size, to: ask, card: layer === "card" }), [size, ask, layer]);
   const shared: PartsProps = {
     ...props,
@@ -253,7 +249,6 @@ export default function MapPanel(props: Props) {
     halfChrome,
     sizes,
     panelSize,
-    setHead,
     setFoot,
     onFootTap: () => ask("half"),
     kept,
@@ -353,7 +348,7 @@ export default function MapPanel(props: Props) {
               } as CSSProperties
             }
             className={cn(
-              "group/sheet pointer-events-auto absolute inset-x-0 flex flex-col overflow-clip text-foreground outline-none will-change-transform print:static",
+              "group/sheet pointer-events-auto absolute inset-x-0 flex flex-col text-foreground outline-none will-change-transform print:static",
               // Slid by the Drawer's snap offset and the finger's movement,
               // in a class: the Drawer clears its popup's inline transform
               // as a swipe starts. Eased on the Drawer's own curve, never
@@ -368,9 +363,24 @@ export default function MapPanel(props: Props) {
               look,
             )}
           >
-            {fromBottom && grabber}
-            <SheetParts {...shared} />
-            {!fromBottom && grabber}
+            {/* Over its top edge, the parts that ride it (OnSheetTop):
+                inside the popup, so they move with it under a finger and on
+                its curve; a finger on them is theirs, not the sheet's. */}
+            {fromBottom && (
+              <div
+                ref={sheetTopRef}
+                data-sheet-top=""
+                data-base-ui-swipe-ignore=""
+                className="pointer-events-none absolute inset-x-0 bottom-full"
+              />
+            )}
+            {/* Clipped to its corners here, not on the popup, which the
+                parts over its top stand outside of. */}
+            <div className="flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]">
+              {fromBottom && grabber}
+              <SheetParts {...shared} />
+              {!fromBottom && grabber}
+            </div>
           </Drawer.Popup>
         </SheetViewport>
       </Drawer.Portal>

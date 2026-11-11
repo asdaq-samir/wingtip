@@ -56,62 +56,29 @@ test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
 
-test("shown in the map's settings, the airplanes about are drawn on their tracks with their heights, and adsb.lol is credited", async ({
-  page,
-}) => {
-  const asks = await showTraffic(page, true);
-  await page.goto("/app/plan?place=C81");
-  await settle(page);
-  const marks = page.locator("svg[data-traffic]");
-  await expect(marks).toHaveCount(2, { timeout: slow(15_000) });
-  // With no own ship, each one's own height, a descent's arrow with it.
-  const labels = page.locator(".maplibregl-map").getByText(/^(4,500↓|9,800)/);
-  await expect(labels).toHaveCount(2);
-  await expect(marks.first()).toHaveAttribute("style", /rotate\(320deg\)/);
-  await expect(page.locator(".maplibregl-ctrl-attrib")).toContainText("adsb.lol, ODbL");
-  expect(asks.length).toBeGreaterThan(0);
-  // Asked again while it shows.
-  const first = asks.length;
-  await expect.poll(() => asks.length, { timeout: slow(12_000) }).toBeGreaterThan(first);
-});
-
-test.describe("on a touch screen", () => {
-  test.use({ hasTouch: true });
-  test("on a phone the credit rides on the sheet's top, at rest and where a drag lands it", { tag: "@smoke" }, async ({ page }) => {
-    test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
-    await showTraffic(page, true);
+// The journey's one @smoke (the credit riding the sheet's top went with the
+// map's credits row, the owner 2026-11-11).
+test(
+  "shown in the map's settings, the airplanes about are drawn on their tracks with their heights",
+  { tag: "@smoke" },
+  async ({ page }) => {
+    const asks = await showTraffic(page, true);
     await page.goto("/app/plan?place=C81");
     await settle(page);
-    const credit = page.locator(".maplibregl-ctrl-attrib", { hasText: "adsb.lol" });
-    await expect(credit).toBeVisible({ timeout: slow(15_000) });
-    const panel = page.locator('[data-slot="map-panel"]');
-    // The credit's foot against the sheet's top.
-    const gap = async () => {
-      const [c, p] = [(await credit.boundingBox())!, (await panel.boundingBox())!];
-      return Math.abs(c.y + c.height - p.y);
-    };
-    for (const size of ["half", "peek"] as const) {
-      await grabberTo(page, size);
-      await expect.poll(gap).toBeLessThan(3);
-    }
-    // Dragged up from its grabber and let go (the card is the sheet, no
-    // search over it): the credit on the sheet's top where the throw lands
-    // it, where it once stayed at the inset the sheet had before (the
-    // owner, 2026-10-28). Under the finger it waits for the throw: the
-    // map's buttons and credits, outside the stock Drawer's tree, take the
-    // height the sheet is going to once per snap point (sheetCover; the
-    // Drawer as it is, the owner 2026-11-10).
-    const tabs = (await page.getByTestId("sidebar-trigger-button").boundingBox())!;
-    const at = { x: tabs.x + tabs.width / 2, y: tabs.y + tabs.height / 2 };
-    const cdp = await page.context().newCDPSession(page);
-    const touch = (type: string, q?: { x: number; y: number }) =>
-      cdp.send("Input.dispatchTouchEvent", { type, touchPoints: q ? [{ ...q, id: 1 }] : [] });
-    await touch("touchStart", at);
-    for (let i = 1; i <= 6; i++) await touch("touchMove", { x: at.x, y: at.y - 25 * i });
-    await touch("touchEnd");
-    await expect.poll(gap).toBeLessThan(3);
-  });
-});
+    const marks = page.locator("svg[data-traffic]");
+    await expect(marks).toHaveCount(2, { timeout: slow(15_000) });
+    // With no own ship, each one's own height, a descent's arrow with it.
+    const labels = page.locator(".maplibregl-map").getByText(/^(4,500↓|9,800)/);
+    await expect(labels).toHaveCount(2);
+    await expect(marks.first()).toHaveAttribute("style", /rotate\(320deg\)/);
+    // Credited in Status and About, not on the map (the owner, 2026-11-11).
+    await expect(page.locator(".maplibregl-ctrl-attrib")).toHaveCount(0);
+    expect(asks.length).toBeGreaterThan(0);
+    // Asked again while it shows.
+    const first = asks.length;
+    await expect.poll(() => asks.length, { timeout: slow(12_000) }).toBeGreaterThan(first);
+  },
+);
 
 test("between reports each airplane is carried on along its track, as ForeFlight's and FlightAware's are", async ({ page }) => {
   await page.addInitScript(() => {
@@ -148,8 +115,8 @@ test("off, as it is unless shown, nothing is asked and nothing drawn", async ({ 
   await page.waitForTimeout(2000);
   expect(asks).toHaveLength(0);
   await expect(page.locator("svg[data-traffic]")).toHaveCount(0);
-  // The map's row keeps its legal links (MapCredits); the traffic's credit is not in it.
-  await expect(page.locator(".maplibregl-ctrl-attrib")).not.toContainText("adsb.lol");
+  // No small print on the map at all (MapCredits).
+  await expect(page.locator(".maplibregl-ctrl-attrib")).toHaveCount(0);
 });
 
 test("the traffic is asked about wherever the map is panned, own ship or not, and further out for a map zoomed out", async ({

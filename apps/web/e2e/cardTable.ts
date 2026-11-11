@@ -39,7 +39,8 @@ export interface Entry {
 }
 
 /** The checks a row may be excused from, each with its reason. */
-export type Check = "searchHidden" | "escape" | "scroll" | "dragUp" | "dragDown" | "textSize" | "sideways" | "position" | "desktop";
+export type Check =
+  "searchHidden" | "escape" | "scroll" | "dragUp" | "dragDown" | "textSize" | "sideways" | "position" | "desktop" | "pill";
 
 export interface CardRow {
   name: string;
