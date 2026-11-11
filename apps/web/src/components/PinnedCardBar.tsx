@@ -36,11 +36,23 @@ export function PinnedCardBar({
     watch.observe(node);
     return () => watch.disconnect();
   }, [watched]);
+  // Stuck at the scroller's own top edge, not its padding's: the padding
+  // over the card's head (under-head's --under-pad) showed the card's
+  // content scrolling by over the bar, under the grabber (the sheet
+  // audit's F-SC2).
   return (
-    <div className="sticky top-[var(--head-room,0px)] z-20 -mx-4 h-0" data-testid={`${closeTestId}-bar`} data-shown={past || undefined}>
+    <div
+      className="sticky top-[calc(var(--head-room,0px)-var(--under-pad,0px))] z-20 -mx-4 h-0"
+      data-testid={`${closeTestId}-bar`}
+      data-shown={past || undefined}
+    >
+      {/* Out of sight, out of reach too: its close inert, not a second
+          Close a screen reader or Tab finds behind the card's own (the
+          sheet audit's F-A2). */}
       <div
         className="card-pinned flex items-center gap-2 bg-background px-4 py-1.5 shadow-sm in-data-[sheet]:bg-[var(--sheet)]"
         data-testid={past ? "card-head-pinned" : undefined}
+        inert={!past}
       >
         <span className={cn("min-w-0 flex-1 truncate font-bold text-foreground", TEXT.title)}>{title}</span>
         <CloseButton onClick={onClose} data-back="" data-testid={`${closeTestId}-pinned`} />

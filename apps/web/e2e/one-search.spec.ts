@@ -39,7 +39,10 @@ test(
     await grabberTo(page, "half");
     const row = firstRow(page);
     const title = sideDrawer(page).getByTestId("sheet-title");
-    await expect(row.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search airports, airplanes, or ask");
+    // Short in sight, so it fits beside the mic and Cancel at larger text;
+    // the whole sentence its name (the sheet audit's F-S2).
+    await expect(row.getByTestId("search-airports")).toHaveAttribute("placeholder", "Search or ask");
+    await expect(row.getByTestId("search-airports")).toHaveAttribute("aria-label", "Search airports, airplanes, or ask");
     await expect(title.getByTestId("account-button")).toBeVisible();
     await expect(title.getByRole("heading", { name: "Wingtip Maps" })).toBeVisible();
     await expect(row.getByTestId("account-button")).toHaveCount(0);
