@@ -87,10 +87,12 @@ export function useOpenScreen({
       // Airport the search's own page, Airplane the airplane picked's
       // profile -- the traffic about where none is picked -- and Setup the
       // account page (SETUP_PAGES, above).
+      // The sheet's two pages (SheetPager, the owner 2026-11-11): FPL the plan's, Search the one search's.
       case "fpl":
         setViewPick("plan");
         setPanel("half");
         return;
+      case "search":
       case "airport":
         setViewPick("search");
         setPanel("half");

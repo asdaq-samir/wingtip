@@ -25,6 +25,7 @@ enum Screen: String, CaseIterable, Sendable {
     case passengers
     case shared
     case about
+    case search
 
     /// The screen's title, as its row and its page name it.
     var title: String {
@@ -51,6 +52,7 @@ enum Screen: String, CaseIterable, Sendable {
         case .passengers: "Passenger Briefing"
         case .shared: "Shared Flight"
         case .about: "About"
+        case .search: "Search"
         }
     }
 

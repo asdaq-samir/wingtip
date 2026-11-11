@@ -21,7 +21,7 @@
     { "key": "share", "about": "A saved flight shared by its pilot, by its token (GET /api/shared-flights/{token}); read-only, until they stop sharing it." }
   ],
   "screens": [
-    { "id": "fpl", "title": "FPL", "about": "The plan: the route, its altitude and its figures, the sheet's main content under the one search.", "platforms": ["web", "ios", "android"], "shortcut": 6 },
+    { "id": "fpl", "title": "FPL", "about": "The plan: the route, its altitude and its figures, the sheet's second page (Search, FPL).", "platforms": ["web", "ios", "android"], "shortcut": 6 },
     { "id": "airport", "title": "Airport", "about": "The one search with nothing typed: the flight, favorites, recents, nearest.", "platforms": ["web", "ios", "android"], "shortcut": 7 },
     { "id": "airplane", "title": "Airplane", "about": "The airplane picked's profile, or the traffic about where none is picked.", "platforms": ["web", "ios", "android"], "shortcut": 8 },
     { "id": "setup", "title": "Setup", "about": "The account and settings page, the account button's.", "platforms": ["web", "ios", "android"], "shortcut": 15 },
@@ -42,6 +42,7 @@
     { "id": "downloads", "title": "Downloads", "about": "Charts kept for flying with no signal.", "platforms": ["ios", "android"], "shortcut": 13 },
     { "id": "passengers", "title": "Passenger Briefing", "about": "The passenger briefing.", "platforms": ["ios", "android"], "shortcut": 14, "shortLabel": "Passengers" },
     { "id": "shared", "title": "Shared Flight", "about": "A flight another pilot sent: its plan shown first, with Use This Plan and Not Now, the receiver's own plan kept until they choose. Its keys are the plan's (dep, dest, stops, altitude_ft, depart, type, rules, tail) or a saved flight's share.", "platforms": ["web", "ios", "android"] },
-    { "id": "about", "title": "About", "about": "The build, the data's cycles, the credits and the legal pages.", "platforms": ["web", "ios", "android"] }
+    { "id": "about", "title": "About", "about": "The build, the data's cycles, the credits and the legal pages.", "platforms": ["web", "ios", "android"] },
+    { "id": "search", "title": "Search", "about": "The sheet's first page: the one search and its home list (favorites, recents, nearest, saved).", "platforms": ["web", "ios", "android"] }
   ]
 }
