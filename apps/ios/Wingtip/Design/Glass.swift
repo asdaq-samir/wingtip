@@ -67,9 +67,11 @@ private struct GlassButton: ViewModifier {
 
     func body(content: Content) -> some View {
         if #available(iOS 26.0, *) {
-            if prominent { content.buttonStyle(.glassProminent) } else { content.buttonStyle(.glass) }
+            // The filled button's words in the look's own (labelOnTint),
+            // so they pass 4.5:1 on the light tints at night too.
+            if prominent { content.buttonStyle(.glassProminent).labelOnTint() } else { content.buttonStyle(.glass) }
         } else if prominent {
-            content.buttonStyle(.borderedProminent)
+            content.buttonStyle(.borderedProminent).labelOnTint()
         } else {
             content.buttonStyle(.bordered)
         }

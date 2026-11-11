@@ -34,70 +34,42 @@ import { localDay } from "../../lib/format";
 import { FINDING_TONE } from "../../lib/findings";
 import { aircraftProfilesQuery } from "../../lib/queryClient";
 import TogglePill from "../../components/TogglePill";
-import { daysBetween, daysWords, dueTone } from "./paperwork";
+import { daysBetween, daysWords, dueFinding } from "./paperwork";
+import { callEngine } from "../../lib/engine/engine";
 import DueItemsGroup from "./DueItemsGroup";
 import { VorCheckGroup } from "./VorCheckGroup";
 
-// Mirrors services/gateway's own AircraftRequest validation
-// (@NotBlank/@Positive in dto/AircraftRequest.java) so a bad value is
-// caught before the round trip, not just after. Fields stay strings
-// through validation (matching what a plain <input> actually holds)
-// -- the numeric conversion happens once, building the request body in
-// onSubmit below, rather than fighting react-hook-form's generics over
-// a coerced form-value type.
-const positiveNumber = (label: string) =>
-  z
-    .string()
-    .trim()
-    .refine((value) => Number.isFinite(Number(value)) && Number(value) > 0, `${label} must be a positive number`);
-/** Blank, or a positive number: a figure the owner may leave unsaid. */
-const optionalPositiveNumber = (label: string) =>
-  z
-    .string()
-    .trim()
-    .refine((value) => value === "" || (Number.isFinite(Number(value)) && Number(value) > 0), `${label} must be a positive number`);
-/** Blank, or a power a cruise table has: 40 to 100 percent, the
- *  server's limits and the planner's. */
-const optionalPercent = (label: string) =>
-  z
-    .string()
-    .trim()
-    .refine(
-      (value) => value === "" || (Number.isFinite(Number(value)) && Number(value) >= 40 && Number(value) <= 100),
-      `${label} must be between 40 and 100%`,
-    );
 /** A form field as the request carries it: blank is null. */
 const orNull = (value: string) => (value.trim() ? Number(value) : null);
 
-const aircraftSchema = z.object({
-  // The server's limits, which are the columns': longer was refused there
-  // as though it were a tail number already on file.
-  tailNumber: z.string().trim().min(1, "Tail number is required").max(16, "At most 16 characters"),
-  typeDesignator: z.string().trim().min(1, "Type designator is required").max(16, "At most 16 characters"),
-  cruiseTasKt: positiveNumber("Cruise speed"),
-  fuelBurnGph: positiveNumber("Cruise fuel burn"),
-  // Optional: blank flies the cruise figures at the type's own power.
-  cruisePowerPct: optionalPercent("Cruise power"),
-  // Optional: blank climbs at the planner's book figures for the type.
-  climbTasKt: optionalPositiveNumber("Climb speed"),
-  climbFuelBurnGph: optionalPositiveNumber("Climb fuel burn"),
-  // Optional: blank means the owner has not said, and the nav log then
-  // makes no fuel check rather than a wrong one.
-  usableFuelGal: optionalPositiveNumber("Usable fuel"),
-  // Its flight plan's items, each optional (AIM Appendix 4): 10a's
-  // equipment and 10b's surveillance are letters and figures (TBL 4-2's
-  // E1 and J1 among them), at most 40 and 20 (TBL 4-3); item 19's colour
-  // and markings plain words.
-  equipment: z
-    .string()
-    .trim()
-    .regex(/^[A-Za-z0-9]{0,40}$/, "Letters and figures, as SDFGRY"),
-  surveillance: z
-    .string()
-    .trim()
-    .regex(/^[A-Za-z0-9]{0,20}$/, "Letters and figures, as B1"),
-  colour: z.string().trim().max(40, "At most 40 characters"),
-});
+const AIRCRAFT_FIELDS = [
+  "tailNumber",
+  "typeDesignator",
+  "cruiseTasKt",
+  "fuelBurnGph",
+  "cruisePowerPct",
+  "climbTasKt",
+  "climbFuelBurnGph",
+  "usableFuelGal",
+  "equipment",
+  "surveillance",
+  "colour",
+] as const;
+
+// The fields stay strings through validation (what a plain <input> holds),
+// each checked by the engine's aircraft_problems -- the gateway's own
+// AircraftRequest limits, the same on every app -- so a bad value is caught
+// before the round trip, its words under its field. The numbers are made
+// once, building the request body in onSubmit below.
+const aircraftSchema = z
+  .object(Object.fromEntries(AIRCRAFT_FIELDS.map((f) => [f, z.string()])) as Record<(typeof AIRCRAFT_FIELDS)[number], z.ZodString>)
+  .superRefine((form, ctx) => {
+    const problems = callEngine("aircraft_problems", form);
+    for (const field of AIRCRAFT_FIELDS) {
+      const message = problems[field];
+      if (message) ctx.addIssue({ code: "custom", path: [field], message });
+    }
+  });
 type AircraftFormValues = z.infer<typeof aircraftSchema>;
 const EMPTY_AIRCRAFT_FORM: AircraftFormValues = {
   tailNumber: "",
@@ -178,7 +150,7 @@ function Standing({ through, testId }: { through: string | null | undefined; tes
         {good ? `To ${through}` : `Past due since ${through}`}
       </span>
       {good && (
-        <span className={FINDING_TONE[dueTone({ daysLeft: days, hoursLeft: null })]} data-testid={`${testId}-days`}>
+        <span className={FINDING_TONE[dueFinding({ daysLeft: days, hoursLeft: null })]} data-testid={`${testId}-days`}>
           {" "}
           · {daysWords(days)}
         </span>

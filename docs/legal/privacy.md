@@ -83,6 +83,12 @@ On an Android phone that has Google's Gemini Nano (through Android's AICore; Set
 
 On Android 16 and later, Google's Gemini and other assistants on your phone that Android allows can ask Wingtip Maps for an airport's card, its frequencies and approaches, the nearest airports, your planned route and its NOTAMs, the Brief's verdict, and your airplanes and logbook entries, and can open the app on a route, an airport or a screen. The app answers on your phone, only when you ask the assistant; what the assistant then does with the answer is under its maker's privacy policy (Google's, for Gemini). When you ask an assistant about what is on your screen, the app gives it the route you have planned, as a link. The app's shortcuts (a long press on its icon) open its screens and send nothing.
 
+## Your own Claude or ChatGPT
+
+You can connect Wingtip Maps to an AI app you use, such as Claude or ChatGPT, by adding Wingtip as a connector in that app and signing in with your Wingtip account. That app can then ask Wingtip for airports, the weather and NOTAMs at a field, a route's nav log and briefing, and your own airplanes and saved flights, and can save a flight to your account once you confirm it there.
+
+Only what you ask about leaves Wingtip, and only to the app you connected. We do not send your name, email address or logbook. What that app does with the answers is under its maker's privacy policy (Anthropic's for Claude, OpenAI's for ChatGPT); we do not choose the model or pay for it, and we receive nothing from it but the questions its tools ask. We keep that you connected it and the sign-in it holds, which ends 30 days after the app last used it, or at once when you delete your account; we keep no record of what was asked, only a count of requests for a day, to limit how many one connection can make.
+
 ## Faults and speed
 
 So we hear when the app breaks without you having to write in, each app sends us a report when something goes wrong:
@@ -101,6 +107,7 @@ There is no analytics or advertising kit in any of the apps, and no third party 
 
 - **Anthropic,** nothing while the features Claude writes are off, as they are now; with them on, what is listed above.
 - **Apple,** on an iPhone, for the features its Private Cloud Compute writes where the phone's own model cannot, as above; Apple uses it only to answer and does not keep it.
+- **An AI app you connect Wingtip to** (Claude, ChatGPT), what you ask it about, as above.
 - **Our email sender** (Amazon SES), which delivers the email we send: your sign-in link, the reminders you turn on, flight watch's changes, and the email between you and an instructor you ask in.
 - **Your instructor or student,** once you ask them in: your name and address, the experience and endorsements in your logbook, your knowledge test codes, and the saved flights you put to them. Either of you can end it.
 - **Google and Apple,** if you sign in with them; they tell us your name, email and identifier, and know that you signed in.

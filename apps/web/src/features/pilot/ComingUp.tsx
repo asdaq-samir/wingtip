@@ -4,7 +4,7 @@ import { ListGroup, ListRow } from "../../components/GroupedList";
 import QueryState from "../../components/QueryState";
 import { said } from "../../lib/endorsements";
 import { FINDING_TONE } from "../../lib/findings";
-import { dueTitle, dueTone, whenWords } from "./paperwork";
+import { dueTitle, dueFinding, whenWords } from "./paperwork";
 import { paperworkQuery } from "../../lib/queryClient";
 
 /**
@@ -33,7 +33,7 @@ export default function ComingUp() {
             data-testid="coming-up"
             title={dueTitle(d)}
             description={[d.rule, d.dueOn ? said(d.dueOn) : null].filter(Boolean).join(" · ")}
-            value={<span className={cn("tabular-nums", FINDING_TONE[dueTone(d)])}>{whenWords(d)}</span>}
+            value={<span className={cn("tabular-nums", FINDING_TONE[dueFinding(d)])}>{whenWords(d)}</span>}
           />
         ))
       )}

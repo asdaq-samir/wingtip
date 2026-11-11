@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { daysBetween, daysWords, dueTitle, dueTone, whenWords } from "./paperwork";
+import recordsFixture from "../../lib/fixtures/records.json";
+import { daysBetween, daysWords, dueFinding, dueTitle, whenWords } from "./paperwork";
 
 describe("the paperwork list's words", () => {
   it("counts days on the calendar, across a month's end and a clock change", () => {
@@ -19,12 +20,8 @@ describe("the paperwork list's words", () => {
     expect(whenWords({ daysLeft: null, dueAtHours: 2350, hoursLeft: null })).toBe("At 2350.0 h");
   });
 
-  it("is a stop past, a caution within the reminders' 30 days or 10 hours, fine further off", () => {
-    expect(dueTone({ daysLeft: -1, hoursLeft: null })).toBe("stop");
-    expect(dueTone({ daysLeft: 30, hoursLeft: null })).toBe("caution");
-    expect(dueTone({ daysLeft: 31, hoursLeft: null })).toBe("ok");
-    expect(dueTone({ daysLeft: null, hoursLeft: 9.9 })).toBe("caution");
-    expect(dueTone({ daysLeft: null, hoursLeft: null })).toBe("unknown");
+  it.each(recordsFixture.dueTone)("is the engine's tone: $days_left days, $hours_left h, $tone", ({ days_left, hours_left, tone }) => {
+    expect(dueFinding({ daysLeft: days_left, hoursLeft: hours_left })).toBe(tone);
   });
 
   it("puts the airplane's tail before its own items", () => {

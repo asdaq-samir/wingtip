@@ -7,8 +7,8 @@ import app.wingtipmaps.android.api.CyclePackIndex
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.await
+import app.wingtipmaps.android.engine.generated.distanceNm
 import app.wingtipmaps.android.engine.generated.regionOf
-import app.wingtipmaps.android.flight.Geo
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
@@ -214,7 +214,7 @@ class CyclePacks(private val root: File) {
          *  is pairs of latitude and longitude, as /api/course gives it. */
         fun regions(line: List<List<Double>>): Set<String> {
             val names = HashSet<String>()
-            for ((lat, lon) in samples(line, everyNm = 2.0)) {
+            for ((lat, lon) in samples(line, everyNm = 2.0).getOrThrow()) {
                 for (dlat in listOf(-0.1, 0.0, 0.1)) {
                     for (dlon in listOf(-0.1, 0.0, 0.1)) names += Engine.regionOf(lat + dlat, lon + dlon).getOrThrow()
                 }
@@ -224,14 +224,17 @@ class CyclePacks(private val root: File) {
 
         /** Points along a line every so many nm, with both its ends: the
          *  course line's legs are short enough that a straight cut between
-         *  two of its points is within a tenth of a mile of the circle. */
-        fun samples(line: List<List<Double>>, everyNm: Double): List<Pair<Double, Double>> {
+         *  two of its points is within a tenth of a mile of the circle.
+         *  Each leg's length is the engine's `distance_nm`; where it cannot
+         *  say (Engine.rule has logged why), the whole fails, as a line
+         *  sampled short would leave out a region it crosses. */
+        fun samples(line: List<List<Double>>, everyNm: Double): Result<List<Pair<Double, Double>>> = runCatching {
             val out = ArrayList<Pair<Double, Double>>()
             for (i in line.indices) {
                 val (lat, lon) = line[i][0] to line[i][1]
                 if (i > 0) {
                     val (lat0, lon0) = line[i - 1][0] to line[i - 1][1]
-                    val nm = Geo.nm(lat0, lon0, lat, lon)
+                    val nm = Engine.distanceNm(lat0, lon0, lat, lon).getOrThrow()
                     val steps = (nm / everyNm).toInt()
                     for (s in 1 until steps) {
                         val f = s / steps.toDouble()
@@ -240,7 +243,7 @@ class CyclePacks(private val root: File) {
                 }
                 out += lat to lon
             }
-            return out
+            out
         }
     }
 }

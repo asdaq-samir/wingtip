@@ -25,15 +25,17 @@ enum KeepRoute {
     /// at each zoom from `minZoom` to `maxZoom`, the line sampled every
     /// `stepNm`. The corridor is a box of tiles round each sample, one
     /// tile out from the sample's own at the zooms where a tile is wider
-    /// than the corridor, more at the finer zooms.
-    static func tiles(along line: [CLLocationCoordinate2D], minZoom: Int, maxZoom: Int, halfWidthNm: Double = 5, stepNm: Double = 2) -> Set<Tile> {
+    /// than the corridor, more at the finer zooms. Thrown where the engine
+    /// cannot say a leg's miles (`samples`).
+    static func tiles(along line: [CLLocationCoordinate2D], minZoom: Int, maxZoom: Int, halfWidthNm: Double = 5, stepNm: Double = 2) throws -> Set<Tile> {
         guard line.count >= 2 else { return [] }
+        let points = try samples(of: line, everyNm: stepNm)
         var wanted = Set<Tile>()
         for zoom in minZoom...maxZoom {
             // A tile's width at the equator in nm, 21,600 nm round.
             let tileNm = 21_600 / pow(2.0, Double(zoom))
             let reach = max(1, Int((halfWidthNm / tileNm).rounded(.up)))
-            for point in samples(of: line, everyNm: stepNm) {
+            for point in points {
                 let centre = tile(lat: point.latitude, lon: point.longitude, zoom: zoom)
                 for dx in -reach...reach {
                     for dy in -reach...reach {
@@ -45,11 +47,13 @@ enum KeepRoute {
         return wanted
     }
 
-    /// Points along the line a step apart, its vertices included.
-    static func samples(of line: [CLLocationCoordinate2D], everyNm step: Double) -> [CLLocationCoordinate2D] {
+    /// Points along the line a step apart, its vertices included. Each
+    /// leg's miles are the engine's (`distance_nm`); thrown where it cannot
+    /// say them, rather than a leg kept with gaps in its chart.
+    static func samples(of line: [CLLocationCoordinate2D], everyNm step: Double) throws -> [CLLocationCoordinate2D] {
         var out: [CLLocationCoordinate2D] = []
         for (a, b) in zip(line, line.dropFirst()) {
-            let nm = Flight.nm(from: a, to: b)
+            let nm = try Engine.distanceNm(lat1: a.latitude, lon1: a.longitude, lat2: b.latitude, lon2: b.longitude)
             let count = max(1, Int((nm / step).rounded(.up)))
             for i in 0..<count {
                 let t = Double(i) / Double(count)

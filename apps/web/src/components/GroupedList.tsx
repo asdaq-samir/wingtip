@@ -43,7 +43,10 @@ export function ListGroup({
     <section aria-labelledby={title ? id : undefined} className={className}>
       {title && (
         <div className="flex items-end justify-between gap-2">
-          <div className="flex items-center gap-2 px-1 pb-1.5">
+          {/* At the box's own edge, the sheet's and the card's one
+              sixteen-point inset (the sheet audit's F-B3), where four more
+              put the titles out of line with the card's name. */}
+          <div className="flex items-center gap-2 pb-1.5">
             <SectionTitle id={id}>{title}</SectionTitle>
             {badge}
           </div>
@@ -67,7 +70,7 @@ export function ListGroup({
           </Fragment>
         ))}
       </ItemGroup>
-      {footer && <p className={cn("px-1 pt-1.5 text-muted-foreground", TEXT.note)}>{footer}</p>}
+      {footer && <p className={cn("pt-1.5 text-muted-foreground", TEXT.note)}>{footer}</p>}
     </section>
   );
 }

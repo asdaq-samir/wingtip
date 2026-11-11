@@ -71,7 +71,9 @@ Why these lines:
 
 - `core` is the ground: distances, magnetic variation, the grid, dates
   and the JSON and XML every rule reads and writes, used by all. It holds
-  no aviation rule.
+  no aviation rule; its sphere's figures are asked by name
+  (`distance_nm`, `bearing_deg`, `destination`), so no app keeps its own
+  great-circle arithmetic.
 - `flight` holds the flight's own rules (the wind triangle, 14 CFR
   91.159's cruising altitudes, 91.151's reserve, the atmosphere). It is a
   crate of its own, not part of `brief`, because `procedures` (the

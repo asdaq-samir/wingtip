@@ -44,8 +44,9 @@ class SheetNav internal constructor(
 ) {
     internal var wide by mutableStateOf(false)
 
-    // The sheet brought to where the page shown opens: a card at half,
-    // the plan raised from the peek.
+    // The sheet brought to where the page shown opens: a card shown from
+    // the search or the map at half, the plan raised from the peek; a card
+    // pushed from inside another leaves the sheet where it is.
     internal var onShown: (SheetPage) -> Unit = {}
 
     /** The page on top of the NavHost's stack. */
@@ -83,18 +84,21 @@ class SheetNav internal constructor(
     fun show(page: SheetPage) = go(page) { showNow(page) }
 
     /** `page` opened from inside a card or a page, on top of it, so Back
-     *  comes back to it. */
-    fun push(page: SheetPage) = go(page) { pushNow(page) }
+     *  comes back to it. It keeps the sheet's height (the owner's decision,
+     *  2026-11-10, on the audit's SC-1): only a card shown from the search
+     *  or the map brings the sheet to half, so `onShown` is not told of a
+     *  card pushed over another. */
+    fun push(page: SheetPage) = go(page, tell = !page.covers) { pushNow(page) }
 
     /** A page asked for by its name: on top of the page it was asked from,
      *  else shown as the one card. */
     fun open(page: SheetPage) = if (covered && page.covers) push(page) else show(page)
 
-    private fun go(page: SheetPage, step: suspend () -> Unit) {
+    private fun go(page: SheetPage, tell: Boolean = true, step: suspend () -> Unit) {
         scope.launch {
             if (!awaitHost()) return@launch
             step()
-            onShown(page)
+            if (tell) onShown(page)
         }
     }
 

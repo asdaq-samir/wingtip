@@ -74,6 +74,10 @@ Companion docs:
   Liquid Glass in the content layer" ([HIG Materials][hig-materials]).
   - Glass goes on map buttons, the floating toolbar, the sheet's
     chrome and the tab bar.
+  - **The map buttons (owner decision 2026-11-10)** are one glass
+    capsule, Map, My Position and Ask stacked in it with a hairline
+    between, each 48 points (`size.map-button`) as Maps' are, in place
+    of three separate 44-point circles (`MapButtons`).
   - Rows, cards and figures sit on solid grounds.
   - The clear variant only goes over the chart. If the chart under it
     is bright, add a 35% dimming layer ([HIG Materials][hig-materials]).
@@ -138,10 +142,20 @@ chart stays live under it ([HIG Sheets][hig-sheets]: "When a nonmodal
 sheet is onscreen, people use its functionality to affect the parent
 view without dismissing the sheet").
 
-- **Code.** `presentationDetents([pill, .medium, .large], selection: $detent)`,
-  with `presentationBackgroundInteraction(.enabled(upThrough: .medium))`
+- **Code.** `presentationDetents([pill, .half, .large], selection: $detent)`,
+  with `presentationBackgroundInteraction(.enabled(upThrough: .half))`
   and a grabber (`presentationDragIndicator(.visible)`).
   - `pill` is `.height(132)` today (`RootView.pill`).
+  - **Half height (owner decision 2026-11-10).** `.half` is
+    `.fraction(0.45)` (`Navigation/Detents.swift`), 45% of the screen as
+    Maps' half covers it, in place of the stock `.medium`'s 53.5% (the
+    iOS sheet audit measured both). The plan's sheet and every card that
+    opens half way use it; the system animates between the detents as
+    its own. The other modal sheets keep `.medium`.
+  - **The figures strip at the pill (owner decision 2026-11-10).** The
+    route's TO / DIST strip is the sheet's foot from half height up and
+    not at the pill, where it drew 25 points over the search field
+    (`sheetAtPill`, PlanSheet).
   - The HIG asks for a grabber on a resizable sheet. Tapping it cycles
     through the detents, and VoiceOver reads it ([HIG Sheets][hig-sheets]).
 - **Content changes with the detent.** The owner checked Apple Maps on
@@ -175,8 +189,8 @@ view without dismissing the sheet").
     (`RootView.openScreen` for a screen by its name); the plan's sheet
     presents the card through one `.sheet(item:)` (`CardHost`), so one
     card is up at a time and a new one takes its place.
-  - The card opens at `.medium` for a thing and `.large` for a page,
-    grows to `.large`, and the map stays live under it up to `.medium`;
+  - The card opens at `.half` for a thing and `.large` for a page,
+    grows to `.large`, and the map stays live under it up to `.half`;
     a question or a form stays modal.
   - Its close is at the right of its bar; what it opens is pushed in its
     own `NavigationStack` with the system's Back (`Navigator.push`), and
@@ -307,11 +321,36 @@ view without dismissing the sheet").
 
 1. **The search field** in the sheet's head, with the account avatar
    at its trailing end.
+   - **The avatar (owner decision 2026-11-10)** is its own 44 × 44
+     round glass button, apart from the microphone's (a fixed
+     `ToolbarSpacer` between them), as Maps' avatar is; it drew 40 × 36
+     inside the microphone's capsule. Its name stays "Account and
+     Settings", and the microphone keeps its place (`SearchBarItems`).
+   - **One row (owner decision 2026-11-10: "I will take your
+     recommendation for the one row").** The "Flight Plan" title bar is
+     gone: the bar is the search field itself
+     (`.searchable(placement: .toolbarPrincipal)`, `OneSearch`'s
+     `oneRow`), the microphone and the account beside it, as Maps' search
+     row. Under it, at half and full, the route card (`RouteCard`): the
+     route (KMSN → KOSH) with the engine's Ready to Fly line and the
+     route's ••• at its right; the figures in one line (distance, ETE,
+     fuel, altitude, airplane); Brief, Nav Log and Airplane; then the
+     route itself (From and To, Routes, the airplane and the altitude),
+     the stops and the rest of the plan. At the pill, the search row
+     alone. With no route, the same place holds Favorites, Recents, Find
+     Nearby and Nearest. Saved Flights, Share and Undo moved from the bar
+     into the route card's ••• with the Profile and Clear Route; Undo
+     stays on shake and the Edit menu (UndoManager); the stops' Edit is
+     at the Stops header's right. Cards still cover the search with
+     their ✕ (the card rule).
+   - Still the owner's to decide (2026-11-10): the altitude picker, a
+     wheel or a list like ForeFlight's Altitude Advisor.
    - Use `.searchable(text:placement:prompt:)` and
      `searchToolbarBehavior`.
    - One field finds airports, navaids, fixes, airspace, procedures,
      traffic by N-number, and places (Overture).
-2. **Before typing:**
+2. **Before typing** (the same sections in the plan itself before
+   there is a route, `BrowseSections`):
    - Recents.
    - Favorites, as a horizontal strip of ident tiles.
    - "Find Nearby" chips for the Stops kinds (Fuel, Food, Repair,

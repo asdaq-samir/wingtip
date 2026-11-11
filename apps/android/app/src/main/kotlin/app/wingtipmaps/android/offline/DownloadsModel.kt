@@ -11,6 +11,7 @@ import androidx.work.WorkManager
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.OfflineBox
 import app.wingtipmaps.android.api.generated.OfflineCatalog
 import app.wingtipmaps.android.api.generated.OfflineRegion
@@ -75,7 +76,7 @@ class DownloadsModel(app: Application) : AndroidViewModel(app) {
         store.sweep()
         runCatching { Gateway.json.decodeFromString(OfflineCatalog.serializer(), Planner.fetch("/api/offline-charts")) }
             .onSuccess { _catalog.value = it; _problem.value = null }
-            .onFailure { _problem.value = "The regions could not be listed: ${it.message}" }
+            .onFailure { _problem.value = Problems.say("The regions could not be listed", it) }
     }
 
     /** A region of the cycle kept: its files listed, the picked archives it
@@ -105,7 +106,7 @@ class DownloadsModel(app: Application) : AndroidViewModel(app) {
                 }
                 _problem.value = null
             } catch (e: Exception) {
-                _problem.value = "The region could not be fetched: ${e.message}"
+                _problem.value = Problems.say("The region could not be fetched", e)
             } finally {
                 _busy.value -= regionId
             }

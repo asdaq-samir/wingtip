@@ -1372,6 +1372,18 @@ class FeedState(BaseModel):
     what: Annotated[str | None, Field(title='What')] = None
 
 
+class FieldForecast(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    at: Annotated[float | None, Field(title='At')] = None
+    category: Annotated[
+        Literal['VFR', 'MVFR', 'IFR', 'LIFR'] | None, Field(title='Category')
+    ] = None
+    distance_nm: Annotated[float | None, Field(title='Distance Nm')] = None
+    station: Annotated[str | None, Field(title='Station')] = None
+
+
 class FlightArrival(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -1998,7 +2010,14 @@ class NearestAirport(BaseModel):
     distance_nm: Annotated[float | None, Field(title='Distance Nm')] = None
     elevation_ft: Annotated[float | None, Field(title='Elevation Ft')] = None
     flight_category: Annotated[str | None, Field(title='Flight Category')] = None
+    forecast: FieldForecast | None = None
+    fuel: Annotated[
+        list[Literal['100LL', 'Jet A', 'UL94']] | None, Field(title='Fuel')
+    ] = []
     ident: Annotated[str | None, Field(title='Ident')] = None
+    instrument_approach: Annotated[bool | None, Field(title='Instrument Approach')] = (
+        None
+    )
     kind: Annotated[
         Literal['large', 'medium', 'small', 'other'] | None, Field(title='Kind')
     ] = None
@@ -2015,7 +2034,15 @@ class NearestAirport(BaseModel):
     )
     private: Annotated[bool | None, Field(title='Private')] = False
     radio: InboundRadio | None = None
+    runway_surfaces: Annotated[
+        list[Literal['paved', 'turf', 'water', 'other']] | None,
+        Field(title='Runway Surfaces'),
+    ] = []
     towered: Annotated[bool | None, Field(title='Towered')] = False
+    visibility_sm: Annotated[float | None, Field(title='Visibility Sm')] = None
+    wind_dir_true_deg: Annotated[float | None, Field(title='Wind Dir True Deg')] = None
+    wind_gust_kt: Annotated[float | None, Field(title='Wind Gust Kt')] = None
+    wind_speed_kt: Annotated[float | None, Field(title='Wind Speed Kt')] = None
 
 
 class NearestAirports(BaseModel):

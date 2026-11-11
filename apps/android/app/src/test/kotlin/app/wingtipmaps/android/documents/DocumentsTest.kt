@@ -112,10 +112,11 @@ class DocumentsTest {
         assertEquals("53.0", form.usableFuelGal)
         assertEquals("N12345", form.tailNumber)
         assertEquals("C172", form.typeDesignator)
-        val request = form.request!!
+        // The form's check is the engine's (EngineFixturesTest); none here.
+        val request = form.request(emptyMap())!!
         assertEquals(113.0, request.cruiseTasKt, 0.0)
         assertEquals("C172", request.typeDesignator)
-        assertNull(form.copy(fuelBurnGph = "").request)
+        assertNull(form.copy(fuelBurnGph = "").request(emptyMap()))
         val figures = HandbookReview.forGateway(handbook.handbookCheck!!.handbook)
         assertEquals(handbook.handbookCheck.handbook.cruise!!.size, figures.cruise.size)
     }

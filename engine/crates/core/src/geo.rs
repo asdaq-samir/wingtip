@@ -5,6 +5,8 @@
 //! well-conditioned at every distance, so the two agree to a few
 //! micrometres.
 
+use crate::json::{self, Value};
+
 /// wingtip.geo's EARTH_RADIUS_NM.
 pub const EARTH_RADIUS_NM: f64 = 3440.065;
 
@@ -37,15 +39,19 @@ pub fn bearing_deg(lat1: f64, lon1: f64, lat2: f64, lon2: f64) -> f64 {
 
 /// Where a great circle from a point on a true bearing reaches `nm` out,
 /// (lat, lon) in degrees, the longitude within -180 to 180: the web's
-/// lib/geo destination, written as it is (`deg * PI / 180`).
+/// lib/geo destination, written as it is (`deg * PI / 180`). The engine's
+/// one copy: the look ahead (airspace::ahead) and the phones' traffic
+/// carried on along its track (the rule `destination`) both reach a point
+/// here.
 pub fn destination(lat: f64, lon: f64, bearing: f64, nm: f64) -> (f64, f64) {
     use std::f64::consts::PI;
     let d = nm / EARTH_RADIUS_NM;
     let b = bearing * PI / 180.0;
     let (lat1, lon1) = (lat * PI / 180.0, lon * PI / 180.0);
-    let lat2 = (lat1.sin() * d.cos() + lat1.cos() * d.sin() * b.cos()).asin();
+    // Clamped, so a rounding past 1 at a pole is the pole, not NaN.
+    let lat2 = (lat1.sin() * d.cos() + lat1.cos() * d.sin() * b.cos()).clamp(-1.0, 1.0).asin();
     let lon2 = lon1 + (b.sin() * d.sin() * lat1.cos()).atan2(d.cos() - lat1.sin() * lat2.sin());
-    (lat2 * 180.0 / PI, (lon2 * 180.0 / PI + 540.0) % 360.0 - 180.0)
+    (lat2 * 180.0 / PI, (lon2 * 180.0 / PI + 540.0).rem_euclid(360.0) - 180.0)
 }
 
 /// How far apart two directions are, degrees 0 to 180, either way round
@@ -145,6 +151,45 @@ pub fn path_meets_polygon(path: &[(f64, f64)], ring: &[(f64, f64)]) -> bool {
     path.windows(2).any(|s| (0..n).any(|i| meet(s[0], s[1], ring[i], ring[(i + 1) % n])))
 }
 
+// --- By name (the facade's dispatcher, contract/*.json) -----------------
+
+fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
+    v.get(key).and_then(Value::as_f64).ok_or_else(|| format!("{name}: \"{key}\" is missing or not a number"))
+}
+
+/// The sphere's figures by name, for the apps that draw between fixes (the
+/// phones' traffic notice, own trail and replay) and the planner, so no app
+/// keeps its own great-circle arithmetic: `distance_nm` and `bearing_deg`
+/// from `{"lat1", "lon1", "lat2", "lon2"}`, and `destination` from
+/// `{"points": [{"lat", "lon", "bearing_deg", "nm"}]}` to `[{"lat",
+/// "lon"}]`, a list so a map's airplanes carried on a step a second cross
+/// into the engine once, not once each.
+pub fn call(name: &str, v: &Value) -> Result<String, String> {
+    let mut out = String::new();
+    match name {
+        "distance_nm" | "bearing_deg" => {
+            let (lat1, lon1, lat2, lon2) = (num(name, v, "lat1")?, num(name, v, "lon1")?, num(name, v, "lat2")?, num(name, v, "lon2")?);
+            let figure = if name == "distance_nm" { distance_nm(lat1, lon1, lat2, lon2) } else { bearing_deg(lat1, lon1, lat2, lon2) };
+            json::number(&mut out, figure);
+        }
+        "destination" => {
+            let points = v.get("points").and_then(Value::as_array).ok_or("destination: \"points\" is missing or not a list")?;
+            out.push('[');
+            for (i, p) in points.iter().enumerate() {
+                let (lat, lon) = destination(num(name, p, "lat")?, num(name, p, "lon")?, num(name, p, "bearing_deg")?, num(name, p, "nm")?);
+                out.push_str(if i > 0 { ",{\"lat\":" } else { "{\"lat\":" });
+                json::number(&mut out, lat);
+                out.push_str(",\"lon\":");
+                json::number(&mut out, lon);
+                out.push('}');
+            }
+            out.push(']');
+        }
+        _ => return Err(format!("the engine has no rule called {name:?}")),
+    }
+    Ok(out)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -187,5 +232,29 @@ mod tests {
         assert_eq!(angle_between(10.0, 190.0), 180.0);
         assert_eq!(py_mod(-1e-20, 360.0), 360.0);
         assert_eq!(py_mod(-30.0, 360.0), 330.0);
+    }
+
+    #[test]
+    fn destination_is_the_sphere_s() {
+        // Due north 60 nm is a degree of latitude on wingtip.geo's sphere
+        // (the look ahead's own test, before its copy was folded in here).
+        let (lat, lon) = destination(45.0, -93.0, 0.0, 60.0);
+        assert!((lat - 45.999_413).abs() < 1e-4 && (lon + 93.0).abs() < 1e-9, "{lat} {lon}");
+        assert!((distance_nm(45.0, -93.0, lat, lon) - 60.0).abs() < 1e-9);
+        // Across the antimeridian the longitude comes back within 180.
+        let (_, lon) = destination(0.0, 179.9, 90.0, 60.0);
+        assert!((-180.0..=180.0).contains(&lon) && lon < -179.0, "{lon}");
+    }
+
+    #[test]
+    fn the_sphere_s_figures_by_name() {
+        let ask = |name: &str, text: &str| call(name, &json::parse(text).unwrap());
+        assert_eq!(ask("distance_nm", r#"{"lat1":45,"lon1":-93,"lat2":45,"lon2":-93}"#).unwrap(), "0.0");
+        let b: f64 = ask("bearing_deg", r#"{"lat1":41.9786,"lon1":-87.9048,"lat2":41.7868,"lon2":-87.7522}"#).unwrap().parse().unwrap();
+        assert!((b - 149.308_659_909_716_54).abs() < 1e-9, "{b}");
+        let to = ask("destination", r#"{"points":[{"lat":45,"lon":-93,"bearing_deg":0,"nm":60}]}"#).unwrap();
+        assert!(to.starts_with("[{\"lat\":45.99") && to.ends_with(",\"lon\":-93.0}]"), "{to}");
+        assert_eq!(ask("destination", r#"{"points":[]}"#).unwrap(), "[]");
+        assert!(ask("bearing_deg", "{}").is_err());
     }
 }

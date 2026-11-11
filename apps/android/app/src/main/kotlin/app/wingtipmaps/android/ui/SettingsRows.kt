@@ -1,15 +1,25 @@
 package app.wingtipmaps.android.ui
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SegmentedListItem
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
@@ -79,4 +89,41 @@ fun ValueSettingRow(title: String, value: String, index: Int, count: Int) {
         trailingContent = { Text(value, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) },
         content = { Text(title) },
     )
+}
+
+/**
+ * A setting of a few choices as a row of the group, Material's own: the
+ * whole row the target, its name and the value at its end, a tap opening
+ * the stock menu under it (the sheet audit's B-1 and B-2, 2026-11-10: a
+ * lone "Off" text button read only "Off, button"). TalkBack reads the
+ * row's name and value as one button.
+ */
+@Composable
+fun MenuSettingRow(title: String, value: String, choices: List<Pair<String, () -> Unit>>, index: Int, count: Int) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        SegmentedListItem(
+            onClick = { open = true },
+            shapes = ListItemDefaults.segmentedShapes(index = index, count = count),
+            modifier = Modifier.fillMaxWidth().semantics { role = Role.DropdownList },
+            trailingContent = { Text(value, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            content = { Text(title) },
+        )
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            for ((label, pick) in choices) {
+                DropdownMenuItem(
+                    text = { Text(label) },
+                    trailingIcon = if (label == value) {
+                        { Icon(Icons.Filled.Check, contentDescription = null) }
+                    } else {
+                        null
+                    },
+                    onClick = {
+                        open = false
+                        pick()
+                    },
+                )
+            }
+        }
+    }
 }

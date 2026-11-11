@@ -4,13 +4,15 @@ import app.wingtipmaps.android.api.generated.assistant.HandbookProfile
 import app.wingtipmaps.android.api.generated.gateway.AircraftDto
 import app.wingtipmaps.android.api.generated.gateway.AircraftRequest
 import app.wingtipmaps.android.documents.HandbookReview
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.aircraftProblems
 
 /**
  * The "Your Airplane" form's fields as typed (the web's own-airplane
- * form in AccountPanels, the iPhone's AircraftForm), checked as the
- * gateway checks them (AircraftRequest's @NotBlank, @Size and
- * @Positive, its 40 to 100 percent cruise power) before the round trip,
- * each problem in the web's words under its field.
+ * form in AccountPanels, the iPhone's AircraftForm), checked by the
+ * engine's `aircraft_problems` -- the gateway's AircraftRequest limits --
+ * before the round trip, each problem in its words under its field.
  */
 data class AircraftForm(
     val tailNumber: String = "",
@@ -25,54 +27,42 @@ data class AircraftForm(
     val surveillance: String = "",
     val colour: String = "",
 ) {
-    /** What is wrong, by field, in the web's words; empty when it may be saved. */
-    val problems: Map<Field, String>
-        get() = buildMap {
-            val tail = tailNumber.trim()
-            val type = typeDesignator.trim()
-            if (tail.isEmpty()) put(Field.TAIL, "Tail number is required") else if (tail.length > 16) put(Field.TAIL, "At most 16 characters")
-            if (type.isEmpty()) put(Field.TYPE, "Type designator is required") else if (type.length > 16) put(Field.TYPE, "At most 16 characters")
-            fun positive(field: Field, value: String, label: String, required: Boolean) {
-                val t = value.trim()
-                if (t.isEmpty()) {
-                    if (required) put(field, "$label must be a positive number")
-                } else if ((t.toDoubleOrNull() ?: 0.0) <= 0) {
-                    put(field, "$label must be a positive number")
-                }
-            }
-            positive(Field.CRUISE_TAS, cruiseTasKt, "Cruise speed", required = true)
-            positive(Field.BURN, fuelBurnGph, "Cruise fuel burn", required = true)
-            positive(Field.CLIMB_TAS, climbTasKt, "Climb speed", required = false)
-            positive(Field.CLIMB_BURN, climbFuelBurnGph, "Climb fuel burn", required = false)
-            positive(Field.USABLE_FUEL, usableFuelGal, "Usable fuel", required = false)
-            // A power a cruise table has: 40 to 100 percent, the gateway's
-            // limits and the planner's.
-            val power = cruisePowerPct.trim()
-            if (power.isNotEmpty() && (power.toDoubleOrNull() ?: 0.0) !in 40.0..100.0) put(Field.POWER, "Cruise power must be between 40 and 100%")
-            // Flight plan items 10a and 10b are letters and figures, at
-            // most 40 and 20 (AIM Appendix 4, TBL 4-2 and 4-3); item 19
-            // plain words.
-            fun codes(s: String, n: Int) = s.length <= n && s.all { it.code < 128 && it.isLetterOrDigit() }
-            if (!codes(equipment.trim(), 40)) put(Field.EQUIPMENT, "Letters and figures, as SDFGRY")
-            if (!codes(surveillance.trim(), 20)) put(Field.SURVEILLANCE, "Letters and figures, as B1")
-            if (colour.trim().length > 40) put(Field.COLOUR, "At most 40 characters")
-        }
+    /** The engine's `aircraft_problems`; a test's own in its place. */
+    fun interface Rules {
+        fun problems(form: AircraftForm): Result<EngineContract.AircraftProblemsAnswer>
+    }
 
-    /** The gateway's request, when nothing is wrong. */
-    val request: AircraftRequest?
-        get() {
-            if (problems.isNotEmpty()) return null
-            val tas = cruiseTasKt.trim().toDoubleOrNull() ?: return null
-            val burn = fuelBurnGph.trim().toDoubleOrNull() ?: return null
-            fun opt(s: String) = s.trim().toDoubleOrNull()
-            fun words(s: String) = s.trim().ifEmpty { null }
-            return AircraftRequest(
-                tailNumber = tailNumber.trim().uppercase(), typeDesignator = typeDesignator.trim().uppercase(),
-                cruiseTasKt = tas, fuelBurnGph = burn, cruisePowerPct = opt(cruisePowerPct),
-                climbTasKt = opt(climbTasKt), climbFuelBurnGph = opt(climbFuelBurnGph), usableFuelGal = opt(usableFuelGal),
-                equipment = words(equipment)?.uppercase(), surveillance = words(surveillance)?.uppercase(), colour = words(colour),
-            )
-        }
+    /** What is wrong, by field, in the engine's words; empty when it may
+     *  be saved. Where the engine cannot check the form (Engine.rule has
+     *  logged why), that is said under the first field, so a form not
+     *  checked is never taken for a good one. */
+    fun problems(rules: Rules = EngineRules): Map<Field, String> =
+        rules.problems(this).fold(
+            onSuccess = { a ->
+                listOf(
+                    Field.TAIL to a.tailNumber, Field.TYPE to a.typeDesignator, Field.CRUISE_TAS to a.cruiseTasKt,
+                    Field.BURN to a.fuelBurnGph, Field.POWER to a.cruisePowerPct, Field.CLIMB_TAS to a.climbTasKt,
+                    Field.CLIMB_BURN to a.climbFuelBurnGph, Field.USABLE_FUEL to a.usableFuelGal, Field.EQUIPMENT to a.equipment,
+                    Field.SURVEILLANCE to a.surveillance, Field.COLOUR to a.colour,
+                ).mapNotNull { (field, words) -> words?.let { field to it } }.toMap()
+            },
+            onFailure = { mapOf(Field.TAIL to "The airplane could not be checked: ${it.message}") },
+        )
+
+    /** The gateway's request, where this form's [problems] are none. */
+    fun request(problems: Map<Field, String>): AircraftRequest? {
+        if (problems.isNotEmpty()) return null
+        val tas = cruiseTasKt.trim().toDoubleOrNull() ?: return null
+        val burn = fuelBurnGph.trim().toDoubleOrNull() ?: return null
+        fun opt(s: String) = s.trim().toDoubleOrNull()
+        fun words(s: String) = s.trim().ifEmpty { null }
+        return AircraftRequest(
+            tailNumber = tailNumber.trim().uppercase(), typeDesignator = typeDesignator.trim().uppercase(),
+            cruiseTasKt = tas, fuelBurnGph = burn, cruisePowerPct = opt(cruisePowerPct),
+            climbTasKt = opt(climbTasKt), climbFuelBurnGph = opt(climbFuelBurnGph), usableFuelGal = opt(usableFuelGal),
+            equipment = words(equipment)?.uppercase(), surveillance = words(surveillance)?.uppercase(), colour = words(colour),
+        )
+    }
 
     /** The figures a confirmed handbook page gives, only those it gives,
      *  each to a tenth as the form shows them (the iPhone's
@@ -101,6 +91,16 @@ data class AircraftForm(
     }
 
     enum class Field { TAIL, TYPE, CRUISE_TAS, BURN, POWER, CLIMB_TAS, CLIMB_BURN, USABLE_FUEL, EQUIPMENT, SURVEILLANCE, COLOUR }
+
+    /** The form as typed, to the engine. */
+    object EngineRules : Rules {
+        override fun problems(form: AircraftForm) = with(form) {
+            Engine.aircraftProblems(
+                tailNumber, typeDesignator, cruiseTasKt, fuelBurnGph, cruisePowerPct, climbTasKt,
+                climbFuelBurnGph, usableFuelGal, equipment, surveillance, colour,
+            )
+        }
+    }
 
     companion object {
         /** A figure as the form shows it: whole where it is whole. */

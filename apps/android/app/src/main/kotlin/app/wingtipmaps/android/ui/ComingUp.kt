@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.gateway.PaperworkDto
 import app.wingtipmaps.android.records.Paperwork
 
@@ -36,7 +37,7 @@ fun ComingUpSection(signedInAs: String) {
     LaunchedEffect(signedInAs) {
         runCatching { Paperwork.fetch() }
             .onSuccess { list = it; problem = null }
-            .onFailure { problem = "What falls due could not be fetched: ${it.message}" }
+            .onFailure { problem = Problems.say("What falls due could not be fetched", it) }
     }
     Column(Modifier.fillMaxWidth()) {
         SectionTitle(stringResource(R.string.coming_up))

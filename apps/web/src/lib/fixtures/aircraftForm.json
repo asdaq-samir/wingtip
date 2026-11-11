@@ -1,0 +1,285 @@
+{
+  "about": "The \"Your Airplane\" form's fields as typed and what is wrong with them, by field, in the words shown under each (the engine's aircraft_problems; the gateway's AircraftRequest limits, which its own test holds to these cases). Web: features/pilot/AccountPanels. iOS: AircraftForm in PilotLogic. Android: aircraft/AircraftForm.",
+  "cases": [
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {}
+    },
+    {
+      "form": {
+        "tailNumber": "  ",
+        "typeDesignator": "",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {
+        "tailNumber": "Tail number is required",
+        "typeDesignator": "Type designator is required"
+      }
+    },
+    {
+      "form": {
+        "tailNumber": "N1234567890123456",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {
+        "tailNumber": "At most 16 characters"
+      }
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "ABCDEFGHIJKLMNOP",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {}
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "",
+        "fuelBurnGph": "0",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {
+        "cruiseTasKt": "Cruise speed must be a positive number",
+        "fuelBurnGph": "Cruise fuel burn must be a positive number"
+      }
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "fast",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {
+        "cruiseTasKt": "Cruise speed must be a positive number"
+      }
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "",
+        "climbTasKt": "-5",
+        "climbFuelBurnGph": "12",
+        "usableFuelGal": "0",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {
+        "climbTasKt": "Climb speed must be a positive number",
+        "usableFuelGal": "Usable fuel must be a positive number"
+      }
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "40",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {}
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "100",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {}
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "39.9",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {
+        "cruisePowerPct": "Cruise power must be between 40 and 100%"
+      }
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "101",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": ""
+      },
+      "problems": {
+        "cruisePowerPct": "Cruise power must be between 40 and 100%"
+      }
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "SDFGRY",
+        "surveillance": "B1",
+        "colour": ""
+      },
+      "problems": {}
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "S/D",
+        "surveillance": "B1 ",
+        "colour": ""
+      },
+      "problems": {
+        "equipment": "Letters and figures, as SDFGRY"
+      }
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "surveillance": "BBBBBBBBBBBBBBBBBBBBB",
+        "colour": ""
+      },
+      "problems": {
+        "equipment": "Letters and figures, as SDFGRY",
+        "surveillance": "Letters and figures, as B1"
+      }
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": "White with blue stripes"
+      },
+      "problems": {}
+    },
+    {
+      "form": {
+        "tailNumber": "N12345",
+        "typeDesignator": "C172",
+        "cruiseTasKt": "122",
+        "fuelBurnGph": "8.5",
+        "cruisePowerPct": "",
+        "climbTasKt": "",
+        "climbFuelBurnGph": "",
+        "usableFuelGal": "",
+        "equipment": "",
+        "surveillance": "",
+        "colour": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      },
+      "problems": {
+        "colour": "At most 40 characters"
+      }
+    }
+  ]
+}

@@ -2,6 +2,7 @@ package app.wingtipmaps.android.here
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.AirspaceAt
 import app.wingtipmaps.android.live.LiveSource
 import app.wingtipmaps.android.live.PlannerLive
@@ -43,7 +44,7 @@ class HereModel(private val source: LiveSource = PlannerLive) : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _state.value = State(at = lat to lon, problem = "The airspace here could not be fetched: ${e.message}")
+                _state.value = State(at = lat to lon, problem = Problems.say("The airspace here could not be fetched", e))
             }
         }
     }

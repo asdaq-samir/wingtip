@@ -41,3 +41,12 @@ iPhone's sheet and glass are the system's as they come (plain
 `glassEffect`, the system's Reduce Transparency and scroll-edge
 effect), with no haptic of the app's at a detent. Pill, half and full
 remain the detents.
+
+## Amended 2026-11-10 (the web's sheet is solid)
+
+Owner decision 2026-11-10 (decisions page), on the sheet audit's F-L1:
+the web's sheet stays solid at every size, the look's `--sheet` (the
+light grey of Apple Maps' web sheet in Wingtip), as it is now; it is not
+Liquid Glass at the pill or anywhere else. Glass on the web is only what
+floats over the map, the map's buttons (`liquid-glass`, `MapControls`).
+The iPhone's sheet keeps the system's glass as it comes.

@@ -33,6 +33,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.aircraft.YourAirplanesRow
 import app.wingtipmaps.android.api.AircraftProfileSummary
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.documents.AddFromPhotoRow
 import app.wingtipmaps.android.documents.HandbookPhotoSheet
 import app.wingtipmaps.android.plan.FlightChoices
@@ -43,7 +44,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /** The airplane card's picker's model: the planner's airplane types
- *  (/api/aircraft-profiles), asked once. */
+ *  (/api/aircraft-profiles), asked once, and again by Try Again. */
 class AirplaneModel : ViewModel() {
     private val _profiles = MutableStateFlow<List<AircraftProfileSummary>>(emptyList())
     val profiles: StateFlow<List<AircraftProfileSummary>> = _profiles.asStateFlow()
@@ -52,6 +53,11 @@ class AirplaneModel : ViewModel() {
     val problem: StateFlow<String?> = _problem.asStateFlow()
 
     init {
+        load()
+    }
+
+    /** The types asked for: at first, and again after a failure. */
+    fun load() {
         viewModelScope.launch {
             try {
                 _profiles.value = Planner.aircraftProfiles()
@@ -59,7 +65,7 @@ class AirplaneModel : ViewModel() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _problem.value = "The airplane types could not be fetched: ${e.message}"
+                _problem.value = Problems.say("The airplane types could not be fetched", e)
             }
         }
     }
@@ -83,7 +89,7 @@ internal fun FlownAirplaneRows(plan: Plan, onYourAirplanes: () -> Unit, model: A
     val state by plan.state.collectAsStateWithLifecycle()
     var photo by remember { mutableStateOf(false) }
     AirplanePicker(profiles, selected = state.aircraft, onPick = plan::setAircraft)
-    ProblemLine(problem)
+    ProblemLine(problem, onRetry = model::load)
     RegistrationField()
     PassengersRow()
     AddFromPhotoRow(stringResource(R.string.photo_line_airplane)) { photo = true }

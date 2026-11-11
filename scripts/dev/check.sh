@@ -251,11 +251,12 @@ run_area() {
         "rustup component add clippy 2>/dev/null && cargo clippy -q --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings && $cmd"
       ;;
     java)
-      # services/, not the gateway alone: the pom generates the assistant's
-      # answers from ../assistant/openapi.json.
-      docker run --rm -v "$here/services":/services -v /services/gateway/target -v fp-m2:/root/.m2 \
+      # The whole repository, not the gateway alone: the pom generates the
+      # assistant's answers from ../assistant/openapi.json, and the tests
+      # read the shared fixtures in apps/web/src/lib/fixtures.
+      docker run --rm -v "$here":/repo -v /repo/services/gateway/target -v fp-m2:/root/.m2 \
         -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
-        -w /services/gateway "maven:$MAVEN-eclipse-temurin-$JAVA" mvn -B -q test
+        -w /repo/services/gateway "maven:$MAVEN-eclipse-temurin-$JAVA" mvn -B -q test
       ;;
     ios)
       local sim

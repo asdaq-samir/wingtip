@@ -56,7 +56,7 @@ class HereModelTest {
         val source = Fake(fail = true)
         val m = HereModel(source)
         m.at(43.14, -89.34)
-        assertEquals("The airspace here could not be fetched: offline", m.state.value.problem)
+        assertEquals("The airspace here could not be fetched.", m.state.value.problem)
         source.fail = false
         m.retry()
         assertNull(m.state.value.problem)

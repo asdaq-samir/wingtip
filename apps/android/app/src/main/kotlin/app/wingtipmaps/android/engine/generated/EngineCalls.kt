@@ -31,6 +31,12 @@ fun Engine.airborneNow(before: Boolean? = null, airborne: Boolean? = null, arriv
     rule("airborne_now", EngineContract.AirborneNowInput(before = before, airborne = airborne, arrived = arrived, heardS = heardS))
 
 /**
+ * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
+ */
+fun Engine.aircraftProblems(tailNumber: String? = null, typeDesignator: String? = null, cruiseTasKt: String? = null, fuelBurnGph: String? = null, cruisePowerPct: String? = null, climbTasKt: String? = null, climbFuelBurnGph: String? = null, usableFuelGal: String? = null, equipment: String? = null, surveillance: String? = null, colour: String? = null): Result<EngineContract.AircraftProblemsAnswer> =
+    rule("aircraft_problems", EngineContract.AircraftProblemsInput(tailNumber = tailNumber, typeDesignator = typeDesignator, cruiseTasKt = cruiseTasKt, fuelBurnGph = fuelBurnGph, cruisePowerPct = cruisePowerPct, climbTasKt = climbTasKt, climbFuelBurnGph = climbFuelBurnGph, usableFuelGal = usableFuelGal, equipment = equipment, surveillance = surveillance, colour = colour))
+
+/**
  * An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's ("pilot"), else its photographed handbook page's ("handbook"), else its type's stock profile's ("book"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).
  */
 fun Engine.airplaneFigures(book: Map<String, JsonElement>? = null, handbook: Map<String, JsonElement>? = null, own: Map<String, JsonElement>? = null): Result<EngineContract.AirplaneFiguresAnswer> =
@@ -235,9 +241,9 @@ fun Engine.awcGairmetsRead(text: String): Result<List<Map<String, JsonElement>>>
     rule("awc_gairmets_read", EngineContract.AwcGairmetsReadInput(text = text))
 
 /**
- * The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1), visibility, wind, altimeter, temperature and dewpoint, and where it is.
+ * The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1) and its layer's cover, visibility, wind, altimeter, temperature and dewpoint, and where it is.
  */
-fun Engine.awcMetarsRead(text: String): Result<Map<String, JsonElement>> =
+fun Engine.awcMetarsRead(text: String): Result<Map<String, EngineContract.AwcMetarsReadAnswerValue>> =
     rule("awc_metars_read", EngineContract.AwcMetarsReadInput(text = text))
 
 /**
@@ -257,6 +263,12 @@ fun Engine.awcTafsRead(text: String): Result<List<Map<String, JsonElement>>> =
  */
 fun Engine.bareField(ident: String): Result<String> =
     rule("bare_field", EngineContract.BareFieldInput(ident = ident))
+
+/**
+ * The initial great-circle course from the first point to the second, degrees true 0 to 360, on the same sphere as distance_nm (wingtip.geo.bearing_deg); 0 for two points that coincide.
+ */
+fun Engine.bearingDeg(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Result<Double> =
+    rule("bearing_deg", EngineContract.BearingDegInput(lat1 = lat1, lon1 = lon1, lat2 = lat2, lon2 = lon2))
 
 /**
  * Whether a ceiling or a visibility is under 14 CFR 91.155(c), (d)'s basic VFR minimums (1,000 ft, 3 sm); a missing figure is below nothing.
@@ -433,6 +445,12 @@ fun Engine.departureWindow(start: List<Double>, end: List<Double>, airplane: Boo
     rule("departure_window", EngineContract.DepartureWindowInput(start = start, end = end, airplane = airplane, minimums = minimums, risk = risk, hours = hours))
 
 /**
+ * Where a great circle from each point on its true course reaches its distance out, on the same sphere as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.
+ */
+fun Engine.destination(points: List<EngineContract.DestinationInputPointsItem>): Result<List<EngineContract.DestinationAnswerItem>> =
+    rule("destination", EngineContract.DestinationInput(points = points))
+
+/**
  * Whether own ship is drawn on the airport diagram: a fix no older than 3 s (AC 120-76D 11.17.2.3) and good to 30 m or better (11.17.2.4); a negative accuracy, none known, never.
  */
 fun Engine.diagramFixUsable(ageS: Double, accuracyM: Double): Result<Boolean> =
@@ -463,7 +481,7 @@ fun Engine.directOf(text: String): Result<String?> =
     rule("direct_of", EngineContract.DirectOfInput(text = text))
 
 /**
- * The geodesic distance between two points on the WGS 84 ellipsoid, nm.
+ * The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0).
  */
 fun Engine.distanceNm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Result<Double> =
     rule("distance_nm", EngineContract.DistanceNmInput(lat1 = lat1, lon1 = lon1, lat2 = lat2, lon2 = lon2))
@@ -487,10 +505,22 @@ fun Engine.drillDecks(): Result<List<EngineContract.DrillDeck>> =
     rule("drill_decks", EngineContract.DrillDecksInput())
 
 /**
+ * A flash card answered, by Leitner's boxes: known, up a box (a card never seen counts as the first) to the fifth at most; missed, back to the first. Its new box and the days until it is due again: 0, 1, 3, 7 and 16 for boxes 1 to 5.
+ */
+fun Engine.drillNext(box: Double? = null, knew: Boolean): Result<EngineContract.DrillNextAnswer> =
+    rule("drill_next", EngineContract.DrillNextInput(box = box, knew = knew))
+
+/**
  * The planned flight flown on paper along the nav log's rows, by its procedures and holds, going missed when asked.
  */
 fun Engine.dryRun(rows: List<EngineContract.NavLogRow>, startS: Double, line: List<List<JsonElement>>? = null, missed: Boolean? = null): Result<EngineContract.DryRunAnswer> =
     rule("dry_run", EngineContract.DryRunInput(rows = rows, startS = startS, line = line, missed = missed))
+
+/**
+ * How near a paperwork item falls due, as every app colours its row: past is a stop, within 30 days (the reminders' first email, the gateway's ReminderService) or 10 hours of time in service a caution, further off ok; unknown with neither. By its day where it has one, else its hours.
+ */
+fun Engine.dueTone(daysLeft: Double? = null, hoursLeft: Double? = null): Result<String> =
+    rule("due_tone", EngineContract.DueToneInput(daysLeft = daysLeft, hoursLeft = hoursLeft))
 
 /**
  * What to do in an emergency with no airplane picked: general good practice only, each item with its source -- fly the airplane and pick a field within reach (FAA-H-8083-3C ch. 18), ask for help early (AIM 6-1-2), squawk 7700 (AIM 6-2-2), MAYDAY on the frequency in use or 121.5 (AIM 6-3-1, 6-3-2), climb if possible (AIM 6-3-2), stay in VFR conditions and the pilot in command's authority to deviate (AIM 6-2-1, 6-1-1, 14 CFR 91.3(b)). No airplane's checklist, speeds, glide or distances.
@@ -1007,6 +1037,12 @@ fun Engine.ifrAlternateCheck(ident: String, approaches: EngineContract.IfrAltern
  */
 fun Engine.ifrAlternateDestination(ident: String, approaches: EngineContract.IfrAlternateInApproaches, forecast: EngineContract.IfrAlternateInForecast? = null): Result<EngineContract.IfrAlternateDestinationAnswer> =
     rule("ifr_alternate_destination", EngineContract.IfrAlternateIn(ident = ident, approaches = approaches, forecast = forecast))
+
+/**
+ * The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).
+ */
+fun Engine.ifrAlternateWindow(eta: Double, `for`: String): Result<EngineContract.IfrAlternateWindowAnswer> =
+    rule("ifr_alternate_window", EngineContract.IfrAlternateWindowInput(eta = eta, `for` = `for`))
 
 /**
  * The fields offered as the IFR alternate: those that will do, or that meet the standard minimums and publish their own, good first then nearest, `limit` of them.
@@ -1783,16 +1819,22 @@ fun Engine.tokens(text: String): Result<List<EngineContract.HeardToken>> =
     rule("tokens", EngineContract.TokensInput(text = text))
 
 /**
+ * Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.
+ */
+fun Engine.trafficFresh(ageS: Double? = null, planes: List<EngineContract.TrafficFreshInputPlanesItem>): Result<List<Boolean>> =
+    rule("traffic_fresh", EngineContract.TrafficFreshInput(ageS = ageS, planes = planes))
+
+/**
  * An airplane's kind from its ADS-B emitter category (GDL 90 Table 11).
  */
 fun Engine.trafficKind(category: String? = null): Result<String> =
     rule("traffic_kind", EngineContract.TrafficKindInput(category = category))
 
 /**
- * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159).
+ * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
  */
-fun Engine.trafficMarks(ownFt: Double? = null, planes: List<EngineContract.TrafficMarksInputPlanesItem>): Result<List<EngineContract.TrafficMarksAnswerItem>> =
-    rule("traffic_marks", EngineContract.TrafficMarksInput(ownFt = ownFt, planes = planes))
+fun Engine.trafficMarks(ownFt: Double? = null, planes: List<EngineContract.TrafficMarksInputPlanesItem>, own: EngineContract.TrafficMarksInputOwn? = null): Result<List<EngineContract.TrafficMarksAnswerItem>> =
+    rule("traffic_marks", EngineContract.TrafficMarksInput(ownFt = ownFt, planes = planes, own = own))
 
 /**
  * Whether an airplane heard passes the traffic list's filter.

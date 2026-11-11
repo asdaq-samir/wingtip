@@ -44,7 +44,7 @@ jobs:
   # keep no pip cache (6.5 of the Actions cache's 10 GB).
   test:
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes]
+    needs: [changes, engine-wheel]
     if: needs.changes.outputs.test-root == 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -71,9 +71,10 @@ jobs:
           python-version-file: .tool-versions
       - run: pip install uv
       - run: uv pip install --system -r services/planner/requirements-dev-wingtip.txt
-      # wingtip's Rust extension (engine/), in the light `ci` profile, built
-      # into the runner's own temp (two jobs on one machine share /tmp).
-      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
+      # wingtip's Rust extension (engine/), built once a run by engine-wheel.
+      - uses: ./.github/actions/engine-wheel
+        with:
+          mode: install
       # The engine's tests, its crates' layering (engine/README.md), no unused
       # dependency (cargo-machete), rustfmt and clippy with warnings denied.
       - run: python3 scripts/ci/engine_layers.py
@@ -234,101 +235,77 @@ jobs:
                       print(f"::error title={test}::{text}")
           EOF
 
-  # The planner's FastAPI suite, on its own requirements.
-  test-planner:
+  # wingtip's Rust extension (engine/bindings/py), built once a run and
+  # handed to every job that imports it as the artifact engine-wheel
+  # (.github/actions/engine-wheel): from the cache when engine/ is
+  # unchanged, seconds; built only when it changed.
+  engine-wheel:
+    name: Engine wheel
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     needs: [changes]
-    if: needs.changes.outputs.test-planner == 'true'
+    if: needs.changes.outputs.docs-only != 'true' || needs.changes.outputs.test-root == 'true' || needs.changes.outputs.python != '[]'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: ./.github/actions/engine-wheel
+        with:
+          mode: build
+
+  # The Python services' suites, one leg each where `changes` found its
+  # filter touched (test-planner, test-ingest, test-assistant, test-weather
+  # in scripts/areas.yml): ruff and pytest in services/<service>, on its own
+  # requirements. Each leg keeps the old job's name, so its budget and check
+  # are unchanged; none to run skips the job, which counts as passed.
+  test-python:
+    name: test-${{ matrix.service }}
+    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
+    needs: [changes, engine-wheel]
+    if: needs.changes.outputs.python != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJSON(needs.changes.outputs.python) }}
     defaults:
       run:
-        working-directory: services/planner
+        working-directory: services/${{ matrix.service }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       # The planner's reference data with the charts and tiles, a week at a
       # time: its first C81-KDLH plans read the corridor's tiles (185 of 215 s
       # uncached, run 42302178567).
       - name: The week, for the reference data's cache
+        if: matrix.service == 'planner'
         id: week
         run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
-      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+      - if: matrix.service == 'planner'
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         id: raw
         with:
           path: data/raw
           key: tests-raw-planner-v2-${{ steps.week.outputs.week }}
           restore-keys: tests-raw-planner-v2-
-      - if: steps.raw.outputs.cache-hit != 'true'
+      - if: matrix.service == 'planner' && steps.raw.outputs.cache-hit != 'true'
         run: echo "::notice title=Cache miss::tests-raw-planner (weekly key)"
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
         with:
           python-version-file: .tool-versions
       - run: pip install uv
       - run: uv pip install --system -r requirements-dev.txt
-      # The planner imports wingtip's Rust extension (engine/), as in the test job.
-      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
-      - run: ruff check app tests
+      # The planner, ingest and weather import wingtip's Rust extension; the
+      # assistant does not (Claude and the planner are stood in for).
+      - if: matrix.service != 'assistant'
+        uses: ./.github/actions/engine-wheel
+        with:
+          mode: install
+      # The assistant's client and tools are generated
+      # (scripts/build/assistant_client.py) and checked.
+      - name: Generated code matches its sources
+        if: matrix.service == 'assistant'
+        run: python ../../scripts/build/assistant_client.py --check
+      - run: ruff check ${{ matrix.service == 'ingest' && 'ingest' || 'app' }} tests
       # The planner's import contracts (services/planner/.importlinter), for
       # app and wingtip alike: the one job that runs them.
-      - run: lint-imports
-      - run: pytest tests/ -v
-
-  # ingest's suite (services/ingest, #535).
-  test-ingest:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes]
-    if: needs.changes.outputs.test-ingest == 'true'
-    defaults:
-      run:
-        working-directory: services/ingest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
-        with:
-          python-version-file: .tool-versions
-      - run: pip install uv
-      - run: uv pip install --system -r requirements-dev.txt
-      # wingtip imports its Rust extension (engine/), as in the test job.
-      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
-      - run: ruff check ingest tests
-      - run: pytest tests/ -v
-
-  # The assistant's suite: Claude and the planner stood in for; its client
-  # and tools are generated (scripts/build/assistant_client.py) and checked.
-  test-assistant:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes]
-    if: needs.changes.outputs.test-assistant == 'true'
-    defaults:
-      run:
-        working-directory: services/assistant
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
-        with:
-          python-version-file: .tool-versions
-      - run: pip install uv
-      - run: uv pip install --system -r requirements-dev.txt
-      - name: Generated code matches its sources
-        run: python ../../scripts/build/assistant_client.py --check
-      - run: ruff check app tests
-      - run: pytest tests/ -v
-
-  # The weather service's suite, the network stubbed.
-  test-weather:
-    runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes]
-    if: needs.changes.outputs.test-weather == 'true'
-    defaults:
-      run:
-        working-directory: services/weather
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0  # v7.1.0
-        with:
-          python-version-file: .tool-versions
-      - run: pip install uv
-      - run: uv pip install --system -r requirements-dev.txt
-      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m ../../engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
-      - run: ruff check app tests
+      - if: matrix.service == 'planner'
+        run: lint-imports
       - run: pytest tests/ -v
 
   # What this run has to do, from what changed: the one job the others wait
@@ -347,10 +324,7 @@ jobs:
       test-root: ${{ steps.plan.outputs.test-root }}
       test-web: ${{ steps.plan.outputs.test-web }}
       test-gateway: ${{ steps.plan.outputs.test-gateway }}
-      test-planner: ${{ steps.plan.outputs.test-planner }}
-      test-ingest: ${{ steps.plan.outputs.test-ingest }}
-      test-assistant: ${{ steps.plan.outputs.test-assistant }}
-      test-weather: ${{ steps.plan.outputs.test-weather }}
+      python: ${{ steps.plan.outputs.python }}
       docs: ${{ steps.plan.outputs.docs }}
       infra: ${{ steps.plan.outputs.infra }}
       android: ${{ steps.plan.outputs.android }}
@@ -560,6 +534,7 @@ jobs:
                 - services/gateway/**
                 - services/assistant/openapi.json
                 - services/planner/openapi.json
+                - apps/web/src/lib/fixtures/aircraftForm.json
               ios:
                 - apps/ios/**
                 - engine/**
@@ -642,9 +617,10 @@ jobs:
           due = lambda name: everything or name in changed
           images = [{"service": s} for s in IMAGES if due(s)]
           outputs = {"images": json.dumps(images)}
-          for name in ("test-root", "test-web", "test-gateway", "test-planner", "test-ingest", "test-assistant", "test-weather",
-                       "docs", "infra", "api", "arch", "site"):
+          for name in ("test-root", "test-web", "test-gateway", "docs", "infra", "api", "arch", "site"):
               outputs[name] = "true" if due(name) else "false"
+          # test-python's legs: the services whose test-<service> filter matched.
+          outputs["python"] = json.dumps([s for s in ("planner", "ingest", "assistant", "weather") if due(f"test-{s}")])
           # The phones' builds gate a merge: a pull request, or a run
           # started by hand on one's branch. Main's pushes and the nights
           # have native-android.yml and native-ios.yml for them, so they
@@ -1390,7 +1366,7 @@ jobs:
   # gets a small CI).
   flight-critical:
     name: Flight-critical
-    needs: [changes]
+    needs: [changes, engine-wheel]
     if: needs.changes.outputs.docs-only != 'true'
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 20
@@ -1402,8 +1378,10 @@ jobs:
         with:
           python-version-file: .tool-versions
       - run: pip install uv && uv pip install --system -r services/planner/requirements-dev.txt
-      # The planner asks the engine every rule (wingtip_native), as in test-planner.
-      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o "$RUNNER_TEMP"/native && uv pip install --system "$RUNNER_TEMP"/native/*.whl
+      # The planner asks the engine every rule (wingtip_native), built by engine-wheel.
+      - uses: ./.github/actions/engine-wheel
+        with:
+          mode: install
       - name: The planner's nav log and nearest fields
         working-directory: services/planner
         run: pytest tests/test_flight_critical.py -v
@@ -1650,6 +1628,7 @@ jobs:
   # five times in random order; a test that passed and failed is flaky.
   flake-hunt-python:
     name: Flake hunt (${{ matrix.suite }})
+    needs: [engine-wheel]
     if: github.event_name == 'schedule'
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 45
@@ -1684,7 +1663,9 @@ jobs:
           python-version-file: .tool-versions
       - run: pip install uv
       - run: uv pip install --system -r services/planner/${{ matrix.suite == 'wingtip' && 'requirements-dev-wingtip.txt' || 'requirements-dev.txt' }}
-      - run: uv pip install --system maturin==1.16.0 && maturin build --profile ci --compatibility linux -m engine/bindings/py/Cargo.toml -o /tmp/native && uv pip install --system /tmp/native/*.whl
+      - uses: ./.github/actions/engine-wheel
+        with:
+          mode: install
       # Each run's seed is at the top of its output ("Using --randomly-seed=N").
       - name: Five runs in random order
         working-directory: services/planner
@@ -1792,7 +1773,7 @@ jobs:
   # (scripts/ci/ci_budget.py). Last, after every job; seconds.
   budget:
     name: CI budget
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, e2e, e2e-images, build-images, dependency-review, rules-boundary, flight-critical, architecture, site, links, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, passed]
+    needs: [changes, test, test-web, test-gateway, engine-wheel, test-python, e2e, e2e-images, build-images, dependency-review, rules-boundary, flight-critical, architecture, site, links, docs, infra, android, ios, api-compat, standards, flake-hunt-python, flake-hunt-web, flake-report, sources, passed]
     if: ${{ !cancelled() }}
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 3
@@ -1818,7 +1799,7 @@ jobs:
   passed:
     name: CI passed
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
-    needs: [changes, test, test-web, test-gateway, test-planner, test-ingest, test-assistant, test-weather, docs, infra, api-compat, rules-boundary, flight-critical, architecture, links, site, android, ios]
+    needs: [changes, test, test-web, test-gateway, engine-wheel, test-python, docs, infra, api-compat, rules-boundary, flight-critical, architecture, links, site, android, ios]
     if: always()
     steps:
       - name: Every job passed or was not needed

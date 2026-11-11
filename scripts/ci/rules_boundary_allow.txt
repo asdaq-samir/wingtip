@@ -27,3 +27,34 @@ services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService
 # feeds are made (RVR each minute, AIM 7-1-13), a polling cadence. What a
 # report means for the flight is the engine's (rvr_check, the Go / No-Go).
 apps/web/src/lib/liveReports.ts 1
+
+# The sphere's figures where they are deliberately the host's own: the
+# planner's wingtip.geo (pyproj, which the engine's core::geo is held to)
+# and the web map's lib/geo (MapLibre's drawing between frames). The phones
+# ask the engine's distance_nm, bearing_deg and destination.
+services/planner/wingtip/geo.py 1
+apps/web/src/lib/geo.ts 1
+
+# The planner's wingtip/, scanned since 2026-11-10. Readers' and caches'
+# own bounds, not a figure a flight is planned by: the towns looked for
+# round a point (wider than the engine's 91.119(b) radius, so none at its
+# edge is missed); the sea floor in the terrain tiles (below Badwater
+# Basin a pixel is the sea's); the most an RVR system reports, as its feed
+# is read; how long the special use airspace set is served while the
+# service is down (a NASR cycle); the obstacle file's own threshold for an
+# obstacle that counts (faa_data); where a recorded track is taken to
+# start at a field; how far a station's report is said of a field (a
+# design choice, its comment says so).
+services/planner/wingtip/congested.py 1
+services/planner/wingtip/elevation.py 1
+services/planner/wingtip/rvr.py 1
+services/planner/wingtip/sua.py 1
+services/planner/wingtip/terrain_view.py 1
+services/planner/wingtip/traffic/flights.py 1
+services/planner/wingtip/weather.py 1
+# Still to move into the engine (#482): how long a D-ATIS is the
+# airport's, a coded course reversal's turn and an open leg's drawn
+# length (the engine draws the rest of a procedure's legs).
+services/planner/wingtip/datis.py 1
+services/planner/wingtip/procedure_paths.py 1
+services/planner/wingtip/procedures.py 1

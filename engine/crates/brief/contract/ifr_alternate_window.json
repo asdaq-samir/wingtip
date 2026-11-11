@@ -1,0 +1,47 @@
+{
+  "x-call": "wingtip_brief::alternates::call",
+  "description": "The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "IfrAlternateWindowInput",
+      "type": "object",
+      "properties": {
+        "eta": {
+          "type": "number"
+        },
+        "for": {
+          "enum": [
+            "destination",
+            "alternate"
+          ]
+        }
+      },
+      "required": [
+        "eta",
+        "for"
+      ]
+    },
+    "answer": {
+      "title": "IfrAlternateWindowAnswer",
+      "type": "object",
+      "properties": {
+        "start": {
+          "type": "number"
+        },
+        "end": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "start",
+        "end"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

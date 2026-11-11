@@ -202,9 +202,9 @@ def airport_index(*, v: int | None = None) -> Any:
 _NEAREST_AIRPORTS = _Answer(m.NearestAirports)
 
 
-def nearest_airports(*, lat: float, lon: float, limit: int | None = None) -> m.NearestAirports:
+def nearest_airports(*, lat: float, lon: float, limit: int | None = None, at: float | None = None) -> m.NearestAirports:
     """GET /api/airports/nearest: Nearest Airports"""
-    found = _send('GET', '/api/airports/nearest', query={'lat': lat, 'lon': lon, 'limit': limit}, body=None, headers={})
+    found = _send('GET', '/api/airports/nearest', query={'lat': lat, 'lon': lon, 'limit': limit, 'at': at}, body=None, headers={})
     return _NEAREST_AIRPORTS.validate_python(found)
 
 

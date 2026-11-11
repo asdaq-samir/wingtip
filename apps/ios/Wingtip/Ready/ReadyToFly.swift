@@ -118,9 +118,15 @@ final class ReadyToFly {
         let key = "\(Self.flightKey(plan))|\(plan.course?.distanceNm ?? 0)|\(template?.cycle ?? "")"
         guard force || key != storeFor else { return }
         let line = plan.course?.coordinates ?? []
-        let tiles = line.isEmpty ? [] : KeepRoute.tiles(along: line, minZoom: max(charts?.base?.minZoom ?? 6, 6), maxZoom: 10)
-        let regions = line.isEmpty ? [] : CyclePacks.regions(along: line)
-        store = await ReadyStore.look(tiles: tiles, template: template, regions: regions)
+        do {
+            let tiles = line.isEmpty ? [] : try KeepRoute.tiles(along: line, minZoom: max(charts?.base?.minZoom ?? 6, 6), maxZoom: 10)
+            let regions = line.isEmpty ? [] : try CyclePacks.regions(along: line)
+            store = await ReadyStore.look(tiles: tiles, template: template, regions: regions)
+        } catch {
+            // The corridor not known, nothing is said to be kept for it.
+            Log.engine.error("distance_nm: \(error.localizedDescription, privacy: .public)")
+            store = ReadyStore(chartsKept: false, chartEdition: nil, packEdition: nil)
+        }
         storeFor = key
     }
 
@@ -163,7 +169,12 @@ final class ReadyToFly {
                 KeepForAir.shared.keep(plan: plan, template: template, minZoom: charts.base?.minZoom ?? 6, verdict: verdict, signedIn: session?.signedIn ?? false)
             }
         case "update_packs":
-            await CyclePacks.shared.keep(regions: plan.course.map { CyclePacks.regions(along: $0.coordinates) } ?? [])
+            do {
+                let regions = try plan.course.map { try CyclePacks.regions(along: $0.coordinates) } ?? []
+                await CyclePacks.shared.keep(regions: regions)
+            } catch {
+                Log.engine.error("distance_nm: \(error.localizedDescription, privacy: .public)")
+            }
             await lookAtStore(force: true)
         case "refresh_weather":
             if plan.routed { await plan.brief(dep: plan.dep, dest: plan.dest, stops: plan.stops, eteMin: plan.totals?.eteMin) }

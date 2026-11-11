@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Gateway
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.gateway.FlightCheckpointDto
 import app.wingtipmaps.android.api.generated.gateway.SharedFlightDto
 import app.wingtipmaps.android.navigation.ScreenRequests
@@ -67,7 +68,7 @@ class SharedFlightModel(app: Application) : AndroidViewModel(app) {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                State.Problem(e.message ?: "The flight could not be read.")
+                State.Problem(Problems.say("The flight could not be read", e))
             }
         }
     }

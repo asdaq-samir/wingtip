@@ -85,7 +85,7 @@ class AssistantTest {
     fun aPlannerWithoutTheAssistantIsSaidSo() {
         assertEquals(Assistant.NOT_HERE, Assistant.words(Planner.Failure(404, "Not Found")))
         assertEquals("The model is busy.", Assistant.words(Planner.Failure(503, "The model is busy.")))
-        assertEquals("The assistant could not be reached: timeout", Assistant.words(IOException("timeout")))
+        assertEquals("The assistant could not be reached: there is no connection to Wingtip.", Assistant.words(IOException("timeout")))
     }
 
     @Test

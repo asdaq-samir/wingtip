@@ -9,7 +9,7 @@ struct NavigatorTests {
     @Test func aThingOpensHalfWayAndAPageFull() throws {
         let nav = Navigator()
         nav.open(.airport("KOSH"))
-        #expect(nav.card?.page == .airport("KOSH") && nav.cardDetent == .medium)
+        #expect(nav.card?.page == .airport("KOSH") && nav.cardDetent == .half)
         nav.open(.screen(.setup))
         #expect(nav.card?.page == .screen(.setup) && nav.cardDetent == .large)
     }

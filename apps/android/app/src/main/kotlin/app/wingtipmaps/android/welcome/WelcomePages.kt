@@ -51,7 +51,7 @@ internal fun WelcomePage(step: Step, state: WelcomeModel.State, plan: Plan, mode
                 val profiles by airplanes.profiles.collectAsStateWithLifecycle()
                 val problem by airplanes.problem.collectAsStateWithLifecycle()
                 AirplanePicker(profiles, selected = state.airplane, onPick = model::pickAirplane)
-                ProblemLine(problem)
+                ProblemLine(problem, onRetry = airplanes::load)
             }
             Step.HOME -> {
                 Words(R.string.welcome_home, R.string.welcome_home_line)
@@ -89,7 +89,7 @@ private fun HomeSearch(home: String?, onPick: (String) -> Unit) {
         label = { Text(stringResource(R.string.airport)) }, singleLine = true,
         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, imeAction = ImeAction.Search),
     )
-    ProblemLine(found.problem)
+    ProblemLine(found.problem, onRetry = { search.search(found.query) })
     if (found.loading && found.suggestions.isEmpty()) LoadingRow()
     if (found.query.isNotBlank()) {
         found.suggestions.take(SHOWN).forEach { field ->
