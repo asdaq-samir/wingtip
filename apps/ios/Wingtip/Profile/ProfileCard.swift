@@ -51,6 +51,7 @@ struct ProfileCard: View {
                 }
                 .listRowInsets(EdgeInsets())
                 previewRow(shown, clear: clear)
+                ProblemLine(plan.sideProblems[.profile])
                 ProblemLine(dryRun.problem)
                 ProblemLine(advisor, "The Altitude Advisor")
                 if let clear { ProblemLine(clear, "The ground's clearance") }

@@ -53,12 +53,14 @@ struct NavLogPage: View {
                     ProfileChart(profile: plan.profile, legs: plan.legs, previewFt: nil, clearance: try? clear?.get())
                         .frame(height: 180)
                         .listRowInsets(EdgeInsets())
+                    ProblemLine(plan.sideProblems[.profile])
                     // The ground left uncoloured is said, never taken for clear.
                     if let clear { ProblemLine(clear, "The ground's clearance") }
                 }
                 Section {
                     // The nav log kept, shown with no signal, with its age.
                     KeptAgeLine(kind: .plan, key: ReadyToFly.flightKey(plan))
+                    ProblemLine(plan.sideProblems[.checkpoints])
                     ForEach(Array(plan.legs.enumerated()), id: \.element.id) { i, leg in
                         // The one Route Leg card, pushed in the nav log's own card.
                         let index = RouteLegModel.index(of: leg, at: i, plan: plan)
