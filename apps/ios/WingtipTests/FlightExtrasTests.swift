@@ -155,6 +155,22 @@ struct RouteEditsTests {
         plan.clear()
         #expect(plan.extras == RouteExtras())
     }
+
+    @Test func aDirectToWithNoConnectionPutsTheRouteBackAndSaysSo() {
+        let plan = Plan()
+        plan.dep = "C81"; plan.dest = "KDLH"; plan.stops = ["KJVL", "KMSN"]
+        let before = plan.routeState
+        plan.directTo("KMSN", from: nil)
+        // Held until the nav log is whole, for the planner's failure.
+        #expect(plan.directFrom == before)
+        plan.undoDirect(before)
+        #expect(plan.stops == ["KJVL", "KMSN"] && plan.extras.direct == nil && plan.extras.was == nil)
+        #expect(plan.directProblem?.hasPrefix("Not changed: no connection") == true)
+        #expect(plan.directFrom == nil)
+        // The next plan clears it.
+        plan.plan()
+        #expect(plan.directProblem == nil)
+    }
 }
 
 /// The traffic's words, colours and alerts.

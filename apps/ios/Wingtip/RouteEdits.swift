@@ -188,12 +188,21 @@ extension Plan {
     func directTo(_ ident: String, from fix: OwnShip.Fix?) {
         let was = extras.was ?? current
         guard let route = RouteExtras.directed(was, to: ident, from: fix.map(RouteExtras.position)) else { return }
+        let before = routeState
         dep = route.dep; stops = route.stops; dest = route.dest
         extras.was = was
         extras.direct = ident
         extras.procedureDirect = [:]
         Feel.tap(.directTo)
+        planDirect(before)
+    }
+
+    /// A Direct to planned, the route before it held until the nav log is
+    /// whole: with no connection it is put back and said so (Plan's
+    /// undoDirect), as the phone can't give the new route's legs alone.
+    private func planDirect(_ before: RouteState) {
         plan()
+        directFrom = before
     }
 
     /// The Direct to taken back: the route as it was.
@@ -210,12 +219,13 @@ extension Plan {
     /// it was kept for Cancel.
     func divert(to ident: String, from fix: OwnShip.Fix) {
         let was = extras.was ?? current
+        let before = routeState
         dep = RouteExtras.position(fix); stops = []; dest = ident
         extras.was = was
         extras.direct = ident
         extras.procedureDirect = [:]
         Feel.tap(.directTo)
-        plan()
+        planDirect(before)
     }
 
     /// A hold set at a point, changed, or (nil) taken off: one a point.
@@ -293,6 +303,7 @@ extension Plan {
             best = stops.count
         }
         let index = min(stops.count, best)
+        let before = routeState
         if then == .direct {
             let was = extras.was ?? current
             if let fix { dep = RouteExtras.position(fix) }
@@ -301,9 +312,10 @@ extension Plan {
             extras.direct = ident
             extras.procedureDirect = [:]
             Feel.tap(.directTo)
+            planDirect(before)
         } else {
             stops.insert(ident, at: index)
+            plan()
         }
-        plan()
     }
 }

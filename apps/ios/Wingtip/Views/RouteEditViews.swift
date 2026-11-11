@@ -96,6 +96,8 @@ struct DirectStrip: View {
                 Button("Cancel") { plan.cancelDirect() }
             }
         }
+        // A Direct to that couldn't be planned, said where it was asked.
+        ProblemLine(plan.directProblem)
     }
 }
 
