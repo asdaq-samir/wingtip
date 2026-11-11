@@ -147,3 +147,12 @@ fn its_title_names_the_thing_its_subject_words_say() {
         assert_eq!(title(text).as_deref(), want, "{text}");
     }
 }
+
+#[test]
+fn a_domestic_notam_ending_in_a_case_number_is_still_domestic() {
+    // An FAA obstruction case number, "(2024-AGL-13315-OE)", ends in "E)":
+    // not the ICAO form's E) item, which starts a word (JO 7930.2 Appendix B).
+    let r = read("!FDC 6/4917 ORD IAP CHICAGO O'HARE INTL, CHICAGO, IL.\nRNAV (GPS)  RWY 4R, AMDT 1D...\nTEMPORARY CRANE 788 MSL 5934FT SW OF RWY 4R (2024-AGL-13315-OE). 2611031515-2706152355EST", &[]);
+    assert_eq!((r.form, r.keyword.as_deref()), ("domestic", Some("IAP")));
+    assert!(r.words.starts_with("Chicago O'Hare International"), "{}", r.words);
+}

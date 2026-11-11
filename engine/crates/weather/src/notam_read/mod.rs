@@ -269,7 +269,11 @@ pub fn read(text: &str, idents: &[String]) -> NotamRead {
     if t.bytes().any(|b| b.is_ascii_lowercase()) {
         return NotamRead { form: "text", words: t.to_owned(), ..NotamRead::default() };
     }
-    let mut r = if t.contains("Q)") || t.contains("E)") { icao(t, idents) } else { domestic(t, idents) };
+    // The ICAO form by its items, each starting a word (JO 7930.2 Appendix
+    // B), not any "E)" in the words: a domestic NOTAM's FAA case number,
+    // "(2024-AGL-13315-OE)", ends in one.
+    let mut r =
+        if !t.starts_with('!') && (item(t, b'Q').is_some() || item(t, b'E').is_some()) { icao(t, idents) } else { domestic(t, idents) };
     r.title = title::title(t);
     r
 }

@@ -111,6 +111,22 @@ def test_a_domestic_notam_is_kept_by_its_number_in_the_words_a_briefing_gives():
     assert notams.since() == NOW
 
 
+def test_the_feeds_html_inside_its_xml_is_read_as_the_text_it_is():
+    # The FAA sends a NOTAM's text as HTML inside the XML: "O&apos;HARE"
+    # once decoded, read as someone's own words for its lower case.
+    feed = message(
+        location="ORD",
+        text="IAP CHICAGO O&amp;apos;HARE INTL",
+        start="202611031515",
+        end="202706152355",
+        domestic="!FDC 6/4918 ORD IAP CHICAGO O&amp;apos;HARE INTL, CHICAGO, IL. ILS Z RWY 10R 2611031515-2706152355",
+        icao_location="KORD",
+    )
+    assert notams.heard(feed, now=NOW) == 1
+    [kept] = notams.at_fields(["KORD"], now=NOW)
+    assert kept["raw"].startswith("!FDC 6/4918 ORD IAP CHICAGO O'HARE INTL")
+
+
 def test_a_notam_is_let_go_once_it_ends_and_one_estimated_says_so():
     notams.heard(RUNWAY, now=NOW)
     assert notams.at_fields(["KORD"], now=NOW + 9 * 3600) == []

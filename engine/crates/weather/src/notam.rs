@@ -189,7 +189,13 @@ pub fn from_fns(text: &str) -> Vec<Notam> {
                 _ => {}
             }
         }
-        let text = get("text");
+        // The FAA's text is HTML inside the XML: one decoding leaves its own
+        // entities ("O&apos;HARE"), whose lower case then read as someone's
+        // own writing (notam_read). Decoded again; kept as it is where that
+        // fails (a bare "&" in the words).
+        let html = |s: String| xml::unescape(&s).unwrap_or(s);
+        let (domestic, icao) = (domestic.map(html), icao.map(html));
+        let text = html(get("text"));
         // An empty ICAO form is none, as Python's `icao or text` reads it.
         let icao_or_text = icao.as_deref().filter(|i| !i.is_empty()).unwrap_or(&text);
         let found = fns_icao_id(icao_or_text);
