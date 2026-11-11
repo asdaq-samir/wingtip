@@ -63,7 +63,7 @@ for (const row of CARDS) {
       const pinned = page.getByTestId(row.card).getByTestId("card-head-pinned");
       if (await pinned.isVisible()) {
         const head = (await pinned.boundingBox())!;
-        const body = (await panel(page).locator("[data-panel-body]").boundingBox())!;
+        const body = (await panel(page).locator("[data-sheet-scroll]").boundingBox())!;
         expect(Math.abs(head.y - body.y), "the pinned head's top against the sheet's content top").toBeLessThanOrEqual(2);
         const over = await page.evaluate(
           ([x, y, card]) => {
@@ -155,8 +155,10 @@ for (const row of CARDS) {
  * The airport card opened FROM THE PILL, the path that failed on the
  * owner's iPhone (2026-11-10): the search row went as the sheet rose, the
  * head's height was not measured again, and the card's pinned head sat
- * that far down the sheet with the card scrolling above it. At the bottom
- * edge and in the top layout (the preferences' navBar "top") alike.
+ * that far down the sheet with the card scrolling above it. Nothing is
+ * measured now (the head sticky in the sheet's one scroller); this holds
+ * it. At the bottom edge and in the top layout (the preferences' navBar
+ * "top") alike.
  */
 for (const edge of ["bottom", "top"] as const) {
   test(`opened from the pill (${edge} layout), scrolled to its end, its pinned head is at the sheet's content top`, async ({ page }) => {
@@ -178,7 +180,7 @@ for (const edge of ["bottom", "top"] as const) {
     await expect(pinned).toBeVisible();
     await expect(async () => {
       const head = (await pinned.boundingBox())!;
-      const body = (await panel(page).locator("[data-panel-body]").boundingBox())!;
+      const body = (await panel(page).locator("[data-sheet-scroll]").boundingBox())!;
       expect(Math.abs(head.y - body.y)).toBeLessThanOrEqual(2);
     }).toPass({ timeout: slow(5_000) });
     const head = (await pinned.boundingBox())!;

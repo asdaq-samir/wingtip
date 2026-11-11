@@ -16,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../../components
 import { SectionsOpen } from "../../../../components/sectionLayout";
 import { GoToTab, LEGS, useTabAsk, type PanelTab } from "./panelTab";
 import { holdOpenCard } from "../../../../lib/openCards";
+import { sheetScroller } from "../../../../lib/scrollPlace";
 
 /** The panel's tabs in the order the flight is flown, at the owner's pick
  *  of the redesign ("I like C concept"): Preflight -- the go / no-go and
@@ -103,30 +104,13 @@ export default function PanelTabs({
   const [tab, setTab] = useState<PanelTab | null>(Overview ? null : "preflight");
   const [opened, setOpened] = useState<PanelTab[]>(Overview ? [] : ["preflight"]);
   if (tab && !opened.includes(tab)) setOpened([...opened, tab]);
-  const scroller = useRef<HTMLDivElement>(null);
-  // The card's own head -- what comes before the tabs (its title) and the
-  // tabs -- that the scroller runs on up under as under the map panel's,
-  // at the owner's ask ("look at this for the see-through under the top
-  // bar"): the scroller reaches up by both heads (--head-room on the
-  // tabs' root, the panel's own head --panel-head and this one's foot in
-  // the panel's body).
-  const [localHead, setLocalHead] = useState<HTMLDivElement | null>(null);
-  useEffect(() => {
-    const root = localHead?.parentElement;
-    const body = localHead?.closest<HTMLElement>("[data-panel-body]");
-    if (!localHead || !root || !body) return;
-    const measure = () => {
-      const foot = Math.max(0, Math.round(localHead.getBoundingClientRect().bottom - body.getBoundingClientRect().top));
-      root.style.setProperty("--head-room", `calc(var(--panel-head, 0px) + ${foot}px)`);
-    };
-    measure();
-    const watch = new ResizeObserver(measure);
-    watch.observe(localHead);
-    return () => {
-      watch.disconnect();
-      root.style.removeProperty("--head-room");
-    };
-  }, [localHead]);
+  // The pages, laid out whole in the sheet's one scroller (SheetParts),
+  // which scrolls them: its place kept for each page.
+  const pages = useRef<HTMLDivElement>(null);
+  // The card's own head -- its title and the tabs -- sticky at the
+  // scroller's top, the pages passing under it (the owner's ask: "look at
+  // this for the see-through under the top bar").
+  const localHead = useRef<HTMLDivElement>(null);
   // The tab that was up as a finger or a key pressed one, read at its
   // click, by when Base UI has made the pressed one the tab up: whether
   // the tap was on the tab already up.
@@ -138,7 +122,8 @@ export default function PanelTabs({
   const [asked, setAsked] = useState(0);
   const choose = useCallback(
     (next: string | null) => {
-      if (scroller.current) scrolls.current[tab ?? "overview"] = scroller.current.scrollTop;
+      const box = sheetScroller(pages.current);
+      if (box) scrolls.current[tab ?? "overview"] = box.scrollTop;
       // Slid in as a page of a stack, forward to a later page or from the
       // overview, back to an earlier one (lib/viewTransition).
       pageStep(PAGE_ORDER.indexOf(next as PanelTab | null) >= PAGE_ORDER.indexOf(tab), () => setTab(next as PanelTab | null));
@@ -164,21 +149,19 @@ export default function PanelTabs({
     [choose, onLegs],
   );
   useLayoutEffect(() => {
-    const box = scroller.current;
+    const box = sheetScroller(pages.current);
     if (!box) return;
     box.scrollTop = scrolls.current[tab ?? "overview"] ?? 0;
     const section = wanted.current;
     wanted.current = null;
     if (!section) return;
-    // To the section's top, under the tabs; twice, the second after a
+    // To the section's top, under the head; twice, the second after a
     // frame, as the sections above it are laid out only near the screen
     // (content-visibility) and the first move is on their estimates.
     const to = () => {
       const target = box.querySelector(`[data-tab="${tab}"] [data-title="${CSS.escape(section)}"]`);
-      // Under the heads it runs on up under (its scroll padding), not under them.
-      if (target)
-        box.scrollTop +=
-          target.getBoundingClientRect().top - box.getBoundingClientRect().top - (parseFloat(getComputedStyle(box).scrollPaddingTop) || 0);
+      const under = localHead.current?.getBoundingClientRect().bottom ?? box.getBoundingClientRect().top;
+      if (target) box.scrollTop += target.getBoundingClientRect().top - under;
     };
     to();
     const frame = requestAnimationFrame(to);
@@ -210,10 +193,10 @@ export default function PanelTabs({
     // is no viewport to clip to, and a route long enough to scroll
     // would otherwise print only whatever page's worth happened to be
     // visible.
-    // Not clipped: its scroller runs on up under the heads over it
-    // (under-head), and clips what it holds itself.
-    <Tabs value={tab ?? ""} onValueChange={choose} className="flex min-h-0 flex-1 flex-col gap-0 print:h-auto">
-      <div ref={setLocalHead} className="relative z-10 flex shrink-0 flex-col">
+    // Laid out whole in the sheet's one scroller, its head sticky at the
+    // top and frosted, the pages passing under it.
+    <Tabs value={tab ?? ""} onValueChange={choose} className="flex shrink-0 flex-col gap-0 print:h-auto">
+      <div ref={localHead} className="frost-head sticky top-(--sheet-head,0px) z-20 flex shrink-0 flex-col print:static">
         {before}
         {/* The stock line tabs, as the consoles' (ConsoleTabs), over the
           scroller so they stay as it scrolls: an icon over its word, at a
@@ -265,12 +248,12 @@ export default function PanelTabs({
       </div>
       <ViewTransition update={PAGE_STEP} enter="none" exit="none" default="none">
         <div
-          ref={scroller}
+          ref={pages}
           // The bottom inset clears the home indicator on an installed
           // app, so the last section's content is not under it.
           // `flight-briefing`: index.css's print rules lay every tab out on
           // paper.
-          className="flight-briefing @container under-head min-h-0 flex-1 overflow-auto pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))] print:h-auto print:overflow-visible print:pb-0"
+          className="flight-briefing @container pr-4 pb-[env(safe-area-inset-bottom)] pl-[max(1rem,env(safe-area-inset-left))] print:h-auto print:pb-0"
           data-testid="brief-scroller"
         >
           {notice}

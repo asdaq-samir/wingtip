@@ -1157,10 +1157,12 @@ its reason:
   are the stock way, and each moves as its section is next changed.
 - **Map gestures** (the ruler's two-finger hold, the zoom banner): on
   MapLibre's canvas, where no stock component reaches.
-- **The map's buttons on the sheet's top** (`sheet/sheetCover`): outside
-  the Drawer's tree, so its CSS variables do not reach them; set once per
-  snap point on the Drawer's curve. Under a finger they wait for the
-  throw.
+- **The radio's button and the first flight's card on the sheet's top**
+  (`sheet/sheetTop`, `OnSheetTop`): a portal into a slot in the Drawer's
+  popup just over its top edge (`bottom: 100%`), so they move with the
+  sheet under a finger and on its curve; the popup's corners are clipped
+  on an inner box, not the popup, which they stand outside of. Base UI has
+  no prop for parts riding a drawer; this uses only its popup's own box.
 - **The side panel's Escape** (MapPanel, from `md` up): a plain region,
   not a Drawer, so no stock component hears the key for it.
 - **The departure hours' semantics:** Base UI's ToggleGroup gives pressed

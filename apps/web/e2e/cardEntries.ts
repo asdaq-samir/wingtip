@@ -146,12 +146,15 @@ export async function expectBack(page: Page, back: Back) {
   if (back === "profile") await expect(page.getByTestId("profile-card")).toBeVisible();
 }
 
-/** The scroller of a card: the card itself or the first element in it that scrolls up and down. */
+/** The scroller of a card: the first element in it that scrolls up and
+ *  down (a list of its own, StopsCard's), else the sheet's one scroller it
+ *  is laid out in (SheetParts' data-sheet-scroll). */
 export async function scrollOf(page: Page, card: string, to?: number | "end") {
   return page.getByTestId(card).evaluate((root, y) => {
     const all = [root, ...root.querySelectorAll<HTMLElement>("*")];
     const box =
-      all.find((el) => ["auto", "scroll"].includes(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1) ?? null;
+      all.find((el) => ["auto", "scroll"].includes(getComputedStyle(el).overflowY) && el.scrollHeight > el.clientHeight + 1) ??
+      root.closest<HTMLElement>("[data-sheet-scroll]");
     if (!box) return { top: -1, max: 0 };
     if (y != null) box.scrollTo({ top: y === "end" ? box.scrollHeight : y });
     return { top: box.scrollTop, max: box.scrollHeight - box.clientHeight };

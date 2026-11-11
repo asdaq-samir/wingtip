@@ -1,7 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
-import { firstRow, sideDrawer, slow } from "./helpers";
+import { firstRow, grabberTo, settled, sideDrawer, slow } from "./helpers";
 import { CARDS, type CardRow, type Entry } from "./cardTable";
-import { expectBack, hittable } from "./cardEntries";
+import { expectBack, hittable, scrollOf } from "./cardEntries";
 
 /**
  * Opening and closing every card, by the one card rule (the owner,
@@ -50,6 +50,44 @@ for (const row of CARDS) {
       });
     }
 
+    // At the sheet's smallest size a card shows its one title row, its
+    // name and ✕, in the pill's room, and nothing else of it, as Apple
+    // Maps' place card does (the owner, 2026-11-11: Settings dragged down
+    // to the smallest size left the sheet empty); a tap on the row raises
+    // it back to half with the card as it was.
+    if (!row.question && !row.fullHeight)
+      test("at the pill, its title row and ✕ in the pill's room, nothing else of it", async ({ page }) => {
+        test.skip(!phone(page), "a phone's sheet");
+        test.skip(!!row.not?.pill, row.not?.pill ?? "");
+        await open(page, row, row.entries[0]!);
+        await settled(sideDrawer(page));
+        await grabberTo(page, "peek");
+        await settled(sideDrawer(page));
+        const sheetTop = (await sideDrawer(page).boundingBox())!.y;
+        await expect.poll(() => hittable(page, [row.close]), { timeout: slow(10_000) }).toBe(row.close);
+        const close = (await page.getByTestId(row.close).filter({ visible: true }).first().boundingBox())!;
+        expect(close.y - sheetTop, "its ✕ at the sheet's top").toBeLessThan(80);
+        // Only the title row of the card is drawn: under it, nothing of the card takes a point.
+        const below = await page.evaluate(
+          ([y, card]) => {
+            const found: string[] = [];
+            for (let at = y; at < innerHeight; at += 6) {
+              const hit = document.elementFromPoint(innerWidth / 3, at);
+              if (hit?.closest(`[data-testid="${card}"]`) && !hit.closest("[data-sheet-head]")) found.push(`${Math.round(at)}`);
+            }
+            return found;
+          },
+          [close.y + close.height + 8, row.card] as const,
+        );
+        expect(below, "the card's body in sight under its title row at the pill").toEqual([]);
+        // A tap on the row, beside its buttons, raises it back to half.
+        const head = page.locator("[data-sheet-head]").filter({ visible: true }).first();
+        const box = (await head.boundingBox())!;
+        await page.mouse.click(box.x + 24, box.y + box.height - 6);
+        await expect(sideDrawer(page)).toHaveAttribute("data-panel", "half");
+        await expect(page.getByTestId(row.card)).toBeVisible();
+      });
+
     if (row.question)
       test("its Cancel (the sheet's ✕) leaves the state as it was", async ({ page }) => {
         test.skip(!phone(page), row.not?.desktop ?? "a phone's sheet");
@@ -94,7 +132,7 @@ test(
     await open(page, row, entry);
     await expect(firstRow(page)).toBeHidden();
     // Scrolled to its end: its name and ✕ still in sight and taking a tap (the pinned head).
-    await page.getByTestId(row.card).evaluate((el) => el.scrollTo({ top: el.scrollHeight }));
+    await scrollOf(page, row.card, "end");
     await expect.poll(() => hittable(page, [`${row.close}-pinned`, row.close]), { timeout: slow(10_000) }).not.toBeNull();
     const id = (await hittable(page, [`${row.close}-pinned`, row.close]))!;
     await page.getByTestId(id).click();

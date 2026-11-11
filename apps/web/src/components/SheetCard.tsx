@@ -8,6 +8,7 @@ import { Dialog, DialogPortal } from "./ui/dialog";
 import { holdOpenCard, setCardPill, type OpenCard, type PillHead } from "../lib/openCards";
 import { SheetCardHead, useSheetCards } from "../lib/sheetCards";
 import { TEXT } from "../lib/text";
+import { sheetScroller } from "../lib/scrollPlace";
 
 /**
  * A card in the map's panel on a phone, opened from anywhere on the page:
@@ -102,6 +103,15 @@ export function SheetCard({
     if (held.current) setCardPill(held.current, pill);
   }, []);
   const [slot, setSlot] = useState<HTMLElement | null>(null);
+  // Opened anew, at its top (the one scrolling rule); a card under it keeps
+  // its place for its return (TabKept).
+  const startAtTop = useCallback((node: HTMLDivElement | null) => {
+    card.current = node;
+    if (node && !node.closest(".tab-away")) {
+      const scroller = sheetScroller(node);
+      if (scroller) scroller.scrollTop = 0;
+    }
+  }, []);
   // A close of the caller's own in the head (`action`, the app's
   // CloseButton): one that goes back a page first, the procedures'. With
   // the tab bar naming the card it is the bar's close that does it, and
@@ -204,20 +214,19 @@ export function SheetCard({
         close to come back to, as a tab is kept (TabKept). */}
         <TabKept away={!top}>
           {/* A labelled region, as Setup's layer is, not a dialog: nothing else
-        on the page is put out of reach while it is open. A card's own
-        scroller as PanelCard's is: from the panel's corner (its close
-        where every card's is), on up under the panel's head, no scroll
-        bar, as iOS shows none. */}
+        on the page is put out of reach while it is open. Laid out whole in
+        the sheet's one scroller as PanelCard is, from the panel's corner
+        (its close where every card's is), at its top as it opens. */}
           <DialogPrimitive.Popup
             role="region"
             aria-labelledby={headingId}
             aria-describedby={undefined}
             initialFocus={initialFocus ?? toName}
             finalFocus={finalFocus ?? toOpener}
-            ref={card}
+            ref={startAtTop}
             data-testid={testId}
             data-sheet-card=""
-            className="under-head relative min-h-0 flex-1 overflow-y-auto px-4 [--under-pad:var(--corner-inset,0.75rem)] pb-[max(1rem,env(safe-area-inset-bottom))] [scrollbar-width:none]"
+            className="relative shrink-0 px-4 pt-(--pinned-room) pb-[max(1rem,env(safe-area-inset-bottom))] [--pinned-room:var(--corner-inset,0.75rem)]"
             render={<section />}
           >
             {/* Its name at the left at a card's size and the close at the right

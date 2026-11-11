@@ -72,7 +72,7 @@
     [data-slot="popover-content"],
     [data-slot="command-list"]
   )
-  :where(.overflow-y-auto, .overflow-auto, .under-head),
+  :where(.overflow-y-auto, .overflow-auto),
 :where([data-slot="popover-content"], [data-slot="command-list"], [data-slot="dropdown-menu-content"]) {
   overscroll-behavior: contain;
 }

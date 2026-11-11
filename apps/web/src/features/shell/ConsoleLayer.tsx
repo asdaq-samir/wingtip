@@ -1,5 +1,5 @@
 import { ConsoleLeave } from "../../components/consoleLeave";
-import { type CSSProperties, useEffect, useEffectEvent, useRef, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useRef, type ReactNode } from "react";
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
 import { TEXT } from "../../lib/text";
@@ -76,20 +76,19 @@ export default function ConsoleLayer({
       // A page open in it (Minimums, Airplanes) heads itself with its own
       // name and close, back to Settings: this row steps aside, one ✕ in
       // sight, not two (the owner's testing, 2026-11-10).
+      // Laid out whole in the sheet's one scroller (SheetParts), its title
+      // row sticky at the top over it.
       className={cn(
-        "min-h-0 flex-1 flex-col print:hidden [&:has([data-slot=console-page])>[data-slot=layer-head]]:hidden",
+        "shrink-0 flex-col print:hidden [&:has([data-slot=console-page])>[data-slot=layer-head]]:hidden",
         shown ? "flex" : "hidden",
       )}
-      // Its pages start under its own title row, not up under the panel's
-      // head as a tab's page does (index.css's under-head, by the panel's
-      // --head-room): pulled up, the page's scroller lay over this row and
-      // took the taps meant for its close (one-search.spec, consoles.spec).
-      style={{ "--head-room": "0px" } as CSSProperties}
     >
       {/* Its name and its close, the way back to the sheet under it, at the
           sheet's top: the page covers the title row and the search, as every
-          page does by the one card rule (the owner, 2026-11-10). */}
-      <div className="flex items-center gap-2 px-4 pt-3 pb-1" data-slot="layer-head">
+          page does by the one card rule (the owner, 2026-11-10). Pinned and
+          frosted as a card's head (PinnedHead), and at the sheet's smallest
+          size all of it in sight (data-sheet-head). */}
+      <div className="frost-head sticky top-0 z-20 flex items-center gap-2 px-4 pt-3 pb-1" data-slot="layer-head" data-sheet-head="">
         <h2 className={cn("flex-1 font-bold", TEXT.title)}>Account and Settings</h2>
         <CloseButton label="Back to the map" onClick={onClose} data-back="" data-testid="console-close" />
       </div>

@@ -57,6 +57,14 @@ Compose. Nothing here is built by hand where a stock part does it.
    stock prompt.
 9. **One way to open a screen by name**, which links
    (`design/screens.json`), Siri and App Actions all use.
+10. **A card at the sheet's smallest size is its title row** (owner-reported
+    2026-11-11: Account and Settings dragged down to the smallest size left
+    the sheet empty, the grabber alone). As Apple Maps' place card does, a
+    card at the pill shows its one title row -- its name, Share where it
+    has one, and ✕ -- in the pill's room, and nothing else of it; a tap on
+    the row or a drag up raises the sheet back to half with the card as it
+    was; ✕ there closes the card and the pill then shows the search. With
+    no card open the pill is the search, as before.
 
 | | Web | iPhone (Apple Maps' way) | Android (Google Maps' way) |
 |---|---|---|---|
@@ -66,6 +74,7 @@ Compose. Nothing here is built by hand where a stock part does it.
 | Questions | `SheetDialog`: a bottom sheet on a phone with ✕ or Cancel, centred from `md` up | `.alert` and `.confirmationDialog`, hung on the top of the stack (`TopHosts`) so they always show | `AlertDialog` (`ui/SourceDialog` for a source report) |
 | Emergency | The one full-height card, ✕ at the top right, the map not dimmed | `fullScreenCover`, its close at the top right | Material's full-screen dialog, ✕ at the start of its app bar |
 | One search | The traffic's airplane and Nearest's place are the search scoped to them (`listSearchOf`); the route's points ask it for an airport (`askSearchPick`) | The one `.searchable` field | Add a Stop and Add a Stop After open the one search (`SearchControl.stopAfter`) |
+| At the pill | The card's pinned head (`data-sheet-head`: `PinnedHead`, Settings' title row, a console page's head) is all of the card left in sight there (SheetParts' `headAlone`); a tap on the row raises the sheet to half | The system sheet's smallest detent shows the card's bar | The sheet's peek shows the card's bar |
 | By name | `useOpenScreen` through `lib/navigation/wanted` | `RootView.openScreen`, which opens the card by `Navigator.open` | `OpenScreen` through `ScreenRequests` |
 
 Each "by name" path is a `switch` or `when` over the generated list of
@@ -98,11 +107,11 @@ there fails each app's build until that app opens it.
 
 | | Web | iPhone | Android |
 |---|---|---|---|
-| Pinned head | `PinnedHead`: one row pinned at the sheet's top from the start, frosted (index.css `frost-head`: the sheet's ground at the glass fill over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard` and `ListPageHead`. The airport card's tabs pin directly under it (`--pinned-head`), frosted the same | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport card's section picker pins under the bar | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
-| Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the body's scrollers are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, and a row focused under the sheet's edge raises the sheet (MapPanel) | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page | The sheet's nested scroll; every card shown from the search or the map opens at half (`halfWindow`) and grows to full; one pushed inside a card keeps the height |
+| Pinned head | One scroller per sheet (SheetParts' `data-sheet-scroll`), its head band (the search, the route's row) `position: sticky; top: 0` in it and frosted, the grabber's room inside it; cards and tab pages laid out whole in it, nothing measured and no scroller pulled up under the head (2026-11-11). `PinnedHead`: one row sticky at the sheet's top from the start (under the search's row, a fixed height, `--sheet-head`, on a tab's list), frosted (index.css `frost-head`: the sheet's ground at the glass fill over the sheet blur, solid without backdrop-filter and under Reduce Transparency); on `CardTitle`, `CardHead`, `SheetCard`, `ListPageHead`, Settings' title row and a console page's head. The airport card's tabs pin directly under it by plain CSS (`PINNED_BELOW`: its room and its 3rem), frosted the same | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport card's section picker pins under the bar | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
+| Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the sheet's scroller and any in its body are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, and a row focused under the sheet's edge raises the sheet (MapPanel) | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page | The sheet's nested scroll; every card shown from the search or the map opens at half (`halfWindow`) and grows to full; one pushed inside a card keeps the height |
 | Detents | The sheet comes up half way for a card at the least | A thing opens at `.medium`, a page at `.large`; every card grows to `.large`, and the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal | A card from the search or the map opens at half and grows to full; one opened inside a card keeps the height |
 | Sideways rows | The Embla carousels (`CardPictures`, `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`; every native sideways row `overscroll-x-contain` and, in the sheet, `overflow-y: hidden` (index.css: `overflow-x: auto` alone made it a few points' vertical scroller, which took a drag up at half); the upright altitude Slider and the sortable rows' grips keep `""`, their drag being up and down | No control takes the sheet's drag: the Profile opens at full height for its upright altitude slider, the flown track's chart moves the replay on a tap | A sideways row takes only a sideways drag; the sheet's nested scroll takes the rest |
-| Place kept | The airport card's tabs each keep their place (`useTabScroll`); a tab not yet seen, picked with the bar pinned, opens at its own top under the bar, and a short one leaves the bar pinned (Apple Maps' place card; the owner's recording, 2026-11-11), Settings' list its place after a page (`lib/scrollPlace`); the suggestions, a sent search's results and its Filters page each have their own scroll box | The stack's own behaviour | Each card is its own back stack entry with its own scroll and title state; the welcome starts each page at the top |
+| Place kept | A kept tab or a card under a card keeps its place in the sheet's one scroller (`TabKept`'s `useKeptScroll`), and a page or card opened anew starts at its top (`useStartAtTop`); the airport card's tabs each keep their place (`useTabScroll`); a tab not yet seen, picked with the bar pinned, opens at its own top under the bar, and a short one leaves the bar pinned (Apple Maps' place card; the owner's recording, 2026-11-11), Settings' list its place after a page (`lib/scrollPlace`); the suggestions, a sent search's results and its Filters page each have their own scroll box | The stack's own behaviour | Each card is its own back stack entry with its own scroll and title state; the welcome starts each page at the top |
 | Footers | The card's own content | Every footer is the system's bar, `safeAreaBar` (`glassFoot`); a card's toolbar the stock bottom bar | The card's own content |
 | Forms | `useDiscardGuard` (`components/discardGuard`): a swipe, Cancel, Escape or a tap beside asks first | `interactiveDismissDisabled` while there is an edit, Cancel at the leading edge asking in a `confirmationDialog` (`Navigation/FormCancel`) | `DiscardDialog` on a swipe or Back (Add Flight, Your Airplanes' form) |
 
@@ -256,6 +265,33 @@ gone on every platform.
 | Waypoint | Base UI Popover from a tablet's width up, `SheetDialog` on a phone (`altitude/LegAltitude`) | | |
 | Advisor | shadcn Item rows (`altitude/AltitudeAdvisor`) | | |
 | Tests | `altitude/altitude.test.ts`; `e2e/plans.spec.ts` | | |
+
+## 7. What rides the sheet, and the map's small print (the owner, 2026-11-11)
+
+1. **The radio's button and the first flight's card ride the sheet's
+   top**, 24 points over it at the pill and half, following a finger's
+   drag frame by frame as Apple Maps' buttons do; all the way up they give
+   way. The map's own buttons (Map, My Position) stay at the top right
+   under a bottom sheet, untouched.
+2. **No row of small print on the map.** Privacy, Terms and Legal are
+   links at Settings' foot, after Status, Log, Guide and About (the
+   owner: "Can privacy terms etc move next to status log"); Legal is
+   About, every data source with its licence (`components/dataSources`).
+   The FAA data's cycles are in Status, and what each layer drawn says of
+   its source and currency (the overlay tiles' FAA cycle, the radar loop's
+   source, the traffic's, old field weather) is Status's "On the Map"
+   (the owner: "Yes status works"). The search page's foot keeps its
+   links (`SheetFooter`).
+3. **Google's credit alone stays on the map**, while its tiles are drawn,
+   as MapLibre's stock compact attribution (the (i)), because Google's
+   Map Tiles API policies ask for its attribution on the map itself.
+
+| | Web |
+|---|---|
+| Riding the sheet | `components/sheet/sheetTop` (`OnSheetTop`): a slot in the Drawer's popup just over its top edge (`bottom: 100%`), the popup's corners clipped on an inner box |
+| Settings' foot | `features/pilot/PilotPanel`'s "More" row, `settings-foot`; 44-point hit areas that meet (`PAGE_LINK`), a second line at a large text size |
+| Status | `components/StatusPanel`: FAA Data, On the Map (`lib/map/gl/creditStore`) |
+| Tests | `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the radio 24 over the sheet, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` |
 
 ## Changing a rule
 

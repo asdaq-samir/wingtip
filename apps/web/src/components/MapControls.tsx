@@ -10,6 +10,7 @@ import { useAtcRadio } from "../lib/atcRadio";
 import { useIsMobile } from "../hooks/use-mobile";
 import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "../lib/mapChrome";
 import { EngineGate } from "../lib/engine/engineGate";
+import { OnSheetTop } from "./sheet/sheetTop";
 
 /**
  * The map's buttons, in one group floating over the chart, as Maps
@@ -65,16 +66,19 @@ function MapControlsDrawn() {
   // foot past the panel's edge. One of the two drawn, never both: the
   // radio's state is the one mic's.
   const onPhone = useIsMobile();
-  const mic = (
+  // `riding`: on a phone's bottom sheet's top (OnSheetTop), 24 over it.
+  const mic = (riding = false) => (
     <div
       data-map-food=""
       className={cn(
         "z-[1000] flex items-end rounded-4xl p-1",
-        onPhone
-          ? "absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--sheet-cover,var(--map-inset-bottom,0px)))+1.5rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] max-w-[min(28rem,calc(100vw-5rem))]"
-          : // In the column at the right edge: widening to the left into
-            // the pill, its mic staying where it was.
-            "max-w-[min(28rem,calc(100vw-30rem))] flex-row-reverse",
+        riding
+          ? "pointer-events-auto absolute bottom-6 left-[max(0.5rem,env(safe-area-inset-left))] max-w-[min(28rem,calc(100vw-5rem))]"
+          : onPhone
+            ? "absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] max-w-[min(28rem,calc(100vw-5rem))]"
+            : // In the column at the right edge: widening to the left into
+              // the pill, its mic staying where it was.
+              "max-w-[min(28rem,calc(100vw-30rem))] flex-row-reverse",
         GLASS,
       )}
       data-testid="mic-circle"
@@ -112,9 +116,9 @@ function MapControlsDrawn() {
       <div
         data-map-controls=""
         data-flying={flying || undefined}
-        className="absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-[calc(max(env(safe-area-inset-bottom),var(--sheet-cover,var(--map-inset-bottom,0px)))+1.5rem)] nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:bottom-auto z-[1000] flex flex-col items-end gap-2"
+        className="absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:bottom-auto z-[1000] flex flex-col items-end gap-2"
       >
-        {!onPhone && mic}
+        {!onPhone && mic()}
         <div
           className={cn(
             // One soft rounded card of glass round them, as Apple Maps on
@@ -184,12 +188,13 @@ function MapControlsDrawn() {
         things apart, one here and one at the top of the map (the owner,
         2026-11-03). The width eases through a grid column from 0fr to
         1fr, which is how a box of unknown width is animated in CSS. */}
-      {/* At the foot's left, over the tabs, riding the sheet's top as the
-        map's buttons do at the right: back from the top right at the
-        owner's ask (2026-11-04, "Move the mic back to the left side, above
-        the tabs"); tapped, it widens to the right into the pill. In the
-        air it grows to 60 points there. */}
-      {onPhone && mic}
+      {/* At the foot's left, over the tabs, riding the sheet's top: back
+        from the top right at the owner's ask (2026-11-04, "Move the mic
+        back to the left side, above the tabs"); tapped, it widens to the
+        right into the pill. In the air it grows to 60 points there. Over
+        a bottom sheet drawn in the Drawer's popup (OnSheetTop), so it
+        follows a finger's drag as Apple Maps' buttons do. */}
+      {onPhone && <OnSheetTop>{(riding) => mic(riding)}</OnSheetTop>}
     </>
   );
 }

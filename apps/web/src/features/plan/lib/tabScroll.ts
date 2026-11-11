@@ -12,8 +12,9 @@ import { useEffect, useLayoutEffect, useRef, type RefObject } from "react";
  *  - a tab shorter than the card's room still leaves the bar where it
  *    pinned, the room under it blank, rather than the card jumping back to
  *    its top (Runways, in the same recording).
- * The card's scroller is the nearest one round its tab bar (`bar`), whose
- * parent (the Tabs root) holds the panels.
+ * The card's scroller is the sheet's one scroller round its tab bar
+ * (`bar`, SheetParts' data-sheet-scroll), whose parent (the Tabs root)
+ * holds the panels.
  */
 export function useTabScroll(bar: RefObject<HTMLElement | null>, tab: string) {
   const places = useRef(new Map<string, number>());
