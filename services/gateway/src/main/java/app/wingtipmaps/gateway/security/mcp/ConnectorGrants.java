@@ -1,6 +1,8 @@
 package app.wingtipmaps.gateway.security.mcp;
 
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,9 +18,40 @@ import org.springframework.stereotype.Component;
 public class ConnectorGrants {
 
     private final JdbcOperations jdbc;
+    private final OAuth2AuthorizationService authorizations;
 
-    public ConnectorGrants(JdbcOperations jdbc) {
+    public ConnectorGrants(JdbcOperations jdbc, OAuth2AuthorizationService authorizations) {
         this.jdbc = jdbc;
+        this.authorizations = authorizations;
+    }
+
+    /**
+     * Whether the pilot still has a live connection through this client:
+     * one whose tokens are neither revoked (disconnected, or a refresh token
+     * replayed) nor run out, and gone with the account. The planner asks
+     * on every MCP call, since its JWTs are checked by signature alone and
+     * would otherwise outlive both by up to 15 minutes (the security
+     * audit's L4). By V41's index on the pilot, a pilot's few rows.
+     */
+    public boolean live(long pilotId, String clientId) {
+        return jdbc
+                .queryForList(
+                        "SELECT a.id FROM oauth2_authorization a JOIN oauth2_registered_client c"
+                                + " ON c.id = a.registered_client_id WHERE a.principal_name = ? AND c.client_id = ?",
+                        String.class,
+                        Long.toString(pilotId),
+                        clientId)
+                .stream()
+                .map(authorizations::findById)
+                .anyMatch(ConnectorGrants::live);
+    }
+
+    private static boolean live(OAuth2Authorization connection) {
+        return connection != null
+                && ((connection.getAccessToken() != null
+                                && connection.getAccessToken().isActive())
+                        || (connection.getRefreshToken() != null
+                                && connection.getRefreshToken().isActive()));
     }
 
     /** Ends every connection the pilot made: their tokens stop working at once. */

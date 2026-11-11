@@ -116,9 +116,17 @@ def signed(**over) -> str:
     return jwt.encode(claims, KEY, algorithm="RS256", headers={"kid": "k1"})
 
 
+#: The connections that still stand, as the gateway would say (pilot, client).
+LIVE = {("42", "c1")}
+
+
+async def _live(pilot: str, client: str) -> bool:
+    return (pilot, client) in LIVE
+
+
 @pytest.fixture
 def tokens(monkeypatch):
-    reader = GatewayTokens(jwks_url="http://gateway.test/oauth2/jwks", issuer=ISSUER, resource=RESOURCE)
+    reader = GatewayTokens(jwks_url="http://gateway.test/oauth2/jwks", issuer=ISSUER, resource=RESOURCE, live=_live)
     monkeypatch.setattr(reader._keys, "get_signing_key_from_jwt", lambda token: jwt.PyJWK.from_dict(_jwk()))
     return reader
 
@@ -143,6 +151,13 @@ def test_a_gateway_token_for_this_connector_is_read_as_its_pilot(tokens):
 )
 def test_a_token_not_for_this_connector_is_refused(tokens, over):
     assert anyio.run(tokens.verify_token, signed(**over)) is None
+
+
+def test_a_token_whose_connection_is_gone_is_refused_at_once(tokens):
+    """Disconnected, or the account deleted: the gateway says so, and the
+    token is refused though it has not run out (L4)."""
+    assert anyio.run(tokens.verify_token, signed(sub="43")) is None
+    assert anyio.run(tokens.verify_token, signed(client_id="another")) is None
 
 
 def test_a_token_signed_by_another_key_is_refused(tokens):
