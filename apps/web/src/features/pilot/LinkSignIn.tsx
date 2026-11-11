@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "react-router";
 import SheetDialog from "../../components/SheetDialog";
 import { ApiError, api } from "../../lib/api/client";
 import { TEXT } from "../../lib/text";
@@ -10,13 +11,6 @@ import { linkAccount } from "./linkAccount";
  *  (MagicLinkController#confirm). */
 function linkToken(): string | null {
   return new URLSearchParams(window.location.hash.slice(1)).get("signin");
-}
-
-/** Takes the token off the address, so a reload or a shared link does
- *  not ask again. */
-function forgetLink() {
-  const { pathname, search } = window.location;
-  window.history.replaceState(window.history.state, "", pathname + search);
 }
 
 /**
@@ -38,6 +32,10 @@ function forgetLink() {
  */
 export default function LinkSignIn() {
   const [token] = useState(linkToken);
+  // The token taken off the address by the router (React Router's
+  // navigate, replacing), so a reload or a shared link does not ask again.
+  const navigate = useNavigate();
+  const { pathname, search } = useLocation();
   const [open, setOpen] = useState(token !== null);
   const account = useQuery({
     queryKey: ["linkAccount", token],
@@ -57,7 +55,7 @@ export default function LinkSignIn() {
   const spent = (finish.error instanceof ApiError && finish.error.status === 400) || account.data === null;
   const close = () => {
     setOpen(false);
-    forgetLink();
+    void navigate({ pathname, search }, { replace: true });
   };
 
   return (

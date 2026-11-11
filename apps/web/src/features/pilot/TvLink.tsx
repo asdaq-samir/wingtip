@@ -1,5 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useLocation, useNavigate } from "react-router";
 import SheetDialog from "../../components/SheetDialog";
 import { Button } from "../../components/ui/button";
 import { ApiError, api } from "../../lib/api/client";
@@ -11,13 +12,6 @@ import { TV_CODE_LENGTH, fromTvAddress, tvCode } from "./tvCode";
 const SignInModal = lazy(() => import("../../components/SignInModal"));
 // The code's slots (Base UI's OTP Field), with the sheet.
 const TvCodeField = lazy(() => import("./TvCodeField"));
-
-/** Takes the TV's mark off the address, so a reload does not ask again. */
-function forgetTvAddress() {
-  const url = new URL(window.location.href);
-  url.searchParams.delete("tv-link");
-  window.history.replaceState(window.history.state, "", url.pathname + url.search + url.hash);
-}
 
 /**
  * Signing a TV in from the phone (#207, TvCode the TV's half): opened by
@@ -42,10 +36,18 @@ export default function TvLink() {
     setShort(code.length < TV_CODE_LENGTH);
     if (code.length === TV_CODE_LENGTH) approve.mutate(tvCode(code));
   };
-  // Off the address at once, so a reload does not open the box again.
+  // Off the address at once, so a reload does not open the box again:
+  // React Router's navigate, replacing, the rest of the address kept.
+  const navigate = useNavigate();
+  const location = useLocation();
+  const marked = open && new URLSearchParams(location.search).has("tv-link");
   useEffect(() => {
-    if (open) forgetTvAddress();
-  }, [open]);
+    if (!marked) return;
+    const params = new URLSearchParams(location.search);
+    params.delete("tv-link");
+    const rest = params.toString();
+    void navigate({ pathname: location.pathname, search: rest ? `?${rest}` : "", hash: location.hash }, { replace: true });
+  }, [marked, location, navigate]);
   if (!open) return null;
   const close = () => setOpen(false);
   return (
