@@ -637,7 +637,7 @@ fn with_no_airplane_the_plans_are_the_lowest_and_highest_alone() {
     let per_leg: &[&[f64]] = &[&[4500.0, 6500.0, 8500.0], &[4500.0, 6500.0, 8500.0]];
     let made = plans(per_leg, &[(8500.0, 40.0)], Value::Null, Some(700.0));
     let mut kinds: Vec<&String> = made["plans"].as_object().unwrap().keys().collect();
-    kinds.sort();
+    wingtip_engine::sort::StableSort::stable_sort(&mut kinds[..]);
     assert_eq!(kinds, ["highest", "lowest"]);
     assert_eq!(steps(&made, "lowest"), [4500.0]);
     assert_eq!(steps(&made, "highest"), [8500.0]);

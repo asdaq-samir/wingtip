@@ -23,6 +23,7 @@
 use crate::json;
 use crate::pack::Pack;
 use crate::view::{in_box, meets, oriented, reaches, representative, rings_of, round5, simplified, text_at, tolerance_for, Bbox, Pt};
+use wingtip_core::sort::StableSort;
 
 /// The special-use areas the map draws, by TYPE_CODE: those inked as
 /// restricted, then those inked as MOAs.
@@ -122,7 +123,7 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
     }
     // MOAs first, then the restricted kinds over them; each kind by name.
     let mut order: Vec<usize> = (0..out.len()).collect();
-    order.sort_by(|&x, &y| out[x].0.cmp(&out[y].0).then(found[x].2.cmp(&found[y].2)));
+    order.stable_sort_by(|&x, &y| out[x].0.cmp(&out[y].0).then(found[x].2.cmp(&found[y].2)));
     let areas: Vec<&str> = order.iter().map(|&k| out[k].1.as_str()).collect();
     format!("{{\"areas\":[{}]}}", areas.join(","))
 }
@@ -155,7 +156,7 @@ pub fn fixes_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east: f6
             fixes.push((ident, la, lo, vfr));
         }
     }
-    fixes.sort_by(|a, b| a.0.cmp(&b.0));
+    fixes.stable_sort_by(|a, b| a.0.cmp(&b.0));
     fixes.truncate(FIX_LIMIT);
     let mut out = String::from("{\"fixes\":[");
     for (k, (ident, la, lo, vfr)) in fixes.iter().enumerate() {

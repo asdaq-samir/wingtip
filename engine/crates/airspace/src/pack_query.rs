@@ -33,6 +33,7 @@
 use crate::json;
 use crate::pack::Pack;
 use crate::rules::{self, FloorRef, Volume};
+use wingtip_core::sort::StableSort;
 
 /// A phone pack's region: a square of this many degrees (wingtip.cycle_pack's
 /// REGION_DEG), named by its south-west corner.
@@ -114,7 +115,7 @@ pub fn special_use<'a>(pack: &Pack<'a>, lat: f64, lon: f64) -> Option<Vec<&'a st
         found.push((name, f64_at(r, 0)?, text_at(blobs, r, 8)?));
     }
     // Python's sort: (floor is None, floor or 0), stable.
-    found.sort_by(|a, b| {
+    found.stable_sort_by(|a, b| {
         let key = |f: f64| (f.is_nan(), if f.is_nan() { 0.0 } else { f });
         let (ka, kb) = (key(a.1), key(b.1));
         ka.0.cmp(&kb.0).then(ka.1.partial_cmp(&kb.1).unwrap())

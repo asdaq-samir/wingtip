@@ -12,7 +12,7 @@
 
 use crate::json::{self, Value};
 use crate::xml::{self, Element};
-use crate::{metar, time, validity};
+use crate::{metar, sort::StableSort, time, validity};
 
 /// Feet in a metre (the international foot, 0.3048 m).
 const FT_PER_M: f64 = 1.0 / 0.3048;
@@ -219,7 +219,7 @@ pub fn tafs(text: &str) -> Result<String, String> {
             p.push('}');
             periods.push((from, change_order(&change), p));
         }
-        periods.sort_by_key(|(from, order, _)| (*from, *order));
+        periods.stable_sort_by_key(|(from, order, _)| (*from, *order));
         let mut s = String::from("{\"icaoId\":");
         json::string(&mut s, ident);
         s.push_str(",\"lat\":");

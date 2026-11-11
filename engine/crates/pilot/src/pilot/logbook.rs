@@ -27,6 +27,7 @@ use super::csv;
 use super::js;
 use super::logbook_derived;
 use crate::json::{self, Value};
+use wingtip_core::sort::StableSort;
 
 /// The columns written, ForeFlight's names where it has the field, each
 /// with the entry's member it is written from.
@@ -118,7 +119,7 @@ pub fn write(entries: &[Value]) -> String {
         Some(v) => cell(Some(v)),
         None => "undefined".to_owned(),
     };
-    sorted.sort_by_key(|e| day(e));
+    sorted.stable_sort_by_key(|e| day(e));
     let mut rows = vec![OUT.iter().map(|(name, _)| (*name).to_owned()).collect::<Vec<_>>()];
     for e in sorted {
         rows.push(

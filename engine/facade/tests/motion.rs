@@ -321,7 +321,7 @@ fn nav_log_rows(fields: &[Value], legs: &[Value]) -> Value {
                 points.push((kind, &leg[kind]));
             }
         }
-        points.sort_by(|a, b| n(&a.1["along_nm"]).partial_cmp(&n(&b.1["along_nm"])).unwrap());
+        wingtip_engine::sort::StableSort::stable_sort_by(&mut points[..], |a, b| n(&a.1["along_nm"]).total_cmp(&n(&b.1["along_nm"])));
         let mut from = (0.0, 0.0, 0.0);
         for (kind, point) in &points {
             let mut part = piece(leg, from, (n(&point["along_nm"]), point["ete_min"].as_f64(), point["fuel_gal"].as_f64()));

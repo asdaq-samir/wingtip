@@ -511,6 +511,7 @@ jobs:
                 - engine/**
                 - scripts/ci/engine_layers.py
                 - scripts/ci/engine_affected.py
+                - scripts/ci/wasm_size.py
                 - scripts/build/build-engine-wasm.sh
                 - apps/web/src/lib/engine/wingtip-engine.wasm
                 - apps/web/src/lib/fixtures/**

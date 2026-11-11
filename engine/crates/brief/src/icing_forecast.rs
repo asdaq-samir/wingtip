@@ -28,6 +28,7 @@
 
 use crate::figures::words::{feet, grouped};
 use crate::json::{self, Value};
+use wingtip_core::sort::StableSort;
 
 /// The AWC's severity categories by their number (the GFA's legend; "heavy"
 /// is the AWC's word where AIM 7-1-19's scale ends at "severe").
@@ -199,7 +200,7 @@ fn route(name: &str, v: &Value) -> R<Value> {
         Some(c) => {
             let on: Vec<usize> = found.iter().filter(|f| f.2 == c).map(|f| f.0).collect();
             let mut at: Vec<f64> = found.iter().filter(|f| f.2 == c).map(|f| f.1).collect();
-            at.sort_by(f64::total_cmp);
+            at.stable_sort_by(f64::total_cmp);
             at.dedup();
             let altitudes = match at.as_slice() {
                 [one] => feet(*one),

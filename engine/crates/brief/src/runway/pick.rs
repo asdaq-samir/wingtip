@@ -8,6 +8,7 @@
 
 use super::performance::has;
 use super::wind::{js_normalize, js_round, RunwayWind};
+use wingtip_core::sort::StableSort;
 
 /// A runway end: its ident as the data has it ("09") and its true
 /// heading, None for one without (a helipad's).
@@ -64,7 +65,7 @@ pub fn runway_in_use(runways: &[Runway]) -> Option<Flown> {
         (0..runways.len()).filter(|&i| !runways[i].closed && runways[i].ends.iter().any(|e| e.heading_true_deg.is_some())).collect();
     let mut winded: Vec<usize> = open.iter().copied().filter(|&i| runways[i].wind.is_some()).collect();
     // A stable sort, as JavaScript's: equals keep the data's order.
-    winded.sort_by(|&a, &b| {
+    winded.stable_sort_by(|&a, &b| {
         let (wa, wb) = (runways[a].wind.as_ref().unwrap(), runways[b].wind.as_ref().unwrap());
         (wb.in_use as i32)
             .cmp(&(wa.in_use as i32))
@@ -78,7 +79,7 @@ pub fn runway_in_use(runways: &[Runway]) -> Option<Flown> {
         }
     }
     let mut by_use = open;
-    by_use.sort_by(|&a, &b| most_used(&runways[a], &runways[b]));
+    by_use.stable_sort_by(|&a, &b| most_used(&runways[a], &runways[b]));
     let longest = *by_use.first()?;
     let j = runways[longest].ends.iter().position(|e| e.heading_true_deg.is_some())?;
     Some((longest, j, false))

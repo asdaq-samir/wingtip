@@ -28,8 +28,8 @@ use super::{Drawing, RunwayPath, FT_PER_NM};
 use crate::figures::debrief::{airborne, Point};
 use crate::figures::words::{alt_ft, grouped, js_num, js_round_f, to_fixed};
 use crate::geo::distance_nm;
-use crate::json;
 use crate::motion::rad;
+use crate::{json, sort::StableSort};
 
 /// How near a fix the track has to come, nm off the course through it, to
 /// have flown over it -- the app's own figure for "it went that way", a
@@ -188,7 +188,7 @@ fn finding(tone: Tone, text: String) -> Finding {
 
 /// Stop first, then caution, ok and info, each kind in the order found.
 fn ordered(mut findings: Vec<Finding>) -> Vec<Finding> {
-    findings.sort_by_key(|f| f.tone);
+    findings.stable_sort_by_key(|f| f.tone);
     findings
 }
 
@@ -1115,7 +1115,7 @@ pub fn find_approaches(drawings: &[Drawing], points: &[Point], picked: Option<&s
     // approach fix are one, the best kept and the rest named with it. As
     // good laterally (within 0.05 nm), the one picked for the flight wins,
     // then one whose glidepath the track came down (within GLIDEPATH_FIT_FT).
-    found.sort_by(|a, b| a.faf_at.partial_cmp(&b.faf_at).unwrap_or(std::cmp::Ordering::Equal));
+    found.stable_sort_by(|a, b| a.faf_at.partial_cmp(&b.faf_at).unwrap_or(std::cmp::Ordering::Equal));
     let followed = |f: &Debrief| f.glidepath_fit_ft.is_some_and(|ft| ft <= GLIDEPATH_FIT_FT);
     let is_picked = |f: &Debrief| picked.is_some_and(|p| f.id == p);
     let beats = |f: &Debrief, g: &Debrief| {

@@ -162,7 +162,7 @@ fn tenth(hours: f64) -> f64 {
 fn passengers_until(entries: &[Entry], landings: &dyn Fn(&Entry) -> f64) -> Option<String> {
     let mut newest: Vec<&Entry> = entries.iter().collect();
     // Newest first; flights of one day kept in the order given.
-    newest.sort_by_key(|e| std::cmp::Reverse(e.day));
+    crate::sort::StableSort::stable_sort_by_key(&mut newest[..], |e| std::cmp::Reverse(e.day));
     let mut counted = 0.0;
     for e in newest {
         counted += landings(e);

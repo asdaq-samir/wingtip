@@ -70,8 +70,8 @@ use self::read::{highest_cruise_ft, LEGAL_CEILING_FT, LEGAL_VISIBILITY_SM, LOWES
 use self::stops::{Fuel, Stop, MARGINAL_STOP_MIN, STOP_FIELD_NM, TURNAROUND_MIN};
 use self::ways::{along, crossed, line_minutes, minutes_along, straightened, way, Along};
 use self::words::r1;
-use crate::geo;
 use crate::json::{self, Value};
+use crate::{geo, sort::StableSort};
 use std::cell::RefCell;
 use wingtip_core::grid::Point;
 use wingtip_core::wmm;
@@ -191,7 +191,7 @@ fn make_way(
     for s in stops {
         points.push((s.at, s.ident.clone(), (s.lat, s.lon), true));
     }
-    points.sort_by(|x, y| x.0.total_cmp(&y.0));
+    points.stable_sort_by(|x, y| x.0.total_cmp(&y.0));
     let mut path = vec![turns[0]];
     path.extend(points.iter().map(|p| p.2));
     path.push(*turns.last().unwrap());
@@ -260,7 +260,7 @@ fn own(
     let mut points: Vec<(f64, String, Point, bool)> =
         inner.iter().enumerate().map(|(i, (ident, p, _))| (along_min[i + 1], (*ident).clone(), *p, false)).collect();
     points.extend(found.iter().map(|s| (s.at, s.ident.clone(), (s.lat, s.lon), true)));
-    points.sort_by(|x, y| x.0.total_cmp(&y.0));
+    points.stable_sort_by(|x, y| x.0.total_cmp(&y.0));
     let mut way = vec![path[0]];
     way.extend(points.iter().map(|p| p.2));
     way.push(*path.last().unwrap());
@@ -678,7 +678,7 @@ mod tests {
         assert_eq!(found[0].stops, vec!["B".to_string()]);
         assert_eq!(found[0].kind, "weather");
         let mut kinds = found[0].kinds.clone();
-        kinds.sort();
+        kinds.stable_sort();
         assert_eq!(kinds, vec!["fastest", "stops", "weather"]);
     }
 }

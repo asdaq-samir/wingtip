@@ -9,7 +9,7 @@
 use super::climbs::{climb_fuel_penalty_gal, climb_penalty_min, with_climbs};
 use super::legs::{leg_between, tailwind_kt, totals};
 use super::{number, object, opt_number, py_round, py_sum, LegAir, Obj, Profile, R};
-use crate::json::Value;
+use crate::{json::Value, sort::StableSort};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use wingtip_flight::performance::Climber;
@@ -348,7 +348,7 @@ impl Plan<'_> {
     /// no airplane, its times, fuel and wind along null.
     fn by_altitude(&self) -> R<Vec<Value>> {
         let mut all: Vec<f64> = self.candidates.iter().flatten().copied().collect();
-        all.sort_by(f64::total_cmp);
+        all.stable_sort_by(f64::total_cmp);
         all.dedup();
         let mut by_altitude = Vec::with_capacity(all.len());
         for target in all {
@@ -458,7 +458,7 @@ pub fn join_figures(by_hop: &[Vec<Obj>], lengths: &[f64]) -> R<Vec<Value>> {
     let offered: Vec<&Vec<Obj>> = by_hop.iter().filter(|f| !f.is_empty()).collect();
     let offered_nm: Vec<f64> = by_hop.iter().zip(lengths).filter(|(f, _)| !f.is_empty()).map(|(_, n)| *n).collect();
     let mut all = offered.iter().flat_map(|f| f.iter().map(|x| x.num("altitude_ft"))).collect::<R<Vec<f64>>>()?;
-    all.sort_by(f64::total_cmp);
+    all.stable_sort_by(f64::total_cmp);
     all.dedup();
     let mut joined = Vec::with_capacity(all.len());
     for target in all {

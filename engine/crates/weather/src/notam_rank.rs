@@ -44,6 +44,7 @@
 
 use crate::json::{self, Value};
 use crate::time::parse_iso;
+use wingtip_core::sort::StableSort;
 
 /// How many are said first, each with its line; the rest are folded.
 pub const TOP: usize = 3;
@@ -293,7 +294,7 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
     }
     let notams = v.get("notams").and_then(Value::as_array).ok_or("notams_ranked: \"notams\" is missing")?;
     let mut ranked: Vec<Ranked> = notams.iter().map(|n| rank_one(n, v)).collect();
-    ranked.sort_by(|a, b| b.score.cmp(&a.score).then_with(|| a.id.cmp(&b.id)));
+    ranked.stable_sort_by(|a, b| b.score.cmp(&a.score).then_with(|| a.id.cmp(&b.id)));
     let mut top = 0;
     let mut out = String::from("{\"ranked\":[");
     for (i, r) in ranked.iter().enumerate() {

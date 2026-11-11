@@ -16,6 +16,8 @@
 //! "When a pilot is uncertain of an ATC clearance, that pilot shall
 //! immediately request clarification from ATC").
 
+use wingtip_core::sort::StableSort;
+
 mod json;
 mod parts;
 
@@ -239,7 +241,7 @@ pub fn read(text: &str) -> Vec<Item> {
             said.push((start, Item::Runway { runway, what }));
         }
     }
-    said.sort_by_key(|(k, _)| *k);
+    said.stable_sort_by_key(|(k, _)| *k);
     said.into_iter().map(|(_, item)| item).collect()
 }
 

@@ -9,6 +9,7 @@ use crate::figures::words::js_round;
 use crate::json::{self, Value};
 use crate::time::{days_from_civil, days_in_month};
 use crate::xml::{self, Element};
+use wingtip_core::sort::StableSort;
 
 /// Feet in a metre (the international foot, 0.3048 m).
 pub const FEET_PER_METRE: f64 = 3.28084;
@@ -196,7 +197,7 @@ pub fn read_track(text: &str) -> Result<Vec<TrackPoint>, &'static str> {
         _ => return Err(NOT_A_TRACK),
     };
     let mut points: Vec<TrackPoint> = raw.iter().copied().filter(valid).collect();
-    points.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Equal));
+    points.stable_sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Equal));
     if points.len() < 2 {
         return Err(if raw.is_empty() { NO_TRACK } else { NO_TIMES });
     }

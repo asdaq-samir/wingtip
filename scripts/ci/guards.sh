@@ -15,8 +15,9 @@
 #   SITE     the website built and checked
 #   WEB      apps/web: the API types, tsc, ESLint with no warning,
 #            Prettier, knip
-#   ENGINE   the crates' layering, no unused dependency (cargo-machete),
-#            rustfmt, clippy with warnings denied
+#   ENGINE   the crates' layering, the WebAssembly's size budget, no
+#            unused dependency (cargo-machete), rustfmt, clippy with
+#            warnings denied
 #   FLIGHT   flight-critical: the engine's FAA worked examples and the
 #            planner's KMSN-KOSH nav log (needs the engine's wheel and the
 #            planner's requirements)
@@ -153,6 +154,7 @@ on SITE && start "Website" site
 on WEB && start "Web: API types" web
 if on ENGINE; then
   start "Engine layers" python3 scripts/ci/engine_layers.py
+  start "Engine: WebAssembly size" python3 scripts/ci/wasm_size.py
   start "Engine: machete" machete
   start "Engine: rustfmt" scripts/dev/format.sh --check rust
   start "Engine: clippy" clippy

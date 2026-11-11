@@ -9,6 +9,7 @@ use super::words::r1;
 use crate::geo;
 use crate::route::points::frd_ident;
 use wingtip_core::grid::Point;
+use wingtip_core::sort::StableSort;
 use wingtip_core::{time, wmm};
 
 /// How far from a turn a fix is looked for to turn at instead, nm, and
@@ -108,7 +109,7 @@ pub fn fix_for_turn<'a>(grid: &Grid, gs: &Vec<f64>, fixes: &'a [Fix], before: Po
     if near.is_empty() {
         return None;
     }
-    near.sort_by(|a, b| a.0.total_cmp(&b.0));
+    near.stable_sort_by(|a, b| a.0.total_cmp(&b.0));
     let own = cost(grid, &[before, turn, after]);
     let minutes = line_minutes(grid, gs, before, turn, 0.0, 0.0) + line_minutes(grid, gs, turn, after, 0.0, 0.0);
     for (nm, fix) in near {

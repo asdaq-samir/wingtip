@@ -4,7 +4,7 @@
 //! planner does with no network. services/planner/tests_wingtip/test_native.py holds the two to
 //! the same answer at every tap it asks.
 
-use crate::json;
+use crate::{json, sort::StableSort};
 use wingtip_flight::vfr;
 
 /// Class A, from here to FL600 (14 CFR 71.33): IFR only; the one copy in
@@ -268,7 +268,7 @@ pub fn column(ground_ft: f64, volumes: &[Volume], in_veil: bool) -> Vec<Band> {
         edges.push(*c);
     }
     edges.retain(|e| ground_ft <= *e && *e <= CLASS_A_FLOOR_FT);
-    edges.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    edges.stable_sort_by(|a, b| a.partial_cmp(b).unwrap());
     edges.dedup();
 
     let mut bands: Vec<Band> = Vec::new();

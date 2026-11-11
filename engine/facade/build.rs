@@ -11,6 +11,10 @@
 //! workspace (README.md), and the two members it reads are plain strings
 //! written by the contract's own tooling.
 
+// The build script runs on the host and is not in the WebAssembly, so the
+// slices' own sorts are fine here (engine/clippy.toml).
+#![allow(clippy::disallowed_methods)]
+
 use std::fs;
 use std::path::{Path, PathBuf};
 

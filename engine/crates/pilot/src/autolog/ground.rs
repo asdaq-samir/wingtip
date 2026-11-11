@@ -11,6 +11,7 @@
 
 use super::Field;
 use wingtip_core::geo::distance_nm;
+use wingtip_core::sort::StableSort;
 use wingtip_procedures::figures::debrief::{airborne, ground_speeds, Point, AIRBORNE_KT};
 
 /// Moving under its own power: faster than a walk over the ground. A
@@ -220,7 +221,7 @@ pub fn read(points: &[Point], fields: &[Field]) -> Ground {
         }
         floor = end;
     }
-    takeoffs.sort_by_key(|t| t.i);
-    landings.sort_by_key(|l| l.i);
+    takeoffs.stable_sort_by_key(|t| t.i);
+    landings.stable_sort_by_key(|l| l.i);
     Ground { gs, runs, takeoffs, landings, spans, ends_airborne }
 }

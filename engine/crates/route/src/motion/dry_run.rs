@@ -204,7 +204,7 @@ fn missed_heights(start: f64, end: f64, from: f64, to: f64) -> Vec<ProfilePoint>
 
 /// Sorted, each once: a JavaScript Set of numbers, sorted.
 fn sorted_once(mut marks: Vec<f64>) -> Vec<f64> {
-    marks.sort_by(|x, y| x.partial_cmp(y).unwrap_or(std::cmp::Ordering::Equal));
+    crate::sort::StableSort::stable_sort_by(&mut marks[..], |x, y| x.partial_cmp(y).unwrap_or(std::cmp::Ordering::Equal));
     marks.dedup();
     marks
 }

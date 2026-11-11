@@ -15,6 +15,7 @@
 
 use super::frat;
 use super::verdict::{self, Item};
+use wingtip_core::sort::StableSort;
 use wingtip_flight::sun;
 use wingtip_flight::vfr;
 
@@ -234,7 +235,7 @@ pub fn windows(hours: &[Judged]) -> Vec<Window> {
         last = Some(h.depart_s);
     }
     let tenth = |m: Option<f64>| m.map_or(-1, |m| (m * 10.0).round() as i64);
-    out.sort_by(|a, b| {
+    out.stable_sort_by(|a, b| {
         tenth(b.margin)
             .cmp(&tenth(a.margin))
             .then(a.ete_min.unwrap_or(f64::INFINITY).total_cmp(&b.ete_min.unwrap_or(f64::INFINITY)))

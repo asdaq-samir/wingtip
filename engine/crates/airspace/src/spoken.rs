@@ -15,8 +15,8 @@
 //! are shown as said, not found.
 
 use crate::clearance::{Found, FoundPlaces};
-use crate::json;
 use crate::pack::Pack;
+use crate::{json, sort::StableSort};
 
 /// A place a clearance may name.
 #[derive(Clone, Debug, PartialEq)]
@@ -252,7 +252,7 @@ pub fn point(said: &str, places: &[Place]) -> Option<Found> {
         .map(|p| (alike(&joined, &p.ident).max(alike(&joined, p.name.as_deref().unwrap_or(""))), closer(&joined, &p.ident), *p))
         .collect();
     // Stable, as Python's sorted: of equals, the nearer stays first.
-    scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap().then(b.1.partial_cmp(&a.1).unwrap()));
+    scored.stable_sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap().then(b.1.partial_cmp(&a.1).unwrap()));
     match scored.first() {
         Some((s, _, p)) if *s >= ALIKE => Some(row(said, p, false)),
         _ => None,
@@ -375,7 +375,7 @@ pub fn by_nearness(mut places: Vec<Place>, near: &[(f64, f64)]) -> Vec<Place> {
     }
     let squeeze = (near.iter().map(|p| p.0).sum::<f64>() / near.len() as f64).to_radians().cos();
     let d = |p: &Place| near.iter().map(|(la, lo)| (p.lat - la).powi(2) + ((p.lon - lo) * squeeze).powi(2)).fold(f64::INFINITY, f64::min);
-    places.sort_by(|a, b| d(a).partial_cmp(&d(b)).unwrap());
+    places.stable_sort_by(|a, b| d(a).partial_cmp(&d(b)).unwrap());
     places
 }
 

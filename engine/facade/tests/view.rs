@@ -227,7 +227,7 @@ fn the_airports_in_view_are_the_planners_fields() {
             .map(|v| (["large", "medium", "small"].iter().position(|k| *k == v["kind"].as_str().unwrap()).unwrap_or(3), ident(v)))
             .collect();
         let mut sorted = order.clone();
-        sorted.sort();
+        wingtip_engine::sort::StableSort::stable_sort(&mut sorted[..]);
         assert_eq!(order, sorted, "{tag}");
     }
 }

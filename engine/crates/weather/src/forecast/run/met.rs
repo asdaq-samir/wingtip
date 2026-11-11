@@ -9,6 +9,7 @@ use crate::geo;
 use crate::json::Value;
 use crate::metar;
 use crate::winds::{self, WindAt};
+use wingtip_core::sort::StableSort;
 
 /// Whose forecast a figure is.
 #[derive(Clone, Debug, PartialEq)]
@@ -81,7 +82,7 @@ fn taf_near(tafs: &[Value], ident: Option<&str>, lat: f64, lon: f64, start: f64,
         .filter_map(|s| Some((geo::distance_nm(lat, lon, num(s, "lat")?, num(s, "lon")?), s)))
         .filter(|(nm, _)| *nm <= TAF_REACH_NM)
         .collect();
-    near.sort_by(|a, b| a.0.total_cmp(&b.0));
+    near.stable_sort_by(|a, b| a.0.total_cmp(&b.0));
     near.into_iter().find_map(|(nm, s)| taf_met(s, nm, start, end))
 }
 

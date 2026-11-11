@@ -34,6 +34,8 @@
 //!   "fields"?, "drawings"?, "picked"?, "aircraft"?, "aircraft_type"?,
 //!   "utc_offset_min"?}`.
 
+use wingtip_core::sort::StableSort;
+
 pub mod answer;
 pub mod entry;
 pub mod ground;
@@ -95,7 +97,7 @@ fn points(name: &str, v: &Value) -> R<Vec<Point>> {
             Ok(Point { t: num(name, p, "t")?, lat: num(name, p, "lat")?, lon: num(name, p, "lon")?, alt_ft: opt_num(name, p, "alt_ft")? })
         })
         .collect::<R<Vec<_>>>()?;
-    out.sort_by(|a, b| a.t.total_cmp(&b.t));
+    out.stable_sort_by(|a, b| a.t.total_cmp(&b.t));
     Ok(out)
 }
 

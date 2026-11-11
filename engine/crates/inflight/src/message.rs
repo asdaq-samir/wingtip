@@ -4,6 +4,7 @@
 //! (KINDS), so the host shows the first and only the first.
 
 use wingtip_core::json::Value;
+use wingtip_core::sort::StableSort;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Level {
@@ -77,7 +78,7 @@ impl Message {
 
 /// The messages most pressing first; equals keep the order found.
 pub fn rank(messages: &mut [Message]) {
-    messages.sort_by_key(Message::order);
+    messages.stable_sort_by_key(Message::order);
 }
 
 /// A UNIX time as a pilot reads it, "1742Z".

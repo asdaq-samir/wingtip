@@ -6,8 +6,8 @@
 //! engine never fetches.
 
 use super::awc::{GAIRMET_SNAPSHOT_S, PIREP_MAX_AGE_S, PIREP_MAX_ALT_FT};
-use crate::geo;
 use crate::json::{self, Value};
+use crate::{geo, sort::StableSort};
 
 fn num(v: &Value, key: &str) -> Option<f64> {
     v.get(key).and_then(Value::as_f64)
@@ -325,7 +325,7 @@ pub fn pireps_along_route(reports: &[Value], path: &[(f64, f64)], corridor_nm: f
             found.push((report.get("urgent") == Some(&Value::Bool(true)), (at * 10.0).round() / 10.0, report));
         }
     }
-    found.sort_by(|x, y| y.0.cmp(&x.0).then(x.1.total_cmp(&y.1)));
+    found.stable_sort_by(|x, y| y.0.cmp(&x.0).then(x.1.total_cmp(&y.1)));
     let items: Vec<String> = found
         .iter()
         .map(|(_, at, r)| {
@@ -347,7 +347,7 @@ pub fn pireps_in_box(reports: &[Value], box_: (f64, f64, f64, f64), now: f64) ->
         .filter(|r| told(r, now))
         .filter(|r| num(r, "lat").is_some_and(|l| s <= l && l <= n) && num(r, "lon").is_some_and(|l| w <= l && l <= e))
         .collect();
-    found.sort_by_key(|r| r.get("urgent") == Some(&Value::Bool(true)));
+    found.stable_sort_by_key(|r| r.get("urgent") == Some(&Value::Bool(true)));
     let items: Vec<String> = found
         .iter()
         .map(|r| {

@@ -4,6 +4,7 @@
 use super::{awc, field, hours, route};
 use crate::json::{self, Value};
 use crate::{metar, winds};
+use wingtip_core::sort::StableSort;
 
 type R<T> = Result<T, String>;
 
@@ -90,7 +91,7 @@ fn profile(name: &str, v: &Value) -> R<Vec<(f64, f64)>> {
         })
         .collect::<Result<_, &str>>()
         .map_err(|_| format!("{name}: \"profile\" is not [[altitude_ft, temp_c], ...]"))?;
-    out.sort_by(|a, b| a.0.total_cmp(&b.0));
+    out.stable_sort_by(|a, b| a.0.total_cmp(&b.0));
     Ok(out)
 }
 

@@ -17,6 +17,10 @@
 //! the rules and definitions in order of name, so two branches that each
 //! add a rule add two files and never touch the same line.
 
+// A tool on the host, not in the WebAssembly, so the slices' own sorts
+// are fine here (engine/clippy.toml).
+#![allow(clippy::disallowed_methods)]
+
 use serde_json::{Map, Value};
 use std::collections::BTreeMap;
 use std::fs;

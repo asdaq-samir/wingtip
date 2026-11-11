@@ -139,11 +139,12 @@ areas:
       - engine/**
   engine:
     ci: test-engine
-    check: scripts/ci/engine_layers.py, cargo machete, clippy, then cargo test --profile ci over scripts/ci/engine_affected.py --all
+    check: scripts/ci/engine_layers.py, scripts/ci/wasm_size.py, cargo machete, clippy, then cargo test --profile ci over scripts/ci/engine_affected.py --all
     paths:
       - engine/**
       - scripts/ci/engine_layers.py
       - scripts/ci/engine_affected.py
+      - scripts/ci/wasm_size.py
       # the committed WebAssembly, held to what engine/ builds
       - scripts/build/build-engine-wasm.sh
       - apps/web/src/lib/engine/wingtip-engine.wasm

@@ -15,6 +15,7 @@
 //! where 1,000 would do, never the other way.
 
 use super::track::Point;
+use wingtip_core::sort::StableSort;
 
 const fn dms(deg: f64, minutes: f64) -> f64 {
     deg + minutes / 60.0
@@ -222,7 +223,7 @@ pub fn crossed(a: Point, b: Point) -> bool {
             crossings(c, a, b, &mut ts);
         }
     }
-    ts.sort_by(f64::total_cmp);
+    ts.stable_sort_by(f64::total_cmp);
     let point = |t: f64| (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t);
     ts.iter().any(|&t| at(point(t))) || ts.windows(2).any(|w| at(point((w[0] + w[1]) / 2.0)))
 }

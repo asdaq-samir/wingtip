@@ -2,6 +2,7 @@
 
 use crate::flight::lowest_vfr_cruising_altitude;
 use crate::geo::py_mod;
+use wingtip_core::sort::StableSort;
 
 /// 14 CFR 71.33: Class A airspace begins at 18,000 ft MSL, and 91.135
 /// takes no VFR flight into it: no VFR cruising above 17,500. The figures
@@ -59,7 +60,7 @@ pub fn legal_vfr(floor_ft: f64, ceiling_ft: Option<f64>, magnetic_course_deg: f6
             candidate += LOW_STEP_FT;
         }
     }
-    out.sort_by(f64::total_cmp);
+    out.stable_sort_by(f64::total_cmp);
     out.dedup();
     out
 }
@@ -104,7 +105,7 @@ pub fn wheel(legal_ft: &[f64], flown_ft: Option<f64>) -> Vec<f64> {
     rows.extend(flown_ft);
     // The ladder is limits' vfr_altitudes, the one the apps ask by name.
     rows.extend(wingtip_flight::limits::vfr_altitudes(WHEEL_LOWEST_FT));
-    rows.sort_by(|a, b| b.total_cmp(a));
+    rows.stable_sort_by(|a, b| b.total_cmp(a));
     rows.dedup();
     rows
 }

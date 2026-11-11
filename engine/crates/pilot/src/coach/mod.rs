@@ -12,6 +12,8 @@
 //! this answer gives each currency ("due:night_passengers") and each line
 //! of evidence ("ev:2"), and never decides what is due.
 
+use wingtip_core::sort::StableSort;
+
 pub mod due;
 pub mod evidence;
 pub mod sessions;
@@ -68,7 +70,7 @@ fn plan(name: &str, v: &Value) -> Result<String, String> {
         .map(|w| (*w, evidence.iter().filter(|e| e.weak == *w).collect::<Vec<_>>()))
         .filter(|(_, e)| !e.is_empty())
         .collect();
-    weak.sort_by_key(|w| std::cmp::Reverse(w.1.len()));
+    weak.stable_sort_by_key(|w| std::cmp::Reverse(w.1.len()));
     let places = sessions::places(name, list(name, v, "places")?)?;
     let sessions = sessions::plan(&due, &weak, &currency, &places);
     Ok(write::plan(today_iso, &due, &evidence, &weak, &sessions))

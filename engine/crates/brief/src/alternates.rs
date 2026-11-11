@@ -29,6 +29,7 @@
 
 use crate::figures::words::grouped;
 use crate::json::{self, Value};
+use wingtip_core::sort::StableSort;
 
 /// 91.169(b)(2)(i): an hour either side of the ETA, at least 2,000 ft
 /// above the field and 3 sm.
@@ -226,7 +227,7 @@ fn ranked(checks: &[Value], limit: usize) -> Value {
         })
         .collect();
     let distance = |c: &Value| c.get("distance_nm").and_then(Value::as_f64).unwrap_or(f64::INFINITY);
-    kept.sort_by(|a, b| {
+    kept.stable_sort_by(|a, b| {
         let not_good = |c: &Value| c.get("good") != Some(&Value::Bool(true));
         not_good(a).cmp(&not_good(b)).then(distance(a).total_cmp(&distance(b)))
     });

@@ -4,6 +4,8 @@
 //! coding of the NWS's FB text is AC 00-45H's Winds and Temperatures Aloft
 //! Forecast.
 
+use wingtip_core::sort::StableSort;
+
 // Moved from the planner's wingtip.weather (#482 phase 2): a station's
 // levels as the weather service stores them ({altitude_ft: {
 // "wind_dir_true_deg", "wind_speed_kt", "temp_c"}}, the GFS's levels at the
@@ -32,7 +34,7 @@ pub struct WindAt {
 /// level is left -- no wind known, never calm.
 pub fn wind_at_altitude(levels: &[(f64, Option<f64>, f64)], altitude_ft: f64) -> Option<WindAt> {
     let mut profile: Vec<(f64, f64, f64)> = levels.iter().filter_map(|&(a, d, s)| d.map(|d| (a, d, s))).collect();
-    profile.sort_by(|a, b| a.0.total_cmp(&b.0));
+    profile.stable_sort_by(|a, b| a.0.total_cmp(&b.0));
     let (first, last) = (*profile.first()?, *profile.last()?);
     if altitude_ft <= first.0 {
         return Some(WindAt { dir_true_deg: first.1, speed_kt: first.2 });

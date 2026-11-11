@@ -355,15 +355,15 @@ mod tests {
                 blanks.push(rest[open + 1..close].to_owned());
                 rest = &rest[close + 1..];
             }
-            blanks.sort();
+            crate::sort::StableSort::stable_sort(&mut blanks[..]);
             blanks.dedup();
             let mut fields: Vec<String> = k.fields.iter().map(|f| f.key.to_owned()).chain(["student".to_owned()]).collect();
-            fields.sort();
+            crate::sort::StableSort::stable_sort(&mut fields[..]);
             fields.dedup();
             assert_eq!(blanks, fields, "{}", k.code);
         }
         let mut codes: Vec<_> = KINDS.iter().map(|k| k.code).collect();
-        codes.sort();
+        crate::sort::StableSort::stable_sort(&mut codes[..]);
         codes.dedup();
         assert_eq!(codes.len(), KINDS.len());
     }

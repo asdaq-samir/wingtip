@@ -16,6 +16,7 @@ use crate::geo;
 use crate::json::{self, Value};
 use std::collections::HashMap;
 use wingtip_core::grid::Point;
+use wingtip_core::sort::StableSort;
 
 /// Kept from Class B airspace a route is bent round, as a pilot keeps a
 /// margin from its edge rather than skimming it: a mile, in degrees of the
@@ -191,7 +192,7 @@ pub fn detours(start: Point, end: Point, shelves: &[Shelf], below_ft: f64, fixes
             },
         ));
     }
-    ranked.sort_by(|a, b| a.0.total_cmp(&b.0).then_with(|| a.1.ident.cmp(&b.1.ident)));
+    ranked.stable_sort_by(|a, b| a.0.total_cmp(&b.0).then_with(|| a.1.ident.cmp(&b.1.ident)));
     ranked.into_iter().take(DETOUR_CHOICES).map(|(_, d)| d).collect()
 }
 

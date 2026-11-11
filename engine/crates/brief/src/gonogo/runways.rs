@@ -16,6 +16,7 @@ pub use crate::runway::performance::{
     density_altitude_ft, end_distance, field_air, pressure_altitude_ft, short_field, soft_surface, Distances, ShortField,
 };
 pub use crate::runway::pick::{bare_ident, picked_end, runway_flown, runway_in_use, runway_number, End, Flown, Picks, Runway};
+use wingtip_core::sort::StableSort;
 
 /// A field's current report, as much as the check reads of it.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
@@ -125,7 +126,7 @@ pub fn runway_checks(
         // The runway the wind favours most, or the longest without a wind.
         let mut open: Vec<usize> = (0..runways.len()).filter(|&r| !runways[r].closed).collect();
         let headwind_of = |r: usize| runways[r].wind.as_ref().map_or(-99.0, |w| w.headwind_kt);
-        open.sort_by(|&a, &b| {
+        open.stable_sort_by(|&a, &b| {
             headwind_of(b)
                 .total_cmp(&headwind_of(a))
                 .then_with(|| runways[b].length_ft.unwrap_or(0.0).total_cmp(&runways[a].length_ft.unwrap_or(0.0)))

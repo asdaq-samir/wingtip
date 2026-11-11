@@ -17,7 +17,7 @@
 //! track's (TrackDto: `t` in ms since 1970, GPS altitude in feet).
 
 use crate::geo::{angle_between, bearing_deg, distance_nm};
-use crate::json;
+use crate::{json, sort::StableSort};
 
 /// PA.VI.A's tolerances: S7's altitude, and its heading applied to the
 /// ground track; S5's distance from the planned route; S6's time at each
@@ -216,7 +216,7 @@ struct Grade {
 /// MSL, by ident (the planner's own, wingtip.pattern's).
 pub fn debrief(checkpoints: &[Checkpoint], points: &[Point], patterns: &[(String, f64)]) -> Option<Debrief> {
     let mut cps = checkpoints.to_vec();
-    cps.sort_by_key(|c| c.sequence_no);
+    cps.stable_sort_by_key(|c| c.sequence_no);
     let runs = airborne(points);
     if cps.len() < 2 || runs.is_empty() {
         return None;
@@ -624,7 +624,7 @@ pub fn tolerances_json() -> String {
 /// first, as the planner does.
 pub fn answer_json(checkpoints: &[Checkpoint], points: &[Point], patterns: &[(String, f64)]) -> String {
     let mut sorted = points.to_vec();
-    sorted.sort_by(|a, b| a.t.total_cmp(&b.t));
+    sorted.stable_sort_by(|a, b| a.t.total_cmp(&b.t));
     let mut out = String::from("{\"debrief\":");
     match debrief(checkpoints, &sorted, patterns) {
         Some(d) => out.push_str(&to_json(&d, true)),

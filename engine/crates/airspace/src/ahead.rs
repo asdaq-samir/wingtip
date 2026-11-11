@@ -21,7 +21,7 @@
 
 use crate::geo::destination;
 use crate::json::{self, Value};
-use crate::pack::Pack;
+use crate::{pack::Pack, sort::StableSort};
 
 /// How far ahead the airspace is looked at: the minutes it takes to find
 /// the frequency, call and be answered before a Class C or D, or to be
@@ -629,7 +629,7 @@ fn obstacle_alerts(track: &Track, obstacles: &[Obstacle], gs_kt: f64) -> Vec<Ale
             ..Default::default()
         });
     }
-    found.sort_by(|a, b| a.seconds.partial_cmp(&b.seconds).unwrap());
+    found.stable_sort_by(|a, b| a.seconds.partial_cmp(&b.seconds).unwrap());
     found.truncate(3);
     found
 }
@@ -686,7 +686,7 @@ fn near_field(packs: &[Pack], lat: f64, lon: f64, alt: f64) -> bool {
 
 fn sorted(mut alerts: Vec<Alert>) -> Vec<Alert> {
     // Warnings first, then the soonest.
-    alerts.sort_by(|a, b| (a.level != "warning").cmp(&(b.level != "warning")).then(a.seconds.partial_cmp(&b.seconds).unwrap()));
+    alerts.stable_sort_by(|a, b| (a.level != "warning").cmp(&(b.level != "warning")).then(a.seconds.partial_cmp(&b.seconds).unwrap()));
     alerts
 }
 

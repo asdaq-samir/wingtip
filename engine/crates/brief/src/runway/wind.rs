@@ -14,6 +14,7 @@
 use super::pick::{runway_in_use, runway_number, Runway};
 use crate::figures::words::js_round_f;
 use crate::geo::py_mod;
+use wingtip_core::sort::StableSort;
 
 /// A runway's wind as the planner works it out (favoured_end): the end it
 /// favours as painted, and its components, knots -- the crosswind signed,
@@ -318,7 +319,7 @@ pub fn wind_pick(runways: &[Runway], nearby: Option<&Nearby>, forecast_at: Optio
     // The most headwind, the longer runway on a tie (a stable sort, the
     // data's order among equals).
     let mut sorted = ends;
-    sorted.sort_by(|a, b| {
+    sorted.stable_sort_by(|a, b| {
         tie_places(headwind_kt(dir, speed, b.2))
             .total_cmp(&tie_places(headwind_kt(dir, speed, a.2)))
             .then_with(|| b.0.length_ft.unwrap_or(0.0).total_cmp(&a.0.length_ft.unwrap_or(0.0)))

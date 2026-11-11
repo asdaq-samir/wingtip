@@ -55,7 +55,7 @@
 //! on the simplified ring it can differ from the planner's by a little.
 
 use crate::json::{self, Value};
-use crate::pack::Pack;
+use crate::{pack::Pack, sort::StableSort};
 
 /// The planner's defaults: at most this many fields, and this many VORs.
 pub const AIRPORT_LIMIT: usize = 300;
@@ -334,7 +334,7 @@ pub(crate) fn representative(polygons: &[Polygon]) -> Option<Pt> {
                 xs.push(a.0 + (b.0 - a.0) * (y - a.1) / (b.1 - a.1));
             }
         }
-        xs.sort_by(|a, b| a.partial_cmp(b).unwrap());
+        xs.stable_sort_by(|a, b| a.partial_cmp(b).unwrap());
         for pair in xs.as_chunks::<2>().0 {
             let width = pair[1] - pair[0];
             if best.is_none_or(|b| width > b.0) {
@@ -459,7 +459,7 @@ pub fn airspace_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
             });
         }
     }
-    found.sort_by_key(|f| f.number.unwrap_or(usize::MAX));
+    found.stable_sort_by_key(|f| f.number.unwrap_or(usize::MAX));
     let mut out = String::from("{\"volumes\":[");
     for (k, f) in found.iter().enumerate() {
         if k > 0 {
@@ -628,7 +628,7 @@ pub fn airports_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east:
             });
         }
     }
-    pins.sort_by(|a, b| rank(a.kind).cmp(&rank(b.kind)).then_with(|| a.ident.cmp(&b.ident)));
+    pins.stable_sort_by(|a, b| rank(a.kind).cmp(&rank(b.kind)).then_with(|| a.ident.cmp(&b.ident)));
     pins.truncate(AIRPORT_LIMIT);
     let primary = primaries(packs);
     let mut out = String::from("{\"airports\":[");
@@ -745,7 +745,7 @@ pub fn navaids_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east: 
         }
     }
     vors.retain(|v| VOR_KINDS.contains(&v.kind));
-    vors.sort_by(|a, b| a.ident.cmp(&b.ident));
+    vors.stable_sort_by(|a, b| a.ident.cmp(&b.ident));
     vors.truncate(NAVAID_LIMIT);
     let mut out = String::from("{\"vors\":[");
     for (k, v) in vors.iter().enumerate() {

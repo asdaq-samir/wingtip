@@ -24,6 +24,7 @@
 use super::due::{Due, Status};
 use super::evidence::{Evidence, Weak};
 use crate::json::Value;
+use wingtip_core::sort::StableSort;
 
 /// The most sessions a plan holds: a pilot looks and goes (docs/decisions/0012).
 pub const MOST_SESSIONS: usize = 4;
@@ -59,7 +60,7 @@ pub fn places(name: &str, items: &[Value]) -> Result<Vec<Place>, String> {
             })
         })
         .collect::<Result<_, String>>()?;
-    out.sort_by(|a, b| a.distance_nm.total_cmp(&b.distance_nm));
+    out.stable_sort_by(|a, b| a.distance_nm.total_cmp(&b.distance_nm));
     Ok(out)
 }
 

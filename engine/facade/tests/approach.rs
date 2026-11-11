@@ -769,7 +769,7 @@ fn the_quiz_never_offers_the_answer_as_a_wrong_choice_nor_any_choice_twice() {
             let choices = q["choices"].as_array().unwrap();
             let mut seen = choices.clone();
             seen.dedup();
-            seen.sort_by_key(|c| c.to_string());
+            wingtip_engine::sort::StableSort::stable_sort_by_key(&mut seen[..], |c| c.to_string());
             seen.dedup();
             assert_eq!(seen.len(), choices.len());
             assert_eq!(choices.iter().filter(|c| **c == answer(&q)).count(), 1);

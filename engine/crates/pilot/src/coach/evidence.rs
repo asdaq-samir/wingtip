@@ -10,6 +10,7 @@
 
 use crate::json::Value;
 use crate::time::days_from_civil;
+use wingtip_core::sort::StableSort;
 
 use crate::pilot::currency::day;
 
@@ -199,7 +200,7 @@ pub fn evidence(name: &str, debriefs: &[Value], today: i64) -> Result<Vec<Eviden
         }
     }
     // Newest first, the order found kept within a day.
-    found.sort_by_key(|f| std::cmp::Reverse(f.day));
+    found.stable_sort_by_key(|f| std::cmp::Reverse(f.day));
     for (i, e) in found.iter_mut().enumerate() {
         e.id = format!("ev:{}", i + 1);
     }

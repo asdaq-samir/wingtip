@@ -8,6 +8,7 @@ use crate::forecast::awc::GAIRMET_SNAPSHOT_S;
 use crate::forecast::route::{self, feet, miles};
 use crate::geo;
 use crate::json::Value;
+use wingtip_core::sort::StableSort;
 use wingtip_flight::vfr;
 
 /// What an alert or an area is.
@@ -269,6 +270,6 @@ pub fn alerts(input: &Input, samples: &[Meets], fields: &[FieldMet], areas: &[Ar
         }
         was_in.clone_from(&m.areas);
     }
-    out.sort_by(|a, b| a.t.total_cmp(&b.t));
+    out.stable_sort_by(|a, b| a.t.total_cmp(&b.t));
     out
 }

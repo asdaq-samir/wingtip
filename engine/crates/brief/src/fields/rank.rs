@@ -2,6 +2,7 @@
 //! runway end, and the order.
 
 use std::cmp::Ordering;
+use wingtip_core::sort::StableSort;
 
 use super::{reasons, Airplane, Answer, EndPick, Field, Mode, Own, Ranked, Reach, Ring};
 use crate::figures::debrief::AIRBORNE_KT;
@@ -41,7 +42,7 @@ pub fn best_fields(mode: Mode, own: &Own, airplane: Option<&Airplane>, fields: V
     };
     let mut ranked: Vec<Ranked> =
         fields.into_iter().map(|field| one(mode, own, airplane, glide.filter(|_| ring.is_some()), tas, field)).collect();
-    ranked.sort_by(|a, b| order(mode, glide.is_some(), a, b));
+    ranked.stable_sort_by(|a, b| order(mode, glide.is_some(), a, b));
     ranked.truncate(limit);
     Answer { mode, ring, needs_airplane: mode == Mode::Glide && glide.is_none(), fields: ranked }
 }

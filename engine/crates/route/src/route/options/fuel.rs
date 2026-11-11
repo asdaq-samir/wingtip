@@ -19,7 +19,7 @@ use super::stops::MIN_RUNWAY_FT;
 use super::words::r1;
 use crate::geo::{self, EARTH_RADIUS_NM};
 use crate::json::{self, Value};
-use wingtip_core::grid::Point;
+use wingtip_core::{grid::Point, sort::StableSort};
 
 /// How far off the straight line a stop may take the flight, the miles it
 /// adds: beyond that, a field nearer the line is always the better stop.
@@ -174,7 +174,7 @@ pub fn suggest(start: Point, end: Point, fig: &Figures, fields: &[Field], skip: 
     let off_line: Vec<f64> = at.iter().map(|p| cross_track_nm(p.0, p.1, start, end).abs()).collect();
     let mut ranked = first.clone();
     let key = |i: usize| (trip(i) > quickest + SAME_MINUTES, off_line[i].round_ties_even(), -least_landing(i), trip(i));
-    ranked.sort_by(|&a, &b| key(a).partial_cmp(&key(b)).unwrap_or(std::cmp::Ordering::Equal));
+    ranked.stable_sort_by(|&a, &b| key(a).partial_cmp(&key(b)).unwrap_or(std::cmp::Ordering::Equal));
     let stop = |i: usize, prev: Option<usize>, flown_nm: f64| {
         let f = nodes[i - 1];
         let leg = match prev {
@@ -240,9 +240,9 @@ pub fn along(flights: &[(String, Point, Point)], skip: &[String], fields: &[Fiel
             });
         }
     }
-    out.sort_by(|a, b| a.added_nm.total_cmp(&b.added_nm));
+    out.stable_sort_by(|a, b| a.added_nm.total_cmp(&b.added_nm));
     out.truncate(ALONG_MOST);
-    out.sort_by(|a, b| a.flight.cmp(&b.flight).then(a.from_nm.total_cmp(&b.from_nm)));
+    out.stable_sort_by(|a, b| a.flight.cmp(&b.flight).then(a.from_nm.total_cmp(&b.from_nm)));
     out
 }
 

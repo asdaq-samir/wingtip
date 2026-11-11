@@ -7,6 +7,8 @@
 //! close enough together to catch a heading error before it compounds.
 //! Until 2026-09-10 the nav log zipped all of them into 205 legs.
 
+use wingtip_core::sort::StableSort;
+
 /// A VFR pilotage checkpoint every 10-15 nm is the spacing flight training
 /// conventionally uses; no regulation or handbook sets one, so it is the
 /// planner's own figure: close enough that a heading error shows before it
@@ -57,7 +59,7 @@ pub fn select(
         .filter(|&(_, _, score)| min_score.is_none_or(|m| score >= m))
         .filter(|&(_, along, _)| length_nm.is_none_or(|l| NEAR_A_STOP_NM <= along && along <= l - NEAR_A_STOP_NM))
         .collect();
-    usable.sort_by(|a, b| b.2.total_cmp(&a.2).then(a.1.total_cmp(&b.1)));
+    usable.stable_sort_by(|a, b| b.2.total_cmp(&a.2).then(a.1.total_cmp(&b.1)));
     let mut chosen: Vec<(usize, f64)> = Vec::new();
     for (i, along, _) in usable {
         if max_count.is_some_and(|m| chosen.len() >= m) {
@@ -67,7 +69,7 @@ pub fn select(
             chosen.push((i, along));
         }
     }
-    chosen.sort_by(|a, b| a.1.total_cmp(&b.1));
+    chosen.stable_sort_by(|a, b| a.1.total_cmp(&b.1));
     chosen.into_iter().map(|(i, _)| i).collect()
 }
 

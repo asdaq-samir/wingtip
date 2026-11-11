@@ -10,6 +10,7 @@ use super::ways::line_minutes;
 use crate::geo;
 use std::cell::RefCell;
 use wingtip_core::grid::Point;
+use wingtip_core::sort::StableSort;
 
 /// The fields with fuel looked at for a stop, nm off the way.
 pub const STOP_FIELD_NM: f64 = 15.0;
@@ -141,7 +142,7 @@ pub fn stops(grid: &Grid, gs: &Vec<f64>, way: &[Point], fuel: &Fuel, fewest: boo
             (s.2, best.0, (s.0, s.1), *f)
         })
         .collect();
-    found.sort_by(|a, b| a.0.total_cmp(&b.0));
+    found.stable_sort_by(|a, b| a.0.total_cmp(&b.0));
     let mut nodes = vec![Stop { at: 0.0, off: 0.0, ident: String::new(), name: String::new(), lat: 0.0, lon: 0.0, dear: 0.0, food: false }];
     for (at, off, on_way, f) in found {
         if off > STOP_FIELD_NM || !(0.0 < at && at < total_min) {
