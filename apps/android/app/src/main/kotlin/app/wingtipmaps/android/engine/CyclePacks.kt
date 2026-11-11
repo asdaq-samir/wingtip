@@ -202,6 +202,10 @@ class CyclePacks(private val root: File) {
         @Volatile
         private var shared: CyclePacks? = null
 
+        /** The app's store, made at launch (WingtipApplication); none in a
+         *  JVM test, where nothing is kept. */
+        val current: CyclePacks? get() = shared
+
         /** The app's one store of packs, under filesDir/cycle-packs. */
         fun of(context: Context): CyclePacks =
             shared ?: synchronized(this) {

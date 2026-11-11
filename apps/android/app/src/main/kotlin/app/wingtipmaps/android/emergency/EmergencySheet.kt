@@ -122,6 +122,9 @@ private fun FieldsList(state: EmergencyModel.State, onPick: (String) -> Unit, on
     SectionTitle(if (glide != null) stringResource(R.string.best_fields_glide, glide.stillAirNm.toInt()) else stringResource(R.string.best_fields))
     if (state.loading) LinearProgressIndicator(Modifier.fillMaxWidth())
     ProblemLine(state.problem)
+    // The planner out of reach: the packs' fields, said so, since they
+    // carry no weather, runways or frequencies.
+    if (state.onPhone) Text(stringResource(R.string.from_this_phone), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     // An airplane without its glide ratio: asked for here, nearest first
     // meanwhile; with none, the guidance below has the picker.
     if (ranked?.needsAirplane == true && state.guidance.isEmpty()) askGlide()

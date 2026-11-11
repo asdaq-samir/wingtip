@@ -508,6 +508,8 @@
     <string name="welcome_sample">Open Sample Flight</string>
     <string name="welcome_own">Plan My Own</string>
     <string name="welcome_again">Show Welcome Again</string>
+    <!-- Emergency and Nearest worked out from the cycle packs, the planner out of reach (PhoneFields). -->
+    <string name="from_this_phone">From this phone, without weather</string>
     <string name="microphone">Microphone</string>
     <string name="loading">Loading</string>
     <string name="microphone_line">Wingtip listens to the radio to write down your clearance. Speech is recognised on this phone and never leaves it.</string>
