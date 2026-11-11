@@ -262,10 +262,10 @@ in the search is not counted.
 
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
-| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop; each field of the route opens its card |
+| Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop; each field of the route opens its card; under IFR an Alternate row after the destination (its card), or Add Alternate, which opens the Brief's Alternate (2026-11-10) |
 | Nav Log, Profile | the flight's card → Nav Log (or the figures); the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
 | A leg | a leg on the map, a nav log row, or a strip checkpoint: the one leg card | 1 / 2 | Direct, Remove |
-| Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head |
+| Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head; under IFR the Alternate (14 CFR 91.169): an alternate filed from those that will do, or taken off, as the web's (2026-11-10) |
 | Airport card | search → the field; tap it on the map; a list row; the plan's field | 1 + typing (map 1) | Fly Here (with its time), Depart From, Add as Stop, Diagram, Call, Address at its foot; the star; Overview, Weather, Frequencies, Runways, Approaches, NOTAMs under pinned tabs |
 | A fix, VOR, airspace, traffic, What's Here | tap it on the map; an alert; a point's More Info | 1 | its actions |
 | Airplane card (the one airplane card) | the flight's card → Airplane; search → an airplane; Ready to Fly's Pick an Airplane; a logbook N-number | 2 → 2 | The flown airplane's picker, registration, passengers, Your Airplanes; every figure a tap to edit; Fly This Airplane |

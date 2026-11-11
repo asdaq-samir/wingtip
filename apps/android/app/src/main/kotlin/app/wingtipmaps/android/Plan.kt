@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.OwnAirplanes
 import app.wingtipmaps.android.airplane.OwnRecord
+import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.altitude.PlanAltitudes
 import app.wingtipmaps.android.api.Course
 import app.wingtipmaps.android.api.Leg
@@ -91,7 +92,6 @@ class Plan(app: Application) : AndroidViewModel(app) {
     }
 
     private val store = KeptPlan(app)
-
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
 
@@ -232,7 +232,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 val course = Planner.course(asked.dep, asked.dest, asked.stops)
                 _state.update { it.copy(course = course) }
                 val fresh = mutableListOf<Leg>()
-                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart, PlanAltitudes.query(listOf(asked.dep) + asked.stops + asked.dest)).collect { message ->
+                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart, PlanAltitudes.query(listOf(asked.dep) + asked.stops + asked.dest) + PlanAlternate.query(asked.rules, asked.dest)).collect { message ->
                     when (message) {
                         is NavLogMessage.Stage -> _state.update { it.copy(stage = message.detail) }
                         is NavLogMessage.Altitude -> PlanAltitudes.heard(message.line)
