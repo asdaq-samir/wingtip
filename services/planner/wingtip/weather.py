@@ -525,9 +525,9 @@ def ceiling_visibility_along_route(
 def tafs_over(windows: dict) -> dict:
     """Each station's TAF read over a window of its own -- {icaoId:
     (start, end)} in unix seconds, around when the flight gets there --
-    as {icaoId: {"ceiling_ft", "ceiling_unknown", "visibility_sm", "raw"}}:
-    the worst it forecasts then (_worst_in_window) and the forecast as
-    issued. Figures None where the TAF says nothing about its window; a
+    as {icaoId: {"ceiling_ft", "ceiling_unknown", "visibility_sm", "covers",
+    "raw"}}: the worst it forecasts then and whether the TAF covers the
+    whole window (_worst_in_window), and the forecast as issued. Figures None where the TAF says nothing about its window; a
     station with no TAF held is left out."""
     if not windows:
         return {}
