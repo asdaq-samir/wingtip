@@ -1,8 +1,10 @@
 import { cn } from "cn";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 
-function TooltipProvider({ delay = 0, ...props }: TooltipPrimitive.Provider.Props) {
-  return <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} {...props} />;
+// Base UI's own delay (600 ms), not shadcn's 0: a mouse crossing a row of
+// buttons no longer pops each label in turn over the next.
+function TooltipProvider(props: TooltipPrimitive.Provider.Props) {
+  return <TooltipPrimitive.Provider data-slot="tooltip-provider" {...props} />;
 }
 
 function Tooltip({ ...props }: TooltipPrimitive.Root.Props) {

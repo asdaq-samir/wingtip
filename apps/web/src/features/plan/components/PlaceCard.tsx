@@ -32,6 +32,7 @@ import { TEXT } from "../../../lib/text";
 import { diagramRunwaysPicture } from "../../../lib/diagram";
 import { ago } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
+import { prefersReducedMotion } from "../../../lib/motion";
 import { arrivalHour, hoursOf, sentenceOf } from "../lib/hourly";
 import { sameField } from "../../../lib/procedures";
 import { airportQuery, photosQuery, servicesQuery } from "../../../lib/queryClient";
@@ -220,7 +221,9 @@ export default function PlaceCard({
         tabsRef.current
           ?.closest('[data-testid="place-card"]')
           ?.querySelector('[data-chart-group="Approaches"]')
-          ?.scrollIntoView({ block: "start", behavior: "smooth" });
+          // Smooth only where motion is welcome: CSS's Reduce Motion rule
+          // (index.css) cannot reach a script's own behavior.
+          ?.scrollIntoView({ block: "start", behavior: prefersReducedMotion() ? "auto" : "smooth" });
         started();
       }, 50);
     }, RISEN_MS);

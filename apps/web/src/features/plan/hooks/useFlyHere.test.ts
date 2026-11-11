@@ -60,8 +60,8 @@ describe("Fly Here read ahead as a card opens", () => {
   test("asks for its route's checkpoints and nav log as reads ahead", async () => {
     renderHook((p: ReturnType<typeof props>) => useFlyHere(p), { initialProps: props("KOSH") });
     await waitFor(() => expect(api.navlog).toHaveBeenCalled());
-    expect(api.course).toHaveBeenCalledWith("KMSN", "KOSH", [], expect.anything());
-    expect(api.checkpoints).toHaveBeenCalledWith("KMSN", "KOSH", [], expect.anything(), true);
+    expect(api.course).toHaveBeenCalledWith("KMSN", "KOSH", [], expect.anything(), undefined);
+    expect(api.checkpoints).toHaveBeenCalledWith("KMSN", "KOSH", [], expect.anything(), true, undefined);
     // Its `ahead`, before Start At: the planner's reads queued behind the pilot's.
     expect(vi.mocked(api.navlog).mock.calls[0]!.at(-2)).toBe(true);
   });

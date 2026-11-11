@@ -26,6 +26,8 @@ vi.mock("../../../lib/api/client", async (importOriginal) => ({
     saveCheckpointNote: vi.fn(),
     narrative: vi.fn(),
     me: vi.fn(),
+    // The chart's cycle (chartCycle): unanswered but where a test sets it.
+    chart: vi.fn(),
   },
 }));
 
@@ -70,6 +72,7 @@ beforeEach(() => {
   vi.mocked(api.briefing).mockReturnValue(new Promise(() => {})); // never answers; not what these tests are about
   vi.mocked(api.checkpoints).mockReturnValue(new Promise(() => {}));
   vi.mocked(api.me).mockResolvedValue(null);
+  vi.mocked(api.chart).mockReturnValue(new Promise(() => {}));
 });
 
 afterEach(() => {
@@ -336,5 +339,15 @@ describe("an altitude asked for", () => {
     rerender({ ...params, dest: "KMSP", altitudeFt: "6500" });
     await waitFor(() => expect(result.current.legs).toEqual([]));
     expect(result.current.replanning).toBe(false);
+  });
+});
+
+describe("the chart cycle", () => {
+  test("the course and checkpoints are asked again in the chart's cycle, as the tiles are", async () => {
+    vi.mocked(api.chart).mockResolvedValue({ ...courseFixture(), chart_cycle: "11-27-2026" } as never);
+    renderHook(() => usePlan(params), { wrapper });
+
+    await waitFor(() => expect(api.course).toHaveBeenCalledWith("C81", "KDLH", [], expect.anything(), "11-27-2026"));
+    await waitFor(() => expect(api.checkpoints).toHaveBeenCalledWith("C81", "KDLH", [], expect.anything(), false, "11-27-2026"));
   });
 });

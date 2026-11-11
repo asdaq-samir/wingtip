@@ -39,19 +39,12 @@ export function IconTip({ label, variant = "ghost", size = "icon", className, ch
   // closeNavLog on run 42843021881). The keys stay the button's own.
   const { onKeyDown: _keyDown, onKeyUp: _keyUp, ...holdProps } = longPressProps;
   return (
-    <Tooltip
-      open={open}
-      // The tooltip opens on a pointer, never on focus: a sheet opening
-      // focuses its first control, and the tooltip that popped up over it
-      // took the Escape meant for the sheet. The accessible name is the
-      // label either way.
-      onOpenChange={(next, details) => {
-        if (next && details.reason === "trigger-focus") return;
-        setOpen(next);
-      }}
-    >
+    // Base UI's own opening: after its hover delay, and on a keyboard's
+    // focus, so a keyboard user learns what an icon does. The main sheet
+    // and the cards no longer focus a first control as they open
+    // (initialFocus false), which is why focus was once kept out.
+    <Tooltip open={open} onOpenChange={setOpen}>
       <TooltipTrigger
-        delay={0}
         render={
           <Button
             variant={variant}

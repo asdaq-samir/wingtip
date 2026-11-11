@@ -23,7 +23,6 @@ export const subscriptionQuery = queryOptions({
   queryKey: ["subscription"],
   queryFn: () => api.subscription.get(),
   staleTime: 60_000,
-  retry: false,
   meta: { silent: true },
 });
 
