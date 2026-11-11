@@ -31,6 +31,9 @@ final class Navigator {
     private(set) var card: Card?
     /// The pages pushed inside the card.
     var cardPath: [SheetPage] = []
+    /// The plan's sheet's page, Search or FPL (SheetPager): kept here so a
+    /// link, Siri and every "show the plan" turn it.
+    var sheetPage: PlanPage = .search
     /// The card's height on the iPhone: half way for a thing, as Maps
     /// opens a place, full for a page.
     var cardDetent: PresentationDetent = .half
@@ -89,10 +92,13 @@ final class Navigator {
         set(nil)
     }
 
-    /// The plan in sight: the card closed and the sidebar back to its root.
+    /// The plan in sight: the card closed, the sidebar back to its root and
+    /// the sheet on its FPL page, as a route made or opened shows it (the
+    /// carousel, 2026-11-11).
     func showPlan() {
         close()
         planPath = []
+        sheetPage = .fpl
     }
 
     /// The card, as the system sheet's item binding sets it: nil once the

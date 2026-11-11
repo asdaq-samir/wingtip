@@ -2697,6 +2697,16 @@
     "Over %@°" : {
 
     },
+    "Page %lld of %lld, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Page %1$lld of %2$lld, %3$@"
+          }
+        }
+      }
+    },
     "Passenger Briefing" : {
 
     },
@@ -2785,6 +2795,9 @@
 
     },
     "Plan Your First Flight" : {
+
+    },
+    "Plan a Flight" : {
 
     },
     "Plan a Trip" : {
@@ -3135,6 +3148,9 @@
 
     },
     "Search an Airport" : {
+
+    },
+    "Search for a field, a town or a route, or type the route's ends below." : {
 
     },
     "Search for an airport to fly to or from; the chart, the weather and the route follow." : {

@@ -78,8 +78,10 @@ struct RootView: View {
             onDragged: { Tracking.shared.follow = false })
     }
 
-    /// The sheet's lowest size, the pill: the search's row, as Maps' is.
-    static let pill = PresentationDetent.height(132)
+    /// The sheet's lowest size, the pill: the page dots and the page's
+    /// first row (the search's on Search, the route's on FPL), as Maps'
+    /// pill is its search row; 132 points for the row, the dots' row over it.
+    static let pill = PresentationDetent.height(132 + PageDots.row)
 
     var layout: RootLayout { .of(sizeClass, verticalSizeClass) }
 
