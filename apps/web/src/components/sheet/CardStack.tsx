@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, type CSSProperties, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, type CSSProperties, type ReactNode } from "react";
 import { Drawer } from "@base-ui/react/drawer";
 import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
@@ -6,7 +6,7 @@ import { closeTopCard } from "../../lib/openCards";
 import { cardOpening, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
 import { sizeAt, snapsOf } from "./insets";
 import { UNDER_INDICATOR } from "./SheetDrawer";
-import { sheetTopRef } from "./sheetTopSlot";
+import { cardSettled, sheetTopRef, useRidingCard } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
 
 export interface StackProps {
@@ -73,12 +73,21 @@ const SLIDE = {
  */
 export function CardStack(p: StackProps & { host: HTMLElement | null }) {
   const stack = useSheetCards((s) => s.stack);
+  const riding = useRidingCard();
   if (!p.host) return null;
   const top = [...stack].reverse().find((entry) => entry.shown)?.id;
-  return stack.map((entry) => <CardDrawer key={entry.id} entry={entry} top={entry.id === top} {...p} host={p.host!} />);
+  return stack.map((entry) => (
+    <CardDrawer key={entry.id} entry={entry} top={entry.id === top} riding={entry.id === riding} {...p} host={p.host!} />
+  ));
 }
 
-function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry; top: boolean; host: HTMLElement }) {
+function CardDrawer({
+  entry,
+  top,
+  riding,
+  host,
+  ...p
+}: StackProps & { entry: CardEntry; top: boolean; riding: boolean; host: HTMLElement }) {
   const { id, frame } = entry;
   const slot = useCallback((node: HTMLElement | null) => setCard(id, { slot: node }), [id]);
   const { onPhone, fromBottom } = p;
@@ -92,13 +101,15 @@ function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry;
     if (unset) setCard(id, { at });
   }, [unset, id, at]);
   const ask = useCallback((size: PanelState) => setCard(id, { at: size }), [id]);
+  // Gone, it is no longer up: opened again it comes up anew (sheetTopSlot).
+  useEffect(() => () => cardSettled(id, false), [id]);
   // A drag let go: the size of the snap point the Drawer picked, one of ours.
   const snapped = (point: Drawer.Root.SnapPoint | null) => {
     if (point === null || !top) return;
     const target = sizeAt(fromBottom, point);
     if (target && target !== at) ask(target);
   };
-  const topSlot = onPhone && fromBottom && top;
+  const topSlot = onPhone && fromBottom && riding;
   return (
     <Drawer.Root
       open={entry.shown}
@@ -108,6 +119,8 @@ function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry;
       snapToSequentialPoints
       snapPoint={onPhone ? snaps.at[at] : undefined}
       onSnapPointChange={snapped}
+      // The map's buttons move onto it once it has finished coming up (sheetTopSlot).
+      onOpenChangeComplete={(open) => cardSettled(id, open)}
       onOpenChange={(open, details) => {
         if (open) return;
         // The card on top alone hears it: two cards open are two drawers
@@ -175,7 +188,7 @@ function CardDrawer({ entry, top, host, ...p }: StackProps & { entry: CardEntry;
                 onPhone && fromBottom && UNDER_INDICATOR,
               )}
             >
-              {/* The map's buttons ride the top card's top, as the sheet's (OnSheetTop). */}
+              {/* The map's buttons ride the top card's top, as the sheet's (OnSheetTop), once it is up. */}
               {topSlot && (
                 <div
                   ref={sheetTopRef}

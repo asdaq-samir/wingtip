@@ -72,7 +72,7 @@ export function SheetDrawer({
   /** The sheet's grabber, at its free edge: outside the clip of its
    *  corners, so its hit area reaches past the sheet's edge (SheetGrabber). */
   grabber?: ReactNode;
-  /** The map's buttons ride its top (OnSheetTop): not while a card is over it, whose top they ride. */
+  /** The map's buttons ride its top (OnSheetTop): not once a card has come up over it, whose top they ride. */
   topSlot: boolean;
   /** The cards over it (CardStack), outside the clip of its corners, so a card can stand higher than it. */
   cards: ReactNode;
