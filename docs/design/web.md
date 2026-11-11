@@ -736,6 +736,19 @@ with an estimated end or a permanent one said, and in the device's own
 time with its zone named; and "As Sent" folded. A word the engine does
 not know stays as written.
 
+**The airport card's Lights** (the Info tab, `place/PlaceLights`) read
+the same way, by the planner (the engine's `lighting_read`, the owner
+2026-11-11: "Also decode the lights information"): a row a system its
+Chart Supplement remark names, its name in AIM 2-1 with the legend's
+code as the title ("Approach lights (MALSR)", "Runway edge lights, high
+intensity (HIRL)"), its runways under it, and how it is turned on
+("Key the mic on CTAF when the tower is closed", "Preset low, sunset to
+sunrise; key the mic on CTAF for more", "On all the time"); a sentence
+the engine could not read in full a row of its words, never a guess;
+the first three, "Lights ›" opening the rest; the Keying row where the
+remarks give no count of their own (7 high, 5 medium, 3 low, AIM
+2-1-8); and the remarks "As Written" folded.
+
 **Stock parts.** Filters: Base UI Toggle Group or a Menu with checkbox
 items (menus, not sliders); the list: shadcn Item rows; the raw text:
 Base UI Collapsible; Pin and Mark Read in each row's Menu.

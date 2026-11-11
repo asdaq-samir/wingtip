@@ -1082,15 +1082,15 @@ test("an airport's card says which lights a pilot turns on with the mic, and the
   page,
 }) => {
   // 3CK, Lake in the Hills: its Chart Supplement remarks, from the FAA's
-  // own airport data, in plain English.
+  // own airport data, read by the engine (lighting_read) and in plain English.
   await page.goto("/app/plan?place=3CK");
   await expect(card(page).getByTestId("place-name")).not.toBeEmpty({ timeout: slow(15000) });
   // On Info, all the way up.
   await grabberTo(page, "full");
   // With the radio, under the frequencies: it is the mic that turns
   // them on.
-  const lights = card(page).getByTestId("place-lighting");
-  await expect(lights.first()).toContainText("Activate REIL runway 08 & 26");
+  const lights = card(page).getByTestId("place-light");
+  await expect(lights.first()).toContainText(/Runway end identifier lights \(REIL\)\s*Runways 08, 26\s*Key the mic on CTAF/);
   // The standard keying a row of its own, where it was a footnote.
   await expect(card(page).getByTestId("place-keying")).toContainText("7 high · 5 medium · 3 low");
   await expect(card(page)).toContainText("Weather advisory - CTAF 5 clicks");

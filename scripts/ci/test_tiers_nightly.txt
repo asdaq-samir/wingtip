@@ -27,6 +27,7 @@ diversion.spec.ts
 document-photo.spec.ts
 dry-run-bar.spec.ts
 export.spec.ts
+field-lights.spec.ts
 field-notams.spec.ts
 first-flight.spec.ts
 flying-mode.spec.ts

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import PlaceAge from "./PlaceAge";
-import { Lightbulb, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
 import { PillSection } from "../../../../components/Favorites";
 import { FirstFew } from "../../../../components/FirstFew";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
@@ -12,6 +12,7 @@ import { feet } from "../../../../lib/format";
 import { FrequencyRow } from "../FrequencyRow";
 import { StopServices } from "../StopServices";
 import { mapsLink } from "./mapsLink";
+import { PlaceLights } from "./PlaceLights";
 import { PlaceNotamsSection } from "./PlaceNotams";
 
 /** The radio a pilot calls the field on, beside its airspace: the tower's
@@ -142,42 +143,9 @@ export function PlaceInfoTab({
           <ListRow title="Address" description={place.address ?? where ?? undefined} href={mapsLink(place)} data-testid="place-address" />
         </ListGroup>
       </CardSection>
-      {place.lighting.length > 0 && (
-        // The field's lights, from its Chart Supplement remarks: the
-        // ones a pilot turns on from the cockpit by keying the mic, and
-        // with no count of clicks of their own, the standard one --
-        // after the radio, as it is the mic that turns them on.
-        <div className="pt-5">
-          <FirstFew
-            key={place.ident}
-            title="Lights"
-            rows={place.lighting.map((note) => (
-              <ListRow
-                key={note}
-                media={
-                  <RowBadge colour={BADGE.lights}>
-                    <Lightbulb />
-                  </RowBadge>
-                }
-                title={note}
-                data-testid="place-lighting"
-              />
-            ))}
-            after={
-              place.standard_keying && (
-                // The standard keying (AIM 2-1-9): the mic keyed 7 times
-                // within 5 seconds for high intensity, 5 for medium, 3 for
-                // low -- a row, where it was a footnote.
-                <ListRow
-                  title="Keying"
-                  value={<span className="text-foreground">7 high · 5 medium · 3 low</span>}
-                  data-testid="place-keying"
-                />
-              )
-            }
-          />
-        </div>
-      )}
+      {/* The field's lights, after the radio, as it is the mic that
+          turns most of them on (PlaceLights). */}
+      <PlaceLights place={place} />
       {/* What the field offers on the ground (StopServices), after
           the radio and the lights, at the owner's ask for food, fuel
           and rest stops: its fuel first in its On the field. */}
