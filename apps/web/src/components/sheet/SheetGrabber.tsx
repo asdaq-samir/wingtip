@@ -137,6 +137,12 @@ export function SheetGrabber({
   // the keyboard is said by its own focus, so not again here.
   const list = useRef<HTMLDivElement>(null);
   const live = useRef<HTMLSpanElement>(null);
+  // Whether the pressed bar was the page up before the press: the Tabs
+  // pick a bar as it takes the focus, which a press gives it before its
+  // click, so by the click the other page's bar was up too and sized the
+  // sheet as well as turning the page. A key's click has no press: the
+  // focused bar is the page up already.
+  const pressedUp = useRef<boolean | null>(null);
   const said = useRef(page);
   useEffect(() => {
     if (said.current === page || !pages || !live.current) return;
@@ -162,12 +168,6 @@ export function SheetGrabber({
   const { names } = pages;
   // The page whose capsule is open, if one is.
   const opened = capsule.open ? capsule.shown : null;
-  // Whether the pressed bar was the page up before the press: the Tabs
-  // pick a bar as it takes the focus, which a press gives it before its
-  // click, so by the click the other page's bar was up too and sized the
-  // sheet as well as turning the page. A key's click has no press: the
-  // focused bar is the page up already.
-  const pressedUp = useRef<boolean | null>(null);
   const tapped = (up: boolean) => {
     const was = pressedUp.current ?? up;
     pressedUp.current = null;

@@ -167,9 +167,7 @@ export function SheetDrawer({
               <div className={GIVE_WAY}>{grabber}</div>
               {/* Clipped to its corners here, not on the popup, which the
                   parts over its top stand outside of. */}
-              <div className={cn("relative flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]", GIVE_WAY)}>
-                {children}
-              </div>
+              <div className={cn("relative flex min-h-0 flex-1 flex-col overflow-clip rounded-[inherit]", GIVE_WAY)}>{children}</div>
               {cards}
             </Drawer.Popup>
           </SheetViewport>
