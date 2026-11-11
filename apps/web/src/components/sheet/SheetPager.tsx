@@ -1,6 +1,4 @@
 import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
-import { Tabs } from "@base-ui/react/tabs";
-import { cn } from "cn";
 import { prefersReducedMotion } from "../../lib/motion";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "../ui/carousel";
 
@@ -13,9 +11,9 @@ import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "../ui
 export interface SheetPages {
   /** The page up: 0 the search's, 1 the plan's. */
   at: number;
-  /** A page picked, by a swipe or its dot. */
+  /** A page picked, by a swipe or its bar of the grabber. */
   go: (page: number) => void;
-  /** Each page's name, for its dot and a screen reader. */
+  /** Each page's name, for its bar of the grabber and a screen reader. */
   names: readonly [string, string];
   /** The second page's body: the plan. */
   second: ReactNode;
@@ -45,7 +43,7 @@ export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: num
       api.off("select", picked);
     };
   }, [api]);
-  // A page picked elsewhere (its dot, a route made, a link): the pager
+  // A page picked elsewhere (its bar of the grabber, a route made, a link): the pager
   // follows, at once under Reduce Motion.
   useEffect(() => {
     if (api && api.selectedScrollSnap() !== at) api.scrollTo(at, prefersReducedMotion());
@@ -55,7 +53,7 @@ export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: num
       opts={{ startIndex: start, watchDrag: drag }}
       setApi={setApi}
       // The arrow keys are the field's and the lists' here, not the pager's:
-      // the dots (Tabs) step the pages from the keyboard.
+      // the split grabber (SheetGrabber's Tabs) steps the pages from the keyboard.
       onKeyDownCapture={undefined}
       aria-label="Sheet pages"
       data-base-ui-swipe-ignore="x"
@@ -71,53 +69,5 @@ export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: num
         ))}
       </CarouselContent>
     </Carousel>
-  );
-}
-
-/**
- * The pages' dots under the grabber, iOS's page control on Base UI's Tabs:
- * the one up filled, a tap or the arrow keys picking another, each said
- * "Page 1 of 2, Search". The global 44-point hit area round each button
- * (index.css), the two meeting between the dots, not overlapping.
- */
-export function PageDots({
-  at,
-  go,
-  names,
-  className,
-}: {
-  at: number;
-  go: (page: number) => void;
-  names: readonly string[];
-  className?: string;
-}) {
-  return (
-    <Tabs.Root
-      value={at}
-      onValueChange={(value) => go(Number(value))}
-      className={cn("pointer-events-none absolute inset-x-0 z-20 flex h-4 justify-center print:hidden", className)}
-    >
-      <Tabs.List aria-label="Pages" activateOnFocus className="pointer-events-auto flex h-full">
-        {names.map((name, i) => (
-          <Tabs.Tab
-            key={name}
-            value={i}
-            aria-label={`Page ${i + 1} of ${names.length}, ${name}`}
-            data-testid={`sheet-page-dot-${i}`}
-            className={cn(
-              "group/dot relative flex h-full w-8 items-center rounded-full px-1 outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              i === 0 ? "justify-end after:right-0!" : "justify-start after:left-0!",
-              // Over the grabber's row it is the grabber's; under it, the first row's.
-              "after:-top-3! after:bottom-0!",
-            )}
-          >
-            <span
-              className="size-2 rounded-full bg-muted-foreground/40 transition-colors group-data-active/dot:bg-foreground"
-              aria-hidden="true"
-            />
-          </Tabs.Tab>
-        ))}
-      </Tabs.List>
-    </Tabs.Root>
   );
 }

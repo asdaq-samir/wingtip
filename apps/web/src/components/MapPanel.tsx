@@ -23,7 +23,8 @@ import { useSheetDetents } from "./sheet/useSheetDetents";
 import { prefersReducedMotion } from "../lib/motion";
 import { useSheetLife } from "./sheet/useSheetLife";
 import { useCardRaise } from "./sheet/useCardRaise";
-import { CUT_TOP, FOLLOW, SHEET_BELOW, SheetGrabber, SheetParts, type PartsProps } from "./sheet/SheetParts";
+import { CUT_TOP, FOLLOW, SHEET_BELOW, SheetParts, type PartsProps } from "./sheet/SheetParts";
+import { SheetGrabber } from "./sheet/SheetGrabber";
 import { CardStack, type StackProps } from "./sheet/CardStack";
 import { SheetDrawer } from "./sheet/SheetDrawer";
 import type { SheetPages } from "./sheet/SheetPager";
@@ -151,7 +152,6 @@ export default function MapPanel(props: Props) {
     size,
     moving,
     barInPill: !flying,
-    dots: !!props.pages && !flying,
     grabberOver: bottomSheet,
     footShown,
     pillChrome,
@@ -269,7 +269,15 @@ export default function MapPanel(props: Props) {
     bar,
     children,
   };
+  // A card's own grabber is the plain one; the sheet's, with its pages and
+  // not flying, the split one that picks them (SheetGrabber).
   const grabber = <SheetGrabber label={label} size={size} ask={ask} at={bottomSheet ? "top" : "bottom"} />;
+  const pages = props.pages && !flying && layer === "tab" ? props.pages : undefined;
+  const sheetGrabber = pages ? (
+    <SheetGrabber label={label} size={size} ask={ask} at={bottomSheet ? "top" : "bottom"} pages={pages} />
+  ) : (
+    grabber
+  );
   // The room at half for a card fitted to it (ProfileCard, PastFlightCard),
   // for the sheet's body and the cards over it: changed as it sets off and
   // at rest, never per frame.
@@ -336,7 +344,7 @@ export default function MapPanel(props: Props) {
         style={{ top: FLOAT_PX, height: size === "peek" ? undefined : detents.full, borderRadius: PILL_RADIUS, ...halfBody }}
       >
         <SheetParts {...shared} />
-        {!cardsUp && grabber}
+        {!cardsUp && sheetGrabber}
         {/* The cards over it, each covering the panel, its own scroller. */}
         <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40 rounded-[inherit]" />
         <CardStack {...stackProps} />
@@ -356,10 +364,9 @@ export default function MapPanel(props: Props) {
       popup={common}
       style={{ height: detents.full, maxHeight: `calc(100% - ${reserve}px)`, ...halfBody }}
       look={look}
+      grabber={!cardsUp && sheetGrabber}
     >
-      {fromBottom && !cardsUp && grabber}
       <SheetParts {...shared} />
-      {!fromBottom && !cardsUp && grabber}
       {/* The cards over it, inside it: its corners, its place. */}
       <div ref={setCardHost} className="pointer-events-none absolute inset-0 z-40" />
       <CardStack {...stackProps} />

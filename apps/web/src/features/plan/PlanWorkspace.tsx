@@ -33,7 +33,7 @@ import { listSearchOf } from "./components/workspace/listSearch";
 import OneSearchField from "./components/search/OneSearchField";
 import { useOneSearch } from "./hooks/useOneSearch";
 
-/** The sheet's pages' names (SheetPager), for their dots. */
+/** The sheet's pages' names (SheetPager), for their bars of the split grabber. */
 const PAGE_NAMES = ["Search", "FPL"] as const;
 
 /**
