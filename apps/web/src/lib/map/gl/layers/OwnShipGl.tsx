@@ -8,6 +8,7 @@ import { ownShipHtml } from "../../marks/icons";
 import { useOwnShip } from "../../position/ownShip";
 import { useGlMap } from "../glLayer";
 import { glZoom } from "../glStyle";
+import { picked } from "../pilotCamera";
 
 /** The location arrow's close-in, in the app's levels. */
 const LOCAL_ZOOM = 9;
@@ -15,10 +16,12 @@ const LOCAL_ZOOM = 9;
 /**
  * Own ship as a MapLibre marker: an element the map places in the same
  * frame it draws the chart, so it stays on its point through a pinch, at
- * the GPS's heading on the map (rotationAlignment). Followed while the
- * location arrow says so, a drag ending that; the
- * arrow's tap flies to it (recentred); grey at its last place when own
- * ship is turned off (the owner, 2026-10-06).
+ * the GPS's heading on the map (rotationAlignment). Followed only while
+ * the pilot's follow is on -- Apple Maps' tracking mode, which the
+ * location arrow sets and a drag ends -- the arrow's tap flying to it
+ * (recentred), a pick (lib/map/gl/pilotCamera); a drag before the first
+ * fix comes lets that flight go too. Grey at its last place when own ship
+ * is turned off (the owner, 2026-10-06).
  */
 export function OwnShipGl() {
   const { map } = useGlMap();
@@ -30,12 +33,17 @@ export function OwnShipGl() {
   const recentred = useOwnShip((s) => s.recentred);
   const recentreZoom = useOwnShip((s) => s.recentreZoom);
   const marker = useRef<Marker | null>(null);
+  const flown = useRef(recentred);
   useEffect(() => {
     const el = document.createElement("div");
     el.style.pointerEvents = "none";
     marker.current = new Marker({ element: el, rotationAlignment: "map" });
     const stop = (e: { originalEvent?: Event }) => {
-      if (e.originalEvent && useOwnShip.getState().follow) useOwnShip.getState().setFollow(false);
+      if (!e.originalEvent) return;
+      const ownShip = useOwnShip.getState();
+      if (ownShip.follow) ownShip.setFollow(false);
+      // A flight to the position still waiting on its fix is let go.
+      flown.current = ownShip.recentred;
     };
     map.on("dragstart", stop);
     return () => {
@@ -62,11 +70,11 @@ export function OwnShipGl() {
       .setRotation(heading ?? 0)
       .addTo(map);
   }, [map, fix, enabled, simulated, look]);
-  const flown = useRef(recentred);
   useEffect(() => {
     if (!fix || !enabled) return;
     if (flown.current !== recentred) {
       flown.current = recentred;
+      picked();
       const zoom = recentreZoom !== null ? glZoom(recentreZoom) : Math.max(map.getZoom(), glZoom(LOCAL_ZOOM));
       map.flyTo({ center: [fix.lon, fix.lat], zoom, duration: prefersReducedMotion() ? 0 : SHEET_SECONDS * 2000 });
       return;

@@ -167,11 +167,14 @@ function Layers(p: GlRouteMapProps) {
 function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void }) {
   const { course } = p;
   const dryRunning = usePastFlight((s) => s.hex === DRY_RUN);
-  // The map fitted to what was just picked: a lone departure,
-  // Nearest's fields, the Stops, a procedure or a pattern just picked.
-  useGlFit(p.start ? [p.start] : NONE, !p.place ? (p.start?.ident ?? null) : null, 9);
-  useGlFit(p.nearest ?? NONE, !p.place && p.nearest?.length ? p.nearest.map((a) => a.ident).join(",") : null);
-  useGlFit(p.stopFields, p.stopFields.length ? `stops:${p.stopFields.map((f) => f.ident).join(",")}` : null);
+  // The map fitted to what was just picked, once a pick: a lone
+  // departure, Nearest opened, the Stops, a procedure or a pattern just
+  // picked. Not again as their points change (useGlFit), and not where
+  // the airport's card a pick opened flies the map itself (GlMapShell).
+  const placed = !!p.place;
+  useGlFit(p.start ? [p.start] : NONE, p.start?.ident ?? null, 9, undefined, placed);
+  useGlFit(p.nearest ?? NONE, p.nearest ? "nearest" : null, undefined, undefined, placed);
+  useGlFit(p.stopFields, p.stopFields.length ? "stops" : null);
   useGlFit(p.focusedProcedure, p.focusedProcedure.length ? p.procedureFocus : null, 12, p.procedureCover);
   useGlFit(p.focusedPattern, p.focusedPattern.length ? p.patternFocus : null, 13);
   const route = course ? [course.departure.ident, ...(course.stops ?? []).map((s) => s.ident), course.destination.ident] : [];

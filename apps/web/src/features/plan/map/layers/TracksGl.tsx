@@ -17,6 +17,7 @@ import { useTracking } from "../../../../lib/map/position/tracking";
 import { useGlMap } from "../../../../lib/map/gl/glLayer";
 import { iconMarker, setMarkerIcon } from "../../../../lib/map/gl/htmlMarker";
 import { useGlFit } from "../useGlFit";
+import { picked, pilotMoved } from "../../../../lib/map/gl/pilotCamera";
 import { useGlLines, type GlRun } from "../../../../lib/map/gl/useGlLines";
 import { CHART } from "../../../../lib/tokens";
 
@@ -119,7 +120,8 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
     let frame = 0,
       last = performance.now(),
       reported = -Infinity,
-      reportedAt: number | null = null;
+      reportedAt: number | null = null,
+      wasPlaying = false;
     const step = (now: number) => {
       frame = requestAnimationFrame(step);
       stepPastFlight(now - last);
@@ -147,8 +149,12 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
         marker.current.setLngLat([here.lon, here.lat]);
         setMarkerIcon(marker.current, icon);
       }
-      // Kept in sight while it plays.
-      if (usePastFlight.getState().playing) {
+      // Kept in sight while it plays, its Play being the pilot's pick
+      // (lib/map/gl/pilotCamera); not once they move the map by hand.
+      const playing = usePastFlight.getState().playing;
+      if (playing && !wasPlaying) picked();
+      wasPlaying = playing;
+      if (playing && !pilotMoved()) {
         const p = map.project([here.lon, here.lat]);
         const { clientWidth: w, clientHeight: h } = map.getContainer();
         if (p.x < w * 0.15 || p.x > w * 0.85 || p.y < h * 0.15 || p.y > h * 0.85) map.jumpTo({ center: [here.lon, here.lat] });

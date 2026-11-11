@@ -69,8 +69,8 @@ const LAYERS = [BUBBLE, COUNT, POINT];
 /**
  * A search sent, its fields on the map (useSearchResults), as Apple Maps
  * marks the results of a search over its map (the owner's screenshot,
- * 2026-11-10): over the chart, fitted above the sheet as the list comes or
- * its filters change, the same fields as the list. A tap on a mark opens
+ * 2026-11-10): over the chart, fitted above the sheet once as the list
+ * first comes and as its filters change, the same fields as the list. A tap on a mark opens
  * its card, as its row does; a tap on a bubble zooms in to part it. Gone
  * as the search is cleared.
  */
@@ -100,7 +100,10 @@ export function SearchResultsGl() {
     ident: f.properties.ident ?? null,
     count: f.properties.point_count ?? null,
   }));
-  useGlFit(shown, shown.length ? `search:${sent?.query}:${shown.map((a) => a.ident).join(",")}` : null, 11);
+  // Once a search sent or its filters changed, the pilot's picks; not as
+  // its results refresh (useGlFit).
+  const filters = useSearchResults((s) => s.filters);
+  useGlFit(shown, sent ? `search:${JSON.stringify([sent, filters])}` : null, 11);
   useGlTap(["search-results-point"], TAP.mark, TAP.rank.field, (feature) => {
     const ident = feature.properties.ident as string | undefined;
     if (ident) useSearchResults.getState().open?.(ident);

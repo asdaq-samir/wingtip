@@ -39,6 +39,7 @@ import {
 import { OVERLAY_SOURCE, addOverlays, applyOverlayFilters, overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
 import { glZoom } from "../../lib/map/gl/glStyle";
 import { RulerGl } from "../../lib/map/gl/layers/RulerGl";
+import { picked, watchPilotMoves } from "../../lib/map/gl/pilotCamera";
 import { tvPlatform, zoomInKey, zoomOutKey } from "../../lib/tv";
 
 const COUNTRY: [number, number] = [39.5, -98.35];
@@ -452,19 +453,17 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       [Math.max(...lons) + pad, Math.max(...lats) + pad],
     ];
   }, [course]);
-  // The zoom the route was last fitted at: a map still there (or out from
-  // it) is the route at its fitted size, which the sheet's settling fits
-  // again; one the pilot zoomed in on is only slid (follow, below).
-  const fitZoom = useRef<number | null>(null);
+  // A route made, or asked for again from the location arrow: the pilot's
+  // pick, so the map is the app's to fit (lib/map/gl/pilotCamera).
   const fit = useCallback(
     (animate: boolean) => {
       const bounds = routeBounds();
       if (!map || !bounds) return;
+      picked();
       const ownShip = useOwnShip.getState();
       if (ownShip.enabled && ownShip.follow) ownShip.setFollow(false);
       // Over the map's own padding, the room the panel leaves (MapLibre adds
       // the two): a margin, and the map's buttons cleared.
-      fitZoom.current = map.cameraForBounds(bounds, { padding: FIT_MARGIN })?.zoom ?? null;
       map.fitBounds(bounds, { padding: FIT_MARGIN, duration: animate ? flight() : 0 });
     },
     [map, routeBounds],
@@ -518,7 +517,10 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   // The map follows the sheet: MapLibre's padding is what the panel
   // covers, eased in the sheet's own time, so what was in the middle of
   // the room left stays in the middle -- told as the sheet sets off, its
-  // snap point set (MapPanel's insets).
+  // snap point set (MapPanel's insets). Only padded, never fitted again:
+  // the sheet moving is no pick (the owner, 2026-11-11, "I like the stock
+  // behavior": Apple Maps slides its map with the sheet and leaves its
+  // zoom alone).
   const follow = useCallback(
     (to: MapInsets) => {
       const was = insetsRef.current;
@@ -540,49 +542,9 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
         return;
       }
       const duration = prefersReducedMotion() ? 0 : DRAWER_MS;
-      // The route in sight at its fitted size (or out from it): fitted again
-      // to the room the sheet leaves at its new size, as the owner's rule
-      // has it (2026-10-06, 2026-10-27: "Route in sight: refit it to what
-      // the panel leaves"); MapLibre's map kept only the slide, and going
-      // up to half put KOSH 94 pt off the top (the FPL audit's A13). A map
-      // the pilot zoomed in on, own ship followed, or no route in sight:
-      // only slid, as before.
-      const bounds = routeBounds();
-      const ownShip = useOwnShip.getState();
-      // Only as the sheet goes out or back (MapInsets' `out`): a later change
-      // of its size -- a notice under the route -- never refits, which took
-      // the map from under the pilot's zoom.
-      if (
-        to.out !== was.out &&
-        bounds &&
-        course &&
-        fitZoom.current !== null &&
-        map.getZoom() <= fitZoom.current + 0.05 &&
-        !(ownShip.enabled && ownShip.follow) &&
-        routeInSight(map, course, was)
-      ) {
-        // The margin round the route over the room left, as the first fit's
-        // (FIT_MARGIN, which is even each way, so the room's middle is the
-        // camera's with or without it).
-        const room = padOf(to);
-        const camera = map.cameraForBounds(bounds, {
-          padding: {
-            top: to.top + FIT_MARGIN.top,
-            bottom: to.bottom + FIT_MARGIN.bottom,
-            left: to.left + FIT_MARGIN.left,
-            right: FIT_MARGIN.right,
-          },
-          absolutePadding: true,
-        });
-        if (camera?.center !== undefined && camera.zoom !== undefined) {
-          fitZoom.current = camera.zoom;
-          map.easeTo({ center: camera.center, zoom: camera.zoom, padding: room, duration, easing: drawerEasing });
-          return;
-        }
-      }
       map.easeTo({ padding: padOf(to), duration, easing: drawerEasing });
     },
-    [map, course, routeBounds],
+    [map],
   );
   useEffect(() => {
     follow(insets);
@@ -593,11 +555,10 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   const flyTo = useCallback(
     (point: { lat: number; lon: number } | null, zoom: number) => {
       if (!map || !point) return;
+      picked();
       const ownShip = useOwnShip.getState();
       if (ownShip.enabled && ownShip.follow) ownShip.setFollow(false);
       flying.current = { center: [point.lon, point.lat], zoom: Math.max(map.getZoom(), glZoom(zoom)) };
-      // On the point picked, not the route's fit: the sheet does not refit it.
-      fitZoom.current = null;
       map.flyTo({ ...flying.current, duration: flight() });
     },
     [map],
@@ -612,19 +573,18 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       queueMicrotask(() => {
         if (!map.isMoving()) flying.current = null;
       });
-    // Moved by hand, the route is the pilot's now: slid with the sheet,
-    // not fitted again (follow; the owner, 2026-11-04).
+    // Moved by hand, the map is the pilot's until they next pick something
+    // (lib/map/gl/pilotCamera).
     const byHand = (e: { originalEvent?: unknown }) => {
-      if (e.originalEvent) {
-        flying.current = null;
-        fitZoom.current = null;
-      }
+      if (e.originalEvent) flying.current = null;
     };
     map.on("moveend", rested);
     map.on("movestart", byHand);
+    const unwatch = watchPilotMoves(map);
     return () => {
       map.off("moveend", rested);
       map.off("movestart", byHand);
+      unwatch();
     };
   }, [map]);
   useEffect(() => {
@@ -659,16 +619,6 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
 }
 
 /** What the panel covers, as MapLibre's padding: its middle is the map's. */
-/** Whether any of the route's line is on the map in the room `insets`
- *  leave, a few points' grace at its edges. */
-function routeInSight(map: maplibregl.Map, course: Course, insets: MapInsets): boolean {
-  const { clientWidth: w, clientHeight: h } = map.getContainer();
-  return (course.course_line as [number, number][]).some(([lat, lon]) => {
-    const p = map.project([lon, lat]);
-    return p.x >= insets.left - 8 && p.x <= w + 8 && p.y >= insets.top - 8 && p.y <= h - insets.bottom + 8;
-  });
-}
-
 function padOf({ top, bottom, left }: MapInsets): PaddingOptions {
   return { top, bottom, left, right: 0 };
 }
