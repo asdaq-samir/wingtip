@@ -1,14 +1,15 @@
 // @vitest-environment jsdom
 /**
  * A live card keeps itself fresh: what has gone stale of its own queries
- * is asked again as the window comes back into focus and as the card is
- * back in sight (lib/shown), and nothing else's.
+ * is asked again as the card is back in sight (lib/shown), and nothing
+ * else's; the window's focus is TanStack's own refetch (lib/queryClient).
  */
 import type { ReactNode } from "react";
-import { act, cleanup, renderHook } from "@testing-library/react";
-import { focusManager } from "@tanstack/react-query";
+import { cleanup, renderHook } from "@testing-library/react";
+import { ApiError } from "./api/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { queryClient } from "./queryClient";
+import { retryOnServerFailure } from "./queryRetry";
 import { refreshLive, useLiveRefresh } from "./liveRefresh";
 import { Shown } from "./shown";
 
@@ -36,29 +37,36 @@ describe("a live card's refresh", () => {
     expect(matches("navlog")).toBe(false);
   });
 
-  it("asks what is stale again as the window comes back, and as the card is back in sight", () => {
+  it("asks what is stale again as the card is back in sight", () => {
     const { refetch, matches } = asked();
     let shown = true;
     const wrapper = ({ children }: { children: ReactNode }) => <Shown.Provider value={shown}>{children}</Shown.Provider>;
     const { rerender } = renderHook(() => useLiveRefresh("brief"), { wrapper });
     expect(refetch).not.toHaveBeenCalled();
 
-    act(() => focusManager.setFocused(false));
-    act(() => focusManager.setFocused(true));
+    // Hidden under another card, then back in sight: what went stale
+    // meanwhile is asked again.
+    shown = false;
+    rerender();
+    expect(refetch).not.toHaveBeenCalled();
+    shown = true;
+    rerender();
     expect(refetch).toHaveBeenCalledTimes(1);
     expect(refetch.mock.calls[0]![0]).toMatchObject({ type: "active", stale: true });
     expect(matches("briefing")).toBe(true);
+  });
+});
 
-    // Hidden under another card: the window's focus asks nothing.
-    shown = false;
-    rerender();
-    act(() => focusManager.setFocused(false));
-    act(() => focusManager.setFocused(true));
-    expect(refetch).toHaveBeenCalledTimes(1);
-    // Back in sight: what went stale meanwhile is asked again.
-    shown = true;
-    rerender();
-    expect(refetch).toHaveBeenCalledTimes(2);
-    focusManager.setFocused(undefined);
+describe("the query client's defaults", () => {
+  it("refetches what is stale on focus, TanStack's default", () => {
+    expect(queryClient.getDefaultOptions().queries!.refetchOnWindowFocus).toBeUndefined();
+  });
+
+  it("retries a server's failure up to three times, but never a request it refused", () => {
+    expect(retryOnServerFailure(0, new ApiError("Bad gateway", 502))).toBe(true);
+    expect(retryOnServerFailure(2, new ApiError("Bad gateway", 502))).toBe(true);
+    expect(retryOnServerFailure(3, new ApiError("Bad gateway", 502))).toBe(false);
+    expect(retryOnServerFailure(0, new ApiError("Not found", 404))).toBe(false);
+    expect(retryOnServerFailure(0, new ApiError("Too many", 429))).toBe(true);
   });
 });

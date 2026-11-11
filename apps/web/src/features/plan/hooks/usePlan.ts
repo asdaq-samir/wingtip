@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { experimental_streamedQuery as streamedQuery, keepPreviousData, useQuery } from "@tanstack/react-query";
 import { ApiError, api, describeError, isUnknownPlace, unknownPlaceOf } from "../../../lib/api/client";
-import { checkpointsQuery, courseQuery } from "../../../lib/queryClient";
+import { chartQuery, checkpointsQuery, courseQuery } from "../../../lib/queryClient";
 import { identOf, routeOf } from "../../../lib/identSchema";
 import { ended, inBatches } from "../../../lib/api/streams";
 import type {
@@ -262,6 +262,7 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
       initialValue: [] as NavLogMessage[],
     }),
     staleTime: Infinity,
+    retry: false, // a retry would plan the whole route again behind the lines drawn
     // No legal altitude is the page's to say, with what can be done about
     // it (PlanWorkspace): not the query client's plain toast.
     // Nor a point the planner does not know, the route box's (courseQuery).
@@ -303,7 +304,8 @@ export function usePlan({
 
   // The previous route's course stays on the map until the new one is
   // charted, so the map is never taken down between routes.
-  const course = useQuery({ ...courseQuery(dep, dest, stops), enabled: briefable, placeholderData: keepPreviousData });
+  const { data: cycle } = useQuery({ ...chartQuery, select: (chart) => chart.chart_cycle });
+  const course = useQuery({ ...courseQuery(dep, dest, stops, cycle), enabled: briefable, placeholderData: keepPreviousData });
   const localFlight = useQuery({
     queryKey: ["localFlight", dep, localMin, depart, aircraft.profile, aircraft.fuelBurnGph ?? null, aircraft.usableFuelGal ?? null, rules],
     queryFn: () => api.localFlight(dep, localMin, aircraft, depart || undefined, rules),
@@ -317,7 +319,7 @@ export function usePlan({
   // out the checkpoints for the nav log itself (and once for both:
   // app.checkpoint_scoring) -- and starts on the chart's read and the ground under
   // the route as the course is asked for (app.prefetch).
-  const checkpoints = useQuery({ ...checkpointsQuery(dep, dest, stops), enabled: routeKnown && withCheckpoints });
+  const checkpoints = useQuery({ ...checkpointsQuery(dep, dest, stops, cycle), enabled: routeKnown && withCheckpoints });
 
   const plan = {
     dep,

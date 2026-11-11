@@ -12,8 +12,9 @@ import { toasterReady } from "../../lib/toast";
  * frosted capsule round one line with a tick in the tint for a success
  * and a spinner while something is under way (index.css, data-slot
  * toast), and an Undo at its end where it has one (Base UI's Action). No
- * close button, as iOS's banners have none: each goes by itself, and none
- * of them is an error (lib/problems). Beside the stack, as Base UI's docs
+ * close button, as iOS's banners have none: each goes by itself after
+ * Base UI's own 5 seconds, held while a finger or the pointer is on it
+ * and put away with a swipe, and none of them is an error (lib/problems). Beside the stack, as Base UI's docs
  * keep them, the confirmations anchored to the control that made them
  * (lib/toast's `done`).
  */
@@ -30,7 +31,7 @@ export function Toaster({ position, style, className }: { position: "top" | "bot
 
 function Stacked({ position, style, className }: { position: "top" | "bottom"; style?: CSSProperties; className?: string }) {
   return (
-    <Toast.Provider toastManager={toastManager} timeout={2000} limit={3}>
+    <Toast.Provider toastManager={toastManager} limit={3}>
       <Ready />
       <Toast.Portal>
         <Toast.Viewport

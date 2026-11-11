@@ -78,7 +78,7 @@ export function DryRunControls({
   // The chart dragged along, at the owner's ask ("can the trace be
   // drag-able in the dry run?"): a finger or a pointer on it puts the
   // airplane where it points along the course, the run held while it does
-  // and going on as it was once let go; the arrow keys step it five miles.
+  // and going on as it was once let go; the keys the stock slider's own.
   // shadcn's Slider (Base UI's) over the chart, its track and thumb unseen:
   // the chart's own marks say where the run is. Across the chart's own
   // width, inside its twelve points each side (PastFlightChart), a tenth
@@ -102,18 +102,13 @@ export function DryRunControls({
     if (held.current?.was) playPastFlight();
     held.current = null;
   };
-  // Five miles an arrow, where the slider's own would step a tenth; Home
-  // and End are the slider's; Space plays or pauses (the playback bar's).
+  // The keys are the stock slider's (Base UI, the APG's): an arrow a
+  // tenth of a mile, Page Up and Down or Shift and an arrow five miles
+  // (largeStep), Home and End; Space plays or pauses (the playback bar's).
   const step = (event: KeyboardEvent<HTMLSpanElement>) => {
-    if (playbackKey(event.key, event.target) === "toggle") {
-      event.preventDefault();
-      toggle();
-      return;
-    }
-    const by = event.key === "ArrowRight" || event.key === "ArrowUp" ? 5 : event.key === "ArrowLeft" || event.key === "ArrowDown" ? -5 : 0;
-    if (!by) return;
+    if (playbackKey(event.key, event.target) !== "toggle") return;
     event.preventDefault();
-    seekNm((nowNm ?? first) + by);
+    toggle();
   };
   return (
     <div className="relative flex min-h-0 flex-1 flex-col rounded-xl bg-background/70 px-1 pt-1" data-testid="dry-run">
@@ -209,6 +204,7 @@ export function DryRunControls({
           min={tenth(first)}
           max={Math.max(tenth(last), tenth(first) + 0.1)}
           step={0.1}
+          largeStep={5}
           value={[tenth(nowNm ?? first)]}
           onValueChange={(v) => {
             const nm = Array.isArray(v) ? v[0] : v;

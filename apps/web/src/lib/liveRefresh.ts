@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { focusManager } from "@tanstack/react-query";
 import { queryClient } from "./queryClient";
 import { useShown } from "./shown";
 
@@ -29,12 +28,10 @@ export function refreshLive(card: LiveCard): Promise<void> {
 
 /**
  * A live card kept fresh by itself: what it shows asked again, where it
- * has gone stale (each query's own staleTime), as the window comes back
- * into focus or into sight (TanStack Query's focusManager, which hears
- * both) and as the card is back in sight under the sheet's others (lib/
- * shown). Only the card's own queries: the app's default stays no
- * refetch on focus, so the nav log is never worked out again under the
- * pilot (lib/queryClient).
+ * has gone stale (each query's own staleTime), as the card is back in
+ * sight under the sheet's others (lib/shown). The window coming back into
+ * focus is TanStack Query's own refetch on focus (lib/queryClient), which
+ * asks every stale query again, the card's among them.
  */
 export function useLiveRefresh(card: LiveCard): void {
   const shown = useShown();
@@ -43,11 +40,5 @@ export function useLiveRefresh(card: LiveCard): void {
     const back = shown && !wasShown.current;
     wasShown.current = shown;
     if (back) void queryClient.refetchQueries({ type: "active", stale: true, predicate: ofCard(card) });
-  }, [shown, card]);
-  useEffect(() => {
-    if (!shown) return;
-    return focusManager.subscribe((focused) => {
-      if (focused) void queryClient.refetchQueries({ type: "active", stale: true, predicate: ofCard(card) });
-    });
   }, [shown, card]);
 }

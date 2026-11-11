@@ -59,6 +59,8 @@ export function useNarrative({ dep, dest, planKey, nav, legs, whole }: Narrative
     queryFn: streamedQuery({ streamFn: ({ signal }: { signal: AbortSignal }) => ended(api.narrative(request!, signal), "narrative") }),
     enabled: false,
     staleTime: Infinity,
+    // One of the month's narratives each: never written twice unasked.
+    retry: false,
     // Said in its own tab, where it was asked for (BriefNarrative).
     meta: { silent: true },
   });

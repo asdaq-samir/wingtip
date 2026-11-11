@@ -50,6 +50,8 @@ export function useCheckpointNotes(dep: string, dest: string, stops: string[] = 
     }),
     enabled: false,
     staleTime: Infinity,
+    // One of the month's runs each: never run twice unasked.
+    retry: false,
   });
   // The query's own refetch and flags, not its result, which is new at
   // every render: so was this, and with it the nav log drawn again at

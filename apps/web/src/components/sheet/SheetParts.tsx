@@ -198,7 +198,7 @@ export function SheetParts(p: PartsProps) {
       // not behind it (WCAG 2.4.11).
       style={{ "--sheet-head": head, scrollPaddingTop: head } as CSSProperties}
       className={cn(
-        "flex min-h-0 flex-1 flex-col overflow-y-auto [scrollbar-width:none] print:overflow-visible",
+        "flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible",
         topSheet && cn(follows, CUT_TOP),
         p.onPhone && fromBottom && footShown && CUT_BOTTOM,
       )}

@@ -8,7 +8,7 @@ import { isPosition, positionIdent } from "../../../lib/identSchema";
 import { feel } from "../../../lib/haptics";
 import { positionNow, useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePreferences } from "../../../lib/preferences";
-import { checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
+import { chartCycle, checkpointsQuery, courseQuery, queryClient } from "../../../lib/queryClient";
 import { loadRoutePanel } from "../routePanelParts";
 import { panelNow, riseToSee } from "./panelNow";
 import type { PlannedRoute } from "./planAddress";
@@ -161,7 +161,7 @@ export function useFlyHere({
         ahead({
           // usePlanAhead's key for the same read ahead.
           queryKey: ["checkpoints-ahead", from, place, ""],
-          queryFn: ({ signal }: { signal: AbortSignal }) => api.checkpoints(from, place, [], signal, true),
+          queryFn: ({ signal }: { signal: AbortSignal }) => api.checkpoints(from, place, [], signal, true, chartCycle()),
         });
       }
       ahead(navlogQuery(flyHerePlan(from, place, { depart, aircraft, load, showWaypoints, flightRules }), showWaypoints, true));

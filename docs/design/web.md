@@ -83,6 +83,10 @@ These hold on every screen below and win over any reference app.
   `toast.undo`), the web's stock pattern, and a control's own
   confirmation ("Copied") an anchored Base UI Toast by that control
   (`lib/doneNote`), at the owner's word (2026-11-10).
+- **The browser's defaults stay** (the overrides audit, approved
+  2026-11-11): text is selectable, so a METAR, a NOTAM or a frequency is
+  copied with a long press, and only buttons, tabs and the map take no
+  selection (`index.css`).
 - **Words:** "airplane" (decision 0020), Title Case labels (0021), no
   explanatory footnotes (0019), FAA text in sentence case with its codes
   kept, raw reports as sent.
@@ -265,7 +269,8 @@ close does.
   [shadcn React Aria][shadcn-aria], [shadcn Drawer][shadcn-drawer],
   [shadcn Toast][shadcn-toast]). Wingtip's toasts are Base UI's
   (`components/ui/toast.tsx`, `lib/toast.ts`): progress, Undo, and the
-  anchored confirmations.
+  anchored confirmations, on Base UI's own 5 seconds, held under a
+  touch or the pointer and swiped away (2026-11-11).
 - **React Aria Components 1.22** adds a swipeable Sheet and positions
   overlays round the virtual keyboard ([React Aria 1.22][ra-122]). Its drag
   and drop works by keyboard (Enter to start, Tab between targets, arrows,
@@ -1010,7 +1015,12 @@ the map works; weight on the first load (on a signed-out first visit the
   [MDN share_target][mdn-share-target], [MDN file_handlers][mdn-file-handlers]).
 
 **What Wingtip's manifest has** (`apps/web/vite.config.ts`): `display:
-standalone`, `theme_color`, the icons and maskable icons. **Proposed,
+standalone`, `theme_color` (the launch token), the icons and maskable
+icons. The page's own `theme-color` is two metas, the launch ground by
+day and the night navy by the device's scheme (`vite-plugins/manifest`
+`themeColor`, from the tokens), then the page's ground once the look and
+Setup's theme are on (`lib/brand` `BrandLook`), so the browser's bar is
+dark at night (2026-11-11). **Proposed,
 generated rather than hand-written:**
 1. `id` set to the app's path, so a later `start_url` change does not
    make a second app.

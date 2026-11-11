@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useTheme } from "next-themes";
 import { usePreferences, type Brand } from "./preferences";
 
 const INK: Brand = "ink";
@@ -40,14 +41,36 @@ export function useInkLook(): boolean {
   return usePreferences((s) => s.brand) === INK;
 }
 
-/** Puts the pilot's look on <html> (data-brand), and its typeface in. */
+/** Puts the pilot's look on <html> (data-brand), and its typeface in,
+ *  and the browser's bar in the page's own ground (followThemeColor). */
 export function BrandLook() {
   const brand = usePreferences((s) => s.brand);
+  const theme = useTheme().resolvedTheme;
   useEffect(() => {
     document.documentElement.dataset.brand = brand;
     void FONTS[brand]?.()?.catch(() => {
       /* the system's face meanwhile */
     });
   }, [brand]);
+  useEffect(() => followThemeColor(), [brand, theme]);
   return null;
+}
+
+/**
+ * The browser's bar -- Android Chrome's toolbar, the installed app's
+ * status bar, Safari's tab bar -- in the page's own ground, dark at
+ * night against the pilot's dark adaptation (AIM 8-1-6). Before the
+ * script, index.html's two theme-color metas (vite-plugins/manifest,
+ * the launch tokens) follow the device's scheme by their media; once
+ * the look and the theme are on, which Setup can set against the
+ * device's, both say the page's ground. Read a frame on, after
+ * next-themes has put its class on <html>.
+ */
+function followThemeColor(): () => void {
+  const frame = requestAnimationFrame(() => {
+    const ground = getComputedStyle(document.body).backgroundColor;
+    if (!ground) return;
+    for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) meta.content = ground;
+  });
+  return () => cancelAnimationFrame(frame);
 }

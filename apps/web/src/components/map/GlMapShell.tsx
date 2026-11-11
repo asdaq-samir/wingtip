@@ -15,6 +15,7 @@ import { MapInsetsContext, SHEET_SECONDS, type MapInsets } from "../../lib/mapCh
 import { SheetCard } from "../SheetCard";
 import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
+import { watchMapErrors } from "./mapErrors";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { usePreferences } from "../../lib/preferences";
@@ -124,11 +125,10 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     dragRotate: false,
     pitchWithRotate: false,
     touchPitch: false,
-    // On a TV (lib/tv) the map takes the remote's arrows while focused.
-    keyboard: onTv,
+    // MapLibre's own keys everywhere (its default: arrows pan, + and - zoom), not only a TV's.
     // Symbols placed at once, not faded in over 0.3 s.
     fadeDuration: 0,
-    renderWorldCopies: false,
+    // And its world copies (its default): the Western Aleutian sectional runs across 180°.
   });
   if (tiles) overlaysOf.set(m, tiles);
   // A tile's picture the moment its layout asks for it, from the ones
@@ -140,10 +140,10 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
   // A remote has no pinch: the map's own + and - to reach with its arrows.
   if (onTv) m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
   m.touchZoomRotate.disableRotation();
+  m.keyboard.disableRotation();
   m.setPadding(padOf(insets));
-  // A terminal sheet's tile where it has none is a 404, left blank: not
-  // an error to say.
-  m.on("error", () => {});
+  // A tile 404 left blank; any other failure said and reported (mapErrors).
+  watchMapErrors(m);
   // Whether it is moving, on its element, for the browser tests to wait
   // on a still map (e2e helpers' mapStill).
   const el = holder;

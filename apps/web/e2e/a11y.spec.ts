@@ -188,3 +188,17 @@ test("by keyboard: a visible focus ring, and the chart's airports reached and op
   await page.keyboard.press("Enter");
   await expect(page.getByTestId("place-card")).toBeVisible({ timeout: slow(30000) });
 });
+
+test("by keyboard: the map's own arrows pan it", async ({ page }) => {
+  await page.goto("/app/plan?at=42.3172,-88.0905");
+  await settle(page);
+  await mapStill(page);
+  const map = page.getByTestId("gl-map").first();
+  const center = () => map.evaluate((el) => (el as HTMLElement).dataset.center);
+  const before = await center();
+  // MapLibre's keyboard handler, on its canvas (the skip link's landing).
+  await page.locator(".maplibregl-canvas").first().focus();
+  await page.keyboard.press("ArrowRight");
+  await mapStill(page);
+  await expect.poll(center).not.toBe(before);
+});
