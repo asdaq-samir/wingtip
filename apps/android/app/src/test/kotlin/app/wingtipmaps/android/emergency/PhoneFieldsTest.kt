@@ -38,7 +38,7 @@ class PhoneFieldsTest {
         assertEquals(900.0, c81.elevationFt!!, 0.0)
         val own = PhoneFields.emergency(near(10), airplaneName = "N123AB", glideRatio = 9.0)
         assertEquals(9.0, own.airplane!!.glide!!.ratio, 0.0)
-        assertNull(own.airplane!!.glide!!.bestGlideKias)
+        assertNull(own.airplane.glide.bestGlideKias)
     }
 
     @Test

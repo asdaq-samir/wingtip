@@ -29,11 +29,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import app.wingtipmaps.android.about.PlanningAidNotice
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
+import app.wingtipmaps.android.about.PlanningAidNotice
 import app.wingtipmaps.android.ai.rememberAiOffered
 import app.wingtipmaps.android.airplane.AirplaneProfileHost
 import app.wingtipmaps.android.api.AssistantClient

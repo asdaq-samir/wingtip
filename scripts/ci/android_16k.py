@@ -19,6 +19,7 @@ The standard library only.
 
   python3 scripts/ci/android_16k.py app-release.apk app-release.aab
 """
+
 import struct
 import sys
 import zipfile
@@ -35,18 +36,18 @@ def load_aligns(elf: bytes) -> list:
     wide = elf[4] == 2
     end = "<" if elf[5] == 1 else ">"
     if wide:
-        phoff, = struct.unpack_from(end + "Q", elf, 32)
+        (phoff,) = struct.unpack_from(end + "Q", elf, 32)
         phentsize, phnum = struct.unpack_from(end + "HH", elf, 54)
     else:
-        phoff, = struct.unpack_from(end + "I", elf, 28)
+        (phoff,) = struct.unpack_from(end + "I", elf, 28)
         phentsize, phnum = struct.unpack_from(end + "HH", elf, 42)
     aligns = []
     for i in range(phnum):
         at = phoff + i * phentsize
-        p_type, = struct.unpack_from(end + "I", elf, at)
+        (p_type,) = struct.unpack_from(end + "I", elf, at)
         if p_type != PT_LOAD:
             continue
-        align, = struct.unpack_from(end + ("Q" if wide else "I"), elf, at + (48 if wide else 28))
+        (align,) = struct.unpack_from(end + ("Q" if wide else "I"), elf, at + (48 if wide else 28))
         aligns.append(align)
     return aligns
 
