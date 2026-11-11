@@ -1089,6 +1089,11 @@ extension Engine {
         try rule("no_altitude", EngineContract.NoAltitudeInput(selection: selection, between: between, via: via, where: `where`))
     }
 
+    /// A NOTAM read for a pilot, beside its text as sent: its keyword (FAA Order JO 7930.2 1-2-1) as a plain heading, or the ICAO Q) code's subject (Appendix B); its words with the FAA's contractions written out (JO 7340.2; JO 7930.2 3-3-1 and TBL 3-3-1) in sentence case, its codes (ILS, PAPI, VOR, RNAV, LPV) and idents kept, runways and taxiways as designated (3-3-5, 3-3-6), heights MSL unless AGL is stated (4-2-1), distances and compass points from a place, coordinates and fix-radial-distances written out; and its start of activity and end of validity in UTC (YYMMDDHHMM, 3-3-2), with EST (an estimate) and PERM (permanent) (4-2-1). A word it does not know is kept as written, never guessed.
+    static func notamRead(text: String, idents: [String]? = nil) throws -> EngineContract.NotamReadAnswer {
+        try rule("notam_read", EngineContract.NotamReadInput(text: text, idents: idents))
+    }
+
     /// The NOTAMs of one FAA NOTAM System (FNS) message, AIXM 5.1, as wingtip.notams keeps them: each by its domestic place and number, else its place and ICAO number; `ends` the sooner of its own end and its feature lifetime's. None where the message is not XML.
     static func notamsFns(text: String) throws -> [EngineContract.NotamsFnsAnswerItem] {
         try rule("notams_fns", EngineContract.NotamsFnsInput(text: text))
