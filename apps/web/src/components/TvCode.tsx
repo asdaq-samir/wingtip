@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../lib/api/client";
-import type { DeviceCode } from "../lib/api/types";
 import { TEXT } from "../lib/text";
 
 /**
@@ -12,45 +12,37 @@ import { TEXT } from "../lib/text";
  * code ten minutes old is replaced by a new one.
  */
 export default function TvCode() {
-  const [code, setCode] = useState<DeviceCode | null>(null);
-  const [failed, setFailed] = useState(false);
+  const client = useQueryClient();
+  // The code, asked again every ten seconds while it can't be had: no
+  // keyboard on a TV to reload with.
+  const { data: code, failureCount } = useQuery({
+    queryKey: ["device-code"],
+    queryFn: api.deviceCode,
+    staleTime: Infinity,
+    gcTime: 0,
+    retry: true,
+    retryDelay: 10_000,
+    meta: { silent: true },
+  });
+  const failed = !code && failureCount > 0;
+  // Asked every `interval` seconds, as the gateway says, while it is
+  // waiting (not while the page is away, TanStack's own); the network
+  // failing for a moment, asked again at the same pace.
+  const { data: answer } = useQuery({
+    queryKey: ["device-token", code?.deviceCode],
+    queryFn: () => api.deviceToken(code!.deviceCode),
+    enabled: !!code,
+    refetchInterval: (query) => (code && (query.state.data ?? "waiting") === "waiting" ? code.interval * 1000 : false),
+    retry: true,
+    retryDelay: () => (code?.interval ?? 5) * 1000,
+    gcTime: 0,
+    meta: { silent: true },
+  });
   useEffect(() => {
-    let live = true;
-    let timer = 0;
-    const ask = (current: DeviceCode) => {
-      timer = window.setTimeout(async () => {
-        try {
-          const answer = await api.deviceToken(current.deviceCode);
-          if (!live) return;
-          if (answer === "waiting") ask(current);
-          else if (answer === "gone") void begin();
-          else window.location.assign(answer.next);
-        } catch {
-          // The network for a moment: asked again.
-          if (live) ask(current);
-        }
-      }, current.interval * 1000);
-    };
-    const begin = async () => {
-      try {
-        const fresh = await api.deviceCode();
-        if (!live) return;
-        setFailed(false);
-        setCode(fresh);
-        ask(fresh);
-      } catch {
-        // No keyboard on a TV to reload with: asked again, as the poll is.
-        if (!live) return;
-        setFailed(true);
-        timer = window.setTimeout(begin, 10_000);
-      }
-    };
-    void begin();
-    return () => {
-      live = false;
-      window.clearTimeout(timer);
-    };
-  }, []);
+    // A code ten minutes old: a new one.
+    if (answer === "gone") void client.resetQueries({ queryKey: ["device-code"] });
+    else if (answer && answer !== "waiting") window.location.assign(answer.next);
+  }, [answer, client]);
   return (
     <div className="flex flex-col items-center gap-2 py-2 text-center" data-testid="tv-sign-in">
       <p className={TEXT.prose}>On your phone, signed in to Wingtip Maps, open</p>
