@@ -1,7 +1,7 @@
-import { useEffect, useEffectEvent, useRef, type ReactNode } from "react";
+import { useEffect, useEffectEvent, type ReactNode } from "react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import { PinnedCardBar } from "./PinnedCardBar";
+import { PinnedHead } from "./PinnedHead";
 import { holdOpenCard } from "../lib/openCards";
 import { TEXT } from "../lib/text";
 
@@ -28,18 +28,13 @@ export function ListPageHead({
 }) {
   const back = useEffectEvent(onBack);
   useEffect(() => holdOpenCard({ close: () => back(), inBar: false }), []);
-  const named = useRef<HTMLHeadingElement>(null);
-  // Its name and close pinned as the list scrolls (the one scrolling rule, PinnedCardBar).
+  // Its name and close one row pinned at the sheet's top, the list
+  // scrolling under it (PinnedHead; the owner, 2026-11-10).
   return (
-    <>
-      <PinnedCardBar title={title} watched={named} onClose={onBack} closeTestId={`${testId ?? "list-page"}-close`} />
-      <div className="flex items-center gap-2" data-testid={testId}>
-        <h3 ref={named} className={cn("flex-1 font-bold", TEXT.title)}>
-          {title}
-        </h3>
-        {action}
-        <CloseButton label={backLabel} onClick={onBack} className="-mr-1" data-testid={testId && `${testId}-close`} />
-      </div>
-    </>
+    <PinnedHead testId={testId}>
+      <h3 className={cn("min-w-0 flex-1 truncate font-bold", TEXT.title)}>{title}</h3>
+      {action}
+      <CloseButton label={backLabel} onClick={onBack} className="-mr-1" data-testid={testId && `${testId}-close`} />
+    </PinnedHead>
   );
 }

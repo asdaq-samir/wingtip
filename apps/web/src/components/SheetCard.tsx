@@ -2,7 +2,7 @@ import { isValidElement, useCallback, useEffect, useId, useMemo, useRef, useStat
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
-import { PinnedCardBar } from "./PinnedCardBar";
+import { PinnedHead } from "./PinnedHead";
 import TabKept from "./TabKept";
 import { Dialog, DialogPortal } from "./ui/dialog";
 import { holdOpenCard, setCardPill, type OpenCard, type PillHead } from "../lib/openCards";
@@ -220,15 +220,12 @@ export function SheetCard({
             className="under-head relative min-h-0 flex-1 overflow-y-auto px-4 [--under-pad:var(--corner-inset,0.75rem)] pb-[max(1rem,env(safe-area-inset-bottom))] [scrollbar-width:none]"
             render={<section />}
           >
-            {/* Its name folding into a pinned compact head with its close as
-                it scrolls, by the one scrolling rule (PinnedCardBar). */}
-            {title !== undefined && !titleHidden && (
-              <PinnedCardBar title={title} watched={named} onClose={back ?? onClose} closeTestId="sheet-card-close" />
-            )}
             {/* Its name at the left at a card's size and the close at the right
           end of its row, as CardHead sets a place's; a form's Cancel and
-          Save at the two ends, the name between them. */}
-            <div className={cn("flex shrink-0 items-center gap-2 pb-3", titleHidden && "sr-only")}>
+          Save at the two ends, the name between them: one row pinned at the
+          sheet's top, the card scrolling under it (PinnedHead; the owner,
+          2026-11-10). */}
+            <HeadRow hidden={titleHidden}>
               {leading}
               {title === undefined ? (
                 <div ref={setSlot} className="flex min-w-0 flex-1 items-center gap-2.5" />
@@ -238,7 +235,7 @@ export function SheetCard({
                     ref={named}
                     id={headingId}
                     tabIndex={-1}
-                    className={cn("card-title-fold font-bold tracking-tight break-words text-foreground outline-none", TEXT.card)}
+                    className={cn("font-bold tracking-tight break-words text-foreground outline-none", TEXT.card)}
                   >
                     {title}
                   </h2>
@@ -246,11 +243,18 @@ export function SheetCard({
                 </div>
               )}
               {end != null && <div className="-mr-1 flex shrink-0 items-center">{end}</div>}
-            </div>
+            </HeadRow>
             <SheetCardHead.Provider value={head}>{children}</SheetCardHead.Provider>
           </DialogPrimitive.Popup>
         </TabKept>
       </DialogPortal>
     </Dialog>
   );
+}
+
+/** The card's head row: pinned and frosted (PinnedHead), or for a screen
+ *  reader alone where the card draws its own (`titleHidden`). */
+function HeadRow({ hidden, children }: { hidden: boolean; children: ReactNode }) {
+  if (hidden) return <div className="sr-only flex shrink-0 items-center gap-2">{children}</div>;
+  return <PinnedHead className="shrink-0">{children}</PinnedHead>;
 }

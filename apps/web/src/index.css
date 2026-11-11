@@ -671,54 +671,24 @@ html:not([data-brand="native"])::view-transition-new(.page-back) {
   scroll-padding-bottom: var(--foot-room, 0px);
 }
 
-/* The one scrolling rule (the owner, 2026-11-10), as Apple Maps' cards
-   scroll. A card's large title folds into its pinned compact head
-   (PinnedCardBar) as the card scrolls: where the browser runs
-   scroll-driven animations, the title fades and shrinks and the bar comes
-   in with the scroll itself; elsewhere the bar shows once the title has
-   gone (data-shown, from an IntersectionObserver). Hidden, the bar is
-   neither seen nor hit nor read. */
-.card-pinned {
-  visibility: hidden;
-  opacity: 0;
-}
-[data-shown] > .card-pinned {
-  visibility: visible;
-  opacity: 1;
-}
-@supports (animation-timeline: scroll()) {
-  .card-pinned {
-    animation: card-pinned linear both;
-    animation-timeline: scroll(nearest block);
-    animation-range: 0 8rem;
+/* Every card's head in the sheet, one row pinned at its top from the
+   start, the content scrolling on under it blurred through its frost (the
+   owner, 2026-11-10: "just keep the title on top and content moves under
+   with a frosty style"; PinnedHead): the sheet's own ground at the glass's
+   fill over the sheet's blur (design/tokens.json glass-fill, sheet-blur),
+   solid where the browser frosts nothing and under Reduce Transparency
+   or Increase Contrast (the solid variant), as iOS's materials go. */
+@utility frost-head {
+  background-color: color-mix(in oklab, var(--sheet, var(--background)) var(--glass-fill-light), transparent);
+  -webkit-backdrop-filter: blur(var(--sheet-blur));
+  backdrop-filter: blur(var(--sheet-blur));
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    background-color: var(--sheet, var(--background));
   }
-  .card-title-fold {
-    transform-origin: left center;
-    animation: card-title-fold linear both;
-    animation-timeline: scroll(nearest block);
-    animation-range: 0 6rem;
-  }
-}
-@keyframes card-pinned {
-  0%,
-  80% {
-    visibility: hidden;
-    opacity: 0;
-  }
-  100% {
-    visibility: visible;
-    opacity: 1;
-  }
-}
-@keyframes card-title-fold {
-  to {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .card-title-fold {
-    animation: none;
+  @variant solid {
+    background-color: var(--sheet, var(--background)) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
   }
 }
 
