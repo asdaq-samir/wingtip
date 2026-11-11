@@ -29,7 +29,7 @@ object OverlayPictures {
      *  symbol is laid out without its picture. [density] is the screen's
      *  pixels to a dp. */
     fun addTo(builder: Style.Builder, density: Float) {
-        // 2 inks, 4 sizes, 9 pips and 4 uses: 288 small pictures.
+        // 2 inks, 4 sizes, 11 pips and 4 uses: 352 small pictures.
         for (towered in listOf(true, false)) {
             for (size in MapStyle.SIZES) {
                 for (pip in AirportWeatherMarks.PIPS) {

@@ -510,6 +510,8 @@
     <string name="welcome_again">Show Welcome Again</string>
     <!-- Emergency and Nearest worked out from the cycle packs, the planner out of reach (PhoneFields). -->
     <string name="from_this_phone">From this phone, without weather</string>
+    <!-- The map's grey weather marks, their age in the engine's words (WeatherAge). -->
+    <string name="weather_marks_age">Airport weather: %1$s</string>
     <string name="microphone">Microphone</string>
     <string name="loading">Loading</string>
     <string name="microphone_line">Wingtip listens to the radio to write down your clearance. Speech is recognised on this phone and never leaves it.</string>
