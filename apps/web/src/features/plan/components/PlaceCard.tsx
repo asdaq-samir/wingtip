@@ -15,6 +15,7 @@ import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../lib/cardTab";
 import { useTabScroll } from "../lib/tabScroll";
 import PlaceActions from "./place/PlaceActions";
+import FitLine from "../../../components/FitLine";
 import PlaceSubtitle from "./place/PlaceSubtitle";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
@@ -447,8 +448,13 @@ export default function PlaceCard({
             testId="place-head"
             titleTestId="place-name"
             subtitleTestId="place-where"
-            twoLines
-            subtitle={name && name !== ident4 ? <PlaceSubtitle name={name} where={where} place={place ?? null} /> : where || " "}
+            // Its full name the head row's second line, centred under the
+            // ident and fitted to it, in sight at the card's smallest size
+            // too (the owner, 2026-11-11, after Apple Maps' "Buttermilk Cafe /
+            // Breakfast and Brunch Restaurant"); the town, its link to Maps,
+            // under the head.
+            sub={name && name !== ident4 ? <FitLine testId="place-full-name">{name}</FitLine> : undefined}
+            subtitle={where ? <PlaceSubtitle where={where} place={place ?? null} /> : undefined}
             line={
               <>
                 {line && (

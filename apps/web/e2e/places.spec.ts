@@ -632,7 +632,7 @@ test("a Favorite's card names it and the map goes to it before the card's answer
   await page.goto("/app/plan?place=KBUR");
   await settle(page);
   await expect(card(page).getByTestId("place-name")).toHaveText("KBUR");
-  await expect(card(page).getByTestId("place-where")).toContainText("Hollywood Burbank/Bob Hope Airport");
+  await expect(card(page).getByTestId("place-full-name")).toContainText("Hollywood Burbank/Bob Hope Airport");
   await expect(card(page).getByTestId("fly-here")).toBeDisabled();
   await expect(page.locator("[data-selected-airport]")).toBeInViewport({ timeout: slow(10_000) });
   // Its own shape already, at the pilot's ask: the actions and the star
@@ -671,7 +671,7 @@ test("an airport's card that could not be had says so, and Try again brings it",
   await card(page).getByTestId("place-retry").click();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   await expect(card(page).getByTestId("place-retry")).toHaveCount(0);
-  await expect(card(page).getByTestId("place-where")).toContainText("Duluth International Airport");
+  await expect(card(page).getByTestId("place-full-name")).toContainText("Duluth International Airport");
 });
 
 test("an airport tapped on the chart while Setup is up puts Setup away and opens its card on Airport", async ({ page }) => {

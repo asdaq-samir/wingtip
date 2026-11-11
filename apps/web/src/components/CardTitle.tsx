@@ -21,6 +21,7 @@ import { TEXT } from "../lib/text";
  */
 export function CardTitle({
   title,
+  sub,
   subtitle,
   line,
   onClose,
@@ -34,6 +35,10 @@ export function CardTitle({
   twoLines = false,
 }: {
   title: string;
+  /** The line under the name inside the pinned head row, centred with it
+   *  and in sight at the card's smallest size too (an airport's full name,
+   *  as Apple Maps' place card writes its kind under its name). */
+  sub?: ReactNode;
   subtitle?: ReactNode;
   line?: ReactNode;
   onClose: () => void;
@@ -56,6 +61,7 @@ export function CardTitle({
     <>
       <CardHeadRow
         name={title}
+        sub={sub}
         nameTestId={titleTestId}
         testId={testId}
         end={<CloseButton onClick={close} data-back="" data-testid={closeTestId} />}

@@ -13,10 +13,10 @@ import { mapsLink } from "./mapsLink";
  * card's Address does (mapsLink); before the card's answer is in, the
  * town is words alone.
  */
-export default function PlaceSubtitle({ name, where, place }: { name: string; where: string | null; place: AirportPlace | null }) {
+export default function PlaceSubtitle({ name, where, place }: { name?: string; where: string | null; place: AirportPlace | null }) {
   return (
     <>
-      <FitLine testId="place-full-name">{name}</FitLine>
+      {name && <FitLine testId="place-full-name">{name}</FitLine>}
       {where && (
         <span className="block truncate">
           {place ? (

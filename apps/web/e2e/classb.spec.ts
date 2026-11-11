@@ -141,7 +141,7 @@ test("tapping one opens its card in the panel, with Fly Here, as any airport on 
   await ord.click();
   await expect(page).toHaveURL(/[?&]place=KORD/);
   // The live card, unmocked: the class-b fixture is only the chips.
-  await expect(page.getByTestId("place-where")).toContainText("O'Hare", { timeout: 15000 });
+  await expect(page.getByTestId("place-full-name")).toContainText("O'Hare", { timeout: 15000 });
   await expect(page.getByTestId("fly-here")).toBeVisible();
   await expect(page.locator(".maplibregl-popup")).toHaveCount(0);
 });
