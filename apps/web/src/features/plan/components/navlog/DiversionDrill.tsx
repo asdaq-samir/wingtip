@@ -9,10 +9,10 @@ import { Button } from "../../../../components/ui/button";
 import { NumberField } from "../../../../components/ui/number-field";
 import type { Leg } from "../../../../lib/api/types";
 import { useClock } from "../../../../lib/useMinuteClock";
-import { ALLOWANCES, divert, reasonable, stopwatch, type Diversion, type EstimateKey } from "../../../../lib/diversion";
+import { ALLOWANCES, divert, reasonable, type Diversion, type EstimateKey } from "../../../../lib/diversion";
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../format";
-import { bearing, grouped, windCorrection } from "../../../../lib/format";
+import { bearing, grouped, stopwatch, windCorrection } from "../../../../lib/format";
 import { FINDING_TONE } from "../../../../lib/findings";
 import { written } from "./workings";
 import { nearestQuery } from "../../../../lib/queryClient";
@@ -121,7 +121,7 @@ export default function DiversionDrill({ leg, at }: { leg: Leg; at: { name: stri
             >
               <p className={cn("flex items-center justify-between font-medium tabular-nums", TEXT.prose)} data-testid="diversion-clock">
                 <span>{checked ? "You took" : "On the clock"}</span>
-                <span>{stopwatch(Math.max(0, (stopped ?? now) - started))}</span>
+                <span>{stopwatch(Math.floor(Math.max(0, (stopped ?? now) - started) / 1000))}</span>
               </p>
               <ListChoices value={field ?? ""} onChange={setField} label="Divert to">
                 {/* The nearest fields, with their longest runway and their

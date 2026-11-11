@@ -105,6 +105,16 @@ export function ago(sinceMs: number): string {
   return minutes < 1 ? "just now" : `${duration(minutes)} ago`;
 }
 
+/** Minutes and seconds, as a stopwatch shows them, from seconds: "2:07".
+ *  The diversion drill's and the radio's timers (whole seconds gone, as a
+ *  stopwatch counts) and the approach brief's time to the missed approach
+ *  point (to the nearest second, as the engine says it), which each had a
+ *  copy of it. */
+export function stopwatch(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
 /** A time en route as a paper nav log writes it, "0:18", "1:35": the
  *  kneeboard, a saved flight's page and its debrief, and the instructor's
  *  review, which each had a copy of it. */

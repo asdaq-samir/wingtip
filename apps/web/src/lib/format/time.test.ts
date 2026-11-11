@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ago, duration, durationByHand, hm } from "./time";
+import { ago, duration, durationByHand, hm, stopwatch } from "./time";
 
 describe("a time en route as a paper nav log writes it", () => {
   it("pads the minutes, rounded first", () => {
@@ -35,5 +35,13 @@ describe("how long ago", () => {
     expect(ago(-5_000)).toBe("just now");
     expect(ago(23 * 60_000 + 40_000)).toBe("23m ago");
     expect(ago(125 * 60_000)).toBe("2h 5m ago");
+  });
+
+  it("writes a stopwatch's minutes and seconds, the one helper the timers and the approach brief share", () => {
+    expect(stopwatch(0)).toBe("0:00");
+    expect(stopwatch(127)).toBe("2:07");
+    expect(stopwatch(125.4)).toBe("2:05");
+    expect(stopwatch(-3)).toBe("0:00");
+    expect(stopwatch(3600)).toBe("60:00");
   });
 });

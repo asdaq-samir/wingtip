@@ -1,7 +1,8 @@
 import { describe, expect, test } from "vitest";
 import type { Leg } from "./api/types";
 import { callEngine } from "./engine/engine";
-import { ALLOWANCES, divert, reasonable, stopwatch, windTriangle } from "./diversion";
+import { ALLOWANCES, divert, reasonable, windTriangle } from "./diversion";
+import { stopwatch } from "./format";
 
 const leg = { tas_kt: 110, fuel_burn_gph: 8.5, magnetic_variation_deg: -3, wind: { wind_dir_true_deg: 270, wind_speed_kt: 20 } } as Leg;
 
@@ -33,7 +34,7 @@ describe("a diversion worked out", () => {
     expect(reasonable("mh", 10, 355)).toBe(false);
     expect(reasonable("ete", 13, 10)).toBe(true);
     expect(reasonable("fuel", 3.6, 2.5)).toBe(false);
-    expect(stopwatch(127_400)).toBe("2:07");
+    expect(stopwatch(Math.floor(127_400 / 1000))).toBe("2:07");
   });
 });
 

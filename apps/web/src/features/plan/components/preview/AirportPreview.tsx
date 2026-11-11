@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
-import { feet } from "../../../../lib/format";
+import { feet, grouped } from "../../../../lib/format";
 import { airportQuery } from "../../../../lib/queryClient";
 import { colourOf } from "../../../../lib/map/marks/flightCategory";
 import { TEXT } from "../../../../lib/text";
@@ -29,7 +29,7 @@ export default function AirportPreview({ ident }: { ident: string }) {
       {place && (
         <p className={cn("tabular-nums", TEXT.detail)}>
           Elevation {feet(place.elevation_ft)}
-          {longest ? ` · longest runway ${longest.toLocaleString()} ft` : ""}
+          {longest ? ` · longest runway ${grouped(longest)} ft` : ""}
         </p>
       )}
       {place?.metar && (

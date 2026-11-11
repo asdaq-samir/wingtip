@@ -72,12 +72,6 @@ export function alongNm(path: LatLon[], at: LatLon): number {
   return callEngine("approach_along_nm", { path: places(path), at: place(at) });
 }
 
-/** A time as a stopwatch says it: "2:05". */
-export function stopwatch(seconds: number): string {
-  const whole = Math.round(seconds);
-  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
-}
-
 type BriefItem = EngineAnswer<"approach_brief">[number];
 
 /**

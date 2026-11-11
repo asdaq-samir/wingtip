@@ -15,7 +15,7 @@
  * through lib/engine), the very code behind the planner's /api/diversion
  * and the phones' wt_call("diversion"). ALLOWANCES stays here as the drill's
  * labels and the type of its keys; diversion.test.ts holds it to the
- * engine's. `stopwatch` is a display format, not a rule, and stays too.
+ * engine's. Its stopwatch's figures are lib/format's (stopwatch).
  */
 import type { Leg } from "./api/types";
 import { callEngine, type EngineAnswer } from "./engine/engine";
@@ -72,10 +72,4 @@ export function divert(leg: Leg, tcDeg: number, distanceNm: number): Diversion |
  *  round the compass (358° is 4° from 002°). */
 export function reasonable(key: EstimateKey, typed: number, exact: number): boolean {
   return callEngine("diversion_reasonable", { key, typed, exact });
-}
-
-/** Minutes and seconds, as a stopwatch shows them: "2:07". */
-export function stopwatch(ms: number): string {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }

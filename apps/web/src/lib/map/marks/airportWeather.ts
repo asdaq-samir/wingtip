@@ -1,5 +1,6 @@
 import type { AirportPin } from "../../api/types";
 import { callEngine } from "../../engine/engine";
+import { reportedDirection } from "../../format";
 import { barbId, arrowId } from "./stationModel";
 
 /**
@@ -102,7 +103,7 @@ export function spokenWeather(ident: string, category: string | null | undefined
   if (w?.wind_speed_kt != null) {
     if (w.wind_speed_kt === 0) parts.push("wind calm");
     else {
-      const from = w.wind_dir_true_deg == null ? "variable" : String(Math.round(w.wind_dir_true_deg)).padStart(3, "0");
+      const from = w.wind_dir_true_deg == null ? "variable" : reportedDirection(w.wind_dir_true_deg);
       const gust = w.wind_gust_kt != null && w.wind_gust_kt > w.wind_speed_kt ? ` gusting ${Math.round(w.wind_gust_kt)}` : "";
       parts.push(`wind ${from} at ${Math.round(w.wind_speed_kt)}${gust}`);
     }

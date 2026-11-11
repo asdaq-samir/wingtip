@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { altFt, bearing, feet, gal, grouped, magneticVariation, nm, windCorrection } from "./figures";
+import { altFt, bearing, feet, gal, grouped, magneticVariation, nm, reportedDirection, threeFigures, windCorrection } from "./figures";
 
 describe("figures written as the FAA writes them", () => {
   it("puts a comma between each three figures, rounded to a whole number", () => {
@@ -10,6 +10,9 @@ describe("figures written as the FAA writes them", () => {
     expect(grouped(1234567.4)).toBe("1,234,567");
     expect(grouped(-1500)).toBe("-1,500");
     expect(grouped(2699.5)).toBe("2,700");
+    // The stock audit's W15: a ceiling or a runway written with
+    // toLocaleString() was "2.500" on a German phone; every figure is en-US.
+    expect(grouped(2500)).toBe("2,500");
     expect(grouped(-2699.5)).toBe("-2,700");
     expect(grouped(-0.4)).toBe("0");
   });
@@ -48,5 +51,17 @@ describe("a course with no figure", () => {
   it("is an em dash, never NaN°", () => {
     expect(bearing(Number.NaN)).toBe("—");
     expect(bearing(Infinity)).toBe("—");
+  });
+});
+
+describe("directions in three figures", () => {
+  it("writes a forecast wind from the north as 360, a report's as it came", () => {
+    // The stock audit's W15: the forecast strip padded the figure itself
+    // and wrote north 000.
+    expect(threeFigures(0)).toBe("360");
+    expect(threeFigures(359.6)).toBe("360");
+    expect(threeFigures(45)).toBe("045");
+    expect(reportedDirection(0)).toBe("000");
+    expect(reportedDirection(270)).toBe("270");
   });
 });

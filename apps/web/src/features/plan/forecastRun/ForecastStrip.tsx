@@ -4,6 +4,7 @@ import { PlaybackToggle } from "../../../components/PlaybackBar";
 import { Alert, AlertDescription, AlertTitle } from "../../../components/ui/alert";
 import { describeError } from "../../../lib/api/client";
 import type { ForecastRun } from "../../../lib/api/types";
+import { grouped, threeFigures } from "../../../lib/format";
 import { TEXT } from "../../../lib/text";
 import { CATEGORY_CHIP, CATEGORY_UNKNOWN } from "../../../lib/tokens";
 import type { DryRun } from "../components/navlog/dryRun";
@@ -103,12 +104,12 @@ function Here({ here }: { here: ForecastRun["samples"][number] }) {
   const ceiling = here.ceiling_unknown
     ? "ceiling not known"
     : here.ceiling_ft != null
-      ? `ceiling ${Math.round(here.ceiling_ft).toLocaleString()} ft`
+      ? `ceiling ${grouped(here.ceiling_ft)} ft`
       : "no ceiling";
   const visibility = here.visibility_sm != null ? `${here.visibility_sm} sm` : "visibility not known";
   const wind =
     here.wind_speed_kt != null && here.wind_dir_true_deg != null
-      ? `wind ${String(Math.round(here.wind_dir_true_deg)).padStart(3, "0")}° ${Math.round(here.wind_speed_kt)} kt`
+      ? `wind ${threeFigures(here.wind_dir_true_deg)}° ${Math.round(here.wind_speed_kt)} kt`
       : "wind aloft not known";
   return (
     <p className={cn("text-foreground", TEXT.caption)} data-testid="forecast-run-here">
