@@ -22,13 +22,22 @@ export type RouteItem = { id: string; label: string; point?: number; node: React
  * procedures' fixes) neither dragged nor dropped beside. The move is made
  * once, at the drop, by the keys React Aria hands back. Tab goes through a
  * row's own controls, its text boxes keeping their keys.
+ *
+ * Only rows with a grip are draggable: the rest are React Aria's
+ * disabledKeys for selection alone (disabledBehavior "selection"), so
+ * their own controls still answer. Where no row can move (outside the
+ * route's editing) the list has no drag and drop at all, a list of its
+ * own (its key), as React Aria asks a drag button of every row of a
+ * draggable one and its hooks to be there from the first render or not.
  */
 export function RouteGrid({ items, onMove }: { items: RouteItem[]; onMove?: (from: number, to: number) => void }) {
   const points = new Map(items.flatMap((item) => (item.point === undefined ? [] : [[item.id, item.point] as const])));
   // The row picked up: only a point is put down anywhere.
   const carried = useRef<Key | null>(null);
+  const movable = !!onMove && points.size > 0;
+  const fixed = items.flatMap((item) => (item.point === undefined ? [item.id] : []));
   const { dragAndDropHooks } = useDragAndDrop({
-    isDisabled: !onMove,
+    isDisabled: !movable,
     getItems: (keys) => [...keys].map((key) => ({ "text/plain": items.find((item) => item.id === key)?.label ?? String(key) })),
     getAllowedDropOperations: () => ["move"],
     onDragStart: (event) => {
@@ -66,8 +75,11 @@ export function RouteGrid({ items, onMove }: { items: RouteItem[]; onMove?: (fro
   return (
     <GridList
       aria-label="The route"
+      key={movable ? "movable" : "fixed"}
       items={items}
-      dragAndDropHooks={dragAndDropHooks}
+      dragAndDropHooks={movable ? dragAndDropHooks : undefined}
+      disabledKeys={fixed}
+      disabledBehavior="selection"
       keyboardNavigationBehavior="tab"
       disallowTypeAhead
       className="outline-none"
