@@ -1,16 +1,18 @@
 import CoreLocation
 import SwiftUI
 
-/// The alerts of the flight's extras: a point's altitude, a fix off it,
-/// a procedure's fix's crossing altitude, and what the engine refused of
-/// one. The cards it once held (an airplane, a hold, a flown track, a leg)
-/// are Navigator's, as every card is.
+/// The alerts of the flight's extras: a fix off a point, a procedure's
+/// fix's crossing altitude, and what the engine refused of one; and the
+/// point whose altitude the Profile opens on. The cards it once held (an
+/// airplane, a hold, a flown track, a leg) are Navigator's, as every card is.
 @MainActor
 @Observable
 final class FlightUI {
     static let shared = FlightUI()
 
-    /// The point whose altitude is asked for.
+    /// The point whose altitude the Profile opens on, its Start At / Cross
+    /// At popover up (a stop's "Set Altitude…"): the profile's one
+    /// altitude control, taken and cleared there (ProfileCard).
     var altitudeAt: String?
     /// The point a fix is made off.
     var fixFrom: String?
@@ -21,9 +23,9 @@ final class FlightUI {
     var problem: String?
 }
 
-/// The alerts that ask for one figure or two, as iOS asks: a point's own
-/// altitude, a fix off a point (its course and distance), and a
-/// procedure's fix's crossing altitude.
+/// The alerts that ask for one figure or two, as iOS asks: a fix off a
+/// point (its course and distance) and a procedure's fix's crossing
+/// altitude. A point's own altitude is the Profile's (LegAltitudePopover).
 struct PointAlerts: ViewModifier {
     /// Whether this view is the top of the stack, the one that presents.
     let active: Bool
@@ -35,21 +37,6 @@ struct PointAlerts: ViewModifier {
     func body(content: Content) -> some View {
         let ui = FlightUI.shared
         content
-            .alert(ui.altitudeAt.map { "Altitude at \($0)" } ?? "Altitude", isPresented: shown(\.altitudeAt), presenting: ui.altitudeAt) { ident in
-                TextField(PointAltitude.isWaypoint(ident, course: plan.course) ? "FL-045 as 045" : "Feet", text: $typed).keyboardType(.numberPad)
-                Button("Set") {
-                    if let feet = refused({ try PointAltitude.feet(typed, waypoint: PointAltitude.isWaypoint(ident, course: plan.course)) }) {
-                        plan.setAltitude(at: ident, feet: feet)
-                    }
-                    typed = ""
-                }
-                if plan.extras.altitudes[ident.uppercased()] != nil {
-                    Button("Reset", role: .destructive) { plan.setAltitude(at: ident, feet: nil); typed = "" }
-                }
-                Button("Cancel", role: .cancel) { typed = "" }
-            } message: { ident in
-                Text(altitudeMessage(ident))
-            }
             .alert(ui.fixFrom.map { "A fix from \($0)" } ?? "A fix", isPresented: shown(\.fixFrom), presenting: ui.fixFrom) { from in
                 TextField("Course, as 090", text: $course).keyboardType(.numberPad)
                 TextField("Distance, nm", text: $distance).keyboardType(.decimalPad)
@@ -93,49 +80,6 @@ struct PointAlerts: ViewModifier {
     /// Whether one of the alerts is up, its subject set; put away, cleared.
     private func shown(_ subject: ReferenceWritableKeyPath<FlightUI, String?>) -> Binding<Bool> {
         Binding(get: { active && FlightUI.shared[keyPath: subject] != nil }, set: { if !$0 { FlightUI.shared[keyPath: subject] = nil } })
-    }
-
-    /// A waypoint's is flown to it; an airport's is what a flight landing
-    /// there comes down to; with the planner's cautions on the pilot's own.
-    private func altitudeMessage(_ ident: String) -> String {
-        let cautions = plan.altitude?.cautions?.filter { $0.toIdent.uppercased() == ident.uppercased() }.flatMap(\.reasons) ?? []
-        let base = PointAltitude.isWaypoint(ident, course: plan.course) ? "Flown to it at this altitude; the rest of the route as planned."
-            : "Where a flight landing here comes down to, in feet above sea level."
-        return ([base] + cautions).joined(separator: "\n")
-    }
-}
-
-/// A point's own altitude and a fix off it, as typed.
-enum PointAltitude {
-    /// Feet from what is typed: a waypoint's three figures in hundreds of
-    /// feet (045 for 4,500), an airport's in feet. A VFR altitude, under
-    /// Class A's floor at 18,000 ft MSL (14 CFR 71.33, 91.135), as the
-    /// planner takes one (PlanQuery.own_altitudes).
-    /// Nil for what is not an altitude; thrown where the engine refuses.
-    static func feet(_ typed: String, waypoint: Bool) throws -> Int? {
-        let digits = typed.filter(\.isNumber)
-        guard !digits.isEmpty, digits.count <= (waypoint ? 3 : 5), let figure = Int(digits) else { return nil }
-        let feet = waypoint ? figure * 100 : figure
-        return try Altitudes.allowed(Double(feet)) ? feet : nil
-    }
-
-    /// A course of 000 to 360, out to 999 nm, as the planner takes a
-    /// fix/radial/distance (wingtip.fixes.parse_frd): what is typed read as
-    /// the engine's `frd_read` reads one, and written again as its
-    /// `frd_write` writes it. Nil for what is not one; thrown where the
-    /// engine refuses.
-    static func frd(from: String, course: String, distance: String) throws -> String? {
-        let typed = "\(from)/\(course.filter(\.isNumber))/\(distance.trimmingCharacters(in: .whitespaces))"
-        guard let read = try Engine.frdRead(text: typed) else { return nil }
-        return try RouteExtras.frd(read.base, courseDeg: Int(read.course), nm: read.distanceNm)
-    }
-
-    /// Whether a point of the route is a waypoint rather than a field: a
-    /// fix, a pilot's own point off one, or a position.
-    static func isWaypoint(_ ident: String, course: Course?) -> Bool {
-        if ident.contains("/") || ident.hasPrefix("@") { return true }
-        let ends = (course.map { [$0.departure, $0.destination] + ($0.stops ?? []) }) ?? []
-        return ends.first { $0.ident.uppercased() == ident.uppercased() }?.kind == "fix"
     }
 }
 

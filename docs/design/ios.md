@@ -652,9 +652,10 @@ figures anywhere depend on a default type.
      (owner's rule; positions unchanged).
 2. **The figure strip:** To, Dist, ETE and Fuel, in `type.figure`
    digits, from the engine. The fuel is a dash without an airplane.
-3. **Cruise:** the altitude field in FL-045 form; the Profile's
-   Altitude Advisor is where the cruise is chosen (see
-   [The profile](#the-profile-foreflights-way)).
+3. **Cruise:** the altitude in FL-045 form, a button that opens the
+   Profile: its slider and Altitude Advisor are the one place the cruise
+   is set (see [The profile](#the-profile-foreflights-way)). There is no
+   typed cruise field: one control, one source of truth (2026-11-10).
 4. **Route options**, after Routes: up to four cards (Direct, Fastest,
    Most Filed, Economical). Each shows its time, distance and fuel and
    has its own **Use** button, as Maps' route cards each carry Go.
@@ -676,7 +677,8 @@ figures anywhere depend on a default type.
 navigation verbs in order:
 
 1. Direct To
-2. Set Altitude…
+2. Set Altitude…, which opens the Profile on that waypoint's Start At /
+   Cross At popover (no typed alert of its own)
 3. Hold Here…
 4. Add a Stop After
 5. Remove, last and destructive
@@ -741,8 +743,10 @@ view model (`ProfileModel`), every figure the engine's (`ProfileRules`:
 - **A waypoint.** A tap within 22 pt of one (a 44 pt target) opens a
   `.popover`, kept a popover on the iPhone
   (`presentationCompactAdaptation(.popover)`): the altitude as a menu
-  `Picker`, **Start At** or **Cross At** as a segmented control, Set and
-  Reset. VoiceOver reaches each waypoint as an accessibility action of
+  `Picker`, or typed in feet for an altitude off the engine's steps (a
+  field's elevation), **Start At** or **Cross At** as a segmented
+  control, Set and Reset. A stop's "Set Altitude…" opens the Profile on
+  this popover; it is the only way a point's altitude is set. VoiceOver reaches each waypoint as an accessibility action of
   the chart ("Altitude at KLVK").
 - **The Altitude Advisor.** The cruise is chosen from a `List` section:
   one row per altitude, highest first, with time, fuel and the head or

@@ -83,8 +83,21 @@ struct ProfileCard: View {
             }
         }
         // Full height wherever it is opened, a card's page included.
-        .onAppear { if Navigator.shared.card != nil { Navigator.shared.cardDetent = .large } }
+        .onAppear {
+            if Navigator.shared.card != nil { Navigator.shared.cardDetent = .large }
+            takeAltitudeAt()
+        }
+        // A stop's "Set Altitude…" opens its popover here (RoutePointMenu).
+        .onChange(of: FlightUI.shared.altitudeAt) { _, _ in takeAltitudeAt() }
         .onChange(of: plan.altitudeFt) { _, _ in model.previewFt = nil }
+    }
+
+    /// The point a stop's menu asked the altitude of, its popover put up
+    /// and the ask cleared.
+    private func takeAltitudeAt() {
+        guard let ident = FlightUI.shared.altitudeAt else { return }
+        FlightUI.shared.altitudeAt = nil
+        model.waypoint = ident
     }
 
     /// The preview in words, Set where it differs from the plan's, and
