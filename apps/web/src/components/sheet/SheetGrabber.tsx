@@ -69,17 +69,28 @@ function useCapsule(at: number) {
 // it shrinks to the bars' size and goes as they come back.
 const GROW = "width var(--motion-sheet) var(--motion-sheet-ease), height var(--motion-sheet) var(--motion-sheet-ease)";
 const MOVES = { "--grow": GROW, "--fold": `${GROW}, opacity 0s var(--motion-sheet)` } as CSSProperties;
+// Each page's capsule grows out of its own bar, on its own side (the owner,
+// 2026-11-11: "Can the search and fpl animation stay on their sides rather
+// than a shared capsule?"): Search's from the left bar, leftward from the
+// grabber's middle; FPL's from the right bar, rightward. The other bar stays.
 const CAPSULE = cn(
-  "pointer-events-none absolute left-1/2 flex -translate-x-1/2 items-center justify-center overflow-hidden rounded-full bg-muted-foreground",
+  "pointer-events-none absolute flex items-center justify-center overflow-hidden rounded-full bg-muted-foreground",
   TEXT.caption,
   "font-semibold whitespace-nowrap text-background",
-  // The bars' 36 by 5 folded; open about 20 tall, wide enough for "Search" at any text size.
-  "h-[5px] w-9 opacity-0 [transition:var(--fold)]",
-  "group-data-open/grab:h-[1.8em] group-data-open/grab:w-[4.5em] group-data-open/grab:opacity-100 group-data-open/grab:[transition:var(--grow)]",
+  // Its bar's 16 by 5 folded; open about 20 tall, wide enough for its name at any text size.
+  "h-[5px] w-4 opacity-0 [transition:var(--fold)]",
+  "group-data-open/grab:h-[1.8em] group-data-open/grab:opacity-100 group-data-open/grab:[transition:var(--grow)]",
   // Reduce Motion: the name fades in and out at its size, nothing grows
   // (over index.css's stilled transitions, for this fade alone).
-  "motion-reduce:h-[1.8em]! motion-reduce:w-[4.5em]! motion-reduce:[transition:opacity_var(--motion-fade)]!",
+  "motion-reduce:h-[1.8em]! motion-reduce:[transition:opacity_var(--motion-fade)]!",
 );
+/** Where each page's capsule hangs and how wide it opens: the left bar's
+ *  ends at the grabber's middle (less the bars' 2-point gap each side), the
+ *  right bar's starts there. */
+const SIDE = [
+  "right-[calc(50%+2px)] group-data-open/grab:w-[4.5em] motion-reduce:w-[4.5em]!",
+  "left-[calc(50%+2px)] group-data-open/grab:w-[3.25em] motion-reduce:w-[3.25em]!",
+];
 
 /**
  * iOS's grabber, 36 by 5. A finger drags the sheet from it (the Drawer's
@@ -93,8 +104,9 @@ const CAPSULE = cn(
  * on the page up's bar sizes the sheet as the whole grabber did, and Up
  * and Down still step it. Each bar's 44-point hit area (its ::after) grows
  * off the sheet's edge, not over the first row, the two meeting in the
- * middle; the bars never grow. When the page changes they give way to a
- * capsule with its name in it, a second, then fold back (useCapsule).
+ * middle; the bars never grow. When the page changes its bar gives way to
+ * a capsule with its name in it, on its own side, a second, then folds back
+ * (useCapsule).
  */
 export function SheetGrabber({
   label,
@@ -155,7 +167,13 @@ export function SheetGrabber({
       </span>
       <span ref={live} aria-live="polite" className="sr-only" />
       {/* The page's name, grown out of the bars; the bars already say it. */}
-      <span aria-hidden="true" data-testid="grabber-capsule" style={MOVES} className={cn(CAPSULE, at === "top" ? "top-1" : "bottom-1.25")}>
+      <span
+        aria-hidden="true"
+        data-testid="grabber-capsule"
+        data-side={capsule.shown}
+        style={MOVES}
+        className={cn(CAPSULE, SIDE[capsule.shown] ?? SIDE[0], at === "top" ? "top-1" : "bottom-1.25")}
+      >
         {names[capsule.shown]}
       </span>
       {/* Picked as focused: Left and Right switch the pages at once, as the dots did. */}
@@ -188,12 +206,14 @@ export function SheetGrabber({
             >
               <span
                 // The page up's bar the grabber's grey at full strength, the
-                // other lighter; both give way to the capsule at once and
-                // come back as it finishes folding (under Reduce Motion
-                // they stay, the capsule fading in over them).
+                // other lighter; the bar whose capsule is out gives way to it
+                // at once and comes back as it finishes folding, the other
+                // staying (under Reduce Motion it stays, the capsule fading
+                // in over it).
                 className={cn(
                   "h-[5px] w-4 rounded-full bg-muted-foreground/30 group-data-active/bar:bg-muted-foreground",
-                  "transition-opacity delay-(--motion-sheet) duration-0 group-data-open/grab:opacity-0 group-data-open/grab:delay-0",
+                  i === capsule.shown &&
+                    "transition-opacity delay-(--motion-sheet) duration-0 group-data-open/grab:opacity-0 group-data-open/grab:delay-0",
                   "motion-reduce:opacity-100!",
                 )}
                 aria-hidden="true"

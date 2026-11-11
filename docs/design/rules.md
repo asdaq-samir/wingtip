@@ -225,10 +225,12 @@ and the one search is still the only field.
 - **The grabber names the page as it changes** (the owner, 2026-11-11:
   "Can the split grabber dot animate to show search or fpl and then fold
   to the grabber dot when swiped?"): on a swipe, a tap on a bar or a page
-  the app picks (a route made), the two bars grow into one small capsule
-  in the grabber's colour with the page's name in it ("Search", "FPL"),
-  about 20 points tall, hold about a second and fold back into the bars,
-  the new page's bar the stronger. While a finger drags the pages it
+  the app picks (a route made), the new page's bar grows into a small
+  capsule on its own side, in the grabber's colour with the page's name in
+  it (Search's leftward from the grabber's middle, FPL's rightward: the
+  owner, 2026-11-11, "stay on their sides rather than a shared capsule"),
+  about 20 points tall, the other bar staying; it holds about a second and
+  folds back into its bar, the stronger of the two. While a finger drags the pages it
   names the page it is heading to. It moves on the sheet's time and
   ease-out, no spring; under Reduce Motion the name fades in and out with
   no size change. It never moves the sheet or takes a tap, and is not

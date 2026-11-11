@@ -87,6 +87,11 @@ test("a swipe shows the page's name in the grabber's capsule, then it folds back
   await expectPage(page, 1);
   await expect(capsule).toHaveText("FPL");
   await expect(capsule).toHaveCSS("opacity", "1");
+  // On FPL's own side: it starts at the right bar, and Search's bar stays.
+  await expect(capsule).toHaveAttribute("data-side", "1");
+  const [cap, left] = [(await capsule.boundingBox())!, (await bar(page, 0).locator("span").boundingBox())!];
+  expect(cap.x, "FPL's capsule starts right of Search's bar").toBeGreaterThanOrEqual(left.x + left.width);
+  await expect(bar(page, 0).locator("span")).toHaveCSS("opacity", "1");
   // It never takes a tap: the bars under it keep theirs.
   await expect(capsule).toHaveCSS("pointer-events", "none");
   await expect(capsule).toHaveAttribute("aria-hidden", "true");
@@ -95,6 +100,7 @@ test("a swipe shows the page's name in the grabber's capsule, then it folds back
   await expect(bar(page, 1).locator("span")).toHaveCSS("opacity", "1");
   await swipe(page, "right");
   await expect(capsule).toHaveText("Search");
+  await expect(capsule).toHaveAttribute("data-side", "0");
   await expect(capsule).toHaveCSS("opacity", "0", { timeout: 3000 });
 });
 
