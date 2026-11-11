@@ -30,7 +30,7 @@ The owner kept both server languages on this split (2026-11-06): the
 boundary between them is plain HTTP, merging them would give a pilot
 nothing, and Spring is good at identity and persistence. Some rules still
 live outside the engine, in the Python, the Java and the apps; issue #482
-moves them in, in order, and CI's rules-boundary job
+moves them in, in order, and CI's rules boundary (the guards job)
 ([CI.md](CI.md#rules-boundary)) stops new ones.
 
 ## The services

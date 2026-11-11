@@ -33,40 +33,51 @@ from concurrent.futures import ThreadPoolExecutor
 # Each job's budget in minutes, a pull request's (and main's push) and the
 # night's, by its name in the Actions UI (fnmatch patterns, first match).
 # Set from the runs of November 2026 with a little room; lower one when a
-# job gets faster, and raise one only with the reason in the commit.
+# job gets faster, and raise one only with the reason in the commit. The
+# tier-1 jobs, those "CI passed" waits on, fit the three-minute gate (the
+# owner, 2026-11-10), but for the phones' builds (TIER1_LONG, below);
+# scripts/ci/test_tiers.py holds them to it.
 BUDGETS = [
+    # Tier 1: a pull request (docs/CI.md, "The tiers").
     ("changes", 1, 1),
-    ("Rules boundary", 1, 1),
-    ("Doc links", 1, 1),
-    ("Website", 1, 1),
-    ("Architecture", 1, 1),
-    ("API compatibility", 1, 1),
+    ("Engine wheel", 2, 3),
+    ("Guards", 3, 4),
     ("dependency-review", 1, 1),
+    ("API compatibility", 1, 1),
     ("infra", 2, 2),
-    ("test", 5, 5),
-    ("test-web", 5, 5),
-    ("test-gateway", 4, 4),
-    ("test-planner", 4, 4),
+    ("test-engine", 3, 5),
+    ("test-web", 3, 5),
+    ("test-gateway", 3, 4),
+    ("test-planner", 3, 4),
+    ("test-wingtip", 3, 4),
+    ("test-jobs", 2, 2),
     ("test-ingest", 2, 2),
     ("test-assistant", 2, 2),
     ("test-weather", 2, 2),
-    ("Flight-critical", 3, 3),
-    ("Engine wheel", 3, 3),
+    ("Native Android / build", 5, 10),
+    ("Native iOS / test", 6, 70),
+    ("CI passed", 1, 1),
+    # Tier 2: after merge, on main's push.
     ("build (*)", 4, 6),
     ("e2e (*)", 8, 15),
-    ("Native Android / build", 8, 10),
+    # Tier 3: the night.
     ("Native Android / device", 15, 15),
-    ("Native iOS / test", 10, 70),
     ("docs", 10, 10),
     ("Standards", 10, 10),
     ("Flake hunt (*)", 45, 45),
     ("Flake report", 2, 2),
     ("Sources still answer", 2, 2),
-    ("Nightly issue", 1, 1),
-    ("CI passed", 1, 1),
 ]
-# The whole run, first job's start to last job's end.
-TOTAL = (10, 20)
+# The tier-1 gate, in minutes: no tier-1 job's budget above it but these,
+# the phones' builds, which a pull request waits for only when it touches
+# what the app builds from.
+TIER1 = 3
+TIER1_LONG = {"Native Android / build", "Native iOS / test"}
+# The whole run, first job's start to last job's end, by event: a pull
+# request is tier 1; main's push adds tier 2; the night is everything.
+# A run is given at least its longest job's budget (a phone's build), as
+# nothing can make it shorter.
+TOTAL = {"pull_request": TIER1, "push": 14, "night": 20}
 SELF = "CI budget"
 
 
@@ -124,7 +135,9 @@ def report(repo: str, run_id: str, token: str) -> list[str]:
         elif over:
             warnings.append(f"{job['name']} took {minutes:.1f} min against a budget of {limit}")
     total = (max(ends) - min(starts)).total_seconds() / 60 if starts else 0
-    total_limit = TOTAL[1] if nightly else TOTAL[0]
+    limits = [limit for _, _, limit, _ in rows if limit is not None]
+    event = "night" if nightly else ("push" if run["event"] == "push" else "pull_request")
+    total_limit = max([TOTAL[event], *limits])
     if total > total_limit:
         warnings.append(f"the run took {total:.1f} min, first job to last, against a budget of {total_limit}")
     lines = [
