@@ -717,7 +717,7 @@ test("an airplane's card has Follow, Alert and Debrief in a row, Share at the le
   await expect(card.getByTestId("flight-follow")).toHaveAttribute("aria-pressed", "true");
   await expect(card.getByTestId("flight-follow")).toContainText("Following");
   // Share, the star and the close on the pictures, the bar's out of the
-  // pill: Share at the left, the star beside the close at the right.
+  // pill: Share and the star at the left, the close at the right (2026-11-11).
   const head = (await card.getByTestId("flight-head").boundingBox())!;
   const [share, star, close] = await Promise.all(
     ["flight-share", "flight-favorite", "flight-close"].map(async (id) => {
@@ -727,8 +727,8 @@ test("an airplane's card has Follow, Alert and Debrief in a row, Share at the le
     }),
   );
   expect(share!.x + share!.width, "Share at the left").toBeLessThan(head.x + head.width / 2);
-  expect(star!.x, "the star at the right").toBeGreaterThan(head.x + head.width / 2);
-  expect(star!.x + star!.width, "the star before the close").toBeLessThanOrEqual(close!.x);
+  expect(star!.x + star!.width, "the star at the left").toBeLessThan(head.x + head.width / 2);
+  expect(close!.x, "the close at the right").toBeGreaterThan(head.x + head.width / 2);
   await expect(card.getByTestId("flight-share")).toHaveAccessibleName("Share UAL2088");
   // Descending 1,200 ft a minute, at 7,000 ft and 250 kt: said in its summary.
   await expect(card.getByTestId("flight-state")).toHaveText("DES");

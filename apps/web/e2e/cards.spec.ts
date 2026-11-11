@@ -93,11 +93,12 @@ for (const row of CARDS) {
           [close.y + close.height + 8, row.card] as const,
         );
         expect(below, "the card's body in sight under its title row at the pill").toEqual([]);
-        // A tap on the row, beside its buttons, raises it back to half: the
-        // card's own drawer (CardStack), the sheet under it where it was.
+        // A tap on the row, on its centred name between its buttons, raises
+        // it back to half: the card's own drawer (CardStack), the sheet
+        // under it where it was.
         const head = page.locator("[data-sheet-head]").filter({ visible: true }).first();
         const box = (await head.boundingBox())!;
-        await page.mouse.click(box.x + 24, box.y + box.height - 6);
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height - 6);
         await expect(frontSheet(page)).toHaveAttribute("data-panel", "half");
         await expect(page.getByTestId(row.card)).toBeVisible();
       });
@@ -111,6 +112,20 @@ for (const row of CARDS) {
         await page.getByTestId(row.close).click();
         await expect(page.getByTestId(row.card)).toBeHidden();
         expect(page.url()).toBe(url);
+      });
+
+    // Its head as Apple Maps' place card's (the owner, 2026-11-11, "let's
+    // move the title in the middle"): the name centred across the card,
+    // Share and the like at the start, ✕ alone at the end (HeadGrid).
+    if (!row.question)
+      test("its name centred in its head, ✕ alone at the end", async ({ page }) => {
+        test.skip(!phone(page) && !!row.not?.desktop, row.not?.desktop ?? "");
+        await open(page, row, row.entries[0]!);
+        const head = page.locator("[data-sheet-head]").filter({ visible: true }).first();
+        const [box, name] = await Promise.all([head.boundingBox(), head.getByRole("heading").first().boundingBox()]);
+        expect(Math.abs(name!.x + name!.width / 2 - (box!.x + box!.width / 2)), "centred").toBeLessThan(2);
+        await expect(head.locator("[data-slot=head-end] button")).toHaveCount(1);
+        await expect(head.locator("[data-slot=head-end] button")).toHaveAttribute("data-testid", row.close);
       });
 
     if (row.fullHeight)

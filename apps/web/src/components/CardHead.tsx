@@ -2,6 +2,7 @@ import { useContext, type ReactNode, type Ref } from "react";
 import { Share } from "lucide-react";
 import { cn } from "cn";
 import CloseButton from "./CloseButton";
+import { HeadGrid } from "./HeadGrid";
 import { PinnedHead } from "./PinnedHead";
 import RoundButton from "./RoundButton";
 import { closeTopCard, useHeldCard, RouteShareMenu, type CardShare } from "../lib/openCards";
@@ -10,13 +11,16 @@ import { TEXT } from "../lib/text";
 /**
  * Every card's one head row (the card rule's 8, the same thing the same
  * component: the owner, 2026-11-11, "Are we using two different cards?"),
- * pinned at the card's top with the card scrolling under it (PinnedHead):
- * at its start a form's Cancel where it has one (`leading`), its name and
- * the short line under it (`sub`, in sight at the smallest size too), the
- * buttons beside them (`children`: a star, a refresh, the flight rules),
- * and at its end the close or a form's Save (`end`). SheetCard draws it
- * from its props; a card whose content draws its own head (CardHead,
- * CardTitle) draws this same row.
+ * pinned at the card's top with the card scrolling under it (PinnedHead),
+ * laid out as Apple Maps' place card at its smallest size (HeadGrid; the
+ * owner, 2026-11-11, "let's move the title in the middle"): at its start
+ * a form's Cancel (`leading`), or the card's Share, its star and what else
+ * acts on it (`children`: a refresh, the flight rules, the Stops'
+ * distance); its name and the short line under it (`sub`, in sight at the
+ * smallest size too) centred across the card; and at its end the close
+ * alone, or a form's Save (`end`). SheetCard draws it from its props; a
+ * card whose content draws its own head (CardHead, CardTitle) draws this
+ * same row.
  */
 export function CardHeadRow({
   name,
@@ -30,7 +34,6 @@ export function CardHeadRow({
   hidden = false,
   level = "h2",
   nameRef,
-  fit = false,
   slot,
   flush = false,
   children,
@@ -54,42 +57,51 @@ export function CardHeadRow({
   level?: "h2" | "h3";
   /** The name, for the focus as a page is pushed (ConsolePages). */
   nameRef?: Ref<HTMLHeadingElement>;
-  /** The name as wide as its words, what goes beside it (`children`) right
-   *  after it and the end at the row's end (the Stops' distance menu). */
-  fit?: boolean;
   /** PinnedHead's: its slot, and a scroller with no sides of its own. */
   slot?: string;
   flush?: boolean;
   children?: ReactNode;
 }) {
   const Name = level;
-  const row = (
+  const middle = (
     <>
-      {leading}
-      <div className={cn("flex min-w-0 flex-col", !fit && "flex-1", leading && "text-center")}>
-        <Name
-          ref={nameRef}
-          id={nameId}
-          tabIndex={-1}
-          className={cn("font-bold tracking-tight text-foreground outline-none", wrap ? "break-words" : "truncate", TEXT.card)}
-          data-testid={nameTestId}
+      <Name
+        ref={nameRef}
+        id={nameId}
+        tabIndex={-1}
+        className={cn("max-w-full font-bold tracking-tight text-foreground outline-none", wrap ? "break-words" : "truncate", TEXT.card)}
+        data-testid={nameTestId}
+      >
+        {name}
+      </Name>
+      {sub != null && sub !== "" && (
+        <p
+          className={cn("max-w-full text-muted-foreground tabular-nums", wrap ? "break-words" : "truncate", TEXT.note)}
+          data-testid="card-sub"
         >
-          {name}
-        </Name>
-        {sub != null && sub !== "" && (
-          <p className={cn("text-muted-foreground tabular-nums", wrap ? "break-words" : "truncate", TEXT.note)} data-testid="card-sub">
-            {sub}
-          </p>
-        )}
-      </div>
-      {children}
-      {end != null && <div className={cn("-mr-1 flex shrink-0 items-center gap-2.5", fit && "ml-auto")}>{end}</div>}
+          {sub}
+        </p>
+      )}
     </>
   );
-  if (hidden) return <div className="sr-only flex shrink-0 items-center gap-2">{row}</div>;
+  const start =
+    leading != null || children != null ? (
+      <>
+        {leading}
+        {children}
+      </>
+    ) : undefined;
+  if (hidden)
+    return (
+      <div className="sr-only">
+        {start}
+        {middle}
+        {end}
+      </div>
+    );
   return (
     <PinnedHead testId={testId} slot={slot} flush={flush} className="shrink-0">
-      {row}
+      <HeadGrid start={start} middle={middle} end={end} />
     </PinnedHead>
   );
 }
@@ -97,8 +109,8 @@ export function CardHeadRow({
 /**
  * A card's head: its name, the line under it in a note's grey (what it
  * is, not text to read, as the line under a place's name is in Maps),
- * what goes beside them (an airport's weather and its star), and the
- * close, out to the head's row's inset (px-3) as the route's close is.
+ * its Share and what else acts on it at the row's start (CardShareButton),
+ * and the close alone at its end.
  */
 export function CardHead({
   name,
@@ -124,10 +136,10 @@ export function CardHead({
   lineClassName?: string;
   lineTestId?: string;
   onClose: () => void;
-  /** Its share, beside its close (CardClose). */
+  /** Its share, at the row's start (CardShareButton). */
   onShare?: CardShare;
   closeTestId: string;
-  /** Between the name and the close. */
+  /** At the row's start after its Share (a refresh, the flight rules). */
   children?: ReactNode;
 }) {
   // Its name and close one row pinned at the sheet's top, the card
@@ -141,6 +153,7 @@ export function CardHead({
         nameTestId={nameTestId}
         end={<CardClose onClose={onClose} onShare={onShare} testId={closeTestId} />}
       >
+        <CardShareButton onShare={onShare} />
         {children}
       </CardHeadRow>
       {line != null && (
@@ -153,13 +166,13 @@ export function CardHead({
 }
 
 /**
- * A card's Share and close at its head's end, inline with its name, at the
- * owner's ask ("Close should not be anywhere except the top right corner
- * of the card inline with label"), now the tabs stay over a card as the
- * platform's own do (TabBar): its Share where it has one -- its own, or
- * the route's menu for the Brief, the nav log and the profile -- and the
- * close, which goes back one (a page opened in the card first, else the
- * card, lib/openCards), as a device's Back does.
+ * A card's close at its head's end, inline with its name, at the owner's
+ * ask ("Close should not be anywhere except the top right corner of the
+ * card inline with label"), now the tabs stay over a card as the
+ * platform's own do (TabBar): it goes back one (a page opened in the card
+ * first, else the card, lib/openCards), as a device's Back does. It holds
+ * the card open with its share (`onShare`, for the bar's Share), which
+ * the head draws at its start (CardShareButton).
  */
 export function CardClose({
   onClose,
@@ -175,23 +188,28 @@ export function CardClose({
   className?: string;
 }) {
   useHeldCard(onClose, onShare);
-  const routeShare = useContext(RouteShareMenu);
   return (
-    <div className={cn("flex shrink-0 items-center gap-2", className)}>
-      {typeof onShare === "string"
-        ? routeShare?.(onShare)
-        : onShare && (
-            <RoundButton label="Share" onClick={onShare} data-testid="card-share">
-              <Share className="size-5" strokeWidth={2} />
-            </RoundButton>
-          )}
-      <CloseButton
-        onClick={() => {
-          if (!closeTopCard()) onClose();
-        }}
-        data-back=""
-        data-testid={testId}
-      />
-    </div>
+    <CloseButton
+      className={className}
+      onClick={() => {
+        if (!closeTopCard()) onClose();
+      }}
+      data-back=""
+      data-testid={testId}
+    />
+  );
+}
+
+/** A card's Share at its head's start, as Apple Maps' place card has it
+ *  (the owner, 2026-11-11): its own, or the route's menu (•••) for the
+ *  Brief, the nav log and the profile. */
+function CardShareButton({ onShare }: { onShare?: CardShare }) {
+  const routeShare = useContext(RouteShareMenu);
+  if (typeof onShare === "string") return routeShare?.(onShare) ?? null;
+  if (!onShare) return null;
+  return (
+    <RoundButton label="Share" onClick={onShare} data-testid="card-share">
+      <Share className="size-5" strokeWidth={2} />
+    </RoundButton>
   );
 }

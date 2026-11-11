@@ -200,8 +200,8 @@ export default function StopsCard({
       {/* Every card's one head row (CardHeadRow), pinned, all of the card in
           sight at the sheet's smallest size: its name, and under it at every
           size how many it found (the owner, 2026-11-11: "None on the route",
-          "2 stops"), the distance menu right after the name and the close at
-          the row's end (CardClose). */}
+          "2 stops"), centred, the distance menu at the row's start and the
+          close at its end (CardClose). */}
       <CardHeadRow
         name="Stops"
         nameTestId="stops-name"
@@ -214,7 +214,6 @@ export default function StopsCard({
               : `${fields.length} ${fields.length === 1 ? "stop" : "stops"}`
             : undefined
         }
-        fit
         end={<CardClose onClose={onClose} testId="stops-close" />}
       >
         <PullDown

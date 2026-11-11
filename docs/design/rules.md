@@ -67,7 +67,12 @@ Compose. Nothing here is built by hand where a stock part does it.
    stock prompt. Each part of a screen is drawn by its one component on
    the web (owner-reported 2026-11-11: Settings' own title at 17 points
    under its pages' 22): a card's or a page's head row, its name at a
-   card's 22, `CardHeadRow` (`CardHead`, `CardTitle`, `SheetCard`,
+   card's 22 centred across the card with its line under it, Share (or
+   the route's •••), the star and what else acts on the card at its
+   start and ✕ alone at its end, as Apple Maps' place card at its
+   smallest size (the owner, 2026-11-11: "let's move the title in the
+   middle"; `HeadGrid`, the inset each side the wider side's),
+   `CardHeadRow` (`CardHead`, `CardTitle`, `SheetCard`,
    `ListPageHead` and Settings and its pages draw it); a section's title
    `SectionTitle` (`ListGroup`, `PillSection`, `AccordionSection`,
    `SectionPane`); a close `CloseButton` (`CardClose` on a card a
@@ -81,8 +86,8 @@ Compose. Nothing here is built by hand where a stock part does it.
 10. **A card at the sheet's smallest size is its title row** (owner-reported
     2026-11-11: Account and Settings dragged down to the smallest size left
     the sheet empty, the grabber alone). As Apple Maps' place card does, a
-    card at the pill shows its one title row -- its name, Share where it
-    has one, and ✕ -- in the pill's room, and nothing else of it; a tap on
+    card at the pill shows its one title row -- Share where it has one at
+    its start, its name centred, and ✕ at its end -- in the pill's room, and nothing else of it; a tap on
     the row or a drag up raises the sheet back to half with the card as it
     was; ✕ there closes the card and the pill then shows the search. A
     card with a short line under its name keeps it there too: the Nav Log

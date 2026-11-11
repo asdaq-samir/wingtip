@@ -75,7 +75,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await expect(card(page).getByTestId("place-ident")).toHaveCount(0);
   // Measured from the route's departure while the pilot's own position is not known.
   await expect(card(page).getByTestId("place-line")).toHaveText(/^\d+ nm NW of C81 · Elevation [\d,]+ ft$/);
-  // Its share, its star and close at the title's right (the owner, 2026-11-11); the card the whole sheet, no search over it.
+  // Its share at the head's start, the name centred, ✕ at its end (cards.spec, 2026-11-11); the card the whole sheet.
   for (const id of ["place-share", "place-favorite", "place-close"]) await expect(card(page).getByTestId(id)).toBeInViewport();
   await expect(firstRow(page)).toBeHidden();
   // Three tiles in a row at half, nothing else -- no Add Stop for the route's destination -- Info open.
