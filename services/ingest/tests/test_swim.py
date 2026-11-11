@@ -134,7 +134,9 @@ def test_the_radar_reaches_the_planners_map_through_the_store(monkeypatch):
     swim.WANTED[0] = traffic.radar_wanted()
     try:
         assert swim.WANTED[0] == ([(42.0, -88.0, 42)], set())
-        assert swim._radar(MESSAGE) == 1
+        # The wider circle keeps N3429J too, 39 nm out; the planner's read
+        # of the view itself leaves it out.
+        assert swim._radar(MESSAGE) == 2
     finally:
         swim.WANTED[0] = ([], set())
     seen = traffic.radar._elsewhere_near(41.98, -87.9, 20, set())
