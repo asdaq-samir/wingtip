@@ -62,7 +62,7 @@ def test_airport_weather_is_the_metar_and_taf_as_sent(monkeypatch):
     assert wx["metar"]["raw"] == METAR["raw"] and wx["metar"]["flight_category"] == "VFR"
     assert wx["taf"].startswith("TAF KDLH")
     assert "runways" not in wx
-    assert "aviationweather.gov" in wx["sources"][0]["source"]
+    assert wx["sources"][0] == calls.METAR_SOURCE
 
 
 def test_a_weather_outage_is_said_as_one(monkeypatch):
