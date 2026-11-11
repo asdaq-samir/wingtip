@@ -4,7 +4,8 @@
 # - a worktree under .claude/worktrees or ../wingtip-* whose checkout is
 #   clean and whose commit is already on origin/main or
 #   origin/claude/integration, unless it is locked (a running agent's)
-#   or is the live stack's (~/Developer/wingtip-live);
+#   or is the live stack's (~/Developer/wingtip-live), or was touched in
+#   the last six hours (a fresh agent's worktree is "landed" too);
 # - local branches whose commits are all on those two (none checked out);
 # - stopped containers of the worktrees' and scratch stacks (compose
 #   projects named wingtip-<something>) and the leftovers of
@@ -30,6 +31,22 @@ landed() { # is commit $1 on main or the integration branch?
 }
 run() { if [ $dry = 1 ]; then echo "would: $*"; else "$@"; fi; }
 
+# Minutes since a worktree's git state (its HEAD, index, reflog) or its
+# folder last changed. A worktree just made from claude/integration for an
+# agent is "landed" before the agent has written anything; on 2026-11-11
+# go-live removed three such worktrees under their running agents. As
+# tidy-branches.sh does, nothing touched in the last six hours goes.
+idle_minutes() {
+  local admin newest=0 t f
+  admin=$(git -C "$1" rev-parse --path-format=absolute --git-dir 2>/dev/null) || { echo 0; return; }
+  for f in "$admin/HEAD" "$admin/index" "$admin/logs/HEAD" "$1"; do
+    [ -e "$f" ] || continue
+    t=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f")
+    [ "$t" -gt "$newest" ] && newest=$t
+  done
+  echo $((($(date +%s) - newest) / 60))
+}
+
 removed=0; kept=0
 while IFS= read -r line; do
   case $line in worktree\ *) wt=${line#worktree }; locked=0; head="";;
@@ -40,6 +57,7 @@ while IFS= read -r line; do
         case $wt in */.claude/worktrees/*|*/wingtip-*) ;; *) wt=""; continue;; esac
         if [ $locked = 1 ]; then echo "keep (running agent): $wt"; kept=$((kept+1))
         elif [ -n "$(git -C "$wt" status --porcelain 2>/dev/null)" ]; then echo "keep (uncommitted changes): $wt"; kept=$((kept+1))
+        elif [ "$(idle_minutes "$wt")" -lt 360 ]; then echo "keep (in use in the last six hours): $wt"; kept=$((kept+1))
         elif landed "$head"; then run git worktree remove "$wt" && removed=$((removed+1))
         else echo "keep (not landed yet): $wt"; kept=$((kept+1)); fi
         wt="";;
