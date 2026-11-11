@@ -1,13 +1,14 @@
 import SwiftUI
 
 /// The plan, the sheet's main content and the root of its one stack
-/// (PlanSheet), under the search (the owner's one-search design,
-/// 2026-11-09): the route box -- the route's ends, its Routes, and the
-/// airplane, the altitude and the route's buttons (RouteBoxRow) -- then
-/// the stops and "Add a Stop", the route's own edits, the figures for the
-/// whole flight and the procedures, in FPL's order. The nav log is behind
-/// the route box's ••• and Share at the bar's left, as the web has them
-/// (the owner, 2026-11-09).
+/// (PlanSheet), right under the one search with no title bar of its own
+/// (the owner's one-row header, 2026-11-10, as Apple Maps): with a route,
+/// its card (RouteCard: the route, Ready to Fly, the figures, Brief, Nav
+/// Log, Airplane and the route's •••), then the route -- its ends, its
+/// Routes, the airplane and the altitude (RouteBoxRow) -- the stops and
+/// "Add a Stop", the route's own edits and the procedures, in FPL's
+/// order. With none, the route's ends over Favorites, Recents, Find
+/// Nearby and Nearest (BrowseSections).
 struct PlanView: View {
     @Environment(Plan.self) private var plan
     @Environment(Charts.self) private var charts
@@ -20,12 +21,14 @@ struct PlanView: View {
     let open: (Screen) -> Void
     /// "Add a Stop": the search, whose airport card has Add as Stop.
     let addStop: () -> Void
+    /// Before a route, the search's nothing-typed sections in the plan
+    /// itself (BrowseSections): the fields nearest the airplane, and where
+    /// a row's pick goes.
+    var nearest: [NearestAirport] = []
+    var browse: (SearchPick) -> Void = { _ in }
 
     enum Field { case dep, dest, altitude }
     @State private var altitude = ""
-    /// The fields' widths follow the type size, so an ident still fits at
-    /// the larger sizes.
-    @ScaledMetric(relativeTo: .body) private var identWidth = 110.0
 
     /// The hundreds typed, flown; nothing typed, the planner's own pick.
     private func flyAltitude() {
@@ -39,32 +42,9 @@ struct PlanView: View {
     var body: some View {
         @Bindable var plan = plan
         List {
+            if plan.routed { RouteCard(open: open) }
             Section {
-                HStack(spacing: WingtipSpace.sm) {
-                    routeField("From", text: $plan.dep, field: .dep)
-                    Image(systemName: "arrow.right").foregroundStyle(.secondary)
-                    routeField("To", text: $plan.dest, field: .dest)
-                    // A clearance heard off the radio into the route
-                    // (ClearanceSheet), the radio's waves its mark; where
-                    // speech cannot be recognised on the iPhone, the same
-                    // sheet, the clearance typed.
-                    let voice = ClearanceListener.shared.canListen
-                    Button { focused = nil; ClearanceListener.shared.sheetText = nil; ClearanceListener.shared.sheetShown = true } label: {
-                        Image(systemName: !voice ? "text.bubble" : WingtipIcon.radio)
-                            .symbolOnAir(ClearanceListener.shared.listening).symbolSwap()
-                            // The 44-point hit area round the glyph, which does not grow.
-                            .contentShape(Rectangle().inset(by: -10))
-                    }
-                    .buttonStyle(.borderless)
-                    .accessibilityLabel(!voice ? "Enter a clearance" : ClearanceListener.shared.listening ? "Listening to the radio" : "Listen to the radio")
-                    .accessibilityIdentifier("radio")
-                    Button("Plan") { focused = nil; plan.plan() }
-                        .buttonStyle(.borderedProminent)
-                        // ⌘Return plans from an iPad's keyboard; Return
-                        // in a field already does (onSubmit).
-                        .keyboardShortcut(.return, modifiers: .command)
-                        .disabled(!plan.routed || plan.planning)
-                }
+                RouteEndsRow(focused: $focused)
                 if plan.routed && plan.course != nil && RouteLine.shows(plan.routes, picked: plan.pickedChip, problem: plan.routesProblem) {
                     // Routes: the ways to fly it, right under the route's
                     // ends, in the system's menu picker.
@@ -93,46 +73,38 @@ struct PlanView: View {
                         }
                 }
             }
+            if !plan.routed {
+                // Favorites, Recents, Find Nearby and Nearest under the
+                // route's ends until there is a route, as the search shows
+                // them with nothing typed (docs/design/rules.md §4).
+                BrowseSections(nearest: nearest, pick: browse)
+            }
             if plan.routed {
                 // The stops in order, each a swipe from going and all
                 // of them draggable into another order, as the web
                 // app's route list has them; then "Add a Stop", the
                 // search, whose airport card adds it (the Plan
                 // artboard's "+ Add a stop").
-                Section("Stops") {
+                Section {
                     ForEach(Array(plan.stops.enumerated()), id: \.offset) { _, stop in
                         RoutePointMenu(ident: stop)
                     }
                     .onDelete { at in plan.stops.remove(atOffsets: at); plan.plan() }
                     .onMove { from, to in plan.stops.move(fromOffsets: from, toOffset: to); plan.plan() }
                     Button(action: addStop) { Label("Add a Stop", systemImage: "plus") }
+                } header: {
+                    // The stops' Edit (delete, move) at the header's
+                    // right, as iOS's lists put it, since the bar it was
+                    // in is gone (the one-row header, 2026-11-10).
+                    HStack {
+                        Text("Stops")
+                        Spacer()
+                        if !plan.stops.isEmpty { EditButton().textCase(nil) }
+                    }
                 }
             }
             // The route's own edits and the flight in the air.
             RouteExtrasSection()
-            if let totals = plan.totals {
-                Section {
-                    // The airplane's time and fuel open its profile,
-                    // where they are set (the owner, 2026-11-09).
-                    AirplaneFiguresLink {
-                        FigureRow {
-                            stripFigure("TO", plan.dest)
-                            stripFigure("DIST", Format.distance(totals.distanceNm), spoken: SpokenFigures.nauticalMiles(totals.distanceNm))
-                            // Time and fuel are an airplane's: none picked,
-                            // none shown (docs/decisions/0011).
-                            if plan.airplaneChosen {
-                                stripFigure("ETE", totals.eteMin.map(Format.duration) ?? Format.none, spoken: totals.eteMin.map(SpokenFigures.minutes))
-                                stripFigure("FUEL", Format.fuel(totals.fuelGal), spoken: totals.fuelGal.map(SpokenFigures.gallons),
-                                            warn: (totals.fuelMarginGal ?? 0) < 0)
-                            }
-                        }
-                        .accessibilityElement(children: .combine)
-                    }
-                    // What the totals and the climbs lack of the airplane,
-                    // asked in place: its start and taxi fuel, its climb.
-                    if plan.airplaneChosen { AskFigureRow(needs: [.fuelTotals, .climb]) }
-                }
-            }
             if plan.course != nil {
                 // Each field's procedures, pull-downs as the web app's
                 // route list has them: the departure's departures, every
@@ -160,41 +132,10 @@ struct PlanView: View {
             }
         }
         .siriSees(SiriSaw.flight(plan))
+        // The name for VoiceOver and Back; the bar shows the search in its
+        // place (OneSearch's one row).
         .navigationTitle("Flight Plan")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar { FPLToolbar(plan: plan, flights: { open(.flights) }) }
-    }
-
-    private func routeField(_ label: String, text: Binding<String>, field: Field) -> some View {
-        TextField(label, text: text)
-            .borderedField()
-            .textInputAutocapitalization(.characters)
-            .autocorrectionDisabled()
-            .font(WingtipType.row.monospaced())
-            .frame(maxWidth: identWidth)
-            .focused($focused, equals: field)
-            .onSubmit { if field == .dep { focused = .dest } else { plan.plan() } }
-    }
-}
-
-/// The plan's bar, on the iPhone and in the iPad's sidebar alike: Share at the
-/// left, as the web's minimized bar has it (docs/decisions/0015, the
-/// owner's of 2026-11-09), the pilot's saved flights beside it, and the
-/// stops' Edit at the right. Clear is in the route box's ••• (RouteBoxRow).
-struct FPLToolbar: ToolbarContent {
-    let plan: Plan
-    let flights: () -> Void
-
-    var body: some ToolbarContent {
-        if plan.routed {
-            ToolbarItem(placement: .topBarLeading) { ShareMenu() }
-        }
-        ToolbarItem(placement: .topBarLeading) {
-            Button(action: flights) { Label("Flights", systemImage: "tray.full") }
-        }
-        if !plan.stops.isEmpty {
-            ToolbarItem(placement: .topBarTrailing) { EditButton() }
-        }
     }
 }
 

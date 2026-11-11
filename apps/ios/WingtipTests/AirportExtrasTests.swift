@@ -96,6 +96,9 @@ struct AirportExtrasTests {
         #expect(AirportRoute("~recents") == .list(.recents))
         let near = AirportRoute.nearFrom(lat: 42.3, lon: -88.4, label: "Woodstock, IL")
         #expect(AirportRoute(near.text) == near)
+        // Find Nearby's fields of a kind, and a kind it does not know as typed.
+        #expect(AirportRoute("%food") == .nearby(.food) && AirportRoute.nearby(.training).text == "%training")
+        #expect(AirportRoute("%gas") == .airport("%gas"))
         // Not a point: a field's ident, as typed.
         #expect(AirportRoute("@nowhere") == .airport("@nowhere"))
         #expect(AirportRoute("KDLH").heldPoint == nil)

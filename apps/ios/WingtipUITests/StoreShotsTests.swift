@@ -66,11 +66,10 @@ final class StoreShotsTests: XCTestCase {
         let top = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.48))
         top.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)))
         save(app, "01-map", settle: 12)
-        // And up again for the route box's Brief and ••• buttons.
+        // And up again for the route card's Nav Log and Brief.
         let low = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.84))
         low.press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.45)))
         Thread.sleep(forTimeInterval: 2)
-        app.buttons["More"].tap()
         let item = app.buttons["Nav Log"]
         XCTAssertTrue(item.waitForExistence(timeout: Self.planner))
         item.tap()

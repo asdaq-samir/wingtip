@@ -90,7 +90,7 @@ struct StripSheetView: View {
         .onChange(of: opened) { _, now in
             if let last = now.last?.airportRoute {
                 path.append(.airport(last))
-                if detent == RootView.pill { detent = .medium }
+                if detent == RootView.pill { detent = .half }
             }
         }
         .takesAskedScreens { _ = open($0) } // Siri's Brief, and a screen asked for by name (StripSheetView+Screens)
@@ -266,7 +266,7 @@ struct StripSheetView: View {
 
     /// The pill up to half, where the answer is.
     private func up() {
-        if detent == RootView.pill { detent = .medium }
+        if detent == RootView.pill { detent = .half }
     }
 
     /// A question, answered on the strip (StripAnswerCard).

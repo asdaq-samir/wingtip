@@ -757,6 +757,7 @@ enum WingtipHaptic {
 enum WingtipSize {
     static let tapTarget: CGFloat = 44
     static let chip: CGFloat = 32
+    static let mapButton: CGFloat = 48
     static let tabBar: CGFloat = 64
     static let panel: CGFloat = 384
     static let panelWide: CGFloat = 448

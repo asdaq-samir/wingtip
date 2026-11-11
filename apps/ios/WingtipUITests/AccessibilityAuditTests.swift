@@ -73,12 +73,10 @@ final class AccessibilityAuditTests: XCTestCase {
             // A single-line field (the system's search field, FPL's From
             // and To, the N-number) scrolls its text as typed, as Apple's
             // own fields do.
-            if type == .textField || type == .searchField { return true }
-            // Open, not fixed here: FPL's Plan button beside the From and
-            // To fields is squeezed at the largest sizes; laying that row
-            // out again is the owner's call (CLAUDE.md: no control moves
-            // without the owner).
-            return type == .button && element.label == "Plan"
+            // FPL's Plan button no longer needs one: at the accessibility
+            // sizes it has a line of its own under From and To
+            // (RouteEndsRow).
+            return type == .textField || type == .searchField
         default:
             return false
         }

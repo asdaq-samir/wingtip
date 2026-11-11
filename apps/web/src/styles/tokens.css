@@ -153,6 +153,7 @@
   --depth-overlay: 0 0 0 0.5px rgb(0 0 0 / 0.078), 0 4px 8px 0 rgb(0 0 0 / 0.059), 0 16px 40px 0 rgb(0 0 0 / 0.18);
   --tap-target: 44px;
   --size-chip: 32px;
+  --size-map-button: 48px;
   --size-tab-bar: 64px;
   --size-panel: 384px;
   --size-panel-wide: 448px;

@@ -10,6 +10,7 @@ import SwiftUI
 struct PlanSheet: View {
     @Environment(Plan.self) var plan
     @Environment(\.splitLayout) private var split
+    @Environment(\.sheetAtPill) private var atPill
     let search: OneSearchModel
     /// A screen by its name, as a link opens it (RootView.openScreen): the
     /// one way a page opens by name.
@@ -19,16 +20,17 @@ struct PlanSheet: View {
 
     var body: some View {
         NavigationStack(path: stack) {
-            PlanView(open: openScreen, addStop: { search.presented = true })
-                .oneSearch(search, host: host)
+            PlanView(open: openScreen, addStop: { search.presented = true }, nearest: search.nearest, browse: browse)
+                .oneSearch(search, host: host, oneRow: !split)
                 .navigationDestination(for: SheetPage.self) { page in SheetPageView(page: page, nearest: search.nearest) }
         }
         .environment(\.showPlan, { showPlan() })
         // The route's figures at the sheet's foot with a route, on every
         // page and size (the web's FlightLine), in the system's bar
-        // (safeAreaBar, glassFoot); over the map on the iPad.
+        // (safeAreaBar, glassFoot); over the map on the iPad. Not at the
+        // pill, where it covered the search (sheetAtPill).
         .glassFoot {
-            if plan.routed, !split {
+            if plan.routed, !split, !atPill {
                 FiguresStrip()
                     .padding(.vertical, WingtipSpace.sm)
                     .frame(maxWidth: .infinity)
@@ -60,6 +62,18 @@ struct PlanSheet: View {
                     nav.planPath = next
                 }
             })
+    }
+
+    /// A row of the plan's sections before a route (BrowseSections): a
+    /// field's card or a list of fields, or an airplane's profile, as the
+    /// search opens them.
+    private func browse(_ picked: SearchPick) {
+        switch picked {
+        case .airport(let route): host.card(route)
+        case .airplane(let tail): Navigator.shared.open(.tail(ProfileAsk(tail: tail.uppercased())))
+        case .plan: showPlan()
+        case .directTo, .types, .action: break
+        }
     }
 
     private var host: SearchHost {
