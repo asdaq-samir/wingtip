@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
 import { prefersReducedMotion } from "../../lib/motion";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "../ui/carousel";
+import { setPageHeading } from "./pageHeading";
 
 /**
  * The sheet's two pages side by side, Search and FPL (the owner,
@@ -79,6 +80,24 @@ export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: num
     api.on("select", picked);
     return () => {
       api.off("select", picked);
+    };
+  }, [api]);
+  // Where it is heading while it moves, for the grabber's capsule: Embla's
+  // own scroll progress (0 on Search, 1 on FPL) at each of its scroll
+  // events, nearer page first, and none once it settles.
+  useEffect(() => {
+    if (!api) return;
+    const moving = () => {
+      const last = api.scrollSnapList().length - 1;
+      setPageHeading(Math.min(last, Math.max(0, Math.round(api.scrollProgress() * last))));
+    };
+    const still = () => setPageHeading(null);
+    api.on("scroll", moving);
+    api.on("settle", still);
+    return () => {
+      api.off("scroll", moving);
+      api.off("settle", still);
+      still();
     };
   }, [api]);
   // At a sideways row's end the swipe goes on to the page (the owner,

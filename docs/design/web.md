@@ -434,7 +434,16 @@ Down sizing the sheet as the plain grabber does. It sits in the Drawer's
 popup outside the clip of its corners (`SheetDrawer`'s `grabber`), so
 each bar's 44-point hit area reaches over the sheet's edge rather than
 over the field; the first row keeps its room from before the pages. A
-card's grabber stays the plain one. The page up
+card's grabber stays the plain one. A page change opens the grabber's
+capsule (`useCapsule`, the owner 2026-11-11): its two bars give way to a
+pill with the page's name in it, grown on `--motion-sheet` by CSS
+transitions of its width and height, held a second and folded back;
+while the pages move it names the page they are heading to, from
+Embla's own `scroll` progress and `settle` event (`SheetPager`, into the
+small `usePageHeading` store), nothing measured of our own. It is
+`aria-hidden` and `pointer-events: none`; a swipe's page is said by a
+polite live region, a bar's by its own focus. Under Reduce Motion it
+keeps its size and fades on `--motion-fade`. The page up
 is the planner's place (`usePanelView`'s `view`: the plan is FPL, the
 search and the traffic are Search); a swipe or a bar picks it as a
 place is picked, so what each kept open comes back with it. The pill is

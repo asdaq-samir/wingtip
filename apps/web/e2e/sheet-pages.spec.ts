@@ -74,6 +74,30 @@ test("Search to FPL and back, by a swipe and by the grabber's bars, the sheet's 
   await expectPage(page, 0);
 });
 
+test("a swipe shows the page's name in the grabber's capsule, then it folds back into the bars", async ({ page }) => {
+  // The owner, 2026-11-11: "Can the split grabber dot animate to show
+  // search or fpl and then fold to the grabber dot when swiped?"
+  await page.goto("/app/plan");
+  await settle(page);
+  await grabberTo(page, "half");
+  const capsule = page.getByTestId("grabber-capsule");
+  // Nothing on the first draw: only a change opens it.
+  await expect(capsule).toHaveCSS("opacity", "0");
+  await swipe(page, "left");
+  await expectPage(page, 1);
+  await expect(capsule).toHaveText("FPL");
+  await expect(capsule).toHaveCSS("opacity", "1");
+  // It never takes a tap: the bars under it keep theirs.
+  await expect(capsule).toHaveCSS("pointer-events", "none");
+  await expect(capsule).toHaveAttribute("aria-hidden", "true");
+  // About a second later it has folded and gone, the bars back.
+  await expect(capsule).toHaveCSS("opacity", "0", { timeout: 3000 });
+  await expect(bar(page, 1).locator("span")).toHaveCSS("opacity", "1");
+  await swipe(page, "right");
+  await expect(capsule).toHaveText("Search");
+  await expect(capsule).toHaveCSS("opacity", "0", { timeout: 3000 });
+});
+
 test("the grabber's bars are 44 points tall to a finger and meet in the middle, the bars the grabber's width", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "the phone's sheet");
   await page.goto("/app/plan");

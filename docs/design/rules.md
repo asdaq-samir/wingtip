@@ -220,6 +220,18 @@ and the one search is still the only field.
   "Search, page 1 of 2", selected or not. Left and Right switch pages,
   Up and Down size the sheet. No row of dots: the first row sits where
   it did before the pages. A card's own grabber stays one bar.
+- **The grabber names the page as it changes** (the owner, 2026-11-11:
+  "Can the split grabber dot animate to show search or fpl and then fold
+  to the grabber dot when swiped?"): on a swipe, a tap on a bar or a page
+  the app picks (a route made), the two bars grow into one small capsule
+  in the grabber's colour with the page's name in it ("Search", "FPL"),
+  about 20 points tall, hold about a second and fold back into the bars,
+  the new page's bar the stronger. While a finger drags the pages it
+  names the page it is heading to. It moves on the sheet's time and
+  ease-out, no spring; under Reduce Motion the name fades in and out with
+  no size change. It never moves the sheet or takes a tap, and is not
+  read aloud (the bars say the page; a page changed by a swipe is said
+  once, politely).
 - **A route made or opened** (Fly Here, a link, Saved) goes to FPL;
   clearing it stays on the page it is on.
 - **Cards** open over both pages as before; ✕ comes back to the page
@@ -233,7 +245,8 @@ and the one search is still the only field.
 | shadcn's Carousel (Embla) with `data-base-ui-swipe-ignore="x"` inside the Drawer, the split grabber Base UI's Tabs (`components/sheet/SheetGrabber`, the pages `SheetPager`; FPL's body `features/plan/components/workspace/PlanPage`) | `TabView` with `.tabViewStyle(.page)` or a paging `ScrollView`, the stock page dots | Compose `HorizontalPager` with a pager indicator |
 
 Tests: [`e2e/sheet-pages.spec.ts`](../../apps/web/e2e/sheet-pages.spec.ts)
-(`@smoke`: Search to FPL and back by a swipe and by the grabber's bars).
+(`@smoke`: Search to FPL and back by a swipe and by the grabber's bars;
+the capsule naming the page after a swipe, then gone).
 
 ## 5. Airport weather marks (the owner, 2026-11-10)
 
