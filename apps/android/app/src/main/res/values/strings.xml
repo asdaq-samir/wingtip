@@ -290,6 +290,9 @@
     <string name="about_chart_edition">Chart Edition</string>
     <string name="about_cycle_packs">Cycle Packs</string>
     <string name="about_planning_aid">A Planning Aid</string>
+    <!-- The first launch's notice (about/PlanningAidNotice), the terms' heading. -->
+    <string name="planning_aid_title">A Planning Aid, Not for Navigation</string>
+    <string name="planning_aid_accept">I Understand</string>
     <string name="about_planning_aid_text">Wingtip Maps is a planning aid for VFR and IFR flight. It does not replace an official weather briefing (1800wxbrief.com or 1‑800‑WX‑BRIEF), current FAA charts and publications, or the pilot in command’s judgement and final authority (14 CFR 91.3, 91.103). Its checkpoints are a model’s suggestions: check them against the chart. Before flight, verify current weather, NOTAMs, TFRs, airport status, aircraft performance, and applicable regulations (14 CFR 91.103).</string>
     <string name="about_credits">Credits</string>
     <string name="about_legal">Legal</string>
