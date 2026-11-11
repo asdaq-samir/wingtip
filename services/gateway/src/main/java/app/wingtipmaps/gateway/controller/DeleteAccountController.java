@@ -64,6 +64,9 @@ public class DeleteAccountController {
     private final String publicBaseUrl;
     private final int perAddressPerHour;
     private final int perClientPerHour;
+    /** Opening and pressing a link, per caller an hour, as MagicLinkAccountController holds its asks. */
+    private final int linkChecksPerClientPerHour;
+
     private final SlidingWindowLimiter recent = new SlidingWindowLimiter(THROTTLE_WINDOW);
     private final SecureRandom random = new SecureRandom();
 
@@ -74,7 +77,8 @@ public class DeleteAccountController {
             Mailer mailer,
             @Value("${app.public-base-url:}") String publicBaseUrl,
             @Value("${app.magic-link.per-address-per-hour:5}") int perAddressPerHour,
-            @Value("${app.magic-link.per-client-per-hour:20}") int perClientPerHour) {
+            @Value("${app.magic-link.per-client-per-hour:20}") int perClientPerHour,
+            @Value("${app.magic-link.account-per-client-per-hour:30}") int linkChecksPerClientPerHour) {
         this.links = links;
         this.pilots = pilots;
         this.accounts = accounts;
@@ -82,6 +86,7 @@ public class DeleteAccountController {
         this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
         this.perAddressPerHour = perAddressPerHour;
         this.perClientPerHour = perClientPerHour;
+        this.linkChecksPerClientPerHour = linkChecksPerClientPerHour;
     }
 
     /** The page that asks for the address. */
@@ -121,6 +126,9 @@ public class DeleteAccountController {
     /** Where the emailed link opens: the address it is for, and a Delete button. Uses nothing up. */
     @GetMapping("/delete-account/confirm")
     public ResponseEntity<String> confirm(HttpServletRequest request, @RequestParam String token) {
+        if (tooMany(request)) {
+            return ConnectPages.page("Delete Account", DeleteAccountPages.expired());
+        }
         Optional<MagicLink> link = links.findByTokenHash(MagicLinkController.hash(PURPOSE + token))
                 .filter(l -> l.getConsumedAt() == null && l.getExpiresAt().isAfter(Instant.now()));
         if (link.isEmpty()) {
@@ -134,7 +142,10 @@ public class DeleteAccountController {
 
     /** Delete pressed: the link used up, and the account deleted as Setup deletes it. */
     @PostMapping(value = "/delete-account/confirm", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<String> delete(@RequestParam String token) {
+    public ResponseEntity<String> delete(HttpServletRequest request, @RequestParam String token) {
+        if (tooMany(request)) {
+            return ConnectPages.page("Delete Account", DeleteAccountPages.expired());
+        }
         String hash = MagicLinkController.hash(PURPOSE + token);
         Optional<MagicLink> link = links.findByTokenHash(hash);
         if (link.isEmpty() || links.consumeIfUsable(hash, Instant.now()) == 0) {
@@ -180,6 +191,12 @@ public class DeleteAccountController {
                         .build()
                         .toUriString()
                 : publicBaseUrl;
+    }
+
+    /** Past the hour's limit of links checked from one caller: answered as a dead link, so it tells nothing. */
+    private boolean tooMany(HttpServletRequest request) {
+        return !recent.allow(
+                "check:" + SlidingWindowLimiter.clientOf(request), linkChecksPerClientPerHour, Instant.now());
     }
 
     private String token() {

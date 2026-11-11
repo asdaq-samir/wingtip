@@ -90,7 +90,6 @@ public class ConnectorGrants {
         return at == null ? null : at.toInstant();
     }
 
-
     /** Ends every connection the pilot made: their tokens stop working at once. */
     public void forget(long pilotId) {
         String principal = Long.toString(pilotId);
