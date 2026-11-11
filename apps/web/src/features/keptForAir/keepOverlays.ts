@@ -19,10 +19,10 @@ import { overlayTilesQuery } from "../../lib/queryClient";
  */
 
 /** The worker's cache for the archive (vite.config.ts). */
-export const OVERLAY_CACHE = "overlay-archive";
+const OVERLAY_CACHE = "overlay-archive";
 
 /** The archive's address, as the map asks for it (overlayTiles' own). */
-export const overlayArchivePath = (tiles: Pick<OverlayTiles, "name">) => `/api/planner/overlay-tiles/${tiles.name}.pmtiles`;
+const overlayArchivePath = (tiles: Pick<OverlayTiles, "name">) => `/api/planner/overlay-tiles/${tiles.name}.pmtiles`;
 
 /** Whether the browser has room for `bytes` and as much again: storage
  *  the browser may take back under pressure is not filled to the top. */

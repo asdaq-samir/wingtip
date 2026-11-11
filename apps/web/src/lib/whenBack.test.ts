@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { whenBack } from "./queryClient";
+import { whenBack } from "./whenBack";
 
 /** A page's visibility, as the phone changes it. */
 function page(visibilityState: DocumentVisibilityState) {

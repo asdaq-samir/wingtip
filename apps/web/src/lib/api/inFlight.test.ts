@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { timedInFlight } from "./client";
+import { timedInFlight } from "./inFlight";
 
 describe("requests that send data, in flight", () => {
   test("given a timeout in flight, and only then", () => {

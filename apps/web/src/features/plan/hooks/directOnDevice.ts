@@ -4,7 +4,7 @@ import type { Course, Leg, NavLogAltitude, NavLogMessage, Totals } from "../../.
 import { callEngine, type EngineInput } from "../../../lib/engine/engine";
 import { positionIdent } from "../../../lib/identSchema";
 import { sameField } from "../../../lib/procedures";
-import { clearProblem, raiseProblem } from "../../../lib/problems";
+import { clearProblem, noConnection, raiseProblem } from "../../../lib/problems";
 
 /**
  * A Direct To worked out on the device, for when the planner cannot be
@@ -43,7 +43,7 @@ export interface DeviceRoute {
 
 /** The last Direct To worked out on the device: usePlan shows it while
  *  the planner has no answer of its own for that route. */
-export const useDeviceDirect = create<{ made: DeviceRoute | null }>(() => ({ made: null }));
+const useDeviceDirect = create<{ made: DeviceRoute | null }>(() => ({ made: null }));
 
 /** Flat squared degrees, the longitude shrunk by the latitude's cosine:
  *  which point of the line is the target's, an index, never a figure. */
@@ -76,7 +76,11 @@ function legBetween(
  * planned; null where it cannot be worked out here -- no course or legs
  * yet, a point not on them, or the engine refusing the figures.
  */
-export function directOnDevice(plan: PlanNow, ident: string, fix: { lat: number; lon: number; altitudeFt?: number | null }): DeviceRoute | null {
+export function directOnDevice(
+  plan: PlanNow,
+  ident: string,
+  fix: { lat: number; lon: number; altitudeFt?: number | null },
+): DeviceRoute | null {
   const { course, legs, nav, totals } = plan;
   if (!course || !legs.length) return null;
   const points = [...(course.stops ?? []), course.destination];
@@ -139,7 +143,7 @@ export function directOnDevice(plan: PlanNow, ident: string, fix: { lat: number;
 }
 
 /** What is said where a Direct To could not be flown without the planner. */
-export const NOT_CHANGED = "Not changed: no connection";
+const NOT_CHANGED = "Not changed: no connection";
 const NOT_CHANGED_ID = "direct-not-changed";
 
 /**
@@ -166,4 +170,36 @@ export function useDirectReady(plan: PlanNow) {
     },
     [course, legs, nav, totals],
   );
+}
+
+/** A query's flags, as far as the planner not answering goes. */
+interface Asked {
+  isError: boolean;
+  error?: unknown;
+  fetchStatus: "fetching" | "paused" | "idle";
+}
+const silent = (q: Asked) => q.isError || noConnection(q) || globalThis.navigator?.onLine === false;
+const hasLegs = (m: readonly NavLogMessage[] | undefined) => !!m?.some((line) => line.type === "leg");
+
+/**
+ * The Direct To worked out here for the route from `dep`, shown while the
+ * planner has no answer of its own for it -- no connection, or it failed
+ * (usePlan): its course in the planner's course's place, its nav log's
+ * lines in the stream's; the planner's answer, once it comes, wins.
+ */
+export function useDirectHere(
+  dep: string,
+  course: Asked & { data?: Course; isPlaceholderData: boolean; isLoading: boolean },
+  navlog: Asked & { data?: NavLogMessage[] },
+  asEntered: { data?: NavLogMessage[] },
+) {
+  const made = useDeviceDirect((d) => (d.made?.dep === dep ? d.made : null));
+  const courseHere = !!made && (!course.data || course.isPlaceholderData) && silent(course);
+  const logHere = !!made && !hasLegs(navlog.data) && !hasLegs(asEntered.data) && silent(navlog);
+  return {
+    courseData: courseHere ? made.course : course.data,
+    courseLoading: courseHere ? false : course.isLoading,
+    messages: logHere ? made.messages : null,
+    onDevice: courseHere || logHere,
+  };
 }

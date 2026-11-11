@@ -7,6 +7,7 @@ import react, { reactCompilerPreset } from "@vitejs/plugin-react";
 import babel from "@rolldown/plugin-babel";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { IN_FLIGHT_READS, OVERLAY_ARCHIVE, RADAR_FRAMES, markFromCache } from "./vite-plugins/workboxRules";
 import { preloadEngine } from "./vite-plugins/preloadEngine.ts";
 import { MANIFEST } from "./vite-plugins/manifest.ts";
 import { CHUNK_SIZE_LIMIT, strictRolldown, warningsFail } from "./vite-plugins/strictBuild.ts";
@@ -106,23 +107,6 @@ const tesseractFiles: Plugin = {
   },
 };
 
-// An answer the service worker gives from its cache rather than the
-// network, marked so the page can say so (lib/fromCache): the header
-// carries when the network gave it, the response's own Date, which the
-// planner and the gateway send on every answer. Only on the NetworkFirst
-// caches below, where the cache answers only when the network has not --
-// the steady ones answer from the cache every time, by design. Written
-// out whole inside the function: Workbox copies it into the generated
-// worker as text, so it can use nothing from this file.
-const markFromCache = {
-  cachedResponseWillBeUsed: async ({ cachedResponse }: { cachedResponse?: Response | null }) => {
-    if (!cachedResponse) return null;
-    const headers = new Headers(cachedResponse.headers);
-    headers.set("X-From-Cache", cachedResponse.headers.get("date") ?? "");
-    return new Response(cachedResponse.body, { status: cachedResponse.status, statusText: cachedResponse.statusText, headers });
-  },
-};
-
 // Built into Spring Boot's static resources, which is what makes it the
 // only public surface: the bundle and the API it calls arrive from one
 // origin, so there is one session, one set of access rules, and no second
@@ -208,21 +192,6 @@ export default defineConfig({
             },
           },
           {
-            // The radar loop's pictures (WeatherLoopGl), straight from the
-            // Iowa Environmental Mesonet: each address names its five-minute
-            // mosaic, so what is kept is that picture for good, cache first.
-            // Keep for the Air fetches the newest over the route
-            // (features/keptForAir/keepFlightPath); kept a day, older
-            // weather being no use in the air.
-            urlPattern: ({ url }) => url.hostname === "mesonet.agron.iastate.edu" && url.pathname.includes("/tile.py/"),
-            handler: "CacheFirst",
-            options: {
-              cacheName: "radar-frames",
-              expiration: { maxEntries: 1500, maxAgeSeconds: 24 * 3600, purgeOnQuotaError: true },
-              cacheableResponse: { statuses: [200] },
-            },
-          },
-          {
             // The airport diagrams' pictures, cache first as the tiles
             // are: an address names its 28-day d-TPP cycle, so what is
             // kept is right for the whole of it, and a card opened again
@@ -250,24 +219,10 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          {
-            // The map's FAA overlays (lib/map/sources/overlayTiles), one
-            // PMTiles archive a cycle read in byte ranges. Keep for the Air
-            // downloads it whole (features/keptForAir/keepOverlays), and
-            // that one plain answer is kept here; every range the map asks
-            // is then cut from it by Workbox's range-requests plugin, with
-            // no connection. A range answered by the network (206) is never
-            // kept: the Cache API holds no partial answer. Named for its
-            // cycle, so two at most.
-            urlPattern: ({ url }) => url.pathname.startsWith("/api/planner/overlay-tiles/") && url.pathname.endsWith(".pmtiles"),
-            handler: "CacheFirst",
-            options: {
-              cacheName: "overlay-archive",
-              rangeRequests: true,
-              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 24 * 3600, purgeOnQuotaError: true },
-              cacheableResponse: { statuses: [200] },
-            },
-          },
+          // The map's overlay archive and the radar's pictures, kept for the
+          // air (vite-plugins/workboxRules).
+          OVERLAY_ARCHIVE,
+          RADAR_FRAMES,
           {
             // What a field offers on the ground and its pictures' list: the network when there is one, the last answer
             // when there is not, in a cache of their own so a route's forty
@@ -388,27 +343,8 @@ export default defineConfig({
               cacheableResponse: { statuses: [0, 200] },
             },
           },
-          {
-            // The same in flight (the page's X-Wingtip-Flying, lib/api/client):
-            // four seconds for the network, not fifteen, before the last
-            // answer -- a phone at one bar often leaves a request hanging
-            // rather than failing it, and the pilot waited out the fifteen
-            // for what was kept. On the ground the fifteen stay, for a
-            // nav log the planner is still working out.
-            urlPattern: ({ url, request }) =>
-              request.method === "GET" &&
-              request.headers.get("x-wingtip-flying") === "1" &&
-              url.pathname.startsWith("/api/planner/") &&
-              !url.pathname.includes("/chart-tile/"),
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "planner-api",
-              networkTimeoutSeconds: 4,
-              expiration: { maxEntries: 300, maxAgeSeconds: 30 * 24 * 3600 },
-              cacheableResponse: { statuses: [0, 200] },
-              plugins: [markFromCache],
-            },
-          },
+          // In flight, a shorter wait on the network (vite-plugins/workboxRules).
+          IN_FLIGHT_READS,
           {
             // The planner's answers: the network when there is one
             // (the winds change), the last answer when there is not --

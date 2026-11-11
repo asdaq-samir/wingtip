@@ -1,7 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { indexOf } from "./airportIndex";
 import { fieldsNear, nearestOnDevice } from "./fieldsOnDevice";
-import { bestFieldsOnDevice } from "../features/emergency/emergency";
 
 /** A few rows of the planner's index (wingtip.airports.search_index):
  *  ident, name, town, state, size, lat, lon. */
@@ -31,11 +30,5 @@ describe("the fields round a point from the browser's index", () => {
     expect(rows[0]!.distance_nm).toBeLessThan(6);
     expect(rows[0]!.bearing_deg).toBeGreaterThan(90);
     expect(rows[0]!.bearing_deg).toBeLessThan(180);
-  });
-
-  test("Emergency ranks them with no airplane nearest first, the glide not guessed", () => {
-    const ranked = bestFieldsOnDevice(fieldsNear(index, at, 3), null, { ...at, altitudeFt: 4500, speedKt: 100 }, null);
-    expect(ranked.needs_airplane).toBe(true);
-    expect(ranked.fields.map((f) => f.ident)).toEqual(["C02", "KENW", "KUGN"]);
   });
 });

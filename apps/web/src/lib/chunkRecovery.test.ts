@@ -2,16 +2,18 @@ import { describe, expect, test, vi } from "vitest";
 import { newerBuild, recoverChunk, type RecoverWith } from "./chunkRecovery";
 
 const OLD = "/app/assets/index-old.js";
-function withIndex(index: string | null, storage = new Map<string, string>(), online = true): RecoverWith & { reload: ReturnType<typeof vi.fn> } {
-  return {
+function withIndex(index: string | null, storage = new Map<string, string>(), online = true) {
+  const reload = vi.fn<() => void>();
+  const with_: RecoverWith = {
     fetchIndex: async () => index,
     entry: `https://example.test${OLD}`,
     update: async () => {},
-    reload: vi.fn(),
+    reload,
     storage: { getItem: (k) => storage.get(k) ?? null, setItem: (k, v) => void storage.set(k, v) },
     online,
     now: 1_000_000,
   };
+  return { ...with_, reload };
 }
 
 describe("a chunk that would not load", () => {

@@ -3,6 +3,7 @@ import { ApiError, api, describeError, isDropped, isUnknownPlace } from "./api/c
 import type { ChartInfo } from "./api/types";
 import { keptStore } from "./storage";
 import { clearProblem, raiseProblem, showError } from "./problems";
+import { whenBack } from "./whenBack";
 
 declare module "@tanstack/react-query" {
   interface Register {
@@ -27,15 +28,10 @@ declare module "@tanstack/react-query" {
  * reads, model inferences and streams of legs, and a pilot switching
  * back to the tab does not want the nav log recomputed under them.
  *
- * Asked even with no connection ("offlineFirst"): the request goes to the
- * service worker, whose kept answers -- Keep for the Air's, the last of
- * each read -- are the flight's data in the air. TanStack's default
- * ("online") paused every query asked after the browser's "offline"
- * event without asking, so the worker was never asked, and a list waited
- * on a skeleton or drew nothing (the offline audit's gap 1). A request
- * the worker did not keep fails at once, and is said "No connection" in
- * place (QueryState, lib/problems). A mutation is sent too, to fail at
- * once with its alert rather than wait unseen for a connection.
+ * Asked with no connection too ("offlineFirst"), so the service worker's
+ * kept answers reach the page in the air; TanStack's "online" paused them
+ * unasked (the offline audit's gap 1). What it did not keep fails at once,
+ * "No connection" in place (QueryState); a mutation, into its alert.
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -106,26 +102,6 @@ const failingWith = new Map<string, string>();
  * fails too.
  */
 const askedAgain = new Set<string>();
-
-export function whenBack(
-  run: () => void,
-  doc: Pick<Document, "visibilityState" | "addEventListener" | "removeEventListener"> = document,
-  afterMs = 1000,
-) {
-  const ready = () => doc.visibilityState === "visible" && globalThis.navigator?.onLine !== false;
-  const done = () => {
-    doc.removeEventListener("visibilitychange", go);
-    globalThis.removeEventListener?.("online", go);
-  };
-  function go() {
-    if (!ready()) return;
-    done();
-    setTimeout(run, afterMs);
-  }
-  doc.addEventListener("visibilitychange", go);
-  globalThis.addEventListener?.("online", go);
-  go();
-}
 
 /** A failure's problem goes once every query it was about answers, or
  *  is no longer asked for: a route changed or closed. With no close of

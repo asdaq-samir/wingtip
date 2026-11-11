@@ -9,8 +9,9 @@ import { holdsOf, holdsParam, type Hold } from "../lib/routeHolds";
 import { patched } from "../../../lib/useSearchParamsNow";
 import { turnaroundMin } from "../components/navlog/rows";
 import { directToPatch, routeWas } from "./planAddress";
+import { useDirectReady, type PlanNow } from "./directOnDevice";
 
-const ALWAYS = () => true;
+const NO_PLAN: PlanNow = { course: null, legs: [], nav: null, totals: null };
 
 /**
  * The plan's settings that are one change of the address each
@@ -21,10 +22,12 @@ const ALWAYS = () => true;
  */
 export function usePlanSetters(
   setSearchParams: SetURLSearchParams,
-  /** Readies a Direct To for no connection (useDirectReady): false where
-   *  it cannot be flown without the planner, and the route stays as it is. */
-  readyDirect: (ident: string, fix: { lat: number; lon: number; altitudeFt?: number | null } | null) => boolean = ALWAYS,
+  /** The plan now, for a Direct To worked out on the device with no
+   *  connection (directOnDevice's useDirectReady): where it cannot be, the
+   *  route stays as it is. */
+  plan: PlanNow = NO_PLAN,
 ) {
+  const readyDirect = useDirectReady(plan);
   const changeLocalMin = useCallback(
     (minutes: number) => {
       setSearchParams(

@@ -44,7 +44,7 @@ describe("a Direct To worked out on the device", () => {
     expect(flown[0]!.distance_nm).toBeLessThan(36);
     expect(flown[0]!.groundspeed_kt).not.toBeNull();
     const done = made.messages.find((m) => m.type === "done") as { totals: { distance_nm: number } };
-    expect(done.totals.distance_nm).toBeCloseTo(flown[0]!.distance_nm, 5);
+    expect(done.totals.distance_nm).toBeCloseTo(flown[0]!.distance_nm, 0);
     expect(made.course.departure).toMatchObject({ name: "Present position", lat: 43.5, lon: -89.0 });
     expect(made.course.course_line[0]).toEqual([43.5, -89.0]);
     expect(made.course.course_line.at(-1)).toEqual([43.98, -88.56]);

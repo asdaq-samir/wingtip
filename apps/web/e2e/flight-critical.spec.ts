@@ -146,7 +146,10 @@ test(
     const desk = (page.viewportSize()?.width ?? 0) >= 1024;
     const log = navLogSheet(page);
     await expect(
-      log.getByTestId(desk ? "navlog-table" : "navlog-list").locator('[role="row"][data-kind="destination"]').or(log.getByText(/No connection/)),
+      log
+        .getByTestId(desk ? "navlog-table" : "navlog-list")
+        .locator('[role="row"][data-kind="destination"]')
+        .or(log.getByText(/No connection/)),
     ).toBeVisible({ timeout: slow(20_000) });
     await closeNavLog(page);
 
@@ -161,9 +164,12 @@ test(
     // Emergency: fields ranked on the device, or No connection.
     await page.getByTestId("flying-emergency").click();
     const sheet = page.getByTestId("emergency-sheet");
-    await expect(sheet.getByTestId("emergency-field").first().or(sheet.getByText(/No connection/).first())).toBeVisible({
-      timeout: slow(20_000),
-    });
+    await expect(
+      sheet
+        .getByTestId("emergency-field")
+        .first()
+        .or(sheet.getByText(/No connection/).first()),
+    ).toBeVisible({ timeout: slow(20_000) });
     await expect(sheet.getByTestId("emergency-squawk")).toContainText("7700");
     await sheet.getByTestId("sheet-card-close").click();
 
@@ -181,7 +187,9 @@ test(
     if (await direct.isVisible()) {
       await direct.click();
       await expect(
-        sideDrawer(page).getByTestId("direct-on-device").or(page.getByTestId("problem-banner-title").getByText("Not changed: no connection")),
+        sideDrawer(page)
+          .getByTestId("direct-on-device")
+          .or(page.getByTestId("problem-banner-title").getByText("Not changed: no connection")),
       ).toBeVisible({ timeout: slow(10_000) });
     }
     await context.setOffline(false);

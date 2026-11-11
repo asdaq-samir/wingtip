@@ -13,7 +13,7 @@ import { useMapCredit } from "../gl/creditStore";
 
 /** When the marks' weather is old enough to say: half an hour, half a
  *  METAR's hour. */
-export const STALE_MS = 30 * 60_000;
+const STALE_MS = 30 * 60_000;
 
 /** The words for weather fetched at `fetchedAt`, now; null while fresh. */
 export function weatherAgeWords(fetchedAt: number | null, now: number): string | null {

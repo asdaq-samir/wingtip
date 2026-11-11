@@ -43,7 +43,7 @@ export default function QueryState({
   // No connection: said so, not a skeleton for ever (a query paused for
   // one drew nothing at all) nor "could not be fetched" as if the server
   // were at fault; asked again by itself once the phone is back
-  // (lib/queryClient's whenBack), and Try again for the pilot meanwhile.
+  // (lib/whenBack), and Try again for the pilot meanwhile.
   const offline = noConnection(query);
   if ((query.isError && !query.isFetching) || offline) {
     const words = (

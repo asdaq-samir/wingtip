@@ -85,6 +85,12 @@ export function nearestOnDevice(index: AirportIndex, at: LatLon, limit: number):
       municipality: field.town || null,
       distance_nm: f.distance_nm,
       bearing_deg: f.course_deg,
+      // Not in the index: none known, so a filter that asks for a fuel, a
+      // surface or a tower keeps none of these (the line says why).
+      fuel: [],
+      runway_surfaces: [],
+      towered: false,
+      private: false,
     };
   });
 }

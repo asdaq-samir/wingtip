@@ -52,7 +52,6 @@ import { useAircraftPick } from "./useAircraftPick";
 import { useRouteWays } from "./useRouteWays";
 import { useRunwayPicks } from "./useRunwayPicks";
 import { usePlanSetters } from "./usePlanSetters";
-import { useDirectReady } from "./directOnDevice";
 import { usePlaceCards } from "./usePlaceCards";
 import { useRouteTidy } from "./useRouteTidy";
 import { useFieldPatterns } from "./useFieldPatterns";
@@ -263,8 +262,6 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     checkpoints: showWaypoints,
   };
   const s = usePlan(planParams);
-  // A Direct To worked out on the device where the planner cannot be had.
-  const readyDirect = useDirectReady(s);
   // The route's own time and miles: its nav log's once it is planned,
   // the grid's and the course's before (its weather strip's minutes).
   const gridOwnMin = (routeWays?.current_along?.bands ?? []).reduce((sum, b) => sum + b.min, 0);
@@ -281,9 +278,9 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // The runways picked at the route's fields (useRunwayPicks).
   const { pickedPatterns, patternFocus, autoPicked, pickPattern, preselectPattern, pickedTakeoffs, setTakeoff, preselectTakeoff } =
     useRunwayPicks({ searchParams, setSearchParams });
-  // The address's one-change settings (usePlanSetters).
-  const { changeLocalMin, setGround, directToPoint, setHold, directToChartPoint, changeDepart, changeAltitudeChoice } =
-    usePlanSetters(setSearchParams, readyDirect);
+  // The address's one-change settings (usePlanSetters), a Direct To worked out on the device offline.
+  const setters = usePlanSetters(setSearchParams, s);
+  const { changeLocalMin, setGround, directToPoint, setHold, directToChartPoint, changeDepart, changeAltitudeChoice } = setters;
   const { selected } = s;
   // The course with each stop's time on the ground, so every row built
   // from it (navLogRows) is timed from when the airplane leaves again.
