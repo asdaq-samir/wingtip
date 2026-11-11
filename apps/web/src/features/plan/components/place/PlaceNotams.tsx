@@ -22,7 +22,7 @@ import {
   type NotamReading,
   type FieldNotams,
 } from "./fieldNotams";
-import { timeLines } from "./notamTimes";
+import { timeLines, type TimeLine } from "./notamTimes";
 
 /** The NOTAMs section's test id. */
 const SECTION = "place-notams";
@@ -35,6 +35,9 @@ const SECTION = "place-notams";
  * is not needed"). Where the engine has no what, the NOTAM's words written
  * out stand first.
  */
+/** Its start's line, which its Active or Inactive badge labels. */
+const starting = (t: TimeLine) => t.label === "Since" || t.label === "Starts";
+
 function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; clamp: boolean }) {
   const times = timeLines(n, read);
   return (
@@ -44,17 +47,24 @@ function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; cla
           {read.words}
         </span>
       )}
-      {times.length > 0 && (
-        // Labelled, as ForeFlight's list gives them (notamTimes).
-        <span className="grid grid-cols-[auto_1fr] gap-x-2 tabular-nums" data-testid="place-notam-when">
-          {times.map((t) => (
-            <span key={t.label} className="contents">
-              <span className="text-muted-foreground">{t.label}</span>
-              <span>{t.value}</span>
-            </span>
-          ))}
-        </span>
-      )}
+      {/* Labelled, as ForeFlight's list gives them (notamTimes), its start
+          labelled by its Active or Inactive badge, not "Since" or "Starts",
+          the title the line's whole width (the owner, 2026-11-11: "Instead
+          of saying since just say active in the red badge so you have more
+          space for the title"). */}
+      <span className="grid grid-cols-[auto_1fr] items-center gap-x-2 tabular-nums" data-testid="place-notam-when">
+        {!times.some(starting) && (
+          <span className="col-span-2">
+            <NotamState n={n} />
+          </span>
+        )}
+        {times.map((t) => (
+          <span key={t.label} className="contents">
+            {starting(t) ? <NotamState n={n} /> : <span className="text-muted-foreground">{t.label}</span>}
+            <span>{t.value}</span>
+          </span>
+        ))}
+      </span>
       {read.where && (
         <span className="text-muted-foreground" data-testid="place-notam-where">
           {read.where}
@@ -79,12 +89,8 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
   const ours = !!read.what && n.kind !== "tfr";
   return (
     <div className="flex flex-col gap-1 pb-6" data-testid="place-notam-full">
-      <p
-        className={cn("flex items-start justify-between gap-2 font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")}
-        data-testid="place-notam-what"
-      >
+      <p className={cn("font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")} data-testid="place-notam-what">
         <NotamWhat what={whatOf(n, ident)} clamp={false} />
-        <NotamState n={n} />
       </p>
       <p className={TEXT.prose}>
         <NotamLines n={n} read={read} clamp={false} />
@@ -139,13 +145,10 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
               // line's end; its when and where a line each under it (NotamLines).
               wide
               title={
-                <span className="flex items-start justify-between gap-2">
-                  <span>
-                    <NotamWhat what={whatOf(n, ident)} clamp={!read.what} />
-                    {/* Its number, as a briefer reads it, muted after it. */}
-                    <span className="text-muted-foreground" data-testid="place-notam-number">{` ${numberOf(n, ident)}`}</span>
-                  </span>
-                  <NotamState n={n} />
+                <span>
+                  <NotamWhat what={whatOf(n, ident)} clamp={!read.what} />
+                  {/* Its number, as a briefer reads it, muted after it. */}
+                  <span className="text-muted-foreground" data-testid="place-notam-number">{` ${numberOf(n, ident)}`}</span>
                 </span>
               }
               description={<NotamLines n={n} read={read} clamp />}
@@ -206,7 +209,7 @@ function NotamState({ n }: { n: FieldNotam }) {
       // Inactive in the disabled colours: nothing to act on yet (the owner,
       // 2026-11-11: "Inactive notam can be disabled color").
       variant={active ? "destructive" : "secondary"}
-      className={cn("shrink-0", !active && "text-muted-foreground")}
+      className={cn("w-fit shrink-0", !active && "text-muted-foreground")}
       data-testid="place-notam-state"
       data-active={active}
     >
