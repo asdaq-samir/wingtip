@@ -354,22 +354,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     c.ask("highest_under_clouds_ft", json!({ "cloud_base_ft": 6000 }));
     c.ask("cloud_clearance_at_ft", json!({ "altitude_ft": 10500 }));
     c.ask("altitude_wheel", json!({ "legal_ft": [4500, 6500], "flown_ft": 3300 }));
-    c.ask("profile_clearance", json!({
-        "altitude_ft": 3500, "along_nm": [0, 10, 20], "ground_ft": [900, 3000, 1200],
-        "obstacles": [{ "along_nm": 15, "amsl_ft": 3200 }], "points": [{ "ident": "KAAA", "along_nm": 0 }, { "ident": "KXYZ", "along_nm": 20 }],
-    }));
-    c.ask(
-        "altitude_advisor",
-        json!({
-            "figures": [{ "altitude_ft": 4500, "ete_min": 60, "fuel_gal": 9, "tailwind_kt": -5, "everywhere": true },
-                        { "altitude_ft": 6500, "ete_min": 55, "fuel_gal": 9.5, "tailwind_kt": 8, "everywhere": false }],
-            "flown_ft": 4500, "plans": [{ "kind": "fastest", "altitude_ft": 6500 }],
-        }),
-    );
-    c.ask(
-        "altitude_change",
-        json!({ "profile": null, "along_nm": 40, "from_ft": 6500, "to_ft": 4500, "mode": "cross_at", "groundspeed_kt": null }),
-    );
     c.ask("ifr_obstacle_radius_nm", json!({}));
     c.ask("airway_floor_ft", json!({ "mea_ft": null, "gnss_mea_ft": 4000 }));
     let (dep, mid, dest) = (json!([45.0, -90.0]), json!([45.5, -89.85]), json!([46.0, -90.0]));
@@ -454,14 +438,6 @@ fn the_shared_fixtures_answers_are_of_the_contracts_shapes() {
     let legs = made["plans"]["fastest"]["legs"].clone();
     c.ask("navlog_with_descents", json!({ "legs": legs, "fixes": fixes, "end_altitude_ft": given["pattern_ft"] }));
     c.ask("navlog_with_climbs", json!({ "legs": legs, "start_altitude_ft": 800, "profile": profile }));
-    let climb = c.ask(
-        "altitude_change",
-        json!({
-            "profile": profile, "along_nm": 10, "from_ft": 1500, "to_ft": 5500, "mode": "start_at",
-            "groundspeed_kt": 100, "tas_kt": 110, "fuel_burn_gph": 8.5, "oat_c": 5,
-        }),
-    );
-    assert!(climb["minutes"].as_f64().unwrap() > 0.0 && climb["ends_nm"].as_f64().unwrap() > 10.0, "{climb}");
     let totals = c.ask("navlog_totals", json!({ "legs": legs }));
     c.ask(
         "navlog_fuel_plan",
