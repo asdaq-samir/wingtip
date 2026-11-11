@@ -116,16 +116,21 @@ for (const row of CARDS) {
 
     // Its head as Apple Maps' place card's (the owner, 2026-11-11, "let's
     // move the title in the middle"): the name centred across the card,
-    // Share and the like at the start, ✕ alone at the end (HeadGrid).
+    // Share at the start, ✕ alone at the end (HeadGrid).
     if (!row.question)
-      test("its name centred in its head, ✕ alone at the end", async ({ page }) => {
+      test("its name centred in its head, Share at the start and ✕ at the end, two buttons at most", async ({ page }) => {
         test.skip(!phone(page) && !!row.not?.desktop, row.not?.desktop ?? "");
         await open(page, row, row.entries[0]!);
         const head = page.locator("[data-sheet-head]").filter({ visible: true }).first();
         const [box, name] = await Promise.all([head.boundingBox(), head.getByRole("heading").first().boundingBox()]);
         expect(Math.abs(name!.x + name!.width / 2 - (box!.x + box!.width / 2)), "centred").toBeLessThan(2);
-        await expect(head.locator("[data-slot=head-end] button")).toHaveCount(1);
-        await expect(head.locator("[data-slot=head-end] button")).toHaveAttribute("data-testid", row.close);
+        await expect(head.locator("[data-slot=head-end] button").last()).toHaveAttribute("data-testid", row.close);
+        // Two buttons at most: Share (or the route's •••) and ✕ (the owner, 2026-11-11).
+        if (row.not?.headButtons) test.info().annotations.push({ type: "not", description: row.not.headButtons });
+        else {
+          await expect(head.locator("[data-slot=head-end] button")).toHaveCount(1);
+          expect(await head.locator("[data-slot=head-start] button").count()).toBeLessThanOrEqual(1);
+        }
       });
 
     if (row.fullHeight)

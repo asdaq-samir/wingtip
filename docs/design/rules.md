@@ -68,9 +68,10 @@ Compose. Nothing here is built by hand where a stock part does it.
    the web (owner-reported 2026-11-11: Settings' own title at 17 points
    under its pages' 22): a card's or a page's head row, its name at a
    card's 22 centred across the card with its line under it, Share (or
-   the route's •••), the star and what else acts on the card at its
-   start and ✕ alone at its end, as Apple Maps' place card at its
-   smallest size (the owner, 2026-11-11: "let's move the title in the
+   the route's •••) at its start and ✕ alone at its end -- two buttons at
+   most, a star a Favorite tile in the card's action row (the owner,
+   2026-11-11: "all the cards have at most two head buttons") -- as Apple
+   Maps' place card at its smallest size (the owner, 2026-11-11: "let's move the title in the
    middle"; `HeadGrid`, the inset each side the wider side's),
    `CardHeadRow` (`CardHead`, `CardTitle`, `SheetCard`,
    `ListPageHead` and Settings and its pages draw it); a section's title
@@ -219,8 +220,9 @@ Setup was. The approved canvas: <https://claude.ai/artifact/XmbNqJTLRwwzebouLbXz
   "Ask: …" to the assistant). Results come from the existing endpoints
   and generated models; the search holds no aviation logic.
 - **Picking:** an airport opens its card with Fly Here, Add as Stop, Call
-  and Address at the top, its star beside Share and Refresh in its
-  Weather tab (the owner, 2026-11-11; the web first, the phones still
+  and Favorite at the top (its address the town link and the Info tab's
+  row), Share in its head and Refresh in its Weather tab (the owner,
+  2026-11-11; the web first, the phones still
   with Depart From); an airplane its profile with Fly This Airplane; an
   action runs.
 - **The plan is the sheet's main content** with a route, everything the

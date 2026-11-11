@@ -1,28 +1,27 @@
-import { Star } from "lucide-react";
 import { cn } from "cn";
 import { CardAction as Action } from "../../../../components/CardAction";
-import RoundButton from "../../../../components/RoundButton";
+import { FavoriteTile } from "../../../../components/FavoriteTile";
 import { useIsDesktop } from "../../../../hooks/use-desktop";
 import type { AirportPlace } from "../../../../lib/api/types";
 import { ACTION } from "../../../../lib/cardActions";
 import { useLiveRefresh } from "../../../../lib/liveRefresh";
-import { FAVORITE_STAR_ON } from "../../../../lib/mapChrome";
 import { usePreferences } from "../../../../lib/preferences";
 import { sameField } from "../../../../lib/procedures";
 import { useShown } from "../../../../lib/shown";
 import { keyHint } from "../../../../lib/shortcutKeys";
 import { useCardKeys } from "../../hooks/useCardKeys";
-import { mapsLink } from "./mapsLink";
 
 /**
  * An airport card's actions, under its title (PlaceCard): four and no
  * more, one row of equal tiles (the owner, 2026-11-11: "fly here, add
- * stop, call and address ... no need for other buttons"). Fly Here filled,
+ * stop, call and address ... no need for other buttons", Favorite in
+ * Address's place since). Fly Here filled,
  * the Direct-To's symbol on it; Add as Stop, the field the route's next
  * stop, where it can be one (else the row holds three); Call, the field's
  * own phone from the FAA's airport file, greyed where it lists none; and
- * the address in Maps. The star is in the card's head beside its Share
- * (PlaceFavorite), Refresh in its Weather tab. On a desktop Fly Here and
+ * Favorite (PlaceFavorite), the head holding its Share and its close
+ * alone; the address in Maps is the town link under the name and the Info
+ * tab's row. Refresh is in its Weather tab. On a desktop Fly Here and
  * Add as Stop by a letter each, F and S, shown on them, while the card is
  * in sight (lib/shown: not under a card over it).
  */
@@ -32,8 +31,11 @@ export default function PlaceActions({
   onFlyHere,
   onAddStop,
   addStopOff,
+  ident,
 }: {
   place: AirportPlace | null;
+  /** The field's ident before its answer is in: its star already right. */
+  ident: string;
   /** Fly Here tapped, the route on its way. */
   flying: boolean;
   onFlyHere: (place: AirportPlace) => void;
@@ -80,37 +82,20 @@ export default function PlaceActions({
         spoken={place?.phone ? `Call ${place.phone}` : "Call: no phone listed"}
         testId="place-call"
       />
-      <Action
-        icon={<ACTION.address.icon />}
-        label={ACTION.address.label}
-        disabled={!place}
-        href={place ? mapsLink(place) : undefined}
-        spoken={place?.address ? `Address in Maps: ${place.address}` : "Open in Maps"}
-        testId="place-address-action"
-      />
+      <PlaceFavorite ident={place?.ident ?? ident} place={place} />
     </div>
   );
 }
 
-/** The star in the card's head beside its Share, as the airplane card's
- *  is (the owner, 2026-11-11): the field in the Favorites or out, pressed
- *  while it is there -- a Favorite's star already as the card waits on its
- *  answer. */
-export function PlaceFavorite({ ident, place }: { ident: string; place: AirportPlace | null }) {
-  const mine = place?.ident ?? ident;
-  const kept = usePreferences((s) => s.favoriteAirports.some((a) => sameField(a.ident, mine)));
+/** Favorite, the row's last tile, where Address was (the owner, 2026-11-11:
+ *  "Because address is already at the bottom, maybe replace address button
+ *  with favorite"; the address stays in the town link and the Info tab):
+ *  the field in the Favorites or out (FavoriteTile) -- a Favorite's star
+ *  already as the card waits on its answer. */
+function PlaceFavorite({ ident, place }: { ident: string; place: AirportPlace | null }) {
+  const kept = usePreferences((s) => s.favoriteAirports.some((a) => sameField(a.ident, ident)));
   const toggle = usePreferences((s) => s.toggleFavoriteAirport);
-  return (
-    <RoundButton
-      label={kept ? "Remove from Favorites" : "Add to Favorites"}
-      aria-pressed={kept}
-      disabled={!place}
-      onClick={() => {
-        if (place) toggle({ ident: place.ident, name: place.name, municipality: place.municipality, lat: place.lat, lon: place.lon });
-      }}
-      data-testid="place-favorite"
-    >
-      <Star className={cn("size-5", kept && FAVORITE_STAR_ON)} strokeWidth={2} />
-    </RoundButton>
-  );
+  const add = () =>
+    place && toggle({ ident: place.ident, name: place.name, municipality: place.municipality, lat: place.lat, lon: place.lon });
+  return <FavoriteTile on={kept} disabled={!place} onToggle={add} testId="place-favorite" />;
 }

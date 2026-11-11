@@ -122,6 +122,7 @@ export function CardHead({
   onClose,
   onShare,
   closeTestId,
+  corner,
   children,
 }: {
   name: ReactNode;
@@ -139,8 +140,11 @@ export function CardHead({
   /** Its share, at the row's start (CardShareButton). */
   onShare?: CardShare;
   closeTestId: string;
-  /** At the row's start after its Share (a refresh, the flight rules). */
+  /** At the row's start after its Share (the Brief's refresh). */
   children?: ReactNode;
+  /** At the row's end before the close, where the owner put it there (the
+   *  Profile's flight rules: "on the top right corner"). */
+  corner?: ReactNode;
 }) {
   // Its name and close one row pinned at the sheet's top, the card
   // scrolling under it (PinnedHead; the owner, 2026-11-10); the line under
@@ -151,7 +155,12 @@ export function CardHead({
         name={name}
         sub={sub}
         nameTestId={nameTestId}
-        end={<CardClose onClose={onClose} onShare={onShare} testId={closeTestId} />}
+        end={
+          <>
+            {corner}
+            <CardClose onClose={onClose} onShare={onShare} testId={closeTestId} />
+          </>
+        }
       >
         <CardShareButton onShare={onShare} />
         {children}

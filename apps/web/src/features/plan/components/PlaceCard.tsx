@@ -14,7 +14,7 @@ import { CardTabBar, CardTabPanel } from "../../../components/CardTabs";
 import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../lib/cardTab";
 import { useTabScroll } from "../lib/tabScroll";
-import PlaceActions, { PlaceFavorite } from "./place/PlaceActions";
+import PlaceActions from "./place/PlaceActions";
 import PlaceSubtitle from "./place/PlaceSubtitle";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
@@ -463,7 +463,6 @@ export default function PlaceCard({
             onShare={share}
             closeTestId="place-close"
             shareTestId="place-share"
-            beside={<PlaceFavorite ident={kept?.ident ?? ident} place={place ?? null} />}
             pill={{ line: pillLine || undefined, picture: pillPicture }}
           />
           {/* The pictures' lightboxes (Base UI Dialogs), opened from the
@@ -502,6 +501,7 @@ export default function PlaceCard({
           )}
           <PlaceActions
             place={place ?? null}
+            ident={kept?.ident ?? ident}
             flying={flying}
             onFlyHere={(p) => {
               setFlying(true);
