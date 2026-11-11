@@ -118,10 +118,7 @@ export function useTripPlanner() {
     const now = contextNow();
     const context = { ...now, aircraft: now.aircraft ?? "", rules: "vfr" as const, pilot: now.pilot ? { ...now.pilot } : null };
     setUsed([]);
-    setAsk((was) => ({
-      body: { text: words, context, time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone },
-      n: was.n + 1,
-    }));
+    setAsk((was) => ({ body: { text: words, context, time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone }, n: was.n + 1 }));
   };
   const use = (leg: TripLeg) => {
     useAsk.getState().applyChange?.(changeOf(leg));

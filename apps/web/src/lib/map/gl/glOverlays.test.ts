@@ -107,7 +107,12 @@ describe("the overlay tiles' layers", () => {
     setSelectedAirport(map, null);
     expect(set.state.get("selectedAirport")).toBeNull();
     const airports = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
-    expect(airports.layout!["text-field"]).toEqual(["case", ["==", ["get", "ident"], ["global-state", "selectedAirport"]], "", ["get", "ident"]]);
+    expect(airports.layout!["text-field"]).toEqual([
+      "case",
+      ["==", ["get", "ident"], ["global-state", "selectedAirport"]],
+      "",
+      ["get", "ident"],
+    ]);
   });
 
   it("hide the armed services' and private fields unless asked for, and the route's own fields", () => {
@@ -127,7 +132,9 @@ describe("the overlay tiles' layers", () => {
     expect(JSON.stringify(airports.filter)).toContain(JSON.stringify(["global-state", "routeAirports"]));
     expect(JSON.stringify(airports.filter)).toContain(JSON.stringify(["global-state", "showMilitary"]));
     for (const id of ["vfr-waypoints", "vfr-waypoints-idents"])
-      expect(JSON.stringify((marks.find((l) => l.id === id) as SymbolLayerSpecification).filter)).toContain(JSON.stringify(["global-state", "routeWaypoints"]));
+      expect(JSON.stringify((marks.find((l) => l.id === id) as SymbolLayerSpecification).filter)).toContain(
+        JSON.stringify(["global-state", "routeWaypoints"]),
+      );
   });
 
   it("join each field's weather pip onto its symbol by ident, from the map's state", () => {

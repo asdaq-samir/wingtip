@@ -58,7 +58,6 @@ const WESTBOUND = "westbound (180° through 359°)";
  *  as every bearing is written (lib/format's bearing). */
 const ruleCourse = (course: number) => bearing(Math.floor(course));
 
-
 /** What sets the whole route's VFR ceiling, the lowest of three
  *  (wingtip.altitude's band_ceiling): the clouds (14 CFR 91.155's distance
  *  under the lowest forecast near a leg), a Class B shelf, or the

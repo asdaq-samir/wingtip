@@ -226,11 +226,7 @@ function Traffic() {
     if (useOwnShip.getState().follow) useOwnShip.getState().setFollow(false);
     const latest = useTracking.getState().latest;
     if (!heard || !latest) return;
-    map.flyTo({
-      center: [latest.plane.lon, latest.plane.lat],
-      zoom: Math.max(map.getZoom(), glZoom(9)),
-      duration: 800,
-    });
+    map.flyTo({ center: [latest.plane.lon, latest.plane.lat], zoom: Math.max(map.getZoom(), glZoom(9)), duration: 800 });
   }, [map, hex, follow, heard]);
 
   // Each airplane carried on a frame at a time, in sight only, a few

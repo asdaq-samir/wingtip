@@ -14,9 +14,7 @@ import { TAP } from "../../../../lib/map/gl/layers/common";
 const SOURCE = "tfrs";
 // Each TFR's NOTAM number its feature's id (promoteId), for MapLibre's
 // feature state to light the one under the mouse.
-const SOURCES = {
-  [SOURCE]: { type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] }, promoteId: "id" },
-};
+const SOURCES = { [SOURCE]: { type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] }, promoteId: "id" } };
 
 /** A TFR is drawn bold, a thing that changes by the day over the chart
  *  that does not: in force a solid red line over a red wash, not yet in

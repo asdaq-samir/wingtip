@@ -54,12 +54,7 @@ export function ClassBGl({
                 onTap: () => {
                   onPreview(false);
                   if (onSelectPlace) onSelectPlace(a.ident);
-                  else
-                    map.flyTo({
-                      center: [a.lon, a.lat],
-                      zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)),
-                      duration: 600,
-                    });
+                  else map.flyTo({ center: [a.lon, a.lat], zoom: Math.max(map.getZoom(), glZoom(overlayFromZoom)), duration: 600 });
                 },
               };
             })

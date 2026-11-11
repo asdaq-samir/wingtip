@@ -21,11 +21,7 @@ export default function ClearButton({
   // Base UI's own words for the button ("x"): the cross is drawn here.
   children: _children,
   ...props
-}: {
-  onClear?: () => void;
-  label?: string;
-  testId?: string;
-} & Omit<ComponentProps<"button">, "aria-label">) {
+}: { onClear?: () => void; label?: string; testId?: string } & Omit<ComponentProps<"button">, "aria-label">) {
   return (
     <button
       type="button"

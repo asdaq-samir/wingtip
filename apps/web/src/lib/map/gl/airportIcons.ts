@@ -95,15 +95,5 @@ export const TILE_AIRPORT_ICON: ExpressionSpecification = [
   "case",
   ["all", ["==", LOOK, "dot"], ["!=", WEATHER, ""]],
   ["concat", "apt-dot|", WEATHER],
-  [
-    "concat",
-    "apt|",
-    ["case", TOWERED, "t", "u"],
-    "|",
-    TILE_SIZE,
-    "|",
-    ["match", LOOK, ["off", "dot"], "", WEATHER],
-    "|",
-    TILE_USE,
-  ],
+  ["concat", "apt|", ["case", TOWERED, "t", "u"], "|", TILE_SIZE, "|", ["match", LOOK, ["off", "dot"], "", WEATHER], "|", TILE_USE],
 ];

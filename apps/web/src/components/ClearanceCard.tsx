@@ -377,7 +377,9 @@ export default function ClearanceCard({
                 pressed={readingBack}
                 onPressedChange={readbackTap}
                 disabled={!heardIt || (listening && !readingBack)}
-                render={<IconButton label={readingBack ? "Stop" : "Read back again"} data-testid="clearance-readback-mic" className={ROW_MIC} />}
+                render={
+                  <IconButton label={readingBack ? "Stop" : "Read back again"} data-testid="clearance-readback-mic" className={ROW_MIC} />
+                }
               >
                 {readingBack ? (
                   <Square className="size-5" strokeWidth={1.5} aria-hidden="true" />
