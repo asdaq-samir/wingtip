@@ -5,7 +5,7 @@ import { CommandList, CommandShortcut } from "../../../../components/ui/command"
 import { TEXT } from "../../../../lib/text";
 import { PreviewCard, PreviewCardContent, PreviewCardTrigger } from "../../../../components/ui/preview-card";
 import { usePointerHover } from "../../../../hooks/use-pointer-hover";
-import { useKeyHint } from "../../../../lib/shortcutKeys";
+import { keyHint } from "../../../../lib/shortcutKeys";
 import type { AirportSearchRow } from "../../../../lib/useAirportSearch";
 import AirportPreview from "../preview/AirportPreview";
 import type { AirplaneHit, DoHit, OneSearchModel } from "../../hooks/useOneSearch";
@@ -54,8 +54,6 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
   // A mouse resting on an airport's row: its preview beside the panel
   // (the owner, 2026-11-09: hover previews on pointer devices only).
   const hover = usePointerHover();
-  // A row's key as the pilot presses it (lib/shortcutKeys), none when off.
-  const hint = useKeyHint();
   // The suggestions: the words sent round a place (Search Nearby), then
   // the question for the assistant.
   const asks = does.filter((d) => d.kind === "ask" || d.kind === "nearby");
@@ -144,7 +142,7 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
       // What is done in the tint, as a button's words are; the question
       // a suggestion, in the text's colour as Apple's are.
       tint={hit.kind !== "ask" && hit.kind !== "nearby"}
-      end={hint(hit.keys) ? <CommandShortcut className="self-center">{hint(hit.keys)}</CommandShortcut> : undefined}
+      end={hit.keys ? <CommandShortcut className="self-center">{keyHint(hit.keys)}</CommandShortcut> : undefined}
     />
   );
 

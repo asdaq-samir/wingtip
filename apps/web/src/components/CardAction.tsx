@@ -57,7 +57,7 @@ export function CardAction({
    *  the tap asked for. */
   busy?: boolean;
   /** Its key on a desktop, shown beside its word (aria-keyshortcuts too):
-   *  the airport card's F, D and S. */
+   *  the airport card's Alt+F, Alt+D and Alt+S. */
   keys?: string;
 } & Omit<ComponentProps<"button">, "children" | "onClick" | "disabled">) {
   // Its sides four points in, not the stock button's ten: the room a
@@ -135,8 +135,8 @@ export function CardAction({
       aria-label={spoken}
       aria-busy={busy || undefined}
       aria-pressed={pressed}
-      // ⌥ is no key name aria-keyshortcuts knows: Alt is (lib/shortcutKeys).
-      aria-keyshortcuts={keys?.replace("⌥", "Alt+")}
+      // "Alt+F", as aria-keyshortcuts names it (lib/shortcutKeys).
+      aria-keyshortcuts={keys}
       className={look}
     >
       {face}

@@ -10,7 +10,7 @@ import { FAVORITE_STAR_ON } from "../../../../lib/mapChrome";
 import { usePreferences } from "../../../../lib/preferences";
 import { sameField } from "../../../../lib/procedures";
 import { useShown } from "../../../../lib/shown";
-import { useKeyHint } from "../../../../lib/shortcutKeys";
+import { keyHint } from "../../../../lib/shortcutKeys";
 import { useCardKeys } from "../../hooks/useCardKeys";
 import { mapsLink } from "./mapsLink";
 
@@ -45,8 +45,6 @@ export default function PlaceActions({
   const desktop = useIsDesktop();
   const shown = useShown();
   const keyed = desktop && shown && !!place;
-  // Each letter as the pilot presses it (lib/shortcutKeys), none when off.
-  const hint = useKeyHint();
   useCardKeys(keyed, { F: () => place && onFlyHere(place), S: onAddStop && !addStopOff ? () => place && onAddStop(place) : undefined });
   // The card keeps itself fresh as the window or the card comes back into
   // sight, whichever tab is open; its Refresh, in the Weather tab, asks now.
@@ -60,7 +58,7 @@ export default function PlaceActions({
         busy={flying}
         disabled={!place}
         testId="fly-here"
-        keys={keyed ? hint("F") : undefined}
+        keys={keyed ? keyHint("F") : undefined}
         onClick={() => place && onFlyHere(place)}
       />
       {onAddStop && (
@@ -71,7 +69,7 @@ export default function PlaceActions({
           spoken={addStopOff ? `${ACTION.addStop.label}: ${addStopOff}` : undefined}
           onClick={() => place && onAddStop(place)}
           testId="place-add-stop"
-          keys={keyed ? hint("S") : undefined}
+          keys={keyed ? keyHint("S") : undefined}
         />
       )}
       <Action

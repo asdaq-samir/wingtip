@@ -134,11 +134,15 @@ close does.
   assistive technology's and the browser's own keys (address bar, reload,
   find) unless the app's use is frequent and the browser's rare
   ([APG keyboard interface][apg-keyboard]).
-- **Single-key shortcuts** (Wingtip's `/`, `1`–`4`, `B`, `N`, `D` in
-  `hooks/use-shortcuts.ts`) must be possible to turn off or remap to
-  include a modifier, or be active only while their component has focus:
-  WCAG 2.1.4, Level A ([WCAG 2.1.4][wcag-214]). Today they cannot be turned
-  off; a switch in the Map menu (one home per control) is needed.
+- **No single-key shortcuts.** Wingtip's letters (`hooks/use-shortcuts.ts`:
+  `/` the search, `B` the Brief, `N` Nearest, `D` Direct To; a card's `F`
+  and `S`, `useCardKeys`) fire only with Alt held, Option on a Mac, read
+  from the physical key (`event.code`, `lib/shortcutKeys`), never a bare
+  letter (the owner, 2026-11-11: "I like the stock behavior"), so
+  VoiceOver's quick nav, the browser's find-as-you-type and a speech
+  user's words keep their keys; with a modifier always held WCAG 2.1.4
+  (Level A, [WCAG 2.1.4][wcag-214]) asks for no switch, and Settings has
+  none. Their hints and `aria-keyshortcuts` say "Alt+F".
 - Show shortcuts where the action is, as Raycast's Action Panel shows each
   action's shortcut at its right so people learn them
   ([Raycast Action Panel][raycast-actions]); shadcn ships a `Kbd` for it
@@ -638,7 +642,7 @@ the glance cards two columns wide by container query.
 **Primary action.** The first of the three actions, as a filled button
 under the verdict. Ready to Fly's primary is the next unchecked item.
 
-**Keyboard and hover.** `B` opens the Brief (switchable, WCAG 2.1.4); Tab
+**Keyboard and hover.** Alt+B opens the Brief (WCAG 2.1.4); Tab
 through the actions, then Ask, then the cards. A card's hover on desktop
 outlines what it refers to on the map (a TFR, a field).
 
@@ -1188,7 +1192,8 @@ the owner's call (decision 0013). Never let the hidden panel take focus
 Read from the code on `claude/integration`, 2026-11-09; each is a
 proposal, not done here.
 
-1. Single-key shortcuts cannot be turned off (WCAG 2.1.4, Level A).
+1. Done 2026-11-11: no single-key shortcuts; every letter takes Alt
+   (WCAG 2.1.4, Level A; "Keyboard").
 2. The manifest has no `id`, `shortcuts`, `screenshots` or
    `description` (section 15).
 3. Done 2026-11-10: the toasts are Base UI's ("The stock parts").

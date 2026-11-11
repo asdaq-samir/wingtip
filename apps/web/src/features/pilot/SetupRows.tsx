@@ -8,9 +8,6 @@ import { aircraftKey, shortName } from "../../lib/aircraftChoice";
 import type { AircraftChoice } from "../../lib/api/types";
 import { wantScreen } from "../../lib/navigation/wanted";
 import { SETTING_BADGE } from "../../lib/rowBadges";
-import Segmented from "../../components/Segmented";
-import { useIsDesktop } from "../../hooks/use-desktop";
-import { SHORTCUT_MODES, useShortcutKeys, type ShortcutMode } from "../../lib/shortcutKeys";
 
 // Its own chunk, as the Logbook's: it reads the saved flights' debriefs
 // only when opened.
@@ -114,33 +111,6 @@ export function EmergencyGroup() {
           </RowBadge>
         }
       />
-    </ListGroup>
-  );
-}
-
-/**
- * How a desktop's one-key shortcuts are pressed (lib/shortcutKeys): the
- * letter alone, with Alt, or off, as WCAG 2.1.4 asks a one-key shortcut to
- * be (docs/design/web.md, gap 1). A segmented control, as a discrete
- * setting is (decision 0017). Only where there is a keyboard's desktop
- * (useIsDesktop), the one place the shortcuts are listened for.
- */
-export function KeyboardGroup() {
-  const desktop = useIsDesktop();
-  const mode = useShortcutKeys((s) => s.mode);
-  const setMode = useShortcutKeys((s) => s.setMode);
-  if (!desktop) return null;
-  return (
-    <ListGroup>
-      <ListRow title="Shortcut Keys" description="B Brief, N Nearest, D Direct To, / Search" data-testid="setup-shortcut-keys">
-        <Segmented
-          label="Shortcut keys"
-          value={mode}
-          onChange={(v) => setMode(v as ShortcutMode)}
-          options={SHORTCUT_MODES}
-          testId="shortcut-keys-mode"
-        />
-      </ListRow>
     </ListGroup>
   );
 }

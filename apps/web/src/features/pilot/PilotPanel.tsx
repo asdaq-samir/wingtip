@@ -31,7 +31,7 @@ import { standing, subscriptionQuery, useSold } from "../../lib/subscription";
 import PilotGuide from "./PilotGuide";
 import PilotPage from "./PilotPage";
 import SetupPill from "./SetupPill";
-import { ChecklistsRow, CoachRow, EmergencyGroup, KeyboardGroup, PracticeRow, SetupChecklistsPage, SetupCoachPage } from "./SetupRows";
+import { ChecklistsRow, CoachRow, EmergencyGroup, PracticeRow, SetupChecklistsPage, SetupCoachPage } from "./SetupRows";
 import PracticePage from "./Practice";
 import TabPage, { TAB_PAGE_GAP } from "../../components/TabPage";
 
@@ -189,7 +189,6 @@ function Personal({
             </div>
           </AccountCard>
           <EmergencyGroup />
-          <KeyboardGroup />
           {signedIn && sold && (
             <ListGroup>
               <SubscriptionRow />
