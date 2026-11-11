@@ -118,7 +118,7 @@ struct AppleAskModel: AskModel {
             let plan = log.figures.first { $0.id == "plan:route" }
             // The phone's model, else Apple's Private Cloud Compute where it
             // cannot run or fails (AppleModels); where it answered is logged.
-            let (sentences, place) = try await AppleModels.attempt { place in
+            let (sentences, place) = try await AppleModels.attempt { (place: ModelPlace) async throws -> [WordsSentence] in
                 log.place = place
                 let session = AppleModels.session(place, tools: OnDeviceTools.all(facts, log: log), instructions: Self.instructions)
                 // Streamed (streamResponse), so the first sentence is read
