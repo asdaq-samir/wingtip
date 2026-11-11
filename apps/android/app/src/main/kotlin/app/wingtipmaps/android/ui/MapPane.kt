@@ -48,6 +48,7 @@ import app.wingtipmaps.android.flight.GlideRing
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.flight.OwnTrail
 import app.wingtipmaps.android.flight.SpokenAlerts
+import app.wingtipmaps.android.flight.StartFlightAsk
 import app.wingtipmaps.android.flight.Tracking
 import app.wingtipmaps.android.flight.Traffic
 import app.wingtipmaps.android.map.AirportWeatherMarks
@@ -297,6 +298,9 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
                 AtcCopilotHost(plan, flying = inFlight.underway, fix = fix)
             }
         }
+        // At flying speed, the pilot asked before the position is read with
+        // the screen off (the location foreground service, OwnShip).
+        if (ownShip.on && !approximate && !denied) StartFlightAsk(ship)
         if (ownShip.on && (approximate || denied)) {
             // Why the airplane is not on the map, where the pilot looks
             // for it: beside the button that showed it.

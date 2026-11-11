@@ -160,14 +160,15 @@ on the phone; that is the agent's maker's collection, under its terms.
 
 Permissions Play will see, each with what it is for
 (`apps/android/app/src/main/AndroidManifest.xml`): location (the
-airplane on the chart; `FOREGROUND_SERVICE_LOCATION` for the flight
-recorder while flying, shown as a notification, never background
-location), `RECORD_AUDIO` and `FOREGROUND_SERVICE_MICROPHONE` (the ATC
+airplane on the chart; `FOREGROUND_SERVICE_LOCATION` while flying, from
+the pilot's Start Flight until the airplane slows, for the alerts ahead,
+the Live Update and the path flown, shown as a notification, never
+background location), `RECORD_AUDIO` and `FOREGROUND_SERVICE_MICROPHONE` (the ATC
 copilot, only when turned on), `CHANGE_WIFI_MULTICAST_STATE` and
 `FOREGROUND_SERVICE_CONNECTED_DEVICE` (a cockpit ADS-B receiver),
 `POST_NOTIFICATIONS`. Play's foreground-service declaration form wants
-a short video of each; the shot list in preview-video.md covers the
-copilot and the recorder.
+a short video of each; foreground-services.md has the text for each
+type and preview-video.md the shots.
 
 ## Account deletion
 

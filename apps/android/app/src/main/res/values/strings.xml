@@ -510,6 +510,10 @@
     <string name="welcome_again">Show Welcome Again</string>
     <!-- Emergency and Nearest worked out from the cycle packs, the planner out of reach (PhoneFields). -->
     <string name="from_this_phone">From this phone, without weather</string>
+    <!-- Start Flight, at flying speed (flight/StartFlightAsk): the location service only on this tap. -->
+    <string name="start_flight_title">Start Flight?</string>
+    <string name="start_flight_line">You\'re at flying speed. Start Flight keeps your position, the alerts ahead and the path flown going with the screen off until you land, with a notification while it does.</string>
+    <string name="start_flight">Start Flight</string>
     <!-- The map's grey weather marks, their age in the engine's words (WeatherAge). -->
     <string name="weather_marks_age">Airport weather: %1$s</string>
     <string name="microphone">Microphone</string>

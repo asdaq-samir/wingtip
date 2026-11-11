@@ -246,6 +246,13 @@ Android sources for the lines that differ: `ui/AirportScreen.kt` and
 `RadioListener.kt` on the system's recognizer), `offline/DownloadsScreen.kt`,
 `logbook/FlightLoggedSheet.kt`, `receiver/Receiver.kt`, `emergency/`.
 
+### Foreground services
+
+The declarations for the three foreground-service types (location,
+microphone, connected device), what starts each and what to paste in
+the Play Console: [foreground-services.md](foreground-services.md). The
+location service starts only on the pilot's Start Flight tap.
+
 ### Content rating (IARC questionnaire)
 
 Category "Reference, News, or Educational" is the nearest; every content
