@@ -6,6 +6,7 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -60,7 +61,8 @@ public class AuthorizationServerConfig {
             ConnectorSettings settings,
             PilotService pilots,
             RegisteredClientRepository clients,
-            OAuth2TokenGenerator<?> tokens)
+            OAuth2TokenGenerator<?> tokens,
+            @Value("${app.mcp.registrations-per-client-per-hour:10}") int registrationsPerHour)
             throws Exception {
         if (!settings.enabled()) {
             return ConnectorOff.chain(http);
@@ -107,6 +109,7 @@ public class AuthorizationServerConfig {
                 // ChatGPT do it from their servers. No cookie is read on
                 // those endpoints, so any origin may ask.
                 .cors(cors -> cors.configurationSource(anyOrigin()))
+                .addFilterBefore(new RegistrationLimit(registrationsPerHour), SecurityContextHolderFilter.class)
                 .addFilterAfter(new PilotPrincipalFilter(pilots), SecurityContextHolderFilter.class);
         return ConnectorSecurityConfig.headersFirst(http.build());
     }

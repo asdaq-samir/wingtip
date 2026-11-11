@@ -277,6 +277,12 @@ app:
     redirect-uris: ${MCP_REDIRECT_URIS:https://claude.ai/api/mcp/auth_callback,https://chatgpt.com/connector_platform_oauth_redirect,https://chatgpt.com/connector/oauth/*,http://localhost,http://127.0.0.1}
     signing-key: ${MCP_SIGNING_KEY:}
     internal-token: ${MCP_INTERNAL_TOKEN:}
+    # Open registration held back (RegistrationLimit): so many an address
+    # an hour; and clients nobody connected through let go this many days
+    # after they registered, each night (ConnectorHousekeeping; "-" off).
+    registrations-per-client-per-hour: ${MCP_REGISTRATIONS_PER_CLIENT_PER_HOUR:10}
+    unused-client-days: ${MCP_UNUSED_CLIENT_DAYS:1}
+    housekeeping-cron: ${MCP_HOUSEKEEPING_CRON:0 45 3 * * *}
   magic-link:
     per-address-per-hour: ${APP_MAGIC_LINK_PER_ADDRESS_PER_HOUR:5}
     per-client-per-hour: ${APP_MAGIC_LINK_PER_CLIENT_PER_HOUR:20}

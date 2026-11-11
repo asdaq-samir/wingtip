@@ -184,7 +184,7 @@ sequenceDiagram
 | Issuer | the gateway's public address (`APP_PUBLIC_BASE_URL`), no trailing slash |
 | Resource (audience) | `<issuer>/mcp` (`MCP_RESOURCE_URL` overrides, on both services) |
 | Metadata | `/.well-known/oauth-authorization-server` (RFC 8414); `/.well-known/oauth-protected-resource/mcp` (RFC 9728, the planner's) |
-| Registration | RFC 7591 at `/oauth2/register`, open, public clients only (`none`), PKCE required, consent required |
+| Registration | RFC 7591 at `/oauth2/register`, open, public clients only (`none`), PKCE required, consent required; 10 an hour per address, a name of 100 characters, 4 callbacks of 200, a 16 KB body (`RegistrationLimit`, `ConnectorClients`); clients nobody connected through let go a day after, and connections whose tokens have all run out a day after the last, each night (`ConnectorHousekeeping`) |
 | Callbacks allowed | `https://claude.ai/api/mcp/auth_callback`, `https://chatgpt.com/connector_platform_oauth_redirect`, `https://chatgpt.com/connector/oauth/*`, loopback `localhost` and `127.0.0.1` on any port (`MCP_REDIRECT_URIS`) |
 | Scopes | `wingtip:read` (tools), `wingtip:write` (save a flight); both in `scopes_supported`, so the pilot approves both once; no `openid` |
 | Access token | JWT, RS256, 15 minutes: `iss`, `aud` = the resource, `sub` = the pilot's id, `scope`, `client_id` |
