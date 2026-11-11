@@ -65,4 +65,19 @@ struct StorePrivacyTests {
         Session.forgetCookies(jar)
         #expect(jar.cookies?.isEmpty != false)
     }
+
+    // MARK: The planning-aid notice (the store audit's S2)
+
+    @Test func thePlanningAidNoticeIsShownOnceAndNotUnderTheTests() throws {
+        let defaults = try #require(UserDefaults(suiteName: "notice-\(UUID().uuidString)"))
+        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: []))
+        // The UI tests' and the store pictures' launches, as the welcome's.
+        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh"]))
+        #expect(PlanningAidNotice.wanted(defaults: defaults, arguments: ["-fresh", "-welcome"]))
+        defaults.set(true, forKey: PlanningAidNotice.acceptedKey)
+        #expect(!PlanningAidNotice.wanted(defaults: defaults, arguments: []))
+        // The words are About's and the listing's.
+        #expect(PlanningAidNotice.message.hasPrefix(PlanningAid.words))
+        #expect(PlanningAidNotice.message.contains("Not for navigation"))
+    }
 }
