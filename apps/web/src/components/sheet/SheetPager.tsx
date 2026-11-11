@@ -49,6 +49,22 @@ function pagersDrag(target: EventTarget | null, root: HTMLElement): boolean {
   return true;
 }
 
+/** The row under `target` that scrolls sideways itself (Nearest,
+ *  Favorites), up to the pager's root; none where it starts elsewhere. */
+function sidewaysRow(target: EventTarget | null, root: HTMLElement): HTMLElement | null {
+  for (let el = target instanceof Element ? target : null; el && el !== root; el = el.parentElement) {
+    if (el instanceof HTMLElement && el.scrollWidth > el.clientWidth + 1) {
+      const x = getComputedStyle(el).overflowX;
+      if (x === "auto" || x === "scroll") return el;
+    }
+  }
+  return null;
+}
+
+/** How far past a row's end a finger pulls on before the page turns: a
+ *  deliberate pull, not the row's own bounce. */
+const PULL_PAST_END = 48;
+
 export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: number) => void; drag: boolean; pages: ReactNode[] }) {
   const [api, setApi] = useState<CarouselApi>();
   // The page it opens on, once: a page picked later is scrolled to (below),
@@ -65,6 +81,50 @@ export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: num
       api.off("select", picked);
     };
   }, [api]);
+  // At a sideways row's end the swipe goes on to the page (the owner,
+  // 2026-11-11: "At the end of the scroll, it should swipe"), as a phone's
+  // nested scrolling hands a drag on: a finger that keeps pulling past the
+  // row's last card (or before its first) turns the page by the stock
+  // carousel's own scrollNext / scrollPrev, once a touch. Embla has no
+  // option for a nested scroller's end, so the touch is watched here.
+  useEffect(() => {
+    if (!api || !drag) return;
+    const root = api.rootNode();
+    let row: HTMLElement | null = null;
+    let lastX = 0;
+    let pull = 0;
+    let turned = false;
+    const start = (event: TouchEvent) => {
+      row = sidewaysRow(event.target, root);
+      lastX = event.touches[0]?.clientX ?? 0;
+      pull = 0;
+      turned = false;
+    };
+    const move = (event: TouchEvent) => {
+      const x = event.touches[0]?.clientX;
+      if (!row || turned || x === undefined) return;
+      const dx = x - lastX;
+      lastX = x;
+      const atEnd = row.scrollLeft + row.clientWidth >= row.scrollWidth - 1;
+      const atStart = row.scrollLeft <= 0;
+      if (dx < 0 && atEnd) pull = Math.min(0, pull) + dx;
+      else if (dx > 0 && atStart) pull = Math.max(0, pull) + dx;
+      else pull = 0;
+      if (pull <= -PULL_PAST_END && api.canScrollNext()) {
+        turned = true;
+        api.scrollNext();
+      } else if (pull >= PULL_PAST_END && api.canScrollPrev()) {
+        turned = true;
+        api.scrollPrev();
+      }
+    };
+    root.addEventListener("touchstart", start, { passive: true });
+    root.addEventListener("touchmove", move, { passive: true });
+    return () => {
+      root.removeEventListener("touchstart", start);
+      root.removeEventListener("touchmove", move);
+    };
+  }, [api, drag]);
   // A page picked elsewhere (its bar of the grabber, a route made, a link): the pager
   // follows, at once under Reduce Motion.
   useEffect(() => {
