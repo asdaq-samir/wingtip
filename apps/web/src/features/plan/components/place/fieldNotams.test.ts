@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { localWords, whenWords, zulu } from "./fieldNotams";
+import { whenWords, zulu } from "./fieldNotams";
 
 describe("a field's NOTAMs on its card", () => {
   it("says its times in UTC with the day, a feed time with no zone read as UTC (AIM 5-1-3)", () => {
@@ -20,11 +20,5 @@ describe("a field's NOTAMs on its card", () => {
     expect(whenWords({ in_force: false, starts: "2026-11-12T12:00:00Z", ends: "2026-11-12T14:32:00Z" })).toBe(
       "From Nov 12 1200Z until Nov 12 1432Z",
     );
-  });
-
-  it("gives the window in the device's own time, or nothing with no times", () => {
-    expect(localWords(null, null)).toBeNull();
-    expect(localWords("2026-11-12T12:00:00Z", null)).toMatch(/^From /);
-    expect(localWords(null, "2026-11-12T14:32:00Z")).toMatch(/^Until /);
   });
 });

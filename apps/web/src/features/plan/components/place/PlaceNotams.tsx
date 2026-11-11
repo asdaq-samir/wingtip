@@ -12,9 +12,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../..
 import { TEXT } from "../../../../lib/text";
 import {
   headingOf,
-  localWords,
   readNotam,
   useFieldNotams,
+  numberOf,
   whatOf,
   whenWords,
   windowOf,
@@ -39,7 +39,7 @@ function NotamLines({ n, read, clamp }: { n: FieldNotam; read: NotamReading; cla
   const times = timeLines(n, read);
   return (
     <span className={cn("flex flex-col gap-0.5", n.in_force === false && "text-muted-foreground")}>
-      {(!read.what || n.kind === "tfr") && (
+      {n.kind === "tfr" && (
         <span className={cn(clamp && "line-clamp-2")} data-testid="place-notam-words">
           {read.words}
         </span>
@@ -76,29 +76,22 @@ export function NotamFull({ n, ident }: { n: FieldNotam; ident: string }) {
   const read = readNotam(n, ident);
   const when = windowOf(n, read);
   const utc = whenWords(when, read);
-  const local = localWords(when.starts, when.ends);
   const ours = !!read.what && n.kind !== "tfr";
   return (
     <div className="flex flex-col gap-1 pb-6" data-testid="place-notam-full">
-      {ours && (
-        <p
-          className={cn("flex items-start justify-between gap-2 font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")}
-          data-testid="place-notam-what"
-        >
-          {read.what}
-          <NotamState n={n} />
-        </p>
-      )}
+      <p
+        className={cn("flex items-start justify-between gap-2 font-medium", TEXT.prose, n.in_force === false && "text-muted-foreground")}
+        data-testid="place-notam-what"
+      >
+        {whatOf(n, ident)}
+        <NotamState n={n} />
+      </p>
       <p className={TEXT.prose}>
         <NotamLines n={n} read={read} clamp={false} />
       </p>
       {ours && <p className={cn("text-muted-foreground", TEXT.note)}>{read.words}</p>}
+      {/* In UTC as the NOTAM gives it; the local times are the lines above. */}
       {utc && <p className={cn("text-muted-foreground tabular-nums", TEXT.note)}>{utc}</p>}
-      {local && (
-        <p className={cn("text-muted-foreground tabular-nums", TEXT.note)} data-testid="place-notam-local">
-          {local}
-        </p>
-      )}
       <Collapsible>
         <CollapsibleTrigger
           className={cn(
@@ -148,9 +141,9 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
               title={
                 <span className="flex items-start justify-between gap-2">
                   <span>
-                    <NotamWhat what={whatOf(n, ident)} title={read.title} />
+                    <NotamWhat what={whatOf(n, ident)} title={read.title} clamp={!read.what} />
                     {/* Its number, as a briefer reads it, muted after it. */}
-                    <span className="text-muted-foreground" data-testid="place-notam-number">{` ${n.id}`}</span>
+                    <span className="text-muted-foreground" data-testid="place-notam-number">{` ${numberOf(n, ident)}`}</span>
                   </span>
                   <NotamState n={n} />
                 </span>
@@ -165,7 +158,12 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
         })}
       </ListGroup>
       {open && (
-        <SheetCard title={headingOf(open, ident)} description={ident} onClose={() => setOpen(null)} testId="place-notam-card">
+        <SheetCard
+          title={headingOf(open, ident)}
+          description={numberOf(open, ident)}
+          onClose={() => setOpen(null)}
+          testId="place-notam-card"
+        >
           <NotamFull n={open} ident={ident} />
         </SheetCard>
       )}
@@ -176,10 +174,10 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
 /** Its what, the condition after the thing's name in red, as ForeFlight
  *  reds "OUT OF SERVICE" (the owner's screenshots, 2026-11-11): the name
  *  is the engine's title, the rest of the engine's what its condition. */
-function NotamWhat({ what, title }: { what: string; title: string | null }) {
+function NotamWhat({ what, title, clamp }: { what: string; title: string | null; clamp: boolean }) {
   const named = !!title && what.startsWith(`${title} `);
   return (
-    <span data-testid="place-notam-heading">
+    <span className={cn(clamp && "line-clamp-3")} data-testid="place-notam-heading">
       {named ? (
         <>
           {title}{" "}
@@ -194,16 +192,18 @@ function NotamWhat({ what, title }: { what: string; title: string | null }) {
   );
 }
 
-/** Whether it is in force now: "Active" in red, "Inactive" in the
- *  caution's colours, as the card's NOTAM badges are (NotamBadge; the
- *  owner, 2026-11-11: "put a active and inactive badge on each notam").
+/** Whether it is in force now: "Active" in red, "Inactive" in the muted
+ *  colours (the owner, 2026-11-11: "put a active and inactive badge on
+ *  each notam").
  *  In force unless the planner says it is not yet (in_force false). */
 function NotamState({ n }: { n: FieldNotam }) {
   const active = n.in_force !== false;
   return (
     <Badge
+      // Inactive in the disabled colours: nothing to act on yet (the owner,
+      // 2026-11-11: "Inactive notam can be disabled color").
       variant={active ? "destructive" : "secondary"}
-      className={cn("shrink-0", !active && "bg-caution-wash text-caution-ink")}
+      className={cn("shrink-0", !active && "text-muted-foreground")}
       data-testid="place-notam-state"
       data-active={active}
     >

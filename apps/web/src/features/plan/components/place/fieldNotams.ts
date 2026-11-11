@@ -66,19 +66,28 @@ export function readNotam(n: FieldNotam, ident: string): NotamReading {
 
 /** A NOTAM's first line: what it is and its condition in our words
  *  ("Runway 04L/22R closed except taxiing"), the engine's (notam_read's
- *  what), else its title. */
+ *  what), else its words written out, said once, not under a title that
+ *  repeats their start (the owner, 2026-11-11: "avoid redundant
+ *  information"); "TFR" for a TFR, its words under it. */
 export function whatOf(n: FieldNotam, ident: string): string {
-  return (n.kind !== "tfr" && readNotam(n, ident).what) || headingOf(n, ident);
-}
-
-/** A NOTAM's title: the thing it is about where its words name it
- *  ("Runway 06/24", "Taxiway A", "Fuel 100LL"), else its keyword as a
- *  heading, both the engine's (notam_read); "TFR" for a TFR. The owner,
- *  2026-11-11: "the notam title can be a bit more specific". */
-export function headingOf(n: FieldNotam, ident: string): string {
   if (n.kind === "tfr") return "TFR";
   const read = readNotam(n, ident);
-  return read.title ?? read.heading ?? "NOTAM";
+  return read.what ?? read.words;
+}
+
+/** The heading of a NOTAM's own card: what kind it is ("Runway",
+ *  "Obstacle", the engine's heading; "TFR"), its first line under it
+ *  saying which. */
+export function headingOf(n: FieldNotam, ident: string): string {
+  if (n.kind === "tfr") return "TFR";
+  return readNotam(n, ident).heading ?? "NOTAM";
+}
+
+/** Its number as a briefer reads it, the field's own name off it on the
+ *  field's card ("11/060", not "ORD 11/060"); another place's kept. */
+export function numberOf(n: FieldNotam, ident: string): string {
+  const own = identsOf(ident).find((i) => n.id.startsWith(`${i} `));
+  return own ? n.id.slice(own.length + 1) : n.id;
 }
 
 /** A feed's time as a date, one with no zone read as UTC; null where it
@@ -128,15 +137,4 @@ const CORNER = new Intl.DateTimeFormat("en-US", { month: "2-digit", day: "2-digi
 export function corner(at: Date, local: boolean): string {
   const part = Object.fromEntries(CORNER.formatToParts(at).map((p) => [p.type, p.value]));
   return `${part.month}/${part.day} ${part.hour}:${part.minute}${local ? " local" : ""}`;
-}
-
-const LOCAL = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-
-/** The window in the device's own time, said to be local, its zone not
- *  named ("Nov 12, 3:00 – 11:00 AM local"), beside the UTC the NOTAM gives (JO 7930.2 3-3-2). */
-export function localWords(starts: string | null | undefined, ends: string | null | undefined): string | null {
-  const [from, until] = [dateOf(starts), dateOf(ends)];
-  if (from && until) return `${LOCAL.formatRange(from, until)} local`;
-  if (from) return `From ${LOCAL.format(from)} local`;
-  return until ? `Until ${LOCAL.format(until)} local` : null;
 }

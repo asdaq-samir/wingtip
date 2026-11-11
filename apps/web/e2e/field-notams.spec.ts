@@ -147,7 +147,7 @@ test("a field's NOTAMs show three, and their title opens every one in place and 
   // Its height is where it is, not part of its what (the owner, 2026-11-11).
   await expect(rows.nth(2).getByTestId("place-notam-heading")).toHaveText("Crane");
   await expect(rows.nth(2).getByTestId("place-notam-where")).toHaveText(
-    "KDLH, 1.2 nm southeast of the field, 1,600 ft MSL (210 ft above ground)",
+    "1.2 nm southeast of the field, 1,600 ft MSL (210 ft above ground)",
   );
   await expect(section).toContainText("5");
 
