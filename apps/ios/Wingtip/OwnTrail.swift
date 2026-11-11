@@ -26,7 +26,7 @@ final class OwnTrail {
     private var lastWritten: Date = .distantPast
     private var underway = false
 
-    private static var file: URL {
+    static var file: URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appendingPathComponent("own-trail.json")
     }
@@ -64,6 +64,15 @@ final class OwnTrail {
         }
         if Date().timeIntervalSince(lastWritten) > Self.writeEveryS { write() }
         return true
+    }
+
+    /// The path gone from the phone, the file with it: the pilot signed
+    /// out or deleted the account (Session.forgetDevice). Where they flew
+    /// is theirs, not the next person's on this iPhone.
+    func erase() {
+        points = []
+        lastWritten = .distantPast
+        try? FileManager.default.removeItem(at: Self.file)
     }
 
     /// The path let go: a new flight's starts empty.

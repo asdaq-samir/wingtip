@@ -151,6 +151,28 @@ final class Session {
         Session.forgetPilot()
         Tracking.shared.forgetFavorites()
         WidgetFeed.shared.forgetPilot()
+        // The session's cookies too: with no signal the gateway's logout
+        // never ran, and the next person would still be signed in.
+        Session.forgetCookies()
+        Session.forgetDevice()
+    }
+
+    /// What this iPhone recorded or kept of the pilot outside the settings:
+    /// the path flown (OwnTrail) and the flight recorder's track, their
+    /// files deleted, and the gateway's and planner's answers kept in the
+    /// session's cache (the account, the logbook, saved flights). Signing
+    /// out and deleting the account both (the store audit's P7).
+    static func forgetDevice(trail: OwnTrail = .shared, recorder: FlightRecorder = .shared,
+                             cache: URLCache? = Gateway.session.configuration.urlCache) {
+        trail.erase()
+        recorder.erase()
+        cache?.removeAllCachedResponses()
+    }
+
+    /// The gateway's cookies gone from the jar the app and the widgets share.
+    static func forgetCookies(_ jar: HTTPCookieStorage = SessionCookies.jar) {
+        for cookie in jar.cookies ?? [] { jar.deleteCookie(cookie) }
+        SessionCookies.keep()
     }
 
     /// The figures kept per N-number on this device, the pilot's own, and
@@ -169,8 +191,9 @@ final class Session {
 
     /// The account deleted on the gateway (App Review 5.1.1(v)): it takes
     /// everything that was the pilot's and every session; this device its
-    /// own copies -- its settings, drills and the last plan -- and the
-    /// cookies, as the web app's useDeleteAccount does. A failure deleted
+    /// own copies -- its settings, drills, the last plan, the path flown
+    /// and the recorder's track, the cached answers -- and the cookies, as
+    /// the web app's useDeleteAccount does. A failure deleted
     /// nothing, and is thrown for the page to say so.
     func deleteAccount() async throws {
         try await Gateway.deleteAccount()
@@ -178,8 +201,8 @@ final class Session {
         Kept.forget()
         KeptForAir.forgetPilotOwn()
         Tracking.shared.erase()
-        for cookie in SessionCookies.jar.cookies ?? [] { SessionCookies.jar.deleteCookie(cookie) }
-        SessionCookies.keep()
+        Session.forgetCookies()
+        Session.forgetDevice()
         WidgetFeed.shared.forgetPilot()
         pilot = nil
     }

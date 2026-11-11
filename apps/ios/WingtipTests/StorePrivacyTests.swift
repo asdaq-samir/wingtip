@@ -35,4 +35,34 @@ struct StorePrivacyTests {
         #expect(reasons["NSPrivacyAccessedAPICategoryDiskSpace"] == ["85F4.1"])
         #expect(reasons["NSPrivacyAccessedAPICategoryFileTimestamp"] == ["C617.1"])
     }
+
+    // MARK: Signing out and deleting the account (the store audit's P7)
+
+    @Test func forgettingTheDeviceDeletesThePathTheTrackAndTheCache() throws {
+        let file = FileManager.default.temporaryDirectory.appending(path: "recorder-\(UUID().uuidString).json")
+        try Data(#"{"points":[{"t":1,"lat":42,"lon":-88}],"flown":true}"#.utf8).write(to: file)
+        let recorder = FlightRecorder(file: file)
+        #expect(!recorder.points.isEmpty)
+        try FileManager.default.createDirectory(at: OwnTrail.file.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data("[]".utf8).write(to: OwnTrail.file)
+        let cache = URLCache(memoryCapacity: 1 << 20, diskCapacity: 0)
+        let request = URLRequest(url: URL(string: "https://example.com/api/me")!)
+        cache.storeCachedResponse(CachedURLResponse(response: URLResponse(url: request.url!, mimeType: "application/json", expectedContentLength: 2, textEncodingName: nil),
+                                                    data: Data("{}".utf8)), for: request)
+        #expect(cache.cachedResponse(for: request) != nil)
+
+        Session.forgetDevice(recorder: recorder, cache: cache)
+
+        #expect(recorder.points.isEmpty && !FileManager.default.fileExists(atPath: file.path))
+        #expect(OwnTrail.shared.points.isEmpty && !FileManager.default.fileExists(atPath: OwnTrail.file.path))
+        #expect(cache.cachedResponse(for: request) == nil)
+    }
+
+    @Test func forgettingTheCookiesEmptiesTheJar() throws {
+        let jar = HTTPCookieStorage.sharedCookieStorage(forGroupContainerIdentifier: "test.\(UUID().uuidString)")
+        jar.setCookie(HTTPCookie(properties: [.name: "SESSION", .value: "v", .domain: "wingtipmaps.app", .path: "/"])!)
+        #expect(jar.cookies?.isEmpty == false)
+        Session.forgetCookies(jar)
+        #expect(jar.cookies?.isEmpty != false)
+    }
 }
