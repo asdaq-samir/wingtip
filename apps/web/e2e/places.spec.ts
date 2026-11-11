@@ -51,8 +51,9 @@ async function cardWeather(
 test("the departure's own card says no distance from itself while the pilot's position is not known", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=C81");
   await settle(page);
-  // Its elevation alone: no "here of C81", as the phones said no "From KMSN 0 nm" (PlaceCard's subtitleOf).
-  await expect(card(page).getByTestId("place-line")).toHaveText(/^Elevation [\d,]+ ft$/);
+  // No Distance row: no "here of C81", as the phones said no "From KMSN 0 nm" (PlaceCard's distanceOf).
+  await expect(card(page).getByTestId("place-elevation")).toBeVisible({ timeout: slow(15000) });
+  await expect(card(page).getByTestId("place-distance")).toHaveCount(0);
 });
 
 test("an airport's card has the field's pictures across its top, its ident over them, how far it is, its actions, its tabs right under them and the weather there", async ({
@@ -69,12 +70,12 @@ test("an airport's card has the field's pictures across its top, its ident over 
   // The owner's pick of the redesign (A2): the pictures across the top, the ident large over them with the name and the town under it.
   await expect(card(page).getByTestId("place-head")).toBeInViewport();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
-  // The name · the town on one line, the town a link (Apple Maps' place card, 2026-11-10).
-  await expect(card(page).getByTestId(/^place-(full-name|town)$/)).toHaveText(["Duluth International Airport", "Duluth, MN"]);
-  await expect(card(page).getByTestId("place-town")).toHaveText("Duluth, MN");
+  // The name under the ident, and no town, distance or elevation in the head (the owner, 2026-11-11).
+  await expect(card(page).getByTestId("place-full-name")).toHaveText("Duluth International Airport");
   await expect(card(page).getByTestId("place-ident")).toHaveCount(0);
-  // Measured from the route's departure while the pilot's own position is not known.
-  await expect(card(page).getByTestId("place-line")).toHaveText(/^\d+ nm NW of C81 · Elevation [\d,]+ ft$/);
+  // Measured from the route's departure while the pilot's own position is not known, a row of the Details.
+  await expect(card(page).getByTestId("place-line")).toHaveCount(0);
+  await expect(card(page).getByTestId("place-distance")).toHaveText(/^Distance\d+ nm NW of C81$/);
   // Its share at the head's start, the name centred, ✕ at its end (cards.spec), the star a tile (2026-11-11); the card the whole sheet.
   for (const id of ["place-share", "place-favorite", "place-close"]) await expect(card(page).getByTestId(id)).toBeInViewport();
   await expect(firstRow(page)).toBeHidden();
@@ -102,7 +103,7 @@ test("an airport's card has the field's pictures across its top, its ident over 
   await card(page).getByTestId("place-tab-radio").click();
   await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
   await expect(card(page).getByTestId("place-elevation")).toContainText(/[\d,]+ ft$/);
-  await expect(card(page).getByTestId("place-airspace")).toHaveText(/^AirspaceClass D · Tower 118\.3$/);
+  await expect(card(page).getByTestId("place-airspace")).toHaveText(/^AirspaceClass D$/);
   // The tower's, named in words, its frequency as pilots write it.
   const tower = card(page).getByTestId("place-frequency").filter({ hasText: "Tower" });
   await expect(tower).toContainText("118.3");
@@ -303,7 +304,7 @@ test("an airport's card keeps one layout whatever the field: a long name in two 
     // actions under them, and the name's lines inside them.
     const measure = async () => {
       const [head, tiles, where] = await Promise.all(
-        ["place-head", "fly-here", "place-where"].map(async (id) => (await card(page).getByTestId(id).boundingBox())!),
+        ["place-head", "fly-here", "place-full-name"].map(async (id) => (await card(page).getByTestId(id).boundingBox())!),
       );
       return { tiles: Math.round(tiles.y - head.y), whereFoot: Math.round(where.y + where.height - head.y), head: Math.round(head.height) };
     };
@@ -632,7 +633,7 @@ test("a Favorite's card names it and the map goes to it before the card's answer
   await page.goto("/app/plan?place=KBUR");
   await settle(page);
   await expect(card(page).getByTestId("place-name")).toHaveText("KBUR");
-  await expect(card(page).getByTestId("place-where")).toContainText("Hollywood Burbank/Bob Hope Airport");
+  await expect(card(page).getByTestId("place-full-name")).toContainText("Hollywood Burbank/Bob Hope Airport");
   await expect(card(page).getByTestId("fly-here")).toBeDisabled();
   await expect(page.locator("[data-selected-airport]")).toBeInViewport({ timeout: slow(10_000) });
   // Its own shape already, at the pilot's ask: the actions and the star
@@ -647,9 +648,9 @@ test("a Favorite's card names it and the map goes to it before the card's answer
   // And the head and its actions where they were: nothing above the
   // frequencies grew or moved as it came.
   expect(Math.abs((await card(page).getByTestId("fly-here").boundingBox())!.y - actionsBefore.y)).toBeLessThan(2);
-  // Nothing to measure from: the elevation alone under the name, where it
-  // said "…".
-  await expect(card(page).getByTestId("place-line")).toHaveText(/^Elevation [\d,]+ ft$/);
+  // Nothing to measure from: no line under the name, no Distance row.
+  await expect(card(page).getByTestId("place-line")).toHaveCount(0);
+  await expect(card(page).getByTestId("place-distance")).toHaveCount(0);
 });
 
 // A planner out of reach for a moment (restarted, say) is not an airport
@@ -671,7 +672,7 @@ test("an airport's card that could not be had says so, and Try again brings it",
   await card(page).getByTestId("place-retry").click();
   await expect(card(page).getByTestId("place-name")).toHaveText("KDLH");
   await expect(card(page).getByTestId("place-retry")).toHaveCount(0);
-  await expect(card(page).getByTestId("place-where")).toContainText("Duluth International Airport");
+  await expect(card(page).getByTestId("place-full-name")).toContainText("Duluth International Airport");
 });
 
 test("an airport tapped on the chart while Setup is up puts Setup away and opens its card on Airport", async ({ page }) => {

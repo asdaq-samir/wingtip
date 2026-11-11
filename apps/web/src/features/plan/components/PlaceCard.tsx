@@ -15,7 +15,7 @@ import { Tabs } from "../../../components/ui/tabs";
 import { useCardTab } from "../lib/cardTab";
 import { useTabScroll } from "../lib/tabScroll";
 import PlaceActions from "./place/PlaceActions";
-import PlaceSubtitle from "./place/PlaceSubtitle";
+import FitLine from "../../../components/FitLine";
 import { ApiError } from "../../../lib/api/client";
 import type { AirportPin, AirportPlace, ClassBAirport } from "../../../lib/api/types";
 import { compassPoint } from "../../../lib/compass";
@@ -55,29 +55,31 @@ function away(from: LatLon, to: LatLon): string {
   return distanceNm(from, to) < 0.5 ? "here" : awayFrom(from, to);
 }
 
-/** The line under the name, how far the field is at the pilot's ask --
- *  "18 nm NE of C81" -- and whether it may be landed at without asking.
- *  Nothing where there is nothing to measure from, nor where the start is
- *  the field itself: the departure's own card, with no fix, said "here of KMSN", as the phones said "From KMSN 0 nm". */
-function subtitleOf(place: AirportPlace, from: { point: LatLon; name: string | null } | null): string {
+/** How far the field is, for the Info tab's Details (the owner,
+ *  2026-11-11: "Add distance to details") -- "18 nm NE of C81". Nothing
+ *  where there is nothing to measure from, nor where the start is the
+ *  field itself: the departure's own card, with no fix, said "here of
+ *  KMSN", as the phones said "From KMSN 0 nm". */
+function distanceOf(place: AirportPlace, from: { point: LatLon; name: string | null } | null): string | null {
   const itself = !!from?.name && (sameField(from.name, place.ident) || distanceNm(from.point, place) < 0.5);
-  return [
-    from && !itself ? (from.name ? `${away(from.point, place)} of ${from.name}` : away(from.point, place)) : null,
-    // Its elevation beside the distance, at the owner's ask (2026-10-29):
-    // the field's from the FAA's airport file (NASR APT_BASE ELEV, feet MSL), what a pilot sets the pattern altitude from.
-    place.elevation_ft != null ? `Elevation ${feet(place.elevation_ft)}` : null,
-    // A field the armed services own (the FAA's airport file): one most pilots may not land at without the service's permission, or a civil
-    // airport sharing it -- not a description, a field to keep out of.
-    place.military === "military"
-      ? "Military, permission required"
-      : place.military === "joint"
-        ? "Joint use"
-        : place.private
-          ? "Private, permission required"
-          : null,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  if (!from || itself) return null;
+  return from.name ? `${away(from.point, place)} of ${from.name}` : away(from.point, place);
+}
+
+/** The line under the head where the field may not be landed at without
+ *  asking: one the armed services own (the FAA's airport file, NASR
+ *  APT_BASE), or a civil airport sharing it, or a private one -- not a
+ *  description, a field to keep out of. The town, the distance and the
+ *  elevation went from the head (the owner, 2026-11-11): the elevation and
+ *  the distance are the Details' rows, the town its Address. */
+function permissionOf(place: AirportPlace): string | null {
+  return place.military === "military"
+    ? "Military, permission required"
+    : place.military === "joint"
+      ? "Joint use"
+      : place.private
+        ? "Private, permission required"
+        : null;
 }
 
 /** How old a report is, "14m ago", for the weather's line. */
@@ -242,7 +244,7 @@ export default function PlaceCard({
   const where = place ? [place.municipality, place.region?.replace(/^US-/, "")].filter(Boolean).join(", ") : null;
   const name = place?.name ?? known?.name ?? kept?.name ?? null;
   const line = place
-    ? subtitleOf(place, measured)
+    ? permissionOf(place)
     : error
       ? error instanceof ApiError && error.status === 404
         ? "Not found"
@@ -447,16 +449,18 @@ export default function PlaceCard({
             testId="place-head"
             titleTestId="place-name"
             subtitleTestId="place-where"
-            twoLines
-            subtitle={name && name !== ident4 ? <PlaceSubtitle name={name} where={where} place={place ?? null} /> : where || " "}
+            // Its full name the head row's second line, centred under the
+            // ident and fitted to it, in sight at the card's smallest size
+            // too (the owner, 2026-11-11, after Apple Maps' "Buttermilk Cafe /
+            // Breakfast and Brunch Restaurant"); under it only whether it may
+            // be landed at without asking (permissionOf).
+            sub={name && name !== ident4 ? <FitLine testId="place-full-name">{name}</FitLine> : undefined}
             line={
-              <>
-                {line && (
-                  <p className={cn("line-clamp-2 text-muted-foreground", TEXT.note)} data-testid="place-line">
-                    {line}
-                  </p>
-                )}
-              </>
+              line ? (
+                <p className={cn("line-clamp-2 pt-1 text-muted-foreground", TEXT.note)} data-testid="place-line">
+                  {line}
+                </p>
+              ) : undefined
             }
             onClose={onClose}
             onShare={share}
@@ -559,7 +563,7 @@ export default function PlaceCard({
             className={cn("frost-head sticky z-10 -mx-4 mt-3 scroll-mt-28 px-4 py-1", PINNED_BELOW)}
           />
           <CardTabPanel value="radio" className="space-y-0">
-            {place && <PlaceInfoTab place={place} where={where} />}
+            {place && <PlaceInfoTab place={place} where={where} distance={distanceOf(place, measured)} />}
           </CardTabPanel>
           <CardTabPanel value="weather" className="space-y-0">
             <PlaceWeatherTab

@@ -48,7 +48,7 @@ test("a field's closure leads its card, and its NOTAMs keep their text as sent",
   await page.goto("/app/plan?dep=C81&place=KDLH");
   await settle(page);
   // Measured from the departure typed alone, no route yet.
-  await expect(card(page).getByTestId("place-line")).toHaveText(/\d+ nm [NESW]+ of C81/);
+  await expect(card(page).getByTestId("place-distance")).toHaveText(/\d+ nm [NESW]+ of C81/);
   const alert = card(page).getByTestId("place-alert");
   await expect(alert).toHaveCount(1);
   await alert.click();
