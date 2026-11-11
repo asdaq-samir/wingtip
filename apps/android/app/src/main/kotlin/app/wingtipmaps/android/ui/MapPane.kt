@@ -5,8 +5,13 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -89,16 +94,18 @@ import kotlinx.coroutines.withContext
  * The map and what is over it, the same under either layout: the chart
  * with its overlays, the fields' weather, the traffic and own ship
  * (ChartMap), the loading mark until it is drawn (MapLoading), the
- * buttons at the top right, and in the air the instruments at the top
+ * buttons at the top right where no sheet carries them, and in the air the instruments at the top
  * left (InFlightTop), or why the airplane is not shown (OwnShipNote).
  *
  * @param covered what the sheet covers at its pill, where the map opens
  *   and the loading mark turns in the middle of what is left; a sheet
  *   pulled up over the map moves neither.
  * @param onAsk the sparkle's Ask, or none (the strip's field is the way).
+ * @param buttonsOnSheet whether the phone's sheet carries the map's
+ *   buttons on its top edge (MapSheet's `onTop`), so none are drawn here.
  */
 @Composable
-fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) -> Unit, onAsk: (() -> Unit)?, onNearest: () -> Unit) {
+fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) -> Unit, onAsk: (() -> Unit)?, onNearest: () -> Unit, buttonsOnSheet: Boolean = false) {
     val charts: Charts = viewModel()
     val info by charts.info.collectAsStateWithLifecycle()
     val overlays by charts.overlays.collectAsStateWithLifecycle()
@@ -289,7 +296,14 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         // chart shown, or its problem with Retry where it could not load.
         // The sheet's first content is the other part (Home).
         ReportDrawnWhen { revealed || problem != null }
-        MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, modifier = Modifier.align(Alignment.TopEnd))
+        if (!buttonsOnSheet) {
+            // Under the status bar, and clear of a cutout or a navigation
+            // bar at the side in landscape (edge to edge).
+            MapButtons(
+                ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk,
+                modifier = Modifier.align(Alignment.TopEnd).windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.End)),
+            )
+        }
         // The receiver heard: "Stratux · 12 targets · GPS"; under it the
         // radar or satellite loop's bar while one is on.
         Column(

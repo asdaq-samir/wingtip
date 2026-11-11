@@ -301,6 +301,13 @@ gone on every platform.
 | Status | `components/StatusPanel`: FAA Data, On the Map (`lib/map/gl/creditStore`) |
 | Tests | `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the radio and the map's buttons 24 over the sheet and clear of each other, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` |
 
+On Android the map's buttons (My Position, with Ask over it) ride the
+`BottomSheetScaffold`'s top at the right the same way, placed from the
+stock sheet's offset each frame and faded away when it is expanded
+(`ui/sheet/MapSheet`'s `onTop`, `ui/MapButtons`;
+`androidTest/.../ui/MapButtonsOnSheetTest`; [android.md](android.md)
+§3.1).
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then

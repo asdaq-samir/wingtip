@@ -39,8 +39,11 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 enum class OwnShipMode { OFF, READING, FOLLOWING }
 
 /**
- * The buttons over the map, under the status bar at the right: the
- * position button and under it the sparkle that opens Ask. Each state of
+ * The buttons over the map, at the right: on a phone's sheet they ride
+ * its top edge (MapSheet's `onTop`, the owner, 2026-11-11), the sparkle
+ * that opens Ask over the position button, which is nearest the thumb
+ * as Google Maps' locate button is (`positionLast`); beside a pane or in
+ * the strip, under the status bar with the position button first. Each state of
  * the position button has its own shape as well as its colour, never the
  * colour alone (the UI audit's #12): off is the outlined arrow on the
  * tonal button; reading is the filled arrow there; following is the
@@ -55,19 +58,17 @@ fun MapButtons(
     onOwnShip: () -> Unit,
     onAsk: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    positionLast: Boolean = false,
 ) {
     // Material 3 Expressive's vertical floating toolbar round the buttons,
     // in the theme's high container and raised over the chart as a menu is.
     // Its own 8-dp padding in a 64-dp column puts each 40-dp button 12 dp
-    // in from its top and its side, so set on the safe edge it keeps the
-    // buttons where they were (8 dp out, plus their touch target's 4); the
-    // Spacer keeps the old 8 dp between their touch targets. Each button's
-    // corners draw in under the finger: the stock press shapes. Under the
-    // status bar, and clear of a cutout or a navigation bar at the side in
-    // landscape (edge to edge).
+    // in from its edges; the Spacer keeps 8 dp between their touch
+    // targets. Each button's corners draw in under the finger: the stock
+    // press shapes. The caller sets it clear of the system bars.
     VerticalFloatingToolbar(
         expanded = true,
-        modifier = modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.End)),
+        modifier = modifier,
         colors = FloatingToolbarDefaults.standardFloatingToolbarColors(
             toolbarContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
@@ -80,27 +81,35 @@ fun MapButtons(
                 OwnShipMode.FOLLOWING -> R.string.own_ship_following
             },
         )
-        FilledIconToggleButton(
-            checked = ownShip == OwnShipMode.FOLLOWING,
-            onCheckedChange = { onOwnShip() },
-            shapes = IconButtonDefaults.toggleableShapes(),
-            colors = IconButtonDefaults.filledIconToggleButtonColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-            ),
-            modifier = Modifier.semantics { stateDescription = state },
-        ) {
-            Icon(
-                if (ownShip == OwnShipMode.OFF) WingtipIcons.myLocationOff else WingtipIcons.myLocation,
-                contentDescription = stringResource(R.string.own_ship_button),
-            )
+        val position: @Composable () -> Unit = {
+            FilledIconToggleButton(
+                checked = ownShip == OwnShipMode.FOLLOWING,
+                onCheckedChange = { onOwnShip() },
+                shapes = IconButtonDefaults.toggleableShapes(),
+                colors = IconButtonDefaults.filledIconToggleButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                ),
+                modifier = Modifier.semantics { stateDescription = state },
+            ) {
+                Icon(
+                    if (ownShip == OwnShipMode.OFF) WingtipIcons.myLocationOff else WingtipIcons.myLocation,
+                    contentDescription = stringResource(R.string.own_ship_button),
+                )
+            }
         }
         // In the strip the field is the way to the assistant, so no sparkle.
-        if (onAsk != null) {
-            Spacer(Modifier.height(WingtipSpace.Sm))
-            FilledTonalIconButton(onClick = onAsk, shapes = IconButtonDefaults.shapes()) {
-                Icon(WingtipIcons.brief, contentDescription = stringResource(R.string.ask_about_flight), tint = MaterialTheme.colorScheme.primary)
+        val ask: (@Composable () -> Unit)? = onAsk?.let { open ->
+            {
+                FilledTonalIconButton(onClick = open, shapes = IconButtonDefaults.shapes()) {
+                    Icon(WingtipIcons.brief, contentDescription = stringResource(R.string.ask_about_flight), tint = MaterialTheme.colorScheme.primary)
+                }
             }
+        }
+        val order = if (positionLast) listOfNotNull(ask, position) else listOfNotNull(position, ask)
+        order.forEachIndexed { i, button ->
+            if (i > 0) Spacer(Modifier.height(WingtipSpace.Sm))
+            button()
         }
     }
 }
