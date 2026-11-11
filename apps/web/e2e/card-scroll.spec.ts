@@ -192,3 +192,38 @@ for (const edge of ["bottom", "top"] as const) {
     expect(over, "the card's body in sight over its pinned head").toBe(false);
   });
 }
+
+/**
+ * The airport card's tabs with the bar pinned (the owner's recording,
+ * 2026-11-11): Weather scrolled down, a tap on Info opened Info part way
+ * down, at its foot, and a tap on Runways, short, threw the card back to
+ * its top with the bar dropped below the photos. Now a tab not yet seen
+ * opens at its own top under the pinned bar, a short one keeps the bar
+ * where it pinned, and a tab seen before is where it was.
+ */
+test("the airport card's tabs, the bar pinned, open each at its top and keep the bar in place", async ({ page }) => {
+  test.skip(page.viewportSize()!.width >= 768, "a phone's sheet");
+  const row = CARDS.find((r) => r.name === "airport")!;
+  await open(page, row);
+  await grabberTo(page, "full");
+  const card = page.getByTestId(row.card);
+  const bar = card.getByRole("tablist");
+  await card.getByTestId("place-tab-weather").click();
+  const { max } = await scrollOf(page, row.card);
+  test.skip(max < 200, "too short to pin the bar at this size");
+  const deep = (await scrollOf(page, row.card, max)).top;
+  const pinnedY = (await bar.boundingBox())!.y;
+  const underBar = async (testId: string) => {
+    const panel = (await card.getByRole("tabpanel").boundingBox())!;
+    const b = (await bar.boundingBox())!;
+    expect(Math.abs(b.y - pinnedY), `the bar stays pinned on ${testId}`).toBeLessThanOrEqual(2);
+    expect(Math.abs(panel.y - (b.y + b.height)), `${testId} opens at its top, under the bar`).toBeLessThanOrEqual(16);
+  };
+  await card.getByTestId("place-tab-radio").click();
+  await expect(async () => underBar("Info")).toPass({ timeout: slow(5_000) });
+  await card.getByTestId("place-tab-runways").click();
+  await expect(async () => underBar("Runways")).toPass({ timeout: slow(5_000) });
+  // Weather, seen before: where it was.
+  await card.getByTestId("place-tab-weather").click();
+  await expect.poll(async () => (await scrollOf(page, row.card)).top, { timeout: slow(5_000) }).toBeGreaterThanOrEqual(deep - 2);
+});

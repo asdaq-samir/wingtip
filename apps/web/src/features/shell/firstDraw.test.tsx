@@ -92,7 +92,10 @@ describe("the planner before the engine is there", () => {
     // whether the airplane is underway on the first draw.
     const { screen } = await drawAt("/plan", async () => {
       const { useOwnShip } = await import("../../lib/map/position/ownShip");
-      useOwnShip.setState({ enabled: true, fix: { lat: 42.1, lon: -87.9, accuracyM: 10, speedKt: 0, headingDeg: null, altitudeFt: null, at: Date.now() } });
+      useOwnShip.setState({
+        enabled: true,
+        fix: { lat: 42.1, lon: -87.9, accuracyM: 10, speedKt: 0, headingDeg: null, altitudeFt: null, at: Date.now() },
+      });
     });
     expect(await screen.findByText("Where do you want to fly?", undefined, { timeout: 10_000 })).toBeTruthy();
   });
