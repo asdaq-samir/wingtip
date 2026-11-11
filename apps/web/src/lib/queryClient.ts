@@ -1,5 +1,6 @@
 import { MutationCache, QueryCache, QueryClient, queryOptions } from "@tanstack/react-query";
-import { ApiError, api, describeError, isDropped, isUnknownPlace } from "./api/client";
+import { api, describeError, isDropped, isUnknownPlace } from "./api/client";
+import { retryable, retryOnServerFailure } from "./queryRetry";
 import type { ChartInfo } from "./api/types";
 import { keptStore } from "./storage";
 import { signedInPilot } from "./pilotCache";
@@ -25,15 +26,10 @@ declare module "@tanstack/react-query" {
  * alert, and neither page threads error strings around to say so. The
  * exceptions are marked on the query or mutation itself (`meta`).
  *
- * TanStack's own refetch on focus: it asks again only what is stale, so
- * the map's weather is current when the phone wakes (iOS stops timers
- * behind the lock), while the nav log, course and checkpoints, fresh for
- * good (staleTime Infinity), are never recomputed under the pilot.
- * TanStack's own three retries with its backoff, but only where asking
- * again could answer differently (`retryable`): one 502 from a planner
- * warming up after a deploy is no longer a "Try again" line, and a 404
- * (a place not known) is said at once. The streams -- the nav log, the
- * chart read, the model's words -- each say `retry: false` themselves.
+ * TanStack's own refetch on focus, which asks again only what is stale:
+ * the map's weather is current as the phone wakes, the nav log, course and
+ * checkpoints (staleTime Infinity) never recomputed. Its own retries, where
+ * they could answer (lib/queryRetry); the streams each say `retry: false`.
  *
  * Asked with no connection too ("offlineFirst"), so the service worker's
  * kept answers reach the page in the air; TanStack's "online" paused them
@@ -42,8 +38,7 @@ declare module "@tanstack/react-query" {
  */
 export const queryClient = new QueryClient({
   defaultOptions: {
-    // Not in the unit tests, as TanStack's testing guide has it: a failure
-    // a test mocks is the one it means to see, at once.
+    // None in the unit tests, as TanStack's testing guide has it.
     queries: { retry: import.meta.env.MODE === "test" ? false : retryOnServerFailure, networkMode: "offlineFirst" },
     mutations: { networkMode: "offlineFirst" },
   },
@@ -137,20 +132,6 @@ function failed(message: string, retry: boolean): string {
   return id;
 }
 
-/** TanStack's own three retries, for what asking again could answer. */
-export function retryOnServerFailure(failures: number, error: unknown): boolean {
-  return failures < 3 && retryable(error);
-}
-
-/** Whether asking again could answer differently: not for what the
- *  request itself got wrong -- a 4xx, a route with no legal altitude
- *  (lib/api/streams) -- where Try again only showed the same toast
- *  again; a timeout or a rate limit can pass. */
-function retryable(error: unknown): boolean {
-  if (!(error instanceof ApiError)) return true;
-  return error.status < 400 || error.status >= 500 || error.status === 408 || error.status === 429;
-}
-
 /*
  * The queries more than one component observes, defined once. TanStack
  * Query keeps one set of options per query, and each observer that
@@ -176,8 +157,7 @@ export const statusQuery = queryOptions({ queryKey: ["status"], queryFn: () => a
 
 /** How this deployment is reached (SIGN_IN, OPEN or CLOSED) and which
  *  sign-ins it offers: asked once, and quiet on failure -- whoever reads
- *  it treats no answer as "not offered", so a 502 while the gateway
- *  starts is asked again (the default retry) before sign-in is hidden. */
+ *  it treats no answer as "not offered". */
 export const capabilitiesQuery = queryOptions({
   queryKey: ["signInCapabilities"],
   queryFn: () => api.capabilities(),
@@ -185,14 +165,10 @@ export const capabilitiesQuery = queryOptions({
   meta: { silent: true },
 });
 
-/** The chart cycle the map draws (chartQuery's, or the one kept in this
- *  browser before it is asked, its initialData), for the course and the
- *  checkpoints to carry in their key and address as the tiles do: on a
- *  cycle's first day a route opened again was drawn from the service
- *  worker's answer kept from the last one, and, never stale here, stood
- *  all session. Undefined until a chart is known. */
-export const chartCycle = (): string | undefined =>
-  queryClient.getQueryData(chartQuery.queryKey)?.chart_cycle ?? keptChart()?.chart.chart_cycle;
+/** The chart's cycle (chartQuery's, else the one kept here), in the course's
+ *  and checkpoints' key and address as in the tiles': a new cycle is never
+ *  served the service worker's answer kept from the last. */
+export const chartCycle = () => queryClient.getQueryData(chartQuery.queryKey)?.chart_cycle ?? keptChart()?.chart.chart_cycle;
 
 /** A route's course: its airports, any stops among them, and the line
  *  through them, the same answer for as long as the page is open. A

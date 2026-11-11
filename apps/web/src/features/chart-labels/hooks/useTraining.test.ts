@@ -17,8 +17,7 @@ import { useTraining } from "./useTraining";
 
 vi.mock("../../../lib/api/client", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../lib/api/client")>()),
-  // The chart's cycle never answers here: the course is asked with none.
-  api: { course: vi.fn(), detect: vi.fn(), savePick: vi.fn(), deletePick: vi.fn(), classify: vi.fn(), chart: vi.fn(() => new Promise(() => {})) },
+  api: { course: vi.fn(), detect: vi.fn(), savePick: vi.fn(), deletePick: vi.fn(), classify: vi.fn() },
 }));
 
 const { api } = await import("../../../lib/api/client");

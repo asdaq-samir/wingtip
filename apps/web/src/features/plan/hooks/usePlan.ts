@@ -262,9 +262,7 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
       initialValue: [] as NavLogMessage[],
     }),
     staleTime: Infinity,
-    // A stream of legs is not asked again by itself: a retry would plan
-    // the whole route over again behind the lines already drawn.
-    retry: false,
+    retry: false, // a retry would plan the whole route again behind the lines drawn
     // No legal altitude is the page's to say, with what can be done about
     // it (PlanWorkspace): not the query client's plain toast.
     // Nor a point the planner does not know, the route box's (courseQuery).
@@ -306,16 +304,12 @@ export function usePlan({
 
   // The previous route's course stays on the map until the new one is
   // charted, so the map is never taken down between routes.
-  // The chart's cycle, watched: a new one asks the course and checkpoints
-  // again, in an address of their own (chartCycle).
   const { data: cycle } = useQuery({ ...chartQuery, select: (chart) => chart.chart_cycle });
   const course = useQuery({ ...courseQuery(dep, dest, stops, cycle), enabled: briefable, placeholderData: keepPreviousData });
   const localFlight = useQuery({
     queryKey: ["localFlight", dep, localMin, depart, aircraft.profile, aircraft.fuelBurnGph ?? null, aircraft.usableFuelGal ?? null, rules],
     queryFn: () => api.localFlight(dep, localMin, aircraft, depart || undefined, rules),
     enabled: local,
-    // Worked out from its key alone, so never asked again on focus.
-    staleTime: Infinity,
     placeholderData: keepPreviousData,
   });
 

@@ -5,10 +5,11 @@
  * else's; the window's focus is TanStack's own refetch (lib/queryClient).
  */
 import type { ReactNode } from "react";
-import { act, cleanup, renderHook } from "@testing-library/react";
+import { cleanup, renderHook } from "@testing-library/react";
 import { ApiError } from "./api/client";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { queryClient, retryOnServerFailure } from "./queryClient";
+import { queryClient } from "./queryClient";
+import { retryOnServerFailure } from "./queryRetry";
 import { refreshLive, useLiveRefresh } from "./liveRefresh";
 import { Shown } from "./shown";
 

@@ -407,9 +407,6 @@ const INDEX_VERSION = 2;
 export const api = {
   /** The leg itself, through any stops: sub-second, and enough to draw
    *  before any tile is read. */
-  /** `cycle`, the chart's (chartCycle): in the address only, as the tiles'
-   *  `c`, so the service worker's answer kept from last cycle is never
-   *  this cycle's. */
   course: (dep: string, dest: string, stops?: string[], signal?: AbortSignal, cycle?: string) =>
     planner.GET("/api/course", { params: { query: { dep, dest, stops: stopsParam(stops), c: cycle } }, signal }).then(data<Course>),
 
