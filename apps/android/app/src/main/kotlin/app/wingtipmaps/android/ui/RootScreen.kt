@@ -257,9 +257,9 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     // The sparkle only where a model can answer (AiOffered): Nano here, or
     // the server's assistant while the Claude features are on.
     val askOffered = rememberAiOffered()
-    val mapView: @Composable (Dp) -> Unit = { covered ->
-        val onAsk = if (askOffered) ({ pages.show(SheetPage.Ask) }) else null
-        MapPane(plan, ownShip, covered = covered, onPick = onPick, onAsk = onAsk, onNearest = { pages.show(SheetPage.Nearest) })
+    val onAsk = if (askOffered) ({ pages.show(SheetPage.Ask) }) else null
+    val mapView: @Composable (Dp, Boolean) -> Unit = { covered, buttonsOnSheet ->
+        MapPane(plan, ownShip, covered = covered, onPick = onPick, onAsk = onAsk, onNearest = { pages.show(SheetPage.Nearest) }, buttonsOnSheet = buttonsOnSheet)
     }
     if (stripLayout) {
         StripLayout(
@@ -282,7 +282,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             // an edit's Snackbar over that.
             map = {
                 Box(Modifier.fillMaxSize()) {
-                    mapView(0.dp)
+                    mapView(0.dp, false)
                     val editing = pages.planShown && planState.routed
                     Column(Modifier.align(Alignment.BottomCenter), horizontalAlignment = Alignment.CenterHorizontally) {
                         SnackbarHost(snackbars, if (editing) Modifier else Modifier.navigationBarsPadding())
@@ -292,7 +292,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             },
         )
     } else if (fold != null) {
-        TabletopPanes(fold, map = { Box(Modifier.fillMaxSize()) { mapView(0.dp); SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter)) } }) {
+        TabletopPanes(fold, map = { Box(Modifier.fillMaxSize()) { mapView(0.dp, false); SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter)) } }) {
             // A card takes the search's place, as on the phone's sheet.
             pagesView(Modifier.weight(1f), true) { searchRow(null) }
         }
@@ -303,7 +303,13 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val searchHeight = with(LocalDensity.current) { searchRowPx.toDp() }.takeIf { it > 0.dp } ?: WingtipSize.TapTarget
         val peek = if (pages.covered) halfWindow() else SheetHandle + searchHeight + WingtipSpace.Sm + navigationBar
-        MapSheet(state = sheet, peek = peek, snackbars = snackbars, lowerOnBack = !pages.covered, body = { covered -> mapView(covered) }) {
+        // The map's buttons ride the sheet's top at the right, just above
+        // the search (the owner, 2026-11-11), the position button nearest it.
+        MapSheet(
+            state = sheet, peek = peek, snackbars = snackbars, lowerOnBack = !pages.covered,
+            onTop = { MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, positionLast = true) },
+            body = { covered -> mapView(covered, true) },
+        ) {
             // A card takes the search's place, its name and ← where the
             // search was; Home and the plan carry the search's row.
             // Back closes a card at once; with none it lowers the expanded

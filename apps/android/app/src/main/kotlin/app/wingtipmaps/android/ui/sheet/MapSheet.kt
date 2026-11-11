@@ -1,8 +1,11 @@
 package app.wingtipmaps.android.ui.sheet
 
 import androidx.activity.compose.PredictiveBackHandler
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -33,10 +36,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -52,6 +57,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import kotlinx.coroutines.launch
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * The map's sheet's state: Material's own standard bottom sheet, which
@@ -133,6 +139,12 @@ fun rememberMapSheetState(): MapSheetState {
  *   Modifier.weight(1f) fills it to the top.
  * @param snackbars the screen's Snackbars (an edit's Undo), shown by the
  *   scaffold's own host, over the sheet.
+ * @param onTop what rides the sheet's top edge at the right, the map's
+ *   buttons (the owner, 2026-11-11: "just above the search bar on the
+ *   right", as Google Maps' locate button rides its sheet): placed each
+ *   frame from the stock sheet's own offset, so it follows a drag and the
+ *   sheet's motion exactly, and faded away while the sheet is expanded,
+ *   when there is no map left to act on.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -142,6 +154,7 @@ fun MapSheet(
     modifier: Modifier = Modifier,
     lowerOnBack: Boolean = true,
     snackbars: SnackbarHostState = remember { SnackbarHostState() },
+    onTop: (@Composable () -> Unit)? = null,
     body: @Composable (covered: Dp) -> Unit,
     sheet: @Composable ColumnScope.() -> Unit,
 ) {
@@ -198,8 +211,52 @@ fun MapSheet(
             },
             content = {},
         )
+        if (onTop != null) {
+            // In the scaffold's own frame (the same insets), so the sheet's
+            // offset is the sheet's top here too; the box takes no touch,
+            // so the map under it keeps every one the buttons do not.
+            AnimatedVisibility(
+                visible = state.sheet.targetValue != SheetValue.Expanded,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top))
+                    .padding(top = WingtipSpace.Sm)
+                    .windowInsetsPadding(WindowInsets.ime.exclude(WindowInsets.navigationBars).only(WindowInsetsSides.Bottom)),
+            ) {
+                Box(Modifier.fillMaxSize()) {
+                    Box(
+                        Modifier.align(Alignment.TopEnd)
+                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.End))
+                            .onSheetTop(state.sheet),
+                    ) { onTop() }
+                }
+            }
+        }
     }
 }
+
+/**
+ * Places what it holds with its foot [OnTopGap] over the sheet's top,
+ * read from the stock sheet's anchored offset (SheetState.requireOffset)
+ * at placement, so a drag or the sheet's spring moves it each frame
+ * without composing again. Before the sheet's first layout there is no
+ * offset yet, and nothing is placed.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+private fun Modifier.onSheetTop(sheet: SheetState): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints.copy(minWidth = 0, minHeight = 0))
+    layout(placeable.width, placeable.height) {
+        val top = runCatching { sheet.requireOffset() }.getOrNull() ?: return@layout
+        placeable.place(0, (top - OnTopGap.toPx()).roundToInt() - placeable.height)
+    }
+}
+
+// The floating toolbar's foot 12 dp over the sheet, which with its own
+// padding and the buttons' touch target puts the lowest button 24 dp
+// over it, as the radio's button rides it (rules.md section 7).
+private val OnTopGap = WingtipSpace.Md
 
 /** The sheet's scale `progress` of the way through a back gesture: up to
  *  `maxPx` off its `sizePx`, as ModalBottomSheet's predictive back. */

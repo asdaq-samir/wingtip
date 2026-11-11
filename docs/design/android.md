@@ -454,6 +454,31 @@ placement wins, and the difference is noted.
   - https://developer.android.com/develop/ui/compose/system/predictive-back-setup
   - https://support.google.com/maps/answer/3092445?hl=en&co=GENIE.Platform%3DAndroid
 
+#### The map's buttons (the owner, 2026-11-11)
+
+- **Where**: just above the search at the right, riding the sheet's
+  top edge as it moves (the owner: "just above the search bar on the
+  right", "similar to how Apple Maps and Google Maps does it"). The
+  position button is the lowest, nearest the thumb; the sparkle (Ask)
+  is over it. All the way up they fade away, as Google Maps' do, since
+  no map is left to act on. Beside a pane, over a fold or in the strip
+  they stay under the status bar at the top right.
+- **Google Maps today** (the 2024-2025 sheet redesign; press reports,
+  not a Google page, so [§4](#4-not-verified) holds): the locate button
+  rides the sheet at the bottom right and the layers button sits at the
+  top right under the search. Ours has no layers button (layers are in
+  the Map menu, one home, 0014), so everything rides the sheet.
+- **Stock parts and wiring**: Material 3 Expressive's
+  `VerticalFloatingToolbar` with the stock `FilledIconToggleButton` and
+  `FilledTonalIconButton` (40 dp, 48-dp touch targets, nothing grown),
+  in `MapSheet`'s `onTop` slot over `BottomSheetScaffold`. A layout
+  modifier places them from the stock `SheetState.requireOffset()` at
+  placement, so a drag or the sheet's spring moves them each frame with
+  no measuring of ours; `AnimatedVisibility` fades them on the sheet's
+  `targetValue`. The lowest button is 24 dp over the sheet
+  (rules.md section 7).
+- **Test**: `androidTest/.../ui/MapButtonsOnSheetTest`.
+
 ### 3.2 The airport card and the airplane card
 
 - **Follow**: Google Maps' place sheet. Its documented parts are the
@@ -743,8 +768,9 @@ placement wins, and the difference is noted.
 - **Structure**:
   1. The map, the chart under the NEXRAD in the chart's own scale
      (`color.chart.nexrad-*`).
-  2. The map's buttons on the `VerticalFloatingToolbar`, unchanged in
-     place.
+  2. The map's buttons on the `VerticalFloatingToolbar`, riding the
+     sheet's top at the right, the position button nearest it (see
+     "The map's buttons" under [§3.1](#31-the-one-search-and-its-results)).
   3. At the foot, over the sheet's pill, a `HorizontalFloatingToolbar`
      in the banner's capsule (`radius.banner`):
      - a Play/Pause `IconToggleButton`
