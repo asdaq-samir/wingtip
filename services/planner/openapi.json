@@ -28323,7 +28323,7 @@
     },
     "/api/route-profile": {
       "get": {
-        "description": "The route's side view: the ground under it every 2 nm and the\nClass B, C and D airspace it passes through, floor and ceiling, and\nthe DOF's obstacles near its line, along the whole route through its\nstops (wingtip.profile) -- for the page to draw the plan's altitudes,\nclimbs and descents over, and to colour what it clears.",
+        "description": "The route's side view: the ground under it every 2 nm and the\nClass B, C and D airspace it passes through and the DOF's obstacles\nnear its line, along the route through its stops (wingtip.profile).",
         "operationId": "route_profile_api_route_profile_get",
         "parameters": [
           {
