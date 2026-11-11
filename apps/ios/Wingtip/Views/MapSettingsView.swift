@@ -30,6 +30,8 @@ struct MapSettingsView: View {
                 Toggle("VFR Waypoints", isOn: $waypointsOn)
                 Toggle("Class B Weather", isOn: $classBOn)
                 Toggle("Approach Plates", isOn: $platesOn)
+                    // Turned on, every plate hidden from its card is back.
+                    .onChange(of: platesOn) { _, on in if on { HiddenPlates.shared.showAll() } }
                 Toggle("Military Fields", isOn: $militaryOn)
                 Toggle("Private Fields", isOn: $privateOn)
                 // Each field's weather on its mark: the halo, the dot or

@@ -181,6 +181,12 @@ extension Planner {
         "/api/approach-plate/\(cycle)/\(ident)/\(procedure).png"
     }
 
+    /// The plate's whole page as a picture, greyscale on white
+    /// (/api/approach-plate-page/{cycle}/{ident}/{id}.png; PlateOverlay.page).
+    static func platePagePath(cycle: String, ident: String, procedure: String) -> String {
+        "/api/approach-plate-page/\(cycle)/\(ident)/\(procedure).png"
+    }
+
     /// One of the FAA's charts as the planner draws its pages
     /// (/api/faa-chart): of a region's booklet, the field's pages alone.
     static func faaChart(url: String, airport: String) async throws -> [ChartPage] {

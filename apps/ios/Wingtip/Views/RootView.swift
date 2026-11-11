@@ -57,6 +57,10 @@ struct RootView: View {
     @AppStorage(MapExtrasInput.Keys.waypoints) private var waypointsOn = false
     @AppStorage(MapExtrasInput.Keys.classB) private var classBOn = false
     @AppStorage(MapExtrasInput.Keys.plates) private var platesOn = true
+    // The plate card's look (PlateLook.Keys), kept on the device.
+    @AppStorage(PlateLook.Keys.opacity) private var plateOpacity = PlateLook.defaultOpacity
+    @AppStorage(PlateLook.Keys.inverted) private var plateInverted = false
+    @AppStorage(PlateLook.Keys.annotations) private var plateAnnotations = true
 
     /// What the map draws of the airplane tracked and the flights flown,
     /// and its taps for them: an airplane's card, a point pressed.
@@ -198,6 +202,10 @@ struct RootView: View {
                 held: heldRoute.flatMap { AirportRoute($0).heldPoint },
                 selectedField: heldRoute.flatMap { AirportRoute($0).field },
                 waypoints: waypointsOn, classB: classBOn, plates: platesOn, approaches: plan.procedures,
+                hiddenPlates: HiddenPlates.shared.keys,
+                plateLook: PlateLook(opacity: plateOpacity, inverted: plateInverted, annotations: plateAnnotations),
+                // A plate's page tapped: its card, half way up, as a field's.
+                onPlate: { key in Navigator.shared.open(.plate(key)) },
                 // A finger held on the chart: the airspace there, half way
                 // up, as a field's card opens.
                 onHold: { at in open(AirportRoute.airspace(lat: at.latitude, lon: at.longitude).text) },
@@ -223,6 +231,9 @@ struct RootView: View {
                 withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { mapShown = true }
             })
             .ignoresSafeArea()
+            // A plate hidden from its card comes back when its approach is
+            // picked again.
+            .onChange(of: plan.procedures.map(PlateKey.of)) { before, now in HiddenPlates.shared.picked(now, before: before) }
             // Over the map, under its buttons, until it shows: Wingtip's mark
             // turning where the map opens.
             .overlay {

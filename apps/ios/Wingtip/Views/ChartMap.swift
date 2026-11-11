@@ -109,7 +109,7 @@ struct ChartMap: UIViewRepresentable {
         let flight = FlightMapLayer()
         flight.attach(map)
         context.coordinator.flight = flight
-        context.coordinator.legLayer.attach(map)
+        context.coordinator.attachLegs(map)
         return map
     }
 
@@ -356,7 +356,7 @@ struct ChartMap: UIViewRepresentable {
                 return renderer
             }
             if let tiles = overlay as? MKTileOverlay { return MKTileOverlayRenderer(tileOverlay: tiles) }
-            if let plate = overlay as? PlateMapOverlay { return PlateRenderer(overlay: plate) }
+            if let renderer = MainActor.assumeIsolated({ extras.plates.renderer(for: overlay) }) { return renderer }
             if let edge = overlay as? CourseEdgePolyline {
                 let renderer = MKPolylineRenderer(polyline: edge)
                 renderer.strokeColor = NightPalette.routeEdge(night: shade > 0)
