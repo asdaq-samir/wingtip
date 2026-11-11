@@ -327,3 +327,29 @@ def test_a_store_kept_by_number_alone_is_kept_by_place_and_number(tmp_path):
     assert notams.at_fields(["KAPG"], now=NOW) == []
     assert [n["id"] for n in notams.at_fields(["KBJC"], now=NOW)] == ["KBJC A1643/26"]
     assert [n["id"] for n in notams.at_fields(["KORD"], now=NOW)] == ["ORD 10/709"]
+
+
+def test_an_icao_notam_is_listed_at_the_place_its_own_a_item_names():
+    # Kept before version 1 under another field's location: Shreveport's
+    # A0917/26 with ORD's, listed on KORD's card.
+    feed = message(
+        location="SHV",
+        text="RWY 06/24 CLSD EXC XNG",
+        start="202611010000",
+        end="202611301200",
+        kind="N",
+        series="A",
+        number="0917",
+        icao="A0917/26 NOTAMN\nQ) KZFW/QMRLC////000/999/3226N09349W005\nA) KSHV\nB) 2611010000\nC) 2611301200\nE) RWY 06/24 CLSD EXC XNG",
+        classification="INTL",
+        icao_location="KSHV",
+    )
+    assert notams.heard(feed, now=NOW) == 1
+    with notams._LOCK:
+        notams._connection().execute("UPDATE notams SET location = 'ORD' WHERE id = 'KSHV A0917/26'")
+    assert notams.at_fields(["KORD"], now=NOW) == []
+    assert [n["id"] for n in notams.at_fields(["KSHV"], now=NOW)] == ["KSHV A0917/26"]
+    # Heard again, its location is the feed's.
+    notams.heard(feed, now=NOW)
+    [kept] = notams.at_fields(["SHV"], now=NOW)
+    assert kept["location"] == "SHV"

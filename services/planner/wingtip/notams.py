@@ -113,7 +113,7 @@ def _keep_by_place(db: sqlite3.Connection) -> None:
         domestic = _DOMESTIC_ID.match(raw or "")
         place = _ICAO_PLACE.search(raw or "")
         if domestic:
-            key, fix = f"{domestic.group(1)} {domestic.group(2)}", {"icao_location": domestic.group(1)}
+            key, fix = (f"{domestic.group(1)} {domestic.group(2)}", {"icao_location": domestic.group(1)})
             # Its location is the word after the number, as the domestic form writes it.
             words = (raw or "").split()
             if len(words) > 2:
@@ -192,6 +192,7 @@ def heard(xml: str, now: float | None = None) -> int:
                         :ends, :estimated, :schedule, :text, :raw, 0, :heard)
                 ON CONFLICT (id) DO UPDATE SET
                     icao_id = COALESCE(excluded.icao_id, icao_id),
+                    location = COALESCE(excluded.location, location),
                     icao_location = COALESCE(excluded.icao_location, icao_location),
                     issued = excluded.issued, starts = excluded.starts, ends = excluded.ends,
                     estimated = excluded.estimated, schedule = excluded.schedule, text = excluded.text,
@@ -228,7 +229,13 @@ def _places(field: str) -> set[str]:
 def at_fields(fields: list[str], now: float | None = None) -> list[dict]:
     """The NOTAMs in force at these fields or yet to come, soonest first:
     not ended, cancelled or replaced. Each {"id", "location", "starts",
-    "ends", "estimated", "schedule", "text", "raw"}."""
+    "ends", "estimated", "schedule", "text", "raw"}.
+
+    An ICAO-form NOTAM is at the place its A) item names (icao_location),
+    not by its kept location: a row kept by its number alone before
+    version 1 kept one field's location under another's words (KSHV's
+    A0917/26, "RWY 06/24 CLSD EXC XNG", listed under KORD on the owner's
+    card, 2026-11-11)."""
     now = time.time() if now is None else now
     places = sorted(set().union(*(_places(f) for f in fields))) if fields else []
     if not places:
@@ -241,7 +248,7 @@ def at_fields(fields: list[str], now: float | None = None) -> list[dict]:
                 f"""
             SELECT id, location, starts, ends, estimated, schedule, text, raw FROM notams
             WHERE ended = 0 AND (ends IS NULL OR ends > ?)
-              AND (location IN ({marks}) OR icao_location IN ({marks}))
+              AND ((location IN ({marks}) AND (raw LIKE '!%' OR icao_location IS NULL)) OR icao_location IN ({marks}))
             ORDER BY starts, id
         """,
                 (_stamp(now), *places, *places),
