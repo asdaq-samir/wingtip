@@ -22,9 +22,26 @@ import { cn } from "cn";
  * For the browser tests it is card-head-pinned; its row is the caller's
  * `testId`.
  */
-export function PinnedHead({ children, testId, className }: { children: ReactNode; testId?: string; className?: string }) {
+export function PinnedHead({
+  children,
+  testId,
+  className,
+  slot,
+  flush = false,
+}: {
+  children: ReactNode;
+  testId?: string;
+  className?: string;
+  /** Its frame's slot, for a stack that hides a head under a page over it
+   *  (ConsolePages' page-head, Settings' layer-head). */
+  slot?: string;
+  /** Its scroller has no sixteen-point sides of its own to reach out over
+   *  (Settings' card, its pages padded each by its own): its room and its
+   *  sides its own, the grabber's room over it as a card's. */
+  flush?: boolean;
+}) {
   return (
-    <div className={PINNED_HEAD} data-sheet-head="" data-testid="card-head-pinned">
+    <div className={flush ? PINNED_FLUSH : PINNED_HEAD} data-slot={slot} data-sheet-head="" data-testid="card-head-pinned">
       <div className={cn("flex min-h-9 items-center gap-2", className)} data-testid={testId}>
         {children}
       </div>
@@ -32,10 +49,16 @@ export function PinnedHead({ children, testId, className }: { children: ReactNod
   );
 }
 
-/** The pinned head's own box, for a head drawn by hand where a wrapper
- *  would not do (ConsolePages' page head, which its stack hides by its slot). */
-export const PINNED_HEAD =
+/** The pinned head's own box, out over its scroller's sixteen-point
+ *  sides and the room over its first line. */
+const PINNED_HEAD =
   "frost-head sticky top-(--sheet-head,0px) z-20 -mx-4 -mt-(--pinned-room,0px) px-4 pt-[calc(var(--pinned-room,0px)+0.375rem)] pb-1.5 print:static";
+
+/** The same where nothing round it is padded: the grabber's room (a
+ *  card's --pinned-room, SheetCard's) its own, so it sits as low as every
+ *  card's head. */
+const PINNED_FLUSH =
+  "frost-head sticky top-(--sheet-head,0px) z-20 px-4 pt-[calc(var(--corner-inset,0.75rem)+0.375rem)] pb-1.5 print:static";
 
 /** Where what pins under a card's PinnedHead sticks, by plain CSS: the
  *  head's own top, its room over its row, and its 3rem (0.375rem, the

@@ -43,7 +43,18 @@ export interface Entry {
 
 /** The checks a row may be excused from, each with its reason. */
 export type Check =
-  "searchHidden" | "escape" | "scroll" | "dragUp" | "dragDown" | "textSize" | "sideways" | "position" | "desktop" | "pill" | "nested";
+  | "searchHidden"
+  | "escape"
+  | "scroll"
+  | "dragUp"
+  | "dragDown"
+  | "textSize"
+  | "sideways"
+  | "position"
+  | "desktop"
+  | "pill"
+  | "nested"
+  | "headButtons";
 
 export interface CardRow {
   name: string;
@@ -177,7 +188,11 @@ export const CARDS: CardRow[] = [
       { name: "the plan", open: async (p) => (await go(p, ROUTE), await openBrief(p)), back: "plan" },
       { name: "link (open=brief)", open: (p) => go(p, `${ROUTE}&open=brief`), back: "plan" },
     ],
-    not: { sideways: "no sideways row on its glance", position: "its pages are a stack of their own (briefing.spec)" },
+    not: {
+      sideways: "no sideways row on its glance",
+      position: "its pages are a stack of their own (briefing.spec)",
+      headButtons: "its Refresh beside the route's ••• in its head, the owner to say where it goes (2026-11-11)",
+    },
   },
   {
     name: "Nav Log",
@@ -205,6 +220,7 @@ export const CARDS: CardRow[] = [
       sideways: "its altitude slider is upright",
       position: "nothing opens inside it",
       scroll: "capped to the sheet at each detent, nothing scrolls",
+      headButtons: "its flight rules at the head's top right, where the owner put them, the owner to say where they go (2026-11-11)",
     },
   },
   {
@@ -226,7 +242,11 @@ export const CARDS: CardRow[] = [
         back: "search-home",
       },
     ],
-    not: { position: "nothing opens inside it", scroll: "one stubbed field: shorter than the sheet" },
+    not: {
+      position: "nothing opens inside it",
+      scroll: "one stubbed field: shorter than the sheet",
+      headButtons: "its distance menu in its head, the owner to say where it goes (2026-11-11)",
+    },
   },
   {
     name: "Settings and its About",

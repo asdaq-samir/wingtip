@@ -22,7 +22,7 @@ import {
  * taken out for the map's room (the owner, 2026-11-10); nothing typed, the search's own page (the flight,
  * Favorites, Recents, Nearest); typed, one list in groups -- Airports,
  * Waypoints and Navaids, Airplanes, Do -- and "Ask:"; an airport picked,
- * its card with Fly Here, Add Stop, Call and Address at its top (the
+ * its card with Fly Here, Add Stop, Call and Favorite at its top (the
  * owner, 2026-11-11), the first two setting the plan and showing it; the account button's menu, Setup's
  * rows. The plan is the sheet's main content with a route.
  */
@@ -73,7 +73,7 @@ test(
     await searchAirports(page).filter({ hasText: "KOSH" }).first().click();
     const card = sideDrawer(page).getByTestId("place-card");
     await expect(card.getByTestId("place-name")).toHaveText("KOSH", { timeout: slow(10_000) });
-    for (const id of ["fly-here", "place-add-stop", "place-call", "place-address-action"]) await expect(card.getByTestId(id)).toBeVisible();
+    for (const id of ["fly-here", "place-add-stop", "place-call", "place-favorite"]) await expect(card.getByTestId(id)).toBeVisible();
     await expect(card.getByTestId("place-actions").locator(":scope > *")).toHaveCount(4);
     await expect(card.getByTestId("place-add-stop")).toContainText("Add Stop");
 

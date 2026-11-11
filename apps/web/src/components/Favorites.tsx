@@ -11,6 +11,7 @@ import { useAway } from "../lib/useAway";
 import { SECTION_TITLE, TEXT } from "../lib/text";
 import { Button } from "./ui/button";
 import PullDown from "./PullDown";
+import SectionTitle from "./SectionTitle";
 import IconButton from "./IconButton";
 import { airportQuery } from "../lib/queryClient";
 export { ListPageHead } from "./ListPageHead";
@@ -141,8 +142,7 @@ export function PillSection({
   // medium, decision 0021), its words in the text's colour and the
   // chevron in the tint where it opens the list in full (owner decision
   // 2026-11-10 (decisions page): the search's page had bold 22-point
-  // titles in the tint beside these).
-  const heading = SECTION_TITLE;
+  // titles in the tint beside these); the plain title SectionTitle itself.
   return (
     // Eight under the title: its 44-point hit area its own (the iOS audit's P1).
     <section className="flex min-w-0 flex-col gap-2" data-testid={testId}>
@@ -154,14 +154,14 @@ export function PillSection({
             data-testid={testId && `${testId}-more`}
             className={cn(
               "relative flex items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2",
-              heading,
+              SECTION_TITLE,
             )}
           >
             {title}
             <ChevronRight className="size-5 text-tint" aria-hidden="true" />
           </button>
         ) : (
-          <h3 className={heading}>{title}</h3>
+          <SectionTitle>{title}</SectionTitle>
         )}
         {beside}
         {right && <div className="ml-auto flex items-center gap-2">{right}</div>}
