@@ -8,6 +8,7 @@ import { useNavEdge } from "../hooks/use-nav-edge";
 import { useSafeArea, useWindowHeight } from "../hooks/use-viewport";
 import { GLASS_SHEET, MATERIAL, PILL_RADIUS, SHEET_MARGIN, type MapInsets, type PanelState } from "../lib/mapChrome";
 import { setCard, topCard, useSheetCards } from "../lib/sheetCards";
+import { useBackCloses } from "../lib/backNavigation";
 import { FLOAT_PX, insetsOf } from "./sheet/insets";
 import { useSheetDetents } from "./sheet/useSheetDetents";
 import { useDrawn } from "./sheet/useDrawn";
@@ -170,6 +171,8 @@ export default function MapPanel(props: Props) {
     return true;
   };
 
+  // Android's Back closes the top card, else lowers the sheet.
+  useBackCloses(front !== "peek");
   // The frontmost sheet's size on <body>, for index.css's rules over the map.
   useLayoutEffect(() => {
     document.body.dataset.mapPanel = front;
