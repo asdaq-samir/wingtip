@@ -274,6 +274,21 @@ the terminal switch as the style is built. The style is built again as
 a download lands. The cycle's update, its expiry at 0901Z on the next
 one's date and the sweep once the update is whole are the iPhone's.
 
+With no signal in the air (the offline audit of 2026-11-10): Emergency
+and Nearest rank the packs' fields on the phone (`emergency/PhoneFields`,
+"From this phone, without weather"); a re-plan that fails puts the last
+whole plan back, saying "Not changed: no connection."
+(`plan/PlanShown`); Keep for the Air also keeps each field's own NOTAMs,
+the route's side view and the radar loop's newest frame over the route
+within 12 MB (`offline/KeptLoopTiles`, answered by the client's
+`LoopTileFallback`); Ask's tools read those copies; a stale airport
+weather mark is greyed with its age said (`map/WeatherAge`); and every
+call through `Gateway.client` ends after 10 s (60 s a write), streams and
+downloads going through `Gateway.streaming`. The location foreground
+service runs only from the pilot's Start Flight
+(`flight/StartFlight`), and sign-out or Delete Account forgets everything
+the phone kept of the pilot (`account/PhoneWipe`).
+
 ## Signing in from a link: whose account it is
 
 An emailed sign-in link names no account, and anyone can mail a pilot a
