@@ -29,6 +29,10 @@ private struct CardHost: ViewModifier {
                     // question or a form stays modal (the scrolling rule).
                     .presentationBackgroundInteraction(card.page.modal ? .disabled : .enabled(upThrough: .half))
                     .environment(\.cardExpanded, nav.cardDetent == .large)
+                    // The map's buttons ride the card's top while it is up,
+                    // as they ride the plan's (MapButtonsDock).
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { SheetEdge.shared.card = $0 }
+                    .onDisappear { SheetEdge.shared.card = nil }
                     .modifier(TopHosts(active: true))
             }
             .modifier(TopHosts(active: nav.card == nil))

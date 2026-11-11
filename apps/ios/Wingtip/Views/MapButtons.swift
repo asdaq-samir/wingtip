@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The map's own buttons at its top right, as Maps has them and the web
-/// app's MyPositionButton: the location arrow, filled while the map
+/// The map's own buttons, riding the sheet's top at the right on the
+/// iPhone and at the top right beside the iPad's sidebar (MapButtonsDock),
+/// as the web app's MyPositionButton: the location arrow, filled while the map
 /// follows own ship and an outline otherwise, and under it the sparkle
 /// that opens Ask (AskView), a question about the flight put to the
 /// assistant. With a route entered and the map panned off it, the
@@ -55,8 +56,6 @@ struct MapButtons: View {
         // on iOS 18 (Design/Glass.swift).
         .floatingGlass(in: Capsule(), interactive: true)
         .glassGroup(spacing: WingtipSpace.md)
-        .padding(.trailing, WingtipSpace.md)
-        .padding(.top, WingtipSpace.md)
     }
 
     /// A button's glyph in the body style, so it follows Dynamic Type,

@@ -78,6 +78,11 @@ Companion docs:
     capsule, Map, My Position and Ask stacked in it with a hairline
     between, each 48 points (`size.map-button`) as Maps' are, in place
     of three separate 44-point circles (`MapButtons`).
+  - **Where (owner, 2026-11-11):** the group rides the sheet's top at
+    the right, 24 points over it, just above the search row, following
+    the sheet between its detents and under a finger, and fades out as
+    the sheet goes on to full (`MapButtonsDock`; rules.md §7). Beside the
+    iPad's sidebar it stays at the top right.
   - Rows, cards and figures sit on solid grounds.
   - The clear variant only goes over the chart. If the chart under it
     is bright, add a 35% dimming layer ([HIG Materials][hig-materials]).

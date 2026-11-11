@@ -294,12 +294,12 @@ gone on every platform.
    as MapLibre's stock compact attribution (the (i)), because Google's
    Map Tiles API policies ask for its attribution on the map itself.
 
-| | Web |
-|---|---|
-| Riding the sheet | `components/sheet/sheetTop` (`OnSheetTop`): a slot in the Drawer's popup just over its top edge (`bottom: 100%`), the popup's corners clipped on an inner box |
-| Settings' foot | `features/pilot/PilotPanel`'s "More" row, `settings-foot`; 44-point hit areas that meet (`PAGE_LINK`), a second line at a large text size |
-| Status | `components/StatusPanel`: FAA Data, On the Map (`lib/map/gl/creditStore`) |
-| Tests | `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the radio and the map's buttons 24 over the sheet and clear of each other, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` |
+| | Web | iOS |
+|---|---|---|
+| Riding the sheet | `components/sheet/sheetTop` (`OnSheetTop`): a slot in the Drawer's popup just over its top edge (`bottom: 100%`), the popup's corners clipped on an inner box | `MapButtonsDock`: the system sheet's own height, the plan's and a card's over it (`onGeometryChange`, `SheetEdge`), sets the glass group (Map, My Position, Ask) 24 over the higher top at the right, fading out past 60% of the screen; at the top right beside the iPad's sidebar. SwiftUI has no stock placement that follows a sheet over a UIKit map |
+| Settings' foot | `features/pilot/PilotPanel`'s "More" row, `settings-foot`; 44-point hit areas that meet (`PAGE_LINK`), a second line at a large text size | |
+| Status | `components/StatusPanel`: FAA Data, On the Map (`lib/map/gl/creditStore`) | |
+| Tests | `e2e/sheet-webkit.spec.ts` (WebKit at an iPhone's size: heads pinned, nothing over or through them, the radio and the map's buttons 24 over the sheet and clear of each other, Settings at the pill, its seven links, no credits row, Status's cycles), `e2e/legal.spec.ts` | `WingtipUITests/MapButtonsTests` (over the search at half and the pill, at the right edge, 44 points, out of reach at full) |
 
 ## Changing a rule
 
