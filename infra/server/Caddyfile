@@ -36,6 +36,14 @@
 			# not this origin's.
 			header_up X-Forwarded-Host {$PUBLIC_HOST}
 			header_up -X-Origin-Secret
+			# Spring reads RFC 7239's Forwarded ahead of X-Forwarded-Host
+			# (forward-headers-strategy: framework), and X-Forwarded-Prefix
+			# beside it: sent by a viewer, CloudFront passes them on, and
+			# they would change the host and path of every link the gateway
+			# builds (the share page's, the sign-in redirects'). Only the
+			# X-Forwarded-* set above reaches it (the security audit's L2).
+			header_up -Forwarded
+			header_up -X-Forwarded-Prefix
 		}
 	}
 
