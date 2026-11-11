@@ -397,6 +397,9 @@ only one, and the site may show it as the web's.
 
 ## The owner's steps
 
+Every console and account step, as a checklist, is
+[launch-checklist.md](launch-checklist.md); in short:
+
 - Register `wingtipmaps.app` (and `wingtipmaps.com`) and serve the site
   there, so the URLs above answer before the first submission.
 - An App Store Connect app record (bundle `app.wingtipmaps.ios`) and a
