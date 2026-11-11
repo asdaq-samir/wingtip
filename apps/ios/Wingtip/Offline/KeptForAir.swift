@@ -85,6 +85,14 @@ enum KeptForAir {
         try? Data(contentsOf: file("pictures", path, ext: "img", in: folder))
     }
 
+    /// The key a field's own NOTAMs are kept under: the one the airport
+    /// card reads (AirportCard), so Keep for the Air's are the card's.
+    static func fieldNotamsKey(_ ident: String) -> String { "field:\(ident.uppercased())" }
+
+    /// The key an FAA airport diagram's PDF is kept under, by its address
+    /// (the own-ship diagram, DiagramOwnShipView).
+    static func pdfKey(_ url: String) -> String { "pdf:\(url)" }
+
     static func writeManifest(_ manifest: Manifest, route: String, in folder: URL = folder) {
         guard let data = try? encoder.encode(manifest) else { return }
         put(data, at: file("routes", route, in: folder))

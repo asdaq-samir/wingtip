@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import Testing
 @testable import Wingtip
@@ -107,5 +108,22 @@ struct KeptForAirTests {
     @Test func theButtonSaysTheSize() {
         #expect(KeepForAirLabel.megabytes(0.42) == "0.4 MB")
         #expect(KeepForAirLabel.megabytes(12.6) == "13 MB")
+    }
+
+    @Test func theFieldsNotamsAreKeptUnderTheKeyTheCardReads() {
+        // The card asks KeptForAir.answer(.notams, key: fieldNotamsKey(ident)),
+        // and so does Keep for the Air: one key, not the flight's.
+        #expect(KeptForAir.fieldNotamsKey("kosh") == "field:KOSH")
+        #expect(KeptForAir.pdfKey("https://aeronav.faa.gov/d-tpp/2611/00045ad.pdf") == "pdf:https://aeronav.faa.gov/d-tpp/2611/00045ad.pdf")
+    }
+
+    @Test func theRadarKeptAlongARouteIsCapped() throws {
+        // Campbell (C81) to Duluth: about 300 nm, a corridor 25 nm wide each way.
+        let line = [CLLocationCoordinate2D(latitude: 42.3246, longitude: -88.0741), CLLocationCoordinate2D(latitude: 46.842, longitude: -92.194)]
+        let tiles = try KeepRadar.tiles(along: line)
+        #expect(!tiles.isEmpty && tiles.count <= KeepRadar.most)
+        #expect(tiles.allSatisfy { (KeepRadar.minZoom...KeepRadar.maxZoom).contains($0.z) })
+        // The coarsest first, so a cap cuts the finest.
+        #expect(tiles.first?.z == KeepRadar.minZoom)
     }
 }

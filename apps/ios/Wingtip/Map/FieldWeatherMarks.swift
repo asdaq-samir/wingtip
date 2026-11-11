@@ -34,6 +34,30 @@ enum FieldWeatherMarks {
                       ceilingLine: ceilingLine(w?.ceilingFt, unknown: w?.ceilingUnknown == true, cover: w?.ceilingCover))
     }
 
+    /// How long a field's report stands before its mark is greyed and
+    /// says its age: an hour, as a routine METAR is made each hour (AC
+    /// 00-45H, chapter 3, routine surface observations); a report heard
+    /// longer ago than that, with no signal to hear the next, is likely
+    /// not the field's weather now.
+    static let staleAfterS: TimeInterval = 60 * 60
+
+    /// The age said by a stale mark, "1h 15m"; nil while the report is
+    /// within staleAfterS of `now`.
+    static func heardAgo(_ heardAt: Date?, now: Date = Date()) -> String? {
+        guard let heardAt, now.timeIntervalSince(heardAt) > staleAfterS else { return nil }
+        return Format.duration(now.timeIntervalSince(heardAt) / 60)
+    }
+
+    /// A mark made stale: its age on it and said, its halo greyed where
+    /// it is drawn (AirportMarkView).
+    static func aged(_ mark: FieldWeatherMark, heardAt: Date?, now: Date = Date()) -> FieldWeatherMark {
+        guard let ago = heardAgo(heardAt, now: now) else { return mark }
+        var out = mark
+        out.heardAgo = ago
+        out.spoken += ", weather heard \(ago) ago, no newer report"
+        return out
+    }
+
     /// The station model's first line as a METAR writes it: "2 SM BR",
     /// the visibility in statute miles with the weather as reported.
     static func visibilityLine(_ sm: Double?, wx: String?) -> String? {

@@ -296,6 +296,16 @@ view without dismissing the sheet").
 - **No assumed airplane.** A figure that needs an airplane (ETE, fuel,
   the performance) shows an em dash and a "Pick an Airplane" row until
   one is picked. It never shows a default type's numbers.
+- **No signal says so, in place.** What the iPhone answers from its
+  own packs says it: "From this iPhone, without weather" over Nearest's
+  and Emergency's fields, "No connection: airports from the chart data
+  on this iPhone only" over the search. An edit the planner must make
+  (Direct To, a diversion) is not half made: the route is put back and
+  "Not changed: no connection" said where it was asked. A kept answer
+  says its age (`KeptAgeLine`); a stale weather mark is greyed with its
+  age by the ident. Never a spinner with nothing asked: with no GPS fix
+  a list says so after ten seconds and what to do (docs/NATIVE.md, "In
+  the air with no signal").
 
 ---
 
@@ -1091,7 +1101,12 @@ third):**
    tap, and VoiceOver says them in full.
 4. **The nearest fields**, a `List`. Each row is ident, distance and
    bearing, the longest runway, and the flight category. Each row has
-   one filled **Direct To** button, the row's primary action.
+   one filled **Direct To** button, the row's primary action. With no
+   planner the fields are the cycle packs' (`PackFields`), ranked by the
+   engine, under one row: "From this iPhone, without weather". A Direct
+   To with no connection is not made, and "Not changed: no connection"
+   is said under the list; the rows keep the engine's heading and
+   distance. With no fix the section says so, never a spinner forever.
 5. **The checklist** for the airplane picked. With none picked it is
    the generic one, labelled as such: never a type assumed.
 
@@ -1399,6 +1414,14 @@ people take an explicit action to save", [HIG File management][hig-files]).
 - **HIG Accounts:** "Delay sign-in" ([HIG Accounts][hig-accounts]).
 - **HIG Alerts:** "Avoid showing an alert when your app starts"
   ([HIG Alerts][hig-alerts]).
+
+**The one exception: the planning-aid notice.** The very first launch
+puts up one stock alert, "A Planning Aid, Not for Navigation", with the
+planning-aid words and the listing's not-for-navigation paragraph and
+one button, I Understand (`Navigation/PlanningAidNotice`). It is the
+pilot-safety position the terms take and what App Review 5.1.5 looks for
+in a moving-map app, so it is said before anything else, once; the
+welcome card comes after it, and About keeps the words.
 
 **Structure.**
 

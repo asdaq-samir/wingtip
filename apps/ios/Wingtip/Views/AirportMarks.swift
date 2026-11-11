@@ -160,8 +160,12 @@ final class AirportMarkView: MKAnnotationView {
         guard let field = annotation as? AirportAnnotation else { return }
         let ink = SectionalInk.airport(towered: field.towered)
         let choice = Self.choice
-        symbol.image = SectionalSymbol.image(towered: field.towered, kind: field.kind, use: field.use, category: field.category, style: choice.style)
-        label.text = field.ident
+        // A stale report's halo grey (FlightCategory's no-report colour),
+        // its age beside the ident.
+        let stale = field.weather?.heardAgo
+        symbol.image = SectionalSymbol.image(towered: field.towered, kind: field.kind, use: field.use,
+                                             category: stale != nil && field.category != nil ? "STALE" : field.category, style: choice.style)
+        label.text = stale.map { "\(field.ident) · \($0)" } ?? field.ident
         label.textColor = ink
         label.sizeToFit()
         let width = Self.box + Self.gap + label.bounds.width

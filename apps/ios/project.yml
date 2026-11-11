@@ -86,12 +86,15 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         # Read by Config at run time: the host the build was made for.
         WingtipHost: $(WINGTIP_HOST)
-        NSLocationWhenInUseUsageDescription: Wingtip Maps shows your airplane on the chart and plans from where you are.
+        # Honest about the background (the store audit's S1, App Review
+        # 5.1.1(ii)): while flying the position keeps being read with the
+        # app put away, and is sent to the planner to answer, not kept.
+        NSLocationWhenInUseUsageDescription: Wingtip Maps shows your airplane on the chart, finds the airports near you and what is ahead, and plans from where you are. While you fly it keeps following your position, even with the app in the background, for the alerts ahead and the path flown. Your position is sent to answer these and not kept; a flight's track is kept only when you log or save it.
         # A clearance read on the radio, heard by Apple's recognizer on the
         # iPhone only (ClearanceListener's requiresOnDeviceRecognition); where
         # it cannot be, voice is not offered and neither is asked for.
-        NSMicrophoneUsageDescription: Wingtip Maps listens to the radio to show what ATC says, tell you when ATC calls you, and enter a clearance's route for you to check. Nothing it hears is recorded or sent.
-        NSSpeechRecognitionUsageDescription: Wingtip Maps turns what ATC says on the radio into words on your iPhone. Speech is recognised on the device and never leaves it.
+        NSMicrophoneUsageDescription: Wingtip Maps listens to the radio to show what ATC says, tell you when ATC calls you, and enter a clearance's route for you to check, and hears the questions you ask it by voice. The sound is never recorded or sent.
+        NSSpeechRecognitionUsageDescription: Wingtip Maps turns what ATC says on the radio, and the questions you ask it by voice, into words on your iPhone. Speech is recognised on the device and its sound never leaves it; a question you send goes where a typed one would.
         # A page photographed with the document camera (Documents/
         # DocumentScanner): a handbook's performance or weight and balance
         # page, a paper logbook page or a clearance copied down, read for
@@ -187,6 +190,12 @@ targets:
         com.apple.developer.icloud-services: [CloudKit]
         com.apple.developer.icloud-container-identifiers:
           - iCloud.$(PRODUCT_BUNDLE_IDENTIFIER)
+        # Development here, which the archive's development signing needs;
+        # the App Store export re-signs with the distribution profile and
+        # the app carries that profile's value, production, in its place
+        # (the profile's entitlements win over the file's at signing).
+        # native-ios.yml checks the exported app where the export leaves
+        # one (docs/NATIVE.md, "Push in the App Store build").
         aps-environment: development
         # A call to us on the radio, traffic near own ship and a watched
         # airplane's takeoff or landing are time-sensitive notifications

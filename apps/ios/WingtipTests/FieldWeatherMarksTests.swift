@@ -129,4 +129,15 @@ struct FieldWeatherMarksTests {
         choice.style = .off
         #expect(!choice.station(zoom: 12))
     }
+
+    @Test func aReportHeardOverAnHourAgoSaysItsAge() {
+        let now = Date(timeIntervalSince1970: 1_762_700_000)
+        let mark = FieldWeatherMark(category: "VFR", spoken: "VFR, wind calm")
+        // Within the hour a routine METAR is made in: fresh, as it was.
+        #expect(FieldWeatherMarks.aged(mark, heardAt: now.addingTimeInterval(-50 * 60), now: now) == mark)
+        #expect(FieldWeatherMarks.aged(mark, heardAt: nil, now: now) == mark)
+        let old = FieldWeatherMarks.aged(mark, heardAt: now.addingTimeInterval(-75 * 60), now: now)
+        #expect(old.heardAgo == "1h 15m")
+        #expect(old.spoken.contains("weather heard 1h 15m ago"))
+    }
 }

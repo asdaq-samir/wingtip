@@ -466,6 +466,77 @@ archives in the Origin Private File System, with
 `navigator.storage.persist()` asked first, read by the `pmtiles`
 library the overlays already use.
 
+## In the air with no signal (2026-11-10)
+
+What keeps working on the iPhone once the network is lost, after the
+offline audit of 2026-11-10:
+
+- **Nearest and Emergency's best fields** ask the planner, and with no
+  answer in five seconds (`Planner.inFlight`) take the fields from the
+  cycle packs kept on the phone (`OnDevice/PackFields`: the engine's
+  `airports_in_view`, ranked by its `best_fields`, the pilot's own glide
+  ratio where an airplane is picked). The list says "From this iPhone,
+  without weather": the packs hold no METAR, elevation or runway. The
+  search's Nearest group and the Watch's take the same fallback
+  (`Planner.nearestOrPacks`). With no GPS fix both say "Finding your
+  position…" for ten seconds, then "No GPS position" and what to do, or
+  with Location off a link to Settings.
+- **Direct To and a diversion** need the planner for the new route's legs.
+  The route before is held until the nav log is whole; with no connection
+  it is put back and "Not changed: no connection" said under the route's
+  Direct row and in Emergency (`Plan.directFrom`, `undoDirect`), so the
+  route box, the line and the legs are always one route's.
+- **Keep for the Air** also keeps each route field's NOTAMs under the key
+  the airport card reads (`KeptForAir.fieldNotamsKey`), the newest radar
+  frame's tiles 25 nm either side of the course at zooms 5 to 8, at most
+  300 (`Offline/KeepRadar`, drawn by the loop where IEM can't be
+  reached), each field's FAA diagram PDF for the own-ship diagram, and the
+  route profile where the plan's own fetch had not brought it.
+- **The corridor's chart tiles** are kept in Application Support
+  (`kept-chart-tiles`, excluded from backup), which iOS does not purge;
+  the tiles the map fetches as it pans stay under Caches (`TileStore`).
+- **Ages.** The kept plan and briefing say their age from the launch
+  (`KeptAgeLine`). An airport weather mark whose report was heard over an
+  hour ago (a routine METAR is hourly, AC 00-45H ch. 3) is greyed, with its
+  age by the ident (`FieldWeatherMarks.aged`).
+- **Timeouts.** The plan's course, the nav log, chart tiles and the search
+  give up after ten seconds with no byte (`Planner.read`), the in-air calls
+  after five, and a body over 64 kB gets two minutes (`Planner.upload`).
+- **Search** says "No connection" and matches the airports in the kept
+  packs by ident or name (`PackSearch`); waypoints, towns and N-numbers
+  need the planner.
+
+Tests: `OfflineFieldsTests`, `FlightExtrasTests` (Direct To put back),
+`KeptForAirTests`, `TilesTests`, `FieldWeatherMarksTests`.
+
+## The App Store's privacy and first-launch rules (2026-11-10)
+
+- **Privacy manifests.** `Wingtip/PrivacyInfo.xcprivacy` declares Email,
+  Name, Phone Number, User ID, Other User Content and Precise Location
+  (linked), Crash and Performance Data (not linked), and the
+  required-reason APIs: UserDefaults `CA92.1` and `1C8F.1` (the App
+  Group), File Timestamp `C617.1`, Disk Space `85F4.1` (Downloads' free
+  space). The widget extension has its own (`WingtipWidgets/`,
+  UserDefaults `1C8F.1`) and the Watch an empty one. The codes are
+  Apple's NSPrivacyAccessedAPITypeReasons list's; `StorePrivacyTests`
+  reads the bundled manifest. docs/privacy-inventory.md is the list.
+- **Sign-out and Delete Account** erase the path flown and the flight
+  recorder's track with their files, the session's answer cache and the
+  gateway's cookies (`Session.forgetDevice`, `forgetCookies`).
+- **Purpose strings** name the voice questions (microphone, speech) and
+  the position read on in the background while flying (location).
+- **The first launch** puts up one stock alert, "A Planning Aid, Not for
+  Navigation", with About's planning-aid words and the listing's
+  not-for-navigation paragraph, accepted once (`PlanningAidNotice`); the
+  welcome comes after it. The UI tests' launch arguments skip it.
+- **Push in the App Store build.** `project.yml` keeps `aps-environment`
+  development, which the archive's development signing needs; the App
+  Store export re-signs with the distribution profile, whose value,
+  production, the app then carries. To confirm: `codesign -d
+  --entitlements - --xml Payload/Wingtip.app` in the exported `.ipa` shows
+  `production` (`native-ios.yml` checks it wherever the export leaves an
+  `.ipa`), or App Store Connect's build metadata lists the entitlement.
+
 ## Signing in from a link: whose account it is
 
 An emailed sign-in link names no account, and anyone can mail a pilot a
@@ -499,8 +570,10 @@ a nonce it issued to this session, used once:
 
 The gateway checks the nonce is the one this session was given and the
 token's claim is its hash; a nonce is spent by the attempt, so a failed one
-asks for a new nonce. Today the nonce is optional, so the app as shipped
-keeps signing in; once the app sends it, the owner sets
+asks for a new nonce. The iPhone asks a nonce as the sign-in page opens
+and after each attempt (`Session.prepareAppleNonce`, `hashedNonce`).
+Today the nonce is optional, so an older build keeps signing in; once
+the app that sends it has shipped, the owner sets
 `APP_APPLE_REQUIRE_NONCE=true` on the gateway, and a token without one is
 refused. A token that carries a nonce claim is always refused without it.
 

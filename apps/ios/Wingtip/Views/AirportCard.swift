@@ -149,7 +149,7 @@ struct AirportCard: View {
 
     /// The field's NOTAMs, kept for the air, or why they couldn't be had.
     private static func notices(_ ident: String) async -> Result<APINotamsRanked, any Error> {
-        do { return .success(try await KeptForAir.answer(.notams, key: "field:\(ident)") { try await Planner.notams(ident) }.value) } catch { return .failure(error) }
+        do { return .success(try await KeptForAir.answer(.notams, key: KeptForAir.fieldNotamsKey(ident)) { try await Planner.notams(ident) }.value) } catch { return .failure(error) }
     }
 
     private func load() async {

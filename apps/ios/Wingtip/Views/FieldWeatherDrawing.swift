@@ -28,6 +28,10 @@ struct FieldWeatherMark: Equatable, Sendable {
     var worse = false
     /// What VoiceOver says after the ident: "IFR, wind 220 at 18 gusting 26".
     var spoken: String
+    /// How old the report is where it is stale ("1h 15m"): heard over
+    /// FieldWeatherMarks.staleAfterS ago, its halo greyed and the age by
+    /// the ident; nil while fresh.
+    var heardAgo: String? = nil
 }
 
 /// A wind barb's parts as the engine's wind_barb gives them.

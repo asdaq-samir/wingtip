@@ -158,7 +158,16 @@ struct DiagramOwnShipView: View {
         problem = nil
         do {
             guard let address = URL(string: url) else { throw Planner.Failure(status: 404, detail: "No diagram for \(ident).") }
-            let (data, _) = try await URLSession.shared.data(from: address)
+            let data: Data
+            do {
+                (data, _) = try await URLSession.shared.data(from: address)
+                KeptForAir.writePicture(data, path: KeptForAir.pdfKey(url))
+            } catch {
+                // With no signal, the PDF Keep for the Air kept (or the last
+                // one opened); the FAA's diagram changes only with the cycle.
+                guard let kept = KeptForAir.picture(KeptForAir.pdfKey(url)) else { throw error }
+                data = kept
+            }
             guard let read = DiagramPage.read(data) else {
                 problem = "The FAA's diagram for \(ident) could not be read."
                 return

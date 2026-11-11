@@ -64,7 +64,7 @@ Crashlytics, Firebase or analytics kit: a grep of `apps/ios` finds none).
 
 | Apple's type | What | Where |
 |---|---|---|
-| Location: Precise Location | The airplane's position, sent to the planner to answer (Nearest, the copilot's look ahead, `/api/copilot/around`) and not kept | `OwnShip.swift`, `Copilot/Copilot.swift`; `PrivacyInfo.xcprivacy` declares it unlinked |
+| Location: Precise Location | The airplane's position, sent to the planner to answer (Nearest, the copilot's look ahead, `/api/copilot/around`) and not kept | `OwnShip.swift`, `Copilot/Copilot.swift`; `PrivacyInfo.xcprivacy` has one Precise Location entry, linked for the saved track |
 | Diagnostics: Crash Data | MetricKit's crash, hang, CPU and disk-write exception diagnostics (the call stack, the exception or signal), with the app's version, the iOS version and phone or tablet; no account, no cookie, no position or route; kept 30 days | `Diagnostics/DiagnosticsReporter.swift`, `DiagnosticsReport.swift`; the gateway's `diagnostics` |
 | Diagnostics: Performance Data | MetricKit's daily launch and resume times, hang time, scroll hitches, peak memory and the exits the system forced for memory, the same way; kept 400 days | `Diagnostics/DiagnosticsReporter.swift`; the gateway's `speed_samples` |
 
@@ -116,14 +116,15 @@ Not collected, though the app uses them on the device:
 
 ### The privacy manifest
 
-`apps/ios/Wingtip/PrivacyInfo.xcprivacy` must declare the same rows:
+`apps/ios/Wingtip/PrivacyInfo.xcprivacy` declares the same rows:
 Email Address, Name, Phone Number, User ID, Other User Content and
-Precise Location (the saved track), linked; Precise Location (the live
-position), Crash Data and Performance Data, not linked; all for App
-Functionality. privacy-inventory.md, "The iOS app's privacy manifest",
-lists what the file declares today and its required-reason APIs; the
-missing rows come with the iPhone's privacy fixes. Product Interaction
-joins them if the Claude caps ever count on iOS.
+Precise Location, linked (one entry a type, as App Store Connect asks one
+answer a type: the saved track makes it linked, the live position sent to
+answer being kept nowhere); Crash Data and Performance Data, not linked;
+all for App Functionality. Its required-reason APIs and the widget
+extension's own manifest are in privacy-inventory.md, "The iOS app's
+privacy manifest". Product Interaction joins them if the Claude caps ever
+count on iOS.
 
 ## Google Play: Data safety
 

@@ -320,7 +320,7 @@ final class ChartTileRenderer: MKOverlayRenderer, @unchecked Sendable {
         var data = chart.store.read(cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale)
         if data == nil, !Task.isCancelled {
             source = "network"
-            if let (fetched, response) = try? await session.data(from: template.url(z: tile.z, x: tile.x, y: tile.y)),
+            if let (fetched, response) = try? await session.data(for: URLRequest(url: template.url(z: tile.z, x: tile.x, y: tile.y), timeoutInterval: Planner.read)),
                (response as? HTTPURLResponse)?.statusCode == 200 {
                 chart.store.write(fetched, cycle: template.cycle, kind: template.kind, z: tile.z, x: tile.x, y: tile.y, scale: template.scale)
                 data = fetched
