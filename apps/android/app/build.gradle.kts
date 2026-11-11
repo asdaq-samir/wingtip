@@ -46,6 +46,15 @@ val appId: String =
     (System.getenv("ANDROID_NATIVE_APP_ID") ?: providers.gradleProperty("androidNativeAppId").orNull ?: "")
         .trim().ifEmpty { "app.wingtipmaps.android.native" }
 
+// / The upload key the release is signed with for Google Play, which
+// / re-signs what it serves with the app-signing key it holds (Play App
+// / Signing; docs/NATIVE-ANDROID.md, "Releasing to Google Play"): a
+// / keystore file and its password, from the workflow's secrets
+// / (scripts/ci/android_build.sh writes the file) or a developer's shell.
+// / Without both the release builds unsigned, as before.
+val uploadKeystore: File? = System.getenv("WINGTIP_UPLOAD_KEYSTORE")?.ifEmpty { null }?.let(::file)?.takeIf { it.isFile }
+val uploadPassword: String? = System.getenv("WINGTIP_UPLOAD_PASSWORD")?.ifEmpty { null }
+
 android {
     namespace = "app.wingtipmaps.android"
     // The NDK that builds the JNI shim, .tool-versions' android-ndk (held
@@ -96,8 +105,20 @@ android {
         }
     }
 
+    signingConfigs {
+        if (uploadKeystore != null && uploadPassword != null) {
+            create("upload") {
+                storeFile = uploadKeystore
+                storePassword = uploadPassword
+                keyAlias = System.getenv("WINGTIP_UPLOAD_ALIAS")?.ifEmpty { null } ?: "upload"
+                keyPassword = uploadPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfigs.findByName("upload")?.let { signingConfig = it }
             // R8 over the code and the resources: the release APK was
             // 74.8 MB unshrunk (2026-11-10). The libraries bring their own
             // keep rules (kotlinx.serialization, Room 3, AppFunctions,
