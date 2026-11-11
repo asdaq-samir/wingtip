@@ -74,6 +74,31 @@ test("the Map settings open as a card in the map's sheet, and its close goes bac
   await expect(page.locator("[data-map-controls]").getByTestId("map-settings-button")).toBeFocused();
 });
 
+// The owner, 2026-11-11, on the live stack in WebKit: the Map button's
+// card opened and closed at once, aria-expanded true and then false. The
+// map's buttons ride the front sheet's top, a card's once one is open
+// (OnSheetTop), and moved there they were drawn afresh, the button's own
+// open state with them; the Map card's open is its own (lib/mapCard) and
+// the buttons keep one container (sheetTopSlot).
+test("the Map button's card stays open once tapped, and the button says so", async ({ page }) => {
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await settled(sideDrawer(page));
+  const button = page.locator("[data-map-controls]").getByTestId("map-settings-button");
+  await button.click();
+  const card = page.getByTestId("map-settings");
+  await expect(card).toBeVisible();
+  await settled(card);
+  // Still open once the sheet has settled, the buttons on the card's top.
+  await settled(sideDrawer(page));
+  await expect(card).toBeVisible();
+  await expect(page.locator("[data-map-controls]").getByTestId("map-settings-button")).toHaveAttribute("aria-expanded", "true");
+  // Tapped again, it closes.
+  await page.locator("[data-map-controls]").getByTestId("map-settings-button").click();
+  await expect(card).toBeHidden();
+  await expect(button).toHaveAttribute("aria-expanded", "false");
+});
+
 test("the approaches' pull-down is a card in the sheet, and the list it opens takes its place there", async ({ page }) => {
   test.skip(page.viewportSize()!.width >= 768, "a phone's card; wider it is a popover");
   await page.route(

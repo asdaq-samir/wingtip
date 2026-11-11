@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import FlownTrackButton from "./FlownTrackButton";
 import FullscreenButton from "./FullscreenButton";
 import MyPositionButton from "./MyPositionButton";
-import MapSettingsButton from "./MapSettingsButton";
+import MapSettingsButton, { MapSettingsCard } from "./MapSettingsButton";
 import RadioButton from "./RadioButton";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -180,6 +180,9 @@ function MapControlsDrawn() {
         (googleCredit); the radio's pill stops short of the group. With
         the sheet at the top, just under its edge at the bottom right,
         riding it; beside a desktop's side panel at the bottom right. */}
+      {/* The Map button's card, beside what rides the sheet: drawn there
+          it went with the buttons as they moved to the card's top. */}
+      <MapSettingsCard />
       <OnSheetTop>
         {(riding) => (
           <div
