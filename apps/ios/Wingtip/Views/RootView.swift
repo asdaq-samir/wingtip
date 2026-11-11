@@ -18,7 +18,7 @@ struct RootView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @Environment(\.undoManager) private var undoManager
-    @State var detent: PresentationDetent = .medium
+    @State var detent: PresentationDetent = .half
     @State private var sheetUp = true
     /// The card and the pages in it (Navigator): the pages a scene was on
     /// come back with it (SceneStorage), as Apple restores state, so a
@@ -90,8 +90,9 @@ struct RootView: View {
                         // How much of the map the sheet covers, for the map's
                         // opening point and the loading mark over it.
                         .onGeometryChange(for: CGFloat.self) { $0.size.height + $0.safeAreaInsets.bottom } action: { sheetHeight = $0 }
-                        .presentationDetents([RootView.pill, .medium, .large], selection: $detent)
-                        .presentationBackgroundInteraction(.enabled(upThrough: .medium))
+                        .environment(\.sheetAtPill, detent == RootView.pill)
+                        .presentationDetents([RootView.pill, .half, .large], selection: $detent)
+                        .presentationBackgroundInteraction(.enabled(upThrough: .half))
                         // The system's Liquid Glass sheet and its own corners
                         // on iOS 26; the material on iOS 18 (Design/Glass.swift).
                         .sheetGlass()
@@ -249,7 +250,7 @@ struct RootView: View {
                     // credit beside the internet's traffic it covers.
                     ReceiverChip()
                     if traffic.credited { MapChip(Traffic.credit(traffic.source)) }
-                    if traffic.on, !traffic.planes.isEmpty, let problem = traffic.marksProblem { MapChip(problem, colour: WingtipInk.caution) }
+                    if traffic.on, let problem = traffic.marksProblem { MapChip(problem, colour: WingtipInk.caution) }
                 }
                 .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
             }

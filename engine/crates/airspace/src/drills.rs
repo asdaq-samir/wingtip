@@ -2,8 +2,9 @@
 //! by name: the web's lib/drills and the iPhone's Drills had each its own
 //! copy of both tables (#482 phase 1). The VFR minimums' cards are worded
 //! from crate::rules' own table, the one the airspace column gives each
-//! band, so the drill and the map cannot say two things. How the cards
-//! are gone through (Leitner's boxes) is each app's.
+//! band, so the drill and the map cannot say two things. How long a card
+//! known stays away (Leitner's boxes, `drill_next`) is here too, once for
+//! every app; each keeps its own progress.
 
 use crate::json::{self, Value};
 use crate::rules::{self, Rule, CLASS_A_FLOOR_FT, G_LOW_AGL_FT, TEN_THOUSAND_FT};
@@ -216,6 +217,19 @@ pub fn decks_json() -> String {
     out
 }
 
+/// Days until a card in each box comes round again, the first box the same
+/// session: Leitner's boxes spaced as a short course is (a design choice,
+/// no rule), five of them.
+pub const INTERVAL_DAYS: [f64; 5] = [0.0, 1.0, 3.0, 7.0, 16.0];
+
+/// A card answered: known, up a box (a card never seen counts as the
+/// first) to the last at most; missed, back to the first. Its new box and
+/// the days until it is due again.
+pub fn drill_next(box_now: Option<usize>, knew: bool) -> (usize, f64) {
+    let to = if knew { (box_now.unwrap_or(1).max(1) + 1).min(INTERVAL_DAYS.len()) } else { 1 };
+    (to, INTERVAL_DAYS[to - 1])
+}
+
 fn write_rule(out: &mut String, r: &Rule) {
     out.push_str("{\"visibility_sm\":");
     json::number(out, r.visibility_sm);
@@ -269,6 +283,23 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             })
         }
         "drill_decks" => Ok(decks_json()),
+        // `{"box"?: 1 to 5, null never seen, "knew"}`: `{"box", "in_days"}`.
+        "drill_next" => {
+            let box_now = match v.get("box") {
+                None | Some(Value::Null) => None,
+                Some(Value::Number(b)) if *b >= 0.0 => Some(*b as usize),
+                Some(_) => return Err("drill_next: \"box\" is not a box".to_owned()),
+            };
+            let knew = match v.get("knew") {
+                Some(Value::Bool(k)) => *k,
+                _ => return Err("drill_next: \"knew\" is missing or not true or false".to_owned()),
+            };
+            let (to, days) = drill_next(box_now, knew);
+            let mut out = format!("{{\"box\":{to},\"in_days\":");
+            json::number(&mut out, days);
+            out.push('}');
+            Ok(out)
+        }
         _ => Err(format!("the engine has no rule called {name:?}")),
     }
 }
@@ -276,6 +307,15 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn a_card_known_goes_up_a_box_and_one_missed_back_to_the_first() {
+        assert_eq!(drill_next(None, true), (2, 1.0));
+        assert_eq!(drill_next(Some(2), true), (3, 3.0));
+        assert_eq!(drill_next(Some(5), true), (5, 16.0));
+        assert_eq!(drill_next(Some(4), false), (1, 0.0));
+        assert_eq!(call("drill_next", &json::parse(r#"{"box":3,"knew":true}"#).unwrap()).unwrap(), r#"{"box":4,"in_days":7.0}"#);
+    }
 
     #[test]
     fn the_cards_say_91_155s_rows() {

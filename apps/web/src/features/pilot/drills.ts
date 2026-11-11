@@ -63,19 +63,17 @@ export function deckOf(key: DeckKey): Deck {
   return decks[key];
 }
 
-/** Days until a card in each box comes round again: the first box the
- *  same session. */
-export const INTERVAL_DAYS = [0, 1, 3, 7, 16] as const;
 const DAY = 86_400_000;
 
 /** Where each card of a deck stands: its box (1 to 5) and when it is due. */
 export type Progress = Record<string, { box: number; due: number }>;
 
 /** A card answered: known, up a box and away for its interval; missed,
- *  back to the first box and due now. */
+ *  back to the first box and due now. The boxes and their days are the
+ *  engine's (drill_next), the same on every app. */
 export function answered(progress: Progress, cardId: string, knew: boolean, now: number): Progress {
-  const box = knew ? Math.min(INTERVAL_DAYS.length, (progress[cardId]?.box ?? 1) + 1) : 1;
-  return { ...progress, [cardId]: { box, due: now + INTERVAL_DAYS[box - 1]! * DAY } };
+  const next = callEngine("drill_next", { box: progress[cardId]?.box ?? null, knew });
+  return { ...progress, [cardId]: { box: next.box, due: now + next.in_days * DAY } };
 }
 
 /** The deck's cards due now -- never seen, or past their day -- the

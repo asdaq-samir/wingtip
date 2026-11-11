@@ -15,6 +15,13 @@ uvicorn[standard]==0.54.0
 # The FastAPI app's spans (app.tracing); the rest of tracing is wingtip's
 # (requirements-wingtip.txt, wingtip.tracing).
 opentelemetry-instrumentation-fastapi==0.66b2
+# The connector (app.mcp): the official MCP SDK's server and Streamable
+# HTTP transport, the gateway's signed tokens read with PyJWT (the SDK's
+# own dependency, pinned here as app.mcp.auth imports it), and each
+# pilot's tool calls counted with limits' moving window.
+mcp==2.3.0
+PyJWT[crypto]==2.15.1
+limits==5.8.0
 
 # The chart model's runtime (app.chart_scorer loads the promoted
 # model.joblib in this process). A joblib artifact is a pickle of

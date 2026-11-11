@@ -30,6 +30,18 @@ class SearchControl {
     var stopAfter by mutableStateOf<String?>(null)
         private set
 
+    // The asks a search bar has opened for, so a bar composed again (Home
+    // and the plan each carry the row on the sheet's stack) does not open
+    // for an ask already taken.
+    private var taken = 0
+
+    /** Whether there is an ask not yet opened for; it is taken. */
+    fun takeAsk(): Boolean {
+        if (asked <= taken) return false
+        taken = asked
+        return true
+    }
+
     fun open() {
         addingStop = false
         stopAfter = null

@@ -1,19 +1,13 @@
 import type { Due } from "../../lib/api/types";
+import { callEngine } from "../../lib/engine/engine";
 import type { Finding } from "../../lib/findings";
 
 /**
  * How the paperwork list says what falls due (GET /api/paperwork, the
  * gateway's PaperworkService): the days themselves are the engine's
- * (pilot_currency, inspections_due) or the owner's own; here only the
- * words and the tone. The 30 days are the reminders' own window
- * (ReminderService: an email 30 and 7 days before), not a rule's.
+ * (pilot_currency, inspections_due) or the owner's own, and so is the
+ * tone (due_tone, the reminders' 30 days or 10 hours); here only the words.
  */
-
-/** Within this many days, a thing is coming up: the reminders' first email. */
-const SOON_DAYS = 30;
-/** Within this many hours of time in service, an hour-counted item is
- *  coming up: about a fortnight's flying for an airplane flown for hire. */
-const SOON_HOURS = 10;
 
 /** Days between two ISO days, `to` less `from`: counted on the calendar,
  *  at noon UTC, so no clock change makes a day 23 hours. */
@@ -43,12 +37,11 @@ export function whenWords(due: Pick<Due, "daysLeft" | "dueAtHours" | "hoursLeft"
   return due.daysLeft != null ? daysWords(due.daysLeft) : hoursWords(due);
 }
 
-/** Past is a stop, within the window a caution, further off fine; by its
- *  day where it has one, else its hours, else not known. */
-export function dueTone(due: Pick<Due, "daysLeft" | "hoursLeft">): Finding {
-  if (due.daysLeft != null) return due.daysLeft < 0 ? "stop" : due.daysLeft <= SOON_DAYS ? "caution" : "ok";
-  if (due.hoursLeft != null) return due.hoursLeft <= 0 ? "stop" : due.hoursLeft <= SOON_HOURS ? "caution" : "ok";
-  return "unknown";
+/** Past is a stop, within the reminders' window a caution, further off
+ *  fine, by its day where it has one, else its hours, else not known: the
+ *  engine's due_tone, the same on every app. */
+export function dueFinding(due: Pick<Due, "daysLeft" | "hoursLeft">): Finding {
+  return callEngine("due_tone", { days_left: due.daysLeft ?? null, hours_left: due.hoursLeft ?? null });
 }
 
 /** The row's title: the airplane's tail before its own items. */

@@ -11,6 +11,17 @@ export type AirwayFloorFtAnswer = number | null;
  * via the `definition` "AheadPolygons".
  */
 export type AheadPolygons = [number, number][][][];
+export type AltitudeAdvisorAnswer = {
+  altitude_ft: number;
+  ete_min: number | null;
+  fuel_gal: number | null;
+  tailwind_kt: number | null;
+  legal: boolean;
+  flown: boolean;
+  fastest: boolean;
+  economical: boolean;
+  warning: string | null;
+}[];
 export type AltitudeAllowedAnswer = boolean;
 export type AltitudeAnywayAnswer = number | null;
 export type AltitudeSaidAnswer = string;
@@ -135,6 +146,7 @@ export type AwcGairmetsReadAnswer = {}[];
 export type AwcPirepsReadAnswer = {}[];
 export type AwcTafsReadAnswer = {}[];
 export type BareFieldAnswer = string;
+export type BearingDegAnswer = number;
 export type BelowVfrMinimumsAnswer = boolean;
 export type CallPatternAnswer = string | null;
 export type CeilingFtAnswer = number | null;
@@ -231,6 +243,10 @@ export type GonogoInspections = {
   hundred_hour_due_at_hours?: number | null;
   hours_now?: number | null;
 } | null;
+export type DestinationAnswer = {
+  lat: number;
+  lon: number;
+}[];
 export type DiagramFixUsableAnswer = boolean;
 export type DiagramGraticuleAnswer = {
   lat_on_x: boolean;
@@ -245,6 +261,7 @@ export type DirectOfAnswer = string | null;
 export type DistanceNmAnswer = number;
 export type DiversionReasonableAnswer = boolean;
 export type DrillDecksAnswer = DrillDeck[];
+export type DueToneAnswer = "stop" | "caution" | "ok" | "unknown";
 export type EmitterCategoryAnswer =
   | "light"
   | "small"
@@ -838,10 +855,14 @@ export type TfrDetailReadAnswer = {} | null;
 export type ThinTrackAnswer = unknown[];
 export type TitleCaseAnswer = string | string[];
 export type TokensAnswer = HeardToken[];
+export type TrafficFreshAnswer = boolean[];
 export type TrafficKindAnswer = "light" | "small" | "large" | "helicopter" | "other";
 export type TrafficMarksAnswer = {
   label: string;
   near: boolean;
+  nm: number | null;
+  bearing_deg: number | null;
+  tell: boolean;
 }[];
 export type TrafficMatchesAnswer = boolean;
 export type UnderwayAnswer = boolean;
@@ -934,6 +955,13 @@ export interface EngineContract {
     answer: AirborneNowAnswer;
   };
   /**
+   * What is wrong with the "Your Airplane" form's fields as typed, by field (the gateway's AircraftRequest names), in the words shown under each; {} where it may be saved. Tail number and type designator required, at most 16 characters (the columns'); cruise speed and burn positive numbers, the climb's and usable fuel blank or positive; cruise power blank or 40 to 100%; equipment and surveillance letters and figures, at most 40 and 20 (FAA Form 7233-4 items 10a and 10b, AIM Appendix 4, TBL 4-2 and 4-3); colour at most 40 characters.
+   */
+  aircraft_problems: {
+    input: AircraftProblemsInput;
+    answer: AircraftProblemsAnswer;
+  };
+  /**
    * An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's ("pilot"), else its photographed handbook page's ("handbook"), else its type's stock profile's ("book"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).
    */
   airplane_figures: {
@@ -983,6 +1011,13 @@ export interface EngineContract {
     answer: AlertsAheadAnswer;
   };
   /**
+   * The Altitude Advisor's rows, highest first: the altitude wheel's (the legal altitudes, the one flown, every 500 ft from 1,000 ft to 17,500 ft under Class A, 14 CFR 71.33, 91.135), each with the route's time, fuel and head or tail wind where the planner has them; Fastest (the winds') and Most economical (the fuel's, climbs included) marked from the planner's plans, else the legal row with the least time and fuel; a row outside the legal altitudes (91.119, 91.159, 91.179, airspace, clouds, the ceiling) kept with a warning (the owner's warn, never limit).
+   */
+  altitude_advisor: {
+    input: AltitudeAdvisorInput;
+    answer: AltitudeAdvisorAnswer;
+  };
+  /**
    * Whether an altitude asked for may be planned: at least 500 ft (91.119(c)), under Class A for VFR (any figure under 18,000 ft MSL, 71.33(a), 91.135), at most FL410 for IFR (91.179(b)(4)).
    */
   altitude_allowed: {
@@ -995,6 +1030,13 @@ export interface EngineContract {
   altitude_anyway: {
     input: AltitudeAnywayInput;
     answer: AltitudeAnywayAnswer;
+  };
+  /**
+   * A pilot's own change of altitude at a waypoint: Start At (begins at the waypoint) or Cross At (done by it), where along the route it begins and ends, its gradient, and with an airplane its minutes and gallons. The climb is the airplane's best-rate climb, slower the thinner the air (PHAK ch. 11), over the ground at its climb speed scaled by the leg's wind; the descent the nav log's three to one (about a 3 degree path, AIM 2-1-2) at the leg's ground speed and burn. No airplane: no time or fuel, the descent's geometry alone, and a climb drawn as a step.
+   */
+  altitude_change: {
+    input: AltitudeChangeInput;
+    answer: AltitudeChangeAnswer;
   };
   /**
    * The altitudes a flight may be planned at: no lower than 500 ft (14 CFR 91.119(c)), VFR up to 17,500 ft (91.159(a)'s highest under Class A, which begins at 18,000 ft MSL, 71.33(a), and takes IFR only, 91.135), IFR up to FL410 (the highest 91.179(b)(4) names); flight levels from 18,000 ft (91.121(a)(2)); 91.159's cruising altitudes 500 ft apart.
@@ -1158,7 +1200,7 @@ export interface EngineContract {
     answer: AwcGairmetsReadAnswer;
   };
   /**
-   * The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1), visibility, wind, altimeter, temperature and dewpoint, and where it is.
+   * The Aviation Weather Center's national metars cache file (XML) read into the shape the weather store keeps: {ident: report}, the newest per station: its text, time, flight category (only what the visibility settles where the ceiling is not known), ceiling (14 CFR 1.1) and its layer's cover, visibility, wind, altimeter, temperature and dewpoint, and where it is.
    */
   awc_metars_read: {
     input: AwcMetarsReadInput;
@@ -1184,6 +1226,13 @@ export interface EngineContract {
   bare_field: {
     input: BareFieldInput;
     answer: BareFieldAnswer;
+  };
+  /**
+   * The initial great-circle course from the first point to the second, degrees true 0 to 360, on the same sphere as distance_nm (wingtip.geo.bearing_deg); 0 for two points that coincide.
+   */
+  bearing_deg: {
+    input: BearingDegInput;
+    answer: BearingDegAnswer;
   };
   /**
    * Whether a ceiling or a visibility is under 14 CFR 91.155(c), (d)'s basic VFR minimums (1,000 ft, 3 sm); a missing figure is below nothing.
@@ -1389,6 +1438,13 @@ export interface EngineContract {
     answer: DepartureWindowAnswer;
   };
   /**
+   * Where a great circle from each point on its true course reaches its distance out, on the same sphere as distance_nm, the longitude within -180 to 180: the phones' traffic carried on along its track between reports, a list so a map's airplanes cross once.
+   */
+  destination: {
+    input: DestinationInput;
+    answer: DestinationAnswer;
+  };
+  /**
    * Whether own ship is drawn on the airport diagram: a fix no older than 3 s (AC 120-76D 11.17.2.3) and good to 30 m or better (11.17.2.4); a negative accuracy, none known, never.
    */
   diagram_fix_usable: {
@@ -1424,7 +1480,7 @@ export interface EngineContract {
     answer: DirectOfAnswer;
   };
   /**
-   * The geodesic distance between two points on the WGS 84 ellipsoid, nm.
+   * The great-circle distance between two points, nm, on the sphere of 3,440.065 nm flight computers use (wingtip.geo, pyproj's Geod with f = 0).
    */
   distance_nm: {
     input: DistanceNmInput;
@@ -1452,11 +1508,25 @@ export interface EngineContract {
     answer: DrillDecksAnswer;
   };
   /**
+   * A flash card answered, by Leitner's boxes: known, up a box (a card never seen counts as the first) to the fifth at most; missed, back to the first. Its new box and the days until it is due again: 0, 1, 3, 7 and 16 for boxes 1 to 5.
+   */
+  drill_next: {
+    input: DrillNextInput;
+    answer: DrillNextAnswer;
+  };
+  /**
    * The planned flight flown on paper along the nav log's rows, by its procedures and holds, going missed when asked.
    */
   dry_run: {
     input: DryRunInput;
     answer: DryRunAnswer;
+  };
+  /**
+   * How near a paperwork item falls due, as every app colours its row: past is a stop, within 30 days (the reminders' first email, the gateway's ReminderService) or 10 hours of time in service a caution, further off ok; unknown with neither. By its day where it has one, else its hours.
+   */
+  due_tone: {
+    input: DueToneInput;
+    answer: DueToneAnswer;
   };
   /**
    * What to do in an emergency with no airplane picked: general good practice only, each item with its source -- fly the airplane and pick a field within reach (FAA-H-8083-3C ch. 18), ask for help early (AIM 6-1-2), squawk 7700 (AIM 6-2-2), MAYDAY on the frequency in use or 121.5 (AIM 6-3-1, 6-3-2), climb if possible (AIM 6-3-2), stay in VFR conditions and the pilot in command's authority to deviate (AIM 6-2-1, 6-1-1, 14 CFR 91.3(b)). No airplane's checklist, speeds, glide or distances.
@@ -2061,6 +2131,13 @@ export interface EngineContract {
     answer: IfrAlternateDestinationAnswer;
   };
   /**
+   * The window, unix seconds, a field's TAF is read over for 14 CFR 91.169: the destination's from an hour before to an hour after the ETA (91.169(b)(2)(i), aircraft other than helicopters); an alternate's the ETA there alone, at the estimated time of arrival at the alternate airport (91.169(c)).
+   */
+  ifr_alternate_window: {
+    input: IfrAlternateWindowInput;
+    answer: IfrAlternateWindowAnswer;
+  };
+  /**
    * The fields offered as the IFR alternate: those that will do, or that meet the standard minimums and publish their own, good first then nearest, `limit` of them.
    */
   ifr_alternates_ranked: {
@@ -2593,6 +2670,13 @@ export interface EngineContract {
     answer: ProficiencyPlanAnswer;
   };
   /**
+   * The profile's clearance preview at an altitude: the ground samples and obstacles along the route coloured red within 100 ft of it or above it and yellow within 1,000 ft -- ForeFlight's Hazard Advisor display defaults (ForeFlight Pilot's Guide), not a regulation; the legal minimums over the ground are 14 CFR 91.119 (VFR) and 91.177 (IFR), which the legal altitudes keep -- with the highest point, the least clearance, where the route first meets ground at or over the altitude, the route point nearest, and the whole in words for VoiceOver and TalkBack ("3,500 ft, terrain within 500 ft near KXYZ").
+   */
+  profile_clearance: {
+    input: ProfileClearanceInput;
+    answer: ProfileClearanceAnswer;
+  };
+  /**
    * Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
    */
   prohibited_caution: {
@@ -2957,6 +3041,13 @@ export interface EngineContract {
     answer: TokensAnswer;
   };
   /**
+   * Whether each airplane heard is drawn: its position, seen_s old when the answer was made and the answer age_s old now, within 30 s (wingtip.traffic's STALE_S); older, it is somewhere else by now.
+   */
+  traffic_fresh: {
+    input: TrafficFreshInput;
+    answer: TrafficFreshAnswer;
+  };
+  /**
    * An airplane's kind from its ADS-B emitter category (GDL 90 Table 11).
    */
   traffic_kind: {
@@ -2964,7 +3055,7 @@ export interface EngineContract {
     answer: TrafficKindAnswer;
   };
   /**
-   * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159).
+   * Each airplane's label under it, its height against own ship's in hundreds as TCAS writes it, and whether it is within 1,000 ft of own ship's (14 CFR 91.159); with own ship's place and the airplane's, how far off it is (nm) and its true bearing from own ship, and tell: near in height and within 5 nm, the traffic the phones notify while the app is not in front (a design choice, no rule).
    */
   traffic_marks: {
     input: TrafficMarksInput;
@@ -3232,6 +3323,32 @@ export interface AirborneNowInput {
   arrived?: boolean | null;
   heard_s?: number | null;
 }
+export interface AircraftProblemsInput {
+  tailNumber?: string | null;
+  typeDesignator?: string | null;
+  cruiseTasKt?: string | null;
+  fuelBurnGph?: string | null;
+  cruisePowerPct?: string | null;
+  climbTasKt?: string | null;
+  climbFuelBurnGph?: string | null;
+  usableFuelGal?: string | null;
+  equipment?: string | null;
+  surveillance?: string | null;
+  colour?: string | null;
+}
+export interface AircraftProblemsAnswer {
+  tailNumber?: string;
+  typeDesignator?: string;
+  cruiseTasKt?: string;
+  fuelBurnGph?: string;
+  cruisePowerPct?: string;
+  climbTasKt?: string;
+  climbFuelBurnGph?: string;
+  usableFuelGal?: string;
+  equipment?: string;
+  surveillance?: string;
+  colour?: string;
+}
 export interface AirplaneFiguresInput {
   /**
    * The type's stock profile (the planner's /api/aircraft-profiles entry); null for a type with none.
@@ -3488,12 +3605,71 @@ export interface AlertsAheadAnswer {
    */
   ground_ft?: number | null;
 }
+export interface AltitudeAdvisorInput {
+  figures: {
+    altitude_ft: number;
+    ete_min?: number | null;
+    fuel_gal?: number | null;
+    tailwind_kt?: number | null;
+    everywhere?: boolean;
+  }[];
+  flown_ft?: number | null;
+  plans?:
+    | {
+        kind: string;
+        altitude_ft: number;
+      }[]
+    | null;
+}
 export interface AltitudeAllowedInput {
   ft: number;
   ifr?: boolean | null;
 }
 export interface AltitudeAnywayInput {
   selection: {};
+}
+export interface AltitudeChangeInput {
+  profile?: NavLogProfile | null;
+  along_nm: number;
+  from_ft: number;
+  to_ft: number;
+  mode: "start_at" | "cross_at";
+  groundspeed_kt?: number | null;
+  tas_kt?: number | null;
+  fuel_burn_gph?: number | null;
+  oat_c?: number | null;
+}
+/**
+ * An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none.
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "NavLogProfile".
+ */
+export interface NavLogProfile {
+  /**
+   * At its cruise power at cruise_altitude_ft (else 6,000 ft) on a standard day.
+   */
+  cruise_tas_kt?: number;
+  fuel_burn_gph?: number;
+  service_ceiling_ft?: number;
+  cruise_power_pct?: number | null;
+  cruise_altitude_ft?: number | null;
+  climb_tas_kt?: number | null;
+  climb_fuel_burn_gph?: number | null;
+  climb_rate_fpm_sea_level?: number | null;
+  taxi_fuel_gal?: number | null;
+  usable_fuel_gal?: number | null;
+  supplemental_oxygen?: boolean | null;
+  pressurized?: boolean | null;
+  [k: string]: unknown;
+}
+export interface AltitudeChangeAnswer {
+  kind: "climb" | "descent" | "level";
+  begins_nm: number;
+  ends_nm: number;
+  ft_per_nm: number | null;
+  minutes: number | null;
+  gallons: number | null;
 }
 export interface AltitudeLimitsInput {
   ifr?: boolean | null;
@@ -3935,7 +4111,33 @@ export interface AwcGairmetsReadInput {
 export interface AwcMetarsReadInput {
   text: string;
 }
-export interface AwcMetarsReadAnswer {}
+export interface AwcMetarsReadAnswer {
+  [k: string]: AwcMetar;
+}
+/**
+ * A station's newest METAR as the weather store keeps it.
+ */
+export interface AwcMetar {
+  raw: string | null;
+  observed_at: string | null;
+  flight_category: string | null;
+  wx: string;
+  ceiling_ft: number | null;
+  ceiling_unknown: boolean;
+  /**
+   * The ceiling layer's cover as a METAR writes the ceiling (OVC008, VV002; FMH-1 ch. 9): BKN, OVC or VV for an obscuration; null with no ceiling or one of unknown height.
+   */
+  ceiling_cover: "BKN" | "OVC" | "VV" | null;
+  visibility_sm: number | null;
+  wind_dir_true_deg: number | null;
+  wind_speed_kt: number | null;
+  wind_gust_kt: number | null;
+  altimeter_in_hg: number | null;
+  temp_c: number | null;
+  dewpoint_c: number | null;
+  lat: number | null;
+  lon: number | null;
+}
 export interface AwcPirepsReadInput {
   text: string;
 }
@@ -3944,6 +4146,12 @@ export interface AwcTafsReadInput {
 }
 export interface BareFieldInput {
   ident: string;
+}
+export interface BearingDegInput {
+  lat1: number;
+  lon1: number;
+  lat2: number;
+  lon2: number;
 }
 export interface BelowVfrMinimumsInput {
   ceiling_ft?: number | null;
@@ -5127,6 +5335,14 @@ export interface DepartureWindowRun {
    */
   quickest_s: number;
 }
+export interface DestinationInput {
+  points: {
+    lat: number;
+    lon: number;
+    bearing_deg: number;
+    nm: number;
+  }[];
+}
 export interface DiagramFixUsableInput {
   /**
    * The fix's age, s.
@@ -5253,6 +5469,14 @@ export interface DrillCard {
   colours: ("green" | "red" | "white")[];
   flashing: boolean;
 }
+export interface DrillNextInput {
+  box?: number | null;
+  knew: boolean;
+}
+export interface DrillNextAnswer {
+  box: number;
+  in_days: number;
+}
 export interface DryRunInput {
   rows: NavLogRow[];
   /**
@@ -5325,6 +5549,10 @@ export interface DryRunAnswer {
     nm: number;
     fuel: number;
   }[];
+}
+export interface DueToneInput {
+  days_left?: number | null;
+  hours_left?: number | null;
 }
 export interface EmergencyGuidanceInput {}
 export interface EmergencyGuidanceAnswer {
@@ -6909,6 +7137,14 @@ export interface IfrAlternateDestinationAnswer {
   required: boolean;
   reasons: string[];
 }
+export interface IfrAlternateWindowInput {
+  eta: number;
+  for: "destination" | "alternate";
+}
+export interface IfrAlternateWindowAnswer {
+  start: number;
+  end: number;
+}
 export interface IfrAlternatesRankedInput {
   /**
    * Items: An ifr_alternate_check answer with its distance_nm.
@@ -7545,30 +7781,6 @@ export interface NavLogAlternateLegInput {
     wind?: NavLogWind | null;
     oat_c?: number | null;
   } | null;
-}
-/**
- * An airplane's profile (data/aircraft/*.json, a pilot's own figures laid over it). A figure of 0 is taken as none.
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "NavLogProfile".
- */
-export interface NavLogProfile {
-  /**
-   * At its cruise power at cruise_altitude_ft (else 6,000 ft) on a standard day.
-   */
-  cruise_tas_kt?: number;
-  fuel_burn_gph?: number;
-  service_ceiling_ft?: number;
-  cruise_power_pct?: number | null;
-  cruise_altitude_ft?: number | null;
-  climb_tas_kt?: number | null;
-  climb_fuel_burn_gph?: number | null;
-  climb_rate_fpm_sea_level?: number | null;
-  taxi_fuel_gal?: number | null;
-  usable_fuel_gal?: number | null;
-  supplemental_oxygen?: boolean | null;
-  pressurized?: boolean | null;
-  [k: string]: unknown;
 }
 /**
  * The wind aloft, the direction it blows from in true degrees, carried onto the leg as it is.
@@ -8792,6 +9004,35 @@ export interface ProficiencySession {
     acs: string;
     note: string;
   } | null;
+}
+export interface ProfileClearanceInput {
+  altitude_ft: number;
+  along_nm: number[];
+  ground_ft: number[];
+  obstacles?:
+    | {
+        along_nm: number;
+        amsl_ft: number;
+      }[]
+    | null;
+  points?:
+    | {
+        ident: string;
+        along_nm: number;
+      }[]
+    | null;
+}
+export interface ProfileClearanceAnswer {
+  red_from_ft: number;
+  yellow_from_ft: number;
+  highest_ft: number | null;
+  least_ft: number | null;
+  least_along_nm: number | null;
+  obstacle: boolean;
+  strike_nm: number | null;
+  level: "red" | "yellow" | "clear" | null;
+  near: string | null;
+  words: string;
 }
 export interface ProhibitedCautionInput {
   selection: {};
@@ -10191,6 +10432,12 @@ export interface TitleCaseInput {
 export interface TokensInput {
   text: string;
 }
+export interface TrafficFreshInput {
+  age_s?: number | null;
+  planes: {
+    seen_s?: number | null;
+  }[];
+}
 export interface TrafficKindInput {
   category?: string | null;
 }
@@ -10199,7 +10446,13 @@ export interface TrafficMarksInput {
   planes: {
     altitude_ft?: number | null;
     vertical_fpm?: number | null;
+    lat?: number | null;
+    lon?: number | null;
   }[];
+  own?: {
+    lat: number;
+    lon: number;
+  } | null;
 }
 export interface TrafficMatchesInput {
   plane: {

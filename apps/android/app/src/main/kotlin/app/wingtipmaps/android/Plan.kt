@@ -6,11 +6,13 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.OwnAirplanes
 import app.wingtipmaps.android.airplane.OwnRecord
+import app.wingtipmaps.android.altitude.PlanAltitudes
 import app.wingtipmaps.android.api.Course
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.NavLogMessage
 import app.wingtipmaps.android.api.NavLogTotals
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -37,11 +39,10 @@ import java.io.IOException
 
 /**
  * The route being planned and what the planner has said of it so far: the
- * course as soon as its ends are found, then the nav log's lines as they
- * stream. The log before a re-plan stays on the page until the new one is
- * whole, as the web app keeps it (usePlan) and the iOS app's Plan.swift
- * does, so the pilot is never looking at a blank list. One State, changed
- * only here and read by the screens (unidirectional data flow).
+ * course once its ends are found, then the nav log's lines as they stream.
+ * The log before a re-plan stays until the new one is whole (as the web's
+ * usePlan and iOS's Plan.swift keep it), so the list is never blank. One
+ * State, changed only here and read by the screens.
  */
 class Plan(app: Application) : AndroidViewModel(app) {
     data class State(
@@ -231,10 +232,10 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 val course = Planner.course(asked.dep, asked.dest, asked.stops)
                 _state.update { it.copy(course = course) }
                 val fresh = mutableListOf<Leg>()
-                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart).collect { message ->
+                Planner.navlog(asked.dep, asked.dest, asked.stops, AirplaneNow.plannerQuery(asked.aircraft, asked.own), asked.holds, asked.rules, asked.altitudeFt, asked.depart, PlanAltitudes.query(listOf(asked.dep) + asked.stops + asked.dest)).collect { message ->
                     when (message) {
                         is NavLogMessage.Stage -> _state.update { it.copy(stage = message.detail) }
-                        is NavLogMessage.Altitude -> {}
+                        is NavLogMessage.Altitude -> PlanAltitudes.heard(message.line)
                         is NavLogMessage.OneLeg -> {
                             fresh += message.leg
                             // Each leg as it comes, once the first is in: the
@@ -256,7 +257,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                 // With no connection the plan kept stands, in silence; a
                 // planner's own refusal is said as it is.
                 _state.update {
-                    val said = if (it.legs.isEmpty() || e !is IOException) e.message ?: "The planner could not be reached." else it.problem
+                    val said = if (it.legs.isEmpty() || e !is IOException) Problems.say("The route could not be planned", e) else it.problem
                     it.copy(problem = said, stage = null)
                 }
             }
@@ -286,14 +287,15 @@ class Plan(app: Application) : AndroidViewModel(app) {
         plan(positionIdent(at), s.dest.ifEmpty { ident }, if (s.dest.isEmpty()) emptyList() else stops)
     }
 
-    /** Add Stop and Add to Route: the point among the stops where it
-     *  bends the route least (Geo.bestStopIndex), the route planned again. */
+    /** Add Stop and Add to Route: the point among the stops where it bends the route least
+     *  (Geo.bestStopIndex, the engine's distances), planned again; else the pilot told why. */
     fun addToRoute(point: ChartPoint) {
         val s = _state.value
         val course = s.course ?: return
         val points = (listOf(course.departure) + course.stops.orEmpty() + course.destination).map { it.lat to it.lon }
-        val at = Geo.bestStopIndex(points, point.lat, point.lon).coerceAtMost(s.stops.size)
-        plan(s.dep, s.dest, s.stops.toMutableList().apply { add(at, point.ident) })
+        val at = Geo.bestStopIndex(points, point.lat, point.lon)
+            .getOrElse { why -> return _state.update { it.copy(problem = "${point.ident} could not be put on the route: ${why.message}") } }
+        plan(s.dep, s.dest, s.stops.toMutableList().apply { add(at.coerceAtMost(s.stops.size), point.ident) })
     }
 
     private var holdAt: String? = null
@@ -383,8 +385,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
          *  in epoch milliseconds; null where there is none or it is not one. */
         fun departMs(iso: String?): Long? =
             iso?.let { runCatching { java.time.OffsetDateTime.parse(it).toInstant().toEpochMilli() }.getOrNull() }
-        /** A hold's length where the pilot sets none: two turns, as the
-         *  web's and the iPhone's hold sheets begin. */
+        /** A hold's length where the pilot sets none: two turns, as the web's and iPhone's begin. */
         private const val HOLD_TURNS = 2.0
 
         /** The airplane's position as the planner reads a place for a

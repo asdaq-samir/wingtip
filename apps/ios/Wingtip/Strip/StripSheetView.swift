@@ -90,7 +90,7 @@ struct StripSheetView: View {
         .onChange(of: opened) { _, now in
             if let last = now.last?.airportRoute {
                 path.append(.airport(last))
-                if detent == RootView.pill { detent = .medium }
+                if detent == RootView.pill { detent = .half }
             }
         }
         .takesAskedScreens { _ = open($0) } // Siri's Brief, and a screen asked for by name (StripSheetView+Screens)
@@ -266,7 +266,7 @@ struct StripSheetView: View {
 
     /// The pill up to half, where the answer is.
     private func up() {
-        if detent == RootView.pill { detent = .medium }
+        if detent == RootView.pill { detent = .half }
     }
 
     /// A question, answered on the strip (StripAnswerCard).
@@ -302,8 +302,10 @@ struct StripSheetView: View {
             guard routed else { return "Plan a route first, then its other ways are chips at the head of the strip." }
             up()
         case .altitude, .profile:
+            // Full height, so the altitude slider never fights the sheet's
+            // drag (the owner's spec of 2026-11-10).
             guard routed, plan.profile != nil else { return "Plan a route first; then say an altitude, \"altitude 5500\"." }
-            path.append(.profile); up()
+            path.append(.profile); detent = .large
         case .procedures:
             guard !plan.dest.isEmpty else { return "Plan a route first: the procedures are the destination's." }
             path.append(.procedures); up()
@@ -321,7 +323,7 @@ struct StripSheetView: View {
             path.append(.clearance); up()
         case .dryrun:
             guard routed, plan.profile != nil else { return "Plan a route first." }
-            path.append(.profile); up()
+            path.append(.profile); detent = .large
             return "Dry run is the Profile's button, at the side view's foot."
         case .saved, .recentRoutes:
             path.append(.flights); up()

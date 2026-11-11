@@ -134,6 +134,7 @@ class GoNoGoAsk(BaseModel):
     rules: FlightRules = "vfr"
     alternate: str = ""
     altitudes: str = ""
+    altitude_starts: str = ""
     procedures: str = ""
     runways: str = ""
     crossings: str = ""

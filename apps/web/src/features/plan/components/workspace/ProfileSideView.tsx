@@ -2,7 +2,10 @@ import { Suspense, lazy } from "react";
 import { Play } from "lucide-react";
 import RoundButton from "../../../../components/RoundButton";
 import { AltitudeProfile, RouteProblem } from "../../routePanelParts";
+import { useQuery } from "@tanstack/react-query";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
+import { aircraftProfilesQuery } from "../../../../lib/queryClient";
+import { bookOf, ownOf } from "../../../../lib/airplane/figures";
 
 // The route from the side, drawn only in the Profile's card: out of the
 // first load as the lists are.
@@ -14,6 +17,7 @@ const MiniProfile = lazy(() => import("../navlog/MiniProfile"));
 export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
   const {
     acceptClassB,
+    aircraft,
     avoidClassB,
     changeAltitudeChoice,
     classBClearance,
@@ -32,12 +36,20 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
     selected,
     setAddingStop,
     setNewStopVia,
+    setPointAltitude,
     setStops,
     startDryRun,
     tightLeg,
     typeStopAt,
     unflyable,
+    waypointStops,
   } = vm;
+  // The airplane as the engine reads it, for a leg's climb or descent
+  // (altitude_change): its type's book figures with the pilot's own over
+  // them; none picked, none.
+  const { data: profiles } = useQuery(aircraftProfilesQuery);
+  const book = aircraft.none ? null : bookOf(aircraft.profile, profiles);
+  const airplaneProfile = book ? { ...book, ...ownOf(aircraft) } : null;
   if (!routed || !course || local) return null;
   return (
     <Suspense fallback={<div className="h-56" />}>
@@ -45,9 +57,9 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
         nav={s.nav}
         legs={s.legs}
         ends={course}
-        chart={(preview, scaleTop) => (
+        chart={(preview) => (
           <Suspense fallback={null}>
-            <MiniProfile ends={course} selected={selected} legs={s.legs} preview={preview} scaleTop={scaleTop} ruler />
+            <MiniProfile ends={course} selected={selected} legs={s.legs} preview={preview} ruler />
           </Suspense>
         )}
         corner={
@@ -98,6 +110,10 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
         }}
         onAltitudeChoiceChange={changeAltitudeChoice}
         onFlyAltitude={flyAltitude}
+        routePoints={routePoints}
+        waypoints={waypointStops}
+        airplaneProfile={airplaneProfile}
+        onLegAltitude={setPointAltitude}
         // The rules' switch at the card's top right (ProfileCard's corner).
         rules={flightRules}
       />

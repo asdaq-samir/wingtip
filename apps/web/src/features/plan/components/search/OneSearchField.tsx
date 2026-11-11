@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, type ComponentProps } from "react";
 import { Search } from "lucide-react";
 import { cn } from "cn";
+import ClearButton from "../../../../components/ClearButton";
 import { PANEL_FIELD } from "../../../../components/panelField";
 import { SearchField } from "../../../../components/PanelCapsule";
 import { CommandField } from "../../../../components/ui/command";
@@ -72,20 +73,19 @@ export default function OneSearchField({
   if (list && !model.pick && !model.direct) return <SearchField {...list} />;
   return (
     <div className="flex w-full items-center gap-2" role="search">
-      {/* 41 tall, as Maps' field is, a white card on the sheet's grey; its
-          44-point hit area its own, strips above and below it (CLAUDE.md:
-          nothing grows to it). */}
+      {/* 46 tall, a white card on the sheet's grey, its own 44-point hit
+          area (the sheet audit's F-P2, 2026-11-10: the title row over it
+          the same height). */}
       <label
         className={cn(
-          "relative flex h-[2.5625rem] min-w-0 flex-1 items-center gap-2 rounded-full pr-0.5 pl-3.5 text-muted-foreground",
+          "relative flex h-[2.875rem] min-w-0 flex-1 items-center gap-2 rounded-full pr-0.5 pl-3.5 text-muted-foreground",
           PANEL_FIELD,
-          // Focused, the tint's ring round it, as Apple's field has.
-          "focus-within:ring-2 focus-within:ring-tint",
-          "before:absolute before:inset-x-0 before:-top-0.5 before:h-0.5 before:content-[''] after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5 after:content-['']",
+          // Focused, a fine ring in the tint round it, as Apple's field has.
+          "focus-within:ring-1 focus-within:ring-tint",
           TEXT.row,
         )}
       >
-        <Search className="size-5 shrink-0 text-foreground" strokeWidth={1.75} aria-hidden="true" />
+        <Search className="size-5 shrink-0 text-muted-foreground" strokeWidth={1.75} aria-hidden="true" />
         <CommandField
           ref={inputRef}
           type="search"
@@ -93,8 +93,10 @@ export default function OneSearchField({
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
+          // The short words in sight, which fit beside the mic and Cancel at
+          // the larger text sizes; the whole sentence said (F-S2).
           placeholder={voice.listening ? voice.prompt : model.placeholder}
-          aria-label={model.placeholder}
+          aria-label={model.label}
           // Open only while its results are in the sheet (PlanSidebar's
           // search page): the Autocomplete is always open, inline, and
           // said "expanded" with no list to point at (axe's
@@ -133,8 +135,20 @@ export default function OneSearchField({
               }
             }
           }}
-          className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground"
+          // The browser's own clear put away for the app's (ClearButton),
+          // the one every field has.
+          className="min-w-0 flex-1 bg-transparent text-foreground outline-none placeholder:text-muted-foreground [&::-webkit-search-cancel-button]:hidden"
         />
+        {model.typed && (
+          <ClearButton
+            label="Clear the search"
+            testId="search-clear"
+            onClear={() => {
+              model.setTyped("");
+              inputRef.current?.focus();
+            }}
+          />
+        )}
         {!model.typed && desktop && !using && <Kbd aria-hidden="true">{searchKeys()}</Kbd>}
         {/* The microphone, the field's trailing button: on-device speech
             only (lib/speechLocal), so none where the browser has no
@@ -159,7 +173,8 @@ export default function OneSearchField({
           type="button"
           onClick={model.cancel}
           data-testid="one-search-cancel"
-          className={cn("relative h-11 shrink-0 px-1 text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring", TEXT.row)}
+          // Its 44-point hit area the pseudo-element's (index.css), not its own height.
+          className={cn("relative shrink-0 px-1 text-tint outline-none focus-visible:ring-2 focus-visible:ring-ring", TEXT.row)}
         >
           Cancel
         </button>

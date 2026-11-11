@@ -53,10 +53,11 @@ final class CyclePacks: @unchecked Sendable {
 
     /// The regions a route's corridor crosses: the region of each point
     /// along it, two nm apart, and of points a tenth of a degree (6 nm)
-    /// either side, as its chart is kept five nm either side.
-    static func regions(along line: [CLLocationCoordinate2D]) -> Set<String> {
+    /// either side, as its chart is kept five nm either side. Thrown where
+    /// the engine cannot say the route's miles (KeepRoute.samples).
+    static func regions(along line: [CLLocationCoordinate2D]) throws -> Set<String> {
         var names = Set<String>()
-        for p in KeepRoute.samples(of: line, everyNm: 2) {
+        for p in try KeepRoute.samples(of: line, everyNm: 2) {
             for dlat in [-0.1, 0, 0.1] {
                 for dlon in [-0.1, 0, 0.1] {
                     names.insert(Engine.region(lat: p.latitude + dlat, lon: p.longitude + dlon))

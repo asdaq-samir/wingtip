@@ -125,16 +125,19 @@ val LocalInk = staticCompositionLocalOf { InkColors.of(WingtipPalettes.Light, da
  * same tint, grounds and words as the web and the iPhone: the sheet's
  * ground is the surface, a card the containers, the muted grey the high
  * containers and the variant, the tint primary, the course tertiary, the
- * destructive ink the error. A container colour the palette gives (the
- * ink look's) wins over Material's own.
+ * destructive ink the error. A Material role the palette gives (the
+ * tokens' color.material: the Wingtip look's stepped containers, its
+ * 3:1 outline and its night primary, the owner's decision of 2026-11-10;
+ * the ink look's containers) wins over the mapping.
  */
 fun WingtipPalette.materialScheme(dark: Boolean): ColorScheme {
     val base = if (dark) darkColorScheme() else lightColorScheme()
+    fun Color.or(other: Color) = takeIf { it.isSpecified } ?: other
     return base.copy(
-        primary = primary,
-        onPrimary = primaryForeground,
-        primaryContainer = primaryContainer.takeIf { it.isSpecified } ?: base.primaryContainer,
-        onPrimaryContainer = onPrimaryContainer.takeIf { it.isSpecified } ?: base.onPrimaryContainer,
+        primary = materialPrimary.or(primary),
+        onPrimary = materialOnPrimary.or(primaryForeground),
+        primaryContainer = primaryContainer.or(base.primaryContainer),
+        onPrimaryContainer = onPrimaryContainer.or(base.onPrimaryContainer),
         secondary = mutedForeground,
         onSecondary = primaryForeground,
         secondaryContainer = secondary,
@@ -145,15 +148,15 @@ fun WingtipPalette.materialScheme(dark: Boolean): ColorScheme {
         onBackground = foreground,
         surface = sheet,
         onSurface = foreground,
-        surfaceVariant = muted,
+        surfaceVariant = surfaceVariant.or(muted),
         onSurfaceVariant = mutedForeground,
-        surfaceContainerLowest = card,
-        surfaceContainerLow = card,
-        surfaceContainer = card,
-        surfaceContainerHigh = muted,
-        surfaceContainerHighest = muted,
-        outline = outline.takeIf { it.isSpecified } ?: border,
-        outlineVariant = outlineVariant.takeIf { it.isSpecified } ?: border,
+        surfaceContainerLowest = surfaceContainerLowest.or(card),
+        surfaceContainerLow = surfaceContainerLow.or(card),
+        surfaceContainer = surfaceContainer.or(card),
+        surfaceContainerHigh = surfaceContainerHigh.or(muted),
+        surfaceContainerHighest = surfaceContainerHighest.or(muted),
+        outline = outline.or(border),
+        outlineVariant = outlineVariant.or(border),
         error = destructiveInk,
         onError = primaryForeground,
     )

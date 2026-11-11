@@ -13,6 +13,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -141,19 +142,23 @@ fun RowScope.Figure(name: String, value: String, warn: Boolean = false, said: St
 
 /**
  * A problem said where it happened, the app's one error style, as the
- * web app's lib/problems says it: the error glyph and the call's own
- * words in the error colour under what failed, read out as it appears,
- * and nothing at all without one.
+ * web app's lib/problems says it: the error glyph and one plain sentence
+ * in the error colour under what failed (Problems: the details go to the
+ * log), read out as it appears, and nothing at all without one. Where the
+ * ask can be made again, Try Again under it, Material's text button.
  */
 @Composable
-fun ProblemLine(problem: String?, modifier: Modifier = Modifier) {
+fun ProblemLine(problem: String?, modifier: Modifier = Modifier, onRetry: (() -> Unit)? = null) {
     if (problem.isNullOrEmpty()) return
-    Row(
-        modifier.semantics { liveRegion = LiveRegionMode.Polite },
-        horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
-        verticalAlignment = Alignment.Top,
-    ) {
-        Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(WingtipSpace.Lg + WingtipSpace.Xs))
-        Text(problem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+    Column(modifier) {
+        Row(
+            Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Icon(Icons.Outlined.ErrorOutline, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(WingtipSpace.Lg + WingtipSpace.Xs))
+            Text(problem, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
+        }
+        if (onRetry != null) TextButton(onClick = onRetry) { Text(stringResource(R.string.try_again)) }
     }
 }

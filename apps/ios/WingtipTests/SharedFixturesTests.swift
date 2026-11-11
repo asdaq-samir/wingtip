@@ -53,7 +53,6 @@ private struct DrillsFixture: Decodable {
     struct StandingF: Decodable { let box: Int; let due: Double }
     struct Answer: Decodable { let progress: [String: StandingF]; let card: String; let knew: Bool; let now: Double; let result: [String: StandingF] }
     struct Due: Decodable { let deck: String; let progress: [String: StandingF]; let now: Double; let ids: [String]; let next: Double? }
-    let intervalDays: [Int]
     let decks: [DeckF]
     let answered: [Answer]
     let due: [Due]
@@ -141,7 +140,6 @@ struct SharedFixturesTests {
 
     @Test func theDrillsCardsAreTheWebsCardByCard() throws {
         let f = try fixture("drills", as: DrillsFixture.self)
-        #expect(Drills.intervalDays == f.intervalDays)
         let decks = [Drills.lightGun, Drills.vfrMinimums]
         #expect(decks.map(\.key) == f.decks.map(\.key))
         for (deck, want) in zip(decks, f.decks) {

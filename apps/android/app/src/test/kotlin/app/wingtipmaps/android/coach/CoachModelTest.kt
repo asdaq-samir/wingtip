@@ -129,7 +129,7 @@ class CoachModelTest {
         val s = model.state.value
         assertEquals(plan, s.plan)
         assertNull(s.words)
-        assertEquals("The assistant could not be reached: timed out", s.noWords)
+        assertEquals("The assistant could not be reached: there is no connection to Wingtip.", s.noWords)
         assertTrue(!s.wording && !s.making)
     }
 

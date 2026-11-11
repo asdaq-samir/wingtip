@@ -1,5 +1,5 @@
 {
-  "about": "What a pilot's and an airplane's records say, the engine's endorsement_records and inspections_due, which the gateway asks through the planner (POST /api/pilot/endorsements, /api/aircraft/inspections): a solo endorsement good for 90 days (14 CFR 61.87(n), (p)), 61.93(d)(4) and (5) for a solo cross-country, and the inspections in calendar months (91.409(a) and 91.207(d) 12, 91.411(a) and 91.413(a) 24: to the last day of the Nth month after), the 100-hour 100 hours on (91.409(b)) and a VOR check good 30 days within 4 or 6 degrees (91.171). The boundaries: a flight on the 90th day after the endorsement and the day after; an annual on the 5th and on the last day of a month; a check on 29 February. Also the turnaround and the cruise reference (planning_figures) and the E6B's tolerances (workings_right). And AC 61-65K's student endorsements filled in to sign (endorsement_fill, the gateway's EndorsementKind before #482): A.10's words with its blanks filled and no conditions leaving nothing, a blank's spaces closed up and a field it does not take left out; A.8's conditions, which its words lead into, missing; a code no endorsement has is null.",
+  "about": "What a pilot's and an airplane's records say, the engine's endorsement_records and inspections_due, which the gateway asks through the planner (POST /api/pilot/endorsements, /api/aircraft/inspections): a solo endorsement good for 90 days (14 CFR 61.87(n), (p)), 61.93(d)(4) and (5) for a solo cross-country, and the inspections in calendar months (91.409(a) and 91.207(d) 12, 91.411(a) and 91.413(a) 24: to the last day of the Nth month after), the 100-hour 100 hours on (91.409(b)) and a VOR check good 30 days within 4 or 6 degrees (91.171). The boundaries: a flight on the 90th day after the endorsement and the day after; an annual on the 5th and on the last day of a month; a check on 29 February. Also the turnaround and the cruise reference (planning_figures) and the E6B's tolerances (workings_right). And AC 61-65K's student endorsements filled in to sign (endorsement_fill, the gateway's EndorsementKind before #482): A.10's words with its blanks filled and no conditions leaving nothing, a blank's spaces closed up and a field it does not take left out; A.8's conditions, which its words lead into, missing; a code no endorsement has is null. dueTone: a paperwork row's tone, past a stop, within 30 days or 10 hours a caution, further off ok (the engine's due_tone).",
   "endorsements": [
     {
       "name": "solo current on its 90th day",
@@ -290,6 +290,58 @@
         "student": "Avery B. Student"
       },
       "answer": null
+    }
+  ],
+  "dueTone": [
+    {
+      "days_left": -1,
+      "hours_left": null,
+      "tone": "stop"
+    },
+    {
+      "days_left": 0,
+      "hours_left": null,
+      "tone": "caution"
+    },
+    {
+      "days_left": 30,
+      "hours_left": null,
+      "tone": "caution"
+    },
+    {
+      "days_left": 31,
+      "hours_left": null,
+      "tone": "ok"
+    },
+    {
+      "days_left": 40,
+      "hours_left": -5,
+      "tone": "ok"
+    },
+    {
+      "days_left": null,
+      "hours_left": 0,
+      "tone": "stop"
+    },
+    {
+      "days_left": null,
+      "hours_left": -2.5,
+      "tone": "stop"
+    },
+    {
+      "days_left": null,
+      "hours_left": 10,
+      "tone": "caution"
+    },
+    {
+      "days_left": null,
+      "hours_left": 10.5,
+      "tone": "ok"
+    },
+    {
+      "days_left": null,
+      "hours_left": null,
+      "tone": "unknown"
     }
   ]
 }

@@ -103,6 +103,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security-oauth2-client</artifactId>
         </dependency>
+        <!-- The OAuth 2.1 authorization server a pilot signs in through to
+             connect Wingtip to their own Claude or ChatGPT (the MCP
+             connector, docs/design/mcp-connector.md): Spring Security's
+             own, stock, rather than tokens minted here by hand. Its
+             tokens are for the planner's /mcp alone (security/mcp). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-oauth2-authorization-server</artifactId>
+        </dependency>
         <!-- Sessions kept in Postgres rather than the JVM's memory, so a
              sign-in survives a gateway restart (every rebuild used to sign
              everyone out) and can last the 30 days application.yml sets.

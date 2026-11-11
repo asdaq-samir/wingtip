@@ -7,6 +7,7 @@ import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.ai.read.OnPhoneReader
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
+import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead
 import app.wingtipmaps.android.api.generated.assistant.ReadAsk
 import kotlinx.coroutines.Dispatchers
@@ -88,7 +89,7 @@ object Documents {
         e is Planner.Failure && (e.status == 401 || e.status == 403) -> "Sign in to read a page."
         e is Planner.Failure && e.status == 404 -> "Reading a page isn't on this server yet."
         e is Planner.Failure -> e.message ?: "The server answered ${e.status}."
-        e is IOException -> "The page reader could not be reached: ${e.message}"
+        e is IOException -> Problems.say("The page reader could not be reached", e)
         else -> e.message ?: "The page could not be read."
     }
 }

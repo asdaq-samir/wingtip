@@ -204,7 +204,9 @@ export default function OneSearchResults({ model }: { model: OneSearchModel }) {
   if (rest.length > 0) groups.push({ heading: "Do", rows: lined(rest, (d) => d.key, doRow) });
 
   return (
-    <div className="flex flex-col gap-2 px-4 pt-2 pb-4" data-testid="one-search-results">
+    // Its sides the page's own sixteen (TabPage), where its own sixteen
+    // more put the list 32 in (the sheet audit's F-P1).
+    <div className="flex flex-col gap-2 pt-2 pb-4" data-testid="one-search-results">
       {problem && (
         <p role="alert" className={cn("appear text-destructive-ink", TEXT.note)} data-testid="one-search-problem">
           {problem}

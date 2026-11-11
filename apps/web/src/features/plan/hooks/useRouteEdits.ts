@@ -155,16 +155,23 @@ export function useRouteEdits({
     },
     [setSearchParams],
   );
-  // A point's own altitude set, or (null) given back to the plan.
+  // A point's own altitude set, or (null) given back to the plan; with
+  // `startAt` from the profile, whether its change begins there (Start At,
+  // the address's `altitude_starts`) or is done by it (Cross At), as the
+  // planner and the phones read them.
   const setPointAltitude = useCallback(
-    (ident: string, feet: number | null) => {
+    (ident: string, feet: number | null, startAt?: boolean) => {
       feel("altitude");
       setSearchParams(
         (prev) => {
           const own = altitudesOf(prev.get("altitudes"));
           if (feet === null) delete own[ident];
           else own[ident] = feet;
-          return patched(prev, { altitudes: altitudesParam(own) });
+          const starts = new Set((prev.get("altitude_starts") ?? "").split(",").filter(Boolean));
+          if (startAt && feet !== null) starts.add(ident);
+          else if (startAt !== undefined || feet === null) starts.delete(ident);
+          const kept = [...starts].filter((s) => s in own);
+          return patched(prev, { altitudes: altitudesParam(own), altitude_starts: kept.length ? kept.join(",") : null });
         },
         { replace: true },
       );

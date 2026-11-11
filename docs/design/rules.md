@@ -31,6 +31,10 @@ Compose. Nothing here is built by hand where a stock part does it.
    Recents), the plan, or a link.
 2. **What opens inside a card stays in that card's stack, with Back**
    (NOTAMs, a diagram's details, a past flight, a page of Settings).
+   It keeps the sheet's height: a card opens at half only from the search
+   or the map, and a page opened inside a card stays at the height the
+   sheet is at (owner decision 2026-11-10, on the Android sheet audit's
+   SC-1).
 3. **Pages are cards too.** Brief, Nav Log, Profile, Stops, Nearest, Ask,
    Settings and its pages, the Logbook, Checklists and Saved Flights
    cover the search the same way: ✕ closes, Back steps through the levels
@@ -72,7 +76,11 @@ there fails each app's build until that app opens it.
 
 1. **The title and ✕ always stay in view.** The title starts large and
    folds into a pinned head as the content scrolls. A card's tabs or
-   segmented control pin under the head.
+   segmented control pin under the head. On Android, at half height a
+   card shows the small bar, its title and actions on one row, and at
+   full the large flexible bar, folding as it scrolls (owner decision
+   2026-11-10, on the Android sheet audit's H-1), so the half-height card
+   keeps its room for content.
 2. **Below full, a drag up grows the sheet first, then scrolls; at the
    top of the content, a drag down lowers it.** No pull to refresh inside
    a sheet: cards refresh by themselves.
@@ -86,10 +94,10 @@ there fails each app's build until that app opens it.
 
 | | Web | iPhone | Android |
 |---|---|---|---|
-| Pinned head | `PinnedCardBar`: Apple Maps' card head, the large title folding into a compact pinned head, scroll-linked with CSS scroll-driven animations where the browser has them (index.css `card-pinned`, `card-title-fold`); on `CardTitle`, `CardHead`, `SheetCard` and `ListPageHead`. The airport card's tabs pin under it | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport card's section picker pins under the bar | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page, the plan included; the airport card's tabs a `stickyHeader` |
-| Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the body's scrollers are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, and a row focused under the sheet's edge raises the sheet (MapPanel) | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page | The sheet's nested scroll; every card opens at half (`halfWindow`) and grows to full |
-| Detents | The sheet comes up half way for a card at the least | A thing opens at `.medium`, a page at `.large`; every card grows to `.large`, and the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal | Every card opens at half and grows to full |
-| Sideways rows | The Embla carousels (`CardPictures`, `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`; every native sideways row `overscroll-x-contain`; the upright altitude Slider and the sortable rows' grips keep `""`, their drag being up and down | No control takes the sheet's drag: the altitudes are a menu picker, the flown track's chart moves the replay on a tap | A sideways row takes only a sideways drag; the sheet's nested scroll takes the rest |
+| Pinned head | `PinnedCardBar`: Apple Maps' card head, the large title folding into a compact pinned head, scroll-linked with CSS scroll-driven animations where the browser has them (index.css `card-pinned`, `card-title-fold`); on `CardTitle`, `CardHead`, `SheetCard` and `ListPageHead`. The airport card's tabs pin under it | The stock large navigation title collapsing to inline; nothing forces `.inline` but forms. The airport card's section picker pins under the bar | Material 3 Expressive's large flexible top app bar with `exitUntilCollapsed` on every card and page at full height, the plan included, and the small `TopAppBar` at half (`LocalSheetFull`); the airport card's tabs a `stickyHeader` |
+| Grow, then scroll | Base UI's Drawer gives a drag to any scroller that can scroll, so below full the body's scrollers are `overflow-y: hidden` (index.css), which its arbitration skips; a script, the keyboard and a focused row still scroll them, and a row focused under the sheet's edge raises the sheet (MapPanel) | The system sheet's own behaviour, with nothing overriding it; no zoom push inside a resizable sheet, whose pull-down would pop the page | The sheet's nested scroll; every card shown from the search or the map opens at half (`halfWindow`) and grows to full; one pushed inside a card keeps the height |
+| Detents | The sheet comes up half way for a card at the least | A thing opens at `.medium`, a page at `.large`; every card grows to `.large`, and the map stays live under it up to `.medium` (`presentationBackgroundInteraction`); questions and forms stay modal | A card from the search or the map opens at half and grows to full; one opened inside a card keeps the height |
+| Sideways rows | The Embla carousels (`CardPictures`, `RecentCards`) and the route's pills carry `data-base-ui-swipe-ignore="x"`; every native sideways row `overscroll-x-contain`; the upright altitude Slider and the sortable rows' grips keep `""`, their drag being up and down | No control takes the sheet's drag: the Profile opens at full height for its upright altitude slider, the flown track's chart moves the replay on a tap | A sideways row takes only a sideways drag; the sheet's nested scroll takes the rest |
 | Place kept | The airport card's tabs each keep their place (`useTabScroll`), Settings' list its place after a page (`lib/scrollPlace`); the suggestions, a sent search's results and its Filters page each have their own scroll box | The stack's own behaviour | Each card is its own back stack entry with its own scroll and title state; the welcome starts each page at the top |
 | Footers | The card's own content | Every footer is the system's bar, `safeAreaBar` (`glassFoot`); a card's toolbar the stock bottom bar | The card's own content |
 | Forms | `useDiscardGuard` (`components/discardGuard`): a swipe, Cancel, Escape or a tap beside asks first | `interactiveDismissDisabled` while there is an edit, Cancel at the leading edge asking in a `confirmationDialog` (`Navigation/FormCancel`) | `DiscardDialog` on a swipe or Back (Add Flight, Your Airplanes' form) |
@@ -208,6 +216,41 @@ At each airport the chart already shows, from the map's own
 Every app's tests read the shared fixture
 [`apps/web/src/lib/fixtures/airportWeatherMarks.json`](../../apps/web/src/lib/fixtures/airportWeatherMarks.json):
 arrow shown or not, red or not, ↓ shown or not.
+
+## 6. Altitude in the profile (the owner, 2026-11-10)
+
+The cruise and each waypoint's altitude are set on the route's profile,
+as ForeFlight's profile view sets them; the wheel and the plan's menu are
+gone on every platform.
+
+1. **The slider previews; Set flies.** An upright slider beside the side
+   view steps through the engine's altitudes (`altitude_advisor`'s rows,
+   the altitude wheel's). As it moves, the ground and the DOF's obstacles
+   within a mile of the line turn red within 100 ft of the altitude or
+   above it and yellow within 1,000 ft (`profile_clearance`; ForeFlight's
+   display defaults, not a rule: the legal margins are 14 CFR 91.119 and
+   91.177, which the legal altitudes keep). Nothing is planned until
+   **Set**. In flight, **Auto** holds the preview at the GPS altitude.
+2. **A waypoint's altitude, Start At or Cross At.** A tap on a waypoint
+   sets its altitude: Cross At (done by the waypoint, the planner's
+   `altitudes`) or Start At (begun there, `altitude_starts` beside it).
+   Where the climb or descent is flown is the engine's `altitude_change`:
+   the airplane's climb, the three-to-one descent, and with no airplane no
+   time or fuel.
+3. **The Altitude Advisor chooses the cruise.** One row per altitude with
+   its time, fuel and head or tail wind, Fastest and Most economical
+   marked; a row outside the legal altitudes stays with its warning (warn,
+   never limit).
+4. **Accessibility.** The slider is adjustable a row at a time and says
+   the engine's words ("3,500 ft, terrain within 500 ft near KXYZ");
+   every mark is a 44 pt / 48 dp target.
+
+| | Web | iPhone | Android |
+|---|---|---|---|
+| Slider | Base UI Slider, upright (`features/plan/components/navlog/altitude/AltitudeProfile`, its view model `useAltitudePreview`) | See [ios.md](ios.md) | See [android.md](android.md) |
+| Waypoint | Base UI Popover from a tablet's width up, `SheetDialog` on a phone (`altitude/LegAltitude`) | | |
+| Advisor | shadcn Item rows (`altitude/AltitudeAdvisor`) | | |
+| Tests | `altitude/altitude.test.ts`; `e2e/plans.spec.ts` | | |
 
 ## Changing a rule
 

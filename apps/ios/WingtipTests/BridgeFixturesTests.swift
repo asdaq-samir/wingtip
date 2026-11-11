@@ -198,7 +198,13 @@ struct BridgeFixturesTests {
         #expect(all.count >= 20)
         for c in all {
             let got = try ask("traffic_marks", ["own_ft": c["ownFt"], "planes": [c["plane"] as Any]])
-            check(got, [["label": c["label"] as Any, "near": c["near"] as Any]], "\(c["plane"] ?? "") against \(c["ownFt"] ?? "none")")
+            // With no own ship's place, no miles, no bearing, and none told
+            // (android's EngineFixturesTest asks the same).
+            let want: [String: Any] = [
+                "label": c["label"] as Any, "near": c["near"] as Any,
+                "nm": NSNull(), "bearing_deg": NSNull(), "tell": false,
+            ]
+            check(got, [want], "\(c["plane"] ?? "") against \(c["ownFt"] ?? "none")")
         }
     }
 

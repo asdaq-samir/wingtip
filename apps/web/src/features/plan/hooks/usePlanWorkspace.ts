@@ -145,9 +145,8 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // The fuel stops the address names (`fuel`), kept as the Routes' cards
   // are browsed (useRouteLine).
   const fuelParam = searchParams.get("fuel");
-  // Points' own altitudes (`altitudes`, "VPBNG:4500,KMSN:1900"), set from
-  // a point's menu in the route's box: a waypoint's flown to it, an
-  // airport's its pattern. As the address has them, for the planner.
+  // Points' own altitudes (`altitudes`, "VPBNG:4500,KMSN:1900"): a waypoint's
+  // reached by it (or begun there, `altitude_starts`), an airport's its pattern.
   const altitudes = altitudesParam(altitudesOf(searchParams.get("altitudes")));
   // A local flight's time aloft, in minutes (`local_min`): an hour unless
   // the address says otherwise.
@@ -248,6 +247,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     load,
     classBClearance,
     altitudes,
+    altitudeStarts: searchParams.get("altitude_starts") ?? "",
     procedures,
     runways: runwaysText,
     patterns: landingsText,

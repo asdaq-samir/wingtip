@@ -61,11 +61,11 @@ class OpenScreenTest {
     }
 
     @Test
-    fun profileOpensTheNavLogAndMapItsSettings() {
-        assertEquals(Screen.NAVLOG, OpenScreen.screenOf(FieldScreen.PROFILE))
+    fun profileOpensItsCardAndMapItsSettings() {
+        assertNull(OpenScreen.screenOf(FieldScreen.PROFILE))
         assertEquals("Plan a route first.", OpenScreen.field(FieldScreen.PROFILE, routed = false))
         assertNull(OpenScreen.field(FieldScreen.PROFILE, routed = true))
-        assertEquals(Screen.NAVLOG, ScreenRequests.take(setOf(Screen.NAVLOG)))
+        assertEquals(SheetPage.Profile, CardRequests.take())
         assertNull(OpenScreen.field(FieldScreen.MAP, routed = false))
         assertEquals(SheetPage.MapSettings, CardRequests.take())
         assertNull(OpenScreen.field(FieldScreen.CLEARANCE, routed = false))

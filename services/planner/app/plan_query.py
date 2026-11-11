@@ -103,6 +103,11 @@ class PlanQuery:
     #: a pilot crosses it); an airport's is its pattern, which a flight
     #: landing there comes down to. The rest of the route as planned.
     altitudes: str = ""
+    #: The waypoints among `altitudes` whose change of altitude begins at
+    #: them (Start At), "VPBNG,DLH090030"; the rest are reached by their
+    #: point (Cross At). The profile's per-leg altitude on the web and the
+    #: phones (the owner's pick, 2026-11-10).
+    altitude_starts: str = ""
     #: The instrument procedures picked at the route's fields, as the
     #: address has them: "KDLH:I09:ANDOE,KORD:BENKY6:BYLAW", the field, the
     #: procedure and any transition -- approaches, arrivals and
@@ -189,6 +194,16 @@ class PlanQuery:
                 raise HTTPException(422, f"{part!r} is not a point's altitude: an ident and feet, as VPBNG:4500.")
             out[point_key(ident)] = float(feet)
         return out
+
+    def own_starts(self) -> frozenset[str]:
+        """`altitude_starts` as idents (point_key); a 422 for one that is
+        not a point of a route."""
+        out = set()
+        for ident in filter(None, (p.strip() for p in self.altitude_starts.split(","))):
+            if not point_figure(f"{ident}:0"):
+                raise HTTPException(422, f"{ident!r} is not a point of the route for Start At: an ident, as VPBNG.")
+            out.add(point_key(ident))
+        return frozenset(out)
 
     def procedure_picks(self) -> list[tuple[str, str, str | None, str | None]]:
         """`procedures`, each the field, the procedure, its transition
@@ -297,6 +312,7 @@ class PlanQuery:
             rules=self.rules,
             depart=self.depart,
             own_altitudes=self.own_altitudes(),
+            altitude_starts=self.own_starts(),
             drawn=self.drawn_procedures(),
             leave_runways=self.departure_runways(),
             land_runways=self.landing_runways(),

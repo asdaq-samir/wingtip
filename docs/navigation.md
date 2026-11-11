@@ -216,6 +216,14 @@ Discard Changes?). The iPad's sidebar holds the same search and plan, its
 pages pushed there and its things in the inspector. Counted from the map
 with the sheet at rest: the search or a row of the plan is 1.
 
+**One row (owner decision 2026-11-10).** The "Flight Plan" title bar is
+gone on the iPhone: the sheet's top row is the search with the microphone
+and the account button beside it, and the route card sits under it (the
+route, Ready to Fly, the figures, Brief, Nav Log, Airplane, •••). Saved
+Flights, Share and Undo, which were the bar's, are in the route card's
+•••: Flights 1 → 2, Share 1 → 2 (its ways a submenu, 3 to pick one), Undo
+1 → 2, and Undo is still 0 taps by shaking the iPhone or ⌘Z.
+
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
 | Plan (was FPL) | the sheet itself | 1 → **0** | From/To and altitude inline; stops Edit (delete, move), **Add a Stop (the search)**; each point's menu; Undo bar |
@@ -225,8 +233,12 @@ with the sheet at rest: the search or a row of the plan is 1.
 | Airplane (was the tab) | the plan's Airplane button; the search's types; Pick an Airplane and Ready to Fly's fix (pushed in their card, with Back) | 2 | N-number typed, No Airplane |
 | Route Leg | a tap on the map's course; a nav log row (pushed in the Nav Log card) | 1 / 3 | **One card** from both: Direct To, Remove, then the leg's figures |
 | Figures strip | the sheet's foot, with a route | 0 | Tapped, the nav log |
-| Nav Log | the plan's ••• → Nav Log; the strip | 2 / 1 | -- |
-| Brief, Profile, Flights | the plan's row or bar; the search's Do; Settings' Flights row | 2 | Saved flights: swipe to delete with an Undo row; the Brief's one foot bar, Start Flight |
+| Nav Log | the route card's Nav Log; the strip | 2 → **1** / 1 | -- |
+| Brief | the route card's Brief; the search's Do | 2 → **1** | the Brief's one foot bar, Start Flight |
+| Profile | the route card's ••• → Profile; the search's Do | 2 | -- |
+| Saved Flights | the route card's ••• → Saved Flights (was the bar's, 1); the search's Do; Settings' Flights row | 1 → **2** (one-row header, owner decision 2026-11-10) | Swipe to delete with an Undo row |
+| Share | the route card's ••• → Share → a way (was the bar's Share, 1 → 2) | 2 → **3** | -- |
+| Undo | the route card's ••• → Undo (was the bar's, 1); shake; ⌘Z | 1 → **2**, shake 0 | -- |
 | Nearest | the instruments bar; the search's All Nearest; the plan's Nearest for a Diversion; Siri | 1–2 | **One list** from every way in: Divert on a swipe or a hold, Diversion Drill |
 | Map card (new) | the map's own Map button; Settings' Map row | **1** (was 2, Settings) | The layers, airport weather, traffic, the weather loop and the alerts, each switch in place |
 | Settings (was Setup) | the account button, opening Settings with no menu between (the owner, 2026-11-10) | 1 → 1 | Every switch and picker in place; Sign In or the account's page with Sign Out |
@@ -251,7 +263,7 @@ in the search is not counted.
 | Screen | Path from the map | Taps before → after | Edit in place |
 |---|---|---|---|
 | Plan (was FPL; its legs are the nav log) | the flight's card | 1 → 1 | Route fields, stops, VFR/IFR as before; Add a Stop and a point's Add a Stop After open the one search for the stop; each field of the route opens its card |
-| Nav Log, Profile | the flight's card → Nav Log (or the figures); "profile" in the search opens the nav log's altitudes (no side view on Android) | 2 → 2 | as the plan |
+| Nav Log, Profile | the flight's card → Nav Log (or the figures); the plan's Profile row or "profile" in the search opens the Profile card: the side view, its vertical altitude slider (Set, Auto in flight), a waypoint's Start At / Cross At sheet | 2 → 2 | as the plan; the Altitude Advisor's rows pick the cruise |
 | A leg | a leg on the map, a nav log row, or a strip checkpoint: the one leg card | 1 / 2 | Direct, Remove |
 | Brief | the flight's card → Brief; or search "brief" | 2 → 2 | Departure hour; Ready to Fly at its head |
 | Airport card | search → the field; tap it on the map; a list row; the plan's field | 1 + typing (map 1) | Fly Here (with its time), Depart From, Add as Stop, Diagram, Call, Address at its foot; the star; Overview, Weather, Frequencies, Runways, Approaches, NOTAMs under pinned tabs |
@@ -276,7 +288,7 @@ or overflow).
 
 | On | Actions | Web | iOS | Android |
 |---|---|---|---|---|
-| A waypoint of the route | Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Move, Remove, Undo | point menu (all) | point menu (all but Add a Stop After; More Info new) | **⋮ point menu: all but Set Altitude… (no per-point altitude on Android); Undo row (new)** |
+| A waypoint of the route | Direct To, Set Altitude…, Hold Here…, More Info, Add a Stop After, Move, Remove, Undo | point menu (all) | point menu (all but Add a Stop After; More Info new) | **⋮ point menu: all but Set Altitude… (a waypoint's altitude is set on the Profile card, Start At or Cross At); Undo row (new)** |
 | The destination | More Info (weather, frequencies, runways, approaches), Brief, Nearest | More Info; Brief on FPL | point menu: More Info, **Brief (new)** | Brief beside Plan; **point menu: More Info, Brief (new)** |
 | The figures | the nav log | **Dist (new)** | **strip (new)** | **strip (new)** |
 | A nav log row | its field's card | **name (new)** | leg detail | leg sheet |
@@ -308,12 +320,12 @@ change or another branch's work:
    special-use areas, terrain and obstacles have no card on Android.
 4. **Android's route Undo row** shows only on the plan (an edit from the
    map's leg card makes one there); the point menu is not on the
-   departure or in the strip layout, and has no Set Altitude… (no
-   per-point altitude on Android).
+   departure or in the strip layout, and has no Set Altitude… (a
+   waypoint's altitude is set from the Profile card instead).
 5. **Logbook delete differs underneath:** the web deletes at once and its
    Undo logs the flight again (a new id), the phones hold the DELETE until
    the Undo goes. The web's confirm before a delete is gone on all three.
-6. **Android has no Profile, saved flights, Guide or Practice**; its
+6. **Android has no saved flights, Guide or Practice** (its Profile card came 2026-11-10); its
    Favorites are the fields starred on their cards and the pilot's own
    airplanes, kept on the phone (`design/screens.json`); that is the android-parity branch's,
    and saved flights' Edit follows it there.

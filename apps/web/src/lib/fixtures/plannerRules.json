@@ -13089,5 +13089,19 @@
    "published_agl_ft": null,
    "flown_ft": 800
   }
+ ],
+ "alternateWindow": [
+  {
+   "eta": 1800000000.0,
+   "for": "destination",
+   "start": 1799996400.0,
+   "end": 1800003600.0
+  },
+  {
+   "eta": 1800000000.0,
+   "for": "alternate",
+   "start": 1800000000.0,
+   "end": 1800000000.0
+  }
  ]
 }

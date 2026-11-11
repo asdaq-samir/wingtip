@@ -22,19 +22,26 @@
 //! - cautions: what a pilot's own altitude breaks (91.119, 91.159, 91.131,
 //!   91.155, 71.33, 91.211, 91.177, 91.179) and prohibited airspace on
 //!   the way (73.83), as warnings;
+//! - clearance: the profile's red and yellow preview of the ground and
+//!   obstacles against an altitude (ForeFlight's display defaults);
+//! - advisor: the Altitude Advisor's rows, Fastest and Most economical
+//!   marked, those outside the legal altitudes warned of;
 //! - calls: the names crate::call answers them by.
 //!
 //! The owner's four plans (2026-09-30) are built on these bands: lowest
 //! and highest are the band's bottom and top, fastest the winds', and
 //! economical the fuel's (the nav log's, #482 phase 4).
 
+pub mod advisor;
 pub mod calls;
 pub mod cautions;
+pub mod clearance;
 pub mod clouds;
 pub mod congested;
 pub mod cruising;
 pub mod floor;
 pub mod mountainous;
+pub mod profile_calls;
 pub mod select;
 pub mod track;
 pub mod words;

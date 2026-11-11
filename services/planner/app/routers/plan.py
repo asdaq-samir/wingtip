@@ -21,7 +21,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import Response, StreamingResponse
-from wingtip import airspace, altitude, chartlabels, charts, geo, planning
+from wingtip import airspace, altitude, chartlabels, charts, faa_data, geo, planning
 from wingtip import flight_plan as fp
 from wingtip.config import VFR_SECTIONAL_MAX_ZOOM, VFR_SECTIONAL_MIN_ZOOM
 from wingtip.engine import ask as engine
@@ -107,12 +107,12 @@ def chart_info(response: Response) -> ChartInfo:
 @router.get("/api/route-profile", openapi_extra=PUBLIC)
 def route_profile(dep: str, dest: str, stops: str = "") -> RouteProfile:
     """The route's side view: the ground under it every 2 nm and the
-    Class B, C and D airspace it passes through, floor and ceiling, along
-    the whole route through its stops (wingtip.profile) -- for the page to
-    draw the plan's altitudes, climbs and descents over."""
+    Class B, C and D airspace it passes through and the DOF's obstacles
+    near its line, along the route through its stops (wingtip.profile)."""
     r = load_route(dep, dest, stops)
     shp_path = airspace.ensure_class_airspace_shapefile(altitude.DEFAULT_FAA_CACHE_DIR)
-    return side_view([(a["lat"], a["lon"]) for a in r.airports], shp_path)
+    dof_path = faa_data.ensure_nasr_file("DOF.DAT", altitude.DEFAULT_FAA_CACHE_DIR)
+    return side_view([(a["lat"], a["lon"]) for a in r.airports], shp_path, dof_path)
 
 
 @router.get("/api/route-check")

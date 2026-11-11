@@ -56,27 +56,27 @@ struct SetupView: View {
                 // The first launch's welcome, shown again from here alone.
                 Button("Show Welcome Again") { WelcomeModel.shared.again() }
             }
-            // The map's own settings are its Map card (the Map button's,
-            // MapSettingsView), one home for them; the same card from here.
-            Section {
+            // How the app looks, in one titled group (the iOS sheet audit,
+            // 2026-11-10, found a group with no title and a "Look" group of
+            // one "Look" row): the map's own settings, its Map card (the
+            // Map button's, MapSettingsView), one home for them; the plan
+            // under the one search, or the strip (StripSheetView), the
+            // owner's pick of 2026-11-04, a segmented control, as a setting
+            // of two is; and the look -- the brand's by default, Glass
+            // Cockpit and Chart Ink kept to pick (the owner, 2026-11-09),
+            // and Native, iOS's own (2026-11-10) -- a menu, as a discrete
+            // setting is (docs/decisions/0017).
+            Section("Display") {
                 NavigationLink(value: SheetPage.mapSettings) { SettingsLabel("Map", systemImage: "map", colour: WingtipColor.Badge.chart) }
-            }
-            // The plan under the one search, or the strip: the flight
-            // as one strip in time under the same search
-            // (StripSheetView), the owner's pick of 2026-11-04, tried
-            // beside it; a segmented control, as a setting of two is.
-            Section("Screen") {
-                Picker("Screen", selection: $layoutName) {
-                    Text("Plan").tag("plan")
-                    Text("Strip").tag("strip")
+                LabeledContent("Screen") {
+                    Picker("Screen", selection: $layoutName) {
+                        Text("Plan").tag("plan")
+                        Text("Strip").tag("strip")
+                    }
+                    .pickerStyle(.segmented)
+                    .labelsHidden()
+                    .fixedSize()
                 }
-                .pickerStyle(.segmented)
-            }
-            // The look: the brand's by default, Glass Cockpit and Chart
-            // Ink kept to pick (the owner, 2026-11-09), and Native, iOS's
-            // own (2026-11-10); a menu, as a discrete setting is
-            // (docs/decisions/0017).
-            Section("Look") {
                 Picker("Look", selection: $look) {
                     ForEach(Look.allCases) { Text($0.label).tag($0.rawValue) }
                 }

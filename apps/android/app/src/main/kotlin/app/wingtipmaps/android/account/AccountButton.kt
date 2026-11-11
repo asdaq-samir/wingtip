@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.Pilot
@@ -35,7 +36,7 @@ import app.wingtipmaps.android.strip.StripData
  * is grown for it.
  */
 @Composable
-fun AccountButton(pilot: Pilot?, modifier: Modifier = Modifier) {
+fun AccountButton(pilot: Pilot?, modifier: Modifier = Modifier, avatar: Dp = AccountAvatar) {
     val initials = StripData.initialsOf(pilot)
     val name = stringResource(R.string.account_and_settings)
     IconButton(
@@ -44,7 +45,7 @@ fun AccountButton(pilot: Pilot?, modifier: Modifier = Modifier) {
             contentDescription = pilot?.let { "${it.displayName}: $name" } ?: name
         },
     ) {
-        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(36.dp)) {
+        Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primary, modifier = Modifier.size(avatar)) {
             Box(contentAlignment = Alignment.Center) {
                 if (initials.isNotEmpty()) {
                     Text(initials, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onPrimary)
@@ -55,3 +56,10 @@ fun AccountButton(pilot: Pilot?, modifier: Modifier = Modifier) {
         }
     }
 }
+
+/** The circle's size inside Material's 48-dp IconButton. */
+private val AccountAvatar = 36.dp
+
+/** The circle in the search bar's trailing slot: Material's search bar
+ *  avatar, 30 dp (SearchBarTokens.AvatarSize), its target still 48. */
+val SearchBarAvatar = 30.dp

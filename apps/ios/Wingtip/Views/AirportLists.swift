@@ -17,6 +17,7 @@ struct AirportDestination: View {
         case .list(.nearest): NearestView()
         case .list(let shows): AirportListView(shows: shows, nearest: nearest)
         case .nearFrom(let lat, let lon, let label): NearFromView(lat: lat, lon: lon, label: label)
+        case .nearby(let kind): FindNearbyView(kind: kind)
         }
     }
 }

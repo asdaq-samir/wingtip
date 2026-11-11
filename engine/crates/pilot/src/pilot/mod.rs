@@ -19,6 +19,7 @@
 pub mod checklist;
 pub mod csv;
 pub mod currency;
+pub mod due_tone;
 pub mod endorsements;
 pub mod handbook;
 pub mod js;

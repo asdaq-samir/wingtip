@@ -50,7 +50,7 @@ PATH=$PATH:$HOME/.docker/bin:/Applications/Docker.app/Contents/Resources/bin:$HO
 tool() { "$here/scripts/build/toolchain.sh" get "$1"; }
 RUST=$(tool rust) PYTHON=$(tool python) JAVA=$(tool java) MAVEN=$(tool maven) NODE=$(tool nodejs)
 RUST_IMAGE=rust:$RUST-slim-$(tool debian)
-# CI's (ci.yml's test job).
+# CI's (scripts/ci/guards.sh).
 CARGO_MACHETE=0.9.2
 # The engine store and sccache every worktree shares (sccache_docker_args).
 # shellcheck source=scripts/build/shared-cache.sh
@@ -248,20 +248,22 @@ run_area() {
       docker run --rm -v "$here:/w" -v wingtip-cargo-registry:/usr/local/cargo/registry \
         -v wingtip-cargo-tools:/tools -w /w/engine "$RUST_IMAGE" sh -c \
         "[ -x /tools/bin/cargo-machete ] || cargo install -q --locked cargo-machete@$CARGO_MACHETE --root /tools; /tools/bin/cargo-machete"
-      # Clippy with its warnings denied, then CI's own cargo test line
-      # (ci.yml's test job), so the crates tested here are always the ones
-      # tested there.
+      # Clippy with its warnings denied, then cargo test over every crate CI
+      # tests (scripts/ci/engine_affected.py --all, the list ci.yml's
+      # test-engine runs on main's push), so the crates tested here are
+      # always the ones tested there.
       local cmd
-      cmd=$(grep -oE 'cargo test --profile ci [^#]*' "$here/.github/workflows/ci.yml" | head -1)
+      cmd="cargo test --profile ci --manifest-path engine/Cargo.toml $(python3 "$here/scripts/ci/engine_affected.py" --all)"
       # Every worktree at one path, /w, so sccache (Cargo's RUSTC_WRAPPER,
-      # with this turn's cache, scripts/build/shared-cache.sh) finds a crate another worktree built
-      # from the same files: its key is the files' content and the compile's
-      # directory. The target stays the worktree's own, a volume labelled
-      # with its path (tidy-local.sh removes it with the worktree): Cargo
-      # judges a crate fresh by mtime, and a target shared with another
-      # worktree served its older build of a crate for this one's
-      # (2026-11-08); the cache sccache keeps is by content, so it cannot.
-      # Clippy runs without it: a check's metadata is not what sccache keeps.
+      # with this turn's cache, scripts/build/shared-cache.sh) finds a crate
+      # another worktree built from the same files: its key is the files'
+      # content and the compile's directory. The target stays the
+      # worktree's own, a volume labelled with its path
+      # (tidy-build-caches.sh removes it with the worktree): Cargo judges a
+      # crate fresh by mtime, and a target shared with another worktree
+      # served its older build of a crate for this one's (2026-11-08); the
+      # cache sccache keeps is by content, so it cannot. Clippy runs
+      # without it: a check's metadata is not what sccache keeps.
       local tvol cache_args=() arg
       tvol=wingtip-cargo-target-tests-$RUST-$(docker version -f '{{.Server.Arch}}')-$(worktree_hash)
       docker volume inspect "$tvol" >/dev/null 2>&1 || docker volume create --label "wingtip.worktree=$here" "$tvol" >/dev/null
@@ -273,11 +275,12 @@ run_area() {
         "rustup component add clippy 2>/dev/null && RUSTC_WRAPPER= cargo clippy -q --manifest-path engine/Cargo.toml --workspace --all-targets -- -D warnings && $cmd"
       ;;
     java)
-      # services/, not the gateway alone: the pom generates the assistant's
-      # answers from ../assistant/openapi.json.
-      docker run --rm -v "$here/services":/services -v /services/gateway/target -v fp-m2:/root/.m2 \
+      # The whole repository, not the gateway alone: the pom generates the
+      # assistant's answers from ../assistant/openapi.json, and the tests
+      # read the shared fixtures in apps/web/src/lib/fixtures.
+      docker run --rm -v "$here":/repo -v /repo/services/gateway/target -v fp-m2:/root/.m2 \
         -v /var/run/docker.sock:/var/run/docker.sock -e TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal \
-        -w /services/gateway "maven:$MAVEN-eclipse-temurin-$JAVA" mvn -B -q test
+        -w /repo/services/gateway "maven:$MAVEN-eclipse-temurin-$JAVA" mvn -B -q test
       ;;
     ios)
       local sim

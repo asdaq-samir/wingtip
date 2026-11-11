@@ -54,8 +54,7 @@ internal object OpenScreen {
     val takenInside: Set<Screen> = setOf(Screen.CHECKLISTS, Screen.COACH)
 
     /** The app's screen a word typed or said in the search names
-     *  (FieldCommands), where this phone has it. Android has no side view,
-     *  so "profile" opens the nav log, its altitudes leg by leg. */
+     *  (FieldCommands), where this phone has it; "profile" is a card (pageOf). */
     fun screenOf(field: FieldScreen): Screen? =
         when (field) {
             FieldScreen.AIRPLANE -> Screen.AIRPLANE
@@ -63,7 +62,7 @@ internal object OpenScreen {
             FieldScreen.SETUP -> Screen.SETUP
             FieldScreen.BRIEF -> Screen.BRIEF
             FieldScreen.NEAREST -> Screen.NEAREST
-            FieldScreen.NAVLOG, FieldScreen.PROFILE -> Screen.NAVLOG
+            FieldScreen.NAVLOG -> Screen.NAVLOG
             FieldScreen.FAVORITES, FieldScreen.RECENTS -> Screen.AIRPORT
             else -> null
         }
@@ -73,6 +72,7 @@ internal object OpenScreen {
         when (field) {
             FieldScreen.RADIO, FieldScreen.CLEARANCE -> SheetPage.Clearance
             FieldScreen.MAP -> SheetPage.MapSettings
+            FieldScreen.PROFILE -> SheetPage.Profile
             else -> null
         }
 

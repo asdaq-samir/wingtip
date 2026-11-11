@@ -769,10 +769,16 @@
     "At a Glance" : {
 
     },
+    "Auto" : {
+
+    },
     "Avery B. Student" : {
 
     },
     "Balance" : {
+
+    },
+    "Band" : {
 
     },
     "Based at" : {
@@ -1049,7 +1055,7 @@
     "Cross-country" : {
 
     },
-    "Cruise Altitude" : {
+    "Cruise" : {
 
     },
     "Cruise altitude, hundreds of feet" : {
@@ -1206,6 +1212,9 @@
 
     },
     "Dismiss the answer" : {
+
+    },
+    "Display" : {
 
     },
     "Dist" : {
@@ -1455,6 +1464,12 @@
 
     },
     "Fill in %@" : {
+
+    },
+    "Find Nearby" : {
+
+    },
+    "Find Nearby is from where the airplane is." : {
 
     },
     "Find an Airplane" : {
@@ -1871,6 +1886,9 @@
     "Its pilot stopped sharing it." : {
 
     },
+    "Its profile" : {
+
+    },
     "J. J. Jones" : {
 
     },
@@ -1878,6 +1896,9 @@
 
     },
     "KDLH VOT" : {
+
+    },
+    "KXXX" : {
 
     },
     "Keep Editing" : {
@@ -2303,6 +2324,9 @@
     "Night" : {
 
     },
+    "No %@ Within 25 nm" : {
+
+    },
     "No Airplane" : {
 
     },
@@ -2355,9 +2379,6 @@
     "No briefing" : {
 
     },
-    "No card for %@" : {
-
-    },
     "No checklist yet" : {
 
     },
@@ -2365,9 +2386,6 @@
 
     },
     "No codes yet" : {
-
-    },
-    "No field %@" : {
 
     },
     "No fields near here" : {
@@ -2773,6 +2791,12 @@
     "Practice Them All" : {
 
     },
+    "Preview" : {
+
+    },
+    "Previews the airplane's own altitude" : {
+
+    },
     "Privacy Policy" : {
 
     },
@@ -2788,10 +2812,10 @@
     "Profile" : {
 
     },
-    "Profile, highest %@" : {
+    "Profile, Altitude Caution" : {
 
     },
-    "Profile, your altitude has a caution" : {
+    "Profile, highest %@" : {
 
     },
     "Put In a GPX File…" : {
@@ -3330,6 +3354,9 @@
     "Support" : {
 
     },
+    "Swipe up or down to preview another altitude; Set flies it." : {
+
+    },
     "TFRs" : {
 
     },
@@ -3435,6 +3462,12 @@
     "The clearance card" : {
 
     },
+    "The climb or descent begins at %@." : {
+
+    },
+    "The climb or descent is done by %@." : {
+
+    },
     "The course is" : {
 
     },
@@ -3450,7 +3483,7 @@
     "The field's name · its longest runway" : {
 
     },
-    "The figures are the planner's; the assistant puts them in words and shows what it read." : {
+    "The figures are the engine's and the planner's; each answer shows what it read." : {
 
     },
     "The flight in words" : {
@@ -3499,7 +3532,7 @@
     "The regulation, in its own words" : {
 
     },
-    "The route from the side: the ground, the airspace and the altitude flown" : {
+    "The route from the side" : {
 
     },
     "The route has changed" : {
@@ -3903,9 +3936,6 @@
 
     },
     "Your airplanes, flights, logbook and endorsements go, and you are signed out on every device. This can't be undone." : {
-
-    },
-    "Your altitude" : {
 
     },
     "Your endorsements and reviews are kept with your account." : {

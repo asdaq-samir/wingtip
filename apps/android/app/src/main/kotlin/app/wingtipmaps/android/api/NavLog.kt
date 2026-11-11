@@ -18,9 +18,9 @@ import kotlinx.serialization.decodeFromString
 sealed interface NavLogMessage {
     data class Stage(val detail: String) : NavLogMessage
 
-    /** The altitude flown; the four plans and the wheel's figures come
-     *  with the altitude wheel, a later phase. */
-    data class Altitude(val altitudeFt: Double?) : NavLogMessage
+    /** The altitude flown, the plans and each legal altitude's figures
+     *  (the Altitude Advisor's rows), and the reasons it was chosen. */
+    data class Altitude(val line: NavLogAltitude) : NavLogMessage
 
     data class OneLeg(val leg: Leg) : NavLogMessage
 
@@ -40,7 +40,7 @@ object NavLog {
         val json = Gateway.json
         return when (json.decodeFromString<Kind>(line).type) {
             "stage" -> NavLogMessage.Stage(json.decodeFromString<NavLogStage>(line).detail)
-            "altitude" -> NavLogMessage.Altitude(json.decodeFromString<NavLogAltitude>(line).altitudeFt)
+            "altitude" -> NavLogMessage.Altitude(json.decodeFromString<NavLogAltitude>(line))
             "leg" -> NavLogMessage.OneLeg(json.decodeFromString<Leg>(line))
             "done" -> NavLogMessage.Done(json.decodeFromString<NavLogDone>(line).totals)
             "error" -> NavLogMessage.Problem(json.decodeFromString<NavLogError>(line))

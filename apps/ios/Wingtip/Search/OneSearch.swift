@@ -27,8 +27,10 @@ extension View {
     /// in the system's list under it, the microphone and the account
     /// button beside it. The iPhone's sheet, its strip and the iPad's
     /// sidebar all put it here, so there is one search.
-    func oneSearch(_ model: OneSearchModel, host: SearchHost) -> some View {
-        modifier(OneSearch(model: model, host: host))
+    /// `oneRow`: the field is the bar itself, no title row above it (the
+    /// plan's sheet on the iPhone, the owner's one-row header).
+    func oneSearch(_ model: OneSearchModel, host: SearchHost, oneRow: Bool = false) -> some View {
+        modifier(OneSearch(model: model, host: host, oneRow: oneRow))
     }
 }
 
@@ -39,6 +41,10 @@ extension View {
 struct OneSearch: ViewModifier {
     @Bindable var model: OneSearchModel
     let host: SearchHost
+    /// The owner's one-row header (2026-11-10): the field in the bar's
+    /// principal place, the title row dropped, the account beside it, as
+    /// Apple Maps' search row; else in the bar's drawer under the title.
+    var oneRow = false
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(Session.self) private var session
@@ -52,7 +58,8 @@ struct OneSearch: ViewModifier {
     func body(content: Content) -> some View {
         content
             .searchable(text: $model.text, isPresented: $model.presented,
-                        placement: .navigationBarDrawer(displayMode: .always), prompt: Text(voice.listening ? OneSearchModel.speak : OneSearchModel.prompt))
+                        placement: oneRow ? .toolbarPrincipal : .navigationBarDrawer(displayMode: .always),
+                        prompt: Text(voice.listening ? OneSearchModel.speak : OneSearchModel.prompt))
             .searchSuggestions {
                 if let problem = model.problem {
                     Section { ProblemLine(problem) }
@@ -66,7 +73,7 @@ struct OneSearch: ViewModifier {
             .onSubmit(of: .search) { Task { await send(model.text) } }
             .onChange(of: model.text) { _, _ in model.problem = nil; model.typed() }
             .toolbar {
-                SearchBarItems(model: model, hear: voice.canListen ? { Task { await hear() } } : nil, open: host.page)
+                SearchBarItems(model: model, hear: voice.canListen ? { Task { await hear() } } : nil, open: host.page, undo: !oneRow)
             }
             .task { await model.loadTypes() }
             // The nearest fields from where the airplane is, asked again

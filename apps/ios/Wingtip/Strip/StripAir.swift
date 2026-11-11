@@ -39,8 +39,10 @@ struct StripAir: View {
                         .accessibilityElement(children: .combine)
                         .accessibilityLabel("Magnetic heading \(SpokenFigures.degrees(heading))")
                     }
-                    if let fix, let at = next.coordinate {
-                        let nm = Flight.nm(from: fix.coordinate, to: at)
+                    // The miles to go are the engine's (`distance_nm`); where
+                    // it cannot say them, the strip shows none.
+                    if let fix, let at = next.coordinate,
+                       let nm = try? Engine.distanceNm(lat1: fix.coordinate.latitude, lon1: fix.coordinate.longitude, lat2: at.latitude, lon2: at.longitude) {
                         VStack(alignment: .trailing, spacing: WingtipSpace.xxs) {
                             Text("To go").condensedCaps(.caption).foregroundStyle(ink.muted)
                             Text(Format.number(nm, decimals: nm < 10 ? 1 : 0)).font(ChartInk.figure(28))

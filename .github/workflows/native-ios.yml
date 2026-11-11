@@ -2,19 +2,25 @@ name: Native iOS
 
 # The native app (apps/ios/, docs/NATIVE.md): the engine's framework, the
 # Xcode project XcodeGen makes from apps/ios/project.yml, and its tests on a
-# simulator. ci.yml calls this on a pull request that touches the app, so
+# simulator (docs/CI.md, "The tiers"). ci.yml calls this on a pull request
+# that touches the app, the build and its unit tests alone (`unit_only`), so
 # "CI passed" waits for it (#499 merged with a phone app not compiling when
-# its build ran beside CI). On its own: main's pushes, then TestFlight;
-# claude/native-* pushes; and every night the whole suite (`full`).
+# its build ran beside CI). On its own: main's pushes, the unit tests and
+# the CardSmokeTests UI smoke after merge, then TestFlight; claude/native-*
+# pushes; and every night the whole suite (`full`).
 #
 # Actions are pinned as in ci.yml (its opening comment says why).
 on:
   workflow_call:
     inputs:
       # The whole suite on the iPhone, the iPad and iPhone Duo. Without it
-      # (a pull request, main's push): the unit tests and CardSmokeTests on
-      # the iPhone alone, about ten minutes (docs/CI.md).
+      # (main's push): the unit tests and CardSmokeTests on the iPhone alone.
       full:
+        type: boolean
+        default: false
+      # A pull request's: built, and the unit tests (WingtipTests) on the
+      # iPhone, no UI test.
+      unit_only:
         type: boolean
         default: false
   push:
@@ -55,14 +61,15 @@ env:
   WINGTIP_URL: ${{ vars.WINGTIP_URL || 'https://wingtipmaps.app/app/plan' }}
   WINGTIP_BUNDLE_ID: ${{ vars.IOS_BUNDLE_ID || 'app.wingtipmaps.ios' }}
   FULL: ${{ inputs.full == true || github.event_name == 'schedule' }}
+  UNIT_ONLY: ${{ inputs.unit_only == true }}
 
 jobs:
   test:
     # GitHub's xcode-27 image, the one hosted image with .tool-versions'
     # Xcode 27.2 (actions/runner-images, images/macos/xcode-27-arm64-Readme.md).
     runs-on: ${{ vars.MAC_RUNNER || 'xcode-27' }}
-    # A pull request's set is about ten minutes; the night's three
-    # simulators and every UI suite about sixty.
+    # A pull request's set is a few minutes; the night's three simulators
+    # and every UI suite about sixty.
     timeout-minutes: ${{ (inputs.full || github.event_name == 'schedule') && 100 || 25 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -141,10 +148,10 @@ jobs:
             echo "ipad=$(pick iPad)" >> "$GITHUB_OUTPUT"
             echo "duo=$(pick 'iPhone Duo')" >> "$GITHUB_OUTPUT"
           fi
-      # A pull request: the unit tests and CardSmokeTests, the one UI test
-      # a change waits on (the airport card opened, scrolled and closed).
-      # The launch, flow and accessibility tests, the card suites and the
-      # store shots are the night's.
+      # A pull request: the unit tests, in WingtipUnit, which builds no UI
+      # test. Main's push: those and CardSmokeTests, the one UI smoke (the
+      # airport card opened, scrolled and closed). The launch, flow and
+      # accessibility tests, the card suites and the store shots are the night's.
       - name: Built and tested on the simulator
         env:
           IPHONE: ${{ steps.sim.outputs.iphone }}
@@ -153,13 +160,13 @@ jobs:
         run: |
           host=$(python3 -c "from urllib.parse import urlparse; print(urlparse('$WINGTIP_URL').hostname)")
           dest=(-destination "platform=iOS Simulator,id=$IPHONE")
-          only=(-only-testing:WingtipTests -only-testing:WingtipUITests/CardSmokeTests)
+          only=(-only-testing:WingtipTests) scheme=WingtipUnit
+          [ "$UNIT_ONLY" = true ] || only+=(-only-testing:WingtipUITests/CardSmokeTests) scheme=Wingtip
           if [ "$FULL" = true ]; then
-            only=()
+            only=() scheme=Wingtip
             for id in $IPAD $DUO; do dest+=(-destination "platform=iOS Simulator,id=$id"); done
           fi
-          set -o pipefail
-          xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme Wingtip -configuration Debug "${dest[@]}" \
+          xcodebuild -project apps/ios/Wingtip.xcodeproj -scheme "$scheme" -configuration Debug "${dest[@]}" \
             -derivedDataPath "$RUNNER_TEMP/derived" -resultBundlePath "$RUNNER_TEMP/Wingtip.xcresult" "${only[@]}" \
             CODE_SIGNING_ALLOWED=NO COMPILER_INDEX_STORE_ENABLE=NO WINGTIP_HOST="$host" WINGTIP_BUNDLE_ID="$WINGTIP_BUNDLE_ID" \
             test > "$RUNNER_TEMP/xcodebuild.log" 2>&1 || true

@@ -2,12 +2,21 @@
 
 The policy, which this script holds the repository to:
 
-- **Three tiers.** A check runs on a pull request (and main's push), or
-  after merge on main, or at night; never in two of them for the same
-  code, and never twice in one pull request's run.
+- **Three tiers** (the owner, 2026-11-10: "3-minute gate: browser smoke,
+  images and iPhone UI smoke run after merge"). Tier 1 is what a pull
+  request runs, and "CI passed" waits for every tier-1 job and no other;
+  tier 2 runs after merge, on main's push (a job whose `if:` says
+  `github.event_name != 'pull_request'`): the browser suite's smoke, the
+  images, and in native-ios.yml's own run the iPhone's UI smoke; tier 3 is
+  the night. No tier-1 job needs a later tier's; the browser suite and the
+  image builds are never tier 1 again; each tier-1 job has a budget in
+  scripts/ci/ci_budget.py within the three minutes (the phones' builds
+  aside); and every app a pull request changes the inputs of is still
+  built in tier 1 (#499): the web app's `vite build`, Android's job, and
+  iOS's, called with `unit_only: true`.
 - **One @smoke per journey.** A browser journey is a spec file in
-  apps/web/e2e, or a top-level `test.describe` block within one. A pull
-  request runs the `@smoke` and `@flight-critical` tests only (ci.yml's
+  apps/web/e2e, or a top-level `test.describe` block within one. Main's
+  push runs the `@smoke` and `@flight-critical` tests only (ci.yml's
   e2e), so each journey holds at most one `@smoke` test.
 - **Every spec chooses its tier.** A spec file holds a `@smoke` or
   `@flight-critical` test, or is named in scripts/ci/test_tiers_nightly.txt
@@ -16,26 +25,29 @@ The policy, which this script holds the repository to:
 - **At most one retry on a pull request** (playwright.config.ts's
   `retries`): a test that needs more is flaky, and goes to the nightly
   issue (scripts/ci/flaky_tests.py) to be fixed, not retried.
-- **Every iOS UI test class in a tier.** native-ios.yml names the pull
-  request's classes with `-only-testing:WingtipUITests/<Class>`; the
-  night (`full`) runs every class the scheme holds, less any
-  `-skip-testing:`. A class in neither fails here.
+- **Every iOS UI test class in a tier.** native-ios.yml names main's
+  push's classes with `-only-testing:WingtipUITests/<Class>` (a pull
+  request's run, `unit_only`, has none); the night (`full`) runs every
+  class the scheme holds, less any `-skip-testing:`. A class in neither
+  fails here.
 - **No check twice in a pull request.** The same check command (tsc,
   ESLint, ruff, pytest, cargo test, ...) run from the same directory in
   two of ci.yml's pull-request jobs fails here.
 
-The standard library only; seconds. Run in ci.yml's rules-boundary job.
+The standard library only; seconds. Run in ci.yml's guards job (scripts/ci/guards.sh).
 
   python3 scripts/ci/test_tiers.py
 """
 
 from __future__ import annotations
 
+import fnmatch
 import os
 import re
 import sys
 from collections import defaultdict
 
+import ci_budget
 import workflows
 
 ROOT = workflows.ROOT
@@ -43,6 +55,13 @@ E2E = ROOT / "apps/web/e2e"
 NIGHTLY_LIST = ROOT / "scripts/ci/test_tiers_nightly.txt"
 PR_TAGS = ("@smoke", "@flight-critical")
 MAX_RETRIES = 1
+# The slower proofs, after merge and never on a pull request again.
+AFTER_MERGE = {"e2e", "e2e-images", "build-images"}
+# ci.yml's jobs about the run rather than in a tier.
+META = {"passed", "budget"}
+# The apps a pull request must still build when it touches their inputs
+# (#499), each by the reusable workflow ci.yml calls.
+PHONES = {"native-android.yml": "", "native-ios.yml": "unit_only: true"}
 
 # The commands that are checks, as the first word or two of a command; the
 # rest of a run line (installs, builds, echo) may repeat freely.
@@ -114,13 +133,96 @@ def ios() -> list[str]:
     for cls in sorted(pr):
         if not (ROOT / f"apps/ios/WingtipUITests/{cls}.swift").exists():
             errors.append(f".github/workflows/native-ios.yml: -only-testing names {cls}, which no file holds")
+    # A pull request's run (unit_only) adds no UI test class.
+    if not re.search(r'\[ "\$UNIT_ONLY" = true \] \|\| only\+=\(-only-testing:WingtipUITests/', workflow):
+        errors.append(
+            ".github/workflows/native-ios.yml: unit_only must leave out every UI test (`[ \"$UNIT_ONLY\" = true ] || only+=(...)`)"
+        )
+    # And builds none: -only-testing still compiles every test target the
+    # scheme holds, so unit_only takes a scheme without WingtipUITests.
+    unit = re.search(r"^  WingtipUnit:\n((?:    .*\n)+)", project, re.M)
+    if not re.search(r"only=\(-only-testing:WingtipTests\) scheme=WingtipUnit\n.*\|\| only\+=\(.*\) scheme=Wingtip\n", workflow):
+        errors.append(".github/workflows/native-ios.yml: unit_only must build the WingtipUnit scheme")
+    elif not unit or "WingtipUITests" in unit.group(1):
+        errors.append("apps/ios/project.yml: the WingtipUnit scheme must hold no WingtipUITests")
     return errors
+
+
+def needs(job: workflows.Job) -> set[str]:
+    return set(re.findall(r"[\w-]+", job.keys.get("needs", "")))
+
+
+def budget_names(job: workflows.Job) -> list[str]:
+    """The job's names in the Actions UI: a called workflow's jobs as
+    `<name> / <job>`, those a call runs (not its own runs' alone)."""
+    name = job.keys.get("name", job.id)
+    called = job.keys.get("uses", "")
+    if not called.startswith("./.github/workflows/"):
+        return [name]
+    inner = workflows.read(ROOT / called[2:]).jobs
+    return [f"{name} / {j.id}" for j in inner if "github.workflow ==" not in j.keys.get("if", "")]
+
+
+def budgets(tier1: list[workflows.Job]) -> list[str]:
+    errors = []
+    for job in tier1:
+        for name in budget_names(job):
+            if "${{" in name:
+                # A matrix's legs: every budget its name could be.
+                pattern = ".+".join(re.escape(part) for part in re.split(r"\$\{\{.*?\}\}", name))
+                rows = [row for row in ci_budget.BUDGETS if re.fullmatch(pattern, row[0])]
+            else:
+                rows = [row for row in ci_budget.BUDGETS if fnmatch.fnmatchcase(name, row[0])][:1]
+            if not rows:
+                errors.append(f"ci.yml: {job.id} ('{name}') has no budget in scripts/ci/ci_budget.py's BUDGETS")
+            for pattern, minutes, _ in rows:
+                if minutes > ci_budget.TIER1 and pattern not in ci_budget.TIER1_LONG:
+                    errors.append(
+                        f"scripts/ci/ci_budget.py: {pattern} is given {minutes} min on a pull request; the gate is "
+                        f"{ci_budget.TIER1} (make it faster, or run it after merge)"
+                    )
+    if ci_budget.TOTAL["pull_request"] > ci_budget.TIER1:
+        errors.append(f"scripts/ci/ci_budget.py: a pull request's TOTAL is above the {ci_budget.TIER1}-minute gate")
+    return errors
+
+
+def tiers() -> list[str]:
+    """ci.yml in the three tiers' shape (the docstring's first rule)."""
+    jobs = {j.id: j for j in workflows.read(workflows.WORKFLOWS / "ci.yml").jobs}
+    if "passed" not in jobs:
+        return ["ci.yml: no `passed` job (\"CI passed\", the one check a merge waits on)"]
+    gate = needs(jobs["passed"])
+    tier1 = {i for i, j in jobs.items() if i not in META and j.tier == 1}
+    errors = [
+        f"ci.yml: {i} runs on a pull request but \"CI passed\" does not wait for it: add it to passed's needs, "
+        "or run it after merge (`if: github.event_name != 'pull_request'`)"
+        for i in sorted(tier1 - gate)
+    ]
+    errors += [f"ci.yml: \"CI passed\" waits for {i}, which is not a tier-1 job" for i in sorted(gate - tier1)]
+    errors += [
+        f"ci.yml: {i} runs after merge (the owner, 2026-11-10): `if: github.event_name != 'pull_request'`"
+        for i in sorted(AFTER_MERGE)
+        if i not in jobs or jobs[i].tier != 2
+    ]
+    for i in sorted(tier1):
+        for need in sorted(needs(jobs[i]) & set(jobs)):
+            if jobs[need].tier != 1:
+                errors.append(f"ci.yml: {i} is tier 1 and needs {need}, which a pull request does not run")
+    for workflow, word in PHONES.items():
+        callers = [jobs[i] for i in sorted(tier1) if jobs[i].keys.get("uses", "").endswith(workflow)]
+        if not callers:
+            errors.append(f"ci.yml: no tier-1 job calls {workflow}; a pull request that touches the app must build it (#499)")
+        elif word and not any(word in "\n".join(j.body) for j in callers):
+            errors.append(f"ci.yml: the job that calls {workflow} passes `{word}` (the UI smoke is after merge)")
+    if not any("vite build" in r.text for i in tier1 for r in jobs[i].runs):
+        errors.append("ci.yml: no tier-1 job builds the web app (`npx vite build`); a pull request must build it (#499)")
+    return errors + budgets([jobs[i] for i in sorted(tier1)])
 
 
 def duplicates() -> list[str]:
     seen: dict[tuple[str, str], list[str]] = defaultdict(list)
     for job in workflows.read(workflows.WORKFLOWS / "ci.yml").jobs:
-        if job.nightly_only:
+        if job.tier != 1:
             continue
         for run in job.runs:
             for command in re.split(r"&&|;|\|\||\n", run.text):
@@ -137,11 +239,11 @@ def duplicates() -> list[str]:
 
 
 def main() -> int:
-    errors = playwright() + ios() + duplicates()
+    errors = playwright() + ios() + duplicates() + tiers()
     for error in errors:
         print(f"::error title=Test tiers::{error}" if "GITHUB_ACTIONS" in os.environ else error)
     if not errors:
-        print("test tiers: every spec and UI test class in one tier, one @smoke a journey, no check twice")
+        print("test tiers: every spec and UI test class in one tier, one @smoke a journey, no check twice, CI in its three tiers")
     return 1 if errors else 0
 
 

@@ -74,6 +74,10 @@ Companion docs:
   Liquid Glass in the content layer" ([HIG Materials][hig-materials]).
   - Glass goes on map buttons, the floating toolbar, the sheet's
     chrome and the tab bar.
+  - **The map buttons (owner decision 2026-11-10)** are one glass
+    capsule, Map, My Position and Ask stacked in it with a hairline
+    between, each 48 points (`size.map-button`) as Maps' are, in place
+    of three separate 44-point circles (`MapButtons`).
   - Rows, cards and figures sit on solid grounds.
   - The clear variant only goes over the chart. If the chart under it
     is bright, add a 35% dimming layer ([HIG Materials][hig-materials]).
@@ -138,10 +142,20 @@ chart stays live under it ([HIG Sheets][hig-sheets]: "When a nonmodal
 sheet is onscreen, people use its functionality to affect the parent
 view without dismissing the sheet").
 
-- **Code.** `presentationDetents([pill, .medium, .large], selection: $detent)`,
-  with `presentationBackgroundInteraction(.enabled(upThrough: .medium))`
+- **Code.** `presentationDetents([pill, .half, .large], selection: $detent)`,
+  with `presentationBackgroundInteraction(.enabled(upThrough: .half))`
   and a grabber (`presentationDragIndicator(.visible)`).
   - `pill` is `.height(132)` today (`RootView.pill`).
+  - **Half height (owner decision 2026-11-10).** `.half` is
+    `.fraction(0.45)` (`Navigation/Detents.swift`), 45% of the screen as
+    Maps' half covers it, in place of the stock `.medium`'s 53.5% (the
+    iOS sheet audit measured both). The plan's sheet and every card that
+    opens half way use it; the system animates between the detents as
+    its own. The other modal sheets keep `.medium`.
+  - **The figures strip at the pill (owner decision 2026-11-10).** The
+    route's TO / DIST strip is the sheet's foot from half height up and
+    not at the pill, where it drew 25 points over the search field
+    (`sheetAtPill`, PlanSheet).
   - The HIG asks for a grabber on a resizable sheet. Tapping it cycles
     through the detents, and VoiceOver reads it ([HIG Sheets][hig-sheets]).
 - **Content changes with the detent.** The owner checked Apple Maps on
@@ -175,8 +189,8 @@ view without dismissing the sheet").
     (`RootView.openScreen` for a screen by its name); the plan's sheet
     presents the card through one `.sheet(item:)` (`CardHost`), so one
     card is up at a time and a new one takes its place.
-  - The card opens at `.medium` for a thing and `.large` for a page,
-    grows to `.large`, and the map stays live under it up to `.medium`;
+  - The card opens at `.half` for a thing and `.large` for a page,
+    grows to `.large`, and the map stays live under it up to `.half`;
     a question or a form stays modal.
   - Its close is at the right of its bar; what it opens is pushed in its
     own `NavigationStack` with the system's Back (`Navigator.push`), and
@@ -192,8 +206,9 @@ view without dismissing the sheet").
     UIKit's one presenter would never show them.
   - Footers are the system's bar (`glassFoot`, `safeAreaBar`); a card's
     own toolbar (the airport card's) is the stock bottom bar.
-  - No control in a card takes the sheet's drag: the altitudes are a
-    menu picker, the flown track's chart moves the replay on a tap.
+  - No control in a card takes the sheet's drag: the Profile opens at
+    full height, so its altitude slider never fights the drag, and the
+    flown track's chart moves the replay on a tap.
 - **Other sheets.**
   - A separate modal sheet (an edit form, Ask, the share sheet) uses
     `[.medium, .large]`.
@@ -307,11 +322,36 @@ view without dismissing the sheet").
 
 1. **The search field** in the sheet's head, with the account avatar
    at its trailing end.
+   - **The avatar (owner decision 2026-11-10)** is its own 44 × 44
+     round glass button, apart from the microphone's (a fixed
+     `ToolbarSpacer` between them), as Maps' avatar is; it drew 40 × 36
+     inside the microphone's capsule. Its name stays "Account and
+     Settings", and the microphone keeps its place (`SearchBarItems`).
+   - **One row (owner decision 2026-11-10: "I will take your
+     recommendation for the one row").** The "Flight Plan" title bar is
+     gone: the bar is the search field itself
+     (`.searchable(placement: .toolbarPrincipal)`, `OneSearch`'s
+     `oneRow`), the microphone and the account beside it, as Maps' search
+     row. Under it, at half and full, the route card (`RouteCard`): the
+     route (KMSN → KOSH) with the engine's Ready to Fly line and the
+     route's ••• at its right; the figures in one line (distance, ETE,
+     fuel, altitude, airplane); Brief, Nav Log and Airplane; then the
+     route itself (From and To, Routes, the airplane and the altitude),
+     the stops and the rest of the plan. At the pill, the search row
+     alone. With no route, the same place holds Favorites, Recents, Find
+     Nearby and Nearest. Saved Flights, Share and Undo moved from the bar
+     into the route card's ••• with the Profile and Clear Route; Undo
+     stays on shake and the Edit menu (UndoManager); the stops' Edit is
+     at the Stops header's right. Cards still cover the search with
+     their ✕ (the card rule).
+   - Still the owner's to decide (2026-11-10): the altitude picker, a
+     wheel or a list like ForeFlight's Altitude Advisor.
    - Use `.searchable(text:placement:prompt:)` and
      `searchToolbarBehavior`.
    - One field finds airports, navaids, fixes, airspace, procedures,
      traffic by N-number, and places (Overture).
-2. **Before typing:**
+2. **Before typing** (the same sections in the plan itself before
+   there is a route, `BrowseSections`):
    - Recents.
    - Favorites, as a horizontal strip of ident tiles.
    - "Find Nearby" chips for the Stops kinds (Fuel, Food, Repair,
@@ -612,12 +652,9 @@ figures anywhere depend on a default type.
      (owner's rule; positions unchanged).
 2. **The figure strip:** To, Dist, ETE and Fuel, in `type.figure`
    digits, from the engine. The fuel is a dash without an airplane.
-3. **Cruise:** the altitude field in FL-045 form, opening the legal
-   altitudes in the Profile card's menu `Picker` (a wheel in the card's
-   list fought the sheet's drag: the owner's scrolling rule, 2026-11-10).
-   - HIG Pickers: "Consider using a picker to offer medium-to-long
-     lists", and "Avoid switching views to show a picker"
-     ([HIG Pickers][hig-pickers]).
+3. **Cruise:** the altitude field in FL-045 form; the Profile's
+   Altitude Advisor is where the cruise is chosen (see
+   [The profile](#the-profile-foreflights-way)).
 4. **Route options**, after Routes: up to four cards (Direct, Fastest,
    Most Filed, Economical). Each shows its time, distance and fuel and
    has its own **Use** button, as Maps' route cards each carry Go.
@@ -677,6 +714,45 @@ card holds Add Stop and End Route.
 [HIG Lists][hig-lists]; [HIG Menus][hig-menus];
 [HIG Context menus][hig-contextmenus]; [HIG Pickers][hig-pickers];
 [HIG Alerts][hig-alerts]; [WWDC26 269][wwdc-269] (reorderable containers).
+
+### The profile, ForeFlight's way
+
+The owner's spec of 2026-11-10, after ForeFlight's profile view; the
+same on the web and Android. Code: `apps/ios/Wingtip/Profile/`, one
+view model (`ProfileModel`), every figure the engine's (`ProfileRules`:
+`profile_clearance`, `altitude_advisor`).
+
+- **Full height.** The Profile opens at the large detent from every way
+  in (the strip, a card, Ready to Fly's fix), so the slider's drag is
+  never the sheet's.
+- **The slider.** The system `Slider`, turned a quarter beside the
+  chart: the iOS 27.2 SDK's `SwiftUI` swiftinterface has no vertical
+  orientation, so no control is drawn by hand. It steps through the
+  engine's altitudes (`altitude_wheel`'s rows) and only previews: a
+  dashed rule at the altitude, and the ground coloured live, Chart
+  Warning red within 100 ft (or above it) and Chart Caution amber within
+  1,000 ft. These are ForeFlight's display defaults, not 14 CFR; the
+  legal floors (91.119, 91.177) are the legal altitudes' own.
+  - **Set** (the one prominent button) flies the preview; nothing
+    changes before it.
+  - **Auto**, in flight only (`InFlight.underway`), a button-style
+    `Toggle`: the preview follows the GPS altitude.
+  - The slider is 44 pt across, its stock size kept.
+- **A waypoint.** A tap within 22 pt of one (a 44 pt target) opens a
+  `.popover`, kept a popover on the iPhone
+  (`presentationCompactAdaptation(.popover)`): the altitude as a menu
+  `Picker`, **Start At** or **Cross At** as a segmented control, Set and
+  Reset. VoiceOver reaches each waypoint as an accessibility action of
+  the chart ("Altitude at KLVK").
+- **The Altitude Advisor.** The cruise is chosen from a `List` section:
+  one row per altitude, highest first, with time, fuel and the head or
+  tail wind, **Fastest** and **Most Economical** marked and the flown
+  row ticked. A row outside the legal altitudes stays a tap, its warning
+  under it (warn, never limit). With no airplane, time and fuel are a
+  dash.
+- **VoiceOver.** The slider is the stock adjustable element: a swipe up
+  or down steps one altitude, and its value is the engine's words, "3,500
+  ft, terrain within 500 ft near KXYZ". The chart's value says the same.
 
 ---
 
@@ -1542,10 +1618,11 @@ behaviour; only the content, its order and the brand tokens are ours.
 | Haptics off under Reduce Motion | The system's haptics switch alone decides; a tap is not motion |
 | `SaveLabel`'s drawn-on checkmark | The button's own words ("Saving…"), the saved flight showing in the list |
 
-The altitude stays a read-only Swift Charts profile with the system's
-menu `Picker` of the engine's altitudes beside it (on an iPad or a wide
-window; under it on an iPhone). The menu opens on the planner's pick; any row can be flown, and one outside
-the legal altitudes is said under it.
+The altitude is picked in the profile, ForeFlight's way (see
+[The profile](#the-profile-foreflights-way)): the system `Slider` turned
+upright beside the chart, the system `.popover` on a waypoint, and a
+`List` of the Altitude Advisor's rows. The wheel and the menu `Picker`
+are gone.
 
 **Left hand-built, and why.**
 

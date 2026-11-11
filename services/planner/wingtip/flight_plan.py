@@ -36,6 +36,7 @@ from . import (
     geo,
     magnetic,
     navlog,
+    own_altitude,
     pattern,
     places,
     planning,
@@ -78,20 +79,19 @@ class Asked:
     (app.routers.plan's PlanQuery.asked, which refuses what is not one).
 
     `profile` is the airplane's (wingtip.aircraft.aircraft_profile) and
-    `aircraft_key` what the altitude selection is cached by (its name and
-    any ceiling of the pilot's own); `profile` None is no airplane
-    (no `aircraft` asked): the route's own figures, and none that
-    needs an airplane. `altitude_ft`, a pilot's own cruise,
-    is flown on every leg -- or, `altitude_nearest` (the wheel's pick), at
-    each leg's legal altitude nearest it; without it the plan
-    `altitude_choice` is flown. `own_altitudes` are points' own altitudes
-    by ident, `drawn` the procedures picked as drawn
-    (wingtip.procedures.procedure_drawing), `leave_runways` and
-    `land_runways` the runways picked by field, `wind_runways` whether the
-    rest are picked into the wind (wind_picks), `ground` the minutes on the
-    ground at stops, `holds` the pilot's holds, `checkpoints` whether the
-    legs run by the chart's checkpoints, and `alternate` the IFR alternate
-    filed, as the airports table has it with its ident."""
+    `aircraft_key` what the altitude selection is cached by (its name and any
+    ceiling of the pilot's own); `profile` None is no airplane (no `aircraft`
+    asked): the route's own figures, and none that needs an airplane.
+    `altitude_ft`, a pilot's own cruise, is flown on every leg -- or,
+    `altitude_nearest` (the wheel's pick), at each leg's legal altitude nearest
+    it; without it the plan `altitude_choice` is flown. `own_altitudes` are
+    points' own altitudes by ident, `drawn` the procedures picked as drawn
+    (wingtip.procedures.procedure_drawing), `leave_runways` and `land_runways`
+    the runways picked by field, `wind_runways` whether the rest are picked
+    into the wind (wind_picks), `ground` the minutes on the ground at stops,
+    `holds` the pilot's holds, `checkpoints` whether the legs run by the
+    chart's checkpoints, and `alternate` the IFR alternate filed, as the
+    airports table has it with its ident."""
 
     profile: dict | None
     aircraft_key: str
@@ -102,6 +102,7 @@ class Asked:
     rules: str = "vfr"
     depart: datetime | None = None
     own_altitudes: dict = field(default_factory=dict)
+    altitude_starts: frozenset = frozenset()  # the Start At points (wingtip.own_altitude)
     drawn: list = field(default_factory=list)
     leave_runways: dict = field(default_factory=dict)
     land_runways: dict = field(default_factory=dict)
@@ -364,9 +365,8 @@ def hop_runs(
 
 
 def resolve_run(run: HopRun, asked: Asked) -> Flown | Unflyable | NoWinds:
-    """One hop's altitude and legs (resolve_altitude), as asked. The hop
-    into a waypoint with an altitude of its own is flown at it."""
-    own = None if run.hop.lands else asked.own_altitudes.get(run.hop.dest_ident)
+    """One hop's altitude and legs (resolve_altitude), as asked."""
+    own = own_altitude.of_hop(run.hop, asked.own_altitudes, asked.altitude_starts)  # a waypoint's own
     return resolve_altitude(
         run.hop,
         run.fixes,

@@ -5,6 +5,7 @@ import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.weatherWorse
 import app.wingtipmaps.android.engine.generated.windArrow
 import app.wingtipmaps.android.engine.generated.windBarb
+import app.wingtipmaps.android.engine.generated.windCalm
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -60,6 +61,8 @@ object StationMarks {
         fun barb(speedKt: Double): EngineContract.WindBarbAnswer?
         fun arrow(speedKt: Double?, gustKt: Double?, crosswindKt: Double?, demonstratedKt: Double?): EngineContract.WindArrowAnswer?
         fun worse(now: List<EngineContract.WorseField>, atEta: List<EngineContract.WorseField>): Set<String>
+        /** Whether a wind is calm (`wind_calm`); null where it cannot say. */
+        fun calm(speedKt: Double): Boolean?
     }
 
     object EngineRules : Rules {
@@ -70,6 +73,8 @@ object StationMarks {
 
         override fun worse(now: List<EngineContract.WorseField>, atEta: List<EngineContract.WorseField>): Set<String> =
             worseIdents(Engine.weatherWorse(reading(now), reading(atEta)).getOrNull())
+
+        override fun calm(speedKt: Double) = Engine.windCalm(speedKt).getOrNull()
     }
 
     /** A plan field's readings as weather_worse takes TAFs where the
@@ -106,14 +111,16 @@ object StationMarks {
     }
 
     /** What TalkBack says of a field's weather after its name: "IFR,
-     *  wind 220 at 18 gusting 26"; calm or variable as such; "" for none. */
-    fun said(field: FieldWx): String {
+     *  wind 220 at 18 gusting 26"; calm (the engine's `wind_calm`) or
+     *  variable as such; "" for none. Where the engine cannot say whether
+     *  it is calm (Engine.rule has logged why), its figures are said. */
+    fun said(field: FieldWx, rules: Rules = EngineRules): String {
         val parts = mutableListOf<String>()
         field.category?.let { parts += it }
         val kt = field.windKt
         when {
             kt == null -> {}
-            kt == 0.0 -> parts += "wind calm"
+            rules.calm(kt) == true -> parts += "wind calm"
             else -> {
                 val dir = field.windFromDeg?.let { String.format(Locale.US, "%03d", it.roundToInt()) } ?: "variable"
                 val gust = field.gustKt?.takeIf { it > kt }?.let { " gusting ${it.roundToInt()}" }.orEmpty()

@@ -6344,6 +6344,11 @@
             "title": "Altitude Nearest",
             "type": "boolean"
           },
+          "altitude_starts": {
+            "default": "",
+            "title": "Altitude Starts",
+            "type": "string"
+          },
           "altitudes": {
             "default": "",
             "title": "Altitudes",
@@ -10030,6 +10035,11 @@
             "default": false,
             "title": "Altitude Nearest",
             "type": "boolean"
+          },
+          "altitude_starts": {
+            "default": "",
+            "title": "Altitude Starts",
+            "type": "string"
           },
           "altitudes": {
             "default": "",
@@ -16914,6 +16924,25 @@
         "title": "ProfileGround",
         "type": "object"
       },
+      "ProfileObstacle": {
+        "description": "An obstacle of the FAA's DOF near the route's line: where along it,\nand its top, feet MSL.",
+        "properties": {
+          "along_nm": {
+            "title": "Along Nm",
+            "type": "number"
+          },
+          "amsl_ft": {
+            "title": "Amsl Ft",
+            "type": "number"
+          }
+        },
+        "required": [
+          "along_nm",
+          "amsl_ft"
+        ],
+        "title": "ProfileObstacle",
+        "type": "object"
+      },
       "ProfilePoint": {
         "properties": {
           "along_nm": {
@@ -18030,7 +18059,7 @@
         "type": "object"
       },
       "RouteProfile": {
-        "description": "The route's side view (wingtip.profile): its length, the ground under\nit, and the controlled airspace it passes through.",
+        "description": "The route's side view (wingtip.profile): its length, the ground under\nit, the controlled airspace it passes through and the obstacles near\nits line.",
         "properties": {
           "airspace": {
             "items": {
@@ -18042,6 +18071,14 @@
           "length_nm": {
             "title": "Length Nm",
             "type": "number"
+          },
+          "obstacles": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ProfileObstacle"
+            },
+            "title": "Obstacles",
+            "type": "array"
           },
           "terrain": {
             "items": {
@@ -26080,6 +26117,16 @@
           },
           {
             "in": "query",
+            "name": "altitude_starts",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Altitude Starts",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "procedures",
             "required": false,
             "schema": {
@@ -26667,6 +26714,16 @@
             "schema": {
               "default": "",
               "title": "Altitudes",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "altitude_starts",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Altitude Starts",
               "type": "string"
             }
           },
@@ -27828,6 +27885,16 @@
           },
           {
             "in": "query",
+            "name": "altitude_starts",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Altitude Starts",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "procedures",
             "required": false,
             "schema": {
@@ -28256,7 +28323,7 @@
     },
     "/api/route-profile": {
       "get": {
-        "description": "The route's side view: the ground under it every 2 nm and the\nClass B, C and D airspace it passes through, floor and ceiling, along\nthe whole route through its stops (wingtip.profile) -- for the page to\ndraw the plan's altitudes, climbs and descents over.",
+        "description": "The route's side view: the ground under it every 2 nm and the\nClass B, C and D airspace it passes through and the DOF's obstacles\nnear its line, along the route through its stops (wingtip.profile).",
         "operationId": "route_profile_api_route_profile_get",
         "parameters": [
           {
