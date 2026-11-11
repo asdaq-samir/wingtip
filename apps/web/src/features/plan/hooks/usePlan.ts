@@ -20,6 +20,8 @@ import { ownOf } from "../../../lib/airplane/figures";
 import { useCheckpointNotes } from "./useCheckpointNotes";
 import { useNarrative } from "./useNarrative";
 import { briefingLegs } from "./briefingLegs";
+import { useDeviceDirect } from "./directOnDevice";
+import { noConnection } from "../../../lib/problems";
 
 /**
  * The plan as TanStack Query sees it: one query per stage, keyed on
@@ -300,7 +302,14 @@ export function usePlan({
 
   // The previous route's course stays on the map until the new one is
   // charted, so the map is never taken down between routes.
-  const course = useQuery({ ...courseQuery(dep, dest, stops), enabled: briefable, placeholderData: keepPreviousData });
+  const courseAsked = useQuery({ ...courseQuery(dep, dest, stops), enabled: briefable, placeholderData: keepPreviousData });
+  // A Direct To worked out on the device (directOnDevice), while the
+  // planner has no answer of its own for it: no connection, or it failed.
+  const madeHere = useDeviceDirect((d) => (d.made?.dep === dep ? d.made : null));
+  const plannerSilent = (q: { isError: boolean; error?: unknown; fetchStatus: "fetching" | "paused" | "idle" }) =>
+    q.isError || noConnection(q) || globalThis.navigator?.onLine === false;
+  const courseHere = !!madeHere && (!courseAsked.data || courseAsked.isPlaceholderData) && plannerSilent(courseAsked);
+  const course = courseHere ? { ...courseAsked, data: madeHere.course, isPlaceholderData: false, isLoading: false } : courseAsked;
   const localFlight = useQuery({
     queryKey: ["localFlight", dep, localMin, depart, aircraft.profile, aircraft.fuelBurnGph ?? null, aircraft.usableFuelGal ?? null, rules],
     queryFn: () => api.localFlight(dep, localMin, aircraft, depart || undefined, rules),
@@ -366,7 +375,12 @@ export function usePlan({
     enabled: routeKnown && withCheckpoints && !fullIn && (ready === undefined ? slowFor === routeId : !ready),
   });
   const pointToPoint = withCheckpoints && !fullIn && !!asEntered.data?.some((m) => m.type === "leg");
-  const streamed = useMemo(() => (pointToPoint ? asEntered.data : navlog.data) ?? [], [pointToPoint, asEntered.data, navlog.data]);
+  const navlogHere =
+    !!madeHere && !(navlog.data ?? []).some((m) => m.type === "leg") && !asEntered.data?.some((m) => m.type === "leg") && plannerSilent(navlog);
+  const streamed = useMemo(
+    () => (navlogHere ? madeHere.messages : ((pointToPoint ? asEntered.data : navlog.data) ?? [])),
+    [navlogHere, madeHere, pointToPoint, asEntered.data, navlog.data],
+  );
   // The log before an altitude is asked for, kept on the page till the new
   // one is in whole: the pilot commanded the altitude, and is not to wait
   // on it (the owner, 2026-10-20) -- the stream starts over, and the log,
@@ -569,6 +583,8 @@ export function usePlan({
     // The nav log on screen is the route as entered, its checkpoints' own
     // still to come in its place.
     pointToPoint,
+    // A Direct To worked out on this device, the planner not to be had.
+    directOnDevice: navlogHere || courseHere,
     totals: local ? (localFlight.data ?? null) : totals,
     local,
     briefing: briefingState,
