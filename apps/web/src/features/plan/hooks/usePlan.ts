@@ -58,8 +58,7 @@ export interface Unflyable {
 export interface PlanParams {
   dep: string;
   dest: string;
-  /** The airports landed at on the way, in order: [] for a route flown
-   *  straight. */
+  /** The airports landed at on the way, in order ([] flown straight). */
   stops: string[];
   /** The pilot's own cruise altitude, or "" for the planner's plan. */
   altitudeFt: string;
@@ -77,13 +76,14 @@ export interface PlanParams {
   /** Points' own altitudes, as the address has them ("VPBNG:4500,KMSN:1900"):
    *  a waypoint's flown to it, an airport's its pattern (RouteBox). */
   altitudes?: string;
+  /** Those whose change begins there, Start At ("VPBNG"); the rest Cross At. */
+  altitudeStarts?: string;
   /** The procedures picked at the route's fields ("KDLH:I09:ANDOE,
    *  KORD:BENKY6:BYLAW"): a leg flown by them is the longer by their path,
    *  and a flight landing by an approach comes down to its first fix's
    *  altitude. */
   procedures?: string;
-  /** The runway each departure picked is left from ("KSTL:30R"), its
-   *  runway transition the one flown. */
+  /** The runway each departure is left from ("KSTL:30R"), its transition flown. */
   runways?: string;
   /** The runway each field is landed on ("KUGN:5"): with no approach
    *  there, the leg in is flown by its traffic pattern. */
@@ -91,14 +91,12 @@ export interface PlanParams {
   /** Altitudes given to cross the procedures' fixes at ("BXCMB:3000"),
    *  each in place of the chart's there. */
   crossings?: string;
-  /** Minutes on the ground at the stops ("KJVL:45"); one not named, the
-   *  planner's 30. */
+  /** Minutes on the ground at the stops ("KJVL:45"); one not named, 30. */
   ground?: string;
   /** The pilot's holds ("VPBNG:270:R:1M:2T", features/plan/lib/routeHolds). */
   holds?: string;
   /** Checkpoints between the route's points, as the map shows them (the
-   *  settings' Waypoints): without, the nav log runs point to point and
-   *  none are asked for. */
+   *  settings' Waypoints); without, the nav log runs point to point. */
   checkpoints?: boolean;
   /** A local flight's time aloft, in minutes (one airport to itself). */
   localMin?: number;
@@ -166,6 +164,7 @@ function planKeyOf({
   holds = "",
   altitudeNearest = false,
   patterns = "",
+  altitudeStarts = "",
 }: PlanParams) {
   return [
     dep,
@@ -176,7 +175,7 @@ function planKeyOf({
     depart,
     load,
     classBClearance,
-    altitudes,
+    altitudeStarts ? `${altitudes}|${altitudeStarts}` : altitudes,
     checkpoints,
     aircraft.profile,
     // Every figure of its own, a new one planned again (lib/airplane).
@@ -251,6 +250,7 @@ export function navlogQuery(plan: PlanParams, checkpointsToo: boolean, ahead = f
               runways,
               patterns,
               ahead,
+              plan.altitudeStarts,
             ),
             "nav log",
           ),

@@ -217,6 +217,41 @@ Every app's tests read the shared fixture
 [`apps/web/src/lib/fixtures/airportWeatherMarks.json`](../../apps/web/src/lib/fixtures/airportWeatherMarks.json):
 arrow shown or not, red or not, ↓ shown or not.
 
+## 6. Altitude in the profile (the owner, 2026-11-10)
+
+The cruise and each waypoint's altitude are set on the route's profile,
+as ForeFlight's profile view sets them; the wheel and the plan's menu are
+gone on every platform.
+
+1. **The slider previews; Set flies.** An upright slider beside the side
+   view steps through the engine's altitudes (`altitude_advisor`'s rows,
+   the altitude wheel's). As it moves, the ground and the DOF's obstacles
+   within a mile of the line turn red within 100 ft of the altitude or
+   above it and yellow within 1,000 ft (`profile_clearance`; ForeFlight's
+   display defaults, not a rule: the legal margins are 14 CFR 91.119 and
+   91.177, which the legal altitudes keep). Nothing is planned until
+   **Set**. In flight, **Auto** holds the preview at the GPS altitude.
+2. **A waypoint's altitude, Start At or Cross At.** A tap on a waypoint
+   sets its altitude: Cross At (done by the waypoint, the planner's
+   `altitudes`) or Start At (begun there, `altitude_starts` beside it).
+   Where the climb or descent is flown is the engine's `altitude_change`:
+   the airplane's climb, the three-to-one descent, and with no airplane no
+   time or fuel.
+3. **The Altitude Advisor chooses the cruise.** One row per altitude with
+   its time, fuel and head or tail wind, Fastest and Most economical
+   marked; a row outside the legal altitudes stays with its warning (warn,
+   never limit).
+4. **Accessibility.** The slider is adjustable a row at a time and says
+   the engine's words ("3,500 ft, terrain within 500 ft near KXYZ");
+   every mark is a 44 pt / 48 dp target.
+
+| | Web | iPhone | Android |
+|---|---|---|---|
+| Slider | Base UI Slider, upright (`features/plan/components/navlog/altitude/AltitudeProfile`, its view model `useAltitudePreview`) | See [ios.md](ios.md) | See [android.md](android.md) |
+| Waypoint | Base UI Popover from a tablet's width up, `SheetDialog` on a phone (`altitude/LegAltitude`) | | |
+| Advisor | shadcn Item rows (`altitude/AltitudeAdvisor`) | | |
+| Tests | `altitude/altitude.test.ts`; `e2e/plans.spec.ts` | | |
+
 ## Changing a rule
 
 A rule here changes only when the owner says so (the `owner` label). Then

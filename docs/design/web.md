@@ -405,6 +405,12 @@ by clicking the map, typing an address or a name, up to 9 stops in all
 3. The route string field (typed, Enter to compute), as SkyVector's.
 4. The altitude (`FL045` style, decision 0009) and the figure strip at
    the foot: To, Dist, ETE, Fuel (ETE and Fuel only with an airplane).
+   The Profile card sets the altitude on the side view
+   ([rules.md](rules.md) section 6): the upright Slider previews the
+   clearance (red within 100 ft, yellow within 1,000 ft, the engine's
+   `profile_clearance`) until Set, Auto in flight; a waypoint's mark opens
+   its altitude, Start At or Cross At (a Popover, a sheet on a phone); the
+   Altitude Advisor list under it chooses the cruise, the plan's menu gone.
 5. A toast with Undo after a change that takes something away
    (`toast.undo`).
 
@@ -1066,7 +1072,8 @@ pill's long press (ContextMenu's own), pull to refresh (a Refresh button
 in each live card's head, and TanStack Query's focus manager and stale
 times for the rest), swipe to delete (the row menu, RowMenu), the Undo
 rows (Toast with its action), the status chips (Badge), the profile's
-altitude (Slider, upright), "Copied" (an anchored Toast), the flight's
+altitude (Slider, upright; a waypoint's altitude a Popover; the Altitude
+Advisor Item rows), "Copied" (an anchored Toast), the flight's
 progress (Progress), the dry run's on-or-off buttons (Toggle) and the
 caution boxes (Alert). Code that re-implemented what a stock part does
 went with them: the sheet's frame loop following the Drawer (its parts

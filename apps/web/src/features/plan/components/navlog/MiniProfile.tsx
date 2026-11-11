@@ -11,6 +11,7 @@ import { one } from "../../format";
 import { planProfile } from "./profile";
 import { navLogRows, type RouteEnds } from "./rows";
 import { CHART } from "../../../../lib/tokens";
+import { clearanceAt } from "./altitude/clearance";
 const W = 340,
   H = 64;
 const miles = (nm: number) => `${Math.round(nm)}`;
@@ -123,13 +124,14 @@ export default memo(function MiniProfile({
   // chart empty, at the owner's notice ("y axis has extra white space").
   const top = scaleTop ?? Math.ceil((highest + 300) / 500) * 500;
   // The ground tinted against the altitude shown, as ForeFlight's profile
-  // does (the owner's recording): red at and above it, amber within 500 ft
-  // under it -- the least a flight keeps over the ground away from a
-  // congested area (14 CFR 91.119(c)) -- else the ground's own. Offsets in
-  // the chart's own height, moved by the Profile card's drag as it goes
-  // (data-tint), not drawn again.
+  // does: red within 100 ft of it or above, yellow within 1,000 ft, else the
+  // ground's own -- the engine's (profile_clearance), whose thresholds are
+  // ForeFlight's display defaults, not a rule. Offsets in the chart's own
+  // height, moved by the Profile card's slider as it goes (data-tint), not
+  // drawn again.
   const tintAt = preview ?? cruise;
-  const tintOffset = (ft: number) => Math.max(0, Math.min(1, 1 - ft / top));
+  const tint = tintAt ? clearanceAt(profile, tintAt) : null;
+  const tintOffset = (ft: number | undefined) => (ft === undefined ? 0 : Math.max(0, Math.min(1, 1 - ft / top)));
   const x = (nm: number) => (profile.length_nm > 0 ? (nm / profile.length_nm) * W : 0);
   const y = (ft: number) => H - (Math.max(0, Math.min(ft, top)) / top) * H;
   const ground = `M0 ${H} ${profile.terrain.map((t) => `L${x(t.along_nm).toFixed(1)} ${y(t.ground_ft).toFixed(1)}`).join(" ")} L${W} ${H}Z`;
@@ -154,10 +156,10 @@ export default memo(function MiniProfile({
         <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block h-full w-full" aria-hidden="true">
           <defs>
             <linearGradient id={tintId} gradientUnits="userSpaceOnUse" x1={0} y1={0} x2={0} y2={H}>
-              <stop offset={tintAt ? tintOffset(tintAt) : 0} stopColor={CHART.warning} data-tint="red" />
-              <stop offset={tintAt ? tintOffset(tintAt) : 0} stopColor={CHART.caution} data-tint="red-end" />
-              <stop offset={tintAt ? tintOffset(tintAt - 500) : 0} stopColor={CHART.caution} data-tint="amber" />
-              <stop offset={tintAt ? tintOffset(tintAt - 500) : 0} stopColor={CHART.terrain} data-tint="amber-end" />
+              <stop offset={tintOffset(tint?.red_from_ft)} stopColor={CHART.warning} data-tint="red" />
+              <stop offset={tintOffset(tint?.red_from_ft)} stopColor={CHART.caution} data-tint="red-end" />
+              <stop offset={tintOffset(tint?.yellow_from_ft)} stopColor={CHART.caution} data-tint="amber" />
+              <stop offset={tintOffset(tint?.yellow_from_ft)} stopColor={CHART.terrain} data-tint="amber-end" />
             </linearGradient>
           </defs>
           <g

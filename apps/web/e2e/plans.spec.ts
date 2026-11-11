@@ -45,26 +45,29 @@ test(
     // Hundreds of feet after "FL", at the owner's pick: FL045 for 4,500 ft.
     await expect(input).toHaveValue(/^FL-\d{3}$/);
     await openProfile(page);
-    // The Profile card: the route from the side with the wheel of legal
-    // altitudes in its corner, the altitude's figures, the flight rules,
+    // The Profile card: the side view with its slider, the Altitude
+    // Advisor under it (Fastest marked), the flight rules,
     // and how it was chosen, folded.
     const popover = page.getByTestId("profile-card");
     await expect(popover).toBeVisible();
     const wheel = popover.getByRole("slider", { name: "Cruise altitude" }); // the stock Slider, a step each altitude
-    await expect(wheel).toHaveAttribute("aria-valuetext", /feet, .*Fastest/);
+    await expect(wheel).toHaveAttribute("aria-valuetext", /feet, .*(terrain|clear).*Fastest/);
     await expect(popover.getByTestId("mini-profile")).toBeVisible();
-    await expect(popover.getByTestId("altitude-figures")).toContainText(/\d+[hm]\b/);
+    const advisor = popover.getByTestId("altitude-advisor");
+    await expect(advisor.locator("[data-flown]")).toContainText(/\d+[hm]\b/); // its time, fuel and wind
     await expect(popover).toContainText("Floor");
     await expect(popover).toContainText("Ceiling");
     await expect(popover).toContainText("14 CFR 91.159");
     await expect(popover).toContainText("Checked as well");
-    // A step down the wheel, as VoiceOver's adjustable control steps it:
-    // flown once it rests, its plan where it is one's, else as the pilot's own.
+    // A step down the slider, as VoiceOver steps it: a preview, nothing
+    // planned till Set flies it, its plan's or as the pilot's own.
     const feetOf = async () => Number((await wheel.getAttribute("aria-valuetext"))!.replace(/ feet.*$/, "").replace(/,/g, ""));
     const was = await feetOf();
     await wheel.focus();
     await page.keyboard.press("ArrowDown");
     await expect.poll(feetOf).toBeLessThan(was);
+    await expect(page).not.toHaveURL(/[?&](altitude_ft|altitude_choice)=/);
+    await popover.getByTestId("altitude-set").click();
     await expect(page).toHaveURL(/[?&](altitude_ft|altitude_choice)=/, { timeout: slow(10000) });
     await closeCard(page, "profile-close");
     await expect(popover).toHaveCount(0);
@@ -86,13 +89,10 @@ test(
     await closeNavLog(page);
     // No altitude box over FPL's list: the altitude is beside the airplane.
     await expect(sideDrawer(page).getByTestId("navlog-scroller")).not.toContainText("Cruise altitude");
-    // Back to the default plan from the wheel: its Fastest row, the address
-    // without the altitude or the choice.
+    // Back to the default plan from the Advisor's Fastest row: no altitude or choice.
     await openProfile(page);
     await expect(popover).toBeVisible();
-    // From the plan's menu, under the graph the altitude is dragged on.
-    await popover.getByTestId("altitude-plan").click();
-    await page.getByTestId("altitude-plan-option").filter({ hasText: "Fastest" }).click();
+    await popover.getByTestId("altitude-advisor-row").filter({ hasText: "Fastest" }).click();
     await expect(page).not.toHaveURL(/[?&]altitude_ft=/, { timeout: slow(10000) });
     await expect(page).not.toHaveURL(/[?&]altitude_choice=/);
     await closeCard(page, "profile-close");

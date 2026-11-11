@@ -51,6 +51,7 @@ export function useDepartureWindow() {
     altitude_choice: "fastest",
     altitude_nearest: false,
     altitudes: "",
+    altitude_starts: "",
     checkpoints: true,
     class_b_clearance: false,
     crossings: "",

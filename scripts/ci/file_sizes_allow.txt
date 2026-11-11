@@ -49,7 +49,6 @@ apps/web/src/features/plan/components/PlaceCard.tsx 629
 apps/web/src/features/plan/components/ProcedureMenu.tsx 417
 apps/web/src/features/plan/components/RouteBox.tsx 1188
 apps/web/src/features/plan/components/RouteMap.tsx 460
-apps/web/src/features/plan/components/navlog/AltitudeGroup.tsx 750
 apps/web/src/features/plan/components/navlog/NavLogView.tsx 952
 apps/web/src/features/plan/components/procedures/FieldStep.tsx 556
 apps/web/src/features/plan/components/procedures/PatternChips.tsx 434
@@ -59,7 +58,7 @@ apps/web/src/features/plan/hooks/usePlan.ts 589
 apps/web/src/features/plan/hooks/usePlanWorkspace.ts 1213
 apps/web/src/features/plan/hooks/useProceduresRoute.ts 667
 apps/web/src/features/shell/MapPage.tsx 418
-apps/web/src/lib/api/client.ts 1193
+apps/web/src/lib/api/client.ts 1192
 apps/web/src/lib/audioInput.test.ts 632
 apps/web/src/lib/audioInput.ts 592
 apps/web/src/lib/map/gl/glOverlays.ts 473
@@ -122,7 +121,7 @@ services/planner/app/routers/airports.py 805
 services/planner/app/routers/plan.py 483
 services/planner/app/routers/words.py 608
 services/planner/app/schemas/airports.py 492
-services/planner/app/schemas/plan.py 873
+services/planner/app/schemas/plan.py 843
 services/planner/tests/test_airports.py 590
 services/planner/tests/test_api.py 615
 services/planner/tests/test_plan.py 711

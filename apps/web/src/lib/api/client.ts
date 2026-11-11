@@ -453,6 +453,7 @@ export const api = {
     runways = "",
     patterns = "",
     ahead = false,
+    altitudeStarts = "",
   ): AsyncGenerator<NavLogMessage> {
     const result = await planner.GET("/api/navlog", {
       params: {
@@ -468,14 +469,13 @@ export const api = {
           depart: depart || undefined,
           class_b_clearance: classBClearance || undefined,
           altitudes: altitudes || undefined,
+          altitude_starts: altitudeStarts || undefined, // begun there: Start At
           checkpoints: checkpoints ? undefined : false,
           // Under IFR (the planner's wingtip.ifr); VFR, the default, unsaid.
           rules: rules === "ifr" ? rules : undefined,
           // The IFR alternate filed, whose fuel is in the totals.
           alternate: rules === "ifr" && alternate ? alternate : undefined,
-          // The procedures picked, which the legs are flown by and the
-          // descents planned to.
-          procedures: procedures || undefined,
+          procedures: procedures || undefined, // flown by, descended to
           // The runway each departure picked is left from.
           runways: runways || undefined,
           // With none picked at a field, its runway into the wind, the one
@@ -490,8 +490,7 @@ export const api = {
           // The altitudes given to cross their fixes at.
           crossings: crossings || undefined,
           ground: ground || undefined,
-          // The pilot's holds, flown on the legs leaving their points.
-          holds: holds || undefined,
+          holds: holds || undefined, // flown on the legs leaving their points
         },
       },
       parseAs: "stream",
