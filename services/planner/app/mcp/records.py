@@ -1,6 +1,7 @@
 """The pilot's own records -- airplanes and saved flights -- which the
 gateway keeps (it owns accounts and what a pilot saves; the planner holds
-none). Asked of its /internal/mcp routes with the planner's own secret
+none). Asked of its /internal/mcp routes, on the gateway's internal port
+that only the compose network reaches, with the planner's own secret
 and the pilot's id from a checked token, never with the pilot's token:
 the MCP authorization spec forbids passing a token on to another service
 ("MCP servers MUST NOT accept or transit any other tokens")."""
@@ -21,7 +22,7 @@ async def _ask(method: str, path: str, pilot_id: str, body: dict | None = None):
         raise ToolError("This Wingtip server cannot read saved records: its MCP_INTERNAL_TOKEN is not set.")
     headers = {"X-Internal-Token": settings.mcp_internal_token, "X-Pilot-Id": pilot_id}
     try:
-        async with httpx2.AsyncClient(base_url=settings.gateway_url, timeout=TIMEOUT_S) as client:
+        async with httpx2.AsyncClient(base_url=settings.gateway_internal_url, timeout=TIMEOUT_S) as client:
             resp = await client.request(method, f"/internal/mcp{path}", json=body, headers=headers)
     except httpx2.HTTPError as err:
         raise ToolError(f"Wingtip's account service did not answer ({type(err).__name__}); try again in a minute.") from err

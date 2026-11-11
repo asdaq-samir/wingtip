@@ -35,9 +35,10 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * <p>A token of its own rather than the pilot's: the MCP spec forbids an
  * MCP server passing on the token it was given, which is for it alone.
- * Not in the API's document, and a 404 to anyone without the token, so
- * this answers nobody else -- and nobody at all where the deployment set
- * no token.
+ * Not in the API's document, on the gateway's internal port alone, which
+ * no compose file publishes (InternalPortConfig), and a 404 to anyone
+ * without the token, so this answers nobody else -- and nobody at all
+ * where the deployment set no token.
  */
 @RestController
 @Hidden

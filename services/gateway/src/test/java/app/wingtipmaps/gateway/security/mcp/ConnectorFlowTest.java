@@ -51,7 +51,8 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * resource, and refresh. Against a real Postgres: the clients,
  * authorizations and consents are Spring's JDBC stores, on V40's tables.
  */
-@SpringBootTest(properties = "app.public-base-url=http://localhost")
+@SpringBootTest(
+        properties = {"app.public-base-url=http://localhost", "app.mcp.enabled=true", "app.mcp.internal-token=t"})
 @AutoConfigureMockMvc
 @Testcontainers
 class ConnectorFlowTest {

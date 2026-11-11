@@ -16,6 +16,7 @@ import app.wingtipmaps.gateway.repository.PilotRepository;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +34,7 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.postgresql.PostgreSQLContainer;
@@ -42,12 +44,15 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * came, and the pilot's records read and written by the planner's tools
  * with the token the two share -- refused, as a 404, to anyone without it.
  */
-@SpringBootTest(properties = "app.mcp.internal-token=" + ConnectorRecordsTest.TOKEN)
+@SpringBootTest(properties = {"app.mcp.enabled=true", "app.mcp.internal-token=" + ConnectorRecordsTest.TOKEN})
 @AutoConfigureMockMvc
 @Testcontainers
 class ConnectorRecordsTest {
 
     static final String TOKEN = "planner-and-gateway";
+
+    /** app.internal.port's default. */
+    static final int INTERNAL_PORT = 8081;
 
     @Container
     @ServiceConnection
@@ -146,23 +151,23 @@ class ConnectorRecordsTest {
         aircraft.saveAndFlush(new Aircraft(pilot, "N12345", "C172", 110.0, 8.5, null, null, null, null));
         String id = String.valueOf(pilot.getId());
 
-        mvc.perform(get("/internal/mcp/aircraft").header("X-Pilot-Id", id)).andExpect(status().isNotFound());
-        mvc.perform(get("/internal/mcp/aircraft").header("X-Pilot-Id", id).header("X-Internal-Token", "guess"))
+        mvc.perform(internal(get("/internal/mcp/aircraft")).header("X-Pilot-Id", id)).andExpect(status().isNotFound());
+        mvc.perform(internal(get("/internal/mcp/aircraft")).header("X-Pilot-Id", id).header("X-Internal-Token", "guess"))
                 .andExpect(status().isNotFound());
-        mvc.perform(get("/internal/mcp/aircraft").header("X-Pilot-Id", "999999").header("X-Internal-Token", TOKEN))
+        mvc.perform(internal(get("/internal/mcp/aircraft")).header("X-Pilot-Id", "999999").header("X-Internal-Token", TOKEN))
                 .andExpect(status().isNotFound());
-        mvc.perform(get("/internal/mcp/aircraft").header("X-Pilot-Id", id).header("X-Internal-Token", TOKEN))
+        mvc.perform(internal(get("/internal/mcp/aircraft")).header("X-Pilot-Id", id).header("X-Internal-Token", TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].tailNumber").value("N12345"))
                 .andExpect(jsonPath("$[0].cruiseTasKt").value(110.0));
 
-        mvc.perform(post("/internal/mcp/flights")
+        mvc.perform(internal(post("/internal/mcp/flights"))
                         .header("X-Pilot-Id", id)
                         .header("X-Internal-Token", TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"departureIdent\":\"C81\",\"destinationIdent\":\"not an ident\"}"))
                 .andExpect(status().isBadRequest());
-        mvc.perform(post("/internal/mcp/flights")
+        mvc.perform(internal(post("/internal/mcp/flights"))
                         .header("X-Pilot-Id", id)
                         .header("X-Internal-Token", TOKEN)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -170,10 +175,30 @@ class ConnectorRecordsTest {
                                 + "\"stops\":[\"KDSM\"]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.destinationIdent").value("KDLH"));
-        mvc.perform(get("/internal/mcp/flights").header("X-Pilot-Id", id).header("X-Internal-Token", TOKEN))
+        mvc.perform(internal(get("/internal/mcp/flights")).header("X-Pilot-Id", id).header("X-Internal-Token", TOKEN))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].stops[0]").value("KDSM"));
+    }
+
+    /** As the planner reaches the records: on the gateway's internal port. */
+    static MockHttpServletRequestBuilder internal(MockHttpServletRequestBuilder request) {
+        return request.with(asked -> {
+            asked.setLocalPort(INTERNAL_PORT);
+            return asked;
+        });
+    }
+
+    /** Not on the public port, with the right token or without: the
+     *  internet never reaches them (InternalPortConfig). */
+    @Test
+    void theRecordsAreNotOnThePublicPort() throws Exception {
+        mvc.perform(get("/internal/mcp/aircraft").header("X-Pilot-Id", "1").header("X-Internal-Token", TOKEN))
+                .andExpect(status().isNotFound());
+        mvc.perform(get(URI.create("/%69nternal/mcp/aircraft")).header("X-Pilot-Id", "1").header("X-Internal-Token", TOKEN))
+                .andExpect(status().isNotFound());
+        // Nor is anything else on the internal port.
+        mvc.perform(internal(get("/api/me"))).andExpect(status().isNotFound());
     }
 
     @Autowired

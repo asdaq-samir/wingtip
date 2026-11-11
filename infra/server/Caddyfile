@@ -10,6 +10,14 @@
 {$ORIGIN_HOST} {
 	encode zstd gzip
 
+	# The routes only the planner calls, over the compose network to the
+	# gateway's internal port (8081, InternalPortConfig); the gateway
+	# refuses them on 8080 too, and this keeps them off the internet
+	# whatever it does (the security audit's M2, 2026-11-10).
+	handle /internal/* {
+		respond "Not found" 404
+	}
+
 	@cloudfront header X-Origin-Secret {$ORIGIN_SECRET}
 	handle @cloudfront {
 		# The pilot's address is the last one in X-Forwarded-For: CloudFront

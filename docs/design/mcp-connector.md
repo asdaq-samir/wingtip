@@ -173,8 +173,9 @@ sequenceDiagram
 - **The pilot's records stay in the gateway.** The planner asks
   `/internal/mcp/aircraft`, `/flights` and `POST /flights` with its own
   secret (`MCP_INTERNAL_TOKEN`) and the pilot's id from the checked token,
-  never with the pilot's token: the spec forbids passing it on. Without the
-  secret, those routes are a 404.
+  never with the pilot's token: the spec forbids passing it on. Those routes
+  answer only on the gateway's internal port (8081), which nothing
+  publishes, and only with the secret; anywhere else they are a 404.
 
 ## 3. Sign-in and tokens
 
@@ -271,8 +272,11 @@ logbook, and send nothing to Anthropic or OpenAI unless the pilot asked.
 
 ## 7. Left for the owner
 
-- **The production domain:** `APP_PUBLIC_BASE_URL` on HTTPS (the issuer and
-  `/mcp`), `MCP_SIGNING_KEY` and `MCP_INTERNAL_TOKEN` as secrets, and
+- **The production domain:** `MCP_ENABLED=true` (the connector is off,
+  every address a 404, until then), `APP_PUBLIC_BASE_URL` on HTTPS (the
+  issuer and `/mcp`), `MCP_SIGNING_KEY` and `MCP_INTERNAL_TOKEN` (a long
+  random value, `openssl rand -hex 32`) as secrets on the gateway and the
+  planner, and
   Anthropic's egress range allowed through any WAF in front of the gateway.
 - **Anthropic's directory:** submit at claude.ai's developer portal, with a
   test account holding airplanes and flights, the public documentation page,

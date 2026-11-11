@@ -62,6 +62,9 @@ public class AuthorizationServerConfig {
             RegisteredClientRepository clients,
             OAuth2TokenGenerator<?> tokens)
             throws Exception {
+        if (!settings.enabled()) {
+            return ConnectorOff.chain(http);
+        }
         OAuth2AuthorizationServerConfigurer server = new OAuth2AuthorizationServerConfigurer();
         http.securityMatcher(server.getEndpointsMatcher())
                 .with(
