@@ -1,7 +1,6 @@
 // The debrief's tolerances and marks are the engine's (debrief.rs), the very ones the planner and the phones give.
 import { Suspense, lazy, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { Check, Upload, X } from "lucide-react";
 import { cn } from "cn";
 import { ListGroup, ListRow } from "../../components/GroupedList";
@@ -17,7 +16,7 @@ import { routeName } from "../../lib/identSchema";
 import { altFt, bearing, feet, gal, grouped, nm } from "../../lib/format";
 import { mayUse, useEntitlement } from "../../lib/subscription";
 import PaidPrompt from "../../components/PaidPrompt";
-import { hm, localDay } from "../../lib/format";
+import { dayMonthTime, dayMonthYear, hm, localDay } from "../../lib/format";
 import { reviewState, said } from "../../lib/endorsements";
 import { ReviewAskForm, type ReviewAsk } from "../../components/ReviewAsk";
 import { FINDING_TONE } from "../../lib/findings";
@@ -120,7 +119,7 @@ function Findings({ d }: { d: Debrief }) {
         </ul>
       )}
       <ListGroup title="The flight">
-        <ListRow title="Took off" value={format(new Date(d.takeoff), "d MMM, HH:mm")} />
+        <ListRow title="Took off" value={dayMonthTime(new Date(d.takeoff))} />
         <ListRow
           title="In the air"
           description={d.plannedMin != null ? `${hm(d.plannedMin)} planned` : undefined}
@@ -438,13 +437,13 @@ export default function FlightPage({ summary, planHref }: { summary: FlightSumma
   return (
     <div className="space-y-4">
       <ListGroup>
-        <Row title="Filed" value={format(new Date(summary.createdAt), "d MMM yyyy")} />
+        <Row title="Filed" value={dayMonthYear(new Date(summary.createdAt))} />
         {summary.aircraftTailNumber && <Row title="Airplane" value={summary.aircraftTailNumber} />}
         <Row title="Altitude" value={feet(summary.cruiseAltitudeFt)} />
         {summary.totalDistanceNm != null && <Row title="Distance" value={nm(summary.totalDistanceNm)} />}
         {summary.totalEteMin != null && <Row title="Time" value={hm(summary.totalEteMin)} />}
         {summary.totalFuelGal != null && <Row title="Fuel" value={gal(summary.totalFuelGal)} />}
-        {summary.plannedFor && <Row title="Planned for" value={format(new Date(summary.plannedFor), "d MMM, HH:mm")} />}
+        {summary.plannedFor && <Row title="Planned for" value={dayMonthTime(new Date(summary.plannedFor))} />}
         {summary.risk && (
           <ListRow
             title="Risk"

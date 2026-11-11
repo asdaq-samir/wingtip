@@ -6,7 +6,7 @@ import { TEXT } from "../../../../lib/text";
 import { useClaudeOn } from "../../../../lib/subscription";
 import { LocalDuration } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
-import { LOCAL_MINUTES } from "../../hooks/usePlanWorkspace";
+import { LOCAL_MINUTES } from "../../hooks/planAddress";
 
 /** The route's chips: the airplane, the altitude and the time
  *  (`flightInputs`), a local flight's time aloft, and the route's buttons --

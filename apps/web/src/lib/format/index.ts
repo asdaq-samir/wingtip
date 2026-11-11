@@ -6,3 +6,4 @@
 export * from "./figures";
 export * from "./time";
 export * from "./spoken";
+export * from "./days";

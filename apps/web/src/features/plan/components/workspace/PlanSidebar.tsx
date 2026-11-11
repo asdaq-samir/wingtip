@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, type ReactNode, type ComponentProps } from "react";
+import { lazy, useEffect, type ReactNode, type ComponentProps } from "react";
 import { cn } from "cn";
 import { fromChunk } from "../../../../lib/fromChunk";
 import { loadAccountPanels } from "../../../pilot";
@@ -19,6 +19,7 @@ import ProfileCard from "../ProfileCard";
 import { BriefCard, AirspaceCard, FlightCard, PastFlightCard, PlaceCard, StopsCard, DryRunControls } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
 import ProfileSideView from "./ProfileSideView";
+import Waits from "./Waits";
 
 /** The one search's parts on chunks of their own, out of the first load
  *  (its 1.10 MB budget, scripts/first-load.mjs): its own page, drawn once
@@ -160,19 +161,16 @@ export default function PlanSidebar({
     const later = window.setTimeout(searchHome.prefetch, 1500);
     return () => window.clearTimeout(later);
   }, []);
+  // In the traffic tab's Waits (below), as the rest of that tab is.
   const flightCard =
     flight && past ? (
-      <Suspense fallback={null}>
-        <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} />
-      </Suspense>
+      <PastFlightCard key={`${flight}-${past}`} hex={flight} id={past} onClose={() => selectPast(null)} />
     ) : flight ? (
-      <Suspense fallback={null}>
-        <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={openAirportOverFlight} />
-      </Suspense>
+      <FlightCard key={flight} hex={flight} onOpenPast={selectPast} onClose={closeFlight} onOpenAirport={openAirportOverFlight} />
     ) : null;
   // The airport's card, in the panel's body.
   const placeCard = place && (
-    <Suspense fallback={null}>
+    <Waits>
       <PlaceCard
         key={place}
         ident={place}
@@ -194,14 +192,14 @@ export default function PlanSidebar({
         // The route's destination: when the flight lands there -- en route and on the ground at its
         // stops (Totals.ground_min) after it leaves, as the figures' ETA -- for its forecast's hour.
         arrival={
-          !s.local && sameField(place, `${planned.dest}`) && s.totals?.ete_min != null
+          !s.local && s.totals?.ete_min != null && sameField(place, `${planned.dest}`)
             ? { depart: depart || null, minutes: s.totals.ete_min + (s.totals.ground_min ?? 0) }
             : undefined
         }
         startOn={approachesOf === place ? "approaches" : undefined}
         onStarted={() => setApproachesOf(null)}
       />
-    </Suspense>
+    </Waits>
   );
   // With the Map switch at its right (AircraftPill).
   const aircraftStrip = (
@@ -221,7 +219,7 @@ export default function PlanSidebar({
         // tabs' Back there has a card to close.
         placeCard
       ) : heldPoint ? (
-        <Suspense fallback={null}>
+        <Waits>
           <AirspaceCard
             key={`${heldPoint.lat},${heldPoint.lon}`}
             point={heldPoint}
@@ -234,56 +232,58 @@ export default function PlanSidebar({
                 }
               : {})}
           />
-        </Suspense>
+        </Waits>
       ) : null}
       {/* Each place once opened kept under the others (TabKept): back to
           it, as it was left. */}
       {opened.includes("traffic") && (
         <TabKept away={cardUp || view !== "traffic"}>
-          {flightCard ??
-            (aircraftOpen &&
-              (aircraftFavoritesOpen && !aircraftTyped ? (
-                <TabPage testId="aircraft-favorites">
-                  <Suspense fallback={null}>
-                    <AircraftFavoritesList
-                      onBack={closeList}
-                      onOpen={(hex) => selectFlight(hex)}
-                      onChangeMine={() => {
-                        closeList();
-                        addFromPill("mine");
-                      }}
-                      onAdd={() => {
-                        closeList();
-                        addFromPill("airplane");
-                      }}
-                    />
-                  </Suspense>
-                </TabPage>
-              ) : aircraftRecentsOpen && !aircraftTyped ? (
-                // Kept open under an airplane's card opened from it, as the
-                // Favorites in full are: its close comes back here.
-                <AircraftRecentsPage onBack={closeList} onPick={(kept) => pickKeptAircraft(kept, (hex) => selectFlight(hex))} />
-              ) : (
-                // The strip once, in the pill or here: at the pill's size the
-                // body is out of sight but for a finger taking it up.
-                <AircraftCard
-                  onPick={(plane) => selectFlight(plane.hex, plane)}
-                  onPickHex={(hex) => selectFlight(hex)}
-                  strip={stripsDrawn ? aircraftStrip : null}
-                />
-              )))}
+          <Waits>
+            {flightCard ??
+              (aircraftOpen &&
+                (aircraftFavoritesOpen && !aircraftTyped ? (
+                  <TabPage testId="aircraft-favorites">
+                    <Waits>
+                      <AircraftFavoritesList
+                        onBack={closeList}
+                        onOpen={(hex) => selectFlight(hex)}
+                        onChangeMine={() => {
+                          closeList();
+                          addFromPill("mine");
+                        }}
+                        onAdd={() => {
+                          closeList();
+                          addFromPill("airplane");
+                        }}
+                      />
+                    </Waits>
+                  </TabPage>
+                ) : aircraftRecentsOpen && !aircraftTyped ? (
+                  // Kept open under an airplane's card opened from it, as the
+                  // Favorites in full are: its close comes back here.
+                  <AircraftRecentsPage onBack={closeList} onPick={(kept) => pickKeptAircraft(kept, (hex) => selectFlight(hex))} />
+                ) : (
+                  // The strip once, in the pill or here: at the pill's size the
+                  // body is out of sight but for a finger taking it up.
+                  <AircraftCard
+                    onPick={(plane) => selectFlight(plane.hex, plane)}
+                    onPickHex={(hex) => selectFlight(hex)}
+                    strip={stripsDrawn ? aircraftStrip : null}
+                  />
+                )))}
+          </Waits>
         </TabKept>
       )}
       {!cardUp && view === "search" && nearOpen && (
-        <Suspense fallback={null}>
+        <Waits>
           <NearestCard onOpen={selectPlace} from={nearFrom} onFrom={setNearFrom} onBack={closeNearest} />
-        </Suspense>
+        </Waits>
       )}
       {opened.includes("search") && (
         <TabKept away={cardUp || view !== "search" || nearOpen}>
           {favoritesOpen ? (
             <TabPage testId="favorites-page">
-              <Suspense fallback={null}>
+              <Waits>
                 <FavoritesList
                   home={home}
                   favorites={favorites}
@@ -295,7 +295,7 @@ export default function PlanSidebar({
                   onMove={moveFavoriteAirport}
                   onAdd={() => askFor("favorite")}
                 />
-              </Suspense>
+              </Waits>
             </TabPage>
           ) : airportRecentsOpen && !query ? (
             <TabPage testId="airport-recents-list">
@@ -313,14 +313,14 @@ export default function PlanSidebar({
             </TabPage>
           ) : savedOpen ? (
             <TabPage testId="saved-flights">
-              <Suspense fallback={null}>
+              <Waits>
                 <SavedFlights onBack={closeSaved} />
-              </Suspense>
+              </Waits>
             </TabPage>
           ) : model.typed || model.direct ? (
             // A search sent, its results, else the suggestions: each its own scroll box (one scrolling rule).
             <TabPage key={model.sent ? "results" : "suggestions"} testId="search-page">
-              {model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}
+              <Waits>{model.sent ? <SearchResultsPage /> : <OneSearchResults model={model} />}</Waits>
             </TabPage>
           ) : (
             stripsDrawn && <SearchHome vm={vm} model={model} />
@@ -380,11 +380,11 @@ export default function PlanSidebar({
               {/* The dry run in the side view's place while it plays, the card's
               height; its figures counting down at the sheet's foot. */}
               {dryRunning ? (
-                <Suspense fallback={null}>
+                <Waits>
                   <div className="flex min-h-0 flex-1 flex-col" data-testid="profile-dry-run">
                     <DryRunControls run={dryRunning} ends={course} onClose={stopDryRun} missed={goMissed} onMissed={goMissedNow} />
                   </div>
-                </Suspense>
+                </Waits>
               ) : (
                 <ProfileSideView vm={vm} />
               )}

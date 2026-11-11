@@ -3,7 +3,7 @@
  *  the console's two chunks, each asked for by its loader so that naming
  *  this entry never pulls them into a first load. */
 export { default as LinkSignIn } from "./LinkSignIn";
-export { default as TvLink } from "./TvLink";
+export { default as TvLinkHost } from "./TvLinkHost";
 export const loadPilotPanel = () => import("./PilotPanel");
 export const loadAccountPanels = () => import("./AccountPanels");
 export { default as AccountButton } from "./AccountButton";

@@ -1,5 +1,6 @@
 import { Suspense, lazy } from "react";
 import { useSharedLink } from "./store";
+import { EngineGate } from "../../lib/engine/engineGate";
 
 /** The preview's own chunk, fetched only when a shared flight's link
  *  opened the page: nothing of it in the map's first load (the web's
@@ -13,7 +14,10 @@ export default function SharedFlightHost() {
   if (!link) return null;
   return (
     <Suspense fallback={null}>
-      <SharedFlightSheet link={link} />
+      {/* The route it previews is read by the engine (MapPage draws before it). */}
+      <EngineGate>
+        <SharedFlightSheet link={link} />
+      </EngineGate>
     </Suspense>
   );
 }

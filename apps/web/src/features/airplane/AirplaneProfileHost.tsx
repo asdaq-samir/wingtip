@@ -2,6 +2,7 @@ import { Suspense, lazy } from "react";
 import { useProfileOpen } from "../../lib/airplane/profileStore";
 import { useProfileAddress } from "./useProfileAddress";
 import KeepFiguresOffer from "./KeepFiguresOffer";
+import { EngineGate } from "../../lib/engine/engineGate";
 
 /** The profile's own chunk, fetched the first time one opens: nothing of
  *  it in the map page's first load (the web's bundle budget). */
@@ -17,7 +18,11 @@ export default function AirplaneProfileHost() {
       <KeepFiguresOffer />
       {open && (
         <Suspense fallback={null}>
-          <AirplaneProfileSheet />
+          {/* Its figures are the engine's: opened from the address (?airplane=)
+            as the page loads, it waits for the .wasm (MapPage). */}
+          <EngineGate>
+            <AirplaneProfileSheet />
+          </EngineGate>
         </Suspense>
       )}
     </>

@@ -4,10 +4,10 @@ import { CommandRoot } from "../../components/ui/command";
 import { MAX_STOPS, routeName } from "../../lib/identSchema";
 import type { WorkspaceProps } from "../shell";
 import { ShareMenu } from "./ShareMenuLazy";
+import PaidPrompt from "../../components/PaidPromptLazy";
 import { RouteShareMenu, type RouteCard } from "../../lib/openCards";
 import { CardHead } from "../../components/PanelCard";
 import type { BriefingPart } from "./components/briefing/sections";
-import PaidPrompt from "../../components/PaidPrompt";
 import {
   PilotPanel,
   NavLogView,

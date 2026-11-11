@@ -5,18 +5,12 @@ import { Button } from "../../components/ui/button";
 import { ApiError, api } from "../../lib/api/client";
 import { pilotQuery } from "../../lib/queryClient";
 import { TEXT } from "../../lib/text";
-import { TV_CODE_LENGTH, tvCode } from "./tvCode";
+import { TV_CODE_LENGTH, fromTvAddress, tvCode } from "./tvCode";
 
 // Loaded when it is drawn: the sign-in sheet out of the first load.
 const SignInModal = lazy(() => import("../../components/SignInModal"));
-// The code's slots (Base UI's OTP Field) only where a TV's address opened
-// the page: TvLink itself is drawn on every planner page.
+// The code's slots (Base UI's OTP Field), with the sheet.
 const TvCodeField = lazy(() => import("./TvCodeField"));
-
-/** Whether the page was opened from a TV's address (/tv, WebMvcConfig). */
-function fromTvAddress(): boolean {
-  return new URLSearchParams(window.location.search).has("tv-link");
-}
 
 /** Takes the TV's mark off the address, so a reload does not ask again. */
 function forgetTvAddress() {

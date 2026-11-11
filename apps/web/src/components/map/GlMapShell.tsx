@@ -225,8 +225,8 @@ interface Props {
   place: { lat: number; lon: number } | null;
   /** Its layers (lib/map/gl/layers), drawn once the map is made. */
   children: ReactNode;
-  /** The map alone, drawn before the engine is there (GlBootMap): no
-   *  buttons, banners or ruler, which ask it, and no taps until it is. */
+  /** The map alone, while a route in the address waits for the engine
+   *  (GlBootMap): no buttons, banners or ruler, and no taps until it is. */
   bare?: boolean;
 }
 
@@ -243,9 +243,9 @@ interface Props {
  * what the sheet leaves, clear of the map's buttons.
  *
  * One MapLibre map lives on from one tree to the next: the map the page
- * draws before the engine is there (GlBootMap, outside MapPage's engine
- * gate) is parked as that tree goes and taken up by the planner's, its
- * chart and overlays kept, rather than a second map drawn from nothing.
+ * draws while a route in the address waits for the engine (GlBootMap) is
+ * parked as that tree goes and taken up by the planner's, its chart and
+ * overlays kept, rather than a second map drawn from nothing.
  */
 export default function GlMapShell({ course, focus, focusZoom, place, children, bare = false }: Props) {
   // Once: a page is on a TV or not for its whole visit.
@@ -401,7 +401,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     if (!map) return;
     const tap = (e: MapMouseEvent) => {
       // The cards a tap opens ask the engine as they draw: a tap waits for
-      // it, as nothing else on the map does (MapPage's engine gate).
+      // it, as the layers that draw with it do (GlRouteMap's EngineLayers).
       if (!engineLoaded()) return;
       for (const t of [...registry.taps].sort((a, b) => a.rank - b.rank)) {
         const layers = t.layers.filter((l) => map.getLayer(l));

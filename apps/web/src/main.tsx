@@ -47,10 +47,11 @@ import { takeSharedLinkFromAddress } from "./features/shared-flight";
 
 // The shared Rust engine (lib/engine), asked for first: the rules it
 // works out (the hold's entry, lost comms, the diversion, the debrief)
-// answer synchronously. The first render no longer waits for it: the
-// parts that ask it while they render are behind an engine gate
-// (lib/engine/engineGate, the workspace in MapPage), so the shell paints
-// while the .wasm comes. index.html preloads it beside the scripts.
+// answer synchronously. The first render does not wait for it: the
+// search, the sheet and the chart draw at once, and each part that asks
+// it while it renders waits in its place (lib/engine/engineGate; a route
+// named in the address, which it reads, behind MapPage's boot map).
+// index.html preloads it beside the scripts.
 const engineLoaded = loadEngine();
 
 // The reader's text size from the iPhone's Settings, before the first

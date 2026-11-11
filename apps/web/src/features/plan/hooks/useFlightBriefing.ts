@@ -1,12 +1,11 @@
 import { useAirplaneChosen } from "../../../lib/preferences";
 import { useEffect, useState, useEffectEvent } from "react";
-import { format } from "date-fns";
 import { useQuery } from "@tanstack/react-query";
 import { aircraftListQuery, currencyQuery, pilotQuery } from "../../../lib/queryClient";
 import type { Briefing, Course, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
 import type { BriefingState } from "./usePlan";
 import { ceilingAndVisibility, PLAN_NAME, reportedWind } from "../format";
-import { feetRange, flightLevel, grouped, reportedDirection } from "../../../lib/format";
+import { feetRange, flightLevel, grouped, localDay, reportedDirection, weekdayDayMonthTime } from "../../../lib/format";
 import { isAirwayToken } from "../../../lib/identSchema";
 import { useLoad } from "./useLoad";
 import { armText } from "../../../lib/weightBalance";
@@ -249,7 +248,7 @@ export function useFlightBriefing({
         inspections: flownOwn?.inspections,
         squawks: flownOwn?.openSquawks,
         currency: currency ?? null,
-        day: format(new Date(depart || opened), "yyyy-MM-dd"),
+        day: localDay(new Date(depart || opened)),
         ticked,
       })
     : null;
@@ -279,7 +278,7 @@ export function useFlightBriefing({
         fuelGal: totals?.fuel_gal,
         reserveMin: totals?.reserve_min,
         night: totals?.night,
-        depart: depart ? format(new Date(depart), "EEE d MMM, HH:mm") : null,
+        depart: depart ? weekdayDayMonthTime(new Date(depart)) : null,
         metars: landings.flatMap((i) => (briefing.metars[i]?.raw ? [{ ident: i, raw: briefing.metars[i]!.raw! }] : [])),
         destinationForecast: destStation ? ceilingAndVisibility(destStation.ceiling_ft, destStation.visibility_sm) : null,
         hazards: hazardNames,

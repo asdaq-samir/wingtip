@@ -12,12 +12,23 @@ import { useFlying } from "../lib/mapChrome";
 import { useWeatherLayers } from "../lib/map/sources/weatherLayers";
 // The radar and satellite loop's bar, lazy in its feature: fetched once a loop is turned on.
 import { LoopBar } from "../features/weather-loop";
+import { EngineGate } from "../lib/engine/engineGate";
 
 const RadioLayer = lazy(() => import("./RadioLayer"));
 // The in-flight copilot, fetched with its first flight.
 const CopilotBanner = lazy(() => import("../features/copilot").then((m) => ({ default: m.CopilotBanner })));
 // The ATC copilot (features/atc), fetched once the pilot turns it on.
 const AtcCopilot = lazy(() => import("../features/atc").then((m) => ({ default: m.AtcCopilot })));
+
+/** Drawn once the shared engine is there (lib/engine/engineGate), which
+ *  it asks as it draws: the chart under it draws at once (MapPage). */
+export default function MapBanners({ map }: { map: GlMap | null }) {
+  return (
+    <EngineGate>
+      <MapBannersDrawn map={map} />
+    </EngineGate>
+  );
+}
 
 /**
  * The map's lines: at the top, the screen's width, over a panel at the
@@ -45,7 +56,7 @@ const AtcCopilot = lazy(() => import("../features/atc").then((m) => ({ default: 
  * The radio's (RadioLayer) after what is ahead: a call to us with its
  * actions, and the captions while the app listens, once it first has.
  */
-export default function MapBanners({ map }: { map: GlMap | null }) {
+function MapBannersDrawn({ map }: { map: GlMap | null }) {
   // The microphone's pill too, which stays with what it heard or why it
   // heard nothing until put away: with nothing heard it went with the
   // listening, a few seconds after the tap (the owner's report, 2026-11-02).

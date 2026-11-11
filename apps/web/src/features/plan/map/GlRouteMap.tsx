@@ -6,6 +6,7 @@ import { DRY_RUN, usePastFlight } from "./pastFlight";
 import type { RouteWay } from "../../../lib/map/route/routeWays";
 import type { StopPin } from "../../../lib/map/marks/stopPins";
 import GlMapShell from "../../../components/map/GlMapShell";
+import { EngineGate } from "../../../lib/engine/engineGate";
 import { AirportsGl } from "./layers/AirportsGl";
 import { useWorseByArrival } from "./worseByArrival";
 import type { BriefingState } from "../hooks/usePlan";
@@ -122,9 +123,10 @@ export default function GlRouteMap(p: GlRouteMapProps) {
 }
 
 /**
- * The map before the engine is there (MapPage's engine gate): the chart
- * and the cycle's overlays from their tiles, which ask it nothing, drawn
- * while the .wasm comes; no taps, cards, buttons or route, which do. The
+ * The map alone, while a route named in the address waits for the engine
+ * to read it (MapPage's Suspense): the chart and the cycle's overlays
+ * from their tiles, which ask it nothing; no taps, cards, buttons or
+ * route, which do. The
  * planner's map takes this one up as it comes (GlMapShell's park), the
  * chart and the overlays as they are.
  */
@@ -140,8 +142,30 @@ export function GlBootMap() {
 
 function Layers(p: GlRouteMapProps) {
   const { course } = p;
-  const dryRunning = usePastFlight((s) => s.hex === DRY_RUN);
   const [previewing, setPreviewing] = useState(false);
+  // The chart and the cycle's overlays from their tiles, which ask the
+  // engine nothing, at once; every layer that works out a figure or a
+  // colour with it (the fields' flight categories, the glide ring, the
+  // traffic) once it is there (MapPage, lib/engine/engineGate). Each layer
+  // has its slot (lib/map/gl/glLayer), so one added later is drawn where
+  // it always is.
+  return (
+    <>
+      <LandWaterGl />
+      <ChartGl course={course} previewing={previewing} />
+      <OverlayGl />
+      <EngineGate>
+        <EngineLayers {...p} onPreview={setPreviewing} />
+      </EngineGate>
+    </>
+  );
+}
+
+/** The layers the engine works out a figure or a colour for, and the
+ *  map's fits to what is picked: drawn once it is there (Layers). */
+function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void }) {
+  const { course } = p;
+  const dryRunning = usePastFlight((s) => s.hex === DRY_RUN);
   // The map fitted to what was just picked: a lone departure,
   // Nearest's fields, the Stops, a procedure or a pattern just picked.
   useGlFit(p.start ? [p.start] : NONE, !p.place ? (p.start?.ident ?? null) : null, 9);
@@ -150,20 +174,17 @@ function Layers(p: GlRouteMapProps) {
   useGlFit(p.focusedProcedure, p.focusedProcedure.length ? p.procedureFocus : null, 12, p.procedureCover);
   useGlFit(p.focusedPattern, p.focusedPattern.length ? p.patternFocus : null, 13);
   const route = course ? [course.departure.ident, ...(course.stops ?? []).map((s) => s.ident), course.destination.ident] : [];
+  const worse = useWorseByArrival(p.briefing, course);
   const terrain = useTerrainView();
   // The radar and satellite loop under the advisories, while one is on.
   const loop = useWeatherLayers((s) => s.loop !== "off");
-  const worse = useWorseByArrival(p.briefing, course);
   return (
     <>
-      <LandWaterGl />
-      <ChartGl course={course} previewing={previewing} />
       {terrain.mode !== "flat" && (
         <Suspense fallback={null}>
           <TerrainGl mode={terrain.mode} pilot={terrain.pilot} aloft={course ? (p.aloft ?? null) : null} />
         </Suspense>
       )}
-      <OverlayGl />
       {loop && <WeatherLoopGl />}
       <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />
       <TfrGl />
@@ -173,7 +194,7 @@ function Layers(p: GlRouteMapProps) {
       <NavaidsGl />
       <WaypointsGl exclude={p.chippedIdents} />
       <AirportsGl selected={p.place} onSelect={p.onSelectPlace} others={p.chipped} route={p.routeBox} worse={worse} />
-      {p.chart && <ClassBGl chart={p.chart} route={route} onPreview={setPreviewing} onSelectPlace={p.onSelectPlace} />}
+      {p.chart && <ClassBGl chart={p.chart} route={route} onPreview={p.onPreview} onSelectPlace={p.onSelectPlace} />}
       <StopFieldsGl fields={p.stopFields} onSelect={p.onPickStopField ?? p.onSelectPlace} />
       {course && (
         <>

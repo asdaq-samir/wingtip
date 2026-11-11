@@ -117,6 +117,9 @@ export function sameField(a: string, b: string): boolean {
 
 /** The procedures picked, for the address. */
 export function proceduresParam(picks: PickedProcedure[]): string {
+  // None picked writes nothing: the engine not asked (the page's first
+  // draw, before it is there).
+  if (!picks.length) return "";
   return callEngine("procedures_write", { picks });
 }
 

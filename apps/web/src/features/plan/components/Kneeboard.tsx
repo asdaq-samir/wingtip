@@ -1,10 +1,9 @@
 import { createPortal } from "react-dom";
-import { format } from "date-fns";
 import type { Briefing, Candidate, Course, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
 import { kneeboardRadio, mhzText } from "../../../lib/frequencies";
 import { pickedEnd, runwayFlown, runwayNumber } from "../lib/pattern";
 import { useRunwayPicks } from "../lib/useRunwayPicks";
-import { hm } from "../../../lib/format";
+import { hm, weekdayDayMonthTime } from "../../../lib/format";
 import { routeName } from "../../../lib/identSchema";
 import { altFt, feetRange, gal, nm } from "../../../lib/format";
 import { bearing, etaAt, one, plannedWords } from "../format";
@@ -76,7 +75,7 @@ export default function Kneeboard({
           which the layout's tests find by its element. */}
       <div className="mb-1.5 flex items-baseline justify-between border-b-2 border-black pb-1">
         <span className="text-[13pt] font-bold tracking-tight">{route}</span>
-        <span>{depart ? format(new Date(depart), "EEE d MMM, HH:mm") : <Blank label="Date" />}</span>
+        <span>{depart ? weekdayDayMonthTime(new Date(depart)) : <Blank label="Date" />}</span>
       </div>
       <p className="mb-1.5">
         {aircraftLabel}

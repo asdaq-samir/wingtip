@@ -65,3 +65,12 @@ describe("the shared holds fixture", () => {
     expect(legMinutes(altitudeFt)).toBe(minutes);
   });
 });
+
+describe("no holds in the address", () => {
+  test("reads as the engine reads none, without asking it", async () => {
+    const { callEngine } = await import("../../../lib/engine/engine");
+    expect(callEngine("holds_read", { text: "" })).toEqual([]);
+    expect(holdsOf(null)).toEqual([]);
+    expect(holdsOf("")).toEqual([]);
+  });
+});

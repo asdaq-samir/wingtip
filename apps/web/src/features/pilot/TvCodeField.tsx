@@ -14,9 +14,8 @@ const upper = (value: string) => value.toUpperCase();
  * blocked -- and the letters in capitals. Its type at 20, over the 16 under
  * which iOS zooms into a field; the slots share the width, 44 tall, so the
  * code fits a phone 320 wide. Full, it calls `onComplete`, which sends
- * it; Enter sends the form round it. On its own chunk: the planner's page
- * draws TvLink for every pilot, and only one opened from a TV's address
- * draws this.
+ * it; Enter sends the form round it. On its own chunk, as TvLink is
+ * (TvLinkHost): only a page opened from a TV's address draws it.
  */
 export default function TvCodeField({
   value,

@@ -12,8 +12,9 @@ import {
   stopsOf,
 } from "../../../lib/identSchema";
 import { cruiseTasOf, shortName, taxiFuelOf } from "../../../lib/aircraftChoice";
-import { clockTime } from "../../../lib/format";
+import { clockTime, flightLevel } from "../../../lib/format";
 import { useMinuteClock } from "../../../lib/useMinuteClock";
+import { useEngineWhen } from "../../../lib/engine/useEngineReady";
 import { legsWithoutWind, windsOutOfDate } from "../format";
 import { placeName } from "../lib/radio";
 import { bestStopIndex, distanceNm, type LatLon } from "../../../lib/geo";
@@ -41,11 +42,10 @@ import { useSuggestedStops, withStopsAfter } from "./useSuggestedStops";
 import { navlogQuery, usePlan } from "./usePlan";
 import { useVerdict } from "../../../lib/verdict";
 import { mayUse, useEntitlement } from "../../../lib/subscription";
-import { flightLevel } from "../../../lib/format";
 import type { WorkspaceProps } from "../../shell";
 import { prefetchPilotPanel } from "../routePanelParts";
 import { panelNow } from "./panelNow";
-import { altitudeChoiceOf, departureRunways, landingRunways, routeWas, suggestedStopAt } from "./planAddress";
+import { altitudeChoiceOf, departureRunways, landingRunways, LOCAL_MINUTES, namesRoute, routeWas, suggestedStopAt } from "./planAddress";
 import { briefMarkOf, marksOf, progressWords, tightLegWords } from "./planWords";
 import { drawnOnly, useProcedurePicks } from "./useProcedurePicks";
 import { useAircraftPick } from "./useAircraftPick";
@@ -66,10 +66,6 @@ import { useLegSheet } from "./useLegSheet";
 import { useFieldColours } from "./useFieldColours";
 import { useRouteLine } from "./useRouteLine";
 import { useFlightToSave } from "./useFlightToSave";
-
-/** A local flight's times aloft to choose from, in minutes: a menu, not a
- *  slider. */
-export const LOCAL_MINUTES = [30, 45, 60, 90, 120, 150, 180, 240];
 
 /**
  * The planner's view model (PlanWorkspace, MVVM): the plan read from the
@@ -109,6 +105,9 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     panelNow.current = panel;
   }, [panel]);
   const [searchParams, setSearchParams] = useSearchParamsNow();
+  // A route in the address is read by the engine, so waited for behind
+  // MapPage's boot map; with none (a fresh open) the page draws at once.
+  const engine = useEngineWhen(namesRoute(searchParams));
   // How the route is changed once it has a destination (RouteEdit): its
   // box folded to a line, or the plan's own rows under the route's name.
   const routeEdit = usePreferences((p) => p.routeEdit);
@@ -695,7 +694,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const profile = profiles?.find((p) => p.name === aircraft.profile);
   const cruiseTasKt = cruiseTasOf(aircraft, profiles);
   const fuelBurnGph = aircraft.fuelBurnGph ?? profile?.fuel_burn_gph ?? null;
-  const taxiFuelGal = taxiFuelOf(aircraft, profiles);
+  const taxiFuelGal = engine ? taxiFuelOf(aircraft, profiles) : null;
   // Before the course comes, at the tap: the great circles between the
   // route's points, placed from the airport index the browser keeps
   // (placeOf) -- the figures at once, where they waited a second or more

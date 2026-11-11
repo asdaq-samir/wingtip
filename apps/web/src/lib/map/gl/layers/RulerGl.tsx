@@ -5,9 +5,20 @@ import { placed } from "../../ruler/rulerPlaced";
 import { useCruiseTas } from "../../useCruiseTas";
 import { HOLD_MS, heldStill } from "../../ruler/ruler";
 import { useGlMap } from "../glLayer";
+import { EngineGate } from "../../../engine/engineGate";
 
 type XY = { x: number; y: number };
 type Ends = readonly [XY, XY];
+
+/** Drawn once the shared engine is there (lib/engine/engineGate), which
+ *  it asks as it draws: the chart under it draws at once (MapPage). */
+export function RulerGl() {
+  return (
+    <EngineGate>
+      <RulerGlDrawn />
+    </EngineGate>
+  );
+}
 
 /**
  * Two fingers held still on the chart measure it, as ForeFlight's ruler
@@ -15,7 +26,7 @@ type Ends = readonly [XY, XY];
  * the pinch handed over to the ruler, which follows the fingers until
  * they lift, its distance, course and time en route along it.
  */
-export function RulerGl() {
+function RulerGlDrawn() {
   const { map } = useGlMap();
   const [ends, setEnds] = useState<{ first: Ends; now: Ends } | null>(null);
   const [declination, setDeclination] = useState<Declination | null>(null);

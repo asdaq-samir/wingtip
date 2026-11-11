@@ -9,6 +9,7 @@ import RadioButton from "./RadioButton";
 import { useAtcRadio } from "../lib/atcRadio";
 import { useIsMobile } from "../hooks/use-mobile";
 import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "../lib/mapChrome";
+import { EngineGate } from "../lib/engine/engineGate";
 
 /**
  * The map's buttons, in one group floating over the chart, as Maps
@@ -37,7 +38,17 @@ import { FLYING_BUTTON, FLYING_STACK, GLASS, useFlying } from "../lib/mapChrome"
  *  first load. */
 const RadioPill = lazy(() => import("./RadioLayer").then((m) => ({ default: m.RadioPill })));
 
+/** Drawn once the shared engine is there (lib/engine/engineGate), which
+ *  it asks as it draws: the chart under it draws at once (MapPage). */
 export default function MapControls() {
+  return (
+    <EngineGate>
+      <MapControlsDrawn />
+    </EngineGate>
+  );
+}
+
+function MapControlsDrawn() {
   const flying = useFlying((s) => s.flying);
   const nearest = useFlying((s) => s.nearest);
   const direct = useFlying((s) => s.direct);

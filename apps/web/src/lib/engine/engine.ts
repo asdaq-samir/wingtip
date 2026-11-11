@@ -81,6 +81,10 @@ export function loadEngine(bytes?: BufferSource): Promise<void> {
   loading ??= (async () => {
     const instance = bytes ? (await WebAssembly.instantiate(bytes, {})).instance : await fromNetwork(wasmUrl);
     engine = instance.exports as unknown as Exports;
+    // Marked settled as React's `use` reads a promise (its status and
+    // value), so a part that waits on it (useEngineWhen) reads it at once
+    // from now on, rather than suspending a moment to find out.
+    Object.assign(engineReady, { status: "fulfilled", value: undefined });
     ready();
   })();
   return loading;
