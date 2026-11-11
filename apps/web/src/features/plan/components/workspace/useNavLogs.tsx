@@ -4,7 +4,8 @@ import PaidPrompt from "../../../../components/PaidPromptLazy";
 import type { BriefingPart } from "../briefing/sections";
 import { BriefingNotices, FlightBriefingView, NavLogView } from "../../routePanelParts";
 import type { PlanWorkspaceModel } from "../../hooks/usePlanWorkspace";
-import { figuresLine } from "../../figures";
+import { EngineGate } from "../../../../lib/engine/engineGate";
+import FiguresLine from "./FiguresLine";
 
 /**
  * The plan's two nav logs (PlanWorkspace): FPL's own list -- the route in
@@ -178,7 +179,11 @@ export function useNavLogs(
               // it (the canvas's Nav Log card): the line the route's figures
               // carried at the sheet's foot.
               name="Nav Log"
-              sub={figuresLine({ totals: s.totals, estimate, local: s.local, destination: `${planned.dest}`, depart })}
+              sub={
+                <EngineGate>
+                  <FiguresLine input={{ totals: s.totals, estimate, local: s.local, destination: `${planned.dest}`, depart }} />
+                </EngineGate>
+              }
               line={briefLine}
               nameTestId="navlog-name"
               onClose={closeNavLogCard}
