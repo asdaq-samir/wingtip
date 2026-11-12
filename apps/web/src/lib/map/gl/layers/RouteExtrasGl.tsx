@@ -1,4 +1,4 @@
-import type { CircleLayerSpecification, ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
+import type { CircleLayerSpecification, ExpressionSpecification, MapGeoJSONFeature, SymbolLayerSpecification } from "maplibre-gl";
 import { useEffect, useMemo, useEffectEvent } from "react";
 import type { Leg, ProcedureDrawing } from "../../../api/types";
 import { bearingDeg, type LatLon } from "../../../geo";
@@ -14,6 +14,7 @@ import { WAY_CHIP_PLACE, WAY_SHARES, wayAt, wayChip, wayInk, type RouteWay } fro
 import { useGlData, useGlLayer, useGlMap } from "../glLayer";
 import { chipLayer, pictureLayer } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
+import { useGlProbe } from "../useGlProbe";
 import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
 import { useGlView } from "../useGlView";
 import { GL_FONT, GL_FONT_BOLD, TAP } from "./common";
@@ -187,6 +188,19 @@ export function PatternsGl({ patterns }: { patterns: TrafficPattern[] }) {
   return null;
 }
 
+/** A procedure's run named for the browser tests: its field, its id and
+ *  transition, its kind and its place among that kind. */
+const runName = (d: ProcedureDrawing, kind: "line" | "hold" | "missed" | "missed-hold", i: number) =>
+  `${d.airport}:${d.id}:${d.transition ?? ""}:${kind}:${i}`;
+
+/** A procedure's run as its probe says it: `kind` the old paths' class
+ *  (line, missed or hold; a missed approach's hold is a hold) and `name`. */
+const PROCEDURE_RUN = (f: MapGeoJSONFeature) => {
+  const name = String(f.properties.name ?? "");
+  const kind = name.split(":")[3] ?? "";
+  return { kind: kind.endsWith("hold") ? "hold" : kind, name };
+};
+
 /** The instrument procedures picked: their lines in the
  *  approach's ink on a white casing, the missed dashed, holds, and each
  *  fix a diamond with its altitudes and speed from zoom 9; a tap a fix's
@@ -210,21 +224,33 @@ export function ProceduresGl({
       drawings.flatMap((d) => [
         ...d.lines
           .filter((l) => l.role !== "missed")
-          .map((l) => ({ points: l.points as [number, number][], colour: inkOf(d), width: 3.5 })),
-        ...d.holds.filter((h) => !h.missed).map((h) => ({ points: h.points as [number, number][], colour: inkOf(d), width: 2.5 })),
+          .map((l, i) => ({ points: l.points as [number, number][], colour: inkOf(d), width: 3.5, name: runName(d, "line", i) })),
+        ...d.holds
+          .filter((h) => !h.missed)
+          .map((h, i) => ({ points: h.points as [number, number][], colour: inkOf(d), width: 2.5, name: runName(d, "hold", i) })),
       ]),
     [drawings],
   );
   const missed = useMemo<GlRun[]>(
     () =>
       drawings.flatMap((d) => [
-        ...d.lines.filter((l) => l.role === "missed").map((l) => ({ points: l.points as [number, number][], colour: inkOf(d), width: 3 })),
-        ...d.holds.filter((h) => h.missed).map((h) => ({ points: h.points as [number, number][], colour: inkOf(d), width: 2.5 })),
+        ...d.lines
+          .filter((l) => l.role === "missed")
+          .map((l, i) => ({ points: l.points as [number, number][], colour: inkOf(d), width: 3, name: runName(d, "missed", i) })),
+        ...d.holds
+          .filter((h) => h.missed)
+          .map((h, i) => ({ points: h.points as [number, number][], colour: inkOf(d), width: 2.5, name: runName(d, "missed-hold", i) })),
       ]),
     [drawings],
   );
   useGlLines("procedures", "route", lines, { colour: CHART.casing, width: 7, opacity: 0.9 });
   useGlLines("procedures-missed", "route", missed, { colour: CHART.casing, width: 6, opacity: 0.9 }, [8 / 3, 7 / 3]);
+  // What the browser tests read where Leaflet's paths were
+  // (path.instrument-procedure, -missed, -hold), as the selected ring's
+  // probe is: each line drawn, its kind and its name (data-instrument-
+  // procedure, useGlProbe); a line cut across the map's tiles can be two
+  // rows of one name, so a test counts the names.
+  useGlProbe("instrument-procedure", ["procedures", "procedures-missed"], PROCEDURE_RUN);
   const marks = useMemo<GlSymbol[]>(
     () =>
       drawings.flatMap((d) =>
