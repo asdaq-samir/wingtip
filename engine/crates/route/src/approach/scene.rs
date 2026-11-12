@@ -250,9 +250,9 @@ pub fn scene(name: &str, v: &Value) -> R<String> {
     for (i, (end, a, b)) in centrelines.iter().enumerate() {
         out.push_str(if i > 0 { ",{\"end\":" } else { "{\"end\":" });
         json::string(&mut out, end);
-        out.push_str(",\"points\":[");
+        out.push_str(",\"points\":[[");
         place(&mut out, a.0, a.1);
-        out.push_str("],");
+        out.push_str("],[");
         place(&mut out, b.0, b.1);
         out.push_str("]]}");
     }
