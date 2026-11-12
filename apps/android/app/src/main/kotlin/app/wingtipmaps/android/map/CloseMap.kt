@@ -1,110 +1,74 @@
 package app.wingtipmaps.android.map
 
-import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
-import androidx.core.content.edit
-import app.wingtipmaps.android.Config
-import app.wingtipmaps.android.api.Gateway
-import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.api.await
-import app.wingtipmaps.android.api.googleMaps
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import okhttp3.Interceptor
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.net.URLEncoder
-import java.security.MessageDigest
+import org.maplibre.android.maps.Style
+import org.maplibre.android.style.expressions.Expression
+import org.maplibre.android.style.layers.PropertyFactory
+import org.maplibre.android.style.layers.RasterLayer
+import org.maplibre.android.style.sources.RasterSource
+import org.maplibre.android.style.sources.TileSet
 
 /**
- * The street map close in, under the runways where the chart is only
- * enlarged, as ForeFlight, Google Maps and Apple Maps show it (the owner's
- * ask): Google's Map Tiles API, with the deployment's key from the planner
- * (/api/map/google), as the web's BaseGl CloseBase draws it. A session for
- * the road map is made once and kept until a day before it runs out (two
- * weeks, Google says), and a session made with another key is not reused.
- * Where the deployment has no key -- none is set today (.env's
- * GOOGLE_MAPS_API_KEY) -- nothing is drawn and the chart stays, enlarged,
- * as on the web.
- *
- * The planner's key is a browser key, restricted to the site's address in
- * Google Cloud; the build may carry a key of the app's own instead
- * (Config.googleMapsAndroidKey, GOOGLE_MAPS_ANDROID_KEY), restricted to
- * this app by package name and signing certificate, which Google reads
- * from the headers `signer` puts on every request to it.
+ * Close in, past the FAA chart's own detail (the owner, 2026-11-12, at
+ * KDEN: the sectional enlarged past its last zoom is a blur), as the web's
+ * closeZoom: the chart fades out over one level from its own last zoom
+ * and the USGS's aerial imagery under it shows the runways and taxiways as
+ * they are, the airports, route, airspace and marks still on top. Plain
+ * zoom expressions MapLibre evaluates itself, frame by frame under a
+ * pinch. Its credit is About's (AboutCredits), not the map's: the map
+ * keeps no small print (docs/design/rules.md, section 7).
  */
 object CloseMap {
-    const val GOOGLE = "https://tile.googleapis.com"
+    /** The imagery's source and layer. */
+    const val IMAGERY = "close-imagery"
 
-    @Serializable
-    private data class Session(val session: String, val expiry: Long, val key: String)
+    /** The USGS's aerial imagery of the United States (The National Map's
+     *  USGSImageryOnly, a public-domain work, 17 U.S.C. 105: NAIP's 0.6 to
+     *  1 m aerial photographs over the lower 48, partners' imagery over
+     *  Alaska, Hawaii and the territories), z/y/x as the web's USGS_URL. */
+    const val USGS_URL = "https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"
 
-    @Serializable
-    private class SessionAsk(val mapType: String, val language: String, val region: String, val imageFormat: String)
+    /** Its last level of tiles: the service's maxScale, 1:9,028, is {z} 16
+     *  (about 2 m a pixel at 40 degrees north); MapLibre enlarges it past. */
+    const val USGS_MAX_ZOOM = 16f
 
-    @Serializable
-    private class SessionAnswer(val session: String, val expiry: String)
+    /** Its credit, as the web's USGS_CREDIT; the USGS asks, not requires,
+     *  that its public-domain data be acknowledged. */
+    const val USGS_CREDIT = "Imagery USGS The National Map"
 
-    /** The road map's tile address for MapLibre, or null where there is
-     *  no key or Google made no session. */
-    suspend fun tiles(context: Context): String? {
-        // The app's own Android-restricted key first, else the deployment's.
-        val key = Config.googleMapsAndroidKey ?: Planner.googleMaps()?.key ?: return null
-        val session = session(context, key) ?: return null
-        return "$GOOGLE/v1/2dtiles/{z}/{x}/{y}?session=${enc(session.session)}&key=${enc(key)}"
+    /** How far in the map goes over the imagery, MapLibre's zoom: about a
+     *  metre a pixel, an airport's taxiways and ramps in sight. */
+    const val MAX_ZOOM = 17.0
+
+    /** The chart's opacity: whole to its own last zoom (`tileMaxZoom`, its
+     *  tiles' {z}), gone one level past it. */
+    fun chartFade(tileMaxZoom: Int): Expression {
+        val from = MapStyle.glZoom(tileMaxZoom.toDouble()).toFloat()
+        return Expression.interpolate(Expression.linear(), Expression.zoom(), Expression.stop(from, 1f), Expression.stop(from + 1, 0f))
     }
 
-    private fun enc(s: String) = URLEncoder.encode(s, "UTF-8")
+    /** The imagery's opacity under the chart: in over the half level before
+     *  the chart starts to fade, so the chart never fades over nothing. */
+    fun imageryFade(tileMaxZoom: Int): Expression {
+        val from = MapStyle.glZoom(tileMaxZoom.toDouble()).toFloat()
+        return Expression.interpolate(Expression.linear(), Expression.zoom(), Expression.stop(from - 0.5f, 0f), Expression.stop(from, 1f))
+    }
 
-    private suspend fun session(context: Context, key: String): Session? {
-        val prefs = context.getSharedPreferences("wingtip", Context.MODE_PRIVATE)
-        val held = prefs.getString(KEPT, null)?.let { runCatching { Gateway.json.decodeFromString<Session>(it) }.getOrNull() }
-        if (held != null && held.key == key && held.expiry * 1000 - System.currentTimeMillis() > DAY_MS) return held
-        val body = Gateway.json.encodeToString(SessionAsk("roadmap", "en-US", "US", "png"))
-        val request = Request.Builder()
-            .url("$GOOGLE/v1/createSession?key=${enc(key)}")
-            .post(body.toRequestBody("application/json".toMediaType()))
-            .build()
-        val answer = Gateway.client.newCall(request).await().use { response ->
-            if (!response.isSuccessful) return null
-            Gateway.json.decodeFromString<SessionAnswer>(response.body.string())
+    /** The imagery under the chart's layers and their fade, in a style
+     *  just set, for a chart whose tiles stop at `tileMaxZoom`; asked
+     *  again as the terminal chart is laid on, so it fades with the rest. */
+    fun draw(style: Style, tileMaxZoom: Int) {
+        if (style.getSource(IMAGERY) == null) {
+            val tiles = TileSet("2.2.0", USGS_URL).apply { maxZoom = USGS_MAX_ZOOM }
+            style.addSource(RasterSource(IMAGERY, tiles, 256))
+            val layer = RasterLayer(IMAGERY, IMAGERY).withProperties(
+                PropertyFactory.rasterFadeDuration(0f),
+                PropertyFactory.rasterOpacity(imageryFade(tileMaxZoom)),
+            )
+            // No tile of it asked for further out.
+            layer.minZoom = MapStyle.glZoom(tileMaxZoom.toDouble()).toFloat() - 0.5f
+            val bottom = MapStyle.CHART_LAYERS.firstOrNull { style.getLayer(it) != null }
+            if (bottom != null) style.addLayerBelow(layer, bottom) else style.addLayer(layer)
         }
-        val session = Session(answer.session, answer.expiry.toLongOrNull() ?: return null, key)
-        prefs.edit { putString(KEPT, Gateway.json.encodeToString(session)) }
-        return session
+        for (id in MapStyle.CHART_LAYERS) style.getLayer(id)?.setProperties(PropertyFactory.rasterOpacity(chartFade(tileMaxZoom)))
     }
-
-    /** The app's package and signing certificate on every request to
-     *  Google's APIs, as an Android-restricted key asks them. */
-    fun signer(context: Context): Interceptor {
-        val app = context.applicationContext
-        val cert by lazy { certificateSha1(app) }
-        return Interceptor { chain ->
-            val request = chain.request()
-            if (!request.url.host.endsWith("googleapis.com")) return@Interceptor chain.proceed(request)
-            val signed = request.newBuilder().header("X-Android-Package", app.packageName)
-                .apply { cert?.let { header("X-Android-Cert", it) } }
-                .build()
-            chain.proceed(signed)
-        }
-    }
-
-    /** The app's signing certificate's SHA-1 in capitals, no colons. */
-    private fun certificateSha1(context: Context): String? = runCatching {
-        val pm = context.packageManager
-        val signature = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            pm.getPackageInfo(context.packageName, PackageManager.GET_SIGNING_CERTIFICATES)
-                .signingInfo?.apkContentsSigners?.firstOrNull()
-        } else {
-            @Suppress("DEPRECATION")
-            pm.getPackageInfo(context.packageName, PackageManager.GET_SIGNATURES).signatures?.firstOrNull()
-        } ?: return null
-        MessageDigest.getInstance("SHA-1").digest(signature.toByteArray()).joinToString("") { "%02X".format(it) }
-    }.getOrNull()
-
-    private const val KEPT = "google_session_map"
-    private const val DAY_MS = 24 * 3600_000L
 }

@@ -21,7 +21,7 @@ the terms it is used under.
 | NOAA models: GFS winds and temperatures aloft, GLMP, magnetic declination | Public domain | As above |
 | NWS NEXRAD radar mosaic loop, via the Iowa Environmental Mesonet (Iowa State University); not for navigation, check official weather | Public domain | IEM's terms put its products in the public domain and ask that it be credited |
 | NOAA GOES East and West satellite loop, via NOAA nowCOAST; not for navigation, check official weather | Public domain | As above for NOAA's; nowCOAST asks no fees and sets no constraints |
-| USGS The National Map imagery | Public domain | As above |
+| USGS The National Map imagery | Public domain | As above; the aerial imagery close in on the web and Android, "Imagery USGS The National Map" |
 | US Census Bureau geocoder and gazetteer | Public domain | As above |
 | OurAirports: runways, frequencies and fields abroad | Public domain | OurAirports dedicates its data to the public domain |
 | Overture Maps places: services near a field | CDLA Permissive 2.0 | The licence asks that its terms go with the data |
@@ -36,7 +36,7 @@ the terms it is used under.
 |---|---|---|
 | MapLibre GL | BSD 3-Clause | The web map and the Android map |
 | Apple MapKit | Apple's terms | The iPhone's map under the chart |
-| Google Maps Platform map tiles | Google's terms; its attribution is drawn on the map | The close-in map on Android, and the web's Google overlay where it is turned on |
+| Google Maps Platform map tiles | Google's terms; its attribution is drawn on the map | The web's Google overlay where it is turned on |
 | Claude, by Anthropic | Anthropic's commercial terms | The features the app says Claude writes: Ask, the written briefing, the words beside a figure, checkpoint notes, the mock oral |
 
 ## A planning aid

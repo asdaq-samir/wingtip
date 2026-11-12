@@ -25,19 +25,6 @@ suspend fun Planner.reportingInView(south: Double, west: Double, north: Double, 
         ),
     ).airports
 
-/** The deployment's key for Google's Map Tiles API (GoogleMaps). */
-typealias GoogleMaps = app.wingtipmaps.android.api.generated.GoogleMaps
-
-/** The deployment's Google key (/api/map/google), or null where it has
- *  none (404): then nothing is drawn close in and the chart stays,
- *  enlarged, as on the web. */
-suspend fun Planner.googleMaps(): GoogleMaps? =
-    try {
-        Gateway.json.decodeFromString<GoogleMaps>(fetch("/api/map/google"))
-    } catch (e: Planner.Failure) {
-        if (e.status == 404) null else throw e
-    }
-
 /** The route's briefing (/api/briefing), for what the map marks of it:
  *  each field's METAR now and the TAF stations' worst within an hour of
  *  the flight's time there (`forecast.stations`, `eta_*`), the flight

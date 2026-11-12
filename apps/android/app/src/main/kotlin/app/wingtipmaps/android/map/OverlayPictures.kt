@@ -22,7 +22,7 @@ import org.maplibre.android.maps.Style
  * VFR Terms and Symbols, Airports) as ForeFlight rings them, the VOR's
  * hexagon, a fix's blue four-point star, a VFR waypoint's green triangle,
  * the VOR's blue ident tag and the airspace's dark altitude tab, the last
- * two stretched to their text, and the special-use areas' hatch.
+ * two stretched to their text, and the special-use areas' hatch and tabs.
  */
 object OverlayPictures {
     /** Every picture added to a style being built, before it loads, so no
@@ -46,8 +46,11 @@ object OverlayPictures {
         for (cls in listOf("B", "C", "D")) {
             stretched(builder, MapStyle.airspaceTab(cls), airspaceTab(ink(MapStyle.AIRSPACE_INK.getValue(cls).colour), density), 4f, density)
         }
-        builder.withImage(MapStyle.SUA_HATCH_RESTRICTED, hatch(ink(MapStyle.SUA_RESTRICTED_INK), density))
-        builder.withImage(MapStyle.SUA_HATCH_MOA, hatch(ink(MapStyle.SUA_MOA_INK), density))
+        builder.withImage(SpecialUseLayers.HATCH_RESTRICTED, hatch(ink(SpecialUseLayers.RESTRICTED_INK), density))
+        builder.withImage(SpecialUseLayers.HATCH_MOA, hatch(ink(SpecialUseLayers.MOA_INK), density))
+        // The special-use areas' tabs: the airspace's, bordered in their ink.
+        stretched(builder, SpecialUseLayers.TAB_RESTRICTED, airspaceTab(ink(SpecialUseLayers.RESTRICTED_INK), density), 4f, density)
+        stretched(builder, SpecialUseLayers.TAB_MOA, airspaceTab(ink(SpecialUseLayers.MOA_INK), density), 4f, density)
         for (near in listOf(true, false)) {
             for (hasTrack in listOf(true, false)) {
                 builder.withImage(MapStyle.trafficIconId(near, hasTrack), airplane(near, hasTrack, density))

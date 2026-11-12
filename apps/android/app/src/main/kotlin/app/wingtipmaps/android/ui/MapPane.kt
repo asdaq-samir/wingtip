@@ -66,7 +66,6 @@ import app.wingtipmaps.android.map.MapLoading
 import app.wingtipmaps.android.map.MapMarks
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.map.MapRest
-import app.wingtipmaps.android.map.MapStyle
 import app.wingtipmaps.android.map.MapWeather
 import app.wingtipmaps.android.map.PlatesShown
 import app.wingtipmaps.android.map.RouteWorse
@@ -111,7 +110,6 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val overlays by charts.overlays.collectAsStateWithLifecycle()
     val overlaysSettled by charts.overlaysSettled.collectAsStateWithLifecycle()
     val chartProblem by charts.problem.collectAsStateWithLifecycle()
-    val closeTiles by charts.closeTiles.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
     // The route's points, where its line is cut into legs, and the leg
     // whose sheet is open (RouteLegModel), cased in green.
@@ -169,7 +167,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     var fieldsInView by remember { mutableStateOf<List<AirportPin>>(emptyList()) }
     val scope = rememberCoroutineScope()
     var marksJob by remember { mutableStateOf<Job?>(null) }
-    val onView = { view: MapRest ->
+    val onView: (MapRest) -> Unit = { view ->
         if (A11y.screenReader(context)) {
             marksJob?.cancel()
             marksJob = scope.launch { fieldsInView = MapMarks.fieldsInView(context, view) }
@@ -180,9 +178,6 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         // it cannot say (Engine.rule has logged why), the last kept.
         Engine.distanceNm((view.south + view.north) / 2, (view.west + view.east) / 2, view.north, view.east)
             .onSuccess { traffic.mapRadiusNm = it }
-        // The street map's session asked for only once the map is near
-        // where it comes in, as the web asks it (BaseGl CloseBase).
-        if (view.zoom >= MapStyle.CLOSE_FROM - 1) charts.wantClose()
     }
 
     val ship = ownShip.ownShip
@@ -269,7 +264,6 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             layers = layers,
             terminal = terminal,
             weather = weather,
-            closeTiles = closeTiles,
             traffic = if (trafficOn) targets else emptyList(),
             tracked = tracked,
             night = night,

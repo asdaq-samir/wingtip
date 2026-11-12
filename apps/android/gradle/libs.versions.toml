@@ -22,7 +22,7 @@ composeBom = "2026.09.00"
 # 1.12.1 already is, so nothing else leaves the BOM. Bump to 1.5.0
 # stable when it is released (docs/NATIVE-ANDROID.md).
 material3 = "1.5.0-rc01"
-serialization = "1.12.0"
+serialization = "1.13.0"
 coroutines = "1.11.0"
 okhttp = "5.5.1"
 maplibre = "13.7.1"

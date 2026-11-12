@@ -12,7 +12,6 @@ import app.wingtipmaps.android.api.OverlayTiles
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.engine.CyclePacks
-import app.wingtipmaps.android.map.CloseMap
 import app.wingtipmaps.android.tiles.TileTemplate
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -146,24 +145,6 @@ class Charts(app: Application) : AndroidViewModel(app) {
         val connectivity = getApplication<Application>().getSystemService(ConnectivityManager::class.java) ?: return false
         val capabilities = connectivity.getNetworkCapabilities(connectivity.activeNetwork) ?: return false
         return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
-    }
-
-    /** Google's street map close in, its tiles' address (CloseMap), or
-     *  null where the deployment has no Google key or Google refused. */
-    private val _closeTiles = MutableStateFlow<String?>(null)
-    val closeTiles: StateFlow<String?> = _closeTiles.asStateFlow()
-
-    private var askedClose = false
-
-    /** Asked once the map is first near where the street map comes in, as
-     *  the web asks only then, so no session is made (or billed) for a
-     *  pilot who never goes close in. */
-    fun wantClose() {
-        if (askedClose) return
-        askedClose = true
-        viewModelScope.launch {
-            _closeTiles.value = runCatching { CloseMap.tiles(getApplication()) }.getOrNull()
-        }
     }
 
     companion object {

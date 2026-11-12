@@ -47,7 +47,7 @@ class AirportWeatherStoreTest {
     fun theStationModelIsDrawnCloseInAtEveryZoomInStationAndNeverOff() {
         assertEquals(MapStyle.glZoom(AirportWeather.STATION_ZOOM), AirportWeather().stationFromZoom!!, 0.0)
         assertNull(AirportWeather(stationClose = false).stationFromZoom)
-        assertEquals(0.0, AirportWeather(AirportWeatherMode.STATION, stationClose = false).stationFromZoom!!, 0.0)
+        assertEquals(MapStyle.glZoom(AirportWeather.STATION_ALWAYS), AirportWeather(AirportWeatherMode.STATION, stationClose = false).stationFromZoom!!, 0.0)
         assertNull(AirportWeather(AirportWeatherMode.OFF).stationFromZoom)
     }
 }

@@ -110,8 +110,7 @@
 
         <!-- Google's Map Tiles key for this app (build.gradle.kts's
              GOOGLE_MAPS_ANDROID_KEY), where Google's own libraries look for
-             one; empty until the owner adds it. CloseMap reads the same
-             key from BuildConfig. -->
+             one; empty until the owner adds it. -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${googleMapsAndroidKey}" />

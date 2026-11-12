@@ -40,16 +40,6 @@ object MapStyle {
     const val CHART_TERMINAL = "chart-terminal"
     val CHART_LAYERS = listOf(CHART_UNDER, CHART, CHART_TERMINAL)
 
-    /** Close in, past the chart's own detail, the street map fades in over
-     *  it (the web's BaseGl CloseTiles): the sectional is drawn from
-     *  1:500,000, about 42 m a pixel at its last zoom, so past MapLibre's
-     *  12 it is only enlarged; from there to 13 the street map comes in
-     *  under the runways, as ForeFlight's does, and the map may go to 17. */
-    const val CLOSE = "close-street"
-    const val CLOSE_FROM = 12.0
-    const val CLOSE_FULL = 13.0
-    const val CLOSE_MAX_ZOOM = 17.0
-
     /** The overlay tiles' source, as the web's OVERLAY_SOURCE. */
     const val OVERLAY_SOURCE = "faa-overlays"
 
@@ -262,9 +252,7 @@ object MapStyle {
      *  AIRSPACE_TILE_LAYERS, NAVAID_TILE_LAYERS), and the ones a tap is
      *  looked for in (the web's useGlTap layers). */
     val AIRSPACE_LINES = listOf("airspace-D", "airspace-C", "airspace-B")
-    // The special-use areas' ids written out: SUA_LAYERS is set further
-    // down, after this list is.
-    val AIRSPACE_LAYERS = listOf("D", "C", "B").flatMap { listOf("airspace-$it-band", "airspace-$it") } + "airspace-labels" + listOf("sua-band", "sua-line")
+    val AIRSPACE_LAYERS = listOf("D", "C", "B").flatMap { listOf("airspace-$it-band", "airspace-$it") } + "airspace-labels" + SpecialUseLayers.IDS
     val NAVAID_LAYERS = listOf("navaids", "navaids-idents", "fixes", "fixes-idents")
     const val AIRPORTS = "airports"
     const val VORS = "navaids"
@@ -294,8 +282,9 @@ object MapStyle {
         val has = tiles.layers.map { it.name }.toSet()
         val specs = if (lines) {
             (if ("runways" in has) runwayLayers() else emptyList()) +
-                (if ("special_use" in has) specialUseLayers() else emptyList()) +
-                (if ("airspace" in has) airspaceLayers("airspace_labels" in has) else emptyList())
+                (if ("special_use" in has) SpecialUseLayers.lines() else emptyList()) +
+                (if ("airspace" in has) airspaceLayers("airspace_labels" in has) else emptyList()) +
+                (if ("special_use" in has) listOf(SpecialUseLayers.labels("special_use_labels" in has)) else emptyList())
         } else {
             marks(has, layers, weather)
         }
@@ -436,64 +425,6 @@ object MapStyle {
             putJsonObject("paint") { put("text-color", "#ffffff") }
         }
         return lines + labels
-    }
-
-    /** The special-use areas' inks (the web's SUA_INK), ForeFlight's over
-     *  the sectional (the owner's screenshot over Lake Michigan,
-     *  2026-11-08): restricted, prohibited, warning and danger areas
-     *  orange-brown, MOAs and alert areas magenta. By the FAA's TYPE_CODE
-     *  (wingtip.sua TYPES). */
-    const val SUA_RESTRICTED_INK = WingtipColors.Chart.SPECIAL_USE_HEX
-    val SUA_MOA_INK = AIRSPACE_INK.getValue("C").colour
-    private val SUA_RESTRICTED = listOf("P", "R", "W", "D")
-    private val SUA_MOA = listOf("MOA", "A")
-    const val SUA_HATCH_RESTRICTED = "sua|hatch|restricted"
-    const val SUA_HATCH_MOA = "sua|hatch|moa"
-    const val SUA_FROM = 7.0
-    val SUA_LAYERS = listOf("sua-band", "sua-line")
-
-    /** The special-use areas from the tiles' `special_use` layer (the
-     *  web's specialUseLayers): each boundary a solid line and a hatched
-     *  band of short diagonal ticks along its inside, a restricted area
-     *  drawn over a MOA it lies in. */
-    private fun specialUseLayers(): List<JsonObject> {
-        val restricted = e("match", e("get", "type"), SUA_RESTRICTED, true, false)
-        val filter = e("match", e("get", "type"), SUA_RESTRICTED + SUA_MOA, true, false)
-        val order = e("case", restricted, 1, 0)
-        return listOf(
-            buildJsonObject {
-                put("id", "sua-band")
-                put("type", "line")
-                from("special_use")
-                put("minzoom", glZoom(SUA_FROM))
-                put("filter", filter)
-                putJsonObject("layout") {
-                    put("line-join", "round")
-                    put("line-sort-key", order)
-                }
-                putJsonObject("paint") {
-                    put("line-pattern", e("case", restricted, SUA_HATCH_RESTRICTED, SUA_HATCH_MOA))
-                    put("line-width", BAND_WIDTH)
-                    put("line-offset", BAND_OFFSET)
-                }
-            },
-            buildJsonObject {
-                put("id", "sua-line")
-                put("type", "line")
-                from("special_use")
-                put("minzoom", glZoom(SUA_FROM))
-                put("filter", filter)
-                putJsonObject("layout") {
-                    put("line-join", "round")
-                    put("line-cap", "round")
-                    put("line-sort-key", order)
-                }
-                putJsonObject("paint") {
-                    put("line-color", e("case", restricted, SUA_RESTRICTED_INK, SUA_MOA_INK))
-                    put("line-width", byZoom(7.0 to 2.0, 10.0 to 3.0))
-                }
-            },
-        )
     }
 
     /** The runways as ForeFlight draws them close in: a dark grey surface

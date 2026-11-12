@@ -30,10 +30,14 @@ import org.maplibre.android.style.sources.GeoJsonSource
 /**
  * The airport weather drawn beside the chart's own symbols (the owner's
  * pick, 2026-11-10), as MapLibre symbol layers over a GeoJSON source of
- * the reporting fields' marks (FieldMark, StationMarks' work): close in,
- * the station model's wind barb and its two lines of visibility and
- * ceiling; at any zoom, the wind arrow and its figures where the wind is
- * worth drawing; and at the plan's fields, the getting-worse badge. The
+ * the reporting fields' marks (FieldMark, StationMarks' work), as the
+ * web's AirportWeatherGl: close in, the station model's wind barb for
+ * every reported wind and its two lines of visibility and ceiling;
+ * farther out, from a region's scale, the barb only where the wind earns
+ * one (the owner, 2026-11-12: barbs as the Aviation Weather Center's map
+ * draws them, in place of arrows), red past the picked airplane's
+ * demonstrated crosswind at every zoom; and at the plan's fields, the
+ * getting-worse badge. The
  * ring or dot round the symbol itself is the symbol's own picture
  * (AirportWeatherMarks). It follows its own flow, as ForecastAreasLayer
  * does, so the map's holder only hands it the view; a style set anew has
@@ -43,7 +47,7 @@ object StationLayer {
     const val SOURCE = "wx-fields"
     const val BARB = "wx-barb"
     const val LINES = "wx-lines"
-    const val ARROW = "wx-arrow"
+    const val FAR = "wx-wind"
     const val WORSE = "wx-worse"
 
     /** What is drawn now: the marks, and the settings they are drawn by. */
@@ -91,30 +95,59 @@ object StationLayer {
         } else {
             source.setGeoJson(json)
         }
-        // The station model from its zoom, or not at all.
+        // The station model from its zoom, or not at all; farther out the
+        // barbs the wind earns, from FAR_FROM to where the station model
+        // takes over.
         val from = shown.settings.stationFromZoom
         for (id in listOf(BARB, LINES)) {
             val layer = style.getLayer(id) ?: continue
             layer.setProperties(PropertyFactory.visibility(if (from == null) Property.NONE else Property.VISIBLE))
             if (from != null) layer.minZoom = from.toFloat()
         }
+        style.getLayer(FAR)?.maxZoom = (from ?: MAX_ZOOM).toFloat()
     }
 
-    /** Over the chart: the barb and arrow cased in white, so they keep to
-     *  the field they are of and never push a field's symbol off. */
+    /** No wind drawn out past a region's scale (the owner's iPhone at zoom
+     *  3, 2026-11-12: the country one tangle of barbs), smaller there and
+     *  growing in to their own size by Leaflet's 9 (the web's FAR_FROM). */
+    private const val FAR_FROM = 6.0
+    private const val FAR_FULL = 9.0
+    private const val MAX_ZOOM = 24.0
+
+    /** The barb from the field toward where the wind is from, turned by
+     *  its direction; a variable wind, which no barb can point, "VRB05"
+     *  under the field, red where the barb would be. The words give way
+     *  where they don't fit; close in, the barb never does. */
+    private fun wind(id: String, filter: Expression): SymbolLayer {
+        val ink = Expression.color(WingtipColors.Chart.FIX_INK_HEX.toColorInt())
+        val red = Expression.color(WingtipColors.Chart.WARNING_HEX.toColorInt())
+        return SymbolLayer(id, SOURCE).withFilter(filter).withProperties(
+            PropertyFactory.iconImage(Expression.coalesce(Expression.get("barb"), Expression.literal(""))),
+            PropertyFactory.iconRotate(Expression.coalesce(Expression.get("from"), Expression.literal(0.0))),
+            PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
+            PropertyFactory.iconAnchor(Expression.coalesce(Expression.get("anchor"), Expression.literal("center"))),
+            PropertyFactory.iconAllowOverlap(true),
+            PropertyFactory.iconIgnorePlacement(true),
+            PropertyFactory.textField(Expression.coalesce(Expression.get("variable"), Expression.literal(""))),
+            PropertyFactory.textFont(arrayOf(MapStyle.FONT)),
+            PropertyFactory.textSize(11f),
+            PropertyFactory.textAnchor(Property.TEXT_ANCHOR_TOP),
+            PropertyFactory.textOffset(arrayOf(0f, 1.3f)),
+            PropertyFactory.textPadding(1f),
+            PropertyFactory.textOptional(true),
+            PropertyFactory.textColor(Expression.switchCase(Expression.eq(Expression.get("over"), true), red, ink)),
+            PropertyFactory.textHaloColor(Expression.color(WingtipColors.Chart.CASING_HEX.toColorInt())),
+            PropertyFactory.textHaloWidth(2f),
+        )
+    }
+
     private fun layers(): List<Layer> {
         val ink = Expression.color(WingtipColors.Chart.FIX_INK_HEX.toColorInt())
         val casing = Expression.color(WingtipColors.Chart.CASING_HEX.toColorInt())
         val farthest = MapStyle.glZoom(MapStyle.AIRPORTS_FARTHEST_ZOOM).toFloat()
         return listOf(
-            SymbolLayer(BARB, SOURCE).withFilter(Expression.has("barb")).withProperties(
-                PropertyFactory.iconImage(Expression.get("barb")),
-                PropertyFactory.iconRotate(Expression.get("from")),
-                PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
-                PropertyFactory.iconAnchor(Expression.get("anchor")),
-                PropertyFactory.iconAllowOverlap(true),
-                PropertyFactory.iconIgnorePlacement(true),
-            ),
+            // Close in, the station model: every reported wind, calm its ring.
+            wind(BARB, Expression.any(Expression.has("barb"), Expression.has("variable"))),
             SymbolLayer(LINES, SOURCE).withFilter(Expression.has("lines")).withProperties(
                 PropertyFactory.textField(Expression.get("lines")),
                 PropertyFactory.textFont(arrayOf(MapStyle.FONT)),
@@ -128,28 +161,19 @@ object StationLayer {
                 PropertyFactory.textAllowOverlap(true),
                 PropertyFactory.textIgnorePlacement(true),
             ),
-            SymbolLayer(ARROW, SOURCE).withFilter(Expression.has("arrow")).withProperties(
-                PropertyFactory.iconImage(Expression.get("arrow")),
-                PropertyFactory.iconRotate(Expression.get("to")),
-                PropertyFactory.iconRotationAlignment(Property.ICON_ROTATION_ALIGNMENT_MAP),
-                PropertyFactory.iconTranslate(arrayOf(ARROW_AT_DP, -ARROW_AT_DP)),
-                PropertyFactory.iconTranslateAnchor(Property.ICON_TRANSLATE_ANCHOR_VIEWPORT),
-                PropertyFactory.textField(Expression.get("figures")),
-                PropertyFactory.textFont(arrayOf(MapStyle.FONT)),
-                PropertyFactory.textSize(11f),
-                PropertyFactory.textAnchor(Property.TEXT_ANCHOR_LEFT),
-                PropertyFactory.textTranslate(arrayOf(ARROW_AT_DP + 11f, -ARROW_AT_DP)),
-                PropertyFactory.textTranslateAnchor(Property.TEXT_TRANSLATE_ANCHOR_VIEWPORT),
-                PropertyFactory.textColor(
-                    Expression.switchCase(Expression.eq(Expression.get("arrow"), StationPictures.ARROW_RED), Expression.color(WingtipColors.Chart.WARNING_HEX.toColorInt()), ink),
+            // Farther out, only where the wind earns it, giving way to one
+            // another rather than piled up.
+            wind(FAR, Expression.eq(Expression.get("far"), true)).withProperties(
+                PropertyFactory.iconAllowOverlap(false),
+                PropertyFactory.iconIgnorePlacement(false),
+                PropertyFactory.iconPadding(2f),
+                PropertyFactory.iconSize(
+                    Expression.interpolate(
+                        Expression.linear(), Expression.zoom(),
+                        Expression.stop(MapStyle.glZoom(FAR_FROM), 0.6f), Expression.stop(MapStyle.glZoom(FAR_FULL), 1f),
+                    ),
                 ),
-                PropertyFactory.textHaloColor(casing),
-                PropertyFactory.textHaloWidth(2f),
-                PropertyFactory.iconAllowOverlap(true),
-                PropertyFactory.iconIgnorePlacement(true),
-                PropertyFactory.textAllowOverlap(true),
-                PropertyFactory.textIgnorePlacement(true),
-            ).also { it.minZoom = farthest },
+            ).also { it.minZoom = MapStyle.glZoom(FAR_FROM).toFloat() },
             SymbolLayer(WORSE, SOURCE).withFilter(Expression.has("worse")).withProperties(
                 PropertyFactory.iconImage(StationPictures.WORSE),
                 PropertyFactory.iconTranslate(arrayOf(-WORSE_AT_DP, -WORSE_AT_DP)),
@@ -160,14 +184,14 @@ object StationLayer {
         )
     }
 
-    /** Where the arrow sits from the field, up and to the right, and the
-     *  badge, up and to the left, dp: clear of the symbol's weather ring. */
-    private const val ARROW_AT_DP = 18f
+    /** Where the badge sits from the field, up and to the left, dp:
+     *  clear of the symbol's weather ring. */
     private const val WORSE_AT_DP = 13f
 
     /** Each mark a point with what its layers draw, a member left out
-     *  where its layer draws nothing there: the barb and lines with the
-     *  station model on, the arrow with the arrows on, the badge with it on. */
+     *  where its layer draws nothing there: the barb or "VRB05" and the
+     *  lines for the station model, `far` with the Wind Barbs switch on,
+     *  the badge with its switch on. */
     fun geoJson(marks: List<FieldMark>, settings: AirportWeather): String = buildJsonObject {
         put("type", "FeatureCollection")
         putJsonArray("features") {
@@ -183,12 +207,10 @@ object StationLayer {
                             // Calm's ring round the field; a barb's staff out from it.
                             put("anchor", if (it == StationPictures.CALM) "center" else "bottom")
                         }
+                        m.variable?.let { put("variable", it) }
+                        if (m.over) put("over", true)
                         m.lines?.let { put("lines", it) }
-                        if (settings.windArrows && m.arrow != null) {
-                            put("arrow", if (m.arrow.red) StationPictures.ARROW_RED else StationPictures.ARROW)
-                            put("to", m.arrow.toDeg)
-                            put("figures", m.arrow.figures)
-                        }
+                        if (settings.windArrows && m.far) put("far", true)
                         if (settings.worse && m.worse) put("worse", true)
                     }
                     putJsonObject("geometry") {

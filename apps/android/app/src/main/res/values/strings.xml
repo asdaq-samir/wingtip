@@ -266,7 +266,7 @@
     <string name="airport_weather_dot">Dot</string>
     <string name="airport_weather_station">Station</string>
     <string name="airport_weather_station_close">Station Model When Zoomed In</string>
-    <string name="airport_weather_wind_arrows">Wind Arrows</string>
+    <string name="airport_weather_wind_arrows">Wind Barbs</string>
     <string name="airport_weather_worse">Getting Worse by Arrival</string>
     <string name="speak_alerts">Speak Alerts Ahead</string>
     <string name="passenger_briefing">Passenger Briefing</string>

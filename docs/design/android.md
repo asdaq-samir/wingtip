@@ -803,9 +803,11 @@ zoom 10 in, a station model adds the wind barb (the engine's `wind_barb`:
 flags, barbs and half-barbs to the nearest 5 kt, a circle for calm,
 FAA-H-8083-28A 25.2.3.4.5) and two lines, the visibility with its weather
 ("2 SM BR") and the ceiling with its cover ("OVC 008", "VV 002", from the
-planner's `ceiling_cover`). At any zoom an arrow shows the way the wind
-blows, with "18G26", where the engine's `wind_arrow` gives one (10 kt or
-more, or gusting); it is red only where the field's `least_crosswind` is
+planner's `ceiling_cover`). Farther out, from zoom 6, the barb is drawn
+only where the engine's `wind_arrow` earns one (10 kt or more, or
+gusting), smaller there and giving way to its neighbours (the owner,
+2026-11-12: barbs in place of the arrows, as the web); a variable wind is
+written "VRB05". The barb is red only where the field's `least_crosswind` is
 more than the picked airplane's demonstrated crosswind (its POH's, on
 `/api/aircraft-profiles`), and never red with no airplane or no figure. An
 amber ↓ marks a plan's field whose TAF for the pilot's time there is worse

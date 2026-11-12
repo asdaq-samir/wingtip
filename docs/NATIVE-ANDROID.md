@@ -200,10 +200,15 @@ and `glOverlays.ts`):
   own symbol, or ForeFlight's dot in its place (`AirportWeatherMarks`,
   part of the symbol's picture, so give-way hides it with the field).
   Over it, MapLibre symbol layers (`StationLayer`): the station model's
-  barb (`wind_barb`) and its visibility and ceiling lines from Leaflet's
-  zoom 10, the wind arrow at any zoom (`wind_arrow`, red past the picked
-  airplane's demonstrated crosswind on the field's least-crosswind
-  runway, the planner's `least_crosswind`), and the amber ↓ at the
+  barb (`wind_barb`, calm under 3 kt) for every reported wind and its
+  visibility and ceiling lines from Leaflet's zoom 10; farther out, from
+  zoom 6, the barb only where the engine's `wind_arrow` earns one (10 kt
+  or more, or gusting), smaller out there and giving way to one another,
+  as the web's `AirportWeatherGl` (the owner, 2026-11-12: barbs as the
+  Aviation Weather Center's map draws them, in place of arrows); "VRB05"
+  for a variable wind no barb can point; red past the picked airplane's
+  demonstrated crosswind on the field's least-crosswind runway (the
+  planner's `least_crosswind`) at every zoom; and the amber ↓ at the
   plan's fields whose TAF at the ETA is worse than the METAR now
   (`weather_worse` over `/api/briefing`'s forecast stations,
   `RouteWorse`). Settings' Map section sets it (`AirportWeatherStore`):
@@ -233,18 +238,17 @@ and `glOverlays.ts`):
   archive (about 120 MB a cycle, carrying on where a fetch stopped), and
   every range is answered from it. The archive's name changes with each
   build, so nothing kept goes stale; another name's files are dropped.
-- **Close in, the street map**: from MapLibre zoom 12 to 13 Google's road
-  map (the Map Tiles API) fades in over the chart under the runways, and
-  the map may go to 17 (`CloseMap`, the web's `CloseBase`), with the
-  deployment's key from `/api/map/google`. No key is set today
-  (`GOOGLE_MAPS_API_KEY` is empty), so, as on the web, the chart stays,
-  enlarged. The key is a browser key; for the phone it must also allow
-  this app (an Android restriction by package and signing certificate,
-  which `CloseMap.signer` sends as `X-Android-Package` and `X-Android-Cert`).
-  The web no longer draws Google close in by default: past the chart's
-  own detail it fades into the USGS's public-domain aerial imagery, with
-  Google only where the Google overlay is picked (docs/GOOGLE-MAPS.md).
-  The phone has not followed yet; it is to use the same USGS tiles.
+- **Close in, the USGS's aerial imagery**: past the chart's own detail
+  the chart fades out over one level from its tiles' last zoom (the
+  sectional's 12, MapLibre's 11 to 12) and the USGS's public-domain
+  imagery under it (The National Map's USGSImageryOnly, tiles to {z} 16,
+  a MapLibre `RasterSource`) fades in over the half level before, so the
+  chart never fades over nothing; the map may go to 17 (`CloseMap`, the
+  web's `lib/map/gl/closeZoom`). No key and no session. Its credit,
+  "Imagery USGS The National Map", is About's (USGS The National Map
+  imagery), not the map's. Google's road map is the web's overlay only;
+  the phone no longer asks for it. With no signal the imagery is only
+  what MapLibre's cache kept.
 - **Traffic** is drawn as on the web (`TrafficDrawing`, the traffic
   layers in the first style): the chevron turned to its track, amber
   where the engine's `traffic_marks` says it is near and cyan otherwise,

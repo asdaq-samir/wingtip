@@ -33,8 +33,9 @@ enum class AirportWeatherMode(val key: String) {
 /**
  * The map's airport weather settings, the web's Map card's: the mode,
  * Halo by default, and three switches, all on by default -- the station
- * model once zoomed in close, the wind arrows, and the getting-worse
- * badge at the plan's fields.
+ * model once zoomed in close, the wind barbs farther out (`windArrows`,
+ * its stored key kept from when they were arrows, as the web keeps its
+ * own), and the getting-worse badge at the plan's fields.
  */
 data class AirportWeather(
     val mode: AirportWeatherMode = AirportWeatherMode.HALO,
@@ -43,12 +44,13 @@ data class AirportWeather(
     val worse: Boolean = true,
 ) {
     /** The station model's zoom, MapLibre's, or null where it is not
-     *  drawn: from Leaflet's 10 (STATION_ZOOM) close in, at every zoom in
-     *  the Station mode, never with the weather off. */
+     *  drawn: from Leaflet's 10 (STATION_ZOOM) close in, from a region's
+     *  scale (STATION_ALWAYS) in the Station mode, never with the weather
+     *  off. */
     val stationFromZoom: Double?
         get() = when {
             mode == AirportWeatherMode.OFF -> null
-            mode == AirportWeatherMode.STATION -> 0.0
+            mode == AirportWeatherMode.STATION -> MapStyle.glZoom(STATION_ALWAYS)
             stationClose -> MapStyle.glZoom(STATION_ZOOM)
             else -> null
         }
@@ -58,6 +60,11 @@ data class AirportWeather(
          *  field without running into the next one's (Leaflet's zoom, as
          *  MapStyle names its zooms): about a county across a phone. */
         const val STATION_ZOOM = 10.0
+
+        /** The Station mode's zoom (the web's STATION_ALWAYS): a region's
+         *  scale, where the fields' own symbols start keeping only a
+         *  little apart; out past it the country would be one tangle. */
+        const val STATION_ALWAYS = 7.0
     }
 }
 

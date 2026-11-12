@@ -79,8 +79,6 @@ data class MapRest(val south: Double, val west: Double, val north: Double, val e
  * @param layers Setup's switches: which overlays are drawn, and the
  *   terminal area chart pinned (`terminal`, where the chart has one).
  * @param weather each reporting field's weather pip by ident (AirportWeatherMarks).
- * @param closeTiles Google's street map close in (CloseMap); null for
- *   the chart alone, enlarged.
  * @param traffic the airplanes heard (Traffic), `tracked` the one ringed.
  * @param night the phone's dark theme: the chart dimmed (MapStyle.chartPaint).
  * @param bottomInset what the sheet covers of the map, in pixels: the
@@ -107,7 +105,6 @@ fun ChartMap(
     layers: MapLayers = MapLayers(),
     terminal: Charts.Companion.Terminal? = null,
     weather: Map<String, String> = emptyMap(),
-    closeTiles: String? = null,
     traffic: List<TrafficDrawing.Target> = emptyList(),
     tracked: String? = null,
     night: Boolean = false,
@@ -161,7 +158,6 @@ fun ChartMap(
     LaunchedEffect(holder, layers) { holder.layers(layers) }
     LaunchedEffect(holder, terminal, layers.tac) { holder.terminal(if (layers.tac) terminal else null) }
     LaunchedEffect(holder, weather) { holder.weather(weather) }
-    LaunchedEffect(holder, closeTiles) { holder.close(closeTiles) }
     LaunchedEffect(holder, traffic, tracked) { holder.traffic(traffic, tracked) }
     LaunchedEffect(holder, glide) { holder.glide(glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
@@ -205,14 +201,12 @@ private class MapHolder(val view: MapView, private val density: Float) {
     private var lastLayers = MapLayers()
     private var lastTerminal: Charts.Companion.Terminal? = null
     private var lastWeather: Map<String, String> = emptyMap()
-    private var lastClose: String? = null
     private var lastTraffic: List<TrafficDrawing.Target> = emptyList()
     private var lastTracked: String? = null
     private var lastEmergency: EmergencyLine? = null
     private var lastSelected: String? = null
-    /** The chart's own furthest zoom, MapLibre's; the street map lets the
-     *  map go further while it is there. */
-    private var chartMaxZoom = 22.0
+    /** The chart's tiles' last {z}, where the imagery takes over (CloseMap). */
+    private var chartTileMax = 12
     /** Each airplane carried on between answers, a step a second. */
     private val carry = object : Runnable {
         override fun run() {
@@ -257,8 +251,9 @@ private class MapHolder(val view: MapView, private val density: Float) {
         view.getMapAsync { map ->
             open(map)
             if (template == null) return@getMapAsync
-            chartMaxZoom = MapStyle.maxZoom(maxZoom)
-            map.setMaxZoomPreference(if (lastClose != null) maxOf(chartMaxZoom, MapStyle.CLOSE_MAX_ZOOM) else chartMaxZoom)
+            // Past the chart's own detail the imagery (CloseMap), to its zoom.
+            chartTileMax = maxZoom
+            map.setMaxZoomPreference(maxOf(MapStyle.maxZoom(maxZoom), CloseMap.MAX_ZOOM))
             val json = app.wingtipmaps.android.offline.OfflineLayers.styled(view.context, template, MapStyle.styleJson(template, minZoom, maxZoom, overlays, night, lastLayers, lastWeather), lastLayers.tac)
             val builder = Style.Builder().fromJson(json)
             OverlayPictures.addTo(builder, density)
@@ -271,7 +266,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
             map.setStyle(builder) { style ->
                 styled = true
                 terminal(style, lastTerminal)
-                close(map, style, lastClose)
+                CloseMap.draw(style, chartTileMax)
                 route(style, line, lastPoints)
                 trail(style, lastTrail)
                 GlideLayer.draw(style, lastGlide, GLIDE, ROUTE)
@@ -367,39 +362,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         )
         layer.minZoom = MapStyle.glZoom(spec.minZoom.toDouble()).toFloat()
         style.addLayerAbove(layer, MapStyle.CHART)
-    }
-
-    /** The street map close in, over the chart and under the overlays,
-     *  fading in from CLOSE_FROM to CLOSE_FULL with the pinch (an opacity
-     *  by zoom); the map let in to CLOSE_MAX_ZOOM while it is there. */
-    fun close(url: String?) {
-        lastClose = url
-        if (destroyed) return
-        view.getMapAsync { map -> map.getStyle { style -> close(map, style, url) } }
-    }
-
-    private fun close(map: MapLibreMap, style: Style, url: String?) {
-        style.getLayer(MapStyle.CLOSE)?.let { style.removeLayer(it) }
-        style.getSource(MapStyle.CLOSE)?.let { style.removeSource(it) }
-        map.setMaxZoomPreference(if (url != null) maxOf(chartMaxZoom, MapStyle.CLOSE_MAX_ZOOM) else chartMaxZoom)
-        if (url == null) return
-        val tiles = TileSet("2.2.0", url).apply {
-            maxZoom = 22f
-            attribution = "Google Maps"
-        }
-        style.addSource(RasterSource(MapStyle.CLOSE, tiles, 256))
-        val layer = RasterLayer(MapStyle.CLOSE, MapStyle.CLOSE).withProperties(
-            PropertyFactory.rasterFadeDuration(0f),
-            PropertyFactory.rasterOpacity(
-                Expression.interpolate(
-                    Expression.linear(), Expression.zoom(),
-                    Expression.stop(MapStyle.CLOSE_FROM, 0), Expression.stop(MapStyle.CLOSE_FULL, 1),
-                ),
-            ),
-        )
-        layer.minZoom = (MapStyle.CLOSE_FROM - 0.5).toFloat()
-        val under = listOf(MapStyle.CHART_TERMINAL, MapStyle.CHART).firstOrNull { style.getLayer(it) != null }
-        if (under != null) style.addLayerAbove(layer, under) else style.addLayer(layer)
+        CloseMap.draw(style, chartTileMax)
     }
 
     /** The airplanes heard, drawn now and carried on a step a second. */
