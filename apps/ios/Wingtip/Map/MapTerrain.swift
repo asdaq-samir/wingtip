@@ -62,9 +62,6 @@ final class RaisedMapView: MKMapView {
     private var lowered: Set<ObjectIdentifier> = []
     /// The route's destination's way in, drawn in 3D (ApproachLines).
     private let approach = ApproachLines()
-    /// The tilt 3D opens at, for the ground to read as ground at once (the web's OPEN_PITCH).
-    static let openPitch: CGFloat = 50
-
     override init(frame: CGRect) {
         super.init(frame: frame)
         isPitchEnabled = false
@@ -197,7 +194,7 @@ final class RaisedMapView: MKMapView {
             }
             preferredConfiguration = Self.raisedLook
             isPitchEnabled = true
-            tilt(to: Self.openPitch, heading: camera.heading, animated: animated)
+            tilt(to: WingtipMap.pitchOpen, heading: camera.heading, animated: animated)
         } else {
             let back = overlays(in: .aboveRoads).filter { lowered.contains(ObjectIdentifier($0)) }
             // The chart and its imagery at the bottom, the rest over them in their order.

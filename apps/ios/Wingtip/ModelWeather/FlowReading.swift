@@ -13,7 +13,7 @@ struct FlowReading: Equatable, Sendable {
     var figure: String
     var under: String
 
-    /// The badge for `field`'s `value` (FlowGrid.value), where `top` is the
+    /// The badge for `field`'s `value` (FlowGrid.reading), where `top` is the
     /// field's picture's highest value, `fromDeg` the wind's direction and
     /// `tempC` the temperature there (the precipitation's, and the wind's
     /// at its level). An engine rule that fails throws, as the web's
