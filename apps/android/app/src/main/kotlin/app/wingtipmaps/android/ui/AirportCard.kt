@@ -29,6 +29,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -53,6 +54,8 @@ import app.wingtipmaps.android.search.Remembered
 import app.wingtipmaps.android.search.SearchMemory
 import app.wingtipmaps.android.ui.sheet.CardExit
 import app.wingtipmaps.android.ui.sheet.CardPage
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * A field's card, laid out as Google Maps' place sheet on Android is in
@@ -99,10 +102,17 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     var section by rememberSaveable(ident) { mutableIntStateOf(0) }
     var diagram by remember { mutableStateOf(false) }
     // The field's NOTAMs, each read by the engine once, best first; the
-    // badges on what they address; the NOTAMs opened over the card.
+    // badges on what they address; the NOTAMs opened over the card. Read
+    // off the main thread as the card opens: the engine reads every one.
     val ranked = state.notams.takeIf { place != null }
-    val said = remember(ranked, place?.ident) { place?.let { p -> ranked?.notams?.sortedBy { it.rank }?.map { FieldNotams.say(it, p.ident) } } }
-    val marks = remember(ranked, place) { place?.let { NotamMarks.of(ranked?.notams.orEmpty(), it) } ?: NotamMarks.NONE }
+    val read by produceState<Pair<List<FieldNotams.Said>?, NotamMarks>>(null to NotamMarks.NONE, ranked, place) {
+        value = place?.let { p ->
+            withContext(Dispatchers.Default) {
+                ranked?.notams?.sortedBy { it.rank }?.map { FieldNotams.say(it, p.ident) } to NotamMarks.of(ranked?.notams.orEmpty(), p)
+            }
+        } ?: (null to NotamMarks.NONE)
+    }
+    val (said, marks) = read
     val badges = remember(place, marks) { place?.let { RunwayBadges.of(it, marks) } ?: RunwayBadges(-1, -1) }
     var allNotams by rememberSaveable(ident) { mutableStateOf(false) }
     var opened by remember(ident) { mutableStateOf<List<RankedNotam>?>(null) }

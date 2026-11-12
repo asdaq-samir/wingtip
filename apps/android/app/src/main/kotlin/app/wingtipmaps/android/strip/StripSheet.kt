@@ -48,6 +48,10 @@ import app.wingtipmaps.android.ui.SourceDialog
 import app.wingtipmaps.android.ui.sheet.MapSheet
 import app.wingtipmaps.android.ui.sheet.halfWindow
 import app.wingtipmaps.android.ui.sheet.rememberMapSheetState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 
 /**
  * The strip layout: the map under Material's standard bottom sheet
@@ -86,13 +90,16 @@ fun StripLayout(
     val strip by model.state.collectAsStateWithLifecycle()
     val briefed by brief.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
-    val fix by ownShip.fix.collectAsStateWithLifecycle()
     val conversation by assistant.conversation.collectAsStateWithLifecycle()
     val rows = remember(state.legs, state.dep, state.dest, state.stops) { StripData.rows(state) }
     val points = remember(rows) { StripData.ribbonPoints(rows) }
-    val positionAsked = remember(state.course, state.legs, fix) {
-        StripData.positionAlong(state.course?.courseLine.orEmpty(), state.legs, fix?.lat, fix?.lon)
-    }
+    // Where the airplane is on the route, asked of the engine once a fix
+    // off the main thread; the strip is drawn again only when the answer
+    // changes, not at every fix.
+    val positionAsked by remember(ownShip, state.course, state.legs) {
+        val line = state.course?.courseLine.orEmpty()
+        ownShip.fix.map { fix -> StripData.positionAlong(line, state.legs, fix?.lat, fix?.lon) }.distinctUntilChanged().flowOn(Dispatchers.Default)
+    }.collectAsStateWithLifecycle(Result.success(null))
     val position = positionAsked.getOrNull()
     // Where the engine could not place the airplane on the route, the
     // field's row says so rather than the ribbon showing it nowhere.

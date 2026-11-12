@@ -103,8 +103,10 @@ private fun UnderSearch(head: @Composable () -> Unit, page: @Composable () -> Un
 /** Nothing typed: the assistant's answer where there is one, the flight's
  *  card, then Nearest, Favorites and Recents, as the search shows them. */
 @Composable
-internal fun Home(plan: Plan, fix: OwnShip.Fix?, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit, modifier: Modifier = Modifier) {
+internal fun Home(plan: Plan, ownShip: OwnShip, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    // The fix read here, for the nearest fields' rows, rather than by the root.
+    val fix by ownShip.fix.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()
     val search: SearchModel = hiltViewModel()
     val found by search.state.collectAsStateWithLifecycle()

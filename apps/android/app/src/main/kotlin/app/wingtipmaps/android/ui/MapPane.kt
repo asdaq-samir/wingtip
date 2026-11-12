@@ -176,7 +176,9 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val ship = ownShip.ownShip
     val opensAt = remember { ship.lastPosition }
     val trail = remember { OwnTrail.of(context) }
-    val fix by ship.fix.collectAsStateWithLifecycle()
+    // The fix and the instruments read only in ChartMap's lambdas (and
+    // InFlightTop), so the pane is not drawn again at every fix.
+    val fix = ship.fix.collectAsStateWithLifecycle()
     val approximate by ship.approximate.collectAsStateWithLifecycle()
     val denied by ship.denied.collectAsStateWithLifecycle()
     val flown by trail.points.collectAsStateWithLifecycle()
@@ -186,7 +188,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // pilot asked (SpokenAlerts).
     val ahead by ship.ahead.collectAsStateWithLifecycle()
     val groundFt by ship.groundFt.collectAsStateWithLifecycle()
-    val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
+    val inFlight = InFlight.shared.state.collectAsStateWithLifecycle()
     LaunchedEffect(groundFt) { InFlight.shared.terrainFt = groundFt }
     // The airplane's own glide ratio (the pilot's over its book's), none
     // with no airplane or none given: no other airplane's is taken.
@@ -223,6 +225,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // While the emergency assistant is open, the line from the airplane
     // to the field it picked (the same model EmergencyHost holds).
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
+    // The glide ring off unless the pilot keeps it on, on by itself while
+    // the emergency assistant is open (GlideRing); asked of the engine only then.
+    val ringShown = ownShip.on && GlideRing.shown(ringKept == true, emergencyFrom != null)
+    LaunchedEffect(ringShown) { InFlight.shared.ringShown = ringShown }
     val emergency by hiltViewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
     // The dry run's airplane, drawn as own ship while a run is open (DryRun).
     val dryRun by hiltViewModel<DryRun>().state.collectAsStateWithLifecycle()
@@ -262,11 +268,9 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             night = night,
             bottomInset = with(density) { covered.roundToPx() },
             opensAt = opensAt,
-            ownShip = app.wingtipmaps.android.map.OwnShipMark.of(fix, ownShip.on, dryRun.fix),
+            ownShip = { app.wingtipmaps.android.map.OwnShipMark.of(fix.value, ownShip.on, dryRun.fix) },
             trail = flown,
-            // Off unless the pilot keeps it on, on by itself while the
-            // emergency assistant is open (GlideRing).
-            glide = if (ownShip.on && GlideRing.shown(ringKept == true, emergencyFrom != null)) inFlight.glide?.ring.orEmpty() else emptyList(),
+            glide = { if (ringShown) inFlight.value.glide?.ring.orEmpty() else emptyList() },
             emergency = if (emergencyFrom != null && ownShip.on) EmergencyLine.of(emergency) else null,
             selectedField = openField,
             plates = plates,
@@ -307,10 +311,10 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
         if (ownShip.on && !approximate && !denied) {
             // What is ahead and the flight's instruments, at the top left of
             // the buttons where nothing else was (#218).
-            InFlightTop(state = inFlight, ahead = ahead, onNearest = onNearest, modifier = Modifier.align(Alignment.TopStart)) {
-                CopilotBanner(state, flying = inFlight.underway, fix = fix, ahead = ahead)
+            InFlightTop(ahead = ahead, onNearest = onNearest, modifier = Modifier.align(Alignment.TopStart)) { flight ->
+                CopilotBanner(state, flying = flight.underway, fix = flight.fix, ahead = ahead)
                 // The ATC copilot's card for the newest call to us.
-                AtcCopilotHost(plan, flying = inFlight.underway, fix = fix)
+                AtcCopilotHost(plan, flying = flight.underway, fix = flight.fix)
             }
         }
         // At flying speed, the pilot asked before the position is read with
