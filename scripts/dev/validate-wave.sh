@@ -190,6 +190,19 @@ EOF
     -e BASE_URL="http://localhost:$GATEWAY_PORT" -e MAILPIT_URL="http://localhost:$MAILPIT_PORT" \
     -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" \
     npx playwright test --project=mobile --grep @smoke --reporter=list || status=$?
+  # Then every spec the wave changed, in whole (the owner's efficiency rules,
+  # 2026-11-12): @smoke and what the wave touched here, the whole suite in
+  # CI's nightly run (decision 0034).
+  touched=$(git -C "$here" diff --name-only "$(git -C "$here" merge-base HEAD origin/main)" HEAD -- 'apps/web/e2e/*.spec.ts' |
+    while read -r f; do [ -f "$here/$f" ] && echo "${f#apps/web/}"; done)
+  if [ -n "$touched" ]; then
+    echo "validate-wave: the $(echo "$touched" | wc -l | tr -d ' ') specs the wave changed"
+    # shellcheck disable=SC2086 # one argument per spec file
+    docker run --rm --network host -e CI=1 \
+      -e BASE_URL="http://localhost:$GATEWAY_PORT" -e MAILPIT_URL="http://localhost:$MAILPIT_PORT" \
+      -v "$here/apps/web:/w" -v "$vol:/w/node_modules" -w /w "$image" \
+      npx playwright test --project=mobile --reporter=list $touched || status=$?
+  fi
   # The stack's whole logs beside the suite's, for a failure to be read.
   wave logs --no-color --timestamps planner gateway weather > "$out/stack.log" 2>&1
   [ "$status" -eq 0 ] || echo "validate-wave: the stack's logs are in $out/stack.log"

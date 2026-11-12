@@ -255,7 +255,8 @@ All in `scripts/dev/`, each with its usage at its top.
 |---|---|
 | `check.sh <area>` or `check.sh all-changed` | The quick checks for a part of the repo (web, py, planner, ingest, assistant, weather, jobs, engine, java, ios, android), in Docker, warm from any worktree's first run ([CI.md](CI.md)) |
 | `dev.sh doctor` or `dev.sh up` | What `make dev` and `make doctor` run (First run, above) |
-| `one-at-a-time.sh "<label>" <command>` | Runs a heavy command (a suite, an image build, a browser run) in one of two turns, waiting while memory is short; `--alone` takes the whole machine for a measurement |
+| `one-at-a-time.sh "<label>" <command>` | Runs a heavy command (a suite, an image build, a browser run) in one of the turns the swap watcher allows (below), waiting while memory is short; `--alone` takes the whole machine for a measurement |
+| `swap-watch.sh`, `install-swap-watch.sh` | Full throttle without swapping: a LaunchAgent that holds the heavy-turn limit as high as the Mac takes (below) |
 | `validate-wave.sh` | The end-of-wave validation on `claude/integration`: every check area, the image builds, the `@smoke` browser specs on a throwaway stack, the iPad tests; one table of what passed |
 | `go-live.sh [branch]` | A branch on the owner's stack for the phone (above) |
 | `tidy-local.sh [--dry-run]` | Removes merged, clean worktrees and branches and stopped scratch containers; never volumes, never a running agent's worktree |
@@ -265,6 +266,24 @@ All in `scripts/dev/`, each with its usage at its top.
 | `install-hooks.sh` | Installs the pre-push hook (tsc and ESLint, ruff, `cargo check`, the formatters, and the generated-file and budget checks CI runs -- `screens.sh --check`, `design-tokens.sh --check`, `toolchain.sh --check`, `file_sizes.py`, `brand_guard.py` -- each for what a push changes) |
 | `rename-local.sh` | Once, on a Mac that ran the stack before the rename to Wingtip |
 | `mcp_token.py` | A token for the connector (`/mcp`) from the stack's own sign-in, as Claude gets one; the Inspector and Claude or ChatGPT through a tunnel are in [MCP-CONNECTOR.md](MCP-CONNECTOR.md) |
+
+### Full throttle without swapping
+
+The owner's standing rule (2026-11-12): "Make it permanent rule full
+throttle while avoiding swapping memory". `scripts/dev/install-swap-watch.sh`
+installs a LaunchAgent that runs `swap-watch.sh` from login, for ever. Each
+minute it reads the Mac's swap-outs (`vm_stat`) and sets
+`ONE_AT_A_TIME_SLOTS` in `~/.config/wingtip/one-at-a-time`:
+
+- **6 turns** while the Mac isn't swapping;
+- **3 turns** the moment it writes more than 2,000 pages a minute (about 31 MB) to swap;
+- **one turn back** after each 3 calm minutes.
+
+Swap-outs are the signal, not `memory_pressure`'s free percentage, which
+counts compressed memory as free: on 2026-11-12 the Mac swapped about
+35 MB/s while it read 44% free. Its log is
+`~/Library/Logs/wingtip-swap-watch.log`; `--remove` takes it out. The
+`SWAP_WATCH_*` settings at the script's top change the numbers.
 
 ### The nightly database backup
 

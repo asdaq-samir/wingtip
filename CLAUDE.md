@@ -103,18 +103,30 @@ integration branch"):
   finish.
 - **Live for the owner first:** once a wave is merged into
   `claude/integration`, `scripts/dev/go-live.sh` (in
-  `~/Developer/wingtip-live`) tidies the Mac, rebuilds and puts it on the
-  owner's stack for the phone, before any lengthy test or CI. The owner
+  `~/Developer/wingtip-live`) tidies the Mac and moves the live tree to it,
+  before any lengthy test or CI. The stack stays down: the owner is assumed
+  not to be testing and asks for it when he is (2026-11-12); then, or for an
+  agent's screenshots, `go-live.sh --up` rebuilds and starts it. The owner
   is told what to try.
 - **Web first (decision 0038):** a change a pilot sees is made on the web
   as the proof of concept; the iPhone and Android follow only on the
   owner's word for that piece (the hook refuses phone edits and merges
   until its topic is in `~/.config/wingtip/phones-approved`).
 - **Enforced (decision 0037):** `.claude/hooks/guard.py` refuses every
-  long test until the live stack runs the current `claude/integration`;
-  a brief never asks an agent to verify before pushing.
+  long test until the live stack runs the current `claude/integration`,
+  and while any requested change is still in flight (the owner,
+  2026-11-12: whoever asked, the owner, an audit or a bug fix): a
+  `claude/<topic>` branch or worktree changed in the last day and not yet
+  merged. A validation under way stops its tests when new changes are
+  asked for, keeps its fixes, and runs again once they merge. A brief
+  never asks an agent to verify before pushing.
 - **Then one validation pass**, `scripts/dev/validate-wave.sh` on
-  `claude/integration`, its fixes one commit set; then a few grouped pull
+  `claude/integration`: every area's checks, `@smoke` and the browser
+  specs the wave touched, never the full browser suite, which is CI's
+  nightly (decision 0034). Each branch and each validation agent pushes
+  once, when it's done: a push moves integration past the live stack and
+  the guard holds every test until go-live runs again. Its fixes are one
+  commit set; then a few grouped pull
   requests to `main`, which merge by themselves once "CI passed" is green
   (auto-merge-agents.yml). Nothing merges red. CI failures are fixed in
   that pass, at most once more after it; an asked-for review is put right
@@ -227,12 +239,17 @@ without it).
   a rule tested once at the lowest level, least privilege, macOS for iOS
   only, and small workflows. `guards` (`scripts/ci/guards.sh`) and `CI
   budget` enforce what a script can check.
-- **On the owner's Mac**, every browser run, suite, image build and
-  measurement goes through `scripts/dev/one-at-a-time.sh "<label>"
-  <command>` (three at once with the live stack down, two with it up;
-  `~/.config/wingtip/one-at-a-time` overrides it; `--alone` for a speed
-  measurement). Never wrap `check.sh` in it. A
-  quick check of a minute or two runs outside it.
+- **On the owner's Mac, full throttle without swapping** (the owner,
+  2026-11-12): every browser run, suite, image build, Xcode or Gradle
+  build and measurement goes through `scripts/dev/one-at-a-time.sh
+  "<label>" <command>`, whose turns the swap watcher sets (6 while the Mac
+  isn't swapping, 3 once it is; `install-swap-watch.sh`, docs/LOCAL-DEV.md);
+  `--alone` for a speed measurement. Never wrap `check.sh` in it. A quick
+  check of a minute or two runs outside it. One simulator and one
+  emulator at most. The live stack runs only while the owner tests or an
+  agent needs it (go-live.sh stops the web build once it has built);
+  scratch stacks, their volumes and an agent's build outputs go when it's
+  done.
 
 ## The app on the phone
 
