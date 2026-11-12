@@ -121,16 +121,16 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val scope = rememberCoroutineScope()
     val resources = LocalResources.current
     val search = rememberSearchControl()
-    // Under way: own ship on and at flying speed (the engine's `underway`).
-    val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
-    val flying = ownShip.on && inFlight.underway
+    // Under way: own ship on and at flying speed (the engine's `underway`), told as it changes.
+    val underway by InFlight.shared.underway.collectAsStateWithLifecycle()
+    val flying = ownShip.on && underway
     val layout by rememberLayout()
     val stripLayout = layout == LayoutPreference.STRIP
     val wide = isWide()
     val fold = tabletopFold()
     val planState by plan.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
-    val fix by ownShip.ownShip.fix.collectAsStateWithLifecycle()
+    val fix = ownShip.ownShip.fix
     val strips by strip.state.collectAsStateWithLifecycle()
     val conversation by assistant.conversation.collectAsStateWithLifecycle()
 
@@ -222,15 +222,15 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
 
     // The one search's line and picks, the same in every layout.
     val routed = planState.routed
-    val askContext = StripModel.contextOf(planState, fix, pilot)
+    val askContext = { StripModel.contextOf(planState, fix.value, pilot) }
     val flyDryRun = {
         dryRun.start(planState)
         showPlan()
     }
-    val doLine: (String) -> Unit = { line -> strip.submit(line, plan, pilot, fix, assistant, askContext) { OpenScreen.field(it, routed, flyDryRun) } }
+    val doLine: (String) -> Unit = { line -> strip.submit(line, plan, pilot, fix.value, assistant, askContext()) { OpenScreen.field(it, routed, flyDryRun) } }
     val picks = SearchPicks(
-        plan, fix, search.addingStop, search.stopAfter, search.picking, onAirport = openField, onPlan = showPlan,
-        ask = { q -> strip.ask(q, assistant, askContext) },
+        plan, fix::value, search.addingStop, search.stopAfter, search.picking, onAirport = openField, onPlan = showPlan,
+        ask = { q -> strip.ask(q, assistant, askContext()) },
         say = strip::say, noRoute = { ident -> resources.getString(R.string.plan_a_route_first, ident) },
     )
     val searchRow: @Composable (String?) -> Unit = { problem ->
@@ -266,7 +266,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             home = {
                 if (!stripLayout) {
                     val hidden = sheetLayout && sheet.atPeek
-                    Home(plan, fix, answer, picks::pick, Modifier.semantics { if (hidden) hideFromAccessibility() })
+                    Home(plan, ownShip.ownShip, answer, picks::pick, Modifier.semantics { if (hidden) hideFromAccessibility() })
                 }
             },
             // The FPL page, with a route or none: with none its ✕ goes back
@@ -371,7 +371,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     SignInDialog(session)
     // The planning aid's words, once at first launch (PlanningAidNotice).
     PlanningAidNotice()
-    ReadyToFlyHost(plan, ownShipOn = ownShip.on, underway = inFlight.underway, onSetRoute = if (stripLayout) null else showPlan)
+    ReadyToFlyHost(plan, ownShipOn = ownShip.on, underway = underway, onSetRoute = if (stripLayout) null else showPlan)
     AutoLogbookHost(plan, session)
     NextFlightFeed(plan)
 }
