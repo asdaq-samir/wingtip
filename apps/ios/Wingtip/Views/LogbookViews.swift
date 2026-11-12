@@ -39,7 +39,6 @@ struct LogbookView: View {
     @State private var period = LogbookSummary.Period.month
     /// The CSV on its way to Files (iOS 27's exporter; the share sheet before).
     @State private var saving: SavedFile?
-    @State private var sharing: URL?
 
     var body: some View {
         List {
@@ -116,8 +115,7 @@ struct LogbookView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Button { importing = true } label: { Label("Import a Logbook", systemImage: "square.and.arrow.down") }
-                        Button { export() } label: { Label("Export as CSV", systemImage: "square.and.arrow.up") }
-                            .disabled(exportFile == nil)
+                        exportRow
                     } label: {
                         Label("More", systemImage: "ellipsis")
                     }
@@ -127,10 +125,7 @@ struct LogbookView: View {
                 }
             }
         }
-        .modifier(SaveFileExporter(saving: $saving) { sharing = $0 })
-        .sheet(isPresented: Binding(get: { sharing != nil }, set: { if !$0 { sharing = nil } })) {
-            if let sharing { ActivityView(items: [sharing]).presentationDetents([.medium, .large]) }
-        }
+        .modifier(SaveFileExporter(saving: $saving))
         .sheet(isPresented: Binding(get: { adding != nil }, set: { if !$0 { adding = nil } })) {
             NavigationStack {
                 LogbookEntryForm(entry: adding ?? .blank(aircraft: plan.tail), isNew: true) { saved in
@@ -272,10 +267,17 @@ struct LogbookView: View {
         })
     }
 
-    /// The CSV written for today, handed to Files (SaveFileExporter).
-    private func export() {
-        guard let exportFile, let data = try? Data(contentsOf: exportFile) else { return }
-        saving = SavedFile(data: data, type: .commaSeparatedText, name: exportFile.lastPathComponent)
+    /// The CSV written for today, handed to Files (SaveFileExporter) on
+    /// iOS 27, else to the system's ShareLink; dimmed until it is written.
+    @ViewBuilder private var exportRow: some View {
+        let label = Label("Export as CSV", systemImage: "square.and.arrow.up")
+        if let exportFile {
+            SaveFileLink(name: exportFile.lastPathComponent, type: .commaSeparatedText, saving: $saving, make: {
+                SavedFile(data: try Data(contentsOf: exportFile), type: .commaSeparatedText, name: exportFile.lastPathComponent)
+            }) { label }
+        } else {
+            Button {} label: { label }.disabled(true)
+        }
     }
 
     /// The logbook's rows in their own layout, greyed while they come.

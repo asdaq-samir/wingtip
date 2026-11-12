@@ -1,13 +1,15 @@
 import PDFKit
 import UIKit
 
-/// A diagram's first page as a picture, with its graticule from its labels
-/// (nil where it has none the engine can fit).
+/// A diagram's first page as PDFKit reads it, drawn as the vector page it
+/// is (DiagramOwnShipView), with its graticule from its labels (nil where
+/// it has none the engine can fit).
 struct DiagramPage {
     typealias Graticule = EngineContract.DiagramGraticuleAnswer
     typealias Placed = EngineContract.DiagramPointAnswer
 
-    let image: UIImage
+    /// The FAA's PDF, its first page the diagram.
+    let document: PDFDocument
     /// The page in points.
     let size: CGSize
     let graticule: Graticule?
@@ -35,22 +37,28 @@ struct DiagramPage {
                                        width: Double(size.width), height: Double(size.height))
     }
 
-    /// The PDF's first page drawn three times its size, and its labels
-    /// found: their words by the engine (diagram_labels), where each is
-    /// drawn by PDFKit, the fit by the engine (diagram_graticule).
+    /// Where a point the engine gives (from the page's top left, as
+    /// `place` answers) is in PDFKit's space, from the media box's foot.
+    func pagePoint(x: Double, y: Double) -> CGPoint {
+        let box = document.page(at: 0)?.bounds(for: .mediaBox) ?? CGRect(origin: .zero, size: size)
+        return CGPoint(x: box.minX + x, y: box.maxY - y)
+    }
+
+    /// The PDF's first page, and its labels found: their words by the
+    /// engine (diagram_labels), where each is drawn by PDFKit, the fit by
+    /// the engine (diagram_graticule).
     static func read(_ data: Data) -> DiagramPage? {
         guard let document = PDFDocument(data: data), let page = document.page(at: 0) else { return nil }
         let box = page.bounds(for: .mediaBox)
-        let image = page.thumbnail(of: CGSize(width: box.width * 3, height: box.height * 3), for: .mediaBox)
         // A page turned by its /Rotate would need its labels turned too:
         // the d-TPP's are all upright (0), and another is drawn without
         // the airplane.
-        guard page.rotation == 0, let text = page.string else { return DiagramPage(image: image, size: box.size, graticule: nil) }
+        guard page.rotation == 0, let text = page.string else { return DiagramPage(document: document, size: box.size, graticule: nil) }
         // A page whose labels the engine cannot read is drawn without the
         // airplane, and says so (logged by Engine.rule).
         let words: [String]
         do { words = try Engine.diagramLabels(text: text) } catch {
-            return DiagramPage(image: image, size: box.size, graticule: nil, problem: "Its latitude and longitude marks couldn't be read.")
+            return DiagramPage(document: document, size: box.size, graticule: nil, problem: "Its latitude and longitude marks couldn't be read.")
         }
         var placed: [EngineContract.DiagramGraticuleInputLabelsItem] = []
         for word in words {
@@ -62,9 +70,9 @@ struct DiagramPage {
             }
         }
         do {
-            return DiagramPage(image: image, size: box.size, graticule: try Engine.diagramGraticule(labels: placed))
+            return DiagramPage(document: document, size: box.size, graticule: try Engine.diagramGraticule(labels: placed))
         } catch {
-            return DiagramPage(image: image, size: box.size, graticule: nil, problem: "Its latitude and longitude marks couldn't be fitted.")
+            return DiagramPage(document: document, size: box.size, graticule: nil, problem: "Its latitude and longitude marks couldn't be fitted.")
         }
     }
 }

@@ -352,17 +352,6 @@ enum RouteShare {
     }
 }
 
-/// iOS's share sheet, for a file made here.
-struct ActivityView: UIViewControllerRepresentable {
-    let items: [Any]
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-
-    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
-}
-
 /// The alerts ahead said aloud, Setup's switch for it.
 struct SpokenAlertsToggle: View {
     var body: some View {

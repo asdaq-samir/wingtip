@@ -52,10 +52,13 @@ struct SheetPager<Search: View, Fpl: View>: View {
 struct PageDots: UIViewRepresentable {
     @Binding var page: PlanPage
 
-    /// The row the dots take in the sheet: their 44-point tap area
-    /// (WingtipSize.tapTarget) reaches past it into the grabber's strip
-    /// above and the bar's margin below, so the control does not grow to
-    /// get it (CLAUDE.md, hit areas).
+    /// The row the dots take in the sheet, and the control's height: its
+    /// taps stay inside it, clear of the system's grabber about 5 points
+    /// under the sheet's top and of the bar below (each of which a taller
+    /// frame overlapped, taking the grabber's drags; the iPhone stock
+    /// audit, 2026-11-12). The control spans the row's width, where
+    /// nothing else is, for the rest of its tap area (CLAUDE.md, hit
+    /// areas: nothing grows to get one).
     static let row: CGFloat = WingtipSize.tapTarget - WingtipSpace.sm * 2
 
     func makeUIView(context: Context) -> UIPageControl {

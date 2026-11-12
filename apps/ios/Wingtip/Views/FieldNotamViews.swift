@@ -5,69 +5,57 @@ import SwiftUI
 /// the Info tab, a page of each in the card's stack, and a badge on each
 /// thing a NOTAM in force addresses.
 
-/// A badge of words on a capsule, as the web's stock Badge in its variants.
-struct TextBadge: View {
-    enum Look { case destructive, caution, secondary, muted }
-
+/// A status word as a stock Label, its symbol and word in the status's
+/// colour (docs/design/ios.md §17, status capsules: as Weather states a
+/// condition), in place of a hand-drawn capsule: Active and Inactive on a
+/// NOTAM, a NOTAM's mark on what it addresses, a runway's Best Wind.
+struct StatusLabel: View {
     let words: String
-    let look: Look
+    let symbol: String
+    let colour: Color
 
-    init(_ words: String, look: Look) {
+    init(_ words: String, systemImage symbol: String, colour: Color) {
         self.words = words
-        self.look = look
+        self.symbol = symbol
+        self.colour = colour
     }
 
     var body: some View {
-        Text(words)
-            .font(WingtipType.tabBar.weight(.semibold))
+        Label(words, systemImage: symbol)
+            .font(WingtipType.label)
             .lineLimit(1)
             .fixedSize()
-            .foregroundStyle(ink)
-            .padding(.horizontal, WingtipSpace.sm)
-            .padding(.vertical, WingtipSpace.xxs)
-            .background(ground, in: Capsule())
-    }
-
-    private var ink: Color {
-        switch look {
-        case .destructive: .white
-        case .caution: WingtipInk.caution
-        case .secondary: WingtipInk.secondaryText
-        case .muted: WingtipInk.mutedText
-        }
-    }
-
-    private var ground: Color {
-        switch look {
-        case .destructive: WingtipInk.destructive
-        case .caution: WingtipInk.cautionWash
-        case .secondary, .muted: WingtipInk.secondary
-        }
+            .foregroundStyle(colour)
     }
 }
 
-/// Whether it is in force now: "Active" in red, "Inactive" muted, nothing
-/// to act on yet (the owner, 2026-11-11: "put a active and inactive badge
-/// on each notam", "Inactive notam can be disabled color"). In force unless
-/// the planner says it is not yet.
+/// Whether it is in force now: "Active" in red, "Inactive" in the
+/// secondary grey, nothing to act on yet (the owner, 2026-11-11: "put a
+/// active and inactive badge on each notam", "Inactive notam can be
+/// disabled color"). In force unless the planner says it is not yet.
 struct NotamStateBadge: View {
     let notam: APIRankedNotam
 
     var body: some View {
         let active = notam.inForce != false
-        TextBadge(active ? "Active" : "Inactive", look: active ? .destructive : .muted)
+        if active {
+            StatusLabel("Active", systemImage: "exclamationmark.circle.fill", colour: WingtipInk.problem)
+        } else {
+            StatusLabel("Inactive", systemImage: "clock", colour: .secondary)
+        }
     }
 }
 
 /// A NOTAM's badge by the thing it addresses: the engine's word in red where
-/// the thing is closed or not to be used, in the caution's colours where it
+/// the thing is closed or not to be used, in the caution's colour where it
 /// is still open (the owner, 2026-11-11: "If runway is not closed, the notam
 /// badge can be caution color"). VoiceOver reads the NOTAM's words.
 struct NotamMarkBadge: View {
     let mark: NotamMark
 
     var body: some View {
-        TextBadge(mark.word, look: mark.unusable ? .destructive : .caution)
+        StatusLabel(mark.word, systemImage: mark.unusable ? "xmark.octagon.fill" : "exclamationmark.triangle.fill",
+                    colour: mark.unusable ? WingtipInk.problem : WingtipInk.caution)
             .accessibilityLabel("\(mark.word): \(mark.label)")
     }
 }
@@ -141,14 +129,16 @@ struct FieldNotamRow: View {
 }
 
 /// The field's NOTAMs in its card's Info tab: the engine's first three,
-/// "3 of 9" at the title's right, the title opening every one in place
-/// under its kind and closing them again (the owner, 2026-11-11: "Can
-/// notams also show as a list of three like others", "Notams should open
-/// like other sections"). A row opens the NOTAM in full.
+/// "3 of 9" at the title's right, and under them the stock DisclosureGroup
+/// that opens every one in place under its kind and closes them again,
+/// back to the three (the owner, 2026-11-11: "Can notams also show as a
+/// list of three like others", "Notams should open like other sections").
+/// A row opens the NOTAM in full.
 struct FieldNotamsSection: View {
     @Environment(FieldNotams.self) private var notams
 
     var body: some View {
+        @Bindable var notams = notams
         Section {
             if let problem = notams.problem {
                 ProblemLine(problem)
@@ -158,14 +148,17 @@ struct FieldNotamsSection: View {
             } else if notams.ranked == nil {
                 Text("A NOTAM's words and its times").loading("Fetching NOTAMs")
             }
-            if notams.all && notams.long {
-                ForEach(notams.kinds(notams.shown), id: \.kind) { group in
-                    Text(group.kind).font(WingtipType.note).foregroundStyle(.secondary)
-                        .accessibilityAddTraits(.isHeader)
-                    rows(group.notams)
+            if !(notams.all && notams.long) { rows(notams.shown) }
+            if notams.long {
+                DisclosureGroup(isExpanded: $notams.all) {
+                    ForEach(notams.kinds(notams.shown), id: \.kind) { group in
+                        Text(group.kind).font(WingtipType.note).foregroundStyle(.secondary)
+                            .accessibilityAddTraits(.isHeader)
+                        rows(group.notams)
+                    }
+                } label: {
+                    Text("All \(notams.notams.count) NOTAMs")
                 }
-            } else {
-                rows(notams.shown)
             }
         } header: {
             header
@@ -184,18 +177,8 @@ struct FieldNotamsSection: View {
 
     private var header: some View {
         HStack {
-            Button {
-                withAnimation { notams.all.toggle() }
-            } label: {
-                HStack(spacing: WingtipSpace.xs) {
-                    Text("NOTAMs")
-                    if notams.long {
-                        Image(systemName: "chevron.down").rotationEffect(.degrees(notams.all ? 180 : 0)).accessibilityHidden(true)
-                    }
-                }
-            }
-            .disabled(!notams.long)
-            .accessibilityValue(notams.long ? (notams.all ? "All shown" : "\(notams.shown.count) of \(notams.notams.count) shown") : "")
+            Text("NOTAMs")
+                .accessibilityValue(notams.long ? (notams.all ? "All shown" : "\(notams.shown.count) of \(notams.notams.count) shown") : "")
             Spacer()
             if notams.long && !notams.all {
                 Text("\(notams.shown.count) of \(notams.notams.count)").monospacedDigit().accessibilityHidden(true)

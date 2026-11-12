@@ -51,7 +51,9 @@ final class SheetCarouselTests: XCTestCase {
     @MainActor
     func testTheEmptyRoutesCloseGoesBackToSearch() throws {
         let app = launch()
-        app.descendants(matching: .any)["sheet-pager"].swipeLeft()
+        let pager = app.descendants(matching: .any)["sheet-pager"]
+        XCTAssertTrue(pager.waitForExistence(timeout: 20), "no pager")
+        CardTests.dragSideways(pager, in: app, left: true)
         XCTAssertFalse(app.otherElements["plan-a-flight"].exists, "FPL still says Plan a Flight")
         let close = app.buttons["route-close"]
         XCTAssertTrue(close.waitForExistence(timeout: 10), "no close on the empty route box")
@@ -132,14 +134,16 @@ final class SheetCarouselTests: XCTestCase {
         for page in ["Search", "FPL"] {
             CardTests.settled(dots)
             let half = dots.frame.minY
-            grabber.swipeDown()
+            CardTests.dragDown(grabber, in: app)
             CardTests.settled(dots)
             XCTAssertGreaterThan(dots.frame.minY, half + 100, "the sheet did not come down on \(page)")
             XCTAssertTrue(dots.isHittable, "the dots are gone at the pill on \(page)")
-            grabber.swipeUp()
+            // Back up to half: dragged to where the dots were.
+            let halfway = CGVector(dx: 0.5, dy: app.frame.height > 0 ? half / app.frame.height : 0.5)
+            CardTests.drag(grabber, in: app, to: halfway)
             CardTests.settled(dots)
             XCTAssertEqual(dots.frame.minY, half, accuracy: 8, "the sheet did not go back up on \(page)")
-            app.descendants(matching: .any)["sheet-pager"].swipeLeft()
+            CardTests.dragSideways(app.descendants(matching: .any)["sheet-pager"], in: app, left: true)
         }
     }
 }

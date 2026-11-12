@@ -1,5 +1,6 @@
 import CoreLocation
 import Foundation
+import PDFKit
 import Testing
 import UIKit
 @testable import Wingtip
@@ -89,7 +90,7 @@ struct InFlightTests {
             ["text": "46°50'N", "x": 296.60, "y": 76.58], ["text": "92°12'W", "x": 362.69, "y": 328.17],
         ]])
         #expect(g.latOnX && g.northDeg == 270)
-        let page = DiagramPage(image: UIImage(), size: CGSize(width: 387.36, height: 594), graticule: g)
+        let page = DiagramPage(document: PDFDocument(), size: CGSize(width: 387.36, height: 594), graticule: g)
         let fix = OwnShip.Fix(coordinate: CLLocationCoordinate2D(latitude: 46.8417, longitude: -92.1936), altitudeFt: 1428,
                               trackDeg: 90, groundspeedKt: 10, accuracyM: 5, at: Date())
         let at = try #require(try page.place(fix))
