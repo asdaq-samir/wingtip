@@ -100,14 +100,7 @@ pub fn grouped(n: f64) -> String {
     let magnitude = js_round_f(n.abs());
     // The whole number's exact digits, past a u64's reach too (1e21 is
     // 22 figures, as toLocaleString writes them).
-    let plain = format!("{magnitude:.0}");
-    let mut digits = String::new();
-    for (i, c) in plain.chars().enumerate() {
-        if i > 0 && (plain.len() - i) % 3 == 0 {
-            digits.push(',');
-        }
-        digits.push(c);
-    }
+    let digits = crate::text::grouped(&format!("{magnitude:.0}"));
     if n < 0.0 && magnitude > 0.0 {
         format!("-{digits}")
     } else {

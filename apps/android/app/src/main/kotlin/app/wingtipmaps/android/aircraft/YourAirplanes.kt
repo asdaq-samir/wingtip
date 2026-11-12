@@ -27,8 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.gateway.AircraftDto
 import app.wingtipmaps.android.design.LoadingRow
@@ -58,7 +58,7 @@ fun YourAirplanesRow(onOpen: () -> Unit) {
  * ← and Back closing it back to the list.
  */
 @Composable
-fun YourAirplanesPage(exit: CardExit, model: AircraftModel = viewModel()) {
+fun YourAirplanesPage(exit: CardExit, model: AircraftModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val editing = state.editing
     val title = when {

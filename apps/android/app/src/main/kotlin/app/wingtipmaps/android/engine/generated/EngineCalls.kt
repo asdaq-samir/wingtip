@@ -61,6 +61,12 @@ fun Engine.airspaceEntryRules(`class`: String): Result<EngineContract.AirspaceEn
     rule("airspace_entry_rules", EngineContract.AirspaceEntryRulesInput(`class` = `class`))
 
 /**
+ * How high a 3D map stands an airspace volume: its floor and top in feet MSL, from its limits as the FAA's data gives them (each its figure in feet, a flight level times 100, its CODE SFC, AGL, MSL, STD or UNLTD and its DESC TI, TNI or ANI), read as special_use_tab reads them: SFC above 0 is that height above the ground, a ceiling "to but not including" a foot under its figure (FL180 TNI 17,999 ft MSL), a floor "above but not including" a foot over it. A floor above the ground stands on the lowest of `ground`, a ceiling on its highest; the surface is 0 ft MSL with `surface` true; a flight level is drawn as if MSL; no ceiling, or one above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)), a drawing bound. Null where nothing is left to draw, or where a limit above the ground has no `ground`.
+ */
+fun Engine.airspaceVolumeSpan(floor: EngineContract.SpecialUseTabLimit? = null, ceiling: EngineContract.SpecialUseTabLimit? = null, ground: EngineContract.AirspaceVolumeSpanInputGround? = null): Result<EngineContract.AirspaceVolumeSpanAnswer?> =
+    rule("airspace_volume_span", EngineContract.AirspaceVolumeSpanInput(floor = floor, ceiling = ceiling, ground = ground))
+
+/**
  * An airway segment's minimum IFR altitude (14 CFR 91.177(a)(1)): its MEA, else its GNSS MEA; null where it publishes neither.
  */
 fun Engine.airwayFloorFt(meaFt: Double? = null, gnssMeaFt: Double? = null): Result<Double?> =
@@ -727,10 +733,22 @@ fun Engine.floorCorridorNm(): Result<Double> =
     rule("floor_corridor_nm", EngineContract.FloorCorridorNmInput())
 
 /**
+ * The four pixels of a Model Weather picture (the weather service's flow_grid: a latitude-longitude grid, north row first, `bounds` [west, south, east, north] its pixels' outer edges) round a point, by index row by row from the north, north-west, north-east, south-west and south-east of it, and how far east (`fx`) and south (`fy`) of the first the point is, each 0 to 1, for flow_sample to read. Within half a pixel of the edge, the edge's pixels. Null off the picture.
+ */
+fun Engine.flowCell(bounds: List<Double>, width: Int, height: Int, lat: Double, lon: Double): Result<EngineContract.FlowCellAnswer?> =
+    rule("flow_cell", EngineContract.FlowCellInput(bounds = bounds, width = width, height = height, lat = lat, lon = lon))
+
+/**
  * The map's model weather levels by field, as the Aviation Weather Center names them ("060" is 6,000 ft MSL, "180" FL180; "sfc" the surface, "max" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).
  */
 fun Engine.flowLevels(): Result<EngineContract.FlowLevelsAnswer> =
     rule("flow_levels", EngineContract.FlowLevelsInput())
+
+/**
+ * A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes): read between them linearly, as weatherlayers-gl's LINEAR reading does, each byte a 255th of `unscale` [least, most] a step. For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true) come from those parts, the vector average, so the same point reads the same wind on every app. A wind under 1 kt is calm (`calm` true, `from_deg` null): FMH-1 (FCM-H1-2019) Table 5-1 gives under a knot as "Calm; smoke rises vertically", reported as calm with no direction, 00000KT (5.5.2, 12.6.5 d), so the apps write "Calm" rather than a direction the picture's rounding made up. `calm` is false for a scalar field. Null where a pixel the point is read from has no value (alpha 0).
+ */
+fun Engine.flowSample(pixels: List<List<Double>>, fx: Double, fy: Double, unscale: List<Double>, vector: Boolean): Result<EngineContract.FlowSampleAnswer?> =
+    rule("flow_sample", EngineContract.FlowSampleInput(pixels = pixels, fx = fx, fy = fy, unscale = unscale, vector = vector))
 
 /**
  * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).
@@ -815,6 +833,12 @@ fun Engine.gairmetHazards(): Result<EngineContract.GairmetHazardsAnswer> =
  */
 fun Engine.gairmetTitle(hazard: String? = null, severity: String? = null): Result<String> =
     rule("gairmet_title", EngineContract.GairmetTitleInput(hazard = hazard, severity = severity))
+
+/**
+ * The time a G-AIRMET snapshot stands for: three hours either side of its valid time (UNIX seconds). AIM 7-1-6: G-AIRMETs are "valid at discrete times no more than 3 hours apart", and "the user should assume the hazardous weather condition is occurring between the snap shots unless informed otherwise" (a hazard at 03 and none at 00 or 06 exists from 0001 to 0559), so a snapshot stands for the whole gap either side, erring toward telling of the hazard.
+ */
+fun Engine.gairmetWindow(valid: Double): Result<EngineContract.GairmetWindowAnswer> =
+    rule("gairmet_window", EngineContract.GairmetWindowInput(valid = valid))
 
 /**
  * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (FAA-H-8083-28B 26.3.1.1).
@@ -1247,6 +1271,12 @@ fun Engine.modeCVeil(lat: Double, lon: Double, airports: List<EngineContract.Mod
  */
 fun Engine.modelWeatherBands(): Result<EngineContract.ModelWeatherBandsAnswer> =
     rule("model_weather_bands", EngineContract.ModelWeatherBandsInput())
+
+/**
+ * The GFS's pressure levels at a station (the weather service's model winds, from NOMADS' GRIB2 HGT, TMP, UGRD and VGRD) in the units the winds aloft are kept in, as the FB's columns were (FAA-H-8083-28B 27.2.1.1.1): the geopotential height in feet by the international foot (0.3048 m, NIST SP 811 B.9), the temperature in degrees Celsius (kelvin less 273.15, NIST SP 811 4.2.1.1), and the wind's east and north parts in metres a second turned into knots (1,852 m a nautical mile, NIST SP 811 B.9) and the direction it blows from, degrees true (360 for no wind at all), and its speed. Unrounded, in the levels' order; a level with any figure missing is left out.
+ */
+fun Engine.modelWindLevels(levels: List<EngineContract.ModelWindLevelsInputLevelsItem>): Result<List<EngineContract.ModelWindLevelsAnswerItem>> =
+    rule("model_wind_levels", EngineContract.ModelWindLevelsInput(levels = levels))
 
 /**
  * A navaid's ident in Morse code (AIM 1-1-3), the letters two spaces apart.
@@ -1711,7 +1741,7 @@ fun Engine.registeredProfile(manufacturer: String? = null, model: String? = null
     rule("registered_profile", EngineContract.RegisteredProfileInput(manufacturer = manufacturer, model = model, year = year))
 
 /**
- * An airport's remarks in words (the Chart Supplement's, NASR APT_RMK.csv): its fuel's, its FBO's and its courtesy car's, each a line. Each contraction of one meaning written out, by the Chart Supplement's General Information Abbreviations first (CUST customs, TSNT transient, avbl available, hr hour, O/R on request, thru through) and FAA Order JO 7340.2R's decode after it, to which it defers; a code (FBO, CBP, CTAF, 100LL, Jet A), a figure, a time and a telephone number kept as written; a contraction of more than one meaning (OPR, OPN, FM) and any word not known kept as written, never guessed; the rest in sentence case. A remark with any lower case is someone's own writing, as sent.
+ * An airport's remarks in words (the Chart Supplement's, NASR APT_RMK.csv): its fuel's, its FBO's, its courtesy car's and its radio's (the weather read out on the CTAF), and a navaid's (NAV_RMK.csv, where its signal is unusable), each a line. Each contraction of one meaning written out, by the Chart Supplement's General Information Abbreviations first (CUST customs, TSNT transient, avbl available, hr hour, O/R on request, thru through) and FAA Order JO 7340.2R's decode after it, to which it defers; a code (FBO, CBP, CTAF, 100LL, Jet A), a figure, a time and a telephone number kept as written; a contraction of more than one meaning (OPR, OPN, FM) and any word not known kept as written, never guessed; the rest in sentence case. A remark with any lower case is someone's own writing, as sent.
  */
 fun Engine.remarksRead(remarks: List<String>): Result<EngineContract.RemarksReadAnswer> =
     rule("remarks_read", EngineContract.RemarksReadInput(remarks = remarks))
@@ -1861,7 +1891,7 @@ fun Engine.soloXcDeterminations(): Result<List<EngineContract.SoloXcDeterminatio
     rule("solo_xc_determinations", EngineContract.SoloXcDeterminationsInput())
 
 /**
- * The tab ForeFlight writes on a special-use area's boundary, its words: the area's name cut to nine characters after the type's letter ("M-BRADY NOR*"), and its floor and ceiling as figures with their references (SFC, AGL, MSL, FL, UNL), from the FAA's special use airspace data (ADDS: each limit's VAL in feet, a flight level times 100, its CODE SFC, MSL, STD or UNLTD and its DESC TI, TNI or ANI). Written as the FAA's CIFP writes the same areas: a ceiling "to but not including" FL180 is 17,999 ft MSL, as Class A begins at 18,000 ft MSL (14 CFR 71.33); another ceiling TNI a foot under its figure, a floor ANI a foot over it; SFC above 0 is that height AGL. Null for a piece the FAA cuts out of its area (EXCLUSION 1), or where a limit has no figure.
+ * The tab ForeFlight writes on a special-use area's boundary, its words: the area's name cut to nine characters after the type's letter ("M-BRADY NOR*"), its floor and ceiling as figures with their references (SFC, AGL, MSL, FL, UNL), and the tab's finished words as the map writes them ("M-BRADY NOR*:" over "3600-17999": whole feet MSL, 500AGL, FL230, SFC, UNL), from the FAA's special use airspace data (ADDS: each limit's VAL in feet, a flight level times 100, its CODE SFC, MSL, STD or UNLTD and its DESC TI, TNI or ANI). Written as the FAA's CIFP writes the same areas: a ceiling "to but not including" FL180 is 17,999 ft MSL, as Class A begins at 18,000 ft MSL (14 CFR 71.33); another ceiling TNI a foot under its figure, a floor ANI a foot over it; SFC above 0 is that height AGL. Null for a piece the FAA cuts out of its area (EXCLUSION 1), or where a limit has no figure.
  */
 fun Engine.specialUseTab(name: String, type: String? = null, floor: EngineContract.SpecialUseTabLimit? = null, ceiling: EngineContract.SpecialUseTabLimit? = null, excluded: Boolean? = null): Result<EngineContract.SpecialUseTabAnswer?> =
     rule("special_use_tab", EngineContract.SpecialUseTabInput(name = name, type = type, floor = floor, ceiling = ceiling, excluded = excluded))
@@ -2003,6 +2033,12 @@ fun Engine.turbulenceCategory(edr: Double, weightClass: String): Result<String?>
  */
 fun Engine.underway(speedKt: Double? = null): Result<Boolean> =
     rule("underway", EngineContract.UnderwayInput(speedKt = speedKt))
+
+/**
+ * Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.
+ */
+fun Engine.velocityTrack(velocities: List<EngineContract.VelocityTrackInputVelocitiesItem>): Result<List<EngineContract.VelocityTrackAnswerItem>> =
+    rule("velocity_track", EngineContract.VelocityTrackInput(velocities = velocities))
 
 /**
  * The vertical speed in feet a minute from GPS altitudes: the least-squares slope of the last 10 seconds of samples; null with fewer than three of them or under 2 seconds.

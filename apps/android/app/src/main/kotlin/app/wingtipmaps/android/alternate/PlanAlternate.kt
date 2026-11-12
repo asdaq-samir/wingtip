@@ -1,8 +1,8 @@
 package app.wingtipmaps.android.alternate
 
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.Plan
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,15 +23,15 @@ object PlanAlternate {
     /** An alternate filed, and the destination it is the alternate of. */
     data class Filed(val dest: String, val ident: String)
 
-    private var prefs: SharedPreferences? = null
+    private var prefs: Kept? = null
     private val _filed = MutableStateFlow<Filed?>(null)
     val filed: StateFlow<Filed?> = _filed.asStateFlow()
 
     /** The one filed last, read once at launch (WingtipApplication). */
     fun attach(context: Context) {
-        val kept = context.applicationContext.getSharedPreferences("alternate", Context.MODE_PRIVATE).also { prefs = it }
-        val dest = kept.getString(DEST, null)
-        val ident = kept.getString(IDENT, null)
+        val kept = Kept.of(context, "alternate").also { prefs = it }
+        val dest = kept[DEST]
+        val ident = kept[IDENT]
         _filed.value = if (dest != null && ident != null) Filed(dest, ident) else null
     }
 
@@ -40,7 +40,11 @@ object PlanAlternate {
     fun file(dest: String, ident: String?) {
         val filed = ident?.trim()?.uppercase()?.ifEmpty { null }?.let { Filed(dest.uppercase(), it) }
         prefs?.edit {
-            if (filed == null) clear() else putString(DEST, filed.dest).putString(IDENT, filed.ident)
+            it.clear()
+            if (filed != null) {
+                it[DEST] = filed.dest
+                it[IDENT] = filed.ident
+            }
         }
         _filed.value = filed
     }
@@ -63,6 +67,6 @@ object PlanAlternate {
         return Instant.ofEpochMilli((Plan.departMs(depart) ?: nowMs) + Math.round(ete * 60_000)).toString()
     }
 
-    private const val DEST = "dest"
-    private const val IDENT = "ident"
+    private val DEST = stringPreferencesKey("dest")
+    private val IDENT = stringPreferencesKey("ident")
 }

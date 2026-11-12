@@ -71,6 +71,7 @@ def _row(base, **fields):
 )
 def test_the_tab_is_the_engines_from_the_faas_row(row, expected):
     tab = sua_labels.tab_words(sua._area(row))
+    assert tab["text"].startswith(f"{expected[0]}:\n")
     assert (tab["name"], tab["floor_ft"], tab["floor_ref"], tab["ceiling_ft"], tab["ceiling_ref"]) == expected
 
 
@@ -106,6 +107,7 @@ def test_each_area_has_one_tab_on_its_longest_side_and_an_excluded_piece_none(tm
     pack = _pack(tmp_path, [(BRADY_NORTH, north), (BRADY_LOW_EXCLUDED, piece)])
     [tab] = [json.loads(line) for line in sua_labels.special_use_label_features(pack)]
     props = tab["properties"]
+    assert props["tab"] == "M-BRADY NOR*:\n3600-17999"
     assert props["label"] == "M-BRADY NOR*"
     assert (props["floor_ft"], props["floor_ref"], props["ceiling_ft"], props["ceiling_ref"]) == (3600.0, "MSL", 17999.0, "MSL")
     assert props["angle"] == pytest.approx(0, abs=0.5)
@@ -123,6 +125,7 @@ def test_a_tab_on_a_north_south_side_is_turned_to_read_down_it(tmp_path):
     props = tab["properties"]
     assert props["angle"] == pytest.approx(90, abs=0.5)
     assert (props["floor_ft"], props["floor_ref"], props["ceiling_ft"]) == (500.0, "AGL", 5999.0)
+    assert props["tab"] == "M-BRADY LOW:\n500AGL-5999"
     lon, _ = tab["geometry"]["coordinates"]
     # Read top to bottom, the text's top faces east: the area is above it
     # on its west side, below it on its east.

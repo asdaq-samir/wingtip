@@ -1,21 +1,19 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
-import { useState } from "react";
-import type { SetURLSearchParams } from "react-router";
+import { withNuqsTestingAdapter } from "nuqs/adapters/testing";
 import { describe, expect, it, vi } from "vitest";
+import { useAddress } from "../../../lib/address";
 import { useAddressCards, usePanelView } from "./usePanelView";
 
 /** The two hooks over an address of their own, as the planner has them. */
 function setUp(start: string, hasRoute: boolean) {
   return renderHook(
     ({ route }) => {
-      const [params, setParams] = useState(() => new URLSearchParams(start));
-      const set: SetURLSearchParams = (next) =>
-        setParams((prev) => new URLSearchParams((typeof next === "function" ? next(prev) : next) as URLSearchParams));
-      const cards = useAddressCards(params, set, vi.fn());
-      return { params, ...usePanelView({ cards, route, hasRoute: route !== "", searchParams: params, setSearchParams: set }) };
+      const [address, setAddress] = useAddress();
+      const cards = useAddressCards(address, setAddress, vi.fn());
+      return { address, ...usePanelView({ cards, route, hasRoute: route !== "", address, setAddress }) };
     },
-    { initialProps: { route: hasRoute ? "KMSN||KOSH" : "" } },
+    { initialProps: { route: hasRoute ? "KMSN||KOSH" : "" }, wrapper: withNuqsTestingAdapter({ searchParams: start, hasMemory: true }) },
   );
 }
 
@@ -52,10 +50,10 @@ describe("the place under the one search", () => {
   it("opens the traffic in the address, and keeps a card for the place it was open over", () => {
     const hook = setUp("dep=KMSN&dest=KOSH&place=KOSH", true);
     act(() => hook.result.current.pickView("traffic"));
-    expect(hook.result.current.params.get("aircraft")).toBe("1");
-    expect(hook.result.current.params.get("place")).toBeNull();
+    expect(hook.result.current.address.aircraft).toBe(true);
+    expect(hook.result.current.address.place).toBeNull();
     act(() => hook.result.current.pickView("plan"));
-    expect(hook.result.current.params.get("place")).toBe("KOSH");
+    expect(hook.result.current.address.place).toBe("KOSH");
   });
 
   it("turns back to the traffic on the first page where that is what was left there", () => {
@@ -66,7 +64,7 @@ describe("the place under the one search", () => {
     expect(hook.result.current.view).toBe("plan");
     act(() => hook.result.current.pickPage(0));
     expect(hook.result.current.view).toBe("traffic");
-    expect(hook.result.current.params.get("aircraft")).toBe("1");
+    expect(hook.result.current.address.aircraft).toBe(true);
     // And the search where the search was.
     act(() => hook.result.current.pickView("search"));
     act(() => hook.result.current.pickPage(1));

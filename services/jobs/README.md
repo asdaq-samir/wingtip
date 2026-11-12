@@ -9,7 +9,7 @@ starts none of them.
 | Job | What it does | Its code |
 |---|---|---|
 | [`retrain/`](retrain) | The training run: `python -m wingtip.pipeline run` retrains, evaluates and promotes the chart model (and the landmark model where the ratings are enough), each promoted only if it beats the one serving | `wingtip.pipeline`, `wingtip.chartmodel`, `wingtip.model_registry` (shared with the planner, which loads the promoted model) |
-| [`crash/`](crash) | The Studio's crash leads ([docs/STUDIO-PIPELINE.md](../../docs/STUDIO-PIPELINE.md)): the FAA's statements and notices read into leads, each lead's identity checked by the engine's `occurrence_identity` against the FAA's registry and an ADS-B track, and a kit made for each confirmed one; the planner starts it every half hour (`app.crash_leads`) | `crash/cli.py`; `wingtip.crash_drafts` (shared with the planner, which serves the drafts) |
+| [`crash/`](crash) | The Studio's crash leads ([docs/STUDIO-PIPELINE.md](../../docs/STUDIO-PIPELINE.md)): the FAA's statements and notices read into leads, each lead's identity checked by the engine's `occurrence_identity` against the FAA's registry and an ADS-B track, and a kit made for each confirmed one; it keeps its own schedule, a run every half hour (`python -m crash every`, the compose service `crash-leads`) | `crash/cli.py`; `wingtip.crash_drafts` (shared with the planner, which serves the drafts) |
 | [`charts/`](charts) | A new FAA chart cycle fetched, rendered and packed into one PMTiles archive per kind and density; the map's overlay tiles (tippecanoe) from the planner's cycle pack; publishing to S3 | `charts/cli.py` (the commands), `charts/overlays.py` (the vector tiles); `wingtip.charts` and `wingtip.tile_archive` (shared with the planner, which serves the tiles) |
 
 Chart vision (`wingtip.chartvision`) stays in the planner: it reads the
@@ -47,7 +47,7 @@ The planner starts them by itself through the dev-services sidecar,
 which can start a container but never create one, so make them once:
 
 ```bash
-docker compose create retrain charts charts-overlays charts-next crash-leads
+docker compose create retrain charts charts-overlays charts-next
 ```
 
 Then the developer console's Retrain starts `retrain`, its chart
@@ -106,7 +106,7 @@ once a cycle.
 | `airspace` | NASR Class_Airspace.shp, Class B–E | `class`, `local_type`, `name`, `ident`, `floor_ft`, `floor_ref` (SFC/AGL/MSL), `ceiling_ft` (MSL), `ceiling_excluded`, `number`, `hours_code`, `hours_remark` | B 4, C 5, D 6, E2–E4 7, E5–E7 8 |
 | `airspace_labels` | the same file, Class B–D: one point a volume on its ring's outer edge, where the map writes its altitudes | `class`, `floor_ft`, `ceiling_ft`, `ceiling_excluded`, `number`, `angle` (the text's clockwise turn along the ring, −90 to 90) | B 4, C 5, D 6 |
 | `special_use` | FAA special use airspace (ADDS) | `type` (P/R/MOA/W/A/D), `kind`, `name`, `floor_ft`, `floor_ref`, `ceiling_ft`, `ceiling_ref`, `times_of_use`, `time_zone`, `controlling_agency` | 5 |
-| `special_use_labels` | the same, one point an area (not the pieces it excludes, EXCLUSION 1) on its longest side, where the map writes its tab (`sua_labels.py`) | `label` ("M-BRADY NOR*"), `type`, `floor_ft`/`floor_ref` and `ceiling_ft`/`ceiling_ref` (SFC/AGL/MSL/FL/UNL, "to but not including" FL180 as 17999 MSL, as the FAA's CIFP writes it), `angle`, `side` (1 the area below the text, −1 above) | 5 |
+| `special_use_labels` | the same, one point an area (not the pieces it excludes, EXCLUSION 1) on its longest side, where the map writes its tab (`sua_labels.py`) | `tab` ("M-BRADY NOR*:\n3600-17999", the engine's words the map draws), `label` ("M-BRADY NOR*"), `type`, `floor_ft`/`floor_ref` and `ceiling_ft`/`ceiling_ref` (SFC/AGL/MSL/FL/UNL, "to but not including" FL180 as 17999 MSL, as the FAA's CIFP writes it), `angle`, `side` (1 the area below the text, −1 above) | 5 |
 | `airports` | NASR APT_BASE, APT_RWY, APT_RWY_END (operational only) | `ident`, `faa_id`, `name`, `type`, `use`, `military`, `towered`, `elevation_ft`, `longest_ft`, `hard_ft`, `runway_true`, `fuel`, `rank` (0 towered … 4 heliport) | by rank: 5, 6, 7, 9, 10 |
 | `navaids` | NASR NAV_BASE (in service) | `ident`, `name`, `kind`, `freq`, `channel`, `service_volume`, `mag_var`, `elevation_ft`, `hours`, `restricted` | VORs 5, others 7 |
 | `fixes` | NASR FIX_BASE, every row | `ident`, `kind`, `vfr`, `enroute_low` | charted 8, others 10 |

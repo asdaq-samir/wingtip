@@ -135,7 +135,7 @@ services:
   # project mounted at /workspace, as the planner's is). The developer
   # console starts them through dev-services, which can start a container
   # but never create one: `docker compose create retrain charts
-  # charts-overlays charts-next crash-leads` makes them once. services/jobs/README.md has the rest.
+  # charts-overlays charts-next` makes them once. services/jobs/README.md has the rest.
   #
   # The training run (`python -m wingtip.pipeline run`: both models'
   # stages in order, each promoted only if it beats the one serving), the
@@ -204,20 +204,23 @@ services:
   # the FAA's statements and notices read into the Studio's crash leads,
   # each checked against the FAA's registry and an ADS-B track, and a kit
   # made for each confirmed one, into the live-store volume the planner
-  # reads (wingtip.crash_drafts). The planner starts it every
-  # CRASH_LEADS_EVERY_MIN (app.crash_leads) through dev-services; by
-  # hand, `docker compose run --rm crash-leads` (or `parse-check`).
+  # reads (wingtip.crash_drafts). It keeps its own schedule (`every`): a
+  # run each CRASH_LEADS_EVERY_MIN, none with CRASH_LEADS_AUTO=0, which
+  # ends it and leaves it ended. One run by hand, `docker compose run
+  # --rm crash-leads poll` (or `parse-check`).
   crash-leads:
+    restart: on-failure
     build:
       context: .
       dockerfile: services/jobs/crash/Dockerfile
       additional_contexts:
         wingtip-base: service:base
-    profiles: ["jobs"]
-    command: ["poll"]
+    command: ["every"]
     environment:
       LIVE_STORE: /live/live.sqlite
       NOTAM_STORE: /live/notams.sqlite
+      CRASH_LEADS_AUTO: ${CRASH_LEADS_AUTO:-1}
+      CRASH_LEADS_EVERY_MIN: ${CRASH_LEADS_EVERY_MIN:-30}
     volumes:
       - .:/workspace
       - live-store:/live
@@ -271,7 +274,7 @@ services:
       context: .
       dockerfile: infra/dev-services/Dockerfile
     environment:
-      DEV_SERVICES: ml,retrain,charts,charts-overlays,charts-next,crash-leads
+      DEV_SERVICES: ml,retrain,charts,charts-overlays,charts-next
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     networks: [docker-control]
@@ -318,10 +321,6 @@ services:
       FILED_STORE: /live/filed.sqlite
       REPORTS_STORE: /live/reports.sqlite
       PYTHONPATH: /workspace/services/planner
-      # The Studio's crash leads (app.crash_leads): the job started every
-      # this many minutes through dev-services; 0 to stop it.
-      CRASH_LEADS_AUTO: ${CRASH_LEADS_AUTO:-1}
-      CRASH_LEADS_EVERY_MIN: ${CRASH_LEADS_EVERY_MIN:-30}
       # Not the host's Docker socket -- the dev-services sidecar above,
       # which app/dev_services.py asks which services are up and to
       # start one, the jobs (retrain, charts) among them.

@@ -2,6 +2,10 @@ package app.wingtipmaps.android.atc
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,10 +21,16 @@ import kotlinx.coroutines.launch
  * against it (readback_check, AIM 4-4-7 b). Nothing is set until a tap:
  * the pilot decides (14 CFR 91.3; decision 0008, warn never limit).
  */
-class AtcCopilotModel(
-    private val listener: AtcListener,
+@HiltViewModel(assistedFactory = AtcCopilotModel.Factory::class)
+class AtcCopilotModel @AssistedInject constructor(
+    @Assisted private val listener: AtcListener,
     private val rules: AtcRules = EngineAtc,
 ) : ViewModel() {
+    @AssistedFactory
+    interface Factory {
+        fun create(listener: AtcListener): AtcCopilotModel
+    }
+
     /** The next frequency and the code the pilot set from a card, kept in
      *  sight on the card's foot until replaced. */
     data class Kept(val frequency: String? = null, val facility: String? = null, val squawk: String? = null)

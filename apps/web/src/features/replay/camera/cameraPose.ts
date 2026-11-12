@@ -1,6 +1,6 @@
+import { M_PER_FT } from "../../../lib/geo";
 import type { CameraKind } from "./cameraStore";
 
-const M_PER_FT = 0.3048;
 /** Metres in a degree of latitude, near enough for a camera's few hundred
  *  metres (the WGS-84 meridian degree is 110.6 to 111.7 km). */
 const M_PER_DEG = 111_320;
@@ -23,7 +23,7 @@ const TOWER_UP_M = 30;
 /** The least a camera stands over the ground, m: on the runway a little
  *  over it, never under (PilotCamera's). */
 const OVER_GROUND_M = 15;
-/** As far as the 3D map tilts (dem's MAX_PITCH): a camera asked to look
+/** As far as the 3D map tilts (tokens' MAP.pitchMax): a camera asked to look
  *  flatter than this looks this far. */
 const MOST_PITCH = 75;
 

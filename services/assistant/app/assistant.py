@@ -46,7 +46,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import rule_tools, tracing
+from . import rule_tools
 from .gateway import gateway
 from .settings import get_settings
 from .tool_answers import as_json
@@ -247,23 +247,21 @@ def answer(ask: AssistantAsk, runner=None, box: Toolbox | None = None) -> Iterat
         return
     said_any = False
     try:
-        with tracing.claude_call("assistant", ASSISTANT_MODEL, current=False) as used:
-            for stream in runner:
-                for event in stream:
-                    if getattr(event, "type", None) == "text":
-                        said_any = True
-                        yield _line({"type": "text", "text": event.text})
-                message = stream.get_final_message()
-                used.add(message)
-                for block in message.content:
-                    if getattr(block, "type", None) == "tool_use":
-                        yield _line({"type": "tool", "name": block.name, "label": label_of(block.name, dict(block.input or {}))})
-                if message.stop_reason == "refusal":
-                    yield _line({"type": "error", "words": "The assistant declined to answer this one."})
-                    return
-                if message.stop_reason == "max_tokens":
-                    yield _line({"type": "error", "words": "The assistant ran out of room for its answer; ask a shorter question."})
-                    return
+        for stream in runner:
+            for event in stream:
+                if getattr(event, "type", None) == "text":
+                    said_any = True
+                    yield _line({"type": "text", "text": event.text})
+            message = stream.get_final_message()
+            for block in message.content:
+                if getattr(block, "type", None) == "tool_use":
+                    yield _line({"type": "tool", "name": block.name, "label": label_of(block.name, dict(block.input or {}))})
+            if message.stop_reason == "refusal":
+                yield _line({"type": "error", "words": "The assistant declined to answer this one."})
+                return
+            if message.stop_reason == "max_tokens":
+                yield _line({"type": "error", "words": "The assistant ran out of room for its answer; ask a shorter question."})
+                return
     except ValueError as err:
         # The SDK could not parse a tool's input at all (the streaming
         # doc's one ValueError): the turn is lost, and the pilot asks again.

@@ -23,7 +23,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.design.LocalNative
 import app.wingtipmaps.android.design.generated.WingtipColors
 import app.wingtipmaps.android.design.generated.WingtipPalette
@@ -66,18 +67,18 @@ enum class Look(val key: String, val label: String) {
 /** The look picked, kept under the web app's key "look" and held in one
  *  flow, so the theme and Setup's Theme row see the same value at once. */
 object LookPreference {
-    private const val KEY = "look"
+    private val KEY = stringPreferencesKey("look")
     private val state = MutableStateFlow<Look?>(null)
 
     fun flow(context: Context): StateFlow<Look?> {
         if (state.value == null) {
-            state.value = Look.of(context.getSharedPreferences("wingtip", Context.MODE_PRIVATE).getString(KEY, null))
+            state.value = Look.of(Kept.of(context, "wingtip")[KEY])
         }
         return state.asStateFlow()
     }
 
     fun set(context: Context, look: Look) {
-        context.getSharedPreferences("wingtip", Context.MODE_PRIVATE).edit { putString(KEY, look.key) }
+        Kept.of(context, "wingtip").edit { it[KEY] = look.key }
         state.value = look
     }
 }

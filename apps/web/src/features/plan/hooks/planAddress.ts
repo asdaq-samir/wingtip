@@ -1,9 +1,9 @@
-import type { AltitudeChoice, FuelStopSuggestion } from "../../../lib/api/types";
+import type { Address, AddressChange } from "../../../lib/address";
+import type { FuelStopSuggestion } from "../../../lib/api/types";
 import { fieldListParams, fieldListsOf, renamedFieldLists } from "../lib/fieldLists";
 import { positionIdent, stopsOf } from "../../../lib/identSchema";
 import { proceduresOf, proceduresParam, sameField } from "../../../lib/procedures";
 import { patternsOf } from "../../../lib/trafficPattern";
-import { patched } from "../../../lib/useSearchParamsNow";
 import type { SuggestedStop } from "../components/StopServices";
 
 /**
@@ -12,22 +12,19 @@ import type { SuggestedStop } from "../components/StopServices";
  * pieces of it the workspace's hooks share -- a Direct to's route kept for
  * its Cancel, a field renamed everywhere it is named, the runways picked
  * into the wind -- each a function of the address, tested as one
- * (planAddress.test.ts).
+ * (planAddress.test.ts). Each key's parser is lib/address's; a change
+ * returned here is the keys it names, null taking one out.
  */
-
-/** A local flight's times aloft to choose from, in minutes (`local_min`):
- *  a menu, not a slider. */
-export const LOCAL_MINUTES = [30, 45, 60, 90, 120, 150, 180, 240];
 
 /** The address's keys that name a route or a pick on it, each read by the
  *  shared engine (lib/identSchema, lib/procedures, lib/routeHolds). */
-const ROUTE_KEYS = ["dep", "dest", "stops", "altitudes", "procs", "cross", "ground", "holds"];
+const ROUTE_KEYS = ["dep", "dest", "stops", "altitudes", "procs", "cross", "ground", "holds"] as const;
 
 /** Whether the address names a route, which only the engine can read: the
  *  workspace waits for it then (usePlanWorkspace), and draws at once with
  *  none -- every fresh open (features/shell/freshLoad) -- the parts that
  *  ask the engine waiting each on its own (lib/engine/engineGate). */
-export const namesRoute = (params: URLSearchParams) => ROUTE_KEYS.some((key) => params.has(key));
+export const namesRoute = (address: Pick<Address, (typeof ROUTE_KEYS)[number]>) => ROUTE_KEYS.some((key) => address[key] !== null);
 
 /** The route as the address has it this render: its ends, and the points
  *  it goes by on the way (usePlanWorkspace's `planned`). */
@@ -35,10 +32,6 @@ export interface PlannedRoute {
   dep: string;
   dest: string;
   stops: string[];
-}
-
-export function altitudeChoiceOf(value: string | null): AltitudeChoice {
-  return value === "lowest" || value === "highest" || value === "economical" ? value : "fastest";
 }
 
 /** The suggested stop at a field, where it is one of the planner's
@@ -66,55 +59,62 @@ export function suggestedStopAt(ident: string | null, suggestions: FuelStopSugge
 
 /** The route as the address has it, "dep|stops|dest", kept as a Direct to
  *  goes in (directToPoint) for its Cancel. */
-export const routeWas = (params: URLSearchParams) => `${params.get("dep") ?? ""}|${params.get("stops") ?? ""}|${params.get("dest") ?? ""}`;
+export const routeWas = (address: Pick<Address, "dep" | "stops" | "dest">) =>
+  `${address.dep ?? ""}|${address.stops ?? ""}|${address.dest ?? ""}`;
+
+type DirectAddress = Pick<Address, "dep" | "stops" | "dest" | "direct" | "was" | "procs">;
 
 /** The address's changes that give a Direct to back: the route as it was
  *  before it; none with no Direct to. */
-export function routeBeforeDirect(params: URLSearchParams): Record<string, string | null> {
-  const was = params.get("was");
-  if (!params.has("direct") && !was) return {};
-  const [dep = "", stops = "", dest = ""] = (was ?? routeWas(params)).split("|");
+export function routeBeforeDirect(address: DirectAddress): AddressChange {
+  const was = address.was;
+  if (address.direct === null && !was) return {};
+  const [dep = "", stops = "", dest = ""] = (was || routeWas(address)).split("|");
   return { dep: dep || null, stops: stops || null, dest: dest || null, direct: null, was: null };
 }
 
-/** The address with a Direct to a point of the route (`ident`), as ATC
- *  sends an airplane: from `fix` where the airplane is, else from the
- *  departure, on from the point as it was planned; the route as it was
- *  kept (`was`) for Cancel, and a procedure's own direct given back (one
- *  at a time). `ident` null is the Cancel; a point not on the route
- *  leaves the address as it was. */
-export function directToPatch(
-  prev: URLSearchParams,
-  ident: string | null,
-  fix: Parameters<typeof positionIdent>[0] | null,
-): URLSearchParams {
-  if (ident === null) return patched(prev, routeBeforeDirect(prev));
-  const was = prev.get("was") ?? routeWas(prev);
+/** The address's changes for a Direct to a point of the route (`ident`),
+ *  as ATC sends an airplane: from `fix` where the airplane is, else from
+ *  the departure, on from the point as it was planned; the route as it
+ *  was kept (`was`) for Cancel, and a procedure's own direct given back
+ *  (one at a time). `ident` null is the Cancel; a point not on the route
+ *  changes nothing. */
+export function directToPatch(prev: DirectAddress, ident: string | null, fix: Parameters<typeof positionIdent>[0] | null): AddressChange {
+  if (ident === null) return routeBeforeDirect(prev);
+  const was = prev.was || routeWas(prev);
   const [dep = "", stopsWere = "", dest = ""] = was.split("|");
   const stopsThen = stopsOf(stopsWere);
   const at = stopsThen.findIndex((stop) => sameField(stop, ident));
-  if (at < 0 && !sameField(dest, ident)) return prev;
-  const procs = proceduresOf(prev.get("procs"));
-  return patched(prev, {
-    dep: fix ? positionIdent(fix) : dep,
-    stops: at < 0 ? null : stopsThen.slice(at).join(","),
-    dest,
-    direct: ident,
+  if (at < 0 && !sameField(dest, ident)) return {};
+  const procs = proceduresOf(prev.procs);
+  return {
+    dep: (fix ? positionIdent(fix) : dep) || null,
+    stops: at < 0 ? null : stopsThen.slice(at).join(",") || null,
+    dest: dest || null,
+    direct: ident || null,
     was,
     procs: procs.some((p) => p.direct) ? proceduresParam(procs.map((p) => ({ ...p, direct: null }))) || null : undefined,
-  });
+  };
 }
 
-/** The address with a field's ident changed everywhere it is named: the
- *  route's ends and every list of picks by field (features/plan/lib/fieldLists), so a
- *  pick made under "ORD" -- a runway, a procedure, an altitude, a time on
- *  the ground, a hold -- stays with KORD. */
-export function renamed(params: URLSearchParams, from: string, to: string): URLSearchParams {
-  return patched(params, {
-    dep: params.get("dep") === from ? to : undefined,
-    dest: params.get("dest") === from ? to : undefined,
-    ...fieldListParams(renamedFieldLists(fieldListsOf(params), from, to)),
-  });
+/** The address's changes for a field's ident changed everywhere it is
+ *  named: the route's ends and every list of picks by field
+ *  (features/plan/lib/fieldLists), so a pick made under "ORD" -- a runway,
+ *  a procedure, an altitude, a time on the ground, a hold -- stays with
+ *  KORD. Only the keys it changes. */
+export function renamed(
+  address: Parameters<typeof fieldListsOf>[0] & Pick<Address, "dep" | "dest">,
+  from: string,
+  to: string,
+): AddressChange {
+  const lists = fieldListsOf(address);
+  const now = fieldListParams(lists),
+    then = fieldListParams(renamedFieldLists(lists, from, to));
+  return {
+    ...(address.dep === from ? { dep: to } : {}),
+    ...(address.dest === from ? { dest: to } : {}),
+    ...Object.fromEntries(Object.entries(then).filter(([key, value]) => value !== now[key as keyof typeof now])),
+  };
 }
 
 /** `auto` where no runway is picked for the wind: the pilot's own all. */

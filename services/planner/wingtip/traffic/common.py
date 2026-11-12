@@ -6,6 +6,8 @@ from __future__ import annotations
 import threading
 import time
 
+from ..units import NM_PER_DEG_LAT
+
 HEADERS = {"User-Agent": "wingtip-maps/0.1 (VFR flight planner; traffic for pilots' situational awareness)"}
 
 #: A position older than this is left out: the airplane is somewhere else.
@@ -13,7 +15,7 @@ STALE_S = 30.0
 #: How long one request may take.
 TIMEOUT_S = 5.0
 
-_NM_PER_DEG = 60.0
+_NM_PER_DEG = NM_PER_DEG_LAT
 
 # Monotonic clock and sleep, through the module so the tests can stand in.
 _clock = time.monotonic

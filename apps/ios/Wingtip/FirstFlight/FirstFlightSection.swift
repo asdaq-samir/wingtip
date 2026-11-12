@@ -64,6 +64,10 @@ struct FirstFlightSection: View {
                         .font(WingtipType.heading)
                         .foregroundStyle(.primary)
                         .accessibilityAddTraits(.isHeader)
+                        // The card's handle on its title: on the Section it
+                        // was handed down to every row and button in it,
+                        // over their own (Plan It's "first-flight-plan").
+                        .accessibilityIdentifier("first-flight")
                     Spacer()
                     Button("Not Now") { focused = nil; model.dismiss() }
                         .font(WingtipType.row)
@@ -71,7 +75,6 @@ struct FirstFlightSection: View {
                 }
                 .textCase(nil)
             }
-            .accessibilityIdentifier("first-flight")
             // Leaving the page puts the keyboard away.
             .onChange(of: Navigator.shared.sheetPage) { _, _ in focused = nil }
         }

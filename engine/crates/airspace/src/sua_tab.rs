@@ -7,8 +7,9 @@
 //! (`special_use_tab`) for the overlay tiles' `special_use_labels` layer
 //! that the web and Android draw (services/jobs/charts/sua_labels.py).
 //! The name cut as ForeFlight cuts it, the limits as figures with their
-//! references (each app writes their words), and where the tab sits and
-//! how it is turned.
+//! references, the tab's finished words (`text`, which the charts job
+//! writes into the tiles so a map only draws them), and where the tab
+//! sits and how it is turned.
 //!
 //! The limits are read from the FAA's special use airspace data (AIS's
 //! Special_Use_Airspace layer on ADDS, published every eight weeks; its
@@ -194,10 +195,35 @@ pub fn tab(name: &str, type_code: &str, floor: Limit, ceiling: Limit, excluded: 
     Some(Tab { name: label_name(name, type_code), floor: (floor_ft, floor_ref?), ceiling: (ceiling_ft, ceiling_ref?) })
 }
 
-/// The tab's members, `"name","floor_ft","floor_ref","ceiling_ft","ceiling_ref"`,
+/// A limit as the tab writes it, as ForeFlight's tabs over the sectional
+/// do (the owner's screenshot, 2026-11-12): whole feet with no comma,
+/// "7000" MSL, "500AGL" above the ground, "FL230" a flight level, "SFC"
+/// and "UNL" (`limit`'s references).
+pub fn limit_words(ft: Option<f64>, reference: &str) -> String {
+    let whole = |v: f64| v.round() as i64;
+    let ft = ft.unwrap_or(0.0);
+    match reference {
+        "SFC" | "UNL" => reference.to_owned(),
+        "AGL" => format!("{}AGL", whole(ft)),
+        "FL" => format!("FL{}", whole(ft / 100.0)),
+        _ => whole(ft).to_string(),
+    }
+}
+
+impl Tab {
+    /// The tab's words as the map writes them: "M-BRADY NOR*:" over
+    /// "3600-17999", the name and its limits on two lines.
+    pub fn text(&self) -> String {
+        format!("{}:\n{}-{}", self.name, limit_words(self.floor.0, self.floor.1), limit_words(self.ceiling.0, self.ceiling.1))
+    }
+}
+
+/// The tab's members, `"name","floor_ft","floor_ref","ceiling_ft","ceiling_ref","text"`,
 /// with no braces, for an answer to add to.
 pub(crate) fn write_words(o: &mut String, t: &Tab) {
-    o.push_str("\"name\":");
+    o.push_str("\"text\":");
+    json::string(o, &t.text());
+    o.push_str(",\"name\":");
     json::string(o, &t.name);
     o.push_str(",\"floor_ft\":");
     json::opt_number(o, t.floor.0);
@@ -210,7 +236,7 @@ pub(crate) fn write_words(o: &mut String, t: &Tab) {
 }
 
 /// `special_use_tab`: `{"name", "type", "floor": {"ft", "code", "desc"},
-/// "ceiling": {...}, "excluded"}` to the tab's words, or null.
+/// "ceiling": {...}, "excluded"}` to the tab's words and `text`, or null.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     fn text<'a>(o: Option<&'a Value>, key: &str) -> Option<&'a str> {
         o.and_then(|o| o.get(key)).and_then(Value::as_str)
@@ -341,6 +367,17 @@ mod tests {
         assert!(tab("BRADY LOW MOA", "MOA", floor, ceiling, true).is_none());
         let t = tab("BRADY LOW MOA", "MOA", floor, ceiling, false).unwrap();
         assert_eq!((t.name.as_str(), t.floor, t.ceiling), ("M-BRADY LOW", (Some(1501.0), "AGL"), (Some(5999.0), "MSL")));
+        assert_eq!(t.text(), "M-BRADY LOW:\n1501AGL-5999");
+    }
+
+    #[test]
+    fn limits_are_written_in_the_tabs_words() {
+        // As ForeFlight's tabs near Brady, TX (the owner's screenshot).
+        assert_eq!(limit_words(Some(3600.0), "MSL"), "3600");
+        assert_eq!(limit_words(Some(500.0), "AGL"), "500AGL");
+        assert_eq!(limit_words(Some(23000.0), "FL"), "FL230");
+        assert_eq!(limit_words(Some(0.0), "SFC"), "SFC");
+        assert_eq!(limit_words(None, "UNL"), "UNL");
     }
 
     #[test]

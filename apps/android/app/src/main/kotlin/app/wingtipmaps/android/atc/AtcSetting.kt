@@ -1,8 +1,8 @@
 package app.wingtipmaps.android.atc
 
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.Kept
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -13,24 +13,24 @@ enum class AtcMode { OFF, FLYING }
 
 /** The setting, kept across launches: off until the pilot turns it on,
  *  as the web's and the iPhone's are, since it listens to the cockpit. */
-class AtcSetting(private val prefs: SharedPreferences) {
-    private val _mode = MutableStateFlow(runCatching { AtcMode.valueOf(prefs.getString(KEY, null) ?: "OFF") }.getOrDefault(AtcMode.OFF))
+class AtcSetting(private val prefs: Kept) {
+    private val _mode = MutableStateFlow(runCatching { AtcMode.valueOf(prefs[KEY] ?: "OFF") }.getOrDefault(AtcMode.OFF))
     val mode: StateFlow<AtcMode> = _mode.asStateFlow()
 
     fun set(mode: AtcMode) {
-        prefs.edit { putString(KEY, mode.name) }
+        prefs.edit { it[KEY] = mode.name }
         _mode.value = mode
     }
 
     companion object {
-        private const val KEY = "mode"
+        private val KEY = stringPreferencesKey("mode")
 
         @Volatile
         private var shared: AtcSetting? = null
 
         fun of(context: Context): AtcSetting =
             shared ?: synchronized(this) {
-                shared ?: AtcSetting(context.applicationContext.getSharedPreferences("atc", Context.MODE_PRIVATE)).also { shared = it }
+                shared ?: AtcSetting(Kept.of(context, "atc")).also { shared = it }
             }
     }
 }

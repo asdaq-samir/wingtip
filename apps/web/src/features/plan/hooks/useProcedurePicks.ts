@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
-import type { SetURLSearchParams } from "react-router";
+import type { Address, SetAddress } from "../../../lib/address";
 import { api } from "../../../lib/api/client";
 import type { ProcedureDrawing } from "../../../lib/api/types";
 import { altitudesOf, altitudesParam } from "../../../lib/identSchema";
@@ -18,7 +18,6 @@ import {
 } from "../../../lib/procedures";
 import { procedureQuery, queryClient } from "../../../lib/queryClient";
 import type { TrafficPattern } from "../../../lib/trafficPattern";
-import { patched } from "../../../lib/useSearchParamsNow";
 import type { OpenFix } from "../components/FixCard";
 import type { ProcedureAirport, ProceduresAt } from "../components/ProceduresRoute";
 import type { RouteProcedure } from "../components/RouteBox";
@@ -36,15 +35,15 @@ export const drawnOnly = (results: { data?: ProcedureDrawing }[]) => results.fla
  */
 export function useProcedurePicks({
   planned,
-  searchParams,
-  setSearchParams,
+  address,
+  setAddress,
   procedureAirports,
   crossings,
   patterns,
 }: {
   planned: PlannedRoute;
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
+  address: Address;
+  setAddress: SetAddress;
   procedureAirports: ProcedureAirport[];
   /** The altitudes ATC gave to cross the procedures' fixes at (`cross`). */
   crossings: Record<string, number>;
@@ -53,24 +52,23 @@ export function useProcedurePicks({
 }) {
   // The instrument procedures picked for the route's fields, kept in the
   // address too: "KBUR:I08-Y:LAX" (lib/procedures).
-  const procedureParam = searchParams.get("procs");
+  const procedureParam = address.procs;
   const pickedProcedures = useMemo(() => proceduresOf(procedureParam), [procedureParam]);
   // The procedure just picked, for the map to go to it once it is drawn.
   const [procedureFocus, setProcedureFocus] = useState<string | null>(null);
   const pickProcedures = useCallback(
-    (next: PickedProcedure[], picked: PickedProcedure | null) => {
+    // The picks, or how to make them from the address's as they are now.
+    (picks: PickedProcedure[] | ((now: PickedProcedure[]) => PickedProcedure[]), picked: PickedProcedure | null) => {
       if (picked) setProcedureFocus(`${proceduresParam([picked])}@${Date.now()}`);
-      setSearchParams(
-        (prev) => {
-          // One direct at a time: sent direct to a procedure's fix, a Direct to
-          // a point of the route is given back (directToPoint).
-          const undo = next.some((p) => p.direct) ? routeBeforeDirect(prev) : {};
-          return patched(prev, { ...undo, procs: next.length ? proceduresParam(next) : null });
-        },
-        { replace: true },
-      );
+      void setAddress((prev) => {
+        const next = typeof picks === "function" ? picks(proceduresOf(prev.procs)) : picks;
+        // One direct at a time: sent direct to a procedure's fix, a Direct to
+        // a point of the route is given back (directToPoint).
+        const undo = next.some((p) => p.direct) ? routeBeforeDirect(prev) : {};
+        return { ...undo, procs: next.length ? proceduresParam(next) : null };
+      });
     },
-    [setSearchParams],
+    [setAddress],
   );
   // A SID or a STAR typed in the route box among its points ("KMSP BAEE1
   // BAE ... OSHH2 KATW", as a clearance or a filed route is written):
@@ -82,15 +80,15 @@ export function useProcedurePicks({
       const list = (ident: string) =>
         queryClient.fetchQuery({ queryKey: ["procedures", ident], queryFn: () => api.procedures(ident), staleTime: 6 * 60 * 60_000 });
       const found = await Promise.all(typed.map((t) => typedProcedure(t, route, list)));
-      let next = proceduresOf(new URLSearchParams(window.location.search).get("procs"));
-      let last: PickedProcedure | null = null;
-      for (const hit of found) {
-        if (!hit) continue;
-        const kindOf = (id: string) => hit.list.procedures.find((p) => p.id === id)?.kind;
-        next = [...next.filter((p) => !(sameField(p.ident, hit.picked.ident) && kindOf(p.id) === hit.kind)), hit.picked];
-        last = hit.picked;
-      }
-      if (last) pickProcedures(next, last);
+      // Onto the picks as the address has them once the lists are in.
+      const hits = found.flatMap((hit) => (hit ? [hit] : []));
+      const last = hits.at(-1)?.picked ?? null;
+      const withHits = (now: PickedProcedure[]) =>
+        hits.reduce((next, hit) => {
+          const kindOf = (id: string) => hit.list.procedures.find((p) => p.id === id)?.kind;
+          return [...next.filter((p) => !(sameField(p.ident, hit.picked.ident) && kindOf(p.id) === hit.kind)), hit.picked];
+        }, now);
+      if (last) pickProcedures(withHits, last);
       const missed = typed.filter((_, i) => !found[i]).map((t) => t.name);
       if (missed.length) {
         showError(
@@ -156,17 +154,14 @@ export function useProcedurePicks({
   const showFix = useCallback((field: string, kind: RouteProcedure["kind"], fix: string) => setOpenFixAt({ field, kind, fix }), []);
   const setCrossing = useCallback(
     (fix: string, feet: number | null) => {
-      setSearchParams(
-        (prev) => {
-          const own = altitudesOf(prev.get("cross"));
-          if (feet == null) delete own[fix];
-          else own[fix] = feet;
-          return patched(prev, { cross: altitudesParam(own) || null });
-        },
-        { replace: true },
-      );
+      void setAddress((prev) => {
+        const own = altitudesOf(prev.cross);
+        if (feet == null) delete own[fix];
+        else own[fix] = feet;
+        return { cross: altitudesParam(own) || null };
+      });
     },
-    [setSearchParams],
+    [setAddress],
   );
   const directTo = useCallback(
     (open: OpenFix, direct: boolean) => {

@@ -3,7 +3,7 @@ Chart Supplement entry (NASR's APT_RMK, the same text) that a pilot acts
 on from the cockpit -- the runway lights turned on by keying the mic on
 the CTAF, read by the engine into each system and how it is turned on
 (lighting_read), and the weather some fields read out on so many clicks
-of it, in plain English.
+of it, in words (the engine's remarks_read).
 
 3CK, Lake in the Hills, for one: "ACTVT REIL RWY 08 & 26; PAPI RWY 08
 & 26; MIRL RWY 08/26 - CTAF." -- the REIL, the PAPI and the MIRL, each
@@ -26,125 +26,6 @@ from .config import DATA_DIR
 from .single_flight import once
 
 FAA_CACHE_DIR = DATA_DIR / "raw" / "faa_nasr"
-
-# The remarks' own contractions, in words, for the radio's and a navaid's
-# remarks (the fuel's and the courtesy car's are the engine's,
-# remarks_read); the lighting remarks' are the engine's
-# (lighting_read). The lighting systems' names (MIRL, REIL, PAPI,
-# MALSR...) and the radio's (CTAF, UNICOM, AWOS) are what a pilot reads on
-# the chart and hears on the radio, so they stay.
-WORDS = {
-    "RWY": "runway",
-    "RY": "runway",
-    "RWYS": "runways",
-    "RYS": "runways",
-    "LGT": "light",
-    "LGTS": "lights",
-    "CONT": "continuous",
-    "BCN": "beacon",
-    "OPR": "operates",
-    "OPER": "operates",
-    "OPRS": "operates",
-    "OPS": "operations",
-    "CLSD": "closed",
-    "ATCT": "the tower",
-    "TWR": "tower",
-    "SS": "sunset",
-    "SR": "sunrise",
-    "TWY": "taxiway",
-    "TWYS": "taxiways",
-    "HR": "hour",
-    "HRS": "hours",
-    "MIN": "minute",
-    "MINS": "minutes",
-    "SECS": "seconds",
-    "AVBL": "available",
-    "UNAVBL": "unavailable",
-    "MED": "medium",
-    "AFT": "after",
-    "NSTD": "non-standard",
-    "REQ": "request",
-    "AMGR": "the airport manager",
-    "ARPT": "airport",
-    "FREQ": "frequency",
-    "CTC": "contact",
-    "OTS": "out of service",
-    "CTL": "control",
-    "PCL": "pilot-controlled lighting",
-    "WX": "weather",
-    "RDO": "radio",
-    "DALGT": "daylight",
-    "DURG": "during",
-    "DRG": "during",
-    "OTR": "other",
-    "PPR": "prior permission required",
-    "NGT": "night",
-    "FM": "from",
-    "EXTN": "extension",
-    "LCL": "local",
-    "ADZY": "advisory",
-    "INDEFLY": "indefinitely",
-    "WI": "within",
-    "TEMP": "temperature",
-    "ALT": "altitude",
-    "BTN": "between",
-    "ANNC": "announce",
-    "TKOFF": "takeoff",
-    "INFO": "information",
-    "REBCST": "rebroadcast",
-    "THLD": "threshold",
-    "APCH": "approach",
-    # A navaid's (NAV_RMK): where its signal cannot be used.
-    "UNUSBL": "unusable",
-    "BYD": "beyond",
-    "BLW": "below",
-    "ABV": "above",
-    "RESTR": "restricted",
-}
-KEEP = {
-    "CTAF",
-    "UNICOM",
-    "AWOS",
-    "ASOS",
-    "ATIS",
-    "MIRL",
-    "MIRLS",
-    "HIRL",
-    "LIRL",
-    "REIL",
-    "REILS",
-    "PAPI",
-    "PAPIS",
-    "VASI",
-    "MALSR",
-    "MALSF",
-    "MALS",
-    "ODALS",
-    "ALSF",
-    "SSALR",
-    "RLLS",
-    "PCL",
-    "FSS",
-    "ATC",
-    "GCO",
-    "AIM",
-    "AGL",
-    "MSL",
-    "VFR",
-    "IFR",
-    "VOR",
-    "DME",
-    "TACAN",
-    "VORTAC",
-    "NDB",
-    "ILS",
-    "GPS",
-    "NOTAM",
-    # The fuel and who sells it, as the pump and the sign say: 100LL's
-    # letters, the FBO.
-    "LL",
-    "FBO",
-}
 
 # Which of an airport's remarks are about its lights -- its lighting
 # schedule and its beacon's -- and which about the radio: a click count
@@ -175,20 +56,13 @@ def _all_remarks(cache_dir=FAA_CACHE_DIR) -> dict:
         return _remarks_of(str(path), Path(path).stat().st_mtime)
 
 
-def plain(remark: str) -> str:
-    """A remark in plain English: its contractions spelled out, the rest
-    in lower case but for the names a pilot reads and hears as they are,
-    each sentence started with a capital."""
-
-    def word(match: re.Match) -> str:
-        token = match.group(0)
-        if token in WORDS:
-            return WORDS[token]
-        return token if token in KEEP or not token.isalpha() else token.lower()
-
-    text = re.sub(r"[A-Za-z][A-Za-z']*", word, remark.strip().upper())
-    text = re.sub(r"\s+", " ", text)
-    return re.sub(r"(^|[.!?]\s+)([a-z])", lambda m: m.group(1) + m.group(2).upper(), text)
+def read(texts: list[str]) -> list[str]:
+    """Remarks in words, a line each in their order: the engine's
+    remarks_read, the Chart Supplement's Abbreviations and JO 7340.2R's
+    contractions written out, codes, figures and telephone numbers kept."""
+    if not texts:
+        return []
+    return json.loads(wingtip_native.call("remarks_read", json.dumps({"remarks": texts})))["lines"]
 
 
 def airport_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
@@ -198,20 +72,20 @@ def airport_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
     `light_notes`, what the engine could not read, said as written
     (lighting_read: the Chart Supplement legend, AIM 2-1); `radio`, every
     other remark that counts mic clicks (the weather read out on the
-    CTAF, a radio check) in plain English (`plain`); and `standard_keying`,
+    CTAF, a radio check) in words (`read`); and `standard_keying`,
     where a light is the pilot's and the remarks give no count of clicks:
     AIM 2-1-8's (Pilot Control of Airport Lighting) 7, 5 and 3 apply."""
     remarks = _all_remarks(cache_dir).get(faa_id.strip().upper(), [])
     lighting = [text for column, text, _ in remarks if column == LIGHTS]
     beacon = [text for column, text, _ in remarks if column == BEACON]
     radio = [text for column, text, _ in remarks if column not in (LIGHTS, BEACON) and _CLICKS.search(text.upper())]
-    read = json.loads(wingtip_native.call("lighting_read", json.dumps({"lighting": lighting, "beacon": beacon})))
+    lit = json.loads(wingtip_native.call("lighting_read", json.dumps({"lighting": lighting, "beacon": beacon})))
     return {
         "lighting": lighting + beacon,
-        "lights": read["systems"],
-        "light_notes": read["notes"],
-        "radio": [plain(t) for t in radio],
-        "standard_keying": read["standard_keying"],
+        "lights": lit["systems"],
+        "light_notes": lit["notes"],
+        "radio": read(radio),
+        "standard_keying": lit["standard_keying"],
     }
 
 
@@ -238,8 +112,8 @@ def service_notes(faa_id: str, cache_dir=FAA_CACHE_DIR) -> dict:
             ground.append(text)
         elif column == "FUEL_TYPE" or _FUEL.search(upper):
             fuel.append(text)
-    read = json.loads(wingtip_native.call("remarks_read", json.dumps({"remarks": fuel + ground})))["lines"]
-    return {"fuel": read[: len(fuel)], "fuel_as_written": fuel, "ground": read[len(fuel) :], "courtesy_car": bool(ground)}
+    lines = read(fuel + ground)
+    return {"fuel": lines[: len(fuel)], "fuel_as_written": fuel, "ground": lines[len(fuel) :], "courtesy_car": bool(ground)}
 
 
 # Which part of a runway is turf, where the remarks say: the Chart

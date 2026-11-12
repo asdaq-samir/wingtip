@@ -61,5 +61,6 @@
     <string name="flow_wind_reading">%1$03d° %2$d kt</string>
     <string name="flow_no_ceiling">No ceiling</string>
     <string name="flow_none">None</string>
+    <string name="flow_reading_failed">The value there couldn\'t be worked out.</string>
     <string name="flow_freezing_surface">Freezing at the surface</string>
 </resources>

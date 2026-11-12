@@ -135,7 +135,7 @@ test(
     await field.fill("madison");
     await card.getByTestId("nearest-from-option").filter({ hasText: "Madison, WI" }).click();
     await expect(card).toContainText("Near Madison, WI");
-    await expect(page).toHaveURL(/[?&]nearAt=43\.0849%2C-89\.3888/);
+    await expect(page).toHaveURL(/[?&]nearAt=43\.0849(%2C|,)-89\.3888/);
     await expect(card.getByTestId("nearest-airport")).toContainText("KMSN");
     expect(asked).toContain("43.1,-89.4");
 

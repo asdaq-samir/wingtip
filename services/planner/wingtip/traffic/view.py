@@ -7,7 +7,8 @@ import numpy as np
 
 from .. import weather
 from ..engine import ask as engine
-from .common import TrafficUnavailable, _LOCK, _NM_PER_DEG, _clock
+from ..geo import distance_nm
+from .common import TrafficUnavailable, _LOCK, _clock
 from .adsb_lol import ADSB_LOL_SOURCE, MAX_RADIUS_NM, _FROM_ADSBX, _REGIONS, _covering, _region, _region_answer
 from .adsbx import ADSBX_SOURCE, _adsbx
 from .radar import _elsewhere_near, looked_at
@@ -52,9 +53,7 @@ def near(lat: float, lon: float, radius_nm: float) -> dict:
     if planes:
         lats = np.array([p["lat"] for p in planes])
         lons = np.array([p["lon"] for p in planes])
-        # Flat-earth miles: within 165 the error is a mile or two, at the
-        # edge of a view the size of a state.
-        nm = np.hypot((lats - lat) * _NM_PER_DEG, (lons - lon) * _NM_PER_DEG * np.cos(np.radians(lat)))
+        nm = distance_nm(lat, lon, lats, lons)
         planes = [p for p, d in zip(planes, nm) if d <= radius]
     # An airplane whose card is open and that adsb.lol does not hear (a UAT
     # airplane ADS-R rebroadcasts), from its own asks: on the map with the

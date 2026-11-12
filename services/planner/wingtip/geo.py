@@ -41,6 +41,8 @@ from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.spatial import KDTree
 
+from .units import NM_PER_DEG_LAT
+
 EARTH_RADIUS_NM = 3440.065
 
 # A sphere (f=0), sized in nautical miles, so inv() returns nautical
@@ -181,6 +183,51 @@ def destination_point(lat: float, lon: float, bearing: float, distance_nm_: floa
     return lat2, lon2
 
 
+def great_circle_points(start: tuple, end: tuple, count: int) -> tuple:
+    """`count` points (at least two) evenly along the great circle from
+    start to end, both ends included, as (lats, lons) arrays: PROJ's own
+    intermediate points. Two points that coincide give `count` of it."""
+    got = _GEOD.inv_intermediate(
+        start[1], start[0], end[1], end[0], npts=max(2, count), initial_idx=0, terminus_idx=0, return_back_azimuth=False
+    )
+    return np.asarray(got.lats), np.asarray(got.lons)
+
+
+def path_points(path: list, step_nm: float) -> tuple:
+    """The route flown through `path` [(lat, lon), ...] as (lats, lons),
+    each leg along its great circle in steps of at most `step_nm`."""
+    lats, lons = [np.array([path[0][0]])], [np.array([path[0][1]])]
+    for a, b in zip(path, path[1:]):
+        la, lo = great_circle_points(a, b, int(math.ceil(distance_nm(*a, *b) / step_nm)) + 1)
+        lats.append(la[1:])
+        lons.append(lo[1:])
+    return np.concatenate(lats), np.concatenate(lons)
+
+
+def shape_distance_nm(geometry, other, centre: tuple) -> float:
+    """The distance between two shapely geometries in (lon, lat), nm, 0
+    where they meet: measured on PROJ's azimuthal equidistant projection
+    of this sphere about `centre` (lat, lon), put in or beside one of them.
+    Distances from the centre are true on it and every other is drawn a
+    little long, never short (the projection's scale is 1 along a radius
+    and grows across one), by under 0.1% within 250 nm of the centre
+    (x / sin x, x the distance over the radius). An
+    edge is drawn straight there, so a long leg wants its points close
+    (path_points). It replaces buffers sized in degrees, which a degree of
+    longitude's change with latitude left too narrow at the poleward end."""
+    import shapely
+    from pyproj import Proj
+
+    # The sphere's radius in nautical miles, as _GEOD has it, so the
+    # projection's units, and the distance, are nautical miles.
+    aeqd = Proj(proj="aeqd", lat_0=centre[0], lon_0=centre[1], R=EARTH_RADIUS_NM)
+
+    def flat(coords: np.ndarray) -> np.ndarray:
+        return np.column_stack(aeqd(coords[:, 0], coords[:, 1]))
+
+    return float(shapely.distance(shapely.transform(geometry, flat), shapely.transform(other, flat)))
+
+
 def corridor_bbox(route_start: tuple, route_end: tuple, buffer_nm: float) -> tuple:
     """Padded (min_lat, min_lon, max_lat, max_lon) bounding box around the
     route, generous enough for an Overpass query. The real corridor width
@@ -188,7 +235,7 @@ def corridor_bbox(route_start: tuple, route_end: tuple, buffer_nm: float) -> tup
     """
     lats = [route_start[0], route_end[0]]
     lons = [route_start[1], route_end[1]]
-    pad_lat = buffer_nm / 60.0  # a nautical mile a minute of latitude
+    pad_lat = buffer_nm / NM_PER_DEG_LAT
     # A minute of longitude is cos(latitude) of a mile: the same degrees
     # east and west were 4.95 nm of a 7 nm pad at 45 N, and the obstacles
     # 4.7-5 nm abeam a north-south leg fell out of the terrain floor's 5 nm
@@ -197,6 +244,19 @@ def corridor_bbox(route_start: tuple, route_end: tuple, buffer_nm: float) -> tup
     widest = min(89.0, max(abs(route_start[0]), abs(route_end[0])) + pad_lat)
     pad_lon = pad_lat / max(0.05, math.cos(math.radians(widest)))
     return (min(lats) - pad_lat, min(lons) - pad_lon, max(lats) + pad_lat, max(lons) + pad_lon)
+
+
+def box_around(lat: float, lon: float, radius_nm: float) -> tuple[float, float, float, float]:
+    """(south, west, north, east), degrees, of a box holding what lies
+    within `radius_nm` of a point: a search's first cut, the distance
+    measured within it after. A degree of latitude taken as 60 nm
+    (wingtip.units.NM_PER_DEG_LAT); a degree of longitude as cos(latitude)
+    of that at the box's poleward edge, where it is shortest, as
+    corridor_bbox above has it for a route."""
+    pad_lat = radius_nm / NM_PER_DEG_LAT
+    widest = min(89.0, abs(lat) + pad_lat)
+    pad_lon = pad_lat / max(0.05, math.cos(math.radians(widest)))
+    return lat - pad_lat, lon - pad_lon, lat + pad_lat, lon + pad_lon
 
 
 # --- Web Mercator tiles ---

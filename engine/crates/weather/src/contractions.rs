@@ -98,7 +98,8 @@ pub fn lighting_written(word: &str) -> Option<&'static str> {
 }
 
 /// An airport's other remarks' own contractions (remarks_read: its fuel's,
-/// its FBO's, its courtesy car's), a line each as TABLE, read before it.
+/// its FBO's, its courtesy car's, its radio's) and a navaid's, a line each
+/// as TABLE, read before it.
 /// The remarks are the Chart Supplement's text, so its General Information
 /// "Abbreviations" (NE volume, 3 SEP 2026) come first, then FAA Order JO
 /// 7340.2R's decode (chapter 2, section 1), to which it defers. A
@@ -130,6 +131,19 @@ const REMARKS: &str = concat!(
     "ADNL:additional\n", "WKDAY:weekday\n", "EXCP:except\n", "HNGR:hangar\n", "PSGR:passenger\n", "PAX:passenger\n", "TRNG:training\n",
     // Their past tenses as NASR writes them (UNATNDD's -D, 7340.2R).
     "ATNDD:attended\n", "PRVDD:provided\n", "ARNGD:arranged\n", "RQRD:required\n",
+    // The radio's remarks (APT_RMK's weather read out on the CTAF, "WX
+    // ADZY - CTAF 5 CLICKS") and a navaid's (NAV_RMK, where its signal is
+    // unusable, "VOR UNUSBL 010-030 BYD 20 NM BLW 5000"): 7340.2R's decode,
+    // each of one meaning there; and NASR's own spellings of its RWY,
+    // TKOF and BCST, RY as lighting_read reads it. FT feet, the Chart
+    // Supplement's "ft feet" too; NM, nautical miles, is kept as the
+    // chart writes it.
+    "ADZY:advisory\n", "UNUSBL:unusable\n", "ABV:above\n", "RESTR:restricted\n", "THLD:threshold\n", "ANNC:announce\n",
+    "INDEFLY:indefinitely\n", "RDO:radio\n", "NSTD:non-standard\n", "RY:runway\n", "RYS:runways\n", "TKOFF:takeoff\n",
+    "REBCST:rebroadcast\n", "FT:feet\n",
+    // The Chart Supplement's Abbreviations' "dalgt daylight" and "med
+    // medium", as the lighting remarks read them.
+    "DALGT:daylight\n", "MED:medium\n",
     // Two words read as one where the one alone is not of one meaning:
     // 7340.2R's CLR "clears, or cleared to, or clearance", before CUST
     // (KPWK's "TSNT UTILIZE FBO AFT CLR CUST"); the Chart Supplement's

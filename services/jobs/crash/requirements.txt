@@ -2,3 +2,5 @@
 # statements page. Pinned as wingtip's are; moved on in each wave's end pass.
 -r ../../planner/requirements-wingtip.txt
 beautifulsoup4==4.15.0   # crash.statements: the FAA's statements page (MIT; pure Python, over the standard html.parser)
+us==4.0.0                # crash.places: the states and territories, their postal codes and zones (BSD)
+tzfpy==2.1.2             # crash.places: the IANA zone at a town's point (MIT; Rust, its polygons built in)

@@ -7,6 +7,10 @@ import app.wingtipmaps.android.api.generated.ClearancePlaces
 import app.wingtipmaps.android.atc.AtcListener
 import app.wingtipmaps.android.atc.Heard
 import app.wingtipmaps.android.engine.generated.EngineContract
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -26,11 +30,22 @@ import kotlinx.coroutines.launch
  * against the one filed. Nothing heard changes the plan before Enter the
  * Route, which hands the screen the route to plan (Entry).
  */
+@HiltViewModel(assistedFactory = ClearanceModel.Factory::class)
 class ClearanceModel(
     private val listener: AtcListener?,
     private val rules: ClearanceRules = EngineClearance,
     private val places: suspend (ClearanceAsk) -> ClearancePlaces = ClearancePlanner::places,
 ) : ViewModel() {
+    /** Hilt's, the radio handed in by the page (none where this phone
+     *  hears no speech): the engine's rules and the planner's places. */
+    @AssistedInject
+    constructor(@Assisted listener: AtcListener?, rules: ClearanceRules) : this(listener, rules, ClearancePlanner::places)
+
+    @AssistedFactory
+    interface Factory {
+        fun create(listener: AtcListener?): ClearanceModel
+    }
+
     /** The flight the clearance is for: its route as planned, and the
      *  points to look near ("lat,lon;lat,lon"). */
     data class Flight(val dep: String = "", val stops: List<String> = emptyList(), val dest: String = "", val near: String = "")

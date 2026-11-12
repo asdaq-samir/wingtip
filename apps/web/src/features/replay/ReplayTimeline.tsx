@@ -18,11 +18,6 @@ import { speedName, useReplay } from "./useReplay";
  * The moment in Zulu, as reports give it, and on this device's clock. The
  * gaps -- no report heard -- shaded on the track, so a scrub into one is
  * seen to be one.
- *
- * TODO(claude/studio): the weather flow's FlowBar (features/weather-flow)
- * to take its Slider and readout from here once its Card rework lands;
- * the dry run's distance scrubber (DryRunControls) too, its x being miles
- * along the course rather than seconds.
  */
 export function ReplayTimeline({
   label,

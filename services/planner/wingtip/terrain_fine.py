@@ -45,7 +45,6 @@ these, or a margin of 300 ft, would make the two agree.
 from __future__ import annotations
 
 import io
-import math
 import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -53,7 +52,7 @@ from pathlib import Path
 import numpy as np
 import requests
 
-from . import elevation, faa_data, ground_grid
+from . import elevation, faa_data, geo, ground_grid
 from .config import REQUEST_HEADERS
 
 #: The finest zoom built and served (terrain_view.MAX_ZOOM).
@@ -81,40 +80,32 @@ def tile_path(x: int, y: int) -> Path:
 
 
 def _tile_of(lat, lon) -> tuple[np.ndarray, np.ndarray]:
-    n = 2**FINE_ZOOM
-    lat = np.radians(np.asarray(lat, dtype=float))
-    x = np.floor((np.asarray(lon, dtype=float) + 180.0) / 360.0 * n).astype(int)
-    y = np.floor((1.0 - np.arcsinh(np.tan(lat)) / np.pi) / 2.0 * n).astype(int)
-    return x, y
+    """The zoom-13 tile each point is in, as (x, y) arrays (geo.tile_xy)."""
+    x, y = geo.tile_xy(np.asarray(lat, dtype=float), np.asarray(lon, dtype=float), FINE_ZOOM)
+    return np.floor(x).astype(int), np.floor(y).astype(int)
 
 
 def _tile_bounds(x: int, y: int) -> tuple[float, float, float, float]:
     """A zoom-13 tile's south, west, north and east, degrees."""
-    n = 2**FINE_ZOOM
-
-    def lat_of(yy: float) -> float:
-        return math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * yy / n))))
-
-    return lat_of(y + 1), x / n * 360 - 180, lat_of(y), (x + 1) / n * 360 - 180
+    north, west = geo.tile_lat_lon(x, y, FINE_ZOOM)
+    south, east = geo.tile_lat_lon(x + 1, y + 1, FINE_ZOOM)
+    return south, west, north, east
 
 
 def airport_tiles(points: list[tuple[float, float]], radius_nm: float = AIRPORT_RADIUS_NM) -> set[tuple[int, int]]:
     """The zoom-13 tiles any part of which is within `radius_nm` of a point:
-    the nearest point of each tile in a point's box measured, on the local
-    flat earth so short a distance is."""
+    the nearest point of each tile in a point's box measured along the
+    great circle (geo.distance_nm)."""
     found: set[tuple[int, int]] = set()
     for lat, lon in points:
-        d_lat = radius_nm / 60.0
-        d_lon = radius_nm / (60.0 * max(0.01, math.cos(math.radians(lat))))
-        (x0, x1), (y1, y0) = _tile_of([lat - d_lat, lat + d_lat], [lon - d_lon, lon + d_lon])
+        south, west, north, east = geo.box_around(lat, lon, radius_nm)
+        (x0, x1), (y1, y0) = _tile_of([south, north], [west, east])
         for x in range(int(x0), int(x1) + 1):
             for y in range(int(y0), int(y1) + 1):
                 south, west, north, east = _tile_bounds(x, y)
                 near_lat = min(max(lat, south), north)
                 near_lon = min(max(lon, west), east)
-                dy = (near_lat - lat) * 60.0
-                dx = (near_lon - lon) * 60.0 * math.cos(math.radians(lat))
-                if math.hypot(dx, dy) <= radius_nm:
+                if geo.distance_nm(lat, lon, near_lat, near_lon) <= radius_nm:
                     found.add((x, y))
     return found
 

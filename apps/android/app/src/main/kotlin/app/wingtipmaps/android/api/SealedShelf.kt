@@ -1,9 +1,9 @@
 package app.wingtipmaps.android.api
 
-import android.content.SharedPreferences
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.Kept
 import java.security.KeyStore
 import java.util.Base64
 import javax.crypto.Cipher
@@ -28,7 +28,8 @@ interface Seal {
 /**
  * The cookies kept sealed (the security audit's L9, 2026-11-10): the
  * session cookie is the pilot's 30-day sign-in, so it is written to the
- * preferences encrypted with a key the Android Keystore holds and never
+ * app's kept store (Kept, the DataStore the "cookies" preferences moved
+ * to) encrypted with a key the Android Keystore holds and never
  * lets out (KeystoreSeal), not as plain text. androidx.security's
  * EncryptedSharedPreferences is deprecated (security-crypto 1.1.0, "in
  * favour of existing platform APIs and direct use of Android Keystore",
@@ -36,15 +37,18 @@ interface Seal {
  * the platform's own Keystore and Cipher are used. A store kept plain
  * before this is read once, sealed and the plain one removed.
  */
-class SealedShelf(private val prefs: SharedPreferences, private val seal: Seal) : CookieShelf {
+class SealedShelf(private val kept: Kept, private val seal: Seal) : CookieShelf {
     override fun read(): String? {
-        val read = readFrom(prefs.getString(SEALED, null), prefs.getString(PLAIN, null), seal)
+        val read = readFrom(kept[SEALED_KEY], kept[PLAIN_KEY], seal)
         if (read.migrate && read.text != null) write(read.text)
-        if (read.migrate) prefs.edit { remove(PLAIN) }
+        if (read.migrate) kept.edit { it.remove(PLAIN_KEY) }
         return read.text
     }
 
-    override fun write(text: String) = prefs.edit { putString(SEALED, seal.seal(text)) }
+    override fun write(text: String) {
+        val sealed = seal.seal(text)
+        kept.edit { it[SEALED_KEY] = sealed }
+    }
 
     /** What was read, and whether the plain store is to be moved over. */
     data class Read(val text: String?, val migrate: Boolean)
@@ -53,6 +57,8 @@ class SealedShelf(private val prefs: SharedPreferences, private val seal: Seal) 
         /** The plain store's key, before L9; the sealed one's. */
         const val PLAIN = "cookies"
         const val SEALED = "cookies.sealed"
+        private val PLAIN_KEY = stringPreferencesKey(PLAIN)
+        private val SEALED_KEY = stringPreferencesKey(SEALED)
 
         /** The sealed text where there is one (null where it no longer
          *  opens: signed out, never read as plain); else the plain one,

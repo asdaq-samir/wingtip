@@ -156,6 +156,15 @@
             <artifactId>spring-boot-testcontainers</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- ArchUnit (Apache-2.0), the gateway's architecture as tests
+             (ArchitectureTest; CLAUDE.md, "Simplicity rules"): no aviation
+             maths, and the planner reached through PlannerClient. -->
+        <dependency>
+            <groupId>com.tngtech.archunit</groupId>
+            <artifactId>archunit-junit5</artifactId>
+            <version>1.5.1</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>testcontainers-postgresql</artifactId>
@@ -365,7 +374,7 @@
                             <generatorName>spring</generatorName>
                             <modelPackage>app.wingtipmaps.gateway.planner.model</modelPackage>
                             <modelNamePrefix>Planner</modelNamePrefix>
-                            <modelsToGenerate>CheckpointNote,PilotNotes,FeedHealth,FeedState,CurrencyAsk,Currency,LogbookEntry,ExperienceAsk,ExperienceItem,EndorsementsAsk,HeldEndorsement,Endorsements,ReviewCheck,EndorsementKind,EndorsementField,EndorsementFillAsk,EndorsementFilled,InspectionsAsk,VorCheckAsk,Inspections,VorCheck-Output</modelsToGenerate>
+                            <modelsToGenerate>CheckpointNote,PilotNotes,FeedHealth,FeedState,CurrencyAsk,Currency,LogbookEntry,ExperienceAsk,ExperienceItem,EndorsementsAsk,HeldEndorsement,Endorsements,ReviewCheck,EndorsementKind,EndorsementField,EndorsementFillAsk,EndorsementFilled,InspectionsAsk,VorCheckAsk,Inspections,VorCheck-Output,StudioDraft,StudioDraftCaptions,StudioDraftCheck,StudioDraftIdentity,StudioDraftNearest,StudioDraftQuote,StudioDraftSource,StudioDraftWindow,WordsSources,WordsSource</modelsToGenerate>
                             <generateApis>false</generateApis>
                             <generateSupportingFiles>false</generateSupportingFiles>
                             <generateModelTests>false</generateModelTests>

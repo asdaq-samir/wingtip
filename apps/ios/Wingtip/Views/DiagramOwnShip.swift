@@ -7,7 +7,9 @@ import SwiftUI
 /// diagram_graticule and diagram_point; the free d-TPP's diagrams carry
 /// no GeoPDF georeference). PDFKit reads the page's text and where each
 /// label is drawn; the engine does the rest. A diagram with no labels
-/// (KORD's) is shown without the airplane, and says so.
+/// (KORD's) is shown without the airplane, and says so. The page is
+/// PDFKit's own view (DiagramPDFView), vector-sharp at any zoom, own ship
+/// an annotation on it that moves with the page.
 ///
 /// For a pilot's awareness on the ground, not for navigation: the signs,
 /// the markings and ATC's taxi instructions are what count (AC 120-74B;
@@ -22,10 +24,7 @@ struct DiagramOwnShipView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var diagram: DiagramPage?
     @State private var problem: String?
-    @State private var scale: CGFloat = 1
-    @State private var settledScale: CGFloat = 1
-    @State private var offset: CGSize = .zero
-    @State private var settledOffset: CGSize = .zero
+    @State private var handle = DiagramPDFHandle()
     /// The white disc behind the airplane, growing with its glyph's text size.
     @ScaledMetric(relativeTo: .title2) private var disc = 30.0
 
@@ -88,56 +87,25 @@ struct DiagramOwnShipView: View {
     }
 
     private func page(_ diagram: DiagramPage, fix: OwnShip.Fix?) -> some View {
-        GeometryReader { geo in
-            let fitted = Self.fitted(diagram.size, in: geo.size)
-            ZStack(alignment: .topLeading) {
-                Image(uiImage: diagram.image)
-                    .resizable()
-                    .frame(width: fitted.width, height: fitted.height)
-                if let fix, let at = try? diagram.place(fix), at.onPage {
-                    let k = fitted.width / diagram.size.width
-                    Image(systemName: fix.trackDeg == nil ? "circle.fill" : "location.north.fill")
-                        .font(WingtipType.card)
-                        .foregroundStyle(Color(uiColor: WingtipColor.Chart.mapBlue))
-                        .background(Circle().fill(.white).frame(width: disc, height: disc))
-                        .rotationEffect(.degrees((diagram.graticule?.northDeg ?? 0) + (fix.trackDeg ?? 0)))
-                        .position(x: at.x * k, y: at.y * k)
-                        .accessibilityLabel(fix.trackDeg.map { "You are here, tracking \(SpokenFigures.degrees($0)) true" } ?? "You are here")
-                }
-            }
-            .frame(width: fitted.width, height: fitted.height)
-            .scaleEffect(scale)
-            .offset(offset)
-            .frame(width: geo.size.width, height: geo.size.height)
-            .contentShape(Rectangle())
-            // A pinch and a drag to read it close, as any picture.
-            .gesture(
-                MagnifyGesture()
-                    .onChanged { scale = max(1, min(8, settledScale * $0.magnification)) }
-                    .onEnded { _ in settledScale = scale }
-                    .simultaneously(with: DragGesture()
-                        .onChanged { offset = CGSize(width: settledOffset.width + $0.translation.width, height: settledOffset.height + $0.translation.height) }
-                        .onEnded { _ in settledOffset = offset }))
-            .onTapGesture(count: 2) {
-                scale = 1; settledScale = 1; offset = .zero; settledOffset = .zero
-            }
-            // The pinch and the double tap for VoiceOver's three-finger
-            // zoom and Switch Control, which cannot pinch or drag: the
-            // page one element, where the airplane is its value.
+        DiagramPDFView(document: diagram.document, mark: mark(diagram, fix: fix), disc: disc, handle: handle)
+            // VoiceOver's three-finger zoom and Switch Control, which
+            // cannot pinch: the page one element, where the airplane is
+            // its value.
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Airport diagram")
             .accessibilityValue(youAreHere(diagram, fix: fix))
             .accessibilityAddTraits(.isImage)
-            .accessibilityZoomAction { zoom in
-                scale = max(1, min(8, scale * (zoom.direction == .zoomIn ? 1.5 : 1 / 1.5)))
-                settledScale = scale
-                if scale == 1 { offset = .zero; settledOffset = .zero }
-            }
-            .accessibilityAction(named: "Fit the page") {
-                scale = 1; settledScale = 1; offset = .zero; settledOffset = .zero
-            }
-        }
-        .background(Color.white)
+            .accessibilityZoomAction { zoom in handle.zoom(in: zoom.direction == .zoomIn) }
+            .accessibilityAction(named: "Fit the page") { handle.fit() }
+    }
+
+    /// Own ship on the page where the engine places it, turned by the
+    /// page's north and the track; none off the page or unplaced.
+    private func mark(_ diagram: DiagramPage, fix: OwnShip.Fix?) -> DiagramOwnShipMark? {
+        guard let fix, let at = try? diagram.place(fix), at.onPage else { return nil }
+        return DiagramOwnShipMark(at: diagram.pagePoint(x: at.x, y: at.y),
+                                  turnDeg: (diagram.graticule?.northDeg ?? 0) + (fix.trackDeg ?? 0),
+                                  tracking: fix.trackDeg != nil)
     }
 
     /// Where the airplane is on the page, as VoiceOver says it.
@@ -145,13 +113,6 @@ struct DiagramOwnShipView: View {
         // Where the engine cannot place it, the note under the page says why.
         guard let fix, let at = try? diagram.place(fix), at.onPage else { return "You are not on this diagram" }
         return fix.trackDeg.map { "You are here, tracking \(Format.spokenHeadingTrue($0))" } ?? "You are here"
-    }
-
-    /// The page's size fitted into the room, its shape kept.
-    static func fitted(_ page: CGSize, in room: CGSize) -> CGSize {
-        guard page.width > 0, page.height > 0 else { return .zero }
-        let k = min(room.width / page.width, room.height / page.height)
-        return CGSize(width: page.width * k, height: page.height * k)
     }
 
     private func load() async {

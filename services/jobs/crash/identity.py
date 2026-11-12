@@ -39,7 +39,7 @@ def report_of(lead: dict) -> dict | None:
         "n_number": lead.get("n_number"),
         "date": lead["local_date"],
         "time": lead.get("local_time"),
-        "utc_offsets_min": places.offsets_min(lead.get("state"), lead["local_date"]),
+        "utc_offsets_min": places.offsets_min(lead.get("state"), lead["local_date"], (lat, lon)),
         "lat": lat,
         "lon": lon,
         "place": place,

@@ -99,9 +99,15 @@ final class CardScrollTests: XCTestCase {
             app.navigationBars["Clearance"].swipeDown(velocity: .fast)
             XCTAssertTrue(card.exists, "a swipe threw the edit away at \(size.name)")
             app.navigationBars.buttons["Cancel"].tap()
+            let asked = app.staticTexts["Discard your changes?"]
+            XCTAssertTrue(asked.waitForExistence(timeout: 10), "Cancel did not ask at \(size.name)")
+            XCTAssertTrue(app.buttons["Discard Changes"].exists, "the question has no Discard Changes at \(size.name)")
+            // Keep Editing, the dialog's cancel: a button where the dialog
+            // is an action sheet, and a tap outside it where iOS 26 shows
+            // it as a popover from Cancel, which leaves its cancel out.
             let keep = app.buttons["Keep Editing"]
-            XCTAssertTrue(keep.waitForExistence(timeout: 10), "Cancel did not ask at \(size.name)")
-            keep.tap()
+            if keep.exists { keep.tap() } else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)).tap() }
+            XCTAssertTrue(asked.waitForNonExistence(timeout: 5), "Keep Editing did not put the question away at \(size.name)")
             XCTAssertTrue(card.exists, "Keep Editing put the form away at \(size.name)")
             XCTAssertTrue((field.value as? String ?? "").contains("KOSH"), "Keep Editing lost the words at \(size.name)")
             app.terminate()

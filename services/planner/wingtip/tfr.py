@@ -9,24 +9,25 @@ neither the map nor a briefing waits on tfr.faa.gov (#535).
 
 from __future__ import annotations
 
-import math
 import time
 from datetime import datetime, timezone
 
-from shapely.geometry import LineString, Point, shape
+import numpy as np
+from shapely.geometry import LineString, Point, box, shape
 from shapely.ops import nearest_points
 
 from . import weather_store
 from .engine import ask as engine
-from .geo import along_track_distance_nm
+from .geo import along_track_distance_nm, box_around, corridor_bbox, path_points, shape_distance_nm
 
 #: How often the service reads the shapes again: the site updates them
 #: every few minutes. A list older than this was kept through an outage.
 SHAPES_TTL_S = 10 * 60
 #: How near the route a TFR is listed with it: a pilot plans round one,
-#: not along its edge.
+#: not along its edge. The app's own margin, no FAA figure.
 NEAR_NM = 5.0
-_NM_PER_DEG = 60.0
+#: How far apart the route's points are measured from a TFR, nm.
+STEP_NM = 2.0
 
 
 class TfrUnavailable(RuntimeError):
@@ -106,12 +107,14 @@ def along_route(path: list, start: datetime, end: datetime, near_nm: float = NEA
     lon)], in force at some time from `start` to `end`, in along-route
     order: each of all_tfrs()'s, with "along_track_nm", how far along it
     is, "crosses", whether the route goes through it, and "active_now"."""
-    line = LineString([(lon, lat) for lat, lon in path])
-    # Degrees of buffer, as many as `near_nm` of longitude at the route's
-    # latitude, which are the more: a little generous north and south.
-    mid_lat = sum(lat for lat, _ in path) / len(path)
-    buffer_deg = near_nm / _NM_PER_DEG / max(0.2, math.cos(math.radians(mid_lat)))
-    near = line.buffer(buffer_deg)
+    # The route as it is flown, each leg along its great circle, its
+    # points close enough that a straight edge between them on the flat
+    # projection is the course (geo.shape_distance_nm).
+    lats, lons = path_points(path, STEP_NM)
+    line = LineString(np.column_stack([lons, lats]))
+    # A first cut by the route's box, padded by near_nm as a degree of
+    # longitude is at its poleward edge, where it is shortest: never short.
+    south, west, north, east = corridor_bbox((lats.min(), lons.min()), (lats.max(), lons.max()), near_nm)
     now = datetime.now(timezone.utc)
     found = []
     for tfr in all_tfrs():
@@ -119,14 +122,27 @@ def along_route(path: list, start: datetime, end: datetime, near_nm: float = NEA
             geometry = shape(tfr["geometry"])
         except (KeyError, TypeError, ValueError):
             continue
-        if not near.intersects(geometry) or not in_force(tfr, start, end):
+        g_west, g_south, g_east, g_north = geometry.bounds
+        if g_east < west or g_west > east or g_north < south or g_south > north:
+            continue
+        # The route within the TFR's own box, padded the same way: what
+        # lies outside it is further than near_nm, and is not projected.
+        reach = corridor_bbox((g_south, g_west), (g_north, g_east), near_nm)
+        nearby = line.intersection(box(reach[1], reach[0], reach[3], reach[2]))
+        if nearby.is_empty:
             continue
         point = geometry.representative_point()
+        # Measured, not buffered in degrees: a buffer sized at the route's
+        # middle latitude reached 4.1 of 5 nm east and west at 49 N on a
+        # route from 25 N (cos 49 / cos 37, the stock audit's bug 2).
+        apart = shape_distance_nm(nearby, geometry, (point.y, point.x))
+        if apart > near_nm or not in_force(tfr, start, end):
+            continue
         found.append(
             {
                 **tfr,
                 "along_track_nm": round(along_track_distance_nm(point.y, point.x, path[0], path[-1]), 1),
-                "crosses": line.intersects(geometry),
+                "crosses": apart == 0.0,
                 "active_now": in_force(tfr, now, now),
             }
         )
@@ -141,8 +157,7 @@ def near_point(lat: float, lon: float, start: datetime, end: datetime, near_nm: 
     field ({"lat", "lon"}), which the engine says how far and which way
     (tfr_read)."""
     point = Point(lon, lat)
-    buffer_deg = near_nm / _NM_PER_DEG / max(0.2, math.cos(math.radians(lat)))
-    near = point.buffer(buffer_deg)
+    south, west, north, east = box_around(lat, lon, near_nm)
     now = datetime.now(timezone.utc)
     found = []
     for tfr in all_tfrs():
@@ -150,7 +165,10 @@ def near_point(lat: float, lon: float, start: datetime, end: datetime, near_nm: 
             geometry = shape(tfr["geometry"])
         except (KeyError, TypeError, ValueError):
             continue
-        if near.intersects(geometry) and in_force(tfr, start, end):
+        g_west, g_south, g_east, g_north = geometry.bounds
+        if g_east < west or g_west > east or g_north < south or g_south > north:
+            continue
+        if shape_distance_nm(point, geometry, (lat, lon)) <= near_nm and in_force(tfr, start, end):
             edge = nearest_points(geometry, point)[0]
             found.append(
                 {**tfr, "crosses": geometry.contains(point), "active_now": in_force(tfr, now, now), "edge": {"lat": edge.y, "lon": edge.x}}

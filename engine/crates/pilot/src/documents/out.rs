@@ -45,17 +45,10 @@ pub fn figure(v: f64) -> String {
     let text = if whole { format!("{}", r as i64) } else { format!("{r:.1}") };
     // Thousands separated, as the app writes altitudes and weights.
     let (int, frac) = text.split_once('.').map_or((text.as_str(), None), |(i, f)| (i, Some(f)));
-    let (sign, digits) = int.strip_prefix('-').map_or(("", int), |d| ("-", d));
-    let mut grouped = String::new();
-    for (i, c) in digits.chars().enumerate() {
-        if i > 0 && (digits.len() - i) % 3 == 0 {
-            grouped.push(',');
-        }
-        grouped.push(c);
-    }
+    let grouped = crate::text::grouped(int);
     match frac {
-        Some(f) => format!("{sign}{grouped}.{f}"),
-        None => format!("{sign}{grouped}"),
+        Some(f) => format!("{grouped}.{f}"),
+        None => grouped,
     }
 }
 

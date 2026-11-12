@@ -44,7 +44,6 @@ import requests
 import wingtip_native
 from wingtip import weather_store
 from wingtip.config import REQUEST_HEADERS as HEADERS
-from wingtip.units import M_TO_FT
 
 log = logging.getLogger(__name__)
 
@@ -357,28 +356,29 @@ def _read_grib(body: bytes) -> dict:
     return fields
 
 
+#: The engine's name for each GRIB2 field a level is read from.
+_GRIB_KEYS = (("height_m", "HGT"), ("temp_k", "TMP"), ("u_m_s", "UGRD"), ("v_m_s", "VGRD"))
+
+
 def _at_stations(fields: dict) -> dict:
     """Each station's levels from the grid point nearest it: {ident:
     {altitude_ft: {"wind_dir_true_deg", "wind_speed_kt", "temp_c"}}}, each
     level at its own geopotential height, which the planner's altitude
-    interpolation takes as it did the FB's columns."""
+    interpolation takes as it did the FB's columns. The feet, knots,
+    degrees Celsius and the wind from its parts are the engine's
+    (model_wind_levels); this rounds them as the store keeps them."""
     out = {}
     for code, (lat, lon) in STATIONS.items():
-        levels = {}
-        for hpa in LEVELS_HPA:
-            height_m = _at(fields[("HGT", hpa)], lat, lon)
-            temp_k = _at(fields[("TMP", hpa)], lat, lon)
-            u, v = _at(fields[("UGRD", hpa)], lat, lon), _at(fields[("VGRD", hpa)], lat, lon)
-            if None in (height_m, temp_k, u, v):
-                continue
-            speed_kt = math.hypot(u, v) * 1.943844  # m/s to kt
-            # Where the wind blows from, true: u, v are toward east, north.
-            direction = (math.degrees(math.atan2(-u, -v)) + 360) % 360
-            levels[int(round(height_m * M_TO_FT))] = {
-                "wind_dir_true_deg": round(direction),
-                "wind_speed_kt": round(speed_kt),
-                "temp_c": round(temp_k - 273.15),
+        grib = [{key: _at(fields[(var, hpa)], lat, lon) for key, var in _GRIB_KEYS} for hpa in LEVELS_HPA]
+        read = json.loads(wingtip_native.call("model_wind_levels", json.dumps({"levels": grib})))
+        levels = {
+            int(round(level["altitude_ft"])): {
+                "wind_dir_true_deg": round(level["wind_dir_true_deg"]),
+                "wind_speed_kt": round(level["wind_speed_kt"]),
+                "temp_c": round(level["temp_c"]),
             }
+            for level in read
+        }
         if levels:
             out[str(code)] = levels
     return out

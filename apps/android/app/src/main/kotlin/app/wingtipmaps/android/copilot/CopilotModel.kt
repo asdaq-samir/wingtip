@@ -2,16 +2,19 @@ package app.wingtipmaps.android.copilot
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.AheadAlert
 import app.wingtipmaps.android.api.generated.CopilotAround
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import kotlin.math.max
 
 /** One message of the copilot's, the engine's. */
@@ -26,9 +29,10 @@ typealias CopilotMessage = EngineContract.CopilotMessage
  * for it (Copilot: Spoken). Nothing is refused or held back from the
  * pilot: the engine warns, the pilot decides (decision 0008).
  */
-class CopilotModel(
-    private val source: CopilotSource = PlannerCopilot,
-    private val rules: CopilotRules = EngineCopilot,
+@HiltViewModel
+class CopilotModel @Inject constructor(
+    private val source: CopilotSource,
+    private val rules: CopilotRules,
 ) : ViewModel() {
     private val _message = MutableStateFlow<CopilotMessage?>(null)
     val message: StateFlow<CopilotMessage?> = _message.asStateFlow()
@@ -51,7 +55,7 @@ class CopilotModel(
      */
     fun look(
         mode: CopilotMode, flying: Boolean, fix: OwnShip.Fix?, flight: CopilotFlight?, ahead: List<AheadAlert>, voice: CopilotVoice?,
-        minimums: EngineContract.CopilotWatchInputMinimums? = null, nowMs: Long = System.currentTimeMillis(),
+        minimums: EngineContract.CopilotWatchInputMinimums? = null, nowMs: Long = AppClock.nowMs(),
     ) {
         if (mode == CopilotMode.OFF || !flying || fix == null || flight == null) {
             reset()

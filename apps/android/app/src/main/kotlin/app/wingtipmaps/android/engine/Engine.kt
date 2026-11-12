@@ -56,7 +56,7 @@ object Engine {
      *  absent from the JVM's unit tests, where nothing is logged. */
     @PublishedApi
     internal fun failed(name: String, error: Throwable) {
-        runCatching { android.util.Log.w("engine", "$name failed: ${error.message}") }
+        val _ = runCatching { android.util.Log.w("engine", "$name failed: ${error.message}") }
     }
 }
 

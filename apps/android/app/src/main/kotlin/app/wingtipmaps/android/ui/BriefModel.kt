@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.FigureKey
@@ -16,6 +17,7 @@ import app.wingtipmaps.android.ready.ReadyFacts
 import app.wingtipmaps.android.strip.Finding
 import app.wingtipmaps.android.strip.GlanceAction
 import app.wingtipmaps.android.strip.Verdict
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * The Brief's Go / No-Go for the route on the page: the planner's POST
@@ -32,7 +35,8 @@ import kotlinx.coroutines.launch
  * at most three of its findings that need doing are the head's actions
  * (the web's BriefGlance, decision 0012: verdict first, three lines).
  */
-class BriefModel : ViewModel() {
+@HiltViewModel
+class BriefModel @Inject constructor() : ViewModel() {
     data class State(
         /** The route the brief is of, so a stale one is never shown. */
         val route: String? = null,
@@ -96,7 +100,7 @@ class BriefModel : ViewModel() {
         items = answer.items,
         risk = answer.risk?.line,
         problem = null,
-        fetchedAtMs = System.currentTimeMillis(),
+        fetchedAtMs = AppClock.nowMs(),
     )
 
     companion object {

@@ -18,8 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.ai.AiSources
@@ -157,7 +157,7 @@ private fun cardPictures(place: AirportPlace, state: AirportModel.State): List<C
     val aerial = stringResource(R.string.picture_aerial)
     val ground = stringResource(R.string.picture_ground)
     val chart = stringResource(R.string.picture_chart)
-    val charts: Charts = viewModel()
+    val charts: Charts = hiltViewModel()
     val info by charts.info.collectAsStateWithLifecycle()
     val photos = state.photos
     if (photos != null) {

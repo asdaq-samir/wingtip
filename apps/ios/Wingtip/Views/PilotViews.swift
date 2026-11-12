@@ -64,7 +64,6 @@ struct FlightsView: View {
             }
         }
         .task(id: session.signedIn) { await model.load() }
-        .sheet(item: $model.sendingLink) { ActivityView(items: [$0.url]).presentationDetents([.medium, .large]) }
         // Left with deletes still to undo: they are sent, and their Undo goes.
         .onDisappear {
             undoManager?.forget(model)
@@ -76,20 +75,28 @@ struct FlightsView: View {
         Button("Edit", systemImage: "pencil") { model.edit(flight) }
     }
 
-    /// Share… by link, the N-number with it only where the pilot picks so;
-    /// Stop Sharing once shared, which ends the link for everyone.
+    /// Share… by link, the N-number with it only where the pilot picks so:
+    /// the system's ShareLink, the gateway making the link when the share
+    /// sheet asks for it (SharedLink). Stop Sharing once shared, which ends
+    /// the link for everyone.
     @ViewBuilder private func shareButtons(_ flight: SavedFlight) -> some View {
+        let share = Label("Share…", systemImage: "square.and.arrow.up")
         if let tail = flight.aircraftTailNumber {
             Menu {
-                Button("Share Link") { Task { await model.share(flight, includeTail: false) } }
-                Button("Share Link with \(tail)") { Task { await model.share(flight, includeTail: true) } }
-            } label: { Label("Share…", systemImage: "square.and.arrow.up") }
+                shareLink(flight, includeTail: false) { Text("Share Link") }
+                shareLink(flight, includeTail: true) { Text("Share Link with \(tail)") }
+            } label: { share }
         } else {
-            Button("Share…", systemImage: "square.and.arrow.up") { Task { await model.share(flight, includeTail: false) } }
+            shareLink(flight, includeTail: false) { share }
         }
         if flight.share != nil {
             Button("Stop Sharing", systemImage: "xmark.circle") { Task { await model.stopSharing(flight) } }
         }
+    }
+
+    private func shareLink(_ flight: SavedFlight, includeTail: Bool, @ViewBuilder label: () -> some View) -> some View {
+        ShareLink(item: SharedLink { [model] in try await model.link(flight, includeTail: includeTail) },
+                  preview: SharePreview(SavedFlightsModel.title(flight)), label: label)
     }
 
     private func flownTrack(_ flight: SavedFlight) -> some View {

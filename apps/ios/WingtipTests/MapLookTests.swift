@@ -158,17 +158,14 @@ struct MapLookTests {
         #expect(AirspaceTab.place([ring], centre: centre, in: away) == nil)
     }
 
-    @Test func aSpecialUseTabWritesItsLimitsAsForeFlightDoes() throws {
-        // Brady North and Brady Low, as the engine places them (sua_tab).
-        #expect(SpecialUseTab.limit(3600, ref: "MSL") == "3600")
-        #expect(SpecialUseTab.limit(18000, ref: "FL") == "FL180")
-        #expect(SpecialUseTab.limit(500, ref: "AGL") == "500AGL")
-        #expect(SpecialUseTab.limit(0, ref: "SFC") == "SFC" && SpecialUseTab.limit(nil, ref: "UNL") == "UNL")
-        #expect(SpecialUseTab.limit(nil, ref: "MSL") == nil)
-        let tab = ChartMarks.Area.Tab(name: "M-BRADY LOW", floorFt: 500, floorRef: "AGL", ceilingFt: 6000, ceilingRef: "MSL",
-                                      at: [31, -99], angle: 10, side: 1)
-        let area = ChartMarks.Area(type: "MOA", name: "BRADY LOW MOA", floorFt: 500, ceilingFt: 6000, rings: [], label: [31, -99], tab: tab)
-        #expect(SpecialUseTabAnnotation(area)?.text == "M-BRADY LOW:\n500AGL-6000")
+    @Test func aSpecialUseTabShowsTheEnginesWordsAndTurnsUpright() throws {
+        // Brady Low, as the engine writes and places it (sua_tab): the tab
+        // draws its `text` as given (the shared cases are FlowFixturesTests').
+        let tab = ChartMarks.Area.Tab(text: "M-BRADY LOW:\n500AGL-5999", at: [31, -99], angle: 10, side: 1)
+        let area = ChartMarks.Area(type: "MOA", name: "BRADY LOW MOA", floorFt: 500, ceilingFt: 5999, rings: [], label: [31, -99], tab: tab)
+        #expect(SpecialUseTabAnnotation(area)?.text == "M-BRADY LOW:\n500AGL-5999")
+        let empty = ChartMarks.Area.Tab(text: "", at: [31, -99], angle: 10, side: 1)
+        #expect(SpecialUseTabAnnotation(ChartMarks.Area(type: "MOA", name: "X", floorFt: nil, ceilingFt: nil, rings: [], label: [31, -99], tab: empty)) == nil)
         // Turned with the map and kept upright, the area then on the
         // text's other side.
         #expect(SpecialUseTab.turn(angle: 10, side: 1, heading: 0) == (10, 1))

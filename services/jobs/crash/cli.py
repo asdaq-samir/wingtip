@@ -1,5 +1,11 @@
-"""The crash-leads job, `python -m crash [poll|parse-check]` (the image's
-entry point):
+"""The crash-leads job, `python -m crash [every|poll|parse-check]` (the
+image's entry point):
+
+- `every`: a run of `poll` now and each CRASH_LEADS_EVERY_MIN (30) after,
+  for as long as the container runs: the job keeps its own schedule
+  (docker-compose.yml's `crash-leads`), so no other service starts it.
+  CRASH_LEADS_AUTO=0 runs none. On AWS a scheduled task runs `poll`
+  instead, when the pipeline moves there (#115).
 
 - `poll` (the default): one run of stages 1 to 3 (docs/STUDIO-PIPELINE.md).
   The FAA's statements page is read once (statements.py) and the
@@ -13,10 +19,10 @@ entry point):
 - `parse-check`: the statements page read and parsed, its crashes printed,
   nothing written: a look at whether the FAA has changed the page.
 
-The planner starts `poll` every CRASH_LEADS_EVERY_MIN (app.crash_leads,
-through the dev-services sidecar), as it starts the charts job; by hand,
-`docker compose run --rm crash-leads`. One request to each source a run,
-with wingtip's plain User-Agent.
+By hand, `docker compose run --rm crash-leads poll`. One request to each
+source a run, with wingtip's plain User-Agent. The gateway mails the
+developers each draft the runs make ready (CrashDraftMail); nothing else
+here is anyone else's.
 """
 
 from __future__ import annotations
@@ -26,13 +32,15 @@ import datetime as dt
 import json
 import logging
 import sys
+import time
 
 import requests
 from wingtip import crash_drafts
+from wingtip.config import get_settings
 from wingtip.engine import ask
 from wingtip.traffic import TrafficUnavailable
 
-from . import identity, kit, notices, ntsb, statements
+from . import identity, kit, notices, statements
 
 log = logging.getLogger(__name__)
 
@@ -69,9 +77,6 @@ def read_sources() -> int:
         for event in recent(events):
             _lead_in(event, notices.SOURCE, path.name)
             seen += 1
-    for event in recent(ntsb.leads()):
-        _lead_in(event, ntsb.SOURCE, None)
-        seen += 1
     return seen
 
 
@@ -130,6 +135,23 @@ def poll() -> int:
     return 0
 
 
+def every() -> int:
+    """`poll` now and each CRASH_LEADS_EVERY_MIN after, never ending; a run
+    that fails is said in the log and the next goes on. None where
+    CRASH_LEADS_AUTO is 0, and the container ends."""
+    settings = get_settings()
+    if not settings.crash_leads_auto:
+        log.info("crash leads: CRASH_LEADS_AUTO is off, no runs")
+        return 0
+    every_s = max(5, settings.crash_leads_every_min) * 60
+    while True:
+        try:
+            poll()
+        except Exception:  # noqa: BLE001 -- the next run tries again
+            log.warning("crash leads: the run failed", exc_info=True)
+        time.sleep(every_s)
+
+
 def parse_check() -> int:
     found = statements.parse(statements.fetch())
     leads = recent(found)
@@ -142,6 +164,6 @@ def parse_check() -> int:
 def entry(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(message)s")
     parser = argparse.ArgumentParser(prog="python -m crash")
-    parser.add_argument("command", nargs="?", default="poll", choices=["poll", "parse-check"])
+    parser.add_argument("command", nargs="?", default="poll", choices=["every", "poll", "parse-check"])
     args = parser.parse_args(argv if argv is not None else sys.argv[1:])
-    return poll() if args.command == "poll" else parse_check()
+    return {"every": every, "poll": poll, "parse-check": parse_check}[args.command]()

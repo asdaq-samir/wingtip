@@ -1,6 +1,6 @@
 import type { ExpressionSpecification } from "maplibre-gl";
 import { callEngine } from "../../../../lib/engine/engine";
-import { M_PER_FT } from "./geometry";
+import { M_PER_FT } from "../../../../lib/geo";
 import { CHART } from "../../../../lib/tokens";
 
 // The chart's caution and warning, three quarters and four fifths strong

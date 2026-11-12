@@ -25,7 +25,7 @@ interface CameraState {
 
 /**
  * Which camera follows the replay, and where the tower stands (null: the
- * flight's first report; TODO(claude/studio): a tap on the map to set it),
+ * flight's first report),
  * and the keyframes a video's camera moves by: one small store, so
  * whatever offers the menu (the Studio's bar, and in time Plan's dry run
  * and past flight) carries none of the 3D code, which loads with the 3D

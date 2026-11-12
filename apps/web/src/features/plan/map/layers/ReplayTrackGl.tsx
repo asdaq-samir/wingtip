@@ -15,10 +15,6 @@ const CASING = { colour: CHART.casing, width: 6, opacity: 0.85 };
  * in runs of reports, none drawn across a gap (a report marked `gap`),
  * where nothing was heard. The Studio's (features/studio), on its own
  * chunk.
- *
- * TODO(claude/studio): PastFlightGl to draw with this once a past flight's
- * points come made ready (features/replay's readyTrack), so a hole in its
- * reports is shown as one on Plan's map too.
  */
 export default function ReplayTrackGl({ id, points }: { id: string; points: ReplayPoint[] }) {
   const runs = useMemo<GlRun[]>(() => {

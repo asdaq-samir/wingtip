@@ -9,7 +9,8 @@ from mcp.server.mcpserver import MCPServer
 from pydantic import Field
 
 from .airport_tools import Ident
-from .calls import METAR_SOURCE, NOTAM_SOURCE, pick, pilot, planner, seg
+from ..generated.planner_calls import airport_notams as notams_of, airport_place
+from .calls import METAR_SOURCE, NOTAM_SOURCE, ident as ident_of, pick, pilot
 from .tool_meta import READS, read_only
 
 WEATHER = ("ident", "name", "elevation_ft", "metar", "nearby_metar", "modelled_weather", "taf", "weather_unavailable")
@@ -27,7 +28,7 @@ def register(server: MCPServer) -> None:
     )
     async def airport_weather(ident: Ident) -> dict[str, Any]:
         pilot()
-        card = await planner("GET", f"/api/airport/{seg(ident)}")
+        card = await airport_place(ident=ident_of(ident))
         sources = [METAR_SOURCE]
         if card.get("modelled_weather"):
             sources.append({"source": "NWS Gridded LAMP (modelled, not observed)"})
@@ -50,7 +51,7 @@ def register(server: MCPServer) -> None:
         ident: Ident, limit: Annotated[int, Field(ge=1, le=50, description="How many to answer, best first, 1 to 50.")] = 15
     ) -> dict[str, Any]:
         pilot()
-        ranked = await planner("GET", f"/api/airport/{seg(ident)}/notams")
+        ranked = await notams_of(ident=ident_of(ident))
         return {
             "notams": ranked["notams"][:limit],
             "total": len(ranked["notams"]),

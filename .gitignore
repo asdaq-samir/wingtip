@@ -14,6 +14,11 @@ services/gateway/target/
 # read them from the checkout.
 .claude/*
 !.claude/skills/
+# And the project's hooks, which carry no permission: the simplicity
+# rules checked on each file an agent writes (scripts/dev/simplicity_hook.py;
+# CLAUDE.md, "Simplicity rules"). A machine's own hooks and permissions stay
+# in .claude/settings.local.json, not committed.
+!.claude/settings.json
 
 # The editor's per-machine state. The only file ever committed here was
 # an empty setting VS Code's Python extension wrote on its own.

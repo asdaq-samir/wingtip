@@ -77,16 +77,15 @@ export const volumesQuery = (box: Box, classes: readonly string[]) =>
 const num = (v: unknown) => (v == null || v === "" || Number.isNaN(Number(v)) ? null : Number(v));
 const text = (v: unknown) => (v == null || v === "" ? null : String(v));
 
-/** A volume's floor and ceiling: the NASR file's ceiling is MSL
- *  (wingtip.airspace_at._ceiling), its floor SFC, AGL or MSL
- *  (wingtip.airspace_at._floor); a special use area's and a TFR's both
- *  carry the data set's own reference. */
+/** A volume's limits, which the engine reads (airspaceHeights): the NASR
+ *  file's ceiling is MSL (wingtip.airspace_at._ceiling), its floor SFC,
+ *  AGL or MSL (wingtip.airspace_at._floor); a special use area carries
+ *  the FAA's own codes and descriptors (wingtip.sua `_area`), a TFR its
+ *  references (tfr_read). */
 function heightsOf(p: Record<string, unknown>): VolumeHeights {
   return {
-    floorFt: num(p.floor_ft),
-    floorRef: text(p.floor_ref),
-    ceilingFt: num(p.ceiling_ft),
-    ceilingRef: p.layer === "airspace" ? "MSL" : text(p.ceiling_ref),
+    floor: { ft: num(p.floor_ft), code: text(p.floor_ref), desc: text(p.floor_desc) },
+    ceiling: { ft: num(p.ceiling_ft), code: p.layer === "airspace" ? "MSL" : text(p.ceiling_ref), desc: text(p.ceiling_desc) },
   };
 }
 
@@ -140,7 +139,6 @@ export function piecesOf(features: Feature[], ground: (at: [number, number]) => 
     const span = volumeSpan(heights, under);
     if (!span) return;
     const kind = kindOf(f.properties);
-    const offGround = (heights.floorFt ?? 0) > 0;
     polygons.forEach((rings, k) => {
       const at = (z: number) => rings.map((r) => r.map((p) => [p[0]!, p[1]!, z]));
       out.push({
@@ -150,7 +148,7 @@ export function piecesOf(features: Feature[], ground: (at: [number, number]) => 
         polygon: at(span.floorM),
         heightM: span.ceilingM - span.floorM,
         topM: span.ceilingM,
-        rims: [...at(span.ceilingM), ...(offGround ? at(span.floorM) : [])],
+        rims: [...at(span.ceilingM), ...(span.surface ? [] : at(span.floorM))],
       });
     });
   });

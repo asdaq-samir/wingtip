@@ -10,7 +10,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -31,7 +31,7 @@ internal fun CopilotFixButtons(message: CopilotMessage, fix: OwnShip.Fix?) {
     val about = AlertFixes.copilot(message)
     if (about.about == null && about.flyTo == null) return
     // The activity's one Plan, as Setup's passenger briefing reads it.
-    val plan: Plan = viewModel()
+    val plan: Plan = hiltViewModel()
     Row(
         Modifier.fillMaxWidth().padding(start = WingtipSpace.Md, end = WingtipSpace.Xs, bottom = WingtipSpace.Sm),
         horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm),

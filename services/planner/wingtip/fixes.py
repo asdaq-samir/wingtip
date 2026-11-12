@@ -297,9 +297,9 @@ _REMARKS: tuple[float, dict[tuple[str, str], list[str]]] | None = None
 
 
 def navaid_remarks(ident: str, kind: str, cache_dir=FAA_CACHE_DIR) -> list[str]:
-    """A navaid's own remarks from NASR's NAV_RMK.csv, in plain English
-    (wingtip.remarks.plain): where its signal is unusable ("VOR unusable
-    072-090 beyond 34 nm below 3000 ft"), the Chart Supplement's service
+    """A navaid's own remarks from NASR's NAV_RMK.csv, in words (the
+    engine's remarks_read, wingtip.remarks.read): where its signal is
+    unusable ("VOR unusable 072-090 beyond 34 NM below 3000 feet"), the Chart Supplement's service
     volume restrictions (AIM 1-1-8). Not its receiver checkpoints'. None
     where the file cannot be had: a card without them."""
     from . import remarks
@@ -312,15 +312,15 @@ def navaid_remarks(ident: str, kind: str, cache_dir=FAA_CACHE_DIR) -> list[str]:
         return []
     with _LOCK:
         if _REMARKS is None or _REMARKS[0] != mtime:
-            table: dict[tuple[str, str], list[str]] = {}
+            rows: list[tuple[tuple[str, str], str]] = []
             with open(path, newline="", encoding="utf-8", errors="replace") as f:
                 for row in csv.DictReader(f):
-                    if (row.get("TAB_NAME") or "").strip() != "NAVIGATION_AID":
-                        continue
-                    key = ((row.get("NAV_ID") or "").strip().upper(), (row.get("NAV_TYPE") or "").strip())
                     text = (row.get("REMARK") or "").strip()
-                    if text:
-                        table.setdefault(key, []).append(remarks.plain(text))
+                    if text and (row.get("TAB_NAME") or "").strip() == "NAVIGATION_AID":
+                        rows.append((((row.get("NAV_ID") or "").strip().upper(), (row.get("NAV_TYPE") or "").strip()), text))
+            table: dict[tuple[str, str], list[str]] = {}
+            for (key, _), line in zip(rows, remarks.read([text for _, text in rows]), strict=True):
+                table.setdefault(key, []).append(line)
             _REMARKS = (mtime, table)
         return list(_REMARKS[1].get((ident.upper(), kind), []))
 
@@ -418,8 +418,6 @@ def frd_near(lat: float, lon: float, max_nm: float = NEAR_NM) -> dict | None:
     dropped. None with no fix within `max_nm`. The choice and the
     figures are the engine's (frd_near, the one route options names its
     turns by); the fixes round the point are read here."""
-    dlat = max_nm / 60
-    dlon = max_nm / (60 * max(0.1, math.cos(math.radians(lat))))
     around = [
         {
             "ident": f["ident"],
@@ -430,7 +428,7 @@ def frd_near(lat: float, lon: float, max_nm: float = NEAR_NM) -> dict | None:
             "kind": f.get("kind") or "",
             "mag_var": f.get("mag_var"),
         }
-        for f in within(lat - dlat, lon - dlon, lat + dlat, lon + dlon)
+        for f in within(*geo.box_around(lat, lon, max_nm))
     ]
     point = engine("frd_near", lat=lat, lon=lon, max_nm=max_nm, now_s=time.time(), fixes=around)
     return None if point is None else {**point, "name": frd_title(point)}

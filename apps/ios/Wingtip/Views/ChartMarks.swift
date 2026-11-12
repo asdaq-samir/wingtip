@@ -29,16 +29,12 @@ final class ChartMarks {
         /// older engine or a pack with no codes, or limits with no figure.
         var tab: Tab?
 
-        /// The tab as the engine places it (crate::sua_tab): its name, its
-        /// limits' figures and references (SFC, AGL, MSL, FL, UNL), its
-        /// point [lat, lon] on the line, its clockwise turn, and the side
-        /// of the text the area is on (1 below, -1 above).
+        /// The tab as the engine writes and places it (crate::sua_tab):
+        /// its words as the map draws them, its point [lat, lon] on the
+        /// line, its clockwise turn, and the side of the text the area is
+        /// on (1 below, -1 above).
         struct Tab: Decodable, Equatable {
-            let name: String
-            let floorFt: Double?
-            let floorRef: String
-            let ceilingFt: Double?
-            let ceilingRef: String
+            let text: String
             let at: [Double]
             let angle: Double
             let side: Double

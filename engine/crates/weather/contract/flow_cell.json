@@ -1,0 +1,76 @@
+{
+  "x-call": "wingtip_weather::flow_sample::call",
+  "description": "The four pixels of a Model Weather picture (the weather service's flow_grid: a latitude-longitude grid, north row first, `bounds` [west, south, east, north] its pixels' outer edges) round a point, by index row by row from the north, north-west, north-east, south-west and south-east of it, and how far east (`fx`) and south (`fy`) of the first the point is, each 0 to 1, for flow_sample to read. Within half a pixel of the edge, the edge's pixels. Null off the picture.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FlowCellInput",
+      "type": "object",
+      "properties": {
+        "bounds": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "[west, south, east, north], degrees."
+        },
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        },
+        "lat": {
+          "type": "number"
+        },
+        "lon": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "bounds",
+        "width",
+        "height",
+        "lat",
+        "lon"
+      ]
+    },
+    "answer": {
+      "title": "FlowCellAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "pixels": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "description": "Four indices: north-west, north-east, south-west, south-east."
+            },
+            "fx": {
+              "type": "number"
+            },
+            "fy": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "pixels",
+            "fx",
+            "fy"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

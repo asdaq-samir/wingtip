@@ -9,7 +9,8 @@ import { useGlLayer, useGlMap } from "../../lib/map/gl/glLayer";
 import { useGlView } from "../../lib/map/gl/useGlView";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 import { prefersReducedMotion } from "../../lib/motion";
-import { WEATHER } from "../../lib/tokens";
+import { rgbOf } from "../../lib/rgb";
+import { MAP, WEATHER } from "../../lib/tokens";
 import { FlowBar } from "./FlowBar";
 import { FlowAirmets } from "./FlowAirmets";
 import { FlowBubble } from "./FlowBubble";
@@ -31,7 +32,7 @@ const RADAR_CREDIT = "Radar: NWS NEXRAD via Iowa Environmental Mesonet";
 /** At this zoom and out, the GFS's world wind streaks run past AWC's box,
  *  across the oceans, as Apple Weather's do zoomed out (the owner,
  *  2026-11-12); closer in, AWC's alone. */
-const WORLD_ZOOM = 4;
+const WORLD_ZOOM = MAP.zoomWorldWind;
 
 /** Whether the page is in sight: nothing animates in a hidden tab. */
 function usePageShown() {
@@ -174,7 +175,7 @@ function layersOf(
             ...common,
             style: GridStyle.ARROW,
             density: 0,
-            iconColor: tone(WEATHER.flowStreak),
+            iconColor: rgbOf(WEATHER.flowStreak),
             palette: STREAK_RAMP,
           })
         : new ParticleLayer({
@@ -191,12 +192,6 @@ function layersOf(
   }
   return out;
 }
-
-const tone = (hex: string): [number, number, number] => [
-  parseInt(hex.slice(1, 3), 16),
-  parseInt(hex.slice(3, 5), 16),
-  parseInt(hex.slice(5, 7), 16),
-];
 
 /** An hour past, the precipitation the radar saw (IEM's NEXRAD mosaic, as
  *  the loop draws it), in place of the model's. */

@@ -57,11 +57,16 @@ script can check, and the rest are for whoever writes a test or a job.
    `ci_budget.py`.
 5. **Newest versions, warnings fatal.** docs/versions.md's rules: every
    toolchain and library on its newest stable release, majors too; a
-   held one is listed there with why. A weekly workflow (`versions.yml`)
-   keeps one issue, "Newer versions (weekly)", listing whatever is
-   behind. Warnings are errors in tsc (strict), ESLint (`--max-warnings
+   held one is listed there with why. Renovate (`renovate.json`) keeps
+   one issue, its Dependency Dashboard, "Newer versions (Renovate
+   dashboard)", listing whatever is behind, the pinned Actions' newest
+   commits too. It runs in dashboard-only mode: no pull request opens and
+   nothing merges until the owner ticks an update in that issue (one at a
+   time), and the repository's GitHub writes stay the one issue's edits
+   (decision 0024: no bot pull requests; CLAUDE.md, "Write to GitHub
+   gently"). Warnings are errors in tsc (strict), ESLint (`--max-warnings
    0`), Swift, Clang, Kotlin, Android lint, Rust, clippy, javac, pytest
-   and ruff. *Guards:* `warnings_fatal.py`; `newest_versions.py` weekly.
+   and ruff. *Guard:* `warnings_fatal.py`.
 6. **Batch pushes.** Every push to a pull request runs CI again and
    cancels the run before it: commit as you go, push when the change is
    whole.
@@ -93,6 +98,19 @@ script can check, and the rest are for whoever writes a test or a job.
     there were when the rule came in are listed in
     `scripts/ci/workflow_rules_allow.txt`, which only shrinks. *Guard:*
     `workflow_rules.py`.
+    The stock linters do the rest of the looking: actionlint 1.7.12
+    (syntax, expressions, and the shell of every `run:` through
+    shellcheck) and zizmor 1.32.0 (script injection, credentials left in
+    a checkout, permissions, triggers), run by `workflow_rules.py` at the
+    versions in `.tool-versions` (settings in `.github/actionlint.yaml`
+    and `.github/zizmor.yml`, each exception with its reason); shellcheck
+    0.11.0 over every script in `scripts/` and the pre-push hook
+    (`scripts/ci/shellcheck.sh`, `.shellcheckrc`); lychee 0.24.2 over the
+    Markdown's links and heading anchors, offline (`scripts/ci/check_links.sh`,
+    `lychee.toml`). All are installed by mise through
+    `scripts/build/tool.sh`, the Mac and CI alike, so a finding is the same
+    in both. Where a step's text must be shell and not a template, an
+    untrusted or even a static `${{ }}` goes through `env:`.
 12. **Every failure names what failed.** A job puts the failing test and
     its first error on the run as an `::error` annotation and uploads its
     log on failure; no `|| true` hides a check (the few read afterwards
@@ -155,7 +173,7 @@ they are what the budgets allow, to be lowered once runs show them:
 |---|---|---|
 | `changes` | The path filter, and whether a pull request is words only | under 30 s |
 | `engine-wheel` | The engine's Python wheel, once a run, for every job that imports it (cached: seconds; an engine change compiles only what it changed, from main's last build) | 20 s warm, 1-2 min on an engine change |
-| `guards` | Every quick check on one runner, all started at once (`scripts/ci/guards.sh`): the paths filter, the rules boundary, the legal pages, the tiers, warnings fatal, the workflows' rules, the links; file sizes, toolchain versions, the brand tokens, unused Python; ruff and the Python's layout; where the change touched them, the website, the web app's tsc, ESLint, Prettier and knip, the web's engine rules, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; and flight-critical | 1-3 min (its slowest check: ESLint on a web change, clippy on an engine change) |
+| `guards` | Every quick check on one runner, all started at once (`scripts/ci/guards.sh`): the paths filter, the rules boundary, the legal pages, the tiers, warnings fatal, the workflows' rules, the links; file sizes, toolchain versions, the brand tokens, unused Python, the simplicity rules (Semgrep, jscpd, the ratchet); ruff and the Python's layout; where the change touched them, the website, the web app's tsc, ESLint, Prettier, knip and layers, SwiftLint and detekt, the web's engine rules, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; and flight-critical | 1-3 min (its slowest check: ESLint on a web change, clippy on an engine change) |
 | `test-web` | The generated files are the committed ones; Vitest over the tests the change reaches (`--changed`); `vite build` and the first-load budget | 1.5-2.5 min |
 | `test-engine` | `cargo test` over the touched crates, those that use them and the contract test (`scripts/ci/engine_affected.py`); the committed WebAssembly, where its inputs changed | 1-3 min |
 | `test-python` | One leg per suite the change touches: `test-planner`, `test-wingtip`, `test-jobs`, `test-ingest`, `test-assistant`, `test-weather` (`scripts/ci/python_suite.sh`) | 1-3 min each |
@@ -349,7 +367,7 @@ change needs; a job it skips counts as passing.
 | Job | What it runs |
 |---|---|
 | `changes` | The path filter: which suites, images and phone builds a change touches, and whether it is docs only. Tier 1 |
-| `guards` | Every quick check, all at once on one runner (`scripts/ci/guards.sh`): the paths filter is `scripts/areas.yml`'s; no aviation rule outside the engine (below); the legal pages; CI's own rules (`test_tiers.py`, `warnings_fatal.py`, `workflow_rules.py`, "Rules" above); every Markdown link; no source file new or grown past 400 lines (below, "The layers"), one version of each toolchain, no raw style value outside the tokens, no unused Python; ruff over every Python suite and the Python's layout; where the change touched them, the website, the web app's types, tsc, ESLint, Prettier and knip, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; the web's engine rules (`scripts/build/web_rules.py --check`). And **flight-critical**, on every change but words alone: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs. Tier 1 |
+| `guards` | Every quick check, all at once on one runner (`scripts/ci/guards.sh`): the paths filter is `scripts/areas.yml`'s; no aviation rule outside the engine (below); the legal pages; CI's own rules (`test_tiers.py`, `warnings_fatal.py`, `workflow_rules.py` with actionlint and zizmor, "Rules" above); every Markdown link (lychee); shellcheck over the scripts; no source file new or grown past 400 lines, nor new past 300 (below, "The layers"), one version of each toolchain, no raw style value outside the tokens, no unused Python, the simplicity rules (below); a phone's SwiftLint or detekt where the change touched it; ruff over every Python suite and the Python's layout; where the change touched them, the website, the web app's types, tsc, ESLint, Prettier and knip, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; the web's engine rules (`scripts/build/web_rules.py --check`). And **flight-critical**, on every change but words alone: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs. Tier 1 |
 | `test-engine` | The engine's `cargo test`: on a pull request the crates it touched, those that use them and the contract test (`scripts/ci/engine_affected.py`), elsewhere every crate; that the committed WebAssembly matches the engine, where its inputs changed. Tier 1 |
 | `test-web` | `npm run types`, the generated files (the phones' API models and engine calls, the tokens, the screens, the icons) are the committed ones, Vitest (`--changed` on a pull request), `vite build` and the first-load budget. Tier 1 |
 | `test-gateway` | The Java's layout and `mvn test`: the gateway's JUnit suite, with a real Postgres in Testcontainers. Tier 1 |
@@ -395,8 +413,10 @@ of the repository in Docker ([LOCAL-DEV.md](LOCAL-DEV.md#the-developer-scripts))
 Every aviation rule or figure is the engine's (CLAUDE.md, issue #482).
 The `guards` job, on every run and one of the jobs "CI passed" waits on,
 runs `scripts/ci/rules_boundary.py`: in the web app, the
-phones, the gateway and the planner's app it finds a constant set to a
-number with a regulatory source cited beside it or in the comment above
+phones (and their widgets and watch), every service (the gateway, the
+planner's app and wingtip, weather, ingest, jobs, the assistant) and
+`tools/` it finds a constant set to a number, or to a list of numbers,
+with a regulatory source cited beside it or in the comment above
 (14 CFR, a part 61/91/71/73/95/97 section, the AIM, an AC, the ACS, an
 FAA Order), and an engine rule's name defined again. What is there and is
 not a rule -- the owner's FL-045 formatting, a display span -- is listed
@@ -409,13 +429,21 @@ name, or list the file with its reason. `--list` prints every hit.
 The architecture holds itself (the owner, 2026-11-09: "follow modular
 architecture"), each layer by a check that fails the run:
 
-- **The web app:** ESLint's `boundaries/layers` (`apps/web/eslint/boundaries.js`,
-  in `guards`' ESLint): `lib/` and `hooks/` import neither `components/`
-  nor `features/`; a component or another feature reaches a feature only
-  through its `index.ts` ([apps/web/README.md](../apps/web/README.md#project-layout)).
-- **The planner:** `lint-imports` (`services/planner/.importlinter`, in
-  `test-planner`): `wingtip` never imports `app`, no router
-  imports another, and only `app.main` imports the routers.
+- **The web app:** dependency-cruiser (`apps/web/.dependency-cruiser.cjs`,
+  `npm run layers`, in `guards`' "Web: layers"): `lib/` and `hooks/`
+  import neither `components/` nor `features/`; a component or another
+  feature reaches a feature only through its `index.ts`
+  ([apps/web/README.md](../apps/web/README.md#project-layout)).
+- **The Python services:** `lint-imports` (each service's `.importlinter`,
+  in `test-python`'s planner, ingest and jobs legs): `wingtip` never
+  imports `app`, no router imports another, only `app.main` imports the
+  routers; the crash pipeline is the jobs' alone (the planner and ingest
+  import none of it but today's listed exceptions, an `ignore_imports`
+  line that no longer matches failing); and no job imports another.
+- **The gateway:** ArchUnit (`ArchitectureTest`, in `test-gateway`): no
+  aviation maths (`Math`'s trigonometry), and the planner reached through
+  `PlannerClient` only; today's breaks are frozen in
+  `src/test/resources/archunit_store` and may only leave it.
 - **The engine:** `scripts/ci/engine_layers.py` (in `guards`): each crate's
   wingtip-* dependencies are exactly engine/README.md's crate table's.
 - **The web's engine:** its WebAssembly is built with only the rules the
@@ -429,11 +457,34 @@ architecture"), each layer by a check that fails the run:
   raw and gzipped, about 10% above its size.
 - **Every language:** `guards` ("File sizes") runs
   `scripts/ci/file_sizes.py`: no tracked TypeScript, Python, Rust, Swift,
-  Kotlin or Java file over 400 lines, generated files aside, past
-  `scripts/ci/file_sizes_allow.txt`, which lists the files over it when the
-  budget came in at the lines they had. A listed file may not grow, and
-  the list may not gain or raise an entry against the base branch's; a
-  split lowers its count (`--write`).
+  Kotlin, Java, shell, build JavaScript, C# or Gradle file over 400 lines,
+  and no file new against the base branch over 300 (the owner's target),
+  generated files aside, past `scripts/ci/file_sizes_allow.txt` (the files
+  over 400 when the budget came in, at the lines they had) and
+  `scripts/ci/file_sizes_new_allow.txt` (the wave's new files of 301-400
+  lines on 2026-11-12). A listed file may not grow, and neither list may
+  gain or raise an entry against the base branch's; a split lowers its
+  count (`--write`).
+
+## Simplicity rules
+
+The simplicity audits' findings, held as checks so they cannot come back
+(the owner, 2026-11-12: "make simplicity rules as hard rules"; CLAUDE.md,
+"Simplicity rules"). Each looks only at the files a change touches, each
+holds today's exceptions in a baseline that only shrinks (`--write` lowers
+it, never raises it; a baseline raised against the base branch fails), and
+each runs in `guards`, the pre-push hook and, for one file at a time, the
+agents' edit-time hook (`scripts/dev/simplicity_hook.py`, a Claude Code
+`PostToolUse` hook in `.claude/settings.json`):
+
+| Check | Tool | Baseline |
+|---|---|---|
+| One home per constant or helper: unit factors, Mercator, hex-to-RGB, hand HTTP to the planner, HTML markers, great-circle maths (`scripts/ci/semgrep_check.py`, rules in `scripts/ci/semgrep/`) | Semgrep, the free CLI, metrics off | `scripts/ci/semgrep/baseline.json` |
+| No new copy-paste over 100 tokens (`scripts/ci/jscpd_check.py`) | jscpd | `scripts/ci/jscpd_baseline.json` |
+| Stock components on the web: no raw `<button>`, `<details>` or `role="alert"` outside `components/ui` | ESLint's `no-restricted-syntax` | `apps/web/eslint-suppressions.json` |
+| The web's feature layers | dependency-cruiser | none |
+| The phones' dead code; no HTTP library outside Android's `api/` (`scripts/ci/phone_lint.sh`, on a phone change) | SwiftLint, detekt | `scripts/ci/phones/` |
+| The simplicity ratchet: the audit's counts (`scripts/ci/simplicity_ratchet.py`; `--report` adds the median files a change touches, not gated) | the standard library | `scripts/ci/simplicity_baseline.json` |
 
 ## API compatibility
 

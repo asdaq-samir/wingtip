@@ -1,9 +1,6 @@
 import { useEffect } from "react";
 import { openAirplaneProfile, useProfileOpen } from "../../lib/airplane/profileStore";
-import { patched, useSearchParamsNow } from "../../lib/useSearchParamsNow";
-
-/** The address's key for the profile open: `?airplane=N3429J`. */
-const KEY = "airplane";
+import { useAddressKey } from "../../lib/address";
 
 /**
  * The airplane profile open in the address (the owner, 2026-11-09: every
@@ -13,8 +10,8 @@ const KEY = "airplane";
  * every panel change is (lib/backNavigation).
  */
 export function useProfileAddress() {
-  const [searchParams, setSearchParams] = useSearchParamsNow();
-  const linked = searchParams.get(KEY);
+  // The address's key for the profile open: `?airplane=N3429J`.
+  const [linked, setLinked] = useAddressKey("airplane");
   const tail = useProfileOpen((s) => s.open?.tail ?? null);
   // A link's profile opened as the page lands on it, or as Back comes to it.
   useEffect(() => {
@@ -22,8 +19,6 @@ export function useProfileAddress() {
   }, [linked]);
   // The profile open said in the address; put away, the key let go.
   useEffect(() => {
-    const now = new URLSearchParams(window.location.search).get(KEY);
-    if ((now ?? null) === tail) return;
-    setSearchParams((prev) => patched(prev, { [KEY]: tail }), { replace: true });
-  }, [tail, setSearchParams]);
+    void setLinked((now) => ((now ?? null) === tail ? now : tail));
+  }, [tail, setLinked]);
 }

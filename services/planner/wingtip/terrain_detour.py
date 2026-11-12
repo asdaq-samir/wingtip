@@ -25,10 +25,9 @@ import threading
 
 import numpy as np
 
-from . import elevation, fixes, fuelstops
+from . import elevation, fixes, fuelstops, geo
 from .engine import ask as engine
-
-M_TO_FT = 3.28084
+from .units import M_TO_FT
 
 #: The terrarium tiles' zoom read: a pixel about 0.02 degrees, 1.3 nm.
 ZOOM = 6
@@ -36,9 +35,7 @@ ZOOM = 6
 
 def heights_ft(lats: np.ndarray, lons: np.ndarray) -> np.ndarray:
     """The ground's height at each point, feet, from the terrain tiles."""
-    n = 2**ZOOM
-    fx = (lons + 180.0) / 360.0 * n
-    fy = (1.0 - np.arcsinh(np.tan(np.radians(lats))) / np.pi) / 2.0 * n
+    fx, fy = geo.tile_xy(lats, lons, ZOOM)
     tx, ty = np.floor(fx).astype(int), np.floor(fy).astype(int)
     out = np.zeros(lats.shape, dtype=np.float64)
     for x, y in set(zip(tx.ravel().tolist(), ty.ravel().tolist())):

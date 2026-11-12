@@ -1,0 +1,55 @@
+{
+  "about": "How high a 3D map stands an airspace volume (the engine's airspace_volume_span), feet MSL, held by the engine (engine/facade/tests/airspace_volume_span.rs) and the web (features/plan/map/terrain/airspaceHeights.test.ts). The limits as the FAA's data has them: special use areas from ADDS's Special_Use_Airspace layer (read 2026-11-12), Class airspace from NASR as the planner sends it. Unlimited, or above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)).",
+  "cases": [
+    {
+      "about": "A Chicago Class B shelf, 3,000 to 10,000 MSL: no ground needed",
+      "input": { "floor": { "ft": 3000, "code": "MSL" }, "ceiling": { "ft": 10000, "code": "MSL" }, "ground": null },
+      "answer": { "floor_ft": 3000.0, "ceiling_ft": 10000.0, "surface": false }
+    },
+    {
+      "about": "A Class D from the surface to 3,000 MSL, drawn from the sea up",
+      "input": { "floor": { "ft": 0, "code": "SFC" }, "ceiling": { "ft": 3000, "code": "MSL" } },
+      "answer": { "floor_ft": 0.0, "ceiling_ft": 3000.0, "surface": true }
+    },
+    {
+      "about": "Brady Low MOA, 500 FT SFC to 6,000 MSL TNI, waits for the ground",
+      "input": { "floor": { "ft": 500, "code": "SFC" }, "ceiling": { "ft": 6000, "code": "MSL", "desc": "TNI" }, "ground": null },
+      "answer": null
+    },
+    {
+      "about": "Brady Low MOA over ground from 1,200 to 1,900 ft: 500 AGL over the lowest, 6,000 TNI a foot under",
+      "input": { "floor": { "ft": 500, "code": "SFC" }, "ceiling": { "ft": 6000, "code": "MSL", "desc": "TNI" }, "ground": { "low_ft": 1200, "high_ft": 1900 } },
+      "answer": { "floor_ft": 1700.0, "ceiling_ft": 5999.0, "surface": false }
+    },
+    {
+      "about": "Brady Low's pieces round Curtis Field, 1,500 FT SFC ANI: a foot above 1,500 AGL (CIFP 01501A)",
+      "input": { "floor": { "ft": 1500, "code": "SFC", "desc": "ANI" }, "ceiling": { "ft": 6000, "code": "MSL", "desc": "TNI" }, "ground": { "low_ft": 1200, "high_ft": 1900 } },
+      "answer": { "floor_ft": 2701.0, "ceiling_ft": 5999.0, "surface": false }
+    },
+    {
+      "about": "An AGL ceiling (a TFR to 3,000 AGL) over the highest ground",
+      "input": { "floor": { "ft": 0, "code": "SFC" }, "ceiling": { "ft": 3000, "code": "AGL" }, "ground": { "low_ft": 1200, "high_ft": 1900 } },
+      "answer": { "floor_ft": 0.0, "ceiling_ft": 4900.0, "surface": true }
+    },
+    {
+      "about": "Brady North MOA, 3,600 MSL to FL180 TNI: 17,999 MSL (CIFP 17999M)",
+      "input": { "floor": { "ft": 3600, "code": "MSL" }, "ceiling": { "ft": 18000, "code": "STD", "desc": "TNI" } },
+      "answer": { "floor_ft": 3600.0, "ceiling_ft": 17999.0, "surface": false }
+    },
+    {
+      "about": "Unlimited, drawn to Class A's floor",
+      "input": { "floor": { "ft": 0, "code": "SFC" }, "ceiling": { "ft": null, "code": "UNLTD" } },
+      "answer": { "floor_ft": 0.0, "ceiling_ft": 18000.0, "surface": true }
+    },
+    {
+      "about": "R-4207 to FL450, drawn to Class A's floor",
+      "input": { "floor": { "ft": 0, "code": "SFC" }, "ceiling": { "ft": 45000, "code": "STD" } },
+      "answer": { "floor_ft": 0.0, "ceiling_ft": 18000.0, "surface": true }
+    },
+    {
+      "about": "A floor at FL180: nothing left to draw",
+      "input": { "floor": { "ft": 18000, "code": "STD" }, "ceiling": { "ft": 45000, "code": "STD" } },
+      "answer": null
+    }
+  ]
+}

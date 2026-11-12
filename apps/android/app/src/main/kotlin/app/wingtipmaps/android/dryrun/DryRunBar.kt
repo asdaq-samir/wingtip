@@ -41,8 +41,8 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipRadius
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -66,8 +66,8 @@ import app.wingtipmaps.android.map.ForecastAreasLayer
  */
 @Composable
 fun DryRunBar(rules: String, modifier: Modifier = Modifier) {
-    val dryRun: DryRun = viewModel()
-    val forecast: ForecastRun = viewModel()
+    val dryRun: DryRun = hiltViewModel()
+    val forecast: ForecastRun = hiltViewModel()
     val run by dryRun.state.collectAsStateWithLifecycle()
     val played by forecast.state.collectAsStateWithLifecycle()
     LaunchedEffect(run.path, played.on, rules) { forecast.follow(run.path, rules) }

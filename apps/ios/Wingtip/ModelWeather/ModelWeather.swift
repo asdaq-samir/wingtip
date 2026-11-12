@@ -74,6 +74,9 @@ final class ModelWeather {
     /// Where the pilot tapped, and what the field is there.
     private(set) var point: CLLocationCoordinate2D?
     private(set) var reading: FlowReading?
+    /// Why there is no reading where the pilot tapped: an engine rule that
+    /// failed, said in the bar (ProblemLine), never a hazard word.
+    private(set) var readingProblem: String?
 
     @ObservationIgnored private var grids: [String: FlowGrid] = [:]
     @ObservationIgnored private var fetching: Task<Void, Never>?
@@ -176,7 +179,7 @@ final class ModelWeather {
     private func picked() {
         fetching?.cancel()
         pause()
-        (point, reading, painted, airmets, airmetsAt, index) = (nil, nil, nil, [], nil, nil)
+        (point, reading, readingProblem, painted, airmets, airmetsAt, index) = (nil, nil, nil, nil, [], nil, nil)
         guard field != .off else { return }
         fetching = Task { await self.fetchForever() }
     }
@@ -259,22 +262,28 @@ final class ModelWeather {
     }
 
     private func read() {
-        guard let point, let frame, let layer else { reading = nil; return }
+        guard let point, let frame, let layer else { (reading, readingProblem) = (nil, nil); return }
         let field = self.field, file = self.file, level = self.level
         let spec = layer.fields[field == .gust ? "gust" : field.rawValue]
         // The temperature beside the precipitation, and beside the wind at a
         // level (Max is no one level, so has none).
         let tempFile: String? = field == .precip ? "temp" : (field == .wind && level != nil && level != "max" ? FlowLevels.file("temp", level) : nil)
         Task {
-            guard let grid = await grid(frame, file), let value = grid.value(lat: point.latitude, lon: point.longitude) else {
-                reading = nil
-                return
-            }
-            var temp: Double?
-            if let tempFile { temp = await self.grid(frame, tempFile)?.value(lat: point.latitude, lon: point.longitude) }
+            guard let grid = await grid(frame, file) else { (reading, readingProblem) = (nil, nil); return }
+            let tempGrid: FlowGrid? = if let tempFile { await self.grid(frame, tempFile) } else { nil }
             guard self.point?.latitude == point.latitude, self.point?.longitude == point.longitude else { return }
-            reading = FlowReading.of(field, value: value, unit: spec?.unit ?? "", top: spec?.unscale.last,
-                                     fromDeg: grid.fromDeg(lat: point.latitude, lon: point.longitude), tempC: temp)
+            do {
+                guard let at = try grid.reading(lat: point.latitude, lon: point.longitude) else {
+                    (reading, readingProblem) = (nil, nil)
+                    return
+                }
+                let temp = try tempGrid?.reading(lat: point.latitude, lon: point.longitude)?.value
+                reading = try FlowReading.of(field, value: at.value, unit: spec?.unit ?? "", top: spec?.unscale.last,
+                                             fromDeg: at.fromDeg, calm: at.calm, tempC: temp)
+                readingProblem = nil
+            } catch {
+                (reading, readingProblem) = (nil, "The \(field.label.lowercased()) there couldn't be worked out: \(error.localizedDescription)")
+            }
         }
     }
 }

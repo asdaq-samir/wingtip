@@ -1,12 +1,10 @@
-import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useEffectEvent } from "react";
-import type { SetURLSearchParams } from "react-router";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useEffectEvent } from "react";
+import { PANEL_LISTS, addressPoint, type Address, type AddressChange, type SetAddress } from "../../../lib/address";
 import { useConsoleOpen, type PanelState } from "../../../lib/mapChrome";
 import type { TrafficAircraft } from "../../../lib/api/types";
-import { pointOf } from "../../../lib/airspace";
 import { identOf } from "../../../lib/identSchema";
 import { choosePastFlight, clearPastFlight, usePastFlight } from "../map/pastFlight";
 import { track, useTracking } from "../../../lib/map/position/tracking";
-import { patched } from "../../../lib/useSearchParamsNow";
 import { usePickAirplaneRequest } from "./usePickAirplaneRequest";
 import { riseToSee } from "./panelNow";
 
@@ -31,11 +29,8 @@ export type PanelView = "plan" | "search" | "traffic";
 const CARD_KEYS = ["place", "at", "flight", "past", "near", "nearAt", "nearName", "saved", "list", "brief"] as const;
 
 /** A list in full, from its section's title, in the address
- *  (`?list=favorites`): the airports' Favorites and Recents, the routes
- *  planned, the airplanes' Favorites and Recents. Saved and Nearest have
- *  keys of their own (`saved`, `near`). */
-const LISTS = ["favorites", "recents", "routes", "aircraft-favorites", "aircraft-recents"] as const;
-export type PanelList = (typeof LISTS)[number];
+ *  (`?list=favorites`, lib/address's PANEL_LISTS). */
+export type PanelList = (typeof PANEL_LISTS)[number];
 
 /**
  * The cards the address holds, so a link or Back lands on them: an
@@ -46,7 +41,7 @@ export type PanelList = (typeof LISTS)[number];
  * and its past flight's; the airport's is the workspace's (selectPlace),
  * which the route's Approaches ask for too.
  */
-export function useAddressCards(searchParams: URLSearchParams, setSearchParams: SetURLSearchParams, setPanel: (state: PanelState) => void) {
+export function useAddressCards(address: Address, setAddress: SetAddress, setPanel: (state: PanelState) => void) {
   // A list in full over its tab, as a card is: in the address, so it is
   // kept for its tab and opened again on coming back to it and after
   // Setup, and a link to it lands on it, at the owner's pick ("Yes to
@@ -54,115 +49,80 @@ export function useAddressCards(searchParams: URLSearchParams, setSearchParams: 
   // workspace's own state, put away at any tab picked, and one the
   // Aircraft card's. A reload starts clean, cards and lists alike
   // (features/shell/freshLoad).
-  const listParam = searchParams.get("list");
-  const list = (LISTS as readonly string[]).includes(listParam ?? "") ? (listParam as PanelList) : null;
+  const list = address.list;
   const openList = useCallback(
     (name: PanelList) => {
-      setSearchParams(
-        (prev) => {
-          return patched(prev, { list: name });
-        },
-        { replace: true },
-      );
+      void setAddress({ list: name });
       // From the pill up to half, so it is seen; else the sheet stays the
       // size the pilot left it (the owner, 2026-11-11).
       riseToSee(setPanel);
     },
-    [setSearchParams, setPanel],
+    [setAddress, setPanel],
   );
   const closeList = useCallback(() => {
-    setSearchParams(
-      (prev) => {
-        return patched(prev, { list: null });
-      },
-      { replace: true },
-    );
-  }, [setSearchParams]);
+    void setAddress({ list: null });
+  }, [setAddress]);
   // The airport whose card is open in the panel (PlaceCard), as Maps
   // opens a place's: from a tap on the chart, held in the address so a
   // link lands on it. Opened from the map at the pill's size, as its
   // summary; putting it away leaves the panel where it is, the layer under
   // it in sight.
-  const place = identOf(searchParams.get("place")) || null;
+  const place = identOf(address.place) || null;
   // Or the point a finger was held on, for the airspace over it
   // (AirspaceCard): `?at=42.3172,-88.0905`. One card at a time: either
   // puts the other away, and a tap on the chart puts both away.
-  const atParam = searchParams.get("at");
-  const heldPoint = useMemo(() => pointOf(atParam), [atParam]);
+  const heldPoint = address.at;
   // Or the fields nearest own ship (NearestCard), Airport's NEAREST list:
   // `?near=1`, a card of its own in the panel, with the map fitted to
   // them, at the pilot's ask. An airport opened from it
   // is a layer over it, its close back to the list.
-  const nearOpen = searchParams.get("near") === "1";
+  const nearOpen = address.near;
   // Or the aircraft about and a search for one (AircraftCard), the tab
   // bar's Aircraft: `?aircraft=1`; and one airplane tracked
   // (FlightCard), by its ICAO address: `?flight=a0b7d8` -- a layer over
   // the list where it was picked from it, as an airport's over Nearest.
-  const aircraftOpen = searchParams.get("aircraft") === "1";
-  const flightParam = searchParams.get("flight");
-  const flight = flightParam && /^~?[0-9a-f]{6}$/i.test(flightParam) ? flightParam.toLowerCase() : null;
+  const aircraftOpen = address.aircraft;
+  const flight = address.flight;
   // And one of its past flights (PastFlightCard), by its takeoff's time:
   // `?past=1791723840` -- a layer over the airplane's card, its close back
   // to it, at the pilot's ask.
-  const pastParam = searchParams.get("past");
-  const past = flight && pastParam && /^\d{9,11}$/.test(pastParam) ? Number(pastParam) : null;
+  const past = flight ? address.past : null;
   // Or near a place the pilot typed in it -- a town, an address, an
   // airport -- at the pilot's ask, where it was own ship's alone:
   // `?nearAt=43.0731,-89.4012&nearName=Madison, WI`.
-  const nearAtParam = searchParams.get("nearAt");
-  const nearNameParam = searchParams.get("nearName");
-  const nearFrom = useMemo(() => {
-    const at = pointOf(nearAtParam);
-    return at ? { ...at, label: nearNameParam ?? `${at.lat}, ${at.lon}` } : null;
-  }, [nearAtParam, nearNameParam]);
+  const nearAt = address.nearAt,
+    nearName = address.nearName;
+  const nearFrom = useMemo(() => (nearAt ? { ...nearAt, label: nearName ?? `${nearAt.lat}, ${nearAt.lon}` } : null), [nearAt, nearName]);
   const setNearFrom = useCallback(
     (from: { label: string; lat: number; lon: number } | null) => {
-      setSearchParams(
-        (prev) => {
-          return patched(
-            prev,
-            from ? { nearAt: `${from.lat.toFixed(4)},${from.lon.toFixed(4)}`, nearName: from.label } : { nearAt: null, nearName: null },
-          );
-        },
-        { replace: true },
-      );
+      void setAddress(from ? { nearAt: addressPoint(from), nearName: from.label || null } : { nearAt: null, nearName: null });
     },
-    [setSearchParams],
+    [setAddress],
   );
   const selectFlight = useCallback(
     (hex: string | null, plane?: TrafficAircraft) => {
       track(hex, plane);
-      setSearchParams(
-        (prev) => {
-          // An airplane's card half way, wherever it is opened from, as an
-          // airport's is (the owner's ask; FlightCard's `opens`).
-          return patched(prev, {
-            flight: hex ?? null,
-            place: null,
-            at: null,
-            near: null,
-            nearAt: null,
-            nearName: null,
-            past: null,
-            view: hex ? null : undefined,
-          });
-        },
-        { replace: true },
-      );
+      // An airplane's card half way, wherever it is opened from, as an
+      // airport's is (the owner's ask; FlightCard's `opens`).
+      void setAddress({
+        flight: hex || null,
+        place: null,
+        at: null,
+        near: null,
+        nearAt: null,
+        nearName: null,
+        past: null,
+        view: hex ? null : undefined,
+      });
     },
-    [setSearchParams],
+    [setAddress],
   );
   const selectPast = useCallback(
     (id: number | null) => {
-      setSearchParams(
-        (prev) => {
-          return patched(prev, { past: id ? String(id) : null });
-        },
-        { replace: true },
-      );
+      void setAddress({ past: id || null });
       // A past flight: its card all the way up (PastFlightCard's `opens`).
     },
-    [setSearchParams],
+    [setAddress],
   );
   // The address's flight and list into the tracking the map draws from
   // (lib/map/position/tracking), and the map's tap on an airplane back to here.
@@ -217,19 +177,19 @@ export function usePanelView({
   cards,
   route,
   hasRoute,
-  searchParams,
-  setSearchParams,
+  address,
+  setAddress,
 }: {
   cards: ReturnType<typeof useAddressCards>;
   /** The route as the address has it, and the count of times it was asked
    *  for (Load's): any change of it is a new route, the plan to the front. */
   route: string;
   hasRoute: boolean;
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
+  address: Address;
+  setAddress: SetAddress;
 }) {
   const { place, heldPoint, flight, past, aircraftOpen, nearOpen, list } = cards;
-  const savedOpen = searchParams.get("saved") === "1";
+  const savedOpen = address.saved;
   const [viewPick, setViewPick] = useState<PanelView | null>(null);
   const [routeSeen, setRouteSeen] = useState(route);
   if (route !== routeSeen) {
@@ -257,7 +217,7 @@ export function usePanelView({
         ? "search"
         : (viewPick ?? (hasRoute ? "plan" : "search"));
 
-  const keptCards = useRef<Partial<Record<PanelView, [string, string][]>>>({});
+  const keptCards = useRef<Partial<Record<PanelView, AddressChange>>>({});
   // What the search's page was when it was left, the traffic or the search
   // itself: swiped back to, it is that again (the sheet audit, 2026-11-12:
   // the traffic came back as the plain search).
@@ -284,43 +244,31 @@ export function usePanelView({
       const leaving = next !== view;
       if (leaving && view !== "plan") firstPage.current = view;
       if (leaving) {
-        keptCards.current[view] = CARD_KEYS.flatMap((key) => {
-          const value = searchParams.get(key);
-          return value ? [[key, value] as [string, string]] : [];
-        });
+        keptCards.current[view] = Object.fromEntries(CARD_KEYS.map((key) => [key, address[key]])) as AddressChange;
         const replay = usePastFlight.getState();
         if (flight && past && replay.hex === flight && replay.id === past) {
           keptReplay.current = { hex: flight, id: past, at: replay.at, playing: replay.playing };
         }
       } else delete keptCards.current[view];
-      const back = leaving ? (keptCards.current[next] ?? []) : [];
+      const back = leaving ? (keptCards.current[next] ?? {}) : {};
+      const cleared = Object.fromEntries(CARD_KEYS.map((key) => [key, null])) as AddressChange;
+      // In the same commit as the pick: nuqs changes the address's state at
+      // once, not in a router's transition after it, where the sheet drew
+      // the place the address still had for a frame.
       setViewPick(next);
-      setSearchParams(
-        (prev) => {
-          const out = new URLSearchParams(prev);
-          for (const key of [...CARD_KEYS, "aircraft", "near"]) out.delete(key);
-          if (next === "traffic") out.set("aircraft", "1");
-          for (const [key, value] of back) out.set(key, value);
-          return out;
-        },
-        // In the same commit as the pick, not in the router's transition
-        // after it: in between, the sheet drew the place the address still
-        // had for a frame.
-        { replace: true, flushSync: true },
-      );
+      void setAddress({ ...cleared, aircraft: next === "traffic", ...back });
     },
-    [setSearchParams, searchParams, view, flight, past],
+    [setAddress, address, view, flight, past],
   );
 
   // The workspace's own picks (a card's button, the radio's "nearest", a
   // route cleared) come with an address change -- a card put away, a list
-  // opened -- which the router makes in a transition. The pick in the same
-  // transition, so the two land in one commit. Transitions started in one
-  // event share their lane, so they commit together.
+  // opened -- which nuqs makes at once, not in a transition: the pick at
+  // once too, so the two land in one commit.
   // A page of the sheet picked (SheetPager, its bar of the grabber): FPL's
   // the plan, the first the search's page as it was left.
   const pickPage = useCallback((page: number) => pickView(page ? "plan" : firstPage.current), [pickView]);
-  const pickLater = useCallback((next: PanelView) => startTransition(() => setViewPick(next)), []);
+  const pickLater = useCallback((next: PanelView) => setViewPick(next), []);
   // "Pick an airplane" asked from a screen that needs one (lib/pickAirplane).
   usePickAirplaneRequest(pickView);
   return { view, setViewPick: pickLater, pickView, pickPage };

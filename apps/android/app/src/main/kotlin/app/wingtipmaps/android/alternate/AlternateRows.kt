@@ -14,8 +14,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.core.net.toUri
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.altitude.PlanAltitudes
@@ -36,7 +36,7 @@ import app.wingtipmaps.android.ui.SectionTitle
  * Nothing under VFR.
  */
 @Composable
-fun AlternateRows(plan: Plan, model: AlternateModel = viewModel()) {
+fun AlternateRows(plan: Plan, model: AlternateModel = hiltViewModel()) {
     val planState by plan.state.collectAsStateWithLifecycle()
     val filed by PlanAlternate.filed.collectAsStateWithLifecycle()
     val altitudes by PlanAltitudes.state.collectAsStateWithLifecycle()

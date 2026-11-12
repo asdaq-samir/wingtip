@@ -13,6 +13,7 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.tiles.TileTemplate
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -25,6 +26,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import java.io.File
+import javax.inject.Inject
 
 /**
  * Which chart the map draws (/api/chart): its cycle, its layers and where
@@ -35,7 +37,8 @@ import java.io.File
  * cache with no connection at all, and its first style has the overlays
  * in it from the start.
  */
-class Charts(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class Charts @Inject constructor(app: Application) : AndroidViewModel(app) {
     private val kept = File(app.filesDir, "chart.json")
 
     private val _info = MutableStateFlow<ChartInfo?>(null)
@@ -138,7 +141,7 @@ class Charts(app: Application) : AndroidViewModel(app) {
         withContext(Dispatchers.IO) { runCatching { store.keepOnly(tiles.name) } }
         if (store.hasWhole(tiles.name, tiles.bytes) || !unmetered()) return
         val url = (Config.gateway + Config.plannerPath("/api/overlay-tiles/${tiles.name}.pmtiles")).toHttpUrl()
-        runCatching { store.download(Gateway.streaming, url, tiles.name, tiles.bytes) }
+        val _ = runCatching { store.download(Gateway.streaming, url, tiles.name, tiles.bytes) }
     }
 
     private fun unmetered(): Boolean {

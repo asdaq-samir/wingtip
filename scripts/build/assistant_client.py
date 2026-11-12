@@ -12,6 +12,9 @@ From the planner's OpenAPI document (services/planner/openapi.json):
 - services/assistant/app/generated/planner_client.py: one function per
   operation answering JSON, its path, query, header and body parameters
   typed from the document and its answer validated into the models.
+- services/planner/app/generated/planner_calls.py: the same operations as
+  async functions over the planner's own app, for its MCP connector's
+  tools (scripts/build/planner_calls.py).
 
 From the engine's contract (engine/contract/engine.schema.json):
 
@@ -61,25 +64,11 @@ HEADER = (
 #: datamodel-code-generator's options: pydantic v2, Literal for enums (the
 #: answers are dumped back to JSON for the model, and a Literal dumps as
 #: its string), every field optional, aliases ("from") populated by name.
-DATAMODEL_ARGS = [
-    "--input-file-type",
-    "openapi",
-    "--output-model-type",
-    "pydantic_v2.BaseModel",
-    "--target-python-version",
-    "3.15",
-    "--disable-timestamp",
-    "--formatters",
-    "builtin",
-    "--use-annotated",
-    "--field-constraints",
-    "--use-union-operator",
-    "--use-standard-collections",
-    "--enum-field-as-literal",
-    "all",
-    "--force-optional",
-    "--allow-population-by-field-name",
-]
+DATAMODEL_ARGS = (
+    "--input-file-type openapi --output-model-type pydantic_v2.BaseModel --target-python-version 3.15 --disable-timestamp"
+    " --formatters builtin --use-annotated --field-constraints --use-union-operator --use-standard-collections"
+    " --enum-field-as-literal all --force-optional --allow-population-by-field-name"
+).split()
 
 
 def class_name(schema: str) -> str:
@@ -375,6 +364,8 @@ def _literal(value) -> str:
 
 
 def generate() -> dict[Path, str]:
+    from planner_calls import planner_calls  # beside this file; it imports this one's helpers
+
     spec = json.loads(PLANNER_SPEC.read_text())
     contract = json.loads(CONTRACT.read_text())
     models = planner_models()
@@ -396,6 +387,7 @@ def generate() -> dict[Path, str]:
         ASSISTANT_OUT / "engine_tools.py": assistant_engine_tools(contract),
         PLANNER_OUT / "__init__.py": init,
         PLANNER_OUT / "engine_tools.py": planner_engine_names(contract),
+        PLANNER_OUT / "planner_calls.py": planner_calls(spec),
     }
 
 

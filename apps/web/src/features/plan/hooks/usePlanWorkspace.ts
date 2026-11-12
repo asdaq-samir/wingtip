@@ -24,7 +24,7 @@ import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { usePanelView, type PanelList } from "./usePanelView";
 import { usePreferences } from "../../../lib/preferences";
 import { useProgressToast } from "../../../lib/useProgressToast";
-import { patched, useSearchParamsNow } from "../../../lib/useSearchParamsNow";
+import { ADDRESS_CLEARED, addressParams, useAddress } from "../../../lib/address";
 import { usePlanHistory } from "../../../hooks/use-plan-history";
 import { usePanelDragging } from "../../../lib/mapChrome";
 import { holdsOf, holdsParam } from "../lib/routeHolds";
@@ -45,7 +45,7 @@ import { mayUse, useEntitlement } from "../../../lib/subscription";
 import type { WorkspaceProps } from "../../shell";
 import { prefetchPilotPanel } from "../routePanelParts";
 import { panelNow, riseToSee } from "./panelNow";
-import { altitudeChoiceOf, departureRunways, landingRunways, LOCAL_MINUTES, namesRoute, routeWas, suggestedStopAt } from "./planAddress";
+import { departureRunways, landingRunways, namesRoute, routeWas, suggestedStopAt } from "./planAddress";
 import { briefMarkOf, marksOf, progressWords, tightLegWords } from "./planWords";
 import { drawnOnly, useProcedurePicks } from "./useProcedurePicks";
 import { useAircraftPick } from "./useAircraftPick";
@@ -104,23 +104,23 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   useEffect(() => {
     panelNow.current = panel;
   }, [panel]);
-  const [searchParams, setSearchParams] = useSearchParamsNow();
+  const [address, setAddress] = useAddress();
   // A route in the address is read by the engine, so waited for behind
   // MapPage's boot map; with none (a fresh open) the page draws at once.
-  const engine = useEngineWhen(namesRoute(searchParams));
+  const engine = useEngineWhen(namesRoute(address));
   // How the route is changed once it has a destination (RouteEdit): its
   // box folded to a line, or the plan's own rows under the route's name.
   const routeEdit = usePreferences((p) => p.routeEdit);
   // Every change of the plan can be taken back (Undo, Cmd-Z), whichever
   // button made it, in place of asking first.
-  usePlanHistory(searchParams, setSearchParams);
+  usePlanHistory(address, setAddress);
   // The route: its two ends, and the airports it lands at on the way --
   // the stops one array while the address has the same, so what is made
   // from them (the map's add-a-stop, the box's waypoints) is too, and the
   // map and the box are not drawn again for nothing at each render.
-  const stopsParam = searchParams.get("stops");
+  const stopsParam = address.stops;
   const stops = useMemo(() => stopsOf(stopsParam), [stopsParam]);
-  const planned = { dep: departureOf(searchParams.get("dep")), dest: identOf(searchParams.get("dest")), stops };
+  const planned = { dep: departureOf(address.dep), dest: identOf(address.dest), stops };
   // The pilot's own points named POS1 on, in the route's order, before
   // anything draws their names (pointName).
   nameOwnPoints(stops);
@@ -128,28 +128,28 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // on (ProceduresRoute's routePoints).
   const routePoints = useMemo(() => [planned.dep, ...stops, planned.dest].filter(Boolean), [planned.dep, stops, planned.dest]);
   const via = planned.stops.join(",");
-  const altitudeFt = searchParams.get("altitude_ft") ?? "";
+  const altitudeFt = address.altitude_ft?.toString() ?? "";
   // The altitude was picked on the wheel (flyAltitude): each leg at its
   // nearest legal altitude, as the wheel's figures were.
-  const altitudeNearest = searchParams.get("altitude_nearest") === "1";
-  const altitudeChoice = altitudeChoiceOf(searchParams.get("altitude_choice"));
+  const altitudeNearest = address.altitude_nearest;
+  const altitudeChoice = address.altitude_choice;
   // The departure time as an ISO instant, or "" for about now. It picks
   // the winds forecast period the planner flies the legs on, gives
   // every checkpoint an ETA, and is what a saved flight is planned for.
-  const depart = searchParams.get("depart") ?? "";
+  const depart = address.depart ?? "";
   // Class B accepted unless the pilot avoids it (class_b=0), at the owner's
   // pick (2026-10-20): planned through it with the clearance it takes
   // (14 CFR 91.131), said in the altitude's sheet with "Avoid Class B".
-  const classBClearance = searchParams.get("class_b") !== "0";
+  const classBClearance = address.class_b;
   // The fuel stops the address names (`fuel`), kept as the Routes' cards
   // are browsed (useRouteLine).
-  const fuelParam = searchParams.get("fuel");
+  const fuelParam = address.fuel;
   // Points' own altitudes (`altitudes`, "VPBNG:4500,KMSN:1900"): a waypoint's
   // reached by it (or begun there, `altitude_starts`), an airport's its pattern.
-  const altitudes = altitudesParam(altitudesOf(searchParams.get("altitudes")));
+  const altitudes = altitudesParam(altitudesOf(address.altitudes));
   // A local flight's time aloft, in minutes (`local_min`): an hour unless
   // the address says otherwise.
-  const localMin = LOCAL_MINUTES.includes(Number(searchParams.get("local_min"))) ? Number(searchParams.get("local_min")) : 60;
+  const localMin = address.local_min;
   // Load pressed again for the same route: a fresh nav log, fresh winds.
   const [load, setLoad] = useState(0);
   const showWaypoints = usePreferences((p) => p.waypoints);
@@ -167,7 +167,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // method called on the render's `planned` made the React Compiler skip
   // every later memo.
   const routeFields = `${planned.dep},${planned.stops},${planned.dest}`;
-  const picksParam = searchParams.get("procs");
+  const picksParam = address.procs;
   const routePicks = useMemo(
     () => proceduresOf(picksParam).filter((p) => routeFields.split(",").includes(p.ident)),
     [picksParam, routeFields],
@@ -192,17 +192,17 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // The altitudes ATC gave to cross the procedures' fixes at (`cross`,
   // "BXCMB:3000"), set from a fix's card (FixCard): each in place of the
   // chart's for the plan's descent and the dry run's heights.
-  const crossParam = searchParams.get("cross");
+  const crossParam = address.cross;
   const crossings = useMemo(() => altitudesOf(crossParam), [crossParam]);
   const crossingsText = altitudesParam(crossings);
   // Minutes on the ground at the stops (`ground`, "KJVL:45"), set from a
   // stop's Depart step (ProceduresRoute); one not named, 30.
-  const groundParamText = searchParams.get("ground");
+  const groundParamText = address.ground;
   const ground = useMemo(() => groundOf(groundParamText), [groundParamText]);
   const groundText = altitudesParam(ground);
   // The pilot's holds (`holds`, features/plan/lib/routeHolds), each flown on the leg leaving
   // its point (plan.with_holds), set from a point's menu in FPL's list.
-  const holdsParamText = searchParams.get("holds");
+  const holdsParamText = address.holds;
   const holds = useMemo(() => holdsOf(holdsParamText), [holdsParamText]);
   const holdsText = holdsParam(holds);
   // The runway each departure picked is left from ("KSTL:30R"): the
@@ -213,8 +213,8 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // for the log again, which the planner answers from its cache: the legs
   // are planned without the runways, their paths laid on after
   // (with_procedures).
-  const patternText = searchParams.get("pattern"),
-    takeoffText = searchParams.get("takeoff");
+  const patternText = address.pattern,
+    takeoffText = address.takeoff;
   // Every field the airplane leaves is left by its runway (a departure
   // picked there by its transition for it, else along it and out of its
   // pattern), and every one it lands at is landed on its runway by its
@@ -246,7 +246,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     load,
     classBClearance,
     altitudes,
-    altitudeStarts: searchParams.get("altitude_starts") ?? "",
+    altitudeStarts: address.altitude_starts ?? "",
     procedures,
     runways: runwaysText,
     patterns: landingsText,
@@ -256,7 +256,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     localMin,
     rules: flightRules,
     // Under IFR, the alternate filed in the Weather tab (AlternateSection).
-    alternate: searchParams.get("alternate") ?? "",
+    alternate: address.alternate ?? "",
     // Checkpoints as the map shows them: the settings' Waypoints off, the
     // nav log runs from point to point, at the pilot's ask.
     checkpoints: showWaypoints,
@@ -277,9 +277,9 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     .reduce((sum, stop) => sum + (ground[stop.ident] ?? 30), 0);
   // The runways picked at the route's fields (useRunwayPicks).
   const { pickedPatterns, patternFocus, autoPicked, pickPattern, preselectPattern, pickedTakeoffs, setTakeoff, preselectTakeoff } =
-    useRunwayPicks({ searchParams, setSearchParams });
+    useRunwayPicks({ address, setAddress });
   // The address's one-change settings (usePlanSetters), a Direct To worked out on the device offline.
-  const setters = usePlanSetters(setSearchParams, s);
+  const setters = usePlanSetters(setAddress, s);
   const { changeLocalMin, setGround, directToPoint, setHold, directToChartPoint, changeDepart, changeAltitudeChoice } = setters;
   const { selected } = s;
   // The course with each stop's time on the ground, so every row built
@@ -306,7 +306,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     closeFlight,
     selectPlaceOnChart,
     holdPoint,
-  } = usePlaceCards({ searchParams, setSearchParams, setPanel });
+  } = usePlaceCards({ address, setAddress, setPanel });
   const {
     place,
     heldPoint,
@@ -324,7 +324,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   } = cards;
   // The route's ends named by their airports' idents, and picks at fields
   // the route no longer has let go (useRouteTidy).
-  const { noApproaches } = useRouteTidy({ planned, searchParams, setSearchParams });
+  const { noApproaches } = useRouteTidy({ planned, address, setAddress });
   // The route's fields, their runways' fit and their patterns (useFieldPatterns).
   const { procedureAirports, fitAircraft, runwayFitInputs, patterns } = useFieldPatterns({
     planned,
@@ -355,8 +355,8 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     openProcedures,
     previewProcedure,
     mapProcedures,
-  } = useProcedurePicks({ planned, searchParams, setSearchParams, procedureAirports, crossings, patterns });
-  const directParam = searchParams.get("direct");
+  } = useProcedurePicks({ planned, address, setAddress, procedureAirports, crossings, patterns });
+  const directParam = address.direct;
   // Where the map is brought to (useMapPins).
   const { placePin, depAlone, startPin, fix, nearOrigin, nearestPoints, measuredFrom } = useMapPins({
     place,
@@ -378,12 +378,12 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     showWaypoints,
     flightRules,
     setPanel,
-    setSearchParams,
+    setAddress,
   });
 
   // The route's edits, each a change of the address (useRouteEdits).
   const { setRoute, addStop, departFrom, setPointAltitude, setStops, removeStop, insertStopAfter, acceptClassB, avoidClassB, flyAltitude } =
-    useRouteEdits({ planned, routePoints, setSearchParams });
+    useRouteEdits({ planned, routePoints, setAddress });
   // The stops the planner suggests, and keeping them (useSuggestedStops).
   const { fuelStops, fuelHidden, hideFuelStop, showFuelStops, tankFigures, fuelStopPins, keepFuelStops, addStopField } = useSuggestedStops({
     totals: s.totals,
@@ -437,7 +437,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     course,
     planned,
     aircraft,
-    classBAvoided: searchParams.get("class_b") === "0",
+    classBAvoided: !address.class_b,
     setStops,
     setRoute,
     directToChartPoint,
@@ -488,7 +488,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   const stopsKey = planned.stops.join(",");
   // With what was picked for it, kept as it changes: the route planned
   // again from Recents as it was left.
-  const recentPicks = picksOf(searchParams, ["altitudes"]);
+  const recentPicks = picksOf(addressParams(address), ["altitudes"]);
   useEffect(() => {
     if (!answered) return;
     usePreferences
@@ -513,8 +513,8 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     // 2026-11-12: "When I tap fly here, it still shows the search sheet").
     route: `${planned.dep}|${planned.stops.join(",")}|${planned.dest}|${load}`,
     hasRoute: routed || !!planned.dep || !!planned.dest || planned.stops.length > 0,
-    searchParams,
-    setSearchParams,
+    address,
+    setAddress,
   });
   // The places opened so far, each kept under the others once it has been
   // (TabKept): back to one, it is as it was left, a list scrolled where it
@@ -540,33 +540,29 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
       const index = bestStopIndex(points, at);
       const ship = useOwnShip.getState();
       const fix = ship.enabled ? ship.fix : null;
-      setSearchParams(
-        (prev) => {
-          const stops = stopsOf(prev.get("stops"));
-          const withIt = [...stops.slice(0, index), ident, ...stops.slice(index)];
-          const away = { place: null, at: null };
-          if (then !== "direct") return patched(prev, { ...away, stops: withIt.join(",") });
-          return patched(prev, {
-            ...away,
-            dep: fix ? positionIdent(fix) : undefined,
-            stops: [ident, ...stops.slice(index)].join(","),
-            direct: ident,
-            was: prev.get("was") ?? routeWas(prev),
-            // One direct at a time, as directToPoint's.
-            procs: proceduresOf(prev.get("procs")).some((p) => p.direct)
-              ? proceduresParam(proceduresOf(prev.get("procs")).map((p) => ({ ...p, direct: null }))) || null
-              : undefined,
-          });
-        },
-        { replace: true },
-      );
+      setAddress((prev) => {
+        const stops = stopsOf(prev.stops);
+        const withIt = [...stops.slice(0, index), ident, ...stops.slice(index)];
+        const away = { place: null, at: null };
+        if (then !== "direct") return { ...away, stops: withIt.join(",") };
+        const procs = proceduresOf(prev.procs);
+        return {
+          ...away,
+          dep: fix ? positionIdent(fix) : undefined,
+          stops: [ident, ...stops.slice(index)].join(","),
+          direct: ident,
+          was: prev.was ?? routeWas(prev),
+          // One direct at a time, as directToPoint's.
+          procs: procs.some((p) => p.direct) ? proceduresParam(procs.map((p) => ({ ...p, direct: null }))) || null : undefined,
+        };
+      });
       // FPL's list in sight, its new row and the hold's sheet with it: up
       // to half from the pill, else where the pilot left the sheet.
       setViewPick("plan");
       riseToSee(setPanel);
       if (then === "hold") setHoldAsk(`${ident}@${Date.now()}`);
     },
-    [course, setSearchParams, setPanel, setViewPick],
+    [course, setAddress, setPanel, setViewPick],
   );
   // The cards over FPL, the Stops and the lists in full (useFplCards).
   const {
@@ -607,8 +603,8 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     briefOpen,
     setViewPick,
     setPanel,
-    searchParams,
-    setSearchParams,
+    address,
+    setAddress,
     setProceduresShown,
   });
   // The search's own page in sight (SearchHome), its Nearest asked for
@@ -636,7 +632,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     setHomeAirport,
     toggleFavoriteAirport,
     moveFavoriteAirport,
-  } = useSearchPanel({ view, selectPlace, listAway, searchParams, setSearchParams });
+  } = useSearchPanel({ view, selectPlace, listAway, address, setAddress });
 
   // The route's close, at the pilot's ask: first it clears the route --
   // the address keeps nothing of it, and its box, the controls and the
@@ -648,25 +644,20 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // clearing that with the route lowered it to its pill.
   const hasPoints = !!planned.dep || !!planned.dest || planned.stops.length > 0;
   const clearRoute = useCallback(() => {
-    const keeping = (prev: URLSearchParams, place?: string) => {
-      const next = new URLSearchParams();
-      const height = prev.get("view");
-      if (height) next.set("view", height);
-      if (place) next.set("place", place);
-      return next;
-    };
+    // Every key taken out but the sheet's height, and the card to go back to.
+    const keeping = (place?: string) => ({ ...ADDRESS_CLEARED, view: undefined, place: place ?? null });
     if (hasPoints) {
       // Cleared: FPL's box empty to type another in.
-      setSearchParams((prev) => keeping(prev), { replace: true });
+      void setAddress(keeping());
       setViewPick("plan");
       return;
     }
     // The empty box closed: the airport it was flown to from (Fly Here),
     // or the search, on Airport.
     setViewPick("search");
-    if (under) setSearchParams((prev) => keeping(prev, under), { replace: true });
+    if (under) void setAddress(keeping(under));
     setUnder(null);
-  }, [hasPoints, under, setSearchParams, setViewPick, setUnder]);
+  }, [hasPoints, under, setAddress, setViewPick, setUnder]);
 
   // An airplane's card's close goes back to the place it was opened over
   // (usePlaceCards' closeFlight), by the view's own setter.
@@ -907,8 +898,8 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     depart,
     altitudes,
     localMin,
-    searchParams,
-    setSearchParams,
+    address,
+    setAddress,
     setRoute,
     flyAltitude,
     changeDepart,

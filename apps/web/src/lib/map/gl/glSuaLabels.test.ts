@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import specialUseTab from "../../fixtures/specialUseTab.json";
 import { AIRSPACE_LABELS_FROM, SUA_INK, glZoom } from "./glStyle";
 import { SUA_TAB_PICTURES, specialUseLabelLayer, suaTab } from "./glSuaLabels";
 
@@ -9,6 +10,8 @@ function evaluate(value: unknown, properties: Record<string, unknown>): unknown 
   const [op, ...args] = value as [string, ...unknown[]];
   const at = (i: number) => evaluate(args[i], properties);
   switch (op) {
+    case "coalesce":
+      return args.map((_, i) => at(i)).find((v) => v !== undefined && v !== null) ?? null;
     case "literal":
       return args[0];
     case "get":
@@ -44,16 +47,13 @@ const text = (properties: Record<string, unknown>) => {
 };
 
 describe("a special-use area's tab", () => {
-  it("writes the name and altitudes as ForeFlight does near Brady, TX", () => {
-    // The charts job's figures for the owner's screenshot's areas.
-    expect(text({ label: "M-BRADY NOR*", floor_ft: 3600, floor_ref: "MSL", ceiling_ft: 17999, ceiling_ref: "MSL" })).toBe(
-      "M-BRADY NOR*:\n3600-17999",
-    );
-    expect(text({ label: "M-BRADY LOW", floor_ft: 500, floor_ref: "AGL", ceiling_ft: 5999, ceiling_ref: "MSL" })).toBe(
-      "M-BRADY LOW:\n500AGL-5999",
-    );
-    expect(text({ label: "R-2502E", floor_ft: 0, floor_ref: "SFC", ceiling_ref: "UNL" })).toBe("R-2502E:\nSFC-UNL");
-    expect(text({ label: "R-6312", floor_ft: 0, floor_ref: "SFC", ceiling_ft: 23000, ceiling_ref: "FL" })).toBe("R-6312:\nSFC-FL230");
+  it("draws the engine's words the charts job wrote into the tiles", () => {
+    // The engine's special_use_tab for the owner's screenshot's areas
+    // (lib/fixtures/specialUseTab.json), as the tiles carry it.
+    for (const { answer } of specialUseTab.cases)
+      if (answer) expect(text({ tab: answer.text, label: answer.name, type: "MOA" })).toBe(answer.text);
+    // An archive written before the tiles carried the words: the name.
+    expect(text({ label: "M-BRADY NOR*", floor_ft: 3600, floor_ref: "MSL" })).toBe("M-BRADY NOR*");
   });
 
   it("is turned along its side and set inside the area, from the class labels' zoom", () => {

@@ -2,54 +2,66 @@ import CoreGraphics
 import Foundation
 import ImageIO
 
-/// One frame's picture of a field as values (the weather service's
-/// app.flow_grid): a latitude-longitude grid, north row first, the value
-/// in the red channel (the wind's east part in red and its north part in
-/// green), a 255th of its field's `unscale` range a step, and alpha 0
-/// where the model gave none. The picture's box, `bounds`, is its pixels'
-/// outer edges [west, south, east, north] (FlowLayer.bounds), so each
-/// pixel's value stands at its middle. The web reads the same pictures
-/// with weatherlayers-gl (features/weather-flow/flowTexture); this is its
-/// reading on the phone, with no rule in it: the bands and words are the
-/// engine's (FlowLooks, FlowReading).
+/// One frame's picture of a field (the weather service's app.flow_grid):
+/// a latitude-longitude grid, north row first, the value in the red
+/// channel (the wind's east part in red and its north part in green), a
+/// 255th of its field's `unscale` range a step, and alpha 0 where the
+/// model gave none. The picture's box, `bounds`, is its pixels' outer
+/// edges [west, south, east, north] (FlowLayer.bounds). Reading it at a
+/// point is the engine's (flow_cell, flow_sample), as the web's bubble and
+/// pins ask it, so the same point reads the same on every app; the bands
+/// and words are the engine's too (FlowLooks, FlowReading).
 struct FlowGrid: Sendable {
     let width: Int
     let height: Int
-    /// The values, row by row from the north, nil where there is none.
-    /// For the wind each is the speed, kt; `east` and `north` keep its
-    /// parts for where it blows from.
+    /// Each pixel's value for the painted picture (FlowPaint), row by row
+    /// from the north, nil where there is none; the wind's is its speed.
     let values: [Float?]
-    let east: [Float]?
-    let north: [Float]?
     /// [west, south, east, north], degrees.
     let bounds: [Double]
+    /// The picture's own bytes, RGBA, which the engine reads a point from.
+    private let rgba: [UInt8]
+    private let unscale: [Double]
+    private let vector: Bool
 
     /// The grid from a picture's RGBA bytes (4 a pixel, rows packed).
     init(rgba: [UInt8], width: Int, height: Int, unscale: [Double], vector: Bool, bounds: [Double]) {
         self.width = width
         self.height = height
         self.bounds = bounds
+        self.rgba = rgba
+        self.unscale = unscale
+        self.vector = vector
         let low = unscale.first ?? 0, high = unscale.count > 1 ? unscale[1] : 1
         let step = (high - low) / 255
-        let count = width * height
-        var values = [Float?](repeating: nil, count: count)
-        var east: [Float]? = vector ? [Float](repeating: 0, count: count) : nil
-        var north: [Float]? = vector ? [Float](repeating: 0, count: count) : nil
-        for i in 0..<min(count, rgba.count / 4) {
-            guard rgba[i * 4 + 3] > 0 else { continue }
+        var values = [Float?](repeating: nil, count: width * height)
+        for i in 0..<min(values.count, rgba.count / 4) where rgba[i * 4 + 3] > 0 {
             let red = Float(low + Double(rgba[i * 4]) * step)
-            if vector {
-                let green = Float(low + Double(rgba[i * 4 + 1]) * step)
-                east?[i] = red
-                north?[i] = green
-                values[i] = (red * red + green * green).squareRoot()
-            } else {
-                values[i] = red
-            }
+            let green = Float(low + Double(rgba[i * 4 + 1]) * step)
+            values[i] = vector ? (red * red + green * green).squareRoot() : red
         }
         self.values = values
-        self.east = east
-        self.north = north
+    }
+
+    /// The value at a point and, for the wind, where it blows from: the
+    /// engine's flow_cell finds the four pixels round it and flow_sample
+    /// reads between them. Nil off the picture or where a pixel it is read
+    /// from has none; a rule that fails throws, so the caller says why
+    /// rather than showing no hazard.
+    func reading(lat: Double, lon: Double) throws -> EngineContract.FlowSampleAnswer? {
+        guard let cell = try Engine.flowCell(bounds: bounds, width: width, height: height, lat: lat, lon: lon) else { return nil }
+        let pixels = try cell.pixels.map { i in
+            guard i >= 0, i * 4 + 3 < rgba.count else { throw OffThePicture(index: i) }
+            return [Double(rgba[i * 4]), Double(rgba[i * 4 + 1]), Double(rgba[i * 4 + 3])]
+        }
+        return try Engine.flowSample(pixels: pixels, fx: cell.fx, fy: cell.fy, unscale: unscale, vector: vector)
+    }
+
+    /// A pixel the engine named that the picture's bytes do not hold (a
+    /// picture shorter than its width and height say).
+    struct OffThePicture: LocalizedError {
+        let index: Int
+        var errorDescription: String? { "the picture has no pixel \(index)" }
     }
 
     /// The grid from the PNG the planner serves, read straight from its
@@ -90,51 +102,4 @@ struct FlowGrid: Sendable {
         }
         return drawn ? out : nil
     }
-
-    /// The pixel's place for a point, fractional, its middle at .5.
-    private func place(lat: Double, lon: Double) -> (x: Double, y: Double)? {
-        guard bounds.count == 4, bounds[2] > bounds[0], bounds[3] > bounds[1] else { return nil }
-        let x = (lon - bounds[0]) / (bounds[2] - bounds[0]) * Double(width) - 0.5
-        let y = (bounds[3] - lat) / (bounds[3] - bounds[1]) * Double(height) - 0.5
-        guard x > -0.5, y > -0.5, x < Double(width) - 0.5, y < Double(height) - 0.5 else { return nil }
-        return (x, y)
-    }
-
-    /// The value at a point, between the four pixels round it as the web's
-    /// reading has it (weatherlayers-gl's linear interpolation), the
-    /// nearest where one of them has none; nil outside the grid.
-    func value(lat: Double, lon: Double) -> Double? {
-        sample(values, lat: lat, lon: lon)
-    }
-
-    /// Where the wind blows from, degrees true, at a point: its parts read
-    /// as the speed is, turned round.
-    func fromDeg(lat: Double, lon: Double) -> Double? {
-        guard let east, let north,
-              let u = sample(east.map { Optional($0) }, lat: lat, lon: lon),
-              let v = sample(north.map { Optional($0) }, lat: lat, lon: lon),
-              u != 0 || v != 0
-        else { return nil }
-        let toward = atan2(u, v) * 180 / .pi
-        return (toward + 180).truncatingRemainder(dividingBy: 360)
-    }
-
-    private func sample(_ grid: [Float?], lat: Double, lon: Double) -> Double? {
-        guard let (x, y) = place(lat: lat, lon: lon) else { return nil }
-        let x0 = max(0, min(width - 1, Int(floor(x)))), y0 = max(0, min(height - 1, Int(floor(y))))
-        let x1 = min(width - 1, x0 + 1), y1 = min(height - 1, y0 + 1)
-        let fx = max(0, min(1, x - Double(x0))), fy = max(0, min(1, y - Double(y0)))
-        let corners = [grid[y0 * width + x0], grid[y0 * width + x1], grid[y1 * width + x0], grid[y1 * width + x1]]
-        if let a = corners[0], let b = corners[1], let c = corners[2], let d = corners[3] {
-            let top = Double(a) * (1 - fx) + Double(b) * fx
-            let bottom = Double(c) * (1 - fx) + Double(d) * fx
-            return top * (1 - fy) + bottom * fy
-        }
-        let nearest = grid[Int(y.rounded()).clamped(0, height - 1) * width + Int(x.rounded()).clamped(0, width - 1)]
-        return nearest.map(Double.init)
-    }
-}
-
-extension Int {
-    fileprivate func clamped(_ low: Int, _ high: Int) -> Int { Swift.max(low, Swift.min(high, self)) }
 }

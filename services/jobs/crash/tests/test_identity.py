@@ -48,9 +48,18 @@ def _day(points, hex_id="a1b2c3"):
 
 
 def test_kentucky_in_november_is_read_at_central_and_eastern_time():
-    assert places.offsets_min("KY", "2026-11-08") == [-300.0, -360.0]
-    assert places.offsets_min("AZ", "2026-07-01") == [-420.0, -360.0]
+    assert sorted(places.offsets_min("KY", "2026-11-08")) == [-360.0, -300.0]
     assert places.offsets_min(None, "2026-11-08") == []
+
+
+def test_the_navajo_nation_keeps_summer_time_where_the_rest_of_arizona_does_not():
+    assert places.offsets_min("AZ", "2026-07-01", (33.45, -112.07)) == [-420.0]  # Phoenix
+    assert sorted(places.offsets_min("AZ", "2026-07-01", (36.15, -109.55))) == [-420.0, -360.0]  # Chinle
+
+
+def test_a_states_name_as_the_faa_writes_it_is_its_postal_code():
+    names = ("Kentucky", "KY", "D.C.", "District of Columbia", "U.S. Virgin Islands", "Puerto Rico", "Ontario", "", None)
+    assert [places.state_code(n) for n in names] == ["KY", "KY", "DC", "DC", "VI", "PR", None, None, None]
 
 
 def test_three_sources_agreeing_make_the_draft_ready_with_its_track(lead, monkeypatch):

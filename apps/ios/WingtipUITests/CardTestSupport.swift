@@ -118,6 +118,37 @@ enum CardTests {
         return all.element(boundBy: max(0, all.count - 1))
     }
 
+    /// Dragged from the element's middle to a point of the screen, given
+    /// as a fraction of its width and height. Held a tenth of a second
+    /// first, so the system takes it for a drag of the thing under the
+    /// finger (the sheet by its grabber, the pages sideways) and not for
+    /// a flick that `swipeUp()` and its kind can leave half done, or a tap.
+    @MainActor
+    static func drag(_ element: XCUIElement, in app: XCUIApplication, to point: CGVector) {
+        element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: point))
+    }
+
+    /// The sheet down to its smallest, by its grabber.
+    @MainActor
+    static func dragDown(_ grabber: XCUIElement, in app: XCUIApplication) {
+        drag(grabber, in: app, to: CGVector(dx: 0.5, dy: 0.98))
+    }
+
+    /// The sheet up to full height, by its grabber.
+    @MainActor
+    static func dragUp(_ grabber: XCUIElement, in app: XCUIApplication) {
+        drag(grabber, in: app, to: CGVector(dx: 0.5, dy: 0.02))
+    }
+
+    /// The element dragged sideways to the screen's edge at its own height:
+    /// to the left, the next page; to the right, the one before.
+    @MainActor
+    static func dragSideways(_ element: XCUIElement, in app: XCUIApplication, left: Bool) {
+        let y = app.frame.height > 0 ? element.frame.midY / app.frame.height : 0.5
+        drag(element, in: app, to: CGVector(dx: left ? 0.02 : 0.98, dy: y))
+    }
+
     /// Swiped up on the screen's middle until `element` is hittable, at
     /// most twelve times.
     @MainActor

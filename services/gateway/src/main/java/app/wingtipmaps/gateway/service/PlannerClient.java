@@ -51,28 +51,21 @@ import tools.jackson.databind.DeserializationFeature;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.cfg.DateTimeFeature;
 import tools.jackson.databind.json.JsonMapper;
-import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import tools.jackson.databind.util.RawValue;
 
 /**
- * The planner and the assistant, asked by this app on its own behalf
- * rather than for a browser's request (that is {@link app.wingtipmaps.gateway.controller.PlannerProxyController}):
- * a flight's briefing from the planner, and what changed between two
- * briefings in words from the assistant service (services/assistant,
- * which holds every Claude call), for the flight watch
- * (FlightWatchService); and what a pilot's logbook says of them -- their
- * currency (14 CFR 61.56, 61.57) and a student's 61.109 experience --
- * which the engine works out through the planner, as this app holds no
- * aviation rule of its own (CLAUDE.md). Reached at the same base
- * addresses the proxy uses.
- *
- * <p>The briefing is the planner's JSON document, carried as a string
- * and never read inside: what it says is the planner's to say, and the
- * gateway only keeps it to hand back. The client is pinned to HTTP/1.1
- * for the reason {@link app.wingtipmaps.gateway.controller.StreamingProxy}
- * gives: the planner is uvicorn, and a pooled connection that attempted
- * an HTTP/2 upgrade corrupted the next request on it.
+ * This app's one client of the planner and the assistant on its own behalf
+ * (a browser's request is {@link app.wingtipmaps.gateway.controller.PlannerProxyController}'s):
+ * the flight watch's briefings and their changes in words (FlightWatchService,
+ * ChangeLines), the engine's rules over a pilot's logbook and airplane, as
+ * this app holds no aviation rule of its own (CLAUDE.md), a pilot's notes
+ * (CheckpointNotesClient) and the Studio's drafts (CrashDraftMail), each
+ * answer read into the planner's generated models. A briefing is carried as
+ * the planner's JSON, never read here. Pinned to HTTP/1.1 for the reason
+ * {@link app.wingtipmaps.gateway.controller.StreamingProxy} gives: the
+ * planner is uvicorn, and a pooled connection that attempted an HTTP/2
+ * upgrade corrupted the next request on it.
  */
 @Component
 public class PlannerClient {
@@ -81,18 +74,15 @@ public class PlannerClient {
      *  aviationweather.gov is slow; the words are one Claude call. */
     private static final Duration TIMEOUT = Duration.ofMinutes(2);
 
-    /** Fields the planner adds later are ignored: its answers are
-     *  generated from its OpenAPI document as this app was built, and a
-     *  planner deployed after it may say more. */
+    /** Fields the planner adds later are ignored: a planner deployed after
+     *  this app was built from its OpenAPI document may say more. */
     static final ObjectMapper JSON = JsonMapper.builder()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .build();
 
-    /** The same, reading and writing the planner's days ("2026-10-11") as
-     *  LocalDate, for the planner's own asks and answers: types generated
-     *  from services/planner/openapi.json as this app is built (the pom's
-     *  openapi-generator-maven-plugin, package planner.model), so a field
-     *  the planner renames fails the build where it is used. */
+    /** The same, the planner's days ("2026-10-11") as LocalDate, for its asks and
+     *  answers as the types generated from its document (the pom, planner.model)
+     *  have them, so a field the planner renames fails the build where it is used. */
     static final ObjectMapper DATES = JsonMapper.builder()
             .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
             .disable(DateTimeFeature.WRITE_DATES_AS_TIMESTAMPS)
@@ -169,18 +159,9 @@ public class PlannerClient {
      *     or answers something that is not its answer
      */
     public AssistantChangesWords changes(String dep, String dest, List<String> stops, String then, String now) {
-        ObjectNode body = JSON.createObjectNode();
-        body.put("dep", dep);
-        body.put("dest", dest);
-        ArrayNode stopNodes = body.putArray("stops");
-        for (String stop : stops == null ? List.<String>of() : stops) {
-            stopNodes.add(stop);
-        }
-        // Embedded as the JSON they already are, not as strings holding JSON.
-        body.putRawValue("then", new RawValue(then));
-        body.putRawValue("now", new RawValue(now));
         HttpRequest request = HttpRequest.newBuilder(URI.create(assistantBaseUrl + "/api/words/changes"))
-                .POST(HttpRequest.BodyPublishers.ofString(body.toString(), StandardCharsets.UTF_8))
+                .POST(HttpRequest.BodyPublishers.ofString(
+                        changesAsk(dep, dest, stops, then, now), StandardCharsets.UTF_8))
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .timeout(TIMEOUT)
                 .build();
@@ -191,6 +172,16 @@ public class PlannerClient {
             throw new PlannerUnavailableException(
                     "the assistant's answer to the changes was not its answer", notItsAnswer);
         }
+    }
+
+    /** The changes' ask, the assistant's and the planner's alike (ChangeLines):
+     *  both briefings embedded as the JSON they already are, not as strings holding JSON. */
+    static String changesAsk(String dep, String dest, List<String> stops, String then, String now) {
+        ObjectNode body = JSON.createObjectNode().put("dep", dep).put("dest", dest);
+        (stops == null ? List.<String>of() : stops).forEach(body.putArray("stops")::add);
+        return body.putRawValue("then", new RawValue(then))
+                .putRawValue("now", new RawValue(now))
+                .toString();
     }
 
     /**
@@ -320,27 +311,19 @@ public class PlannerClient {
      * @throws PlannerUnavailableException when the planner cannot be reached or refuses
      */
     public List<EndorsementKindDto> endorsementKinds() {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + "/api/pilot/endorsement-kinds"))
-                .GET()
-                .timeout(RULE_TIMEOUT)
-                .build();
-        String what = "the endorsements' words";
-        return read(
-                sendAgainOnce(request, what),
-                PlannerEndorsementKind[].class,
-                what,
-                kinds -> Arrays.stream(kinds)
-                        .map(k -> new EndorsementKindDto(
-                                k.getCode(),
-                                k.getParagraph(),
-                                k.getRule(),
-                                k.getLabel(),
-                                k.getTemplate(),
-                                k.getFields().stream()
-                                        .map(f -> new EndorsementFieldDto(
-                                                f.getKey(), f.getLabel(), f.getExample(), f.getRequired()))
-                                        .toList()))
-                        .toList());
+        return Arrays.stream(
+                        get("/api/pilot/endorsement-kinds", PlannerEndorsementKind[].class, "the endorsements' words"))
+                .map(k -> new EndorsementKindDto(
+                        k.getCode(),
+                        k.getParagraph(),
+                        k.getRule(),
+                        k.getLabel(),
+                        k.getTemplate(),
+                        k.getFields().stream()
+                                .map(f -> new EndorsementFieldDto(
+                                        f.getKey(), f.getLabel(), f.getExample(), f.getRequired()))
+                                .toList()))
+                .toList();
     }
 
     /** The endorsement of {@code code} in the catalogue, if there is one. */
@@ -409,6 +392,23 @@ public class PlannerClient {
         return d == null ? null : BigDecimal.valueOf(d);
     }
 
+    /** The planner's {@code path} read, with any {@code headers} (name, value, ...),
+     *  into the generated {@code type} (CrashDraftMail, CheckpointNotesClient). */
+    <A> A get(String path, Class<A> type, String what, String... headers) {
+        HttpRequest.Builder request =
+                HttpRequest.newBuilder(URI.create(plannerBaseUrl + path)).timeout(RULE_TIMEOUT);
+        if (headers.length > 0) {
+            request.headers(headers);
+        }
+        return read(sendAgainOnce(request.build(), what), type, what, a -> a);
+    }
+
+    /** {@code json} posted to the planner's {@code path} as it is, never
+     *  parsed here (ChangeLines' briefings), its answer read into {@code type}. */
+    <A> A postJson(String path, String json, Class<A> type, String what) {
+        return read(post(path, json, what), type, what, a -> a);
+    }
+
     /** {@code ask} sent to the planner's {@code path}, its answer read into
      *  the generated {@code type} and made into what the caller keeps. */
     private <A, T> T answer(String path, Object ask, Class<A> type, String what, Function<A, T> made) {
@@ -433,7 +433,7 @@ public class PlannerClient {
      * connection: the pool may hold several gone stale together, and a
      * second one from it failed the same way. A timeout is not tried again.
      */
-    private String post(String path, String body, String what) {
+    String post(String path, String body, String what) {
         HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + path))
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8))
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)

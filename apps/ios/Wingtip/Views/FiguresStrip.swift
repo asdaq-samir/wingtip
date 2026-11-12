@@ -20,6 +20,19 @@ struct FiguresStrip: View {
     }
 
     var body: some View {
+        // The figures open the nav log they add up, leg by leg (tap what
+        // you see, docs/navigation.md), as the web's distance does: a
+        // stock Button, plain so the strip keeps its own look.
+        if plan.routed {
+            Button { PendingCommand.shared.command = .open(.navlog) } label: { figures.contentShape(Rectangle()) }
+                .buttonStyle(.plain)
+                .accessibilityHint("Opens the nav log")
+        } else {
+            figures
+        }
+    }
+
+    @ViewBuilder private var figures: some View {
         // A fuel the engine could not work out is shown as unknown and in
         // the warning's colour, never as fuel enough.
         let asked = Result { try StripFuel.of(plan.totals) }
@@ -49,12 +62,6 @@ struct FiguresStrip: View {
         .padding(.horizontal)
         .frame(maxWidth: .infinity)
         .accessibilityElement(children: .combine)
-        // The figures open the nav log they add up, leg by leg (tap what
-        // you see, docs/navigation.md), as the web's distance does.
-        .contentShape(Rectangle())
-        .onTapGesture { if plan.routed { PendingCommand.shared.command = .open(.navlog) } }
-        .accessibilityAddTraits(plan.routed ? .isButton : [])
-        .accessibilityHint(plan.routed ? "Opens the nav log" : "")
     }
 }
 

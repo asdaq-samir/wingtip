@@ -27,7 +27,7 @@ INDEX = "overlays.json"
 #: attributes, zooms or tolerances (the charts job's overlays module)
 #: bumps it, and the archive is built again under a new name (its address
 #: is kept a cycle by every cache).
-VERSION = 5
+VERSION = 6
 
 LAYERS = ("airspace", "airspace_labels", "special_use", "special_use_labels", "airports", "navaids", "fixes", "runways")
 

@@ -97,6 +97,12 @@ describe("Sky Dolly's Flight Recorder CSV", () => {
     expect(Number(climbing[col("Pitch")])).toBeLessThan(0);
     expect(climbing[col("GearHandlePosition")]).toBe("0");
   });
+
+  it("sets the thrust levers as the engine estimates them, back while taxiing", () => {
+    const col = rows[0]!.indexOf("ThrottleLeverPosition1");
+    expect(rows[1]![col]).toBe(String(segments[0]!.rows[0]!.throttle));
+    expect(segments[0]!.rows[0]!.throttle).toBeLessThan(0.5);
+  });
 });
 
 describe("KML", () => {

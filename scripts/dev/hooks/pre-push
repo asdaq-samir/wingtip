@@ -103,7 +103,8 @@ if has_area web; then
   while IFS= read -r f; do [ -n "$f" ] && lint+=("${f#apps/web/}"); done <<<"$web_files"
   # The API and engine types are generated, not committed: tsc needs them.
   # The files are the script's own arguments ("$@"), after `--`, not text.
-  web_cmd='npm run -s types >/dev/null && npx tsc --noEmit && { [ "$#" -eq 0 ] || npx eslint --max-warnings 0 --no-warn-ignored -- "$@"; }'
+  # And the feature layers (dependency-cruiser, .dependency-cruiser.cjs).
+  web_cmd='npm run -s types >/dev/null && npx tsc --noEmit && { [ "$#" -eq 0 ] || npx eslint --max-warnings 0 --no-warn-ignored -- "$@"; } && npm run -s layers'
   if command -v npx >/dev/null && [ -d "$here/apps/web/node_modules" ]; then
     note "web: tsc${lint[0]:+, eslint}"
     (cd "$here/apps/web" && sh -c "$web_cmd" sh "${lint[@]+"${lint[@]}"}") || fail "web"
@@ -242,7 +243,12 @@ gen() {   # gen <pattern of the paths it covers> <label> <fix> <command>...
     return 0
   fi
   note "$label"
-  out=$("$@" 2>&1) || { tail -n 12 <<<"$out"; fail "$label ($fix)"; }
+  local status=0
+  out=$("$@" 2>&1) || status=$?
+  # 3: the check's tool is not on this machine (a skip, as guards.sh reads it).
+  if [ "$status" -eq 3 ]; then note "$label: left to CI (its tool is not here)"
+  elif [ "$status" -ne 0 ]; then tail -n 12 <<<"$out"; fail "$label ($fix)"
+  fi
 }
 gen '^(design/screens\.json$|scripts/build/screens\.|docs/navigation\.md$|apps/web/src/lib/navigation/generated/|apps/ios/Wingtip/Navigation/Generated/|apps/android/app/src/main/kotlin/app/wingtipmaps/android/navigation/generated/|apps/android/app/src/main/res/xml/shortcuts\.xml$|apps/android/app/src/main/res/values/screens_strings\.xml$)' \
   "the screens' links are design/screens.json's" "scripts/build/screens.sh writes them" \
@@ -255,12 +261,45 @@ gen '^(design/|scripts/build/design[-_]tokens|apps/web/src/styles/tokens\.css$|a
 gen '(^\.tool-versions$|rust-toolchain\.toml$|^engine/.*Cargo\.toml$|^scripts/build/toolchain\.|\.sh$|Dockerfile|docker-compose.*\.yml$|^\.github/workflows/.*\.yml$|^\.devcontainer/devcontainer\.json$|^apps/web/\.nvmrc$|^apps/web/package\.json$|^services/gateway/pom\.xml$|^apps/android/app/build\.gradle\.kts$|^apps/android/gradle/|^services/.*/requirements-dev.*\.txt$|^scripts/dev/format\.sh$|^CLAUDE\.md$|^README\.md$|^docs/[^/]*\.md$|^\.claude/skills/checks/SKILL\.md$)' \
   "every version is .tool-versions'" "scripts/build/toolchain.sh writes them" \
   "$here/scripts/build/toolchain.sh" --check
-gen '(\.(ts|tsx|py|rs|swift|kt|java)$|^scripts/ci/file_sizes)' \
-  "the file-size budget" "split the file, or scripts/ci/file_sizes_allow.txt" \
+gen '(\.(ts|tsx|py|rs|swift|kt|java|sh|mjs|js|cjs|cs|kts|gradle)$|^scripts/ci/file_sizes)' \
+  "the file-size budget" "split the file (a new one over 300 lines, an old one over 400)" \
   python3 "$here/scripts/ci/file_sizes.py" --base origin/main
 gen '(^apps/web/src/.*\.(ts|tsx|css)$|^apps/ios/.*\.swift$|^apps/android/app/src/main/.*\.kt$|^scripts/ci/brand_guard|^design/tokens\.json$)' \
   "no raw style value outside the design tokens" "use design/tokens.json's" \
   python3 "$here/scripts/ci/brand_guard.py"
+# The simplicity rules (CLAUDE.md, "Simplicity rules"), each on the files
+# the push changes, each a few seconds; a tool not here is left to CI.
+src='^(apps|services|engine|tools)/.*\.(ts|tsx|js|mjs|py|swift|kt|java|cs|rs)$'
+gen "($src|^scripts/ci/rules_boundary)" \
+  "no aviation rule outside the engine" "ask the engine by name (engine/README.md)" \
+  python3 "$here/scripts/ci/rules_boundary.py"
+gen "($src|^scripts/ci/(semgrep|changed))" \
+  "one home per constant or helper (Semgrep)" "import from the home the message names" \
+  python3 "$here/scripts/ci/semgrep_check.py" --base origin/main
+gen "($src|^scripts/ci/(jscpd|changed))" \
+  "no new copy-paste (jscpd)" "move the copy into one function both call" \
+  python3 "$here/scripts/ci/jscpd_check.py" --base origin/main
+gen "($src|^scripts/ci/simplicity_|^apps/web/eslint-suppressions\.json$)" \
+  "the simplicity ratchet" "bring the count back down; never raise the baseline" \
+  python3 "$here/scripts/ci/simplicity_ratchet.py" --base origin/main
+# The stock linters of the scripts, the workflows and the Markdown's links
+# (shellcheck, actionlint and zizmor, lychee: scripts/build/tool.sh installs
+# them at .tool-versions' versions; one not here is left to CI).
+gen '(^scripts/.*\.sh$|^scripts/dev/hooks/|^\.shellcheckrc$)' \
+  "shellcheck over the scripts" "scripts/ci/shellcheck.sh says what to put right" \
+  "$here/scripts/ci/shellcheck.sh"
+gen '(^\.github/(workflows/|actionlint\.yaml$|zizmor\.yml$)|^scripts/ci/workflow_rules)' \
+  "the workflows' rules, actionlint and zizmor" "scripts/ci/workflow_rules.py says what to put right" \
+  python3 "$here/scripts/ci/workflow_rules.py"
+gen '(\.md$|^lychee\.toml$)' \
+  "the Markdown's links" "scripts/ci/check_links.sh names each broken one" \
+  "$here/scripts/ci/check_links.sh"
+gen '^(apps/ios/.*\.swift$|scripts/ci/phones/swiftlint)' \
+  "SwiftLint" "scripts/ci/phones/swiftlint.yml says what each rule wants" \
+  "$here/scripts/ci/phone_lint.sh" ios --base origin/main
+gen '^(apps/android/.*\.kt$|scripts/ci/phones/detekt)' \
+  "detekt" "scripts/ci/phones/detekt.yml says what each rule wants" \
+  "$here/scripts/ci/phone_lint.sh" android --base origin/main
 
 if [ "$failed" -ne 0 ]; then
   echo "pre-push: fix the above, or push anyway with git push --no-verify (or SKIP_HOOKS=1)"

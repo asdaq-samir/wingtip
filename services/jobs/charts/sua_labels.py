@@ -2,9 +2,9 @@
 each special-use area's boundary where the map writes its tab, as
 ForeFlight does over the sectional (the owner's screenshot near Brady,
 TX, 2026-11-12): "M-BRNWD 2 W*: 7000-17999", "M-BRADY LOW:
-500AGL-5999". The tiles carry the tab's name and its limits as figures
-with their references; the map writes the altitudes' words, as it does
-for the Class B, C and D tabs (`airspace_labels`, overlays.py).
+500AGL-5999". The tiles carry the tab's finished words (`tab`), which
+the web only draws, and its name and its limits as figures with their
+references for a map that still writes them.
 
 The tab's words -- the name cut as ForeFlight cuts it and the limits as
 the FAA's CIFP writes them ("to but not including" FL180 as 17999 MSL,
@@ -29,8 +29,8 @@ from .overlays import SPECIAL_USE_MIN_ZOOM, _feature, _meets, _orient
 
 def tab_words(area: dict) -> dict | None:
     """The engine's tab for one area as wingtip.sua `_area` describes it:
-    {"name", "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref"}, or None
-    for a piece marked EXCLUSION or a limit with no figure."""
+    {"text", "name", "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref"},
+    or None for a piece marked EXCLUSION or a limit with no figure."""
     asked = {
         "name": area["name"],
         "type": area["type"].strip(),
@@ -69,9 +69,10 @@ def _edge_place(geometry) -> tuple[tuple[float, float], float, int]:
 
 def special_use_label_features(pack, bbox=None):
     """The `special_use_labels` layer's lines of GeoJSON: one point an
-    area's polygon (_edge_place) with `label`, `type`, its floor and
-    ceiling as `floor_ft`/`floor_ref` and `ceiling_ft`/`ceiling_ref`
-    (tab_words), `angle` and `side`. A piece the FAA marks EXCLUSION 1
+    area's polygon (_edge_place) with `tab`, the engine's words as the
+    map writes them, `label`, `type`, its floor and ceiling as
+    `floor_ft`/`floor_ref` and `ceiling_ft`/`ceiling_ref` (tab_words),
+    `angle` and `side`. A piece the FAA marks EXCLUSION 1
     (Brady Low's airspace above 1,500 ft AGL round the fields it excludes
     below that, the engine's sua_tab) is the area's own and has none."""
     from wingtip import sua
@@ -89,6 +90,7 @@ def special_use_label_features(pack, bbox=None):
         (lon, lat), angle, side = _edge_place(geometry)
         yield _feature(
             {
+                "tab": tab["text"],
                 "label": tab["name"],
                 "type": area["type"].strip(),
                 "floor_ft": tab["floor_ft"],

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { ImageInterpolation, ImageType, getRasterPoints, loadTextureData, type TextureData } from "weatherlayers-gl";
+import { loadTextureData, type TextureData } from "weatherlayers-gl";
+import { callEngine } from "../../lib/engine/engine";
 import { pictureUrl, type FlowFrame, type FlowLayer } from "./useWeatherFlow";
 
 /** A frame's picture of a file ("wind-060") as a query: loaded once by
@@ -23,26 +24,30 @@ export function useFlowTexture(frame: FlowFrame | null, field: string, enabled =
   }).data;
 }
 
-/** A picture's value at a point: weatherlayers-gl's own reading of it
- *  (its direction, for the wind, the one it blows from). `file` is the
- *  picture's name, its encoding its field's ("temp-060" is a "temp"). */
+/** A picture's value at a point, the engine's reading of it (flow_cell
+ *  and flow_sample, the one the phones' FlowGrid make too): between the
+ *  four pixel middles round it, the wind from its east and north parts,
+ *  its direction the one it blows from. weatherlayers-gl only loads the
+ *  picture here: its own reading takes the bounds as the outer pixels'
+ *  middles, half a pixel off the weather service's (flow_grid BOUNDS, the
+ *  pixels' outer edges), and averages none where a pixel has none in a
+ *  way the phones did not. `file` is the picture's name, its encoding its
+ *  field's ("temp-060" is a "temp"). */
 export function valueAt(layer: FlowLayer, file: string, texture: TextureData | undefined, point: [number, number]) {
   const spec = layer.fields[file.split("-")[0]!];
   if (!texture || !spec) return null;
-  const read = getRasterPoints(
-    {
-      image: texture,
-      image2: null,
-      imageSmoothing: 0,
-      imageInterpolation: ImageInterpolation.LINEAR,
-      imageWeight: 0,
-      imageType: spec.vector ? ImageType.VECTOR : ImageType.SCALAR,
-      imageUnscale: spec.unscale as [number, number],
-      imageMinValue: null,
-      imageMaxValue: null,
-    },
-    layer.bounds as GeoJSON.BBox,
-    [point],
-  ).features[0]?.properties;
-  return read && Number.isFinite(read.value) ? read : null;
+  const { data, width, height } = texture;
+  const cell = callEngine("flow_cell", { bounds: layer.bounds, width, height, lat: point[1], lon: point[0] });
+  if (!cell) return null;
+  // Each pixel's red, green and alpha: RGBA pictures, so four a pixel.
+  const channels = data.length / (width * height);
+  const pixel = (i: number) => [data[i * channels]!, data[i * channels + 1]!, data[i * channels + 3]!];
+  const read = callEngine("flow_sample", {
+    pixels: cell.pixels.map(pixel),
+    fx: cell.fx,
+    fy: cell.fy,
+    unscale: spec.unscale,
+    vector: spec.vector,
+  });
+  return read && { value: read.value, direction: read.from_deg ?? undefined, calm: read.calm };
 }

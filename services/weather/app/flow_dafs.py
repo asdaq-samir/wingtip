@@ -36,6 +36,7 @@ import gribberish
 import numpy as np
 import requests
 from wingtip.config import REQUEST_HEADERS as HEADERS
+from wingtip.units import M_PER_FT
 
 from . import flow_grid
 
@@ -48,7 +49,6 @@ TURBULENCE_VAR = "EDPARM"
 TURBULENCE_MAX = ("MXEDPRM", "entire atmosphere")
 LAST_STEP = 18
 CYCLES_TRIED = 3
-M_PER_FT = 0.3048  # the international foot (NIST Handbook 44, Appendix C)
 #: (product, cycle, step) -> when its .idx was last missing: not asked
 #: again for NOT_UP_RETRY_S.
 _NOT_UP: dict = {}

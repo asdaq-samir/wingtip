@@ -48,9 +48,6 @@ struct Feathers: Equatable, Sendable {
 /// engine's (wind_barb, FAA-H-8083-28B 25.2.3.4.5), a ring for calm, and
 /// the visibility and ceiling as two short lines beside the field.
 enum StationModel {
-    /// The web map's zoom from which its lines fit beside each field (the
-    /// web and Android draw it from 10).
-    static let fromZoom = 10.0
     /// The staff's length from the field's middle, points.
     static let staff: CGFloat = 26
 

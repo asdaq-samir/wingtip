@@ -155,11 +155,10 @@ class MapStyleTest {
         assertEquals("""["get","angle"]""", layout["text-rotate"].toString())
         assertTrue(layout["icon-image"].toString().contains(SpecialUseLayers.TAB_RESTRICTED))
         assertEquals("both", layout["icon-text-fit"]!!.jsonPrimitive.content)
-        // "M-BRADY NOR*:" over "3600-17999": the label, then each limit by
-        // its reference, "500AGL" above the ground.
-        val text = SpecialUseLayers.TAB_TEXT.toString()
-        assertTrue(text, text.startsWith("""["concat",["get","label"],":\n","""))
-        assertTrue(text, text.contains(""""AGL",["concat",["to-string",["round",["get","floor_ft"]]],"AGL"]"""))
+        // "M-BRADY NOR*:" over "3600-17999": the engine's words, which the
+        // charts job writes into the tiles as `tab`; the name alone in an
+        // archive from before them.
+        assertEquals("""["coalesce",["get","tab"],["get","label"]]""", SpecialUseLayers.TAB_TEXT.toString())
         // An older archive: the name alone along the boundary.
         val older = layer(style(tiles("special_use")), SpecialUseLayers.LABELS)
         assertEquals("special_use", older["source-layer"]!!.jsonPrimitive.content)
