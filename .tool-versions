@@ -35,3 +35,13 @@ swiftformat 0.64.6
 ktlint 1.8.0
 palantir-java-format 2.103.0
 prettier 3.9.10
+# The simplicity guards (CLAUDE.md, "Simplicity rules"). Semgrep's free
+# command line (LGPL-2.1, metrics off, no login), run by uvx at this version;
+# jscpd (MIT) and dependency-cruiser (MIT) by npx (dependency-cruiser pinned
+# in apps/web/package.json and checked against this line); SwiftLint (MIT)
+# and detekt's command line (Apache-2.0) by scripts/ci/phone_lint.sh.
+semgrep 1.185.0
+jscpd 5.4.3
+dependency-cruiser 18.8.0-beta-2
+swiftlint 0.65.1
+detekt 2.0.0-alpha.6

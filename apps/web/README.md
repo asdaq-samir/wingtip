@@ -246,12 +246,12 @@ loader (`loadPilotPanel = () => import("./PilotPanel")`) for a part on a
 chunk of its own, so naming the entry never pulls the chunk into a first
 load.
 
-The lint holds the layers (`eslint/boundaries.js`, rule
-`boundaries/layers`): `lib/` and `hooks/` import neither `components/` nor
+dependency-cruiser holds the layers (`.dependency-cruiser.cjs`, `npm run
+layers`): `lib/` and `hooks/` import neither `components/` nor
 `features/`; `components/` import a feature only through its `index.ts`;
 a feature imports another only through its `index.ts`; `main.tsx`, which
 wires them, may name any. Every way a module is named counts: `import`,
-`export ... from`, `import()`, a type's `import("...")`, `vi.mock()`.
+`export ... from`, `import()`, a type-only import.
 
 ## Architecture
 
