@@ -54,8 +54,10 @@ struct FlowFixturesTests {
         let f = try fixture("flowSample", as: FlowSampleFixture.self)
         #expect(!f.samples.isEmpty)
         for c in f.samples {
-            let got = try Engine.flowSample(pixels: c.input.pixels, fx: c.input.fx, fy: c.input.fy, unscale: c.input.unscale, vector: c.input.vector)
+            let got = try Engine.flowSample(pixels: c.input.pixels, fx: c.input.fx, fy: c.input.fy, unscale: c.input.unscale, vector: c.input.vector,
+                                            ceiling: c.input.ceiling)
             #expect((got == nil) == (c.answer == nil), "\(c.about)")
+            #expect(got?.noCeiling == c.answer?.noCeiling, "\(c.about)")
             #expect(roughly(got?.value, c.answer?.value, within: 1e-6), "\(c.about)")
             #expect(roughly(got?.fromDeg, c.answer?.fromDeg, within: 1e-6), "\(c.about)")
         }
@@ -67,8 +69,17 @@ struct FlowFixturesTests {
         let c = try #require(f.samples.first { $0.about.hasPrefix("Calm: half a knot") })
         let got = try #require(try Engine.flowSample(pixels: c.input.pixels, fx: c.input.fx, fy: c.input.fy, unscale: c.input.unscale, vector: c.input.vector))
         #expect(got.calm && got.fromDeg == nil)
-        let said = try FlowReading.of(.wind, value: got.value, unit: "kt", top: nil, fromDeg: got.fromDeg, calm: got.calm)
+        let said = try FlowReading.of(.wind, value: got.value, unit: "kt", fromDeg: got.fromDeg, calm: got.calm)
         #expect(said.figure == "Calm" && said.over == nil)
+    }
+
+    @Test func theCeilingsTopIsWrittenNone() throws {
+        // The fixture's top-of-ceiling case: the engine's no_ceiling, so the badge says None.
+        let f = try fixture("flowSample", as: FlowSampleFixture.self)
+        let c = try #require(f.samples.first { $0.input.ceiling == true && $0.answer?.noCeiling == true })
+        let got = try #require(try Engine.flowSample(pixels: c.input.pixels, fx: c.input.fx, fy: c.input.fy, unscale: c.input.unscale,
+                                                     vector: c.input.vector, ceiling: true))
+        #expect(try FlowReading.of(.ceiling, value: got.value, unit: "ft", noCeiling: got.noCeiling).figure == "None")
     }
 
     @Test func aGridReadsAPointAsTheTwoRulesTogether() throws {

@@ -13,14 +13,14 @@ struct FlowReading: Equatable, Sendable {
     var figure: String
     var under: String
 
-    /// The badge for `field`'s `value` (FlowGrid.reading), where `top` is the
-    /// field's picture's highest value, `fromDeg` the wind's direction and
+    /// The badge for `field`'s `value` (FlowGrid.reading), where `noCeiling`
+    /// is the engine's reading of the ceiling's top, `fromDeg` the wind's direction and
     /// `tempC` the temperature there (the precipitation's, and the wind's
     /// at its level). An engine rule that fails throws, as the web's
     /// callEngine does, and the caller shows no reading and says why: the
     /// engine's nil is "none" (no icing, turbulence under its lightest
     /// band), but a failed rule is not, and must never read as no hazard.
-    static func of(_ field: FlowFieldKind, value: Double, unit: String, top: Double?, fromDeg: Double? = nil, calm: Bool = false, tempC: Double? = nil) throws -> FlowReading {
+    static func of(_ field: FlowFieldKind, value: Double, unit: String, fromDeg: Double? = nil, calm: Bool = false, noCeiling: Bool = false, tempC: Double? = nil) throws -> FlowReading {
         switch field {
         case .precip:
             let said = try Engine.precipIntensity(dbz: value, tempC: tempC)
@@ -36,11 +36,10 @@ struct FlowReading: Equatable, Sendable {
         case .tops:
             return FlowReading(over: "Tops", figure: Format.mapLevel(value), under: "MSL")
         case .ceiling:
-            // The picture keeps a ceiling over its top, and none, at the
-            // top (the weather service's flow_grid): either is no ceiling
-            // AIM 7-1-7's categories turn on.
-            if let top, value >= top - 25 { return FlowReading(over: nil, figure: "None", under: "ceiling") }
-            return FlowReading(over: nil, figure: Format.grouped((value / 50).rounded() * 50), under: "ft agl")
+            // The engine reads the ceiling rounded to its picture's 50 ft,
+            // and its top as none (flow_sample's no_ceiling, AIM 7-1-7).
+            if noCeiling { return FlowReading(over: nil, figure: "None", under: "ceiling") }
+            return FlowReading(over: nil, figure: Format.grouped(value), under: "ft agl")
         case .cape:
             return FlowReading(over: try Engine.capeCategory(jKg: value), figure: String(Int(value.rounded())), under: unit)
         case .vis:

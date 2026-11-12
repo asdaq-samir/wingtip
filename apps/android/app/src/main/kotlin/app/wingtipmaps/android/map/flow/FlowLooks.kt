@@ -91,14 +91,14 @@ object FlowLooks {
         // The wind and the gusts: one hue deepening with speed, calm nearly
         // clear (Apple Weather's wind map, the owner's screenshot, 2026-11-11).
         val wind = ramp(WingtipFlow.RAMP_WIND)
-        val knots = listOf(0.0, 25.0, 50.0, 75.0)
+        val knots = WingtipFlow.SCALE_WIND_TICKS
 
         // Precipitation in the reflectivity a radar would see: clear under
         // the engine's least, blue to violet to magenta to yellow; the top a
         // step past extreme's floor.
         val p = bands.precip.bands
         val least = bands.precip.leastDbz
-        val top = p[3].from + 15
+        val top = p[3].from + WingtipFlow.SCALE_RAIN_HEADROOM
         val a = WingtipFlow.ALPHA_RAIN
         val rain = listOf(
             Stop(least - 0.1, tone(Weather.FlowRainLight, a[0])),

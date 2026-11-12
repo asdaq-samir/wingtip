@@ -96,15 +96,15 @@ enum FlowLooks {
     static func looks(_ bands: EngineContract.ModelWeatherBandsAnswer, _ grid: EngineContract.AviationGridBandsAnswer) -> [FlowFieldKind: FieldLook] {
         var out: [FlowFieldKind: FieldLook] = [:]
         let windStops = tokenStops(T.rampWind)
-        out[.wind] = plain("Wind (kt)", windStops, [0, 25, 50, 75], T.coverTint)
-        out[.gust] = plain("Gusts (kt)", windStops, [0, 25, 50, 75], T.coverTint)
+        out[.wind] = plain("Wind (kt)", windStops, T.scaleWindTicks, T.coverTint)
+        out[.gust] = plain("Gusts (kt)", windStops, T.scaleWindTicks, T.coverTint)
 
         // Precipitation as the reflectivity a radar would see for its rate
         // (the engine's precip_dbz), clear under the engine's least.
         let p = bands.precip.bands.map(\.from)
         let a = T.alphaRain
         if p.count == 4, a.count == 6 {
-            let least = bands.precip.leastDbz, top = p[3] + 15
+            let least = bands.precip.leastDbz, top = p[3] + T.scaleRainHeadroom
             let rain = [s(least - 0.1, W.flowRainLight, a[0]), s(least, W.flowRainLight, a[1]), s(p[1], W.flowRainModerate, a[2]),
                         s(p[2], W.flowRainHeavy, a[3]), s(p[3], W.flowRainExtreme, a[4]), s(top, W.flowRainExtremeTop, a[5])]
             let edges = p + [top]

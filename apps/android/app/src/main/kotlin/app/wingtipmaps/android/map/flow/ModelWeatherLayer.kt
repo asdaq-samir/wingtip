@@ -189,7 +189,7 @@ object ModelWeatherLayer {
                 val png = BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options) ?: return@withContext null
                 val pixels = IntArray(png.width * png.height)
                 png.getPixels(pixels, 0, png.width, 0, 0, png.width, png.height)
-                val grid = FlowGrid.decode(pixels, png.width, png.height, layer.bounds, spec.unscale, spec.vector)
+                val grid = FlowGrid.decode(pixels, png.width, png.height, layer.bounds, spec.unscale, spec.vector, ceiling = field == FlowKind.CEILING)
                 png.recycle()
                 grid to Painted.of(grid, Ramp(look.ramp))
             } ?: return

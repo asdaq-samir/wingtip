@@ -202,7 +202,8 @@ final class ModelWeather {
 
     /// A frame's picture of a file as values, fetched once at its version.
     func grid(_ frame: APIFlowFrame, _ file: String) async -> FlowGrid? {
-        guard let layer, frame.fields.contains(file), let spec = layer.fields.additionalProperties[String(file.split(separator: "-")[0])] else { return nil }
+        let name = String(file.split(separator: "-")[0])
+        guard let layer, frame.fields.contains(file), let spec = layer.fields.additionalProperties[name] else { return nil }
         let version = frame.versions?.additionalProperties[file]
         let key = "\(frame.id)/\(file)/\(version ?? "")"
         if let kept = grids[key] { return kept }
@@ -210,7 +211,7 @@ final class ModelWeather {
             try await Data(collecting: $0.flowPicture(path: .init(frame: frame.id, field: String(file)), query: .init(v: version)).ok.body.png, upTo: 32 << 20)
         }) else { return nil }
         let bounds = file == "world" ? (layer.worldBounds ?? layer.bounds) : layer.bounds
-        let grid = await Task.detached { FlowGrid.decode(png: data, field: spec, bounds: bounds) }.value
+        let grid = await Task.detached { FlowGrid.decode(png: data, field: spec, bounds: bounds, ceiling: name == FlowFieldKind.ceiling.rawValue) }.value
         if let grid {
             // The hours of one field at one level are kept; another's let go.
             if grids.count > 24 { grids.removeAll() }
@@ -280,8 +281,8 @@ final class ModelWeather {
                     return
                 }
                 let temp = try tempGrid?.reading(lat: point.latitude, lon: point.longitude)?.value
-                reading = try FlowReading.of(field, value: at.value, unit: spec?.unit ?? "", top: spec?.unscale.last,
-                                             fromDeg: at.fromDeg, calm: at.calm, tempC: temp)
+                reading = try FlowReading.of(field, value: at.value, unit: spec?.unit ?? "", fromDeg: at.fromDeg, calm: at.calm,
+                                             noCeiling: at.noCeiling, tempC: temp)
                 readingProblem = nil
             } catch {
                 (reading, readingProblem) = (nil, "The \(field.label.lowercased()) there couldn't be worked out: \(error.localizedDescription)")

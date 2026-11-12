@@ -46,8 +46,25 @@ class FlowGridTest {
     }
 
     @Test
+    fun theCeilingsPictureIsAskedAsTheCeiling() {
+        // The engine rounds the ceiling and says its top is none
+        // (flow_sample's no_ceiling) only when told the picture is the
+        // ceiling's; any other field is asked without it.
+        val cell = EngineContract.FlowCellAnswer(listOf(0, 1, 2, 3), 0.0, 0.0)
+        val none = EngineContract.FlowSampleAnswer(12750.0, null, false, noCeiling = true)
+        val bounds = listOf(0.0, 0.0, 2.0, 2.0)
+        val ceiling = FlowGrid.decode(IntArray(4) { pixel(255, 0) }, 2, 2, bounds, listOf(0.0, 12750.0), vector = false, ceiling = true)
+        val asked = Asked(cell, Result.success(none))
+        assertEquals(none, ceiling.valueAt(1.0, 1.0, asked).getOrThrow())
+        assertEquals(true, asked.sampleIn!!.ceiling)
+        val other = Asked(cell, Result.success(none))
+        FlowGrid.decode(IntArray(4) { pixel(255, 0) }, 2, 2, bounds, listOf(0.0, 12750.0), vector = false).valueAt(1.0, 1.0, other)
+        assertEquals(false, other.sampleIn!!.ceiling)
+    }
+
+    @Test
     fun aPointIsAskedOfTheEngineAsTheFixtureAsksIt() {
-        val read = EngineContract.FlowSampleAnswer(42.0, null, false)
+        val read = EngineContract.FlowSampleAnswer(42.0, null, false, noCeiling = false)
         for (case in fixture.getValue("cells").jsonArray.map { it.jsonObject }) {
             val want = json.decodeFromJsonElement<EngineContract.FlowCellInput>(case.getValue("input"))
             val cell = json.decodeFromJsonElement<EngineContract.FlowCellAnswer?>(case.getValue("answer"))
