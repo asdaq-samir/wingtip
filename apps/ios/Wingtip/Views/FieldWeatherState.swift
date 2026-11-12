@@ -5,11 +5,11 @@ import SwiftUI
 struct AirportWeatherSetting: DynamicProperty {
     @AppStorage(AirportWeatherStyle.Keys.style) private var style = AirportWeatherStyle.halo.rawValue
     @AppStorage(AirportWeatherStyle.Keys.stationClose) private var stationClose = true
-    @AppStorage(AirportWeatherStyle.Keys.windArrows) private var windArrows = true
+    @AppStorage(AirportWeatherStyle.Keys.windArrows) private var windBarbs = true
     @AppStorage(AirportWeatherStyle.Keys.worse) private var worse = true
 
     var choice: AirportWeatherChoice {
-        AirportWeatherChoice(style: AirportWeatherStyle(rawValue: style) ?? .halo, stationClose: stationClose, windArrows: windArrows, worse: worse)
+        AirportWeatherChoice(style: AirportWeatherStyle(rawValue: style) ?? .halo, stationClose: stationClose, windBarbs: windBarbs, worse: worse)
     }
 }
 

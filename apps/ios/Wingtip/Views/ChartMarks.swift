@@ -25,6 +25,24 @@ final class ChartMarks {
         let ceilingFt: Double?
         let rings: [[[Double]]]
         let label: [Double]
+        /// ForeFlight's tab on its boundary (SpecialUseTab); nil from an
+        /// older engine or a pack with no codes, or limits with no figure.
+        var tab: Tab?
+
+        /// The tab as the engine places it (crate::sua_tab): its name, its
+        /// limits' figures and references (SFC, AGL, MSL, FL, UNL), its
+        /// point [lat, lon] on the line, its clockwise turn, and the side
+        /// of the text the area is on (1 below, -1 above).
+        struct Tab: Decodable, Equatable {
+            let name: String
+            let floorFt: Double?
+            let floorRef: String
+            let ceilingFt: Double?
+            let ceilingRef: String
+            let at: [Double]
+            let angle: Double
+            let side: Double
+        }
 
         /// Inked as a restricted area rather than a MOA (wingtip.sua TYPES).
         var restricted: Bool { ["P", "R", "W", "D"].contains(type) }
@@ -48,9 +66,13 @@ final class ChartMarks {
     private var fixFetch = ViewFetch()
     private var lines: [String: [SpecialUseLine]] = [:]
     private var fixes: [String: FixAnnotation] = [:]
+    /// The areas drawn, and their tabs shown, by the same key.
+    private var areas: [String: Area] = [:]
+    private var tabs: [String: SpecialUseTabAnnotation] = [:]
 
     func attach(to map: MKMapView) {
         map.register(FixMarkView.self, forAnnotationViewWithReuseIdentifier: FixMarkView.reuse)
+        map.register(SpecialUseTabView.self, forAnnotationViewWithReuseIdentifier: SpecialUseTabView.reuse)
     }
 
     func renderer(for overlay: any MKOverlay) -> MKOverlayRenderer? {
@@ -58,7 +80,8 @@ final class ChartMarks {
     }
 
     func view(for annotation: any MKAnnotation, on map: MKMapView) -> MKAnnotationView? {
-        annotation is FixAnnotation ? map.dequeueReusableAnnotationView(withIdentifier: FixMarkView.reuse, for: annotation) : nil
+        if annotation is SpecialUseTabAnnotation { return map.dequeueReusableAnnotationView(withIdentifier: SpecialUseTabView.reuse, for: annotation) }
+        return annotation is FixAnnotation ? map.dequeueReusableAnnotationView(withIdentifier: FixMarkView.reuse, for: annotation) : nil
     }
 
     /// The view moved: each kind off below its zoom, else asked of the
@@ -73,6 +96,7 @@ final class ChartMarks {
             _ = areaFetch.ask(view, zoom: zoom)
             take(areas, map: map)
         }
+        showTabs(zoom >= SpecialUseTab.from, heading: map.camera.heading, map: map)
         if zoom < Self.fixesFrom {
             takeFixes([], map: map)
             fixFetch.forget()
@@ -86,12 +110,30 @@ final class ChartMarks {
     private func take(_ areas: [Area], map: MKMapView) {
         let fresh = Dictionary(areas.map { ("\($0.type)|\($0.name)", $0) }, uniquingKeysWith: { a, _ in a })
         for key in lines.keys where fresh[key] == nil { map.removeOverlays(lines.removeValue(forKey: key) ?? []) }
+        self.areas = fresh
         // MOAs first, so a restricted area's line is drawn over them.
         for area in areas where lines["\(area.type)|\(area.name)"] == nil {
             let made = area.rings.compactMap { SpecialUseLine.of($0, restricted: area.restricted) }
             lines["\(area.type)|\(area.name)"] = made
             map.addOverlays(made, level: .aboveLabels)
         }
+    }
+
+    /// The areas' tabs on (from SpecialUseTab.from) or off, a gone area's
+    /// taken off, and turned again where the map has turned.
+    private func showTabs(_ on: Bool, heading: Double, map: MKMapView) {
+        let wanted = on ? areas : [:]
+        for key in tabs.keys where wanted[key] == nil || wanted[key] != tabs[key]?.area {
+            if let tab = tabs.removeValue(forKey: key) { map.removeAnnotation(tab) }
+        }
+        for (key, area) in wanted where tabs[key] == nil {
+            guard let tab = SpecialUseTabAnnotation(area) else { continue }
+            tabs[key] = tab
+            map.addAnnotation(tab)
+        }
+        guard abs(heading - SpecialUseTabView.heading) > 0.5 else { return }
+        SpecialUseTabView.heading = heading
+        for tab in tabs.values { (map.view(for: tab) as? SpecialUseTabView)?.turn() }
     }
 
     private func takeFixes(_ found: [Fix], map: MKMapView) {

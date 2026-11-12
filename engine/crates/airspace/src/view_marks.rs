@@ -22,7 +22,10 @@
 
 use crate::json;
 use crate::pack::Pack;
-use crate::view::{in_box, meets, oriented, reaches, representative, rings_of, round5, simplified, text_at, tolerance_for, Bbox, Pt};
+use crate::sua_tab;
+use crate::view::{
+    in_box, meets, oriented, reaches, representative, rings_of, round5, simplified, text_at, tolerance_for, Bbox, Polygon, Pt,
+};
 use wingtip_core::sort::StableSort;
 
 /// The special-use areas the map draws, by TYPE_CODE: those inked as
@@ -49,9 +52,12 @@ fn point(out: &mut String, p: Pt) {
 }
 
 /// The special-use areas reaching into the box, JSON:
-/// `{"areas": [{"type", "name", "floor_ft", "ceiling_ft", "rings": [[[lat, lon], ...]], "label": [lat, lon]}]}`,
+/// `{"areas": [{"type", "name", "floor_ft", "ceiling_ft", "rings": [[[lat, lon], ...]], "label": [lat, lon], "tab"}]}`,
 /// restricted kinds after the MOAs, so a restricted area is drawn over a
-/// MOA it lies in; an area two packs hold, once.
+/// MOA it lies in; an area two packs hold, once. `tab` is ForeFlight's tab
+/// on its boundary (crate::sua_tab), `{"name", "floor_ft", "floor_ref",
+/// "ceiling_ft", "ceiling_ref", "at": [lat, lon], "angle", "side"}`, null
+/// where its limits have no figure to write or the pack keeps no codes.
 pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east: f64) -> String {
     let view: Bbox = [west, south, east, north];
     let tolerance = tolerance_for(south, north);
@@ -63,6 +69,7 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
         else {
             continue;
         };
+        let described = p.section("sua.json");
         for i in 0..layer.count {
             let (Some(a), Some(r)) = (alt.get(32 * i..32 * i + 32), rec.get(24 * i..24 * i + 24)) else { continue };
             let kind = String::from_utf8_lossy(a[..4].split(|&c| c == 0).next().unwrap_or(&[])).into_owned();
@@ -117,6 +124,14 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
             }
             o.push_str("],\"label\":");
             point(&mut o, (round5(label.0), round5(label.1)));
+            o.push_str(",\"tab\":");
+            let codes = described.and_then(|d| text_at(d, r, 8)).and_then(|t| json::parse(t).ok());
+            let code = |key: &str| codes.as_ref().and_then(|c| c.get(key)).and_then(|v| v.as_str().map(str::to_owned));
+            if codes.is_some() {
+                tab(&mut o, &polygons, name, &kind, (f64_at(a, 8), code("floor_ref")), (f64_at(a, 16), code("ceiling_ref")));
+            } else {
+                o.push_str("null");
+            }
             o.push('}');
             out.push((restricted, o));
         }
@@ -126,6 +141,36 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
     order.stable_sort_by(|&x, &y| out[x].0.cmp(&out[y].0).then(found[x].2.cmp(&found[y].2)));
     let areas: Vec<&str> = order.iter().map(|&k| out[k].1.as_str()).collect();
     format!("{{\"areas\":[{}]}}", areas.join(","))
+}
+
+/// An area's tab (crate::sua_tab), or null.
+fn tab(
+    o: &mut String, polygons: &[Polygon], name: &str, kind: &str, floor: (Option<f64>, Option<String>),
+    ceiling: (Option<f64>, Option<String>),
+) {
+    let (floor_ft, floor_ref) = sua_tab::limit(floor.0.filter(|v| !v.is_nan()), floor.1.as_deref());
+    let (ceiling_ft, ceiling_ref) = sua_tab::limit(ceiling.0.filter(|v| !v.is_nan()), ceiling.1.as_deref());
+    let (Some(floor_ref), Some(ceiling_ref), Some((at, angle, side))) = (floor_ref, ceiling_ref, sua_tab::edge_place(polygons)) else {
+        o.push_str("null");
+        return;
+    };
+    o.push_str("{\"name\":");
+    json::string(o, &sua_tab::label_name(name, kind));
+    o.push_str(",\"floor_ft\":");
+    json::opt_number(o, floor_ft);
+    o.push_str(",\"floor_ref\":");
+    json::string(o, floor_ref);
+    o.push_str(",\"ceiling_ft\":");
+    json::opt_number(o, ceiling_ft);
+    o.push_str(",\"ceiling_ref\":");
+    json::string(o, ceiling_ref);
+    o.push_str(",\"at\":");
+    point(o, (round5(at.0), round5(at.1)));
+    o.push_str(",\"angle\":");
+    json::number(o, angle);
+    o.push_str(",\"side\":");
+    json::number(o, f64::from(side));
+    o.push('}');
 }
 
 /// The fixes inside the box, JSON: `{"fixes": [{"ident", "lat", "lon", "vfr"}]}`,

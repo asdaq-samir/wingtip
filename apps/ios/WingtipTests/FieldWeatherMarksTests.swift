@@ -5,8 +5,8 @@ import Testing
 /// The airport weather marks (the owner's pick, 2026-11-10) as the map
 /// asks the engine for them through wt_call, against the shared fixture
 /// the engine's, the web's and Android's tests read too
-/// (apps/web/src/lib/fixtures/airportWeatherMarks.json): the arrow shown
-/// or not, red or not, the barb's parts, and the ↓ shown or not.
+/// (apps/web/src/lib/fixtures/airportWeatherMarks.json): the barb drawn
+/// zoomed out or not, red or not, its parts and calm, and the ↓ shown or not.
 @MainActor
 struct FieldWeatherMarksTests {
     private final class FixtureBundle {}
@@ -62,14 +62,14 @@ struct FieldWeatherMarksTests {
         return try JSONDecoder().decode(Fixture.self, from: Data(contentsOf: url))
     }
 
-    @Test func theArrowShowsAndGoesRedAsTheEngineSays() throws {
+    @Test func theFarBarbShowsAndGoesRedAsTheEngineSays() throws {
         for example in try fixture().windArrow {
             let i = example.input
             let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", category: "VFR", windDirTrueDeg: 220, windSpeedKt: i.speedKt, windGustKt: i.gustKt,
                                                     crosswindKt: i.crosswindKt),
                                               demonstratedKt: i.demonstratedKt, worse: false)
-            #expect(mark.arrow == example.answer.shown, "\(example.why)")
-            #expect(mark.arrowRed == example.answer.over, "\(example.why)")
+            #expect(mark.far == example.answer.shown, "\(example.why)")
+            #expect(mark.over == example.answer.over, "\(example.why)")
         }
     }
 
@@ -78,7 +78,7 @@ struct FieldWeatherMarksTests {
         #expect(FieldWeatherMarks.demonstratedKt(plan) == nil)
         let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", windDirTrueDeg: 220, windSpeedKt: 18, windGustKt: 26, crosswindKt: 17),
                                           demonstratedKt: FieldWeatherMarks.demonstratedKt(plan), worse: false)
-        #expect(mark.arrow && !mark.arrowRed)
+        #expect(mark.far && !mark.over)
     }
 
     @Test func theBarbIsTheEngines() throws {
@@ -100,7 +100,24 @@ struct FieldWeatherMarksTests {
         let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", category: "IFR", windDirTrueDeg: 220, windSpeedKt: 18, windGustKt: 26),
                                           demonstratedKt: nil, worse: false)
         #expect(mark.spoken == "IFR, wind 220 at 18 gusting 26")
-        #expect(mark.windLabel == "18G26")
+        // The gust is the card's; the barb is the wind's only mark.
+        #expect(mark.variable == nil)
+    }
+
+    @Test func aVariableWindIsWrittenAsTheMetarWritesIt() {
+        let mark = FieldWeatherMarks.mark(.init(ident: "KJVL", category: "VFR", windSpeedKt: 5), demonstratedKt: nil, worse: false)
+        #expect(mark.variable == "VRB05" && !mark.calm)
+        #expect(mark.spoken == "VFR, wind variable at 5")
+        // Calm is no variable wind.
+        let calm = FieldWeatherMarks.mark(.init(ident: "KJVL", windSpeedKt: 2), demonstratedKt: nil, worse: false)
+        #expect(calm.calm && calm.variable == nil)
+    }
+
+    @Test func farBarbsStartAtARegionsScaleAndGrowIn() {
+        #expect(FarBarb.scale(zoom: 5.9) == nil)
+        #expect(FarBarb.scale(zoom: 6) == 0.6)
+        #expect(FarBarb.scale(zoom: 7.5) == 0.8)
+        #expect(FarBarb.scale(zoom: 9) == 1 && FarBarb.scale(zoom: 12) == 1)
     }
 
     @Test func theStationLinesAreTheReportsFigures() {
@@ -120,7 +137,7 @@ struct FieldWeatherMarksTests {
 
     @Test func theStationModelShowsCloseInOrAlways() {
         var choice = AirportWeatherChoice()
-        #expect(choice.style == .halo && choice.stationClose && choice.windArrows && choice.worse)
+        #expect(choice.style == .halo && choice.stationClose && choice.windBarbs && choice.worse)
         #expect(!choice.station(zoom: 9) && choice.station(zoom: 10))
         choice.stationClose = false
         #expect(!choice.station(zoom: 12))

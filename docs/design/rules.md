@@ -331,12 +331,18 @@ At each airport the chart already shows, from the map's own
   calm), and two lines beside the field, the visibility with its weather
   ("2 SM BR") and the lowest ceiling ("OVC 008"), from the METAR as the
   planner decodes it. The halo stays.
-- **Wind arrow at any zoom**, the way the wind blows with "18G26", only
-  where the engine's `wind_arrow` gives one (10 kt or more, or gusting).
-  It is red only when the field's `least_crosswind` exceeds the picked
-  airplane's maximum demonstrated crosswind from its profile; with no
-  airplane, or no figure, it is never red, and nothing assumes a 172
-  (decision [0011](../decisions/0011-no-assumed-airplane.md)).
+- **Wind barb at every zoom** where the station model isn't drawn (the
+  owner, 2026-11-12, as the Aviation Weather Center's map draws winds):
+  the same `wind_barb` barb, only where the engine's `wind_arrow` says the
+  wind earns one (10 kt or more, or gusting), none out past zoom 6, drawn
+  at 0.6 of its size there and whole by 9, the barbs giving way to one
+  another rather than piling up. It is red only when the field's
+  `least_crosswind` exceeds the picked airplane's maximum demonstrated
+  crosswind from its profile; with no airplane, or no figure, it is never
+  red, and nothing assumes a 172
+  (decision [0011](../decisions/0011-no-assumed-airplane.md)). A variable
+  wind, which no barb can point, is written "VRB05"; a gust is left to
+  the field's card. Calm is `wind_barb`'s own answer (under 3 kt).
 - **Getting worse, ↓:** an amber badge at a field the plan uses
   (departure, stops, destination, alternates) when the engine's
   `weather_worse` says the TAF worsens by the pilot's ETA there. Off the
@@ -345,7 +351,7 @@ At each airport the chart already shows, from the map's own
   Weather, Off / Halo / Dot / Station (Dot is ForeFlight's filled dot in
   place of the symbol; Station draws the station model wherever it fits),
   and three switches, all on to begin with: Station Model When Zoomed In,
-  Wind Arrows, Getting Worse by Arrival.
+  Wind Barbs, Getting Worse by Arrival.
 - **Access:** brand tokens only; a screen reader says the category and
   wind ("KJVL, IFR, wind 220 at 18 gusting 26").
 
@@ -357,7 +363,7 @@ At each airport the chart already shows, from the map's own
 
 Every app's tests read the shared fixture
 [`apps/web/src/lib/fixtures/airportWeatherMarks.json`](../../apps/web/src/lib/fixtures/airportWeatherMarks.json):
-arrow shown or not, red or not, ↓ shown or not.
+barb drawn zoomed out or not, red or not, ↓ shown or not.
 
 ## 6. Altitude in the profile (the owner, 2026-11-10)
 

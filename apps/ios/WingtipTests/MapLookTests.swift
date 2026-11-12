@@ -47,14 +47,20 @@ struct MapLookTests {
         return (Int(pixel[0]), Int(pixel[1]), Int(pixel[2]))
     }
 
-    // MARK: Apple's map close in
+    // MARK: The imagery close in
 
-    @Test func theChartGivesWayToApplesMapOverOneLevelCloseIn() throws {
-        #expect(ChartFade.alpha(zoom: 8) == 1)
-        #expect(ChartFade.alpha(zoom: 13) == 1)
-        #expect(abs(ChartFade.alpha(zoom: 13.5) - 0.5) < 0.001)
-        #expect(ChartFade.alpha(zoom: 14) == 0)
-        #expect(ChartFade.alpha(zoom: 17) == 0)
+    @Test func theChartFadesIntoTheImageryOverOneLevelPastItsOwnLast() throws {
+        // The sectional's last level is 12 (the web's closeZoom).
+        #expect(ChartFade.alpha(zoom: 8, last: 12) == 1)
+        #expect(ChartFade.alpha(zoom: 12, last: 12) == 1)
+        #expect(abs(ChartFade.alpha(zoom: 12.5, last: 12) - 0.5) < 0.001)
+        #expect(ChartFade.alpha(zoom: 13, last: 12) == 0)
+        #expect(ChartFade.alpha(zoom: 17, last: 12) == 0)
+        // The imagery is in over the half level before, so the chart never
+        // fades over nothing.
+        #expect(ChartFade.imagery(zoom: 11.4, last: 12) == 0)
+        #expect(abs(ChartFade.imagery(zoom: 11.75, last: 12) - 0.5) < 0.001)
+        #expect(ChartFade.imagery(zoom: 12, last: 12) == 1)
     }
 
     @Test func aRunwaysSurfaceIsItsOwnWidthBetweenItsEnds() throws {
@@ -150,6 +156,23 @@ struct MapLookTests {
         // None in sight: no tab.
         let away = MKMapRect(origin: MKMapPoint(CLLocationCoordinate2D(latitude: 30, longitude: -100)), size: MKMapSize(width: 10, height: 10))
         #expect(AirspaceTab.place([ring], centre: centre, in: away) == nil)
+    }
+
+    @Test func aSpecialUseTabWritesItsLimitsAsForeFlightDoes() throws {
+        // Brady North and Brady Low, as the engine places them (sua_tab).
+        #expect(SpecialUseTab.limit(3600, ref: "MSL") == "3600")
+        #expect(SpecialUseTab.limit(18000, ref: "FL") == "FL180")
+        #expect(SpecialUseTab.limit(500, ref: "AGL") == "500AGL")
+        #expect(SpecialUseTab.limit(0, ref: "SFC") == "SFC" && SpecialUseTab.limit(nil, ref: "UNL") == "UNL")
+        #expect(SpecialUseTab.limit(nil, ref: "MSL") == nil)
+        let tab = ChartMarks.Area.Tab(name: "M-BRADY LOW", floorFt: 500, floorRef: "AGL", ceilingFt: 6000, ceilingRef: "MSL",
+                                      at: [31, -99], angle: 10, side: 1)
+        let area = ChartMarks.Area(type: "MOA", name: "BRADY LOW MOA", floorFt: 500, ceilingFt: 6000, rings: [], label: [31, -99], tab: tab)
+        #expect(SpecialUseTabAnnotation(area)?.text == "M-BRADY LOW:\n500AGL-6000")
+        // Turned with the map and kept upright, the area then on the
+        // text's other side.
+        #expect(SpecialUseTab.turn(angle: 10, side: 1, heading: 0) == (10, 1))
+        #expect(SpecialUseTab.turn(angle: 10, side: 1, heading: 180) == (10, -1))
     }
 
     @Test func theBandWidensAsTheMapComesIn() throws {

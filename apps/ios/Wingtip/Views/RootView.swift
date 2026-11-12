@@ -222,7 +222,7 @@ struct RootView: View {
                 selected: { if case .leg(let index) = nav.top { return index }; return nil }(),
                 onSelect: { index in Navigator.shared.open(.leg(index)) }),
             // The route's fields worse by the flight's time there, and the
-            // airplane's demonstrated crosswind for the wind arrows' red.
+            // airplane's demonstrated crosswind for the wind barbs' red.
             fieldWeather: FieldWeatherInput(
                 worse: FieldWeatherMarks.worse(plan.briefing, fields: Set([plan.dep, plan.dest] + plan.stops).subtracting([""])),
                 alternates: AlternateCheck.shared.atEta,
@@ -278,6 +278,8 @@ struct RootView: View {
                     // credit beside the internet's traffic it covers.
                     ReceiverChip()
                     if traffic.credited { MapChip(Traffic.credit(traffic.source)) }
+                    // The USGS's credit while its imagery shows close in (CloseImagery).
+                    if CloseImagery.shared.drawn { MapChip(CloseImageryOverlay.credit) }
                     if traffic.on, let problem = traffic.marksProblem { MapChip(problem, colour: WingtipInk.caution) }
                 }
                 .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)

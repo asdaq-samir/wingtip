@@ -475,7 +475,7 @@ final class RunwaySurface: MKPolygon {
 final class RunwayCentreline: MKPolyline {}
 
 /// From which Leaflet zoom the runways are drawn: 13, where the chart's
-/// own last level is passed and Apple's map shows (ChartFade), the web
+/// own last level is passed and the imagery shows (ChartFade), the web
 /// map's MapLibre 12 (glOverlays' RUNWAYS_FROM); the ends' numbers half a
 /// level later.
 enum RunwayZoom {
@@ -833,9 +833,9 @@ final class RunwayEndView: MKAnnotationView {
                             CLLocationCoordinate2D(latitude: shape.b.lat, longitude: shape.b.lon)]
                 return [RunwaySurface.between(ends[0], ends[1], widthFt: width, soft: shape.soft), RunwayCentreline(coordinates: ends, count: 2)]
             }
-            // Over Apple's roads and under its labels, where the chart has
-            // given way (ChartFade).
-            map.addOverlays(lines, level: .aboveRoads)
+            // Just over the chart, so over the imagery it fades into (CloseImagery) and under the rest.
+            let onChart = chart.map { c in map.overlays.contains { $0 === c } } == true
+            if let chart, onChart { lines.forEach { map.insertOverlay($0, above: chart) } } else { map.addOverlays(lines, level: .aboveRoads) }
             runwayLines[ident] = lines
         }
         if ends, (runwayEnds[ident] ?? []).isEmpty {
