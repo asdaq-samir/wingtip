@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.outlined.StarOutline
@@ -17,8 +19,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SecondaryScrollableTabRow
 import androidx.compose.material3.Surface
@@ -44,6 +44,7 @@ import app.wingtipmaps.android.R
 import app.wingtipmaps.android.airplane.FigureKey
 import app.wingtipmaps.android.airplane.rememberAirplaneNow
 import app.wingtipmaps.android.api.AirportPlace
+import app.wingtipmaps.android.api.generated.RankedNotam
 import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.flight.OwnShip
@@ -62,15 +63,18 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * them, and the actions as pills docked at the sheet's foot, Directions
  * first): the card's bar where the search was (CardPage), ← and "KOSH ·
  * Wittman Regional" large over its town, shrinking as the card scrolls,
- * with the star and ✕; the facts row -- Weather, Wind, Longest Runway,
- * Distance (from own ship, else "From KMSN", the route's departure) --
- * as containers, under a card of the field's closures and TFRs where it
- * has any (FieldAlertCard); the sections in a tab row, Overview's the
- * pictures (AirportSections); and the actions docked at the foot: Fly Here
- * filled, with its time at the airplane's cruise speed, then Depart From,
- * Add as Stop, Diagram, Call and Address. The planner's words throughout,
- * every figure the planner's or the engine's (AirportFacts). Back
- * closes it with the predictive gesture.
+ * and ✕; a badge where a NOTAM in force closes the field or a TFR is near
+ * it; the facts row -- Weather, Wind, Longest Runway, Distance (from own
+ * ship, else "From KMSN", the route's departure) -- as containers; the
+ * sections in a tab row, Overview's the pictures (AirportSections), each
+ * thing a NOTAM in force addresses badged by its name (NotamMarks); and
+ * the actions docked at the foot, four and no more, as the web's (the
+ * owner, 2026-11-11): Fly Here filled, with its time at the airplane's
+ * cruise speed, then Add as Stop, Call and Favorite. A NOTAM, from its row
+ * or a badge, opens on a page of its own in the card's stack
+ * (NotamPage), ← and Back coming back to the card where it was. The
+ * planner's words throughout, every figure the planner's or the
+ * engine's (AirportFacts). Back closes it with the predictive gesture.
  * The same card from the search, the map, a list, the plan and a link.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -94,17 +98,41 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
     val facts = remember(place, from, cruise) { place?.let { AirportFacts.of(it, from, cruise) } }
     var section by rememberSaveable(ident) { mutableIntStateOf(0) }
     var diagram by remember { mutableStateOf(false) }
+    // The field's NOTAMs, each read by the engine once, best first; the
+    // badges on what they address; the NOTAMs opened over the card.
+    val ranked = state.notams.takeIf { place != null }
+    val said = remember(ranked, place?.ident) { place?.let { p -> ranked?.notams?.sortedBy { it.rank }?.map { FieldNotams.say(it, p.ident) } } }
+    val marks = remember(ranked, place) { place?.let { NotamMarks.of(ranked?.notams.orEmpty(), it) } ?: NotamMarks.NONE }
+    val badges = remember(place, marks) { place?.let { RunwayBadges.of(it, marks) } ?: RunwayBadges(-1, -1) }
+    var allNotams by rememberSaveable(ident) { mutableStateOf(false) }
+    var opened by remember(ident) { mutableStateOf<List<RankedNotam>?>(null) }
+    val list = rememberLazyListState()
+
+    val shown = opened
+    if (shown != null && place != null) {
+        BackHandler { opened = null }
+        val pages = shown.map { n -> said?.firstOrNull { it.notam.id == n.id } ?: FieldNotams.say(n, place.ident) }
+        NotamPage(pages, place.ident, CardExit(back = { opened = null }, close = exit.close))
+        return
+    }
+    val open: (List<RankedNotam>) -> Unit = { opened = it }
+    val view = AirportCardView(
+        marks = marks,
+        runways = badges,
+        notams = CardNotams(ranked, said, state.notamsProblem, allNotams, toggle = { allNotams = !allNotams }, open = open),
+        onNotam = { open(it.notams) },
+        onDiagram = place?.airportDiagramUrl?.let { { diagram = true } },
+    )
 
     // The field's name and ← where the search was, ✕ at the end (CardPage).
     CardPage(
         title = place?.let { "${it.ident} · ${it.name}" } ?: ident.uppercase(),
         exit = exit,
         subtitle = place?.let { p -> listOfNotNull(p.municipality, p.region).joinToString(", ").ifEmpty { null } },
-        actions = { if (place != null) Star(place) },
         bottomBar = {
             if (place != null) {
                 Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
-                    ActionPills(place, facts, actions, onDiagram = { diagram = true }, onDone = onDone)
+                    ActionPills(place, facts, actions, onDone = onDone)
                 }
             }
         },
@@ -112,19 +140,15 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
         // The card is fetched as it opens; no pull to refresh in a sheet,
         // whose drag down is the sheet's (the scrolling rule, 2026-11-10).
         Box(Modifier.padding(padding)) {
-            LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
+            LazyColumn(Modifier.fillMaxSize(), state = list, contentPadding = PaddingValues(bottom = WingtipSpace.Xl)) {
                 state.problem?.let { item(key = "problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg), onRetry = { model.open(ident) }) } }
                 if (place == null) {
                     if (state.loading) item(key = "loading") { LoadingRow(Modifier.padding(WingtipSpace.Lg)) }
                     return@LazyColumn
                 }
-                // Closures and TFRs first, as Maps puts its live cards.
-                val alerts = FieldAlerts.of(state.notams)
-                if (alerts.isNotEmpty()) {
-                    item(key = "alerts") {
-                        FieldAlertCard(place.ident, alerts, onOpen = { section = AirportSection.NOTAMS.ordinal }, Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm))
-                    }
-                }
+                // A NOTAM closing the field or a TFR near it, a badge by the
+                // field's name, its tap the NOTAM (the owner, 2026-11-11).
+                marks.field?.let { mark -> item(key = "field-notam") { NotamBadgeButton(mark, view.onNotam, Modifier.padding(horizontal = WingtipSpace.Sm)) } }
                 facts?.let { f -> item(key = "facts") { FactsRow(f) } }
                 // The sections' tabs pin under the bar as the card scrolls (the
                 // scrolling rule, 2026-11-10), in the sheet's own colour.
@@ -135,27 +159,22 @@ fun AirportCard(ident: String, plan: Plan, exit: CardExit, onDone: () -> Unit, m
                         }
                     }
                 }
-                airportSection(AirportSection.entries[section], place, state)
+                airportSection(AirportSection.entries[section], place, state, view)
             }
         }
     }
     if (diagram) place?.airportDiagramUrl?.let { url -> DiagramOwnShipDialog(place.ident, url) { diagram = false } }
 }
 
-/** The star: the field kept in the search's Favorites (SearchMemory). */
+/** Whether the field is in the search's Favorites (SearchMemory), and the
+ *  way to put it in or take it out: the Favorite tile's. */
 @Composable
-private fun Star(place: AirportPlace) {
+private fun rememberFavorite(place: AirportPlace): Pair<Boolean, () -> Unit> {
     val context = LocalContext.current
     val memory = remember(context) { SearchMemory.of(context) }
     val favorites by memory.favorites.collectAsStateWithLifecycle()
     val starred = favorites.any { it.kind == Remembered.Kind.AIRPORT && it.ident.equals(place.ident, ignoreCase = true) }
-    IconToggleButton(checked = starred, onCheckedChange = { memory.toggleFavorite(Remembered(Remembered.Kind.AIRPORT, place.ident, place.name)) }) {
-        Icon(
-            if (starred) Icons.Filled.Star else Icons.Outlined.StarOutline,
-            contentDescription = stringResource(if (starred) R.string.remove_favorite else R.string.add_favorite),
-            tint = MaterialTheme.colorScheme.primary,
-        )
-    }
+    return starred to { memory.toggleFavorite(Remembered(Remembered.Kind.AIRPORT, place.ident, place.name)) }
 }
 
 /** The facts under the title, each in its own container, read as one
@@ -190,26 +209,28 @@ private fun FactsRow(f: AirportFacts) {
 
 /**
  * The actions docked at the card's foot, as Maps docks its pills, in
- * Material 3 Expressive's button group: Fly Here filled with its time
- * (none without an airplane, decision 0011), then Depart From, Add as
- * Stop, Diagram, Call and Address tonal, each one this field can do now.
- * Every action keeps its word (Google's research found actions harder to
- * use without labels); what does not fit the width goes into the group's
- * own overflow menu, never a smaller button. A pressed button widens and
- * its neighbours make room, the group's stock motion.
+ * Material 3 Expressive's button group, four and no more as the web's
+ * (the owner, 2026-11-11: "fly here, add stop, call and address ... no
+ * need for other buttons", then "replace address button with favorite"):
+ * Fly Here filled with its time (none without an airplane, decision
+ * 0011); Add as Stop where the route can take it; Call, greyed where the
+ * FAA lists no telephone; and Favorite, the star a toggle, where the head
+ * had it. Every action keeps its word (Google's research found actions
+ * harder to use without labels); what does not fit the width goes into
+ * the group's own overflow menu, never a smaller button.
  */
 @Composable
-private fun ActionPills(place: AirportPlace, facts: AirportFacts?, actions: RouteActions, onDiagram: () -> Unit, onDone: () -> Unit) {
-    val route = listOf(CardAction.DEPART_FROM, CardAction.ADD_STOP).filter { actions.canAirport(it, place) }
-    val leave = listOf(CardAction.CALL, CardAction.ADDRESS).filter { actions.canAirport(it, place) }
+private fun ActionPills(place: AirportPlace, facts: AirportFacts?, actions: RouteActions, onDone: () -> Unit) {
     val flyHere = facts?.minutes?.let { stringResource(R.string.fly_here_in, Format.duration(it)) } ?: stringResource(R.string.action_fly_here)
-    val diagram = stringResource(R.string.diagram)
-    val words = (route + leave).associateWith { stringResource(it.label) }
+    val addStop = stringResource(CardAction.ADD_STOP.label)
+    val call = stringResource(CardAction.CALL.label)
+    val favorite = stringResource(R.string.action_favorite)
+    val (starred, toggle) = rememberFavorite(place)
     val items = buildList {
         add(GroupAction(flyHere, CardAction.FLY_HERE.icon, filled = true) { actions.airport(CardAction.FLY_HERE, place); onDone() })
-        route.forEach { a -> add(GroupAction(words.getValue(a), a.icon) { actions.airport(a, place); onDone() }) }
-        if (place.airportDiagramUrl != null) add(GroupAction(diagram, null, onClick = onDiagram))
-        leave.forEach { a -> add(GroupAction(words.getValue(a), a.icon) { actions.airport(a, place) }) }
+        if (actions.canAirport(CardAction.ADD_STOP, place)) add(GroupAction(addStop, CardAction.ADD_STOP.icon) { actions.airport(CardAction.ADD_STOP, place); onDone() })
+        add(GroupAction(call, CardAction.CALL.icon, enabled = actions.canAirport(CardAction.CALL, place)) { actions.airport(CardAction.CALL, place) })
+        add(GroupAction(favorite, if (starred) Icons.Filled.Star else Icons.Outlined.StarOutline, checked = starred, onClick = toggle))
     }
     CardButtonGroup(items, Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm))
 }

@@ -45,8 +45,6 @@
     <string name="waypoint_direct">Direct to it</string>
     <string name="plan_a_route_first">Plan a route first to add %1$s.</string>
     <string name="fly_this_airplane">Fly This Airplane</string>
-    <string name="add_favorite">Add to Favorites</string>
-    <string name="remove_favorite">Remove from Favorites</string>
     <string name="add_a_stop">Add a Stop</string>
     <string name="nav_log">Nav Log</string>
     <string name="route_depart">Depart</string>
@@ -62,7 +60,6 @@
     <string name="section_runways">Runways</string>
     <string name="taf">TAF</string>
     <string name="elevation">Elevation</string>
-    <string name="no_notams">No NOTAMs for this field.</string>
     <string name="runway_closed">Closed</string>
     <string name="runway_lighted">Lighted</string>
     <string name="picture_aerial">Aerial photo</string>
@@ -77,15 +74,6 @@
     <string name="wind_calm">Calm</string>
     <string name="fly_here_in">Fly Here · %1$s</string>
     <string name="fact_from">From %1$s</string>
-    <!-- The field's alert card and its NOTAMs' times (UTC, AIM 5-1-3). -->
-    <string name="field_alerts_open">Opens %1$s\'s NOTAMs</string>
-    <string name="field_alert_tfr">TFR</string>
-    <string name="field_alert_closed">Closed</string>
-    <string name="notam_now">In effect now</string>
-    <string name="notam_now_until">In effect now, until %1$s</string>
-    <string name="notam_from">From %1$s</string>
-    <string name="notam_from_until">%1$s to %2$s</string>
-    <string name="notams_tfrs_unchecked">TFRs couldn\'t be checked just now.</string>
 
     <!-- Sheets and their controls (decision 0015). -->
     <string name="close">Close</string>

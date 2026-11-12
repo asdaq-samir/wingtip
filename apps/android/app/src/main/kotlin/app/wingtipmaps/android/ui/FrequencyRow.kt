@@ -34,10 +34,11 @@ import kotlinx.coroutines.delay
  * name, the frequency in the tint, and the whole row Copy, the copy glyph
  * turning to a tick for a moment so the pilot sees it was taken. Tune is
  * left out: this phone has no link to a radio that sets one (the cockpit
- * receiver only listens), so none is offered.
+ * receiver only listens), so none is offered. A NOTAM on it puts its
+ * badge after its name (`badge`), its own tap.
  */
 @Composable
-fun FrequencyRow(name: String, frequency: String, line: String? = null) {
+fun FrequencyRow(name: String, frequency: String, line: String? = null, badge: (@Composable () -> Unit)? = null) {
     val context = LocalContext.current
     var copied by remember(frequency) { mutableStateOf(false) }
     LaunchedEffect(copied) {
@@ -65,7 +66,17 @@ fun FrequencyRow(name: String, frequency: String, line: String? = null) {
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.fillMaxWidth().semantics { onClick(label = copyLabel, action = null) },
-        content = { Text(name) },
+        // A NOTAM's badge by its name, a tap of its own (the airport card's).
+        content = {
+            if (badge == null) {
+                Text(name)
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(name)
+                    badge()
+                }
+            }
+        },
     )
 }
 
