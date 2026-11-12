@@ -24,6 +24,7 @@ FAA's own data set, its attributes the fields named below:
 - `special_use`: the FAA's special use airspace feature service (ADDS),
   as the cycle pack holds it: NAME, TYPE_CODE, LOWER_*/UPPER_*, TIMESOFUSE,
   GMTOFFSET/DST_CODE and CONT_AGENT, read as wingtip.sua reads them.
+- `special_use_labels`: a point on each area's edge, its tab (sua_labels).
 - `airports`: NASR's APT_BASE.csv (ARPT_ID, ICAO_ID, ARPT_NAME,
   SITE_TYPE_CODE, FACILITY_USE_CODE, OWNERSHIP_TYPE_CODE, TWR_TYPE_CODE,
   ELEV, FUEL_TYPES, LAT_DECIMAL/LONG_DECIMAL; ARPT_STATUS O only), with
@@ -564,10 +565,13 @@ def write_layers(
 ) -> dict[str, int]:
     """Each layer's GeoJSON, a feature a line, into folder/<layer>.geojsonl;
     how many features each holds."""
+    from .sua_labels import special_use_label_features
+
     sources = {
         "airspace": airspace_features(pack, bbox),
         "airspace_labels": airspace_label_features(pack, bbox),
         "special_use": special_use_features(pack, bbox),
+        "special_use_labels": special_use_label_features(pack, bbox),
         "airports": airport_features(apt_path, rwy_path, rwy_end_path, bbox),
         "navaids": navaid_features(nav_path, bbox, nav_rmk_path),
         "fixes": fix_features(fix_path, bbox),
@@ -616,12 +620,8 @@ def tippecanoe_args(folder: Path, out: Path, cycle: str, tippecanoe: str = TIPPE
         "--read-parallel",
         "--temporary-directory",
         str(folder),
-        "--name",
-        f"Wingtip FAA overlays {cycle}",
-        "--description",
-        f"Airspace, special use, airports, navaids, fixes and runways, FAA cycle {cycle}",
-        "--attribution",
-        ATTRIBUTION.format(cycle=cycle),
+        *("--name", f"Wingtip FAA overlays {cycle}", "--attribution", ATTRIBUTION.format(cycle=cycle)),
+        *("--description", f"Airspace, special use, airports, navaids, fixes and runways, FAA cycle {cycle}"),
     ]
     for layer in LAYERS:
         args += ["-L", f"{layer}:{folder / f'{layer}.geojsonl'}"]

@@ -16,7 +16,16 @@ import type { OverlayTiles } from "../../api/types";
  */
 
 /** The archive's source layers (wingtip.vector_tiles.LAYERS). */
-export const OVERLAY_LAYERS = ["airspace", "airspace_labels", "special_use", "airports", "navaids", "fixes", "runways"] as const;
+export const OVERLAY_LAYERS = [
+  "airspace",
+  "airspace_labels",
+  "special_use",
+  "special_use_labels",
+  "airports",
+  "navaids",
+  "fixes",
+  "runways",
+] as const;
 
 /** MapLibre's addProtocol, as much of it as this needs: maplibre-gl itself
  *  is the map's import, not this module's. The loader is pmtiles' own

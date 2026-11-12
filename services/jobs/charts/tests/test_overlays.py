@@ -7,11 +7,9 @@ APT_RWY_END, NAV_BASE, FIX_BASE) copied as the FAA wrote them, the columns
 the tiles read.
 
 - Each layer's features carry the FAA's fields, and start at their zoom.
-- With tippecanoe (the charts job's image has it, and CI's runner;
-  elsewhere those tests are skipped): the archive is PMTiles v3 of vector tiles from zoom 4 to 12,
-  its layers and fields declared, each feature first in the tiles of its
-  zoom, and Chicago's Class B drawn within TOLERANCE_M of the FAA's line,
-  both ways round, in every zoom-12 tile it crosses."""
+- With tippecanoe (the charts job's image has it, and CI's runner; elsewhere those tests are skipped): the archive
+  is PMTiles v3 of vector tiles from zoom 4 to 12, its layers and fields declared, each feature first in the tiles
+  of its zoom, and Chicago's Class B drawn within TOLERANCE_M of the FAA's line, both ways round, in every zoom-12 tile it crosses."""
 
 import csv
 import gzip
@@ -571,6 +569,7 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
     assert {"class", "local_type", "floor_ft", "floor_ref", "ceiling_ft", "name", "ident"} <= set(layers["airspace"]["fields"])
     assert {"class", "floor_ft", "ceiling_ft", "angle", "number"} <= set(layers["airspace_labels"]["fields"])
     assert {"type", "name", "floor_ft", "ceiling_ft", "times_of_use"} <= set(layers["special_use"]["fields"])
+    assert {"label", "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref", "angle", "side"} <= set(layers["special_use_labels"]["fields"])
     assert {"ident", "name", "towered", "hard_ft", "longest_ft", "use", "rank"} <= set(layers["airports"]["fields"])
     assert {"ident", "kind", "freq"} <= set(layers["navaids"]["fields"])
     assert {"ident", "kind", "vfr", "enroute_low"} <= set(layers["fixes"]["fields"])
@@ -582,6 +581,7 @@ def test_the_archive_is_pmtiles_of_vector_tiles_with_its_layers_and_fields(built
         "airspace": len(list(overlays.airspace_features(pack, BBOX))),
         "airspace_labels": len(list(overlays.airspace_label_features(pack, BBOX))),
         "special_use": 1,
+        "special_use_labels": 1,
         "airports": 4,
         "navaids": 2,
         "fixes": 4,

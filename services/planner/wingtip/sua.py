@@ -96,7 +96,13 @@ _CACHE_LOCK = threading.Lock()
 _FETCH_LOCK = threading.Lock()
 #: The service's most features an answer, paged past.
 PAGE = 2000
-_FIELDS = "NAME,TYPE_CODE,UPPER_VAL,UPPER_UOM,UPPER_CODE,LOWER_VAL,LOWER_UOM,LOWER_CODE,TIMESOFUSE,GMTOFFSET,DST_CODE,CONT_AGENT"
+#: UPPER_DESC and LOWER_DESC ("TNI" to, "ANI" above, but not including)
+#: and EXCLUSION (1: a piece cut out of its area) for the map's tabs
+#: (services/jobs/charts/sua_labels.py).
+_FIELDS = (
+    "NAME,TYPE_CODE,UPPER_VAL,UPPER_UOM,UPPER_CODE,UPPER_DESC,LOWER_VAL,LOWER_UOM,LOWER_CODE,LOWER_DESC,EXCLUSION,"
+    "TIMESOFUSE,GMTOFFSET,DST_CODE,CONT_AGENT"
+)
 
 
 class SpecialUseUnavailable(RuntimeError):
