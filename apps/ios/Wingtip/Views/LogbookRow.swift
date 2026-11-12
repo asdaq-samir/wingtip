@@ -5,6 +5,7 @@ import SwiftUI
 /// the airplane's N-number is a tap of its own, opening its profile (the
 /// owner, 2026-11-09: "tapping any N-number opens that airplane's profile").
 struct LogbookRow: View {
+    @Environment(Navigator.self) private var nav
     let entry: LogbookEntry
     let edit: () -> Void
 
@@ -40,7 +41,7 @@ struct LogbookRow: View {
         .accessibilityHint("Edits the flight")
         .accessibilityActions {
             if let tail {
-                Button("Open \(tail)'s Profile") { Navigator.shared.push(.tail(ProfileAsk(tail: tail))) }
+                Button("Open \(tail)'s Profile") { nav.push(.tail(ProfileAsk(tail: tail))) }
             }
         }
     }

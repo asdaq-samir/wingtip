@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from . import faa_data, geo, outside
+from . import by_airport, faa_data, geo, outside
 from .atomic import atomic_path
 from .config import REQUEST_HEADERS
 from .routecsv import locked
@@ -657,7 +657,7 @@ def get_runways(ident: str, cache_path: Path = RUNWAYS_CACHE_PATH) -> list[dict]
     """
     ident = ident.strip().upper()
     df = _load_table(RUNWAYS_URL, cache_path)
-    rows = df[df["airport_ident"].str.upper() == ident]
+    rows = by_airport.rows(df, ident)
     runways = []
     for _, row in rows.iterrows():
         le, he = row.get("le_ident"), row.get("he_ident")
@@ -747,7 +747,7 @@ def get_frequencies(ident: str, cache_path: Path = FREQUENCIES_CACHE_PATH, faa_c
     ident = ident.strip().upper()
     df = _load_table(FREQUENCIES_URL, cache_path)
     faa = faa_data.airport_frequencies(ident, faa_cache_dir) if faa_cache_dir else None
-    return _with_faa(_frequency_list(df[df["airport_ident"].str.upper() == ident]), faa)
+    return _with_faa(_frequency_list(by_airport.rows(df, ident)), faa)
 
 
 def get_frequencies_for(idents: list[str], cache_path: Path = FREQUENCIES_CACHE_PATH, faa_cache_dir=FAA_CACHE_DIR) -> dict[str, list[dict]]:
@@ -756,8 +756,7 @@ def get_frequencies_for(idents: list[str], cache_path: Path = FREQUENCIES_CACHE_
     scan the whole table once per row; the FAA's first, as get_frequencies'."""
     wanted = {i.strip().upper() for i in idents}
     df = _load_table(FREQUENCIES_URL, cache_path)
-    rows = df[df["airport_ident"].str.upper().isin(wanted)]
-    ours = {ident: _frequency_list(group) for ident, group in rows.groupby(rows["airport_ident"].str.upper())}
+    ours = {ident: _frequency_list(by_airport.rows(df, ident)) for ident in wanted}
     faa = faa_data.airport_frequencies_for(wanted, faa_cache_dir) if faa_cache_dir else {}
     found = {ident: _with_faa(ours.get(ident, []), faa.get(ident)) for ident in wanted}
     return {ident: freqs for ident, freqs in found.items() if freqs}

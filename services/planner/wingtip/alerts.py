@@ -18,7 +18,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 import requests
-from shapely.geometry import shape
+from shapely.geometry import box as envelope
 
 from . import airports, airspace, elevation, faa_data, saa, sua, terrain, tfr
 from .engine import ask as engine
@@ -101,17 +101,19 @@ def _special_use(box: tuple) -> list | None:
     ]
 
 
-def _tfrs() -> list | None:
+def _tfrs(box: tuple) -> list | None:
+    """The TFRs whose areas reach `box` (south, west, north, east), the
+    box round the look-ahead's track: the engine's alerts_ahead finds one
+    only where the track goes into it (ahead.rs, tfr_alerts), so one
+    further off gives none, and its ground is not read. Their shapes are
+    parsed once a copy of the list (wingtip.tfr.with_shapes)."""
+    south, west, north, east = box
     try:
-        found = tfr.all_tfrs()
+        found = tfr.with_shapes(envelope(west, south, east, north))
     except tfr.TfrUnavailable:
         return None
     out = []
-    for restriction in found:
-        try:
-            geometry = shape(restriction["geometry"])
-        except (KeyError, TypeError, ValueError):
-            continue
+    for restriction, geometry in found:
         out.append(
             {
                 "notam_id": restriction["notam_id"],
@@ -190,7 +192,7 @@ def ahead(
     with ThreadPoolExecutor(max_workers=4) as pool:
         ground = pool.submit(_ground_ft, lat, lon)
         special_use = pool.submit(_special_use, box)
-        tfrs = pool.submit(_tfrs)
+        tfrs = pool.submit(_tfrs, box)
         volumes = _volumes(shp_path, box)
         given = {
             **own,

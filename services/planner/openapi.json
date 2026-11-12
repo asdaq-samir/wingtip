@@ -31673,7 +31673,11 @@
         },
         "summary": "Tfrs",
         "x-gateway": {
-          "access": "public"
+          "access": "public",
+          "cache": true,
+          "headers": [
+            "ETag"
+          ]
         }
       }
     },

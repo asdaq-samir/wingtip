@@ -47,8 +47,7 @@ def _air(monkeypatch, wind=_wind):
     """The air the nav log's legs are flown in (wingtip.navlog's lookups),
     the engine working the legs out of it: `wind`, 4 degC aloft and 3
     degrees west variation."""
-    monkeypatch.setattr(navlog, "wind_at_altitude", wind)
-    monkeypatch.setattr(navlog, "temperature_at_altitude", lambda lat, lon, altitude_ft, fcst_hr="06": 4.0)
+    monkeypatch.setattr(navlog, "air_at", lambda lat, lon, alts, key="06": [{"wind": wind(lat, lon, a), "temp_c": 4.0} for a in alts])
     monkeypatch.setattr(navlog, "magnetic_variation_deg", lambda lat, lon, on=None: -3.0)
 
 

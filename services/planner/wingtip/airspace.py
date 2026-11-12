@@ -352,30 +352,30 @@ def surface_class_at(lat: float, lon: float, shp_path) -> str:
     return surface_classes([(lat, lon)], shp_path)[0]
 
 
+# The surface airspace's indexes, per shapefile (surface_classes).
+_SURFACE_TREES: dict = {}
+
+
 def surface_classes(points: list[tuple[float, float]], shp_path) -> list[str]:
     """surface_class_at for many (lat, lon) points at once -- every field
-    in the map's view, for its mark -- the airspace about them read once
-    and indexed (shapely's STRtree) rather than searched a point at a
-    time."""
+    in the map's view, for its mark -- through indexes (shapely's STRtree)
+    of the B, C and D reaching the ground and the E surface areas, built
+    once a shapefile: a point in a shape is in its box, so the country's
+    find what the shapes round the points did, with no trees made an ask."""
     if not points:
         return []
-    lats, lons = [p[0] for p in points], [p[1] for p in points]
-    margin = 0.01
-    south, west, north, east = min(lats) - margin, min(lons) - margin, max(lats) + margin, max(lons) + margin
-    where = shapely_points(lons, lats)
+    controlled, surface_e = _load_all_controlled_airspace(shp_path), _load_surface_e(shp_path)
+    held = _SURFACE_TREES.get("held")
+    if held is None or held[0] is not controlled or held[1] is not surface_e:
+        reaching = [p for p in controlled if p["floor_ft_msl"] <= 0]
+        trees = (reaching, STRtree([p["geometry"] for p in reaching]), STRtree([g for g, _ in surface_e]))
+        held = _SURFACE_TREES["held"] = (controlled, surface_e, *trees)
+    reaching, tree, e_tree = held[2:]
+    where = shapely_points([p[1] for p in points], [p[0] for p in points])
     found: list[str | None] = [None] * len(points)
-    reaching = [p for p in load_controlled_airspace(shp_path, (south, west, north, east)) if p["floor_ft_msl"] <= 0]
-    if reaching:
-        inside, polygon = STRtree([p["geometry"] for p in reaching]).query(where, predicate="within")
-        for i, j in zip(inside.tolist(), polygon.tolist()):
-            cls = reaching[j]["class"]
-            found[i] = cls if found[i] is None else min(found[i], cls)
-    surface_e = [
-        geometry
-        for geometry, (min_lon, min_lat, max_lon, max_lat) in _load_surface_e(shp_path)
-        if not (max_lat < south or min_lat > north or max_lon < west or min_lon > east)
-    ]
-    in_e = set(STRtree(surface_e).query(where, predicate="within")[0].tolist()) if surface_e else set()
+    for i, j in zip(*(a.tolist() for a in tree.query(where, predicate="within"))):
+        found[i] = reaching[j]["class"] if found[i] is None else min(found[i], reaching[j]["class"])
+    in_e = set(e_tree.query(where, predicate="within")[0].tolist())
     return [cls or ("E" if i in in_e else "G") for i, cls in enumerate(found)]
 
 

@@ -31,7 +31,8 @@ not timed on a device.
 - **One way in per platform.** Every screen opens by its name from one place:
   the web's `useOpenScreen` (`features/plan/hooks`) through
   `lib/navigation/wanted`, iOS's `RootView.openScreen` (through
-  `PendingCommand.open`; the strip's `ScreenAsk`), which opens the card
+  `AppCommand.open`, a card's through the environment's `appCommand`;
+  the strip's `ScreenAsk`), which opens the card
   by `Navigator.open`, Android's `OpenScreen` through
   `ScreenRequests`. A link, a figure tapped and a shortcut row all use it.
   Each is a `switch`/`when` over the generated list, so a screen added to
@@ -112,7 +113,7 @@ The plan's own keys go beside it, and alone they open what they name:
 A link with a route and a screen (`?dep=C81&dest=KDLH&open=brief`) plans
 the route, then opens the screen: the web waits up to 30 s for the route
 (`lib/navigation/wanted`), the phones open it after the route command
-(`PendingCommand.then`, `Links.Route.then`). The word `open` is taken off
+(the screen `CommandHost` runs after a link's command, `Links.Route.then`). The word `open` is taken off
 the web's address once used, so a reload or Back does not open it again.
 
 ## Sharing a flight

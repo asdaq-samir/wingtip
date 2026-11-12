@@ -106,10 +106,8 @@ export async function grabberTo(page: Page, state: "peek" | "half" | "full") {
   await settled(panel);
 }
 
-/** The sheet half way when it rests at the pill, as a pilot pulls it up to
- *  type: typing leaves the sheet where it is (5db1f8b10, the owner:
- *  "Whenever I try to type on search bar it takes the card to full
- *  screen"), and at the pill what the search shows is under its edge. */
+/** The sheet half way from the pill, as a pilot pulls it up to type: typing
+ *  leaves it where it is (5db1f8b10), its results under the pill's edge. */
 export async function sheetUpToType(page: Page) {
   if ((await sideDrawer(page).getAttribute("data-panel")) === "peek") await grabberTo(page, "half");
 }

@@ -9,6 +9,7 @@ import SwiftUI
 /// destination, Add Stop, Call and Favorite -- and a row of four facts. Every figure is the planner's
 /// or the engine's, as sent; none is worked out here.
 struct AirportPlaceHead: View {
+    @Environment(AirportShelf.self) private var shelf
     let place: AirportPlace
     let photos: AirportPhotos?
     @Binding var shown: ShownPicture?
@@ -155,7 +156,6 @@ struct AirportPlaceHead: View {
         let here = plan.dest == place.ident
         let ete = here ? plan.totals?.eteMin.map(Format.duration) : nil
         let call = place.phone.flatMap { URL(string: "tel:" + $0.filter { !$0.isWhitespace }) }
-        let shelf = AirportShelf.shared
         let kept = shelf.isFavorite(place.ident)
         return HStack(spacing: WingtipSpace.sm) {
             Button { Task { await plan.flyHere(place.ident, near: ownShip.fix); done() } } label: {

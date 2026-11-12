@@ -11,7 +11,7 @@ import SwiftUI
 /// own page from the plan's Alternate row.
 struct AlternateSection: View {
     @Environment(Plan.self) private var plan
-    private var check: AlternateCheck { .shared }
+    @Environment(AlternateCheck.self) private var check
     /// The Airplane page, where the wait is for one.
     var pickAirplane: (() -> Void)?
 
@@ -132,7 +132,7 @@ struct AlternateSection: View {
 /// and none is filed; it opens the alternate's page.
 struct AlternateRow: View {
     @Environment(Plan.self) private var plan
-    private var check: AlternateCheck { .shared }
+    @Environment(AlternateCheck.self) private var check
 
     var body: some View {
         let filed = plan.extras.filedAlternate(rules: .saved())
@@ -157,8 +157,9 @@ struct AlternateRow: View {
 
 /// The alternate's own page, from the plan's row.
 struct AlternatePage: View {
+    @Environment(\.appCommand) private var appCommand
     var body: some View {
-        List { AlternateSection(pickAirplane: { PendingCommand.shared.command = .open(.airplane) }) }
+        List { AlternateSection(pickAirplane: { appCommand(.open(.airplane)) }) }
             .navigationTitle("Alternate")
     }
 }

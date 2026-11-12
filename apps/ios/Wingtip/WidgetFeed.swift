@@ -6,8 +6,8 @@ import WidgetKit
 /// kept current from the plan on the page and the Brief's verdict. It is
 /// written to the App Group only as something changes, and the widget
 /// is told to redraw then and not otherwise, since WidgetKit gives each
-/// app a budget of redraws a day. Run on the app's one clock (Ticker,
-/// WingtipApp) rather than a loop of its own.
+/// app a budget of redraws a day. Run every fifteen seconds on Swift's clock
+/// (Repeating, WingtipApp).
 @MainActor
 final class WidgetFeed {
     static let shared = WidgetFeed()

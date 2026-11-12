@@ -31,7 +31,7 @@ final class WatchLink: NSObject, WCSessionDelegate {
         let session = WCSession.default
         session.delegate = self
         session.activate()
-        await Ticker.shared.run(every: 5) { [weak self] in await self?.sync(plan: plan, ownShip: ownShip) }
+        await Repeating.every(5) { [weak self] in await self?.sync(plan: plan, ownShip: ownShip) }
     }
 
     private func sync(plan: Plan, ownShip: OwnShip) async {

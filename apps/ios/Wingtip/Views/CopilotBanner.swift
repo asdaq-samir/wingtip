@@ -8,8 +8,9 @@ import SwiftUI
 /// message away and a new one comes in its place. Nothing while the
 /// first thing that matters is one the alerts banner already shows.
 struct CopilotBanner: View {
+    @Environment(\.appCommand) private var appCommand
     @State private var open = false
-    private var copilot: Copilot { .shared }
+    @Environment(Copilot.self) private var copilot
 
     var body: some View {
         if let message = copilot.message, !message.elsewhere {
@@ -54,11 +55,11 @@ struct CopilotBanner: View {
         if fix != nil || target != nil {
             HStack(spacing: WingtipSpace.sm) {
                 if let fix {
-                    Button(fix.label, systemImage: WingtipIcon.directTo) { AlertActions.take(fix) }
+                    Button(fix.label, systemImage: WingtipIcon.directTo) { appCommand(AlertActions.command(fix)) }
                         .fontWeight(.semibold)
                 }
                 if let target {
-                    Button("More Info", systemImage: "info.circle") { AlertActions.open(target) }
+                    Button("More Info", systemImage: "info.circle") { appCommand(AlertActions.command(target)) }
                 }
             }
             .font(.subheadline)
@@ -89,8 +90,9 @@ struct CopilotBanner: View {
 /// Setup's Alerts: the in-flight copilot off, shown or said aloud, a pick
 /// of three, segmented (docs/decisions/0017), as the web's Map menu has it.
 struct CopilotModePicker: View {
+    @Environment(Copilot.self) private var copilot
     var body: some View {
-        Picker("Copilot", selection: Binding(get: { Copilot.shared.mode }, set: { Copilot.shared.mode = $0 })) {
+        Picker("Copilot", selection: Binding(get: { copilot.mode }, set: { copilot.mode = $0 })) {
             ForEach(Copilot.Mode.allCases) { Text($0.label).tag($0) }
         }
         .pickerStyle(.segmented)

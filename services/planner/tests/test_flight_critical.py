@@ -67,8 +67,7 @@ def east_of_madison(monkeypatch, altitude):
     }
     monkeypatch.setattr(checkpoint_scoring, "score", lambda dep, dest: [dict(halfway)])
     west_15 = {"wind_dir_true_deg": 270.0, "wind_speed_kt": 15.0}
-    monkeypatch.setattr(navlog, "wind_at_altitude", lambda lat, lon, altitude_ft, fcst_hr="06": west_15)
-    monkeypatch.setattr(navlog, "temperature_at_altitude", lambda lat, lon, altitude_ft, fcst_hr="06": 4.0)
+    monkeypatch.setattr(navlog, "air_at", lambda lat, lon, altitudes, fcst_hr="06": [{"wind": west_15, "temp_c": 4.0} for _ in altitudes])
     monkeypatch.setattr(navlog, "magnetic_variation_deg", lambda lat, lon, on=None: -3.0)
 
 

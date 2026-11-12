@@ -6,6 +6,7 @@ import SwiftUI
 /// it is made with, the site's legal pages, and the demo flight for a
 /// pilot or App Review trying it. Reached from Setup's last section.
 struct AboutView: View {
+    @Environment(\.appCommand) private var appCommand
     @Environment(Charts.self) private var charts
     @Environment(Plan.self) private var plan
     @Environment(\.dismiss) private var dismiss
@@ -51,7 +52,7 @@ struct AboutView: View {
             // route the pilot had is one Undo away (PlanHistory).
             Section {
                 Button {
-                    DemoFlight.fly(plan)
+                    appCommand(DemoFlight.fly(plan))
                     dismiss()
                 } label: {
                     HStack {

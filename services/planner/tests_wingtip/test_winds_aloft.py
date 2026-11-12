@@ -136,3 +136,47 @@ def test_with_no_grid_held_the_stations_are_read(monkeypatch):
     monkeypatch.setattr(airports, "load_airports", lambda: None)
     assert winds_aloft.winds_key_for(None) == "06"
     assert weather.wind_at_altitude(46.8, -92.2, 6000.0) == {"wind_dir_true_deg": 250.0, "wind_speed_kt": 25.0}
+
+
+# A nav log leg's altitudes, at the grid's levels, between and past them.
+ALTITUDES = [2500.0, 3000.0, 4500.0, 6000.0, 7500.0]
+
+
+def test_many_altitudes_at_once_read_as_each_alone():
+    # The engine's rule: one call with "altitudes" gives what one call an
+    # altitude gives, figure for figure (aloft_grid.rs reads each alone).
+    for case in json.loads(FIXTURE.read_text())["cases"]:
+        given = {k: v for k, v in case["input"].items() if k != "altitude_ft"}
+        alone = [ask("wind_aloft_at", **given, altitude_ft=ft) for ft in ALTITUDES]
+        assert ask("wind_aloft_at", **given, altitudes=ALTITUDES) == alone, case["why"]
+
+
+def test_a_legs_air_asked_at_once_is_the_air_asked_an_altitude_at_a_time(grid):
+    # The nav log asks a leg's altitudes together (navlog._air); the
+    # answers are the ones it had when it asked them one by one.
+    key = winds_aloft.winds_key_for(grid + timedelta(minutes=50))
+    winds_aloft._HELD["air"].clear()
+    alone = [
+        {"wind": winds_aloft.wind_at_altitude(LAT, LON, ft, key), "temp_c": winds_aloft.temperature_at_altitude(LAT, LON, ft, key)}
+        for ft in ALTITUDES
+    ]
+    winds_aloft._HELD["air"].clear()
+    assert winds_aloft.air_at(LAT, LON, ALTITUDES, key) == alone
+    assert winds_aloft.air_at(LAT, LON, [], key) == []
+
+
+def test_the_stations_air_at_once_is_their_air_an_altitude_at_a_time(monkeypatch):
+    levels = {
+        3000: {"wind_dir_true_deg": 230, "wind_speed_kt": 15, "temp_c": 9},
+        9000: {"wind_dir_true_deg": 260, "wind_speed_kt": 35, "temp_c": -3},
+    }
+    monkeypatch.setattr(winds_stations, "fd_stations", lambda fcst_hr: {"DLH": levels})
+    monkeypatch.setattr(winds_stations, "nearest_station", lambda lat, lon, ids, df: "DLH")
+    from wingtip import airports
+
+    monkeypatch.setattr(airports, "load_airports", lambda: None)
+    alone = [
+        {"wind": winds_aloft.wind_at_altitude(46.8, -92.2, ft, "12"), "temp_c": winds_aloft.temperature_at_altitude(46.8, -92.2, ft, "12")}
+        for ft in ALTITUDES
+    ]
+    assert winds_aloft.air_at(46.8, -92.2, ALTITUDES, "12") == alone

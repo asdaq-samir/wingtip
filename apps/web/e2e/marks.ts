@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { mapStill, slow } from "./helpers";
+import { drawn, mapStill, slow } from "./helpers";
 
 // The app's own marks on the map -- the route's fields and checkpoints,
 // the weather's chips, the stops' pins -- drawn on the canvas by MapLibre
@@ -68,3 +68,9 @@ export async function tapMark(page: Page, source: string, words: string | RegExp
   const at = (await markWith(page, source, words)())!;
   await page.mouse.click(at.x, at.y);
 }
+
+/** How many of the picked procedures' runs the map draws, of one kind (line,
+ *  missed or hold) or all (RouteExtrasGl's instrument-procedure probe): by
+ *  name, as a run cut across the map's tiles is two rows of one name. */
+export const procedureRuns = async (page: Page, kind?: "line" | "missed" | "hold") =>
+  new Set((await drawn(page, "instrument-procedure")).filter((r) => !kind || r.kind === kind).map((r) => r.name)).size;

@@ -1,9 +1,5 @@
 import { M_PER_FT, M_PER_NM, rad } from "../../../../lib/geo";
 
-// airspaceHeights still takes the foot from here; batch A's engine rule
-// (airspace_volume_span) replaces that file, and this line goes with it.
-export { M_PER_FT };
-
 /**
  * The shapes the 3D map stands up over its ground (TerrainGl): the route
  * at its planned altitudes and the obstacles. Pure, so they are tested

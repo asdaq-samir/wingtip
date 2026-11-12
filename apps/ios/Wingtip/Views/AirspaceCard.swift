@@ -9,6 +9,7 @@ import SwiftUI
 /// veil, the special-use areas and the TFRs over it. Every rule is the
 /// planner's answer; the card writes it.
 struct AirspaceCard: View {
+    @Environment(Navigator.self) private var nav
     let lat: Double
     let lon: Double
     @Environment(Plan.self) private var plan
@@ -54,7 +55,7 @@ struct AirspaceCard: View {
                         .disabled(!plan.routed)
                         Button {
                             plan.drop(named.ident, at: at, then: .hold, from: nil)
-                            Navigator.shared.push(.hold(named.ident))
+                            nav.push(.hold(named.ident))
                         } label: {
                             CardActionLabel(.holdHere)
                         }

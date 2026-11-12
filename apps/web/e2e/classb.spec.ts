@@ -141,6 +141,13 @@ test("tapping one opens its card in the panel, with Fly Here, as any airport on 
   await page.goto(PLAN);
   await routeDrawn(page);
 
+  // At the route's whole view O'Hare's mark is little more than a finger
+  // from C81's chip, which the map's one tap takes first within its reach
+  // (TAP.rank): closer in round O'Hare, so the tap is plainly its.
+  await expect.poll(ord(page), { timeout: slow(30000) }).not.toBeNull();
+  const at = (await ord(page)())!;
+  await page.mouse.move(at.x, at.y);
+  await page.mouse.wheel(0, -600);
   await tapMark(page, "class-b-fields", "KORD");
   await expect(page).toHaveURL(/[?&]place=KORD/);
   // The live card, unmocked: the class-b fixture is only the chips.

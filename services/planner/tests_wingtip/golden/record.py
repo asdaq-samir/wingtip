@@ -41,20 +41,16 @@ def record(route: str) -> dict:
 
     dep, dest = route.split("-")
     winds, temps, variations, given = {}, {}, {}, {}
-    real = (navlog.wind_at_altitude, navlog.temperature_at_altitude, navlog.magnetic_variation_deg, navlog.altitude_profiles)
+    real = (navlog.air_at, navlog.magnetic_variation_deg, navlog.altitude_profiles)
 
-    def wind(lat, lon, alt, fcst_hr="06"):
-        value = real[0](lat, lon, alt, fcst_hr)
-        winds[_key(lat, lon, alt)] = value
-        return value
-
-    def temp(lat, lon, alt, fcst_hr="06"):
-        value = real[1](lat, lon, alt, fcst_hr)
-        temps[_key(lat, lon, alt)] = value
-        return value
+    def air(lat, lon, altitudes, fcst_hr="06"):
+        found = real[0](lat, lon, altitudes, fcst_hr)
+        for alt, at in zip(altitudes, found):
+            winds[_key(lat, lon, alt)], temps[_key(lat, lon, alt)] = at["wind"], at["temp_c"]
+        return found
 
     def variation(lat, lon, on=None):
-        value = real[2](lat, lon)
+        value = real[1](lat, lon)
         variations[_key(lat, lon)] = value
         return value
 
@@ -62,16 +58,16 @@ def record(route: str) -> dict:
         given.update(
             fixes=fix_list, segments=segments, profile=aircraft_profile, fcst_hr=fcst_hr, departure_elevation_ft=departure_elevation_ft
         )
-        return real[3](fix_list, segments, aircraft_profile, fcst_hr, departure_elevation_ft=departure_elevation_ft)
+        return real[2](fix_list, segments, aircraft_profile, fcst_hr, departure_elevation_ft=departure_elevation_ft)
 
     planning._PLANS_CACHE.clear()
     planning._ALTITUDE_CACHE.clear()
-    navlog.wind_at_altitude, navlog.temperature_at_altitude, navlog.magnetic_variation_deg = wind, temp, variation
+    navlog.air_at, navlog.magnetic_variation_deg = air, variation
     navlog.altitude_profiles = profiles
     try:
         body = TestClient(app).get("/api/plan", params={"dep": dep, "dest": dest}).json()
     finally:
-        navlog.wind_at_altitude, navlog.temperature_at_altitude, navlog.magnetic_variation_deg, navlog.altitude_profiles = real
+        navlog.air_at, navlog.magnetic_variation_deg, navlog.altitude_profiles = real
     recorded = {
         "route": route,
         "given": {
@@ -93,15 +89,16 @@ def replay(recorded: dict) -> dict:
     record: a lookup it did not make then is a KeyError -- the engine
     asks something new."""
     lookups = recorded["lookups"]
-    real = (navlog.wind_at_altitude, navlog.temperature_at_altitude, navlog.magnetic_variation_deg)
-    navlog.wind_at_altitude = lambda lat, lon, alt, fcst_hr="06": lookups["winds"][_key(lat, lon, alt)]
-    navlog.temperature_at_altitude = lambda lat, lon, alt, fcst_hr="06": lookups["temperatures"][_key(lat, lon, alt)]
+    real = (navlog.air_at, navlog.magnetic_variation_deg)
+    navlog.air_at = lambda lat, lon, altitudes, fcst_hr="06": [
+        {"wind": lookups["winds"][_key(lat, lon, alt)], "temp_c": lookups["temperatures"][_key(lat, lon, alt)]} for alt in altitudes
+    ]
     navlog.magnetic_variation_deg = lambda lat, lon, on=None: lookups["variations"][_key(lat, lon)]
     try:
         given = recorded["given"]
         return expected(given, given["pattern_ft"], given["choice"])
     finally:
-        navlog.wind_at_altitude, navlog.temperature_at_altitude, navlog.magnetic_variation_deg = real
+        navlog.air_at, navlog.magnetic_variation_deg = real
 
 
 def expected(given: dict, pattern_ft, choice: str) -> dict:

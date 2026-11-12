@@ -11,12 +11,13 @@ import SwiftUI
 /// first flight's card the first time; Favorites, Recents and Nearest are
 /// the Search page's.
 struct PlanView: View {
+    @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @Environment(Charts.self) private var charts
     @Environment(Verdict.self) private var verdict
     @Environment(Session.self) private var session
     @FocusState private var focused: Field?
-    private var keepForAir: KeepForAir { .shared }
+    @Environment(KeepForAir.self) private var keepForAir
     /// A page of the plan's, opened by the sheet: pushed on the iPhone, the
     /// profile, the brief and the flights in the inspector on the iPad.
     let open: (Screen) -> Void
@@ -71,7 +72,7 @@ struct PlanView: View {
                         // list header drew the word "Close" alone).
                         Button {
                             focused = nil
-                            Navigator.shared.closeEmptyRoute()
+                            nav.closeEmptyRoute()
                         } label: {
                             Label("Close", systemImage: WingtipIcon.close).labelStyle(.iconOnly)
                         }
@@ -136,7 +137,7 @@ struct PlanView: View {
         .siriSees(SiriSaw.flight(plan))
         // Leaving the page puts the keyboard away (the web's sheet audit,
         // 2026-11-12: focus left on a page put away kept the keyboard up).
-        .onChange(of: Navigator.shared.sheetPage) { _, _ in focused = nil }
+        .onChange(of: nav.sheetPage) { _, _ in focused = nil }
     }
 }
 

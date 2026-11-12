@@ -11,15 +11,15 @@ import Foundation
 /// file (GPX, KML) handed over from Files or Mail, which the app is a
 /// viewer of (CFBundleDocumentTypes), and a Wingtip flight file
 /// (FlightFile), the app's own type. The sign-in link is not one of
-/// these: Session.open takes it. The answer is a PendingCommand, done by
-/// RootView once the screen is up, as Siri's asks are.
+/// these: Session.open takes it. The answer is an AppCommand, done by
+/// RootView (CommandHost), as Siri's asks are.
 enum Links {
     /// The file types the app opens, as Finder and Files name them.
     static let trackExtensions: Set<String> = ["gpx", "kml"]
     /// A Wingtip flight file's (UTType.wingtipFlight).
     static let flightExtension = "wingtip"
 
-    static func command(for url: URL) -> PendingCommand.Command? {
+    static func command(for url: URL) -> AppCommand? {
         if url.isFileURL {
             // A Wingtip flight file (FlightFile): previewed as a shared
             // flight is, never planned until Use This Plan.

@@ -121,12 +121,11 @@ struct TrustTests {
         let plan = Plan()
         plan.tail = "N3429J"
         plan.altitudeChoice = "fastest"
-        let commands = PendingCommand()
-        DemoFlight.fly(plan, commands: commands)
+        let command = DemoFlight.fly(plan)
         #expect(plan.aircraft == "c172")
         #expect(plan.tail == nil)
         #expect(plan.airplaneChosen)
         #expect(plan.altitudeChoice == nil)
-        #expect(commands.command == .planRoute(dep: "KMSN", stops: [], dest: "KOSH"))
+        #expect(command == .planRoute(dep: "KMSN", stops: [], dest: "KOSH"))
     }
 }

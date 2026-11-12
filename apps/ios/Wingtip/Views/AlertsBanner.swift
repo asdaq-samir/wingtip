@@ -5,17 +5,18 @@ import SwiftUI
 /// where it says so and amber otherwise, with the minutes to it. Tapped,
 /// the airspace card where it is (AlertActions); held, each one's.
 struct AlertsBanner: View {
+    @Environment(\.appCommand) private var appCommand
     let alerts: [AheadAlert]
 
     var body: some View {
         let sorted = alerts.sorted(by: { $0.seconds < $1.seconds })
         if let first = sorted.first {
-            Button { AlertActions.open(AlertActions.target(first)) } label: { line(first) }
+            Button { appCommand(AlertActions.command(AlertActions.target(first))) } label: { line(first) }
                 .buttonStyle(.plain)
                 .accessibilityHint("Opens the airspace where it is")
                 .contextMenu {
                     ForEach(sorted) { alert in
-                        Button(alert.name, systemImage: "info.circle") { AlertActions.open(AlertActions.target(alert)) }
+                        Button(alert.name, systemImage: "info.circle") { appCommand(AlertActions.command(AlertActions.target(alert))) }
                     }
                 }
         }

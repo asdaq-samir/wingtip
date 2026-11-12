@@ -9,9 +9,11 @@ import SwiftUI
 /// the system's red -- then its Distance and its Course, magnetic, and the
 /// nav log's figures for it in full (LegFigureSections).
 struct RouteLegView: View {
+    @Environment(InFlight.self) private var inFlight
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(DryRun.self) private var dryRun
+    @Environment(Navigator.self) private var nav
     @State private var model: RouteLegModel
 
     init(index: Int) { _model = State(initialValue: RouteLegModel(index: index)) }
@@ -19,7 +21,7 @@ struct RouteLegView: View {
     var body: some View {
         let navLeg = model.navLeg(plan: plan)
         List {
-            if let sheet = model.sheet(plan: plan, nextIndex: InFlight.shared.progress?.next?.index) {
+            if let sheet = model.sheet(plan: plan, nextIndex: inFlight.progress?.next?.index) {
                 Section {
                     HStack(spacing: WingtipSpace.sm) {
                         Text(sheet.from).lineLimit(1)
@@ -58,7 +60,7 @@ struct RouteLegView: View {
         if sheet.direct != nil || sheet.remove != nil {
             GlassRow {
                 if let direct = sheet.direct {
-                    Button { model.direct(sheet, plan: plan, from: dryRun.fix ?? ownShip.fix) } label: {
+                    Button { model.direct(sheet, plan: plan, from: dryRun.fix ?? ownShip.fix, nav: nav) } label: {
                         Label(direct.on ? "Cancel Direct" : "Direct \(direct.ident)", systemImage: WingtipIcon.directTo)
                             .symbolBounce(on: Feel.shared.directTo)
                             .frame(maxWidth: .infinity)
@@ -66,7 +68,7 @@ struct RouteLegView: View {
                     .glassProminentButton()
                 }
                 if let stop = sheet.remove {
-                    Button(role: .destructive) { model.remove(sheet, plan: plan) } label: {
+                    Button(role: .destructive) { model.remove(sheet, plan: plan, nav: nav) } label: {
                         Label("Remove \(stop)", systemImage: "trash").frame(maxWidth: .infinity)
                     }
                     .glassButton()

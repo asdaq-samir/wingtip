@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 # One Python suite, as ci.yml's test-python matrix runs each leg (docs/CI.md,
 # "The tiers"): its requirements installed with uv, then its tests. The legs
-# are the services' own suites and wingtip's and the jobs': ruff runs once
+# are the services' own suites and wingtip's, the jobs' and the X-Plane
+# driver's: ruff runs once
 # for all of them in the guards job (scripts/ci/guards.sh), and the
 # engine's wheel is installed by the step before this one, where the leg
 # imports it.
 #
-#   scripts/ci/python_suite.sh planner|wingtip|jobs|ingest|assistant|weather
+#   scripts/ci/python_suite.sh planner|wingtip|jobs|ingest|assistant|weather|xplane
 #
 # The packages go into the running Python (`--system`), as on a fresh
 # runner; on the Mac, use scripts/dev/check.sh, which runs the same suites in
 # containers.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
-leg=${1:?a leg: planner, wingtip, jobs, ingest, assistant or weather}
+leg=${1:?a leg: planner, wingtip, jobs, ingest, assistant, weather or xplane}
 
 # The directory it runs in, its requirements there, and its tests.
 case "$leg" in
@@ -21,21 +22,28 @@ case "$leg" in
   wingtip) dir=services/planner req=requirements-dev-wingtip.txt tests=tests_wingtip ;;
   jobs) dir=services/jobs req=requirements-dev-jobs.txt tests="charts/tests crash/tests" ;;
   ingest | assistant | weather) dir=services/$leg req=requirements-dev.txt tests=tests ;;
+  # The X-Plane trial's plugin: the standard library and its tests' runner only.
+  xplane) dir=tools/xplane-driver req="" tests=tests ;;
   *) echo "python_suite: no leg '$leg'" >&2; exit 64 ;;
 esac
 
 command -v uv > /dev/null || pip install -q uv
-uv pip install --system -q -r "$dir/$req"
+if [ -n "$req" ]; then
+  uv pip install --system -q -r "$dir/$req"
+else
+  # The runner at the planner's pin, so every suite runs on one version.
+  grep -E '^pytest==' services/planner/requirements-dev.txt | sed 's/ .*//' | uv pip install --system -q -r -
+fi
 
 cd "$dir"
 case "$leg" in
   # The import contracts (.importlinter): the planner's, for app and
   # wingtip alike; ingest's and the jobs', with wingtip beside them.
   planner) lint-imports ;;
-  ingest) PYTHONPATH=../planner lint-imports ;;
-  # The assistant's client and tools are generated
-  # (scripts/build/assistant_client.py) and checked.
-  assistant) python ../../scripts/build/assistant_client.py --check ;;
+  ingest | weather) PYTHONPATH=../planner lint-imports ;;
+  # The assistant's contracts, then its client and tools, which are
+  # generated (scripts/build/assistant_client.py) and checked.
+  assistant) lint-imports && python ../../scripts/build/assistant_client.py --check ;;
   # tippecanoe, for the overlay tiles' archive tests; skipped without it.
   jobs)
     PYTHONPATH=../planner lint-imports || exit 1

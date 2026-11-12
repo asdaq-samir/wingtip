@@ -56,7 +56,7 @@ AREAS = [
 ]
 SUFFIXES = {".ts", ".tsx", ".js", ".mjs", ".swift", ".kt", ".java", ".py", ".cs"}
 SKIP = re.compile(
-    r"(\.test\.|\.spec\.|/fixtures/|/Generated/|/generated/|lib/engine/contract\.ts|lib/api/types\.ts|"
+    r"(\.test\.|\.spec\.|/fixtures/|/Generated/|/generated/|apps/ios/WingtipAPI/|lib/engine/contract\.ts|lib/api/types\.ts|"
     r"EngineContract\.(swift|kt)|/tests?/|/test_[^/]*\.py$|Tests?/|/bin/|/obj/|node_modules/|"
     r"planner_client\.py$|planner_models\.py$|services/planner/app/detection\.py)"
 )

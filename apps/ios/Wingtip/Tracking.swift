@@ -285,15 +285,11 @@ final class Tracking {
     /// While the map is shown: the tracked airplane's state every ten
     /// seconds, where the map's own answers do not have it (it is out of
     /// their radius), and each watched airplane's every fifteen; both on
-    /// the app's one clock (Ticker), twice as slow with the app put away.
+    /// Swift's clock (Repeating), twice as slow with the app put away.
     func run() async {
-        let tracked = Ticker.shared.every(5) { [weak self] in await self?.askTracked() }
-        let watched = Ticker.shared.every(15) { [weak self] in await self?.askWatched() }
-        defer {
-            tracked.cancel()
-            watched.cancel()
-        }
-        await Ticker.untilCancelled()
+        async let tracked: Void = Repeating.every(5) { [weak self] in await self?.askTracked() }
+        async let watched: Void = Repeating.every(15) { [weak self] in await self?.askWatched() }
+        _ = await (tracked, watched)
     }
 
     /// The tracked airplane's report, where none has come in ten seconds.

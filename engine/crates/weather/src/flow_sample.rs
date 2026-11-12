@@ -16,13 +16,17 @@
 //!
 //! Two rules, as an app holds the picture and the engine only the method:
 //! `flow_cell`, the four pixels round a point and how far between them it
-//! is, and `flow_sample`, the value read from those four. Read between
-//! the four linearly (bilinear), as weatherlayers-gl reads with LINEAR
+//! is, and `flow_sample`, the value read from those four. A continuous
+//! field (the wind, the temperature and the rest) is read between the
+//! four linearly (bilinear), as weatherlayers-gl reads with LINEAR
 //! interpolation; the wind's east and north parts each so, and its speed
 //! and direction from those, which is the wind a vector average gives (in
 //! shear, an average of the speeds would read a wind where the parts
-//! cancel). None where a pixel the point is read from has no value: no
-//! figure is made up at the edge of the model's data.
+//! cancel). The ceiling and the visibility, where lower is worse, are
+//! read as the worst of the four instead (`Field::named`): a pilot is
+//! never told better weather than the data holds. None where a pixel the
+//! point is read from has no value: no figure is made up at the edge of
+//! the model's data.
 
 use crate::json::{self, Value};
 
@@ -101,30 +105,67 @@ pub struct Reading {
     pub no_ceiling: bool,
 }
 
-/// What a picture holds: a plain value, the wind's two parts, or the
-/// ceiling (`ceiling`), whose top is none.
+/// What a picture holds: a plain value read between its pixels, the
+/// wind's two parts, the ceiling (`ceiling`), whose top is none, or a
+/// plain value where lower is worse (`Least`, the visibility).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Field {
     Scalar,
     Vector,
     Ceiling,
+    Least,
+}
+
+impl Field {
+    /// The field app.flow_grid names (its FIELDS), as the picture's file
+    /// is named, other than the wind, which `vector` says. Read as the
+    /// worst of the four pixels round the point, the lowest, are the two
+    /// fields AIM 7-1-7's categories turn on, where lower is worse: "LIFR (Low IFR). Ceiling less than 500 feet and/or
+    /// visibility less than 1 mile ... VFR. Ceiling greater than 3,000
+    /// feet and visibility greater than 5 miles" (read from the FAA's AIM
+    /// page 2026-11-12). Each is a step where the four differ, not a slope:
+    /// a 500 ft ceiling beside none (the picture's top, 12,750 ft) reads
+    /// about 6,600 ft half way between them, VFR beside an LIFR cell, a
+    /// figure neither pixel holds; and the picture's top is not a height
+    /// at all but a ceiling over it or none (`ceiling`), and the
+    /// visibility's 10 SM its "10 or more" (app.flow_grid clips to its
+    /// `unscale`). The weather service keeps a cell's ceiling as its
+    /// lowest too (app.flow_grid's cells). Every other field reads between
+    /// its pixels: the wind and the temperature are continuous, the
+    /// freezing level an isotherm's height with no category bound on it,
+    /// the cloud tops, CAPE, gusts, precipitation, icing and turbulence
+    /// higher where worse, which a straight-line reading never takes over
+    /// the highest of the four.
+    pub fn named(name: &str) -> Field {
+        match name {
+            "ceiling" => Field::Ceiling,
+            "vis" => Field::Least,
+            _ => Field::Scalar,
+        }
+    }
 }
 
 /// The value read from a cell's four pixels (module note), or None where
-/// one it is read from has none.
+/// one it is read from has none. The pixels a point is read from are
+/// those with a weight: all four between their middles, one on a pixel's
+/// own middle, as that pixel's value is the model's there.
 pub fn sample(pixels: [Pixel; 4], fx: f64, fy: f64, unscale: [f64; 2], field: Field) -> Option<Reading> {
     let weights = [(1.0 - fx) * (1.0 - fy), fx * (1.0 - fy), (1.0 - fx) * fy, fx * fy];
     if pixels.iter().zip(weights).any(|(p, w)| w > 0.0 && p[2] <= 0.0) {
         return None;
     }
-    let channel = |c: usize| {
-        let byte: f64 = pixels.iter().zip(weights).filter(|(_, w)| *w > 0.0).map(|(p, w)| p[c] * w).sum();
-        unscale[0] + byte * (unscale[1] - unscale[0]) / 255.0
-    };
+    let read = || pixels.iter().zip(weights).filter(|(_, w)| *w > 0.0);
+    let unscaled = |byte: f64| unscale[0] + byte * (unscale[1] - unscale[0]) / 255.0;
+    let channel = |c: usize| unscaled(read().map(|(p, w)| p[c] * w).sum());
+    // The lowest of the pixels read (Field::named), so a ceiling is no
+    // ceiling only where every one of them is at the top.
+    let worst = || unscaled(read().map(|(p, _)| p[0]).fold(f64::INFINITY, f64::min));
+    let plain = |value| Some(Reading { value, from_deg: None, calm: false, no_ceiling: false });
     match field {
-        Field::Scalar => return Some(Reading { value: channel(0), from_deg: None, calm: false, no_ceiling: false }),
+        Field::Scalar => return plain(channel(0)),
+        Field::Least => return plain(worst()),
         Field::Ceiling => {
-            let (value, no_ceiling) = ceiling(channel(0), unscale);
+            let (value, no_ceiling) = ceiling(worst(), unscale);
             return Some(Reading { value, from_deg: None, calm: false, no_ceiling });
         }
         Field::Vector => {}
@@ -161,8 +202,8 @@ fn size(name: &str, v: &Value, key: &str) -> Result<usize, String> {
 
 /// `flow_cell`: `{"bounds", "width", "height", "lat", "lon"}` to
 /// `{"pixels", "fx", "fy"}` or null; `flow_sample`: `{"pixels": [[r, g,
-/// a] x 4], "fx", "fy", "unscale", "vector", "ceiling"?}` to `{"value",
-/// "from_deg", "calm", "no_ceiling"}` or null.
+/// a] x 4], "fx", "fy", "unscale", "vector", "ceiling"?, "field"?}` to
+/// `{"value", "from_deg", "calm", "no_ceiling"}` or null.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     match name {
@@ -188,10 +229,11 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             let fx = number(name, v, "fx")?.clamp(0.0, 1.0);
             let fy = number(name, v, "fy")?.clamp(0.0, 1.0);
             let unscale = numbers::<2>(name, v.get("unscale"), "unscale")?;
+            let named = v.get("field").and_then(Value::as_str).map_or(Field::Scalar, Field::named);
             let field = match (v.get("vector"), v.get("ceiling")) {
                 (Some(Value::Bool(true)), _) => Field::Vector,
                 (_, Some(Value::Bool(true))) => Field::Ceiling,
-                _ => Field::Scalar,
+                _ => named,
             };
             let Some(r) = sample(pixels, fx, fy, unscale, field) else { return Ok("null".to_owned()) };
             out.push_str("{\"value\":");
@@ -275,16 +317,55 @@ mod tests {
         // The top byte: a ceiling over 12,750 ft or none, either no ceiling.
         let r = sample([[255.0, 0.0, 255.0]; 4], 0.0, 0.0, top, Field::Ceiling).unwrap();
         assert!(r.no_ceiling && r.value == 12_750.0, "{r:?}");
-        // Half a step under the top is still none; the step under it is a ceiling.
-        assert!(at(254.0, 0.5).no_ceiling);
+        // The step under the top is a ceiling, and so is any point read
+        // from it and the top: only the top everywhere is none.
         let r = at(254.0, 0.0);
         assert!(!r.no_ceiling && r.value == 12_700.0, "{r:?}");
-        // AIM 7-1-7's MVFR bound, 3,000 ft (byte 60), reads as itself, and
-        // a quarter of the way to 3,050 rounds back to it.
+        let r = at(254.0, 0.5);
+        assert!(!r.no_ceiling && r.value == 12_700.0, "{r:?}");
+        // AIM 7-1-7's MVFR bound, 3,000 ft (byte 60), reads as itself
+        // wherever the point is between it and 3,050: the lower.
         assert_eq!(at(60.0, 0.25).value, 3_000.0);
-        assert_eq!(at(60.0, 0.75).value, 3_050.0);
+        assert_eq!(at(60.0, 0.75).value, 3_000.0);
+        // On 3,050's own middle, its own value: the pixel read is that one.
+        assert_eq!(at(60.0, 1.0).value, 3_050.0);
         // A plain field is never a ceiling, nor rounded.
         assert!(!sample([[255.0, 0.0, 255.0]; 4], 0.0, 0.0, top, Field::Scalar).unwrap().no_ceiling);
+    }
+
+    #[test]
+    fn the_ceiling_is_the_lowest_round_the_point_never_a_height_between() {
+        // app.flow_grid's ceiling, 0 to 12,750 ft: none (the top, byte 255)
+        // beside a 500 ft ceiling (byte 10), AIM 7-1-7's IFR floor ("IFR.
+        // Ceiling 500 to less than 1,000 feet"). Half way from one to the
+        // other a straight-line reading says 6,625 ft, VFR; the data holds
+        // 500, and that is the reading anywhere the low pixel is read from.
+        let top = [0.0, 12_750.0];
+        let (none, low) = ([255.0, 0.0, 255.0], [10.0, 0.0, 255.0]);
+        for (fx, fy) in [(0.5, 0.0), (0.5, 0.5), (0.01, 0.0), (0.99, 0.99)] {
+            let r = sample([none, low, none, none], fx, fy, top, Field::Ceiling).unwrap();
+            assert!(r.value == 500.0 && !r.no_ceiling, "{fx} {fy}: {r:?}");
+        }
+        // On the clear pixel's own middle, the model's own value there: none.
+        assert!(sample([none, low, none, none], 0.0, 0.0, top, Field::Ceiling).unwrap().no_ceiling);
+        // A missing pixel the point is read from is still no reading.
+        assert_eq!(sample([none, [10.0, 0.0, 0.0], none, none], 0.5, 0.5, top, Field::Ceiling), None);
+    }
+
+    #[test]
+    fn the_visibility_is_the_lowest_round_the_point() {
+        // app.flow_grid's visibility, 0 to 10 SM: 10 SM (its "10 or more")
+        // beside 0.8 SM (byte 20.4 is 0.8), under AIM 7-1-7's LIFR "1
+        // mile". Read anywhere between, 0.8 SM, never the VFR 5.4 SM a
+        // straight line gives half way from one to the other.
+        let vis = [0.0, 10.0];
+        let r = sample([[255.0, 0.0, 255.0], [20.4, 0.0, 255.0], [255.0, 0.0, 255.0], [255.0, 0.0, 255.0]], 0.5, 0.5, vis, Field::Least)
+            .unwrap();
+        assert!((r.value - 0.8).abs() < 1e-9 && !r.no_ceiling && !r.calm, "{r:?}");
+        assert_eq!(Field::named("vis"), Field::Least);
+        assert_eq!(Field::named("ceiling"), Field::Ceiling);
+        // The temperature, a continuous field, still reads between.
+        assert_eq!(Field::named("temp"), Field::Scalar);
     }
 
     #[test]
@@ -295,6 +376,12 @@ mod tests {
             json::parse(r#"{"pixels":[[0,0,255],[255,0,255],[0,0,255],[255,0,255]],"fx":0.25,"fy":0.5,"unscale":[0,100],"vector":false}"#)
                 .unwrap();
         assert_eq!(call("flow_sample", &s).unwrap(), r#"{"value":25.0,"from_deg":null,"calm":false,"no_ceiling":false}"#);
+        // The field named by its picture: the visibility reads its lowest.
+        let s = json::parse(
+            r#"{"pixels":[[0,0,255],[255,0,255],[0,0,255],[255,0,255]],"fx":0.25,"fy":0.5,"unscale":[0,100],"vector":false,"field":"vis"}"#,
+        )
+        .unwrap();
+        assert_eq!(call("flow_sample", &s).unwrap(), r#"{"value":0.0,"from_deg":null,"calm":false,"no_ceiling":false}"#);
         assert!(call("flow_sample", &json::parse(r#"{"pixels":[]}"#).unwrap()).is_err());
     }
 }

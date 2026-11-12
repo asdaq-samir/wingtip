@@ -8,6 +8,7 @@ import UniformTypeIdentifiers
 /// streamed as they come; a pilot's own edit is theirs from then on (the
 /// web app's useCheckpointNotes).
 struct CheckpointNotesView: View {
+    @Environment(ServerFeatures.self) private var features
     @Environment(Plan.self) private var plan
     @State private var notes: [String: (text: String, source: String)] = [:]
     @State private var writing = false
@@ -22,7 +23,7 @@ struct CheckpointNotesView: View {
     var body: some View {
         List {
             // Claude's descriptions have no free path: hidden while the Claude features are off (docs/decisions/0035).
-            if ServerFeatures.shared.claudeOn {
+            if features.claudeOn {
                 Button(writing ? (count.map { "Writing \(notes.count) of \($0)…" } ?? "Writing…") : "Describe the Checkpoints") { describe() }.disabled(writing || plan.checkpoints.isEmpty)
             }
             ProblemLine(problem)
@@ -181,6 +182,8 @@ struct FlightServiceView: View {
 /// route, put in from a GPX file (ForeFlight's, Garmin Pilot's, a GPS's),
 /// or taken off. GPS altitude, not what the altimeter read.
 struct FlownTrackView: View {
+    @Environment(Replay.self) private var replay
+    @Environment(Tracking.self) private var tracking
     let flight: Int
     let title: String
     @State private var track: SavedTrack?
@@ -200,7 +203,7 @@ struct FlownTrackView: View {
                 // Its replay, the airplane flown along it again on the
                 // map, the track put there with it.
                 ReplaySection(points: Replay.points(track.points), key: replayKey, onPlay: {
-                    if Tracking.shared.flown.isEmpty { Tracking.shared.flown = points }
+                    if tracking.flown.isEmpty { tracking.flown = points }
                 })
                 Section {
                     if let first = points.first, let last = points.last {
@@ -211,12 +214,12 @@ struct FlownTrackView: View {
                 // Its debrief against the flight's nav log, the planner's (POST /api/debrief).
                 DebriefSections(flight: flight, points: track.points)
                 Section {
-                    Button(Tracking.shared.flown.isEmpty ? "Show on the Map" : "Hide from the Map") {
-                        Tracking.shared.flown = Tracking.shared.flown.isEmpty ? points : []
+                    Button(tracking.flown.isEmpty ? "Show on the Map" : "Hide from the Map") {
+                        tracking.flown = tracking.flown.isEmpty ? points : []
                     }
                     Button("Delete the Track", role: .destructive) {
                         Task {
-                            do { try await Gateway.deleteTrack(flight); self.track = nil; Tracking.shared.flown = []; Replay.shared.clear(replayKey) } catch { problem = error.localizedDescription }
+                            do { try await Gateway.deleteTrack(flight); self.track = nil; tracking.flown = []; replay.clear(replayKey) } catch { problem = error.localizedDescription }
                         }
                     }
                 }
@@ -247,7 +250,7 @@ struct FlownTrackView: View {
             do { track = try await Gateway.track(flight) } catch { problem = error.localizedDescription }
             loaded = true
         }
-        .onDisappear { Replay.shared.clear(replayKey) }
+        .onDisappear { replay.clear(replayKey) }
         .fileImporter(isPresented: $importing, allowedContentTypes: [UTType(filenameExtension: "gpx") ?? .xml, .xml]) { result in
             guard case .success(let url) = result else { return }
             let reading = url.startAccessingSecurityScopedResource()
@@ -389,12 +392,13 @@ struct ForgetNotesButton: View {
 
 /// The last watch that went off, over the map until it is put away.
 struct WatchBanner: View {
+    @Environment(Tracking.self) private var tracking
     var body: some View {
-        if let words = Tracking.shared.fired {
+        if let words = tracking.fired {
             HStack(spacing: WingtipSpace.sm) {
                 Image(systemName: "bell.fill").symbolRing(on: words).accessibilityHidden(true)
                 Text(words).font(.subheadline.weight(.semibold)).lineLimit(2)
-                Button { Tracking.shared.fired = nil } label: {
+                Button { tracking.fired = nil } label: {
                     // The 44-point hit area round the glyph, which does not grow.
                     Image(systemName: "xmark").contentShape(Rectangle().inset(by: -12))
                 }
@@ -402,7 +406,7 @@ struct WatchBanner: View {
             }
             .padding(.horizontal, WingtipSpace.md).padding(.vertical, WingtipSpace.sm)
             .floatingGlass(in: Capsule())
-        } else if let problem = Tracking.shared.watchProblem {
+        } else if let problem = tracking.watchProblem {
             // A watch that could not be checked says so where it would
             // have gone off, rather than staying quiet.
             Label(problem, systemImage: "exclamationmark.triangle")
@@ -453,7 +457,9 @@ private enum PreviewData {
 }
 
 #Preview("WatchBanner") {
-    Tracking.shared.fired = "N3429J is in the air from KDLH"
+    let tracking = Tracking()
+    tracking.fired = "N3429J is in the air from KDLH"
     return WatchBanner()
         .padding()
+        .environment(tracking)
 }

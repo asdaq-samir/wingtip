@@ -172,6 +172,11 @@ def preload(path: Path = PLACES_PATH) -> None:
         _TABLE = _load(path)
 
 
+def loaded() -> dict | None:
+    """The places as loaded (preload, once a process); None before."""
+    return _TABLE
+
+
 def _nearest(table: dict, kind: str, lat: float, lon: float) -> tuple[str, float, float, float] | None:
     part = table[kind]
     if part["tree"] is None:

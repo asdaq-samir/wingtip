@@ -44,9 +44,9 @@
       "answer": { "value": 12750.0, "from_deg": null, "calm": false, "no_ceiling": true }
     },
     {
-      "about": "Half a step under the ceiling's top is still none",
+      "about": "Between the ceiling's top and the step under it, the step under it: no ceiling only where every pixel read is at the top",
       "input": { "pixels": [[254, 0, 255], [255, 0, 255], [254, 0, 255], [255, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 12750], "vector": false, "ceiling": true },
-      "answer": { "value": 12750.0, "from_deg": null, "calm": false, "no_ceiling": true }
+      "answer": { "value": 12700.0, "from_deg": null, "calm": false, "no_ceiling": false }
     },
     {
       "about": "A ceiling a step under the top is a ceiling, 12,700 ft",
@@ -54,9 +54,29 @@
       "answer": { "value": 12700.0, "from_deg": null, "calm": false, "no_ceiling": false }
     },
     {
-      "about": "A ceiling read between 3,000 and 3,050 ft (AIM 7-1-7's MVFR bound) is rounded to the picture's 50 ft: 3,012.5 reads 3,000",
+      "about": "A ceiling read between 3,000 and 3,050 ft (AIM 7-1-7's MVFR bound) is the lower, 3,000",
       "input": { "pixels": [[60, 0, 255], [61, 0, 255], [60, 0, 255], [61, 0, 255]], "fx": 0.25, "fy": 0, "unscale": [0, 12750], "vector": false, "ceiling": true },
       "answer": { "value": 3000.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "No ceiling (the top) beside a 500 ft ceiling (AIM 7-1-7's IFR floor), half way: 500 ft, the lowest, where a straight line reads 6,625 ft, VFR",
+      "input": { "pixels": [[255, 0, 255], [10, 0, 255], [255, 0, 255], [10, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 12750], "vector": false, "field": "ceiling" },
+      "answer": { "value": 500.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "The same asked with `ceiling` true: 500 ft",
+      "input": { "pixels": [[255, 0, 255], [10, 0, 255], [255, 0, 255], [10, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 12750], "vector": false, "ceiling": true },
+      "answer": { "value": 500.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Visibility 10 SM beside 0.5 SM (under AIM 7-1-7's LIFR 1 mile), half way: 0.5 SM, the lowest, where a straight line reads 5.25 SM, VFR",
+      "input": { "pixels": [[255, 0, 255], [12.75, 0, 255], [255, 0, 255], [12.75, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 10], "vector": false, "field": "vis" },
+      "answer": { "value": 0.5, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "The temperature, continuous, still reads between: half way from 0 to 10 C",
+      "input": { "pixels": [[0, 0, 255], [255, 0, 255], [0, 0, 255], [255, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 10], "vector": false, "field": "temp" },
+      "answer": { "value": 5.0, "from_deg": null, "calm": false, "no_ceiling": false }
     },
     {
       "about": "None where a pixel it is read from has none",

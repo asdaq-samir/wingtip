@@ -27,6 +27,7 @@ final class FlightUI {
 /// point (its course and distance) and a procedure's fix's crossing
 /// altitude. A point's own altitude is the Profile's (LegAltitudePopover).
 struct PointAlerts: ViewModifier {
+    @Environment(FlightUI.self) private var flightUI
     /// Whether this view is the top of the stack, the one that presents.
     let active: Bool
     @Environment(Plan.self) private var plan
@@ -35,7 +36,7 @@ struct PointAlerts: ViewModifier {
     @State private var distance = ""
 
     func body(content: Content) -> some View {
-        let ui = FlightUI.shared
+        let ui = flightUI
         content
             .alert(ui.fixFrom.map { "A fix from \($0)" } ?? "A fix", isPresented: shown(\.fixFrom), presenting: ui.fixFrom) { from in
                 TextField("Course, as 090", text: $course).keyboardType(.numberPad)
@@ -72,14 +73,14 @@ struct PointAlerts: ViewModifier {
     /// in FlightUI.problem.
     private func refused<T>(_ body: () throws -> T?) -> T? {
         do { return try body() } catch {
-            FlightUI.shared.problem = error.localizedDescription
+            flightUI.problem = error.localizedDescription
             return nil
         }
     }
 
     /// Whether one of the alerts is up, its subject set; put away, cleared.
     private func shown(_ subject: ReferenceWritableKeyPath<FlightUI, String?>) -> Binding<Bool> {
-        Binding(get: { active && FlightUI.shared[keyPath: subject] != nil }, set: { if !$0 { FlightUI.shared[keyPath: subject] = nil } })
+        Binding(get: { active && flightUI[keyPath: subject] != nil }, set: { if !$0 { flightUI[keyPath: subject] = nil } })
     }
 }
 
@@ -105,6 +106,7 @@ struct DirectStrip: View {
 /// menus, the holds set, the procedures' fixes, and the pages of the
 /// flight in the air.
 struct RouteExtrasSection: View {
+    @Environment(Navigator.self) private var nav
     @Environment(Plan.self) private var plan
     @AppStorage(FlightRules.key) private var rules: FlightRules = .vfr
 
@@ -118,7 +120,7 @@ struct RouteExtrasSection: View {
                 // web files it (14 CFR 91.169).
                 if rules == .ifr { AlternateRow() }
                 ForEach(plan.extras.holds) { hold in
-                    Button { Navigator.shared.push(.hold(hold.fix)) } label: {
+                    Button { nav.push(.hold(hold.fix)) } label: {
                         VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                             Text("Hold at \(hold.fix)").foregroundStyle(.primary)
                             Text(hold.words).font(.footnote).foregroundStyle(.secondary)
@@ -171,6 +173,7 @@ struct FlightPage: View {
 /// by time or distance; and how long. The planner works out the entry
 /// from the course flown to it and adds its time and fuel.
 struct HoldSheet: View {
+    @Environment(Navigator.self) private var nav
     let fix: String
     @Environment(Plan.self) private var plan
     @State private var course = ""
@@ -189,7 +192,7 @@ struct HoldSheet: View {
     static let legMiles = [2.0, 3, 4, 5, 10]
 
     /// Done: back where it was opened from, a card's stack or the plan.
-    private func dismiss() { Navigator.shared.finish(.hold(fix)) }
+    private func dismiss() { nav.finish(.hold(fix)) }
     static let lengths = ["1T", "2T", "3T", "4T", "10M", "15M", "20M", "30M"]
 
     /// "2 turns", "1 turn", "10 min".
@@ -314,6 +317,7 @@ struct HoldSheet: View {
 /// altitude to cross it at, the pilot's own in the chart's place (the web
 /// app's FixCard and FixBranch).
 struct ProcedureFixesView: View {
+    @Environment(FlightUI.self) private var flightUI
     let ident: String
     let id: String
     @Environment(Plan.self) private var plan
@@ -348,7 +352,7 @@ struct ProcedureFixesView: View {
                                     plan.setProcedureDirect(pick, fix: direct == fix.ident ? nil : fix.ident)
                                 }
                                 .glassButton()
-                                Button("Cross at…") { FlightUI.shared.crossAt = fix.ident }
+                                Button("Cross at…") { flightUI.crossAt = fix.ident }
                                     .glassButton()
                             }
                         }

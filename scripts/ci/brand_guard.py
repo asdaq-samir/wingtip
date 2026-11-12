@@ -54,7 +54,7 @@ AREAS = {
 
 # Generated, tests and previews.
 SKIP = re.compile(
-    r"(/generated/|/Generated/|\.d\.ts$|\.test\.|\.spec\.|/test/|/tests?/|/e2e/|/fixtures/|__tests__|"
+    r"(/generated/|/Generated/|apps/ios/WingtipAPI/|\.d\.ts$|\.test\.|\.spec\.|/test/|/tests?/|/e2e/|/fixtures/|__tests__|"
     r"\.stories\.|/previews?/|Tests/|UITests/|"
     r"apps/web/src/styles/tokens\.css$|apps/web/src/lib/tokens\.ts$|apps/web/src/lib/api/types\.ts$|"
     r"apps/web/src/lib/engine/contract\.ts$)"

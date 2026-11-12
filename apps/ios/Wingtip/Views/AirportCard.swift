@@ -31,7 +31,7 @@ struct AirportCard: View {
     /// Scrolled past the head: its name in the bar and the section picker
     /// pinned under it (the owner's scrolling rule, 2026-11-10).
     @State private var pinned = false
-    private var shelf: AirportShelf { .shared }
+    @Environment(AirportShelf.self) private var shelf
 
     /// The card's pages, in the pilot's order (the web app's CARD_TABS).
     enum CardTab: String, CaseIterable, Identifiable {
@@ -170,6 +170,7 @@ struct AirportCard: View {
 /// glyph and the report as sent under them; for a field with no report,
 /// the weather modelled at it and the nearest station's report.
 struct AirportWeatherTab: View {
+    @Environment(ClearanceListener.self) private var listener
     let place: AirportPlace
 
     var body: some View {
@@ -194,7 +195,7 @@ struct AirportWeatherTab: View {
             }
         }
         DigitalAtisSections()
-        if ClearanceListener.shared.canListen { AtisSection() } // heard on the iPhone or not offered
+        if listener.canListen { AtisSection() } // heard on the iPhone or not offered
         if place.metar == nil, let nearby = place.nearbyMetar {
             Section("Nearest Report, \(Format.distance(nearby.distanceNm)) \(AirportWords.compassPoint(Double(nearby.bearingDeg)))") {
                 CardRow(title: nearby.ident, detail: nearby.metar.observedAt.flatMap { AirportWords.observed($0) }) {
@@ -214,6 +215,7 @@ struct AirportWeatherTab: View {
     /// in a short table under it and the transcript folded away. A
     /// failure is said in the row (ProblemLine), not an alert.
     struct AtisSection: View {
+        @Environment(ClearanceListener.self) private var listener
         @State private var listening = false
         @State private var heard = ""
         @State private var reading: Atis?
@@ -224,7 +226,7 @@ struct AirportWeatherTab: View {
             Section {
                 Button {
                     if listening {
-                        ClearanceListener.shared.stop()
+                        listener.stop()
                         return
                     }
                     listening = true
@@ -232,10 +234,10 @@ struct AirportWeatherTab: View {
                     reading = nil
                     heard = ""
                     hearing = Task { @MainActor in
-                        let text = await ClearanceListener.shared.hearBroadcast { heard = $0 }
+                        let text = await listener.hearBroadcast { heard = $0 }
                         listening = false
                         guard let text else {
-                            problem = ClearanceListener.shared.problem ?? "Nothing could be heard."
+                            problem = listener.problem ?? "Nothing could be heard."
                             return
                         }
                         guard !text.isEmpty else {
@@ -273,7 +275,7 @@ struct AirportWeatherTab: View {
                     }
                 }
             }
-            .onDisappear { hearing?.cancel(); if listening { ClearanceListener.shared.stop() } }
+            .onDisappear { hearing?.cancel(); if listening { listener.stop() } }
         }
     }
 

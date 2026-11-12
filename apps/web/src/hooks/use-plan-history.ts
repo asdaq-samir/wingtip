@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { addressParams, loadAddress, type Address, type AddressChange, type SetAddress } from "../lib/address";
 import { toast } from "../lib/toast";
-import { observed, PLAN_KEYS, planStateOf, redone, restored, started, undone, type PlanHistory } from "./planHistory";
+import { PLAN_KEYS } from "../lib/address";
+import { observed, planStateOf, redone, restored, started, undone, type PlanHistory } from "./planHistory";
 
 /** The route's Undo toast up now, if any: one at a time, the next
  *  change's in its place. */

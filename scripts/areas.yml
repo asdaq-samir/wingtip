@@ -132,7 +132,7 @@ areas:
       - engine/**
   jobs:
     ci: test-jobs
-    check: the jobs' ruff and pytest (services/jobs/charts/tests), in Docker
+    check: the jobs' ruff, import contracts and pytest (services/jobs/charts/tests and crash/tests), in Docker
     paths:
       - services/jobs/**
       - services/planner/wingtip/**
@@ -205,13 +205,14 @@ areas:
       - apps/web/public/support.html
   sim:
     ci: sim
-    check: the replay agent's build, format check and tests (dotnet, in Docker), cfn-lint on the trial's template, shellcheck on its scripts (the MSFS trial, infra/sim-trial and tools/msfs-agent)
+    check: the replay agent's build, format check and tests (dotnet, in Docker, scripts/ci/sim_suite.sh), cfn-lint on the trial's template, shellcheck on its scripts (the MSFS trial, infra/sim-trial and tools/msfs-agent)
     paths:
       - tools/msfs-agent/**
       - infra/sim-trial/**
+      - scripts/ci/sim_suite.sh
   xplane:
-    ci: arch
-    check: ruff check . && pytest tests (tools/xplane-driver, the X-Plane trial's plugin, docs/XPLANE-TRIAL.md)
+    ci: test-xplane
+    check: ruff check . && pytest tests (tools/xplane-driver, the X-Plane trial's plugin, docs/XPLANE-TRIAL.md); CI runs the tests as test-python's xplane leg (scripts/ci/python_suite.sh), ruff in guards
     paths:
       - tools/xplane-driver/**
       - scripts/dev/xplane-trial.sh

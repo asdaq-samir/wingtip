@@ -130,11 +130,11 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     // And its world copies (its default): the Western Aleutian sectional runs across 180°.
   });
   if (tiles) overlaysOf.set(m, tiles);
-  // A tile's picture the moment its layout asks for it, from the ones
-  // drawn ahead (overlayPictures), so no symbol is laid out bare.
-  m.on("styleimagemissing", (e: { id: string }) => {
-    const got = pictures?.get(e.id);
-    if (got && !m.hasImage(e.id)) m.addImage(e.id, got.image, got.options);
+  // A tile's picture from those drawn ahead (overlayPictures), which MapLibre waits on before it lays the tile out.
+  m.setMissingStyleImageResolver(async (id) => {
+    await picturesDrawn;
+    const got = pictures?.get(id);
+    if (got && !m.hasImage(id)) m.addImage(id, got.image, got.options);
   });
   // A remote has no pinch: the map's own + and - to reach with its arrows.
   if (onTv) m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");

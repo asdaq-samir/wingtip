@@ -13,7 +13,7 @@ struct ReplaySection: View {
     /// Played the first time: the track put on the map with it.
     var onPlay: (() -> Void)?
 
-    private var replay: Replay { .shared }
+    @Environment(Replay.self) private var replay
 
     var body: some View {
         @Bindable var replay = replay

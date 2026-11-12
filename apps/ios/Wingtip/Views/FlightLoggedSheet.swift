@@ -161,9 +161,9 @@ private struct DraftRows: View {
 /// (RootView's one line); its card, Flight Logged, opens when the draft
 /// is asked for (CardTriggers).
 struct AutoLogbookHost: ViewModifier {
+    @Environment(AutoLogbook.self) private var model
     @Environment(Session.self) private var session
     @Environment(Plan.self) private var plan
-    @State private var model = AutoLogbook.shared
 
     func body(content: Content) -> some View {
         content
@@ -176,10 +176,11 @@ struct AutoLogbookHost: ViewModifier {
 /// Flight Logged as a card: the model, the sign-in and the logbook's
 /// change handed to the form.
 struct FlightLoggedCard: View {
+    @Environment(AutoLogbook.self) private var logbook
     @Environment(Session.self) private var session
     @Environment(Verdict.self) private var verdict
 
     var body: some View {
-        FlightLoggedSheet(model: AutoLogbook.shared, signedIn: session.signedIn) { verdict.logbookChanged() }
+        FlightLoggedSheet(model: logbook, signedIn: session.signedIn) { verdict.logbookChanged() }
     }
 }

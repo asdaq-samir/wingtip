@@ -14,9 +14,15 @@ type ListSearch = ComponentProps<typeof SearchField>;
  * the one search's own field says and does this (OneSearchField's
  * `list`), what is typed kept in features/plan/lib/tabSearch. None
  * elsewhere: the field is the search's.
+ *
+ * Nearest's is drawn at the top of its card (NearestCard, nearSearch):
+ * Nearest is a card, its own drawer over the sheet (the card rule's 3),
+ * so the sheet's first row is under it while it is open and the place
+ * could not be typed (nearest.spec's smoke test, 2026-11-12). The same
+ * scoped field, in sight where the pilot is.
  */
 export function listSearchOf(vm: PlanWorkspaceModel): ListSearch | null {
-  return vm.view === "traffic" ? aircraftSearch(vm) : vm.nearOpen ? nearSearch(vm) : null;
+  return vm.view === "traffic" ? aircraftSearch(vm) : null;
 }
 
 /** The traffic's: an airplane by its callsign, registration or address. */
@@ -51,9 +57,9 @@ function aircraftSearch(vm: PlanWorkspaceModel): ListSearch {
   };
 }
 
-/** Nearest's: where the nearest fields are measured from. */
-function nearSearch(vm: PlanWorkspaceModel): ListSearch {
-  const { nearTyped } = vm;
+/** Nearest's: where the nearest fields are measured from, `nearTyped`
+ *  being what is typed in it (features/plan/lib/tabSearch's `near`). */
+export function nearSearch(nearTyped: string): ListSearch {
   return {
     value: nearTyped,
     onChange: (near) => useTabSearch.setState({ near }),

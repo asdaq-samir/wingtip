@@ -3,7 +3,7 @@ import SwiftUI
 /// The receiver's chip on the map: "Stratux · 12 targets · GPS", while one
 /// has been heard; amber once it has gone quiet.
 struct ReceiverChip: View {
-    private var receiver = Receiver.shared
+    @Environment(Receiver.self) private var receiver
 
     var body: some View {
         if receiver.mode == .auto, let summary = receiver.summary {
@@ -17,10 +17,10 @@ struct ReceiverChip: View {
 /// cockpit's Wi-Fi, or not; a menu, as a discrete setting is
 /// (docs/decisions/0017).
 struct ReceiverModePicker: View {
-    @Bindable private var receiver = Receiver.shared
+    @Environment(Receiver.self) private var receiver
 
     var body: some View {
-        Picker("ADS-B Receiver", selection: $receiver.mode) {
+        Picker("ADS-B Receiver", selection: Bindable(receiver).mode) {
             ForEach(Receiver.Mode.allCases) { Text($0.label).tag($0) }
         }
         if receiver.mode == .auto, let summary = receiver.summary {
@@ -34,9 +34,9 @@ struct ReceiverModePicker: View {
 /// (no signal, or none at the field): the METAR and TAF a receiver was
 /// sent over FIS-B, as sent, with when each was heard; else `otherwise`.
 struct ReceiverReportRows: View {
+    @Environment(Receiver.self) private var receiver
     let ident: String
     let otherwise: String
-    private var receiver = Receiver.shared
 
     init(ident: String, otherwise: String) {
         self.ident = ident

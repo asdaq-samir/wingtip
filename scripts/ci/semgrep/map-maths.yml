@@ -61,14 +61,14 @@ rules:
   - id: hex-colour-parsed-by-hand
     message: >-
       A "#rrggbb" colour parsed by hand. The web has one helper,
-      deckColour in apps/web/src/lib/map/gl/deckLayers.ts (the phones read
-      their colours from the generated design tokens): use it. Hex-to-RGB
+      rgbOf in apps/web/src/lib/rgb.ts (the phones read their colours from
+      the generated design tokens): use it. Hex-to-RGB
       was copied four times in one wave (simplicity audit 2026-11-12,
       finding 10).
     severity: ERROR
     languages: [typescript, javascript]
     paths:
-      exclude: ["apps/web/src/lib/map/gl/deckLayers.ts"]
+      exclude: ["apps/web/src/lib/rgb.ts"]
     pattern-either:
       - pattern: parseInt($H.slice($A, $B), 16)
       - pattern: parseInt($H.substring($A, $B), 16)

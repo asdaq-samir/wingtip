@@ -7,11 +7,12 @@ import SwiftUI
 /// With no airplane picked no airplane's figure is shown, and none is
 /// assumed (the owner, 2026-11-09).
 struct PickAirplaneRow: View {
+    @Environment(Navigator.self) private var nav
     /// What the airplane would give here, under the title.
     var detail: String
 
     var body: some View {
-        Button { Navigator.shared.push(.screen(.airplane)) } label: {
+        Button { nav.push(.screen(.airplane)) } label: {
             CardRow(title: "Pick an Airplane", detail: detail) {
                 Image(systemName: "chevron.right").foregroundStyle(.tertiary).accessibilityHidden(true)
             }

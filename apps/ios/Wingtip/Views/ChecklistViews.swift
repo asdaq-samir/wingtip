@@ -5,6 +5,7 @@ import SwiftUI
 /// ticked as it is done, a section's count by its title -- or written as
 /// plain text (ChecklistText). Its state is the model's (ChecklistModel).
 struct ChecklistView: View {
+    @Environment(Emergency.self) private var emergency
     @Environment(\.lookAccent) private var accent
     @State private var model: ChecklistModel
 
@@ -65,7 +66,7 @@ struct ChecklistView: View {
                     // The emergency checklist's way to the assistant: the
                     // best fields, this list at the emergency, the MAYDAY.
                     if model.kind == .emergency {
-                        Button("Emergency Assistant", systemImage: "exclamationmark.triangle.fill") { Emergency.shared.open = .checklist }
+                        Button("Emergency Assistant", systemImage: "exclamationmark.triangle.fill") { emergency.open = .checklist }
                             .foregroundStyle(WingtipInk.problem)
                     }
                     if !model.checklist.sections.isEmpty {
@@ -104,8 +105,9 @@ struct ChecklistRows: View {
 /// The emergency assistant opened by its name (RootView.openScreen), as a
 /// link's `open=emergency` opens it: the best fields, the checklist, the MAYDAY.
 struct EmergencyAssistantRow: View {
+    @Environment(\.appCommand) private var appCommand
     var body: some View {
-        Button { PendingCommand.shared.command = .open(.emergency) } label: {
+        Button { appCommand(.open(.emergency)) } label: {
             Label(Screen.emergency.title, systemImage: "exclamationmark.triangle.fill")
         }
         .foregroundStyle(WingtipInk.problem)
