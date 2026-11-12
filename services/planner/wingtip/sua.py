@@ -111,13 +111,14 @@ class SpecialUseUnavailable(RuntimeError):
 
 def _height_ft(value, uom, code) -> float | None:
     """A floor or ceiling in feet, from the service's value and unit (FT
-    or FL); SFC is 0. The reference (MSL or AGL) is reported beside it."""
-    if code == "SFC":
-        return 0.0
+    or FL); SFC with no figure is 0. SFC with one is that height above the
+    surface: Brady Low MOA's floor is 500 ft AGL, which the FAA's service
+    codes SFC with 500, and which reading every SFC as 0 put at the ground.
+    The reference (MSL or AGL) is reported beside it."""
     try:
         number = float(value)
     except (TypeError, ValueError):
-        return None
+        return 0.0 if code == "SFC" else None
     return number * 100 if uom == "FL" else number
 
 
