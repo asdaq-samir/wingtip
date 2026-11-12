@@ -57,7 +57,7 @@ from wingtip import (
 from wingtip import airspace_at, congested, cycle_pack, data_cycles, traffic as traffic_store
 from wingtip import airports as airport_table
 
-from . import chart_model, chart_refresh, errors, mcp, openapi_document, tracing
+from . import chart_model, chart_refresh, crash_leads, errors, mcp, openapi_document, tracing
 from .chart_cycle import check as chart_cycle
 from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
@@ -65,7 +65,7 @@ from wingtip.aircraft import UnknownAircraft
 from wingtip.planning import StillComputing
 from .routers import airports, airspace as airspace_router, basemaps, briefing, chart, classb, devml, devservices, notes, plan, clearance
 from .routers import copilot, emergency, feeds, figures, gonogo, live, packs, pilot, route_options, system, terrain, coach, words, plates
-from .routers import studio
+from .routers import studio, studio_drafts
 from .routers import engine as engine_router, forecast_run, logbook_draft, notam_rank, offline, traffic, weather_loop, weather_map, window
 from .schemas.common import Index
 from .settings import get_settings
@@ -354,11 +354,10 @@ def _warm_reference_data() -> None:
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
     threading.Thread(target=_warm_reference_data, name="reference-data-warm-up", daemon=True).start()
-    # The live feeds are read by ingest (services/ingest) into the stores
-    # the planner reads: none here. What is watched here is whether they,
-    # and the weather's, still come in (app.feeds), a check a minute; and
-    # the live store is pruned a minute at a time (wingtip.traffic.prune).
+    # The live feeds are read by ingest into the stores the planner reads: none here. Watched here: whether they and the
+    # weather's still come in (app.feeds), a check a minute; the live store pruned (wingtip.traffic.prune); the crash leads.
     threading.Thread(target=feeds_watch.watch_forever, name="feed-watch", daemon=True).start()
+    threading.Thread(target=crash_leads.start_forever, name="crash-leads", daemon=True).start()
     threading.Thread(target=traffic_store.prune_forever, name="live-store-prune", daemon=True).start()
     yield
 
@@ -442,6 +441,7 @@ for module in (
     mcp,
     plates,
     studio,
+    studio_drafts,
 ):
     app.include_router(module.router)
 

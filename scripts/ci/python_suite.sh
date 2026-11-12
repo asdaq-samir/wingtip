@@ -19,7 +19,7 @@ leg=${1:?a leg: planner, wingtip, jobs, ingest, assistant or weather}
 case "$leg" in
   planner) dir=services/planner req=requirements-dev.txt tests=tests ;;
   wingtip) dir=services/planner req=requirements-dev-wingtip.txt tests=tests_wingtip ;;
-  jobs) dir=services/jobs req=requirements-dev-jobs.txt tests=charts/tests ;;
+  jobs) dir=services/jobs req=requirements-dev-jobs.txt tests="charts/tests crash/tests" ;;
   ingest | assistant | weather) dir=services/$leg req=requirements-dev.txt tests=tests ;;
   *) echo "python_suite: no leg '$leg'" >&2; exit 64 ;;
 esac
@@ -41,4 +41,6 @@ case "$leg" in
       || echo "::warning title=No tippecanoe::the overlay tiles' archive tests are skipped"
     ;;
 esac
-pytest "$tests/" -v
+# Unquoted: the jobs' leg is two folders (charts/tests crash/tests).
+# shellcheck disable=SC2086
+pytest $tests -v

@@ -8,6 +8,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "../../component
 import { Input } from "../../components/ui/input";
 import { TEXT } from "../../lib/text";
 import { SimExportMenu } from "../replay";
+import { StudioDrafts } from "./StudioDrafts";
 import { utcToday, type Studio } from "./useStudio";
 
 /**
@@ -25,6 +26,7 @@ export function StudioPanel({ studio, tools }: { studio: Studio; tools?: ReactNo
   const track = studio.track;
   return (
     <div className="flex flex-col gap-5 px-4 pb-6" data-testid="studio-panel">
+      <StudioDrafts drafts={studio.drafts} />
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {

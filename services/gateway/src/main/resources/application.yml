@@ -329,6 +329,13 @@ app:
     alert-emails: ${APP_ALERT_EMAILS:}
     weather-url: ${WEATHER_SERVICE_URL:}
 
+  # The Studio's crash drafts (CrashDraftMail, docs/STUDIO-PIPELINE.md):
+  # every five minutes (cron, UTC; "-" turns it off) the planner is asked
+  # which ready drafts nobody has been mailed about, and each is mailed to
+  # the developer-emails with its link under public-base-url.
+  studio:
+    drafts-cron: ${APP_STUDIO_DRAFTS_CRON:0 */5 * * * *}
+
 # The flight watch (FlightWatchService): how often the watched flights
 # departing within the window are re-briefed and the planner asked what
 # changed, an ISO duration. Each check is a briefing and one Claude call

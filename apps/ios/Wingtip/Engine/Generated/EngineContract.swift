@@ -7908,6 +7908,107 @@ enum EngineContract {
         var runways: [String]
     }
 
+    struct OccurrenceIdentityAnswer: Codable, Equatable, Sendable {
+        var verdict: String
+        /// Each check made, in order (registry, then track or address, window, place), with what it found in words.
+        var checks: [EngineContract.OccurrenceIdentityAnswerChecksItem]
+        var window: EngineContract.OccurrenceIdentityAnswerWindow
+        var withinNm: Double
+        /// The track's report in the window nearest the place, with its distance; null where it has none.
+        var nearest: EngineContract.OccurrenceIdentityAnswerNearest?
+
+        enum CodingKeys: String, CodingKey {
+            case verdict
+            case checks
+            case window
+            case withinNm = "within_nm"
+            case nearest
+        }
+    }
+
+    struct OccurrenceIdentityAnswerChecksItem: Codable, Equatable, Sendable {
+        var check: String
+        var ok: Bool
+        var words: String
+    }
+
+    /// The track's report in the window nearest the place, with its distance; null where it has none.
+    struct OccurrenceIdentityAnswerNearest: Codable, Equatable, Sendable {
+        var t: Double
+        var lat: Double
+        var lon: Double
+        var distanceNm: Double
+
+        enum CodingKeys: String, CodingKey {
+            case t
+            case lat
+            case lon
+            case distanceNm = "distance_nm"
+        }
+    }
+
+    struct OccurrenceIdentityAnswerWindow: Codable, Equatable, Sendable {
+        var start: Double
+        var end: Double
+    }
+
+    struct OccurrenceIdentityInput: Codable, Equatable, Sendable {
+        var report: EngineContract.OccurrenceIdentityInputReport
+        /// The FAA registry's answer for the report's N-number; null or missing where it has none.
+        var registry: EngineContract.OccurrenceIdentityInputRegistry?
+        /// The ADS-B track of that address over the window's UTC days; null or missing where there is none.
+        var track: EngineContract.OccurrenceIdentityInputTrack?
+    }
+
+    /// The FAA registry's answer for the report's N-number; null or missing where it has none.
+    struct OccurrenceIdentityInputRegistry: Codable, Equatable, Sendable {
+        var nNumber: String
+        var hex: String?
+
+        enum CodingKeys: String, CodingKey {
+            case nNumber = "n_number"
+            case hex
+        }
+    }
+
+    struct OccurrenceIdentityInputReport: Codable, Equatable, Sendable {
+        /// The N-number the report gives; null or missing where it gives none.
+        var nNumber: String?
+        /// The local date of the event, YYYY-MM-DD.
+        var date: String
+        /// The local clock time, HH:MM (24-hour); null or missing where the report gives none or gives no a.m. or p.m.
+        var time: String?
+        /// The offsets from UTC the place may have that day, minutes (-360 for CST); empty or missing for every US offset.
+        var utcOffsetsMin: [Double]?
+        var lat: Double
+        var lon: Double
+        /// town: a town's internal point (Census gazetteer); point: a point the record gives.
+        var place: String
+
+        enum CodingKeys: String, CodingKey {
+            case nNumber = "n_number"
+            case date
+            case time
+            case utcOffsetsMin = "utc_offsets_min"
+            case lat
+            case lon
+            case place
+        }
+    }
+
+    /// The ADS-B track of that address over the window's UTC days; null or missing where there is none.
+    struct OccurrenceIdentityInputTrack: Codable, Equatable, Sendable {
+        var hex: String
+        var points: [EngineContract.OccurrenceIdentityInputTrackPointsItem]
+    }
+
+    struct OccurrenceIdentityInputTrackPointsItem: Codable, Equatable, Sendable {
+        /// Seconds since 1970, UTC.
+        var t: Double
+        var lat: Double
+        var lon: Double
+    }
+
     struct OurCallInput: Codable, Equatable, Sendable {
         var text: String
         var tail: String

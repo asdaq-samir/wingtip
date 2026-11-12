@@ -239,7 +239,7 @@ run_area() {
     ingest) run_py services/ingest requirements-dev.txt "$PYTHON" ingest tests ;;
     assistant) run_py services/assistant requirements-dev.txt "$PYTHON" app tests ;;
     weather) run_py services/weather requirements-dev.txt "$PYTHON" app tests ;;
-    jobs) run_py services/jobs requirements-dev-jobs.txt "$PYTHON" charts charts/tests ;;
+    jobs) run_py services/jobs requirements-dev-jobs.txt "$PYTHON" "charts crash" "charts/tests crash/tests" ;;
     engine)
       # The crates' layering, as engine/README.md's table gives it (seconds).
       python3 "$here/scripts/ci/engine_layers.py"

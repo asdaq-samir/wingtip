@@ -1,0 +1,378 @@
+{
+  "source": "engine/crates/procedures/src/occurrence.rs: the Studio's crash drafts' identity check (docs/STUDIO-PIPELINE.md). A report at Mayfield, KY (the Census gazetteer's point), 2026-11-08 around 14:25 CST, 20:25Z; every N-number and address here is made up.",
+  "cases": [
+    {
+      "name": "all three agree: the registry's code, the track's address, a report 1 nm from the town 24 minutes before the time given",
+      "input": {
+        "report": {
+          "n_number": "N123AB",
+          "date": "2026-11-08",
+          "time": "14:25",
+          "utc_offsets_min": [
+            -360
+          ],
+          "lat": 36.7418,
+          "lon": -88.6367,
+          "place": "town"
+        },
+        "registry": {
+          "n_number": "N123AB",
+          "hex": "a1b2c3"
+        },
+        "track": {
+          "hex": "a1b2c3",
+          "points": [
+            {
+              "t": 1794167400,
+              "lat": 36.95,
+              "lon": -88.4
+            },
+            {
+              "t": 1794168000,
+              "lat": 36.8,
+              "lon": -88.6
+            },
+            {
+              "t": 1794168060,
+              "lat": 36.76,
+              "lon": -88.63
+            }
+          ]
+        }
+      },
+      "verdict": "confirmed",
+      "checks": [
+        "registry",
+        "address",
+        "window",
+        "place"
+      ]
+    },
+    {
+      "name": "the track is another airplane's address",
+      "input": {
+        "report": {
+          "n_number": "N123AB",
+          "date": "2026-11-08",
+          "time": "14:25",
+          "utc_offsets_min": [
+            -360
+          ],
+          "lat": 36.7418,
+          "lon": -88.6367,
+          "place": "town"
+        },
+        "registry": {
+          "n_number": "N123AB",
+          "hex": "a1b2c3"
+        },
+        "track": {
+          "hex": "a1b2c4",
+          "points": [
+            {
+              "t": 1794167400,
+              "lat": 36.95,
+              "lon": -88.4
+            },
+            {
+              "t": 1794168000,
+              "lat": 36.8,
+              "lon": -88.6
+            },
+            {
+              "t": 1794168060,
+              "lat": 36.76,
+              "lon": -88.63
+            }
+          ]
+        }
+      },
+      "verdict": "needs_human",
+      "checks": [
+        "registry",
+        "address"
+      ]
+    },
+    {
+      "name": "a TIS-B pseudo-address is never the registry's",
+      "input": {
+        "report": {
+          "n_number": "N123AB",
+          "date": "2026-11-08",
+          "time": "14:25",
+          "utc_offsets_min": [
+            -360
+          ],
+          "lat": 36.7418,
+          "lon": -88.6367,
+          "place": "town"
+        },
+        "registry": {
+          "n_number": "N123AB",
+          "hex": "a1b2c3"
+        },
+        "track": {
+          "hex": "~a1b2c3",
+          "points": [
+            {
+              "t": 1794167400,
+              "lat": 36.95,
+              "lon": -88.4
+            },
+            {
+              "t": 1794168000,
+              "lat": 36.8,
+              "lon": -88.6
+            },
+            {
+              "t": 1794168060,
+              "lat": 36.76,
+              "lon": -88.63
+            }
+          ]
+        }
+      },
+      "verdict": "needs_human",
+      "checks": [
+        "registry",
+        "address"
+      ]
+    },
+    {
+      "name": "the airplane was 60 nm away in the window",
+      "input": {
+        "report": {
+          "n_number": "N123AB",
+          "date": "2026-11-08",
+          "time": "14:25",
+          "utc_offsets_min": [
+            -360
+          ],
+          "lat": 36.7418,
+          "lon": -88.6367,
+          "place": "town"
+        },
+        "registry": {
+          "n_number": "N123AB",
+          "hex": "a1b2c3"
+        },
+        "track": {
+          "hex": "a1b2c3",
+          "points": [
+            {
+              "t": 1794168000,
+              "lat": 37.74,
+              "lon": -88.64
+            }
+          ]
+        }
+      },
+      "verdict": "needs_human",
+      "checks": [
+        "registry",
+        "address",
+        "window",
+        "place"
+      ]
+    },
+    {
+      "name": "the N-number is not in the registry",
+      "input": {
+        "report": {
+          "n_number": "N123AB",
+          "date": "2026-11-08",
+          "time": "14:25",
+          "utc_offsets_min": [
+            -360
+          ],
+          "lat": 36.7418,
+          "lon": -88.6367,
+          "place": "town"
+        },
+        "registry": null,
+        "track": {
+          "hex": "a1b2c3",
+          "points": [
+            {
+              "t": 1794167400,
+              "lat": 36.95,
+              "lon": -88.4
+            },
+            {
+              "t": 1794168000,
+              "lat": 36.8,
+              "lon": -88.6
+            },
+            {
+              "t": 1794168060,
+              "lat": 36.76,
+              "lon": -88.63
+            }
+          ]
+        }
+      },
+      "verdict": "needs_human",
+      "checks": [
+        "registry"
+      ]
+    },
+    {
+      "name": "the report gives no N-number (the FAA's statements seldom do)",
+      "input": {
+        "report": {
+          "n_number": null,
+          "date": "2026-11-08",
+          "time": "14:25",
+          "utc_offsets_min": [
+            -360
+          ],
+          "lat": 36.7418,
+          "lon": -88.6367,
+          "place": "town"
+        },
+        "registry": null,
+        "track": null
+      },
+      "verdict": "needs_human",
+      "checks": [
+        "registry"
+      ]
+    },
+    {
+      "name": "no ADS-B track that day: a draft of the place alone",
+      "input": {
+        "report": {
+          "n_number": "N123AB",
+          "date": "2026-11-08",
+          "time": "14:25",
+          "utc_offsets_min": [
+            -360
+          ],
+          "lat": 36.7418,
+          "lon": -88.6367,
+          "place": "town"
+        },
+        "registry": {
+          "n_number": "N123AB",
+          "hex": "a1b2c3"
+        },
+        "track": null
+      },
+      "verdict": "no_track",
+      "checks": [
+        "registry",
+        "track"
+      ]
+    },
+    {
+      "name": "reports that day, none in the window (the morning's flight)",
+      "input": {
+        "report": {
+          "n_number": "N123AB",
+          "date": "2026-11-08",
+          "time": "14:25",
+          "utc_offsets_min": [
+            -360
+          ],
+          "lat": 36.7418,
+          "lon": -88.6367,
+          "place": "town"
+        },
+        "registry": {
+          "n_number": "N123AB",
+          "hex": "a1b2c3"
+        },
+        "track": {
+          "hex": "a1b2c3",
+          "points": [
+            {
+              "t": 1794146400,
+              "lat": 36.74,
+              "lon": -88.64
+            }
+          ]
+        }
+      },
+      "verdict": "no_track",
+      "checks": [
+        "registry",
+        "address",
+        "window"
+      ]
+    },
+    {
+      "name": "a time with no a.m. or p.m. is the whole local day",
+      "input": {
+        "report": {
+          "n_number": "N123AB",
+          "date": "2026-11-08",
+          "time": null,
+          "utc_offsets_min": [
+            -360
+          ],
+          "lat": 36.7418,
+          "lon": -88.6367,
+          "place": "town"
+        },
+        "registry": {
+          "n_number": "N123AB",
+          "hex": "a1b2c3"
+        },
+        "track": {
+          "hex": "a1b2c3",
+          "points": [
+            {
+              "t": 1794146400,
+              "lat": 36.74,
+              "lon": -88.64
+            }
+          ]
+        }
+      },
+      "verdict": "confirmed",
+      "checks": [
+        "registry",
+        "address",
+        "window",
+        "place"
+      ]
+    },
+    {
+      "name": "the NTSB's point allows 10.5 nm, not a town's 20",
+      "input": {
+        "report": {
+          "n_number": "N123AB",
+          "date": "2026-11-08",
+          "time": "14:25",
+          "utc_offsets_min": [
+            -360
+          ],
+          "lat": 36.7418,
+          "lon": -88.6367,
+          "place": "point"
+        },
+        "registry": {
+          "n_number": "N123AB",
+          "hex": "a1b2c3"
+        },
+        "track": {
+          "hex": "a1b2c3",
+          "points": [
+            {
+              "t": 1794168000,
+              "lat": 36.99,
+              "lon": -88.6367
+            }
+          ]
+        }
+      },
+      "verdict": "needs_human",
+      "checks": [
+        "registry",
+        "address",
+        "window",
+        "place"
+      ]
+    }
+  ]
+}

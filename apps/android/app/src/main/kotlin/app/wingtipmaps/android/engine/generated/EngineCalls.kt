@@ -1399,6 +1399,12 @@ fun Engine.notamsRanked(notams: List<EngineContract.NotamsRankedInputNotamsItem>
     rule("notams_ranked", EngineContract.NotamsRankedInput(notams = notams, fields = fields, from = from, until = until, cruiseFt = cruiseFt, airspaces = airspaces))
 
 /**
+ * Whether an accident or incident report (the FAA's statement or preliminary notice, or the NTSB's record), the FAA's aircraft registry and an ADS-B track are one airplane at one time and place: the identity check a Studio crash draft is held to. The report's N-number must be in the registry with a Mode S code (the registry's MASTER file, MODE S CODE HEX), the track must be that address's (adsb.lol's '~' pseudo-addresses never are), and the track must have a report in the window the report's local time gives -- 60 minutes before it to 15 after, at each UTC offset the place may have that day, or the whole local day without a time; with no offset given, every US offset, UTC-11 to UTC+10 (49 CFR part 71) -- within 20 nm of a town's point or 10.5 nm of a point the NTSB gives (10 nm for the receivers' coverage lost low before the place, plus the place's own doubt; ADS-B's own fix is within 0.05 nm, 14 CFR 91.227(c)(1)(i)). The tolerances are this check's judgment, not a regulation. Verdict: confirmed where all agree; no_track where the registry agrees and the track has no report in the window (a draft of the place alone, never a guessed path); needs_human for anything else.
+ */
+fun Engine.occurrenceIdentity(report: EngineContract.OccurrenceIdentityInputReport, registry: EngineContract.OccurrenceIdentityInputRegistry? = null, track: EngineContract.OccurrenceIdentityInputTrack? = null): Result<EngineContract.OccurrenceIdentityAnswer> =
+    rule("occurrence_identity", EngineContract.OccurrenceIdentityInput(report = report, registry = registry, track = track))
+
+/**
  * Whether a transmission is said to the airplane `tail` (AIM 4-2-4).
  */
 fun Engine.ourCall(text: String, tail: String): Result<Boolean> =

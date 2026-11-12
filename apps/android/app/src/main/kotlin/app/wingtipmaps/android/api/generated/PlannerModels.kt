@@ -7595,6 +7595,144 @@ data class StopField (
 )
 
 /**
+ * A crash draft: the event as reported (local date and time, place),
+ * the airplane (N-number, its Mode S code where the registry gave one),
+ * where it stands, and what the identity check found. `track` is "adsb",
+ * or "none" for a draft of the place alone; `fatal` None where no source
+ * says, which holds publishing as a fatal event does.
+ */
+@Serializable
+data class StudioDraft (
+    val aircraft: String? = null,
+    val captions: StudioDraftCaptions? = null,
+    val city: String? = null,
+    val fatal: Boolean? = null,
+    val hex: String? = null,
+    val id: String,
+    val identity: StudioDraftIdentity? = null,
+
+    @SerialName("identity_by")
+    val identityBy: String? = null,
+
+    @SerialName("kit_at")
+    val kitAt: Double? = null,
+
+    val lat: Double? = null,
+
+    @SerialName("local_date")
+    val localDate: String,
+
+    @SerialName("local_time")
+    val localTime: String? = null,
+
+    val lon: Double? = null,
+
+    @SerialName("n_number")
+    val nNumber: String? = null,
+
+    @SerialName("noticed_at")
+    val noticedAt: Double? = null,
+
+    @SerialName("rendered_at")
+    val renderedAt: Double? = null,
+
+    val sources: List<StudioDraftSource>,
+    val state: String? = null,
+    val status: String,
+    val track: String? = null
+)
+
+/**
+ * The film's words, facts only: a title, "Preliminary ...", "No ADS-B
+ * track" where there is none, the sources' words quoted, the credits.
+ */
+@Serializable
+data class StudioDraftCaptions (
+    val credits: List<String>,
+    val quotes: List<StudioDraftQuote>,
+    val status: String,
+    val title: String,
+    val track: String? = null
+)
+
+@Serializable
+data class StudioDraftQuote (
+    val source: String? = null,
+    val url: String? = null,
+    val words: String
+)
+
+/**
+ * The engine's verdict on the draft's identity, each check made, the
+ * window it read the track in and the report nearest the place.
+ */
+@Serializable
+data class StudioDraftIdentity (
+    val checks: List<StudioDraftCheck>,
+    val nearest: StudioDraftNearest? = null,
+    val verdict: String,
+    val window: StudioDraftWindow? = null
+)
+
+/**
+ * One of the identity check's checks (the engine's occurrence_identity).
+ */
+@Serializable
+data class StudioDraftCheck (
+    val check: String,
+    val ok: Boolean,
+    val words: String
+)
+
+/**
+ * The track's report in the window nearest the reported place.
+ */
+@Serializable
+data class StudioDraftNearest (
+    @SerialName("distance_nm")
+    val distanceNm: Double,
+
+    val lat: Double,
+    val lon: Double,
+    val t: Double
+)
+
+/**
+ * The time window the report gives, s since 1970 (UTC).
+ */
+@Serializable
+data class StudioDraftWindow (
+    val end: Double,
+    val start: Double
+)
+
+/**
+ * One source's word of the event, as it gave it: "faa_statement",
+ * "faa_notice" or "ntsb"; its page (or the notice's file); its heading
+ * and its words, unchanged, which a caption quotes.
+ */
+@Serializable
+data class StudioDraftSource (
+    val heading: String? = null,
+    val source: String,
+    val text: String? = null,
+    val url: String? = null
+)
+
+/**
+ * The developer's word on a draft's identity: right (`confirm`), or
+ * not; with an N-number where the report gave none, which the job then
+ * checks against the registry and the track as it checks its own.
+ */
+@Serializable
+data class StudioDraftIdentityAsk (
+    val confirm: Boolean,
+
+    @SerialName("n_number")
+    val nNumber: String? = null
+)
+
+/**
  * The ground's height under each point asked, ft MSL, in order: the
  * elevation tiles (USGS 3DEP and SRTM, wingtip.elevation).
  */

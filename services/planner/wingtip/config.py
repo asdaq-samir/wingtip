@@ -154,6 +154,10 @@ class Settings(BaseSettings):
     chart_landmarks_dir: Path | None = None
     #: Whether the planner starts the charts job when a cycle or its overlay tiles are due (0 in production, which schedules it).
     charts_auto_refresh: bool = True
+    #: Whether the planner starts the crash-leads job (services/jobs/crash) every
+    #: crash_leads_every_min through the dev-services sidecar: the Studio's crash drafts.
+    crash_leads_auto: bool = True
+    crash_leads_every_min: int = 30
     #: Whether the planner fetches a new edition of the FAA's NASR files and
     #: obstacle file on its own (0 on a test stack): on in production, whatever the charts do.
     faa_data_auto_refresh: bool = True
@@ -217,6 +221,7 @@ class Settings(BaseSettings):
         "cycle_pack",
         "landmarks_build",
         "charts_auto_refresh",
+        "crash_leads_auto",
         "faa_data_auto_refresh",
         "chart_reads_in_process",
         "charts_cycle_auto",

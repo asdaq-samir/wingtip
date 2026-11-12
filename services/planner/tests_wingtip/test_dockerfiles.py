@@ -32,6 +32,7 @@ IMAGES = {
     "ml/Dockerfile.ml": "ml",
     "services/jobs/retrain/Dockerfile": "retrain",
     "services/jobs/charts/Dockerfile": "charts",
+    "services/jobs/crash/Dockerfile": "crash-leads",
 }
 
 
