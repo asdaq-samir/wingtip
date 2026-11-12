@@ -20,9 +20,9 @@ class FlowReadingTest {
     @Test
     fun aWindUnderAKnotIsCalmWithNoDirection() {
         // The shared fixture's half-knot case (flowSample.json): value 0.5, no direction, calm.
-        val calmRead = EngineContract.FlowSampleAnswer(0.5, null, true)
+        val calmRead = EngineContract.FlowSampleAnswer(0.5, null, true, noCeiling = false)
         assertEquals("Calm", FlowReading.wind(calmRead, "Calm") { from, kt -> "$from $kt" })
-        val westerly = EngineContract.FlowSampleAnswer(50.0, 270.0, false)
+        val westerly = EngineContract.FlowSampleAnswer(50.0, 270.0, false, noCeiling = false)
         assertEquals("270 50", FlowReading.wind(westerly, "Calm") { from, kt -> "$from $kt" })
     }
 

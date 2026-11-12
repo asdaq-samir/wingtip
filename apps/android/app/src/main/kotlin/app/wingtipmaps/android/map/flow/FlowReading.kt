@@ -19,16 +19,10 @@ import kotlin.math.roundToInt
  * figure and the NWS's category (cape_category); AWC's icing and
  * turbulence their words (icing_severity, turbulence_category); the
  * freezing level and the cloud tops their level; the ceiling its feet
- * above the ground, or none; the others their figure and unit. Every word
+ * above the ground, or none (the engine's no_ceiling); the others their figure and unit. Every word
  * of a rule is the engine's; only how a figure is written is the app's.
  */
 object FlowReading {
-    /** The ceiling's picture holds 50 ft a step to its top, where a ceiling
-     *  over it and none are both kept (the weather service's flow_grid):
-     *  either is no ceiling a category turns on (AIM 7-1-7's highest bound
-     *  is 3,000 ft), so it reads as none. */
-    private fun nearTop(value: Double, top: Double?) = top != null && value >= top - 25
-
     private fun whole(v: Double) = String.format(Locale.US, "%,d", v.roundToInt())
 
     /** The badge's word from a rule's answer (the precipitation's
@@ -46,7 +40,7 @@ object FlowReading {
     /** The reading in words, or the failure of the engine rule behind it,
      *  which the bar shows as its problem with no reading (as the web's
      *  callEngine throws). */
-    fun words(context: Context, field: FlowKind, read: EngineContract.FlowSampleAnswer, top: Double?): Result<String> = runCatching {
+    fun words(context: Context, field: FlowKind, read: EngineContract.FlowSampleAnswer): Result<String> = runCatching {
         val v = read.value
         val none = context.getString(R.string.flow_none)
         fun word(rule: Result<String?>) = wordOrNone(rule, none).getOrThrow()
@@ -55,7 +49,9 @@ object FlowReading {
             FlowKind.GUST -> "${v.roundToInt()} kt"
             FlowKind.PRECIP -> word(Engine.precipIntensity(v).map { it.word })
             FlowKind.CLOUD -> "${v.roundToInt()}%"
-            FlowKind.CEILING -> if (nearTop(v, top)) context.getString(R.string.flow_no_ceiling) else "${whole(v)} ft"
+            // The engine reads the ceiling rounded to its picture's 50 ft, and
+            // its top as none (flow_sample's no_ceiling, AIM 7-1-7).
+            FlowKind.CEILING -> if (read.noCeiling) context.getString(R.string.flow_no_ceiling) else "${whole(v)} ft"
             FlowKind.CAPE -> listOfNotNull("${whole(v)} J/kg", Engine.capeCategory(v).getOrThrow()).joinToString(", ")
             FlowKind.TEMP -> "${v.roundToInt()}°C"
             FlowKind.VIS -> String.format(Locale.US, "%.1f SM", v)

@@ -19,10 +19,11 @@ enum Altitudes {
         try Engine.altitudeAllowed(ft: ft, ifr: ifr)
     }
 
-    /// "5,500 ft" below 18,000 ft, "FL180" from there up. A label only:
-    /// where the engine refuses (logged by Engine.rule) the feet are
-    /// written plainly, which says the same altitude.
+    /// "5,500 ft" below 18,000 ft, "FL180" from there up. Where the engine
+    /// refuses (logged by Engine.rule), its problem in the altitude's
+    /// place, as FlightWords' squawk does: feet written plainly above
+    /// 18,000 ft would be an altitude ATC never says.
     static func said(_ ft: Double) -> String {
-        (try? Engine.altitudeSaid(ft: ft)) ?? Format.altitude(ft)
+        do { return try Engine.altitudeSaid(ft: ft) } catch { return "altitude couldn't be worked out: \(error.localizedDescription)" }
     }
 }

@@ -93,7 +93,7 @@ enum ArrivalWords {
         if s.etaCeilingUnknown == true {
             parts.append("the ceiling isn't forecast")
         } else {
-            parts.append(s.etaCeilingFt.map { "ceiling \(IntentLookups.grouped($0)) feet" } ?? "no ceiling")
+            parts.append(s.etaCeilingFt.map { "ceiling \(Format.grouped($0)) feet" } ?? "no ceiling")
         }
         if let vis = s.etaVisibilitySm { parts.append("visibility \(IntentLookups.plain(vis)) miles") }
         let from = s.icaoId.uppercased() == dest.uppercased() ? "\(dest)'s forecast" : "The forecast at \(s.icaoId), the nearest to \(dest),"

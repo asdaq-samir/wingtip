@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -68,12 +69,15 @@ object Planner {
 
     /** An answer's body, or the planner's own words why not. Every planner
      *  call goes through here; `timeoutMs` bounds the whole call for those
-     *  made in the air (IN_FLIGHT_MS). */
+     *  made in the air (IN_FLIGHT_MS). executeAsync comes back on the
+     *  caller's dispatcher, the main thread for a screen, with the body
+     *  still to come off the network, so it is read on the IO dispatcher
+     *  (OkHttp's own advice for executeAsync). */
     suspend fun fetch(path: String, query: Map<String, String?> = emptyMap(), timeoutMs: Long? = null): String =
         Gateway.client.newCall(get(path, query)).also { call ->
             if (timeoutMs != null) call.timeout().timeout(timeoutMs, TimeUnit.MILLISECONDS)
         }.executeAsync().use { response ->
-            val body = response.body.string()
+            val body = withContext(Dispatchers.IO) { response.body.string() }
             if (response.code != 200) throw Failure(response.code, detail(body))
             body
         }

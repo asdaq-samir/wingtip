@@ -12,6 +12,8 @@ import app.wingtipmaps.android.map.OverlayCache
 import app.wingtipmaps.android.map.OverlayStore
 import app.wingtipmaps.android.offline.KeptLoopTiles
 import app.wingtipmaps.android.offline.LoopTileFallback
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -148,7 +150,8 @@ object Gateway {
         client.newCall(request(method, path, json, form)).also { call ->
             if (method != "GET") call.timeout().timeout(WRITE_TIMEOUT_S, TimeUnit.SECONDS)
         }.executeAsync().use { response ->
-            response.body.string() to response.code
+            // Read on the IO dispatcher, as Planner.fetch reads its body.
+            withContext(Dispatchers.IO) { response.body.string() } to response.code
         }
 
     /** A call whose answer is read, or nothing where the server sends no

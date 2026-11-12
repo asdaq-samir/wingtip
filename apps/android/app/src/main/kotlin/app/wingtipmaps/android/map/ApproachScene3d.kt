@@ -2,7 +2,9 @@ package app.wingtipmaps.android.map
 
 import app.wingtipmaps.android.api.generated.AirportPlace
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.destination
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.add
@@ -13,10 +15,6 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
-import kotlin.math.asin
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.sin
 
 /**
  * A field's way in for the 3D view (Map3dLayer), the web's
@@ -67,22 +65,14 @@ object ApproachScene3d {
     /** The ring's points, one each 5 degrees round (the web's RING_POINTS). */
     private const val RING_POINTS = 72
 
-    /** The earth's mean radius in nautical miles (the web's lib/geo
-     *  EARTH_NM): a spherical earth, within a few metres over a pattern's
-     *  mile or two. */
-    private const val EARTH_NM = 3440.065
-
-    /** Where a great circle from a point on a true bearing reaches `nm` out
-     *  (the web's lib/geo destination). */
-    fun destination(lat: Double, lon: Double, bearingDeg: Double, nm: Double): Pair<Double, Double> {
-        val d = nm / EARTH_NM
-        val b = Math.toRadians(bearingDeg)
-        val lat1 = Math.toRadians(lat)
-        val lon1 = Math.toRadians(lon)
-        val lat2 = asin(sin(lat1) * cos(d) + cos(lat1) * sin(d) * cos(b))
-        val lon2 = lon1 + atan2(sin(b) * sin(d) * cos(lat1), cos(d) - sin(lat1) * sin(lat2))
-        return Math.toDegrees(lat2) to ((Math.toDegrees(lon2) + 540) % 360) - 180
-    }
+    /** The pattern's ring round `centre`, `nm` out, one point each 5
+     *  degrees, on the engine's great circle (its `destination`, the sphere
+     *  of distance_nm); none where the engine refuses (logged by
+     *  Engine.rule), so no ring is drawn on a guess. */
+    private fun ringPoints(centre: Pair<Double, Double>, nm: Double): List<Pair<Double, Double>>? =
+        Engine.destination(
+            (0..RING_POINTS).map { i -> EngineContract.DestinationInputPointsItem(lat = centre.first, lon = centre.second, bearingDeg = 360.0 * i / RING_POINTS, nm = nm) },
+        ).getOrNull()?.map { it.lat to it.lon }
 
     private fun latLon(point: List<JsonElement>): Pair<Double, Double>? {
         val lat = (point.getOrNull(0) as? JsonPrimitive)?.doubleOrNull ?: return null
@@ -99,7 +89,7 @@ object ApproachScene3d {
             scene.path?.let { add(PROCEDURE to it.mapNotNull(::latLon)) }
             scene.ring?.let { ring ->
                 val centre = latLon(ring.center)
-                if (centre != null) add(PATTERN to (0..RING_POINTS).map { i -> destination(centre.first, centre.second, 360.0 * i / RING_POINTS, ring.radiusNm) })
+                centre?.let { ringPoints(it, ring.radiusNm) }?.let { add(PATTERN to it) }
             }
         }
         return buildJsonObject {

@@ -100,10 +100,10 @@ enum StationModel {
 /// in, so a country of light winds doesn't bury the chart (the owner's
 /// iPhone at zoom 3, 2026-11-12).
 enum FarBarb {
-    /// From the app's zoom 6, a sectional region's scale, at 0.6 of its
-    /// size, whole by 9.
-    static let from = 6.0
-    static let whole = 9.0
+    /// From a sectional region's scale, at 0.6 of its size, whole close
+    /// in: the tokens' zooms, the web's and Android's too.
+    static let from = WingtipMap.zoomBarbFarFrom
+    static let whole = WingtipMap.zoomBarbFull
     static let smallest: CGFloat = 0.6
 
     /// The barb's size at `zoom`, in tenths so the marks are drawn again
