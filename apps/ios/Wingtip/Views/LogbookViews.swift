@@ -272,8 +272,14 @@ struct LogbookView: View {
     @ViewBuilder private var exportRow: some View {
         let label = Label("Export as CSV", systemImage: "square.and.arrow.up")
         if let exportFile {
-            SaveFileLink(name: exportFile.lastPathComponent, type: .commaSeparatedText, saving: $saving, make: {
-                SavedFile(data: try Data(contentsOf: exportFile), type: .commaSeparatedText, name: exportFile.lastPathComponent)
+            SaveFileLink(name: exportFile.lastPathComponent, type: .commaSeparatedText, saving: $saving, make: { [$problem] in
+                // Why it sent nothing, under the list (lib/problems' rule).
+                do {
+                    return SavedFile(data: try Data(contentsOf: exportFile), type: .commaSeparatedText, name: exportFile.lastPathComponent)
+                } catch {
+                    $problem.wrappedValue = "The CSV couldn't be made, so nothing was sent: \(error.localizedDescription)"
+                    throw error
+                }
             }) { label }
         } else {
             Button {} label: { label }.disabled(true)

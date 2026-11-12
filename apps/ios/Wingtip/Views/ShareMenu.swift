@@ -77,23 +77,45 @@ struct ShareMenu<Rows: View, More: View, Shown: View>: View {
     /// Include is on, as for Share Link; made when it is saved.
     private var flightFile: @MainActor @Sendable () throws -> SavedFile? {
         { [plan, includeTail] in
-            SavedFile(data: try FlightFile.of(plan, includeTail: includeTail).data(), type: .wingtipFlight, name: FlightFile.name(plan))
+            try Self.said("The flight file", on: plan) {
+                SavedFile(data: try FlightFile.of(plan, includeTail: includeTail).data(), type: .wingtipFlight, name: FlightFile.name(plan))
+            }
         }
     }
 
     /// The kneeboard's page as a PDF file (Kneeboard.pdf); made when it is saved.
     private var kneeboardFile: @MainActor @Sendable () throws -> SavedFile? {
         { [plan] in
-            guard let url = Kneeboard.pdf(plan) else { return nil }
-            return SavedFile(data: try Data(contentsOf: url), type: .pdf, name: url.lastPathComponent)
+            try Self.said("The kneeboard's PDF", on: plan) {
+                guard let url = Kneeboard.pdf(plan) else { throw CocoaError(.fileWriteUnknown) }
+                return SavedFile(data: try Data(contentsOf: url), type: .pdf, name: url.lastPathComponent)
+            }
         }
     }
 
     /// The nav log's page as a PDF, drawn when the share sheet asks for it.
     private var navLogPDF: SharedFile {
         SharedFile(name: nil, type: .pdf) { [plan] in
-            guard let url = Kneeboard.pdf(plan) else { throw CocoaError(.fileWriteUnknown) }
-            return url
+            try Self.said("The nav log's PDF", on: plan) {
+                guard let url = Kneeboard.pdf(plan) else { throw CocoaError(.fileWriteUnknown) }
+                return url
+            }
+        }
+    }
+
+    /// A file made for the share sheet or the exporter, and why it could
+    /// not be, said under the route (Plan.shareProblem, lib/problems' rule:
+    /// where it happens), since the sheet itself then just sends nothing.
+    /// Thrown on, so nothing half made goes.
+    @MainActor
+    private static func said<T>(_ what: String, on plan: Plan, _ make: () throws -> T) throws -> T {
+        do {
+            let made = try make()
+            plan.shareProblem = nil
+            return made
+        } catch {
+            plan.shareProblem = "\(what) couldn't be made, so nothing was sent: \(error.localizedDescription)"
+            throw error
         }
     }
 

@@ -127,6 +127,8 @@ struct StripSheetView: View {
                             Text(planProblem.brief ?? planProblem.detail).font(ChartInk.detail.weight(.semibold)).foregroundStyle(WingtipInk.caution)
                         }
                         StripHead(onBrief: { path.append(.brief) }, onFile: { path.append(.file) })
+                        // Why the head's Share sent nothing (ShareMenu).
+                        if let shareProblem = plan.shareProblem { ProblemLine(shareProblem) }
                         StripList(points: points,
                                   onField: { path.append(.airport($0)) },
                                   onPlates: { path.append(.airport($0)) },
