@@ -15,6 +15,13 @@ extension CyclePacks {
         /// The packs' ground under the airplane (their terrain grid's
         /// highest in its cell, with its margin), the glide ring's ground.
         var groundFt: Double?
+
+        /// The engine's keys: the alerts are the planner's generated type,
+        /// which names its own, so no strategy reads the answer.
+        enum CodingKeys: String, CodingKey {
+            case alerts, unavailable
+            case groundFt = "ground_ft"
+        }
     }
 
     /// Nil where no pack round the point was ever kept.
@@ -41,7 +48,7 @@ extension CyclePacks {
         }
         guard let answer else { return nil }
         defer { wt_string_free(answer) }
-        return try? Planner.snakeCase.decode(Ahead.self, from: Data(String(cString: answer).utf8))
+        return try? Planner.json.decode(Ahead.self, from: Data(String(cString: answer).utf8))
     }
 
     // withPointers: InView.swift, shared with the in-view readers.

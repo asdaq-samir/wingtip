@@ -1,9 +1,10 @@
 import CoreLocation
 import Foundation
+import PlannerAPI
 
 /// A route's two ends and its stops, as /api/course gives them
 /// (AirportEnd), and the line between them as pairs of latitude and
-/// longitude (Generated/PlannerModels.swift).
+/// longitude (WingtipAPI/PlannerAPI).
 typealias CourseEnd = APIAirportEnd
 typealias Course = APICourse
 
@@ -15,9 +16,16 @@ extension Course {
 
 /// The planner, through the gateway's proxy (`/api/planner/…`,
 /// PlannerProxyController), with the pilot's session cookie as the
-/// website's calls carry it. Each answer decoded from the document's
-/// snake case into Models.swift.
+/// website's calls carry it: its generated client (PlannerAPI, Servers.swift)
+/// under the names the app calls it by. Every type carries the planner's
+/// own keys, so its answers decode with a plain decoder (`json`).
 enum Planner {
+    /// The planner's JSON for its generated types, which name their own
+    /// snake-case keys.
+    static let json = JSONDecoder()
+
+    /// The app's own types of the planner's JSON, named in camel case:
+    /// "flight_category" read as flightCategory.
     static let snakeCase: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
@@ -44,16 +52,17 @@ enum Planner {
     /// not URLSession's sixty. With one bar of signal at altitude a call
     /// that hangs would hold the alert ahead past the next ten-second ask,
     /// which cancels it, so the packs' answer would never be shown. The
-    /// whole call is bound by it (load), not only the wait for data.
+    /// whole call is bound by it (Servers.Wait.inFlight's
+    /// timeoutIntervalForResource), not only the wait for data.
     static let inFlight: TimeInterval = 5
 
     /// How long a read the pilot is waiting on -- the plan's course, the
     /// nav log's stream, a chart tile, the search -- goes with no byte
     /// before it fails: about ten seconds, not URLSession's sixty, so on
     /// one bar of signal the kept plan, the kept tiles or "no connection"
-    /// shows in seconds (the offline audit's gap 8). URLRequest's
-    /// timeoutInterval counts time with no data, so a nav log streaming
-    /// its stages is not cut off.
+    /// shows in seconds (the offline audit's gap 8). It counts time with
+    /// no data (timeoutIntervalForRequest), so a nav log streaming its
+    /// stages is not cut off.
     static let read: TimeInterval = 10
 
     /// How long a call that sends a large body (a photo to read, a logbook
@@ -61,112 +70,9 @@ enum Planner {
     /// weak link.
     static let upload: TimeInterval = 120
 
-    /// A body past this many bytes is an upload.
-    static let uploadBytes = 64 * 1024
-
-    /// A planner call by its path and query; `timeout` for the calls made
-    /// in the air (inFlight), the session's own wait otherwise.
-    static func get(_ path: String, _ query: [String: String?] = [:], timeout: TimeInterval? = nil) -> URLRequest {
-        var parts = URLComponents(url: Config.gateway.appending(path: Config.plannerPath(path)), resolvingAgainstBaseURL: false)!
-        let items = query.compactMap { key, value in value.map { URLQueryItem(name: key, value: $0) } }.sorted { $0.name < $1.name }
-        parts.queryItems = items.isEmpty ? nil : items
-        var request = URLRequest(url: parts.url!)
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        if let timeout { request.timeoutInterval = timeout }
-        return request
-    }
-
-    /// A call that sends a body, in snake case: with the session's CSRF
-    /// token where it changes something (a checkpoint's note), as the
-    /// website's calls carry it; without, for a POST that changes nothing,
-    /// which the gateway lets through with no session or token
-    /// (SecurityConfig).
-    static func request(_ method: String, _ path: String, json: (any Encodable)?, csrf: Bool, timeout: TimeInterval? = nil) async throws -> URLRequest {
-        // The CSRF cookie is written on any of the gateway's answers once
-        // asked for: one GET first where there is none yet.
-        if csrf, Gateway.csrfToken == nil { _ = try? await Gateway.me() }
-        var request = URLRequest(url: Config.gateway.appending(path: Config.plannerPath(path)))
-        request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let json { request.httpBody = try snakeEncoder.encode(json) }
-        if csrf, let token = Gateway.csrfToken { request.setValue(token, forHTTPHeaderField: "X-XSRF-TOKEN") }
-        if let timeout { request.timeoutInterval = timeout } else if (request.httpBody?.count ?? 0) > uploadBytes { request.timeoutInterval = upload }
-        return request
-    }
-
-    /// An answer's body, or the planner's own words why not. Every
-    /// planner call goes through here, on the gateway's session: its
-    /// cookies are the pilot's, and its cache answers what the planner
-    /// said may be kept (Gateway.session).
-    static func data(for request: URLRequest, ok: ClosedRange<Int> = 200...200) async throws -> Data {
-        let (data, response) = try await load(request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        guard ok.contains(status) else {
-            // The path names the call (an ident in it is public); the query
-            // may hold a position and is left out.
-            Log.planner.error("\(request.url?.path ?? "", privacy: .public) answered \(status)")
-            throw Failure(status: status, detail: detail(of: data))
-        }
-        return data
-    }
-
-    /// The call made. A request asked to wait no longer than inFlight is
-    /// bound as a whole: URLRequest.timeoutInterval only counts time with
-    /// no data, so a server trickling bytes would hold the call past the
-    /// next ten-second ask, which cancels it. The race ends it at that
-    /// time whatever arrives.
-    private static func load(_ request: URLRequest) async throws -> (Data, URLResponse) {
-        guard request.timeoutInterval <= inFlight else { return try await Gateway.session.data(for: request) }
-        return try await withThrowingTaskGroup(of: (Data, URLResponse).self) { group in
-            group.addTask { try await Gateway.session.data(for: request) }
-            group.addTask {
-                try await Task.sleep(for: .seconds(inFlight))
-                throw URLError(.timedOut)
-            }
-            defer { group.cancelAll() }
-            return try await group.next()!
-        }
-    }
-
-    static func fetch<T: Decodable>(_ type: T.Type, _ path: String, _ query: [String: String?] = [:], timeout: TimeInterval? = nil) async throws -> T {
-        try snakeCase.decode(T.self, from: try await data(for: get(path, query, timeout: timeout)))
-    }
-
-    /// A planner POST that changes nothing, its body in snake case.
-    static func postRead<T: Decodable>(_ type: T.Type, _ path: String, _ body: some Encodable, timeout: TimeInterval? = nil) async throws -> T {
-        try snakeCase.decode(T.self, from: try await data(for: request("POST", path, json: body, csrf: false, timeout: timeout)))
-    }
-
-    /// An answer streamed a line at a time (newline-delimited JSON: the
-    /// nav log, the checkpoints' notes), each line read by `decode`; nil
-    /// skips a line.
-    static func lines<T: Sendable>(_ make: @escaping @Sendable () async throws -> URLRequest, _ decode: @escaping @Sendable (Data) throws -> T?) -> AsyncThrowingStream<T, any Error> {
-        AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    let (bytes, response) = try await Gateway.session.bytes(for: try await make())
-                    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-                    guard status == 200 else {
-                        Log.planner.error("stream answered \(status)")
-                        throw Failure(status: status, detail: nil)
-                    }
-                    for try await line in bytes.lines where !line.isEmpty {
-                        if let value = try decode(Data(line.utf8)) { continuation.yield(value) }
-                    }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            continuation.onTermination = { _ in task.cancel() }
-        }
-    }
-
-    /// A route as every planner call takes it: its ends, and its stops
-    /// joined where it has any.
-    static func route(_ dep: String, _ dest: String, _ stops: [String]) -> [String: String?] {
-        ["dep": dep, "dest": dest, "stops": stops.isEmpty ? nil : stops.joined(separator: ",")]
+    /// A route's stops as every planner call takes them: joined, or none.
+    static func stops(_ stops: [String]) -> String? {
+        stops.isEmpty ? nil : stops.joined(separator: ",")
     }
 
     /// FastAPI's `{"detail": "…"}`, where an answer carries one.
@@ -176,7 +82,7 @@ enum Planner {
 
     /// Which chart the map draws and where its tiles are (/api/chart).
     static func chart() async throws -> ChartInfo {
-        try await fetch(ChartInfo.self, "/api/chart")
+        try await call { try await $0.chartInfo().ok.body.json }
     }
 
     /// The fields in the map's view, fewer and bigger as it zooms out,
@@ -185,99 +91,104 @@ enum Planner {
     /// map's weather (FieldWeatherFeed), as the web map asks it.
     static func airports(south: Double, west: Double, north: Double, east: Double,
                          limit: Int? = nil, reporting: Bool = false) async throws -> [AirportPin] {
-        let box = ["south": String(south), "west": String(west), "north": String(north), "east": String(east),
-                   "limit": limit.map(String.init), "reporting": reporting ? "true" : nil]
-        return try await fetch(APIAirportsInView.self, "/api/airports/in-view", box).airports
+        try await call {
+            try await $0.airportsInView(query: .init(south: south, west: west, north: north, east: east, limit: limit, reporting: reporting ? true : nil))
+                .ok.body.json.airports
+        }
     }
 
     /// The fields nearest a point (/api/airports/nearest), nearest first.
     /// Asked in the air (Nearest, Direct To, the watch), so it waits no
     /// longer than inFlight.
     static func nearest(lat: Double, lon: Double, limit: Int = 10) async throws -> [NearestAirport] {
-        return try await fetch(APINearestAirports.self, "/api/airports/nearest", ["lat": String(lat), "lon": String(lon), "limit": String(limit)], timeout: inFlight).airports
+        try await call(.inFlight) { try await $0.nearestAirports(query: .init(lat: lat, lon: lon, limit: limit)).ok.body.json.airports }
     }
 
     /// The airplanes heard about a point (/api/traffic), out to a radius.
     static func traffic(lat: Double, lon: Double, radiusNm: Double) async throws -> TrafficAnswer {
-        try await fetch(TrafficAnswer.self, "/api/traffic", ["lat": String(lat), "lon": String(lon), "radius": String(Int(radiusNm.rounded()))])
+        try await call { try await $0.trafficNear(query: .init(lat: lat, lon: lon, radius: radiusNm.rounded())).ok.body.json }
     }
 
     /// Fields by ident or name as they are typed (/api/airports/search);
     /// with `fixes`, the named fixes too (VFR and GPS waypoints, `kind`
     /// "fix"), for the one search's Waypoints group.
     static func search(_ q: String, fixes: Bool = false) async throws -> [AirportSuggestion] {
-        return try await fetch(APIAirportSearch.self, "/api/airports/search", ["q": q, "fixes": fixes ? "true" : nil], timeout: read).airports
+        try await call(.read) { try await $0.airportSearch(query: .init(q: q, fixes: fixes ? true : nil)).ok.body.json.airports }
     }
 
     /// A field's card: its weather, runways, frequencies and pattern
-    /// (/api/airport/{ident}); `timeout`, how long the card waits with no
-    /// answer before it says so.
+    /// (/api/airport/{ident}); with `timeout`, as a read the pilot is
+    /// waiting on (Planner.read), the card saying so when it passes.
     static func place(_ ident: String, timeout: TimeInterval? = nil) async throws -> AirportPlace {
-        try await fetch(AirportPlace.self, "/api/airport/\(ident)", timeout: timeout)
+        try await call(timeout == nil ? .usual : .read) { try await $0.airportPlace(path: .init(ident: ident)).ok.body.json }
     }
 
     /// The route's checkpoints, the ones picked for the nav log
     /// (/api/checkpoints): read off the chart, so the first ask for a new
     /// route takes a while.
     static func checkpoints(dep: String, dest: String, stops: [String]) async throws -> [Checkpoint] {
-        return try await fetch(APICheckpoints.self, "/api/checkpoints", route(dep, dest, stops)).selected
+        try await call { try await $0.checkpoints(query: .init(dep: dep, dest: dest, stops: Self.stops(stops))).ok.body.json.selected }
     }
 
     /// The ground and airspace under the route, for the profile
     /// (/api/route-profile).
     static func routeProfile(dep: String, dest: String, stops: [String]) async throws -> RouteProfile {
-        try await fetch(RouteProfile.self, "/api/route-profile", route(dep, dest, stops))
+        try await call { try await $0.routeProfile(query: .init(dep: dep, dest: dest, stops: Self.stops(stops))).ok.body.json }
     }
 
     /// What the airplane's track runs into in the next minutes
     /// (/api/airspace/ahead): the planner's alerts, in its words. Waits no
     /// longer than inFlight, so OwnShip falls back to the packs.
     static func ahead(lat: Double, lon: Double, trackDeg: Double, groundspeedKt: Double, altitudeFt: Double?) async throws -> [AheadAlert] {
-        return try await fetch(APIAlertsAhead.self, "/api/airspace/ahead", [
-            "lat": String(lat), "lon": String(lon), "track": String(Int(trackDeg.rounded())), "gs": String(Int(groundspeedKt.rounded())),
-            "alt": altitudeFt.map { String(Int($0.rounded())) },
-        ], timeout: inFlight).alerts
+        try await call(.inFlight) {
+            try await $0.airspaceAhead(query: .init(lat: lat, lon: lon, track: trackDeg.rounded(), gs: groundspeedKt.rounded(), alt: altitudeFt?.rounded()))
+                .ok.body.json.alerts
+        }
     }
 
     /// The ways to fly a route (/api/route-options): the planner's grid
-    /// search round what the direct line meets.
+    /// search round what the direct line meets. The pilot's own figures
+    /// with it, which an own airplane of no stock type flies on alone (the
+    /// planner's aircraft "own").
     static func routeOptions(dep: String, dest: String, stops: [String], aircraft: String?, figures: Figures = Figures()) async throws -> RouteOptions {
-        // The pilot's own figures with it, which an own airplane of no
-        // stock type flies on alone (the planner's aircraft "own").
-        try await fetch(RouteOptions.self, "/api/route-options", figures.query.merging(route(dep, dest, stops).merging(["aircraft": aircraft]) { $1 }) { $1 })
+        let query = Operations.RouteOptions.Input.Query(
+            dep: dep, dest: dest, stops: Self.stops(stops), aircraft: aircraft, cruiseTasKt: figures.cruiseTasKt, fuelBurnGph: figures.fuelBurnGph,
+            usableFuelGal: figures.usableFuelGal, serviceCeilingFt: figures.serviceCeilingFt, taxiFuelGal: figures.taxiFuelGal, glideRatio: figures.glideRatio)
+        return try await call { try await $0.routeOptions(query: query).ok.body.json }
     }
 
     /// A field's procedures (/api/airport/{ident}/procedures).
     static func procedures(_ ident: String) async throws -> ProcedureList {
-        try await fetch(ProcedureList.self, "/api/airport/\(ident)/procedures")
+        try await call { try await $0.airportProcedures(path: .init(ident: ident)).ok.body.json }
     }
 
     /// An ATC clearance heard: the places it named, found near the route
     /// (/api/clearance/places, wingtip.spoken). Heard in the air, so it
     /// waits no longer than inFlight before the packs read it (Engine.hear).
     static func clearancePlaces(_ ask: ClearanceAsk) async throws -> ClearancePlaces {
-        try await postRead(ClearancePlaces.self, "/api/clearance/places", ask, timeout: inFlight)
+        try await call(.inFlight) { try await $0.clearancePlaces(body: .json(ask)).ok.body.json }
     }
 
     /// The names a clearance near the route will likely say, for the
     /// recognizer's contextualStrings (/api/clearance/words).
     static func clearanceWords(near: String, dep: String) async throws -> [String] {
-        return try await fetch(APIClearanceWords.self, "/api/clearance/words", ["near": near.isEmpty ? nil : near, "dep": dep.isEmpty ? nil : dep]).words
+        try await call { try await $0.clearanceWords(query: .init(near: near.isEmpty ? nil : near, dep: dep.isEmpty ? nil : dep)).ok.body.json.words }
     }
 
     /// An airplane by its N-number in the FAA's registry (/api/traffic/find).
     static func registered(_ tail: String) async throws -> AircraftRegistration? {
-        return try await fetch(APITrafficFound.self, "/api/traffic/find", ["q": tail]).registered
+        try await call { try await $0.trafficFind(query: .init(q: tail)).ok.body.json.registered }
     }
 
-    /// The planner's airplane types (/api/aircraft-profiles).
+    /// The planner's airplane types (/api/aircraft-profiles): each the
+    /// picker's summary of its profile, read as the profile it summarises
+    /// (the members it leaves out are the profile's optional ones).
     static func aircraftProfiles() async throws -> [AircraftProfile] {
-        struct Answer: Decodable { let profiles: [AircraftProfile] }
-        return try await fetch(Answer.self, "/api/aircraft-profiles").profiles
+        try await call { try await $0.aircraftProfiles().ok.body.json.profiles }.map { try Engine.recoded($0) }
     }
 
     /// The route as entered, its ends found and its line (/api/course).
     static func course(dep: String, dest: String, stops: [String]) async throws -> Course {
-        try await fetch(Course.self, "/api/course", route(dep, dest, stops), timeout: read)
+        try await call(.read) { try await $0.course(query: .init(dep: dep, dest: dest, stops: Self.stops(stops))).ok.body.json }
     }
 }

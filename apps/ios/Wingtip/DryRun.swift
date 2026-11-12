@@ -1,6 +1,7 @@
 import CoreLocation
 import Foundation
 import Observation
+import OpenAPIRuntime
 import UIKit
 
 /// The route flown on the ground, as the web app's dry run flies it
@@ -234,7 +235,7 @@ final class DryRun {
         // its snake case, which the contract leaves open: written so, and
         // read again as the contract's rows.
         let asked: [EngineContract.NavLogRow] = try Engine.recoded(rows, encoder: Planner.snakeEncoder)
-        let answer = try Engine.dryRun(rows: asked, startS: 0, line: course.courseLine.map { $0.map(JSONValue.number) })
+        let answer = try Engine.dryRun(rows: asked, startS: 0, line: course.courseLine.map { $0.map(OpenAPIValueContainer.init(number:)) })
         let heights = rows.contains { $0.kind == "toc" }
         let points = answer.points.map {
             Replay.Point(t: $0.t, lat: $0.lat, lon: $0.lon, altFt: heights ? $0.altFt : nil, gsKt: $0.gsKt, trackDeg: $0.trackDeg)

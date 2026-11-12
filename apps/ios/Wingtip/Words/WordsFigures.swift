@@ -1,4 +1,5 @@
 import Foundation
+import OpenAPIRuntime
 
 /// The figures the words rest on, as the phone assembles them from the
 /// briefing and the Go / No-Go it has already (nothing is fetched here),
@@ -48,8 +49,8 @@ enum WordsFigures {
             out.append(WordsSource(id: "below-vfr:\(f.ident)", label: "\(f.ident) below VFR",
                                    text: "\(f.ident) is below VFR where the flight meets it, by its \(f.source)\(f.flightCategory.map { " (\($0))" } ?? ""): \(ceiling), \(visibility). \(meets(f.onRoute) ?? "")"))
         }
-        for ident in b.metars.keys.sorted() {
-            if let metar = b.metars[ident] ?? nil, let raw = metar.raw {
+        for ident in b.metars.additionalProperties.keys.sorted() {
+            if let metar = b.metars.additionalProperties[ident] ?? nil, let raw = metar.raw {
                 let category = metar.flightCategory ?? "no category"
                 out.append(WordsSource(id: "metar:\(ident)", label: "\(ident) METAR, \(category)", text: raw))
             } else {
@@ -143,6 +144,7 @@ extension RiskWordsAsk {
     init(_ answer: GoNoGoAnswer, pilot: [String: String]? = nil) throws {
         let verdict = APIRiskVerdict(finding: nil, items: try answer.items.map { try Engine.recoded($0) }, line: try Engine.recoded(answer.line),
                                      risk: answer.risk, words: nil)
-        self.init(pilot: pilot?.mapValues { JSONValue.string($0) }, verdict: verdict)
+        let record = try pilot.map { try OpenAPIObjectContainer(unvalidatedValue: $0) }
+        self.init(pilot: record.map { .init(additionalProperties: $0) }, verdict: verdict)
     }
 }

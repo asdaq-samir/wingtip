@@ -1,4 +1,5 @@
 import Observation
+import OpenAPIRuntime
 import SwiftUI
 import UIKit
 
@@ -33,19 +34,19 @@ typealias DocumentRead = ASDocumentRead
 /// model renames or leaves out can be lost on the way.
 struct DocumentAnswer: Equatable, Sendable {
     var read: DocumentRead
-    var handbook: JSONValue?
+    var handbook: OpenAPIValueContainer?
 
-    init(read: DocumentRead, handbook: JSONValue? = nil) {
+    init(read: DocumentRead, handbook: OpenAPIValueContainer? = nil) {
         self.read = read
         self.handbook = handbook
     }
 
     /// The reader's body, both ways.
     init(data: Data) throws {
-        struct Raw: Decodable { var handbook: JSONValue? }
-        read = try Planner.snakeCase.decode(DocumentRead.self, from: data)
+        struct Raw: Decodable { var handbook: OpenAPIValueContainer? }
+        read = try Planner.json.decode(DocumentRead.self, from: data)
         let raw = try JSONDecoder().decode(Raw.self, from: data).handbook
-        handbook = raw == .null ? nil : raw
+        handbook = raw?.value == nil ? nil : raw
     }
 }
 
@@ -58,10 +59,6 @@ enum DocumentReader {
     /// small print, and well under the reader's 3.5 MB once a JPEG.
     static let longEdge: CGFloat = 2000
     static let quality: CGFloat = 0.85
-    /// How long a read may take: a model reading a full page can take most
-    /// of a minute, past URLSession's own wait.
-    static let timeout: TimeInterval = 120
-
     /// The photo as the reader takes it: a JPEG no longer than `longEdge`
     /// on its long side, never made larger. Nil where it cannot be drawn.
     static func jpeg(_ image: UIImage) -> Data? {
@@ -115,8 +112,8 @@ enum DocumentReader {
     /// The page read by the assistant (Claude), the photo sent.
     static func server(_ kind: DocumentKind, image: UIImage) async throws -> DocumentAnswer {
         guard let jpeg = jpeg(image) else { throw Planner.Failure(status: 422, detail: "That photo could not be opened.") }
-        let request = try await Planner.request("POST", "/api/read-document", json: ask(kind, jpeg: jpeg), csrf: true, timeout: timeout)
-        return try DocumentAnswer(data: try await Planner.data(for: request))
+        let read = try await Planner.ask(.upload) { try await $0.readDocument(body: .json(ask(kind, jpeg: jpeg))).ok.body.json }
+        return try DocumentAnswer(data: JSONEncoder().encode(read))
     }
 
     /// Why a read failed, in words for the screen: the reader's own detail

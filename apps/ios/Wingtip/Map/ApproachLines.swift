@@ -1,4 +1,5 @@
 import MapKit
+import OpenAPIRuntime
 import UIKit
 
 /// A runway's extended centreline on the ground (approach_scene).
@@ -56,8 +57,8 @@ final class ApproachLines {
     }
 
     /// The engine's [lat, lon, ...] as a place.
-    nonisolated static func coordinate(_ point: [JSONValue]) -> CLLocationCoordinate2D? {
-        guard point.count >= 2, case .number(let lat) = point[0], case .number(let lon) = point[1] else { return nil }
+    nonisolated static func coordinate(_ point: [OpenAPIValueContainer]) -> CLLocationCoordinate2D? {
+        guard point.count >= 2, let lat = point[0].number, let lon = point[1].number else { return nil }
         return CLLocationCoordinate2D(latitude: lat, longitude: lon)
     }
 

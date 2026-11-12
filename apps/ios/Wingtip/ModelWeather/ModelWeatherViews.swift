@@ -224,7 +224,7 @@ struct ModelWeatherLegend: View {
     /// The web's sourceLine: whose the picture is and when its run was made.
     private var sourceLine: (text: String, stale: Bool) {
         if model.radarTiles != nil { return ("Radar, observed", false) }
-        guard let source = model.frame?.sources?[model.file] else { return ("", false) }
+        guard let source = model.frame?.sources?.additionalProperties[model.file] else { return ("", false) }
         let when = source.issued.map { iso -> String in
             let hour = iso.dropFirst(11).prefix(2)
             return "\(hour)Z"

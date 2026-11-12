@@ -54,7 +54,7 @@ struct ClaudeGateTests {
     @Test func offCoachHasThePlanAndNoWords() async throws {
         let plain = CoachCalls(plan: { _ in
             let raw = Data(CoachModelTests.plan.utf8)
-            return CoachPlanned(plan: try Planner.snakeCase.decode(ProficiencyPlan.self, from: raw), raw: raw)
+            return CoachPlanned(plan: try Planner.json.decode(ProficiencyPlan.self, from: raw), raw: raw)
         })
         let pilot = CoachPilot(entries: [try CoachModelTests.entry()])
         let model = CoachModel(calls: plain, fetchPilot: { pilot }, fetchDebriefs: { [] },

@@ -29,15 +29,17 @@ extension CyclePacks {
         return packs.isEmpty ? nil : packs
     }
 
-    /// One of the engine's in-view answers, decoded as the planner's.
-    private func inView<T: Decodable>(_ type: T.Type, south: Double, west: Double, north: Double, east: Double,
+    /// One of the engine's in-view answers, decoded as the planner's:
+    /// the planner's generated types with their own keys (Planner.json),
+    /// the app's own in camel case (Planner.snakeCase).
+    private func inView<T: Decodable>(_ type: T.Type, decoder: JSONDecoder = Planner.json, south: Double, west: Double, north: Double, east: Double,
                                       _ call: (UnsafePointer<UnsafePointer<UInt8>?>?, UnsafePointer<Int>?, Int, Double, Double, Double, Double) -> UnsafeMutablePointer<CChar>?) -> T? {
         guard let packs = packs(south: south, west: west, north: north, east: east) else { return nil }
-        return Self.inView(type, packs: packs, south: south, west: west, north: north, east: east, call)
+        return Self.inView(type, decoder: decoder, packs: packs, south: south, west: west, north: north, east: east, call)
     }
 
     /// The same, from packs in hand.
-    static func inView<T: Decodable>(_ type: T.Type, packs: [Data], south: Double, west: Double, north: Double, east: Double,
+    static func inView<T: Decodable>(_ type: T.Type, decoder: JSONDecoder = Planner.json, packs: [Data], south: Double, west: Double, north: Double, east: Double,
                                      _ call: (UnsafePointer<UnsafePointer<UInt8>?>?, UnsafePointer<Int>?, Int, Double, Double, Double, Double) -> UnsafeMutablePointer<CChar>?) -> T? {
         let answer: UnsafeMutablePointer<CChar>? = Self.withPointers(packs[...], [], []) { ptrs, lens in
             ptrs.withUnsafeBufferPointer { p in
@@ -48,7 +50,7 @@ extension CyclePacks {
         }
         guard let answer else { return nil }
         defer { wt_string_free(answer) }
-        return try? Planner.snakeCase.decode(T.self, from: Data(String(cString: answer).utf8))
+        return try? decoder.decode(T.self, from: Data(String(cString: answer).utf8))
     }
 
     struct AreasAnswer: Decodable { let areas: [ChartMarks.Area] }
@@ -57,12 +59,12 @@ extension CyclePacks {
     /// The special-use areas reaching into the box (the engine's
     /// special_use_in_view), MOAs first; nil with no pack.
     func specialUseInView(south: Double, west: Double, north: Double, east: Double) -> [ChartMarks.Area]? {
-        inView(AreasAnswer.self, south: south, west: west, north: north, east: east, wt_special_use_in_view)?.areas
+        inView(AreasAnswer.self, decoder: Planner.snakeCase, south: south, west: west, north: north, east: east, wt_special_use_in_view)?.areas
     }
 
     /// The Enroute Low fixes and charted VFR waypoints in the box; nil with no pack.
     func fixesInView(south: Double, west: Double, north: Double, east: Double) -> [ChartMarks.Fix]? {
-        inView(FixesAnswer.self, south: south, west: west, north: north, east: east, wt_fixes_in_view)?.fixes
+        inView(FixesAnswer.self, decoder: Planner.snakeCase, south: south, west: west, north: north, east: east, wt_fixes_in_view)?.fixes
     }
 
     private struct AirportsAnswer: Decodable { let airports: [AirportPin] }

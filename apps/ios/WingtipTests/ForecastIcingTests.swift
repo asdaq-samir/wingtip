@@ -9,7 +9,7 @@ struct ForecastIcingTests {
     private func briefing(legsFrom: String, fixes: Int) throws -> Briefing {
         let points = (0..<fixes).map { #"{"lat":46.8\#($0),"lon":-92.1\#($0)}"# }.joined(separator: ",")
         let json = #"{"airports":{},"forecast":{"stations":[]},"hazards":[],"metars":{},"weather_unavailable":[],"legs_from":"\#(legsFrom)","leg_fixes":[\#(points)]}"#
-        return try Planner.snakeCase.decode(Briefing.self, from: Data(json.utf8))
+        return try Planner.json.decode(Briefing.self, from: Data(json.utf8))
     }
 
     private let legs = [
@@ -31,7 +31,7 @@ struct ForecastIcingTests {
 
     @Test func eachLegInWords() throws {
         let json = #"{"issued":"2026-11-09T15:00:00Z","unchecked":[],"legs":[{"index":0,"altitude_ft":6500,"severity":"light","share":0.4,"layer":{"bottom_ft":4000,"top_ft":9000}},{"index":1,"altitude_ft":5500,"severity":"none"},{"index":2,"altitude_ft":5500,"severity":null}]}"#
-        let answer = try Planner.snakeCase.decode(IcingForecastAnswer.self, from: Data(json.utf8))
+        let answer = try Planner.json.decode(IcingForecastAnswer.self, from: Data(json.utf8))
         #expect(ForecastIcing.value(answer.legs[0]) == "Light at 6,500 ft, 40% of it")
         #expect(ForecastIcing.detail(answer.legs[0]) == "Icing forecast 4,000–9,000 ft")
         #expect(ForecastIcing.value(answer.legs[1]) == "None at 5,500 ft" && !ForecastIcing.iced(answer.legs[1]))

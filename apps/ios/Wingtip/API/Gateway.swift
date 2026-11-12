@@ -3,12 +3,14 @@ import Foundation
 /// The pilot, as the gateway knows them (PilotDto, generated).
 typealias Pilot = GWPilotDto
 
-/// The gateway's calls, by hand: its OpenAPI document gives them "*/*"
-/// bodies, which a generated client would hand over raw. URLSession keeps
-/// the session cookie the gateway sets, so a call made after signing in
-/// is the pilot's, as in Safari.
+/// The gateway, through its generated client (GatewayAPI, Servers.swift)
+/// under the names the app calls it by. URLSession keeps the session
+/// cookie the gateway sets, so a call made after signing in is the
+/// pilot's, as in Safari.
 enum Gateway {
-    static let session: URLSession = {
+    /// The settings every call's session shares: the one cookie jar and
+    /// the one cache (Servers.Wait makes a session of each wait from them).
+    static func configuration() -> URLSessionConfiguration {
         let config = URLSessionConfiguration.default
         config.httpCookieAcceptPolicy = .always
         config.httpShouldSetCookies = true
@@ -24,80 +26,34 @@ enum Gateway {
         // (the owner's ask for speed, 2026-11-03). Sized for a flight's
         // worth of tiles and answers; the protocol's own policy, so an
         // answer marked no-store is never kept.
-        config.urlCache = URLCache(memoryCapacity: 32 << 20, diskCapacity: 256 << 20, diskPath: "wingtip-answers")
+        config.urlCache = answers
         config.requestCachePolicy = .useProtocolCachePolicy
-        return URLSession(configuration: config)
-    }()
-
-    static func request(_ method: String, _ path: String, json: (any Encodable)? = nil, form: [String: String]? = nil) -> URLRequest {
-        var request = URLRequest(url: Config.gateway.appending(path: path))
-        request.httpMethod = method
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        // Spring Security's CSRF check (SecurityConfig): every POST, PUT and
-        // DELETE echoes the XSRF-TOKEN cookie the gateway set in a header,
-        // as the web app's client does.
-        if method != "GET", let token = csrfToken { request.setValue(token, forHTTPHeaderField: "X-XSRF-TOKEN") }
-        if let json {
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            request.httpBody = try? JSONEncoder().encode(AnyEncodable(json))
-        } else if let form {
-            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
-            var parts = URLComponents()
-            parts.queryItems = form.map { URLQueryItem(name: $0.key, value: $0.value) }
-            request.httpBody = parts.percentEncodedQuery?.data(using: .utf8)
-        }
-        // A large body (a logbook imported) given the upload's time.
-        if (request.httpBody?.count ?? 0) > Planner.uploadBytes { request.timeoutInterval = Planner.upload }
-        return request
+        return config
     }
+
+    static let answers = URLCache(memoryCapacity: 32 << 20, diskCapacity: 256 << 20, diskPath: "wingtip-answers")
+
+    static let session = URLSession(configuration: configuration())
 
     /// The gateway's CSRF token, from the cookie it sets on every answer.
     static var csrfToken: String? {
-        session.configuration.httpCookieStorage?.cookies(for: Config.gateway)?.first { $0.name == "XSRF-TOKEN" }?.value
-    }
-
-    /// One call with the pilot's session: the answer's body and status.
-    /// Every gateway call goes through here, and is refused through
-    /// `send` or `read` in the gateway's own words.
-    static func call(_ method: String, _ path: String, json: (any Encodable)? = nil, form: [String: String]? = nil) async throws -> (Data, Int) {
-        let (data, response) = try await session.data(for: request(method, path, json: json, form: form))
-        // A sign-in, a renewed session or a sign-out kept as it happens.
-        SessionCookies.keep()
-        return (data, (response as? HTTPURLResponse)?.statusCode ?? 0)
-    }
-
-    /// A call whose answer is read, or nothing where the server sends no
-    /// body; refused outside `ok`, with the gateway's own words.
-    @discardableResult
-    static func send(_ method: String, _ path: String, json: (any Encodable)? = nil, form: [String: String]? = nil,
-                     ok: ClosedRange<Int> = 200...299) async throws -> Data {
-        let (data, status) = try await call(method, path, json: json, form: form)
-        guard ok.contains(status) else { throw GatewayRefusal(status: status, words: GatewayRefusal.words(in: data)) }
-        return data
-    }
-
-    static func send<T: Decodable>(_ type: T.Type, _ method: String, _ path: String, json: (any Encodable)? = nil) async throws -> T {
-        try JSONDecoder().decode(T.self, from: try await send(method, path, json: json))
-    }
-
-    /// A read that is nobody's when signed out: nil for the statuses in
-    /// `none` (401, 403 and 204 unless a call says otherwise). The
-    /// gateway's JSON is camelCase already, its dates the strings they
-    /// come as.
-    static func read<T: Decodable>(_ type: T.Type, _ path: String, none: Set<Int> = [204, 401, 403]) async throws -> T? {
-        let (data, status) = try await call("GET", path)
-        if status == 200 { return try JSONDecoder().decode(T.self, from: data) }
-        if none.contains(status) { return nil }
-        throw GatewayRefusal(status: status, words: GatewayRefusal.words(in: data))
+        SessionCookies.jar.cookies(for: Config.gateway)?.first { $0.name == "XSRF-TOKEN" }?.value
     }
 
     /// The pilot signed in, or nil (the gateway's 204) when no one is.
-    static func me() async throws -> Pilot? { try await read(Pilot.self, "/api/me", none: [204, 401]) }
+    static func me() async throws -> Pilot? {
+        try await read(none: [401]) {
+            switch try await $0.me() {
+            case .ok(let ok): try ok.body.json
+            default: nil
+            }
+        }
+    }
 
     /// Apple's identity token from the system's sheet, checked by the
     /// gateway against this app's bundle id (AppleNativeSignInController).
     static func signInWithApple(identityToken: String, nonce: String?) async throws {
-        try await send("POST", "/api/auth/apple/native", json: GWAppleToken(identityToken: identityToken, nonce: nonce), ok: 200...200)
+        _ = try await call { try await $0.signIn(body: .json(GWAppleToken(identityToken: identityToken, nonce: nonce))).ok }
     }
 
     /// A nonce for one Sign in with Apple attempt, issued to this session
@@ -105,14 +61,13 @@ enum Gateway {
     /// L5): its SHA-256 goes into Apple's request, so a leaked identity
     /// token cannot be replayed on another session.
     static func appleNonce() async throws -> String {
-        if csrfToken == nil { _ = try? await me() }
-        return try JSONDecoder().decode(GWAppleNonceAnswer.self, from: try await send("POST", "/api/auth/apple/native/nonce", ok: 200...200)).nonce
+        try await call { try await $0.nonce().ok.body.json.nonce }
     }
 
     /// A sign-in link emailed to the pilot; the gateway answers 202
     /// whether or not the address is known.
     static func requestMagicLink(email: String) async throws {
-        try await send("POST", "/api/auth/magic-link", json: GWMagicLinkRequest(email: email))
+        _ = try await call { try await $0.request(body: .json(GWMagicLinkRequest(email: email))) }
     }
 
     /// Whose account a sign-in link is for, before the pilot says yes
@@ -126,47 +81,50 @@ enum Gateway {
     }
 
     static func linkAccount(token: String) async throws -> LinkAccount {
-        // The CSRF cookie is written on any of the gateway's answers once
-        // asked for: one GET first where there is none yet.
-        if csrfToken == nil { _ = try? await me() }
-        let (data, status) = try await call("POST", "/api/auth/magic-link/account", form: ["token": token])
-        switch status {
-        case 200: return .email(try JSONDecoder().decode(GWLinkAccount.self, from: data).email)
-        case 404: return .expired
-        case 429: return .tooMany
-        default: throw GatewayRefusal(status: status, words: GatewayRefusal.words(in: data))
+        do {
+            return .email(try await call { try await $0.account(body: .urlEncodedForm(.init(token: token))).ok.body.json.email })
+        } catch let refusal as GatewayRefusal where refusal.status == 404 {
+            return .expired
+        } catch let refusal as GatewayRefusal where refusal.status == 429 {
+            return .tooMany
         }
     }
 
     /// The link's one-time token, posted as the website's page posts it.
     static func verifyMagicLink(token: String) async throws {
-        try await send("POST", "/api/auth/magic-link/verify", form: ["token": token], ok: 200...399)
+        _ = try await call { try await $0.verify(body: .urlEncodedForm(.init(token: token))) }
     }
 
-    /// Spring Security's own logout, which answers 204.
+    /// Spring Security's own logout, which answers 204: not one of the
+    /// document's operations, so asked of the session itself, with the
+    /// CSRF token every POST carries.
     static func signOut() async throws {
-        _ = try await call("POST", "/logout")
+        var request = URLRequest(url: Config.gateway.appending(path: "/logout"))
+        request.httpMethod = "POST"
+        if let token = csrfToken { request.setValue(token, forHTTPHeaderField: CSRF.header.rawName) }
+        _ = try await session.data(for: request)
+        SessionCookies.keep()
     }
 }
 
-/// The gateway's own words for a refusal (ErrorResponse), where it sent
-/// any: "Invalid request" with each field's, or the instructor's rule.
+/// The gateway's own words for a refusal: Spring's ProblemDetail (RFC
+/// 9457), its `detail` ("Invalid request: email: must be a well-formed
+/// email address", each broken field named), or its `errors` one by one
+/// where it has no detail. The old ErrorResponse's `error` and `details`
+/// are read too, until the planner's and the assistant's refusals are
+/// checked for the same shape.
 struct GatewayRefusal: Error, LocalizedError, Equatable {
     let status: Int
     let words: String?
     var errorDescription: String? { words ?? "The server answered \(status)." }
 
     static func words(in data: Data) -> String? {
-        struct Body: Decodable { var error: String?; var details: [String]? }
-        guard let body = try? JSONDecoder().decode(Body.self, from: data), let error = body.error else { return nil }
+        struct Body: Decodable { var detail: String?; var errors: [String]?; var error: String?; var details: [String]? }
+        guard let body = try? JSONDecoder().decode(Body.self, from: data) else { return nil }
+        if let detail = body.detail, !detail.isEmpty { return detail }
+        if let errors = body.errors, !errors.isEmpty { return errors.joined(separator: "; ") }
+        guard let error = body.error else { return nil }
         let details = body.details ?? []
         return details.isEmpty ? error : "\(error): \(details.joined(separator: "; "))"
     }
-}
-
-/// Encodes whatever Encodable it is given, for one request builder.
-private struct AnyEncodable: Encodable {
-    let value: any Encodable
-    init(_ value: any Encodable) { self.value = value }
-    func encode(to encoder: any Encoder) throws { try value.encode(to: encoder) }
 }

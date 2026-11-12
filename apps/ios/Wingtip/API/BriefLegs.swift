@@ -8,7 +8,7 @@ import Foundation
 /// whether the airplane is there while it is valid ("during", "before",
 /// "after"; none for a report or a field's forecast). The planner works
 /// all of it out; the app says it. Generated from the planner's document
-/// (Generated/PlannerModels.swift), as the next two are.
+/// (WingtipAPI/PlannerAPI), as the next two are.
 typealias OnRoute = APIOnRoute
 
 /// A field below VFR where the flight meets it (FieldBelowVfr): its
@@ -159,15 +159,15 @@ extension Planner {
     /// The briefing, its hazards placed on the nav log's legs where they
     /// are given (/api/briefing's fixes, leg_min, ground_min).
     static func briefing(dep: String, dest: String, stops: [String], eteMin: Double?, legs: BriefLegs.Query?) async throws -> Briefing {
-        try await fetch(Briefing.self, "/api/briefing", route(dep, dest, stops).merging([
-            "ete_min": eteMin.map { String(Int($0.rounded())) },
-            "fixes": legs?.fixes, "leg_min": legs?.legMin, "ground_min": legs?.groundMin,
-        ]) { $1 })
+        try await call {
+            try await $0.briefing(query: .init(dep: dep, dest: dest, stops: Self.stops(stops), eteMin: eteMin?.rounded(),
+                                               fixes: legs?.fixes, legMin: legs?.legMin, groundMin: legs?.groundMin)).ok.body.json
+        }
     }
 
     /// When the planner fetched the METARs and TFRs the map draws
     /// (/api/map/ages).
     static func mapAges() async throws -> MapLayerAges {
-        try await fetch(MapLayerAges.self, "/api/map/ages")
+        try await call { try await $0.mapLayerAges().ok.body.json }
     }
 }

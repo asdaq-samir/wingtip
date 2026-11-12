@@ -150,7 +150,7 @@ enum FieldWeatherMarks {
         var now: [EngineContract.WorseField] = []
         var atEta: [EngineContract.WorseField] = []
         for station in briefing.forecast.stations where fields.contains(station.icaoId) && station.eta != nil {
-            guard let metar = briefing.metars[station.icaoId] ?? nil else { continue }
+            guard let metar = briefing.metars.additionalProperties[station.icaoId] ?? nil else { continue }
             now.append(.init(ident: station.icaoId, ceilingFt: metar.ceilingFt, visibilitySm: metar.visibilitySm,
                              ceilingUnknown: metar.ceilingUnknown, arrival: true))
             atEta.append(.init(ident: station.icaoId, ceilingFt: station.etaCeilingFt, visibilitySm: station.etaVisibilitySm,
@@ -206,8 +206,8 @@ enum FieldWeatherMarks {
     /// (the owner, 2026-11-09).
     @MainActor
     static func demonstratedKt(_ plan: Plan, airplanes: Airplanes = .shared) -> Double? {
-        guard plan.airplaneChosen, case .object(let crosswind)? = airplanes.books[plan.aircraft]?["crosswind"],
-              case .number(let kt)? = crosswind["demonstrated_kt"] else { return nil }
-        return kt
+        guard plan.airplaneChosen, let crosswind = airplanes.books[plan.aircraft]?["crosswind"]?.value as? [String: (any Sendable)?],
+              let kt = crosswind["demonstrated_kt"] ?? nil else { return nil }
+        return (kt as? Double) ?? (kt as? Int).map(Double.init)
     }
 }

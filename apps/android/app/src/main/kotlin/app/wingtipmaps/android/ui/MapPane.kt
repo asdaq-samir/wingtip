@@ -262,7 +262,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             night = night,
             bottomInset = with(density) { covered.roundToPx() },
             opensAt = opensAt,
-            ownShip = dryRun.fix ?: if (ownShip.on) fix else null,
+            ownShip = app.wingtipmaps.android.map.OwnShipMark.of(fix, ownShip.on, dryRun.fix),
             trail = flown,
             // Off unless the pilot keeps it on, on by itself while the
             // emergency assistant is open (GlideRing).

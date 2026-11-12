@@ -44,11 +44,11 @@ struct CoachModelTests {
         let calls = CoachCalls(
             plan: { _ in
                 let raw = Data(Self.plan.utf8)
-                return CoachPlanned(plan: try Planner.snakeCase.decode(ProficiencyPlan.self, from: raw), raw: raw)
+                return CoachPlanned(plan: try Planner.json.decode(ProficiencyPlan.self, from: raw), raw: raw)
             },
             words: { _ in
                 if wordsFail { throw URLError(.notConnectedToInternet) }
-                return try Planner.snakeCase.decode(CoachWords.self, from: Data(words.utf8))
+                return try Planner.json.decode(CoachWords.self, from: Data(words.utf8))
             })
         let defaults = UserDefaults(suiteName: "coach-tests-\(UUID().uuidString)")!
         return CoachModel(calls: calls, fetchPilot: { pilot }, fetchDebriefs: { [] }, defaults: defaults)
@@ -83,7 +83,7 @@ struct CoachModelTests {
     }
 
     @Test func theStatusWordsAreTheEnginesStatus() throws {
-        let plan = try Planner.snakeCase.decode(ProficiencyPlan.self, from: Data(Self.plan.utf8))
+        let plan = try Planner.json.decode(ProficiencyPlan.self, from: Data(Self.plan.utf8))
         #expect(plan.due.map(CoachModel.statusWords) == ["9 days left", "To 31 May 2027", "Lapsed", "Not on record"])
         var pending = plan.due[2]
         pending.status = "pending"
@@ -115,7 +115,7 @@ struct CoachModelTests {
         var ask = CoachAsk(entries: [], flightReviewOn: "2025-05-12", today: "2026-11-09")
         ask.debriefs = [CoachDebrief(elevationFt: 887, flownOn: "2026-10-20", kind: "approach", place: "KMSN",
                                      profile: [APICoachProfilePoint(altFt: 1300, off: true, toGoNm: 1.2)])]
-        let body = try #require(String(data: try ask.body(), encoding: .utf8))
+        let body = try #require(String(data: try JSONEncoder().encode(ask), encoding: .utf8))
         #expect(body.contains(#""flightReviewOn":"2025-05-12""#))
         #expect(body.contains(#""elevation_ft":887"#) && body.contains(#""flown_on":"2026-10-20""#) && body.contains(#""to_go_nm":1.2"#))
         #expect(!body.contains("flownOn"))

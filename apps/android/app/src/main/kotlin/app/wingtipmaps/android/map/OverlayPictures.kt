@@ -57,53 +57,7 @@ object OverlayPictures {
             }
         }
         stretched(builder, MapStyle.TRAFFIC_TAG, trafficTag(density), 4f, density)
-        builder.withImage(MapStyle.OWN_SHIP_ICON, ownShip(hasTrack = true, density))
-        builder.withImage(MapStyle.OWN_SHIP_DOT, ownShip(hasTrack = false, density))
     }
-
-    /** Own ship: an airplane seen from above, nose up for the layer to turn
-     *  to the track, in the tint with a white casing, 28 dp across, larger
-     *  than the traffic so it is never taken for one; the tint's dot in a
-     *  white ring where the phone gives no track. */
-    private fun ownShip(hasTrack: Boolean, density: Float): Bitmap = picture(OWN_SHIP_MARK + 4f, density, origin = 2f) {
-        val colour = ink(MapStyle.TINT)
-        val scale = OWN_SHIP_MARK / 24f
-        scale(scale, scale)
-        val casing = 2f / scale
-        if (hasTrack) {
-            // Material's `flight` glyph, pointing up.
-            val plane = Path().apply {
-                moveTo(12f, 1.5f)
-                cubicTo(11.2f, 1.5f, 10.5f, 2.2f, 10.5f, 3f)
-                lineTo(10.5f, 8.5f)
-                lineTo(2f, 13.5f)
-                lineTo(2f, 15.5f)
-                lineTo(10.5f, 13f)
-                lineTo(10.5f, 18.5f)
-                lineTo(8f, 20.3f)
-                lineTo(8f, 22f)
-                lineTo(12f, 21f)
-                lineTo(16f, 22f)
-                lineTo(16f, 20.3f)
-                lineTo(13.5f, 18.5f)
-                lineTo(13.5f, 13f)
-                lineTo(22f, 15.5f)
-                lineTo(22f, 13.5f)
-                lineTo(13.5f, 8.5f)
-                lineTo(13.5f, 3f)
-                cubicTo(13.5f, 2.2f, 12.8f, 1.5f, 12f, 1.5f)
-                close()
-            }
-            drawPath(plane, stroke(Color.WHITE, casing * 2))
-            drawPath(plane, fill(colour))
-        } else {
-            drawCircle(12f, 12f, 7f, fill(Color.WHITE))
-            drawCircle(12f, 12f, 5f, fill(colour))
-        }
-    }
-
-    /** Own ship's size, dp. */
-    private const val OWN_SHIP_MARK = 28f
 
     /** A picture `inset` dp each way kept as drawn and the middle
      *  stretched to the text (the web's Stretch, MapLibre's stretch and

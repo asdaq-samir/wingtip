@@ -82,8 +82,9 @@ final class CyclePacks: @unchecked Sendable {
     /// cannot be reached: the next keep tries again, and finds the packs
     /// already fetched in the new cycle's folder.
     func keep(regions wanted: Set<String>) async {
-        guard let data = try? await Planner.data(for: Planner.get("/api/cycle-packs")),
-              let fresh = try? Planner.snakeCase.decode(CyclePackIndex.self, from: data) else { return }
+        // The planner's index, read as the phone keeps it (in camel case).
+        guard let answer = try? await Planner.call(.usual, { try await $0.cyclePacks().ok.body.json }),
+              let fresh: CyclePackIndex = try? Engine.recoded(answer, decoder: Planner.snakeCase) else { return }
         let kept = index
         var names = wanted
         if let kept {
@@ -112,7 +113,7 @@ final class CyclePacks: @unchecked Sendable {
         // with nothing older to fall back on. A new cycle only when whole.
         if let kept, kept.cycle != fresh.cycle, !whole { return }
         lock.withLock {
-            try? data.write(to: indexFile, options: .atomic)
+            try? JSONEncoder().encode(answer).write(to: indexFile, options: .atomic)
             if let editions = try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) {
                 for edition in editions where edition.hasDirectoryPath && edition.lastPathComponent != fresh.cycle {
                     try? FileManager.default.removeItem(at: edition)

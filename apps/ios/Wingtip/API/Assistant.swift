@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import OpenAPIRuntime
 
 /// One line of the assistant's stream (POST /api/assistant, newline-
 /// delimited JSON, app.assistant): a "tool" line while it looks something
@@ -96,7 +97,7 @@ extension AssistantContext {
     /// The record as Context.pilot's open object, its keys already in the
     /// planner's snake case: Planner.snakeEncoder converts a struct's keys
     /// but not a dictionary's, so the record is written in snake case here.
-    static func pilotJSON(_ record: PilotRecord) throws -> [String: JSONValue] {
+    static func pilotJSON(_ record: PilotRecord) throws -> ASContext.PilotPayload {
         try Engine.recoded(record, encoder: Planner.snakeEncoder)
     }
 
@@ -258,33 +259,11 @@ final class AssistantClient {
         return (error as? URLError)?.code == .cancelled ? "The answer was given up." : "The assistant could not be reached: \(error.localizedDescription)"
     }
 
-    /// The answer's lines, read as the planner sends them through the
+    /// The answer's lines, read as the assistant sends them through the
     /// app's session (Gateway.session, so the cookie and the cache policy
-    /// are the app's). A POST that changes nothing goes without the
-    /// CSRF token, as Planner.postRead does.
+    /// are the app's), with its generated client.
     nonisolated static func stream(_ ask: AssistantAsk) -> AsyncThrowingStream<AssistantLine, any Error> {
-        AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    let request = try await Planner.request("POST", "/api/assistant", json: ask, csrf: false)
-                    let (bytes, response) = try await Gateway.session.bytes(for: request)
-                    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-                    guard status == 200 else {
-                        var body = Data()
-                        for try await byte in bytes { body.append(byte) }
-                        Log.planner.error("the assistant answered \(status)")
-                        throw Planner.Failure(status: status, detail: Planner.detail(of: body))
-                    }
-                    for try await line in bytes.lines where !line.isEmpty {
-                        if let value = try decode(line: Data(line.utf8)) { continuation.yield(value) }
-                    }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            continuation.onTermination = { _ in task.cancel() }
-        }
+        Planner.lines({ try await Planner.ask { try await $0.askAssistant(body: .json(ask)).ok.body.applicationXNdjson } }) { try decode(line: $0) }
     }
 
     /// One line of the stream, or nil for a kind the app has no use for.
@@ -294,7 +273,9 @@ final class AssistantClient {
         struct Text: Decodable { var text: String? }
         struct Sources: Decodable { var sources: [AssistantSource]? }
         struct Problem: Decodable { var words: String?; var detail: String? }
-        let decoder = Planner.snakeCase
+        // Each member one word, so the generated Source's own keys read
+        // with no strategy.
+        let decoder = Planner.json
         switch try decoder.decode(Kind.self, from: line).type {
         case "tool":
             let tool = try decoder.decode(Tool.self, from: line)

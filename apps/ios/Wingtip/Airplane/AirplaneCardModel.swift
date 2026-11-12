@@ -38,7 +38,7 @@ final class AirplaneCardModel {
         } catch {
             problem = "Its past flights could not be had. Try again in a moment."
         }
-        do { based = try await basedAsk.based[hex.lowercased()] ?? nil } catch { failed.append("where it is based") }
+        do { based = try await basedAsk.based.additionalProperties[hex.lowercased()] ?? nil } catch { failed.append("where it is based") }
         detailProblem = failed.isEmpty ? nil : "Not all of it could be had: \(failed.joined(separator: " and ")) missing."
     }
 

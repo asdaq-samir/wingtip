@@ -14,7 +14,7 @@ struct PassengerBriefingView: View {
     }
 
     private var message: String {
-        let metar = plan.briefing?.metars[plan.dest] ?? nil
+        let metar = plan.briefing?.metars.additionalProperties[plan.dest] ?? nil
         return PassengerBriefing.message(
             dep: plan.dep, depName: plan.course?.departure.name, dest: plan.dest, destName: plan.course?.destination.name,
             departs: model.departs, eteMin: plan.totals?.eteMin, weather: PassengerBriefing.weather(metar))

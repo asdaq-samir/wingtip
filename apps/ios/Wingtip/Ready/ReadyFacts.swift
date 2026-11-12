@@ -28,7 +28,7 @@ enum ReadyFacts {
         let tafs = Set(briefing.forecast.stations.filter { $0.raw != nil }.map { $0.icaoId.uppercased() })
         return [(dep, "departure"), (dest, "destination")].map { ident, role in
             let station = station(ident, in: briefing)
-            let observed = station.flatMap { briefing.metars[$0] ?? nil }?.observedAt.flatMap { AirportWords.date($0) }
+            let observed = station.flatMap { briefing.metars.additionalProperties[$0] ?? nil }?.observedAt.flatMap { AirportWords.date($0) }
             return EngineContract.ReadyToFlyInputFieldsItem(ident: ident, role: role, metarObserved: observed?.timeIntervalSince1970,
                                                             taf: candidates(ident).contains { tafs.contains($0) })
         }
@@ -37,7 +37,7 @@ enum ReadyFacts {
     /// The briefing's key for a field: as typed, else with the K a
     /// three-letter US identifier takes in ICAO form ("OSH" is "KOSH").
     static func station(_ ident: String, in briefing: Briefing) -> String? {
-        candidates(ident).first { briefing.metars.keys.contains($0) }
+        candidates(ident).first { briefing.metars.additionalProperties.keys.contains($0) }
     }
 
     private static func candidates(_ ident: String) -> [String] {

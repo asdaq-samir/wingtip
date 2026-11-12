@@ -1,4 +1,5 @@
 import Foundation
+import OpenAPIRuntime
 
 /// The pilot's own figures for the airplane flown: its record's on the
 /// gateway, or kept on this device while signed out (OwnFigureStore). Each
@@ -87,20 +88,9 @@ struct Figures: Codable, Equatable, Sendable {
     /// wingtip.planning.OWN_AIRPLANE).
     var flyable: Bool { cruiseTasKt != nil && fuelBurnGph != nil }
 
-    /// The nav log's, the route options' and the Go / No-Go's query for
-    /// them, only the ones set (the planner's PlanQuery); the empty weight
-    /// and moment are the loading's, not the plan's.
-    var query: [String: String?] {
-        var out: [String: String?] = [:]
-        for figure in OwnFigure.allCases where figure != .emptyWeightLb && figure != .emptyMomentLbIn {
-            out[figure.rawValue] = self[figure].map { String($0) }
-        }
-        return out
-    }
-
     /// airplane_figures' `own`: every figure by its key, null where not given.
-    var engine: [String: JSONValue] {
-        Dictionary(uniqueKeysWithValues: OwnFigure.allCases.map { ($0.rawValue, self[$0].map(JSONValue.number) ?? .null) })
+    var engine: [String: OpenAPIValueContainer] {
+        Dictionary(uniqueKeysWithValues: OwnFigure.allCases.map { ($0.rawValue, self[$0].map(OpenAPIValueContainer.init(number:)) ?? nil) })
     }
 
     /// The gateway's OwnFigures: those six of them, nil left out (which

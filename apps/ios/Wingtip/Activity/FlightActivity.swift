@@ -92,7 +92,7 @@ final class FlightActivity {
             progress: nil, routeNm: kept.course?.distanceNm ?? kept.legs.reduce(0) { $0 + $1.distanceNm },
             airplaneChosen: kept.aircraft != Plan.noAirplane, usableFuelGal: kept.totals?.usableFuelGal,
             frequency: nil, copilot: nil, now: now, phase: .ready,
-            depCategory: kept.briefing?.metars[kept.dep]??.flightCategory, plannedEteMin: kept.totals?.eteMin)
+            depCategory: kept.briefing?.metars.additionalProperties[kept.dep]??.flightCategory, plannedEteMin: kept.totals?.eteMin)
         return start(dep: kept.dep, dest: kept.dest, tail: kept.tail, state: FlightActivityContent.state(inputs))
     }
 
@@ -182,7 +182,7 @@ final class FlightActivity {
             copilot: Copilot.shared.mode == .off ? nil : Copilot.shared.message,
             weather: WeatherWatch.shared.latest,
             now: now,
-            depCategory: plan.briefing?.metars[plan.dep]??.flightCategory,
+            depCategory: plan.briefing?.metars.additionalProperties[plan.dep]??.flightCategory,
             plannedEteMin: plan.totals?.eteMin)
     }
 
