@@ -1,11 +1,10 @@
 import { MutationCache, QueryCache, QueryClient, queryOptions } from "@tanstack/react-query";
 import { api, describeError, isDropped, isUnknownPlace } from "./api/client";
-import { retryable, retryOnServerFailure } from "./queryRetry";
+import { retryable, retryDelay, retryOnServerFailure } from "./queryRetry";
 import type { ChartInfo } from "./api/types";
 import { keptStore } from "./storage";
 import { signedInPilot } from "./pilotCache";
 import { clearProblem, raiseProblem, showError } from "./problems";
-import { whenBack } from "./whenBack";
 
 declare module "@tanstack/react-query" {
   interface Register {
@@ -29,7 +28,9 @@ declare module "@tanstack/react-query" {
  * TanStack's own refetch on focus, which asks again only what is stale:
  * the map's weather is current as the phone wakes, the nav log, course and
  * checkpoints (staleTime Infinity) never recomputed. Its own retries, where
- * they could answer (lib/queryRetry); the streams each say `retry: false`.
+ * they could answer (lib/queryRetry), a lost connection's for as long as
+ * the query is wanted, paused while the page is hidden or the phone
+ * offline; the streams each say `retry: false`.
  *
  * Asked with no connection too ("offlineFirst"), so the service worker's
  * kept answers reach the page in the air; TanStack's "online" paused them
@@ -39,7 +40,7 @@ declare module "@tanstack/react-query" {
 export const queryClient = new QueryClient({
   defaultOptions: {
     // None in the unit tests, as TanStack's testing guide has it.
-    queries: { retry: import.meta.env.MODE === "test" ? false : retryOnServerFailure, networkMode: "offlineFirst" },
+    queries: { retry: import.meta.env.MODE === "test" ? false : retryOnServerFailure, retryDelay, networkMode: "offlineFirst" },
     mutations: { networkMode: "offlineFirst" },
   },
   queryCache: new QueryCache({
@@ -52,25 +53,13 @@ export const queryClient = new QueryClient({
       // errors for internet loss specially in no coverage up in the
       // air"). The page keeps what it had (TanStack keeps a query's data
       // through a failed refetch, the service worker its answers), and
-      // the query is asked again once the phone is back: a second after
-      // the first drop, then every half minute, not every second all
-      // flight. The Status page says what is being shown from the cache.
-      if (isDropped(error) || globalThis.navigator?.onLine === false) {
-        const again = askedAgain.has(query.queryHash);
-        askedAgain.add(query.queryHash);
-        whenBack(
-          () => void queryClient.refetchQueries({ predicate: (q) => q.queryHash === query.queryHash }),
-          document,
-          again ? 30_000 : 1000,
-        );
-        return;
-      }
+      // a query with retries of its own is asked again by them
+      // (lib/queryRetry); one that ends here failed with `retry: false`.
+      // The Status page says what is being shown from the cache.
+      if (isDropped(error) || globalThis.navigator?.onLine === false) return;
       failingWith.set(query.queryHash, failed(describeError(error), retryable(error)));
     },
-    onSuccess: (_data, query) => {
-      askedAgain.delete(query.queryHash);
-      forget(query.queryHash);
-    },
+    onSuccess: (_data, query) => forget(query.queryHash),
   }),
   // A mutation is something the pilot just did: its failure is the
   // alert's, with OK (lib/problems).
@@ -96,22 +85,10 @@ export const queryClient = new QueryClient({
 /** Which problem each failing query raised: a query's hash to its id. */
 const failingWith = new Map<string, string>();
 
-/**
- * A query whose connection dropped, asked again by itself once before it
- * is said: Safari drops a page's requests as the phone locks or the app
- * goes behind another (its "Load failed"), and a pilot coming back found
- * "The connection dropped" over a route the planner answers in two
- * seconds (the owner's screenshot, 2026-10-22). Asked again once the page
- * is in sight and the phone online, a second after; said only if that
- * fails too.
- */
-const askedAgain = new Set<string>();
-
 /** A failure's problem goes once every query it was about answers, or
  *  is no longer asked for: a route changed or closed. With no close of
  *  its own, a problem left behind by a route long gone stayed. */
 function forget(hash: string) {
-  askedAgain.delete(hash);
   const id = failingWith.get(hash);
   failingWith.delete(hash);
   if (id !== undefined && ![...failingWith.values()].includes(id)) clearProblem(id);
@@ -346,15 +323,24 @@ export const classBQuery = queryOptions({
 export const airportQuery = (ident: string) =>
   queryOptions({ queryKey: ["airport", ident], queryFn: () => api.airport(ident), staleTime: 5 * 60_000, meta: { silent: true } });
 
+/** A cycle's procedures hold for its 28 days. */
+const PROCEDURE_STALE_MS = 6 * 60 * 60_000;
+
+/** A field's procedures from the FAA's CIFP (api.procedures): the route's
+ *  Procedures, a debrief's approaches and a lesson's pick alike. */
+export const proceduresQuery = (ident: string) =>
+  queryOptions({ queryKey: ["procedures", ident], queryFn: () => api.procedures(ident), staleTime: PROCEDURE_STALE_MS });
+
 /** A procedure picked, drawn as the planner draws it (wingtip.procedures):
- *  one query for the map's drawing, the planner's descent and the approach
- *  lesson (ApproachLesson) alike. */
-export const procedureQuery = (p: { ident: string; id: string; transition: string | null }) => ({
-  queryKey: ["procedure", p.ident, p.id, p.transition],
-  queryFn: () => api.procedure(p.ident, p.id, p.transition),
-  // A cycle's procedures hold for its 28 days.
-  staleTime: 6 * 60 * 60_000,
-});
+ *  one query for the map's drawing, its page in the Procedures, the
+ *  planner's descent, a debrief and the approach lesson (ApproachLesson)
+ *  alike. */
+export const procedureQuery = (p: { ident: string; id: string; transition: string | null }) =>
+  queryOptions({
+    queryKey: ["procedure", p.ident, p.id, p.transition],
+    queryFn: () => api.procedure(p.ident, p.id, p.transition),
+    staleTime: PROCEDURE_STALE_MS,
+  });
 
 /** What a field offers on the ground (api.airportServices): the stop's
  *  card's and a suggested stop's row's. The FAA's cycle and Overture's

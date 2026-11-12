@@ -1,4 +1,5 @@
 import { corner, dateOf, windowOf, type FieldNotam, type NotamReading } from "./fieldNotams";
+import { twoFigures } from "../../../../lib/format";
 
 /** One labelled line of a NOTAM's times: "Since", "Starts", "Ends",
  *  "Duration". */
@@ -13,7 +14,7 @@ export function span(ms: number): string {
   const [d, h, m] = [Math.floor(minutes / 1440), Math.floor((minutes % 1440) / 60), minutes % 60];
   if (d >= 10) return `${d}d`;
   if (d >= 1) return h ? `${d}d${h}h` : `${d}d`;
-  return h ? `${h}h${String(m).padStart(2, "0")}m` : `${m}m`;
+  return h ? `${h}h${twoFigures(m)}m` : `${m}m`;
 }
 
 /**

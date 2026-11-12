@@ -63,17 +63,23 @@ export const NO_CONNECTION = "No connection";
 interface Asked {
   isError: boolean;
   error?: unknown;
+  /** The last try's failure while TanStack's retries go on. */
+  failureReason?: unknown;
   fetchStatus?: "fetching" | "paused" | "idle";
 }
 
 /**
  * Whether a query has no answer because there is no connection: paused,
- * waiting on one (a mutation, or a query retried while offline), or
- * failed with the request dropped or the browser offline. The service
+ * waiting on one (a mutation, or a query retried while offline or
+ * hidden), asked again after its request dropped (lib/queryRetry asks a
+ * lost connection again for as long as the query is wanted, so it is
+ * never in error for it), or failed with the request dropped or the
+ * browser offline. The service
  * worker answers what it kept first (networkMode "offlineFirst",
  * lib/queryClient), so this is what it did not keep.
  */
 export function noConnection(query: Asked): boolean {
   if (query.fetchStatus === "paused") return true;
+  if (query.fetchStatus === "fetching" && isDropped(query.failureReason)) return true;
   return query.isError && (isDropped(query.error) || globalThis.navigator?.onLine === false);
 }

@@ -15,6 +15,7 @@
  * number words are written here rather than by Intl, which has no
  * spelled-out style.
  */
+import { utcFigures } from "./time";
 
 const ONES = [
   "zero",
@@ -154,6 +155,5 @@ export function spokenDuration(minutes: number): string {
 
 /** A UTC time digit by digit and "zulu" (AIM 4-2-13): "one four three two zulu". */
 export function spokenZulu(at: Date): string {
-  const hhmm = `${String(at.getUTCHours()).padStart(2, "0")}${String(at.getUTCMinutes()).padStart(2, "0")}`;
-  return `${digits(hhmm)} zulu`;
+  return `${digits(utcFigures(at))} zulu`;
 }

@@ -10,6 +10,7 @@
  */
 import { placeWords, tokens, type Token } from "../lib/clearance";
 import { directOf } from "../lib/heardCall";
+import { twoFigures } from "../lib/format";
 
 /** The approaches as said, each the start of the FAA's name for it in
  *  the planner's procedures (CIFP: "ILS RWY 19R", "RNAV (GPS) RWY 13",
@@ -97,7 +98,7 @@ function runwayAfter(toks: Token[], from: number): { runway: string; end: number
     const n = t.num;
     if (!n || n.includes(".") || Number(n) < 1 || Number(n) > 36) return null;
     const side = toks[i + 1] && SIDES[toks[i + 1]!.word];
-    return { runway: String(Number(n)).padStart(2, "0") + (side ?? ""), end: i + (side ? 2 : 1) };
+    return { runway: twoFigures(Number(n)) + (side ?? ""), end: i + (side ? 2 : 1) };
   }
   return null;
 }

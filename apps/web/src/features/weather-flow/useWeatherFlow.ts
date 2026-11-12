@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { data, planner } from "../../lib/api/client";
 import type { components } from "../../lib/api/schema";
 import { prefersReducedMotion } from "../../lib/motion";
+import { usePauseWhileHidden } from "../../lib/usePauseWhileHidden";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 
 export type FlowLayer = components["schemas"]["FlowLayer"];
@@ -80,7 +81,7 @@ function windowOf(frames: FlowFrame[], field: string, span: Span): number[] {
  * -- now until the pilot scrubs or plays -- and play, which steps through
  * the forecast hours once and stops on the last (WCAG 2.2.2), not by
  * itself and never under Reduce Motion, and pauses while the app is in
- * the background. `drive` is passed by the one component that runs the
+ * the background, going on as it is back. `drive` is passed by the one component that runs the
  * clock (the bar).
  */
 export function useWeatherFlow({ drive = false }: { drive?: boolean } = {}) {
@@ -113,15 +114,8 @@ export function useWeatherFlow({ drive = false }: { drive?: boolean } = {}) {
     return () => clearTimeout(timer);
   }, [drive, playing, shown, last, set]);
 
-  // Paused in the background, as the loop is: nothing plays unseen.
-  useEffect(() => {
-    if (!drive) return;
-    const hidden = () => {
-      if (document.hidden) usePlayer.getState().set({ playing: false });
-    };
-    document.addEventListener("visibilitychange", hidden);
-    return () => document.removeEventListener("visibilitychange", hidden);
-  }, [drive]);
+  // Paused in the background, and on again on return, as the loop is.
+  usePauseWhileHidden(drive, usePlayer);
 
   return {
     field,

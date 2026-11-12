@@ -119,7 +119,7 @@ function TimeField({
       hourCycle={24}
       {...props}
       value={timeOf(value)}
-      onChange={(time) => onChange?.(time ? `${String(time.hour).padStart(2, "0")}:${String(time.minute).padStart(2, "0")}` : "")}
+      onChange={(time) => onChange?.(time ? time.toString().slice(0, 5) : "")}
       data-slot="time-field"
       className="min-w-0"
     >

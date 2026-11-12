@@ -11,20 +11,12 @@ import type { ApproachLesson, FlightSummary, Training } from "../../lib/api/type
 import { dueWords, lessonPicked, lessonStatus, notableFixes, notesToSend } from "../../lib/assignedLessons";
 import { localDay } from "../../lib/format";
 import { said } from "../../lib/endorsements";
-import { procedureQuery } from "../../lib/queryClient";
+import { procedureQuery, proceduresQuery } from "../../lib/queryClient";
 import { FINDING_TONE } from "../../lib/findings";
 import { TEXT } from "../../lib/text";
 
 // Its own chunk, as on a flight's page: drawn only where a track came.
 const ApproachDebriefs = lazy(() => import("../../components/ApproachDebrief"));
-
-/** A cycle's procedures hold for its 28 days, under the key the map's and
- *  the debrief's lists share. */
-const listQuery = (ident: string) => ({
-  queryKey: ["procedures", ident],
-  queryFn: () => api.procedures(ident),
-  staleTime: 6 * 60 * 60_000,
-});
 
 const route = (f: Pick<FlightSummary, "departureIdent" | "stops" | "destinationIdent">) =>
   [f.departureIdent, ...f.stops, f.destinationIdent].join(" ");
@@ -95,7 +87,7 @@ function AssignForm({ studentId, onDone, onCancel }: { studentId: number; onDone
   const [due, setDue] = useState("");
   const ident = field.trim().toUpperCase();
   const typed = /^[A-Z0-9]{3,4}$/.test(ident);
-  const list = useQuery({ ...listQuery(ident), enabled: typed });
+  const list = useQuery({ ...proceduresQuery(ident), enabled: typed });
   const approaches = (list.data?.procedures ?? []).filter((p) => p.kind === "approach");
   const procedure = approaches.find((p) => p.id === picked) ?? null;
   const at = list.data && procedure ? { ident: list.data.airport, id: procedure.id, transition: null } : null;

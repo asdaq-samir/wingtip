@@ -6,11 +6,10 @@
  * of patterns (the speed audit, 2026-11-10). English, as every other word
  * the app writes is, in this device's time zone.
  */
-import { clockTime } from "./time";
+import { clockTime, twoFigures as two } from "./time";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const two = (n: number) => String(n).padStart(2, "0");
 
 /** The day of the week, short: "Mon". */
 export const weekdayShort = (at: Date) => WEEKDAYS[at.getDay()]!;

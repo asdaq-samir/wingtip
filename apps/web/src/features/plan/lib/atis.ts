@@ -10,7 +10,7 @@
 import { heardThrough, useAtcRadio } from "../../../lib/atcRadio";
 import { holdForListening } from "../../../lib/audioInput";
 import { callEngine, type EngineAnswer } from "../../../lib/engine/engine";
-import { listen } from "../../../lib/listen";
+import { listen, saidSoFar } from "../../../lib/listen";
 import { altFt, reportedDirection } from "../../../lib/format";
 
 /** A broadcast's figures as the engine reads them (read_atis): a figure
@@ -185,11 +185,7 @@ export function hearAtis(onHeard: (text: string) => void): { stop: () => void; d
     stop();
   };
   useAtcRadio.setState({ atisStop: giveWay });
-  const typed = () =>
-    [...said.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .map((e) => e[1])
-      .join(" ");
+  let typed = "";
   const done = new Promise<AtisHeard>((resolve) => {
     let quiet = window.setTimeout(stop, NOTHING_MS);
     const longest = window.setTimeout(stop, LONGEST_MS);
@@ -203,15 +199,9 @@ export function hearAtis(onHeard: (text: string) => void): { stop: () => void; d
         if (!text) return;
         // A finished phrase given again under a new number, or the last
         // words with more after them, are the last result over again
-        // (lib/atcListening's listenOnce, the same recognizer).
-        const last = [...said.keys()].filter((k) => k < id).sort((a, b) => b - a)[0];
-        if (last !== undefined) {
-          const before = said.get(last)!.toLowerCase(),
-            now = text.toLowerCase();
-          if (now === before || now.startsWith(before) || before.startsWith(now)) said.delete(last);
-        }
-        said.set(id, text);
-        onHeard(typed());
+        // (lib/listen's saidSoFar, the same recognizer's).
+        typed = saidSoFar(said, id, text);
+        onHeard(typed);
         window.clearTimeout(quiet);
         quiet = window.setTimeout(stop, PAUSE_MS);
       },
@@ -223,7 +213,7 @@ export function hearAtis(onHeard: (text: string) => void): { stop: () => void; d
         const through = heardThrough(useAtcRadio.getState().input);
         input.release();
         resolve({
-          text: typed(),
+          text: typed,
           error,
           ...(interrupted && !error ? { notice: "Stopped for the microphone; tap to listen again." } : {}),
           ...(through ? { through } : {}),

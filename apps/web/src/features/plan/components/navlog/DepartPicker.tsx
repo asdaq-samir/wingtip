@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState } from "react";
-import { clockTime, localDay, monthSlashDay, weekdayShort } from "../../../../lib/format";
+import { clockTime, localDay, monthSlashDay, twoFigures, weekdayShort } from "../../../../lib/format";
 import { CalendarIcon, ChevronDown } from "lucide-react";
 import { Button } from "../../../../components/ui/button";
 
@@ -43,7 +43,7 @@ function instantAt(day: Date, time: string): string {
 /** The next whole hour, local: the time a freshly picked day starts
  *  with, so picking a day alone already means something. */
 function nextHour(): string {
-  return `${String((new Date().getHours() + 1) % 24).padStart(2, "0")}:00`;
+  return `${twoFigures((new Date().getHours() + 1) % 24)}:00`;
 }
 
 /** The departure in a few characters, as iOS's compact picker reads:
