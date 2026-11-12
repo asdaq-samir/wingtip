@@ -1,7 +1,9 @@
-import { useState, type ReactNode } from "react";
+import { Fragment, useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { PillSection } from "./Favorites";
 import { ListGroup } from "./GroupedList";
+import { ItemSeparator } from "./ui/item";
+import { CollapsibleContent } from "./ui/collapsible";
 import { TEXT } from "../lib/text";
 
 /** How many rows a section shows before its title opens the rest. */
@@ -37,6 +39,25 @@ export function FirstFew({
   const [all, setAll] = useState(open);
   const long = rows.length > FIRST_ROWS;
   const more = !all && long;
+  // The rows past the first few in the stock Collapsible's content, held
+  // with the last of them so the group draws no line before it closed;
+  // each a line of its own inside, as the group draws between its rows.
+  const shown = long
+    ? [
+        ...rows.slice(0, FIRST_ROWS - 1),
+        <Fragment key="rest">
+          {rows[FIRST_ROWS - 1]}
+          <CollapsibleContent className="flex flex-col">
+            {rows.slice(FIRST_ROWS).map((row, i) => (
+              <Fragment key={i}>
+                <ItemSeparator className="my-0" />
+                {row}
+              </Fragment>
+            ))}
+          </CollapsibleContent>
+        </Fragment>,
+      ]
+    : rows;
   return (
     <PillSection
       title={title}
@@ -46,7 +67,7 @@ export function FirstFew({
       right={more ? <span className={cn("text-muted-foreground", TEXT.note)}>{`${FIRST_ROWS} of ${rows.length}`}</span> : undefined}
     >
       <ListGroup>
-        {more ? rows.slice(0, FIRST_ROWS) : rows}
+        {shown}
         {after}
       </ListGroup>
     </PillSection>

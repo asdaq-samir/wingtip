@@ -1,8 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "cn";
 import { Toggle } from "@base-ui/react/toggle";
-import { Button } from "./ui/button";
-import { GLASS_BUTTON } from "../lib/mapChrome";
+import { Button, GLASS_BUTTON } from "./ui/button";
 import { TEXT } from "../lib/text";
 import { Spinner } from "./ui/spinner";
 import { Kbd } from "./ui/kbd";

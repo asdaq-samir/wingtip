@@ -1,4 +1,4 @@
-import { ChevronRight, CircleMinus, House, ListFilter, Plus } from "lucide-react";
+import { CircleMinus, House, ListFilter, Plus } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { cn } from "cn";
@@ -8,13 +8,14 @@ import type { AirspaceClass, RecentAirport } from "../lib/preferences";
 import { useAirspace } from "../lib/useAirspace";
 import { useRowRemove } from "./rowRemove";
 import { useAway } from "../lib/useAway";
-import { SECTION_TITLE, TEXT } from "../lib/text";
+import { TEXT } from "../lib/text";
 import { Button } from "./ui/button";
 import PullDown from "./PullDown";
-import SectionTitle from "./SectionTitle";
 import IconButton from "./IconButton";
 import { airportQuery } from "../lib/queryClient";
+import { PillSection } from "./PillSection";
 export { ListPageHead } from "./ListPageHead";
+export { PillSection };
 
 /** A row's small round mark, the tile's at a list row's size. */
 export function Mark({ icon, className, style }: { icon: ReactNode; className?: string; style?: CSSProperties }) {
@@ -106,68 +107,6 @@ export function SmallTile({
       {detail && <span className={cn("-mt-1.5 w-full truncate text-center text-foreground/65 tabular-nums", TEXT.note)}>{detail}</span>}
       {label && <span className="sr-only">, {label}</span>}
     </button>
-  );
-}
-
-/**
- * One of a pill's labelled rows, the redesign's pattern at the owner's ask
- * ("make the minimal layout this big, and then design all the tabs"): a
- * title over its strip of tiles -- Saved, Favorites, Recents, Nearest --
- * and anything that acts on the row at its right (`right`: what the strip
- * shows, Aircraft's Map switch).
- */
-export function PillSection({
-  title,
-  onMore,
-  expanded,
-  beside,
-  right,
-  children,
-  testId,
-}: {
-  title: string;
-  /** The list in full, the title the way to it with its tinted chevron, every section's alike (the owner: "make saved,
-   *  favorites and recents into links ..."); `expanded`, opened in place (FirstFew), its chevron down, a tap closing it. */
-  onMore?: () => void;
-  expanded?: boolean;
-  /** Beside the title: what the strip is of, to change there (Aircraft's
-   *  airport asked of). */
-  beside?: ReactNode;
-  right?: ReactNode;
-  children: ReactNode;
-  testId?: string;
-}) {
-  // Every section's title one style (lib/text SECTION_TITLE: 20 points,
-  // medium, decision 0021), its words in the text's colour and the
-  // chevron in the tint where it opens the list in full (owner decision
-  // 2026-11-10 (decisions page): the search's page had bold 22-point
-  // titles in the tint beside these); the plain title SectionTitle itself.
-  return (
-    // Eight under the title: its 44-point hit area its own (the iOS audit's P1).
-    <section className="flex min-w-0 flex-col gap-2" data-testid={testId}>
-      <div className="flex min-h-7 items-center gap-2">
-        {onMore ? (
-          <button
-            type="button"
-            onClick={onMore}
-            aria-expanded={expanded}
-            data-testid={testId && `${testId}-more`}
-            className={cn(
-              "relative flex items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-ring after:absolute after:-inset-2",
-              SECTION_TITLE,
-            )}
-          >
-            {title}
-            <ChevronRight className={cn("size-5 text-tint transition-transform", expanded && "rotate-90")} aria-hidden="true" />
-          </button>
-        ) : (
-          <SectionTitle>{title}</SectionTitle>
-        )}
-        {beside}
-        {right && <div className="ml-auto flex items-center gap-2">{right}</div>}
-      </div>
-      {children}
-    </section>
   );
 }
 

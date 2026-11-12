@@ -4,7 +4,7 @@ import { ArrowLeftRight, ChevronDown } from "lucide-react";
 import { cn } from "cn";
 import RoundButton from "../../../components/RoundButton";
 import CloseButton from "../../../components/CloseButton";
-import { GLASS_BUTTON } from "../../../lib/mapChrome";
+import { GLASS_BUTTON } from "../../../components/ui/button";
 import { ListGroup, ListRow } from "../../../components/GroupedList";
 import { ListPicks, type ListPick } from "../../../components/ListPicks";
 import { ResponsivePopover, ResponsivePopoverContent, ResponsivePopoverTrigger } from "../../../components/ResponsivePopover";
