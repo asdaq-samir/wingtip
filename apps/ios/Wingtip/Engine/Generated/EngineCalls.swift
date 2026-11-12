@@ -49,6 +49,11 @@ extension Engine {
         try Self.rule("airspace_entry_rules", EngineContract.AirspaceEntryRulesInput(class: `class`))
     }
 
+    /// How high a 3D map stands an airspace volume: its floor and top in feet MSL, from its limits as the FAA's data gives them (each its figure in feet, a flight level times 100, its CODE SFC, AGL, MSL, STD or UNLTD and its DESC TI, TNI or ANI), read as special_use_tab reads them: SFC above 0 is that height above the ground, a ceiling "to but not including" a foot under its figure (FL180 TNI 17,999 ft MSL), a floor "above but not including" a foot over it. A floor above the ground stands on the lowest of `ground`, a ceiling on its highest; the surface is 0 ft MSL with `surface` true; a flight level is drawn as if MSL; no ceiling, or one above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)), a drawing bound. Null where nothing is left to draw, or where a limit above the ground has no `ground`.
+    static func airspaceVolumeSpan(floor: EngineContract.SpecialUseTabLimit? = nil, ceiling: EngineContract.SpecialUseTabLimit? = nil, ground: EngineContract.AirspaceVolumeSpanInputGround? = nil) throws -> EngineContract.AirspaceVolumeSpanAnswer? {
+        try Self.rule("airspace_volume_span", EngineContract.AirspaceVolumeSpanInput(floor: floor, ceiling: ceiling, ground: ground))
+    }
+
     /// An airway segment's minimum IFR altitude (14 CFR 91.177(a)(1)): its MEA, else its GNSS MEA; null where it publishes neither.
     static func airwayFloorFt(meaFt: Double? = nil, gnssMeaFt: Double? = nil) throws -> Double? {
         try Self.rule("airway_floor_ft", EngineContract.AirwayFloorFtInput(meaFt: meaFt, gnssMeaFt: gnssMeaFt))
@@ -604,9 +609,19 @@ extension Engine {
         try Self.rule("floor_corridor_nm", EngineContract.FloorCorridorNmInput())
     }
 
+    /// The four pixels of a Model Weather picture (the weather service's flow_grid: a latitude-longitude grid, north row first, `bounds` [west, south, east, north] its pixels' outer edges) round a point, by index row by row from the north, north-west, north-east, south-west and south-east of it, and how far east (`fx`) and south (`fy`) of the first the point is, each 0 to 1, for flow_sample to read. Within half a pixel of the edge, the edge's pixels. Null off the picture.
+    static func flowCell(bounds: [Double], width: Int, height: Int, lat: Double, lon: Double) throws -> EngineContract.FlowCellAnswer? {
+        try Self.rule("flow_cell", EngineContract.FlowCellInput(bounds: bounds, width: width, height: height, lat: lat, lon: lon))
+    }
+
     /// The map's model weather levels by field, as the Aviation Weather Center names them ("060" is 6,000 ft MSL, "180" FL180; "sfc" the surface, "max" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).
     static func flowLevels() throws -> EngineContract.FlowLevelsAnswer {
         try Self.rule("flow_levels", EngineContract.FlowLevelsInput())
+    }
+
+    /// A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes): read between them linearly, as weatherlayers-gl's LINEAR reading does, each byte a 255th of `unscale` [least, most] a step. For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true, null for a calm) come from those parts, the vector average, so the same point reads the same wind on every app. Null where a pixel the point is read from has no value (alpha 0).
+    static func flowSample(pixels: [[Double]], fx: Double, fy: Double, unscale: [Double], vector: Bool) throws -> EngineContract.FlowSampleAnswer? {
+        try Self.rule("flow_sample", EngineContract.FlowSampleInput(pixels: pixels, fx: fx, fy: fy, unscale: unscale, vector: vector))
     }
 
     /// The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).

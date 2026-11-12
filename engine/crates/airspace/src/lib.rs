@@ -10,6 +10,7 @@
 //! - ahead: the alerts ahead of the airplane from the phone's packs;
 //! - spoken: the places a clearance names, found in the phone's packs;
 //! - view_marks, sua_tab: the special-use areas, their tabs and the fixes in view;
+//! - volume_span: how high a 3D map stands a volume, from its limits;
 //! - drills: the oral's flash cards (91.125, 91.155) and 91.155 by name.
 
 pub mod ahead;
@@ -22,6 +23,7 @@ pub mod spoken;
 pub mod sua_tab;
 pub mod view;
 pub mod view_marks;
+pub mod volume_span;
 
 // The modules below this crate by the names they had when the engine was
 // one crate, so the code reads them as crate::json and so on.

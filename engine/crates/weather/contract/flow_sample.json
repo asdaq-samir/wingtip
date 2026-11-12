@@ -1,0 +1,78 @@
+{
+  "x-call": "wingtip_weather::flow_sample::call",
+  "description": "A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes): read between them linearly, as weatherlayers-gl's LINEAR reading does, each byte a 255th of `unscale` [least, most] a step. For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true, null for a calm) come from those parts, the vector average, so the same point reads the same wind on every app. Null where a pixel the point is read from has no value (alpha 0).",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "FlowSampleInput",
+      "type": "object",
+      "properties": {
+        "pixels": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "description": "Four pixels, as flow_cell orders them, each [red, green, alpha] bytes."
+        },
+        "fx": {
+          "type": "number"
+        },
+        "fy": {
+          "type": "number"
+        },
+        "unscale": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "description": "[least, most]."
+        },
+        "vector": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pixels",
+        "fx",
+        "fy",
+        "unscale",
+        "vector"
+      ]
+    },
+    "answer": {
+      "title": "FlowSampleAnswer",
+      "anyOf": [
+        {
+          "type": "object",
+          "properties": {
+            "value": {
+              "type": "number"
+            },
+            "from_deg": {
+              "type": [
+                "number",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "value",
+            "from_deg"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

@@ -3,6 +3,20 @@
 export type AcsCodesAnswer = string[];
 export type AirborneNowAnswer = boolean | null;
 export type AirspaceColumnAnswer = AirspaceBand[];
+export type AirspaceVolumeSpanAnswer = {
+  /**
+   * Feet MSL.
+   */
+  floor_ft: number;
+  /**
+   * Feet MSL, at most 18,000.
+   */
+  ceiling_ft: number;
+  /**
+   * Whether the floor is the surface, drawn from the sea up.
+   */
+  surface: boolean;
+} | null;
 export type AirwayFloorFtAnswer = number | null;
 /**
  * An area's outline: polygons, each its outer ring and its holes, each ring [[lon, lat], ...].
@@ -297,6 +311,18 @@ export type FixRadialDistanceAnswer = string | null;
 export type FlightCategoryAnswer = "VFR" | "MVFR" | "IFR" | "LIFR" | null;
 export type FloorCautionAnswer = string | null;
 export type FloorCorridorNmAnswer = number;
+export type FlowCellAnswer = {
+  /**
+   * Four indices: north-west, north-east, south-west, south-east.
+   */
+  pixels: number[];
+  fx: number;
+  fy: number;
+} | null;
+export type FlowSampleAnswer = {
+  value: number;
+  from_deg: number | null;
+} | null;
 export type ForecastHourAnswer = "06" | "12" | "24";
 export type FrdNearAnswer = {
   base: string;
@@ -1050,6 +1076,13 @@ export interface EngineContract {
   airspace_entry_rules: {
     input: AirspaceEntryRulesInput;
     answer: AirspaceEntryRulesAnswer;
+  };
+  /**
+   * How high a 3D map stands an airspace volume: its floor and top in feet MSL, from its limits as the FAA's data gives them (each its figure in feet, a flight level times 100, its CODE SFC, AGL, MSL, STD or UNLTD and its DESC TI, TNI or ANI), read as special_use_tab reads them: SFC above 0 is that height above the ground, a ceiling "to but not including" a foot under its figure (FL180 TNI 17,999 ft MSL), a floor "above but not including" a foot over it. A floor above the ground stands on the lowest of `ground`, a ceiling on its highest; the surface is 0 ft MSL with `surface` true; a flight level is drawn as if MSL; no ceiling, or one above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)), a drawing bound. Null where nothing is left to draw, or where a limit above the ground has no `ground`.
+   */
+  airspace_volume_span: {
+    input: AirspaceVolumeSpanInput;
+    answer: AirspaceVolumeSpanAnswer;
   };
   /**
    * An airway segment's minimum IFR altitude (14 CFR 91.177(a)(1)): its MEA, else its GNSS MEA; null where it publishes neither.
@@ -1829,11 +1862,25 @@ export interface EngineContract {
     answer: FloorCorridorNmAnswer;
   };
   /**
+   * The four pixels of a Model Weather picture (the weather service's flow_grid: a latitude-longitude grid, north row first, `bounds` [west, south, east, north] its pixels' outer edges) round a point, by index row by row from the north, north-west, north-east, south-west and south-east of it, and how far east (`fx`) and south (`fy`) of the first the point is, each 0 to 1, for flow_sample to read. Within half a pixel of the edge, the edge's pixels. Null off the picture.
+   */
+  flow_cell: {
+    input: FlowCellInput;
+    answer: FlowCellAnswer;
+  };
+  /**
    * The map's model weather levels by field, as the Aviation Weather Center names them ("060" is 6,000 ft MSL, "180" FL180; "sfc" the surface, "max" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).
    */
   flow_levels: {
     input: FlowLevelsInput;
     answer: FlowLevelsAnswer;
+  };
+  /**
+   * A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes): read between them linearly, as weatherlayers-gl's LINEAR reading does, each byte a 255th of `unscale` [least, most] a step. For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true, null for a calm) come from those parts, the vector average, so the same point reads the same wind on every app. Null where a pixel the point is read from has no value (alpha 0).
+   */
+  flow_sample: {
+    input: FlowSampleInput;
+    answer: FlowSampleAnswer;
   };
   /**
    * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).
@@ -3698,6 +3745,28 @@ export interface AirspaceEntryRulesAnswer {
    * The frequency types to call: TWR for a Class D, APP then TWR otherwise.
    */
   call: ("APP" | "TWR")[];
+}
+export interface AirspaceVolumeSpanInput {
+  floor?: SpecialUseTabLimit;
+  ceiling?: SpecialUseTabLimit;
+  /**
+   * The ground under the volume, ft MSL: its lowest and its highest. Null where the map has none in yet.
+   */
+  ground?: {
+    low_ft: number;
+    high_ft: number;
+  } | null;
+}
+/**
+ * One limit of a special-use area as the FAA's data gives it: its figure in feet (a flight level times 100), its CODE (SFC, MSL, STD, UNLTD) and its DESC (TI, TNI to but not including, ANI above but not including).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "SpecialUseTabLimit".
+ */
+export interface SpecialUseTabLimit {
+  ft?: number | null;
+  code?: string | null;
+  desc?: string | null;
 }
 export interface AirwayFloorFtInput {
   mea_ft?: number | null;
@@ -6415,6 +6484,16 @@ export interface FloorCautionInput {
   altitude_ft: number;
 }
 export interface FloorCorridorNmInput {}
+export interface FlowCellInput {
+  /**
+   * [west, south, east, north], degrees.
+   */
+  bounds: number[];
+  width: number;
+  height: number;
+  lat: number;
+  lon: number;
+}
 export interface FlowLevelsInput {}
 export interface FlowLevelsAnswer {
   wind: {
@@ -6434,6 +6513,19 @@ export interface FlowLevelsAnswer {
   }[];
   temperature_hpa: number[];
   flight_levels_from_ft: number;
+}
+export interface FlowSampleInput {
+  /**
+   * Four pixels, as flow_cell orders them, each [red, green, alpha] bytes.
+   */
+  pixels: number[][];
+  fx: number;
+  fy: number;
+  /**
+   * [least, most].
+   */
+  unscale: number[];
+  vector: boolean;
 }
 export interface ForecastHourInput {
   hours_ahead?: number | null;
@@ -11236,6 +11328,10 @@ export interface SimRow {
    * Estimated flap handle, 0 up to 1 full.
    */
   flaps: number;
+  /**
+   * Estimated thrust levers, 0 idle to 1 full: forward for the takeoff roll and the takeoff, 0.9 climbing, 0.6 level, 0.3 descending, 0.1 on the ground otherwise, the landing's roll-out included. For the picture and the sound only.
+   */
+  throttle: number;
   lights: SimLights;
 }
 /**
@@ -11271,17 +11367,6 @@ export interface SpecialUseTabInput {
   floor?: SpecialUseTabLimit;
   ceiling?: SpecialUseTabLimit;
   excluded?: boolean | null;
-}
-/**
- * One limit of a special-use area as the FAA's data gives it: its figure in feet (a flight level times 100), its CODE (SFC, MSL, STD, UNLTD) and its DESC (TI, TNI to but not including, ANI above but not including).
- *
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "SpecialUseTabLimit".
- */
-export interface SpecialUseTabLimit {
-  ft?: number | null;
-  code?: string | null;
-  desc?: string | null;
 }
 export interface SquawkMeaningInput {
   squawk?: string | null;

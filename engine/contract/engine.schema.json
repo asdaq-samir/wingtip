@@ -615,6 +615,84 @@
       ],
       "additionalProperties": false
     },
+    "airspace_volume_span": {
+      "description": "How high a 3D map stands an airspace volume: its floor and top in feet MSL, from its limits as the FAA's data gives them (each its figure in feet, a flight level times 100, its CODE SFC, AGL, MSL, STD or UNLTD and its DESC TI, TNI or ANI), read as special_use_tab reads them: SFC above 0 is that height above the ground, a ceiling \"to but not including\" a foot under its figure (FL180 TNI 17,999 ft MSL), a floor \"above but not including\" a foot over it. A floor above the ground stands on the lowest of `ground`, a ceiling on its highest; the surface is 0 ft MSL with `surface` true; a flight level is drawn as if MSL; no ceiling, or one above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)), a drawing bound. Null where nothing is left to draw, or where a limit above the ground has no `ground`.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "AirspaceVolumeSpanInput",
+          "type": "object",
+          "properties": {
+            "floor": {
+              "$ref": "#/definitions/SpecialUseTabLimit"
+            },
+            "ceiling": {
+              "$ref": "#/definitions/SpecialUseTabLimit"
+            },
+            "ground": {
+              "description": "The ground under the volume, ft MSL: its lowest and its highest. Null where the map has none in yet.",
+              "anyOf": [
+                {
+                  "type": "object",
+                  "properties": {
+                    "low_ft": {
+                      "type": "number"
+                    },
+                    "high_ft": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "low_ft",
+                    "high_ft"
+                  ],
+                  "additionalProperties": false
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "answer": {
+          "title": "AirspaceVolumeSpanAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "floor_ft": {
+                  "type": "number",
+                  "description": "Feet MSL."
+                },
+                "ceiling_ft": {
+                  "type": "number",
+                  "description": "Feet MSL, at most 18,000."
+                },
+                "surface": {
+                  "type": "boolean",
+                  "description": "Whether the floor is the surface, drawn from the sea up."
+                }
+              },
+              "required": [
+                "floor_ft",
+                "ceiling_ft",
+                "surface"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "airway_floor_ft": {
       "description": "An airway segment's minimum IFR altitude (14 CFR 91.177(a)(1)): its MEA, else its GNSS MEA; null where it publishes neither.",
       "type": "object",
@@ -8926,6 +9004,81 @@
       ],
       "additionalProperties": false
     },
+    "flow_cell": {
+      "description": "The four pixels of a Model Weather picture (the weather service's flow_grid: a latitude-longitude grid, north row first, `bounds` [west, south, east, north] its pixels' outer edges) round a point, by index row by row from the north, north-west, north-east, south-west and south-east of it, and how far east (`fx`) and south (`fy`) of the first the point is, each 0 to 1, for flow_sample to read. Within half a pixel of the edge, the edge's pixels. Null off the picture.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FlowCellInput",
+          "type": "object",
+          "properties": {
+            "bounds": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "description": "[west, south, east, north], degrees."
+            },
+            "width": {
+              "type": "integer"
+            },
+            "height": {
+              "type": "integer"
+            },
+            "lat": {
+              "type": "number"
+            },
+            "lon": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "bounds",
+            "width",
+            "height",
+            "lat",
+            "lon"
+          ]
+        },
+        "answer": {
+          "title": "FlowCellAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "pixels": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  },
+                  "description": "Four indices: north-west, north-east, south-west, south-east."
+                },
+                "fx": {
+                  "type": "number"
+                },
+                "fy": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "pixels",
+                "fx",
+                "fy"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "flow_levels": {
       "description": "The map's model weather levels by field, as the Aviation Weather Center names them (\"060\" is 6,000 ft MSL, \"180\" FL180; \"sfc\" the surface, \"max\" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).",
       "type": "object",
@@ -9044,6 +9197,83 @@
             "flight_levels_from_ft"
           ],
           "additionalProperties": false
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "flow_sample": {
+      "description": "A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes): read between them linearly, as weatherlayers-gl's LINEAR reading does, each byte a 255th of `unscale` [least, most] a step. For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true, null for a calm) come from those parts, the vector average, so the same point reads the same wind on every app. Null where a pixel the point is read from has no value (alpha 0).",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FlowSampleInput",
+          "type": "object",
+          "properties": {
+            "pixels": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "description": "Four pixels, as flow_cell orders them, each [red, green, alpha] bytes."
+            },
+            "fx": {
+              "type": "number"
+            },
+            "fy": {
+              "type": "number"
+            },
+            "unscale": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "description": "[least, most]."
+            },
+            "vector": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "pixels",
+            "fx",
+            "fy",
+            "unscale",
+            "vector"
+          ]
+        },
+        "answer": {
+          "title": "FlowSampleAnswer",
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "value": {
+                  "type": "number"
+                },
+                "from_deg": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "value",
+                "from_deg"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -24803,6 +25033,10 @@
                           "type": "number",
                           "description": "Estimated flap handle, 0 up to 1 full."
                         },
+                        "throttle": {
+                          "type": "number",
+                          "description": "Estimated thrust levers, 0 idle to 1 full: forward for the takeoff roll and the takeoff, 0.9 climbing, 0.6 level, 0.3 descending, 0.1 on the ground otherwise, the landing's roll-out included. For the picture and the sound only."
+                        },
                         "lights": {
                           "title": "SimLights",
                           "type": "object",
@@ -24853,6 +25087,7 @@
                         "ground",
                         "gear_down",
                         "flaps",
+                        "throttle",
                         "lights"
                       ],
                       "additionalProperties": false
@@ -28103,6 +28338,7 @@
     "airplane_needs",
     "airspace_column",
     "airspace_entry_rules",
+    "airspace_volume_span",
     "airway_floor_ft",
     "alert_fires",
     "alerts_ahead",
@@ -28214,7 +28450,9 @@
     "flight_category",
     "floor_caution",
     "floor_corridor_nm",
+    "flow_cell",
     "flow_levels",
+    "flow_sample",
     "forecast_hour",
     "forecast_run",
     "frd_near",
