@@ -49,8 +49,11 @@ class FlowGridTest {
         val p = pixel(east, calm)
         val grid = FlowGrid.decode(intArrayOf(p, p, p, p), 2, 2, bounds, listOf(-100.0, 100.0), vector = true)
         val read = grid.valueAt(1.0, 1.0)!!
-        // Air carried east is a west wind: from 270 degrees.
-        assertEquals(270.0, read.fromDeg!!, 1.0)
-        assertEquals(20.0, read.value, 1.0)
+        // Air carried east is a west wind, from 270 degrees, turned a little
+        // by the 0.39 kt north part that the calm green stands for (the
+        // eight bits have no exact zero): 270 - atan(0.39 / 20), 268.9.
+        val north = calm / 255.0 * 200 - 100
+        assertEquals(270.0 - Math.toDegrees(Math.atan(north / 20.0)), read.fromDeg!!, 0.1)
+        assertEquals(20.0, read.value, 0.1)
     }
 }
