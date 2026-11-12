@@ -57,7 +57,7 @@ export function NotamSheet({ notams, ident, onClose }: { notams: FieldNotam[]; i
   const [one] = notams;
   if (notams.length === 1 && one)
     return (
-      <SheetCard title={headingOf(one, ident)} description={numberOf(one, ident)} onClose={onClose} testId="place-notam-card">
+      <SheetCard title={headingOf(one, ident)} description={`NOTAM ${numberOf(one, ident)}`} onClose={onClose} testId="place-notam-card">
         <NotamFull n={one} ident={ident} />
       </SheetCard>
     );

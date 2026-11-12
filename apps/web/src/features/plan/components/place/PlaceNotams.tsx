@@ -131,10 +131,10 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
               // line's end; its when and where a line each under it (NotamLines).
               wide
               title={
+                // Its number only on its own card (the owner, 2026-11-11: "what's
+                // 11/439", then "Full card is fine").
                 <span className={cn(!read.what && "line-clamp-3")}>
                   <NotamWhat what={whatOf(n, ident)} />
-                  {/* Its number, as a briefer reads it, muted after it. */}
-                  <span className="text-muted-foreground" data-testid="place-notam-number">{` ${numberOf(n, ident)}`}</span>
                 </span>
               }
               description={<NotamLines n={n} read={read} clamp />}
@@ -149,7 +149,7 @@ export function NotamRows({ notams, ident, state }: { notams: FieldNotam[]; iden
       {open && (
         <SheetCard
           title={headingOf(open, ident)}
-          description={numberOf(open, ident)}
+          description={`NOTAM ${numberOf(open, ident)}`}
           onClose={() => setOpen(null)}
           testId="place-notam-card"
         >
