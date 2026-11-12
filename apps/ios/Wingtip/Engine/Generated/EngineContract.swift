@@ -2093,6 +2093,15 @@ enum EngineContract {
         }
     }
 
+    struct CompassPointInput: Codable, Equatable, Sendable {
+        /// Degrees true, any turn.
+        var bearingDeg: Double
+
+        enum CodingKeys: String, CodingKey {
+            case bearingDeg = "bearing_deg"
+        }
+    }
+
     struct CompassWordInput: Codable, Equatable, Sendable {
         var bearingDeg: Double
 
@@ -10337,6 +10346,20 @@ enum EngineContract {
             case ceilingFt = "ceiling_ft"
             case ceilingRef = "ceiling_ref"
             case midSentence = "mid_sentence"
+        }
+    }
+
+    struct SunDownInput: Codable, Equatable, Sendable {
+        var lat: Double
+        /// East positive.
+        var lon: Double
+        /// UNIX seconds.
+        var atS: Double
+
+        enum CodingKeys: String, CodingKey {
+            case lat
+            case lon
+            case atS = "at_s"
         }
     }
 

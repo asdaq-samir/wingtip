@@ -90,6 +90,7 @@ test("model weather is off by default, turned on from the Map menu, and its lege
   await expect(page.getByTestId("weather-flow-source")).toContainText("Model forecast, not an observation");
   await expect(page.getByTestId("weather-flow-time")).toContainText(/\d{4}Z/);
   await expect(page.getByTestId("weather-flow-bar")).toContainText("Now");
+  await expect(page.getByTestId("weather-flow-bar")).toContainText("Wind Speed");
   await expect(page.locator("[data-testid=gl-map] canvas")).toHaveCount(1);
   await expect.poll(() => asked.some((p) => p.endsWith("/wind.png"))).toBe(true);
 
@@ -110,10 +111,29 @@ test("model weather is off by default, turned on from the Map menu, and its lege
   await page.getByTestId("weather-flow-legend-field").click();
   await page.getByTestId("weather-flow-legend-field-precip").click();
 
-  // A forecast hour scrubbed to says so.
+  // A forecast hour scrubbed to says so; its title is "Forecast", and the
+  // 1h span runs over the hour past alone, ending at now.
+  const bar = page.getByTestId("weather-flow-bar");
+  await expect(bar).toContainText("Forecast");
   await page.getByRole("slider", { name: "Precipitation hour" }).focus();
   await page.keyboard.press("End");
-  await expect(page.getByTestId("weather-flow-bar")).toContainText("Forecast +6 h");
+  await expect(bar).toContainText("Forecast +6 h");
+  await page.getByTestId("weather-flow-span").getByRole("button", { name: "1h" }).click();
+  await expect(page.getByRole("slider", { name: "Precipitation hour" })).toHaveAttribute("aria-valuemax", "1");
+  await expect(page.getByTestId("weather-flow-time")).not.toContainText("Forecast");
+  await page.getByTestId("weather-flow-span").getByRole("button", { name: "12h" }).click();
+
+  // A tap on an hour's label goes to it.
+  await page.getByTestId("weather-flow-now").click();
+  await expect(page.getByTestId("weather-flow-time")).not.toContainText("Forecast");
+
+  // The temperature carries no bubble's unit: its pill is the figure alone.
+  await page.getByTestId("weather-flow-legend-field").click();
+  await page.getByTestId("weather-flow-legend-field-temp").click();
+  await expect(legend).toContainText("-15");
+  await expect(page.getByTestId("weather-flow-bubble").first()).not.toContainText("°C");
+  await page.getByTestId("weather-flow-legend-field").click();
+  await page.getByTestId("weather-flow-legend-field-precip").click();
 
   // Close turns it off.
   await page.getByTestId("weather-flow-close").click();

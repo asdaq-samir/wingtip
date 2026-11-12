@@ -392,7 +392,7 @@ pub fn rule(name: &str, v: &Value) -> Result<String, String> {
         "notams_fns" | "tfr_detail_read" | "ceiling_ft" | "vfr_basic_minimums" | "vfr_not_recommended_reasons" | "below_vfr_minimums" => {
             weather_rule(&ask)
         }
-        "night_on_the_way" | "night_at_either_end" | "passenger_night" | "passenger_night_on_the_way" => sun_rule(&ask),
+        "night_on_the_way" | "night_at_either_end" | "passenger_night" | "passenger_night_on_the_way" | "sun_down" => sun_rule(&ask),
         "checkpoints_select" => checkpoints_rule(&ask),
         "reserve_min"
         | "isa_temp_c"
@@ -714,25 +714,17 @@ fn sun_rule(ask: &Ask) -> Result<String, String> {
             _ => Err(format!("{}: \"{key}\" is not [lat, lon]", ask.name)),
         }
     };
-    let mut out = String::new();
-    match ask.name {
-        "night_on_the_way" => {
-            let night = sun::night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?);
-            out.push_str(if night { "true" } else { "false" });
-        }
-        "passenger_night" => {
-            out.push_str(if sun::passenger_night(ask.num("lat")?, ask.num("lon")?, ask.num("at_s")?) { "true" } else { "false" })
-        }
+    let night = match ask.name {
+        "night_on_the_way" => sun::night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?),
+        "passenger_night" => sun::passenger_night(ask.num("lat")?, ask.num("lon")?, ask.num("at_s")?),
+        // The sky's own day and night (sunset to sunrise), not 1.1's.
+        "sun_down" => sun::sun_down(ask.num("lat")?, ask.num("lon")?, ask.num("at_s")?),
         "passenger_night_on_the_way" => {
-            let night = sun::passenger_night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?);
-            out.push_str(if night { "true" } else { "false" });
+            sun::passenger_night_on_the_way(pair("start")?, pair("end")?, ask.num("depart_s")?, ask.num("minutes")?)
         }
-        _ => {
-            let night = sun::night_at_either_end(pair("start")?, ask.num("depart_s")?, pair("end")?, ask.num("arrive_s")?);
-            out.push_str(if night { "true" } else { "false" });
-        }
-    }
-    Ok(out)
+        _ => sun::night_at_either_end(pair("start")?, ask.num("depart_s")?, pair("end")?, ask.num("arrive_s")?),
+    };
+    Ok(if night { "true" } else { "false" }.to_owned())
 }
 
 /// The nav log's checkpoints from the chart model's candidates

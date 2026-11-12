@@ -1,0 +1,47 @@
+{
+  "x-call": "wingtip_weather::model_weather::call",
+  "description": "A bearing, degrees true, as the nearest of the 16 points of the compass as FAA Order JO 7930.2 3-3-9 abbreviates them (N, NNE, NE, ... NNW), each the middle of its 22.5-degree sector, an edge taken clockwise. The map's value bubble says a wind's direction this way, where it blows from.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "CompassPointInput",
+      "type": "object",
+      "properties": {
+        "bearing_deg": {
+          "type": "number",
+          "description": "Degrees true, any turn."
+        }
+      },
+      "required": [
+        "bearing_deg"
+      ]
+    },
+    "answer": {
+      "title": "CompassPointAnswer",
+      "type": "string",
+      "enum": [
+        "N",
+        "NNE",
+        "NE",
+        "ENE",
+        "E",
+        "ESE",
+        "SE",
+        "SSE",
+        "S",
+        "SSW",
+        "SW",
+        "WSW",
+        "W",
+        "WNW",
+        "NW",
+        "NNW"
+      ]
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

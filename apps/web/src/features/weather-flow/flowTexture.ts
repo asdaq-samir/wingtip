@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { loadTextureData } from "weatherlayers-gl";
+import { ImageInterpolation, ImageType, getRasterPoints, loadTextureData, type TextureData } from "weatherlayers-gl";
 import type { ShownField } from "./flowLook";
-import { pictureUrl, type FlowFrame } from "./useWeatherFlow";
+import { pictureUrl, type FlowFrame, type FlowLayer } from "./useWeatherFlow";
 
 /** A frame's picture of a field as a query: loaded once by weatherlayers-gl's
  *  own loader (its pixels, which the layers and the bubble read), kept
@@ -21,4 +21,27 @@ export function useFlowTexture(frame: FlowFrame | null, field: ShownField | "win
     enabled: enabled && !!frame && frame.fields.includes(field),
     meta: { silent: true },
   }).data;
+}
+
+/** A picture's value at a point: weatherlayers-gl's own reading of it
+ *  (its direction, for the wind, the one it blows from). */
+export function valueAt(layer: FlowLayer, field: ShownField | "wind", texture: TextureData | undefined, point: [number, number]) {
+  const spec = layer.fields[field];
+  if (!texture || !spec) return null;
+  const read = getRasterPoints(
+    {
+      image: texture,
+      image2: null,
+      imageSmoothing: 0,
+      imageInterpolation: ImageInterpolation.LINEAR,
+      imageWeight: 0,
+      imageType: spec.vector ? ImageType.VECTOR : ImageType.SCALAR,
+      imageUnscale: spec.unscale as [number, number],
+      imageMinValue: null,
+      imageMaxValue: null,
+    },
+    layer.bounds as GeoJSON.BBox,
+    [point],
+  ).features[0]?.properties;
+  return read && Number.isFinite(read.value) ? read : null;
 }

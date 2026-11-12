@@ -164,7 +164,8 @@ fn bands(out: &mut String, list: &[(&str, f64)]) {
 }
 
 /// The rules, JSON in and out (call.rs): model_weather_bands,
-/// precip_intensity, precip_dbz, cloud_cover and cape_category.
+/// precip_intensity, precip_dbz, cloud_cover, cape_category and
+/// compass_point.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     match name {
@@ -213,6 +214,13 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
         "cape_category" => {
             let j_kg = num(name, v, "j_kg")?.ok_or_else(|| format!("{name}: \"j_kg\" is missing"))?;
             json::string(&mut out, cape_category(j_kg));
+        }
+        "compass_point" => {
+            // The bubble's wind, said as Apple Weather's map says it (the
+            // owner's screenshot, 2026-11-12): the direction it blows from
+            // as one of JO 7930.2 3-3-9's 16 points.
+            let bearing = num(name, v, "bearing_deg")?.ok_or_else(|| format!("{name}: \"bearing_deg\" is missing"))?;
+            json::string(&mut out, crate::contractions::point_of(bearing));
         }
         _ => return Err(format!("{name}: not a rule of model_weather")),
     }
