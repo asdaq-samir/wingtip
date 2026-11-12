@@ -17,6 +17,9 @@ export function useLogout() {
   return useMutation({
     mutationFn: api.logout,
     onSuccess: () => {
+      // Signed out first, so forgetting their home airport here is not
+      // taken for a pick to write to the account (lib/homeAirport).
+      queryClient.setQueryData(pilotQuery.queryKey, null);
       forgetPilot();
       forgetChecklists();
       // Which route was kept for the air is theirs; the briefing, NOTAMs,
@@ -26,7 +29,6 @@ export function useLogout() {
       // flights (vite.config.ts, pilot-own), which a start with no
       // signal would otherwise show the next person to pick up the phone.
       forgetPilotCache();
-      queryClient.setQueryData(pilotQuery.queryKey, null);
       queryClient.removeQueries({ queryKey: ["aircraft"] });
       queryClient.removeQueries({ queryKey: ["flights"] });
       void queryClient.invalidateQueries({ queryKey: pilotQuery.queryKey });

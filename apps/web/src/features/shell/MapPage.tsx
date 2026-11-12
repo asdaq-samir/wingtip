@@ -10,6 +10,7 @@ import { EngineGate } from "../../lib/engine/engineGate";
 import { useNavEdge } from "../../hooks/use-nav-edge";
 import { usePreferences } from "../../lib/preferences";
 import { useWarmAirportIndex } from "../../lib/airportIndex";
+import { useHomeAirportSync } from "../../lib/homeAirport";
 import { LinkSignIn, TvLinkHost } from "../pilot";
 import { EmergencyHost } from "../emergency";
 import { AirplaneProfileHost } from "../airplane";
@@ -102,6 +103,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // The airport index downloaded ahead of the first search, which at rest
   // is out of sight (lib/airportIndex).
   useWarmAirportIndex(mode === "pilot");
+  useHomeAirportSync(); // the account's home base and this device's home airport, one field
   const briefingInAddress = searchParams.get("view") === "briefing";
   const panel: PanelState = mode === "pilot" ? (briefingInAddress ? "full" : localPanel === "full" ? "peek" : localPanel) : localPanel;
   // flushSync: the panel moves the moment the address says so. React
