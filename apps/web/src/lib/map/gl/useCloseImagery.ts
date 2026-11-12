@@ -9,6 +9,7 @@ import { useGlView } from "./useGlView";
 import { useGoogleAttribution } from "./googleCredit";
 import { useMapCredit } from "./creditStore";
 import { useCloseImageryDrawn, type CloseImagery } from "./closeZoom";
+import { tileOf } from "../tileMath";
 
 /** The imagery close in, as its tiles' address, their last level and whose. */
 export interface CloseTiles {
@@ -73,9 +74,7 @@ function useMiddleTile(on: boolean): string | null {
     if (!on) return;
     const look = () => {
       const { lng, lat } = map.getCenter();
-      const n = 2 ** USGS_COVER_ZOOM;
-      const x = Math.floor(((lng + 180) / 360) * n);
-      const y = Math.floor(((1 - Math.asinh(Math.tan((lat * Math.PI) / 180)) / Math.PI) / 2) * n);
+      const { x, y } = tileOf(lat, lng, USGS_COVER_ZOOM);
       setTile(`${USGS_COVER_ZOOM}/${y}/${x}`);
     };
     look();

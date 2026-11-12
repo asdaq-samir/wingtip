@@ -1,6 +1,7 @@
 //! An airport's remarks read into words (`remarks_read`): its fuel's, its
-//! FBO's and its courtesy car's, as the Chart Supplement prints them (NASR
-//! APT_RMK.csv, the same text). KPWK's "CUST CLNC 2 HR PPR -
+//! FBO's, its courtesy car's and its radio's, as the Chart Supplement
+//! prints them (NASR APT_RMK.csv, the same text), and a navaid's (NAV_RMK.csv,
+//! "VOR unusable 010-030 beyond 20 NM below 5000"). KPWK's "CUST CLNC 2 HR PPR -
 //! 847-894-7292. TSNT UTILIZE FBO AFT CLR CUST. FBO CBP USER FEE." reads
 //! "Customs clearance 2 hours prior permission required - 847-894-7292.
 //! Transient utilize FBO after clearing customs. FBO CBP user fee."

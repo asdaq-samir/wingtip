@@ -1,4 +1,6 @@
-import { M_PER_FT, type AloftPoint } from "./geometry";
+import { M_PER_FT, M_PER_NM } from "../../../../lib/geo";
+import { latOf, mercX, mercY } from "../../../../lib/map/tileMath";
+import type { AloftPoint } from "./geometry";
 
 /**
  * The ground near the route against the plan, for the 3D map
@@ -15,8 +17,6 @@ import { M_PER_FT, type AloftPoint } from "./geometry";
  * the latitude, at the few miles a corridor is across.
  */
 
-/** International nautical miles in a metre's place. */
-const M_PER_NM = 1852;
 /** The equator's length, m: the Web Mercator world's width (EPSG:3857). */
 const EARTH_M = 40075016.686;
 /** A height no ground has, m: the tile's pixels outside the corridor,
@@ -35,10 +35,6 @@ export interface CoursePiece {
   by: number;
   altM: number;
 }
-
-const mercX = (lon: number) => (lon + 180) / 360;
-const mercY = (lat: number) => (1 - Math.asinh(Math.tan((lat * Math.PI) / 180)) / Math.PI) / 2;
-const latOf = (y: number) => (Math.atan(Math.sinh(Math.PI * (1 - 2 * y))) * 180) / Math.PI;
 
 /** The route's points as pieces of course, a point kept every STEP_NM and
  *  wherever the leg changes, each piece at the altitude of the leg it

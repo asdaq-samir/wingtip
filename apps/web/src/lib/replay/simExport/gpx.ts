@@ -1,4 +1,5 @@
 import { altitudeWords, ESTIMATED_WORDS, isoTime, type SimMeta, type SimSegment } from "./flight";
+import { M_PER_FT } from "../../geo";
 import { xmlDocument, xmlText } from "./xml";
 
 /*
@@ -14,7 +15,6 @@ import { xmlDocument, xmlText } from "./xml";
  */
 
 const GPX = "http://www.topografix.com/GPX/1/1";
-const M_PER_FT = 0.3048;
 
 /** The flight as GPX, a track segment for each run of reports. */
 export function writeGpx(segments: SimSegment[], meta: SimMeta): string {

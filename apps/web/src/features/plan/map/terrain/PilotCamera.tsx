@@ -4,7 +4,7 @@ import { useOwnShip } from "../../../../lib/map/position/ownShip";
 import { positionAt, usePastFlight } from "../pastFlight";
 import { slotId, useGlMap } from "../../../../lib/map/gl/glLayer";
 import { DEM, SV_TINT } from "./dem";
-import { M_PER_FT } from "./geometry";
+import { M_PER_FT } from "../../../../lib/geo";
 import { svColours } from "./svColours";
 
 /** The look down from the pilot's seat, degrees from straight down: the

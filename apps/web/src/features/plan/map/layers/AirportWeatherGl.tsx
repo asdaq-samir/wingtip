@@ -9,7 +9,7 @@ import { weatherMarksOf } from "../../../../lib/map/marks/airportWeather";
 import { useAirportWeatherPrefs } from "../../../../lib/map/marks/airportWeatherPrefs";
 import { WORSE_ID } from "../../../../lib/map/marks/stationModel";
 import { useDemonstratedCrosswind } from "../../../../lib/map/marks/useDemonstratedCrosswind";
-import { CHART } from "../../../../lib/tokens";
+import { CHART, MAP } from "../../../../lib/tokens";
 
 const SOURCE = "airport-weather";
 
@@ -18,8 +18,8 @@ const SOURCE = "airport-weather";
  *  10 on web and Android"); with the look Station, from 7, a region's
  *  scale, where the fields' own symbols start keeping only a little apart
  *  (glOverlays' icon-padding) and the lines give way where they don't fit. */
-const STATION_CLOSE = 10;
-const STATION_ALWAYS = 7;
+const STATION_CLOSE = MAP.zoomStationClose;
+const STATION_ALWAYS = MAP.zoomStationAlways;
 
 const ROTATE_ON_MAP = { "icon-rotation-alignment": "map", "icon-allow-overlap": true, "icon-ignore-placement": true } as const;
 
@@ -76,7 +76,7 @@ const LINES: SymbolLayerSpecification = {
  *  scale, smaller there and growing in, and giving way to one another
  *  rather than piled up (the owner's iPhone at zoom 3, 2026-11-12: the
  *  country one tangle of barbs). */
-const FAR_FROM = 6;
+const FAR_FROM = MAP.zoomBarbFarFrom;
 const farWind = wind("airport-wx-wind", ["==", ["get", "far"], true]);
 const FAR: SymbolLayerSpecification = {
   ...farWind,
@@ -85,7 +85,7 @@ const FAR: SymbolLayerSpecification = {
     "icon-allow-overlap": false,
     "icon-ignore-placement": false,
     "icon-padding": 2,
-    "icon-size": ["interpolate", ["linear"], ["zoom"], glZoom(FAR_FROM), 0.6, glZoom(9), 1],
+    "icon-size": ["interpolate", ["linear"], ["zoom"], glZoom(FAR_FROM), 0.6, glZoom(MAP.zoomBarbFull), 1],
   },
 };
 

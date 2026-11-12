@@ -934,6 +934,41 @@ enum WingtipHaptic {
     static let detent: SensoryFeedback = .impact(weight: .light)
 }
 
+/// The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees.
+enum WingtipMap {
+    static let pitchOpen: Double = 50
+    static let pitchMax: Double = 75
+    static let pitchFlatMax: Double = 60
+    static let zoomStationClose: Double = 10
+    static let zoomStationAlways: Double = 7
+    static let zoomBarbFarFrom: Double = 6
+    static let zoomBarbFull: Double = 9
+    static let zoomWorldWind: Double = 4
+    static let zoomStreakNear: Double = 7
+}
+
+/// Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers.
+enum WingtipFlow {
+    typealias Stop = (at: Double, colour: UIColor, alpha: UInt8)
+    static let rampWind: [Stop] = [(0, WingtipColor.Weather.flowWindCalm, 40), (25, WingtipColor.Weather.flowWindBreeze, 140), (50, WingtipColor.Weather.flowWindStrong, 190), (75, WingtipColor.Weather.flowWindGale, 220)]
+    static let rampStreak: [Stop] = [(0, WingtipColor.Weather.flowStreak, 90), (15, WingtipColor.Weather.flowStreak, 180), (40, WingtipColor.Weather.flowStreak, 250)]
+    static let rampCloud: [Stop] = [(0, WingtipColor.Weather.flowCloud, 0), (50, WingtipColor.Weather.flowCloud, 110), (100, WingtipColor.Weather.flowCloud, 215)]
+    static let rampTemp: [Stop] = [(-60, WingtipColor.Weather.flowTempFrigid, 235), (-30, WingtipColor.Weather.flowTempFrigid, 235), (-10, WingtipColor.Weather.flowTempCold, 235), (0, WingtipColor.Weather.flowTempFreezing, 235), (10, WingtipColor.Weather.flowTempCool, 235), (20, WingtipColor.Weather.flowTempMild, 235), (30, WingtipColor.Weather.flowTempWarm, 235), (40, WingtipColor.Weather.flowTempHot, 235), (45, WingtipColor.Weather.flowTempHot, 235)]
+    static let rampVis: [Stop] = [(0, WingtipColor.Weather.flowVisLow, 200), (5, WingtipColor.Weather.flowVisHigh, 90), (10, WingtipColor.Weather.flowVisHigh, 0)]
+    static let rampFrzlvl: [Stop] = [(0, WingtipColor.Weather.flowFrzLow, 200), (8000, WingtipColor.Weather.flowFrzMid, 180), (16000, WingtipColor.Weather.flowFrzHigh, 170)]
+    static let rampTops: [Stop] = [(0, WingtipColor.Weather.flowTopsLow, 120), (40000, WingtipColor.Weather.flowTopsHigh, 220)]
+    static let alphaRain: [UInt8] = [0, 160, 190, 215, 235, 245]
+    static let alphaCeiling: [UInt8] = [220, 200, 170, 110]
+    static let alphaCape: [UInt8] = [0, 130, 170, 200, 225]
+    static let alphaIcing: UInt8 = 210
+    static let alphaTurb: UInt8 = 200
+    static let alphaBlock: UInt8 = 220
+    static let coverTint: CGFloat = 0.6
+    static let coverWash: CGFloat = 0.75
+    static let coverHazard: CGFloat = 0.8
+    static let coverSolid: CGFloat = 0.9
+}
+
 enum WingtipSize {
     static let tapTarget: CGFloat = 44
     static let chip: CGFloat = 32

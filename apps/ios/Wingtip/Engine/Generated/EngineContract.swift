@@ -10811,6 +10811,8 @@ enum EngineContract {
         var floorRef: String
         var ceilingFt: Double?
         var ceilingRef: String
+        /// The tab as the map writes it: the name, a colon, a line break, then the floor and the ceiling a hyphen apart.
+        var text: String
 
         enum CodingKeys: String, CodingKey {
             case name
@@ -10818,6 +10820,7 @@ enum EngineContract {
             case floorRef = "floor_ref"
             case ceilingFt = "ceiling_ft"
             case ceilingRef = "ceiling_ref"
+            case text
         }
     }
 

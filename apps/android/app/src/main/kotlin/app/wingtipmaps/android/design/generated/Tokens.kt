@@ -1140,6 +1140,41 @@ object WingtipHaptic {
     const val DETENT = HapticFeedbackConstants.CONTEXT_CLICK
 }
 
+/** The map's camera and the zooms its marks change at (design/tokens.json's map group); pitches in degrees. */
+object WingtipMap {
+    const val PITCH_OPEN = 50
+    const val PITCH_MAX = 75
+    const val PITCH_FLAT_MAX = 60
+    const val ZOOM_STATION_CLOSE = 10
+    const val ZOOM_STATION_ALWAYS = 7
+    const val ZOOM_BARB_FAR_FROM = 6
+    const val ZOOM_BARB_FULL = 9
+    const val ZOOM_WORLD_WIND = 4
+    const val ZOOM_STREAK_NEAR = 7
+}
+
+/** Model Weather's colour scales: ramps (value, colour, opacity in 255ths), the banded fields' opacities, and the covers. */
+object WingtipFlow {
+    class Stop(val at: Double, val colour: Color, val alpha: Int)
+    val RAMP_WIND = listOf(Stop(0.0, WingtipColors.Weather.FlowWindCalm, 40), Stop(25.0, WingtipColors.Weather.FlowWindBreeze, 140), Stop(50.0, WingtipColors.Weather.FlowWindStrong, 190), Stop(75.0, WingtipColors.Weather.FlowWindGale, 220))
+    val RAMP_STREAK = listOf(Stop(0.0, WingtipColors.Weather.FlowStreak, 90), Stop(15.0, WingtipColors.Weather.FlowStreak, 180), Stop(40.0, WingtipColors.Weather.FlowStreak, 250))
+    val RAMP_CLOUD = listOf(Stop(0.0, WingtipColors.Weather.FlowCloud, 0), Stop(50.0, WingtipColors.Weather.FlowCloud, 110), Stop(100.0, WingtipColors.Weather.FlowCloud, 215))
+    val RAMP_TEMP = listOf(Stop(-60.0, WingtipColors.Weather.FlowTempFrigid, 235), Stop(-30.0, WingtipColors.Weather.FlowTempFrigid, 235), Stop(-10.0, WingtipColors.Weather.FlowTempCold, 235), Stop(0.0, WingtipColors.Weather.FlowTempFreezing, 235), Stop(10.0, WingtipColors.Weather.FlowTempCool, 235), Stop(20.0, WingtipColors.Weather.FlowTempMild, 235), Stop(30.0, WingtipColors.Weather.FlowTempWarm, 235), Stop(40.0, WingtipColors.Weather.FlowTempHot, 235), Stop(45.0, WingtipColors.Weather.FlowTempHot, 235))
+    val RAMP_VIS = listOf(Stop(0.0, WingtipColors.Weather.FlowVisLow, 200), Stop(5.0, WingtipColors.Weather.FlowVisHigh, 90), Stop(10.0, WingtipColors.Weather.FlowVisHigh, 0))
+    val RAMP_FRZLVL = listOf(Stop(0.0, WingtipColors.Weather.FlowFrzLow, 200), Stop(8000.0, WingtipColors.Weather.FlowFrzMid, 180), Stop(16000.0, WingtipColors.Weather.FlowFrzHigh, 170))
+    val RAMP_TOPS = listOf(Stop(0.0, WingtipColors.Weather.FlowTopsLow, 120), Stop(40000.0, WingtipColors.Weather.FlowTopsHigh, 220))
+    val ALPHA_RAIN = listOf(0, 160, 190, 215, 235, 245)
+    val ALPHA_CEILING = listOf(220, 200, 170, 110)
+    val ALPHA_CAPE = listOf(0, 130, 170, 200, 225)
+    val ALPHA_ICING = 210
+    val ALPHA_TURB = 200
+    val ALPHA_BLOCK = 220
+    const val COVER_TINT = 0.6f
+    const val COVER_WASH = 0.75f
+    const val COVER_HAZARD = 0.8f
+    const val COVER_SOLID = 0.9f
+}
+
 object WingtipSize {
     val TapTarget = 48.dp
     val Chip = 32.dp

@@ -1,13 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { TrackError } from "../../lib/track";
-import { csvRows, readCsvTrack } from "./importTrack";
+import { readCsvTrack } from "./importTrack";
 
 describe("a CSV track for the Studio", () => {
-  it("reads quoted fields with their commas and doubled quotes", () => {
-    expect(csvRows('a,"b,c","say ""hi"""\r\n1,2,3\n')).toEqual([
-      ["a", "b,c", 'say "hi"'],
-      ["1", "2", "3"],
-    ]);
+  it("reads quoted fields, CR LF lines and blank lines by the engine's reader", () => {
+    const text = '\r\n"time","lat","lon","note"\r\n2026-11-10 01:00:00,45,-93,"a, ""b"""\r\n\r\n2026-11-10 01:00:10,45.01,-93,\r\n';
+    expect(readCsvTrack(text).map((r) => r.lat)).toEqual([45, 45.01]);
   });
 
   it("reads Flightradar24's export, its position one quoted column", () => {

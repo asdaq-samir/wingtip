@@ -1,4 +1,5 @@
 import { altitudeWords, ESTIMATED_WORDS, isoTime, type SimMeta, type SimSegment } from "./flight";
+import { M_PER_FT } from "../../geo";
 import { xmlDocument, xmlText } from "./xml";
 
 /*
@@ -24,7 +25,6 @@ import { xmlDocument, xmlText } from "./xml";
 
 const KML = "http://www.opengis.net/kml/2.2";
 const GX = "http://www.google.com/kml/ext/2.2";
-const M_PER_FT = 0.3048;
 
 function track(doc: XMLDocument, segment: SimSegment): Element {
   const el = doc.createElementNS(GX, "gx:Track");

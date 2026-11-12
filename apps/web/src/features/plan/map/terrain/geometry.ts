@@ -1,4 +1,8 @@
-import { rad } from "../../../../lib/geo";
+import { M_PER_FT, M_PER_NM, rad } from "../../../../lib/geo";
+
+// airspaceHeights still takes the foot from here; batch A's engine rule
+// (airspace_volume_span) replaces that file, and this line goes with it.
+export { M_PER_FT };
 
 /**
  * The shapes the 3D map stands up over its ground (TerrainGl): the route
@@ -22,10 +26,6 @@ export interface AloftPoint {
    *  the ground near the route is coloured against (ClearanceGl). */
   legFt?: number;
 }
-
-/** International feet in a metre's place: 0.3048 m a foot. */
-export const M_PER_FT = 0.3048;
-const M_PER_NM = 1852;
 
 /** The flight's line in the air as deck.gl takes it: [lon, lat, metres
  *  MSL] a point, the plan's altitude there. */
