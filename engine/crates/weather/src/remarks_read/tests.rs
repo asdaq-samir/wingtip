@@ -77,3 +77,13 @@ fn a_fuels_grade_and_auto_fuel_are_kept() {
     // 2C9's: AUTO is the legend's "automatic", here an automobile's fuel.
     assert_eq!(read("AUTO FUEL AVBL, PRIOR CDN RQRD 419-242-7575."), "AUTO fuel available, prior coordination required 419-242-7575.");
 }
+
+#[test]
+fn the_radios_and_a_navaids_remarks() {
+    // 3CK's weather on the CTAF (APT_RMK): ADZY advisory (7340.2R).
+    assert_eq!(read("WX ADZY - CTAF 5 CLICKS OR 815-444-1729."), "Weather advisory - CTAF 5 clicks or 815-444-1729.");
+    // A VOR's service volume restriction (NAV_RMK, AIM 1-1-8): UNUSBL
+    // unusable, BYD beyond, BLW below; the radials and NM kept.
+    assert_eq!(read("VOR UNUSBL 010-030 BYD 20 NM BLW 5000."), "VOR unusable 010-030 beyond 20 NM below 5000.");
+    assert_eq!(read("DME UNUSBL 250-280 ABV 8000."), "DME unusable 250-280 above 8000.");
+}

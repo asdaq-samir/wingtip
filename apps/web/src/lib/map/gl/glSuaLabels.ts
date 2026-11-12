@@ -34,37 +34,19 @@ export const SUA_TAB_PICTURES: [id: string, svg: () => string, stretch?: Stretch
   { inset: 4 },
 ]);
 
-/** A figure of the tab's as ForeFlight writes it: whole feet, no comma. */
-const feet = (field: string) => ["to-string", ["round", ["get", field]]];
-/** A limit in the tab's words, from the tiles' figure and its reference
- *  (the engine's special_use_tab, which turns the FAA's "to but not
- *  including" FL180 into 17999 as the FAA's CIFP does): the
- *  surface "SFC", above the ground "500AGL", a flight level "FL230", no
- *  ceiling "UNL", else feet MSL, "7000". */
-const limitText = (ft: string, ref: string) => [
-  "match",
-  ["get", ref],
-  "SFC",
-  "SFC",
-  "UNL",
-  "UNL",
-  "AGL",
-  ["concat", feet(ft), "AGL"],
-  "FL",
-  ["concat", "FL", ["to-string", ["round", ["/", ["get", ft], 100]]]],
-  feet(ft),
-];
-/** "M-BRNWD 2 W*:" over "7000-17999": the charts job's name (its letter
- *  and the name, "*" where cut), then the floor and the ceiling. */
-const TAB_TEXT = ["concat", ["get", "label"], ":\n", limitText("floor_ft", "floor_ref"), "-", limitText("ceiling_ft", "ceiling_ref")];
+/** "M-BRNWD 2 W*:" over "7000-17999": the engine's words for the tab
+ *  (special_use_tab's `text`), which the charts job writes into the
+ *  tiles, so the map only draws them; the name alone in an archive
+ *  written before the tiles carried them (vector_tiles.VERSION 5). */
+const TAB_TEXT = ["coalesce", ["get", "tab"], ["get", "label"]];
 
 /** How far off its point a tab sits, ems towards the area's side: about
  *  half its two lines' height, so its edge meets the line. */
 const INSIDE_EM = 1.35;
 
 /** The tabs' one layer. From the tiles' `special_use_labels` (the charts
- *  job's points, one an area on its longest side, `angle` its turn and
- *  `side` where the area lies); or where an older archive has none of
+ *  job's points, one an area on its longest side, `tab` its words, `angle`
+ *  its turn and `side` where the area lies); or where an older archive has none of
  *  them, the area's name alone along its `special_use` boundary: that
  *  layer's floor is 0 for a floor the FAA gives above the ground (Brady
  *  Low's 500 ft) and keeps no "to but not including", so its figures are

@@ -859,6 +859,10 @@ export type SpecialUseTabAnswer = {
   floor_ref: "SFC" | "AGL" | "MSL" | "FL" | "UNL";
   ceiling_ft: number | null;
   ceiling_ref: "SFC" | "AGL" | "MSL" | "FL" | "UNL";
+  /**
+   * The tab as the map writes it: the name, a colon, a line break, then the floor and the ceiling a hyphen apart.
+   */
+  text: string;
 } | null;
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type SuaAltitudesAnswer = string;
@@ -2973,7 +2977,7 @@ export interface EngineContract {
     answer: RegisteredProfileAnswer;
   };
   /**
-   * An airport's remarks in words (the Chart Supplement's, NASR APT_RMK.csv): its fuel's, its FBO's and its courtesy car's, each a line. Each contraction of one meaning written out, by the Chart Supplement's General Information Abbreviations first (CUST customs, TSNT transient, avbl available, hr hour, O/R on request, thru through) and FAA Order JO 7340.2R's decode after it, to which it defers; a code (FBO, CBP, CTAF, 100LL, Jet A), a figure, a time and a telephone number kept as written; a contraction of more than one meaning (OPR, OPN, FM) and any word not known kept as written, never guessed; the rest in sentence case. A remark with any lower case is someone's own writing, as sent.
+   * An airport's remarks in words (the Chart Supplement's, NASR APT_RMK.csv): its fuel's, its FBO's, its courtesy car's and its radio's (the weather read out on the CTAF), and a navaid's (NAV_RMK.csv, where its signal is unusable), each a line. Each contraction of one meaning written out, by the Chart Supplement's General Information Abbreviations first (CUST customs, TSNT transient, avbl available, hr hour, O/R on request, thru through) and FAA Order JO 7340.2R's decode after it, to which it defers; a code (FBO, CBP, CTAF, 100LL, Jet A), a figure, a time and a telephone number kept as written; a contraction of more than one meaning (OPR, OPN, FM) and any word not known kept as written, never guessed; the rest in sentence case. A remark with any lower case is someone's own writing, as sent.
    */
   remarks_read: {
     input: RemarksReadInput;
@@ -3148,7 +3152,7 @@ export interface EngineContract {
     answer: SoloXcDeterminationsAnswer;
   };
   /**
-   * The tab ForeFlight writes on a special-use area's boundary, its words: the area's name cut to nine characters after the type's letter ("M-BRADY NOR*"), and its floor and ceiling as figures with their references (SFC, AGL, MSL, FL, UNL), from the FAA's special use airspace data (ADDS: each limit's VAL in feet, a flight level times 100, its CODE SFC, MSL, STD or UNLTD and its DESC TI, TNI or ANI). Written as the FAA's CIFP writes the same areas: a ceiling "to but not including" FL180 is 17,999 ft MSL, as Class A begins at 18,000 ft MSL (14 CFR 71.33); another ceiling TNI a foot under its figure, a floor ANI a foot over it; SFC above 0 is that height AGL. Null for a piece the FAA cuts out of its area (EXCLUSION 1), or where a limit has no figure.
+   * The tab ForeFlight writes on a special-use area's boundary, its words: the area's name cut to nine characters after the type's letter ("M-BRADY NOR*"), its floor and ceiling as figures with their references (SFC, AGL, MSL, FL, UNL), and the tab's finished words as the map writes them ("M-BRADY NOR*:" over "3600-17999": whole feet MSL, 500AGL, FL230, SFC, UNL), from the FAA's special use airspace data (ADDS: each limit's VAL in feet, a flight level times 100, its CODE SFC, MSL, STD or UNLTD and its DESC TI, TNI or ANI). Written as the FAA's CIFP writes the same areas: a ceiling "to but not including" FL180 is 17,999 ft MSL, as Class A begins at 18,000 ft MSL (14 CFR 71.33); another ceiling TNI a foot under its figure, a floor ANI a foot over it; SFC above 0 is that height AGL. Null for a piece the FAA cuts out of its area (EXCLUSION 1), or where a limit has no figure.
    */
   special_use_tab: {
     input: SpecialUseTabInput;
