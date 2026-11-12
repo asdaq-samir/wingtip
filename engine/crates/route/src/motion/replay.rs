@@ -14,7 +14,8 @@
 //!   last and 13 were more than 60 s apart. Past that the airplane was not
 //!   heard, and where it went is not known: a replay holds and says so
 //!   rather than drawing a straight line over it.
-//! - The height is smoothed over SMOOTH_ALT_S each side: a transponder's
+//! - The height is smoothed over SMOOTH_ALT_S each side, on a straight
+//!   line fitted through the heights at the report's own time: a transponder's
 //!   pressure altitude comes in 25 ft steps (DO-260B, the barometric
 //!   altitude's 25 ft quantum), which a point-to-point climb rate reads as
 //!   bursts of thousands of feet a minute.
@@ -96,14 +97,23 @@ pub fn condition(mut reports: Vec<Report>, gap_s: f64) -> Vec<Sample> {
     let alt: Vec<Option<f64>> = (0..n)
         .map(|i| {
             reports[i].alt_ft?;
-            mean(window(i, SMOOTH_ALT_S).iter().filter_map(|&j| reports[j].alt_ft))
+            // On a line through them at its own time, as the position
+            // below: a mean leans toward the level a climb is heading for
+            // at a run's ends (250 ft high at N14511's first report).
+            line_at(window(i, SMOOTH_ALT_S).iter().filter_map(|&j| Some((reports[j].t, reports[j].alt_ft?))), reports[i].t)
         })
         .collect();
+    // The position each report's own time has on a straight line fitted
+    // through those within SMOOTH_POS_S (least squares): a plain mean is
+    // the position at the reports' mean time, which, where they come
+    // unevenly, puts a report behind or ahead of where it was and makes a
+    // steady airplane surge (the simulator export's 10 frames a second
+    // showed 300 kt read as 26 to 419, 2026-11-12).
     let pos: Vec<(f64, f64)> = (0..n)
         .map(|i| {
             let w = window(i, SMOOTH_POS_S);
-            let lat = mean(w.iter().map(|&j| reports[j].lat)).unwrap_or(reports[i].lat);
-            let lon = mean(w.iter().map(|&j| reports[j].lon)).unwrap_or(reports[i].lon);
+            let lat = line_at(w.iter().map(|&j| (reports[j].t, reports[j].lat)), reports[i].t).unwrap_or(reports[i].lat);
+            let lon = line_at(w.iter().map(|&j| (reports[j].t, reports[j].lon)), reports[i].t).unwrap_or(reports[i].lon);
             (lat, lon)
         })
         .collect();
@@ -159,6 +169,18 @@ fn vertical_speed(reports: &[Report], run: &[usize], i: usize) -> Option<f64> {
     let spread: f64 = near.iter().map(|p| (p.0 - mt) * (p.0 - mt)).sum();
     let together: f64 = near.iter().map(|p| (p.0 - mt) * (p.1 - ma)).sum();
     (spread > 0.0).then(|| together / spread * 60.0)
+}
+
+/// The value at `t` of the straight line fitted (least squares) through
+/// the (time, value) pairs; their mean where they share one time; None
+/// with none.
+fn line_at(pairs: impl Iterator<Item = (f64, f64)>, t: f64) -> Option<f64> {
+    let pairs: Vec<(f64, f64)> = pairs.collect();
+    let count = pairs.len() as f64;
+    let (mt, mv) = (mean(pairs.iter().map(|p| p.0))?, mean(pairs.iter().map(|p| p.1))?);
+    let spread: f64 = pairs.iter().map(|p| (p.0 - mt) * (p.0 - mt)).sum();
+    let together: f64 = pairs.iter().map(|p| (p.0 - mt) * (p.1 - mv)).sum();
+    Some(if spread > 0.0 && count > 1.0 { mv + together / spread * (t - mt) } else { mv })
 }
 
 fn mean(values: impl Iterator<Item = f64>) -> Option<f64> {
@@ -267,6 +289,25 @@ mod tests {
         let s = condition(vec![at(20.0, Some(1000.0)), at(0.0, Some(1000.0)), at(20.0, Some(1000.0)), at(10.0, None)], GAP_S);
         assert_eq!(s.iter().map(|x| x.t).collect::<Vec<_>>(), vec![0.0, 10.0, 20.0]);
         assert!(s[1].ground && s[1].alt_ft.is_none());
+    }
+
+    #[test]
+    fn a_climb_from_a_runs_start_is_not_lifted_toward_where_it_is_going() {
+        // 3,000 ft/min from 125 ft, a report a second, in 25 ft steps.
+        let reports: Vec<Report> = (0..30).map(|i| at(i as f64, Some(((125.0 + i as f64 * 50.0) / 25.0).round() * 25.0))).collect();
+        let s = condition(reports, GAP_S);
+        let first = s[0].alt_ft.unwrap();
+        assert!((first - 125.0).abs() < 15.0, "{first}");
+    }
+
+    #[test]
+    fn uneven_reports_keep_their_own_place_on_a_steady_line() {
+        // Due north at a steady 0.0005 degrees a second, reported at 0,
+        // 0.4, 1.6 and 3 s: each keeps the latitude of its own time.
+        let s = condition(vec![at(0.0, Some(1000.0)), at(0.4, Some(1000.0)), at(1.6, Some(1000.0)), at(3.0, Some(1000.0))], GAP_S);
+        for x in &s {
+            assert!((x.lat - (45.0 + x.t * 0.0005)).abs() < 1e-9, "{} {}", x.t, x.lat);
+        }
     }
 
     #[test]

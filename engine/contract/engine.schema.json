@@ -22547,7 +22547,7 @@
       "additionalProperties": false
     },
     "replay_track": {
-      "description": "A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude averaged over 10 s each side (a transponder's 25 ft steps, DO-260B) and the position over 2 s; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.",
+      "description": "A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.",
       "type": "object",
       "properties": {
         "input": {
@@ -24339,6 +24339,304 @@
           "items": {
             "type": "object"
           }
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
+    "sim_flight": {
+      "description": "A recorded flight made ready (replay_track) made ready for a flight simulator's replay: each run of reports between two gaps its own segment, nothing drawn across a gap; the path between reports a cubic Hermite spline through each report with its sent velocity as the slope (de Boor 1978, ch. IV), the height the same with the vertical speed, `rate_hz` frames a second (10 where not given, at most 60); pressure altitude set on the airplane's own altimeter setting where it sent one below 18,000 ft (14 CFR 91.121(a)(1); FAA-H-8083-25C ch. 11), else left as sent and the segment's `msl` false; on the ground, the ground's height. Estimated, as ADS-B sends none of them: bank from the turn, tan(bank) = V x turn rate / g (FAA-H-8083-25C ch. 5), pitch the flight path angle, each and the heading averaged over 2.5 s each side so the airplane rolls in before the heading moves (FAA-H-8083-15B ch. 7, a lead of half the bank); heading the track (no wind known), and magnetic by the WMM; gear and flaps by phase (FAA-H-8083-3C ch. 6, retracted once climbing; down below 1,000 ft above the ground descending, AC 120-108); lights by AIM 4-3-24 and 14 CFR 91.209.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "SimFlightInput",
+          "type": "object",
+          "properties": {
+            "points": {
+              "type": "array",
+              "description": "replay_track's points, in time order.",
+              "items": {
+                "title": "SimSample",
+                "type": "object",
+                "properties": {
+                  "t": {
+                    "type": "number",
+                    "description": "s since 1970"
+                  },
+                  "lat": {
+                    "type": "number"
+                  },
+                  "lon": {
+                    "type": "number"
+                  },
+                  "alt_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "gs_kt": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "track_deg": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "vs_fpm": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  },
+                  "along_nm": {
+                    "type": "number"
+                  },
+                  "gap": {
+                    "type": "boolean"
+                  },
+                  "ground": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "t",
+                  "lat",
+                  "lon"
+                ]
+              }
+            },
+            "settings": {
+              "type": "array",
+              "description": "The altimeter settings the airplane sent (ADS-B's barometric pressure setting), each with its pressure altitude then; null on the ground.",
+              "items": {
+                "title": "SimSetting",
+                "type": "object",
+                "properties": {
+                  "t": {
+                    "type": "number"
+                  },
+                  "hpa": {
+                    "type": "number"
+                  },
+                  "alt_ft": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "t",
+                  "hpa"
+                ]
+              }
+            },
+            "ground": {
+              "type": "array",
+              "description": "The ground's height under the track, ft MSL, by how far along it.",
+              "items": {
+                "title": "SimGround",
+                "type": "object",
+                "properties": {
+                  "along_nm": {
+                    "type": "number"
+                  },
+                  "ground_ft": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "along_nm",
+                  "ground_ft"
+                ]
+              }
+            },
+            "pressure": {
+              "type": [
+                "boolean",
+                "null"
+              ],
+              "description": "Whether `alt_ft` is pressure altitude (adsb.lol's) rather than above sea level."
+            },
+            "from": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "Only the runs that meet [from, to], s since 1970."
+            },
+            "to": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "rate_hz": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "exclusiveMinimum": 0,
+              "maximum": 60
+            }
+          },
+          "required": [
+            "points"
+          ]
+        },
+        "answer": {
+          "title": "SimFlightAnswer",
+          "type": "object",
+          "properties": {
+            "segments": {
+              "type": "array",
+              "items": {
+                "title": "SimSegment",
+                "type": "object",
+                "properties": {
+                  "rows": {
+                    "type": "array",
+                    "items": {
+                      "title": "SimRow",
+                      "type": "object",
+                      "properties": {
+                        "t": {
+                          "type": "number"
+                        },
+                        "lat": {
+                          "type": "number"
+                        },
+                        "lon": {
+                          "type": "number"
+                        },
+                        "alt_ft": {
+                          "type": "number",
+                          "description": "Above sea level where the segment's `msl`, else pressure altitude."
+                        },
+                        "gs_kt": {
+                          "type": "number"
+                        },
+                        "vs_fpm": {
+                          "type": "number"
+                        },
+                        "track_deg": {
+                          "type": "number",
+                          "description": "True; also the heading, as no wind is known."
+                        },
+                        "heading_mag_deg": {
+                          "type": "number"
+                        },
+                        "pitch_deg": {
+                          "type": "number",
+                          "description": "Estimated, nose up positive."
+                        },
+                        "bank_deg": {
+                          "type": "number",
+                          "description": "Estimated, right wing down positive."
+                        },
+                        "agl_ft": {
+                          "type": [
+                            "number",
+                            "null"
+                          ]
+                        },
+                        "ground": {
+                          "type": "boolean"
+                        },
+                        "gear_down": {
+                          "type": "boolean",
+                          "description": "Estimated."
+                        },
+                        "flaps": {
+                          "type": "number",
+                          "description": "Estimated flap handle, 0 up to 1 full."
+                        },
+                        "lights": {
+                          "title": "SimLights",
+                          "type": "object",
+                          "description": "Estimated.",
+                          "properties": {
+                            "nav": {
+                              "type": "boolean"
+                            },
+                            "beacon": {
+                              "type": "boolean"
+                            },
+                            "strobe": {
+                              "type": "boolean"
+                            },
+                            "landing": {
+                              "type": "boolean"
+                            },
+                            "taxi": {
+                              "type": "boolean"
+                            },
+                            "logo": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "nav",
+                            "beacon",
+                            "strobe",
+                            "landing",
+                            "taxi",
+                            "logo"
+                          ],
+                          "additionalProperties": false
+                        }
+                      },
+                      "required": [
+                        "t",
+                        "lat",
+                        "lon",
+                        "alt_ft",
+                        "gs_kt",
+                        "vs_fpm",
+                        "track_deg",
+                        "heading_mag_deg",
+                        "pitch_deg",
+                        "bank_deg",
+                        "agl_ft",
+                        "ground",
+                        "gear_down",
+                        "flaps",
+                        "lights"
+                      ],
+                      "additionalProperties": false
+                    }
+                  },
+                  "msl": {
+                    "type": "boolean"
+                  },
+                  "setting_hpa": {
+                    "type": [
+                      "number",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "rows",
+                  "msl",
+                  "setting_hpa"
+                ],
+                "additionalProperties": false
+              }
+            }
+          },
+          "required": [
+            "segments"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -27757,6 +28055,7 @@
     "short_airspace_name",
     "sigmet_hazard",
     "sigmets_along_route",
+    "sim_flight",
     "solo_standing",
     "solo_xc_determinations",
     "squawk_meaning",

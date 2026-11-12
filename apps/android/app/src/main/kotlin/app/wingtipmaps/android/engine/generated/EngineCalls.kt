@@ -1711,7 +1711,7 @@ fun Engine.remarksRead(remarks: List<String>): Result<EngineContract.RemarksRead
     rule("remarks_read", EngineContract.RemarksReadInput(remarks = remarks))
 
 /**
- * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude averaged over 10 s each side (a transponder's 25 ft steps, DO-260B) and the position over 2 s; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
+ * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude on a straight line fitted through those within 10 s each side, at the report's own time (a transponder's 25 ft steps, DO-260B) and the position on a straight line fitted through those within 2 s, at the report's own time; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
  */
 fun Engine.replayTrack(points: List<EngineContract.ReplayTrackInputPointsItem>, gapS: Double? = null): Result<EngineContract.ReplayTrackAnswer> =
     rule("replay_track", EngineContract.ReplayTrackInput(points = points, gapS = gapS))
@@ -1835,6 +1835,12 @@ fun Engine.sigmetHazard(hazard: String? = null, kind: String? = null): Result<St
  */
 fun Engine.sigmetsAlongRoute(advisories: List<Map<String, JsonElement>>, from: List<Double>, to: List<Double>, corridorNm: Double? = null, now: Double): Result<List<Map<String, JsonElement>>> =
     rule("sigmets_along_route", EngineContract.SigmetsAlongRouteInput(advisories = advisories, from = from, to = to, corridorNm = corridorNm, now = now))
+
+/**
+ * A recorded flight made ready (replay_track) made ready for a flight simulator's replay: each run of reports between two gaps its own segment, nothing drawn across a gap; the path between reports a cubic Hermite spline through each report with its sent velocity as the slope (de Boor 1978, ch. IV), the height the same with the vertical speed, `rate_hz` frames a second (10 where not given, at most 60); pressure altitude set on the airplane's own altimeter setting where it sent one below 18,000 ft (14 CFR 91.121(a)(1); FAA-H-8083-25C ch. 11), else left as sent and the segment's `msl` false; on the ground, the ground's height. Estimated, as ADS-B sends none of them: bank from the turn, tan(bank) = V x turn rate / g (FAA-H-8083-25C ch. 5), pitch the flight path angle, each and the heading averaged over 2.5 s each side so the airplane rolls in before the heading moves (FAA-H-8083-15B ch. 7, a lead of half the bank); heading the track (no wind known), and magnetic by the WMM; gear and flaps by phase (FAA-H-8083-3C ch. 6, retracted once climbing; down below 1,000 ft above the ground descending, AC 120-108); lights by AIM 4-3-24 and 14 CFR 91.209.
+ */
+fun Engine.simFlight(points: List<EngineContract.SimFlightInputPointsItem>, settings: List<EngineContract.SimFlightInputSettingsItem>? = null, ground: List<EngineContract.SimFlightInputGroundItem>? = null, pressure: Boolean? = null, from: Double? = null, to: Double? = null, rateHz: Double? = null): Result<EngineContract.SimFlightAnswer> =
+    rule("sim_flight", EngineContract.SimFlightInput(points = points, settings = settings, ground = ground, pressure = pressure, from = from, to = to, rateHz = rateHz))
 
 /**
  * A student's 61.87(n) solo endorsement on the instructor's list: the days to its last good day and its standing, caution within 7 days (the owner's choice).

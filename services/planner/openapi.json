@@ -20768,7 +20768,7 @@
         "type": "object"
       },
       "StudioReport": {
-        "description": "One report of the day: when (s since 1970), where, its altitude\n(ft; the transponder's pressure altitude for adsb.lol's day, see\n`altitude`; None on the ground), ground speed (kt), track (degrees\ntrue) and whether it was on the ground.",
+        "description": "One report of the day: when (s since 1970), where, its altitude\n(ft; the transponder's pressure altitude for adsb.lol's day, see\n`altitude`; None on the ground), ground speed (kt), track (degrees\ntrue), whether it was on the ground, and the altimeter setting.",
         "properties": {
           "alt_ft": {
             "anyOf": [
@@ -20804,6 +20804,17 @@
           "lon": {
             "title": "Lon",
             "type": "number"
+          },
+          "qnh_hpa": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Qnh Hpa"
           },
           "t": {
             "title": "T",
@@ -20851,6 +20862,17 @@
           "license": {
             "title": "License",
             "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
           },
           "points": {
             "items": {

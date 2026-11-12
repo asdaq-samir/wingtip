@@ -10457,6 +10457,146 @@ object EngineContract {
     )
 
     @Serializable
+    data class SimFlightAnswer(
+        val segments: List<EngineContract.SimFlightAnswerSegmentsItem>,
+    )
+
+    @Serializable
+    data class SimFlightAnswerSegmentsItem(
+        val rows: List<EngineContract.SimFlightAnswerSegmentsItemRowsItem>,
+        val msl: Boolean,
+        @SerialName("setting_hpa")
+        val settingHpa: Double? = null,
+    )
+
+    @Serializable
+    data class SimFlightAnswerSegmentsItemRowsItem(
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+        /**
+         * Above sea level where the segment's `msl`, else pressure altitude.
+         */
+        @SerialName("alt_ft")
+        val altFt: Double,
+        @SerialName("gs_kt")
+        val gsKt: Double,
+        @SerialName("vs_fpm")
+        val vsFpm: Double,
+        /**
+         * True; also the heading, as no wind is known.
+         */
+        @SerialName("track_deg")
+        val trackDeg: Double,
+        @SerialName("heading_mag_deg")
+        val headingMagDeg: Double,
+        /**
+         * Estimated, nose up positive.
+         */
+        @SerialName("pitch_deg")
+        val pitchDeg: Double,
+        /**
+         * Estimated, right wing down positive.
+         */
+        @SerialName("bank_deg")
+        val bankDeg: Double,
+        @SerialName("agl_ft")
+        val aglFt: Double? = null,
+        val ground: Boolean,
+        /**
+         * Estimated.
+         */
+        @SerialName("gear_down")
+        val gearDown: Boolean,
+        /**
+         * Estimated flap handle, 0 up to 1 full.
+         */
+        val flaps: Double,
+        /**
+         * Estimated.
+         */
+        val lights: EngineContract.SimFlightAnswerSegmentsItemRowsItemLights,
+    )
+
+    /**
+     * Estimated.
+     */
+    @Serializable
+    data class SimFlightAnswerSegmentsItemRowsItemLights(
+        val nav: Boolean,
+        val beacon: Boolean,
+        val strobe: Boolean,
+        val landing: Boolean,
+        val taxi: Boolean,
+        val logo: Boolean,
+    )
+
+    @Serializable
+    data class SimFlightInput(
+        /**
+         * replay_track's points, in time order.
+         */
+        val points: List<EngineContract.SimFlightInputPointsItem>,
+        /**
+         * The altimeter settings the airplane sent (ADS-B's barometric pressure setting), each with its pressure altitude then; null on the ground.
+         */
+        val settings: List<EngineContract.SimFlightInputSettingsItem>? = null,
+        /**
+         * The ground's height under the track, ft MSL, by how far along it.
+         */
+        val ground: List<EngineContract.SimFlightInputGroundItem>? = null,
+        /**
+         * Whether `alt_ft` is pressure altitude (adsb.lol's) rather than above sea level.
+         */
+        val pressure: Boolean? = null,
+        /**
+         * Only the runs that meet [from, to], s since 1970.
+         */
+        val from: Double? = null,
+        val to: Double? = null,
+        @SerialName("rate_hz")
+        val rateHz: Double? = null,
+    )
+
+    @Serializable
+    data class SimFlightInputGroundItem(
+        @SerialName("along_nm")
+        val alongNm: Double,
+        @SerialName("ground_ft")
+        val groundFt: Double,
+    )
+
+    @Serializable
+    data class SimFlightInputPointsItem(
+        /**
+         * s since 1970
+         */
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+        @SerialName("alt_ft")
+        val altFt: Double? = null,
+        @SerialName("gs_kt")
+        val gsKt: Double? = null,
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        @SerialName("vs_fpm")
+        val vsFpm: Double? = null,
+        @SerialName("along_nm")
+        val alongNm: Double? = null,
+        val gap: Boolean? = null,
+        val ground: Boolean? = null,
+    )
+
+    @Serializable
+    data class SimFlightInputSettingsItem(
+        val t: Double,
+        val hpa: Double,
+        @SerialName("alt_ft")
+        val altFt: Double? = null,
+    )
+
+    @Serializable
     data class SoloStandingAnswer(
         val days: Int? = null,
         val standing: String,

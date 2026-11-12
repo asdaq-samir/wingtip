@@ -1,5 +1,5 @@
 import { callEngine } from "../../lib/engine/engine";
-import type { ReplayGap, ReplayReport, ReplaySample } from "../../lib/engine/contract";
+import type { ReplayGap, ReplayReport, ReplaySample, SimSetting } from "../../lib/engine/contract";
 import { positionAt } from "../../lib/replay/clock";
 
 /** What an altitude in a track is: the transponder's pressure altitude
@@ -29,15 +29,22 @@ export interface ReplayTrack {
   /** Where it came from, said beside the replay (ODbL 1.0 asks it of
    *  adsb.lol's data): "adsb.lol, ODbL 1.0"; null for the pilot's own file. */
   credit: string | null;
+  /** The airplane, where it is known: what a simulator export names it. */
+  aircraft?: { tail: string | null; icaoType: string | null; model: string | null };
+  /** The altimeter settings it sent (ADS-B's barometric pressure
+   *  setting), each with its pressure altitude then: what a simulator
+   *  export sets its pressure altitude on (lib/replay/simExport). */
+  settings: SimSetting[];
 }
 
+/** A report as it came, with the altimeter setting where it carried one. */
+type Report = ReplayReport & { qnh_hpa?: number | null };
+
 /** The reports made ready (the engine's replay_track). */
-export function readyTrack(
-  reports: ReplayReport[],
-  meta: { id: string; label: string; altitude: AltitudeKind; credit: string | null },
-): ReplayTrack {
+export function readyTrack(reports: Report[], meta: Pick<ReplayTrack, "id" | "label" | "altitude" | "credit" | "aircraft">): ReplayTrack {
   const ready = callEngine("replay_track", { points: reports });
-  return { ...meta, points: ready.points, gaps: ready.gaps, lengthNm: ready.length_nm };
+  const settings = reports.flatMap((r) => (r.qnh_hpa == null ? [] : [{ t: r.t, hpa: r.qnh_hpa, alt_ft: r.alt_ft ?? null }]));
+  return { ...meta, points: ready.points, gaps: ready.gaps, lengthNm: ready.length_nm, settings };
 }
 
 /** The gap `t` falls in, or null: the replay says "No reports" there

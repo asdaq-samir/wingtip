@@ -184,6 +184,7 @@ export const WEB_RULES = [
   "service_volume",
   "short_airspace_name",
   "sigmet_hazard",
+  "sim_flight",
   "solo_standing",
   "solo_xc_determinations",
   "squawk_meaning",

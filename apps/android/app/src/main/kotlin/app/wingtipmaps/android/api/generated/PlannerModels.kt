@@ -7583,6 +7583,7 @@ data class StudioTrack (
     val day: String,
     val hex: String,
     val license: String,
+    val model: String? = null,
     val points: List<StudioReport>,
     val registration: String? = null,
     val source: String,
@@ -7593,7 +7594,7 @@ data class StudioTrack (
  * One report of the day: when (s since 1970), where, its altitude
  * (ft; the transponder's pressure altitude for adsb.lol's day, see
  * `altitude`; None on the ground), ground speed (kt), track (degrees
- * true) and whether it was on the ground.
+ * true), whether it was on the ground, and the altimeter setting.
  */
 @Serializable
 data class StudioReport (
@@ -7607,6 +7608,10 @@ data class StudioReport (
 
     val lat: Double,
     val lon: Double,
+
+    @SerialName("qnh_hpa")
+    val qnhHpa: Double? = null,
+
     val t: Double,
 
     @SerialName("track_deg")

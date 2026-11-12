@@ -7,6 +7,7 @@ import { DateField } from "../../components/ui/date-field";
 import { Field, FieldDescription, FieldError, FieldLabel } from "../../components/ui/field";
 import { Input } from "../../components/ui/input";
 import { TEXT } from "../../lib/text";
+import { SimExportMenu } from "../replay";
 import { utcToday, type Studio } from "./useStudio";
 
 /**
@@ -61,6 +62,7 @@ export function StudioPanel({ studio }: { studio: Studio }) {
           {track.credit && <span data-testid="studio-credit"> · {track.credit}</span>}
         </p>
       )}
+      {track && <SimExportMenu track={track} ground={studio.ground} />}
 
       {studio.watched.length > 0 && (
         <ListGroup title="Watched here">

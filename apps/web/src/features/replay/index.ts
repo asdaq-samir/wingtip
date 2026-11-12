@@ -9,3 +9,4 @@ export { CameraMenu } from "./camera/CameraMenu";
 export { setReplayCamera } from "./camera/cameraStore";
 export { alongAt, readyTrack, type AltitudeKind, type ReplayTrack } from "./track";
 export { loadReplay, STUDIO_SPEEDS, toggleReplay } from "./useReplay";
+export { SimExportMenu } from "./SimExportMenu";

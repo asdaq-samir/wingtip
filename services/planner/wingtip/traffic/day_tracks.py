@@ -140,10 +140,22 @@ def _day_trace(hex_id: str, day: dt.date) -> dict | None:
     return trace
 
 
+def _setting(details) -> float | None:
+    """The altimeter setting the crew had set, hPa, where the report's
+    details carry one (readsb's `nav_qnh`, ADS-B version 2's barometric
+    pressure setting): what the simulator export sets the pressure
+    altitude on (the engine's sim_flight), 14 CFR 91.121(a) making it the
+    local station's below 18,000 ft."""
+    if not isinstance(details, dict):
+        return None
+    return _number(details.get("nav_qnh"))
+
+
 def _reports(trace: dict | None, start: float, end: float) -> list[dict]:
     """A readsb trace's reports within [start, end): its pressure altitude
     (readsb's alt_baro, the transponder's own, DO-260B), not the GNSS
-    height, for the altimeter's figure; None and `ground` on the ground."""
+    height, for the altimeter's figure; None and `ground` on the ground;
+    and the altimeter setting where the report carries one (_setting)."""
     if not trace:
         return []
     base = _number(trace.get("timestamp")) or 0.0
@@ -164,9 +176,18 @@ def _reports(trace: dict | None, start: float, end: float) -> list[dict]:
                 "gs_kt": _number(p[4]),
                 "track_deg": _number(p[5]),
                 "ground": ground,
+                "qnh_hpa": _setting(p[8] if len(p) > 8 else None),
             }
         )
     return out
+
+
+def _model(hex_id: str) -> str | None:
+    """The airplane's maker and model as the FAA's registry has them
+    ("Airbus S A S A321-271NX"), which a simulator export names it by."""
+    found = registry.lookup(hex_id=hex_id) or {}
+    words = " ".join(str(found[k]).strip() for k in ("manufacturer", "model") if found.get(k))
+    return words or None
 
 
 def day_track(query: str, day: dt.date, today: dt.date | None = None) -> dict:
@@ -190,6 +211,7 @@ def day_track(query: str, day: dt.date, today: dt.date | None = None) -> dict:
         "hex": hex_id,
         "registration": registration or named.get("r") or None,
         "type": named.get("t") or None,
+        "model": _model(hex_id),
         "day": day.isoformat(),
         "altitude": "pressure",
         **ADSB_LOL_SOURCE,
