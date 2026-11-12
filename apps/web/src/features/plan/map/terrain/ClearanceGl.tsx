@@ -16,8 +16,8 @@ import { demSource } from "./dem";
 import type { AloftPoint } from "./geometry";
 import { svColours } from "./svColours";
 
-export const CLEARANCE_DEM = "terrain-clearance-dem";
-export const CLEARANCE_TINT = "terrain-clearance";
+const CLEARANCE_DEM = "terrain-clearance-dem";
+const CLEARANCE_TINT = "terrain-clearance";
 const PROTOCOL = "wingtip-clearance";
 /** The pilot's-eye view's tint's strength (PilotCamera), so the two read alike. */
 const OPACITY = 0.55;
