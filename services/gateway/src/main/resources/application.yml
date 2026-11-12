@@ -35,6 +35,27 @@ spring:
   jackson:
     deserialization:
       fail-on-null-for-primitives: false
+  # The clients this app makes of the planner and the assistant on its own
+  # behalf (UpstreamClients, Spring's HTTP interfaces): the planner's rules
+  # are milliseconds of the engine's work, so one that takes 20 s is not
+  # well; a briefing reads the weather along the route and the changes'
+  # words are a Claude call, so those wait 2 minutes. No redirect is
+  # followed: one from an upstream is a misconfiguration to surface.
+  http:
+    clients:
+      connect-timeout: 10s
+      read-timeout: 30s
+      redirects: dont-follow
+    serviceclient:
+      planner:
+        base-url: ${planner-service.base-url}
+        read-timeout: 20s
+      briefing:
+        base-url: ${planner-service.base-url}
+        read-timeout: 2m
+      assistant:
+        base-url: ${assistant-service.base-url}
+        read-timeout: 2m
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/wingtip}
     username: ${SPRING_DATASOURCE_USERNAME:wingtip}

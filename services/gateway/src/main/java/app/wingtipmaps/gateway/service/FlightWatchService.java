@@ -28,6 +28,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * The flight watch: a pilot watches a saved flight, and up to its
@@ -83,6 +84,8 @@ public class FlightWatchService {
      *  the instructor emails' app.public-base-url); blank where this
      *  deployment sends no mail, and then there is no link. */
     private final String publicBaseUrl;
+    /** Boot's own, for the changes kept with a watch. */
+    private final JsonMapper json;
 
     public FlightWatchService(
             FlightWatchRepository watches,
@@ -92,7 +95,8 @@ public class FlightWatchService {
             ChangeLines lines,
             @Value("${app.claude-features:OFF}") SubscriptionService.ClaudeFeatures claude,
             Mailer mail,
-            @Value("${app.public-base-url:}") String publicBaseUrl) {
+            @Value("${app.public-base-url:}") String publicBaseUrl,
+            JsonMapper json) {
         this.watches = watches;
         this.flights = flights;
         this.pilots = pilots;
@@ -101,6 +105,7 @@ public class FlightWatchService {
         this.claude = claude;
         this.mail = mail;
         this.publicBaseUrl = publicBaseUrl.replaceAll("/+$", "");
+        this.json = json;
     }
 
     /**
@@ -329,22 +334,22 @@ public class FlightWatchService {
                 sources);
     }
 
-    private static String write(AssistantChangesWords answer) {
+    private String write(AssistantChangesWords answer) {
         try {
-            return PlannerClient.JSON.writeValueAsString(answer);
+            return json.writeValueAsString(answer);
         } catch (JacksonException e) {
             throw new IllegalStateException("The planner's changes would not write as JSON", e);
         }
     }
 
-    private static AssistantChangesWords read(FlightWatch watch) {
+    private AssistantChangesWords read(FlightWatch watch) {
         if (watch.getChangesJson() == null) {
             return null;
         }
         try {
             // Kept as the planner wrote it, so read as the planner's: the
             // rows written before these were generated have the same fields.
-            return PlannerClient.JSON.readValue(watch.getChangesJson(), AssistantChangesWords.class);
+            return json.readValue(watch.getChangesJson(), AssistantChangesWords.class);
         } catch (JacksonException e) {
             throw new IllegalStateException("Flight " + watch.getFlightId() + "'s kept changes are not JSON", e);
         }

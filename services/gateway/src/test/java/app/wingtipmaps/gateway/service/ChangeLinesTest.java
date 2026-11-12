@@ -6,6 +6,7 @@ import app.wingtipmaps.gateway.assistant.model.AssistantChangesWords;
 import app.wingtipmaps.gateway.assistant.model.AssistantSentence;
 import app.wingtipmaps.gateway.planner.model.PlannerWordsSources;
 import org.junit.jupiter.api.Test;
+import tools.jackson.databind.json.JsonMapper;
 
 /** The flight watch's lines while the Claude features are off: each change
  *  the planner found is a sentence of its own heading, citing it; the
@@ -38,6 +39,6 @@ class ChangeLinesTest {
 
     /** The planner's answer as the generated model reads it. */
     private static PlannerWordsSources sources(String json) {
-        return PlannerClient.DATES.readValue(json, PlannerWordsSources.class);
+        return JsonMapper.shared().readValue(json, PlannerWordsSources.class);
     }
 }

@@ -65,9 +65,9 @@ public class CrashDraftMail {
     /** The ready drafts nobody has been mailed about; none where the planner does not say. */
     List<PlannerStudioDraft> ready() {
         try {
-            return List.of(planner.get("/api/studio/drafts-to-notice", PlannerStudioDraft[].class, "the crash drafts"));
+            return planner.draftsToNotice();
         } catch (PlannerUnavailableException e) {
-            log.info("the planner's crash drafts not read: {}", e.getMessage());
+            log.info("the planner's crash drafts not read: {}", e.getBody().getDetail());
             return List.of();
         }
     }
@@ -99,9 +99,9 @@ public class CrashDraftMail {
 
     private void noticed(String id) {
         try {
-            planner.post("/api/studio/drafts/" + id + "/noticed", "", "the crash draft's notice");
+            planner.noticed(id);
         } catch (PlannerUnavailableException e) {
-            log.warn("crash draft {} mailed, not marked: {}", id, e.getMessage());
+            log.warn("crash draft {} mailed, not marked: {}", id, e.getBody().getDetail());
         }
     }
 }

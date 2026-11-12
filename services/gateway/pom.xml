@@ -45,6 +45,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+        <!-- RestClient and the HTTP interface clients Boot makes of the
+             planner and the assistant (UpstreamClients, application.yml's
+             spring.http.serviceclient). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-restclient</artifactId>
+        </dependency>
         <!-- Bean Validation (@NotBlank/@Pattern on RouteRequest) and the
              @RestControllerAdvice global exception handler's use of
              MethodArgumentNotValidException; neither works without this. -->
@@ -249,9 +256,10 @@
                  OpenAPI document rather than written out by hand, so a
                  field the assistant renames or drops fails this build
                  instead of reading as null in production. Models only:
-                 PlannerClient asks with java.net.http, pinned to
-                 HTTP/1.1 for the reason StreamingProxy gives, which a
-                 generated client would replace. Only the schemas read
+                 the asking is Spring's HTTP interfaces (upstream/), which
+                 Boot makes into clients; the generator's own
+                 spring-http-interface library is still labelled testing.
+                 Only the schemas read
                  here are generated (modelsToGenerate), prefixed Assistant
                  so "Source" and "Sentence" do not read as this app's own;
                  the browser's pass-through proxies read nothing and need
