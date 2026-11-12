@@ -7,14 +7,18 @@ import { useSunlight } from "../../../sunlight";
 import { useGlLayer, useGlMap, useGlPaint } from "../glLayer";
 import { useDarkTheme } from "../useDarkTheme";
 import { chartPaint, chartStyle, type ChartStyle } from "../glStyle";
-
-const CHART_LAYERS = ["chart-under", "chart", "chart-terminal"];
+import { CLOSE_MAX_ZOOM, chartFade } from "../closeZoom";
+import { CloseImageryGl } from "./CloseImageryGl";
+import { useCloseImagery } from "../useCloseImagery";
 
 /**
  * The FAA chart (glStyle's chartStyle): the base
  * chart, the region's level under it and the terminal sheet over it while
  * pinned, made again as the base, the pin or the cycle changes; dimmed at
- * night and brightened in sunlight (glStyle's chartPaint).
+ * night and brightened in sunlight (glStyle's chartPaint). Close in,
+ * past the base chart's own last zoom, the chart fades into the satellite
+ * imagery under it where there is a Google key (closeZoom), and the map
+ * goes in to CLOSE_MAX_ZOOM; with none, to two levels past the chart.
  */
 export function ChartGl({ course, previewing = false }: { course: Course | null; previewing?: boolean }) {
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
@@ -46,6 +50,8 @@ export function ChartGl({ course, previewing = false }: { course: Course | null;
     [spec],
   );
   const night = dark && chartNight === "dimmed";
+  const tileMax = spec?.sources.chart?.maxzoom ?? null;
+  const imagery = useCloseImagery(tileMax);
   // Which charts are drawn and how, on the map's element, for the browser
   // tests: each part's kind (its tiles' path) and the paint's look.
   const { map } = useGlMap();
@@ -58,19 +64,42 @@ export function ChartGl({ course, previewing = false }: { course: Course | null;
     el.dataset.chartKinds = kinds;
     el.dataset.chartLook = look;
   }, [map, kinds, look]);
-  return parts.map(({ part, spec }) => (
-    <ChartSources key={`${part}:${JSON.stringify(spec.sources)}`} spec={spec} night={night} sunlight={sunlight} />
-  ));
+  return (
+    <>
+      {parts.map(({ part, spec }) => (
+        <ChartSources key={`${part}:${JSON.stringify(spec.sources)}`} spec={spec} night={night} sunlight={sunlight} fade={!!imagery} />
+      ))}
+      {imagery && tileMax != null && spec && (
+        <CloseImageryGl
+          key={`${imagery}:${tileMax}`}
+          url={imagery}
+          tileMaxZoom={tileMax}
+          night={night}
+          under={spec.sources["chart-under"] ? "chart-under" : "chart"}
+        />
+      )}
+    </>
+  );
 }
 
 /** One chart's sources and layers, made again (`key`) as its tiles change;
- *  its paint set as the night and the sunlight change. */
-function ChartSources({ spec, night, sunlight }: { spec: ChartStyle; night: boolean; sunlight: boolean }) {
+ *  its paint set as the night and the sunlight change, and, with the
+ *  imagery under it (`fade`), faded out past its own last zoom. */
+function ChartSources({ spec, night, sunlight, fade }: { spec: ChartStyle; night: boolean; sunlight: boolean; fade: boolean }) {
   const { map } = useGlMap();
   useGlLayer("chart", spec.sources, spec.layers);
-  useGlPaint(CHART_LAYERS, chartPaint(night, sunlight) as Record<string, unknown>);
+  // The base and the region's level under it fade by the base's last
+  // zoom, the terminal sheet by its own.
+  const own = (spec.sources.chart ?? spec.sources["chart-terminal"])?.maxzoom;
+  const opacity = fade && own != null ? chartFade(own) : 1;
+  useGlPaint(
+    spec.layers.map((l) => l.id),
+    { ...chartPaint(night, sunlight), "raster-opacity": opacity } as Record<string, unknown>,
+  );
   useEffect(() => {
-    map.setMaxZoom(spec.maxZoom);
+    map.setMaxZoom(fade ? CLOSE_MAX_ZOOM : spec.maxZoom);
+  }, [map, spec, fade]);
+  useEffect(() => {
     // The frame the chart's first tile is drawn in, for the speed
     // measurements (a canvas is no Largest Contentful Paint candidate, as
     // an image is): `chart-drawn`, once a page.
