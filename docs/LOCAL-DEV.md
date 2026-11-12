@@ -276,6 +276,31 @@ touched. Its log is `~/Library/Logs/wingtip-db-backup.log`;
 `install-backup.sh --now` runs one at once and `--remove` takes it out.
 The server's backups are in [README-AWS.md](README-AWS.md#backups-and-restore).
 
+## The linters and formatters
+
+Installed by [mise](https://mise.jdx.dev), at the version each has in
+`.tool-versions`, through one script: `scripts/build/tool.sh <tool> [args]`
+(`--have <tool>` asks whether it can be had, `--path <tool>` where it is). Nothing
+is installed by hand: the first call fetches mise's release (checked against
+its sum in the script) into `~/.cache/wingtip-tools`, and mise fetches the
+tool; a copy already on the PATH at the right version is used as it is. CI's
+`guards` job calls the same scripts, so a finding is the same on the Mac:
+
+| Tool | Run by |
+|---|---|
+| shellcheck | `scripts/ci/shellcheck.sh` (`.shellcheckrc`) |
+| actionlint, zizmor | `python3 scripts/ci/workflow_rules.py` (`.github/actionlint.yaml`, `.github/zizmor.yml`) |
+| lychee | `scripts/ci/check_links.sh` (`lychee.toml`) |
+| SwiftFormat, ktlint | `scripts/dev/format.sh swift kotlin` |
+| SwiftLint, Semgrep | `scripts/ci/phone_lint.sh ios`, `scripts/ci/semgrep_check.py` |
+
+A tool mise cannot fetch (no network) is a skip on the Mac, a failure in CI.
+A bump is a line in `.tool-versions` (Renovate lists the newer ones in its
+dashboard issue), then `scripts/build/toolchain.sh --check`; mise's own
+version carries its sums in `scripts/build/tool.sh`. The legal pages are
+written with markdown-it-py by `scripts/build/legal_pages.py`, which uv
+runs with the dependency pinned in its own header.
+
 ## Shared build caches
 
 Many agents work at once on the Mac, each in its own worktree, each

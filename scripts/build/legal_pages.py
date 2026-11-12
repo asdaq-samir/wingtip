@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run --script
+# /// script
+# requires-python = ">=3.11"
+# dependencies = ["markdown-it-py==4.3.0"]
+# ///
 """The privacy policy, terms and support page, from docs/legal to the web.
 
 docs/legal/{privacy,terms,support}.md are the one source the owner edits
@@ -8,19 +12,20 @@ which the web build copies to /app/<name>.html and the gateway serves at
 without the app's JavaScript, as App Review and Google Play ask of the
 links in a listing.
 
-The Markdown is the small part these documents use: headings, paragraphs,
-"- " lists, "> " quotes, tables, **bold**, *italic*, `code`, [links](url)
-and <!-- notes --> for the owner, which are left out of the page. The
-standard library only, for the Mac's python3 and CI's.
+The Markdown is read by markdown-it-py (CommonMark with tables, raw HTML
+escaped); <!-- notes --> for the owner are left out of the page. Run by uv,
+which installs it at the version pinned in the script's own header.
 
-  python3 scripts/build/legal_pages.py           write the pages
-  python3 scripts/build/legal_pages.py --check   fail if a page is stale (CI)
+  scripts/build/legal_pages.py           write the pages
+  scripts/build/legal_pages.py --check   fail if a page is stale (CI)
 """
 
 import html
 import re
 import sys
 from pathlib import Path
+
+from markdown_it import MarkdownIt
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "docs/legal"
@@ -68,55 +73,22 @@ TEMPLATE = """<!doctype html>
 """
 
 
-def inline(text: str) -> str:
-    """A line's emphasis, code and links, the rest escaped."""
-    out = html.escape(text, quote=False)
-    out = re.sub(r"`([^`]+)`", r"<code>\1</code>", out)
-    out = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", out)
-    out = re.sub(r"(?<![*\w])\*(?!\s)(.+?)(?<!\s)\*(?![*\w])", r"<em>\1</em>", out)
-    return re.sub(r"\[([^\]]+)\]\(([^)\s]+)\)", lambda m: f'<a href="{html.escape(m[2])}">{m[1]}</a>', out)
-
-
-def cells(row: str) -> list:
-    return [c.strip() for c in row.strip().strip("|").split("|")]
+def slug(heading: str) -> str:
+    """An id from the heading's words, so a page can link to a section (the
+    site's link is /terms/#a-planning-aid-not-for-navigation)."""
+    return "-".join(re.sub(r"[^a-z0-9 ]", "", heading.lower()).split())
 
 
 def render(markdown: str) -> str:
-    """The Markdown's body as HTML."""
+    """The Markdown's body as HTML: CommonMark and tables by markdown-it-py,
+    raw HTML escaped, the owner's <!-- notes --> left out."""
     text = re.sub(r"<!--.*?-->", "", markdown, flags=re.S)
-    blocks = [b for b in re.split(r"\n\s*\n", text.strip()) if b.strip()]
-    out = []
-    for block in blocks:
-        lines = block.splitlines()
-        first = lines[0]
-        heading = re.match(r"(#{1,3}) (.*)", first)
-        if heading and len(lines) == 1:
-            level = len(heading[1])
-            # An id from the heading's words, so a page can link to a section
-            # (the site's link is /terms/#a-planning-aid-not-for-navigation).
-            slug = "-".join(re.sub(r"[^a-z0-9 ]", "", heading[2].lower()).split())
-            out.append(f'<h{level} id="{slug}">{inline(heading[2])}</h{level}>')
-        elif first.startswith("- "):
-            items, current = [], []
-            for line in lines:
-                if line.startswith("- "):
-                    if current:
-                        items.append(" ".join(current))
-                    current = [line[2:].strip()]
-                else:
-                    current.append(line.strip())
-            items.append(" ".join(current))
-            out.append("<ul>\n" + "\n".join(f"<li>{inline(i)}</li>" for i in items) + "\n</ul>")
-        elif first.startswith(">"):
-            quoted = " ".join(line.lstrip(">").strip() for line in lines)
-            out.append(f"<blockquote><p>{inline(quoted)}</p></blockquote>")
-        elif first.startswith("|") and len(lines) > 1 and re.match(r"^\|[\s|:-]+\|$", lines[1].strip()):
-            head = "".join(f"<th>{inline(c)}</th>" for c in cells(first))
-            rows = "\n".join("<tr>" + "".join(f"<td>{inline(c)}</td>" for c in cells(r)) + "</tr>" for r in lines[2:])
-            out.append(f"<table>\n<thead><tr>{head}</tr></thead>\n<tbody>\n{rows}\n</tbody>\n</table>")
-        else:
-            out.append(f"<p>{inline(' '.join(line.strip() for line in lines))}</p>")
-    return "\n".join(out)
+    md = MarkdownIt("commonmark", {"html": False}).enable("table")
+    tokens = md.parse(text.strip())
+    for i, token in enumerate(tokens):
+        if token.type == "heading_open":
+            token.attrSet("id", slug(tokens[i + 1].content))
+    return md.renderer.render(tokens, md.options, {}).strip()
 
 
 def page(name: str) -> str:
@@ -138,7 +110,7 @@ def main(argv: list) -> int:
         else:
             target.write_text(wanted, encoding="utf-8")
     if stale:
-        print("legal pages out of date with docs/legal; run python3 scripts/build/legal_pages.py:", *stale, sep="\n  ")
+        print("legal pages out of date with docs/legal; run scripts/build/legal_pages.py:", *stale, sep="\n  ")
         return 1
     return 0
 

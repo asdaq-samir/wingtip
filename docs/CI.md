@@ -57,11 +57,16 @@ script can check, and the rest are for whoever writes a test or a job.
    `ci_budget.py`.
 5. **Newest versions, warnings fatal.** docs/versions.md's rules: every
    toolchain and library on its newest stable release, majors too; a
-   held one is listed there with why. A weekly workflow (`versions.yml`)
-   keeps one issue, "Newer versions (weekly)", listing whatever is
-   behind. Warnings are errors in tsc (strict), ESLint (`--max-warnings
+   held one is listed there with why. Renovate (`renovate.json`) keeps
+   one issue, its Dependency Dashboard, "Newer versions (Renovate
+   dashboard)", listing whatever is behind, the pinned Actions' newest
+   commits too. It runs in dashboard-only mode: no pull request opens and
+   nothing merges until the owner ticks an update in that issue (one at a
+   time), and the repository's GitHub writes stay the one issue's edits
+   (decision 0024: no bot pull requests; CLAUDE.md, "Write to GitHub
+   gently"). Warnings are errors in tsc (strict), ESLint (`--max-warnings
    0`), Swift, Clang, Kotlin, Android lint, Rust, clippy, javac, pytest
-   and ruff. *Guards:* `warnings_fatal.py`; `newest_versions.py` weekly.
+   and ruff. *Guard:* `warnings_fatal.py`.
 6. **Batch pushes.** Every push to a pull request runs CI again and
    cancels the run before it: commit as you go, push when the change is
    whole.
@@ -93,6 +98,19 @@ script can check, and the rest are for whoever writes a test or a job.
     there were when the rule came in are listed in
     `scripts/ci/workflow_rules_allow.txt`, which only shrinks. *Guard:*
     `workflow_rules.py`.
+    The stock linters do the rest of the looking: actionlint 1.7.12
+    (syntax, expressions, and the shell of every `run:` through
+    shellcheck) and zizmor 1.32.0 (script injection, credentials left in
+    a checkout, permissions, triggers), run by `workflow_rules.py` at the
+    versions in `.tool-versions` (settings in `.github/actionlint.yaml`
+    and `.github/zizmor.yml`, each exception with its reason); shellcheck
+    0.11.0 over every script in `scripts/` and the pre-push hook
+    (`scripts/ci/shellcheck.sh`, `.shellcheckrc`); lychee 0.24.2 over the
+    Markdown's links and heading anchors, offline (`scripts/ci/check_links.sh`,
+    `lychee.toml`). All are installed by mise through
+    `scripts/build/tool.sh`, the Mac and CI alike, so a finding is the same
+    in both. Where a step's text must be shell and not a template, an
+    untrusted or even a static `${{ }}` goes through `env:`.
 12. **Every failure names what failed.** A job puts the failing test and
     its first error on the run as an `::error` annotation and uploads its
     log on failure; no `|| true` hides a check (the few read afterwards
@@ -349,7 +367,7 @@ change needs; a job it skips counts as passing.
 | Job | What it runs |
 |---|---|
 | `changes` | The path filter: which suites, images and phone builds a change touches, and whether it is docs only. Tier 1 |
-| `guards` | Every quick check, all at once on one runner (`scripts/ci/guards.sh`): the paths filter is `scripts/areas.yml`'s; no aviation rule outside the engine (below); the legal pages; CI's own rules (`test_tiers.py`, `warnings_fatal.py`, `workflow_rules.py`, "Rules" above); every Markdown link; no source file new or grown past 400 lines, nor new past 300 (below, "The layers"), one version of each toolchain, no raw style value outside the tokens, no unused Python, the simplicity rules (below); a phone's SwiftLint or detekt where the change touched it; ruff over every Python suite and the Python's layout; where the change touched them, the website, the web app's types, tsc, ESLint, Prettier and knip, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; the web's engine rules (`scripts/build/web_rules.py --check`). And **flight-critical**, on every change but words alone: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs. Tier 1 |
+| `guards` | Every quick check, all at once on one runner (`scripts/ci/guards.sh`): the paths filter is `scripts/areas.yml`'s; no aviation rule outside the engine (below); the legal pages; CI's own rules (`test_tiers.py`, `warnings_fatal.py`, `workflow_rules.py` with actionlint and zizmor, "Rules" above); every Markdown link (lychee); shellcheck over the scripts; no source file new or grown past 400 lines, nor new past 300 (below, "The layers"), one version of each toolchain, no raw style value outside the tokens, no unused Python, the simplicity rules (below); a phone's SwiftLint or detekt where the change touched it; ruff over every Python suite and the Python's layout; where the change touched them, the website, the web app's types, tsc, ESLint, Prettier and knip, and the engine's layering, WebAssembly size, cargo-machete, rustfmt and clippy; the web's engine rules (`scripts/build/web_rules.py --check`). And **flight-critical**, on every change but words alone: what must never break in the air. The engine against worked examples from the FAA's own texts (`apps/web/src/lib/fixtures/flightCritical.json`: the nav log's wind triangle, groundspeed, heading and fuel from FAA-H-8083-25C ch. 16; 14 CFR 91.159 and 91.179 cruising altitudes; 91.151 and 91.167 reserves; 91.155 minimums; AIM 5-3-8 hold entries; glide at a ratio), and the planner's KMSN to KOSH nav log and nearest fields (`tests/test_flight_critical.py`). The browser's journey is tagged `@flight-critical` and runs in `e2e`; the phones' twins run in their native jobs. Tier 1 |
 | `test-engine` | The engine's `cargo test`: on a pull request the crates it touched, those that use them and the contract test (`scripts/ci/engine_affected.py`), elsewhere every crate; that the committed WebAssembly matches the engine, where its inputs changed. Tier 1 |
 | `test-web` | `npm run types`, the generated files (the phones' API models and engine calls, the tokens, the screens, the icons) are the committed ones, Vitest (`--changed` on a pull request), `vite build` and the first-load budget. Tier 1 |
 | `test-gateway` | The Java's layout and `mvn test`: the gateway's JUnit suite, with a real Postgres in Testcontainers. Tier 1 |

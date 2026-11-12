@@ -150,11 +150,12 @@ fi
 
 start "Areas filter" python3 scripts/areas.py check
 start "Rules boundary" python3 scripts/ci/rules_boundary.py
-start "Legal pages" python3 scripts/build/legal_pages.py --check
+start "Legal pages" scripts/build/legal_pages.py --check
 start "Test tiers" python3 scripts/ci/test_tiers.py
 start "Warnings fatal" python3 scripts/ci/warnings_fatal.py
 start "Workflow rules" python3 scripts/ci/workflow_rules.py
-start "Doc links" python3 scripts/ci/check_links.py
+start "Doc links" scripts/ci/check_links.sh
+start "Shell scripts" scripts/ci/shellcheck.sh
 start "Web engine rules" python3 scripts/build/web_rules.py --check
 start "Python lint" ruff_check
 start "Python layout" scripts/dev/format.sh --check python

@@ -1,0 +1,13 @@
+# shellcheck's settings for scripts/ and the pre-push hook (CI's guards job,
+# scripts/ci/guards.sh, and the Mac run the same file through scripts/build/tool.sh).
+# Follow `source`d files, so shared-cache.sh's functions are known to its users.
+external-sources=true
+# SC2016: single quotes on purpose where the text is a script for a
+# container's shell or for node, which expands its own variables.
+disable=SC2016
+# SC2012: `ls` where a name sorts or the newest is wanted (find has no
+# equivalent) and every name is the repository's own, without spaces.
+disable=SC2012
+# SC2329: functions started by name (`run_$lang`, a `start NAME fn` in
+# guards.sh) look unused to it.
+disable=SC2329

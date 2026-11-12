@@ -30,8 +30,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
-  id-token: write
 
 # A review asked for again replaces one still running. The label is in the
 # group, so putting some other label on the pull request (a run whose job
@@ -45,6 +43,10 @@ jobs:
     if: ${{ github.event.label.name == 'review' && github.event.pull_request.user.login != 'dependabot[bot]' }}
     runs-on: ${{ vars.LINUX_RUNNER || 'ubuntu-26.04' }}
     timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
     env:
       HAS_KEY: ${{ secrets.ANTHROPIC_API_KEY != '' || secrets.CLAUDE_CODE_OAUTH_TOKEN != '' }}
     steps:
