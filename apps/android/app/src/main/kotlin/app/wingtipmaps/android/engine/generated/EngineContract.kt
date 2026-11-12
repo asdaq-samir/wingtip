@@ -3745,7 +3745,7 @@ object EngineContract {
          */
         val ceiling: Boolean? = null,
         /**
-         * The field the picture is, as app.flow_grid names it (its file's name: "ceiling", "vis", "temp" and the rest), so the engine reads each its own way: the ceiling and the visibility as the lowest round the point, the rest between. Absent reads between.
+         * The field the picture is, as app.flow_grid names it (its file's name before any level: "ceiling", "vis", "temp" and the rest), so the engine reads each its own way: the ceiling, the visibility and the freezing level as the lowest round the point, the gusts, precipitation, CAPE, cloud cover, cloud tops, icing and turbulence as the highest, the temperature between. Absent reads between.
          */
         val field: String? = null,
     )

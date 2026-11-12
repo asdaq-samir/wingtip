@@ -74,6 +74,41 @@
       "answer": { "value": 0.5, "from_deg": null, "calm": false, "no_ceiling": false }
     },
     {
+      "about": "Freezing level 8,000 ft beside 2,000 ft MSL, half way: 2,000 ft, the lowest, as icing begins round it (AIM 7-1-19: +02 to -10 C), where a straight line reads 5,000",
+      "input": { "pixels": [[80, 0, 255], [20, 0, 255], [80, 0, 255], [20, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 25500], "vector": false, "field": "frzlvl" },
+      "answer": { "value": 2000.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "No icing beside category 3 (AIM 7-1-19's moderate), half way: 3, the highest, never the 1.5 a straight line makes, a category neither pixel holds",
+      "input": { "pixels": [[0, 0, 255], [150, 0, 255], [0, 0, 255], [150, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 5.1], "vector": false, "field": "icing" },
+      "answer": { "value": 3.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Precipitation 0 beside 60 dBZ (AIM 7-1-12's EXTREME, > 50 dBZ), a quarter of the way: 60 dBZ, where a straight line reads 15, LIGHT",
+      "input": { "pixels": [[0, 0, 255], [204, 0, 255], [0, 0, 255], [204, 0, 255]], "fx": 0.25, "fy": 0, "unscale": [0, 75], "vector": false, "field": "precip" },
+      "answer": { "value": 60.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Cloud tops 8,000 ft beside FL240, half way: 24,000 ft, the top to clear (14 CFR 91.155(a): 1,000 ft above), where a straight line reads 16,000",
+      "input": { "pixels": [[40, 0, 255], [120, 0, 255], [40, 0, 255], [120, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 51000], "vector": false, "field": "tops" },
+      "answer": { "value": 24000.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Gusts none beside 40 kt, half way: 40 kt, the highest",
+      "input": { "pixels": [[0, 0, 255], [102, 0, 255], [0, 0, 255], [102, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 100], "vector": false, "field": "gust" },
+      "answer": { "value": 40.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "Cloud cover clear beside 80% (AIM 7-1-28's BroKeN, a ceiling), half way: 80%, where a straight line reads 40%, ScaTtered",
+      "input": { "pixels": [[0, 0, 255], [204, 0, 255], [0, 0, 255], [204, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 100], "vector": false, "field": "cloud" },
+      "answer": { "value": 80.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
+      "about": "On the clear pixel's own middle, its own value: the higher pixel is not read",
+      "input": { "pixels": [[0, 0, 255], [150, 0, 255], [0, 0, 255], [150, 0, 255]], "fx": 0, "fy": 0, "unscale": [0, 5.1], "vector": false, "field": "icing" },
+      "answer": { "value": 0.0, "from_deg": null, "calm": false, "no_ceiling": false }
+    },
+    {
       "about": "The temperature, continuous, still reads between: half way from 0 to 10 C",
       "input": { "pixels": [[0, 0, 255], [255, 0, 255], [0, 0, 255], [255, 0, 255]], "fx": 0.5, "fy": 0, "unscale": [0, 10], "vector": false, "field": "temp" },
       "answer": { "value": 5.0, "from_deg": null, "calm": false, "no_ceiling": false }

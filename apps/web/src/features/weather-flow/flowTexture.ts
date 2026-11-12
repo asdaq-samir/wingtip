@@ -25,15 +25,17 @@ export function useFlowTexture(frame: FlowFrame | null, field: string, enabled =
 }
 
 /** A picture's value at a point, the engine's reading of it (flow_cell
- *  and flow_sample, the one the phones' FlowGrid make too): between the
- *  four pixel middles round it, the wind from its east and north parts,
- *  its direction the one it blows from. weatherlayers-gl only loads the
+ *  and flow_sample, the one the phones' FlowGrid make too) from the four
+ *  pixel middles round it: the wind from its east and north parts, its
+ *  direction the one it blows from. weatherlayers-gl only loads the
  *  picture here: its own reading takes the bounds as the outer pixels'
  *  middles, half a pixel off the weather service's (flow_grid BOUNDS, the
  *  pixels' outer edges), and averages none where a pixel has none in a
- *  way the phones did not. The ceiling's picture is read as the
- *  ceiling, rounded to its 50 ft step, its top no ceiling (`noCeiling`). `file` is the picture's name, its encoding its
- *  field's ("temp-060" is a "temp"). */
+ *  way the phones did not. The field is sent by name, so the engine reads
+ *  each its own way: the worst round the point where there is a worse
+ *  end, the ceiling rounded to its 50 ft step and its top no ceiling
+ *  (`noCeiling`). `file` is the picture's name, its encoding its field's
+ *  ("temp-060" is a "temp"). */
 export function valueAt(layer: FlowLayer, file: string, texture: TextureData | undefined, point: [number, number]) {
   const field = file.split("-")[0]!;
   const spec = layer.fields[field];
@@ -50,7 +52,7 @@ export function valueAt(layer: FlowLayer, file: string, texture: TextureData | u
     fy: cell.fy,
     unscale: spec.unscale,
     vector: spec.vector,
-    ceiling: field === "ceiling",
+    field,
   });
   return read && { value: read.value, direction: read.from_deg ?? undefined, calm: read.calm, noCeiling: read.no_ceiling };
 }

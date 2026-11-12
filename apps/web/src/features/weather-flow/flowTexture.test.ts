@@ -55,6 +55,24 @@ describe("valueAt", () => {
     expect(valueAt(ceiling, "ceiling", picture, [1.5, 0.5])).toMatchObject({ value: mvfr.answer!.value, noCeiling: false });
   });
 
+  it("sends the field by name, so a level's icing and the visibility read their worst (the fixture's cases)", () => {
+    const icing = fixture.samples.find((s) => s.about.startsWith("No icing beside category 3"))!;
+    const vis = fixture.samples.find((s) => s.about.startsWith("Visibility 10 SM beside 0.5 SM"))!;
+    // 2 by 1 pictures, the west pixel clear, the east the worse: read half way.
+    const both = {
+      bounds: [0, 0, 2, 1],
+      fields: {
+        icing: { unscale: icing.input.unscale, vector: false, unit: "category" },
+        vis: { unscale: vis.input.unscale, vector: false, unit: "SM" },
+      },
+    } as unknown as FlowLayer;
+    const picture = (west: number, east: number) =>
+      ({ data: new Uint8ClampedArray([west, 0, 0, 255, east, 0, 0, 255]), width: 2, height: 1 }) as unknown as TextureData;
+    expect(valueAt(both, "icing-060", picture(0, 150), [1, 0.5])!.value).toBe(icing.answer!.value);
+    // Byte 13 is 0.51 SM: the lowest, where half way between reads over 5.
+    expect(valueAt(both, "vis", picture(255, 13), [1, 0.5])!.value).toBeCloseTo(0.51, 2);
+  });
+
   it("reads nothing off the picture or before it loads", () => {
     expect(valueAt(layer, "wind-060", texture, [3, 0.5])).toBeNull();
     expect(valueAt(layer, "wind-060", undefined, [0.5, 0.5])).toBeNull();
