@@ -15,8 +15,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -65,6 +69,11 @@ class InFlight private constructor() {
     @Volatile
     var glideRatio: Double? = null
 
+    /** Whether the map shows the glide ring (GlideRing.shown): the engine
+     *  is asked for it only then, not at every fix for nothing. */
+    @Volatile
+    var ringShown: Boolean = false
+
     /** The nearest field's elevation, the ring's ground where no pack
      *  reaches, asked of the planner now and then while moving. */
     @Volatile
@@ -72,6 +81,11 @@ class InFlight private constructor() {
     private var fieldAskedMs = 0L
     private var fieldAsking: Job? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+
+    /** Whether the airplane is at flying speed, told only when that
+     *  changes: what the root and the map lay out by, so they are not
+     *  drawn again at every fix. */
+    val underway: StateFlow<Boolean> = state.map { it.underway }.distinctUntilChanged().stateIn(scope, SharingStarted.Eagerly, false)
 
     /** The GPS altitudes of the last seconds, for the vertical speed. */
     private val altitudes = ArrayDeque<Pair<Double, Double>>()
@@ -92,7 +106,7 @@ class InFlight private constructor() {
             altitudes.addLast(t to ft)
         }
         val vs = Engine.verticalSpeed(altitudes.map { EngineContract.VerticalSpeedInputSamplesItem(it.first, it.second) })
-        val glide = Engine.glideRing(fix.lat, fix.lon, fix.altitudeFt, fix.groundspeedKt, terrainFt, fieldFt, glideRatio)
+        val glide = if (ringShown) Engine.glideRing(fix.lat, fix.lon, fix.altitudeFt, fix.groundspeedKt, terrainFt, fieldFt, glideRatio) else Result.success(null)
         val progress = progress(fix, plan, nowMs)
         val underway = OwnShip.underway(fix.groundspeedKt)
         // The first rule that failed, in the engine's words (Engine.rule

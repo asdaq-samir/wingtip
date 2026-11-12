@@ -3,6 +3,7 @@ package app.wingtipmaps.android
 import app.wingtipmaps.android.flight.Geo
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.flight.OwnTrail
+import kotlinx.coroutines.Dispatchers
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -17,14 +18,15 @@ import kotlin.math.hypot
  *  the file written and read back. Flying speed and the distance are
  *  given to the test (the engine's `underway` and `distance_nm` are not
  *  on the JVM): 20 kt and over, and a flat chart's miles, near enough
- *  over a tenth of a mile. */
+ *  over a tenth of a mile. The file is written at once (Unconfined), not
+ *  behind as on the phone. */
 class OwnTrailTest {
     private var clockMs = 1_700_000_000_000L
     private val file = File.createTempFile("own-trail", ".json").also { it.delete() }
 
     private val flat = Geo.Distance { lat1, lon1, lat2, lon2 -> Result.success(hypot(lat2 - lat1, (lon2 - lon1) * cos(Math.toRadians(lat1))) * 60) }
 
-    private fun trail(distance: Geo.Distance = flat) = OwnTrail(file, underway = { (it ?: 0.0) >= 20.0 }, distance = distance, nowMs = { clockMs })
+    private fun trail(distance: Geo.Distance = flat) = OwnTrail(file, underway = { (it ?: 0.0) >= 20.0 }, distance = distance, nowMs = { clockMs }, writing = Dispatchers.Unconfined)
 
     private fun fix(lat: Double, lon: Double, kt: Double, atMs: Long = clockMs) =
         OwnShip.Fix(lat = lat, lon = lon, altitudeFt = 3500.0, trackDeg = 90.0, groundspeedKt = kt, accuracyM = 5.0, atMs = atMs)

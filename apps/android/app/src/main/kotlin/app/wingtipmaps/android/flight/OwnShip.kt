@@ -310,8 +310,9 @@ class OwnShip private constructor(private val context: Context) {
         asking?.cancel()
         asking = scope.launch {
             // The packs' answer is asked either way, for the ground under
-            // the airplane the glide ring stands on, network or none.
-            val offline = CyclePacks.of(context).ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt)
+            // the airplane the glide ring stands on, network or none: off
+            // the main thread, as the engine reads nine regions' packs.
+            val offline = withContext(Dispatchers.Default) { CyclePacks.of(context).ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt) }
             _groundFt.value = offline?.groundFt
             val alerts = try {
                 Planner.ahead(fix.lat, fix.lon, track, gs, fix.altitudeFt)

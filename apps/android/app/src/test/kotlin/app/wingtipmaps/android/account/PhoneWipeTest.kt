@@ -12,6 +12,7 @@ import app.wingtipmaps.android.api.generated.gateway.OwnFigures
 import app.wingtipmaps.android.flight.OwnShip
 import app.wingtipmaps.android.flight.OwnTrail
 import app.wingtipmaps.android.logbook.FlightRecorder
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import okhttp3.Cookie
 import okhttp3.HttpUrl.Companion.toHttpUrl
@@ -45,13 +46,13 @@ class PhoneWipeTest {
     }
 
     @Test
-    fun bothTrackFilesAreGone() {
+    fun bothTrackFilesAreGone() = runTest {
         val trailFile = File(dir, "own-trail.json")
-        val trail = OwnTrail(trailFile, underway = { (it ?: 0.0) >= 20.0 }, distance = { _, _, _, _ -> Result.success(1.0) }, nowMs = { 1_000L })
+        val trail = OwnTrail(trailFile, underway = { (it ?: 0.0) >= 20.0 }, distance = { _, _, _, _ -> Result.success(1.0) }, nowMs = { 1_000L }, writing = Dispatchers.Unconfined)
         trail.took(fix(1_000L, 90.0))
         trail.took(fix(20_000L, 90.0))
         val recordedFile = File(dir, "flight-recorded.json")
-        val recorder = FlightRecorder(recordedFile) { 60_000L }
+        val recorder = FlightRecorder(recordedFile, Dispatchers.Unconfined) { 60_000L }
         recorder.took(fix(1_000L, 90.0))
         recorder.asked(600.0)
         assertTrue(recordedFile.isFile)

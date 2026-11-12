@@ -18,6 +18,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.maplibre.android.camera.CameraUpdateFactory
 import org.maplibre.android.maps.MapLibreMap
 import org.maplibre.android.maps.MapView
@@ -64,8 +65,7 @@ object Map3dLayer {
     private const val APPROACH_LINE = "approach-3d-line"
     private const val APPROACH_DASH = "approach-3d-centreline"
 
-    /** The finest terrain tile asked for, the planner's finest
-     *  (wingtip.terrain_view.MAX_ZOOM). */
+    /** The finest terrain tile asked for, the planner's (wingtip.terrain_view.MAX_ZOOM). */
     private const val DEM_MAX_ZOOM = 13f
 
     /** The tilt 3D opens at, for the ground to read as ground at once (the
@@ -131,8 +131,8 @@ object Map3dLayer {
                     "/api/airspace/volumes",
                     mapOf("south" to "${b.south}", "west" to "${b.west}", "north" to "${b.north}", "east" to "${b.east}", "classes" to classes.joinToString(",")),
                 )
-                val answer = Gateway.json.decodeFromString(AirspaceVolumes.serializer(), body)
-                volumes = AirspaceVolumes3d.geoJson(answer.features, appZoom)
+                // Read off the main thread: each polygon's floor and ceiling is asked of the engine.
+                volumes = withContext(Dispatchers.Default) { AirspaceVolumes3d.geoJson(Gateway.json.decodeFromString(AirspaceVolumes.serializer(), body).features, appZoom) }
                 redraw(view, camera = false)
             } catch (e: CancellationException) {
                 throw e
