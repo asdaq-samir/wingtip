@@ -9,7 +9,7 @@ from app import oral, references
 from app.main import app
 
 client = TestClient(app)
-REAL_FORCED = oral._forced
+REAL_PARSED = oral._parsed
 
 CLASS_C = references.Source(
     "14 CFR 91.130",
@@ -38,11 +38,11 @@ def corpus(monkeypatch):
 def canned(*outputs):
     calls = []
 
-    def forced(tool, content, max_tokens):
-        calls.append((tool["name"], content))
-        return outputs[len(calls) - 1]
+    def parsed(output, content, max_tokens):
+        calls.append((output.__name__, content))
+        return output(**outputs[len(calls) - 1])
 
-    return calls, forced
+    return calls, parsed
 
 
 QUESTION = {
@@ -52,7 +52,7 @@ QUESTION = {
 
 
 def test_a_question_keeps_only_the_quotes_that_are_the_faas_words(monkeypatch):
-    calls, forced = canned(
+    calls, parsed = canned(
         {
             "question": "Before you enter Duluth's Class C, what must you have?",
             "acs_code": "PA.I.E.K1",
@@ -65,7 +65,7 @@ def test_a_question_keeps_only_the_quotes_that_are_the_faas_words(monkeypatch):
             ],
         }
     )
-    monkeypatch.setattr(oral, "_forced", forced)
+    monkeypatch.setattr(oral, "_parsed", parsed)
 
     body = client.post("/api/oral/question", json=QUESTION).json()
 
@@ -76,11 +76,11 @@ def test_a_question_keeps_only_the_quotes_that_are_the_faas_words(monkeypatch):
     assert body["editions"]["cfr_issued"] == "2026-09-29"
     # The plan is the student's material, set apart; the sources are given.
     name, content = calls[0]
-    assert name == "ask_question" and "<plan>\nC81 to KDLH" in content and '<source id="14 CFR 91.130"' in content
+    assert name == "AskedQuestion" and "<plan>\nC81 to KDLH" in content and '<source id="14 CFR 91.130"' in content
 
 
 def test_a_question_with_no_true_quote_is_said_to_be_unsupported_and_a_stray_code_is_the_focus(monkeypatch):
-    _, forced = canned(
+    _, parsed = canned(
         {
             "question": "Q?",
             "acs_code": "PA.IX.Z.K9",
@@ -89,13 +89,13 @@ def test_a_question_with_no_true_quote_is_said_to_be_unsupported_and_a_stray_cod
             "citations": [{"source": "14 CFR 91.130", "quote": "made up words entirely here"}],
         }
     )
-    monkeypatch.setattr(oral, "_forced", forced)
+    monkeypatch.setattr(oral, "_parsed", parsed)
     body = client.post("/api/oral/question", json=QUESTION).json()
     assert body["unsupported"] is True and body["acs_code"] == "PA.I.E.K1"
 
 
 def test_an_answer_is_graded_against_the_sources_it_was_asked_from(monkeypatch):
-    calls, forced = canned(
+    calls, parsed = canned(
         {
             "verdict": "partial",
             "feedback": "Right that you need the radio; you also keep it while inside.",
@@ -103,7 +103,7 @@ def test_an_answer_is_graded_against_the_sources_it_was_asked_from(monkeypatch):
             "citations": [{"source": "14 CFR 91.130", "quote": "thereafter maintain those communications while within that airspace"}],
         }
     )
-    monkeypatch.setattr(oral, "_forced", forced)
+    monkeypatch.setattr(oral, "_parsed", parsed)
     body = client.post(
         "/api/oral/grade",
         json={
@@ -121,8 +121,13 @@ def test_an_answer_is_graded_against_the_sources_it_was_asked_from(monkeypatch):
 
 
 def test_an_unreadable_grade_and_an_unreachable_examiner_are_502s(monkeypatch):
-    _, forced = canned({"verdict": "great", "feedback": "", "missed": [], "citations": []})
-    monkeypatch.setattr(oral, "_forced", forced)
+    class Unreadable:
+        messages = type(
+            "Messages", (), {"parse": staticmethod(lambda **kwargs: type("Resp", (), {"stop_reason": "end_turn", "parsed_output": None})())}
+        )()
+
+    monkeypatch.setattr(oral, "_parsed", REAL_PARSED)
+    monkeypatch.setattr(oral.anthropic, "Anthropic", Unreadable)
     grade = {"question": "Q?", "model_answer": "A.", "source_ids": ["14 CFR 91.130"], "answer": "x"}
     assert client.post("/api/oral/grade", json=grade).status_code == 502
 
@@ -131,9 +136,9 @@ def test_an_unreadable_grade_and_an_unreachable_examiner_are_502s(monkeypatch):
         raise anthropic.AuthenticationError("invalid x-api-key", response=_response(401), body=None)
 
     class Refusing:
-        messages = type("Messages", (), {"create": staticmethod(refused)})()
+        messages = type("Messages", (), {"parse": staticmethod(refused)})()
 
-    monkeypatch.setattr(oral, "_forced", REAL_FORCED)
+    monkeypatch.setattr(oral, "_parsed", REAL_PARSED)
     monkeypatch.setattr(oral.anthropic, "Anthropic", Refusing)
     resp = client.post("/api/oral/question", json=QUESTION)
     assert resp.status_code == 502 and "could not reach its examiner" in resp.json()["detail"]
@@ -143,11 +148,10 @@ def test_an_answer_cut_off_by_its_token_limit_is_a_502_not_a_question_without_ci
     class Cut:
         class messages:  # noqa: N801 -- the client's own attribute name
             @staticmethod
-            def create(**kwargs):
-                block = type("Block", (), {"type": "tool_use", "input": {"question": "Q?", "acs_code": "PA.I.E.K1"}})()
-                return type("Resp", (), {"stop_reason": "max_tokens", "content": [block]})()
+            def parse(**kwargs):
+                return type("Resp", (), {"stop_reason": "max_tokens", "parsed_output": None})()
 
-    monkeypatch.setattr(oral, "_forced", REAL_FORCED)
+    monkeypatch.setattr(oral, "_parsed", REAL_PARSED)
     monkeypatch.setattr(oral.anthropic, "Anthropic", Cut)
     resp = client.post("/api/oral/question", json=QUESTION)
     assert resp.status_code == 502 and "ran out of room" in resp.json()["detail"]

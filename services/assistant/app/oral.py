@@ -4,8 +4,8 @@ the student's own planned flight, and their answer checked -- each
 grounded only in the regulations and the AIM (app.references), the
 sources quoted word for word.
 
-Two calls to Claude, each made to fill in one tool's fields so what comes
-back is data, not prose to be parsed: one asks a question on an ACS
+Two calls to Claude, each made to fill in a model's fields (messages.parse)
+so what comes back is data, not prose to be parsed: one asks a question on an ACS
 element (the student's knowledge-test codes first, where they have
 them) about their route, with its answer and the passages it rests on;
 the other grades their answer against those same passages. Every quote
@@ -22,11 +22,12 @@ reviewed its answers (the roadmap's release gate) it is the developer's.
 
 from __future__ import annotations
 
-import json
 import logging
+from typing import Literal
 
 import anthropic
 from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field, ValidationError
 
 from . import references, tracing
 from .gateway import gateway
@@ -37,51 +38,33 @@ from .settings import get_settings
 #: since a wrong answer about a regulation is worse than a slow one.
 ORAL_MODEL = get_settings().oral_model
 log = logging.getLogger(__name__)
-VERDICTS = ("satisfactory", "partial", "unsatisfactory")
 
-_CITATIONS = {
-    "type": "array",
-    "description": "The passages the answer rests on: each source's id exactly as given, and a short quote copied word for word from it.",
-    "items": {"type": "object", "properties": {"source": {"type": "string"}, "quote": {"type": "string"}}, "required": ["source", "quote"]},
-}
 
-ASK = {
-    "name": "ask_question",
-    "description": "Ask the student one oral-exam question and record its answer.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "question": {"type": "string", "description": "One question, as an examiner would ask it, about the student's own flight."},
-            "acs_code": {"type": "string", "description": "The ACS element code it examines, one of those given."},
-            "model_answer": {"type": "string", "description": "A complete, correct answer, from the sources only."},
-            "key_points": {
-                "type": "array",
-                "items": {"type": "string"},
-                "description": "What a satisfactory answer must include, each a few words.",
-            },
-            "citations": _CITATIONS,
-        },
-        "required": ["question", "acs_code", "model_answer", "key_points", "citations"],
-    },
-}
+class Cite(BaseModel):
+    source: str = Field(description="The source's id, exactly as given.")
+    quote: str = Field(description="A short quote copied word for word from it.")
 
-GRADE = {
-    "name": "grade_answer",
-    "description": "Grade the student's answer to the question.",
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "verdict": {"type": "string", "enum": list(VERDICTS)},
-            "feedback": {
-                "type": "string",
-                "description": "Two or three sentences to the student: what was right, what was wrong or missing, and why it matters.",
-            },
-            "missed": {"type": "array", "items": {"type": "string"}, "description": "The key points the answer did not make."},
-            "citations": _CITATIONS,
-        },
-        "required": ["verdict", "feedback", "missed", "citations"],
-    },
-}
+
+class AskedQuestion(BaseModel):
+    """What the examiner fills in to ask the student one question."""
+
+    question: str = Field(description="One question, as an examiner would ask it, about the student's own flight.")
+    acs_code: str = Field(description="The ACS element code it examines, one of those given.")
+    model_answer: str = Field(description="A complete, correct answer, from the sources only.")
+    key_points: list[str] = Field(description="What a satisfactory answer must include, each a few words.")
+    citations: list[Cite] = Field(description="The passages the answer rests on.")
+
+
+class Grading(BaseModel):
+    """What the examiner fills in to grade the student's answer."""
+
+    verdict: Literal["satisfactory", "partial", "unsatisfactory"]
+    feedback: str = Field(
+        description="Two or three sentences to the student: what was right, what was wrong or missing, and why it matters."
+    )
+    missed: list[str] = Field(description="The key points the answer did not make.")
+    citations: list[Cite] = Field(description="The passages the grade rests on.")
+
 
 SYSTEM = (
     "You are a designated pilot examiner giving the oral portion of a private pilot airplane practical test under "
@@ -106,56 +89,44 @@ def _sources_block(found: list[references.Source], limit: int) -> str:
     return "\n".join(f'<source id="{s.id}" title="{s.title}">\n{s.text[:limit]}\n</source>' for s in found)
 
 
-def _forced(tool: dict, content: str, max_tokens: int) -> dict:
-    """One call answered by filling in `tool`'s fields; what it filled in.
-    Asked for in words, with the tool the only one offered: the most
-    capable models take no forced tool_choice."""
+def _parsed[T: BaseModel](output: type[T], content: str, max_tokens: int) -> T:
+    """One call, answered by filling in `output`'s fields; what it filled
+    in, as messages.parse reads it."""
     try:
-        with tracing.claude_call("oral", ORAL_MODEL) as used:
-            resp = anthropic.Anthropic().messages.create(
+        with tracing.feature("oral"):
+            resp = anthropic.Anthropic().messages.parse(
                 model=ORAL_MODEL,
                 max_tokens=max_tokens,
                 system=SYSTEM,
-                tools=[tool],
-                tool_choice={"type": "auto"},
-                messages=[{"role": "user", "content": f"{content}\n\nAnswer by calling the {tool['name']} tool."}],
+                messages=[{"role": "user", "content": content}],
+                output_format=output,
             )
-            used.add(resp)
-    except anthropic.AnthropicError as err:
-        # No key, a refused one, no network, a limit: the examiner is out,
-        # whichever it was, and the page says which.
+    except (anthropic.AnthropicError, ValidationError) as err:
+        # No key, a refused one, no network, a limit, or fields that do not
+        # read: the examiner is out, whichever it was, and the page says which.
         raise OralUnavailable(str(err)) from err
-    # Cut off, the tool's fields are cut off with it -- the citations,
-    # written last -- and a question would read as unsupported when it
-    # was only short of room. The model thinks first, within max_tokens.
+    # Cut off, the fields are cut off with it -- the citations, written
+    # last -- and a question would read as unsupported when it was only
+    # short of room. The model thinks first, within max_tokens.
     if resp.stop_reason == "max_tokens":
         raise OralUnavailable("The examiner ran out of room for its answer.")
-    block = next((b for b in resp.content if getattr(b, "type", None) == "tool_use"), None)
-    if block is None:
+    if resp.parsed_output is None:
         raise OralUnavailable("The examiner gave no answer.")
-    return dict(block.input)
+    return resp.parsed_output
 
 
-def checked(citations, allowed: dict[str, references.Source]) -> list[dict]:
+def checked(citations: list[Cite], allowed: dict[str, references.Source]) -> list[dict]:
     """The citations that are the FAA's own words, from a source the call
     was given, each with that source's title and link; the rest dropped,
-    and logged for the review of its answers. A list written out as JSON
-    text, as a model now and then gives one, is read as the list."""
-    if isinstance(citations, str):
-        try:
-            citations = json.loads(citations)
-        except ValueError:
-            citations = []
+    and logged for the review of its answers."""
     kept = []
-    for c in citations if isinstance(citations, list) else []:
-        if not isinstance(c, dict):
-            continue
-        source = allowed.get(str(c.get("source", "")))
-        quote = str(c.get("quote", "")).strip()
+    for c in citations:
+        source = allowed.get(c.source)
+        quote = c.quote.strip()
         if source and references.quoted(quote, source):
             kept.append({"source": source.id, "title": source.title, "url": source.url, "quote": quote})
         else:
-            log.info("Dropped a citation of %s: %r", c.get("source"), quote[:120])
+            log.info("Dropped a citation of %s: %r", c.source, quote[:120])
     return kept
 
 
@@ -174,14 +145,14 @@ def ask(plan: str, focus: list[dict], asked: list[str]) -> dict:
         "airspace, weather, altitudes, aircraft), that the sources answer. Then give its answer, its key points "
         "and its citations."
     )
-    out = _forced(ASK, content, 6000)
+    out = _parsed(AskedQuestion, content, 6000)
     codes = [f["code"] for f in focus]
-    citations = checked(out.get("citations"), allowed)
+    citations = checked(out.citations, allowed)
     return {
-        "question": str(out.get("question", "")).strip(),
-        "acs_code": out.get("acs_code") if out.get("acs_code") in codes else codes[0],
-        "model_answer": str(out.get("model_answer", "")).strip(),
-        "key_points": [str(k) for k in out.get("key_points") or []][:8],
+        "question": out.question.strip(),
+        "acs_code": out.acs_code if out.acs_code in codes else codes[0],
+        "model_answer": out.model_answer.strip(),
+        "key_points": out.key_points[:8],
         "citations": citations,
         "source_ids": list(allowed),
         "unsupported": not citations,
@@ -202,15 +173,12 @@ def grade(question: str, model_answer: str, key_points: list[str], source_ids: l
         "correct and makes the key points, partial where it is right as far as it goes but misses one that "
         "matters, unsatisfactory where it is wrong or unsafe. Cite the sources that show what the answer should be."
     )
-    out = _forced(GRADE, content, 4000)
-    verdict = out.get("verdict")
-    if verdict not in VERDICTS:
-        raise OralUnavailable("The examiner's grade could not be read.")
+    out = _parsed(Grading, content, 4000)
     return {
-        "verdict": verdict,
-        "feedback": str(out.get("feedback", "")).strip(),
-        "missed": [str(m) for m in out.get("missed") or []][:8],
-        "citations": checked(out.get("citations"), allowed),
+        "verdict": out.verdict,
+        "feedback": out.feedback.strip(),
+        "missed": out.missed[:8],
+        "citations": checked(out.citations, allowed),
     }
 
 
