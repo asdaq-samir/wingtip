@@ -1,6 +1,6 @@
 """The shapes app.routers.airspace sends and takes, as Pydantic models."""
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -139,3 +139,15 @@ class AlertsAhead(BaseModel):
 
     alerts: list[AheadAlert]
     unavailable: list[str] = []
+
+
+class AirspaceVolumes(BaseModel):
+    """The volumes in a box as GeoJSON (wingtip.airspace_volumes): each
+    feature a Class B, C, D or surface E volume (`layer` "airspace") or a
+    special use area (`layer` "special_use"), with the fields of the
+    cycle's overlay tiles' layer of that name and `label`, the point its
+    name is written at; `cycle`, the pack's, None before one is built."""
+
+    type: Literal["FeatureCollection"] = "FeatureCollection"
+    features: list[dict[str, Any]]
+    cycle: str | None = None

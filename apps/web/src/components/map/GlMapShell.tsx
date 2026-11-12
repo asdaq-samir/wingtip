@@ -32,6 +32,7 @@ import {
   parkLayers,
   slotId,
   sweepLayers,
+  tapHit,
   type DrawnImage,
   type GlMapApi,
   type GlTap,
@@ -407,16 +408,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       // it, as the layers that draw with it do (GlRouteMap's EngineLayers).
       if (!engineLoaded()) return;
       for (const t of [...registry.taps].sort((a, b) => a.rank - b.rank)) {
-        const layers = t.layers.filter((l) => map.getLayer(l));
-        if (!layers.length) continue;
-        const r = t.reach;
-        const hit = map.queryRenderedFeatures(
-          [
-            [e.point.x - r, e.point.y - r],
-            [e.point.x + r, e.point.y + r],
-          ],
-          { layers },
-        )[0];
+        const hit = tapHit(map, t, e.point);
         if (hit) {
           noteTap(e.lngLat);
           t.onTap(hit, e);

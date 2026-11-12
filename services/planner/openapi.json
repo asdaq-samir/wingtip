@@ -1973,6 +1973,41 @@
         "title": "AirspaceTransit",
         "type": "object"
       },
+      "AirspaceVolumes": {
+        "description": "The volumes in a box as GeoJSON (wingtip.airspace_volumes): each\nfeature a Class B, C, D or surface E volume (`layer` \"airspace\") or a\nspecial use area (`layer` \"special_use\"), with the fields of the\ncycle's overlay tiles' layer of that name and `label`, the point its\nname is written at; `cycle`, the pack's, None before one is built.",
+        "properties": {
+          "cycle": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cycle"
+          },
+          "features": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "type": {
+            "const": "FeatureCollection",
+            "default": "FeatureCollection",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "features"
+        ],
+        "title": "AirspaceVolumes",
+        "type": "object"
+      },
       "AirwayAltitudes": {
         "description": "An airway segment's published altitudes, feet MSL (NASR AWY_SEG_ALT):\nthe MEA, the GNSS MEA, the MOCA and the MAA; `from_` the fix it starts\nat.",
         "properties": {
@@ -24271,6 +24306,107 @@
         "summary": "Airspace At Point",
         "x-gateway": {
           "access": "public"
+        }
+      }
+    },
+    "/api/airspace/volumes": {
+      "get": {
+        "description": "The Class B, C and D, the surface Class E and the special use areas\nmeeting the box, each polygon whole as the FAA draws it, for the 3D\nmap to stand up (wingtip.airspace_volumes): from the cycle pack the\nshared store holds, the same for every pilot, so kept for an hour at\nmost (SHARED_CACHE). A state's width at most; at a far zoom the map\nasks only for Class B and the special use areas.",
+        "operationId": "airspace_volumes_in_api_airspace_volumes_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "south",
+            "required": true,
+            "schema": {
+              "maximum": 90,
+              "minimum": -90,
+              "title": "South",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "west",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "West",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "north",
+            "required": true,
+            "schema": {
+              "maximum": 90,
+              "minimum": -90,
+              "title": "North",
+              "type": "number"
+            }
+          },
+          {
+            "in": "query",
+            "name": "east",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "title": "East",
+              "type": "number"
+            }
+          },
+          {
+            "description": "The classes wanted, as 'B,C'",
+            "in": "query",
+            "name": "classes",
+            "required": false,
+            "schema": {
+              "default": "B,C,D,E",
+              "description": "The classes wanted, as 'B,C'",
+              "title": "Classes",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "special_use",
+            "required": false,
+            "schema": {
+              "default": true,
+              "title": "Special Use",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AirspaceVolumes"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Airspace Volumes In",
+        "x-gateway": {
+          "access": "public",
+          "cache": true
         }
       }
     },

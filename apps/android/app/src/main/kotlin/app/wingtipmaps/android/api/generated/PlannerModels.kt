@@ -868,6 +868,20 @@ data class TfrHere (
 )
 
 /**
+ * The volumes in a box as GeoJSON (wingtip.airspace_volumes): each
+ * feature a Class B, C, D or surface E volume (`layer` "airspace") or a
+ * special use area (`layer` "special_use"), with the fields of the
+ * cycle's overlay tiles' layer of that name and `label`, the point its
+ * name is written at; `cycle`, the pack's, None before one is built.
+ */
+@Serializable
+data class AirspaceVolumes (
+    val cycle: String? = null,
+    val features: JsonArray,
+    val type: String? = null
+)
+
+/**
  * What is ahead of the airplane, warnings first, then the soonest;
  * `unavailable` names what could not be read (special-use airspace,
  * TFRs, terrain, obstacles), said rather than shown as nothing there.

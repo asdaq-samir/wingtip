@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { MapboxOverlay } from "@deck.gl/mapbox";
 import type { Layer } from "@deck.gl/core";
-import type { IControl, Map as MlMap, RasterLayerSpecification } from "maplibre-gl";
+import type { Map as MlMap, RasterLayerSpecification } from "maplibre-gl";
 import { GridLayer, GridStyle, ImageType, ParticleLayer, RasterLayer, type TextureData } from "weatherlayers-gl";
 import { useEngineWhen } from "../../lib/engine/useEngineReady";
-import { slotId, useGlLayer, useGlMap } from "../../lib/map/gl/glLayer";
+import { deckSlot, useDeckLayers } from "../../lib/map/gl/deckLayers";
+import { useGlLayer, useGlMap } from "../../lib/map/gl/glLayer";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 import { prefersReducedMotion } from "../../lib/motion";
 import { WEATHER } from "../../lib/tokens";
@@ -58,7 +58,7 @@ function usePageShown() {
  * maps as the look): the model weather's field as a colour wash and, on
  * the wind and the gusts (hasStreaks), the wind as thin streaks over it,
  * as Apple Weather's maps draw them, drawn with weatherlayers-gl's RasterLayer
- * and ParticleLayer on deck.gl, interleaved into the map's own style
+ * and ParticleLayer on deck.gl (lib/map/gl/deckLayers), interleaved into the map's own style
  * under its areas, lines and marks (slot "areas"), so the airports, the
  * route and the airspace stay on top. A chunk of its own, loaded only
  * once the layer is turned on.
@@ -92,27 +92,17 @@ export default function FlowGl() {
   const worldTexture = useFlowTexture(frame, "world", world);
   const shown = usePageShown();
   const [reduced] = useState(prefersReducedMotion);
-  const overlay = useMemo(() => new MapboxOverlay({ interleaved: true, layers: [] }), []);
   const phone = map.getContainer().clientWidth < 640;
-
-  useEffect(() => {
-    const control = overlay as unknown as IControl;
-    const unshim = shimTransform(map);
-    map.addControl(control);
-    return () => {
-      if (map.style) map.removeControl(control);
-      unshim();
-    };
-  }, [map, overlay]);
 
   // The next hour's pictures fetched ahead, so play steps without a wait.
   usePrefetchNext(flow.frames, flow.shown, streaks ? [file, windFile] : [file]);
 
-  useEffect(() => {
+  const layers = useMemo(() => {
     const wind = streaks ? windTexture : undefined;
     const textures = { field: fieldTexture, wind, world: world ? worldTexture : undefined };
-    overlay.setProps({ layers: layer ? layersOf(layer, field, textures, { reduced, animate: shown, phone, zoom }) : [] });
-  }, [overlay, layer, field, fieldTexture, windTexture, worldTexture, world, streaks, reduced, shown, phone, zoom]);
+    return layer ? layersOf(layer, field, textures, { reduced, animate: shown, phone, zoom }) : [];
+  }, [layer, field, fieldTexture, windTexture, worldTexture, world, streaks, reduced, shown, phone, zoom]);
+  useDeckLayers("flow", layers);
 
   return (
     <>
@@ -125,25 +115,6 @@ export default function FlowGl() {
       {layer && field === "temp" && <FlowPins layer={layer} frame={frame} file={file} />}
     </>
   );
-}
-
-/**
- * deck.gl 9.4's interleaved mode (@deck.gl/mapbox's deck-utils) reads
- * `map.transform` -- its height, and with terrain its elevation -- which
- * MapLibre 6 moved from the map onto its camera (Map._camera.transform);
- * without it every frame threw "reading 'height'" and nothing drew
- * (measured 2026-11-12, deck.gl 9.4.1 on MapLibre 6.17). Given back to
- * the map for as long as the layer is on, only where the map has none.
- * TODO: drop once @deck.gl/mapbox reads MapLibre 6's camera itself.
- */
-function shimTransform(map: MlMap): () => void {
-  if ("transform" in map) return () => {};
-  const camera = (map as unknown as { _camera?: { transform?: unknown } })._camera;
-  if (!camera?.transform) return () => {};
-  Object.defineProperty(map, "transform", { configurable: true, get: () => camera.transform });
-  return () => {
-    delete (map as unknown as { transform?: unknown }).transform;
-  };
 }
 
 function usePrefetchNext(frames: FlowFrame[], shown: number, files: string[]) {
@@ -173,9 +144,8 @@ function layersOf(
   const { field: fieldTexture, wind: windTexture, world: worldTexture } = textures;
   // Into the map's style under its "areas" slot (lib/map/gl/glLayer's
   // SLOTS): over the chart and the radar, under the areas, the airspace,
-  // the route and the marks. @deck.gl/mapbox's prop, which the layers'
-  // own types do not list, so spread rather than written.
-  const place: { beforeId?: string } = { beforeId: slotId("areas") };
+  // the route and the marks.
+  const place = deckSlot("areas");
   const out: Layer[] = [];
   if (fieldTexture && spec) {
     out.push(
