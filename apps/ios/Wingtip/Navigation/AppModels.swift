@@ -15,6 +15,7 @@ struct AppModels: ViewModifier {
     let verdict: Verdict
     let nav: Navigator
     let inFlight: InFlight
+    let screens: ScreenModels
 
     func body(content: Content) -> some View {
         content
@@ -27,39 +28,43 @@ struct AppModels: ViewModifier {
             .environment(verdict)
             .environment(nav)
             .environment(inFlight)
-            .modifier(ReachedModels())
+            .environment(screens)
+            .modifier(ReachedModels(screens: screens))
     }
 }
 
-/// The models the rest of the app reaches too -- the session, the
-/// navigator, the intents, the Live Activity and the widgets' feed -- held
-/// by their types until those take them as the screens do; the screens
-/// read them from the environment, given here.
+/// The screens' own models (ScreenModels), and those the rest of the app
+/// still reaches by their types -- the session, the intents, the Live
+/// Activity and the widgets' feed -- until those take them too; the
+/// screens read them all from the environment, given here.
 private struct ReachedModels: ViewModifier {
+    let screens: ScreenModels
+
     func body(content: Content) -> some View {
         content
+            .environment(Feel.shared)
+            .environment(screens.firstFlight)
+            .environment(screens.sheetEdge)
+            .environment(screens.flightUI)
+            .environment(screens.replay)
+            .environment(screens.figureOffer)
+            .environment(screens.emergency)
+            .environment(screens.copilot)
+            .environment(screens.atcCopilot)
+            .environment(screens.screenAsk)
+            .environment(screens.briefAsk)
+            .environment(screens.autoLogbook)
+            .environment(screens.sharedFlight)
             .environment(Tracking.shared)
             .environment(ClearanceListener.shared)
-            .environment(AtcCopilot.shared)
-            .environment(Copilot.shared)
-            .environment(Emergency.shared)
-            .environment(Replay.shared)
             .environment(Receiver.shared)
             .environment(AirportShelf.shared)
             .environment(Airplanes.shared)
-            .environment(FigureOffer.shared)
             .environment(ReadyToFly.shared)
             .environment(AlternateCheck.shared)
             .environment(KeepForAir.shared)
             .environment(KeptShown.shared)
-            .environment(FirstFlightModel.shared)
             .environment(VoiceInput.shared)
-            .environment(FlightUI.shared)
-            .environment(Feel.shared)
-            .environment(SheetEdge.shared)
-            .environment(AutoLogbook.shared)
-            .environment(SharedFlightModel.shared)
-            .environment(BriefAsk.shared)
             .environment(ServerFeatures.shared)
             .environment(ModelWeather.shared)
             .environment(WeatherLoop.shared)
@@ -70,6 +75,27 @@ extension RootView {
     /// The models this root was given, for a view hosted outside it.
     var models: AppModels {
         AppModels(session: session, charts: charts, plan: plan, ownShip: ownShip, dryRun: dryRun,
-                  traffic: traffic, verdict: verdict, nav: nav, inFlight: inFlight)
+                  traffic: traffic, verdict: verdict, nav: nav, inFlight: inFlight, screens: screens)
     }
+}
+
+/// The screens' own models the app makes once, given to the views in the
+/// environment (AppModels) and to the intents and the app's loops as
+/// arguments or App Intents' dependencies (WingtipApp), in place of a
+/// singleton each.
+@MainActor
+@Observable
+final class ScreenModels {
+    let firstFlight = FirstFlightModel()
+    let sheetEdge = SheetEdge()
+    let flightUI = FlightUI()
+    let replay = Replay()
+    let figureOffer = FigureOffer()
+    let emergency = Emergency()
+    let copilot = Copilot()
+    let atcCopilot = AtcCopilot()
+    let screenAsk = ScreenAsk()
+    let briefAsk = BriefAsk()
+    let autoLogbook = AutoLogbook()
+    let sharedFlight = SharedFlightModel()
 }

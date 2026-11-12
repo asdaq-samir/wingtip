@@ -40,10 +40,3 @@ struct EmergencyControl: ControlWidget {
         .description("Opens the emergency assistant: the best fields within a glide, the checklist and the MAYDAY.")
     }
 }
-
-/// The extension's side of the intents that open the app: nothing, since
-/// iOS runs them in the app, whose AppOpener does the work. Given to them
-/// as the app gives its own (AppDependencyManager, WingtipWidgetsBundle).
-final class AppOpener: Sendable {
-    func open(_ what: AppOpening) async {}
-}

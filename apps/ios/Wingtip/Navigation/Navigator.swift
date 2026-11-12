@@ -23,6 +23,9 @@ final class Navigator {
     /// The iPad's layout (SplitLayout): a thing opens in the inspector,
     /// a page on the sidebar's stack.
     var split = false
+    /// The screens' models a card going away lets go of (left); the app
+    /// gives them (WingtipApp), a preview's navigator has none.
+    @ObservationIgnored var screens: ScreenModels?
     /// The sidebar's stack on the iPad, the plan at its root. The iPhone's
     /// plan has no page pushed on it: every page is a card.
     var planPath: [SheetPage] = []
@@ -146,17 +149,17 @@ final class Navigator {
         let was = card
         card = next
         guard let was, was != next else { return }
-        Self.left(was.page, for: next?.page)
+        left(was.page, for: next?.page)
     }
 
-    private static func left(_ page: SheetPage, for next: SheetPage?) {
+    private func left(_ page: SheetPage, for next: SheetPage?) {
         switch page {
         case .traffic:
             if case .traffic = next {} else { Tracking.shared.track(nil) }
         case .sharedFlight:
-            if SharedFlightModel.shared.showing { SharedFlightModel.shared.notNow() }
+            if let shared = screens?.sharedFlight, shared.showing { shared.notNow() }
         case .flightLogged:
-            let model = AutoLogbook.shared
+            guard let model = screens?.autoLogbook else { break }
             if model.isOpen { if model.logged != nil { model.close() } else { model.later() } }
         case .clearance:
             ClearanceListener.shared.sheetShown = false

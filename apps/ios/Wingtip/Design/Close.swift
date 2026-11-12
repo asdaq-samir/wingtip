@@ -6,22 +6,16 @@ import SwiftUI
 /// superseding decision 0015's close on every level). Cancel stays only
 /// where it throws away an edit.
 ///
-/// On iOS 26 the system's own close (Button(role: .close)), drawn as
-/// Liquid Glass in the bar; on iOS 18 the same glyph, named for VoiceOver.
+/// The system's own close (Button(role: .close)), drawn as Liquid Glass
+/// in the bar.
 struct CloseButton: View {
     let action: () -> Void
 
     var body: some View {
         // Escape on an iPad's keyboard closes the level too, as the
         // system's own sheets do (the cancel action's shortcut).
-        if #available(iOS 26.0, *) {
-            Button(role: .close, action: action)
-                .keyboardShortcut(.cancelAction)
-        } else {
-            Button(action: action) { Image(systemName: "xmark") }
-                .accessibilityLabel("Close")
-                .keyboardShortcut(.cancelAction)
-        }
+        Button(role: .close, action: action)
+            .keyboardShortcut(.cancelAction)
     }
 }
 

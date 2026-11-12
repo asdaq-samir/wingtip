@@ -139,11 +139,8 @@ final class WeatherLoop {
 
     /// iOS 27's ask to scale back live effects (UIApplication's
     /// systemPrefersReducedResourceUsage): the loop then waits for Play
-    /// rather than starting by itself, the newest frame shown. Never so
-    /// before iOS 27.
-    private static var savingResources: Bool {
-        if #available(iOS 27.0, *) { UIApplication.shared.systemPrefersReducedResourceUsage } else { false }
-    }
+    /// rather than starting by itself, the newest frame shown.
+    private static var savingResources: Bool { UIApplication.shared.systemPrefersReducedResourceUsage }
 
     func toggle() {
         started = true

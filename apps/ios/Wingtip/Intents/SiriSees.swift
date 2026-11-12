@@ -3,25 +3,13 @@ import MapKit
 import SwiftUI
 
 /// What Siri sees on the screen (App Intents' View Annotations: a view
-/// mapped to the App Entity it shows, WWDC26 "Explore advanced App Intents
-/// features for Siri and Apple Intelligence"), so a pilot can say "fly
-/// direct to that airport", "what's the ATIS here", "brief this approach"
-/// or "what does this NOTAM mean for me" about what is in front of them.
-/// `appEntityIdentifier(_:)` is iOS 18.4's; on an older iOS the view is
-/// left as it is and Siri asks which one, as it always has.
-extension View {
-    @ViewBuilder
-    func siriSees(_ id: EntityIdentifier?) -> some View {
-        if #available(iOS 18.4, *) {
-            appEntityIdentifier(id)
-        } else {
-            self
-        }
-    }
-}
-
-/// The entity ids the screens annotate with, one place for each kind so a
-/// row and the intent that takes it agree.
+/// mapped to the App Entity it shows with `appEntityIdentifier(_:)`,
+/// WWDC26 "Explore advanced App Intents features for Siri and Apple
+/// Intelligence"), so a pilot can say "fly direct to that airport", "what's
+/// the ATIS here", "brief this approach" or "what does this NOTAM mean for
+/// me" about what is in front of them. The entity ids the screens annotate
+/// with, one place for each kind so a row and the intent that takes it
+/// agree.
 enum SiriSaw {
     static func airport(_ ident: String) -> EntityIdentifier {
         EntityIdentifier(for: AirportEntity.self, identifier: ident.uppercased())
@@ -66,7 +54,6 @@ enum SiriSaw {
 /// field's mark an airport, each checkpoint a waypoint, the airplane the
 /// one the route flies, and the course line the flight, with where each
 /// is on the screen and which are selected.
-@available(iOS 18.4, *)
 @MainActor
 enum ChartMapSiri {
     /// A mark's hit area when its view is not drawn: Apple's 44 points.

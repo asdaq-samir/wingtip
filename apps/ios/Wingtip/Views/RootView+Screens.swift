@@ -12,7 +12,7 @@ extension RootView {
     func openScreen(_ screen: Screen) {
         let strip = layout == .sheet && layoutName == "strip"
         if strip, StripSheetView.opens(screen) {
-            ScreenAsk.shared.ask(screen)
+            screens.screenAsk.ask(screen)
             if detent != .large { detent = .large }
             return
         }

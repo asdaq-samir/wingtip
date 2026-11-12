@@ -251,7 +251,7 @@ struct NotamRow: View {
                 }
             }
         }
-        .siriSees(SiriSaw.notam(notam.id))
+        .appEntityIdentifier(SiriSaw.notam(notam.id))
         .accessibilityElement(children: .combine)
     }
 }

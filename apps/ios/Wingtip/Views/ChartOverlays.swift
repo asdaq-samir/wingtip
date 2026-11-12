@@ -88,59 +88,6 @@ struct VorPin: Decodable, Equatable, Sendable {
     let lon: Double
 }
 
-// MARK: - When to ask again
-
-/// The view's box as south, west, north, east.
-struct ViewBox: Equatable, Sendable {
-    var south, west, north, east: Double
-
-    init(south: Double, west: Double, north: Double, east: Double) {
-        (self.south, self.west, self.north, self.east) = (south, west, north, east)
-    }
-
-    init(_ region: MKCoordinateRegion) {
-        self.init(south: region.center.latitude - region.span.latitudeDelta / 2,
-                  west: region.center.longitude - region.span.longitudeDelta / 2,
-                  north: region.center.latitude + region.span.latitudeDelta / 2,
-                  east: region.center.longitude + region.span.longitudeDelta / 2)
-    }
-
-    /// The box grown by half of itself on every side: what is asked for,
-    /// so a pan within it asks nothing.
-    var widened: ViewBox {
-        let dLat = (north - south) / 2, dLon = (east - west) / 2
-        return ViewBox(south: max(-90, south - dLat), west: max(-180, west - dLon), north: min(90, north + dLat), east: min(180, east + dLon))
-    }
-
-    func holds(_ other: ViewBox) -> Bool {
-        other.south >= south && other.north <= north && other.west >= west && other.east <= east
-    }
-}
-
-/// What was last asked for the view, as the web map's useGlView asks during
-/// a gesture: again when the whole level changes or the view leaves the
-/// box asked for, at most once a frame, and not otherwise.
-struct ViewFetch: Equatable, Sendable {
-    private(set) var box: ViewBox?
-    private(set) var level: Int?
-
-    /// Whether a view at this zoom wants a new answer.
-    func wants(_ view: ViewBox, zoom: Double) -> Bool {
-        guard let box, let level else { return true }
-        return Int(zoom.rounded(.down)) != level || !box.holds(view)
-    }
-
-    /// The box to ask for, kept as asked.
-    mutating func ask(_ view: ViewBox, zoom: Double) -> ViewBox {
-        let wide = view.widened
-        box = wide
-        level = Int(zoom.rounded(.down))
-        return wide
-    }
-
-    mutating func forget() { box = nil; level = nil }
-}
-
 // MARK: - Airspace
 
 /// From which Leaflet zoom each class is drawn, the web map's
@@ -656,19 +603,23 @@ final class RunwayEndView: MKAnnotationView {
     // Airspace
 
     private func askAirspace(_ map: MKMapView, view: ViewBox, zoom: Double, chart: (any MKOverlay)?, live: Bool) {
-        let wide = view.widened
-        if let data = CyclePacks.shared.airspaceInView(south: wide.south, west: wide.west, north: wide.north, east: wide.east) {
-            struct Answer: Decodable { let volumes: [AirspaceVolume] }
-            _ = airspaceFetch.ask(view, zoom: zoom)
-            if let answer = try? Planner.snakeCase.decode(Answer.self, from: data) {
-                take(answer.volumes, map: map, zoom: zoom, chart: chart)
+        let asked = airspaceFetch.ask(view, zoom: zoom)
+        Task { [weak self, weak map] in
+            // Off the main actor (CyclePacks.airspaceVolumesInView), taken
+            // back only while the view still wants this box.
+            let found = await CyclePacks.shared.airspaceVolumesInView(asked)
+            guard let self, let map, airspaceFetch.box == asked else { return }
+            guard let found else {
+                // No pack for the box: asked again at the next move. The
+                // airspace comes from the packs alone (the planner's
+                // /api/airspace/in-view is gone, the web drawing it from
+                // the overlay tiles), so the reveal waits for nothing here.
+                airspaceFetch.forget()
+                return firstAnswer()
             }
-            return
+            let now = MapExtras.zoom(longitudeDelta: map.region.span.longitudeDelta, width: Double(map.bounds.width))
+            if let found { take(found, map: map, zoom: now, chart: chart) }
         }
-        // No pack for the box: the airspace comes from the packs alone
-        // (the planner's /api/airspace/in-view is gone, the web drawing it
-        // from the overlay tiles), so the reveal waits for nothing here.
-        firstAnswer()
     }
 
     private func take(_ fresh: [AirspaceVolume], map: MKMapView, zoom: Double, chart: (any MKOverlay)?) {
@@ -762,15 +713,16 @@ final class RunwayEndView: MKAnnotationView {
     // VORs
 
     private func askVors(_ map: MKMapView, view: ViewBox, zoom: Double, live: Bool) {
-        let wide = view.widened
-        if let data = CyclePacks.shared.navaidsInView(south: wide.south, west: wide.west, north: wide.north, east: wide.east) {
-            struct Answer: Decodable { let vors: [VorPin] }
-            _ = vorFetch.ask(view, zoom: zoom)
-            if let answer = try? Planner.snakeCase.decode(Answer.self, from: data) { takeVors(answer.vors, map: map) }
-            return
+        let asked = vorFetch.ask(view, zoom: zoom)
+        Task { [weak self, weak map] in
+            let found = await CyclePacks.shared.vorsInView(asked)
+            guard let self, let map, vorFetch.box == asked else { return }
+            // No pack for the box: no VORs, as the planner's
+            // /api/navaids/in-view is gone (the packs alone answer it);
+            // asked again at the next move.
+            guard let found else { return vorFetch.forget() }
+            if let found { takeVors(found, map: map) }
         }
-        // No pack for the box: no VORs, as the planner's
-        // /api/navaids/in-view is gone (the packs alone answer it).
     }
 
     private func takeVors(_ found: [VorPin], map: MKMapView) {

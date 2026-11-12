@@ -170,14 +170,14 @@ struct PictureViewer: View {
                 if let kept = picture.kept, images != nil, keptShown.at(kept.kind, key: kept.key) != nil {
                     KeptAgeLine(kind: kept.kind, key: kept.key)
                         .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
-                        .floatingGlass(in: Capsule(), material: .thinMaterial)
+                        .floatingGlass(in: Capsule())
                 }
             }
             .safeAreaInset(edge: .bottom) {
                 if let credit = picture.credit, images != nil {
                     Text(credit).font(.caption2).foregroundStyle(.secondary)
                         .padding(.horizontal, WingtipSpace.sm).padding(.vertical, WingtipSpace.xs)
-                        .floatingGlass(in: Capsule(), material: .thinMaterial)
+                        .floatingGlass(in: Capsule())
                         .padding(.bottom, WingtipSpace.sm)
                 }
             }

@@ -121,8 +121,8 @@ writes the sentences, and never a figure of its own:
   proxy, Claude in the assistant service; off by default, decision 0035,
   when it asks only this iPhone), then this iPhone when the planner fails or
   cannot be reached (`OnDeviceWords`: Apple's on-device model,
-  FoundationModels on iOS 26 with Apple Intelligence on), and says why
-  in plain words when neither can (an older iOS, the model still
+  FoundationModels with Apple Intelligence on), and says why
+  in plain words when neither can (no Apple Intelligence, the model still
   downloading, no signal and no planner). The caption over the
   sentences says which wrote them ("From the planner", "On this
   iPhone").
@@ -137,9 +137,9 @@ writes the sentences, and never a figure of its own:
   given, or nothing, is dropped, since a model can cite wrongly, and
   at most ten are kept. `WingtipTests/WordsTests` holds the order of
   the providers and the guard.
-- Every use of FoundationModels sits behind `#if
-  canImport(FoundationModels)` and `#available(iOS 26, *)`, so the app
-  builds on an older SDK and runs on iOS 18 without the words.
+- FoundationModels is used directly: the app's oldest iOS is 27, which
+  has it, Private Cloud Compute and image reading included; a phone without Apple Intelligence, or with the model still
+  downloading, is told why in words and given the engine's answer.
 
 ## Ask and the Brief's glance, with no signal
 
@@ -203,10 +203,9 @@ owner, 2026-11-03):
   is an App Entity (`AirportEntity`: the kept route's, the Favorites and
   the Recents suggested, the planner's search behind them), so "Plan a
   trip to KLAS in Wingtip Maps" goes in one breath. An intent that opens
-  the app names its `AppCommand` (`CommandIntent`); on iOS 26 and later
-  the system hands the intent to the scene (`TargetContentProvidingIntent`,
-  `onAppIntentExecution` in `Intents/IntentScenes.swift`), before it the
-  command waits in `AppCommands` until the scene is up; `RootView`
+  the app names its `AppCommand` (`CommandIntent`), and the system hands
+  the intent to the scene (`TargetContentProvidingIntent`,
+  `onAppIntentExecution` in `Intents/IntentScenes.swift`); `RootView`
   applies it (`RootView+Commands.swift`).
 - **Home Screen widgets** (`WingtipWidgets/FlightWidgets.swift`,
   `Wingtip/WidgetFeed.swift`, `Wingtip/Shared/WidgetSnapshot.swift`): the
@@ -322,7 +321,7 @@ passengers waits for the server on AWS.
 ## The Apple Watch app
 
 `apps/ios/WingtipWatch/` (the owner's ask, 2026-11-03) is a companion of the
-iOS app, bundle id `app.wingtipmaps.ios.watchkitapp`, watchOS 10 and
+iOS app, bundle id `app.wingtipmaps.ios.watchkitapp`, watchOS 27 and
 later, embedded in the phone's app and installed with it: three pages,
 Timers (a flight timer and a hold/approach timer, each a `Stopwatch`
 worked out from the clock at each draw under a `TimelineView`, so it is

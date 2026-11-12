@@ -8,8 +8,6 @@ import SwiftUI
 /// body holds the whole map.
 @MainActor @Observable
 final class SheetEdge {
-    static let shared = SheetEdge()
-
     /// The plan's sheet's height over the screen's foot, its bottom safe
     /// area counted, as RootView's sheetHeight is.
     var plan: CGFloat = 0

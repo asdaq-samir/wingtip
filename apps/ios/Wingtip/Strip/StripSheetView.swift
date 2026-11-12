@@ -72,6 +72,9 @@ struct StripSheetView: View {
         inFlight.onRoute ? inFlight.fix : nil
     }
 
+    /// The airplane's place on the strip, worked out once a fix.
+    @State private var place = StripPlace()
+
     private var points: [StripPoint] {
         StripData.points(dep: plan.dep, dest: plan.dest, stops: plan.stops, legs: plan.legs, checkpoints: plan.checkpoints, course: plan.course)
     }
@@ -110,7 +113,7 @@ struct StripSheetView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: WingtipSpace.md) {
                 if let fix = flyingFix {
-                    let along = Result { try StripData.positionAlong(points, fix: fix.coordinate) }
+                    let along = place.along(points, fix: fix)
                     StripAir(points: points, position: try? along.get(), fix: fix)
                     if case .failure(let error) = along {
                         Text("Your place on the strip couldn't be worked out: \(error.localizedDescription)")

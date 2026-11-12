@@ -58,10 +58,10 @@ struct ShareMenu<Rows: View, More: View, Shown: View>: View {
         ShareLink(item: RouteShare.navLogText(plan)) { Label("Nav Log as Text", systemImage: WingtipIcon.navLog) }
         ShareLink(item: navLogPDF, preview: SharePreview("Nav Log")) { Label("Nav Log as PDF", systemImage: "doc.richtext") }
         Menu {
-            SaveFileLink(name: FlightFile.name(plan), type: .wingtipFlight, saving: $saving, make: flightFile) {
+            SaveFileLink(saving: $saving, make: flightFile) {
                 Label("Flight", systemImage: "airplane")
             }
-            SaveFileLink(name: "\(RouteShare.fileName(plan))-nav-log.pdf", type: .pdf, saving: $saving, make: kneeboardFile) {
+            SaveFileLink(saving: $saving, make: kneeboardFile) {
                 Label("Kneeboard as PDF", systemImage: "doc.richtext")
             }
         } label: {

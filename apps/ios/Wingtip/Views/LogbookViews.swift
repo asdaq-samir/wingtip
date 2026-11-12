@@ -37,7 +37,7 @@ struct LogbookView: View {
     /// The search over the flights' route, airplane, type and remarks.
     @State private var query = ""
     @State private var period = LogbookSummary.Period.month
-    /// The CSV on its way to Files (iOS 27's exporter; the share sheet before).
+    /// The CSV on its way to Files (the system's exporter).
     @State private var saving: SavedFile?
 
     var body: some View {
@@ -87,7 +87,7 @@ struct LogbookView: View {
                                 // Tapped, the flight opens in its row to change (Edit);
                                 // its N-number, a tap of its own, opens the airplane's profile.
                                 LogbookRow(entry: e) { if flights.editingID == e.id { flights.cancelEdit() } else { flights.edit(e) } }
-                                    .siriSees(SiriSaw.logbookEntry(e.id))
+                                    .appEntityIdentifier(SiriSaw.logbookEntry(e.id))
                                     .contextMenu {
                                         Button("Edit", systemImage: "pencil") { flights.edit(e) }
                                         Button("Delete", systemImage: "trash", role: .destructive) { delete(e) }
@@ -267,12 +267,12 @@ struct LogbookView: View {
         })
     }
 
-    /// The CSV written for today, handed to Files (SaveFileExporter) on
-    /// iOS 27, else to the system's ShareLink; dimmed until it is written.
+    /// The CSV written for today, handed to Files (SaveFileExporter);
+    /// dimmed until it is written.
     @ViewBuilder private var exportRow: some View {
         let label = Label("Export as CSV", systemImage: "square.and.arrow.up")
         if let exportFile {
-            SaveFileLink(name: exportFile.lastPathComponent, type: .commaSeparatedText, saving: $saving, make: { [$problem] in
+            SaveFileLink(saving: $saving, make: { [$problem] in
                 // Why it sent nothing, under the list (lib/problems' rule).
                 do {
                     return SavedFile(data: try Data(contentsOf: exportFile), type: .commaSeparatedText, name: exportFile.lastPathComponent)

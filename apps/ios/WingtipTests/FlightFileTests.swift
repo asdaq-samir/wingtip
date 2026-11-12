@@ -53,11 +53,10 @@ struct FlightFileTests {
         #expect(!model.showing && model.plan == nil)
     }
 
-    @Test func aSavedFileIsWrittenUnderItsName() throws {
+    /// Save as File hands the system's exporter the file's own bytes.
+    @Test @MainActor func aSavedFileIsExportedAsItsBytes() async throws {
         let saved = SavedFile(data: Data("x".utf8), type: .wingtipFlight, name: "KMSN-KOSH.wingtip")
-        let url = try saved.temporaryURL()
-        defer { try? FileManager.default.removeItem(at: url) }
-        #expect(url.lastPathComponent == "KMSN-KOSH.wingtip")
-        #expect(try Data(contentsOf: url) == Data("x".utf8))
+        #expect(try await ExportedFile(saved).snapshot(contentType: .wingtipFlight) == Data("x".utf8))
+        #expect(ExportedFile.writableContentTypes.contains(.wingtipFlight))
     }
 }

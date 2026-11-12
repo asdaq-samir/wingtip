@@ -16,6 +16,7 @@ struct FlightLoops: ViewModifier {
     @Environment(Copilot.self) private var copilot
     @Environment(AtcCopilot.self) private var atc
     @Environment(ClearanceListener.self) private var listener
+    @Environment(Emergency.self) private var emergency
 
     func body(content: Content) -> some View {
         content
@@ -46,8 +47,8 @@ struct FlightLoops: ViewModifier {
             // Each fix, own ship's or the dry run's airplane, asked of the
             // engine once for the instruments, the strip and the glide ring
             // (InFlight); again when the route changes under it.
-            .onChange(of: dryRun.fix ?? ownShip.fix, initial: true) { _, fix in inFlight.took(fix, plan: plan) }
-            .onChange(of: plan.course) { _, _ in inFlight.took(dryRun.fix ?? ownShip.fix, plan: plan) }
+            .onChange(of: dryRun.fix ?? ownShip.fix, initial: true) { _, fix in inFlight.took(fix, plan: plan, emergency: emergency.open != nil) }
+            .onChange(of: plan.course) { _, _ in inFlight.took(dryRun.fix ?? ownShip.fix, plan: plan, emergency: emergency.open != nil) }
             .onChange(of: ownShip.groundFt) { _, ft in inFlight.terrainFt = ft }
     }
 }

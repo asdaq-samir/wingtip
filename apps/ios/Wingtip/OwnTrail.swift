@@ -25,6 +25,8 @@ final class OwnTrail {
     private(set) var points: [PathPoint] = []
     private var lastWritten: Date = .distantPast
     private var underway = false
+    /// Written off the main actor (BackgroundFile).
+    private let disk = BackgroundFile(OwnTrail.file)
 
     static var file: URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -72,7 +74,7 @@ final class OwnTrail {
     func erase() {
         points = []
         lastWritten = .distantPast
-        try? FileManager.default.removeItem(at: Self.file)
+        disk.remove()
     }
 
     /// The path let go: a new flight's starts empty.
@@ -89,6 +91,6 @@ final class OwnTrail {
 
     private func write() {
         lastWritten = Date()
-        if let data = try? JSONEncoder().encode(points) { try? data.write(to: Self.file, options: .atomic) }
+        disk.write(points)
     }
 }

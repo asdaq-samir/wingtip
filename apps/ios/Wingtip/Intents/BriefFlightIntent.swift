@@ -9,7 +9,6 @@ struct BriefFlightIntent: CommandIntent {
     static let title: LocalizedStringResource = "Brief a Flight"
     static let description = IntentDescription("Opens the Brief for a route to an airport, from your route's departure or the field nearest you.")
     static let openAppWhenRun: Bool = true
-    @Dependency private var commands: AppCommands
 
     @Parameter(title: "Airport", requestValueDialog: "Brief a flight to where?")
     var airport: AirportEntity
@@ -24,7 +23,6 @@ struct BriefFlightIntent: CommandIntent {
     func appCommand() -> AppCommand? { Self.command(airport) }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        await handOver(to: commands)
         return .result(dialog: "Briefing your flight to \(airport.id).")
     }
 }

@@ -34,6 +34,9 @@ final class CyclePacks: @unchecked Sendable {
 
     let root: URL
     private let lock = NSLock()
+    /// index.json as last read or written, so a pan's queries do not read
+    /// and decode it again each time (nil: not read yet).
+    private var known: CyclePackIndex??
 
     init(root: URL? = nil) {
         self.root = root ?? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -42,10 +45,15 @@ final class CyclePacks: @unchecked Sendable {
 
     private var indexFile: URL { root.appending(path: "index.json") }
 
-    /// The list the packs on the phone were fetched by.
+    /// The list the packs on the phone were fetched by, read from disk
+    /// once and kept as `keep` writes it.
     var index: CyclePackIndex? {
-        guard let data = try? Data(contentsOf: indexFile) else { return nil }
-        return try? Planner.snakeCase.decode(CyclePackIndex.self, from: data)
+        lock.withLock {
+            if let known { return known }
+            let read = (try? Data(contentsOf: indexFile)).flatMap { try? Planner.snakeCase.decode(CyclePackIndex.self, from: $0) }
+            known = .some(read)
+            return read
+        }
     }
 
     func path(cycle: String, region: String) -> URL {
@@ -114,6 +122,8 @@ final class CyclePacks: @unchecked Sendable {
         if let kept, kept.cycle != fresh.cycle, !whole { return }
         lock.withLock {
             try? JSONEncoder().encode(answer).write(to: indexFile, options: .atomic)
+            // Read again at the next ask, as written (the same keys).
+            known = nil
             if let editions = try? FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil) {
                 for edition in editions where edition.hasDirectoryPath && edition.lastPathComponent != fresh.cycle {
                     try? FileManager.default.removeItem(at: edition)

@@ -74,7 +74,7 @@ struct NavLogPage: View {
                         // The one Route Leg card, pushed in the nav log's own card.
                         let index = RouteLegModel.index(of: leg, at: i, plan: plan)
                         NavigationLink(value: SheetPage.leg(index)) { LegRow(leg: leg, number: i + 1) }
-                            .siriSees(SiriSaw.waypoint(leg.to))
+                            .appEntityIdentifier(SiriSaw.waypoint(leg.to))
                     }
                 } header: {
                     // The page is titled Nav Log; its section says at what.

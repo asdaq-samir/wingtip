@@ -5,6 +5,7 @@ import SwiftUI
 /// the nav log flies the airplane; and the holding entries, which the
 /// planner works out (GET /api/holding).
 struct PilotGuideView: View {
+    @Environment(FirstFlightModel.self) private var firstFlight
     /// Show First Flight Again tapped: said, and not tapped twice.
     @State private var askedFirstFlight = false
     // The checkpoints' bands, as CheckpointAnnotation colours them.
@@ -23,7 +24,7 @@ struct PilotGuideView: View {
             // one home for it.
             Section {
                 Button {
-                    FirstFlightModel.shared.again()
+                    firstFlight.again()
                     askedFirstFlight = true
                 } label: {
                     SettingsLabel(askedFirstFlight ? "First Flight Will Show Again" : "Show First Flight Again",

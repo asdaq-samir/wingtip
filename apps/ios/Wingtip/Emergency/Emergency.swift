@@ -15,8 +15,6 @@ import PlannerAPI
 @MainActor
 @Observable
 final class Emergency {
-    static let shared = Emergency()
-
     /// Where it was opened from.
     enum From: String, Identifiable, Sendable {
         case flying, voice, checklist, link

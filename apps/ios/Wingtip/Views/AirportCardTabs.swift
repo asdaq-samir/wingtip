@@ -17,7 +17,7 @@ struct AirportInfoTab: View {
             ForEach(Array(place.frequencies.enumerated()), id: \.offset) { i, f in
                 let mark = notams.marks.frequency[i]
                 NotamMarked(notams: notams, mark: mark) {
-                    FrequencyRowView(frequency: f, mark: mark).siriSees(SiriSaw.frequency(place.ident, f))
+                    FrequencyRowView(frequency: f, mark: mark).appEntityIdentifier(SiriSaw.frequency(place.ident, f))
                 }
             }
             // What some fields read out on so many clicks of the mic on

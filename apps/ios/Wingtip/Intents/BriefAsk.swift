@@ -8,8 +8,6 @@ import Observation
 @MainActor
 @Observable
 final class BriefAsk {
-    static let shared = BriefAsk()
-
     private(set) var wanted = false
     /// The departure time said with the ask ("tomorrow at 9"), for the
     /// Brief's departure window to pick its hour, once.

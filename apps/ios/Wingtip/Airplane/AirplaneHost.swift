@@ -11,6 +11,7 @@ struct AirplaneHost: ViewModifier {
     @Environment(Airplanes.self) private var airplanes
     @Environment(Plan.self) private var plan
     @Environment(Session.self) private var session
+    @Environment(FigureOffer.self) private var figureOffer
 
     func body(content: Content) -> some View {
         content
@@ -18,7 +19,7 @@ struct AirplaneHost: ViewModifier {
             .task(id: session.signedIn) {
                 await airplanes.loadRecords(signedIn: session.signedIn)
                 plan.took(records: airplanes.records)
-                if session.signedIn { FigureOffer.shared.offered = OwnFigureStore.tails() }
+                if session.signedIn { figureOffer.offered = OwnFigureStore.tails() }
             }
     }
 }
@@ -28,7 +29,6 @@ struct AirplaneHost: ViewModifier {
 @MainActor
 @Observable
 final class FigureOffer {
-    static let shared = FigureOffer()
     var offered: [String: Figures] = [:]
     var problem: String?
 }

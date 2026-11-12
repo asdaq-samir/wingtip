@@ -26,12 +26,10 @@ final class AIEvaluationsMoreTests: XCTestCase {
 
     private func modelOrSkip() throws {
         if let why = OnDeviceWords.unavailableWhy { throw XCTSkip("No on-device model here: \(why)") }
-        guard #available(iOS 27, *) else { throw XCTSkip("The Evaluations framework needs iOS 27.") }
     }
 
     func testARemarkKeepsToTheEntry() async throws {
         try modelOrSkip()
-        guard #available(iOS 27, *) else { return }
         let evaluation = RemarkEvaluation(samples: try EvalBar.asked(try RemarkEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
@@ -42,7 +40,6 @@ final class AIEvaluationsMoreTests: XCTestCase {
 
     func testWhyThisAltitudeKeepsToTheEnginesReasons() async throws {
         try modelOrSkip()
-        guard #available(iOS 27, *) else { return }
         let evaluation = AltitudeWhyEvaluation(samples: try EvalBar.asked(try AltitudeWhyEvaluation.samples()))
         let result = try await evaluation.run()
         print("EVAL \(Self.self).\(#function)\n\(result.groupedSummary)")
@@ -54,7 +51,6 @@ final class AIEvaluationsMoreTests: XCTestCase {
     /// The samples are built from the fixtures and the metrics judge known
     /// answers right, with or without a model.
     func testTheNewEvaluationsJudgeKnownAnswers() throws {
-        guard #available(iOS 27, *) else { throw XCTSkip("The Evaluations framework needs iOS 27.") }
         let remarks = try RemarkEvaluation.samples()
         let first = try XCTUnwrap(remarks.first)
         XCTAssertTrue(RemarkEvaluation.names("Cross-country KUGN to KRFD.", first))
@@ -69,7 +65,6 @@ final class AIEvaluationsMoreTests: XCTestCase {
 
 /// A logbook remark: each sample an entry of logbookCsv.json's export, as
 /// JSON; held to its route's fields.
-@available(iOS 27, *)
 struct RemarkEvaluation: Evaluation {
     static let noInvented = Metric("no figure of its own")
     static let kept = Metric("a remark survives the guard")
@@ -133,7 +128,6 @@ struct RemarkEvaluation: Evaluation {
 /// altitudes (the floor, the ceiling, the magnetic course, the rules), a
 /// plan flying its middle legal altitude; held to saying the direction of
 /// flight or the rule it gives.
-@available(iOS 27, *)
 struct AltitudeWhyEvaluation: Evaluation {
     static let noInvented = Metric("no figure of its own")
     static let kept = Metric("the model's words survive the guard")

@@ -137,12 +137,10 @@ struct OpenFlightIntent: OpenIntent, CommandIntent {
 
     @Parameter(title: "Flight")
     var target: FlightEntity
-    @Dependency private var commands: AppCommands
 
     func appCommand() -> AppCommand? { target.command }
 
     func perform() async throws -> some IntentResult {
-        await handOver(to: commands)
         return .result()
     }
 }

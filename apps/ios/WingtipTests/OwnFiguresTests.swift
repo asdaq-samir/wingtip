@@ -133,6 +133,8 @@ struct OwnFiguresTests {
         // Switched on, the ring is drawn at the airplane's own ratio.
         let d = try defaults("OwnFiguresTests.ring")
         #expect(InFlight.ringRatio(plan: plan, defaults: d, airplanes: airplanes) == nil)
+        // On by itself while the emergency assistant is open, the switch off.
+        #expect(InFlight.ringRatio(plan: plan, emergency: true, defaults: d, airplanes: airplanes) == 9)
         d.set(true, forKey: InFlight.ringKey)
         #expect(InFlight.ringRatio(plan: plan, defaults: d, airplanes: airplanes) == 9)
     }

@@ -11,8 +11,6 @@ import Observation
 @MainActor
 @Observable
 final class Replay {
-    static let shared = Replay()
-
     /// A report of the flight: when (s since 1970), where, its height, and
     /// its ground speed and track where they are known.
     struct Point: Equatable, Sendable {

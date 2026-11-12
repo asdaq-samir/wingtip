@@ -10,6 +10,7 @@ import SwiftUI
 /// nav log's figures for it in full (LegFigureSections).
 struct RouteLegView: View {
     @Environment(InFlight.self) private var inFlight
+    @Environment(Feel.self) private var feel
     @Environment(Plan.self) private var plan
     @Environment(OwnShip.self) private var ownShip
     @Environment(DryRun.self) private var dryRun
@@ -62,7 +63,7 @@ struct RouteLegView: View {
                 if let direct = sheet.direct {
                     Button { model.direct(sheet, plan: plan, from: dryRun.fix ?? ownShip.fix, nav: nav) } label: {
                         Label(direct.on ? "Cancel Direct" : "Direct \(direct.ident)", systemImage: WingtipIcon.directTo)
-                            .symbolBounce(on: Feel.shared.directTo)
+                            .symbolBounce(on: feel.directTo)
                             .frame(maxWidth: .infinity)
                     }
                     .glassProminentButton()

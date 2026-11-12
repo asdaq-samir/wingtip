@@ -6,7 +6,7 @@ import SwiftUI
 struct SharedFlightView: View {
     @Environment(\.appCommand) private var appCommand
     @Environment(Plan.self) private var route
-    let model: SharedFlightModel
+    @Environment(SharedFlightModel.self) private var model
 
     var body: some View {
         List {

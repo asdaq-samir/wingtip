@@ -217,7 +217,7 @@ struct SheetPageView: View {
         case .mapSettings: MapSettingsView()
         case .plate(let key): PlateCard(key: key).id(key)
         case .clearance: ClearanceSheet()
-        case .sharedFlight: SharedFlightView(model: .shared)
+        case .sharedFlight: SharedFlightView()
         case .flightLogged: FlightLoggedCard()
         }
     }

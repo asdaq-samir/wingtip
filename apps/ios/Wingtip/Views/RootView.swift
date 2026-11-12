@@ -8,7 +8,6 @@ import UIKit
 /// 2026-11-09, in the tabs' place). The system's own sheet, so the drag,
 /// the detents and the glass are iOS's, not a copy.
 struct RootView: View {
-    @Environment(SheetEdge.self) var sheetEdge
     @Environment(Replay.self) var replay
     @Environment(Emergency.self) var emergency
     @Environment(AirportShelf.self) var shelf
@@ -22,9 +21,9 @@ struct RootView: View {
     @Environment(DryRun.self) var dryRun
     @Environment(Traffic.self) var traffic
     @Environment(Verdict.self) var verdict
+    @Environment(ScreenModels.self) var screens
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
-    @Environment(\.undoManager) private var undoManager
     @State var detent: PresentationDetent = .half
     @State private var sheetUp = true
     /// The card and the pages in it (Navigator): the pages a scene was on
@@ -41,9 +40,6 @@ struct RootView: View {
     /// The same key as the web's preference; a `-layout strip` launch
     /// argument sets it for CI's pictures.
     @AppStorage("layout") var layoutName = "plan"
-    @State private var following = false
-    @State private var routeAway = false
-    @State private var fitRequest = 0
     /// Whether the map has shown (ChartMap's reveal): the loading mark is
     /// over it until then.
     @State private var mapShown = false
@@ -54,30 +50,6 @@ struct RootView: View {
     /// sheet, a new height each frame, does not run this body and the
     /// whole map's update again each frame.
     @State private var sheetHeight: CGFloat = 0
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    // Setup's map switches (MapExtrasInput.Keys).
-    @AppStorage(MapExtrasInput.Keys.waypoints) private var waypointsOn = false
-    @AppStorage(MapExtrasInput.Keys.classB) private var classBOn = false
-    @AppStorage(MapExtrasInput.Keys.plates) private var platesOn = true
-    // The plate card's look (PlateLook.Keys), kept on the device.
-    @AppStorage(PlateLook.Keys.opacity) private var plateOpacity = PlateLook.defaultOpacity
-    @AppStorage(PlateLook.Keys.inverted) private var plateInverted = false
-    @AppStorage(PlateLook.Keys.annotations) private var plateAnnotations = true
-
-    /// What the map draws of the airplane tracked and the flights flown,
-    /// and its taps for them: an airplane's card, a point pressed.
-    private var flightLayer: FlightLayer {
-        return FlightLayer(
-            trackedHex: tracking.hex, tracked: tracking.latest, follow: tracking.follow,
-            path: tracking.path, past: tracking.past, flown: tracking.flown,
-            glide: inFlight.glide?.coordinates ?? [],
-            emergency: emergency.line(from: dryRun.fix ?? ownShip.fix),
-            onTraffic: { plane in
-                tracking.track(plane.hex, plane: plane)
-                nav.open(.traffic(plane.hex.lowercased()))
-            },
-            onDragged: { tracking.follow = false })
-    }
 
     /// The sheet's lowest size, the pill: the page dots and the page's
     /// first row (the search's on Search, the route's on FPL), as Maps'
@@ -106,14 +78,11 @@ struct RootView: View {
                             if !mapShown { sheetHeight = height }
                             // The map's buttons ride its top (MapButtonsDock),
                             // read there alone, so this body is not run again.
-                            sheetEdge.plan = height
+                            screens.sheetEdge.plan = height
                         }
                         .environment(\.sheetAtPill, detent == RootView.pill)
                         .presentationDetents([RootView.pill, .half, .large], selection: $detent)
                         .presentationBackgroundInteraction(.enabled(upThrough: .half))
-                        // The system's Liquid Glass sheet and its own corners
-                        // on iOS 26; the material on iOS 18 (Design/Glass.swift).
-                        .sheetGlass()
                         .interactiveDismissDisabled()
                         // The system sheet settles at its detents with its own
                         // feel; no tap of ours is added to a stock part (the
@@ -164,6 +133,8 @@ struct RootView: View {
         // A link's, Siri's or a Shortcut's ask (the owner's, 2026-11-03:
         // Siri and Shortcuts through App Intents), and a card's own.
         .modifier(CommandHost { await apply($0, then: $1) })
+        // A field's mark held: its card's preview and the plan's three.
+        .onAppear { AirportMarkMenu.shared.input = markPreview }
         .environment(\.appCommand, AppCommandAction { command, then in Task { await apply(command, then: then) } })
     }
 
@@ -192,137 +163,18 @@ struct RootView: View {
         layout == .sheet && sheetUp ? sheetHeight : 0
     }
 
-    /// The point held on the map, whichever holds its card.
-    private var heldRoute: String? { nav.heldRoute }
-
     /// The map with its buttons and banners, under the sheet or beside
-    /// the sidebar.
+    /// the sidebar: a view of its own (RootMap), so what it reads at every
+    /// fix (own ship, the dry run, the traffic) runs its body alone, not
+    /// this one with the sheet.
     private var map: some View {
-        ChartMap(
-            template: charts.template, minZoom: charts.base?.minZoom ?? 5, maxZoom: charts.base?.maxZoom ?? 12,
-            course: plan.course, checkpoints: plan.checkpoints,
-            procedurePaths: plan.legs.compactMap { $0.procedure?.path.compactMap { $0.count == 2 ? CLLocationCoordinate2D(latitude: $0[0], longitude: $0[1]) : nil } },
-            // A flown track's replay, else the dry run: the same airplane.
-            simulated: replay.fix ?? dryRun.fix,
-            traffic: traffic.on ? traffic.planes : [],
-            ownFt: (dryRun.fix ?? ownShip.fix)?.altitudeFt,
-            onRegion: { centre, radius in traffic.mapCentre = centre; traffic.mapRadiusNm = radius },
-            // A field tapped on the chart opens its card, half way up, as
-            // the web app does.
-            onAirport: { ident in open(ident) },
-            following: $following, routeAway: $routeAway, fitRequest: fitRequest,
-            flight: flightLayer,
-            extras: MapExtrasInput(
-                held: heldRoute.flatMap { AirportRoute($0).heldPoint },
-                selectedField: heldRoute.flatMap { AirportRoute($0).field },
-                waypoints: waypointsOn, classB: classBOn, plates: platesOn, approaches: plan.procedures,
-                hiddenPlates: HiddenPlates.shared.keys,
-                plateLook: PlateLook(opacity: plateOpacity, inverted: plateInverted, annotations: plateAnnotations),
-                // A plate's page tapped: its card, half way up, as a field's.
-                onPlate: { key in nav.open(.plate(key)) },
-                // A finger held on the chart: the airspace there, half way
-                // up, as a field's card opens.
-                onHold: { at in open(AirportRoute.airspace(lat: at.latitude, lon: at.longitude).text) },
-                onWaypoint: plan.course != nil ? { (ident: String, at: CLLocationCoordinate2D, action: CardAction) in
-                    plan.drop(ident, at: at, then: action == .directTo ? .direct : .add, from: action == .directTo ? dryRun.fix ?? ownShip.fix : nil)
-                    // Direct To and Add to Route land on FPL, as a card's
-                    // Fly Here does, the sheet at the size it was left.
-                    search.close()
-                    nav.showPlan()
-                } : nil),
-            // A tap on the course opens its nearest leg's card, that leg
-            // cased in green while it is in sight (RouteLegView).
-            routeLegs: RouteLegInput(
-                legs: plan.course != nil ? RouteLegModel.mapLegs(plan) : [],
-                selected: { if case .leg(let index) = nav.top { return index }; return nil }(),
-                onSelect: { index in nav.open(.leg(index)) }),
-            // The route's fields worse by the flight's time there, and the
-            // airplane's demonstrated crosswind for the wind barbs' red.
-            fieldWeather: FieldWeatherInput(
-                worse: FieldWeatherMarks.worse(plan.briefing, fields: Set([plan.dep, plan.dest] + plan.stops).subtracting([""])),
-                alternates: AlternateCheck.shared.atEta,
-                demonstratedKt: FieldWeatherMarks.demonstratedKt(plan)),
-            hazardLegs: plan.hazardLegs,
-            bottomInset: mapInset,
-            onReveal: {
-                Metrics.shared.mapShown() // Instruments' launch-to-map interval ends.
-                withAnimation(reduceMotion ? nil : .easeOut(duration: 0.15)) { mapShown = true }
-            })
-            .ignoresSafeArea()
-            // A plate hidden from its card comes back when its approach is
-            // picked again.
-            .onChange(of: plan.procedures.map(PlateKey.of)) { before, now in HiddenPlates.shared.picked(now, before: before) }
-            // Over the map, under its buttons, until it shows: Wingtip's mark
-            // turning where the map opens.
-            .overlay {
-                if !mapShown {
-                    MapLoading(bottom: mapInset).transition(.opacity)
-                }
-            }
-            .overlay(alignment: .topTrailing) {
-                // Over the sheet's top on the iPhone, at the top right beside
-                // the iPad's sidebar. In the strip the field is the way to the
-                // assistant, so the sparkle is not drawn.
-                MapButtonsDock(overSheet: layout == .sheet, following: $following,
-                               routeAway: routeAway && plan.course != nil, fitRoute: { fitRequest += 1 },
-                               ask: layoutName == "strip" ? nil : { ask(nil) })
-            }
-            .overlay(alignment: .top) {
-                VStack(spacing: WingtipSpace.sm) {
-                    AlertsBanner(alerts: ownShip.ahead)
-                    // The in-flight copilot's one message, under what is ahead.
-                    CopilotBanner()
-                    // The radio, while the app listens or a call to us waits.
-                    RadioOverlay()
-                    // The flight's instruments, at flying speed (#218).
-                    InstrumentsBar()
-                    // The radar or satellite loop's bar while one is on.
-                    WeatherLoopBar()
-                    // The model weather's timeline while it is on, and under it
-                    // its close, field menu and legend at the left (ModelWeather).
-                    ModelWeatherBar()
-                    ModelWeatherLegend()
-                }
-                // Clear of the map's buttons down the right where they stand
-                // at the top (the iPad's): a button and the gutters round it.
-                // Over the iPhone's sheet they ride its top, so the banners
-                // have the width.
-                .padding(.trailing, layout == .split ? WingtipSize.mapButton + WingtipSpace.md * 2 : 0)
-            }
-            .overlay(alignment: .topLeading) {
-                VStack(alignment: .leading, spacing: WingtipSpace.sm) {
-                    if dryRun.fix != nil { DryRunControls() }
-                    WatchBanner()
-                    // The cockpit's ADS-B receiver heard, then the licence's
-                    // credit beside the internet's traffic it covers.
-                    ReceiverChip()
-                    if traffic.credited { MapChip(Traffic.credit(traffic.source)) }
-                    // The USGS's credit while its imagery shows close in (CloseImagery).
-                    if CloseImagery.shared.drawn { MapChip(CloseImageryOverlay.credit) }
-                    if traffic.on, let problem = traffic.marksProblem { MapChip(problem, colour: WingtipInk.caution) }
-                }
-                .padding(.leading, WingtipSpace.md).padding(.top, WingtipSpace.md)
-            }
-            // The flight's own work while the map is up (FlightLoops).
-            .modifier(FlightLoops())
-            // The window's UndoManager for the route's history: shake to undo
-            // and the Edit menu (PlanHistory).
-            .onAppear { plan.undoManager = undoManager }
-            .onChange(of: undoManager) { _, manager in plan.undoManager = manager }
-            // Siri listens for the fields the shortcuts' airport entity
-            // suggests (the kept route's: AirportEntityQuery.suggestedEntities),
-            // and Spotlight finds them, so both are told again when the route
-            // changes (AirportSpotlight).
-            .onAppear { AirportSpotlight.refresh() }
-            // A field's mark held: its card's preview and the plan's three.
-            .onAppear { AirportMarkMenu.shared.input = markPreview }
-            .onChange(of: plan.idents) { _, _ in AirportSpotlight.refresh() }
+        RootMap(layout: layout, inset: mapInset, mapShown: $mapShown, search: search,
+                open: { open($0) }, ask: { ask($0) })
     }
 }
 
 #Preview("RootView") {
     RootView()
         .modifier(AppModels(session: Session(), charts: Charts(), plan: Plan(), ownShip: OwnShip(), dryRun: DryRun(),
-                            traffic: Traffic(), verdict: Verdict(), nav: Navigator(), inFlight: InFlight()))
-        .environment(AppCommands())
+                            traffic: Traffic(), verdict: Verdict(), nav: Navigator(), inFlight: InFlight(), screens: ScreenModels()))
 }

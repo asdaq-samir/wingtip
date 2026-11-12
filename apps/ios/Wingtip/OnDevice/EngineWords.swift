@@ -1,7 +1,7 @@
 import Foundation
 
-/// The answer with no model at all -- an older iOS, Apple Intelligence
-/// off, the model still downloading, and no signal to the planner: the
+/// The answer with no model at all -- a phone without Apple Intelligence,
+/// or off, the model still downloading, and no signal to the planner: the
 /// question is matched to the figures it asks for by its words, and each
 /// figure is said as the engine's own sentence, citing itself. Plain, but
 /// every word of it is a figure the engine or a report gave.

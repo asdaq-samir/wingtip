@@ -77,8 +77,9 @@ and Table 9.3.1, zod 4.6.7, ESLint 10.14.0 with typescript-eslint
 ### iPhone, iPad and Watch (`apps/ios/project.yml`)
 
 Built with Xcode 27.2 against the iOS 27.2 SDK; deployment target iOS
-18.0 (iOS 26 and 27 features behind `#available`); Swift 6 language mode
-with complete strict concurrency.
+27.0 and watchOS 27.0 (the owner's rule: the newest APIs, the floor raised
+when they need it, so nothing sits behind `#available`); Swift 6 language
+mode with complete strict concurrency.
 
 ### Android (`apps/android/gradle/libs.versions.toml`)
 

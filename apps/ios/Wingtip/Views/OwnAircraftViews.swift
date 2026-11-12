@@ -23,7 +23,7 @@ struct OwnAircraftListView: View {
                         HStack {
                             VStack(alignment: .leading, spacing: WingtipSpace.xxs) {
                                 HStack(spacing: WingtipSpace.sm) {
-                                    Text(airplane.tailNumber).font(.headline.monospaced()).siriSees(SiriSaw.airplane(airplane.tailNumber))
+                                    Text(airplane.tailNumber).font(.headline.monospaced()).appEntityIdentifier(SiriSaw.airplane(airplane.tailNumber))
                                     Text(airplane.typeDesignator).foregroundStyle(.secondary)
                                 }
                                 Text(OwnAircraftPage.figuresLine(airplane)).font(.footnote).foregroundStyle(.secondary)

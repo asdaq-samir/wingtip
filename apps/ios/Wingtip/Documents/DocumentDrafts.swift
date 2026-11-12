@@ -1,5 +1,4 @@
 import Foundation
-#if canImport(FoundationModels)
 import FoundationModels
 
 /// The shapes Apple's on-device model fills in when it reads a photographed
@@ -9,7 +8,6 @@ import FoundationModels
 /// snake case, so the engine checks the phone's read exactly as it checks
 /// the server's, and the screens take either. Every figure is optional: a
 /// figure the page does not show is left out, never filled in.
-@available(iOS 27, *)
 @Generable
 struct PageNotes: Codable {
     @Guide(description: "Each figure that was hidden, blurred, cut off or ambiguous, and why; empty when none.")
@@ -18,7 +16,6 @@ struct PageNotes: Codable {
     var unreadable: String
 }
 
-@available(iOS 27, *)
 @Generable
 struct ClearanceDraft: Codable {
     @Guide(description: "The note as written, line by line, shorthand kept.")
@@ -29,14 +26,12 @@ struct ClearanceDraft: Codable {
 }
 
 /// A clearance given as text: as the controller said it.
-@available(iOS 26, *)
 @Generable
 struct ClearanceTextDraft {
     @Guide(description: "The clearance as the controller said it, in words, figures as digits, the places as written, nothing added.")
     var said: String
 }
 
-@available(iOS 27, *)
 @Generable
 struct LogbookRowDraft: Codable {
     @Guide(description: "YYYY-MM-DD; leave out where the day, month or year cannot be read.")
@@ -61,7 +56,6 @@ struct LogbookRowDraft: Codable {
     var remarks: String?
 }
 
-@available(iOS 27, *)
 @Generable
 struct PageTotalsDraft: Codable {
     var total: Double?
@@ -76,7 +70,6 @@ struct PageTotalsDraft: Codable {
     var approaches: Double?
 }
 
-@available(iOS 27, *)
 @Generable
 struct LogbookPageDraft: Codable {
     @Guide(description: "Each flight written on the page, in the page's order.")
@@ -86,7 +79,6 @@ struct LogbookPageDraft: Codable {
     var page: PageNotes
 }
 
-@available(iOS 27, *)
 @Generable
 struct CruiseRowDraft: Codable {
     var altitudeFt: Double?
@@ -96,7 +88,6 @@ struct CruiseRowDraft: Codable {
     var burn: Double?
 }
 
-@available(iOS 27, *)
 @Generable
 struct DistanceRowDraft: Codable {
     var pressureAltitudeFt: Double?
@@ -105,7 +96,6 @@ struct DistanceRowDraft: Codable {
     var overObstacle: Double?
 }
 
-@available(iOS 27, *)
 @Generable
 struct ClimbDraft: Codable {
     var speed: Double?
@@ -113,7 +103,6 @@ struct ClimbDraft: Codable {
     var burn: Double?
 }
 
-@available(iOS 27, *)
 @Generable
 struct GlideDraft: Codable {
     var speed: Double?
@@ -121,7 +110,6 @@ struct GlideDraft: Codable {
     var ratio: Double?
 }
 
-@available(iOS 27, *)
 @Generable
 struct EmptyDraft: Codable {
     var weight: Double?
@@ -131,21 +119,18 @@ struct EmptyDraft: Codable {
     var momentDivisor: Double?
 }
 
-@available(iOS 27, *)
 @Generable
 struct CornerDraft: Codable {
     var arm: Double?
     var weight: Double?
 }
 
-@available(iOS 27, *)
 @Generable
 struct FuelDraft: Codable {
     var total: Double?
     var usable: Double?
 }
 
-@available(iOS 27, *)
 @Generable
 struct HandbookPageDraft: Codable {
     @Guide(description: "The speeds' unit as printed: kt or mph.")
@@ -173,4 +158,3 @@ struct HandbookPageDraft: Codable {
     var fuel: FuelDraft?
     var page: PageNotes
 }
-#endif

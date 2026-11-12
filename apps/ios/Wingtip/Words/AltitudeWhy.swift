@@ -1,7 +1,5 @@
 import Foundation
-#if canImport(FoundationModels)
 import FoundationModels
-#endif
 
 /// "Why this altitude?" in plain words beside the altitude wheel: Apple's
 /// on-device model explains the altitude the plan flies from the engine's
@@ -124,25 +122,20 @@ protocol AltitudeWhyModel: Sendable {
 /// Apple's on-device model with the reasons as its tools.
 struct AppleAltitudeWhy: AltitudeWhyModel {
     func sentences(_ reasons: AltitudeWhy.Reasons, log: FigureLog) async throws -> [WordsSentence] {
-        #if canImport(FoundationModels)
-        if #available(iOS 26, *) {
-            // The altitude and its direction-of-flight rule are in the
-            // prompt, as the first run of AltitudeWhyEvaluation found the
-            // model seldom asked for the rule; the rest come by the tools.
-            log.add(reasons.rule, by: "prompt")
-            let given = ([reasons.flown] + reasons.rule).map(\.forModel).joined(separator: "\n")
-            let prompt = "\(given)\nExplain why the plan flies this altitude: first the direction of flight and the cruising-altitude rule, then what the tools give."
-            let instructions = OnDeviceWords.instructions(.altitude)
-                + " Call the tools for the rest of the reasons: the limits, the plans' winds and fuel, and the cautions."
-            // The phone's model, else Apple's Private Cloud Compute (AppleModels).
-            let (sentences, place) = try await AppleModels.attempt { place in
-                let session = AppleModels.session(place, tools: AltitudeWhyTools.all(reasons, log: log), instructions: instructions)
-                return try await session.respond(to: prompt, generating: WordsAnswer.self).content.sentences.map { WordsSentence(sources: $0.sources, text: $0.text) }
-            }
-            log.place = place
-            return sentences
+        // The altitude and its direction-of-flight rule are in the
+        // prompt, as the first run of AltitudeWhyEvaluation found the
+        // model seldom asked for the rule; the rest come by the tools.
+        log.add(reasons.rule, by: "prompt")
+        let given = ([reasons.flown] + reasons.rule).map(\.forModel).joined(separator: "\n")
+        let prompt = "\(given)\nExplain why the plan flies this altitude: first the direction of flight and the cruising-altitude rule, then what the tools give."
+        let instructions = OnDeviceWords.instructions(.altitude)
+            + " Call the tools for the rest of the reasons: the limits, the plans' winds and fuel, and the cautions."
+        // The phone's model, else Apple's Private Cloud Compute (AppleModels).
+        let (sentences, place) = try await AppleModels.attempt { place in
+            let session = AppleModels.session(place, tools: AltitudeWhyTools.all(reasons, log: log), instructions: instructions)
+            return try await session.respond(to: prompt, generating: WordsAnswer.self).content.sentences.map { WordsSentence(sources: $0.sources, text: $0.text) }
         }
-        #endif
-        throw WordsUnavailable(why: "Words on this iPhone need iOS 26.")
+        log.place = place
+        return sentences
     }
 }

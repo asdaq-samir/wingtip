@@ -7,8 +7,8 @@ name: Wingtip
 options:
   bundleIdPrefix: app.wingtipmaps
   deploymentTarget:
-    iOS: "18.0"
-    watchOS: "10.0"
+    iOS: "27.0"
+    watchOS: "27.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
 settings:
