@@ -5,7 +5,7 @@
 
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/Map3dLayer.kt 303
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/flow/ModelWeatherLayer.kt 337
-apps/ios/Wingtip/Views/FieldNotamViews.swift 315
+apps/ios/Wingtip/Views/FieldNotamViews.swift 304
 engine/crates/airspace/src/sua_tab.rs 393
 engine/crates/procedures/src/occurrence.rs 340
 engine/crates/route/src/approach/scene.rs 332

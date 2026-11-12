@@ -6,8 +6,8 @@
 # the files first listed then, are the formatters' growth (the whole-tree
 # reformat of scripts/dev/format.sh, a commit a language), not new code.
 
-apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 695
-apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 760
+apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ChartMap.kt 670
+apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/MapStyle.kt 755
 apps/ios/Wingtip/Tiles/ChartTileOverlay.swift 404
 apps/ios/Wingtip/Views/ChartMap.swift 729
 apps/ios/Wingtip/Views/ChartOverlays.swift 807
@@ -30,7 +30,7 @@ apps/web/src/components/ApproachDebrief.tsx 415
 apps/web/src/components/ClearanceCard.tsx 467
 apps/web/src/components/RadioLayer.tsx 549
 apps/web/src/components/audioGear.ts 1484
-apps/web/src/components/map/GlMapShell.tsx 564
+apps/web/src/components/map/GlMapShell.tsx 559
 apps/web/src/features/chart-labels/dev/DevPanel.tsx 1096
 apps/web/src/features/chart-labels/hooks/useTraining.test.ts 484
 apps/web/src/features/chart-labels/hooks/useTraining.ts 422
@@ -41,7 +41,7 @@ apps/web/src/features/plan/PlanWorkspace.tsx 500
 apps/web/src/features/plan/components/AltitudeReasoning.tsx 577
 apps/web/src/features/plan/components/ApproachLesson.tsx 476
 apps/web/src/features/plan/components/FlightCard.tsx 801
-apps/web/src/features/plan/components/PlaceCard.tsx 582
+apps/web/src/features/plan/components/PlaceCard.tsx 579
 apps/web/src/features/plan/components/RouteMap.tsx 454
 apps/web/src/features/plan/components/navlog/NavLogView.tsx 952
 apps/web/src/features/plan/components/procedures/FieldStep.tsx 556
@@ -57,7 +57,6 @@ apps/web/src/lib/map/gl/glOverlays.ts 465
 apps/web/src/lib/map/gl/glStyle.ts 577
 apps/web/src/lib/preferences.ts 625
 apps/web/src/lib/queryClient.ts 442
-apps/web/vite.config.ts 441
 engine/crates/airspace/src/ahead.rs 1035
 engine/crates/airspace/src/rules.rs 553
 engine/crates/airspace/src/spoken.rs 560
@@ -98,7 +97,7 @@ engine/facade/tests/runway.rs 598
 scripts/build/assistant_client.py 418
 scripts/build/design_tokens.py 556
 scripts/build/engine-contract-apps.mjs 435
-scripts/dev/check.sh 410
+scripts/dev/check.sh 408
 services/assistant/app/toolbox.py 498
 services/gateway/src/main/java/app/wingtipmaps/gateway/security/SecurityConfig.java 434
 services/gateway/src/main/java/app/wingtipmaps/gateway/service/InstructorService.java 534
@@ -108,21 +107,21 @@ services/ingest/ingest/swim.py 416
 services/jobs/charts/overlays.py 716
 services/jobs/charts/tests/test_overlays.py 795
 services/planner/app/landmarks.py 462
-services/planner/app/main.py 419
-services/planner/app/routers/airports.py 769
+services/planner/app/main.py 418
+services/planner/app/routers/airports.py 762
 services/planner/app/routers/plan.py 483
 services/planner/app/routers/words.py 608
 services/planner/app/schemas/airports.py 483
 services/planner/app/schemas/plan.py 828
 services/planner/tests/test_airports.py 584
 services/planner/tests/test_api.py 615
-services/planner/tests/test_plan.py 710
+services/planner/tests/test_plan.py 709
 services/planner/tests/test_stops.py 888
 services/planner/tests_wingtip/test_airports.py 626
 services/planner/tests_wingtip/test_charts.py 1648
 services/planner/tests_wingtip/test_route_options.py 473
 services/planner/tests_wingtip/test_traffic.py 1382
-services/planner/wingtip/airports.py 763
+services/planner/wingtip/airports.py 762
 services/planner/wingtip/airspace.py 611
 services/planner/wingtip/chart_faces.py 937
 services/planner/wingtip/charts.py 2338
@@ -139,6 +138,6 @@ services/planner/wingtip/procedure_paths.py 406
 services/planner/wingtip/procedures.py 867
 services/planner/wingtip/publications.py 562
 services/planner/wingtip/traffic/flights.py 444
-services/planner/wingtip/weather.py 519
+services/planner/wingtip/weather.py 516
 services/weather/app/gfs.py 402
 services/weather/tests/test_aviationweather.py 557

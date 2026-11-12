@@ -1,0 +1,2 @@
+Method <app.wingtipmaps.gateway.service.RouteImage.draw(java.awt.Graphics2D, java.util.List)> calls method <java.lang.Math.cos(double)> in (RouteImage.java:77)
+Method <app.wingtipmaps.gateway.service.RouteImage.draw(java.awt.Graphics2D, java.util.List)> calls method <java.lang.Math.toRadians(double)> in (RouteImage.java:77)
