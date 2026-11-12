@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { chartZoom, grabberTo, openPanel, openProfile, closeProfile, settle, settled, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { markWith } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -397,7 +398,7 @@ test("with an approach picked, the dry run flies it into the field: out to its f
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeVisible({ timeout: slow(60_000) });
   // The approach drawn, so in hand as the run starts.
-  await expect(page.locator('[data-procedure-fix="CIRUS"]')).toHaveCount(1, { timeout: slow(10_000) });
+  await expect.poll(markWith(page, "procedure-fixes", "CIRUS"), { timeout: slow(10_000) }).not.toBeNull();
   await pressDryRunStart(page, start);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
   // Held at its end, then ten miles back: on the final, between HOMUV and
@@ -418,10 +419,7 @@ test("with an approach picked, the dry run flies it into the field: out to its f
   await expect(thumb).toHaveAttribute("aria-valuenow", String(end));
   await page.keyboard.press("ArrowLeft");
   await page.keyboard.press("ArrowLeft");
-  const fixAt = async (ident: string) => {
-    const b = (await page.locator(`[data-procedure-fix="${ident}"]`).boundingBox())!;
-    return { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-  };
+  const fixAt = async (ident: string) => (await markWith(page, "procedure-fixes", ident)())!; // its point (ProceduresGl's probe)
   await expect(async () => {
     const ship = await shipAt(page),
       from = await fixAt("HOMUV"),

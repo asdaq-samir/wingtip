@@ -1,5 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { cardClose, drawn, grabberTo, openTab, settle, settled, sideDrawer, slow } from "./helpers";
+import { tapMark } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -275,7 +276,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   await expect(page.locator("path.instrument-procedure")).toHaveCount(2, { timeout: slow(10000) });
   await expect(page.locator("path.instrument-procedure-missed")).toHaveCount(1);
   await expect(page.locator("path.instrument-procedure-hold")).toHaveCount(1);
-  await expect(page.locator("[data-procedure-fix]")).toHaveCount(3);
+  await expect.poll(async () => (await drawn(page, "procedure-fixes")).length).toBe(3);
   // Said in the route's box after the destination's pill, and a tap there
   // opens the Procedures.
   const chip = sideDrawer(page).getByTestId("route-procedure");
@@ -729,9 +730,8 @@ test("a procedure's fixes branch off the route, each sent direct to or given an 
   await expect(page).not.toHaveURL(/[?&]cross=/);
   await cardClose(page, "fix-card-close").click();
   await expect(card).toHaveCount(0);
-  // The same card from the fix on the map: a tap's click on its mark, under
-  // the sheet here, as the map's marks are tapped in the other specs.
-  await page.locator('[data-procedure-fix="FAKER"]').dispatchEvent("click");
+  await grabberTo(page, "peek"); // the same card from the fix on the map, the sheet down
+  await tapMark(page, "procedure-fixes", "FAKER");
   await expect(page.getByTestId("fix-card")).toBeVisible();
   await expect(page.getByTestId("fix-card-direct")).toContainText("as Charted");
 });

@@ -6,7 +6,8 @@ import { AirspaceCardBody } from "../../../../components/map/cards/AirspaceCard"
 import { deckColour, deckSlot, useDeckLayers, useDeckTap } from "../../../../lib/map/gl/deckLayers";
 import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../../lib/map/gl/glLayer";
 import { volumeOfTile } from "../../../../lib/map/gl/glOverlays";
-import { SUA_INK, appZoomOf } from "../../../../lib/map/gl/glStyle";
+import { SUA_INK } from "../../../../lib/map/gl/glStyle";
+import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { suaTabLayout } from "../../../../lib/map/gl/glSuaLabels";
 import { GL_FONT_BOLD, TAP } from "../../../../lib/map/gl/layers/common";
 import { usePreferences } from "../../../../lib/preferences";
@@ -49,29 +50,11 @@ const RIMS = "airspace-3d-rims";
 /** The rims: a hairline and a half at any distance. */
 const RIM_PX = 1.5;
 
-/** The view's box and the app's zoom, as the camera comes to rest. */
-function useView(map: MlMap) {
-  const read = () => {
-    const b = map.getBounds(),
-      c = map.getCenter().wrap();
-    return {
-      box: boxOf({ south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() }, { lat: c.lat, lon: c.lng }),
-      zoom: Math.floor(appZoomOf(map.getZoom())),
-    };
-  };
-  const [view, setView] = useState(read);
-  useEffect(() => {
-    const moved = () => {
-      const next = read();
-      setView((was) => (JSON.stringify(was) === JSON.stringify(next) ? was : next));
-    };
-    map.on("moveend", moved);
-    return () => {
-      map.off("moveend", moved);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- read is the map's
-  }, [map]);
-  return view;
+/** The volumes' box round the view, as the camera comes to rest. */
+function volumeBox(map: MlMap) {
+  const b = map.getBounds(),
+    c = map.getCenter().wrap();
+  return boxOf({ south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() }, { lat: c.lat, lon: c.lng });
 }
 
 /** The terrain's tiles' coming in, a quarter second after the last, for
@@ -113,7 +96,7 @@ export default function AirspaceVolumesGl() {
   const { map, openCard } = useGlMap();
   const showAirspace = usePreferences((s) => s.airspace);
   const showTfrs = usePreferences((s) => s.tfrs);
-  const { box, zoom } = useView(map);
+  const { box, level: zoom } = useGlView(volumeBox, "rest");
   const tick = useGroundTick(map);
   const classes = classesAt(zoom);
   const { data: volumes } = useQuery({ ...volumesQuery(box, classes), enabled: showAirspace });

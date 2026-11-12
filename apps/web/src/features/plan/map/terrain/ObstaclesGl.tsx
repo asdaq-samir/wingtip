@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Map as MlMap } from "maplibre-gl";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { api } from "../../../../lib/api/client";
 import { EMPTY, useGlMap } from "../../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../../lib/map/gl/glStyle";
+import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { obstacleFeatures } from "./geometry";
 import { setExtrusionData, useExtrusion } from "./useExtrusion";
 import { CHART } from "../../../../lib/tokens";
@@ -39,17 +40,7 @@ export default function ObstaclesGl() {
       "fill-extrusion-height": ["get", "height"],
     },
   });
-  const [box, setBox] = useState(() => obstacleBox(map));
-  useEffect(() => {
-    const moved = () => {
-      const next = obstacleBox(map);
-      setBox((was) => (JSON.stringify(was) === JSON.stringify(next) ? was : next));
-    };
-    map.on("moveend", moved);
-    return () => {
-      map.off("moveend", moved);
-    };
-  }, [map]);
+  const { box } = useGlView(obstacleBox, "rest");
   const { data } = useQuery({
     queryKey: ["obstacles", box],
     queryFn: () => api.obstacles(box!),

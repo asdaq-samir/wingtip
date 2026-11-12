@@ -5,13 +5,14 @@ import { callEngine } from "../../lib/engine/engine";
 import { TAP } from "../../lib/map/gl/layers/common";
 import { useGlLayer, useGlMap, useGlPaint, useGlTap } from "../../lib/map/gl/glLayer";
 import { useGlLines, type GlRun } from "../../lib/map/gl/useGlLines";
-import { useGlMarks, type GlMark } from "../../lib/map/gl/useGlMarks";
+import { pictureLayer } from "../../lib/map/gl/markLayers";
+import { useGlSymbols, type GlSymbol } from "../../lib/map/gl/useGlSymbols";
 import { usePreferences } from "../../lib/preferences";
 import { plateQuery } from "../../lib/queryClient";
 import { CHART } from "../../lib/tokens";
 import { PlateCard, type ChartViewer } from "./PlateCard";
 import { plateKey, useHiddenPlates, usePlateLook } from "./plateLook";
-import { plateTagIcon } from "./plateTagIcon";
+import { PLATE_TAG_PLACE, plateTag } from "./plateTag";
 import { tagViews } from "./plateTags";
 
 type Corner = [number, number];
@@ -149,18 +150,21 @@ function PlateTagsGl({ drawing }: { drawing: ProcedureDrawing }) {
     [answer, drawing],
   );
   useGlLines(`plate-final-${drawing.airport}-${drawing.id}`, "route", runs, { colour: CHART.casing, width: 8, opacity: 0.9 });
-  const marks = useMemo<GlMark[]>(
+  const marks = useMemo<GlSymbol[]>(
     () =>
       answer
         ? tagViews(answer.tags).map((t) => ({
             key: `plate-tag-${drawing.airport}-${drawing.id}-${t.key}`,
             lat: t.lat,
             lon: t.lon,
-            icon: plateTagIcon({ ident: t.ident, lines: t.lines }),
+            picture: plateTag({ ident: t.ident, lines: t.lines }),
+            props: { ident: t.ident, lines: t.lines.map((l) => l.text).join("\n") },
           }))
         : [],
     [answer, drawing],
   );
-  useGlMarks(marks);
+  const source = `plate-tags-${drawing.airport}-${drawing.id}`;
+  const layers = useMemo(() => [pictureLayer(source, source, {}, PLATE_TAG_PLACE)], [source]);
+  useGlSymbols(source, layers, marks);
   return null;
 }

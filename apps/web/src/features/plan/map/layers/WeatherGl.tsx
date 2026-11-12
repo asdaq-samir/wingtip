@@ -1,16 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
-import type { FillLayerSpecification, LineLayerSpecification } from "maplibre-gl";
-import { useEffect, useMemo, useState } from "react";
+import type {
+  ExpressionSpecification,
+  FillLayerSpecification,
+  LineLayerSpecification,
+  Map as MlMap,
+  SymbolLayerSpecification,
+} from "maplibre-gl";
+import { useMemo } from "react";
 import { api } from "../../../../lib/api/client";
 import { areaColour } from "../../lib/weatherMap";
 import { AreaCard, PirepCard, WindCard } from "../WeatherCards";
-import { barbIcon, pirepIcon, weatherBoxOf } from "../weatherLayer";
+import { PIREP_SHIFT, pirepMarks, weatherBoxOf, windBarb } from "../weatherLayer";
 import { useWeatherLayers } from "../../../../lib/map/sources/weatherLayers";
 import { WINDS_MODELLED } from "../../../../lib/windsAloft";
 import { useGlData, useGlFadeIn, useGlLayer, useGlMap, useGlTap } from "../../../../lib/map/gl/glLayer";
 import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
 import { TAP } from "../../../../lib/map/gl/layers/common";
-import { useGlMarks, type GlMark } from "../../../../lib/map/gl/useGlMarks";
+import { chipLayer, pictureLayer } from "../../../../lib/map/gl/markLayers";
+import { useGlSymbols, type GlSymbol } from "../../../../lib/map/gl/useGlSymbols";
+import { useGlView } from "../../../../lib/map/gl/useGlView";
 
 const REFRESH_MS = 5 * 60_000;
 const empty = () => ({ type: "geojson" as const, data: { type: "FeatureCollection" as const, features: [] } });
@@ -45,20 +53,9 @@ const AREA_LAYERS: (FillLayerSpecification | LineLayerSpecification)[] = [
  * area, a PIREP or a barb opens its card.
  */
 export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | null; altitudeFt: number | null }) {
-  const { map, openCard } = useGlMap();
+  const { openCard } = useGlMap();
   const { areas, pireps, winds } = useWeatherLayers();
-  const [box, setBox] = useState(() => weatherBoxOf(map.getBounds()));
-  useEffect(() => {
-    const rest = () =>
-      setBox((was) => {
-        const next = weatherBoxOf(map.getBounds());
-        return next.south === was.south && next.north === was.north && next.west === was.west && next.east === was.east ? was : next;
-      });
-    map.on("moveend", rest);
-    return () => {
-      map.off("moveend", rest);
-    };
-  }, [map]);
+  const { box } = useGlView(weatherBox, "rest");
   const windsFt = winds === "off" ? null : winds === "plan" ? (altitudeFt ?? 9000) : winds;
   const { data } = useQuery({
     queryKey: ["weatherMap", box, windsFt],
@@ -93,32 +90,62 @@ export function WeatherGl({ line, altitudeFt }: { line: [number, number][] | nul
     if (a) openCard(<AreaCard key={a.id} area={a} line={line} altitudeFt={altitudeFt} />);
   });
 
-  // The PIREPs and the barbs as the app's own chips (WeatherCards' icons),
-  // each a marker a tap opens the card of.
-  const marks = useMemo<GlMark[]>(
+  // The PIREPs as chips and the winds as barbs, each a tap opens the card of.
+  const marks = useMemo<GlSymbol[]>(
     () => [
       ...(pireps
-        ? (data?.pireps ?? []).map((p, i) => ({
-            key: `pirep-${p.lat},${p.lon},${p.observed_at ?? i}`,
-            lat: p.lat,
-            lon: p.lon,
-            icon: pirepIcon(p),
-            onTap: () => openCard(<PirepCard key={`${p.lat},${p.lon},${i}`} pirep={p} />),
-          }))
+        ? (data?.pireps ?? []).map((p, i) => {
+            const { picture, text, colour } = pirepMarks(p);
+            return {
+              key: `pirep-${p.lat},${p.lon},${p.observed_at ?? i}`,
+              lat: p.lat,
+              lon: p.lon,
+              picture,
+              text,
+              props: { kind: "pirep", colour },
+              onTap: () => openCard(<PirepCard key={`${p.lat},${p.lon},${i}`} pirep={p} />),
+            };
+          })
         : []),
       ...(windsFt !== null
         ? (data?.winds?.stations ?? []).map((w) => ({
             key: `wind-${w.ident}`,
             lat: w.lat,
             lon: w.lon,
-            icon: barbIcon(w),
-            title: `${w.ident}: ${Math.round(w.dir_true_deg)}° true at ${Math.round(w.speed_kt)} kt, ${WINDS_MODELLED}`,
+            picture: windBarb(w),
+            props: {
+              kind: "wind",
+              dir: Math.round(w.dir_true_deg),
+              title: `${w.ident}: ${Math.round(w.dir_true_deg)}° true at ${Math.round(w.speed_kt)} kt, ${WINDS_MODELLED}`,
+            },
             onTap: () => openCard(<WindCard key={w.ident} wind={w} altitudeFt={windsFt} />),
           }))
         : []),
     ],
     [data, pireps, windsFt, openCard],
   );
-  useGlMarks(marks, true);
+  // Faded in as they come, not snapped on over the chart.
+  useGlSymbols(MARKS, MARK_LAYERS, marks, { fade: true });
   return null;
 }
+
+/** The weather's grid box round the view at rest. */
+const weatherBox = (map: MlMap) => weatherBoxOf(map.getBounds());
+
+const MARKS = "wx-marks";
+const KIND = (kind: string) => ["==", ["get", "kind"], kind] as ExpressionSpecification;
+/** The barbs turned on the chart by the wind's direction, under the PIREPs'
+ *  chips, their level in the hazard's colour. */
+const MARK_LAYERS: SymbolLayerSpecification[] = [
+  { ...pictureLayer("wx-winds", MARKS, {}, { "icon-rotate": ["get", "dir"], "icon-rotation-alignment": "map" }), filter: KIND("wind") },
+  {
+    ...chipLayer(
+      "wx-pireps",
+      MARKS,
+      {},
+      { "text-size": 12, "text-offset": [PIREP_SHIFT, 0] },
+      { "text-color": ["get", "colour"] as ExpressionSpecification },
+    ),
+    filter: KIND("pirep"),
+  },
+];

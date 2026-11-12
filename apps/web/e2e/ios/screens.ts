@@ -18,6 +18,7 @@ import {
   stripShows,
   frontSheet,
 } from "../helpers";
+import { markWith } from "../marks";
 
 /** One state of the app as a pilot sees it, reached from a fresh page. */
 import { SEARCH_SCREENS } from "./searchScreens";
@@ -38,10 +39,9 @@ export const SCREENS: Screen[] = [
     ready: async (page) => {
       await page.goto(`/app/plan?${ROUTE}`);
       await settle(page);
-      await expect(page.locator(".maplibregl-marker").first()).toBeVisible({ timeout: slow(30000) });
-      // And the plan in, the capsule at rest over it: its checkpoints
-      // drawn and the progress toast gone.
-      await expect(page.locator(".maplibregl-marker", { hasText: /^\d+$/ }).first()).toBeVisible({ timeout: slow(30000) });
+      // The route's marks drawn, and the plan in, the capsule at rest over
+      // it: its checkpoints drawn and the progress toast gone.
+      await expect.poll(markWith(page, "route-marks", /^\d+$/), { timeout: slow(30000) }).not.toBeNull();
       await expect(page.locator("[data-slot=toast]")).toHaveCount(0, { timeout: slow(30000) });
     },
   },

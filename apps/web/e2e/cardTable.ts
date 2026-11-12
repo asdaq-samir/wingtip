@@ -2,7 +2,6 @@ import { expect, type Page } from "@playwright/test";
 import {
   consolePage,
   grabberTo,
-  mapStill,
   openBrief,
   openConsole,
   openMapSettings,
@@ -14,6 +13,7 @@ import {
   sideDrawer,
   slow,
 } from "./helpers";
+import { tapMark } from "./marks";
 import { go, nearbyStops, pick, ROUTE, sky, tapLeg } from "./cardEntries";
 import { pickAirplane } from "./startState";
 
@@ -78,13 +78,11 @@ export const CARDS: CardRow[] = [
         name: "map tap",
         open: async (p) => {
           await go(p, ROUTE);
-          // The departure's chip, the route's own marker, tapped: a route's
-          // fields are drawn by it, not among the chart's airports, and a
-          // tap beside it can take a neighbour (KARR's mark, round C81).
-          const chip = p.locator(".maplibregl-marker", { hasText: "C81" }).first();
+          // The departure's mark, the route's own, tapped at its point: a
+          // route's fields are drawn by it, not among the chart's airports,
+          // and a tap beside it can take a neighbour (KARR's mark, round C81).
           await expect(async () => {
-            await mapStill(p);
-            await chip.click();
+            await tapMark(p, "route-marks", "C81");
             await expect(p).toHaveURL(/[?&]place=C81(&|$)/, { timeout: 2_000 });
           }).toPass({ timeout: slow(20_000) });
           // The pointer off what came up under it: the card's head lands where

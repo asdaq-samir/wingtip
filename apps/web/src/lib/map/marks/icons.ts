@@ -1,4 +1,6 @@
-/** A mark drawn as the app's own markup over the map (gl/htmlMarker): its
+/** A mark drawn as the app's own markup over the map (gl/htmlMarker) --
+ *  own ship and the traffic, which move every frame; every other mark is
+ *  a symbol layer (gl/useGlSymbols) -- its
  *  html, its box and the point in it that sits on the map's point, px. The
  *  shape of a div icon's options, so the marks read the same wherever
  *  they were written for. */
@@ -16,23 +18,21 @@ export interface IconLike {
   };
 }
 
-export function divIcon(options: IconLike["options"]): IconLike {
+function divIcon(options: IconLike["options"]): IconLike {
   return { options };
 }
 import { ownShipSvg, type OwnShipLook } from "../position/ownShipLook";
-import type { AirspaceClass } from "../../preferences";
-import { inkOn } from "../../scoreScale";
-import { AIRPORT_MARK, airportMarkSvg, text } from "./airportMark";
-import { MAP_BLUE, WAYPOINT_MAGENTA } from "./chartColors";
+import { text } from "./airportMark";
+import { MAP_BLUE } from "./chartColors";
 import { CATEGORY_UNKNOWN, CHART } from "../../tokens";
 
 /** An icon made once for the same arguments and handed out again after:
  *  a marker's element is made again only when its icon is a new object
- *  (gl/layers/MarksGl), and every redraw of the planner made every
+ *  (gl/layers/TrafficGl), and every redraw of the planner made every
  *  marker's anew -- a narrative arriving, a tab opening redrew the
  *  route's chips (measured on the Brief tab's first opening, 2026-10). Plain data in, so the arguments are the key; a few thousand
  *  kept at most. */
-export function made<A extends unknown[]>(make: (...args: A) => IconLike): (...args: A) => IconLike {
+function made<A extends unknown[]>(make: (...args: A) => IconLike): (...args: A) => IconLike {
   const kept = new Map<string, IconLike>();
   return (...args: A) => {
     const key = JSON.stringify(args);
@@ -55,49 +55,6 @@ export function made<A extends unknown[]>(make: (...args: A) => IconLike): (...a
  * 200 kB, a second copy of the renderer) into the chunk every page
  * loads, to produce four spans.
  */
-
-/** A target a finger's 44 points across (Apple's Human Interface
- *  Guidelines), for the marks drawn small: a waypoint's diamond. A chip's
- *  target is the chip, where its neighbours' are close: grown to 44 every
- *  chip's box lay over the next one's, and a tap on a chip in sight went
- *  to the one beside it (KORD's, under a neighbour's, 2026-10-07). A tap a
- *  little off a field's chip is its own all the same: the map gives a tap
- *  to the nearest mark within a finger's reach (gl/layers/common's TAP). */
-const TAP = 44;
-
-/**
- * A marker with three edges: a white casing to separate it from dark
- * linework, a dark hairline outside that so it still separates from pale
- * paper, and a shadow to lift it off both. One edge is never enough on a
- * chart this busy.
- */
-export const dotIcon = made(function dotIcon(fill: string, label?: string | number) {
-  const withLabel = label !== undefined;
-  // The tap target (iconSize) is bigger than the visual dot on purpose --
-  // a 20px dot is well under a comfortable touch target, but making the
-  // dot itself that big would make dense stretches of route hard to read.
-  // Centred in a larger invisible box by `position: absolute` and a
-  // transform.
-  const tapSize = withLabel ? 36 : 32;
-  // leading-none and text-(length:--type-caption): a circle has less usable width near
-  // its edges than a square of the same size, so bold digits (a
-  // route's checkpoint count runs to three) need real headroom to stay
-  // inside the curve, and a browser's own line-height slack would sit
-  // the number off-centre. 11px is Apple's floor for text meant to be
-  // read; these were 8, and they are the numbers a pilot matches to
-  // the nav log.
-  const size = withLabel
-    ? "grid h-[24px] w-[24px] place-items-center text-(length:--type-caption) font-bold leading-none tracking-tight"
-    : "h-4 w-4";
-  return divIcon({
-    className: "",
-    iconSize: [tapSize, tapSize],
-    iconAnchor: [tapSize / 2, tapSize / 2],
-    html:
-      `<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-[2.5px] border-background shadow-(--depth-mark) outline outline-1 outline-(color:--chart-shade)/55 ${size}"` +
-      ` style="background-color:${text(fill)};color:${text(inkOn(fill))}">${withLabel ? text(label) : ""}</div>`,
-  });
-});
 
 /** Own ship's mark as markup and its box, px, nose up: OwnShipGl's marker
  *  turns it to the heading as it draws it, round through a turn as an
@@ -125,63 +82,6 @@ export function ownShipHtml(headingDeg: number | null, off: boolean, look: OwnSh
           ),
   };
 }
-
-/** A point the route flies through or works out -- a VFR or GPS waypoint,
- *  a present position (POS0), a top of climb or descent -- as a pill on
- *  the course itself, centred on its point: the chart's magenta diamond
- *  of a fix and its name, white edged in the magenta (the owner's "TOC and
- *  TOD should have the fix on the course for those labels. Just like that
- *  POS0 should have a fix symbol with a label POS0"; "still make those
- *  route labels as pills"; and, of the pill beside the diamond, "a bit
- *  off their position", 2026-10-26). Never moved off its point to clear
- *  another label: that put TOC off the line. */
-export const fixMarkIcon = made(function fixMarkIcon(label: string) {
-  return divIcon({
-    className: "",
-    iconSize: [TAP, TAP],
-    iconAnchor: [TAP / 2, TAP / 2],
-    html:
-      `<span class="absolute left-1/2 top-1/2 inline-flex -translate-x-1/2 -translate-y-1/2 items-center gap-1 whitespace-nowrap rounded-full border-2 bg-white py-0.5 pr-1.5 pl-1 text-(length:--type-caption) leading-none font-bold text-(color:--chart-fix-ink) shadow-sm"` +
-      ` style="border-color:${WAYPOINT_MAGENTA}">` +
-      `<span class="size-2 shrink-0 rotate-45 rounded-[1px]" style="background-color:${WAYPOINT_MAGENTA}"></span>${text(label)}</span>`,
-  });
-});
-
-/**
- * An airport on the map, at the pilot's ask, as ForeFlight marks them
- * from the sectional's own symbols: a ring with four ticks (the chart's
- * sign of a field with services) in the look its airspace has
- * everywhere in the planner (lib/useAirspace) -- Class B a solid blue
- * disc, C a solid magenta one, D a dashed blue ring, an E surface area a
- * dashed magenta ring, G a thin magenta ring, and grey until the class is
- * known. A field the armed services keep is an M on a blue disc, and one
- * closed to the public an R on a magenta one (the sectional's R in a
- * circle), at the pilot's ask, whatever the airspace over either -- the
- * disc alone, as asked: a ring of the airspace's colour round it was tried
- * and taken off, the card saying the class. In its
- * middle (at the disc's edge on the M and the R) a dot in the
- * colour of the field's weather, its METAR's flight category, grey with
- * no report, kept from the chips the map had, at the pilot's ask. Its
- * ident beside it, dark on a white halo, as the chart letters a field.
- * White casing round each line, as on every mark here: a coloured line
- * alone is lost on chart of the same hue.
- */
-export const airportMarkIcon = made(function airportMarkIcon(
-  ident: string,
-  space: AirspaceClass | null,
-  weather: string,
-  use: "military" | "private" | null = null,
-) {
-  const half = AIRPORT_MARK / 2;
-  return divIcon({
-    className: "",
-    iconSize: [AIRPORT_MARK, AIRPORT_MARK],
-    iconAnchor: [half, half],
-    html:
-      airportMarkSvg(space, weather, use, "absolute inset-0 overflow-visible drop-shadow-sm drop-shadow-black/35") +
-      `<span class="absolute top-1/2 left-[calc(100%+1px)] -translate-y-1/2 whitespace-nowrap text-(length:--type-caption) leading-none font-bold text-(color:--chart-fix-ink) [text-shadow:0_0_2px_var(--chart-casing),0_0_2px_var(--chart-casing),0_0_3px_var(--chart-casing),0_0_4px_var(--chart-casing)]">${text(ident)}</span>`,
-  });
-});
 
 /** How big a traffic airplane's mark is drawn, points: 16, where it was
  *  22, at the owner's ask ("Can traffic arrows be smaller?", 2026-10-28)

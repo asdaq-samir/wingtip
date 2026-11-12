@@ -96,11 +96,17 @@ export async function tapLeg(page: Page) {
       const rows = JSON.parse(map.querySelector("[data-route-legs]")?.getAttribute("data-route-legs") ?? "[]") as {
         legs: { ends: number[][] }[];
       }[];
-      // The marks a tap would take: shown, and taking taps (a wind's arrow takes none).
+      // The marks a tap would take: the markers' (own ship), and the app's
+      // own drawn on the canvas, each a mark's 26 across round its point
+      // (useGlSymbols' probes; one MapLibre's collision left out is not).
       const marks = [...map.querySelectorAll<HTMLElement>(".maplibregl-marker")]
-        .filter((m) => m.dataset.declutter !== "hidden" && getComputedStyle(m).pointerEvents !== "none")
         .map((m) => m.getBoundingClientRect())
         .filter((b) => b.width > 0);
+      for (const name of ["route-marks", "leg-points", "fuel-stops", "stop-fields", "procedure-fixes", "route-way-chips", "wx-marks"]) {
+        const probe = map.querySelector<HTMLElement>(`[data-gl-probe="${name}"]`);
+        for (const m of JSON.parse(probe?.getAttribute(`data-${name}`) ?? "[]") as { x: number; y: number }[])
+          marks.push(new DOMRect(r.left + m.x - 13, r.top + m.y - 13, 26, 26));
+      }
       // What of the map is not under the panel: a phone's sheet, a desktop's side panel.
       const panel = document.querySelector<HTMLElement>('[data-slot="map-panel"]')?.getBoundingClientRect();
       const under = (x: number, y: number) =>

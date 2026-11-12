@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { slow, settle, openMapSettings } from "./helpers";
+import { markWith } from "./marks";
 
 /**
  * The chart layers the map asks for: the terminal area chart over the
@@ -42,10 +43,9 @@ for (const path of ["/app/dev"] as const) {
 
     // Wheel-zoom in over the departure marker, well past the sectional's
     // own zooms; the map zooms about the cursor, so C81 stays under it.
-    const marker = page.locator(".maplibregl-marker", { hasText: "C81" }).first();
-    await expect(marker).toBeVisible();
-    const box = (await marker.boundingBox())!;
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await expect.poll(markWith(page, "route-marks", "C81")).not.toBeNull();
+    const marker = (await markWith(page, "route-marks", "C81")())!;
+    await page.mouse.move(marker.x, marker.y);
     for (let i = 0; i < 8; i++) {
       await page.mouse.wheel(0, -60);
       await page.waitForTimeout(400);

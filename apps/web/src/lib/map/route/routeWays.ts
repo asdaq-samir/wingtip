@@ -1,5 +1,6 @@
-import { divIcon, made } from "../marks/icons";
-import { text } from "../marks/airportMark";
+import type { Layout } from "../gl/markLayers";
+import type { GlPicture } from "../gl/useGlSymbols";
+import { framed } from "../marks/markPictures";
 import { CHART } from "../../tokens";
 
 /** A way FPL's route line offers beside the route (its chips), as the map
@@ -22,30 +23,28 @@ export const WAY_SHARES = [0.35, 0.6, 0.8];
  *  points on it 6:1 (WCAG 1.4.3 asks 4.5; the line's own #e600e6 is 3.8). */
 const WAY_CHIP = CHART.courseChip;
 
-/** The chip on a way's line: its names and time, as Maps marks the
- *  routes beside the one picked, in the line's magenta; 24 tall, its
- *  44-point hit area a pseudo-element round it. */
-export const wayIcon = made(function wayIcon(key: string, label: string, name: string, shown: boolean) {
-  // A callout as Maps puts on its routes: the one shown filled in
-  // magenta with its name under its time, the others white with the time in
-  // magenta; a tail down to the line. Sized to its words, so the marker
-  // has a box (a hit test, a test's "visible").
-  const lines = shown && name ? 2 : 1;
-  const width = Math.ceil(Math.max(label.length, shown ? name.length : 0) * 7.6) + 22;
-  const height = lines === 2 ? 40 : 24;
+/** The chip on a way's line: its time and, on the one shown, its name
+ *  under it, as Maps marks the routes beside the one picked -- the one
+ *  shown filled in the line's magenta, the others white with the time in
+ *  magenta -- with a tail down to the line from its lower left, the
+ *  tail's tip on the point. Stretched to its words (icon-text-fit), ten
+ *  points either side and four above and under; WAY_CHIP_PLACE puts the
+ *  words where the tail's tip falls on the point. */
+export function wayChip(shown: boolean): GlPicture {
   const fill = shown ? WAY_CHIP : CHART.casing;
-  const ink = shown ? CHART.casing : WAY_CHIP;
-  return divIcon({
-    className: "",
-    iconSize: [width, height],
-    iconAnchor: [14, height + 7],
-    html:
-      `<span data-route-way="${text(key)}" class="relative flex h-full w-full flex-col justify-center rounded-xl px-2.5 text-(length:--type-note) leading-4 font-semibold shadow-(--depth-mark) after:absolute after:-inset-x-1 after:-inset-y-1 after:content-['']" style="background-color:${fill};color:${ink}">` +
-      `<span class="whitespace-nowrap tabular-nums">${text(label)}</span>` +
-      (lines === 2 ? `<span class="whitespace-nowrap font-medium">${text(name)}</span>` : "") +
-      `<span aria-hidden="true" class="absolute left-2 top-full h-0 w-0 border-x-[6px] border-t-[8px] border-x-transparent" style="border-top-color:${fill}"></span></span>`,
-  });
-});
+  return framed(
+    `way-chip|${shown ? 1 : 0}`,
+    () => `<rect width="48" height="24" rx="12" fill="${fill}"/><path d="M8 23.5L14 32L20 23.5Z" fill="${fill}"/>`,
+    48,
+    32,
+    { inset: 12, x: [22, 34], y: [11.5, 12.5], content: [10, 4, 38, 20] },
+  );
+}
+/** The words' ink on each chip. */
+export const wayInk = (shown: boolean) => (shown ? CHART.casing : WAY_CHIP);
+/** The words' bottom left 4 points left of the tip and 12 above it (the
+ *  content's corner at 10, 20; the tip at 14, 32), in ems of 13 points. */
+export const WAY_CHIP_PLACE: Layout = { "text-anchor": "bottom-left", "text-offset": [-4 / 13, -12 / 13] };
 
 /** Where a way's chip sits: `share` of the way along it. */
 export function wayAt(path: [number, number][], share: number): [number, number] {

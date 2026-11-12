@@ -18,17 +18,9 @@ import { GlideRingGl } from "./layers/GlideRingGl";
 import { AheadGl, ClassBGl } from "./layers/MarksGl";
 import { NavaidsGl, WaypointsGl } from "../../../components/map/layers/NavaidsGl";
 import { OwnShipGl } from "../../../lib/map/gl/layers/OwnShipGl";
-import {
-  FuelStopsGl,
-  HoldTracksGl,
-  LegPointsGl,
-  LessonGl,
-  PatternsGl,
-  PickedGl,
-  ProceduresGl,
-  StopFieldsGl,
-  WaysGl,
-} from "../../../lib/map/gl/layers/RouteExtrasGl";
+import { HoldTracksGl, LegPointsGl, PatternsGl, PickedGl, ProceduresGl, WaysGl } from "../../../lib/map/gl/layers/RouteExtrasGl";
+import { LessonGl } from "../../../lib/map/gl/layers/LessonGl";
+import { FuelStopsGl, StopFieldsGl } from "../../../lib/map/gl/layers/StopMarksGl";
 import { RouteGl, type GlCandidate, type GlCheckpoint, type GlEndpoint } from "../../../lib/map/gl/layers/RouteGl";
 import type { GlLeg } from "../../../lib/map/gl/legTap";
 import { TfrGl } from "./layers/TfrGl";

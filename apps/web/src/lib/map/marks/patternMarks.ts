@@ -1,4 +1,5 @@
-import { divIcon } from "./icons";
+import { svgPicture, type GlPicture } from "../gl/useGlSymbols";
+import { framed } from "./markPictures";
 import { CHART } from "../../tokens";
 
 /**
@@ -23,30 +24,21 @@ const LABEL_TEAL = CHART.patternLabel;
 export const PATTERN_WORDS_FROM_ZOOM = 11;
 
 /** An arrowhead the way a leg is flown, at its middle: turned to the leg's
- *  true bearing on the chart (MapLibre's map-aligned rotation), so it
+ *  true bearing on the chart (the layer's map-aligned icon-rotate), so it
  *  keeps along the leg as the map turns. */
-export function arrowIcon(bearing: number) {
-  return divIcon({
-    className: "",
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
-    rotation: Math.round(bearing),
-    html:
-      `<svg viewBox="-8 -8 16 16" width="16" height="16" aria-hidden="true">` +
-      `<path d="M0 -6 L5 4 L0 1.5 L-5 4 Z" fill="${TEAL}" stroke="${CHART.casing}" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
-  });
-}
+export const PATTERN_ARROW: GlPicture = svgPicture(
+  "pattern-arrow",
+  () =>
+    `<svg width="16" height="16" viewBox="-8 -8 16 16">` +
+    `<path d="M0 -6 L5 4 L0 1.5 L-5 4 Z" fill="${TEAL}" stroke="${CHART.casing}" stroke-width="1.5" stroke-linejoin="round"/></svg>`,
+);
 
-/** A name's width on the chart, px: 11 px bold, a letter a little wide. */
-const labelWidth = (words: string) => Math.ceil(words.length * 6.6) + 12;
-
-/** A leg's name on the chart, white words on teal. */
-export function labelIcon(words: string) {
-  const width = labelWidth(words);
-  return divIcon({
-    className: "",
-    iconSize: [width, 18],
-    iconAnchor: [width / 2, 9],
-    html: `<span class="absolute inset-0 grid place-items-center whitespace-nowrap rounded-md text-(length:--type-caption) leading-none font-bold text-white shadow-sm" style="background:${LABEL_TEAL}">${words.replace(/[<>&]/g, "")}</span>`,
-  });
-}
+/** A leg's name on the chart, white words on teal: the chip, stretched
+ *  to them, 18 points tall, six points either side. */
+export const PATTERN_LABEL: GlPicture = framed(
+  "pattern-label",
+  () => `<rect width="16" height="18" rx="6" fill="${LABEL_TEAL}"/>`,
+  16,
+  18,
+  { inset: 7, content: [6, 4, 10, 14] },
+);

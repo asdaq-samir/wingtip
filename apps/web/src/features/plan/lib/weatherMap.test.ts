@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 import type { WeatherArea } from "../../../lib/api/types";
 import { mapLevel } from "../../../lib/format";
-import { areaWords, barbSvg, inside, pirepMark, routeThrough } from "./weatherMap";
+import { areaWords, inside, pirepMark, routeThrough } from "./weatherMap";
 
 const square = [
   [42, -90],
@@ -72,14 +72,5 @@ describe("the weather drawn on the map", () => {
     });
     expect(pirepMark({ lat: 0, lon: 0, altitude_ft: 4500, icing: "LGT", urgent: false })).toMatchObject({ glyph: "❄\uFE0E", level: "045" });
     expect(pirepMark({ lat: 0, lon: 0, altitude_ft: 3000, urgent: true })).toMatchObject({ glyph: "!" });
-  });
-
-  test("draws a wind barb with a pennant for each 50 kt, a barb each 10 and a half for 5", () => {
-    const svg = barbSvg(270, 65);
-    expect(svg.match(/<path /g)).toHaveLength(1);
-    expect(svg.match(/x2="32"/g)).toHaveLength(1);
-    expect(svg.match(/x2="27"/g)).toHaveLength(1);
-    expect(svg).toContain("rotate(270 22 22)");
-    expect(barbSvg(0, 2)).toContain("<circle");
   });
 });
