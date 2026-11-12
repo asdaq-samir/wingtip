@@ -29,10 +29,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.ai.AiSources
@@ -65,7 +65,7 @@ import java.util.Locale
  * cycle. The words are the engine's, shown as sent.
  */
 @Composable
-fun ReadyToFlyRow(plan: Plan, onSetRoute: (() -> Unit)?, model: ReadyToFlyModel = viewModel()) {
+fun ReadyToFlyRow(plan: Plan, onSetRoute: (() -> Unit)?, model: ReadyToFlyModel = hiltViewModel()) {
     val fixer = rememberReadyFixer(plan, onSetRoute, model)
     ReadyCheck(plan, fixer, model)
     val state by model.state.collectAsStateWithLifecycle()
@@ -169,7 +169,7 @@ private fun dayWords(day: String): String =
 internal fun ReadyCheck(plan: Plan, fixer: ReadyFixer, model: ReadyToFlyModel) {
     val context = LocalContext.current
     val state by plan.state.collectAsStateWithLifecycle()
-    val brief: BriefModel = viewModel()
+    val brief: BriefModel = hiltViewModel()
     val briefed by brief.state.collectAsStateWithLifecycle()
     val kept by remember { OfflineStore.of(context) }.kept.collectAsStateWithLifecycle()
     val picture by remember { Receiver.of(context) }.picture.collectAsStateWithLifecycle()

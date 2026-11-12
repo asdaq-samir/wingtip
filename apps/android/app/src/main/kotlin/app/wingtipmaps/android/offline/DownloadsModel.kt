@@ -17,6 +17,7 @@ import app.wingtipmaps.android.api.generated.OfflineCatalog
 import app.wingtipmaps.android.api.generated.OfflineRegion
 import app.wingtipmaps.android.api.generated.OfflineRegionFiles
 import app.wingtipmaps.android.engine.CyclePacks
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import javax.inject.Inject
 
 /**
  * The Downloads screen's state (Setup → Downloads), as the iOS app's
@@ -32,7 +34,8 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
  * chart kinds and density picked, the regions kept and how far each has
  * come, and the calls that keep, update and delete them.
  */
-class DownloadsModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class DownloadsModel @Inject constructor(app: Application) : AndroidViewModel(app) {
     private val store = OfflineStore.of(app)
     private val prefs = app.getSharedPreferences("offline", Context.MODE_PRIVATE)
 
@@ -102,7 +105,7 @@ class DownloadsModel(app: Application) : AndroidViewModel(app) {
                 CyclePacks.of(getApplication()).keep(entry.packs.toSet())
                 _catalog.value?.overlay?.let { overlay ->
                     val url = (Config.gateway + Config.plannerPath("/api/overlay-tiles/${overlay.name}.pmtiles")).toHttpUrl()
-                    runCatching { Gateway.overlayStore.download(Gateway.streaming, url, overlay.name, overlay.bytes) }
+                    val _ = runCatching { Gateway.overlayStore.download(Gateway.streaming, url, overlay.name, overlay.bytes) }
                 }
                 _problem.value = null
             } catch (e: Exception) {

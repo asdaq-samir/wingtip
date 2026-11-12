@@ -12,6 +12,7 @@ import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.planProfile
 import app.wingtipmaps.android.offline.KeptForAir
 import app.wingtipmaps.android.ready.ReadyFacts
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * The Profile card's view model: the route's side view from the planner
@@ -30,7 +32,8 @@ import kotlinx.coroutines.launch
  * changes nothing until Set. The clearance at a previewed altitude is the
  * engine's (ProfileClearance). Nothing aviation is worked out here.
  */
-class ProfileModel : ViewModel() {
+@HiltViewModel
+class ProfileModel @Inject constructor() : ViewModel() {
     data class State(
         val profile: RouteProfile? = null,
         val problem: String? = null,

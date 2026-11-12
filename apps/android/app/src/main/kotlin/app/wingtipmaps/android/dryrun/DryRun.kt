@@ -6,6 +6,7 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.dryRun
 import app.wingtipmaps.android.flight.OwnShip
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonPrimitive
+import javax.inject.Inject
 
 /**
  * The route flown on the ground, as the web's and the iPhone's dry runs
@@ -29,7 +31,8 @@ import kotlinx.serialization.json.JsonPrimitive
  * Own ship's own position is left alone; the map draws this one in its
  * place while the run is open.
  */
-class DryRun : ViewModel() {
+@HiltViewModel
+class DryRun @Inject constructor() : ViewModel() {
     data class State(
         val path: DryRunPath? = null,
         /** Seconds flown since the run's start. */

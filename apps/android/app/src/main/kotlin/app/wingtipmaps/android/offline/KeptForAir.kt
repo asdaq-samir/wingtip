@@ -36,7 +36,7 @@ class KeptForAir(private val dir: File) {
 
     fun write(kind: String, key: String, body: String, atMs: Long = System.currentTimeMillis()) {
         val to = file(kind, key, "json")
-        runCatching {
+        val _ = runCatching {
             to.parentFile?.mkdirs()
             // Written beside and moved over, so a kill mid-write leaves the
             // last good answer, never half of one.

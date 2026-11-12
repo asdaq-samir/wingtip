@@ -1,8 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.toRoute
 import app.wingtipmaps.android.airplane.ProfileOpen
 import app.wingtipmaps.android.map.MapPick
 import kotlinx.serialization.Serializable
@@ -15,9 +12,10 @@ import kotlinx.serialization.json.Json
  * VOR, an airspace, traffic, a leg of the route, the map's settings --
  * or a page -- the Brief, Nearest, Ask, Settings and its pages, a
  * checklist -- each with its name and ← where the search was (CardPage).
- * Each card is a route of the sheet's NavHost (SheetPagesHost) or, on a wide
- * window, of the detail pane, so the system keeps the stack across a
- * rotation and Back steps down it.
+ * Each card is a key of the sheet's back stack (MapViewModel), drawn by
+ * Navigation 3's NavDisplay (SheetPagesHost) -- on a wide window in the
+ * list-detail scene's detail pane -- so the stack outlives a rotation and
+ * Back steps down it.
  */
 @Serializable
 sealed interface SheetPage {
@@ -124,15 +122,4 @@ sealed interface SheetPage {
             else -> Thing(pick)
         }
     }
-}
-
-/** A card or a page on the NavHost's stack, by its key (SheetPage.key):
- *  one route for them all, so a new card needs no route of its own. */
-@Serializable
-internal data class CardRoute(val key: String)
-
-/** The page a back stack entry of the sheet's NavHost shows. */
-internal fun NavBackStackEntry.page(): SheetPage = when {
-    destination.hasRoute<CardRoute>() -> SheetPage.of(toRoute<CardRoute>().key)
-    else -> SheetPage.Home
 }

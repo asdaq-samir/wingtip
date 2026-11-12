@@ -55,7 +55,7 @@ class SheetCarouselTest {
         compose.setContent {
             WingtipTheme {
                 sheet = rememberMapSheetState()
-                nav = rememberSheetNav(wide = false, airports = viewModel(), onShown = {})
+                nav = rememberSheetNav(model = viewModel(), airports = viewModel(), onShown = {})
                 MapSheet(state = sheet, peek = PEEK, body = { Box(Modifier.fillMaxSize()) }) {
                     SheetPagesHost(
                         nav, backEnabled = true, modifier = Modifier.weight(1f),
@@ -82,10 +82,10 @@ class SheetCarouselTest {
         pager.performTouchInput { swipeLeft() }
         on(PLAN_PAGE)
         dot(1).assert(SemanticsMatcher.expectValue(SemanticsProperties.Selected, true))
-        assertEquals(SheetPage.Plan, nav.shown)
+        assertEquals(SheetPage.Plan, nav.top)
         pager.performTouchInput { swipeRight() }
         on(SEARCH_PAGE)
-        assertEquals(SheetPage.Home, nav.shown)
+        assertEquals(SheetPage.Home, nav.top)
         dot(1).performClick()
         on(PLAN_PAGE)
         dot(0).performClick()

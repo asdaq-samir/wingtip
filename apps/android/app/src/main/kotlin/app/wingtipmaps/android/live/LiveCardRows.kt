@@ -14,8 +14,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.LoadingRow
 import app.wingtipmaps.android.ui.LocalInk
@@ -29,7 +29,7 @@ import app.wingtipmaps.android.ui.SectionTitle
  * caution ink where it is in use.
  */
 @Composable
-fun SpecialUseRows(lat: Double, lon: Double, model: SpecialUseModel = viewModel()) {
+fun SpecialUseRows(lat: Double, lon: Double, model: SpecialUseModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     LaunchedEffect(lat, lon) { model.at(lat, lon) }
     SectionTitle(stringResource(R.string.special_use))
@@ -58,7 +58,7 @@ fun SpecialUseRows(lat: Double, lon: Double, model: SpecialUseModel = viewModel(
 /** The followed airplane's tower departure event in a line, where TDES
  *  sent one (DepartureModel). */
 @Composable
-fun DepartureLine(ident: String?, model: DepartureModel = viewModel()) {
+fun DepartureLine(ident: String?, model: DepartureModel = hiltViewModel()) {
     val line by model.line.collectAsStateWithLifecycle()
     LaunchedEffect(ident) { model.of(ident) }
     line?.let { Text(it, style = MaterialTheme.typography.bodyMedium) }

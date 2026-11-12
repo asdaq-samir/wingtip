@@ -13,6 +13,7 @@ import app.wingtipmaps.android.api.generated.AirportPhotos
 import app.wingtipmaps.android.api.generated.AirportServices
 import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.offline.KeptForAir
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -21,11 +22,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /** A field's card's model, and the welcome's search for the pilot's home
  *  field: the search's words, what the planner found for them, and the
  *  card of the one picked (the map rings it). */
-class AirportModel : ViewModel() {
+@HiltViewModel
+class AirportModel @Inject constructor() : ViewModel() {
     data class State(
         val query: String = "",
         val suggestions: List<AirportSuggestion> = emptyList(),

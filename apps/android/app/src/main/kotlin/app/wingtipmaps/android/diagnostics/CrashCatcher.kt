@@ -19,7 +19,7 @@ object CrashCatcher {
         val file = File(folder, FILE_NAME)
         val before = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
-            runCatching { file.writeText(write(error, Instant.now())) }
+            val _ = runCatching { file.writeText(write(error, Instant.now())) }
             before?.uncaughtException(thread, error)
         }
     }

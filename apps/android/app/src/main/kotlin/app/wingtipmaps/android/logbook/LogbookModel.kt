@@ -29,6 +29,9 @@ class LogbookModel(
     private val edits: LogbookEdits = ServerLogbookEdits,
     private val adds: suspend (LogbookEntryRequest) -> LogbookEntryDto = { Gateway.addLogbook(it) },
 ) : ViewModel() {
+    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
+    // constructor once the sources and seams it is given are injectable
+    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     /** An entry taken out of the list and where it was, for its Undo. */
     data class Removed(val entry: LogbookEntryDto, val index: Int)
 

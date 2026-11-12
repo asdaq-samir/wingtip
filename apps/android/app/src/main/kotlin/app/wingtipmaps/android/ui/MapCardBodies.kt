@@ -132,14 +132,14 @@ internal fun VorCard(vor: MapPick.Vor) {
     }
     vor.channel?.let { Fact(stringResource(R.string.fact_dme_channel), it) }
     val volume = stringResource(R.string.fact_service_volume)
-    remember(vor.serviceVolume) { MapRules.serviceVolume(vor.serviceVolume) }.fold(
+    val _ = remember(vor.serviceVolume) { MapRules.serviceVolume(vor.serviceVolume) }.fold(
         { it?.let { Fact(volume, it, description = true) } },
         { ProblemLine("The service volume failed: ${it.message}") },
     )
     vor.elevationFt?.let { Fact(stringResource(R.string.fact_elevation), Format.altitude(it)) }
     vor.magVar?.let { Fact(stringResource(R.string.fact_declination), Format.variation(it)) }
     val hours = stringResource(R.string.fact_hours)
-    remember(vor.hours) { MapRules.navaidHours(vor.hours) }.fold(
+    val _ = remember(vor.hours) { MapRules.navaidHours(vor.hours) }.fold(
         { it?.let { Fact(hours, it) } },
         { ProblemLine("The hours failed: ${it.message}") },
     )

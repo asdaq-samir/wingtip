@@ -13,6 +13,7 @@ import app.wingtipmaps.android.navigation.ScreenRequests
 import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.FlightRules
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
+import javax.inject.Inject
 
 /**
  * The Shared Flight sheet's state (design/screens.json `shared`): a flight
@@ -29,7 +31,8 @@ import java.time.Instant
  * with its filed nav log. Use This Plan plans it as the receiver's own,
  * with their own airplane; Not Now leaves their plan as it was.
  */
-class SharedFlightModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class SharedFlightModel @Inject constructor(app: Application) : AndroidViewModel(app) {
     /** What the sheet shows. */
     sealed interface State {
         data object Closed : State
