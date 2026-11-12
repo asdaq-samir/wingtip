@@ -4,7 +4,7 @@ import { cn } from "cn";
 import { PILL_RADIUS, type PanelState } from "../../lib/mapChrome";
 import { closeTopCard } from "../../lib/openCards";
 import { cardOpening, coverCard, setCard, useSheetCards, type CardEntry } from "../../lib/sheetCards";
-import { sizeAt, snapsOf } from "./insets";
+import { AT_PILL, sizeAt, snapsOf } from "./insets";
 import { UNDER_INDICATOR } from "./SheetDrawer";
 import { cardSettled, sheetTopRef, useRidingCard } from "./sheetTopSlot";
 import { SheetViewport } from "./SheetViewport";
@@ -263,11 +263,7 @@ function CardScroller({
         ref={slot}
         data-sheet-scroll=""
         data-panel-body=""
-        className={cn(
-          "flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible",
-          below,
-          pill && "invisible [&_[data-sheet-head]]:visible",
-        )}
+        className={cn("flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible", below, pill && AT_PILL)}
       />
     </div>
   );

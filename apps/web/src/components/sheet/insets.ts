@@ -38,6 +38,23 @@ const BOTTOM_POINTS = [BOTTOM_SNAPS.peek, BOTTOM_SNAPS.half, BOTTOM_SNAPS.full];
 const TOP_POINTS = [TOP_SNAPS.peek, TOP_SNAPS.half, TOP_SNAPS.full];
 const SIZES: PanelState[] = ["peek", "half", "full"];
 
+/**
+ * A sheet's or a card's body at the pill, the one rule for every surface
+ * (SheetParts, CardStack): out of sight (a card's or a page alone: its
+ * title row kept in sight, data-sheet-head, AT_PILL), laid out at the full height but hidden -- and drawn again the
+ * moment a finger takes the sheet (Base UI's data-swiping on the popup,
+ * the group/sheet), so it comes into sight as the sheet rises, as Apple
+ * Maps' card does. The pill is the settled snap point, which only changes
+ * once the finger lifts: hidden by it alone, the body under the title stayed
+ * blank all through a drag up and appeared at the let-go (the owner's
+ * iPhone, 2026-11-12, KORD's card; in WebKit at 390x844 none of its 23
+ * parts in sight painted at any step of the drag). `visibility` keeps it
+ * laid out and its pictures loaded, so there is nothing to build mid-drag.
+ */
+export const PILL_BODY = "invisible group-data-swiping/sheet:visible";
+/** And a body that is the pill's one surface: its title row kept in sight. */
+export const AT_PILL = `${PILL_BODY} [&_[data-sheet-head]]:visible`;
+
 /** A sheet's snap points and each size's, one constant per edge. */
 export function snapsOf(fromBottom: boolean) {
   return fromBottom ? { at: BOTTOM_SNAPS, points: BOTTOM_POINTS } : { at: TOP_SNAPS, points: TOP_POINTS };

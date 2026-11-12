@@ -83,6 +83,7 @@ search-desk.spec.ts
 search-results.spec.ts
 setup-rows.spec.ts
 sheet-cards.spec.ts
+sheet-drag-content.spec.ts
 sheet-drag.spec.ts
 sheet-size.spec.ts
 sheet-turn.spec.ts
