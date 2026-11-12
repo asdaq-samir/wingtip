@@ -2,6 +2,7 @@ package app.wingtipmaps.android.map
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.reportingInView
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -69,7 +70,7 @@ class MapWeather @Inject constructor() : ViewModel() {
      *  airports are drawn. */
     fun view(view: MapRest) {
         if (view.zoom < MapStyle.glZoom(MapStyle.AIRPORTS_FARTHEST_ZOOM)) return
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         val box = asked
         if (box != null && box.holds(view) && now - askedAtMs < EVERY_MS) return
         if (asking?.isActive == true && box != null && box.holds(view)) return
@@ -82,7 +83,7 @@ class MapWeather @Inject constructor() : ViewModel() {
                 val fields = Planner.reportingInView(next.south, next.west, next.north, next.east)
                 _categories.value = merged(_categories.value, fields.associate { it.ident to it.flightCategory.orEmpty() })
                 _fields.value = merged(_fields.value, fields.associate { it.ident to StationLines.fieldOf(it) }) { true }
-                val heard = System.currentTimeMillis()
+                val heard = AppClock.nowMs()
                 _heardAtMs.value = merged(_heardAtMs.value, fields.associate { it.ident to heard }) { true }
             } catch (e: CancellationException) {
                 throw e

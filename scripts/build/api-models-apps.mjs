@@ -4,6 +4,7 @@
 //   node api-models-apps.mjs prep <openapi.json> <out.json> [swift]
 //   node api-models-apps.mjs swift <file> <snake|camel>
 //   node api-models-apps.mjs kotlin <file> <openapi.json>
+//   node api-models-apps.mjs client <openapi.json> <models.kt> <planner|gateway|assistant> <out dir>
 //
 // prep makes the document's enums and consts plain strings and its tuples
 // (prefixItems, a lat/lon pair) arrays of their one type, which quicktype
@@ -12,7 +13,10 @@
 // Foundation's .convertFromSnakeCase capitalises those its own way and a
 // key that did not match would fail the whole answer. swift and kotlin
 // put the header on a written file and fit it to the app's coder (the
-// shell script says how).
+// shell script says how). client readies a server's document for
+// openapi-generator's Kotlin Retrofit client (its operations, one
+// interface a server) and maps each schema to the class quicktype wrote,
+// so the client's calls answer in the same models.
 import fs from "node:fs";
 
 const header = (comment) =>
@@ -139,7 +143,89 @@ function withoutDigitWords(doc) {
   return doc;
 }
 
-const [mode, a, b, c] = process.argv.slice(2);
+// The client's names. FastAPI names an operation "{function}{path}_{method}"
+// with every non-word character an underscore; the function's name is
+// what the planner's code calls it. Spring's are the method's, numbered
+// where two controllers share one ("list_2"), which then take their
+// controller's name ("aircraftList").
+function camel(words) {
+  const parts = words.split(/[^A-Za-z0-9]+/).filter(Boolean);
+  return parts.map((w, i) => (i === 0 ? w[0].toLowerCase() + w.slice(1) : w[0].toUpperCase() + w.slice(1))).join("");
+}
+
+// An answer the client reads as a model: one that names a schema, or a
+// list or a number. A bare string (a redirect's page, a plain-text body)
+// or an untyped object is read as nothing (Unit), which Retrofit closes.
+function modelled(schema) {
+  return JSON.stringify(schema).includes('"$ref"') || ["array", "number", "integer", "boolean"].includes(schema.type);
+}
+
+function client(docPath, modelsKt, server, outDir) {
+  const original = JSON.parse(fs.readFileSync(docPath, "utf8"));
+  const doc = plain(original);
+  const tag = server[0].toUpperCase() + server.slice(1);
+  const paths = {};
+  const ops = [];
+  for (const [path, item] of Object.entries(doc.paths)) {
+    // The planner and the assistant are reached through the gateway's
+    // proxy (UpstreamRoutes), their clients' base /api/planner/
+    // (Config.plannerPath); the gateway's proxy is no call of the
+    // gateway's own; a page ("/") is no API.
+    if (!path.startsWith("/api/") || path.startsWith("/api/planner/")) continue;
+    const at = server === "gateway" ? path : path.slice("/api".length);
+    paths[at] = item;
+    for (const [method, op] of Object.entries(item)) {
+      if (!op || typeof op !== "object" || !op.operationId) continue;
+      const fastapi = `${path.replace(/\W/g, "_")}_${method}`;
+      const own = op.operationId.endsWith(fastapi) ? op.operationId.slice(0, -fastapi.length) : op.operationId;
+      ops.push({ op, base: camel(own.replace(/_\d+$/, "")), group: (op.tags?.[0] ?? "").replace(/-controller$/, "") });
+      // A parameter keeps its int64 (an id is a Long), which prep drops
+      // with every format.
+      for (const [i, param] of (op.parameters ?? []).entries()) {
+        if (original.paths[path][method].parameters?.[i]?.schema?.format === "int64") param.schema.format = "int64";
+      }
+      // An ask the document leaves an untyped object is sent as
+      // kotlinx's JsonObject, which serializes as it is.
+      for (const [type, ask] of Object.entries(op.requestBody?.content ?? {})) {
+        if (type.includes("json") && ask.schema && !modelled(ask.schema)) ask.schema = { $ref: "#/components/schemas/JsonObject" };
+      }
+      for (const answer of Object.values(op.responses ?? {})) {
+        const content = Object.values(answer.content ?? {});
+        if (content.length && !content.every((c) => modelled(c.schema ?? {}))) delete answer.content;
+      }
+    }
+  }
+  const counts = {};
+  for (const { base } of ops) counts[base] = (counts[base] ?? 0) + 1;
+  for (const { op, base, group } of ops) {
+    op.operationId = counts[base] > 1 ? camel(`${group} ${base}`) : base;
+    op.tags = [tag];
+  }
+  doc.paths = paths;
+  // A schema is quicktype's class of the same name, matched as quicktype
+  // spells it (its acronyms camel case).
+  const classes = new Map();
+  for (const [, name] of fs.readFileSync(modelsKt, "utf8").matchAll(/^(?:data class|class|typealias|enum class) (\w+)/gm)) {
+    classes.set(name.toLowerCase(), name);
+  }
+  const pkg = { planner: "", gateway: ".gateway", assistant: ".assistant" }[server];
+  const schemaMappings = {};
+  for (const name of Object.keys(doc.components?.schemas ?? {})) {
+    const found = classes.get(name.replace(/[^A-Za-z0-9]/g, "").toLowerCase());
+    // One quicktype could not tell apart (FastAPI's "-Input" and
+    // "-Output" halves of a schema) is read as it comes.
+    schemaMappings[name] = found ? `app.wingtipmaps.android.api.generated${pkg}.${found}` : "kotlinx.serialization.json.JsonElement";
+  }
+  // A property of its own, so the generator takes it as a schema to map
+  // rather than a free-form object (kotlin.Any, which nothing serializes).
+  doc.components.schemas.JsonObject = { type: "object", properties: { any: { type: "string" } } };
+  schemaMappings.JsonObject = "kotlinx.serialization.json.JsonObject";
+  fs.writeFileSync(`${outDir}/${server}.client.json`, JSON.stringify(doc));
+  // A number is a Double, as the models have it, not BigDecimal.
+  fs.writeFileSync(`${outDir}/${server}.config.json`, JSON.stringify({ schemaMappings, typeMappings: { number: "kotlin.Double" } }));
+}
+
+const [mode, a, b, c, d] = process.argv.slice(2);
 if (mode === "prep") {
   const doc = plain(JSON.parse(fs.readFileSync(a, "utf8")));
   fs.writeFileSync(b, JSON.stringify(c === "swift" ? withoutDigitWords(doc) : doc));
@@ -148,4 +234,5 @@ if (mode === "prep") {
 else if (mode === "names") console.log(Object.keys(JSON.parse(fs.readFileSync(a, "utf8")).components.schemas).join(" "));
 else if (mode === "swift") swift(a, b);
 else if (mode === "kotlin") kotlin(a, b);
+else if (mode === "client") client(a, b, c, d);
 else throw new Error(`no step "${mode}"`);

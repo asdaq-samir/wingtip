@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
@@ -19,7 +20,7 @@ import app.wingtipmaps.android.plan.FlightChoices
 @Composable
 fun AutoLogbookHost(plan: Plan, session: Session) {
     val context = LocalContext.current
-    val model = viewModel { LogbookDraftModel(FlightRecorder.of(context)) }
+    val model = hiltViewModel<LogbookDraftModel, LogbookDraftModel.Factory> { it.create(FlightRecorder.of(context)) }
     val pilot by session.pilot.collectAsStateWithLifecycle()
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
     val planned by plan.state.collectAsStateWithLifecycle()

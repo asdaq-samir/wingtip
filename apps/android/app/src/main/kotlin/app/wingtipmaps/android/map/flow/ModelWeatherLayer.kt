@@ -7,7 +7,6 @@ import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.api.await
 import app.wingtipmaps.android.api.generated.WeatherArea
 import app.wingtipmaps.android.api.generated.WeatherMap
 import app.wingtipmaps.android.design.generated.WingtipColors
@@ -31,6 +30,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
+import okhttp3.coroutines.executeAsync
 import org.maplibre.android.geometry.LatLng
 import org.maplibre.android.geometry.LatLngQuad
 import org.maplibre.android.maps.MapView
@@ -180,7 +180,7 @@ object ModelWeatherLayer {
         try {
             val (path, version) = FlowTimeline.picture(frame, file)
             val request = Planner.get(path, mapOf("v" to version))
-            val bytes = Gateway.client.newCall(request).await().use { r -> if (r.code == 200) r.body.bytes() else null } ?: return
+            val bytes = Gateway.client.newCall(request).executeAsync().use { r -> if (r.code == 200) r.body.bytes() else null } ?: return
             val (grid, picture) = withContext(Dispatchers.Default) {
                 val options = BitmapFactory.Options().apply {
                     inPremultiplied = false

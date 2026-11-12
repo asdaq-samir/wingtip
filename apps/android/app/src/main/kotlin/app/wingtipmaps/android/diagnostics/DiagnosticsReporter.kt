@@ -5,7 +5,6 @@ import android.os.Build
 import app.wingtipmaps.android.BuildConfig
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
-import app.wingtipmaps.android.api.await
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.encodeToString
 import okhttp3.CookieJar
@@ -13,6 +12,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.coroutines.executeAsync
 import java.util.concurrent.TimeUnit
 
 /**
@@ -44,7 +44,7 @@ object DiagnosticsReporter {
                 .url(Config.gateway + "/api/diagnostics")
                 .post(Gateway.json.encodeToString(body).toRequestBody("application/json".toMediaType()))
                 .build()
-            client.newCall(request).await().use { it.code < 500 }
+            client.newCall(request).executeAsync().use { it.code < 500 }
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {

@@ -2,7 +2,8 @@ package app.wingtipmaps.android.flight
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.api.AheadAlert
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -21,8 +22,8 @@ import kotlin.math.roundToInt
  * them, through Android's own TextToSpeech.
  */
 class SpokenAlerts private constructor(context: Context) {
-    private val prefs = context.getSharedPreferences("spoken-alerts", Context.MODE_PRIVATE)
-    private val _on = MutableStateFlow(prefs.getBoolean(KEY, false))
+    private val prefs = Kept.of(context, "spoken-alerts")
+    private val _on = MutableStateFlow(prefs[KEY] ?: false)
     val on: StateFlow<Boolean> = _on.asStateFlow()
     private var said: Set<String> = emptySet()
     private var ready = false
@@ -31,7 +32,7 @@ class SpokenAlerts private constructor(context: Context) {
     }
 
     fun setOn(on: Boolean) {
-        prefs.edit { putBoolean(KEY, on) }
+        prefs.edit { it[KEY] = on }
         _on.value = on
         // Turned on in the air, what is ahead then is said at once.
         if (on) said = emptySet()
@@ -49,7 +50,7 @@ class SpokenAlerts private constructor(context: Context) {
     }
 
     companion object {
-        private const val KEY = "on"
+        private val KEY = booleanPreferencesKey("on")
 
         @Volatile
         private var shared: SpokenAlerts? = null

@@ -7,18 +7,26 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import androidx.core.content.ContextCompat
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.voice.RecognizerErrors
 import app.wingtipmaps.android.voice.VoiceInput
-import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** The radio as the copilot hears it: a fake in the tests. */
 interface AtcListener {
@@ -49,7 +57,8 @@ interface AtcListener {
  * recognizer (below Android 12, or none installed), voice is not offered:
  * canListen is false and the ATC copilot, its setting and the search's
  * microphone (Ask by voice, VoiceInput, a feature apart) are hidden.
- * Main thread only, as the recognizer is.
+ * Its work runs in coroutines on the main thread, as the recognizer
+ * wants: each utterance a callbackFlow of the recognizer's callbacks.
  */
 class RadioListener private constructor(private val context: Context) : AtcListener {
     private val _heard = MutableStateFlow<List<Heard>>(emptyList())
@@ -59,10 +68,14 @@ class RadioListener private constructor(private val context: Context) : AtcListe
     private val _error = MutableStateFlow<String?>(null)
     override val error: StateFlow<String?> = _error.asStateFlow()
 
-    private val main = Handler(Looper.getMainLooper())
+    /** The recognizer's thread, the main one, for every call made of it. */
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var recognizer: SpeechRecognizer? = null
     private var nextId = 1
-    private var waiting: CompletableDeferred<String?>? = null
+    /** Listening on and on: one utterance after another until stopped. */
+    private var onAndOn: Job? = null
+    /** One transmission asked for (`once`) is being heard. */
+    private var asked = false
     /** Passing recognizer errors in a row, since the last words heard. */
     private var failures = 0
 
@@ -74,24 +87,33 @@ class RadioListener private constructor(private val context: Context) : AtcListe
         VoiceInput.of(context).finish()
         _listening.value = true
         AtcListenService.keep(context, true)
-        listen()
+        onAndOn = scope.launch {
+            while (_listening.value) {
+                if (!carryOn(hear())) break
+                // A beat later, so the recognizer has let go.
+                delay(AGAIN_MS)
+            }
+        }
     }
 
     override fun stop() {
         _listening.value = false
         AtcListenService.keep(context, false)
-        if (waiting == null) release()
+        if (!asked) {
+            onAndOn?.cancel()
+            release()
+        }
     }
 
-    override suspend fun once(): String? {
-        if (_listening.value || VoiceInput.of(context).listening.value || !ready()) return null
-        val answer = CompletableDeferred<String?>()
-        waiting = answer
-        listen()
-        return try {
-            answer.await()
+    override suspend fun once(): String? = withContext(Dispatchers.Main.immediate) {
+        if (_listening.value || VoiceInput.of(context).listening.value || !ready()) return@withContext null
+        asked = true
+        try {
+            val end = hear()
+            carryOn(end)
+            (end as? Event.Settled)?.words
         } finally {
-            waiting = null
+            asked = false
             if (!_listening.value) release()
         }
     }
@@ -111,14 +133,49 @@ class RadioListener private constructor(private val context: Context) : AtcListe
         return true
     }
 
-    private fun listen() {
-        // On the device or not at all: below Android 12 there is no
-        // on-device recognizer to ask for (ready() has said so already).
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
-        val r = recognizer ?: SpeechRecognizer.createOnDeviceSpeechRecognizer(context).also {
-            it.setRecognitionListener(callback)
-            recognizer = it
+    /** What the recognizer says of one utterance. */
+    private sealed interface Event {
+        data class Partial(val words: String) : Event
+        data class Settled(val words: String?) : Event
+        data class Failed(val error: Int) : Event
+    }
+
+    /** One utterance as the recognizer hears it: its partial words, then
+     *  its settled words or its error, which ends the flow. Cancelled, the
+     *  recognizer stops listening. On the device or not at all: below
+     *  Android 12 there is no on-device recognizer to ask for (ready()
+     *  has said so already). */
+    private fun utterance(): Flow<Event> = callbackFlow {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            close()
+            return@callbackFlow
         }
+        val r = recognizer ?: SpeechRecognizer.createOnDeviceSpeechRecognizer(context).also { recognizer = it }
+        var ended = false
+        r.setRecognitionListener(object : RecognitionListener {
+            override fun onPartialResults(partial: Bundle?) {
+                words(partial)?.let { trySend(Event.Partial(it)) }
+            }
+
+            override fun onResults(results: Bundle?) {
+                ended = true
+                trySend(Event.Settled(words(results)))
+                close()
+            }
+
+            override fun onError(error: Int) {
+                ended = true
+                trySend(Event.Failed(error))
+                close()
+            }
+
+            override fun onReadyForSpeech(params: Bundle?) {}
+            override fun onBeginningOfSpeech() {}
+            override fun onRmsChanged(rmsdB: Float) {}
+            override fun onBufferReceived(buffer: ByteArray?) {}
+            override fun onEndOfSpeech() {}
+            override fun onEvent(eventType: Int, params: Bundle?) {}
+        })
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             // US ATC's phraseology, in American English, as the engine reads it.
@@ -128,64 +185,58 @@ class RadioListener private constructor(private val context: Context) : AtcListe
             // any service that reads only the extra.
             .putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
         r.startListening(intent)
+        awaitClose { if (!ended && recognizer === r) r.cancel() }
+    }
+
+    /** One utterance heard, its words put in the list as they come and
+     *  as they settle; how it ended (null where nothing was heard). */
+    private suspend fun hear(): Event? {
+        var id: Int? = null
+        var end: Event? = null
+        utterance().collect { e ->
+            when (e) {
+                is Event.Partial -> put(Heard(id ?: nextId++.also { id = it }, e.words, AppClock.nowMs(), final = false))
+                is Event.Settled -> {
+                    val settled = id ?: nextId++
+                    if (e.words != null) put(Heard(settled, e.words, AppClock.nowMs(), final = true))
+                }
+                is Event.Failed -> {}
+            }
+            end = e
+        }
+        return end
+    }
+
+    /** After an utterance settles or misses: whether to listen again. A
+     *  silence or a miss is listened to again, nothing said. Any other
+     *  error is said (RecognizerErrors); one that passes is tried again,
+     *  up to MAX_IN_A_ROW, and the rest stop the listening. */
+    private fun carryOn(end: Event?): Boolean {
+        if (end !is Event.Failed) {
+            // Heard again: a passing error said before is over.
+            if (end is Event.Settled) {
+                if (failures > 0) _error.value = null
+                failures = 0
+            }
+            return true
+        }
+        if (end.error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
+            _error.value = "ATC: allow the microphone to listen to the radio"
+            stop()
+            return false
+        }
+        val outcome = RecognizerErrors.of(end.error)
+        if (outcome.words == null) return true
+        failures++
+        _error.value = "ATC: ${outcome.words}"
+        if (outcome.again && failures < RecognizerErrors.MAX_IN_A_ROW) return true
+        stop()
+        return false
     }
 
     private fun release() {
         recognizer?.destroy()
         recognizer = null
-    }
-
-    /** After an utterance settles or misses: on again while listening on
-     *  and on, a beat later so the recognizer has let go. */
-    private fun again() {
-        if (_listening.value) main.postDelayed({ if (_listening.value) listen() }, AGAIN_MS)
-    }
-
-    private val callback = object : RecognitionListener {
-        private var current: Int? = null
-
-        override fun onPartialResults(partial: Bundle?) {
-            val text = words(partial) ?: return
-            val id = current ?: nextId++.also { current = it }
-            put(Heard(id, text, System.currentTimeMillis(), final = false))
-        }
-
-        override fun onResults(results: Bundle?) {
-            val text = words(results)
-            val id = current ?: nextId++
-            current = null
-            waiting?.complete(text)
-            if (text != null) put(Heard(id, text, System.currentTimeMillis(), final = true))
-            // Heard again: a passing error said before is over.
-            if (failures > 0) _error.value = null
-            failures = 0
-            again()
-        }
-
-        override fun onError(error: Int) {
-            current = null
-            waiting?.complete(null)
-            if (error == SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS) {
-                _error.value = "ATC: allow the microphone to listen to the radio"
-                stop()
-                return
-            }
-            // A silence or a miss: listened to again, nothing said. Any
-            // other error is said (RecognizerErrors); one that passes is
-            // tried again, up to MAX_IN_A_ROW, and the rest stop the listening.
-            val outcome = RecognizerErrors.of(error)
-            if (outcome.words == null) return again()
-            failures++
-            _error.value = "ATC: ${outcome.words}"
-            if (outcome.again && failures < RecognizerErrors.MAX_IN_A_ROW) again() else stop()
-        }
-
-        override fun onReadyForSpeech(params: Bundle?) {}
-        override fun onBeginningOfSpeech() {}
-        override fun onRmsChanged(rmsdB: Float) {}
-        override fun onBufferReceived(buffer: ByteArray?) {}
-        override fun onEndOfSpeech() {}
-        override fun onEvent(eventType: Int, params: Bundle?) {}
     }
 
     private fun words(bundle: Bundle?): String? =

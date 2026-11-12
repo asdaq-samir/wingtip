@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.diagnostics
 
+import app.wingtipmaps.android.AppClock
 import java.io.File
 import java.time.Instant
 
@@ -19,7 +20,7 @@ object CrashCatcher {
         val file = File(folder, FILE_NAME)
         val before = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
-            val _ = runCatching { file.writeText(write(error, Instant.now())) }
+            val _ = runCatching { file.writeText(write(error, AppClock.javaNow())) }
             before?.uncaughtException(thread, error)
         }
     }

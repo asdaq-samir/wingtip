@@ -3,25 +3,22 @@ package app.wingtipmaps.android.offline
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.keptAge
 import app.wingtipmaps.android.strip.Finding
 import app.wingtipmaps.android.strip.words
 import app.wingtipmaps.android.ui.LocalInk
-import kotlinx.coroutines.delay
 
 /** The engine's kept_age for an answer of `kind` fetched at `fetchedAtMs`:
  *  its line ("Fetched 42 min ago") and whether it is past the freshness
  *  ready_to_fly holds that kind to. Null where the engine could not say. */
-fun keptAge(kind: String, fetchedAtMs: Long, nowMs: Long = System.currentTimeMillis()): EngineContract.KeptAgeAnswer? =
+fun keptAge(kind: String, fetchedAtMs: Long, nowMs: Long = AppClock.nowMs()): EngineContract.KeptAgeAnswer? =
     Engine.keptAge(now = (nowMs / 1000).toDouble(), fetchedAt = (fetchedAtMs / 1000).toDouble(), kind = kind).getOrNull()
 
 /**
@@ -35,13 +32,7 @@ fun keptAge(kind: String, fetchedAtMs: Long, nowMs: Long = System.currentTimeMil
 @Composable
 fun KeptAgeLine(kind: String, fetchedAtMs: Long?, modifier: Modifier = Modifier) {
     if (fetchedAtMs == null) return
-    var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(fetchedAtMs) {
-        while (true) {
-            now = System.currentTimeMillis()
-            delay(MINUTE_MS)
-        }
-    }
+    val now by AppClock.ticking(MINUTE_MS)
     val age = remember(kind, fetchedAtMs, now / MINUTE_MS) { keptAge(kind, fetchedAtMs, now) } ?: return
     val finding = if (age.finding == "caution") Finding.CAUTION else Finding.UNKNOWN
     Text(

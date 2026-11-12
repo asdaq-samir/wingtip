@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.emergency
 
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.emergencyFields
 import app.wingtipmaps.android.api.generated.EmergencyFields
@@ -17,7 +18,6 @@ import app.wingtipmaps.android.flight.OwnShip
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
-import java.time.LocalDate
 import java.time.ZoneOffset
 
 /** What the MAYDAY is filled from: each part not known left for the
@@ -71,7 +71,7 @@ object EngineEmergency : EmergencyRules {
     private inline fun <reified A, reified B> recast(a: A): B = coder.decodeFromJsonElement(coder.encodeToJsonElement(a))
 
     override fun bestFields(data: EmergencyFields, fix: OwnShip.Fix): Result<EngineContract.BestFieldsAnswer> {
-        val today = LocalDate.now(ZoneOffset.UTC).toString()
+        val today = AppClock.today(ZoneOffset.UTC).toString()
         val variation = Engine.magneticVariation(fix.lat, fix.lon, date = today).getOrNull()
         val airplane = data.airplane?.let {
             EngineContract.BestFieldsInputAirplane(
