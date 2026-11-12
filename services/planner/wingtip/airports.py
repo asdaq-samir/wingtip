@@ -221,19 +221,10 @@ def _faa_listed(faa_path: str, _faa_mtime: float) -> frozenset:
 
 @lru_cache(maxsize=2)
 def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: float = 0.0) -> pd.DataFrame:
-    """The US-only, pre-uppercased slice `search_airports` filters --
-    keyed by path and mtime like `_read_table` (a replaced file is a
-    new entry, and the old one is dropped rather than kept for ever
-    under an `id()` Python may hand to another frame), so this is
-    built once per file, not on every keystroke. Building it fresh
-    each call -- filtering the full 80,000-row table to US-only, then
-    `.str.upper()` over three string columns of the result -- was
-    cheap in isolation but
-    added up to real, measurable CPU under a burst of concurrent
-    searches (every DEP/DEST field firing one on mount), which is
-    exactly the kind of load a page full of Playwright tests, or a
-    pilot just loading the app, produces.
-    """
+    """The US-only, pre-uppercased slice `search_airports` filters, keyed
+    by path and mtime like `_read_table`, so it is built once per file, not
+    on every keystroke: built per call, a burst of searches (every DEP/DEST
+    field firing one on mount) cost real, measurable CPU."""
     df = _read_table(path, _mtime)
     # This app plans against FAA sectional charts and
     # aviationweather.gov data alone -- there's no route it could
@@ -255,6 +246,14 @@ def _us_airports_of(path: str, _mtime: float, faa_path: str = "", _faa_mtime: fl
                     on |= us[column].astype(str).fillna("").str.strip().str.upper().isin(listed).to_numpy()
             us = us[on]
     us = us.copy()
+    if faa_path:
+        # The FAA's reference point (NASR APT_BASE's ARP) over OurAirports',
+        # 190 m off at KDEN: the map's marks are NASR's (owner, 2026-11-12).
+        arp = faa_data._read_apt_base_cached(faa_path, _faa_mtime).drop_duplicates("ARPT_ID").set_index("ARPT_ID")
+        local = us["local_code"].astype(str).str.strip().str.upper()
+        for ours, faa in (("latitude_deg", "LAT_DECIMAL"), ("longitude_deg", "LONG_DECIMAL")):
+            if faa in arp.columns:
+                us[ours] = local.map(pd.to_numeric(arp[faa], errors="coerce")).fillna(us[ours])
     us["_ident_upper"] = us["ident"].astype(str).str.upper()
     us["_local_upper"] = us["local_code"].astype(str).str.upper()
     us["_name_upper"] = us["name"].astype(str).str.upper()
