@@ -7,6 +7,7 @@ import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.diagnostics.Diagnostics
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.offline.KeptForAir
+import dagger.hilt.android.HiltAndroidApp
 import org.maplibre.android.MapLibre
 import org.maplibre.android.module.http.HttpRequestUtil
 
@@ -15,8 +16,10 @@ import org.maplibre.android.module.http.HttpRequestUtil
  * the first screen. MapLibre wants its instance made before any MapView,
  * and its tiles go through the app's own OkHttp client, so a tile
  * through the gateway carries the session's cookie and every tile is
- * kept in the one cache (Gateway.client).
+ * kept in the one cache (Gateway.client). Hilt's component lives here
+ * (HiltAndroidApp): the view models the screens ask for are its own.
  */
+@HiltAndroidApp
 class WingtipApplication : Application() {
     override fun onCreate() {
         super.onCreate()

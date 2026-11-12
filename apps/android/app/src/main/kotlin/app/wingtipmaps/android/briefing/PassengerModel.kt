@@ -8,12 +8,14 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.checklist.PreferencesStore
 import app.wingtipmaps.android.strip.StripData
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * The passenger briefing's state for the planned flight: the items
@@ -21,7 +23,8 @@ import kotlinx.coroutines.launch
  * weather now) for the message. The ticks are kept on the phone for the
  * flight (PassengerTicks); a new route starts them afresh.
  */
-class PassengerModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class PassengerModel @Inject constructor(app: Application) : AndroidViewModel(app) {
     data class State(
         val flight: String = "",
         val ticked: Set<String> = emptySet(),

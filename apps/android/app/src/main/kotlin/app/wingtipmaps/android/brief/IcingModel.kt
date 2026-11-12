@@ -31,6 +31,9 @@ import kotlin.math.roundToInt
  * forecast that cannot be had is said, never shown as no icing.
  */
 class IcingModel(private val ask: suspend (fixes: String, altFt: String, legMin: String, groundMin: String) -> IcingForecast = { f, a, l, g -> Planner.icingRoute(f, a, l, g) }) : ViewModel() {
+    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
+    // constructor once the sources and seams it is given are injectable
+    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     data class Row(val title: String, val value: String, val layer: String?, val finding: Finding)
 
     data class State(

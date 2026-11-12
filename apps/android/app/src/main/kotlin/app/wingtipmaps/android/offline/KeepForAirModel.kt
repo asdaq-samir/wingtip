@@ -7,6 +7,7 @@ import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.map.WeatherLoop
 import app.wingtipmaps.android.ready.ReadyFacts
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +15,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 /**
  * Keep for the Air in one tap, the flight plan's row and Ready to fly's
@@ -24,7 +26,8 @@ import kotlinx.coroutines.withContext
  * as Setup → Downloads keeps a box (DownloadsModel). Then what the
  * answers take on the phone, said as "Kept for the Air: N MB".
  */
-class KeepForAirModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class KeepForAirModel @Inject constructor(app: Application) : AndroidViewModel(app) {
     data class State(
         /** The route kept or being kept (ReadyFacts.flightKey). */
         val route: String? = null,

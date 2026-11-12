@@ -24,8 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.OfflineRegion
 import app.wingtipmaps.android.design.ChoiceGroup
@@ -48,7 +48,7 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  * the update when the FAA's next cycle is out. The state is DownloadsModel's.
  */
 @Composable
-fun DownloadsScreen(model: DownloadsModel = viewModel()) {
+fun DownloadsScreen(model: DownloadsModel = hiltViewModel()) {
     val context = LocalContext.current
     val catalog by model.catalog.collectAsStateWithLifecycle()
     val kept by model.kept.collectAsStateWithLifecycle()

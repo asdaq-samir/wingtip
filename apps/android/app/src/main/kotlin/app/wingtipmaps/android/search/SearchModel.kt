@@ -11,6 +11,7 @@ import app.wingtipmaps.android.api.findAirplane
 import app.wingtipmaps.android.api.generated.AircraftProfileSummary
 import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.api.searchWithFixes
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Locale
+import javax.inject.Inject
 
 /**
  * The one search's model: what a line typed finds, grouped (SearchGroups),
@@ -30,7 +32,8 @@ import java.util.Locale
  * the pilot's own airplanes. No figure is worked out here. Why a search
  * failed is said under the field, in the planner's words.
  */
-class SearchModel : ViewModel() {
+@HiltViewModel
+class SearchModel @Inject constructor() : ViewModel() {
     data class State(
         val query: String = "",
         val airports: List<AirportSuggestion> = emptyList(),

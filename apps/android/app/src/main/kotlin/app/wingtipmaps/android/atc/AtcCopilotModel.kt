@@ -21,6 +21,9 @@ class AtcCopilotModel(
     private val listener: AtcListener,
     private val rules: AtcRules = EngineAtc,
 ) : ViewModel() {
+    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
+    // constructor once the sources and seams it is given are injectable
+    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     /** The next frequency and the code the pilot set from a card, kept in
      *  sight on the card's foot until replaced. */
     data class Kept(val frequency: String? = null, val facility: String? = null, val squawk: String? = null)

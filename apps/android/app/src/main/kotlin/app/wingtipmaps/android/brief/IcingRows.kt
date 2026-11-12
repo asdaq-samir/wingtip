@@ -12,8 +12,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.LoadingRow
@@ -29,7 +29,7 @@ import app.wingtipmaps.android.ui.SectionTitle
  * Nothing until the nav log is whole with each leg's time.
  */
 @Composable
-fun IcingRows(plan: Plan.State, model: IcingModel = viewModel()) {
+fun IcingRows(plan: Plan.State, model: IcingModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val points = remember(plan.course) { RoutePoints.of(plan.course) }
     // Under IFR only, as the web's useIcingForecast: a VFR flight keeps

@@ -25,6 +25,9 @@ import kotlinx.coroutines.launch
  * that fails said under it and left to try again.
  */
 class LogbookPhotoModel(private val source: LogbookSource = ServerLogbook) : ViewModel() {
+    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
+    // constructor once the sources and seams it is given are injectable
+    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     data class State(
         val reading: Boolean = false,
         val problem: String? = null,

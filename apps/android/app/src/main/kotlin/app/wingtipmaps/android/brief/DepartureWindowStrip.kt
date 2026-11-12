@@ -28,8 +28,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.LoadingRow
@@ -51,7 +51,7 @@ import java.time.Instant
  * time and fuel.
  */
 @Composable
-fun DepartureWindowStrip(plan: Plan.State, signedIn: Boolean, model: DepartureWindowModel = viewModel()) {
+fun DepartureWindowStrip(plan: Plan.State, signedIn: Boolean, model: DepartureWindowModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     LaunchedEffect(plan.dep, plan.dest, plan.stops, plan.aircraft, signedIn) { model.ask(plan, signedIn) }
     if (!plan.routed) return

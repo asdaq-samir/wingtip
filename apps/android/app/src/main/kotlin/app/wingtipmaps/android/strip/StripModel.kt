@@ -22,6 +22,7 @@ import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.HomeAirport
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,6 +33,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.intOrNull
+import javax.inject.Inject
 
 /**
  * What the strip does with a line from the field (FieldCommands.readField
@@ -49,7 +51,8 @@ import kotlinx.serialization.json.intOrNull
  * (frequency_of, ctaf_of: the CTAF, else a UNICOM that is also the CTAF,
  * else MULTICOM's 122.9, AC 90-66C 9.6), never by this file.
  */
-class StripModel : ViewModel() {
+@HiltViewModel
+class StripModel @Inject constructor() : ViewModel() {
     /** A chip on a field's card: its label in capitals, and the words a
      *  screen reader says ("ATIS 124.8"). */
     data class RadioChip(val label: String, val words: String)

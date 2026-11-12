@@ -31,6 +31,9 @@ class ClearanceModel(
     private val rules: ClearanceRules = EngineClearance,
     private val places: suspend (ClearanceAsk) -> ClearancePlaces = ClearancePlanner::places,
 ) : ViewModel() {
+    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
+    // constructor once the sources and seams it is given are injectable
+    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     /** The flight the clearance is for: its route as planned, and the
      *  points to look near ("lat,lon;lat,lon"). */
     data class Flight(val dep: String = "", val stops: List<String> = emptyList(), val dest: String = "", val near: String = "")

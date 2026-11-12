@@ -14,8 +14,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.Loading
@@ -31,7 +31,7 @@ import java.util.Locale
  * in the tint, a stock list item; tapped again, kept afresh.
  */
 @Composable
-fun KeepForAirRow(plan: Plan, keeper: KeepForAirModel = viewModel(), downloads: DownloadsModel = viewModel()) {
+fun KeepForAirRow(plan: Plan, keeper: KeepForAirModel = hiltViewModel(), downloads: DownloadsModel = hiltViewModel()) {
     val state by keeper.state.collectAsStateWithLifecycle()
     val route by plan.state.collectAsStateWithLifecycle()
     val mine = state.route == ReadyFacts.flightKey(route)

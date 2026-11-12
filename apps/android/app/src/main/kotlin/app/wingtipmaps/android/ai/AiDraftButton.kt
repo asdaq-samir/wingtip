@@ -12,8 +12,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -29,7 +29,7 @@ import app.wingtipmaps.android.ui.WingtipIcons
  */
 @Composable
 fun AiDraftButton(task: AiTask, key: String, label: String, sources: () -> List<AssistantSource>, onDraft: (String) -> Unit) {
-    val model: AiWordsModel = viewModel(key = "ai-draft-${task.name}-$key")
+    val model: AiWordsModel = hiltViewModel(key = "ai-draft-${task.name}-$key")
     val state by model.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.answer) { state.answer?.let { onDraft(it.text) } }
     if (!state.offered) return

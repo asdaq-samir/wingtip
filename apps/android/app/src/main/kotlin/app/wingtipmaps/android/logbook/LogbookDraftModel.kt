@@ -31,6 +31,9 @@ class LogbookDraftModel(
     private val source: LogbookSource = ServerLogbook,
     private val utcOffsetMin: () -> Double = { TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 60_000.0 },
 ) : ViewModel() {
+    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
+    // constructor once the sources and seams it is given are injectable
+    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     data class Logged(val entry: LogbookEntryDto, val currency: List<String>)
 
     data class State(

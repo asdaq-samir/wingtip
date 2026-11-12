@@ -23,8 +23,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSize
@@ -48,7 +48,7 @@ import app.wingtipmaps.android.ui.sheet.CardPage
 fun ProfileCard(plan: Plan, exit: CardExit) {
     val state by plan.state.collectAsStateWithLifecycle()
     val altitudes by PlanAltitudes.state.collectAsStateWithLifecycle()
-    val model: ProfileModel = viewModel()
+    val model: ProfileModel = hiltViewModel()
     val shown by model.state.collectAsStateWithLifecycle()
     val flight by InFlight.shared.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.dep, state.dest, state.stops) { model.load(state) }

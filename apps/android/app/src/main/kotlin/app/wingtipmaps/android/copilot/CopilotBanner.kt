@@ -36,8 +36,8 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AheadAlert
@@ -58,7 +58,7 @@ import app.wingtipmaps.android.ui.LocalInk
  * banner already shows.
  */
 @Composable
-fun CopilotBanner(plan: Plan.State, flying: Boolean, fix: OwnShip.Fix?, ahead: List<AheadAlert>, model: CopilotModel = viewModel()) {
+fun CopilotBanner(plan: Plan.State, flying: Boolean, fix: OwnShip.Fix?, ahead: List<AheadAlert>, model: CopilotModel = hiltViewModel()) {
     val context = LocalContext.current
     val setting = remember(context) { CopilotSetting.of(context) }
     val mode by setting.mode.collectAsStateWithLifecycle()

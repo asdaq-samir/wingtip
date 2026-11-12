@@ -30,6 +30,9 @@ class AlternateModel(
     private val ask: suspend (dest: String, eta: String, tasKt: Double, filed: String?) -> Alternates = { d, e, t, f -> Planner.alternate(d, e, t, f) },
     private val nowMs: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
+    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
+    // constructor once the sources and seams it is given are injectable
+    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     /** What the plan gives the check: the destination, the nav log's time
      *  en route, when it leaves (null for now), the cruise, the one filed. */
     data class Where(val dest: String, val eteMin: Double?, val depart: String?, val tasKt: Double?, val filed: String?)

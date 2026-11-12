@@ -15,6 +15,9 @@ import kotlinx.coroutines.launch
  * line. Nothing where the tower sent none.
  */
 class DepartureModel(private val source: LiveSource = PlannerLive) : ViewModel() {
+    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
+    // constructor once the sources and seams it is given are injectable
+    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     private val _line = MutableStateFlow<String?>(null)
     val line: StateFlow<String?> = _line.asStateFlow()
     private var asked: String? = null

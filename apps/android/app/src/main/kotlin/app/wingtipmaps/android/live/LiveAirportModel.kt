@@ -27,6 +27,9 @@ class LiveAirportModel(
     private val source: LiveSource = PlannerLive,
     private val rules: LiveRules = EngineLive,
 ) : ViewModel() {
+    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
+    // constructor once the sources and seams it is given are injectable
+    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     /** One broadcast as its group shows it. */
     data class Broadcast(val title: String, val glance: String?, val rows: List<LiveRow>, val text: String)
 

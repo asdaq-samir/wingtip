@@ -179,7 +179,7 @@ class OverlayCache(private val store: OverlayStore) : Interceptor {
         val body = response.body
         val type = body.contentType() ?: OCTETS
         val bytes = body.bytes()
-        runCatching { store.store(name, start, end, bytes) }
+        val _ = runCatching { store.store(name, start, end, bytes) }
         return response.newBuilder().body(bytes.toResponseBody(type)).build()
     }
 

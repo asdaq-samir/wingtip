@@ -74,7 +74,7 @@ class FlightRecorder(private val file: File, private val nowMs: () -> Long = Sys
 
     private fun write() {
         writtenAtMs = nowMs()
-        runCatching {
+        val _ = runCatching {
             file.parentFile?.mkdirs()
             val part = File(file.path + ".part")
             part.writeText(Gateway.json.encodeToString(_recorded.value))
