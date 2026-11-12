@@ -3,28 +3,17 @@ import type { RasterLayerSpecification } from "maplibre-gl";
 import { useEffect, useState } from "react";
 import { googleMapsQuery } from "../../../queryClient";
 import { usePreferences, type OverlayStrength } from "../../../preferences";
-import { GOOGLE, GOOGLE_REFERRER_POLICY, googleReferrer, useGoogleSession } from "../../sources/googleSession";
+import { googleReferrer, googleTiles, useGoogleSession } from "../../sources/googleSession";
 import { USGS_URL } from "../../sources/imagery";
 import { useShownOverlay } from "../../sources/useShownOverlay";
 import { useGlLayer, useGlMap, useGlPaint, type Slot } from "../glLayer";
-import { appZoomOf, glZoom } from "../glStyle";
-import { useGlView } from "../useGlView";
+import { glZoom } from "../glStyle";
 import { MapCredits } from "../MapCredits";
-import { useGoogleCredit } from "../googleCredit";
+import { useGoogleAttribution } from "../googleCredit";
 import { useMapCredit } from "../creditStore";
 
 /** OverlayTiles': how strongly the imagery covers the chart. */
 const OPACITY: Record<OverlayStrength, number> = { faint: 0.35, half: 0.6, full: 1 };
-
-/** Where the FAA chart has no more to show: the sectional is drawn from
- *  1:500,000 (about 42 m a pixel at its last zoom), so past MapLibre's 12
- *  the chart is only enlarged. From there to 13 the street map fades in
- *  over it, as ForeFlight's does, with the runways (RunwaysGl) on top. */
-const CLOSE_FROM = 12;
-const CLOSE_FULL = 13;
-/** How far in the street map lets the map go (the chart alone stops two
- *  levels past its own, glStyle's OVERZOOM). */
-const CLOSE_MAX_ZOOM = 17;
 
 /** A raster layer of someone else's tiles, in a slot. */
 function useTiles(id: string, slot: Slot, url: string, maxzoom: number, paint: RasterLayerSpecification["paint"] = {}, minzoom = 0) {
@@ -98,9 +87,7 @@ export function OverlayGl() {
   // What the sources say of themselves, for Status (MapCredits), with the
   // imagery whose words are most of it.
   const drawn =
-    overlay === "none" ? (
-      <CloseBase />
-    ) : overlay === "usgs" ? (
+    overlay === "none" ? null : overlay === "usgs" ? (
       <Usgs opacity={OPACITY[strength]} />
     ) : (
       <Google key={overlay} kind={overlay === "google-map" ? "map" : "satellite"} opacity={OPACITY[strength]} />
@@ -121,106 +108,24 @@ function Usgs({ opacity }: { opacity: number }) {
   return null;
 }
 
-/** Close in, past the chart's own detail, Google's street map over the
- *  chart, fading in from CLOSE_FROM to CLOSE_FULL; asked for only once the
- *  map is near there, so no tile is fetched (or billed) further out. With
- *  no Google key configured (issue #210) nothing is drawn and the chart
- *  stays, enlarged, as before. */
-function CloseBase() {
-  const { level } = useGlView();
-  // A level before the fade, so its tiles are in as it starts (useGlView's levels are the app's).
-  return level >= appZoomOf(CLOSE_FROM - 1) ? <Google kind="map" opacity={null} /> : null;
-}
-
-function Google({ kind, opacity }: { kind: "map" | "satellite"; opacity: number | null }) {
+function Google({ kind, opacity }: { kind: "map" | "satellite"; opacity: number }) {
   const { map } = useGlMap();
   const { data: google } = useQuery(googleMapsQuery);
   const { data: session } = useGoogleSession(kind);
-  // Google's copyright for what is in sight, asked at each rest, as its
-  // Map Tiles API's terms ask.
-  const [copyright, setCopyright] = useState("");
   // Its tiles with the site's origin as their Referer, which the key's
   // restriction is checked against (googleReferrer); every other request
   // the map makes is passed through as it was.
   useEffect(() => {
     map.setTransformRequest(googleReferrer);
   }, [map]);
-  useEffect(() => {
-    if (!google || !session) return;
-    let live = true;
-    const ask = () => {
-      const b = map.getBounds();
-      const q = new URLSearchParams({
-        session: session.session,
-        key: google.key,
-        zoom: String(Math.round(map.getZoom() + 1)),
-        north: String(Math.min(89.9, b.getNorth())),
-        south: String(Math.max(-89.9, b.getSouth())),
-        east: String(Math.max(-179.9, Math.min(179.9, b.getEast()))),
-        west: String(Math.max(-179.9, Math.min(179.9, b.getWest()))),
-      });
-      void fetch(`${GOOGLE}/tile/v1/viewport?${q}`, { referrerPolicy: GOOGLE_REFERRER_POLICY })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((info: { copyright?: string } | null) => {
-          if (live && info?.copyright) setCopyright(info.copyright);
-        })
-        .catch(() => {
-          /* the copyright as it was */
-        });
-    };
-    ask();
-    map.on("moveend", ask);
-    return () => {
-      live = false;
-      map.off("moveend", ask);
-    };
-  }, [map, google, session]);
-  useGoogleCredit(
-    session ? `<span aria-label="Google Maps" data-testid="google-credit">Google Maps</span>${copyright ? ` · ${copyright}` : ""}` : null,
-  );
+  useGoogleAttribution(session?.session ?? null, google?.key ?? null);
   if (!google || !session) return null;
-  return (
-    <GoogleTiles
-      key={session.session}
-      url={`${GOOGLE}/v1/2dtiles/{z}/{x}/{y}?session=${encodeURIComponent(session.session)}&key=${encodeURIComponent(google.key)}`}
-      max={kind === "map" ? 22 : 20}
-      opacity={opacity}
-    />
-  );
-}
-
-function GoogleTiles({ url, max, opacity }: { url: string; max: number; opacity: number | null }) {
-  return opacity == null ? <CloseTiles url={url} max={max} /> : <OverlayTiles url={url} max={max} opacity={opacity} />;
+  return <OverlayTiles url={googleTiles(session.session, google.key)} max={kind === "map" ? 22 : 20} opacity={opacity} />;
 }
 
 function OverlayTiles({ url, max, opacity }: { url: string; max: number; opacity: number }) {
   useTiles("overlay-google", "imagery", url, max, {}, glZoom(3));
   useGlPaint(["overlay-google"], { "raster-opacity": opacity });
   useImageryShown("google", opacity);
-  return null;
-}
-
-/** The street map close in: its opacity a zoom expression, so it fades
- *  with the pinch frame by frame; the map let in past the chart's own
- *  last zoom while it is there. */
-function CloseTiles({ url, max }: { url: string; max: number }) {
-  const { map } = useGlMap();
-  useTiles(
-    "close-google",
-    "imagery",
-    url,
-    max,
-    { "raster-opacity": ["interpolate", ["linear"], ["zoom"], CLOSE_FROM, 0, CLOSE_FULL, 1] },
-    CLOSE_FROM - 0.5,
-  );
-  useEffect(() => {
-    const was = map.getMaxZoom();
-    map.setMaxZoom(Math.max(was, CLOSE_MAX_ZOOM));
-    map.getContainer().dataset.closeBase = "google";
-    return () => {
-      map.setMaxZoom(was);
-      delete map.getContainer().dataset.closeBase;
-    };
-  }, [map]);
   return null;
 }

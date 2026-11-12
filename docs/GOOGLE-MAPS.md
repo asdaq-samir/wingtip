@@ -28,6 +28,15 @@ How the Google overlay works:
   worker leaves them to the network, and Google's terms forbid storing
   or prefetching them.
 
+Close in, past the FAA chart's own detail (the sectional's last zoom,
+MapLibre's 11; a TAC's 12; IFR low's 10), the chart fades out over one
+level into Google's satellite imagery under it, without Google's roads
+and names, and the map goes in to MapLibre's 17 (`closeZoom.ts`,
+`CloseImageryGl`). It needs no choice of overlay, and its session and
+tiles are asked for only a level short of the fade. With no key the
+chart stays, enlarged two levels past its own, as before. Its credit is
+the same "Google Maps" and copyright as the overlay's.
+
 ## What only the owner can do
 
 1. **A Google Cloud project with billing** (console.cloud.google.com).

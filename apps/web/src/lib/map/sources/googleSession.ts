@@ -21,6 +21,10 @@ export function googleReferrer(url: string): { url: string; referrerPolicy: Refe
   return url.startsWith(`${GOOGLE}/`) ? { url, referrerPolicy: GOOGLE_REFERRER_POLICY } : undefined;
 }
 
+/** A session's 2D tiles, for a MapLibre raster source. */
+export const googleTiles = (session: string, key: string) =>
+  `${GOOGLE}/v1/2dtiles/{z}/{x}/{y}?session=${encodeURIComponent(session)}&key=${encodeURIComponent(key)}`;
+
 interface Session {
   session: string;
   expiry: number;
@@ -33,9 +37,13 @@ interface Session {
  * set, asked for once rather than with every page. A session belongs to
  * the key that made it, so one made with another key (rotated since) is
  * not reused: Google refuses its tiles. The satellite's has
- * Google's roads and names over it, as its Satellite view does.
+ * Google's roads and names over it, as its Satellite view does; the
+ * imagery's is the same pictures bare, what the map shows close in past
+ * the chart's own detail (CloseImageryGl), under the app's own marks.
  */
-async function googleSession(key: string, kind: "map" | "satellite"): Promise<Session> {
+type GoogleKind = "map" | "satellite" | "imagery";
+
+async function googleSession(key: string, kind: GoogleKind): Promise<Session> {
   const kept = keptStore<Session | null>(`wingtip.googleSession.${kind}`, null);
   // No storage: a new session.
   const held = kept.getState().value;
@@ -47,7 +55,9 @@ async function googleSession(key: string, kind: "map" | "satellite"): Promise<Se
     body: JSON.stringify(
       kind === "map"
         ? { mapType: "roadmap", language: "en-US", region: "US", imageFormat: "png" }
-        : { mapType: "satellite", language: "en-US", region: "US", layerTypes: ["layerRoadmap"] },
+        : kind === "satellite"
+          ? { mapType: "satellite", language: "en-US", region: "US", layerTypes: ["layerRoadmap"] }
+          : { mapType: "satellite", language: "en-US", region: "US" },
     ),
   });
   if (!resp.ok) throw new Error(`Google's map session: ${resp.status}`);
@@ -60,7 +70,7 @@ async function googleSession(key: string, kind: "map" | "satellite"): Promise<Se
 
 /** Google's session for a kind of map, once the deployment's key is known;
  *  its error is for the settings to say (MapSettings). */
-export function useGoogleSession(kind: "map" | "satellite", wanted = true) {
+export function useGoogleSession(kind: GoogleKind, wanted = true) {
   const { data: google } = useQuery(googleMapsQuery);
   return useQuery({
     queryKey: ["googleSession", kind, google?.key],

@@ -33,7 +33,7 @@ export const glZoom = (appZoom: number) => appZoom - 1;
 /** The app's level from MapLibre's zoom. */
 export const appZoomOf = (glZoomLevel: number) => glZoomLevel + 1;
 
-/** The chart enlarged two levels past its own last zoom. */
+/** The chart enlarged two levels past its own last zoom, with no imagery (closeZoom). */
 const OVERZOOM = 2;
 /** A region's level of the chart under it, where the
  *  chart's own tiles are not in yet. */
@@ -54,8 +54,8 @@ export const DAY_SATURATION = 0.1;
 export interface ChartStyle {
   sources: Record<string, RasterSourceSpecification>;
   layers: RasterLayerSpecification[];
-  /** The map's furthest zoom, MapLibre's: the chart's own last plus
-   *  OVERZOOM. */
+  /** The map's furthest zoom without imagery, MapLibre's: the chart's
+   *  own last plus OVERZOOM (closeZoom's CLOSE_MAX_ZOOM with it). */
   maxZoom: number;
 }
 

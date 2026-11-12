@@ -232,12 +232,12 @@ const FIX_ZOOM = 10;
 /** The VORs a pilot tunes (wingtip.fixes.VOR_KINDS, NASR NAV_TYPE). */
 const VOR_KINDS = ["VORTAC", "VOR/DME", "VOR"];
 
-/** From MapLibre's 12, where the chart is only enlarged (BaseGl's
- *  CLOSE_FROM): before it a runway is under a pixel or two wide and the
+/** From MapLibre's 12, where the sectional has faded into the imagery
+ *  (closeZoom): before it a runway is under a pixel or two wide and the
  *  chart's own airport symbol says more. */
 const RUNWAYS_FROM = 12;
 
-/** The runways' look, as ForeFlight draws them over its street map: a
+/** The runways' look, as ForeFlight draws them over its base map: a
  *  dark grey surface (a soft one lighter), a dashed white centreline, and
  *  each end's number in bold white on a dark halo, turned to read from
  *  the approach end (text-rotate is the end's true heading, so the
