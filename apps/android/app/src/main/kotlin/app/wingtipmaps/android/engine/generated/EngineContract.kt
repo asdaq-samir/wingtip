@@ -7821,6 +7821,117 @@ object EngineContract {
     )
 
     @Serializable
+    data class OccurrenceIdentityAnswer(
+        val verdict: String,
+        /**
+         * Each check made, in order (registry, then track or address, window, place), with what it found in words.
+         */
+        val checks: List<EngineContract.OccurrenceIdentityAnswerChecksItem>,
+        val window: EngineContract.OccurrenceIdentityAnswerWindow,
+        @SerialName("within_nm")
+        val withinNm: Double,
+        /**
+         * The track's report in the window nearest the place, with its distance; null where it has none.
+         */
+        val nearest: EngineContract.OccurrenceIdentityAnswerNearest? = null,
+    )
+
+    @Serializable
+    data class OccurrenceIdentityAnswerChecksItem(
+        val check: String,
+        val ok: Boolean,
+        val words: String,
+    )
+
+    /**
+     * The track's report in the window nearest the place, with its distance; null where it has none.
+     */
+    @Serializable
+    data class OccurrenceIdentityAnswerNearest(
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+        @SerialName("distance_nm")
+        val distanceNm: Double,
+    )
+
+    @Serializable
+    data class OccurrenceIdentityAnswerWindow(
+        val start: Double,
+        val end: Double,
+    )
+
+    @Serializable
+    data class OccurrenceIdentityInput(
+        val report: EngineContract.OccurrenceIdentityInputReport,
+        /**
+         * The FAA registry's answer for the report's N-number; null or missing where it has none.
+         */
+        val registry: EngineContract.OccurrenceIdentityInputRegistry? = null,
+        /**
+         * The ADS-B track of that address over the window's UTC days; null or missing where there is none.
+         */
+        val track: EngineContract.OccurrenceIdentityInputTrack? = null,
+    )
+
+    /**
+     * The FAA registry's answer for the report's N-number; null or missing where it has none.
+     */
+    @Serializable
+    data class OccurrenceIdentityInputRegistry(
+        @SerialName("n_number")
+        val nNumber: String,
+        val hex: String? = null,
+    )
+
+    @Serializable
+    data class OccurrenceIdentityInputReport(
+        /**
+         * The N-number the report gives; null or missing where it gives none.
+         */
+        @SerialName("n_number")
+        val nNumber: String? = null,
+        /**
+         * The local date of the event, YYYY-MM-DD.
+         */
+        val date: String,
+        /**
+         * The local clock time, HH:MM (24-hour); null or missing where the report gives none or gives no a.m. or p.m.
+         */
+        val time: String? = null,
+        /**
+         * The offsets from UTC the place may have that day, minutes (-360 for CST); empty or missing for every US offset.
+         */
+        @SerialName("utc_offsets_min")
+        val utcOffsetsMin: List<Double>? = null,
+        val lat: Double,
+        val lon: Double,
+        /**
+         * town: a town's internal point (Census gazetteer); point: a point the record gives.
+         */
+        val place: String,
+    )
+
+    /**
+     * The ADS-B track of that address over the window's UTC days; null or missing where there is none.
+     */
+    @Serializable
+    data class OccurrenceIdentityInputTrack(
+        val hex: String,
+        val points: List<EngineContract.OccurrenceIdentityInputTrackPointsItem>,
+    )
+
+    @Serializable
+    data class OccurrenceIdentityInputTrackPointsItem(
+        /**
+         * Seconds since 1970, UTC.
+         */
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+    )
+
+    @Serializable
     data class OurCallInput(
         val text: String,
         val tail: String,

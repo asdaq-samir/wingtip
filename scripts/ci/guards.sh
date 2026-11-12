@@ -73,7 +73,7 @@ ruff_check() {
     (cd services/ingest && "${ruff[@]}" check ingest tests) &&
     (cd services/assistant && "${ruff[@]}" check app tests) &&
     (cd services/weather && "${ruff[@]}" check app tests) &&
-    (cd services/jobs && "${ruff[@]}" check charts)
+    (cd services/jobs && "${ruff[@]}" check charts crash)
 }
 
 file_sizes() {

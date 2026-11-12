@@ -4599,6 +4599,98 @@ struct APIStopField: Codable, Equatable, Sendable {
     var training: [APINearbyPlace]?
 }
 
+/// A crash draft: the event as reported (local date and time, place),
+/// the airplane (N-number, its Mode S code where the registry gave one),
+/// where it stands, and what the identity check found. `track` is "adsb",
+/// or "none" for a draft of the place alone; `fatal` None where no source
+/// says, which holds publishing as a fatal event does.
+// MARK: - APIStudioDraft
+struct APIStudioDraft: Codable, Equatable, Sendable {
+    var aircraft: String?
+    var captions: APIStudioDraftCaptions?
+    var city: String?
+    var fatal: Bool?
+    var hex: String?
+    var id: String
+    var identity: APIStudioDraftIdentity?
+    var identityBy: String?
+    var kitAt, lat: Double?
+    var localDate: String
+    var localTime: String?
+    var lon: Double?
+    var nNumber: String?
+    var noticedAt, renderedAt: Double?
+    var sources: [APIStudioDraftSource]
+    var state: String?
+    var status: String
+    var track: String?
+}
+
+/// The film's words, facts only: a title, "Preliminary ...", "No ADS-B
+/// track" where there is none, the sources' words quoted, the credits.
+// MARK: - APIStudioDraftCaptions
+struct APIStudioDraftCaptions: Codable, Equatable, Sendable {
+    var credits: [String]
+    var quotes: [APIStudioDraftQuote]
+    var status, title: String
+    var track: String?
+}
+
+// MARK: - APIStudioDraftQuote
+struct APIStudioDraftQuote: Codable, Equatable, Sendable {
+    var source, url: String?
+    var words: String
+}
+
+/// The engine's verdict on the draft's identity, each check made, the
+/// window it read the track in and the report nearest the place.
+// MARK: - APIStudioDraftIdentity
+struct APIStudioDraftIdentity: Codable, Equatable, Sendable {
+    var checks: [APIStudioDraftCheck]
+    var nearest: APIStudioDraftNearest?
+    var verdict: String
+    var window: APIStudioDraftWindow?
+}
+
+/// One of the identity check's checks (the engine's occurrence_identity).
+// MARK: - APIStudioDraftCheck
+struct APIStudioDraftCheck: Codable, Equatable, Sendable {
+    var check: String
+    var ok: Bool
+    var words: String
+}
+
+/// The track's report in the window nearest the reported place.
+// MARK: - APIStudioDraftNearest
+struct APIStudioDraftNearest: Codable, Equatable, Sendable {
+    var distanceNm, lat, lon, t: Double
+}
+
+/// The time window the report gives, s since 1970 (UTC).
+// MARK: - APIStudioDraftWindow
+struct APIStudioDraftWindow: Codable, Equatable, Sendable {
+    var end, start: Double
+}
+
+/// One source's word of the event, as it gave it: "faa_statement",
+/// "faa_notice" or "ntsb"; its page (or the notice's file); its heading
+/// and its words, unchanged, which a caption quotes.
+// MARK: - APIStudioDraftSource
+struct APIStudioDraftSource: Codable, Equatable, Sendable {
+    var heading: String?
+    var source: String
+    var text, url: String?
+}
+
+/// The developer's word on a draft's identity: right (`confirm`), or
+/// not; with an N-number where the report gave none, which the job then
+/// checks against the registry and the track as it checks its own.
+// MARK: - APIStudioDraftIdentityAsk
+struct APIStudioDraftIdentityAsk: Codable, Equatable, Sendable {
+    var confirm: Bool
+    var nNumber: String?
+}
+
 /// The ground's height under each point asked, ft MSL, in order: the
 /// elevation tiles (USGS 3DEP and SRTM, wingtip.elevation).
 // MARK: - APIStudioGround

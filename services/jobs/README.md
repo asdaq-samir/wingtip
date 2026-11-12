@@ -9,6 +9,7 @@ starts none of them.
 | Job | What it does | Its code |
 |---|---|---|
 | [`retrain/`](retrain) | The training run: `python -m wingtip.pipeline run` retrains, evaluates and promotes the chart model (and the landmark model where the ratings are enough), each promoted only if it beats the one serving | `wingtip.pipeline`, `wingtip.chartmodel`, `wingtip.model_registry` (shared with the planner, which loads the promoted model) |
+| [`crash/`](crash) | The Studio's crash leads ([docs/STUDIO-PIPELINE.md](../../docs/STUDIO-PIPELINE.md)): the FAA's statements and notices read into leads, each lead's identity checked by the engine's `occurrence_identity` against the FAA's registry and an ADS-B track, and a kit made for each confirmed one; the planner starts it every half hour (`app.crash_leads`) | `crash/cli.py`; `wingtip.crash_drafts` (shared with the planner, which serves the drafts) |
 | [`charts/`](charts) | A new FAA chart cycle fetched, rendered and packed into one PMTiles archive per kind and density; the map's overlay tiles (tippecanoe) from the planner's cycle pack; publishing to S3 | `charts/cli.py` (the commands), `charts/overlays.py` (the vector tiles); `wingtip.charts` and `wingtip.tile_archive` (shared with the planner, which serves the tiles) |
 
 Chart vision (`wingtip.chartvision`) stays in the planner: it reads the
@@ -46,7 +47,7 @@ The planner starts them by itself through the dev-services sidecar,
 which can start a container but never create one, so make them once:
 
 ```bash
-docker compose create retrain charts charts-overlays charts-next
+docker compose create retrain charts charts-overlays charts-next crash-leads
 ```
 
 Then the developer console's Retrain starts `retrain`, its chart
@@ -138,7 +139,7 @@ From this directory, over wingtip's requirements
 (`requirements-dev-jobs.txt`):
 
 ```bash
-ruff check charts && pytest charts/tests/
+ruff check charts crash && pytest charts/tests crash/tests
 ```
 
 or `scripts/dev/check.sh jobs` on the Mac mini. CI runs them in its

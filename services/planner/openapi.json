@@ -20722,6 +20722,495 @@
         "title": "StopFields",
         "type": "object"
       },
+      "StudioDraft": {
+        "description": "A crash draft: the event as reported (local date and time, place),\nthe airplane (N-number, its Mode S code where the registry gave one),\nwhere it stands, and what the identity check found. `track` is \"adsb\",\nor \"none\" for a draft of the place alone; `fatal` None where no source\nsays, which holds publishing as a fatal event does.",
+        "properties": {
+          "aircraft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aircraft"
+          },
+          "captions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudioDraftCaptions"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "fatal": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fatal"
+          },
+          "hex": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hex"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "identity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudioDraftIdentity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "identity_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identity By"
+          },
+          "kit_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kit At"
+          },
+          "lat": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lat"
+          },
+          "local_date": {
+            "title": "Local Date",
+            "type": "string"
+          },
+          "local_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Local Time"
+          },
+          "lon": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lon"
+          },
+          "n_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Number"
+          },
+          "noticed_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Noticed At"
+          },
+          "rendered_at": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rendered At"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/StudioDraftSource"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "state": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "State"
+          },
+          "status": {
+            "enum": [
+              "needs_identity",
+              "ready",
+              "rendered",
+              "dismissed"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "track": {
+            "anyOf": [
+              {
+                "enum": [
+                  "adsb",
+                  "none"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "local_date",
+          "sources"
+        ],
+        "title": "StudioDraft",
+        "type": "object"
+      },
+      "StudioDraftCaptions": {
+        "description": "The film's words, facts only: a title, \"Preliminary ...\", \"No ADS-B\ntrack\" where there is none, the sources' words quoted, the credits.",
+        "properties": {
+          "credits": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Credits",
+            "type": "array"
+          },
+          "quotes": {
+            "items": {
+              "$ref": "#/components/schemas/StudioDraftQuote"
+            },
+            "title": "Quotes",
+            "type": "array"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "track": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Track"
+          }
+        },
+        "required": [
+          "title",
+          "status",
+          "quotes",
+          "credits"
+        ],
+        "title": "StudioDraftCaptions",
+        "type": "object"
+      },
+      "StudioDraftCheck": {
+        "description": "One of the identity check's checks (the engine's occurrence_identity).",
+        "properties": {
+          "check": {
+            "title": "Check",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "check",
+          "ok",
+          "words"
+        ],
+        "title": "StudioDraftCheck",
+        "type": "object"
+      },
+      "StudioDraftIdentity": {
+        "description": "The engine's verdict on the draft's identity, each check made, the\nwindow it read the track in and the report nearest the place.",
+        "properties": {
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/StudioDraftCheck"
+            },
+            "title": "Checks",
+            "type": "array"
+          },
+          "nearest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudioDraftNearest"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "verdict": {
+            "enum": [
+              "confirmed",
+              "no_track",
+              "needs_human"
+            ],
+            "title": "Verdict",
+            "type": "string"
+          },
+          "window": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudioDraftWindow"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "verdict",
+          "checks"
+        ],
+        "title": "StudioDraftIdentity",
+        "type": "object"
+      },
+      "StudioDraftIdentityAsk": {
+        "description": "The developer's word on a draft's identity: right (`confirm`), or\nnot; with an N-number where the report gave none, which the job then\nchecks against the registry and the track as it checks its own.",
+        "properties": {
+          "confirm": {
+            "title": "Confirm",
+            "type": "boolean"
+          },
+          "n_number": {
+            "anyOf": [
+              {
+                "pattern": "^[Nn]?[1-9][0-9A-Za-z]{0,4}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "N Number"
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "title": "StudioDraftIdentityAsk",
+        "type": "object"
+      },
+      "StudioDraftNearest": {
+        "description": "The track's report in the window nearest the reported place.",
+        "properties": {
+          "distance_nm": {
+            "title": "Distance Nm",
+            "type": "number"
+          },
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          },
+          "t": {
+            "title": "T",
+            "type": "number"
+          }
+        },
+        "required": [
+          "t",
+          "lat",
+          "lon",
+          "distance_nm"
+        ],
+        "title": "StudioDraftNearest",
+        "type": "object"
+      },
+      "StudioDraftQuote": {
+        "properties": {
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "words": {
+            "title": "Words",
+            "type": "string"
+          }
+        },
+        "required": [
+          "words"
+        ],
+        "title": "StudioDraftQuote",
+        "type": "object"
+      },
+      "StudioDraftSource": {
+        "description": "One source's word of the event, as it gave it: \"faa_statement\",\n\"faa_notice\" or \"ntsb\"; its page (or the notice's file); its heading\nand its words, unchanged, which a caption quotes.",
+        "properties": {
+          "heading": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Heading"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          }
+        },
+        "required": [
+          "source"
+        ],
+        "title": "StudioDraftSource",
+        "type": "object"
+      },
+      "StudioDraftWindow": {
+        "description": "The time window the report gives, s since 1970 (UTC).",
+        "properties": {
+          "end": {
+            "title": "End",
+            "type": "number"
+          },
+          "start": {
+            "title": "Start",
+            "type": "number"
+          }
+        },
+        "required": [
+          "start",
+          "end"
+        ],
+        "title": "StudioDraftWindow",
+        "type": "object"
+      },
       "StudioGround": {
         "description": "The ground's height under each point asked, ft MSL, in order: the\nelevation tiles (USGS 3DEP and SRTM, wingtip.elevation).",
         "properties": {
@@ -29898,6 +30387,322 @@
         "summary": "Stops Near",
         "x-gateway": {
           "access": "public"
+        }
+      }
+    },
+    "/api/studio/drafts": {
+      "get": {
+        "description": "Every crash draft, the newest event first.",
+        "operationId": "studio_drafts_api_studio_drafts_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StudioDraft"
+                  },
+                  "title": "Response Studio Drafts Api Studio Drafts Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Studio Drafts",
+        "x-gateway": {
+          "access": "developer"
+        }
+      }
+    },
+    "/api/studio/drafts-to-notice": {
+      "get": {
+        "description": "The ready drafts with a kit the developer has not been mailed about.",
+        "operationId": "studio_drafts_to_notice_api_studio_drafts_to_notice_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/StudioDraft"
+                  },
+                  "title": "Response Studio Drafts To Notice Api Studio Drafts To Notice Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Studio Drafts To Notice",
+        "x-internal": "gateway"
+      }
+    },
+    "/api/studio/drafts/{draft_id}": {
+      "get": {
+        "description": "One draft, with its kit's captions where the kit is made.",
+        "operationId": "studio_draft_api_studio_drafts__draft_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Studio Draft",
+        "x-gateway": {
+          "access": "developer"
+        }
+      }
+    },
+    "/api/studio/drafts/{draft_id}/dismiss": {
+      "post": {
+        "description": "Set the draft aside: no film, no mail.",
+        "operationId": "studio_draft_dismiss_api_studio_drafts__draft_id__dismiss_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Studio Draft Dismiss",
+        "x-gateway": {
+          "access": "developer"
+        }
+      }
+    },
+    "/api/studio/drafts/{draft_id}/identity": {
+      "post": {
+        "description": "The developer's word: the identity is right (ready; with a new\nN-number, checked again by the job first), or it is not (the match\nforgotten, waiting for a person).",
+        "operationId": "studio_draft_identity_api_studio_drafts__draft_id__identity_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StudioDraftIdentityAsk"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Studio Draft Identity",
+        "x-gateway": {
+          "access": "developer"
+        }
+      }
+    },
+    "/api/studio/drafts/{draft_id}/noticed": {
+      "post": {
+        "description": "The developer mailed about the draft: not again.",
+        "operationId": "studio_draft_noticed_api_studio_drafts__draft_id__noticed_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Studio Draft Noticed",
+        "x-internal": "gateway"
+      }
+    },
+    "/api/studio/drafts/{draft_id}/rendered": {
+      "post": {
+        "description": "The Studio's film of a ready draft made (scripts/dev/studio-render.mjs,\nthrough the page). Publishing stays a person's.",
+        "operationId": "studio_draft_rendered_api_studio_drafts__draft_id__rendered_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioDraft"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Studio Draft Rendered",
+        "x-gateway": {
+          "access": "developer"
+        }
+      }
+    },
+    "/api/studio/drafts/{draft_id}/track": {
+      "get": {
+        "description": "The ADS-B track the draft's identity was confirmed on, as its kit\nkeeps it: a same-day trace, kept before it rolled off. A 404 for a\ndraft with none (\"No ADS-B track\"): never a guessed path.",
+        "operationId": "studio_draft_track_api_studio_drafts__draft_id__track_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "draft_id",
+            "required": true,
+            "schema": {
+              "title": "Draft Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StudioTrack"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Studio Draft Track",
+        "x-gateway": {
+          "access": "developer"
         }
       }
     },

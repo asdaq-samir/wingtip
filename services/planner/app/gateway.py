@@ -84,3 +84,6 @@ DEVELOPER = gateway("developer")
 #: phone reaches it; ``x-internal`` says who does, for a reader of the
 #: document.
 INTERNAL_ASSISTANT = {"x-internal": "assistant"}
+#: Asked by the gateway alone (its CrashDraftMail, the Studio's crash
+#: drafts' mail), on the stack's own network, never forwarded.
+INTERNAL_GATEWAY = {"x-internal": "gateway"}

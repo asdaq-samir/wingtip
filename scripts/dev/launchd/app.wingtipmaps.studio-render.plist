@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The Studio's crash films (scripts/dev/studio-render.mjs) every half hour,
+  as the owner's own user, on the Mac's GPU: each ready crash draft filmed
+  and saved. A template, not installed by any script:
+  docs/STUDIO-PIPELINE.md, "Installing the render agent", fills in
+  __NODE__ (mise's node), __REPO__ (a checkout that stays: the live one,
+  ~/Developer/wingtip-live, not a worktree removed on merge) and __HOME__,
+  and bootstraps it with launchctl. A Mac asleep at the half hour runs it at
+  the next wake.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>app.wingtipmaps.studio-render</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>__NODE__</string>
+    <string>__REPO__/scripts/dev/studio-render.mjs</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>__REPO__</string>
+  <key>StartInterval</key>
+  <integer>1800</integer>
+  <key>StandardOutPath</key>
+  <string>__HOME__/Library/Logs/wingtip-studio-render.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/Library/Logs/wingtip-studio-render.log</string>
+  <key>ProcessType</key>
+  <string>Interactive</string>
+</dict>
+</plist>

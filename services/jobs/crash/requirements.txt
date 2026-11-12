@@ -1,0 +1,4 @@
+# The crash-leads job's list: wingtip's own, then what reads the FAA's
+# statements page. Pinned as wingtip's are; moved on in each wave's end pass.
+-r ../../planner/requirements-wingtip.txt
+beautifulsoup4==4.15.0   # crash.statements: the FAA's statements page (MIT; pure Python, over the standard html.parser)

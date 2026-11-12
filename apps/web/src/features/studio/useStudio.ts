@@ -7,6 +7,7 @@ import { clearPastFlight } from "../../lib/replay/clock";
 import { loadReplay, readyTrack, setReplayCamera, type ReplayTrack } from "../replay";
 import { importTrackFile } from "./importTrack";
 import { studioGroundQuery, studioTrackQuery, studioWatchedQuery, type StudioTrack } from "./studioApi";
+import { useDrafts } from "./useDrafts";
 
 /** The ground asked for at most this many points along a track. */
 const GROUND_POINTS = 200;
@@ -43,6 +44,7 @@ export function useStudio() {
   const day = params.get("day") ?? "";
   const asked = useQuery(studioTrackQuery(q, day));
   const watched = useQuery(studioWatchedQuery);
+  const drafts = useDrafts();
   const [file, setFile] = useState<{ track: ReplayTrack | null; problem: string | null } | null>(null);
 
   const fromDay = useMemo(() => (asked.data ? dayTrack(asked.data) : null), [asked.data]);
@@ -91,6 +93,8 @@ export function useStudio() {
     problem,
     loading: asked.isFetching,
     watched: watched.data ?? [],
+    /** The crash drafts (useDrafts), the one open among them. */
+    drafts,
     /** An airplane's day, by N-number or ICAO address. */
     load: (tail: string, utcDay: string) => {
       setFile(null);
