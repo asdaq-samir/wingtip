@@ -16,11 +16,20 @@ import { useCloseImagery } from "../useCloseImagery";
  * chart, the region's level under it and the terminal sheet over it while
  * pinned, made again as the base, the pin or the cycle changes; dimmed at
  * night and brightened in sunlight (glStyle's chartPaint). Close in,
- * past the base chart's own last zoom, the chart fades into the satellite
- * imagery under it where there is a Google key (closeZoom), and the map
- * goes in to CLOSE_MAX_ZOOM; with none, to two levels past the chart.
+ * past the base chart's own last zoom, the chart fades into the aerial
+ * imagery under it (closeZoom, useCloseImagery: the USGS's, or Google's
+ * at the pilot's pick, never for export, `publicOnly`), and the map goes
+ * in to CLOSE_MAX_ZOOM; where there is none, to two levels past the chart.
  */
-export function ChartGl({ course, previewing = false }: { course: Course | null; previewing?: boolean }) {
+export function ChartGl({
+  course,
+  previewing = false,
+  publicOnly = false,
+}: {
+  course: Course | null;
+  previewing?: boolean;
+  publicOnly?: boolean;
+}) {
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const chart = course ?? chartOnly ?? null;
   const base = usePreferences((s) => s.base);
@@ -51,7 +60,7 @@ export function ChartGl({ course, previewing = false }: { course: Course | null;
   );
   const night = dark && chartNight === "dimmed";
   const tileMax = spec?.sources.chart?.maxzoom ?? null;
-  const imagery = useCloseImagery(tileMax);
+  const imagery = useCloseImagery(tileMax, publicOnly);
   // Which charts are drawn and how, on the map's element, for the browser
   // tests: each part's kind (its tiles' path) and the paint's look.
   const { map } = useGlMap();
@@ -71,8 +80,8 @@ export function ChartGl({ course, previewing = false }: { course: Course | null;
       ))}
       {imagery && tileMax != null && spec && (
         <CloseImageryGl
-          key={`${imagery}:${tileMax}`}
-          url={imagery}
+          key={`${imagery.url}:${tileMax}`}
+          tiles={imagery}
           tileMaxZoom={tileMax}
           night={night}
           under={spec.sources["chart-under"] ? "chart-under" : "chart"}

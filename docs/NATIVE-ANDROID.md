@@ -241,6 +241,10 @@ and `glOverlays.ts`):
   enlarged. The key is a browser key; for the phone it must also allow
   this app (an Android restriction by package and signing certificate,
   which `CloseMap.signer` sends as `X-Android-Package` and `X-Android-Cert`).
+  The web no longer draws Google close in by default: past the chart's
+  own detail it fades into the USGS's public-domain aerial imagery, with
+  Google only where the Google overlay is picked (docs/GOOGLE-MAPS.md).
+  The phone has not followed yet; it is to use the same USGS tiles.
 - **Traffic** is drawn as on the web (`TrafficDrawing`, the traffic
   layers in the first style): the chevron turned to its track, amber
   where the engine's `traffic_marks` says it is near and cyan otherwise,

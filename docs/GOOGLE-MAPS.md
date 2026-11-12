@@ -30,12 +30,28 @@ How the Google overlay works:
 
 Close in, past the FAA chart's own detail (the sectional's last zoom,
 MapLibre's 11; a TAC's 12; IFR low's 10), the chart fades out over one
-level into Google's satellite imagery under it, without Google's roads
-and names, and the map goes in to MapLibre's 17 (`closeZoom.ts`,
-`CloseImageryGl`). It needs no choice of overlay, and its session and
-tiles are asked for only a level short of the fade. With no key the
-chart stays, enlarged two levels past its own, as before. Its credit is
-the same "Google Maps" and copyright as the overlay's.
+level into aerial imagery under it, and the map goes in to MapLibre's 17
+(`closeZoom.ts`, `useCloseImagery.ts`, `CloseImageryGl`). By default that
+imagery is the USGS's (The National Map's `USGSImageryOnly` tile cache,
+NAIP over the lower 48, partners' imagery over Alaska, Hawaii, Puerto
+Rico and the territories): a public-domain work, so it costs nothing,
+needs no key and may go into Studio's exported videos. Its tiles end at
+{z} 16 (about 2 m a pixel at 40 degrees north) and MapLibre enlarges
+them past it, so at 16 and 17 it is softer than Google's; its photographs
+are a few years old (the service says NAIP 2017 to 2021). Its credit,
+"Imagery USGS The National Map", is in Status, as the overlay's is.
+Where the USGS has none under the middle of the view (Canada beyond the
+border, the Bahamas, the sea) or cannot be reached (offline), the chart
+stays, enlarged two levels past its own, as before.
+
+Google's satellite imagery, without Google's roads and names, is the one
+close in only where the pilot has picked the Google overlay (and the
+deployment has a key): then its session and tiles are asked for only a
+level short of the fade, and its credit is the same "Google Maps" and
+copyright as the overlay's. Google's terms forbid exporting its content
+outside the service, so Studio's map never draws it (`ChartGl`'s
+`publicOnly`) and an export asks `imageryForExport()` (`closeZoom.ts`)
+whether what is drawn may go out.
 
 ## What only the owner can do
 

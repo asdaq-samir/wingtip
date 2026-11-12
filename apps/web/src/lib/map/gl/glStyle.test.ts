@@ -18,7 +18,7 @@ import {
   selectedLegFilter,
   specialUseLayers,
 } from "./glStyle";
-import { CLOSE_MAX_ZOOM, chartFade, imageryFade, imageryFrom } from "./closeZoom";
+import { CLOSE_MAX_ZOOM, chartFade, imageryFade, imageryForExport, imageryFrom, useCloseImageryDrawn } from "./closeZoom";
 
 const chart = {
   chart_cycle: "10-29-2026",
@@ -63,6 +63,16 @@ describe("chartStyle", () => {
     expect(chartFade(13)).toEqual(["interpolate", ["linear"], ["zoom"], 12, 1, 13, 0]);
     expect(chartFade(11)).toEqual(["interpolate", ["linear"], ["zoom"], 10, 1, 11, 0]);
     expect(CLOSE_MAX_ZOOM).toBe(17);
+  });
+
+  it("lets the USGS's public-domain imagery, or none, go out in an export, and never Google's", () => {
+    useCloseImageryDrawn.setState({ drawn: null });
+    expect(imageryForExport()).toBe(true);
+    useCloseImageryDrawn.setState({ drawn: "usgs" });
+    expect(imageryForExport()).toBe(true);
+    useCloseImageryDrawn.setState({ drawn: "google" });
+    expect(imageryForExport()).toBe(false);
+    useCloseImageryDrawn.setState({ drawn: null });
   });
 
   it("puts the terminal sheet over the chart only while pinned", () => {
