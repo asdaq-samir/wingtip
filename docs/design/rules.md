@@ -260,10 +260,11 @@ and the one search is still the only field.
 2. **FPL** (the second page): the route's row (its pills, Routes, Brief,
    •••), the airplane and the altitude, the route in order, and the
    route's figures pinned at the foot, which are FPL's alone; the Brief,
-   the Nav Log, the Profile and the Stops are cards over it. With no route, "Plan a flight" (the
-   platform's empty view) with Search, which goes to the first page with
-   the field focused, and Open Sample Flight. FPL has no field of its
-   own: adding a stop asks the one search.
+   the Nav Log, the Profile and the Stops are cards over it. With no route, the route's row stands
+   empty, with a Close that goes back to the card or Search it came from
+   (the owner, 2026-11-11: "We don't need plan a flight either with two
+   buttons"); the first time, the first-flight card asks where to.
+   FPL has no field of its own: adding a stop asks the one search.
 
 - **A sideways swipe on the sheet moves a page**; it never moves the
   sheet up or down, and a drag up or down is still the sheet's (and each
