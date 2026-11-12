@@ -427,6 +427,91 @@ code:
   and `Metrics` subscribes to MetricKit, so launch, hang, battery and
   crash reports come from real phones into the system log.
 
+## 3D and the model weather, the MapKit way (2026-11-12)
+
+The web's 3D (`features/plan/map/terrain`) and its model weather
+(`features/weather-flow`) on the iPhone, built from MapKit's and
+SwiftUI's own parts rather than a copy of the web's WebGL. What MapKit
+can and cannot do here is from Apple's documentation (MKOverlayLevel,
+MKMapConfiguration.ElevationStyle, MKMapCamera, "Displaying overlays on
+a map") and the WWDC22 session "What's new in MapKit" (10035), whose
+transcript states the overlay rules.
+
+**3D** (`Map/MapTerrain.swift`, `Map/ApproachLines.swift`). The Map card
+has Terrain, Flat | 3D, segmented as the web's Map menu has it.
+`RaisedMapView` (the app's MKMapView) does the rest:
+
+- The ground is MapKit's: `MKHybridMapConfiguration(elevationStyle:
+  .realistic)`, Apple's imagery with its terrain and labels, and the map
+  tilts (`isPitchEnabled`, the camera opened at the web's 50 degrees;
+  flat and north up again after). The standard map's realistic style
+  stands up only where Apple has its 3D City Experience and "will
+  automatically fall back to ... a flat elevation" elsewhere (WWDC22),
+  so the imagery is the 3D a pilot gets over the country.
+- The FAA chart is taken off in 3D, with the USGS imagery under it.
+  "When adding an overlay to a map with realistic terrain, MapKit will
+  automatically transition the map to a flat representation" (WWDC22),
+  and the chart is an `MKTileOverlay` drawn flat in map points: it
+  cannot drape over Apple's ground. Apple's imagery is then the map,
+  Apple's data on Apple's map (CloseImagery's note on its terms).
+- Every other overlay is moved to `.aboveRoads`, which "will be shown on
+  top of the terrain" under the labels (WWDC22, MKOverlayLevel), and
+  back to the level it was asked for when the map is flat again; one
+  added while in 3D goes there too. Whether a custom `MKPolyline` at
+  that level lies on the 3D ground or still flattens the map is to be
+  seen on the phone: WWDC22 says ordinary overlays flatten it and only
+  the Directions API's route follows the terrain, while Apple's forums
+  (thread 825523) say `.aboveRoads` overlays drape. Either way the
+  lines are on the ground, never in the air.
+- Lines are draped, not raised: an `MKPolyline`'s points are latitude
+  and longitude, with no altitude, and MapKit has no way to stand a
+  custom line or volume in the air. So the route and the procedures
+  are on the ground; the way in to the destination is the engine's
+  `approach_scene` drawn on the ground (each runway's extended
+  centreline dashed white, the pattern's ring in teal), and its
+  glidepath and the approach at their altitudes, the route's curtain,
+  the obstacles stood up and the sky are not drawn.
+- The airspace stays flat with its tabs, as MapKit cannot raise a
+  custom volume.
+- Traffic stays annotations: MapKit draws an annotation on the ground
+  ("seamlessly displayed at the correct elevation", WWDC22) and has no
+  altitude for one, so each airplane keeps the engine's TCAS tag
+  (`traffic_marks`, "+12" against own ship) as its height.
+
+**Model weather** (`ModelWeather/`). The Map card's Model Weather menu
+(Off and the web's twelve fields) and, where the field has them, its
+Level menu (Surface ... FL300, Max; the engine's `flow_levels`).
+`ModelWeather` reads the planner's `GET /api/weather/flow` every ten
+minutes and each hour's picture at its version; `FlowGrid` reads a PNG's
+channels as the field's `unscale` range (alpha 0 is no value, the wind
+its east and north parts), `FlowPaint` colours it by the field's ramp
+into a Mercator picture, and a custom `MKOverlayRenderer`
+(`ModelWeatherLayer`) draws it just over the chart and under the
+airspace and the route, at the web's strength. The ramps and the
+legend's words come from the engine's `model_weather_bands` and
+`aviation_grid_bands` and the tokens' `color.weather.flow-*`
+(`FlowLooks`, the web's flowLook and aviationLooks). An hour past on the
+precipitation is the radar's mosaic, as on the web. The hour's
+G-AIRMETs are the planner's weather map at its time, dashed in their
+hazard's colour with AWC's short label (`gairmet_hazards`). A tap that
+finds no mark puts the value's badge there (`FlowReading`: the engine's
+`compass_point`, `precip_intensity`, `cape_category`, `icing_severity`,
+`turbulence_category`). The timeline is a glass bar in the banners'
+column: Play (once through, never under Reduce Motion, paused in the
+background), the title, the day and the Zulu hour with how far ahead,
+1h | 12h on the precipitation, and a stock `Slider` with the first and
+last hours as its labels; under it the legend card: Close, the field's
+and the level's menus, the ramp with its ticks and "AWC winds, 12Z".
+
+Where it differs from the web: no streaks (the owner took the fields
+and the AIRMETs without them, 2026-11-12), so no world wind beyond
+AWC's box either; no hatch outside the box; no temperature pills at
+the pilot's position and favourites; the precipitation's badge has no
+sun, moon or cloud glyph; the legend and the timeline sit together at
+the top, as the iPhone's sheet covers the foot. The web's Shaded
+terrain is not offered, as MapKit draws no hillshade of the app's
+own elevation tiles.
+
 ## Downloads: the chart with no signal
 
 Setup → Chart → Downloads (`Wingtip/Offline/`) keeps a region's chart on

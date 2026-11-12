@@ -58,6 +58,8 @@ struct ChartMap: UIViewRepresentable {
     /// Setup's Military fields and Private fields.
     @AppStorage(MapExtrasInput.Keys.military) var militaryFields = false
     @AppStorage(MapExtrasInput.Keys.privateFields) var privateFields = false
+    /// The Map card's Terrain: flat, or MapKit's 3D (RaisedMapView).
+    @AppStorage(MapTerrain.key) var terrain = MapTerrain.flat.rawValue
     /// Settings' Airport Weather, and the plan's part of the marks: the ↓
     /// fields and the airplane's crosswind (FieldWeatherState).
     var airportWeather = AirportWeatherSetting()
@@ -78,24 +80,18 @@ struct ChartMap: UIViewRepresentable {
     static let revealCap: Duration = .milliseconds(2500)
 
     func makeUIView(context: Context) -> MKMapView {
-        let map = MKMapView()
+        // Apple's muted map under the chart, flat, or its 3D ground (RaisedMapView, the Terrain).
+        let map = RaisedMapView()
         map.delegate = context.coordinator
         map.showsUserLocation = true
         map.showsCompass = true
         map.showsScale = true
         map.pointOfInterestFilter = .excludingAll
-        map.isPitchEnabled = false
         map.register(AirportMarkView.self, forAnnotationViewWithReuseIdentifier: AirportMarkView.reuse)
         map.register(CheckpointMarkView.self, forAnnotationViewWithReuseIdentifier: CheckpointMarkView.reuse)
         map.register(TrafficMarkView.self, forAnnotationViewWithReuseIdentifier: TrafficMarkView.reuse)
         context.coordinator.extras.attach(to: map)
         context.coordinator.overlays.attach(to: map)
-        // Apple's map is under the chart and the USGS imagery (CloseImagery), and shows close
-        // in only where the USGS has none: muted, with no points of interest or traffic.
-        let config = MKStandardMapConfiguration(elevationStyle: .flat, emphasisStyle: .muted)
-        config.pointOfInterestFilter = .excludingAll
-        config.showsTraffic = false
-        map.preferredConfiguration = config
         // Where the map opens is set once it has its size and the sheet's
         // (Coordinator.open); the map shows at the cap at the latest.
         let coordinator = context.coordinator
@@ -221,6 +217,7 @@ struct ChartMap: UIViewRepresentable {
             }
         }
         context.coordinator.legLayer.update(map, routeLegs, night: shade > 0, below: context.coordinator.courseEdge)
+        (map as? RaisedMapView)?.use(MapTerrain(rawValue: terrain) ?? .flat, field: course?.destination.ident)
     }
 
     /// Whether two paths are the same points, to the metre: a procedure's
