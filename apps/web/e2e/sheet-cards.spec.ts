@@ -251,3 +251,70 @@ test("a card opened over a higher one leaves the map's buttons with the higher",
   await expect(placeDrawer.locator("[data-map-controls]")).toHaveCount(1);
   await expect(controls).toHaveCSS("opacity", "1");
 });
+
+// The owner's iPhone, 2026-11-12: "Why are all the cards jumping like
+// this?" A card opened from the chart (TFR 6/2478 over San Angelo) came in
+// near the top and dropped to half, or arrived at half and shifted again;
+// the map panned at each change and again as it closed; and the map's
+// buttons sat over the card's lines. A card's drawer mounted already open,
+// which Base UI draws where it rests from its first frame, all the way up
+// before it has measured itself (CardStack). Now it rises once from the
+// screen's foot to half and stays there, the chart still under it, the
+// buttons out of the way until it is up and then over its top.
+test("a card tapped open on the chart rises once to half, the map still and its buttons never over it", async ({ page }) => {
+  test.skip(page.viewportSize()!.width >= 768, "a phone's cards and their heights");
+  await page.goto("/app/plan?dep=C81&dest=KDLH");
+  await settle(page);
+  await settled(sideDrawer(page));
+  const marker = page.locator(".maplibregl-marker", { hasText: /^\d+$/ }).filter({ visible: true }).first();
+  await expect(marker).toBeVisible({ timeout: slow(60000) });
+  await marker.evaluate((el) => el.setAttribute("data-tapped", ""));
+  // Every frame for a second and a half from the tap, as painted: the
+  // card's top, the map's buttons, and where the chart's marks are.
+  const frames = await page.evaluate(
+    () =>
+      new Promise<{ card: number | null; buttons: number | null; shown: boolean; mark: number; other: number | null }[]>((done) => {
+        const out: { card: number | null; buttons: number | null; shown: boolean; mark: number; other: number | null }[] = [];
+        const tapped = document.querySelector<HTMLElement>("[data-tapped]")!;
+        const other = [...document.querySelectorAll<HTMLElement>(".maplibregl-marker")].find((m) => m !== tapped);
+        const start = performance.now();
+        const frame = () => {
+          const card = document.querySelector("[data-sheet-card][data-open]");
+          const buttons = document.querySelector("[data-map-controls]");
+          out.push({
+            card: card ? card.getBoundingClientRect().top : null,
+            buttons: buttons ? buttons.getBoundingClientRect().bottom : null,
+            shown: !!buttons && getComputedStyle(buttons).opacity !== "0",
+            mark: tapped.getBoundingClientRect().top,
+            other: other ? other.getBoundingClientRect().top : null,
+          });
+          if (performance.now() - start < 1500) requestAnimationFrame(frame);
+          else done(out);
+        };
+        tapped.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+        requestAnimationFrame(frame);
+      }),
+  );
+  const card = sideDrawer(page).locator("[data-sheet-card][data-open]");
+  await expect(card).toHaveAttribute("data-panel", "half");
+  const tops = frames.map((f) => f.card).filter((top): top is number => top !== null);
+  const rest = tops[tops.length - 1]!;
+  // It never shows higher than where it rests, and only ever rises.
+  expect(Math.min(...tops)).toBeGreaterThanOrEqual(rest - 1);
+  tops.slice(1).forEach((top, i) => expect(top).toBeLessThanOrEqual(tops[i]! + 1));
+  // The buttons, wherever they are in sight, are over the card's top.
+  for (const f of frames) if (f.shown && f.card !== null && f.buttons !== null) expect(f.buttons).toBeLessThanOrEqual(f.card + 1);
+  // The chart moves at most once, one way, and only to bring the
+  // checkpoint out from under the card; the mark tapped ends in sight.
+  const marks = frames.map((f) => f.other).filter((y): y is number => y !== null);
+  const steps = marks.slice(1).map((y, i) => Math.sign(Math.round(y - marks[i]!)));
+  expect(new Set(steps.filter((s) => s !== 0)).size).toBeLessThanOrEqual(1);
+  expect(frames[frames.length - 1]!.mark).toBeLessThan(rest);
+
+  // Put away, the chart stays where it is.
+  const before = await marker.evaluate((el) => el.getBoundingClientRect().top);
+  await closeCard(page, "sheet-card-close");
+  await expect(card).toHaveCount(0);
+  await settled(sideDrawer(page));
+  expect(await marker.evaluate((el) => el.getBoundingClientRect().top)).toBeCloseTo(before, 0);
+});

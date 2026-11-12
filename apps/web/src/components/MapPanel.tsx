@@ -16,7 +16,7 @@ import { CUT_TOP, FOLLOW, SHEET_BELOW, SheetParts, type PartsProps } from "./she
 import { SheetGrabber } from "./sheet/SheetGrabber";
 import { CardStack, type StackProps } from "./sheet/CardStack";
 import { SheetDrawer } from "./sheet/SheetDrawer";
-import { useRidingCard } from "./sheet/sheetTopSlot";
+import { useCardMoving, useRidingCard } from "./sheet/sheetTopSlot";
 import type { SheetPages } from "./sheet/SheetPager";
 
 interface Props {
@@ -138,11 +138,11 @@ export default function MapPanel(props: Props) {
   // The room the sheet in sight (the top card, else the sheet) leaves the
   // map, read from the Drawer as its snap point is set: the map eases with
   // the sheet (GlMapShell, in the Drawer's time).
-  const cover = useSheetCover(sheetNode, front, onPhone, fromBottom);
+  const { cover, card: coverIsCard } = useSheetCover(sheetNode, front, onPhone, fromBottom);
   const tellInsets = props.onInsetsChange;
   const insetsNow = useMemo(
-    () => insetsOf(front, cover, onPhone, fromBottom, safe.top, desktop),
-    [front, cover, onPhone, fromBottom, safe.top, desktop],
+    () => ({ ...insetsOf(front, cover, onPhone, fromBottom, safe.top, desktop), card: cardsUp || coverIsCard }),
+    [front, cover, onPhone, fromBottom, safe.top, desktop, cardsUp, coverIsCard],
   );
   useEffect(() => tellInsets(insetsNow), [insetsNow, tellInsets]);
 
@@ -164,6 +164,13 @@ export default function MapPanel(props: Props) {
       delete document.body.dataset.mapPanel;
     };
   }, [front]);
+  // A card still sliding up or down: the map's buttons give way until it
+  // is up and they ride its top (index.css, useCardMoving).
+  const cardMoving = useCardMoving();
+  useLayoutEffect(() => {
+    document.body.toggleAttribute("data-card-moving", cardMoving);
+    return () => document.body.removeAttribute("data-card-moving");
+  }, [cardMoving]);
   useLayoutEffect(() => {
     document.body.toggleAttribute("data-map-sheet", onPhone);
     return () => document.body.removeAttribute("data-map-sheet");

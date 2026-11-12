@@ -17,6 +17,7 @@ import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
 import { watchMapErrors } from "./mapErrors";
 import { useRouteFit } from "./useRouteFit";
+import { inRoom, keepStill, useTappedInSight } from "./cardRoom";
 import type { Course, OverlayTiles } from "../../lib/api/types";
 import { engineLoaded } from "../../lib/engine/engine";
 import { usePreferences } from "../../lib/preferences";
@@ -260,6 +261,8 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   // Where a point picked is being flown to (flyTo below), for the sheet
   // turning under the flight to aim it again rather than stop it.
   const flying = useRef<{ center: [number, number]; zoom: number } | null>(null);
+  // What a tap opened a card for, brought into sight once the card is up if it hides it.
+  const noteTap = useTappedInSight(map, insetsRef, padOf, flying);
   const { data: chartOnly } = useQuery({ ...chartQuery, enabled: !course });
   const known = !!(course ?? chartOnly);
   // The overlay tiles' name and the overlays' pictures, for the map's
@@ -415,6 +418,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
           { layers },
         )[0];
         if (hit) {
+          noteTap(e.lngLat);
           t.onTap(hit, e);
           return;
         }
@@ -427,7 +431,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
     return () => {
       map.off("click", tap);
     };
-  }, [map, registry]);
+  }, [map, registry, noteTap]);
   const api = useMemo<GlMapApi | null>(
     () => (map ? { map, addTap, addMiss, openCard: setCard, overlays } : null),
     [map, addTap, addMiss, overlays],
@@ -464,6 +468,13 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
       const aim = flying.current;
       if (aim && map.isMoving()) {
         map.flyTo({ ...aim, padding: padOf(to), duration: DRAWER_MS });
+        return;
+      }
+      // A card come or gone: its room is the map's from now on, the chart
+      // kept where it is under it (cardRoom), what was tapped brought into
+      // sight once the card is up if it hides it (useTappedInSight).
+      if (to.card || was.card) {
+        keepStill(map, padOf(to));
         return;
       }
       // Half way to all the way up and back the map stays put.
@@ -519,9 +530,17 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   useEffect(() => {
     flyTo(focus, focusZoom);
   }, [flyTo, focus, focusZoom]);
+  // A field tapped on the chart is in sight already: not flown to, only
+  // brought into the card's room once its card is up, if the card hides it
+  // (useTappedInSight). One picked elsewhere -- the search, a list, a link
+  // -- is flown to.
   useEffect(() => {
+    if (map && place && map.getZoom() >= glZoom(PLACE_ZOOM) && inRoom(map, [place.lon, place.lat], padOf(insetsRef.current))) {
+      noteTap([place.lon, place.lat]);
+      return;
+    }
     flyTo(place, PLACE_ZOOM);
-  }, [flyTo, place]);
+  }, [map, flyTo, place, noteTap]);
 
   return (
     <div className="relative h-full w-full">

@@ -35,6 +35,10 @@ export interface MapInsets {
    *  down. Coming down to the pill is a change the map follows too, the
    *  pill's own height measured as it comes. */
   up: boolean;
+  /** A card in front (CardStack): its coming and going leaves the chart
+   *  where it is (GlMapShell, cardRoom), where the sheet's own size moves
+   *  the map with it. */
+  card?: boolean;
 }
 export const NO_INSETS: MapInsets = { top: 0, bottom: 0, left: 0, out: false, up: false };
 export const MapInsetsContext = createContext<MapInsets>(NO_INSETS);

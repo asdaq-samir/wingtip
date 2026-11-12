@@ -31,6 +31,20 @@ export function useRidingCard(): string | null {
   return useSheetCards((s) => coverCard(s.stack, (entry) => up.includes(entry.id))?.id ?? null);
 }
 
+/**
+ * Whether a card is still sliding: shown and not yet up, or put away and
+ * not yet down. The map's buttons ride a card only once it is up, and
+ * until then they stayed on the sheet's top, where the card coming up
+ * slid under them and they were drawn over its content (the owner's
+ * iPhone, 2026-11-12: the radio and the map's buttons over the TFR card's
+ * lines); so while one slides they give way (index.css), and come back on
+ * its top as it settles.
+ */
+export function useCardMoving(): boolean {
+  const up = useSheetTop((s) => s.up);
+  return useSheetCards((s) => s.stack.some((entry) => entry.shown !== up.includes(entry.id)));
+}
+
 /** The one container the riding buttons are drawn in, moved from slot to
  *  slot. A portal into a new container is a new subtree to React: when a
  *  card opened and the buttons moved to its top, the map's buttons were

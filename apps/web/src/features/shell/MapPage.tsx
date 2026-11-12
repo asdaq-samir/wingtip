@@ -164,7 +164,12 @@ export default function MapPage({ mode }: { mode: Mode }) {
   const [insets, setInsets] = useState<MapInsets>(NO_INSETS);
   const changeInsets = useCallback((next: MapInsets) => {
     setInsets((prev) =>
-      prev.top === next.top && prev.bottom === next.bottom && prev.left === next.left && prev.out === next.out && prev.up === next.up
+      prev.top === next.top &&
+      prev.bottom === next.bottom &&
+      prev.left === next.left &&
+      prev.out === next.out &&
+      prev.up === next.up &&
+      prev.card === next.card
         ? prev
         : next,
     );
