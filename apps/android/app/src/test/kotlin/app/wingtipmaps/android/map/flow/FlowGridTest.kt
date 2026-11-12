@@ -47,7 +47,7 @@ class FlowGridTest {
 
     @Test
     fun aPointIsAskedOfTheEngineAsTheFixtureAsksIt() {
-        val read = EngineContract.FlowSampleAnswer(42.0, null)
+        val read = EngineContract.FlowSampleAnswer(42.0, null, false)
         for (case in fixture.getValue("cells").jsonArray.map { it.jsonObject }) {
             val want = json.decodeFromJsonElement<EngineContract.FlowCellInput>(case.getValue("input"))
             val cell = json.decodeFromJsonElement<EngineContract.FlowCellAnswer?>(case.getValue("answer"))
