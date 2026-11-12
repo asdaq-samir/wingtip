@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, searchAirports, settle, settled, sideDrawer, frontSheet, slow } from "./helpers";
+import { grabberTo, settle, settled, sideDrawer, frontSheet, slow } from "./helpers";
+import { bar, expectPage, expectShown, openAirport, pager } from "./sheetPages";
 
 /**
  * The sheet's two pages, Search and FPL (the owner, 2026-11-11;
@@ -10,11 +11,6 @@ import { grabberTo, searchAirports, settle, settled, sideDrawer, frontSheet, slo
  * route made goes to FPL, and a drag up or down still sizes the sheet on
  * either page.
  */
-
-const pager = (page: Page) => sideDrawer(page).getByTestId("sheet-pager");
-/** A page's bar of the split grabber (SheetGrabber), outside the sheet's
- *  scroller: the Drawer's popup holds it. */
-const bar = (page: Page, at: 0 | 1) => page.locator(`[data-page-bar="${at}"]`);
 
 /** A finger's sideways swipe across the pager, at its middle, by a mouse
  *  (Embla takes a mouse's drag as it takes a touch's). */
@@ -27,38 +23,6 @@ async function swipe(page: Page, way: "left" | "right") {
   await page.mouse.down();
   await page.mouse.move(to, y, { steps: 12 });
   await page.mouse.up();
-}
-
-/** The page `at` is the one in sight and live: its slide where the pager
- *  is, and its body not inert -- the app's page and Embla's in step (the
- *  sheet audit, 2026-11-12: a card's coming and going built Embla again on
- *  its first page, the page in sight inert and nothing on it tappable). */
-async function expectShown(page: Page, at: 0 | 1) {
-  await expectPage(page, at);
-  const slide = pager(page).locator(`[data-sheet-page="${at}"]`);
-  await expect(async () => {
-    const [box, of] = [(await slide.boundingBox())!, (await pager(page).boundingBox())!];
-    expect(Math.abs(box.x - of.x), "the page up is the page in sight").toBeLessThan(2);
-  }).toPass();
-  await expect(slide.locator("[data-panel-body]")).not.toHaveAttribute("inert");
-}
-
-/** An airport typed into the one search and its card opened. */
-async function openAirport(page: Page, ident: string) {
-  const search = page.getByTestId("search-airports");
-  await search.click();
-  await search.fill(ident);
-  await searchAirports(page)
-    .filter({ hasText: ident })
-    .first()
-    .click({ timeout: slow(10_000) });
-  await expect(sideDrawer(page).getByTestId("place-card").getByTestId("place-name")).toHaveText(ident, { timeout: slow(10_000) });
-}
-
-async function expectPage(page: Page, at: 0 | 1) {
-  await expect(pager(page)).toHaveAttribute("data-page", String(at));
-  await expect(bar(page, at)).toHaveAttribute("aria-selected", "true");
-  await expect(bar(page, at === 0 ? 1 : 0)).toHaveAttribute("aria-selected", "false");
 }
 
 test("Search to FPL and back, by a swipe and by the grabber's bars, the sheet's size kept", { tag: "@smoke" }, async ({ page }) => {

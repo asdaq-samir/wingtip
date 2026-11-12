@@ -40,6 +40,15 @@ describe("the place under the one search", () => {
     expect(hook.result.current.view).toBe("plan");
   });
 
+  it("goes back to the plan when the same route is asked for again (Fly Here, Plan Again)", () => {
+    const hook = setUp("dep=KMSN&dest=KOSH", true);
+    hook.rerender({ route: "KMSN||KOSH|1" });
+    act(() => hook.result.current.pickView("search"));
+    expect(hook.result.current.view).toBe("search");
+    hook.rerender({ route: "KMSN||KOSH|2" });
+    expect(hook.result.current.view).toBe("plan");
+  });
+
   it("opens the traffic in the address, and keeps a card for the place it was open over", () => {
     const hook = setUp("dep=KMSN&dest=KOSH&place=KOSH", true);
     act(() => hook.result.current.pickView("traffic"));
