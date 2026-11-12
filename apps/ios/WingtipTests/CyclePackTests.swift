@@ -18,7 +18,7 @@ private func resource(_ name: String, _ ext: String) throws -> Data {
 
 struct CyclePackTests {
     @Test func theRealTapsAreThePlannersAnswer() throws {
-        let expected = try Planner.snakeCase.decode([String: AirspaceAt].self, from: try resource("chicago_airspace_at", "json"))
+        let expected = try Planner.json.decode([String: AirspaceAt].self, from: try resource("chicago_airspace_at", "json"))
         #expect(expected.count >= 5)
         for (name, want) in expected {
             let pack = try resource(Engine.region(lat: want.lat, lon: want.lon), "pack")

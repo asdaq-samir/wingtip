@@ -104,7 +104,7 @@ struct OnDeviceRouteTests {
     // MARK: The Brief's glance
 
     static func answer() throws -> GoNoGoAnswer {
-        try Planner.snakeCase.decode(GoNoGoAnswer.self, from: Data(GoNoGoTests.answer.utf8))
+        try Planner.json.decode(GoNoGoAnswer.self, from: Data(GoNoGoTests.answer.utf8))
     }
 
     struct FakeGlance: BriefGlanceModel {

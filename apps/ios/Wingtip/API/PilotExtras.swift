@@ -5,7 +5,7 @@ import SwiftUI
 // their airplanes with squawks, inspections and VOR checks,
 // the logbook written to, the account's contact and its deletion, and the
 // instructor's side of training. Each model is the gateway's, generated
-// from services/gateway/openapi.json (Generated/GatewayModels.swift, the
+// from services/gateway/openapi.json (WingtipAPI/GatewayAPI, the
 // GW prefix) in its own camelCase names; dates are the "2026-10-25"
 // strings it sends. Every rule (61.57's windows, 91.171's limits, 91.409's
 // months) is worked out by the gateway; the app shows its answers.
@@ -15,7 +15,7 @@ import SwiftUI
 /// of its inspections, open squawks and last VOR check.
 typealias OwnAircraftRecord = GWAircraftDto
 
-extension OwnAircraftRecord: Identifiable {}
+extension OwnAircraftRecord: @retroactive Identifiable {}
 
 /// The inspections as the owner records them, with the last day each is
 /// good for as the gateway works it out (InspectionsDto): the annual
@@ -40,7 +40,7 @@ extension InspectionsRequest {
 /// determination covers.
 typealias Squawk = GWSquawkDto
 
-extension Squawk: Identifiable {
+extension Squawk: @retroactive Identifiable {
     var request: SquawkRequest {
         SquawkRequest(deferredFor: deferredFor, fixedOn: fixedOn, fixNote: fixNote, inoperative: inoperative, reportedOn: reportedOn, text: text)
     }
@@ -221,8 +221,8 @@ extension Due {
 typealias EndorsementKind = GWEndorsementKindDto
 typealias EndorsementField = GWEndorsementFieldDto
 
-extension EndorsementKind: Identifiable {
-    var id: String { code }
+extension EndorsementKind: @retroactive Identifiable {
+    public var id: String { code }
 }
 
 /// An endorsement recorded from paper (EndorsementDto): the day it was
@@ -235,8 +235,8 @@ typealias RecordedEndorsement = GWEndorsementDto
 typealias Instructor = GWInstructorDto
 typealias StudentRow = GWStudentDto
 
-extension StudentRow: Identifiable {
-    var id: Int { linkId }
+extension StudentRow: @retroactive Identifiable {
+    public var id: Int { linkId }
 }
 
 typealias InstructorRequest = GWInstructorRequest
@@ -245,81 +245,78 @@ typealias AskReviewRequest = GWAskReviewRequest
 
 extension Gateway {
     // The airplanes.
-    static func aircraftRecords() async throws -> [OwnAircraftRecord] { try await read([OwnAircraftRecord].self, "/api/aircraft") ?? [] }
-    static func addAircraft(_ r: AircraftRequest) async throws -> OwnAircraftRecord { try await send(OwnAircraftRecord.self, "POST", "/api/aircraft", json: r) }
+    static func aircraftRecords() async throws -> [OwnAircraftRecord] { try await read { try await $0.getAircraft().ok.body.json } ?? [] }
+    static func addAircraft(_ r: AircraftRequest) async throws -> OwnAircraftRecord { try await call { try await $0.postAircraft(body: .json(r)).ok.body.json } }
     static func updateAircraft(_ id: Int, _ r: AircraftRequest) async throws -> OwnAircraftRecord {
-        try await send(OwnAircraftRecord.self, "PUT", "/api/aircraft/\(id)", json: r)
+        try await call { try await $0.putAircraftId(path: .init(id: id), body: .json(r)).ok.body.json }
     }
-    static func deleteAircraft(_ id: Int) async throws { try await send("DELETE", "/api/aircraft/\(id)") }
+    static func deleteAircraft(_ id: Int) async throws { _ = try await call { try await $0.deleteAircraftId(path: .init(id: id)) } }
     static func saveInspections(_ id: Int, _ r: InspectionsRequest) async throws -> OwnAircraftRecord {
-        try await send(OwnAircraftRecord.self, "PUT", "/api/aircraft/\(id)/inspections", json: r)
+        try await call { try await $0.inspections(path: .init(id: id), body: .json(r)).ok.body.json }
     }
-    static func squawks(_ id: Int) async throws -> [Squawk] { try await send([Squawk].self, "GET", "/api/aircraft/\(id)/squawks") }
+    static func squawks(_ id: Int) async throws -> [Squawk] { try await call { try await $0.squawks(path: .init(id: id)).ok.body.json } }
     static func addSquawk(_ id: Int, _ r: SquawkRequest) async throws -> Squawk {
-        try await send(Squawk.self, "POST", "/api/aircraft/\(id)/squawks", json: r)
+        try await call { try await $0.addSquawk(path: .init(id: id), body: .json(r)).ok.body.json }
     }
     static func updateSquawk(_ id: Int, _ squawk: Int, _ r: SquawkRequest) async throws -> Squawk {
-        try await send(Squawk.self, "PUT", "/api/aircraft/\(id)/squawks/\(squawk)", json: r)
+        try await call { try await $0.updateSquawk(path: .init(id: id, squawkId: squawk), body: .json(r)).ok.body.json }
     }
-    static func deleteSquawk(_ id: Int, _ squawk: Int) async throws { try await send("DELETE", "/api/aircraft/\(id)/squawks/\(squawk)") }
+    static func deleteSquawk(_ id: Int, _ squawk: Int) async throws { _ = try await call { try await $0.deleteSquawk(path: .init(id: id, squawkId: squawk)) } }
     static func recordVorCheck(_ id: Int, _ r: VorCheckRequest) async throws -> OwnAircraftRecord {
-        try await send(OwnAircraftRecord.self, "PUT", "/api/aircraft/\(id)/vor-check", json: r)
+        try await call { try await $0.vorCheck(path: .init(id: id), body: .json(r)).ok.body.json }
     }
 
     // The logbook.
-    static func addLogbookEntry(_ r: LogbookEntryRequest) async throws { try await send("POST", "/api/logbook", json: r.trimmed) }
-    static func updateLogbookEntry(_ id: Int, _ r: LogbookEntryRequest) async throws { try await send("PUT", "/api/logbook/\(id)", json: r.trimmed) }
-    static func deleteLogbookEntry(_ id: Int) async throws { try await send("DELETE", "/api/logbook/\(id)") }
-    static func setCurrencyDates(_ r: CurrencyDatesRequest) async throws -> Currency { try await send(Currency.self, "PUT", "/api/logbook/currency", json: r) }
-    static func reminders() async throws -> Reminders? { try await read(Reminders.self, "/api/logbook/reminders") }
-    static func setReminders(_ on: Bool) async throws -> Reminders { try await send(Reminders.self, "PUT", "/api/logbook/reminders", json: Reminders(on: on)) }
-    static func paperwork() async throws -> Paperwork? { try await read(Paperwork.self, "/api/paperwork") }
+    static func addLogbookEntry(_ r: LogbookEntryRequest) async throws { _ = try await call { try await $0.postLogbook(body: .json(r.trimmed)) } }
+    static func updateLogbookEntry(_ id: Int, _ r: LogbookEntryRequest) async throws {
+        _ = try await call { try await $0.putLogbookId(path: .init(id: id), body: .json(r.trimmed)) }
+    }
+    static func deleteLogbookEntry(_ id: Int) async throws { _ = try await call { try await $0.deleteLogbookId(path: .init(id: id)) } }
+    static func setCurrencyDates(_ r: CurrencyDatesRequest) async throws -> Currency { try await call { try await $0.setCurrencyDates(body: .json(r)).ok.body.json } }
+    static func reminders() async throws -> Reminders? { try await read { try await $0.reminders().ok.body.json } }
+    static func setReminders(_ on: Bool) async throws -> Reminders { try await call { try await $0.setReminders(body: .json(Reminders(on: on))).ok.body.json } }
+    static func paperwork() async throws -> Paperwork? { try await read { try await $0.due().ok.body.json } }
+    /// A large body, given the upload's time.
     static func importLogbook(_ entries: [LogbookEntryRequest]) async throws -> LogbookImportResult {
-        try await send(LogbookImportResult.self, "POST", "/api/logbook/import", json: GWLogbookImportRequest(entries: entries))
+        try await call(.upload) { try await $0.importAll(body: .json(GWLogbookImportRequest(entries: entries))).ok.body.json }
     }
 
     // The account.
     static func setContact(phone: String?, homeBase: String?) async throws -> Pilot {
-        try await send(Pilot.self, "PUT", "/api/me/contact", json: GWPilotContactRequest(homeBase: homeBase, phone: phone))
+        try await call { try await $0.setContact(body: .json(GWPilotContactRequest(homeBase: homeBase, phone: phone))).ok.body.json }
     }
     /// Everything that was the pilot's, and every session they hold
     /// (DELETE /api/me, 204); a 502 deleted nothing.
-    static func deleteAccount() async throws { try await send("DELETE", "/api/me") }
+    static func deleteAccount() async throws { _ = try await call { try await $0.deleteMe() } }
 
     // The student's side of training.
     static func setTrainingName(_ name: String) async throws -> Training {
-        try await send(Training.self, "PUT", "/api/training/name", json: GWFullNameRequest(fullName: name))
+        try await call { try await $0.setName(body: .json(GWFullNameRequest(fullName: name))).ok.body.json }
     }
     static func setKnowledgeTest(_ codes: [String]) async throws -> Training {
-        try await send(Training.self, "PUT", "/api/training/knowledge-test", json: GWKnowledgeTestRequest(codes: codes))
+        try await call { try await $0.setKnowledgeTest(body: .json(GWKnowledgeTestRequest(codes: codes))).ok.body.json }
     }
     /// An endorsement signed on paper, recorded by its day; nil takes it off.
     static func recordEndorsement(_ code: String, on day: String?) async throws -> Training {
-        if let day { return try await send(Training.self, "PUT", "/api/training/endorsements/\(code)", json: GWEndorsementRequest(endorsedOn: day)) }
-        return try await send(Training.self, "DELETE", "/api/training/endorsements/\(code)")
+        if let day { return try await call { try await $0.endorse(path: .init(code: code), body: .json(GWEndorsementRequest(endorsedOn: day))).ok.body.json } }
+        return try await call { try await $0.withdraw(path: .init(code: code)).ok.body.json }
     }
-    static func dropInstructor(_ id: Int) async throws -> Training { try await send(Training.self, "DELETE", "/api/training/instructors/\(id)") }
-    static func askReview(_ r: AskReviewRequest) async throws -> Training { try await send(Training.self, "POST", "/api/training/reviews", json: r) }
-    static func withdrawReview(_ id: Int) async throws -> Training { try await send(Training.self, "DELETE", "/api/training/reviews/\(id)") }
+    static func dropInstructor(_ id: Int) async throws -> Training { try await call { try await $0.dropInstructor(path: .init(id: id)).ok.body.json } }
+    static func askReview(_ r: AskReviewRequest) async throws -> Training { try await call { try await $0.askReview(body: .json(r)).ok.body.json } }
+    static func withdrawReview(_ id: Int) async throws -> Training { try await call { try await $0.withdrawReview(path: .init(id: id)).ok.body.json } }
 
     // The instructor's side.
-    static func instructor() async throws -> Instructor? { try await read(Instructor.self, "/api/instructor") }
-    static func setInstructor(_ r: InstructorRequest) async throws -> Instructor { try await send(Instructor.self, "PUT", "/api/instructor", json: r) }
-    static func stopInstructing() async throws -> Instructor { try await send(Instructor.self, "DELETE", "/api/instructor") }
-    static func acceptStudent(_ linkId: Int) async throws -> Instructor {
-        try await send(Instructor.self, "POST", "/api/instructor/students/\(linkId)/accept")
-    }
-    static func leaveStudent(_ linkId: Int) async throws -> Instructor { try await send(Instructor.self, "DELETE", "/api/instructor/students/\(linkId)") }
-    static func voidEndorsement(_ id: Int) async throws -> Instructor {
-        try await send(Instructor.self, "POST", "/api/instructor/endorsements/\(id)/void")
-    }
+    static func instructor() async throws -> Instructor? { try await read { try await $0.getInstructor().ok.body.json } }
+    static func setInstructor(_ r: InstructorRequest) async throws -> Instructor { try await call { try await $0.set(body: .json(r)).ok.body.json } }
+    static func stopInstructing() async throws -> Instructor { try await call { try await $0.deleteInstructor().ok.body.json } }
+    static func acceptStudent(_ linkId: Int) async throws -> Instructor { try await call { try await $0.accept(path: .init(linkId: linkId)).ok.body.json } }
+    static func leaveStudent(_ linkId: Int) async throws -> Instructor { try await call { try await $0.leave(path: .init(linkId: linkId)).ok.body.json } }
+    static func voidEndorsement(_ id: Int) async throws -> Instructor { try await call { try await $0.voidEndorsement(path: .init(id: id)).ok.body.json } }
     static func declineReview(_ id: Int, note: String) async throws -> Instructor {
-        try await send(Instructor.self, "POST", "/api/instructor/reviews/\(id)/decline", json: GWDeclineRequest(note: note))
+        try await call { try await $0.decline(path: .init(id: id), body: .json(GWDeclineRequest(note: note))).ok.body.json }
     }
-    static func studentTraining(_ studentId: Int) async throws -> Training {
-        try await send(Training.self, "GET", "/api/instructor/students/\(studentId)/training")
-    }
+    static func studentTraining(_ studentId: Int) async throws -> Training { try await call { try await $0.student(path: .init(studentId: studentId)).ok.body.json } }
     static func sign(_ studentId: Int, _ r: SignRequest) async throws -> Training {
-        try await send(Training.self, "POST", "/api/instructor/students/\(studentId)/endorsements", json: r)
+        try await call { try await $0.sign(path: .init(studentId: studentId), body: .json(r)).ok.body.json }
     }
 }

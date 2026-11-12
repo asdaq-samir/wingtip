@@ -102,7 +102,7 @@ extension OwnAirplaneAsk {
             squawks: record.openSquawks.filter { $0.fixedOn == nil }.map {
                 APIOpenSquawk(deferredFor: $0.deferredFor, inoperative: $0.inoperative, text: $0.text)
             },
-            vorCheck: record.vorCheck.map { APIVorCheckClass(goodThrough: $0.goodThrough, withinLimit: $0.withinLimit) })
+            vorCheck: record.vorCheck.map { APIVorCheckInput(goodThrough: $0.goodThrough, withinLimit: $0.withinLimit) })
     }
 }
 
@@ -114,15 +114,15 @@ typealias VerdictLine = APIVerdictLine
 /// and where the web app says it in full.
 typealias VerdictItem = APIVerdictItem
 
-extension VerdictItem: Identifiable {
-    var id: String { key }
+extension VerdictItem: @retroactive Identifiable {
+    public var id: String { key }
 }
 
 /// What raised the risk (RiskFactor), with its mark.
 typealias RiskFactor = APIRiskFactor
 
-extension RiskFactor: Identifiable {
-    var id: String { key }
+extension RiskFactor: @retroactive Identifiable {
+    public var id: String { key }
     /// What it adds, as the web's row says it: "No-go" or "+3".
     var value: String { stop == true ? "No-go" : "+\(points)" }
 }
@@ -130,8 +130,8 @@ extension RiskFactor: Identifiable {
 /// A check only the pilot can answer (RiskCheck), in its group.
 typealias RiskCheck = APIRiskCheck
 
-extension RiskCheck: Identifiable {
-    var id: String { key }
+extension RiskCheck: @retroactive Identifiable {
+    public var id: String { key }
     var value: String { stop == true ? "No-go" : "+\(points)" }
 }
 
@@ -163,6 +163,6 @@ typealias GoNoGoAnswer = APIGoNoGo
 extension Planner {
     /// The Go / No-Go for the route (POST /api/go-no-go).
     static func goNoGo(_ ask: GoNoGoAsk) async throws -> GoNoGoAnswer {
-        try await postRead(GoNoGoAnswer.self, "/api/go-no-go", ask)
+        try await call { try await $0.goNoGo(body: .json(ask)).ok.body.json }
     }
 }

@@ -50,7 +50,7 @@ final class WidgetFeed {
         // The planner's own report for the field, else the briefing's
         // where it has one, until the field's card answers.
         let own = weather?.ident == dep ? weather : nil
-        let metar = own?.metar ?? (plan.briefing?.metars[dep] ?? nil)
+        let metar = own?.metar ?? (plan.briefing?.metars.additionalProperties[dep] ?? nil)
         let wind = own?.wind ?? metar.map { AirportWords.windLine(dirTrueDeg: $0.windDirTrueDeg, speedKt: $0.windSpeedKt, gustKt: $0.windGustKt) }
         let checking = plan.planning || verdict.asking
         var fresh = WidgetSnapshot(

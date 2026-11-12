@@ -44,13 +44,18 @@ enum CoachApproaches {
         try Engine.decoder.decode(EngineContract.ProcedureDrawing.self, from: data)
     }
 
+    /// A procedure as the planner draws it (/api/airport/{ident}/procedures/{id}),
+    /// read as the engine's contract has it: the same members by name.
+    static func drawing(_ ident: String, procedure: String, transition: String? = nil) async throws -> EngineContract.ProcedureDrawing {
+        try Engine.recoded(try await Planner.procedure(ident, id: procedure, transition: transition))
+    }
+
     /// The field's approaches, drawn; one that cannot be had is left out.
     static func drawings(_ ident: String) async -> [EngineContract.ProcedureDrawing] {
         guard let listed = try? await Planner.procedures(ident) else { return [] }
         var out: [EngineContract.ProcedureDrawing] = []
         for p in listed.procedures.filter({ $0.kind == "approach" }).prefix(mostApproaches) {
-            if let data = try? await Planner.data(for: Planner.get("/api/airport/\(ident)/procedures/\(p.id)")),
-               let d = try? drawing(data) { out.append(d) }
+            if let d = try? await drawing(ident, procedure: p.id) { out.append(d) }
         }
         return out
     }

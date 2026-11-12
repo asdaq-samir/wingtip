@@ -1,4 +1,5 @@
 import Observation
+import OpenAPIRuntime
 import UIKit
 
 /// The airplane form's "Add from a Photo": the page asked for, read, and
@@ -10,7 +11,7 @@ final class HandbookPhotoModel {
     let reader = DocumentReadModel()
     var kind: DocumentKind = .pohPerformance
     /// The read as the reader sent it, with the pilot's edits written in.
-    private(set) var page: JSONValue?
+    private(set) var page: OpenAPIValueContainer?
     /// The engine's check of `page`: the reader's at first, the phone's own
     /// once a figure is edited.
     private(set) var check: ASHandbookCheck?

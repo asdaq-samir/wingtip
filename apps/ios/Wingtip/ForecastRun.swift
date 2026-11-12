@@ -72,7 +72,7 @@ final class ForecastRun {
         let ask = ForecastPlay.ask(points: run.points, rowT: run.rowT, landings: run.landings, course: course,
                                    start: start.timeIntervalSince1970, rules: rules, minimums: minimums)
         do {
-            let got = try await Planner.postRead(APIForecastRun.self, "/api/forecast/run", ask)
+            let got = try await Planner.call { try await $0.forecastDryRun(body: .json(ask)).ok.body.json }
             guard on, askedFor == start else { return }
             answer = got
         } catch {

@@ -8,7 +8,7 @@ import Testing
 @MainActor
 struct AirportLiveTests {
     private func decode<T: Decodable>(_ type: T.Type, _ json: String) throws -> T {
-        try Planner.snakeCase.decode(T.self, from: Data(json.utf8))
+        try Planner.json.decode(T.self, from: Data(json.utf8))
     }
 
     @Test func aDigitalAtisIsReadByTheEngineIntoItsFigures() throws {
@@ -46,7 +46,7 @@ struct AirportLiveTests {
     }
 
     @Test func specialUseStatusAndTowerDepartureInWords() throws {
-        let saa = try decode(APISaaStatuses.self, #"{"areas":{"R-4305":{"designator":"R-4305","active":true,"until":1762723800,"heard":1},"MOA":{"designator":"MOA","active":false,"next":1762696800,"heard":1},"W-1":{"designator":"W-1","active":null,"heard":1}}}"#).areas
+        let saa = try decode(APISaaStatuses.self, #"{"areas":{"R-4305":{"designator":"R-4305","active":true,"until":1762723800,"heard":1},"MOA":{"designator":"MOA","active":false,"next":1762696800,"heard":1},"W-1":{"designator":"W-1","active":null,"heard":1}}}"#).areas.additionalProperties
         #expect(LiveWords.saaWords(saa["R-4305"]) == "Active now until 2130Z (FAA SFDPS)")
         #expect(LiveWords.saaWords(saa["MOA"]) == "Cold now; next active 1400Z (FAA SFDPS)")
         #expect(LiveWords.saaWords(saa["W-1"]) == nil && LiveWords.saaWords(nil) == nil)

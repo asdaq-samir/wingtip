@@ -21,8 +21,9 @@
 // - Enums and consts are plain strings: an answer the engine adds a word
 //   to must not fail to decode on a phone built before it.
 // - Tuples are arrays of their one type.
-// - A member left untyped ({}), or a union of two shapes, is JSONValue
-//   (API/JSONValue.swift) on the iPhone and kotlinx's JsonElement on Android;
+// - A member left untyped ({}), or a union of two shapes, is
+//   OpenAPIRuntime's OpenAPIValueContainer on the iPhone, as the servers'
+//   generated clients' are, and kotlinx's JsonElement on Android;
 //   a union of objects told apart by a const member ("kind") is one struct
 //   of every shape's members (taggedUnion).
 // - Keys are written as the rule names them (snake case mostly, camel
@@ -82,7 +83,7 @@ const kotlinId = (n) => (KOTLIN_KEYWORDS.has(n) ? `\`${n}\`` : n);
 //
 // A type is one of:
 //   {kind: "prim", swift, kotlin}          Double, String, Bool, Int
-//   {kind: "any"}                           JSONValue / JsonElement
+//   {kind: "any"}                           OpenAPIValueContainer / JsonElement
 //   {kind: "list", of}                      [T] / List<T>
 //   {kind: "map", of}                       [String: T] / Map<String, T>
 //   {kind: "struct", name}                  a struct written once by name
@@ -174,7 +175,7 @@ function objectStruct(s, name, description) {
 // a string, and every shape's other members, each optional, as the shape
 // it came in has it. Neither phone has Swift's or Kotlin's sum types from
 // a schema, and this reads every shape without a hand-written decoder; a
-// member two shapes type differently is JSONValue / JsonElement. None for
+// member two shapes type differently is OpenAPIValueContainer / JsonElement. None for
 // a union that is not so told apart.
 function taggedUnion(shapes, name) {
   const objects = shapes.map((u) => (u.$ref ? defs[refName(u.$ref)] : u));
@@ -246,7 +247,7 @@ function swiftType(t) {
       base = t.swift;
       break;
     case "any":
-      base = "JSONValue";
+      base = "OpenAPIValueContainer";
       break;
     case "list":
       base = `[${swiftType(t.of)}]`;
@@ -275,7 +276,7 @@ function swiftDoc(text, indent) {
 }
 
 function writeSwift() {
-  const out = [header("//"), "import Foundation", ""];
+  const out = [header("//"), "import Foundation", "import OpenAPIRuntime", ""];
   out.push(
     "/// The engine's inputs and answers by rule, as engine/contract/engine.schema.json",
     "/// types them; Engine's functions in EngineCalls.swift take and return them.",
@@ -303,7 +304,7 @@ function writeSwift() {
   out.push("}", "");
   fs.writeFileSync(path.join(swiftDir, "EngineContract.swift"), out.filter((l, i, a) => !(l === "" && a[i - 1] === "")).join("\n"));
 
-  const calls = [header("//"), "import Foundation", ""];
+  const calls = [header("//"), "import Foundation", "import OpenAPIRuntime", ""];
   calls.push(
     "/// Every rule of the engine by name, typed: its input's members as",
     "/// parameters and its answer as the contract's type. Each throws",

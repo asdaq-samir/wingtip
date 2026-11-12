@@ -1,4 +1,5 @@
 import Foundation
+import OpenAPIRuntime
 import Testing
 @testable import Wingtip
 
@@ -103,7 +104,7 @@ private struct TrafficFixture: Decodable {
 private struct LogbookFixture: Decodable {
     // The web's entries, where a field not kept is null; the gateway's
     // LogbookEntryDto never sends one, so these go to the engine as written.
-    struct Export: Decodable { let entries: [[String: JSONValue]]; let csv: String }
+    struct Export: Decodable { let entries: [[String: OpenAPIValueContainer]]; let csv: String }
     struct Skip: Decodable { let line: Int; let reason: String }
     struct Import: Decodable { let name: String; let text: String; let entries: [LogbookEntryRequest]; let skipped: [Skip] }
     let exports: [Export]

@@ -1,4 +1,5 @@
 import MapKit
+import OpenAPIRuntime
 import UIKit
 
 /// A fix of the approach picked as the engine tags it (its
@@ -57,8 +58,7 @@ struct PlateTags: Equatable {
     /// The approach picked as the planner draws it, read as the engine's
     /// contract has it (CoachApproaches.drawing), then tagged by the engine.
     static func fetch(_ pick: ProcedurePick) async -> PlateTags? {
-        let request = Planner.get("/api/airport/\(pick.ident)/procedures/\(pick.id)", ["transition": pick.transition])
-        guard let data = try? await Planner.data(for: request), let drawing = try? CoachApproaches.drawing(data) else { return nil }
+        guard let drawing = try? await CoachApproaches.drawing(pick.ident, procedure: pick.id, transition: pick.transition) else { return nil }
         return of(drawing)
     }
 
@@ -79,8 +79,9 @@ struct PlateTags: Equatable {
                 glidepathFt: tag.vertical?.ft, glidepathWord: tag.vertical?.kind == "glidepath" ? "GP" : "GS",
                 thresholdCrossingFt: tag.runway?.tchFt, touchdownZoneFt: tag.runway?.tdzeFt)
         }
-        let final = (answer.final?.points ?? []).compactMap { point -> CLLocationCoordinate2D? in
-            guard point.count >= 2, case .number(let lat) = point[0], case .number(let lon) = point[1] else { return nil }
+        let points: [[OpenAPIValueContainer]] = answer.final?.points ?? []
+        let final = points.compactMap { point -> CLLocationCoordinate2D? in
+            guard point.count >= 2, let lat = point[0].number, let lon = point[1].number else { return nil }
             return CLLocationCoordinate2D(latitude: lat, longitude: lon)
         }
         return PlateTags(fixes: fixes, finalSegment: final)

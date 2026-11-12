@@ -59,15 +59,22 @@ struct TilesTests {
         try? FileManager.default.removeItem(at: store.keptRoot)
     }
 
-    @Test func readsWaitTenSecondsAndUploadsTwoMinutes() throws {
+    @Test func eachWaitIsItsOwnSessionsTimeout() throws {
         // The reads a pilot waits on: about ten seconds with no byte, not 60.
         #expect(Planner.read == 10)
-        #expect(Planner.get("/api/navlog", [:], timeout: Planner.read).timeoutInterval == 10)
-        // A large body is an upload: two minutes; a small one, the session's.
-        let big = Gateway.request("POST", "/api/logbook/import", form: ["csv": String(repeating: "x", count: Planner.uploadBytes + 1)])
-        #expect(big.timeoutInterval == Planner.upload)
-        let small = Gateway.request("POST", "/api/logbook", form: ["a": "b"])
-        #expect(small.timeoutInterval == URLRequest(url: URL(string: "https://example.com")!).timeoutInterval)
+        #expect(Servers.sessions[.read]?.configuration.timeoutIntervalForRequest == 10)
+        // A call made in the air is bound as a whole: five seconds from
+        // asking to the last byte, however they trickle in.
+        #expect(Servers.sessions[.inFlight]?.configuration.timeoutIntervalForResource == Planner.inFlight)
+        // An upload waits two minutes with no byte; the usual call, the
+        // session's own minute.
+        #expect(Servers.sessions[.upload]?.configuration.timeoutIntervalForRequest == Planner.upload)
+        #expect(Servers.sessions[.usual] === Gateway.session)
+        // Every one keeps the one jar and the one cache.
+        for session in Servers.sessions.values {
+            #expect(session.configuration.httpCookieStorage === SessionCookies.jar)
+            #expect(session.configuration.urlCache === Gateway.answers)
+        }
     }
 
     @Test func plannerPathsAreRewrittenUnderTheGatewaysProxy() throws {

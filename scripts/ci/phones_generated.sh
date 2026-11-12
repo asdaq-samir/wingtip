@@ -9,6 +9,7 @@ scripts/build/api-models-apps.sh
 scripts/build/engine-contract-apps.sh
 generated=(
   apps/ios/Wingtip/API/Generated
+  apps/ios/WingtipAPI
   apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/generated
   apps/ios/Wingtip/Engine/Generated
   apps/android/app/src/main/kotlin/app/wingtipmaps/android/engine/generated

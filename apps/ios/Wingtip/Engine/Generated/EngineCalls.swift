@@ -2,6 +2,7 @@
 // do not edit. Change the engine's contract and run the script.
 
 import Foundation
+import OpenAPIRuntime
 
 /// Every rule of the engine by name, typed: its input's members as
 /// parameters and its answer as the contract's type. Each throws
@@ -30,12 +31,12 @@ extension Engine {
     }
 
     /// An airplane's figures, each with where it comes from: its pilot's own where they differ from the book's ("pilot"), else its photographed handbook page's ("handbook"), else its type's stock profile's ("book"); a figure none has is null, never another airplane's (the owner, 2026-11-09). The empty weight and moment are the pilot's alone (a stock profile's are its handbook's sample airplane's). `profile` is the book's with the picked figures over it, the airplane every other rule takes; null with no book, handbook or own figures (no airplane).
-    static func airplaneFigures(book: [String: JSONValue]? = nil, handbook: [String: JSONValue]? = nil, own: [String: JSONValue]? = nil) throws -> EngineContract.AirplaneFiguresAnswer {
+    static func airplaneFigures(book: [String: OpenAPIValueContainer]? = nil, handbook: [String: OpenAPIValueContainer]? = nil, own: [String: OpenAPIValueContainer]? = nil) throws -> EngineContract.AirplaneFiguresAnswer {
         try Self.rule("airplane_figures", EngineContract.AirplaneFiguresInput(book: book, handbook: handbook, own: own))
     }
 
     /// The inputs a figure needs that the airplane's profile lacks, by name, so the app asks for them where the figure would be (the owner, 2026-11-09): the legs their cruise speed and burn; the fuel totals also the start, taxi and takeoff allowance; the glide its glide ratio; the climb its climb speed, sea-level rate and service ceiling; a weight and balance its loading envelope and its own empty weight and moment; takeoff and landing their charts. ["airplane"] with no airplane.
-    static func airplaneNeeds(profile: [String: JSONValue]? = nil, figure: String) throws -> EngineContract.AirplaneNeedsAnswer {
+    static func airplaneNeeds(profile: [String: OpenAPIValueContainer]? = nil, figure: String) throws -> EngineContract.AirplaneNeedsAnswer {
         try Self.rule("airplane_needs", EngineContract.AirplaneNeedsInput(profile: profile, figure: figure))
     }
 
@@ -80,7 +81,7 @@ extension Engine {
     }
 
     /// The altitude a route with no legal one is flown at anyway (the owner's warn, never limit): the lowest over the floor everywhere on the course's own altitudes (14 CFR 91.159, 91.179(b)); null where no floor is known.
-    static func altitudeAnyway(selection: [String: JSONValue]) throws -> Double? {
+    static func altitudeAnyway(selection: [String: OpenAPIValueContainer]) throws -> Double? {
         try Self.rule("altitude_anyway", EngineContract.AltitudeAnywayInput(selection: selection))
     }
 
@@ -210,12 +211,12 @@ extension Engine {
     }
 
     /// The Aviation Weather Center's national airsigmets cache file (XML) read into the shape the weather store keeps: [{hazard, type, altitude_low_ft, altitude_high_ft, raw, valid_from, valid_to, issued, coords}].
-    static func awcAirsigmetsRead(text: String) throws -> [[String: JSONValue]] {
+    static func awcAirsigmetsRead(text: String) throws -> [[String: OpenAPIValueContainer]] {
         try Self.rule("awc_airsigmets_read", EngineContract.AwcAirsigmetsReadInput(text: text))
     }
 
     /// The Aviation Weather Center's national gairmets cache file (XML) read into the shape the weather store keeps: The G-AIRMET areas a VFR flight is told of: [{hazard (words), severity, due_to, valid_at, valid, issued, altitude_low_ft, from_freezing_level, altitude_high_ft, coords}].
-    static func awcGairmetsRead(text: String) throws -> [[String: JSONValue]] {
+    static func awcGairmetsRead(text: String) throws -> [[String: OpenAPIValueContainer]] {
         try Self.rule("awc_gairmets_read", EngineContract.AwcGairmetsReadInput(text: text))
     }
 
@@ -225,12 +226,12 @@ extension Engine {
     }
 
     /// The Aviation Weather Center's national pireps cache file (XML) read into the shape the weather store keeps: The PIREPs (UA, UUA), not the AIREPs: [{observed_at, observed, lat, lon, altitude_ft, aircraft, urgent, turbulence, icing, raw}].
-    static func awcPirepsRead(text: String) throws -> [[String: JSONValue]] {
+    static func awcPirepsRead(text: String) throws -> [[String: OpenAPIValueContainer]] {
         try Self.rule("awc_pireps_read", EngineContract.AwcPirepsReadInput(text: text))
     }
 
     /// The Aviation Weather Center's national tafs cache file (XML) read into the shape the weather store keeps: [{icaoId, lat, lon, elevation_ft, raw, fcsts}], each station's latest TAF, its periods in time order.
-    static func awcTafsRead(text: String) throws -> [[String: JSONValue]] {
+    static func awcTafsRead(text: String) throws -> [[String: OpenAPIValueContainer]] {
         try Self.rule("awc_tafs_read", EngineContract.AwcTafsReadInput(text: text))
     }
 
@@ -355,7 +356,7 @@ extension Engine {
     }
 
     /// The CTAF's index in frequencies (a CTAF, else a UNICOM that is the CTAF, else a UNICOM), or MULTICOM's 122.9 as a frequency where none is listed (AC 90-66C 9.6).
-    static func ctafOf(frequencies: [EngineContract.FieldFrequency]) throws -> JSONValue {
+    static func ctafOf(frequencies: [EngineContract.FieldFrequency]) throws -> OpenAPIValueContainer {
         try Self.rule("ctaf_of", EngineContract.CtafOfInput(frequencies: frequencies))
     }
 
@@ -370,12 +371,12 @@ extension Engine {
     }
 
     /// The track's flights as [first, last] point indices.
-    static func debriefAirborne(points: [EngineContract.TrackPoint]) throws -> [[JSONValue]] {
+    static func debriefAirborne(points: [EngineContract.TrackPoint]) throws -> [[OpenAPIValueContainer]] {
         try Self.rule("debrief_airborne", EngineContract.DebriefAirborneInput(points: points))
     }
 
     /// The web's debrief (its figures, snake_case, no marks) marked against ACS PA.VI.A's tolerances as `debrief` marks its own, with the tolerances.
-    static func debriefMarked(debrief: [String: JSONValue]) throws -> EngineContract.DebriefMarkedAnswer {
+    static func debriefMarked(debrief: [String: OpenAPIValueContainer]) throws -> EngineContract.DebriefMarkedAnswer {
         try Self.rule("debrief_marked", EngineContract.DebriefMarkedInput(debrief: debrief))
     }
 
@@ -390,7 +391,7 @@ extension Engine {
     }
 
     /// The departure's circuit and the course out, or null.
-    static func departureCircuit(runway: EngineContract.CircuitRunwayIn, endIdent: String, toward: [JSONValue]) throws -> EngineContract.DepartureCircuitAnswer? {
+    static func departureCircuit(runway: EngineContract.CircuitRunwayIn, endIdent: String, toward: [OpenAPIValueContainer]) throws -> EngineContract.DepartureCircuitAnswer? {
         try Self.rule("departure_circuit", EngineContract.DepartureCircuitInput(runway: runway, endIdent: endIdent, toward: toward))
     }
 
@@ -460,7 +461,7 @@ extension Engine {
     }
 
     /// The planned flight flown on paper along the nav log's rows, by its procedures and holds, going missed when asked.
-    static func dryRun(rows: [EngineContract.NavLogRow], startS: Double, line: [[JSONValue]]? = nil, missed: Bool? = nil) throws -> EngineContract.DryRunAnswer {
+    static func dryRun(rows: [EngineContract.NavLogRow], startS: Double, line: [[OpenAPIValueContainer]]? = nil, missed: Bool? = nil) throws -> EngineContract.DryRunAnswer {
         try Self.rule("dry_run", EngineContract.DryRunInput(rows: rows, startS: startS, line: line, missed: missed))
     }
 
@@ -505,7 +506,7 @@ extension Engine {
     }
 
     /// The latest not voided of each code, as [code, index] into the record (newest first).
-    static func endorsementsInForce(signed: [EngineContract.EndorsementsInForceInputSignedItem]) throws -> [[JSONValue]] {
+    static func endorsementsInForce(signed: [EngineContract.EndorsementsInForceInputSignedItem]) throws -> [[OpenAPIValueContainer]] {
         try Self.rule("endorsements_in_force", EngineContract.EndorsementsInForceInput(signed: signed))
     }
 
@@ -520,12 +521,12 @@ extension Engine {
     }
 
     /// The FAA's capitals in sentence case, its codes kept (AIM 3-2-1's "Class B"; an approach's title as AIM 5-4-5 names it, "ILS or LOC rwy 36"): one string from text, or each of texts as a list (a null row answers "").
-    static func faaWords(text: String? = nil, texts: [String?]? = nil) throws -> JSONValue {
+    static func faaWords(text: String? = nil, texts: [String?]? = nil) throws -> OpenAPIValueContainer {
         try Self.rule("faa_words", EngineContract.FaaWordsInput(text: text, texts: texts))
     }
 
     /// A field's weather hour by hour for the airport card: Now from the METAR, then each whole hour its TAF covers, the TAF's change groups read as FAA-H-8083-28B 27.4.2.10 sets them out (a BECMG under way the worse of before and after, a TEMPO's or PROB's worse weather at times).
-    static func fieldHours(metar: [String: JSONValue]? = nil, taf: String? = nil, now: Double, count: Double? = nil) throws -> [EngineContract.FieldHour] {
+    static func fieldHours(metar: [String: OpenAPIValueContainer]? = nil, taf: String? = nil, now: Double, count: Double? = nil) throws -> [EngineContract.FieldHour] {
         try Self.rule("field_hours", EngineContract.FieldHoursInput(metar: metar, taf: taf, now: now, count: count))
     }
 
@@ -600,7 +601,7 @@ extension Engine {
     }
 
     /// What a leg flown at an altitude breaks of 14 CFR 91.119 under VFR, in a pilot's words (1,000 ft within 2,000 ft over a congested area, 91.119(b); 500 ft elsewhere, (c)); null where it keeps it.
-    static func floorCaution(segment: [String: JSONValue], altitudeFt: Double) throws -> String? {
+    static func floorCaution(segment: [String: OpenAPIValueContainer], altitudeFt: Double) throws -> String? {
         try Self.rule("floor_caution", EngineContract.FloorCautionInput(segment: segment, altitudeFt: altitudeFt))
     }
 
@@ -630,7 +631,7 @@ extension Engine {
     }
 
     /// The dry run played against the forecast: for each point of the run (its time, place and altitude), the forecast ceiling and visibility then (the TAF that speaks for it, within 25 nm, and the NWS Gridded LAMP's hour, the worse of the two), the winds aloft at its altitude from the GFS period for that time, and the SIGMETs, G-AIRMET snapshots (90 minutes either side) and SPC Day 1 convective outlook areas over it then; each leg's worst flight category (AIM 7-1-7); each landing's TAF from an hour before to an hour after it is in (14 CFR 91.169(a)(2)'s window) and the departure's an hour on; and an alert, cited, where it first meets forecast weather under 14 CFR 91.155's VFR minimums (flown VFR; Class C, D and E's figures and 91.155(c)'s 1,000 ft ceiling held throughout, the safer reading) or under the pilot's own, or enters an advisory area. Warned, never refused.
-    static func forecastRun(track: [EngineContract.ForecastRunInputTrackItem], fields: [EngineContract.ForecastRunInputFieldsItem]? = nil, tafs: [[String: JSONValue]]? = nil, sigmets: [[String: JSONValue]]? = nil, gairmets: [[String: JSONValue]]? = nil, outlooks: [[String: JSONValue]]? = nil, rules: String? = nil, minimums: EngineContract.ForecastRunInputMinimums? = nil) throws -> EngineContract.ForecastRunAnswer {
+    static func forecastRun(track: [EngineContract.ForecastRunInputTrackItem], fields: [EngineContract.ForecastRunInputFieldsItem]? = nil, tafs: [[String: OpenAPIValueContainer]]? = nil, sigmets: [[String: OpenAPIValueContainer]]? = nil, gairmets: [[String: OpenAPIValueContainer]]? = nil, outlooks: [[String: OpenAPIValueContainer]]? = nil, rules: String? = nil, minimums: EngineContract.ForecastRunInputMinimums? = nil) throws -> EngineContract.ForecastRunAnswer {
         try Self.rule("forecast_run", EngineContract.ForecastRunInput(track: track, fields: fields, tafs: tafs, sigmets: sigmets, gairmets: gairmets, outlooks: outlooks, rules: rules, minimums: minimums))
     }
 
@@ -700,7 +701,7 @@ extension Engine {
     }
 
     /// The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (FAA-H-8083-28B 26.3.1.1).
-    static func gairmetsAlongRoute(advisories: [[String: JSONValue]], path: [[Double]], start: Double, end: Double) throws -> [[String: JSONValue]] {
+    static func gairmetsAlongRoute(advisories: [[String: OpenAPIValueContainer]], path: [[Double]], start: Double, end: Double) throws -> [[String: OpenAPIValueContainer]] {
         try Self.rule("gairmets_along_route", EngineContract.GairmetsAlongRouteInput(advisories: advisories, path: path, start: start, end: end))
     }
 
@@ -775,7 +776,7 @@ extension Engine {
     }
 
     /// The risk assessment (PAVE, IMSAFE): its points, level, line, what to do, and every factor marked.
-    static func gonogoRisk(vfrNotRecommended: Bool? = nil, underMinimums: [String]? = nil, tfrOnRoute: Bool? = nil, hazards: Double? = nil, night: Bool? = nil, nightPassengers: Bool? = nil, fuelMarginGal: Double? = nil, ifr: Bool? = nil, vorCheck: EngineContract.GonogoRiskInputVorCheck? = nil, inspections: EngineContract.GonogoInspections? = nil, squawks: [EngineContract.GonogoRiskInputSquawksItem]? = nil, currency: EngineContract.GonogoRiskInputCurrency? = nil, day: String, ticked: [String: JSONValue]? = nil) throws -> EngineContract.GonogoRiskAnswer {
+    static func gonogoRisk(vfrNotRecommended: Bool? = nil, underMinimums: [String]? = nil, tfrOnRoute: Bool? = nil, hazards: Double? = nil, night: Bool? = nil, nightPassengers: Bool? = nil, fuelMarginGal: Double? = nil, ifr: Bool? = nil, vorCheck: EngineContract.GonogoRiskInputVorCheck? = nil, inspections: EngineContract.GonogoInspections? = nil, squawks: [EngineContract.GonogoRiskInputSquawksItem]? = nil, currency: EngineContract.GonogoRiskInputCurrency? = nil, day: String, ticked: [String: OpenAPIValueContainer]? = nil) throws -> EngineContract.GonogoRiskAnswer {
         try Self.rule("gonogo_risk", EngineContract.GonogoRiskInput(vfrNotRecommended: vfrNotRecommended, underMinimums: underMinimums, tfrOnRoute: tfrOnRoute, hazards: hazards, night: night, nightPassengers: nightPassengers, fuelMarginGal: fuelMarginGal, ifr: ifr, vorCheck: vorCheck, inspections: inspections, squawks: squawks, currency: currency, day: day, ticked: ticked))
     }
 
@@ -815,7 +816,7 @@ extension Engine {
     }
 
     /// A special-use area's times of use read for the pass. The host works the clocks out in the area's own time zone.
-    static func gonogoSuaWhen(timesOfUse: String? = nil, utc: [JSONValue], local: [JSONValue]? = nil) throws -> String {
+    static func gonogoSuaWhen(timesOfUse: String? = nil, utc: [OpenAPIValueContainer], local: [OpenAPIValueContainer]? = nil) throws -> String {
         try Self.rule("gonogo_sua_when", EngineContract.GonogoSuaWhenInput(timesOfUse: timesOfUse, utc: utc, local: local))
     }
 
@@ -880,7 +881,7 @@ extension Engine {
     }
 
     /// A hold's length from its code ("2T", "10M"), or null.
-    static func holdLengthRead(text: String) throws -> JSONValue? {
+    static func holdLengthRead(text: String) throws -> OpenAPIValueContainer? {
         try Self.rule("hold_length_read", EngineContract.HoldLengthReadInput(text: text))
     }
 
@@ -940,7 +941,7 @@ extension Engine {
     }
 
     /// The fields offered as the IFR alternate: those that will do, or that meet the standard minimums and publish their own, good first then nearest, `limit` of them.
-    static func ifrAlternatesRanked(checks: [[String: JSONValue]], limit: Double? = nil) throws -> [[String: JSONValue]] {
+    static func ifrAlternatesRanked(checks: [[String: OpenAPIValueContainer]], limit: Double? = nil) throws -> [[String: OpenAPIValueContainer]] {
         try Self.rule("ifr_alternates_ranked", EngineContract.IfrAlternatesRankedInput(checks: checks, limit: limit))
     }
 
@@ -955,7 +956,7 @@ extension Engine {
     }
 
     /// Whether an airplane is in an emergency: 7500, 7600 or 7700 set, or an emergency sent (AIM 6-2-2, 6-3-4, 6-4-2).
-    static func inEmergency(squawk: String? = nil, emergency: JSONValue? = nil) throws -> Bool {
+    static func inEmergency(squawk: String? = nil, emergency: OpenAPIValueContainer? = nil) throws -> Bool {
         try Self.rule("in_emergency", EngineContract.InEmergencyInput(squawk: squawk, emergency: emergency))
     }
 
@@ -985,7 +986,7 @@ extension Engine {
     }
 
     /// A field's radio as the kneeboard lists it, [short name, MHz] in its order (the tower's before the CTAF's).
-    static func kneeboardRadio(frequencies: [EngineContract.FieldFrequency]) throws -> [[JSONValue]] {
+    static func kneeboardRadio(frequencies: [EngineContract.FieldFrequency]) throws -> [[OpenAPIValueContainer]] {
         try Self.rule("kneeboard_radio", EngineContract.KneeboardRadioInput(frequencies: frequencies))
     }
 
@@ -1010,7 +1011,7 @@ extension Engine {
     }
 
     /// The logbook as a CSV file in ForeFlight's column names, oldest flight first.
-    static func logbookCsvWrite(entries: [[String: JSONValue]]) throws -> String {
+    static func logbookCsvWrite(entries: [[String: OpenAPIValueContainer]]) throws -> String {
         try Self.rule("logbook_csv_write", EngineContract.LogbookCsvWriteInput(entries: entries))
     }
 
@@ -1165,7 +1166,7 @@ extension Engine {
     }
 
     /// Why no plan has an altitude, in a pilot's words: where it fails, the reasons there, what to do, whether Class B is what stops it, and all of it as one message.
-    static func noAltitude(selection: [String: JSONValue], between: [String]? = nil, via: EngineContract.NoAltitudeInputVia? = nil, `where`: String? = nil) throws -> EngineContract.NoAltitudeAnswer {
+    static func noAltitude(selection: [String: OpenAPIValueContainer], between: [String]? = nil, via: EngineContract.NoAltitudeInputVia? = nil, `where`: String? = nil) throws -> EngineContract.NoAltitudeAnswer {
         try Self.rule("no_altitude", EngineContract.NoAltitudeInput(selection: selection, between: between, via: via, where: `where`))
     }
 
@@ -1200,7 +1201,7 @@ extension Engine {
     }
 
     /// What an altitude the pilot set for a hop breaks against the band the planner worked out for each leg, as warnings: under the floor (14 CFR 91.119), off 91.159(a)'s altitudes, into Class B (91.131), over the service ceiling, inside 91.155's cloud clearance, in Class A (71.33(a), 91.135), past 91.211(a)'s oxygen heights; under IFR the minimum IFR altitude (91.177(a)) and 91.179(b)'s thousands. Null where nothing is.
-    static func ownAltitudeCaution(selection: [String: JSONValue], legs: [EngineContract.OwnAltitudeCautionInputLegsItem], between: [String], profile: [String: JSONValue]? = nil) throws -> EngineContract.OwnAltitudeCautionAnswer? {
+    static func ownAltitudeCaution(selection: [String: OpenAPIValueContainer], legs: [EngineContract.OwnAltitudeCautionInputLegsItem], between: [String], profile: [String: OpenAPIValueContainer]? = nil) throws -> EngineContract.OwnAltitudeCautionAnswer? {
         try Self.rule("own_altitude_caution", EngineContract.OwnAltitudeCautionInput(selection: selection, legs: legs, between: between, profile: profile))
     }
 
@@ -1270,17 +1271,17 @@ extension Engine {
     }
 
     /// The PIREPs of the last 90 minutes at or under 18,000 ft within the corridor of the route, urgent first, then in route order, each with along_track_nm.
-    static func pirepsAlongRoute(reports: [[String: JSONValue]], path: [[Double]], corridorNm: Double? = nil, now: Double) throws -> [[String: JSONValue]] {
+    static func pirepsAlongRoute(reports: [[String: OpenAPIValueContainer]], path: [[Double]], corridorNm: Double? = nil, now: Double) throws -> [[String: OpenAPIValueContainer]] {
         try Self.rule("pireps_along_route", EngineContract.PirepsAlongRouteInput(reports: reports, path: path, corridorNm: corridorNm, now: now))
     }
 
     /// The PIREPs still told (the last 90 minutes, at or under 18,000 ft) in a box, the urgent last.
-    static func pirepsInBox(reports: [[String: JSONValue]], box: [Double], now: Double) throws -> [[String: JSONValue]] {
+    static func pirepsInBox(reports: [[String: OpenAPIValueContainer]], box: [Double], now: Double) throws -> [[String: OpenAPIValueContainer]] {
         try Self.rule("pireps_in_box", EngineContract.PirepsInBoxInput(reports: reports, box: box, now: now))
     }
 
     /// A town's name as it is spelt ("McCook"), from text, or each of texts as a list (a null row answers "").
-    static func placeName(text: String? = nil, texts: [String?]? = nil) throws -> JSONValue {
+    static func placeName(text: String? = nil, texts: [String?]? = nil) throws -> OpenAPIValueContainer {
         try Self.rule("place_name", EngineContract.PlaceNameInput(text: text, texts: texts))
     }
 
@@ -1365,7 +1366,7 @@ extension Engine {
     }
 
     /// Prohibited airspace on the way as warnings (14 CFR 73.83), from the selection's `special_use`.
-    static func prohibitedCaution(selection: [String: JSONValue]) throws -> [String] {
+    static func prohibitedCaution(selection: [String: OpenAPIValueContainer]) throws -> [String] {
         try Self.rule("prohibited_caution", EngineContract.ProhibitedCautionInput(selection: selection))
     }
 
@@ -1405,7 +1406,7 @@ extension Engine {
     }
 
     /// A GPX or KML track read: its points in time order, or the words for the pilot where it has none to use.
-    static func readTrack(text: String) throws -> JSONValue {
+    static func readTrack(text: String) throws -> OpenAPIValueContainer {
         try Self.rule("read_track", EngineContract.ReadTrackInput(text: text))
     }
 
@@ -1505,7 +1506,7 @@ extension Engine {
     }
 
     /// Each end's ident, true heading and traffic (right where its key is in `right`, else left, 14 CFR 91.126(b)(1)).
-    static func runwayEndsTraffic(endHeadings: [[JSONValue]]?? = nil, variationDeg: Double, right: [String]? = nil) throws -> [EngineContract.RunwayEndsTrafficAnswerItem] {
+    static func runwayEndsTraffic(endHeadings: [[OpenAPIValueContainer]]?? = nil, variationDeg: Double, right: [String]? = nil) throws -> [EngineContract.RunwayEndsTrafficAnswerItem] {
         try Self.rule("runway_ends_traffic", EngineContract.RunwayEndsTrafficInput(endHeadings: endHeadings, variationDeg: variationDeg, right: right))
     }
 
@@ -1530,7 +1531,7 @@ extension Engine {
     }
 
     /// The planner's altitude selection from the data it read: each leg's band (the floor up to the lowest of the Class B shelf, 91.155's distance under the forecast clouds and the service ceiling, none in prohibited airspace; under IFR the service ceiling and an airway's MAA alone), its legal altitudes by its own magnetic course, the route's, the lowest recommended, and icing where a legal altitude reaches the freezing level with moisture.
-    static func selectCruiseAltitude(start: [Double], end: [Double], fixes: [[Double]]? = nil, breaksNm: [Double]? = nil, rules: String? = nil, classBCleared: Bool? = nil, floors: [[String: JSONValue]]? = nil, airway: EngineContract.SelectCruiseAltitudeInputAirway? = nil, airspaceCeilingsFt: [Double?]? = nil, serviceCeilingsFt: [Double?], variationDeg: Double? = nil, legVariationsDeg: [Double]? = nil, stations: [EngineContract.SelectCruiseAltitudeInputStationsItem]? = nil, minCeilingFt: Double? = nil, specialUse: [[String: JSONValue]]? = nil, freezing: EngineContract.SelectCruiseAltitudeInputFreezing? = nil, hazards: [[String: JSONValue]]? = nil, weatherUnavailable: [String]? = nil) throws -> EngineContract.SelectCruiseAltitudeAnswer {
+    static func selectCruiseAltitude(start: [Double], end: [Double], fixes: [[Double]]? = nil, breaksNm: [Double]? = nil, rules: String? = nil, classBCleared: Bool? = nil, floors: [[String: OpenAPIValueContainer]]? = nil, airway: EngineContract.SelectCruiseAltitudeInputAirway? = nil, airspaceCeilingsFt: [Double?]? = nil, serviceCeilingsFt: [Double?], variationDeg: Double? = nil, legVariationsDeg: [Double]? = nil, stations: [EngineContract.SelectCruiseAltitudeInputStationsItem]? = nil, minCeilingFt: Double? = nil, specialUse: [[String: OpenAPIValueContainer]]? = nil, freezing: EngineContract.SelectCruiseAltitudeInputFreezing? = nil, hazards: [[String: OpenAPIValueContainer]]? = nil, weatherUnavailable: [String]? = nil) throws -> EngineContract.SelectCruiseAltitudeAnswer {
         try Self.rule("select_cruise_altitude", EngineContract.SelectCruiseAltitudeInput(start: start, end: end, fixes: fixes, breaksNm: breaksNm, rules: rules, classBCleared: classBCleared, floors: floors, airway: airway, airspaceCeilingsFt: airspaceCeilingsFt, serviceCeilingsFt: serviceCeilingsFt, variationDeg: variationDeg, legVariationsDeg: legVariationsDeg, stations: stations, minCeilingFt: minCeilingFt, specialUse: specialUse, freezing: freezing, hazards: hazards, weatherUnavailable: weatherUnavailable))
     }
 
@@ -1555,7 +1556,7 @@ extension Engine {
     }
 
     /// The SIGMETs in force whose area the route crosses (FAA-H-8083-28B 26.2.4).
-    static func sigmetsAlongRoute(advisories: [[String: JSONValue]], from: [Double], to: [Double], corridorNm: Double? = nil, now: Double) throws -> [[String: JSONValue]] {
+    static func sigmetsAlongRoute(advisories: [[String: OpenAPIValueContainer]], from: [Double], to: [Double], corridorNm: Double? = nil, now: Double) throws -> [[String: OpenAPIValueContainer]] {
         try Self.rule("sigmets_along_route", EngineContract.SigmetsAlongRouteInput(advisories: advisories, from: from, to: to, corridorNm: corridorNm, now: now))
     }
 
@@ -1605,7 +1606,7 @@ extension Engine {
     }
 
     /// The lowest forecast ceiling and visibility among the TAF stations near a route over a window, each station's own worst kept (14 CFR 91.155's cloud clearance is held to them).
-    static func tafsAlongRoute(tafs: [[String: JSONValue]], from: [Double], to: [Double], corridorNm: Double? = nil, start: Double, end: Double? = nil) throws -> EngineContract.TafsAlongRouteAnswer {
+    static func tafsAlongRoute(tafs: [[String: OpenAPIValueContainer]], from: [Double], to: [Double], corridorNm: Double? = nil, start: Double, end: Double? = nil) throws -> EngineContract.TafsAlongRouteAnswer {
         try Self.rule("tafs_along_route", EngineContract.TafsAlongRouteInput(tafs: tafs, from: from, to: to, corridorNm: corridorNm, start: start, end: end))
     }
 
@@ -1640,12 +1641,12 @@ extension Engine {
     }
 
     /// At most `most` (4,000 where not given) of `points`, even steps through, the first and last kept; each point as it came.
-    static func thinTrack(points: [JSONValue], most: Int? = nil) throws -> [JSONValue] {
+    static func thinTrack(points: [OpenAPIValueContainer], most: Int? = nil) throws -> [OpenAPIValueContainer] {
         try Self.rule("thin_track", EngineContract.ThinTrackInput(points: points, most: most))
     }
 
     /// The FAA's capitals in title case, from text, or each of texts as a list (a null row answers "").
-    static func titleCase(text: String? = nil, texts: [String?]? = nil) throws -> JSONValue {
+    static func titleCase(text: String? = nil, texts: [String?]? = nil) throws -> OpenAPIValueContainer {
         try Self.rule("title_case", EngineContract.TitleCaseInput(text: text, texts: texts))
     }
 
@@ -1725,7 +1726,7 @@ extension Engine {
     }
 
     /// "VFR flight not recommended" (AIM 7-1-5) as its reasons, in briefing order: either end reporting IFR or LIFR or a ceiling of unknown height, then the forecast along the route under 14 CFR 91.155(c), (d)'s basic minimums or of unknown height.
-    static func vfrNotRecommendedReasons(idents: [String]? = nil, metars: [String: JSONValue]? = nil, forecast: [String: JSONValue]? = nil) throws -> [String] {
+    static func vfrNotRecommendedReasons(idents: [String]? = nil, metars: [String: OpenAPIValueContainer]? = nil, forecast: [String: OpenAPIValueContainer]? = nil) throws -> [String] {
         try Self.rule("vfr_not_recommended_reasons", EngineContract.VfrNotRecommendedReasonsInput(idents: idents, metars: metars, forecast: forecast))
     }
 
@@ -1740,7 +1741,7 @@ extension Engine {
     }
 
     /// To when a stored copy may be served when later fetches fail, by its product's own validity (FAA-H-8083-28B 24.4.1, 26.2-26.3, 27.4.1): METARs no limit, TAFs and SIGMETs to the end of their valid time, PIREPs 90 minutes after the newest, G-AIRMETs 90 minutes after the last snapshot; a copy that says nothing three hours from its fetch. Unix seconds.
-    static func weatherHeldUntil(product: String, data: JSONValue? = nil, fetched: Double) throws -> Double? {
+    static func weatherHeldUntil(product: String, data: OpenAPIValueContainer? = nil, fetched: Double) throws -> Double? {
         try Self.rule("weather_held_until", EngineContract.WeatherHeldUntilInput(product: product, data: data, fetched: fetched))
     }
 
@@ -1755,7 +1756,7 @@ extension Engine {
     }
 
     /// The wind and temperature at an altitude and a time from the winds-aloft grid's columns at a place, one column an hour (AWC's GFA levels, an altitude MSL under 18,000 ft and a flight level from FL180, 14 CFR 71.33; each level's wind as its east and north parts, kt): each hour's column read at the altitude as a station's levels are (the direction the short way round, the speed and temperature linear in altitude, clamped past the ends, the temperature keeping its difference from a standard day; FAA-H-8083-28B 27.2.1.1.1), then the two hours round the time weighed by how near each is, the nearest hour's outside them. A level with no wind (under the ground) is left out. Null where the grid has none. A list for "altitudes".
-    static func windAloftAt(hours: [EngineContract.WindAloftAtInputHoursItem], atS: Double, altitudeFt: Double? = nil, altitudes: [Double]? = nil) throws -> JSONValue {
+    static func windAloftAt(hours: [EngineContract.WindAloftAtInputHoursItem], atS: Double, altitudeFt: Double? = nil, altitudes: [Double]? = nil) throws -> OpenAPIValueContainer {
         try Self.rule("wind_aloft_at", EngineContract.WindAloftAtInput(hours: hours, atS: atS, altitudeFt: altitudeFt, altitudes: altitudes))
     }
 
@@ -1765,7 +1766,7 @@ extension Engine {
     }
 
     /// The wind at an altitude from a station's levels: interpolated (the direction the short way round), clamped at the ends, light and variable left out; null with no level left, never calm. A list for "altitudes".
-    static func windAtAltitude(levels: [String: EngineContract.WindAtAltitudeInputLevelsValue], altitudeFt: Double? = nil, altitudes: [Double]? = nil) throws -> JSONValue? {
+    static func windAtAltitude(levels: [String: EngineContract.WindAtAltitudeInputLevelsValue], altitudeFt: Double? = nil, altitudes: [Double]? = nil) throws -> OpenAPIValueContainer? {
         try Self.rule("wind_at_altitude", EngineContract.WindAtAltitudeInput(levels: levels, altitudeFt: altitudeFt, altitudes: altitudes))
     }
 

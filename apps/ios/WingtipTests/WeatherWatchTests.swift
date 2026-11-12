@@ -44,7 +44,7 @@ struct WeatherWatchTests {
     """
 
     @Test func aBriefingIsCarriedIntoTheEnginesReading() throws {
-        let briefing = try Planner.snakeCase.decode(Briefing.self, from: Data(Self.briefing.utf8))
+        let briefing = try Planner.json.decode(Briefing.self, from: Data(Self.briefing.utf8))
         let reading = RouteWeather.of(briefing, lands: ["KDLH"])
         #expect(reading.metars?.map(\.ident) == ["KMSN"])
         #expect(reading.advisories?.map(\.onRoute) == [true, false])
@@ -92,7 +92,7 @@ struct WeatherWatchTests {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         var kept = Kept(dep: "KMSN", dest: "KDLH", stops: [], aircraft: Plan.noAirplane, plannedAt: now.addingTimeInterval(-3600))
         #expect(!WeatherWatch.watching(kept, now: now))
-        kept.briefing = try? Planner.snakeCase.decode(Briefing.self, from: Data(Self.briefing.utf8))
+        kept.briefing = try? Planner.json.decode(Briefing.self, from: Data(Self.briefing.utf8))
         #expect(WeatherWatch.watching(kept, now: now))
         kept.plannedAt = now.addingTimeInterval(-25 * 3600)
         #expect(!WeatherWatch.watching(kept, now: now))

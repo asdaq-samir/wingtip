@@ -107,7 +107,7 @@ final class WeatherLoop {
                 // The last list kept, with its age, when there is no signal (KeptForAir).
                 let asked = kind.rawValue
                 let answer = try await KeptForAir.answer(.weatherLoop, key: asked) {
-                    try await Planner.fetch(APIWeatherLoop.self, "/api/weather/loop", ["kind": asked])
+                    try await Planner.call { try await $0.weatherLoopFrames(query: .init(kind: asked)).ok.body.json }
                 }.value
                 if answer.frames.map(\.valid) != frames.map(\.valid) { ready = false }
                 frames = answer.frames

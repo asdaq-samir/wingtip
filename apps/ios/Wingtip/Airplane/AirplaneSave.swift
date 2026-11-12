@@ -1,4 +1,5 @@
 import Foundation
+import OpenAPIRuntime
 
 /// Where an airplane's figures were kept.
 enum FiguresKept: Equatable, Sendable {
@@ -53,9 +54,8 @@ extension Airplanes {
     }
 
     /// The type designator in a stock profile, where it has one.
-    static func designator(_ book: [String: JSONValue]?) -> String? {
-        if case .string(let d)? = book?["designator"] { return d }
-        return nil
+    static func designator(_ book: [String: OpenAPIValueContainer]?) -> String? {
+        book?["designator"]?.value as? String
     }
 
     /// The whole airplane as PUT /api/aircraft/{id} takes it: its record
@@ -83,6 +83,6 @@ extension Gateway {
     /// The figures given added to the airplane's own, the rest as they
     /// were (PUT /api/aircraft/{id}/figures): an inline ask's Save.
     static func addFigures(_ id: Int, _ figures: GWOwnFigures) async throws -> OwnAircraftRecord {
-        try await send(OwnAircraftRecord.self, "PUT", "/api/aircraft/\(id)/figures", json: figures)
+        try await call { try await $0.figures(path: .init(id: id), body: .json(figures)).ok.body.json }
     }
 }
