@@ -11352,6 +11352,48 @@ enum EngineContract {
         }
     }
 
+    struct WindAloftAtInput: Codable, Equatable, Sendable {
+        var hours: [EngineContract.WindAloftAtInputHoursItem]
+        /// The time read at, UNIX seconds.
+        var atS: Double
+        var altitudeFt: Double?
+        var altitudes: [Double]?
+
+        enum CodingKeys: String, CodingKey {
+            case hours
+            case atS = "at_s"
+            case altitudeFt = "altitude_ft"
+            case altitudes
+        }
+    }
+
+    struct WindAloftAtInputHoursItem: Codable, Equatable, Sendable {
+        /// The hour the column is valid at, UNIX seconds.
+        var validS: Double
+        var levels: [EngineContract.WindAloftAtInputHoursItemLevelsItem]
+
+        enum CodingKeys: String, CodingKey {
+            case validS = "valid_s"
+            case levels
+        }
+    }
+
+    struct WindAloftAtInputHoursItemLevelsItem: Codable, Equatable, Sendable {
+        var altitudeFt: Double
+        /// The wind's east part, toward where it blows.
+        var uKt: Double?
+        /// The wind's north part, toward where it blows.
+        var vKt: Double?
+        var tempC: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case altitudeFt = "altitude_ft"
+            case uKt = "u_kt"
+            case vKt = "v_kt"
+            case tempC = "temp_c"
+        }
+    }
+
     struct WindArrowAnswer: Codable, Equatable, Sendable {
         var shown: Bool
         var over: Bool

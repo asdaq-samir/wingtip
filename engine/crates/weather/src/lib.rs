@@ -30,12 +30,15 @@
 //! - model_weather: the map's model weather in a pilot's words -- the
 //!   precipitation's intensity (AIM 7-1-12), the sky's cover (AIM 7-1-28),
 //!   the ceiling's bands (AIM 7-1-7) and CAPE's categories (NWS);
+//! - aloft_grid: the wind and temperature a leg flies in, read from the
+//!   winds-aloft grid by level and by hour;
 //! - aviation_grids: the Aviation Weather Center's grids by level -- the
 //!   levels, AWC's icing categories, its turbulence thresholds by weight
 //!   class and its GFA cloud text;
 //! - worse: what counts as a route's weather getting worse between two
 //!   readings of its briefing (AIM 7-1-6, 7-1-7).
 
+pub mod aloft_grid;
 pub mod aviation_grids;
 pub mod contractions;
 pub mod cycles;

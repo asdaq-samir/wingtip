@@ -18,7 +18,7 @@ from wingtip.engine import ask as engine
 
 from ..figures.schemas import DebriefAnswer, DebriefAsk, Diversion, Holding, LostComms, LostCommsAsk
 from wingtip.aircraft import aircraft_profile
-from wingtip.planning import forecast_hour_for
+from wingtip.winds_aloft import winds_key_for
 from ..gateway import PUBLIC, PUBLIC_READ_BY_POST
 from ..plan_query import CruisePower, CruiseTas
 
@@ -100,7 +100,7 @@ def diversion(
         raise HTTPException(404, f"No US airport goes by {to.strip().upper()!r}.")
     profile = aircraft_profile(aircraft, cruise_tas_kt, fuel_burn_gph, None, None, None, cruise_power_pct, None)
     try:
-        leg = navlog.leg_from((lat, lon), (place["lat"], place["lon"]), altitude_ft, profile, forecast_hour_for(depart))
+        leg = navlog.leg_from((lat, lon), (place["lat"], place["lon"]), altitude_ft, profile, winds_key_for(depart))
     except WeatherServiceError as err:
         raise HTTPException(503, "The winds aloft could not be fetched for the diversion.") from err
     # The solution, its steps and the estimates checked, all in the

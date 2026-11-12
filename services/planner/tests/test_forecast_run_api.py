@@ -7,7 +7,7 @@ import time
 from pathlib import Path
 
 from fastapi.testclient import TestClient
-from wingtip import weather, weather_store
+from wingtip import weather, weather_store, winds_stations
 
 from app.main import app
 
@@ -23,7 +23,7 @@ def test_an_ifr_run_is_held_to_the_pilots_minimums_and_the_advisories(monkeypatc
     def no_winds(hr):
         raise weather.WeatherServiceError("Winds aloft (GFS model) unavailable from NOAA just now")
 
-    monkeypatch.setattr(weather, "_fd_stations", no_winds)
+    monkeypatch.setattr(winds_stations, "fd_stations", no_winds)
     track = [{k: p[k] for k in ("t", "lat", "lon", "alt_ft", "row")} for p in given["track"]]
     resp = client.post("/api/forecast/run", json={"track": track, "fields": given["fields"], "rules": "IFR", "minimums": given["minimums"]})
     assert resp.status_code == 200

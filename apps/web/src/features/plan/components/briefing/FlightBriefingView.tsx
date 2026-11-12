@@ -207,14 +207,18 @@ export default memo(function FlightBriefingView(props: Props) {
         // under it, the steps the FL chip's popover shows (AltitudeReasoning).
         // From `nav.altitude_selection`, which arrives with the nav log.
         <AccordionSection title="Cruise Altitude">
-          {!nav ? <Pending>Waiting on the nav log&apos;s altitude…</Pending> : <AltitudeReasoning nav={nav} legs={legs} />}
+          {!nav ? (
+            <Pending>Waiting on the nav log&apos;s altitude…</Pending>
+          ) : (
+            <AltitudeReasoning nav={nav} legs={legs} winds={totals?.winds} />
+          )}
         </AccordionSection>
       )}
 
       {/* En route, under the legs and the side view: the weather on the way
           -- adverse conditions first (AIM 7-1-5), then stretch by stretch,
           then the winds -- and any stops. */}
-      {part === "enroute" && <EnroutePart vm={vm} course={course} legs={legs} depart={depart} />}
+      {part === "enroute" && <EnroutePart vm={vm} course={course} legs={legs} depart={depart} winds={totals?.winds} />}
 
       {part === "enroute" && stops.length > 0 && (
         <>

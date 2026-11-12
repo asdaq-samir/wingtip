@@ -13,7 +13,7 @@ import numpy as np
 import pytest
 from wingtip import weather_store
 
-from app import flow, flow_awc, flow_dafs, flow_grid, flow_nomads, flow_parts
+from app import flow, flow_awc, flow_dafs, flow_grid, flow_nomads, flow_parts, flow_store
 
 HERE = Path(__file__).parent / "flow"
 NOW = datetime(2026, 11, 12, 12, 40, tzinfo=timezone.utc)
@@ -85,7 +85,9 @@ def test_the_idx_finds_each_level_by_its_metres_msl():
 def _held_awc(cycle: datetime) -> dict:
     name = "flow-2026111214-wind-held"
     weather_store.write_blob(name, b"png", ".png")
-    return {"key": {"cycle": flow_nomads.iso(cycle), "forecast_hour": 2}, "files": {"wind": name}}
+    weather_store.write_array("flowwinds-held", np.zeros((2, 1, 2, 2), dtype=np.float16))
+    numbers = {"array": "flowwinds-held", "fields": ["u", "v"], "levels": [{"id": "060", "ft": 6000.0}]}
+    return {"key": {"cycle": flow_nomads.iso(cycle), "forecast_hour": 2}, "files": {"wind": name}, "numbers": numbers}
 
 
 def test_an_awc_part_from_a_cycle_within_three_hours_is_not_fetched_again(monkeypatch):
@@ -150,3 +152,40 @@ def test_a_fresh_awc_part_is_drawn_over_noaas(monkeypatch):
     monkeypatch.setattr(flow_nomads, "part", lambda valid, now, held, fallback=False: None)
     frame = flow._frame(latest + timedelta(hours=2), NOW, None, latest, LEVELS)
     assert frame["sources"]["wind"] == "awc"
+
+
+def test_awcs_wind_is_kept_as_numbers_at_each_level_of_an_altitude(monkeypatch):
+    """The recorded surface answer stands for AWC's answer at 6,000 ft:
+    the numbers hold its east and north parts on the half-degree grid,
+    which the planner reads a route's winds from; the surface, no one
+    altitude, is drawn but not kept."""
+    answer = json.loads((HERE / "gfa_wind_sfc.json").read_text())
+    monkeypatch.setattr(flow_awc, "_get", lambda path, params: answer if path == "wind" else None)
+    latest = NOW.replace(minute=0)
+    key, files, numbers = flow_awc.frame(latest, latest, LEVELS["wind"])
+    assert set(files) == {"wind", "wind-060", "gust"}
+    assert numbers["levels"] == [{"id": "060", "ft": 6000.0}]
+    # The recorded point at 36 N, 103 W, from 280 at 8 kt, on the half grid.
+    row, col = int(round((flow_grid.NORTH - 36.0) / 0.5)), int(round((-103.0 - flow_grid.WEST) / 0.5))
+    assert numbers["u"][0][row, col] == pytest.approx(7.88, abs=0.01)
+    assert numbers["v"][0][row, col] == pytest.approx(-1.39, abs=0.01)
+    part = flow_parts._stored_part(
+        latest,
+        key,
+        files,
+        "c2026111212f00",
+        flow_store.store_numbers(latest, "awc", "c2026111212f00", numbers["levels"], {"u": numbers["u"], "v": numbers["v"]}),
+    )
+    held = weather_store.read_array(part["numbers"]["array"])
+    assert held.shape == (2, 1, flow_grid.HALF_ROWS, flow_grid.HALF_COLS) and held.dtype == np.float16
+    assert float(held[0, 0, row, col]) == pytest.approx(7.88, abs=0.01)
+    assert flow_store.stored(part)
+
+
+def test_a_held_awc_part_without_numbers_is_fetched_again(monkeypatch):
+    asked = []
+    monkeypatch.setattr(flow_awc, "frame", lambda *a: asked.append(a))
+    latest = NOW.replace(minute=0)
+    held = {k: v for k, v in _held_awc(latest).items() if k != "numbers"}
+    flow_parts.awc(latest + timedelta(hours=2), latest, LEVELS, held)
+    assert len(asked) == 1

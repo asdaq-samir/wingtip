@@ -935,6 +935,7 @@ export type VorCheckLimitDegAnswer = number;
 export type WeatherExpiresAtAnswer = number | null;
 export type WeatherHeldUntilAnswer = number | null;
 export type WeatherInForceAnswer = boolean;
+export type WindAloftAtAnswer = AloftAt | AloftAt[];
 export type WindAtAltitudeAnswer = WindAloft | null | (WindAloft | null)[];
 export type WindCalmAnswer = boolean;
 export type WindPickAnswer = {
@@ -3340,6 +3341,13 @@ export interface EngineContract {
   weather_worse: {
     input: WeatherWorseInput;
     answer: WeatherWorseAnswer;
+  };
+  /**
+   * The wind and temperature at an altitude and a time from the winds-aloft grid's columns at a place, one column an hour (AWC's GFA levels, an altitude MSL under 18,000 ft and a flight level from FL180, 14 CFR 71.33; each level's wind as its east and north parts, kt): each hour's column read at the altitude as a station's levels are (the direction the short way round, the speed and temperature linear in altitude, clamped past the ends, the temperature keeping its difference from a standard day; FAA-H-8083-28B 27.2.1.1.1), then the two hours round the time weighed by how near each is, the nearest hour's outside them. A level with no wind (under the ground) is left out. Null where the grid has none. A list for "altitudes".
+   */
+  wind_aloft_at: {
+    input: WindAloftAtInput;
+    answer: WindAloftAtAnswer;
   };
   /**
    * Whether a field's wind earns its arrow on the map (10 kt or more, or gusting: the owner's pick, 2026-11-10) and whether it warns: its least crosswind more than the airplane's maximum demonstrated crosswind (the POH's, 14 CFR 23.233(a) before amendment 23-64). Never over with no airplane or no figure.
@@ -11445,6 +11453,48 @@ export interface WeatherWorseItem {
   line: string;
   source: string;
 }
+export interface WindAloftAtInput {
+  hours: {
+    /**
+     * The hour the column is valid at, UNIX seconds.
+     */
+    valid_s: number;
+    levels: {
+      altitude_ft: number;
+      /**
+       * The wind's east part, toward where it blows.
+       */
+      u_kt?: number | null;
+      /**
+       * The wind's north part, toward where it blows.
+       */
+      v_kt?: number | null;
+      temp_c?: number | null;
+    }[];
+  }[];
+  /**
+   * The time read at, UNIX seconds.
+   */
+  at_s: number;
+  altitude_ft?: number | null;
+  altitudes?: number[] | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "AloftAt".
+ */
+export interface AloftAt {
+  wind: WindAloft | null;
+  temp_c: number | null;
+}
+/**
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "WindAloft".
+ */
+export interface WindAloft {
+  wind_dir_true_deg: number;
+  wind_speed_kt: number;
+}
 export interface WindArrowInput {
   speed_kt?: number | null;
   gust_kt?: number | null;
@@ -11474,14 +11524,6 @@ export interface WindAtAltitudeInput {
   };
   altitude_ft?: number | null;
   altitudes?: number[] | null;
-}
-/**
- * This interface was referenced by `EngineContract`'s JSON-Schema
- * via the `definition` "WindAloft".
- */
-export interface WindAloft {
-  wind_dir_true_deg: number;
-  wind_speed_kt: number;
 }
 export interface WindBarbInput {
   speed_kt: number;

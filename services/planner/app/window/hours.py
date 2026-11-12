@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
-from wingtip import departure_window as forecast, runway_wind, weather
+from wingtip import departure_window as forecast, runway_wind, weather, winds_aloft
 
 from wingtip import planning as planning_module
 from ..gonogo import ask as engine
@@ -49,7 +49,9 @@ def _ete(planned: Planned) -> float | None:
 
 class Plans:
     """The route planned for each departure, kept by what changes the plan
-    across the hours: its winds aloft period (weather.forecast_hour) and,
+    across the hours: its winds aloft (winds_aloft.winds_key_for: the
+    map's grid at the hour where its timeline holds it, so each hour flies
+    its own winds; the GFS stations' period past it) and,
     with an airplane, whether the flight is at night, which sets its
     reserve. A dozen hours share a plan or two."""
 
@@ -66,7 +68,7 @@ class Plans:
             return self.kept[key]
 
     def for_hour(self, depart: datetime) -> Planned:
-        period = weather.forecast_hour((depart - self.now).total_seconds() / 3600)
+        period = winds_aloft.winds_key_for(depart)
         planned = self._planned((period, None), depart)
         ete = _ete(planned)
         if not self.airplane or ete is None:

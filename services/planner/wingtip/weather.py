@@ -10,8 +10,10 @@ The service fetches aviationweather.gov's cache files -- the complete
 current national METARs, TAFs, SIGMETs, PIREPs and G-AIRMETs, gzipped,
 regenerated every minute (TAFs every ten) -- rather than per-route API
 queries, as their API terms ask heavy users to, and the winds and
-temperatures aloft from the GFS model since the FB ended with the NAM (NWS
-Service Change Notice 26-47). It parses each as it fetches it and stores
+temperatures aloft: the Aviation Weather Center's GFA winds the map draws,
+by level and hour (wingtip.winds_aloft), and past their twelve hours the
+GFS model at the old FB stations (wingtip.winds_stations), since the FB
+ended with the NAM (NWS Service Change Notice 26-47). It parses each as it fetches it and stores
 it with the time to which it may still be served by its product's own
 validity (a TAF to the end of its valid period, an advisory to the end of
 its own, a METAR as long as it is the latest heard, each report carrying
@@ -50,97 +52,19 @@ class WeatherServiceError(RuntimeError):
     """
 
 
-# --- Winds and temperatures aloft, and the freezing level, from the GFS ---
+# --- Winds and temperatures aloft, and the freezing level ---
+# The map's grid (AWC's winds, the GFS's in their place) at a plan's time
+# where its timeline holds it, the GFS's FB stations by period past it:
+# wingtip.winds_aloft, by the key winds_aloft.winds_key_for gives (None,
+# now). The engine interpolates (winds.rs, aloft_grid.rs).
 
 
-def _fd_stations(fcst_hr: str = "06") -> dict:
-    """The winds and temperatures aloft for one period, as the weather
-    service stored them ("winds-06", "-12", "-24"): the GFS's levels at the
-    old FB stations. The three altitude plans look the winds up at every
-    legal altitude of every leg -- well over a hundred lookups for one
-    route -- so the record is turned into an FdStations once per copy,
-    never per lookup. The FB itself is gone (NWS Service Change Notice
-    26-47: its bulletins ended with the NAM at 1200Z on 3 Nov 2026), so
-    these are the winds aloft, said to be modelled wherever they are
-    shown. WeatherServiceError, in a pilot's words, where no copy inside
-    its own window is held (the record's `until`, the engine's rule for
-    when a winds forecast stops counting, validity.rs)."""
-    weather_store.mark_asked()
-    record = weather_store.read(f"winds-{fcst_hr}")
-    if not weather_store.servable(record):
-        raise WeatherServiceError("Winds aloft (GFS model) unavailable from NOAA just now")
-    held = _FD.get(fcst_hr)
-    if held is not None and held[0] is record:
-        return held[1]
-    out = FdStations({code: {int(alt): level for alt, level in levels.items()} for code, levels in record.data["stations"].items()})
-    out.period = record.data["period"]
-    out.modelled = True
-    _FD[fcst_hr] = (record, out)
-    return out
+def temperatures_aloft(lat: float, lon: float, fcst_hr: str | None = None) -> list:
+    """The forecast temperatures over a place, [(altitude_ft, temp_c)] from
+    the lowest level up; empty where none is known."""
+    from . import winds_aloft
 
-
-# Each period's FdStations, made once per record: fcst_hr -> (record, stations).
-_FD: dict = {}
-
-
-class FdStations(dict):
-    """The winds and temperatures aloft at each station ({station_id:
-    {altitude_ft: {"wind_dir_true_deg", "wind_speed_kt", "temp_c"}}}), and
-    the period they are for: `period` is {"valid_at", "use_from",
-    "use_to", "run", "forecast_hour"}, ISO UTC and the GFS forecast hour
-    (services/weather/app/gfs.py's period_of)."""
-
-    period: dict | None = None
-    #: Model output, not an issued forecast: always so since the FB ended.
-    modelled: bool = False
-
-
-# The FD stations' own rows of the airports table, per set of station
-# ids: filtering 80,000 rows for the same two hundred stations on every
-# wind lookup was the other half of what a plan cost.
-_STATION_ROWS: dict = {}
-
-
-def _station_rows(station_ids, airports_df):
-    key = (frozenset(station_ids), id(airports_df))
-    rows = _STATION_ROWS.get(key)
-    if rows is None:
-        # local_code isn't globally unique (e.g. "MSP" also matches
-        # airports in Argentina and Colombia by coincidence) -- FD
-        # stations are US-only, so restrict the match accordingly.
-        candidates = airports_df[airports_df["local_code"].isin(station_ids) & (airports_df["iso_country"] == "US")]
-        rows = (
-            candidates["local_code"].to_numpy(),
-            np.radians(candidates["latitude_deg"].to_numpy(dtype=float)),
-            np.radians(candidates["longitude_deg"].to_numpy(dtype=float)),
-        )
-        _STATION_ROWS[key] = rows
-    return rows
-
-
-def _nearest_station(lat: float, lon: float, station_ids, airports_df) -> str | None:
-    codes, lats, lons = _station_rows(station_ids, airports_df)
-    if len(codes) == 0:
-        return None
-    # Great-circle distance to every station at once, the same formula
-    # as wingtip.geo.distance_nm; the radius cancels out of an argmin.
-    lat0, lon0 = np.radians(lat), np.radians(lon)
-    a = np.sin((lats - lat0) / 2) ** 2 + np.cos(lat0) * np.cos(lats) * np.sin((lons - lon0) / 2) ** 2
-    return str(codes[int(np.argmin(a))])
-
-
-def temperatures_aloft(lat: float, lon: float, fcst_hr: str = "06") -> list:
-    """The nearest station's forecast temperatures, [(altitude_ft,
-    temp_c)] from the lowest level up -- the GFS's 925 hPa, about 2,500 ft
-    (services/weather/app/gfs.py), each at its own height. Empty where no station
-    is found or it reports no temperature."""
-    from . import airports
-
-    stations = _fd_stations(fcst_hr)
-    station_id = _nearest_station(lat, lon, set(stations.keys()), airports.load_airports())
-    if station_id is None:
-        return []
-    return sorted((float(alt), v["temp_c"]) for alt, v in stations[station_id].items() if v["temp_c"] is not None)
+    return winds_aloft.temperatures_aloft(lat, lon, fcst_hr)
 
 
 def temperature_at(profile: list, altitude_ft: float) -> float | None:
@@ -151,76 +75,42 @@ def temperature_at(profile: list, altitude_ft: float) -> float | None:
     return _ask("temperature_at", profile=[list(p) for p in profile], altitude_ft=altitude_ft)
 
 
-def temperature_at_altitude(lat: float, lon: float, altitude_ft: float, fcst_hr: str = "06") -> float | None:
-    """The forecast temperature at `altitude_ft` near (lat, lon), from
-    the nearest station (temperature_at). None where there is none: a
-    standard day then, assumed rather than known."""
-    return temperature_at(temperatures_aloft(lat, lon, fcst_hr), altitude_ft)
+def temperature_at_altitude(lat: float, lon: float, altitude_ft: float, fcst_hr: str | None = None) -> float | None:
+    """The forecast temperature at `altitude_ft` over (lat, lon); None where
+    there is none: a standard day then, assumed rather than known."""
+    from . import winds_aloft
+
+    return winds_aloft.temperature_at_altitude(lat, lon, altitude_ft, fcst_hr)
 
 
-def freezing_level(lat: float, lon: float, fcst_hr: str = "06") -> dict | None:
-    """Where the nearest station's forecast temperatures cross 0 degC,
-    {"ft", "at_or_below"}: the engine's (winds.rs freezing_level).
-    `at_or_below` where it is freezing at the lowest level already (the
-    GFS's 925 hPa); None where the whole profile stays above freezing --
-    no freezing level in range, not unknown."""
+def freezing_level(lat: float, lon: float, fcst_hr: str | None = None) -> dict | None:
+    """Where the forecast temperatures over a place cross 0 degC, {"ft",
+    "at_or_below"}: the engine's (winds.rs freezing_level). `at_or_below`
+    where it is freezing at the lowest level already; None where the whole
+    profile stays above freezing -- no freezing level in range, not
+    unknown."""
     profile = temperatures_aloft(lat, lon, fcst_hr)
     if not profile:
         return None
     return _ask("freezing_level", profile=[list(p) for p in profile])
 
 
-def winds_period(fcst_hr: str = "06") -> dict | None:
-    """The period the winds a plan flies are for (FdStations.period), with
-    `modelled`, for the screens to say whose winds they are: None where
-    they cannot be had."""
-    try:
-        stations = _fd_stations(fcst_hr)
-    except WeatherServiceError:
-        return None
-    period = getattr(stations, "period", None)
-    return {**period, "modelled": stations.modelled} if period else None
+def winds_period(fcst_hr: str | None = None) -> dict | None:
+    """Whose winds a plan flies and for when (winds_aloft.winds_period),
+    for the screens to say: None where they cannot be had."""
+    from . import winds_aloft
+
+    return winds_aloft.winds_period(fcst_hr)
 
 
-def wind_at_altitude(lat: float, lon: float, altitude_ft: float, fcst_hr: str = "06") -> dict | None:
-    """Wind (true direction/speed) at altitude_ft, from the nearest FD
-    station's reported profile -- linearly interpolated between the two
-    bracketing reported altitudes, or clamped to the nearest end if
-    altitude_ft falls outside the reported range. "Light and variable"
-    (direction not meaningful) reports are excluded from the profile
-    rather than guessed; if that leaves no usable profile, or no station
-    is found nearby, returns None -- callers should treat that as "no
-    wind data available," not "calm."
-    """
-    from . import airports
+def wind_at_altitude(lat: float, lon: float, altitude_ft: float, fcst_hr: str | None = None) -> dict | None:
+    """Wind (true direction/speed) at altitude_ft over (lat, lon),
+    interpolated between the forecast's levels and hours; None where none
+    is known -- callers treat that as "no wind data available," not
+    "calm"."""
+    from . import winds_aloft
 
-    stations = _fd_stations(fcst_hr)
-    airports_df = airports.load_airports()
-    station_id = _nearest_station(lat, lon, set(stations.keys()), airports_df)
-    if station_id is None:
-        return None
-    return wind_in_levels(stations[station_id], altitude_ft)
-
-
-def wind_stations(fcst_hr: str = "06") -> tuple:
-    """Every FD station's levels and where it is: (ids, lats, lons in
-    degrees, [levels]) -- for reading the winds over a whole grid at once
-    (wingtip.route_options), where wind_at_altitude finds the nearest station
-    for one point."""
-    from . import airports
-
-    stations = _fd_stations(fcst_hr)
-    codes, lats, lons = _station_rows(set(stations.keys()), airports.load_airports())
-    return codes, np.degrees(lats), np.degrees(lons), [stations[str(c)] for c in codes]
-
-
-def wind_in_levels(levels: dict, altitude_ft: float) -> dict | None:
-    """One FD station's wind at altitude_ft from its levels ({altitude:
-    {"wind_dir_true_deg", "wind_speed_kt", ...}}): the engine's (winds.rs
-    wind_at_altitude) -- interpolated between the levels either side,
-    clamped at the ends, light and variable left out; None with no usable
-    level."""
-    return _ask("wind_at_altitude", levels={str(alt): level for alt, level in levels.items()}, altitude_ft=altitude_ft)
+    return winds_aloft.wind_at_altitude(lat, lon, altitude_ft, fcst_hr)
 
 
 # --- Every product, read from the weather store ---

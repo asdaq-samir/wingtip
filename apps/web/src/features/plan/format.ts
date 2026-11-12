@@ -3,7 +3,7 @@ import { altFt, bearing, flightLevel, one } from "../../lib/format";
 import { clockTime, duration, zuluTime } from "../../lib/format";
 import { callEngine } from "../../lib/engine/engine";
 import { calmOnRunway, isCalm } from "./lib/wind";
-import { modelledWinds } from "../../lib/windsAloft";
+import { modelledWinds, windsSource } from "../../lib/windsAloft";
 
 export { altFt, bearing, one };
 
@@ -45,12 +45,15 @@ export function plannedWords(t: Totals | null): string {
   if (!t?.planned_at) return "";
   const planned = `Planned ${zuluTime(new Date(t.planned_at))}`;
   if (!t.winds) return planned;
-  // The winds are the GFS model's since the FB ended (NWS SCN 26-47;
-  // lib/windsAloft): said so, with the run and forecast hour ("GFS 12Z +6 h").
+  // Whose winds, as the planner names them ("AWC winds, 12Z", the map's;
+  // lib/windsAloft), else the GFS model's with its run and forecast hour.
   const w = t.winds;
+  const forUse = `for use ${zuluTime(new Date(w.use_from)).slice(0, 4)}–${zuluTime(new Date(w.use_to))}`;
+  const named = windsSource(w);
+  if (named) return `${planned} · ${named} · ${forUse}`;
   const run = w.run ? ` ${zuluTime(new Date(w.run)).slice(0, 2)}Z${w.forecast_hour != null ? ` +${w.forecast_hour} h` : ""}` : "";
   const which = w.modelled ? modelledWinds(run) : "winds";
-  return `${planned} · ${which} for use ${zuluTime(new Date(w.use_from)).slice(0, 4)}–${zuluTime(new Date(w.use_to))}`;
+  return `${planned} · ${which} ${forUse}`;
 }
 
 /** Whether the winds a plan flies are not for its flight: the departure

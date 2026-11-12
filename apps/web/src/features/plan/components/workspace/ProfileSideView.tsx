@@ -56,6 +56,7 @@ export default function ProfileSideView({ vm }: { vm: PlanWorkspaceModel }) {
       <AltitudeProfile
         nav={s.nav}
         legs={s.legs}
+        winds={s.totals?.winds}
         ends={course}
         chart={(preview) => (
           <Suspense fallback={null}>

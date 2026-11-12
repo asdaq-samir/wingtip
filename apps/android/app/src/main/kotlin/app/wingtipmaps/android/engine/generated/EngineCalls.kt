@@ -2035,6 +2035,12 @@ fun Engine.weatherWorse(then: EngineContract.WeatherReading, now: EngineContract
     rule("weather_worse", EngineContract.WeatherWorseInput(then = then, now = now))
 
 /**
+ * The wind and temperature at an altitude and a time from the winds-aloft grid's columns at a place, one column an hour (AWC's GFA levels, an altitude MSL under 18,000 ft and a flight level from FL180, 14 CFR 71.33; each level's wind as its east and north parts, kt): each hour's column read at the altitude as a station's levels are (the direction the short way round, the speed and temperature linear in altitude, clamped past the ends, the temperature keeping its difference from a standard day; FAA-H-8083-28B 27.2.1.1.1), then the two hours round the time weighed by how near each is, the nearest hour's outside them. A level with no wind (under the ground) is left out. Null where the grid has none. A list for "altitudes".
+ */
+fun Engine.windAloftAt(hours: List<EngineContract.WindAloftAtInputHoursItem>, atS: Double, altitudeFt: Double? = null, altitudes: List<Double>? = null): Result<JsonElement> =
+    rule("wind_aloft_at", EngineContract.WindAloftAtInput(hours = hours, atS = atS, altitudeFt = altitudeFt, altitudes = altitudes))
+
+/**
  * Whether a field's wind earns its arrow on the map (10 kt or more, or gusting: the owner's pick, 2026-11-10) and whether it warns: its least crosswind more than the airplane's maximum demonstrated crosswind (the POH's, 14 CFR 23.233(a) before amendment 23-64). Never over with no airplane or no figure.
  */
 fun Engine.windArrow(speedKt: Double? = null, gustKt: Double? = null, crosswindKt: Double? = null, demonstratedKt: Double? = null): Result<EngineContract.WindArrowAnswer> =

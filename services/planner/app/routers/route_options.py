@@ -15,7 +15,7 @@ from wingtip import route_options as wingtip_route_options
 from .. import prefetch
 from ..router_basics import load_route, resolve
 from wingtip.aircraft import aircraft_profile
-from wingtip.planning import forecast_hour_for
+from wingtip.winds_aloft import winds_key_for
 from ..schemas.route_options import RouteOptions
 from ..gateway import PUBLIC
 from ..plan_query import CruiseTas, GlideRatio, ServiceCeiling, TaxiFuel
@@ -191,7 +191,7 @@ def route_options(
         {"ident": dest.upper(), "lat": end["lat"], "lon": end["lon"]},
         profile,
         depart=depart,
-        fcst_hr=forecast_hour_for(depart),
+        fcst_hr=winds_key_for(depart),
         min_ceiling_ft=min_ceiling_ft,
         min_visibility_sm=min_visibility_sm,
         current=current if stops.strip() else None,

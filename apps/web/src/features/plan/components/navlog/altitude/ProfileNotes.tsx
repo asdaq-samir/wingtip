@@ -3,7 +3,7 @@ import { cn } from "cn";
 import { Button } from "../../../../../components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../../../../../components/ui/collapsible";
 import { faaWords } from "../../../../../lib/advisories";
-import type { Detour, Leg, NavLogAltitude, RouteProfile } from "../../../../../lib/api/types";
+import type { Detour, Leg, NavLogAltitude, RouteProfile, Totals } from "../../../../../lib/api/types";
 import { altFt } from "../../../../../lib/format";
 import { GROUP_HEADING, TEXT } from "../../../../../lib/text";
 import AltitudeReasoning from "../../AltitudeReasoning";
@@ -25,6 +25,7 @@ export default function ProfileNotes({
   onAvoidClassB,
   onAllowClassB,
   onGoRound,
+  winds,
 }: {
   nav: NavLogAltitude | null;
   legs: Leg[];
@@ -35,6 +36,7 @@ export default function ProfileNotes({
   onAvoidClassB?: (detour: Detour | null) => void;
   onAllowClassB?: () => void;
   onGoRound?: (via: string[], stopIndex: number) => void;
+  winds?: Totals["winds"];
 }) {
   const bravo =
     profile && shownAt !== null
@@ -133,7 +135,7 @@ export default function ProfileNotes({
           {/* Kept in the page folded: the reasoning is found by the page's
               own search and read by its text while closed. */}
           <CollapsibleContent keepMounted>
-            <AltitudeReasoning nav={nav} legs={legs} plansAbove />
+            <AltitudeReasoning nav={nav} legs={legs} plansAbove winds={winds} />
           </CollapsibleContent>
         </Collapsible>
       )}

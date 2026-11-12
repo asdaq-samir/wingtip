@@ -70,10 +70,11 @@ def cycle_of(key: dict | None) -> datetime | None:
     return datetime.fromisoformat(key["cycle"].replace("Z", "+00:00"))
 
 
-def _keeps(held: dict | None, newest: datetime) -> bool:
-    """Whether a held hourly-cycle part stays: stored whole, and each of
-    its cycles less than REFRESH_H behind the newest now."""
-    if not held or not flow_store.stored(held):
+def _keeps(held: dict | None, newest: datetime, numbers: bool = False) -> bool:
+    """Whether a held hourly-cycle part stays: stored whole (with its
+    numbers, where it has them to give), and each of its cycles less than
+    REFRESH_H behind the newest now."""
+    if not held or not flow_store.stored(held) or (numbers and not held.get("numbers")):
         return False
     keys = held.get("key") or {}
     had = [cycle_of(keys)] if "cycle" in keys else [cycle_of(k) for k in keys.values()]
@@ -82,8 +83,11 @@ def _keeps(held: dict | None, newest: datetime) -> bool:
     return newest - min(had) < timedelta(hours=REFRESH_H)
 
 
-def _stored_part(valid: datetime, key: dict, bodies: dict[str, bytes], made_by: str) -> dict:
-    return {"key": key, "tag": made_by, "files": {name: flow_store.store(valid, name, made_by, body) for name, body in bodies.items()}}
+def _stored_part(valid: datetime, key: dict, bodies: dict[str, bytes], made_by: str, numbers: dict | None = None) -> dict:
+    part = {"key": key, "tag": made_by, "files": {name: flow_store.store(valid, name, made_by, body) for name, body in bodies.items()}}
+    if numbers is not None:
+        part["numbers"] = numbers
+    return part
 
 
 def awc(valid: datetime, latest: datetime | None, levels: dict, held: dict | None) -> dict | None:
@@ -91,15 +95,19 @@ def awc(valid: datetime, latest: datetime | None, levels: dict, held: dict | Non
     if latest is None:
         return held
     picked = flow_awc.cycle_for(valid, latest)
-    if picked is None or _keeps(held, picked[0]):
+    if picked is None or _keeps(held, picked[0], numbers=True):
         return held
 
     def make():
-        made = flow_awc.frame(valid, latest, [lv["id"] for lv in levels["wind"]])
+        made = flow_awc.frame(valid, latest, levels["wind"])
         if made is None:
             return held
-        key, bodies = made
-        return _stored_part(valid, key, bodies, flow_store.tag(key["cycle"], key["forecast_hour"]))
+        key, bodies, winds = made
+        tag = flow_store.tag(key["cycle"], key["forecast_hour"])
+        numbers = None
+        if winds["levels"]:
+            numbers = flow_store.store_numbers(valid, "awc", tag, winds["levels"], {"u": winds["u"], "v": winds["v"]})
+        return _stored_part(valid, key, bodies, tag, numbers)
 
     return guarded("awc", make, held)
 
@@ -145,7 +153,7 @@ def aloft(valid: datetime, now: datetime, levels: dict, held: dict | None, fallb
     for run, hourly in flow_nomads.tries(valid, now)["gfs"]:
         step = flow_aloft.nearest_step(hourly)
         key = {"run": flow_nomads.iso(run), "forecast_hour": step, "fallback": fallback}
-        if held and held.get("key") == key and flow_store.stored(held):
+        if held and held.get("key") == key and flow_store.stored(held) and held.get("numbers"):
             return held
         if time.time() - flow_nomads.NOT_UP.get(("aloft", run, step), 0) < flow_nomads.NOT_UP_RETRY_S:
             continue
@@ -155,21 +163,32 @@ def aloft(valid: datetime, now: datetime, levels: dict, held: dict | None, fallb
             if body is None:
                 flow_nomads.NOT_UP[("aloft", run, step)] = time.time()
                 return None
-            found = flow_aloft.at_levels(body, levels["wind"], levels["flight_levels_from_ft"])
+            half = flow_aloft.at_levels_half(body, levels["wind"], levels["flight_levels_from_ft"])
             terrain = _held_terrain()
-            bodies = {}
+            bodies, numbers, kept = {}, {"temp": [], "u": [], "v": []}, []
             for level in levels["wind"]:
                 level_id = level["id"]
+                if f"temp-{level_id}" not in half:
+                    continue
                 below = _under_ground(level.get("ft"), terrain, levels)
                 hide = lambda a, below=below: a if below is None else np.where(below, np.nan, a)  # noqa: E731
-                if f"temp-{level_id}" in found:
-                    bodies[f"temp-{level_id}"] = flow_grid.png_values("temp", hide(found[f"temp-{level_id}"]))
-                if fallback and f"u-{level_id}" in found and f"v-{level_id}" in found:
-                    bodies[f"wind-{level_id}"] = flow_grid.png_wind(hide(found[f"u-{level_id}"]), hide(found[f"v-{level_id}"]))
+                # The half-degree grid's points are the output's even rows and columns.
+                hide_half = lambda a, below=below: a if below is None else np.where(below[::2, ::2], np.nan, a)  # noqa: E731
+                kept.append({"id": level_id, "ft": level["ft"]})
+                for field in numbers:
+                    numbers[field].append(hide_half(half.get(f"{field}-{level_id}", np.full_like(half[f"temp-{level_id}"], np.nan))))
+                bodies[f"temp-{level_id}"] = flow_grid.png_values("temp", hide(flow_grid.upsample(half[f"temp-{level_id}"])))
+                if fallback and f"u-{level_id}" in half and f"v-{level_id}" in half:
+                    u, v = (hide(flow_grid.upsample(half[f"{c}-{level_id}"])) for c in ("u", "v"))
+                    bodies[f"wind-{level_id}"] = flow_grid.png_wind(u, v)
             world = flow_aloft.world_body(flow_nomads.grouped, run, step)
             if world is not None:
                 bodies["world"] = flow_grid.png_wind(*flow_aloft.world_wind(world))
-            return _stored_part(valid, key, bodies, flow_store.tag(key["run"], step))
+            tag = flow_store.tag(key["run"], step)
+            if not fallback:
+                numbers = {"temp": numbers["temp"]}
+            stored = flow_store.store_numbers(valid, "aloft", tag, kept, numbers) if kept else None
+            return _stored_part(valid, key, bodies, tag, stored)
 
         made = guarded("gfs-aloft", make, None)
         if made is not None:

@@ -7,7 +7,7 @@ import json
 import time
 from pathlib import Path
 
-from wingtip import forecast_run, weather, weather_store
+from wingtip import forecast_run, weather, weather_store, winds_stations
 
 FIXTURE = json.loads((Path(__file__).resolve().parents[3] / "apps/web/src/lib/fixtures/forecastRun.json").read_text())
 LATER = time.time() + 86400
@@ -26,7 +26,7 @@ def _no_winds(monkeypatch):
     def none(hr):
         raise weather.WeatherServiceError("Winds aloft (GFS model) unavailable from NOAA just now")
 
-    monkeypatch.setattr(weather, "_fd_stations", none)
+    monkeypatch.setattr(winds_stations, "fd_stations", none)
 
 
 def _track() -> list[dict]:

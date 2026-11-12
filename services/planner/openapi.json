@@ -22742,8 +22742,13 @@
         "type": "object"
       },
       "WindsPeriod": {
-        "description": "The period of the winds and temperatures aloft a plan flies: the\nGFS model's (fetched by services/weather, read from wingtip.weather_store), since the FB ended with the NAM (NWS\nService Change Notice 26-47). Valid at `valid_at`, for use from\n`use_from` to `use_to` (FAA Order JO 7110.10 TBL 9-3-1's windows round\nthe forecast hour), ISO UTC; `run` the GFS run and `forecast_hour` the\nhour of it read; `modelled` always true now.",
+        "description": "Whose winds and temperatures aloft a plan flies, and for when (read\nby services/weather, from wingtip.weather_store; wingtip.winds_aloft):\nwhere the map's timeline holds the departure, the Aviation Weather\nCenter's GFA winds the map draws (or NOAA's GFS in their place once\nAWC's are past their margin), read at each leg's time, `use_from` to\n`use_to` the grid's hours round the departure; past it, the GFS's at\nthe old FB stations by period, for use `use_from` to `use_to` (FAA\nOrder JO 7110.10 TBL 9-3-1's windows round the forecast hour). ISO\nUTC. `run` AWC's cycle or the GFS's run, `forecast_hour` the hour of\nit read; `label` the nav log's words (\"AWC winds, 12Z\"); `source`\n\"awc\", \"gfs\" (in AWC's place) or \"gfs-stations\"; `fallback` where\nNOAA's stand in for AWC's; `stale` where the run is past its source's\ncadence and margin, as the map's legend says it; `modelled` where they\nare model output said as such (NOAA's GFS).",
         "properties": {
+          "fallback": {
+            "default": false,
+            "title": "Fallback",
+            "type": "boolean"
+          },
           "forecast_hour": {
             "anyOf": [
               {
@@ -22755,6 +22760,18 @@
             ],
             "default": null,
             "title": "Forecast Hour"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Label"
           },
           "modelled": {
             "default": false,
@@ -22772,6 +22789,28 @@
             ],
             "default": null,
             "title": "Run"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "enum": [
+                  "awc",
+                  "gfs",
+                  "gfs-stations"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Source"
+          },
+          "stale": {
+            "default": false,
+            "title": "Stale",
+            "type": "boolean"
           },
           "use_from": {
             "title": "Use From",
@@ -30405,7 +30444,7 @@
     },
     "/api/weather/map": {
       "get": {
-        "description": "The SIGMETs valid at `at` and the G-AIRMETs nearest it, the PIREPs\nof the last 90 minutes up to 18,000 ft, and -- with `altitude_ft` --\nthe FD stations' winds and temperatures there for the period that\nholds `at` (planning.forecast_hour_for, FAA-H-8083-28B Table 27-2's for-use windows),\nin the box; and when the radar mosaic was made.",
+        "description": "The SIGMETs valid at `at` and the G-AIRMETs nearest it, the PIREPs\nof the last 90 minutes up to 18,000 ft, and -- with `altitude_ft` --\nthe FD stations' winds and temperatures there for the period that\nholds `at` (winds_stations.station_period_for, FAA-H-8083-28B Table 27-2's for-use windows),\nin the box; and when the radar mosaic was made.",
         "operationId": "weather_on_the_map_api_weather_map_get",
         "parameters": [
           {

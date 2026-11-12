@@ -1,0 +1,52 @@
+{
+  "why": "The winds aloft a leg flies in, read from the winds-aloft grid by level and by hour (engine/crates/weather/src/aloft_grid.rs, wind_aloft_at), held by the engine (engine/facade/tests/aloft_grid.rs) and the planner (services/planner/tests_wingtip/test_winds_aloft.py). Each level's wind is its east and north parts, kt, toward where it blows: u 20, v 0 is a wind from 270 at 20 kt. The expected answers are worked by hand: linear between levels and between hours (as a pilot reads between the FB's levels, FAA-H-8083-28B 27.2.1.1.1), past the lowest level the temperature keeping its difference from a standard day (ICAO Doc 7488's 1.9812 C a thousand feet).",
+  "cases": [
+    {
+      "why": "halfway between 3,000 and 6,000 ft: the speed and the temperature halfway",
+      "input": {
+        "hours": [{ "valid_s": 0, "levels": [{ "altitude_ft": 3000, "u_kt": 20, "v_kt": 0, "temp_c": 10 }, { "altitude_ft": 6000, "u_kt": 30, "v_kt": 0, "temp_c": 4 }] }],
+        "at_s": 0,
+        "altitude_ft": 4500
+      },
+      "expected": { "wind": { "wind_dir_true_deg": 270, "wind_speed_kt": 25 }, "temp_c": 7 }
+    },
+    {
+      "why": "halfway between two hours two hours apart: the speed and the temperature halfway",
+      "input": {
+        "hours": [
+          { "valid_s": 7200, "levels": [{ "altitude_ft": 6000, "u_kt": 40, "v_kt": 0, "temp_c": -4 }] },
+          { "valid_s": 0, "levels": [{ "altitude_ft": 6000, "u_kt": 20, "v_kt": 0, "temp_c": 0 }] }
+        ],
+        "at_s": 3600,
+        "altitude_ft": 6000
+      },
+      "expected": { "wind": { "wind_dir_true_deg": 270, "wind_speed_kt": 30 }, "temp_c": -2 }
+    },
+    {
+      "why": "a level under the ground (no wind) is left out: under the lowest level left, its wind, and its temperature carried down at the standard lapse rate (5 + 2 x 1.9812)",
+      "input": {
+        "hours": [{ "valid_s": 0, "levels": [{ "altitude_ft": 3000, "u_kt": null, "v_kt": null, "temp_c": null }, { "altitude_ft": 6000, "u_kt": 10, "v_kt": 0, "temp_c": 5 }] }],
+        "at_s": 0,
+        "altitude_ft": 4000
+      },
+      "expected": { "wind": { "wind_dir_true_deg": 270, "wind_speed_kt": 10 }, "temp_c": 8.9624 }
+    },
+    {
+      "why": "after the last hour, the last hour's",
+      "input": {
+        "hours": [
+          { "valid_s": 0, "levels": [{ "altitude_ft": 6000, "u_kt": 20, "v_kt": 0, "temp_c": 0 }] },
+          { "valid_s": 7200, "levels": [{ "altitude_ft": 6000, "u_kt": 40, "v_kt": 0, "temp_c": -4 }] }
+        ],
+        "at_s": 20000,
+        "altitude_ft": 6000
+      },
+      "expected": { "wind": { "wind_dir_true_deg": 270, "wind_speed_kt": 40 }, "temp_c": -4 }
+    },
+    {
+      "why": "no hours: no wind and no temperature known, never calm",
+      "input": { "hours": [], "at_s": 0, "altitude_ft": 6000 },
+      "expected": { "wind": null, "temp_c": null }
+    }
+  ]
+}

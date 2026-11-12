@@ -1,0 +1,26 @@
+{
+  "title": "AloftAt",
+  "type": "object",
+  "properties": {
+    "wind": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/WindAloft"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "temp_c": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "wind",
+    "temp_c"
+  ]
+}

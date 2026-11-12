@@ -7,7 +7,7 @@ planner's (wingtip.weather)."""
 
 import pytest
 
-from wingtip.weather import wind_in_levels
+from wingtip.winds_stations import wind_in_levels
 
 
 def test_circular_interpolation_across_the_360_wrap():
