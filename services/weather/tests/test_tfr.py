@@ -2,6 +2,7 @@
 (app.tfr), without the network: the shapes and the NOTAMs' details stubbed
 with the site's own shapes. Moved from the planner's tests (#535)."""
 
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -34,7 +35,39 @@ def test_a_notams_detail_is_its_times_rule_purpose_and_altitudes():
         "floor_ref": "MSL",
         "ceiling_ft": 10000.0,
         "ceiling_ref": "MSL",
+        "instructions": [],
+        "text": None,
+        "facility": None,
+        "contact": None,
     }
+
+
+#: KSJT's security TFR, FDC 6/2478, its XNOTAM file as tfr.faa.gov sent
+#: it on 2026-11-12 (download/detail_6_2478.xml).
+KSJT = (Path(__file__).parent / "tfr" / "detail_6_2478.xml").read_bytes()
+
+
+def test_a_security_tfrs_instructions_text_and_facility_are_kept_as_sent():
+    got = tfr.parse_detail(KSJT)
+    assert (got["rule"], got["floor_ft"], got["floor_ref"], got["ceiling_ft"], got["ceiling_ref"]) == (
+        "special security instructions (99.7)",
+        3500.0,
+        "MSL",
+        18000.0,
+        "MSL",
+    )
+    assert got["instructions"] == [
+        "EXC AS SPECIFIED BLW AND/OR UNLESS AUTH BY ATC:",
+        "1. ALL AIRCRAFT ENTERING OR EXITING THE TFR MUST BE ON A DISCRETE CODE ASSIGNED BY AN AIR TRAFFIC CONTROL (ATC) FACILITY.",
+        "2. AIRCRAFT MUST BE SQUAWKING THE DISCRETE CODE AT ALL TIMES WHILE IN THE TFR.",
+        "3. ALL AIRCRAFT ENTERING OR EXITING THE TFR MUST REMAIN IN TWO-WAY RADIO COMMUNICATIONS WITH ATC.",
+        "4. FORT WORTH ARTCC, TELEPHONE 817-858-7503, IS THE FAA COORDINATION FACILITY.",
+    ]
+    assert got["text"].startswith("!FDC 6/2478 ZFW TX..AIRSPACE SAN ANGELO, TX..TEMPORARY FLIGHT RESTRICTIONS.")
+    # The template leaves the facility's own fields empty: read from its
+    # instruction that names it, never guessed.
+    assert got["facility"] == {"name": "Fort Worth ARTCC", "phone": "817-858-7503", "frequency": None}
+    assert got["contact"] is None
 
 
 def test_a_height_above_the_ground_or_a_flight_level_is_said_so():
@@ -70,6 +103,7 @@ def test_the_list_is_one_tfr_per_notam_with_its_detail_and_stored(monkeypatch):
         return Mock(json=lambda: {"features": features}, raise_for_status=lambda: None)
 
     monkeypatch.setattr(tfr, "_DETAILS", tfr.LRUCache(maxsize=8))
+    monkeypatch.setattr(tfr, "DETAIL_PAUSE_S", 0)
     monkeypatch.setattr(tfr.requests, "get", get)
     tfr.fetch()
     stored = weather_store.read("tfrs").data
@@ -82,6 +116,17 @@ def test_the_list_is_one_tfr_per_notam_with_its_detail_and_stored(monkeypatch):
     tfr.fetch()
     assert len([u for u, _ in asked if "detail_" in u]) == 1
     assert planner_tfr.fetched_at() is not None
+    # A restart forgets what it read, but the stored list keeps it: nothing
+    # asked again for a TFR whose modification is the same.
+    monkeypatch.setattr(tfr, "_DETAILS", tfr.LRUCache(maxsize=8))
+    tfr.fetch()
+    assert len([u for u, _ in asked if "detail_" in u]) == 1
+    assert weather_store.read("tfrs").data[0]["expires"] == "2026-10-15T02:00:00Z"
+    # A changed one is.
+    for f in features:
+        f["properties"]["LAST_MODIFICATION_DATETIME"] = "2"
+    tfr.fetch()
+    assert len([u for u, _ in asked if "detail_" in u]) == 2
 
 
 def test_a_failed_fetch_leaves_the_list_stored_before(monkeypatch):

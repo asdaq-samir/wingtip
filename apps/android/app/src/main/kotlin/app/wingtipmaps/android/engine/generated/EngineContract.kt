@@ -10454,8 +10454,126 @@ object EngineContract {
     )
 
     @Serializable
+    data class TfrDetailReadAnswer(
+        val effective: String? = null,
+        val expires: String? = null,
+        val rule: String? = null,
+        val purpose: String? = null,
+        @SerialName("floor_ft")
+        val floorFt: Double? = null,
+        @SerialName("floor_ref")
+        val floorRef: String? = null,
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        @SerialName("ceiling_ref")
+        val ceilingRef: String? = null,
+        /**
+         * Its operative instructions, a line each as sent.
+         */
+        val instructions: List<String>,
+        /**
+         * Its NOTAM's text as sent.
+         */
+        val text: String? = null,
+        /**
+         * The FAA facility it is coordinated through (CDN FAC), its name written as a name with its kind kept ("Fort Worth ARTCC").
+         */
+        val facility: EngineContract.TfrDetailReadAnswerFacility? = null,
+        /**
+         * Its point of contact, who is in charge inside it.
+         */
+        val contact: EngineContract.TfrDetailReadAnswerContact? = null,
+    )
+
+    /**
+     * Its point of contact, who is in charge inside it.
+     */
+    @Serializable
+    data class TfrDetailReadAnswerContact(
+        val name: String,
+        val phone: String? = null,
+        val frequency: String? = null,
+    )
+
+    /**
+     * The FAA facility it is coordinated through (CDN FAC), its name written as a name with its kind kept ("Fort Worth ARTCC").
+     */
+    @Serializable
+    data class TfrDetailReadAnswerFacility(
+        val name: String,
+        val phone: String? = null,
+        val frequency: String? = null,
+    )
+
+    @Serializable
     data class TfrDetailReadInput(
         val text: String,
+    )
+
+    /**
+     * A point in degrees, WGS-84 (the field, or a TFR's nearest edge to it); null where not known.
+     */
+    @Serializable
+    data class TfrPoint(
+        val lat: Double,
+        val lon: Double,
+    )
+
+    @Serializable
+    data class TfrReadAnswer(
+        /**
+         * Its kind: "Security TFR", or "TFR".
+         */
+        val heading: String,
+        /**
+         * Its kind and the rule it is under: "Security TFR, 14 CFR 99.7".
+         */
+        val what: String,
+        /**
+         * "3,500 to 18,000 ft MSL, 4.8 nm east of the field"; null where neither is known.
+         */
+        val where: String? = null,
+        /**
+         * Its place's name, its dates off: "San Angelo, TX".
+         */
+        val place: String? = null,
+    )
+
+    @Serializable
+    data class TfrReadInput(
+        /**
+         * tfr.faa.gov's kind ("Security", "Hazards", "Vip", "Space Operations", "Air Shows/Sports", "Uas Public Gathering").
+         */
+        val kind: String? = null,
+        /**
+         * The rule as tfr_detail_read names it ("special security instructions (99.7)") or its code.
+         */
+        val rule: String? = null,
+        /**
+         * The list's title as sent ("SAN ANGELO, TX, Sunday, November 1, 2026 through ...").
+         */
+        val title: String? = null,
+        @SerialName("floor_ft")
+        val floorFt: Double? = null,
+        /**
+         * MSL, AGL or SFC.
+         */
+        @SerialName("floor_ref")
+        val floorRef: String? = null,
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        /**
+         * MSL or AGL.
+         */
+        @SerialName("ceiling_ref")
+        val ceilingRef: String? = null,
+        /**
+         * Whether its area takes the field in.
+         */
+        @SerialName("over_field")
+        val overField: Boolean? = null,
+        val field: EngineContract.TfrPoint? = null,
+        val edge: EngineContract.TfrPoint? = null,
     )
 
     @Serializable

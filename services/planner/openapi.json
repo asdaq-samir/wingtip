@@ -17727,6 +17727,16 @@
             ],
             "title": "Starts"
           },
+          "tfr": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TfrFacts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "tied": {
             "title": "Tied",
             "type": "boolean"
@@ -20774,6 +20784,196 @@
         "title": "Tfr",
         "type": "object"
       },
+      "TfrContact": {
+        "description": "Whom a TFR's NOTAM names to call, as its XNOTAM file gives them:\nthe name in the FAA's capitals, a telephone, a frequency.",
+        "properties": {
+          "frequency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Frequency"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Phone"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "TfrContact",
+        "type": "object"
+      },
+      "TfrFacts": {
+        "description": "A TFR as tfr.faa.gov gives it, for the card to read (the engine's\ntfr_read) and show: its kind, rule, the list's title and its levels;\nits instructions, a line each, and its NOTAM's text, as sent; the\nfacility it is coordinated through and its point of contact; and, on a\nfield's card, whether its area takes the field in, the field and the\nnearest point of its areas.",
+        "properties": {
+          "ceiling_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ceiling Ft"
+          },
+          "ceiling_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ceiling Ref"
+          },
+          "contact": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TfrContact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "edge": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TfrPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "facility": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TfrContact"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "field": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TfrPoint"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "floor_ft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floor Ft"
+          },
+          "floor_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Floor Ref"
+          },
+          "instructions": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Instructions",
+            "type": "array"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kind"
+          },
+          "over_field": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Over Field"
+          },
+          "rule": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "title": "TfrFacts",
+        "type": "object"
+      },
       "TfrHere": {
         "description": "A TFR over the point, and whether it is in force now.",
         "properties": {
@@ -20920,6 +21120,25 @@
           "active_now"
         ],
         "title": "TfrHere",
+        "type": "object"
+      },
+      "TfrPoint": {
+        "description": "A point in degrees (WGS-84).",
+        "properties": {
+          "lat": {
+            "title": "Lat",
+            "type": "number"
+          },
+          "lon": {
+            "title": "Lon",
+            "type": "number"
+          }
+        },
+        "required": [
+          "lat",
+          "lon"
+        ],
+        "title": "TfrPoint",
         "type": "object"
       },
       "Tfrs": {

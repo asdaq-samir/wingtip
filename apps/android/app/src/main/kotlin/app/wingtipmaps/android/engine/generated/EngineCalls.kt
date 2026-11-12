@@ -1867,10 +1867,16 @@ fun Engine.terrainWayRound(start: List<Double>, end: List<Double>, ceilingFt: Do
     rule("terrain_way_round", EngineContract.TerrainWayRoundInput(start = start, end = end, ceilingFt = ceilingFt, terrainFt = terrainFt, fields = fields))
 
 /**
- * A TFR's detail from the FAA's TFR XML: its NOTAM, times, altitudes and areas; null where it holds no NOTAM. Not XML is refused.
+ * A TFR's detail from the FAA's TFR XML (tfr.faa.gov's XNOTAM file): its times, the rule it is issued under, its purpose, its lowest floor and highest ceiling over its areas, its instructions and its NOTAM's text as sent, and who it names to call: the facility it is coordinated through and its point of contact, each with a telephone or frequency, from their own fields or, where the template left them empty, the sentence that calls one the coordination facility. Null where it holds no NOTAM. Not XML is refused.
  */
-fun Engine.tfrDetailRead(text: String): Result<Map<String, JsonElement>?> =
+fun Engine.tfrDetailRead(text: String): Result<EngineContract.TfrDetailReadAnswer?> =
     rule("tfr_detail_read", EngineContract.TfrDetailReadInput(text = text))
+
+/**
+ * A TFR read for a pilot, on the lines a NOTAM's row has, from what tfr.faa.gov gives of it: its kind as a heading ("Security TFR"), what it is with the rule it is issued under ("Security TFR, 14 CFR 99.7": 14 CFR 91.137-91.145, 99.7; 49 U.S.C. 44812), where it is (its floor to its ceiling in whole feet, rounded outward, each MSL or AGL as its XNOTAM gives it, the ground said as surface; and over the field, or how far its nearest edge is from the field and which way, to a tenth of a mile rounded down, on JO 7930.2 3-3-9's 16 points), and its place's name from the list's title, its dates off (the card says them once). A kind or rule it does not know is said as given, never guessed.
+ */
+fun Engine.tfrRead(kind: String? = null, rule: String? = null, title: String? = null, floorFt: Double? = null, floorRef: String? = null, ceilingFt: Double? = null, ceilingRef: String? = null, overField: Boolean? = null, field: EngineContract.TfrPoint? = null, edge: EngineContract.TfrPoint? = null): Result<EngineContract.TfrReadAnswer> =
+    rule("tfr_read", EngineContract.TfrReadInput(kind = kind, rule = rule, title = title, floorFt = floorFt, floorRef = floorRef, ceilingFt = ceilingFt, ceilingRef = ceilingRef, overField = overField, field = field, edge = edge))
 
 /**
  * At most `most` (4,000 where not given) of `points`, even steps through, the first and last kept; each point as it came.

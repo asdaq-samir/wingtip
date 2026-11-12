@@ -184,6 +184,7 @@ export const WEB_RULES = [
   "sua_altitudes",
   "sun_down",
   "terrain_view_bands",
+  "tfr_read",
   "thin_track",
   "title_case",
   "tokens",

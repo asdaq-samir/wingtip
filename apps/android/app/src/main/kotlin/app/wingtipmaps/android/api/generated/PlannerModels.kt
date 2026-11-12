@@ -5760,6 +5760,7 @@ data class RankedNotam (
     val runways: List<String>,
     val score: Int,
     val starts: String? = null,
+    val tfr: TfrFacts? = null,
     val tied: Boolean,
     val top: Boolean
 )
@@ -5771,6 +5772,64 @@ data class RankedNotam (
 data class NotamReason (
     val key: String,
     val words: String
+)
+
+/**
+ * A TFR as tfr.faa.gov gives it, for the card to read (the engine's
+ * tfr_read) and show: its kind, rule, the list's title and its levels;
+ * its instructions, a line each, and its NOTAM's text, as sent; the
+ * facility it is coordinated through and its point of contact; and, on a
+ * field's card, whether its area takes the field in, the field and the
+ * nearest point of its areas.
+ */
+@Serializable
+data class TfrFacts (
+    @SerialName("ceiling_ft")
+    val ceilingFt: Double? = null,
+
+    @SerialName("ceiling_ref")
+    val ceilingRef: String? = null,
+
+    val contact: TfrContact? = null,
+    val edge: TfrPoint? = null,
+    val facility: TfrContact? = null,
+    val field: TfrPoint? = null,
+
+    @SerialName("floor_ft")
+    val floorFt: Double? = null,
+
+    @SerialName("floor_ref")
+    val floorRef: String? = null,
+
+    val instructions: List<String>? = null,
+    val kind: String? = null,
+
+    @SerialName("over_field")
+    val overField: Boolean? = null,
+
+    val rule: String? = null,
+    val text: String? = null,
+    val title: String? = null
+)
+
+/**
+ * Whom a TFR's NOTAM names to call, as its XNOTAM file gives them:
+ * the name in the FAA's capitals, a telephone, a frequency.
+ */
+@Serializable
+data class TfrContact (
+    val frequency: String? = null,
+    val name: String,
+    val phone: String? = null
+)
+
+/**
+ * A point in degrees (WGS-84).
+ */
+@Serializable
+data class TfrPoint (
+    val lat: Double,
+    val lon: Double
 )
 
 /**
