@@ -30,12 +30,12 @@ import threading
 from pathlib import Path
 
 import shapefile
-from cachetools import TTLCache
+from cachetools import LRUCache, TTLCache
 from shapely import STRtree, from_wkb, points as shapely_points, to_wkb
 from shapely.geometry import LineString, Point, shape as shapely_shape
 
 from .engine import ask as engine
-from .faa_data import NASR_INDEX_URL, _is_icloud_evicted, download_and_extract, find_current_cycle_page, find_download_link
+from .faa_data import _is_icloud_evicted, nasr_zip_url, download_and_extract
 
 CONTROLLED_CLASSES = ("B", "C", "D")
 
@@ -100,9 +100,7 @@ def ensure_class_airspace_shapefile(cache_dir) -> Path:
     cache_dir = Path(cache_dir)
     shp_path = cache_dir / "Shape_Files" / "Class_Airspace.shp"
     if not shp_path.exists() or not _shapefile_is_complete(shp_path):
-        cycle_page = find_current_cycle_page(NASR_INDEX_URL)
-        zip_url = find_download_link(cycle_page, r'href="([^"]*class_airspace_shape_files\.zip)"')
-        download_and_extract(zip_url, cache_dir)
+        download_and_extract(nasr_zip_url("Class_Airspace"), cache_dir)
         if not _shapefile_is_complete(shp_path):
             evicted = [shp_path.with_suffix(x).name for x in SHAPEFILE_SUFFIXES if _is_icloud_evicted(shp_path.with_suffix(x))]
             if evicted:
@@ -149,8 +147,10 @@ def _floor_ft_msl(record: dict) -> float:
 # The Class B/C/D polygons, parsed once per process and held in memory:
 # every altitude selection needs them, and walking Class_Airspace.shp --
 # 5,612 PolygonZ records, 394 MB, twelve million vertices -- takes about
-# thirty seconds. Held bbox-independent, so every route shares one parse.
-_ALL_AIRSPACE_CACHE: dict = {}
+# thirty seconds. Held bbox-independent, so every route shares one parse,
+# and one edition at a time: a new cycle's replaces the last in memory
+# rather than sitting beside it.
+_ALL_AIRSPACE_CACHE: LRUCache = LRUCache(maxsize=1)
 _ALL_AIRSPACE_LOCK = threading.Lock()
 
 # The same polygons written beside the shapefile as WKB, so a fresh
@@ -303,7 +303,7 @@ def preload(faa_cache_dir) -> None:
     _load_surface_e(shp_path)
 
 
-_SURFACE_E_CACHE: dict = {}
+_SURFACE_E_CACHE: LRUCache = LRUCache(maxsize=1)
 
 
 def _load_surface_e(shp_path) -> list:
@@ -323,7 +323,6 @@ def _load_surface_e(shp_path) -> list:
                 if record[local_type] in SURFACE_E_TYPES:
                     shape = sf.shape(index)
                     areas.append((shapely_shape(shape.__geo_interface__), tuple(shape.bbox)))
-            _SURFACE_E_CACHE.clear()
             _SURFACE_E_CACHE[key] = areas
         return _SURFACE_E_CACHE[key]
 
