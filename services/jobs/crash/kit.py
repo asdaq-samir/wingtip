@@ -40,7 +40,7 @@ log = logging.getLogger(__name__)
 #: How far round the place the TFRs are kept, nm: a film's frame.
 TFR_NEAR_NM = 30.0
 
-_SOURCE_NAMES = {"faa_statement": "FAA statement", "faa_notice": "FAA preliminary notice", "ntsb": "NTSB"}
+_SOURCE_NAMES = {"faa_statement": "FAA statement", "faa_notice": "FAA preliminary notice"}
 
 
 def _ntsb_quotes(record: dict | None) -> list[dict]:

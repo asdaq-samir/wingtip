@@ -32,6 +32,7 @@ from datetime import datetime
 
 import gribberish
 import numpy as np
+from wingtip.units import M_PER_FT, MS_TO_KT
 
 from . import flow_grid
 
@@ -53,7 +54,6 @@ GFS_WORLD_URL = "https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_1p00.pl"
 #: The world picture's edges, west, south, east, north: half a degree
 #: past the outer points, as flow_grid.BOUNDS.
 WORLD_BOUNDS = (-180.5, -90.5, 179.5, 90.5)
-M_PER_FT = 0.3048  # the international foot (NIST Handbook 44, Appendix C)
 
 Download = Callable[[str, dict, tuple], "bytes | None"]
 
@@ -97,7 +97,7 @@ def read_columns(body: bytes) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         if meta.var_abbrev == "TMP":
             values = values - 273.15
         elif meta.var_abbrev in ("UGRD", "VGRD"):
-            values = values * flow_grid.MS_TO_KT
+            values = values * MS_TO_KT
         found.setdefault(meta.var_abbrev, {})[float(meta.level_value) / 100.0] = values
     if "TMP" not in found or "HGT" not in found:
         raise ValueError("the GFS's file has no temperatures and heights")
@@ -165,7 +165,7 @@ def world_wind(body: bytes) -> tuple[np.ndarray, np.ndarray]:
             found[meta.var_abbrev] = np.asarray(message.data(), dtype=np.float64).reshape(meta.grid_shape)
     if "UGRD" not in found or "VGRD" not in found:
         raise ValueError("no 10 m wind in the world file")
-    u, v = (np.roll(found[k], found[k].shape[1] // 2, axis=1) * flow_grid.MS_TO_KT for k in ("UGRD", "VGRD"))
+    u, v = (np.roll(found[k], found[k].shape[1] // 2, axis=1) * MS_TO_KT for k in ("UGRD", "VGRD"))
     # Cleared inside the layer's own box, where AWC's wind is drawn: the
     # two pictures never draw streaks over each other.
     lats = np.linspace(90.0, -90.0, u.shape[0])[:, None]

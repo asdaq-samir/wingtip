@@ -9,6 +9,7 @@ from wingtip.geo import (
     along_path_nm,
     along_track_distance_nm,
     bearing_deg,
+    box_around,
     cluster_points,
     corridor_bbox,
     cross_track_distance_nm,
@@ -274,3 +275,12 @@ def test_nearest_is_the_argmin_of_every_distance_first_on_a_tie():
         lat[:150], lon[:150] = to_lat + rng.normal(0, 0.01, 150), to_lon + rng.normal(0, 0.01, 150)
         every = distance_nm(lat[:, None], lon[:, None], to_lat[None, :], to_lon[None, :])
         assert (nearest(lat, lon, to_lat, to_lon) == np.argmin(every, axis=1)).all()
+
+
+@pytest.mark.parametrize("lat", [0.0, 46.8, 64.8, -33.9])
+def test_the_box_around_a_point_holds_every_point_within_its_radius(lat):
+    """Each point 30 nm off, every way, on the sphere this module flies."""
+    south, west, north, east = box_around(lat, -92.2, 30.0)
+    for bearing in range(0, 360, 15):
+        p_lat, p_lon = destination_point(lat, -92.2, bearing, 30.0)
+        assert south <= p_lat <= north and west <= p_lon <= east, bearing

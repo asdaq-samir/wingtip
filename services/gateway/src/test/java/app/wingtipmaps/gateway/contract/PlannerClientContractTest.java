@@ -10,6 +10,10 @@ import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.service.AccountService;
 import app.wingtipmaps.gateway.service.AppleRevocation;
+import app.wingtipmaps.gateway.service.ChangeLines;
+import app.wingtipmaps.gateway.service.CheckpointNotesClient;
+import app.wingtipmaps.gateway.service.CrashDraftMail;
+import app.wingtipmaps.gateway.service.Mailer;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import java.lang.reflect.Method;
@@ -25,6 +29,7 @@ import java.util.TreeSet;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.Test;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.transaction.support.TransactionTemplate;
 import tools.jackson.databind.JsonNode;
@@ -33,8 +38,9 @@ import tools.jackson.databind.node.ObjectNode;
 
 /**
  * Every call the gateway makes to the planner by hand -- PlannerClient's
- * rules and the briefing, and AccountService's forgetting of a pilot's
- * notes -- held to services/planner/openapi.json, the planner's own
+ * rules and the briefing, what ChangeLines, CheckpointNotesClient and
+ * CrashDraftMail ask through it, and AccountService's forgetting of a
+ * pilot's notes -- held to services/planner/openapi.json, the planner's own
  * document as this jar was built with it. The asks and answers' fields
  * are the planner's own types, generated from that document as the jar
  * builds, so a field renamed fails the build; what is still written by
@@ -57,7 +63,12 @@ class PlannerClientContractTest {
         }
     }
 
-    record Clients(PlannerClient planner, AccountService accounts) {}
+    record Clients(
+            PlannerClient planner,
+            AccountService accounts,
+            ChangeLines lines,
+            CheckpointNotesClient notes,
+            CrashDraftMail drafts) {}
 
     private static final LocalDate DAY = LocalDate.of(2026, 11, 9);
 
@@ -95,7 +106,15 @@ class PlannerClientContractTest {
                     c -> c.planner().inspections(null, null, null, null, null, null, null, null)),
             new Call(
                     "AccountService.delete",
-                    c -> c.accounts().delete(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))));
+                    c -> c.accounts().delete(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))),
+            new Call(
+                    "ChangeLines.changes",
+                    c -> c.lines().changes("KDLH", "KMSP", List.of("KHYR"), Stub.briefing, Stub.briefing)),
+            new Call(
+                    "CheckpointNotesClient.mine",
+                    c -> c.notes().mine(new Pilot("pilot@example.com", "A. Pilot", "sub-1"))),
+            // The drafts to notice, each mailed and then marked noticed.
+            new Call("CrashDraftMail.everyFewMinutes", c -> c.drafts().everyFewMinutes()));
 
     /** PlannerClient's methods that ask nothing themselves. */
     private static final Set<String> NOT_CALLS = Set.of("endorsementKind"); // a filter over endorsementKinds()
@@ -194,8 +213,13 @@ class PlannerClientContractTest {
                             .flatMap(OpenApiContract::answerSchema)
                             .orElseThrow())
                     .toString();
-            Clients clients =
-                    new Clients(new PlannerClient(plannerStub.url(), assistantStub.url()), accounts(plannerStub.url()));
+            PlannerClient client = new PlannerClient(plannerStub.url(), assistantStub.url());
+            Clients clients = new Clients(
+                    client,
+                    accounts(plannerStub.url()),
+                    new ChangeLines(client),
+                    new CheckpointNotesClient(client),
+                    new CrashDraftMail(client, new Mailer(mock(JavaMailSender.class), "x@y"), "dev@example.com", ""));
             for (Call call : CALLS) {
                 String who = call.method().contains(".") ? call.method() : "PlannerClient." + call.method();
                 List<Stub.Asked> asked = new ArrayList<>();

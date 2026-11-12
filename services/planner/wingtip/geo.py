@@ -41,6 +41,8 @@ from scipy.sparse import coo_matrix
 from scipy.sparse.csgraph import connected_components
 from scipy.spatial import KDTree
 
+from .units import NM_PER_DEG_LAT
+
 EARTH_RADIUS_NM = 3440.065
 
 # A sphere (f=0), sized in nautical miles, so inv() returns nautical
@@ -188,7 +190,7 @@ def corridor_bbox(route_start: tuple, route_end: tuple, buffer_nm: float) -> tup
     """
     lats = [route_start[0], route_end[0]]
     lons = [route_start[1], route_end[1]]
-    pad_lat = buffer_nm / 60.0  # a nautical mile a minute of latitude
+    pad_lat = buffer_nm / NM_PER_DEG_LAT
     # A minute of longitude is cos(latitude) of a mile: the same degrees
     # east and west were 4.95 nm of a 7 nm pad at 45 N, and the obstacles
     # 4.7-5 nm abeam a north-south leg fell out of the terrain floor's 5 nm
@@ -197,6 +199,19 @@ def corridor_bbox(route_start: tuple, route_end: tuple, buffer_nm: float) -> tup
     widest = min(89.0, max(abs(route_start[0]), abs(route_end[0])) + pad_lat)
     pad_lon = pad_lat / max(0.05, math.cos(math.radians(widest)))
     return (min(lats) - pad_lat, min(lons) - pad_lon, max(lats) + pad_lat, max(lons) + pad_lon)
+
+
+def box_around(lat: float, lon: float, radius_nm: float) -> tuple[float, float, float, float]:
+    """(south, west, north, east), degrees, of a box holding what lies
+    within `radius_nm` of a point: a search's first cut, the distance
+    measured within it after. A degree of latitude taken as 60 nm
+    (wingtip.units.NM_PER_DEG_LAT); a degree of longitude as cos(latitude)
+    of that at the box's poleward edge, where it is shortest, as
+    corridor_bbox above has it for a route."""
+    pad_lat = radius_nm / NM_PER_DEG_LAT
+    widest = min(89.0, abs(lat) + pad_lat)
+    pad_lon = pad_lat / max(0.05, math.cos(math.radians(widest)))
+    return lat - pad_lat, lon - pad_lon, lat + pad_lat, lon + pad_lon
 
 
 # --- Web Mercator tiles ---

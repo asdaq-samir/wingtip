@@ -57,7 +57,7 @@ from wingtip import (
 from wingtip import airspace_at, congested, cycle_pack, data_cycles, traffic as traffic_store
 from wingtip import airports as airport_table
 
-from . import chart_model, chart_refresh, crash_leads, errors, mcp, openapi_document, tracing
+from . import chart_model, chart_refresh, errors, mcp, openapi_document, tracing
 from .chart_cycle import check as chart_cycle
 from .feeds import watch as feeds_watch
 from .router_basics import PROCESSED_DIR
@@ -355,9 +355,8 @@ def _warm_reference_data() -> None:
 async def _lifespan(app: FastAPI):
     threading.Thread(target=_warm_reference_data, name="reference-data-warm-up", daemon=True).start()
     # The live feeds are read by ingest into the stores the planner reads: none here. Watched here: whether they and the
-    # weather's still come in (app.feeds), a check a minute; the live store pruned (wingtip.traffic.prune); the crash leads.
+    # weather's still come in (app.feeds), a check a minute; the live store pruned (wingtip.traffic.prune).
     threading.Thread(target=feeds_watch.watch_forever, name="feed-watch", daemon=True).start()
-    threading.Thread(target=crash_leads.start_forever, name="crash-leads", daemon=True).start()
     threading.Thread(target=traffic_store.prune_forever, name="live-store-prune", daemon=True).start()
     yield
 

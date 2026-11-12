@@ -74,3 +74,7 @@ services/planner/wingtip/terrain_fine.py 1
 # Android's 3D airspace volumes, the same drawing bound as the web's: an area with no top (UNL)
 # is drawn up to the floor of Class A (14 CFR 71.33); the card writes it unlimited.
 apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/AirspaceVolumes3d.kt 1
+# The statute mile's length in metres (1,609.344, NIST Handbook 44,
+# Appendix C) among wingtip.units' conversions: a unit's definition, which
+# glmp and the weather service's grids read a visibility in metres with.
+services/planner/wingtip/units.py 1

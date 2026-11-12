@@ -418,8 +418,6 @@ def frd_near(lat: float, lon: float, max_nm: float = NEAR_NM) -> dict | None:
     dropped. None with no fix within `max_nm`. The choice and the
     figures are the engine's (frd_near, the one route options names its
     turns by); the fixes round the point are read here."""
-    dlat = max_nm / 60
-    dlon = max_nm / (60 * max(0.1, math.cos(math.radians(lat))))
     around = [
         {
             "ident": f["ident"],
@@ -430,7 +428,7 @@ def frd_near(lat: float, lon: float, max_nm: float = NEAR_NM) -> dict | None:
             "kind": f.get("kind") or "",
             "mag_var": f.get("mag_var"),
         }
-        for f in within(lat - dlat, lon - dlon, lat + dlat, lon + dlon)
+        for f in within(*geo.box_around(lat, lon, max_nm))
     ]
     point = engine("frd_near", lat=lat, lon=lon, max_nm=max_nm, now_s=time.time(), fixes=around)
     return None if point is None else {**point, "name": frd_title(point)}

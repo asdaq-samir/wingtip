@@ -10,7 +10,8 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 from pydantic import Field
 
-from .calls import METAR_SOURCE, editions, pilot, planner, seg
+from ..generated.planner_calls import airport_place, airport_search, nearest_airports as nearest
+from .calls import METAR_SOURCE, editions, ident as ident_of, pilot
 from .tool_meta import READS, read_only
 
 Ident = Annotated[str, Field(min_length=2, max_length=7, description="An airport's identifier: KDLH, DLH, C81.")]
@@ -34,7 +35,7 @@ def register(server: MCPServer) -> None:
         limit: Annotated[int, Field(ge=1, le=25, description="How many to answer, 1 to 25.")] = 10,
     ) -> dict[str, Any]:
         pilot()
-        found = await planner("GET", "/api/airports/search", params={"q": query})
+        found = await airport_search(q=query)
         return {"airports": found["airports"][:limit], "sources": editions("nasr")}
 
     @server.tool(
@@ -48,7 +49,7 @@ def register(server: MCPServer) -> None:
     )
     async def airport_info(ident: Ident) -> dict[str, Any]:
         pilot()
-        card = await planner("GET", f"/api/airport/{seg(ident)}")
+        card = await airport_place(ident=ident_of(ident))
         facts = {k: v for k, v in card.items() if k not in WEATHER and v not in (None, [], "")}
         return {**facts, "sources": [*editions("nasr"), {"source": "FAA d-TPP and Chart Supplement, the cycle in force"}]}
 
@@ -73,12 +74,12 @@ def register(server: MCPServer) -> None:
         pilot()
         own = None
         if near:
-            card = await planner("GET", f"/api/airport/{seg(near)}")
+            card = await airport_place(ident=ident_of(near))
             lat, lon, own = card["lat"], card["lon"], card["ident"]
         if lat is None or lon is None:
             raise ToolError("Say where: give `near` (an airport identifier) or both `lat` and `lon`.")
         # The planner's most, filtered here: its list is nearest first.
-        found = (await planner("GET", "/api/airports/nearest", params={"lat": lat, "lon": lon, "limit": 25}))["airports"]
+        found = (await nearest(lat=lat, lon=lon, limit=25))["airports"]
         kept = [
             a
             for a in found

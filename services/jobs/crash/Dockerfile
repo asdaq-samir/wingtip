@@ -5,8 +5,8 @@
 # notices read into leads, each lead's identity checked by the engine
 # against the FAA's registry and an ADS-B track, and a kit made for each
 # confirmed one, into the shared store the planner serves. `python -m
-# crash` is the entry point; the planner starts it every half hour
-# (app.crash_leads) through the dev-services sidecar.
+# crash` is the entry point; `every` (the compose service's command) is
+# its own schedule, a run each half hour.
 #
 # No browser: the FAA's preliminary notices' CSV refuses a scripted
 # request and a headless Chromium's alike (403), so Chromium's 400 MB
@@ -34,6 +34,6 @@ USER appuser
 ENV PYTHONPATH=/workspace/services/jobs:/workspace/services/planner
 # The build fails here if a package the job imports is missing, rather
 # than the job on its next run.
-RUN python -B -c "import crash.cli, bs4, wingtip_native, zoneinfo; zoneinfo.ZoneInfo('America/Chicago')"
+RUN python -B -c "import crash.cli, bs4, tzfpy, us, wingtip_native, zoneinfo; zoneinfo.ZoneInfo('America/Chicago')"
 ENTRYPOINT ["python", "-m", "crash"]
 CMD ["poll"]

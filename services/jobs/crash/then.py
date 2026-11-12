@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import datetime as dt
 import logging
-import math
 
+from wingtip import geo
 from wingtip.history import iem, notam_archive, weather_then
 
 from . import ntsb, places
@@ -32,16 +32,16 @@ WEATHER_BEFORE_S = 3600
 #: How far round the place the NOTAMs are kept, nm: the kit's TFRs' frame
 #: (kit.TFR_NEAR_NM), a film's, not a rule.
 NOTAMS_NEAR_NM = 30.0
-#: Nautical miles in a degree of latitude, for the NOTAMs' box (a box, not a distance).
-_NM_PER_DEG = 60.0
 
 
 def moment(lead: dict) -> float | None:
     """The event's moment, s since 1970: the reported local time where the
-    state keeps one offset from UTC that day, else the confirmed track's
+    state and the place's own zone keep one offset from UTC that day (a
+    place on a zone line or in a state of two is not one moment), else the confirmed track's
     report nearest the place (the identity check's `nearest`); None where
     neither is known."""
-    offsets = places.offsets_min(lead.get("state"), lead["local_date"])
+    point = (lead["lat"], lead["lon"]) if lead.get("lat") is not None and lead.get("lon") is not None else None
+    offsets = places.offsets_min(lead.get("state"), lead["local_date"], point)
     if lead.get("local_time") and len(offsets) == 1:
         local = dt.datetime.fromisoformat(f"{lead['local_date']}T{lead['local_time']}")
         return (local - dt.timedelta(minutes=offsets[0])).replace(tzinfo=dt.timezone.utc).timestamp()
@@ -76,10 +76,8 @@ def notams(lead: dict, at: float, now: float) -> dict | None:
     place, from that UTC day's snapshot (notam_archive.as_it_was, its
     `archived` false where none was kept); None while that day is today
     and none is kept yet."""
-    lat, lon = lead["lat"], lead["lon"]
-    dlat = NOTAMS_NEAR_NM / _NM_PER_DEG
-    dlon = dlat / max(0.2, math.cos(math.radians(lat)))
-    found = notam_archive.as_it_was(at, lat - dlat, lat + dlat, lon - dlon, lon + dlon)
+    south, west, north, east = geo.box_around(lead["lat"], lead["lon"], NOTAMS_NEAR_NM)
+    found = notam_archive.as_it_was(at, south, north, west, east)
     today = dt.datetime.fromtimestamp(now, dt.timezone.utc).date().isoformat()
     if not found["archived"] and found["day"] >= today:
         return None

@@ -1,102 +1,54 @@
 """Where an FAA report's place is, and which clocks it keeps: a state's
 name as the FAA writes it ("Kentucky") to its postal code, and the IANA
-zones a state's places may keep, for the offsets from UTC its local time
-is read at (the engine's occurrence_identity widens its window over all
-of them, so a state with two zones is never read at the wrong one).
+zones the place may keep, for the offsets from UTC its local time is read
+at (the engine's occurrence_identity widens its window over all of them,
+so a place near a zone line is never read at the wrong one).
 
-Not a rule: the states' postal codes are USPS Publication 28's, and the
-zones the IANA time zone database's (tzdata), which the US standard zones
-of 49 CFR part 71 are kept in."""
+Not a rule, and not kept here: the states and territories, their postal
+codes and the zones each keeps are the `us` package's (Sunlight Labs'
+metadata, BSD), and the zone at the town's own point
+tzfpy's (the timezone-boundary-builder's polygons over OpenStreetMap, the
+IANA database's zones). The point's zone catches what a state's list
+leaves out: the Navajo Nation in Arizona keeps summer time, which the rest
+of Arizona does not."""
 
 from __future__ import annotations
 
 import datetime as dt
-from zoneinfo import ZoneInfo
+import re
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+import tzfpy
+import us
 from wingtip import geocode
-
-_NY, _CHI, _DEN, _LA = "America/New_York", "America/Chicago", "America/Denver", "America/Los_Angeles"
-
-#: Name -> (postal code, its zones), the zones' first the most of its places keep.
-STATES = {
-    "alabama": ("AL", [_CHI]),
-    "alaska": ("AK", ["America/Anchorage", "America/Adak"]),
-    "arizona": ("AZ", ["America/Phoenix", _DEN]),
-    "arkansas": ("AR", [_CHI]),
-    "california": ("CA", [_LA]),
-    "colorado": ("CO", [_DEN]),
-    "connecticut": ("CT", [_NY]),
-    "delaware": ("DE", [_NY]),
-    "district of columbia": ("DC", [_NY]),
-    "d.c": ("DC", [_NY]),
-    "florida": ("FL", [_NY, _CHI]),
-    "georgia": ("GA", [_NY]),
-    "hawaii": ("HI", ["Pacific/Honolulu"]),
-    "idaho": ("ID", ["America/Boise", _LA]),
-    "illinois": ("IL", [_CHI]),
-    "indiana": ("IN", ["America/Indiana/Indianapolis", _CHI]),
-    "iowa": ("IA", [_CHI]),
-    "kansas": ("KS", [_CHI, _DEN]),
-    "kentucky": ("KY", [_NY, _CHI]),
-    "louisiana": ("LA", [_CHI]),
-    "maine": ("ME", [_NY]),
-    "maryland": ("MD", [_NY]),
-    "massachusetts": ("MA", [_NY]),
-    "michigan": ("MI", ["America/Detroit", _CHI]),
-    "minnesota": ("MN", [_CHI]),
-    "mississippi": ("MS", [_CHI]),
-    "missouri": ("MO", [_CHI]),
-    "montana": ("MT", [_DEN]),
-    "nebraska": ("NE", [_CHI, _DEN]),
-    "nevada": ("NV", [_LA, _DEN]),
-    "new hampshire": ("NH", [_NY]),
-    "new jersey": ("NJ", [_NY]),
-    "new mexico": ("NM", [_DEN]),
-    "new york": ("NY", [_NY]),
-    "north carolina": ("NC", [_NY]),
-    "north dakota": ("ND", [_CHI, _DEN]),
-    "ohio": ("OH", [_NY]),
-    "oklahoma": ("OK", [_CHI]),
-    "oregon": ("OR", [_LA, "America/Boise"]),
-    "pennsylvania": ("PA", [_NY]),
-    "rhode island": ("RI", [_NY]),
-    "south carolina": ("SC", [_NY]),
-    "south dakota": ("SD", [_CHI, _DEN]),
-    "tennessee": ("TN", [_CHI, _NY]),
-    "texas": ("TX", [_CHI, _DEN]),
-    "utah": ("UT", [_DEN]),
-    "vermont": ("VT", [_NY]),
-    "virginia": ("VA", [_NY]),
-    "washington": ("WA", [_LA]),
-    "west virginia": ("WV", [_NY]),
-    "wisconsin": ("WI", [_CHI]),
-    "wyoming": ("WY", [_DEN]),
-    "puerto rico": ("PR", ["America/Puerto_Rico"]),
-    "u.s. virgin islands": ("VI", ["America/St_Thomas"]),
-    "virgin islands": ("VI", ["America/St_Thomas"]),
-    "guam": ("GU", ["Pacific/Guam"]),
-    "northern mariana islands": ("MP", ["Pacific/Saipan"]),
-    "american samoa": ("AS", ["Pacific/Pago_Pago"]),
-}
-_BY_CODE = {code: zones for code, zones in STATES.values()}
 
 
 def state_code(text: str | None) -> str | None:
-    """ "Kentucky" or "KY" as "KY"; None for anything else."""
-    t = (text or "").strip().rstrip(".").lower()
-    if t in STATES:
-        return STATES[t][0]
-    return t.upper() if t.upper() in _BY_CODE else None
+    """ "Kentucky", "KY", "D.C." or "U.S. Virgin Islands" as its postal
+    code; None for anything else, a state that no longer is among them."""
+    t = re.sub(r"(?i)^u\.s\.\s+", "", (text or "").strip()).replace(".", "").strip()
+    found = us.states.lookup(t) if t else None
+    return found.abbr if found is not None and not found.is_obsolete else None
 
 
-def offsets_min(state: str | None, local_date: str) -> list[float]:
-    """The offsets from UTC the state's places keep on that date, minutes,
-    at local noon (summer time included); none for a state not known, which
-    the engine reads at every US offset."""
+def offsets_min(state: str | None, local_date: str, point: tuple[float, float] | None = None) -> list[float]:
+    """The offsets from UTC the state's places, and the zone at `point`
+    (lat, lon) where it is given, keep on that date, minutes, at local
+    noon (summer time included); none for a state not known and no point,
+    which the engine reads at every US offset."""
+    found = us.states.lookup(state) if state else None
+    zones = list(found.time_zones) if found is not None else []
+    if point is not None and (zone := tzfpy.get_tz(point[1], point[0])):
+        zones.append(zone)
     day = dt.date.fromisoformat(local_date)
-    out = []
-    for zone in _BY_CODE.get(state or "", []):
-        offset = dt.datetime.combine(day, dt.time(12), ZoneInfo(zone)).utcoffset()
+    out: list[float] = []
+    for zone in zones:
+        try:
+            offset = dt.datetime.combine(day, dt.time(12), ZoneInfo(zone)).utcoffset()
+        except ZoneInfoNotFoundError:
+            # An old alias (America/Indianapolis) Debian's tzdata no longer
+            # ships; its state lists the zone it stands for as well.
+            continue
         if offset is not None and offset.total_seconds() / 60 not in out:
             out.append(offset.total_seconds() / 60)
     return out

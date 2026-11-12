@@ -30,7 +30,7 @@ from pathlib import Path
 import requests
 
 from .config import DATA_DIR
-from .geo import distance_nm
+from .geo import box_around, distance_nm
 from .units import M_PER_NM
 from .single_flight import once
 
@@ -217,13 +217,12 @@ def _on_field(outline, lat: float, lon: float, metres: float) -> bool:
 def _read(lat: float, lon: float, release: str) -> dict:
     import pyarrow.dataset as ds
 
-    dlat = REACH_M / 111_320.0
-    dlon = dlat / max(0.2, math.cos(math.radians(lat)))
+    south, west, north, east = box_around(lat, lon, REACH_M / M_PER_NM)
     box = (
-        (ds.field("bbox", "xmin") >= lon - dlon)
-        & (ds.field("bbox", "xmin") <= lon + dlon)
-        & (ds.field("bbox", "ymin") >= lat - dlat)
-        & (ds.field("bbox", "ymin") <= lat + dlat)
+        (ds.field("bbox", "xmin") >= west)
+        & (ds.field("bbox", "xmin") <= east)
+        & (ds.field("bbox", "ymin") >= south)
+        & (ds.field("bbox", "ymin") <= north)
     )
     rows = _dataset(release).to_table(columns=_COLUMNS, filter=box).to_pylist()
     try:

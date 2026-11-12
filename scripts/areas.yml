@@ -118,6 +118,8 @@ areas:
       - services/planner/app/generated/**
       - engine/contract/**
       - scripts/build/assistant*
+      # The planner's MCP calls, written by assistant_client.py's generate().
+      - scripts/build/planner_calls.py
   weather:
     ci: test-weather
     check: the weather service's ruff and pytest, in Docker

@@ -19,6 +19,7 @@ from shapely.ops import nearest_points
 from . import weather_store
 from .engine import ask as engine
 from .geo import along_track_distance_nm
+from .units import NM_PER_DEG_LAT
 
 #: How often the service reads the shapes again: the site updates them
 #: every few minutes. A list older than this was kept through an outage.
@@ -26,7 +27,6 @@ SHAPES_TTL_S = 10 * 60
 #: How near the route a TFR is listed with it: a pilot plans round one,
 #: not along its edge.
 NEAR_NM = 5.0
-_NM_PER_DEG = 60.0
 
 
 class TfrUnavailable(RuntimeError):
@@ -110,7 +110,7 @@ def along_route(path: list, start: datetime, end: datetime, near_nm: float = NEA
     # Degrees of buffer, as many as `near_nm` of longitude at the route's
     # latitude, which are the more: a little generous north and south.
     mid_lat = sum(lat for lat, _ in path) / len(path)
-    buffer_deg = near_nm / _NM_PER_DEG / max(0.2, math.cos(math.radians(mid_lat)))
+    buffer_deg = near_nm / NM_PER_DEG_LAT / max(0.2, math.cos(math.radians(mid_lat)))
     near = line.buffer(buffer_deg)
     now = datetime.now(timezone.utc)
     found = []
@@ -141,7 +141,7 @@ def near_point(lat: float, lon: float, start: datetime, end: datetime, near_nm: 
     field ({"lat", "lon"}), which the engine says how far and which way
     (tfr_read)."""
     point = Point(lon, lat)
-    buffer_deg = near_nm / _NM_PER_DEG / max(0.2, math.cos(math.radians(lat)))
+    buffer_deg = near_nm / NM_PER_DEG_LAT / max(0.2, math.cos(math.radians(lat)))
     near = point.buffer(buffer_deg)
     now = datetime.now(timezone.utc)
     found = []
