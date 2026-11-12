@@ -71,10 +71,6 @@ export function DryRunControls({
   const onFinal = !!run.final && !missed && !!onMissed && second !== null && second >= run.final.from && second < run.final.to;
   // Play or pause, from the toggle, Space on the bar, or Space on the
   // chart: the map's one replay clock's, as every replay's (features/replay).
-  // TODO(claude/studio): the scrubber over the chart and the speed menu to
-  // be ReplayTimeline's once it takes miles along the course as its x, and
-  // the pilot's view a camera of features/replay/camera (ReplayCameraGl's
-  // TODO), so the dry run offers Chase, Orbit and Tower as the Studio does.
   const toggle = toggleReplay;
   // The run seen from the pilot's seat over the 3D ground, or the chart
   // from above (features/plan/map/terrain's PilotCamera): a toggle among the

@@ -9,6 +9,7 @@ import { useGlLayer, useGlMap } from "../../lib/map/gl/glLayer";
 import { useGlView } from "../../lib/map/gl/useGlView";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 import { prefersReducedMotion } from "../../lib/motion";
+import { rgbOf } from "../../lib/rgb";
 import { WEATHER } from "../../lib/tokens";
 import { FlowBar } from "./FlowBar";
 import { FlowAirmets } from "./FlowAirmets";
@@ -174,7 +175,7 @@ function layersOf(
             ...common,
             style: GridStyle.ARROW,
             density: 0,
-            iconColor: tone(WEATHER.flowStreak),
+            iconColor: rgbOf(WEATHER.flowStreak),
             palette: STREAK_RAMP,
           })
         : new ParticleLayer({
@@ -191,12 +192,6 @@ function layersOf(
   }
   return out;
 }
-
-const tone = (hex: string): [number, number, number] => [
-  parseInt(hex.slice(1, 3), 16),
-  parseInt(hex.slice(3, 5), 16),
-  parseInt(hex.slice(5, 7), 16),
-];
 
 /** An hour past, the precipitation the radar saw (IEM's NEXRAD mosaic, as
  *  the loop draws it), in place of the model's. */

@@ -90,10 +90,6 @@ async function pictureOf(svg: string): Promise<HTMLImageElement> {
  * canvas does not have. The same mark (trafficIcon), at the same place
  * (the map's projection of its position, on the 3D ground as the marker
  * is), turned to its track on the map.
- *
- * TODO(claude/studio): a ScenegraphLayer airplane at its altitude
- * (features/replay's seam), drawn by deck.gl into the map's canvas once
- * @deck.gl/maplibre is in; this then goes.
  */
 export async function drawAirplane(map: MlMap, here: ReplayPoint | null, out: CanvasRenderingContext2D) {
   if (!here) return;

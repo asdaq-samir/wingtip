@@ -1,4 +1,4 @@
-import { M_PER_FT } from "./geometry";
+import { M_PER_FT } from "../../../../lib/geo";
 
 /*
  * Where an airplane of the traffic stands in the 3D view (TrafficAloftGl):

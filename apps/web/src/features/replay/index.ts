@@ -2,13 +2,7 @@
  *  benefit each other"): the track model, the timeline, the cameras on the
  *  3D view and their keyframes, the data block, the radio and its
  *  captions, and the video export, over the map's one replay clock
- *  (lib/replay/clock).
- *
- *  TODO(claude/studio): the airplane at its altitude in 3D, a deck.gl
- *  ScenegraphLayer (a glTF model, turned to its track and pitched to its
- *  climb) drawn through @deck.gl/maplibre once that branch lands, here
- *  beside ReplayCameraGl; the export's drawAirplane (export/mapFrames)
- *  then goes, as deck.gl draws into the map's own canvas. */
+ *  (lib/replay/clock). */
 export { ReplayTimeline } from "./ReplayTimeline";
 export { DataBlock } from "./DataBlock";
 export { default as ReplayCameraGl } from "./camera/ReplayCameraGl";

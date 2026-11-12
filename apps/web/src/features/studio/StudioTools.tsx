@@ -2,7 +2,7 @@ import { lazy, Suspense, useMemo, type ReactNode } from "react";
 import SectionTitle from "../../components/SectionTitle";
 import { loadStudioParts, sampleAt, type ReplayTrack } from "../replay";
 import { NotamsThen, NtsbEvents, WeatherThen } from "./StudioHistory";
-import type { StudioHistory } from "./useStudioHistory";
+import type { Studio } from "./useStudio";
 
 // The replay's Studio parts, with wavesurfer.js, on their own chunk.
 const KeyframesPanel = lazy(() => loadStudioParts().then((m) => ({ default: m.KeyframesPanel })));
@@ -24,23 +24,13 @@ function Section({ title, children, testId }: { title: string; children: ReactNo
  * moment (the weather, the NTSB's events, the NOTAMs and TFRs), then
  * what makes a video of it -- the camera's keyframes, the radio and its
  * captions, and the export -- the replay's own parts (features/replay),
- * which Plan and Dev can take up too. `renderDraft`, the crash draft open
- * at ?render=1, opens the export to the render script once the weather
- * then has come (or could not), so its METARs are in the film.
+ * which Plan and Dev can take up too. The model's `renderDraft`, the
+ * crash draft open at ?render=1, opens the export to the render script
+ * once the weather then has come (or could not), so its METARs are in the
+ * film.
  */
-export function StudioTools({
-  track,
-  ground,
-  history,
-  callsign,
-  renderDraft = null,
-}: {
-  track: ReplayTrack;
-  ground: { along_nm: number; ground_ft: number }[];
-  history: StudioHistory;
-  callsign: string | null;
-  renderDraft?: string | null;
-}) {
+export function StudioTools({ studio, track }: { studio: Studio; track: ReplayTrack }) {
+  const { history, ground, renderDraft } = studio;
   // The METARs credited in a video where any are drawn, the radar where shown.
   const credits = [
     history.radar ? "Radar: NWS NEXRAD via Iowa Environmental Mesonet" : null,
@@ -68,7 +58,7 @@ export function StudioTools({
           <RadioTrack />
         </Section>
         <Section title="Captions">
-          <CaptionsPanel callsign={callsign} />
+          <CaptionsPanel callsign={studio.registration} />
         </Section>
         <Section title="Video" testId="studio-video">
           <ExportPanel key={track.id} track={track} scene={scene} credits={credits} render={render} />

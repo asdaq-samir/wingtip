@@ -4,6 +4,7 @@ import { TEXT } from "../../lib/text";
 import { lazy, Suspense } from "react";
 import { CameraMenu, DataBlock, loadStudioParts, ReplayTimeline, STUDIO_SPEEDS, type ReplayTrack } from "../replay";
 import { StudioProfile } from "./StudioProfile";
+import type { Studio } from "./useStudio";
 
 const CaptionLine = lazy(() => loadStudioParts().then((m) => ({ default: m.CaptionLine })));
 
@@ -15,7 +16,7 @@ const CaptionLine = lazy(() => loadStudioParts().then((m) => ({ default: m.Capti
  * stands on the planner (FlowBar), the same insets from the sheet and
  * clear of the map's buttons either side.
  */
-export function StudioOverlay({ track, ground }: { track: ReplayTrack; ground: { along_nm: number; ground_ft: number }[] }) {
+export function StudioOverlay({ track, profile }: { track: ReplayTrack; profile: NonNullable<Studio["profile"]> }) {
   return (
     <>
       <div className="pointer-events-none absolute top-[calc(max(0.5rem,env(safe-area-inset-top))+var(--map-inset-top,0px))] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] z-[1000]">
@@ -33,7 +34,7 @@ export function StudioOverlay({ track, ground }: { track: ReplayTrack; ground: {
           <Suspense fallback={null}>
             <CaptionLine className="self-center" />
           </Suspense>
-          <StudioProfile track={track} ground={ground} className="h-20" />
+          <StudioProfile track={track} profile={profile} className="h-20" />
           <ReplayTimeline label="Replay" speeds={STUDIO_SPEEDS} gaps={track.gaps} testId="studio-timeline">
             <CameraMenu testId="studio-camera" />
           </ReplayTimeline>

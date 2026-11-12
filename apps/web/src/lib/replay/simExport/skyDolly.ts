@@ -1,3 +1,4 @@
+import { M_PER_FT, M_PER_NM } from "../../geo";
 import type { SimRow, SimSegment } from "./flight";
 
 /*
@@ -67,7 +68,7 @@ const COLUMNS = [
   "LightCabin",
 ] as const;
 
-const FTS_PER_KT = 1852 / 0.3048 / 3600;
+const FTS_PER_KT = M_PER_NM / M_PER_FT / 3600;
 
 /** The flap handle's notch for the estimated flaps: up, a first notch for
  *  takeoff, the third for landing -- a guess for the picture, as the

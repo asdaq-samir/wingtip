@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent } from "react";
 import { MapLibreOverlay } from "@deck.gl/maplibre";
 import type { Layer } from "@deck.gl/core";
 import type { IControl, Map as MlMap, MapGeoJSONFeature } from "maplibre-gl";
+import { rgbOf } from "../../rgb";
 import { slotId, useGlMap, type GlTap } from "./glLayer";
 
 /**
@@ -66,7 +67,7 @@ export const deckSlot = (slot: "areas" | "lines" | "route" | "marks"): { beforeI
 /** A colour of the tokens as deck.gl takes it: [r, g, b, a], 0 to 255,
  *  from "#rrggbb" and how opaque, 0 to 1. */
 export function deckColour(hex: string, alpha = 1): [number, number, number, number] {
-  return [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16), Math.round(alpha * 255)];
+  return [...rgbOf(hex), Math.round(alpha * 255)];
 }
 
 /** A tap on deck.gl's layers `layerIds` while mounted, in the map's one
