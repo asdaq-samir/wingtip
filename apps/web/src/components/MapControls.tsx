@@ -67,8 +67,9 @@ function MapControlsDrawn() {
   // foot past the panel's edge. One of the two drawn, never both: the
   // radio's state is the one mic's.
   const onPhone = useIsMobile();
-  // `riding`: on a phone's bottom sheet's top (OnSheetTop), 24 over it,
-  // its pill widening no further than 5.5rem from the right edge, clear
+  // `riding`: on a phone's bottom sheet's top (OnSheetTop), 24 over it (or
+  // over the first flight's card riding there too, FirstFlight's
+  // --sheet-top-lift), its pill widening no further than 5.5rem from the right edge, clear
   // of the map's buttons riding there (4.75rem with the margin in flight).
   const mic = (riding = false) => (
     <div
@@ -76,7 +77,7 @@ function MapControlsDrawn() {
       className={cn(
         "z-[1000] flex items-end rounded-4xl p-1",
         riding
-          ? "pointer-events-auto absolute bottom-6 left-[max(0.5rem,env(safe-area-inset-left))] max-w-[min(28rem,calc(100vw-6rem))]"
+          ? "pointer-events-auto absolute bottom-[calc(1.5rem+var(--sheet-top-lift,0px))] left-[max(0.5rem,env(safe-area-inset-left))] max-w-[min(28rem,calc(100vw-6rem))]"
           : onPhone
             ? "absolute bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] max-w-[min(28rem,calc(100vw-5rem))]"
             : // In the column at the right edge: widening to the left into
@@ -191,7 +192,7 @@ function MapControlsDrawn() {
             className={cn(
               "z-[1000] flex flex-col items-end gap-2",
               riding
-                ? "pointer-events-auto absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-6"
+                ? "pointer-events-auto absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-[calc(1.5rem+var(--sheet-top-lift,0px))]"
                 : "absolute right-[max(0.5rem,env(safe-area-inset-right))] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+1.5rem)] nav-bottom:top-[max(0.5rem,env(safe-area-inset-top))] nav-bottom:bottom-auto",
             )}
           >

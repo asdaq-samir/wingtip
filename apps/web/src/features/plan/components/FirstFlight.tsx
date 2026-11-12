@@ -22,6 +22,23 @@ import type { RouteParts } from "./RouteBox";
  * the app has no
  * position and no last departure, a second field asks where from.
  */
+/** The map's buttons riding the sheet's top with the card stand over it,
+ *  not on it (the sheet audit, 2026-11-12: the radio's, the Map and the
+ *  position buttons sat over Plan it): the card's height on the riding
+ *  container they share (OnSheetTop), for their place (MapControls). */
+function liftRiders(card: HTMLDivElement | null) {
+  const slot = card?.parentElement;
+  if (!card || !slot) return;
+  const lift = () => slot.style.setProperty("--sheet-top-lift", `${card.offsetHeight}px`);
+  const watch = new ResizeObserver(lift);
+  watch.observe(card);
+  lift();
+  return () => {
+    watch.disconnect();
+    slot.style.removeProperty("--sheet-top-lift");
+  };
+}
+
 export default function FirstFlight({
   routed,
   onPlan,
@@ -48,6 +65,7 @@ export default function FirstFlight({
         // spacing the card's 16 rather than the stock 24, as the phone's
         // other cards are.
         <Card
+          ref={riding ? liftRiders : undefined}
           role="region"
           aria-labelledby="first-flight-title"
           data-testid="first-flight"

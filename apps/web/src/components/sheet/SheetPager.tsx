@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useState, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { prefersReducedMotion } from "../../lib/motion";
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from "../ui/carousel";
 import { setPageHeading } from "./pageHeading";
@@ -93,9 +93,40 @@ const PULL_PAST_END = 48;
 
 export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: number) => void; drag: boolean; pages: ReactNode[] }) {
   const [api, setApi] = useState<CarouselApi>();
+  // Whether a drag is the pager's now, read when one starts: the options
+  // stay the same object, as any change in them builds Embla again (the
+  // React hook's reInit), which put it back on its first page with no
+  // `select` -- a card opened (`drag` off) and closed left the page in sight
+  // and the app's page out of step, the one in sight inert (the sheet
+  // audit, 2026-11-12: Fly Here from a search, a card from Search over a
+  // route).
+  const dragNow = useRef(drag);
+  useEffect(() => {
+    dragNow.current = drag;
+  }, [drag]);
   // The page it opens on, once: a page picked later is scrolled to (below),
   // where a new start would build the pager again and jump.
-  const [start] = useState(at);
+  const [opts] = useState<ComponentProps<typeof Carousel>["opts"]>(() => ({
+    startIndex: at,
+    watchDrag: (embla, event) => dragNow.current && pagersDrag(event.target, embla.rootNode()),
+  }));
+  // Built again all the same (a resize, the pages' own change): back on the
+  // app's page at once, whichever page Embla started from.
+  const rebuilt = useEffectEvent(() => {
+    if (api && api.selectedScrollSnap() !== at) api.scrollTo(at, true);
+  });
+  useEffect(() => {
+    if (!api) return;
+    const again = () => rebuilt();
+    api.on("reInit", again);
+    return () => {
+      api.off("reInit", again);
+    };
+  }, [api]);
+  // A page picked by a tap (its bar of the grabber, a route made): the
+  // grabber names that page from the tap, not from halfway through the
+  // scroll; a finger's drag names the nearer page as it moves.
+  const target = useRef<number | null>(null);
   const settled = useEffectEvent((page: number) => {
     if (page !== at) go(page);
   });
@@ -114,14 +145,22 @@ export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: num
     if (!api) return;
     const moving = () => {
       const last = api.scrollSnapList().length - 1;
-      setPageHeading(Math.min(last, Math.max(0, Math.round(api.scrollProgress() * last))));
+      setPageHeading(target.current ?? Math.min(last, Math.max(0, Math.round(api.scrollProgress() * last))));
     };
-    const still = () => setPageHeading(null);
+    const still = () => {
+      target.current = null;
+      setPageHeading(null);
+    };
+    const touched = () => {
+      target.current = null;
+    };
     api.on("scroll", moving);
     api.on("settle", still);
+    api.on("pointerDown", touched);
     return () => {
       api.off("scroll", moving);
       api.off("settle", still);
+      api.off("pointerDown", touched);
       still();
     };
   }, [api]);
@@ -171,11 +210,23 @@ export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: num
   // A page picked elsewhere (its bar of the grabber, a route made, a link): the pager
   // follows, at once under Reduce Motion.
   useEffect(() => {
-    if (api && api.selectedScrollSnap() !== at) api.scrollTo(at, prefersReducedMotion());
+    if (!api) return;
+    // Off Search, its field let go, so a phone's keyboard goes down and
+    // nothing typed lands on a page out of sight: whatever had the focus on
+    // a page now put away.
+    const focused = document.activeElement;
+    if (focused instanceof HTMLElement && api.slideNodes().some((page, i) => i !== at && page.contains(focused))) focused.blur();
+    if (api.selectedScrollSnap() === at) return;
+    const jump = prefersReducedMotion();
+    if (!jump) {
+      target.current = at;
+      setPageHeading(at);
+    }
+    api.scrollTo(at, jump);
   }, [api, at]);
   return (
     <Carousel
-      opts={{ startIndex: start, watchDrag: drag ? (embla, event) => pagersDrag(event.target, embla.rootNode()) : false }}
+      opts={opts}
       setApi={setApi}
       // The arrow keys are the field's and the lists' here, not the pager's:
       // the split grabber (SheetGrabber's Tabs) steps the pages from the keyboard.

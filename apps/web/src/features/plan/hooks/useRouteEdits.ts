@@ -53,7 +53,18 @@ export function useRouteEdits({
       const { dep, dest } = parts;
       const drawn = { dep: drawnDep, stops, dest: drawnDest };
       if (!dep && !dest) {
-        setSearchParams({}, { replace: true });
+        // The height the pilot left the sheet at kept (`view`, all the way
+        // up), as the route's close keeps it (clearRoute): wiped with the
+        // rest, the last waypoint out dropped the sheet to its pill.
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams();
+            const height = prev.get("view");
+            if (height) next.set("view", height);
+            return next;
+          },
+          { replace: true },
+        );
         return;
       }
       // The course asked for now, as the route goes in, not once the page

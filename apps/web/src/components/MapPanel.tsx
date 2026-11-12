@@ -110,9 +110,10 @@ export default function MapPanel(props: Props) {
   // The route's figures at half and all the way up; at the pill where they
   // are the pill -- flying, and FPL's page (the owner, 2026-11-11, the
   // canvas's b: To, Dist, ETE and Fuel at a glance, the route's row from
-  // half up) -- the search's row being it on Search. The pill is one fixed
+  // half up) -- the search's row being it on Search: paged, they are FPL's
+  // page's own (SheetParts), beside Search's row. The pill is one fixed
   // height for every page and card (sheet/insets), which the figures fit.
-  const footShown = !!foot && !cardsUp && (!onPhone || props.state !== "peek" || flying || props.pages?.at === 1);
+  const footShown = !!foot && !cardsUp && (!onPhone || props.state !== "peek" || flying || !!props.pages);
   // A card or a page open (the account page too) is the whole sheet, its own head and ✕ at the top
   // (one card rule, 2026-11-10); closed, the search is back -- kept with the keyboard up, as it is typed in.
   const barShown = !!bar && !flying && !cardsUp && layer === "tab";

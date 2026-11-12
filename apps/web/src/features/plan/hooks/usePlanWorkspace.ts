@@ -504,7 +504,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // The place up under the one search and what each keeps open over it
   // (usePanelView): the plan, the route's box and its nav log; the search's
   // own page and its results; the traffic.
-  const { view, setViewPick, pickView } = usePanelView({
+  const { view, setViewPick, pickView, pickPage } = usePanelView({
     cards,
     route: `${planned.dep}|${planned.stops.join(",")}|${planned.dest}`,
     hasRoute: routed || !!planned.dep || !!planned.dest || planned.stops.length > 0,
@@ -1096,6 +1096,7 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
     pickProcedures,
     pickStopField,
     pickView,
+    pickPage,
     pickTail,
     pickWay,
     pickedPatterns,

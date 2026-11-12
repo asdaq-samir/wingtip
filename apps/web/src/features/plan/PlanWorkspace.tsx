@@ -130,7 +130,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
     showFuelStops,
     stale,
     view,
-    pickView,
+    pickPage,
     tankFigures,
     tightLeg,
     unflyable,
@@ -440,7 +440,7 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // The pages (SheetPager, the owner 2026-11-11): Search over `sidebar`, FPL's `route` over the plan.
         pages: {
           at: view === "plan" ? 1 : 0,
-          go: (page) => pickView(page ? "plan" : "search"),
+          go: pickPage,
           names: PAGE_NAMES,
           second: <PlanPage vm={vm} navLog={navLog} navLogCard={navLogCard} briefContents={briefContents} briefNotice={briefNotice} />,
         },
@@ -475,7 +475,8 @@ export default function PlanWorkspace({ panel, setPanel, children }: WorkspacePr
         // body's room half way, and grew with the sheet under a finger.
         // At the pill on FPL they are the pill's one row (MapPanel), the
         // route's row from half up (the owner, 2026-11-11, the canvas's b).
-        foot: view === "plan" && !place && !heldPoint && !flight && !briefShown ? routed && <FlightFoot vm={vm} /> : undefined,
+        // FPL's page's own (SheetParts), so they slide in and out with it.
+        foot: !place && !heldPoint && !flight && !briefShown ? routed && <FlightFoot vm={vm} /> : undefined,
         // The route as one box of pills, in place of the two airport fields,
         // the top row to itself, at the pilot's ask: its close and its
         // Procedures beside it went to the chips' row (Approaches) and the

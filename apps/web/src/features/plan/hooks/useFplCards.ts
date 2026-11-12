@@ -77,8 +77,12 @@ export function useFplCards({
   // place to the radio's microphone, 2026-11-02).
   const stopsOpen = useStopsAlong((st) => st.open);
   const setStopsOpen = useStopsAlong((st) => st.setOpen);
+  // The page the Stops were opened from, which their close goes back to
+  // (docs/design/rules.md, card rule 1: ✕ goes back): Search's Find Nearby
+  // keeps Search under them, where they took the sheet to FPL and left it there.
+  const [stopsFrom, setStopsFrom] = useState<PanelView>("plan");
   // With a route or none: with none, the stops are round the pilot.
-  const stopsShown = stopsOpen && view === "plan" && !briefShown && !navLogShown && !profileShown;
+  const stopsShown = stopsOpen && (view === "plan" || view === stopsFrom) && !briefShown && !navLogShown && !profileShown;
   // The same whatever the tab: what FPL keeps under the others (TabKept).
   const briefHere = briefOpen && routed;
   // Where the Stops are looked for: along the course while one is drawn
@@ -192,19 +196,25 @@ export function useFplCards({
     setNavLogOpen(false);
   }, [setStopsOpen]);
   const closeProfileCard = useCallback(() => setProfileOpen(false), []);
-  // The map's Stops put away, the sheet where it is.
-  const closeStops = useCallback(() => setStopsOpen(false), [setStopsOpen]);
-  // Opened: FPL in sight under it, the other cards over FPL and an
-  // airport's put away; the card opens by the card rule, as the Profile's.
+  // The map's Stops put away, the sheet where it is, on the page they were
+  // opened from.
+  const closeStops = useCallback(() => {
+    setStopsOpen(false);
+    if (stopsFrom !== view) setViewPick(stopsFrom);
+  }, [setStopsOpen, stopsFrom, view, setViewPick]);
+  // Opened: the other cards over FPL and an airport's put away; the card
+  // opens by the card rule, as the Profile's, over the page it was asked
+  // from (Search's Find Nearby, round the pilot), that page remembered for
+  // its close.
   const openStops = useCallback(() => {
     setStopsOpen(true);
-    setViewPick("plan");
+    setStopsFrom(view);
     setNavLogOpen(false);
     setProfileOpen(false);
     setSearchParams((prev) => (prev.get("brief") || prev.get("place") ? patched(prev, { brief: null, place: null }) : prev), {
       replace: true,
     });
-  }, [setStopsOpen, setViewPick, setSearchParams]);
+  }, [setStopsOpen, setSearchParams, view]);
   // Find Nearby's tile (the Airport tab): the Stops round the pilot, that
   // kind picked.
   const setStopKind = usePreferences((p) => p.setStopKind);
@@ -307,7 +317,6 @@ export function useFplCards({
     openProfileCard,
     closeProfileCard,
     closeStops,
-    openStops,
     findNearby,
     pickStopField,
     showLegs,

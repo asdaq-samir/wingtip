@@ -1,6 +1,7 @@
 import { Suspense, type ReactNode } from "react";
 import { ICON } from "../../../../lib/icons";
 import { cn } from "cn";
+import CloseButton from "../../../../components/CloseButton";
 import RoundButton from "../../../../components/RoundButton";
 import { TEXT } from "../../../../lib/text";
 import { useClaudeOn } from "../../../../lib/subscription";
@@ -21,7 +22,7 @@ const WORDED = "lg:pointer-fine:w-auto lg:pointer-fine:gap-1 lg:pointer-fine:px-
 const WORD = cn("hidden font-medium lg:pointer-fine:inline", TEXT.detail);
 
 export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWorkspaceModel; flightInputs: ReactNode; share: ReactNode }) {
-  const { altitudeMark, briefMark, changeLocalMin, localMin, openBrief, openProfile, profileReady, routed, s } = vm;
+  const { altitudeMark, briefMark, changeLocalMin, clearRoute, hasPoints, localMin, openBrief, openProfile, profileReady, routed, s } = vm;
   // "AI brief" only where Claude writes some of it (lib/subscription): off,
   // the Brief is the engine's alone and is called just that.
   const brief = useClaudeOn() ? "AI brief" : "Brief";
@@ -133,6 +134,12 @@ export default function RouteControls({ vm, flightInputs, share }: { vm: PlanWor
             button should not appear before a route is entered"): the box
             clears itself (its own clear). */}
         {routed && share}
+        {/* The box empty -- cleared, or never filled -- its close where
+            the menu was, a level back (the owner's "close goes back one
+            level"): to the airport's card it was flown to from (Fly Here),
+            else the search (clearRoute's second press, which the menu gone
+            with the route left out of reach). */}
+        {!hasPoints && <CloseButton onClick={clearRoute} className="size-[32px]" data-testid="route-close" />}
       </div>
     </div>
   );

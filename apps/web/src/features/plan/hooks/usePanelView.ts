@@ -257,6 +257,10 @@ export function usePanelView({
         : (viewPick ?? (hasRoute ? "plan" : "search"));
 
   const keptCards = useRef<Partial<Record<PanelView, [string, string][]>>>({});
+  // What the search's page was when it was left, the traffic or the search
+  // itself: swiped back to, it is that again (the sheet audit, 2026-11-12:
+  // the traffic came back as the plain search).
+  const firstPage = useRef<PanelView>("search");
   const keptReplay = useRef<{ hex: string; id: number; at: number | null; playing: boolean } | null>(null);
   // The address's past flight drawn on the map (features/plan/map/pastFlight), and
   // let go with its card; back on its place, the replay where it was,
@@ -277,6 +281,7 @@ export function usePanelView({
   const pickView = useCallback(
     (next: PanelView) => {
       const leaving = next !== view;
+      if (leaving && view !== "plan") firstPage.current = view;
       if (leaving) {
         keptCards.current[view] = CARD_KEYS.flatMap((key) => {
           const value = searchParams.get(key);
@@ -311,8 +316,11 @@ export function usePanelView({
   // opened -- which the router makes in a transition. The pick in the same
   // transition, so the two land in one commit. Transitions started in one
   // event share their lane, so they commit together.
+  // A page of the sheet picked (SheetPager, its bar of the grabber): FPL's
+  // the plan, the first the search's page as it was left.
+  const pickPage = useCallback((page: number) => pickView(page ? "plan" : firstPage.current), [pickView]);
   const pickLater = useCallback((next: PanelView) => startTransition(() => setViewPick(next)), []);
   // "Pick an airplane" asked from a screen that needs one (lib/pickAirplane).
   usePickAirplaneRequest(pickView);
-  return { view, setViewPick: pickLater, pickView };
+  return { view, setViewPick: pickLater, pickView, pickPage };
 }

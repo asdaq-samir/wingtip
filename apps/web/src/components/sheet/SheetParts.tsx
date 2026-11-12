@@ -193,7 +193,8 @@ export function SheetParts(p: PartsProps) {
   // back to half, as Apple Maps' place card at its smallest (the owner,
   // 2026-11-11: Settings dragged to the smallest size left the sheet empty).
   // `off`: a page out of sight beside the one up, its body inert.
-  const scroller = (band: ReactNode, body: ReactNode, alone: boolean, off: boolean, head: string) => (
+  // `cut`: the figures pinned at its foot, so its body is cut off there.
+  const scroller = (band: ReactNode, body: ReactNode, alone: boolean, off: boolean, head: string, cut: boolean) => (
     <div
       data-sheet-scroll=""
       // Where a list's pinned head sticks under the head band (PinnedHead):
@@ -205,7 +206,7 @@ export function SheetParts(p: PartsProps) {
       className={cn(
         "flex min-h-0 flex-1 flex-col overflow-y-auto print:overflow-visible",
         topSheet && cn(follows, CUT_TOP),
-        p.onPhone && fromBottom && footShown && CUT_BOTTOM,
+        p.onPhone && fromBottom && cut && CUT_BOTTOM,
       )}
     >
       <div
@@ -251,6 +252,46 @@ export function SheetParts(p: PartsProps) {
     </div>
   );
 
+  // The route's figures pinned at the sheet's foot. Paged, FPL's own, at
+  // its page's foot: they slide with it rather than popping in and out as
+  // the pages move, and a swipe on them at the pill turns the page as one
+  // anywhere on it does (the sheet audit, 2026-11-12).
+  const foot = !!p.foot && (footShown || cardsUp) && (
+    // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to open the sheet, and the figures' own buttons stay focusable
+    <div
+      data-testid="panel-foot"
+      className={cn(
+        // One box at the pill and all the way up, the figures centred
+        // in it at their large size; at half small, the box only as tall
+        // as they are (the owner, 2026-11-05). What gives way in the
+        // pill (data-pill-hides) is put away there.
+        "relative z-10 flex shrink-0 flex-col justify-center border-t print:hidden",
+        fromBottom && follows,
+        // The figures as the pill's one row (FPL's, not flying): under
+        // the grabber's 1.5 rem room, the rest of the pill's 4.75 rem
+        // (sheet/insets) less the foot's edge room, the figures' 2.6875
+        // rem (a name's 18-point line over a value's 25) centred in it.
+        figuresPill
+          ? "pt-0 pb-0"
+          : cn(fromBottom || size !== "half" ? "pb-1" : "pb-4", size === "half" ? "min-h-0" : "min-h-[3.875rem]", ROW_PAD),
+        p.layer === "card" ? "px-0" : "px-4",
+        !footShown && "hidden",
+        pillFoot ? "border-transparent [&_[data-pill-hides]]:hidden [&>*]:flex-none" : cn("border-border/60", SHEET_BELOW),
+      )}
+      style={
+        {
+          "--sheet-progress": size === "half" && !p.desktop ? "0" : "1",
+          ...(p.toEdge && fromBottom && !pillFoot ? { paddingBottom: "10px" } : {}),
+          ...(figuresPill ? { height: `calc(${PILL_BELOW_GRABBER} - ${EDGE_ROOM})` } : {}),
+        } as CSSProperties
+      }
+      // In the pill a tap on it opens it half way.
+      onClick={pillFoot ? p.onFootTap : undefined}
+    >
+      {p.foot}
+    </div>
+  );
+
   let content: ReactNode;
   if (p.pages) {
     const { at, go, second } = p.pages;
@@ -268,8 +309,11 @@ export function SheetParts(p: PartsProps) {
         go={go}
         drag={swiped}
         pages={[
-          scroller(barRow, p.children, searchAlone, at !== 0, sheetHead),
-          scroller(headBlock(routeShown, routeAlone, true), second, routeAlone, at !== 1, "0px"),
+          scroller(barRow, p.children, searchAlone, at !== 0, sheetHead, false),
+          <>
+            {scroller(headBlock(routeShown, routeAlone, true), second, routeAlone, at !== 1, "0px", footShown)}
+            {foot}
+          </>,
         ]}
       />
     );
@@ -284,47 +328,14 @@ export function SheetParts(p: PartsProps) {
       headAlone,
       false,
       sheetHead,
+      footShown,
     );
   }
 
   return (
     <>
       {content}
-      {!!p.foot && (footShown || cardsUp) && (
-        // eslint-disable-next-line jsx-a11y-x/click-events-have-key-events, jsx-a11y-x/no-static-element-interactions -- a pointer convenience, not a control: the grabber is the keyboard's way to open the sheet, and the figures' own buttons stay focusable
-        <div
-          data-testid="panel-foot"
-          className={cn(
-            // One box at the pill and all the way up, the figures centred
-            // in it at their large size; at half small, the box only as tall
-            // as they are (the owner, 2026-11-05). What gives way in the
-            // pill (data-pill-hides) is put away there.
-            "relative z-10 flex shrink-0 flex-col justify-center border-t print:hidden",
-            fromBottom && follows,
-            // The figures as the pill's one row (FPL's, not flying): under
-            // the grabber's 1.5 rem room, the rest of the pill's 4.75 rem
-            // (sheet/insets) less the foot's edge room, the figures' 2.6875
-            // rem (a name's 18-point line over a value's 25) centred in it.
-            figuresPill
-              ? "pt-0 pb-0"
-              : cn(fromBottom || size !== "half" ? "pb-1" : "pb-4", size === "half" ? "min-h-0" : "min-h-[3.875rem]", ROW_PAD),
-            p.layer === "card" ? "px-0" : "px-4",
-            !footShown && "hidden",
-            pillFoot ? "border-transparent [&_[data-pill-hides]]:hidden [&>*]:flex-none" : cn("border-border/60", SHEET_BELOW),
-          )}
-          style={
-            {
-              "--sheet-progress": size === "half" && !p.desktop ? "0" : "1",
-              ...(p.toEdge && fromBottom && !pillFoot ? { paddingBottom: "10px" } : {}),
-              ...(figuresPill ? { height: `calc(${PILL_BELOW_GRABBER} - ${EDGE_ROOM})` } : {}),
-            } as CSSProperties
-          }
-          // In the pill a tap on it opens it half way.
-          onClick={pillFoot ? p.onFootTap : undefined}
-        >
-          {p.foot}
-        </div>
-      )}
+      {!p.pages && foot}
       {/* A bottom sheet's eight points at its foot where there is no home
           indicator (in the body where it runs to the edge, toEdge); the
           indicator's own room is under the Drawer's viewport (SheetDrawer). */}

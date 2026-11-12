@@ -48,4 +48,20 @@ describe("the place under the one search", () => {
     act(() => hook.result.current.pickView("plan"));
     expect(hook.result.current.params.get("place")).toBe("KOSH");
   });
+
+  it("turns back to the traffic on the first page where that is what was left there", () => {
+    // The sheet audit, 2026-11-12: swiped to FPL and back, the traffic came back as the plain search.
+    const hook = setUp("dep=KMSN&dest=KOSH&aircraft=1", true);
+    expect(hook.result.current.view).toBe("traffic");
+    act(() => hook.result.current.pickPage(1));
+    expect(hook.result.current.view).toBe("plan");
+    act(() => hook.result.current.pickPage(0));
+    expect(hook.result.current.view).toBe("traffic");
+    expect(hook.result.current.params.get("aircraft")).toBe("1");
+    // And the search where the search was.
+    act(() => hook.result.current.pickView("search"));
+    act(() => hook.result.current.pickPage(1));
+    act(() => hook.result.current.pickPage(0));
+    expect(hook.result.current.view).toBe("search");
+  });
 });
