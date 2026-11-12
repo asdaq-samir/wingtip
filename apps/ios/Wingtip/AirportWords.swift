@@ -222,9 +222,10 @@ enum AirportWords {
     /// NASR's fuel codes as the pump is labelled: the jet fuels by name,
     /// the rest (100LL, UL94, MOGAS) as the codes they are (the engine's
     /// `fuel_names`).
-    /// The codes as NASR has them where the engine refuses (logged).
+    /// Where the engine refuses, its problem in their place, so a code is
+    /// never passed off as the fuel's name.
     static func fuelNames(_ types: [String]) -> String {
-        (try? Engine.fuelNames(types: types)) ?? types.joined(separator: ", ")
+        do { return try Engine.fuelNames(types: types) } catch { return "the fuels couldn't be worked out: \(error.localizedDescription)" }
     }
 
     /// How far a place is from the field: the minutes' walk where it is a

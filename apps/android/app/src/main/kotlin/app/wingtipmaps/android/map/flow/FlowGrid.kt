@@ -4,7 +4,11 @@ import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.flowCell
 import app.wingtipmaps.android.engine.generated.flowSample
+import kotlin.math.atan
 import kotlin.math.hypot
+import kotlin.math.ln
+import kotlin.math.sinh
+import kotlin.math.tan
 
 /**
  * One frame's picture of a field (the planner's
@@ -79,6 +83,15 @@ class FlowGrid(
         }
 
     companion object {
+        /** Web Mercator's y of a latitude, radians (EPSG:3857 over the
+         *  earth's radius), for painting the grid's rows onto the plane
+         *  MapLibre stretches a picture over (Painted). The app's one
+         *  tile-maths home is still owed (map-maths.yml's phones rule). */
+        fun mercatorY(lat: Double): Double = ln(tan(Math.PI / 4 + Math.toRadians(lat) / 2))
+
+        /** The latitude of a Web Mercator y. */
+        fun latOfMercatorY(y: Double): Double = Math.toDegrees(atan(sinh(y)))
+
         /**
          * A field's picture: `argb` the PNG's pixels as Android hands them
          * (Bitmap.getPixels, one ARGB int a pixel, decoded without

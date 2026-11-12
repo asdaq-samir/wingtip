@@ -1,7 +1,7 @@
 package app.wingtipmaps.android.map.flow
 
 import androidx.annotation.StringRes
-import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.Color
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipColors.Weather
 import app.wingtipmaps.android.design.generated.WingtipFlow
@@ -56,10 +56,10 @@ object FlowLooks {
      *  airplanes this app plans for; the legend's title says so. */
     const val TURBULENCE_CLASS = "light"
 
-    private fun tone(hex: String, alpha: Int) = Ramp.tone(hex, alpha)
+    private fun tone(colour: Color, alpha: Int) = Ramp.tone(colour, alpha)
 
     /** A token ramp's stops as the map's: the colour at its opacity. */
-    private fun ramp(stops: List<WingtipFlow.Stop>) = stops.map { Stop(it.at, (it.alpha.coerceIn(0, 255) shl 24) or (it.colour.toArgb() and 0xffffff)) }
+    private fun ramp(stops: List<WingtipFlow.Stop>) = stops.map { Stop(it.at, tone(it.colour, it.alpha)) }
 
     private fun plain(ramp: List<Stop>, ticks: List<Double>, opacity: Float = WingtipFlow.COVER_WASH, label: (Double) -> String = ::whole) =
         FlowLook(ramp, ramp, ticks.map { Tick(it, label(it)) }, opacity)
@@ -68,14 +68,14 @@ object FlowLooks {
 
     /** A banded field's legend: each band an equal block of its colour, its
      *  words at the block's middle. */
-    private fun blocks(words: List<String>, colours: List<String>): Pair<List<Stop>, List<Tick>> {
+    private fun blocks(words: List<String>, colours: List<Color>): Pair<List<Stop>, List<Tick>> {
         val bar = words.indices.flatMap { i -> listOf(Stop(i.toDouble(), tone(colours[i], WingtipFlow.ALPHA_BLOCK)), Stop(i + 0.999, tone(colours[i], WingtipFlow.ALPHA_BLOCK))) }
         return bar to words.mapIndexed { i, w -> Tick(i + 0.5, w) }
     }
 
     /** Banded steps, each its colour from its least value to the next's, as
      *  AWC's maps draw them; clear under the first (the web's steps). */
-    private fun steps(froms: List<Double>, colours: List<String>, alpha: Int, top: Double): List<Stop> {
+    private fun steps(froms: List<Double>, colours: List<Color>, alpha: Int, top: Double): List<Stop> {
         val out = mutableListOf(Stop(froms[0] - 1e-3, tone(colours[0], 0)))
         froms.forEachIndexed { i, from ->
             val next = froms.getOrNull(i + 1) ?: top
@@ -101,19 +101,19 @@ object FlowLooks {
         val top = p[3].from + 15
         val a = WingtipFlow.ALPHA_RAIN
         val rain = listOf(
-            Stop(least - 0.1, tone(Weather.FLOW_RAIN_LIGHT_HEX, a[0])),
-            Stop(least, tone(Weather.FLOW_RAIN_LIGHT_HEX, a[1])),
-            Stop(p[1].from, tone(Weather.FLOW_RAIN_MODERATE_HEX, a[2])),
-            Stop(p[2].from, tone(Weather.FLOW_RAIN_HEAVY_HEX, a[3])),
-            Stop(p[3].from, tone(Weather.FLOW_RAIN_EXTREME_HEX, a[4])),
-            Stop(top, tone(Weather.FLOW_RAIN_EXTREME_TOP_HEX, a[5])),
+            Stop(least - 0.1, tone(Weather.FlowRainLight, a[0])),
+            Stop(least, tone(Weather.FlowRainLight, a[1])),
+            Stop(p[1].from, tone(Weather.FlowRainModerate, a[2])),
+            Stop(p[2].from, tone(Weather.FlowRainHeavy, a[3])),
+            Stop(p[3].from, tone(Weather.FlowRainExtreme, a[4])),
+            Stop(top, tone(Weather.FlowRainExtremeTop, a[5])),
         )
         val edges = listOf(p[0].from, p[1].from, p[2].from, p[3].from, top)
         val rainTicks = p.mapIndexed { i, b -> Tick((edges[i] + edges[i + 1]) / 2, b.word) }
 
         // The ceiling in the airport marks' category colours, hard-edged at
         // the bands; over VFR's floor it fades to clear by twice that.
-        val ceilingColours = listOf(Weather.FLOW_CEILING_LIFR_HEX, Weather.FLOW_CEILING_IFR_HEX, Weather.FLOW_CEILING_MVFR_HEX, Weather.FLOW_CEILING_VFR_HEX)
+        val ceilingColours = listOf(Weather.FlowCeilingLifr, Weather.FlowCeilingIfr, Weather.FlowCeilingMvfr, Weather.FlowCeilingVfr)
         val ceilingAlpha = WingtipFlow.ALPHA_CEILING
         val vfr = bands.ceiling.last().from
         val ceiling = bands.ceiling.flatMapIndexed { i, b ->
@@ -125,15 +125,15 @@ object FlowLooks {
 
         // CAPE yellow to magenta, clear at none and filling in over the
         // weak band's lower half, so a calm map stays the chart.
-        val capeColours = listOf(Weather.FLOW_CAPE_WEAK_HEX, Weather.FLOW_CAPE_MODERATE_HEX, Weather.FLOW_CAPE_STRONG_HEX, Weather.FLOW_CAPE_EXTREME_HEX)
+        val capeColours = listOf(Weather.FlowCapeWeak, Weather.FlowCapeModerate, Weather.FlowCapeStrong, Weather.FlowCapeExtreme)
         val c = bands.cape
         val ca = WingtipFlow.ALPHA_CAPE
         val cape = listOf(
-            Stop(0.0, tone(Weather.FLOW_CAPE_WEAK_HEX, ca[0])),
-            Stop(c[1].from / 2, tone(Weather.FLOW_CAPE_WEAK_HEX, ca[1])),
-            Stop(c[1].from, tone(Weather.FLOW_CAPE_MODERATE_HEX, ca[2])),
-            Stop(c[2].from, tone(Weather.FLOW_CAPE_STRONG_HEX, ca[3])),
-            Stop(c[3].from, tone(Weather.FLOW_CAPE_EXTREME_HEX, ca[4])),
+            Stop(0.0, tone(Weather.FlowCapeWeak, ca[0])),
+            Stop(c[1].from / 2, tone(Weather.FlowCapeWeak, ca[1])),
+            Stop(c[1].from, tone(Weather.FlowCapeModerate, ca[2])),
+            Stop(c[2].from, tone(Weather.FlowCapeStrong, ca[3])),
+            Stop(c[3].from, tone(Weather.FlowCapeExtreme, ca[4])),
         )
         val (capeBar, capeTicks) = blocks(c.map { b -> if (b.from > 0) "${b.word} ${whole(b.from)}" else b.word }, capeColours)
 
@@ -143,11 +143,11 @@ object FlowLooks {
 
         // AWC's icing: categories 1 to 4 (0 is none, clear), each a whole step.
         val icingWords = aviation.icing.filter { it.from > 0 }
-        val icingColours = listOf(Weather.FLOW_ICING_TRACE_HEX, Weather.FLOW_ICING_LIGHT_HEX, Weather.FLOW_ICING_MODERATE_HEX, Weather.FLOW_ICING_HEAVY_HEX)
+        val icingColours = listOf(Weather.FlowIcingTrace, Weather.FlowIcingLight, Weather.FlowIcingModerate, Weather.FlowIcingHeavy)
         val icing = steps(icingWords.map { it.from - 0.5 }, icingColours, WingtipFlow.ALPHA_ICING, icingWords.last().from + 0.5)
         val (icingBar, icingTicks) = blocks(icingWords.map { it.word }, icingColours)
         val turbRow = aviation.turbulence.light
-        val turbColours = listOf(Weather.FLOW_TURB_LIGHT_HEX, Weather.FLOW_TURB_MODERATE_HEX, Weather.FLOW_TURB_SEVERE_HEX, Weather.FLOW_TURB_EXTREME_HEX)
+        val turbColours = listOf(Weather.FlowTurbLight, Weather.FlowTurbModerate, Weather.FlowTurbSevere, Weather.FlowTurbExtreme)
         val turb = steps(turbRow.map { it.from }, turbColours, WingtipFlow.ALPHA_TURB, 1.0)
         val (turbBar, turbTicks) = blocks(turbRow.map { it.word }, turbColours)
         val frz = ramp(WingtipFlow.RAMP_FRZLVL)

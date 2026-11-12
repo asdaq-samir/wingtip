@@ -3,9 +3,6 @@ package app.wingtipmaps.android.firstflight
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,8 +14,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,13 +27,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -106,29 +103,21 @@ fun FirstFlightCard(plan: Plan, search: SearchControl, onPlanned: () -> Unit, mo
 }
 
 /**
- * An airport field that is the one search: Material's outlined text field,
- * read only, whose tap opens the search to pick the airport, as Android's
- * guide has a field open its picker (the date picker's field, a press
- * read on the field's way down and up) and TalkBack's double tap the same.
+ * An airport field that is the one search: Material's outlined card, whose
+ * tap opens the search to pick the airport -- the card's own onClick, with
+ * its ripple, its role and TalkBack's double tap, where a read-only text
+ * field needed its press read by hand. The label over the ident, or the
+ * hint until one is picked, as a list item's overline and headline.
  */
 @Composable
 private fun AirportPickField(ident: String?, @StringRes label: Int, @StringRes hint: Int, onOpen: () -> Unit) {
-    val words = stringResource(label)
-    OutlinedTextField(
-        value = ident.orEmpty(),
-        onValueChange = {},
-        readOnly = true,
-        singleLine = true,
-        label = { Text(words) },
-        placeholder = { Text(stringResource(hint)) },
-        trailingIcon = { Icon(Icons.Filled.Search, contentDescription = null) },
-        modifier = Modifier.fillMaxWidth()
-            .semantics { onClick(label = words) { onOpen(); true } }
-            .pointerInput(onOpen) {
-                awaitEachGesture {
-                    awaitFirstDown(pass = PointerEventPass.Initial)
-                    if (waitForUpOrCancellation(pass = PointerEventPass.Initial) != null) onOpen()
-                }
-            },
-    )
+    OutlinedCard(onClick = onOpen, modifier = Modifier.fillMaxWidth()) {
+        ListItem(
+            overlineContent = { Text(stringResource(label)) },
+            trailingContent = { Icon(Icons.Filled.Search, contentDescription = null) },
+            colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        ) {
+            if (ident != null) Text(ident) else Text(stringResource(hint), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
 }
