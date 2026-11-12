@@ -6,12 +6,14 @@ import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.AirspaceAt
 import app.wingtipmaps.android.live.LiveSource
 import app.wingtipmaps.android.live.PlannerLive
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * What's Here (the iPhone's and the web's AirspaceCard): the airspace
@@ -20,7 +22,8 @@ import kotlinx.coroutines.launch
  * writes its answer. The special-use areas are SpecialUseRows' own, with
  * SFDPS's word on each.
  */
-class HereModel(private val source: LiveSource = PlannerLive) : ViewModel() {
+@HiltViewModel
+class HereModel @Inject constructor(private val source: LiveSource) : ViewModel() {
     data class State(
         val at: Pair<Double, Double>? = null,
         val here: AirspaceAt? = null,

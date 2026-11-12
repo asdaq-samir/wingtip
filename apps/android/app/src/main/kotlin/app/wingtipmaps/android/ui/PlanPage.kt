@@ -41,8 +41,8 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.ai.AiSources
@@ -102,14 +102,14 @@ import kotlinx.coroutines.launch
 @Composable
 fun PlanPage(plan: Plan, onClose: () -> Unit, onField: (String) -> Unit, onLeg: (Int) -> Unit, onFind: () -> Unit, onAddStop: () -> Unit, onAddStopAfter: (String) -> Unit) {
     val state by plan.state.collectAsStateWithLifecycle()
-    val dryRun: DryRun = viewModel()
+    val dryRun: DryRun = hiltViewModel()
     val dryRunState by dryRun.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()
     val list = rememberLazyListState()
     val scope = rememberCoroutineScope()
     // The Nav Log button and a link's `navlog`: the legs, further down.
-    val toLegs = { scope.launch { list.animateScrollToItem(LEGS_AT) } }
+    val toLegs: () -> Unit = { scope.launch { list.animateScrollToItem(LEGS_AT) } }
     val wanted by ScreenRequests.wanted.collectAsStateWithLifecycle()
     LaunchedEffect(wanted, state.legs.isNotEmpty()) {
         if (state.legs.isNotEmpty() && ScreenRequests.take(setOf(Screen.NAVLOG)) != null) toLegs()

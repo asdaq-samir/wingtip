@@ -17,23 +17,23 @@ import kotlinx.serialization.encodeToString
 
 /** The entry drawn from the track (POST /api/logbook-draft). */
 suspend fun Planner.logbookDraft(ask: LogbookDraftAsk): LogbookDraft =
-    Gateway.json.decodeFromString(Gateway.send("POST", Config.plannerPath("/api/logbook-draft"), Gateway.json.encodeToString(ask)))
+    api.draft(ask).planned()
 
 /** The pilot's logbook, newest first; null signed out. */
-suspend fun Gateway.logbook(): List<LogbookEntryDto>? = read("/api/logbook")
+suspend fun Gateway.logbook(): List<LogbookEntryDto>? = api.logbookList().readOrNone()
 
 /** An entry logged (POST /api/logbook): the gateway's copy of it. */
 suspend fun Gateway.addLogbook(entry: LogbookEntryRequest): LogbookEntryDto =
-    json.decodeFromString(send("POST", "/api/logbook", json = json.encodeToString(entry)))
+    writes.logbookAdd(entry).accepted()
 
 /** What the logbook says of the pilot's currency; null signed out. */
-suspend fun Gateway.currency(): CurrencyDto? = read("/api/logbook/currency")
+suspend fun Gateway.currency(): CurrencyDto? = api.currency().readOrNone()
 
 /** An entry changed in its row (PUT /api/logbook/{id}): the gateway's copy. */
 suspend fun Gateway.updateLogbook(id: Long, entry: LogbookEntryRequest): LogbookEntryDto =
-    json.decodeFromString(send("PUT", "/api/logbook/$id", json = json.encodeToString(entry)))
+    writes.logbookUpdate(id, entry).accepted()
 
 /** An entry deleted (DELETE /api/logbook/{id}), once its Undo has gone. */
 suspend fun Gateway.deleteLogbook(id: Long) {
-    send("DELETE", "/api/logbook/$id")
+    writes.logbookDelete(id).done()
 }

@@ -14,11 +14,9 @@ import kotlinx.serialization.decodeFromString
  * fields nearest `near` ("lat,lon") first among alike ones.
  */
 suspend fun Planner.searchWithFixes(q: String, near: String?): List<AirportSuggestion> =
-    Gateway.json.decodeFromString<AirportSearch>(
-        fetch("/api/airports/search", mapOf("q" to q, "fixes" to "true", "near" to near)),
-    ).airports
+    api.airportSearch(q = q, fixes = true, near = near).planned().airports
 
 /** An airplane named by its N-number (/api/traffic/find): the ones heard
  *  in the air, and the FAA registry's record of it (`registered`). */
 suspend fun Planner.findAirplane(q: String): TrafficFound =
-    Gateway.json.decodeFromString(fetch("/api/traffic/find", mapOf("q" to q)))
+    api.trafficFind(q).planned()

@@ -10,12 +10,17 @@
 #            rules, the Markdown's links, the web's engine rules
 #            (scripts/build/web_rules.py), ruff over every Python suite
 #            and the Python's layout
-#   ARCH     no new or grown source file over 400 lines, one version of
-#            each toolchain, no raw style value outside the tokens, no
-#            unused Python
+#   ARCH     no new or grown source file over 400 lines (a new one over
+#            300), one version of each toolchain, no raw style value
+#            outside the tokens, no unused Python; the simplicity rules on
+#            the files changed: one home per constant or helper (Semgrep),
+#            no new copy-paste (jscpd), and the simplicity ratchet
+#   IOS      SwiftLint on the Swift changed (scripts/ci/phone_lint.sh)
+#   ANDROID  detekt on the Kotlin changed
 #   SITE     the website built and checked
-#   WEB      apps/web: the API types, tsc, ESLint with no warning,
-#            Prettier, knip
+#   WEB      apps/web: the API types, tsc, ESLint with no warning (the
+#            stock-component bans among its rules), Prettier, knip, the
+#            feature layers (dependency-cruiser)
 #   ENGINE   the crates' layering, the WebAssembly's size budget, no
 #            unused dependency (cargo-machete), rustfmt, clippy with
 #            warnings denied
@@ -77,9 +82,14 @@ ruff_check() {
     (cd tools/xplane-driver && "${ruff[@]}" check .)
 }
 
-file_sizes() {
-  git fetch -q --depth=1 origin "${BASE_REF:-main}" && python3 scripts/ci/file_sizes.py --base FETCH_HEAD
-}
+# The branch a change is held against, fetched once for every check that
+# reads it (one deep: a tree is all they compare).
+base=refs/guards/base
+if on ARCH || on IOS || on ANDROID; then
+  git fetch -q --depth=1 origin "+refs/heads/${BASE_REF:-main}:$base" 2> /dev/null || base=origin/${BASE_REF:-main}
+fi
+
+file_sizes() { python3 scripts/ci/file_sizes.py --base "$base"; }
 
 site() { python3 apps/site/build.py && python3 apps/site/check.py; }
 
@@ -94,6 +104,7 @@ web() {
   start "Web: ESLint" npx eslint . --max-warnings 0
   start "Web: Prettier" npm run format:check
   start "Web: knip" npx knip --no-progress
+  start "Web: layers" npm run -s layers
   wait
 }
 
@@ -139,11 +150,12 @@ fi
 
 start "Areas filter" python3 scripts/areas.py check
 start "Rules boundary" python3 scripts/ci/rules_boundary.py
-start "Legal pages" python3 scripts/build/legal_pages.py --check
+start "Legal pages" scripts/build/legal_pages.py --check
 start "Test tiers" python3 scripts/ci/test_tiers.py
 start "Warnings fatal" python3 scripts/ci/warnings_fatal.py
 start "Workflow rules" python3 scripts/ci/workflow_rules.py
-start "Doc links" python3 scripts/ci/check_links.py
+start "Doc links" scripts/ci/check_links.sh
+start "Shell scripts" scripts/ci/shellcheck.sh
 start "Web engine rules" python3 scripts/build/web_rules.py --check
 start "Python lint" ruff_check
 start "Python layout" scripts/dev/format.sh --check python
@@ -153,7 +165,12 @@ if on ARCH; then
   start "Brand" python3 scripts/ci/brand_guard.py
   start "Shared parts" python3 scripts/ci/shared_parts_guard.py
   start "Unused Python" scripts/ci/dead_python.sh
+  start "One home (Semgrep)" python3 scripts/ci/semgrep_check.py --base "$base"
+  start "Copy-paste (jscpd)" python3 scripts/ci/jscpd_check.py --base "$base"
+  start "Simplicity ratchet" python3 scripts/ci/simplicity_ratchet.py --base "$base"
 fi
+on IOS && start "iPhone: SwiftLint" scripts/ci/phone_lint.sh ios --base "$base"
+on ANDROID && start "Android: detekt" scripts/ci/phone_lint.sh android --base "$base"
 on SITE && start "Website" site
 on WEB && start "Web: API types" web
 if on ENGINE; then

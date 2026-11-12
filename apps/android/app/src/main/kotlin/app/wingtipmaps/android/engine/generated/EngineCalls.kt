@@ -745,7 +745,7 @@ fun Engine.flowLevels(): Result<EngineContract.FlowLevelsAnswer> =
     rule("flow_levels", EngineContract.FlowLevelsInput())
 
 /**
- * A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes): read between them linearly, as weatherlayers-gl's LINEAR reading does, each byte a 255th of `unscale` [least, most] a step. For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true, null for a calm) come from those parts, the vector average, so the same point reads the same wind on every app. Null where a pixel the point is read from has no value (alpha 0).
+ * A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes): read between them linearly, as weatherlayers-gl's LINEAR reading does, each byte a 255th of `unscale` [least, most] a step. For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true) come from those parts, the vector average, so the same point reads the same wind on every app. A wind under 1 kt is calm (`calm` true, `from_deg` null): FMH-1 (FCM-H1-2019) Table 5-1 gives under a knot as "Calm; smoke rises vertically", reported as calm with no direction, 00000KT (5.5.2, 12.6.5 d), so the apps write "Calm" rather than a direction the picture's rounding made up. `calm` is false for a scalar field. Null where a pixel the point is read from has no value (alpha 0).
  */
 fun Engine.flowSample(pixels: List<List<Double>>, fx: Double, fy: Double, unscale: List<Double>, vector: Boolean): Result<EngineContract.FlowSampleAnswer?> =
     rule("flow_sample", EngineContract.FlowSampleInput(pixels = pixels, fx = fx, fy = fy, unscale = unscale, vector = vector))
@@ -833,6 +833,12 @@ fun Engine.gairmetHazards(): Result<EngineContract.GairmetHazardsAnswer> =
  */
 fun Engine.gairmetTitle(hazard: String? = null, severity: String? = null): Result<String> =
     rule("gairmet_title", EngineContract.GairmetTitleInput(hazard = hazard, severity = severity))
+
+/**
+ * The time a G-AIRMET snapshot stands for: three hours either side of its valid time (UNIX seconds). AIM 7-1-6: G-AIRMETs are "valid at discrete times no more than 3 hours apart", and "the user should assume the hazardous weather condition is occurring between the snap shots unless informed otherwise" (a hazard at 03 and none at 00 or 06 exists from 0001 to 0559), so a snapshot stands for the whole gap either side, erring toward telling of the hazard.
+ */
+fun Engine.gairmetWindow(valid: Double): Result<EngineContract.GairmetWindowAnswer> =
+    rule("gairmet_window", EngineContract.GairmetWindowInput(valid = valid))
 
 /**
  * The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (FAA-H-8083-28B 26.3.1.1).
@@ -1265,6 +1271,12 @@ fun Engine.modeCVeil(lat: Double, lon: Double, airports: List<EngineContract.Mod
  */
 fun Engine.modelWeatherBands(): Result<EngineContract.ModelWeatherBandsAnswer> =
     rule("model_weather_bands", EngineContract.ModelWeatherBandsInput())
+
+/**
+ * The GFS's pressure levels at a station (the weather service's model winds, from NOMADS' GRIB2 HGT, TMP, UGRD and VGRD) in the units the winds aloft are kept in, as the FB's columns were (FAA-H-8083-28B 27.2.1.1.1): the geopotential height in feet by the international foot (0.3048 m, NIST SP 811 B.9), the temperature in degrees Celsius (kelvin less 273.15, NIST SP 811 4.2.1.1), and the wind's east and north parts in metres a second turned into knots (1,852 m a nautical mile, NIST SP 811 B.9) and the direction it blows from, degrees true (360 for no wind at all), and its speed. Unrounded, in the levels' order; a level with any figure missing is left out.
+ */
+fun Engine.modelWindLevels(levels: List<EngineContract.ModelWindLevelsInputLevelsItem>): Result<List<EngineContract.ModelWindLevelsAnswerItem>> =
+    rule("model_wind_levels", EngineContract.ModelWindLevelsInput(levels = levels))
 
 /**
  * A navaid's ident in Morse code (AIM 1-1-3), the letters two spaces apart.
@@ -2021,6 +2033,12 @@ fun Engine.turbulenceCategory(edr: Double, weightClass: String): Result<String?>
  */
 fun Engine.underway(speedKt: Double? = null): Result<Boolean> =
     rule("underway", EngineContract.UnderwayInput(speedKt = speedKt))
+
+/**
+ * Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.
+ */
+fun Engine.velocityTrack(velocities: List<EngineContract.VelocityTrackInputVelocitiesItem>): Result<List<EngineContract.VelocityTrackAnswerItem>> =
+    rule("velocity_track", EngineContract.VelocityTrackInput(velocities = velocities))
 
 /**
  * The vertical speed in feet a minute from GPS altitudes: the least-squares slope of the last 10 seconds of samples; null with fewer than three of them or under 2 seconds.

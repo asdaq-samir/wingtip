@@ -156,7 +156,7 @@ function Figure({
 }: {
   field: ShownField;
   unit: string;
-  read: { value: number; direction?: number };
+  read: { value: number; direction?: number; calm?: boolean };
   top?: number;
   /** The temperature at the wind's level, C, where it is known. */
   temp?: number | null;
@@ -168,13 +168,16 @@ function Figure({
   // Where the wind blows from as one of the 16 points (the engine's
   // compass_point, JO 7930.2 3-3-9's), above its speed, as Apple Weather's
   // badge says it ("NNW").
-  if (field === "wind" && read.direction !== undefined) over = callEngine("compass_point", { bearing_deg: read.direction });
+  if (field === "wind" && read.direction !== undefined && !read.calm) over = callEngine("compass_point", { bearing_deg: read.direction });
   if (field === "ceiling") {
     if (nearTop(read.value, top)) [figure, under] = ["None", "ceiling"];
     else [figure, under] = [(Math.round(read.value / 50) * 50).toLocaleString("en-US"), "ft agl"];
   }
   if (field === "cape") over = callEngine("cape_category", { j_kg: read.value });
-  if (field === "wind" && temp !== null) under = `${under} ${Math.round(temp)}°`;
+  // A wind under a knot is calm and has no direction (FMH-1 Table 5-1,
+  // 5.5.2): the word alone, in place of a speed and a unit.
+  if (field === "wind" && read.calm) [figure, under] = ["Calm", ""];
+  if (field === "wind" && temp !== null) under = `${under} ${Math.round(temp)}°`.trim();
   return <Said over={over} figure={figure} under={under} />;
 }
 

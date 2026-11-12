@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.logbook
 
 import android.content.Context
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.generated.DraftTrackPoint
 import app.wingtipmaps.android.flight.OwnShip
@@ -38,7 +39,7 @@ interface RecordedFlight {
  * service keeps with the screen off while flying, so nothing new runs.
  * Nothing of it leaves the phone until the pilot asks for the entry.
  */
-class FlightRecorder(private val file: File, private val nowMs: () -> Long = System::currentTimeMillis) : RecordedFlight {
+class FlightRecorder(private val file: File, private val nowMs: () -> Long = AppClock::nowMs) : RecordedFlight {
     private val _recorded = MutableStateFlow(
         runCatching { Gateway.json.decodeFromString<Recorded>(file.readText()) }.getOrNull() ?: Recorded(),
     )
@@ -74,7 +75,7 @@ class FlightRecorder(private val file: File, private val nowMs: () -> Long = Sys
 
     private fun write() {
         writtenAtMs = nowMs()
-        runCatching {
+        val _ = runCatching {
             file.parentFile?.mkdirs()
             val part = File(file.path + ".part")
             part.writeText(Gateway.json.encodeToString(_recorded.value))

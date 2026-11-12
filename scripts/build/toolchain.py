@@ -47,8 +47,9 @@ SKIP = ["docs/archive/*"]
 
 
 def bare(version: str) -> str:
-    """temurin-25 -> 25: setup-java and mise want the vendor, the rest the number."""
-    return version.rsplit("-", 1)[-1]
+    """temurin-25 -> 25: setup-java and mise want the vendor, the rest the number.
+    A version that starts with its number keeps its pre-release (18.8.0-beta-2)."""
+    return version if version[:1].isdigit() else version.rsplit("-", 1)[-1]
 
 
 # Each place: the files (fnmatch over the tracked paths), a pattern whose
@@ -74,10 +75,16 @@ PLACES = [
         "./gradlew updateDaemonJvm --jvm-version {v} --jvm-vendor adoptium, in apps/android",
     ),
     (["services/*/requirements-dev*.txt"], r"^ruff(\S*)$", "ruff", "pin", None),
-    (["scripts/dev/format.sh"], r'^SWIFTFORMAT_SUM="(\S+) ', "swiftformat", "exact", "set SWIFTFORMAT_SUM to {v} and its release's sha256"),
-    (["scripts/dev/format.sh"], r'^KTLINT_SUM="(\S+) ', "ktlint", "exact", "set KTLINT_SUM to {v} and its release's sha256"),
+    (["scripts/build/tool.sh"], r'^MISE_SUMS="(\S+) ', "mise", "exact", "set MISE_SUMS to {v} and its releases' sha256s (SHASUMS256.txt)"),
     (["scripts/build/shared-cache.sh"], r'^SCCACHE_SUMS="(\S+) ', "sccache", "exact", "set SCCACHE_SUMS to {v} and its releases' sha256s"),
     (["apps/web/package.json"], r'"prettier": "([^"]+)"', "prettier", "exact", "npm install -D -E prettier@{v}, in apps/web"),
+    (
+        ["apps/web/package.json"],
+        r'"dependency-cruiser": "([^"]+)"',
+        "dependency-cruiser",
+        "exact",
+        "npm install -D -E dependency-cruiser@{v}, in apps/web",
+    ),
     (["tools/msfs-agent/global.json"], r'"version": "([^"]+)"', "dotnet", "exact", None),
     ([".devcontainer/devcontainer.json"], r'features/node:1": \{ "version": "([^"]+)"', "nodejs", "exact", None),
     ([".devcontainer/devcontainer.json"], r'features/python:1": \{ "version": "([^"]+)"', "python", "exact", None),

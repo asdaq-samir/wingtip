@@ -30,6 +30,8 @@ struct PlanView: View {
         List {
             if plan.routed {
                 RouteCard(open: open)
+                // Why the route's Share menu sent nothing (ShareMenu).
+                if let shareProblem = plan.shareProblem { ProblemLine(shareProblem) }
             }
             FirstFlightSection()
             Section {

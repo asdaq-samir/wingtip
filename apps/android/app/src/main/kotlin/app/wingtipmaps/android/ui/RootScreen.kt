@@ -17,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -31,8 +30,9 @@ import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation3.scene.SceneStrategy
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
@@ -41,7 +41,6 @@ import app.wingtipmaps.android.about.PlanningAidNotice
 import app.wingtipmaps.android.ai.rememberAiOffered
 import app.wingtipmaps.android.airplane.AirplaneProfileHost
 import app.wingtipmaps.android.api.AssistantClient
-import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.api.AssistantTurn
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -88,10 +87,11 @@ import kotlinx.coroutines.launch
  * swipe away on the carousel's second page (SheetCarousel); a thing's
  * card or a page -- a field, an airplane, a fix, a leg, the Brief,
  * Settings -- takes the search's place with its name and ← (CardPage) and
- * fills the sheet below, on the sheet's own stack (SheetNav, SheetCard),
- * the same card from every way in. On a tablet or an unfolded phone the
- * same sits in Material's list and detail panes beside the map
- * (WidePanes), the cards in the detail pane, with the route's floating
+ * fills the sheet below, on the sheet's own stack (MapViewModel, drawn by
+ * Navigation 3, SheetPagesHost; SheetCard), the same card from every way
+ * in. On a tablet or an unfolded phone the same stack sits in Material's
+ * list-detail scene beside the map (WidePanes), the cards in the detail
+ * pane, with the route's floating
  * toolbar over the map while the plan is open; on a half-folded phone the
  * map above the fold and the panel below (TabletopPanes); or the strip
  * layout (Settings' Layout), whose sheet shows the same cards. The sheet
@@ -107,12 +107,13 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
-    val plan: Plan = viewModel()
-    val session: Session = viewModel()
-    val airports: AirportModel = viewModel()
-    val strip: StripModel = viewModel()
-    val assistant: AssistantClient = viewModel()
-    val dryRun: DryRun = viewModel()
+    val plan: Plan = hiltViewModel()
+    val session: Session = hiltViewModel()
+    val airports: AirportModel = hiltViewModel()
+    val strip: StripModel = hiltViewModel()
+    val assistant: AssistantClient = hiltViewModel()
+    val dryRun: DryRun = hiltViewModel()
+    val map: MapViewModel = hiltViewModel()
     val ownShip = rememberOwnShipControl()
     val sheet = rememberMapSheetState()
     // The screen's Snackbars: a route edit's Undo (RouteUndoSnackbar).
@@ -120,8 +121,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val scope = rememberCoroutineScope()
     val resources = LocalResources.current
     val search = rememberSearchControl()
-    var source by remember { mutableStateOf<AssistantSource?>(null) }
-    var raised by remember { mutableIntStateOf(0) }
     // Under way: own ship on and at flying speed (the engine's `underway`).
     val inFlight by InFlight.shared.state.collectAsStateWithLifecycle()
     val flying = ownShip.on && inFlight.underway
@@ -137,18 +136,18 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
 
     // The sheet's cards and pages (SheetNav): a card opens at half, its
     // peek while it is open, and grows when pulled up; the plan raises the
-    // sheet from the search's peek (the strip's by `raised`).
-    val pages = rememberSheetNav(wide, airports) { page ->
+    // sheet from the search's peek (the strip's by `map.raised`).
+    val pages = rememberSheetNav(map, airports) { page ->
         when {
             page.covers -> if (!stripLayout) scope.launch { sheet.lower() }
-            stripLayout -> raised++
+            stripLayout -> map.raise()
             else -> scope.launch { if (sheet.atPeek) sheet.expand() }
         }
     }
     val showPlan: () -> Unit = {
         if (stripLayout) {
             pages.closeAll()
-            raised++
+            map.raise()
         } else {
             pages.show(SheetPage.Plan)
         }
@@ -171,7 +170,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     LaunchedEffect(search) { snapshotFlow { search.asked }.drop(1).collect { pages.closePlan() } }
 
     val link by pending.collectAsStateWithLifecycle()
-    val shared: SharedFlightModel = viewModel()
+    val shared: SharedFlightModel = hiltViewModel()
     LaunchedEffect(link) {
         when (val opened = link) {
             null -> return@LaunchedEffect
@@ -215,9 +214,9 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val card by CardRequests.wanted.collectAsStateWithLifecycle()
     LaunchedEffect(card) { CardRequests.take()?.let(pages::open) }
     // The leg whose card is on top, cased in green on the map.
-    val legs: RouteLegModel = viewModel()
-    LaunchedEffect(pages.shown) {
-        val leg = pages.shown as? SheetPage.Leg
+    val legs: RouteLegModel = hiltViewModel()
+    LaunchedEffect(pages.top) {
+        val leg = pages.top as? SheetPage.Leg
         if (leg != null) legs.open(leg.index) else legs.close()
     }
 
@@ -245,7 +244,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         if (turn != null && strips.answerShown) {
             AnswerCard(
                 turn = turn, answering = conversation.answering, status = conversation.status, onStop = assistant::cancel,
-                onClose = { assistant.clear(); strip.dismissAnswer() }, onSource = { source = it },
+                onClose = { assistant.clear(); strip.dismissAnswer() }, onSource = { map.source = it },
                 modifier = Modifier.padding(horizontal = WingtipSpace.Lg, vertical = WingtipSpace.Sm),
             )
         }
@@ -258,9 +257,9 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     // The search's row as measured, whatever the font scale: the sheet's
     // peek is the handle, this row and the navigation bar.
     var searchRowPx by remember { mutableIntStateOf(0) }
-    val pagesView: @Composable (Modifier, Boolean, @Composable () -> Unit) -> Unit = { modifier, backEnabled, head ->
+    val pagesView: @Composable (Modifier, Boolean, SceneStrategy<SheetPage>?, @Composable () -> Unit) -> Unit = { modifier, backEnabled, scenes, head ->
         SheetPagesHost(
-            pages, backEnabled, modifier, head = head, carousel = !stripLayout,
+            pages, backEnabled, modifier, head = head, carousel = !stripLayout, scenes = scenes,
             // The strip's field and timeline are its Home and its plan. At
             // the peek only the search shows, so what lies under it (the
             // flight's card, under the gesture bar) is kept from TalkBack.
@@ -295,21 +294,15 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     }
     if (stripLayout) {
         StripLayout(
-            plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, raise = raised, searchRow = searchRow,
-            covered = pages.covered, cards = { modifier -> pagesView(modifier, true) {} },
+            plan = plan, session = session, ownShip = ownShip.ownShip, flying = flying, raise = map.raised, searchRow = searchRow,
+            covered = pages.covered, cards = { modifier -> pagesView(modifier, true, null) {} },
             map = { MapPane(plan, ownShip, covered = 0.dp, onPick = onPick, onAsk = null, onNearest = { pages.show(SheetPage.Nearest) }) },
         )
     } else if (wide) {
         WidePanes(
-            pages,
-            list = {
-                Column(Modifier.fillMaxSize()) {
-                    searchRow(null)
-                    // The list pane keeps Home or the plan; its Back waits on the card's.
-                    pagesView(Modifier.fillMaxSize(), pages.card == null) {}
-                }
-            },
-            detail = cardView,
+            // The list pane keeps the search over Home or the plan, the
+            // detail pane the cards.
+            pages = { modifier, scenes -> pagesView(modifier.fillMaxSize(), true, scenes) { searchRow(null) } },
             // The route being worked on: its floating toolbar over the map,
             // an edit's Snackbar over that.
             map = {
@@ -326,7 +319,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     } else if (fold != null) {
         TabletopPanes(fold, map = { Box(Modifier.fillMaxSize()) { mapView(0.dp, false); SnackbarHost(snackbars, Modifier.align(Alignment.BottomCenter)) } }) {
             // A card takes the search's place, as on the phone's sheet.
-            pagesView(Modifier.weight(1f), true) { searchRow(null) }
+            pagesView(Modifier.weight(1f), true, null) { searchRow(null) }
         }
     } else {
         // Over the navigation bar (edge to edge): its peek is the handle and
@@ -362,13 +355,13 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
             // search was; Home and the plan carry the search's row.
             // Back closes a card at once; with none it lowers the expanded
             // sheet first (MapSheet), then goes back a page.
-            pagesView(Modifier.weight(1f).padding(bottom = navigationBar), pages.covered || sheet.atPeek) {
+            pagesView(Modifier.weight(1f).padding(bottom = navigationBar), pages.covered || sheet.atPeek, null) {
                 Box(Modifier.onSizeChanged { searchRowPx = it.height }) { searchRow(null) }
             }
         }
     }
 
-    source?.let { shown -> SourceDialog(shown, onClose = { source = null }) }
+    map.source?.let { shown -> SourceDialog(shown, onClose = { map.source = null }) }
     // The strip has no plan to edit, so no Snackbar of its own.
     if (!stripLayout) RouteUndoSnackbar(plan, snackbars)
     EmergencyHost(plan, ownShip)

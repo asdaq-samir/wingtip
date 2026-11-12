@@ -13,6 +13,7 @@ import app.wingtipmaps.android.api.generated.assistant.TripAsk
 import app.wingtipmaps.android.api.generated.assistant.TripLeg
 import app.wingtipmaps.android.api.generated.assistant.TripMessage
 import app.wingtipmaps.android.api.generated.assistant.TripProposal
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,8 +30,10 @@ import kotlinx.serialization.encodeToString
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.coroutines.executeAsync
 import java.io.IOException
 import java.time.ZoneId
+import javax.inject.Inject
 
 /**
  * The trip planner, as the web's (features/tripPlanner) has it: a trip in
@@ -77,7 +80,7 @@ object TripPlan {
         val builder = Request.Builder().url(Config.gateway + Config.plannerPath("/api/trip-plan"))
             .header("Accept", "application/x-ndjson").post(body)
         Gateway.csrfToken?.let { builder.header("X-XSRF-TOKEN", it) }
-        Gateway.streaming.newCall(builder.build()).execute().use { response ->
+        Gateway.streaming.newCall(builder.build()).executeAsync().use { response ->
             if (response.code != 200) throw Planner.Failure(response.code, Planner.detail(response.body.string()))
             val source = response.body.source()
             while (true) {
@@ -101,7 +104,8 @@ object TripPlan {
 
 /** The trip planner's one view model: one trip at a time, a new one
  *  giving up the last's stream. */
-class TripPlannerModel : ViewModel() {
+@HiltViewModel
+class TripPlannerModel @Inject constructor() : ViewModel() {
     private val _state = MutableStateFlow(TripState())
     val state: StateFlow<TripState> = _state.asStateFlow()
     private var running: Job? = null

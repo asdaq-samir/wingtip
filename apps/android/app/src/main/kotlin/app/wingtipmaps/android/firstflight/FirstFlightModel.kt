@@ -16,6 +16,7 @@ import app.wingtipmaps.android.plan.FlightChoices
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeoutOrNull
+import javax.inject.Inject
 
 /**
  * The first flight's card's one model (the web's useFirstFlight): the
@@ -36,7 +38,8 @@ import kotlinx.coroutines.withTimeoutOrNull
  * planned as the plan's own fields plan one, the card is done with for
  * good (FirstFlightMemory) and `onPlanned` opens the nav log.
  */
-class FirstFlightModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class FirstFlightModel @Inject constructor(app: Application) : AndroidViewModel(app) {
     data class State(
         val dest: String? = null,
         val from: String? = null,

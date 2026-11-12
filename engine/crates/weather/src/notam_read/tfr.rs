@@ -16,7 +16,7 @@ use super::body;
 use crate::contractions::{compass, lookup};
 use crate::geo::{bearing_deg, distance_nm};
 use crate::json::{self, Value};
-use crate::ready::grouped;
+use crate::text::grouped_int as grouped;
 
 /// tfr.faa.gov's kinds (its list's LEGAL column, as the weather service
 /// keeps it, in title case) in our words, a line each.

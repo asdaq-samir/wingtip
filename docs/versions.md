@@ -37,8 +37,9 @@ The owner, 2026-11-09, standing:
 - **Exact pins.** Python requirements pin `==`, the web's lockfile is
   committed, every image is pinned by digest beside its tag, and every
   GitHub Action is pinned to its newest release's commit with the
-  release in a comment. Dependabot opens no pull requests (decision
-  [0024](decisions/0024-no-dependabot-prs.md)); its alerts stay on.
+  release in a comment. No bot opens pull requests (decision
+  [0024](decisions/0024-no-dependabot-prs.md)): Renovate only lists, in its
+  dashboard; Dependabot's alerts stay on.
 
 ## What each part pins today
 
@@ -54,7 +55,8 @@ The owner, 2026-11-09, standing:
 | Maven | 3.10.0 | the gateway's build image |
 | Xcode | 27.2 (the iOS 27.2 SDK) | `scripts/ci/select-xcode.sh`, CI's `xcode-27` runner and the Mac mini |
 | Debian | trixie | every Debian-based image (`postgres:18-trixie`; a `-slim` tag is trixie) |
-| Formatters | ruff 0.17.4, SwiftFormat 0.64.6, ktlint 1.8.0, palantir-java-format 2.103.0, Prettier 3.9.10 | `scripts/dev/format.sh` |
+| Formatters | ruff 0.17.4, SwiftFormat 0.64.6, ktlint 1.8.0, palantir-java-format 2.103.0, Prettier 3.9.10 | `scripts/dev/format.sh` (SwiftFormat and ktlint installed by mise) |
+| Linters | shellcheck 0.11.0, actionlint 1.7.12, zizmor 1.32.0, lychee 0.24.2, SwiftLint 0.65.1, Semgrep 1.185.0; mise 2026.11.7 installs them | `scripts/build/tool.sh`, CI's `guards` job, the pre-push hook |
 
 Not held to `.tool-versions` on purpose (`scripts/build/toolchain.py`
 says why): ruff's `target-version` and the engine wheel's `abi3-py311`
@@ -80,9 +82,13 @@ with complete strict concurrency.
 
 ### Android (`apps/android/gradle/libs.versions.toml`)
 
-AGP 9.5.1 (its built-in Kotlin compiles the app), Kotlin 2.4.21, KSP
-2.3.13, Compose BOM 2026.09.00, Material 3 **1.5.0-rc01** (off the BOM,
-for Material 3 Expressive), navigation-compose 2.10.2, Room 3.0.3
+AGP **9.6.0-alpha03** (its built-in Kotlin compiles the app), Kotlin
+**2.5.0-RC**, KSP 2.3.13, the Compose alpha BOM (`compose-bom-alpha`)
+2026.11.00, which carries Material 3 **1.5.0-rc01** (for Material 3
+Expressive) and Material adaptive 1.4.0-alpha03 with its Navigation 3
+scenes, Navigation 3 **1.3.0-alpha04**, Lifecycle **2.12.0-alpha05**,
+Activity 1.14.0-alpha03, Hilt (Dagger) 2.60.1 with AndroidX Hilt 1.4.0,
+Room 3.0.3
 (`androidx.room3`), DataStore 1.3.0, WorkManager 2.12.0, Glance 1.2.0,
 MapLibre Android 13.7.1, OkHttp 5.5.1, AppFunctions 1.0.0-rc01, ML Kit's
 Prompt API (`genai-prompt`) 1.0.0-beta5. compileSdk 37 (its 37.2 minor
@@ -94,7 +100,7 @@ SDK), targetSdk 37, minSdk 26.
 - **Planner, weather, ingest, assistant, jobs:** Python 3.15 with FastAPI
   0.162.2, pydantic 2.14.3, uvicorn 0.54.0, numpy 2.5.4, pandas 3.1.1,
   shapely 2.2.0, pyproj 3.8.0, rasterio 1.5.2, scikit-learn 1.9.1, the
-  Anthropic SDK 2.7.0, pytest 9.2.0; the engine's Python binding on PyO3
+  Anthropic SDK 2.8.0, pytest 9.2.0; the engine's Python binding on PyO3
   0.30.1.
 - **Images the stack runs:** PostgreSQL 18 (`postgres:18-trixie`), Caddy
   2.11.9, Mailpit 1.33.1, Jaeger 2.23.0.
@@ -117,7 +123,7 @@ written here.
 | What | Pinned | Newest | Why it waits | Moves when |
 |---|---|---|---|---|
 | TypeScript | 6.0.3 | 7.x | typescript-eslint 8.72 supports TypeScript below 6.1 only ([its support range](https://typescript-eslint.io/users/dependency-versions/)), and openapi-typescript 7.13, its newest, asks for 5.x (let onto 6 by an override in package.json); on 7 neither the lint nor `npm run types` would run (commit dd9dae944, 2026-11-09) | typescript-eslint declares TypeScript 7, and openapi-typescript runs on it |
-| Material 3 (Android) | 1.5.0-rc01 | 1.5.0-rc01 (1.4.0 the newest stable) | Not held back: the release candidate is taken on purpose, as 1.4.0 keeps Expressive internal (decision 0016) | 1.5.0 stable ships |
+| Material 3 (Android) | 1.5.0-rc01 | 1.5.0-rc01 (1.4.0 the newest stable) | Not held back: the release candidate is taken on purpose, as 1.4.0 keeps Expressive internal (decision 0016); it comes from the alpha BOM since 2026-11-12 | 1.5.0 stable ships |
 | Java | 25 (LTS) | 27 (non-LTS, September 2026) | The gateway and Android stay on one Java, the LTS the owner named on 2026-11-09 ("Java 25 everywhere"), which AGP's D8 and Spring Boot 4.1 both take | The next LTS, or the owner's word |
 | CI's Android emulator | API 35 x86_64 | API 37 | The instrumented tests' emulator image (`native-android.yml`); the app itself compiles against 37.2 | No reason is recorded: try API 37 at the next pass that touches the job |
 
@@ -136,9 +142,11 @@ Each wave's end pass also runs `npm outdated`, the Python pins against
 PyPI, `./gradlew` dependency updates and the Maven versions against
 Maven Central, and takes whatever is newer; this table is only what is
 already known to be coming.
-The weekly issue "Newer versions (weekly)" (`.github/workflows/versions.yml`,
-`scripts/ci/newest_versions.py`) lists them between passes, the holds above
-marked as held.
+Renovate's Dependency Dashboard ("Newer versions (Renovate dashboard)",
+`renovate.json`) lists them between passes, with the pinned Actions' newest
+commits. It is dashboard only: it opens no pull request and merges nothing
+unless the owner ticks an update in that issue. The holds above are rules in
+`renovate.json` (TypeScript below 7, Java 25), so they are not listed as new.
 
 ## How an upgrade lands
 

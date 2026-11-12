@@ -14,18 +14,28 @@ exactly the table's "Uses":
 - a use the table gives that Cargo.toml does not have: the table is stale;
 - "route (without its options)" where route's default `options` feature is
   on, or the other way round;
-- a dependency from outside the workspace in a crate or the facade (the
-  README: "none has a dependency outside the workspace", for the phones and
-  the WebAssembly);
+- a dependency from outside the workspace in a crate or the facade that
+  the README does not name (its "Outside the workspace": what the phones
+  and the WebAssembly carry is plain Rust the README has weighed), here
+  OUTSIDE; a build-dependency runs on the host and is in no build, so it
+  is free;
 - a binding (engine/bindings) that uses a crate rather than the facade.
 
-The standard library only, for the Mac's python3 (3.9) and CI's: the
-Cargo.toml files are read by a small parser for the sections they have.
+The crates and their dependencies are Cargo's own word for them, `cargo
+metadata --no-deps` (no network, no build), rather than a reading of the
+Cargo.toml files' text. The standard library only besides, for the Mac's
+python3 (3.9) and CI's.
 
   python3 scripts/ci/engine_layers.py
 """
 
+from __future__ import annotations
+
+import json
+import os
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -33,6 +43,35 @@ ROOT = Path(__file__).resolve().parents[2]
 ENGINE = ROOT / "engine"
 README = ENGINE / "README.md"
 FACADE = "facade/"
+# The dependencies from outside the workspace the README's "Outside the
+# workspace" names, by the package that has them: each plain Rust with no
+# system library, so the phones and the WebAssembly carry it as it is.
+OUTSIDE = {"wingtip-airspace": {"crc32fast"}}
+
+
+def cargo() -> str:
+    """Cargo: on the PATH, or rustup's own place on a Mac whose shell has
+    not put it there."""
+    found = shutil.which("cargo") or str(Path.home() / ".cargo" / "bin" / "cargo")
+    if not os.access(found, os.X_OK):
+        sys.exit("::error::cargo not found: install Rust with rustup (docs/LOCAL-DEV.md)")
+    return found
+
+
+def metadata() -> list[dict]:
+    """The workspace's packages as `cargo metadata --no-deps` gives them,
+    each with "dir" (its folder under engine/, "facade/", "crates/core/")
+    added."""
+    out = subprocess.run(
+        [cargo(), "metadata", "--no-deps", "--format-version", "1", "--manifest-path", str(ENGINE / "Cargo.toml")],
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    packages = json.loads(out.stdout)["packages"]
+    for p in packages:
+        p["dir"] = Path(p["manifest_path"]).parent.resolve().relative_to(ENGINE.resolve()).as_posix() + "/"
+    return packages
 
 
 def table():
@@ -60,27 +99,19 @@ def table():
     return rows
 
 
-def dependencies(cargo: Path):
-    """{name: spec text} of the [dependencies] section."""
-    deps, section = {}, None
-    for raw in cargo.read_text().splitlines():
-        line = raw.split("#", 1)[0].strip()
-        if not line:
-            continue
-        header = re.fullmatch(r"\[([^\]]+)\]", line)
-        if header:
-            section = header.group(1)
-            continue
-        if section == "dependencies" and "=" in line:
-            key, _, value = line.partition("=")
-            deps[key.strip()] = value.strip()
-    return deps
+def dependencies(package: dict) -> dict:
+    """{name: uses its default features?} of a package's own dependencies,
+    for its build (Cargo's kind null), not its tests' or its build
+    script's; a renamed one by the package's name."""
+    return {d["name"]: d["uses_default_features"] for d in package["dependencies"] if d["kind"] is None}
 
 
 def main():
     rows = table()
     problems = []
-    crates = sorted(p.name for p in (ENGINE / "crates").iterdir() if (p / "Cargo.toml").is_file())
+    packages = metadata()
+    by_dir = {p["dir"]: p for p in packages}
+    crates = sorted(d[len("crates/") : -1] for d in by_dir if d.startswith("crates/"))
     if not rows:
         problems.append("engine/README.md: no crate table under \"The engine's crates\"")
     for crate in crates:
@@ -90,18 +121,21 @@ def main():
         if name != FACADE and name not in crates:
             problems.append(f"engine/README.md: `{name}` is in the crate table but there is no engine/crates/{name}")
     for name, uses in rows.items():
-        cargo = ENGINE / (FACADE if name == FACADE else f"crates/{name}") / "Cargo.toml"
-        if not cargo.is_file():
+        package = by_dir.get(FACADE if name == FACADE else f"crates/{name}/")
+        if package is None:
             continue
-        where = cargo.relative_to(ROOT).as_posix()
-        deps = dependencies(cargo)
+        where = f"engine/{package['dir']}Cargo.toml"
         wanted = {c: False for c in crates} if uses is None else uses
         built = {}
-        for dep, spec in deps.items():
+        for dep, default in dependencies(package).items():
             if not dep.startswith("wingtip-"):
-                problems.append(f"{where}: {dep} is from outside the workspace (README: none has a dependency outside it)")
+                if dep not in OUTSIDE.get(package["name"], set()):
+                    problems.append(
+                        f"{where}: {dep} is from outside the workspace and engine/README.md's "
+                        f"\"Outside the workspace\" does not name it (a build-dependency is free)"
+                    )
                 continue
-            built[dep[len("wingtip-") :]] = "default-features = false" in spec
+            built[dep[len("wingtip-") :]] = not default
         for dep in sorted(set(built) - set(wanted)):
             problems.append(
                 f"{where}: uses wingtip-{dep}, which engine/README.md's table does not give {name}: "
@@ -113,12 +147,11 @@ def main():
             if uses is not None and dep == "route" and wanted[dep] != built[dep]:
                 said = "without its options" if wanted[dep] else "with its options"
                 problems.append(f"{where}: the README's table has route {said}; set default-features accordingly")
-    for binding in sorted((ENGINE / "bindings").glob("*/Cargo.toml")):
-        for dep in dependencies(binding):
+    for package in sorted((p for p in packages if p["dir"].startswith("bindings/")), key=lambda p: p["dir"]):
+        for dep in dependencies(package):
             if dep.startswith("wingtip-") and dep != "wingtip-engine":
                 problems.append(
-                    f"{binding.relative_to(ROOT).as_posix()}: uses {dep}; a binding reaches the engine "
-                    f"through the facade (wingtip-engine) alone"
+                    f"engine/{package['dir']}Cargo.toml: uses {dep}; a binding reaches the engine through the facade (wingtip-engine) alone"
                 )
     for p in problems:
         print(f"::error::{p}")

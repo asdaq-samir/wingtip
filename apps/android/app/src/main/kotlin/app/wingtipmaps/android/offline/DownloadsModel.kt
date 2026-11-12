@@ -1,14 +1,15 @@
 package app.wingtipmaps.android.offline
 
 import android.app.Application
-import android.content.Context
 import android.os.StatFs
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import app.wingtipmaps.android.Config
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
@@ -17,6 +18,7 @@ import app.wingtipmaps.android.api.generated.OfflineCatalog
 import app.wingtipmaps.android.api.generated.OfflineRegion
 import app.wingtipmaps.android.api.generated.OfflineRegionFiles
 import app.wingtipmaps.android.engine.CyclePacks
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import javax.inject.Inject
 
 /**
  * The Downloads screen's state (Setup → Downloads), as the iOS app's
@@ -32,9 +35,10 @@ import okhttp3.HttpUrl.Companion.toHttpUrl
  * chart kinds and density picked, the regions kept and how far each has
  * come, and the calls that keep, update and delete them.
  */
-class DownloadsModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class DownloadsModel @Inject constructor(app: Application) : AndroidViewModel(app) {
     private val store = OfflineStore.of(app)
-    private val prefs = app.getSharedPreferences("offline", Context.MODE_PRIVATE)
+    private val prefs = Kept.of(app, "offline")
 
     private val _catalog = MutableStateFlow<OfflineCatalog?>(null)
     val catalog: StateFlow<OfflineCatalog?> = _catalog.asStateFlow()
@@ -44,9 +48,9 @@ class DownloadsModel(app: Application) : AndroidViewModel(app) {
     val busy: StateFlow<Set<String>> = _busy.asStateFlow()
     val kept: StateFlow<List<OfflineKept>> = store.kept
 
-    private val _picked = MutableStateFlow(prefs.getStringSet(KINDS, null)?.toSet() ?: setOf("sec", "tac"))
+    private val _picked = MutableStateFlow(prefs[KINDS] ?: setOf("sec", "tac"))
     val picked: StateFlow<Set<String>> = _picked.asStateFlow()
-    private val _scale = MutableStateFlow(prefs.getInt(SCALE, if (app.resources.displayMetrics.density >= 2f) 2 else 1))
+    private val _scale = MutableStateFlow(prefs[SCALE] ?: if (app.resources.displayMetrics.density >= 2f) 2 else 1)
     val scale: StateFlow<Int> = _scale.asStateFlow()
 
     /** Bytes written so far of each region under way, by its id. */
@@ -60,12 +64,12 @@ class DownloadsModel(app: Application) : AndroidViewModel(app) {
 
     fun setPicked(kind: String, on: Boolean) {
         _picked.value = if (on) _picked.value + kind else _picked.value - kind
-        prefs.edit { putStringSet(KINDS, _picked.value) }
+        prefs.edit { it[KINDS] = _picked.value }
     }
 
     fun setScale(value: Int) {
         _scale.value = value
-        prefs.edit { putInt(SCALE, value) }
+        prefs.edit { it[SCALE] = value }
     }
 
     /** The archive names the picks give ("sec@2x", "tac@2x"). */
@@ -102,7 +106,7 @@ class DownloadsModel(app: Application) : AndroidViewModel(app) {
                 CyclePacks.of(getApplication()).keep(entry.packs.toSet())
                 _catalog.value?.overlay?.let { overlay ->
                     val url = (Config.gateway + Config.plannerPath("/api/overlay-tiles/${overlay.name}.pmtiles")).toHttpUrl()
-                    runCatching { Gateway.overlayStore.download(Gateway.streaming, url, overlay.name, overlay.bytes) }
+                    val _ = runCatching { Gateway.overlayStore.download(Gateway.streaming, url, overlay.name, overlay.bytes) }
                 }
                 _problem.value = null
             } catch (e: Exception) {
@@ -145,8 +149,8 @@ class DownloadsModel(app: Application) : AndroidViewModel(app) {
     fun storageFree(): Long = runCatching { StatFs(store.root.parentFile!!.path).availableBytes }.getOrDefault(0)
 
     companion object {
-        private const val KINDS = "kinds"
-        private const val SCALE = "scale"
+        private val KINDS = stringSetPreferencesKey("kinds")
+        private val SCALE = intPreferencesKey("scale")
         /** The chart kinds a download holds, in the map's order. */
         val KINDS_IN_ORDER = listOf("sec", "tac", "ifr_low", "ifr_high", "ifr_area")
 

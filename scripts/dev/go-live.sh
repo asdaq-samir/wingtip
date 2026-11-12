@@ -7,9 +7,18 @@
 # checkout, and the compose project is the same (wingtip), so the
 # phone's address and the saved data don't change.
 #
-#   scripts/dev/go-live.sh                 claude/integration
-#   scripts/dev/go-live.sh <branch>        another branch
+#   scripts/dev/go-live.sh [--up]          claude/integration
+#   scripts/dev/go-live.sh [--up] <branch> another branch
+#
+# By default the live tree moves to the branch and the stack stays down:
+# the owner is assumed not to be testing, and asks for the stack when he
+# is (the owner, 2026-11-12). The test guard reads only the live tree's
+# commit, so the wave's tests may run. --up (or GO_LIVE_UP=1) also
+# rebuilds and starts the stack, for the owner's phone or an agent's
+# screenshots.
 set -euo pipefail
+up=${GO_LIVE_UP:-0}
+if [ "${1:-}" = --up ]; then up=1; shift; fi
 branch=${1:-claude/integration}
 # The main checkout: from the script's own repo, or the current
 # directory's when the script is run from a copy.
@@ -25,8 +34,11 @@ if [ "$(cd "$live" 2>/dev/null && pwd -P || echo "$live")" = "$(cd "$main" && pw
   exit 1
 fi
 
-# Tidy first: merged worktrees and branches, stopped containers.
+# Tidy first: merged worktrees and branches, stopped containers; and the
+# merged worktrees left untouched for six hours, with their build outputs
+# (the owner's efficiency rules, 2026-11-12).
 "$(dirname "$0")/tidy-local.sh" || true
+"$(dirname "$0")/tidy-branches.sh" || true
 git -C "$main" fetch -q origin "$branch"
 if [ ! -d "$live" ]; then
   git -C "$main" worktree add -q --detach "$live" "origin/$branch"
@@ -62,6 +74,11 @@ for name, svc in sorted(cfg.get("services", {}).items()):
 print("\n".join(lines))
 ' "$main" > docker-compose.override.yml
 echo "go-live: $(git log --oneline -1 | cut -c1-72)"
+if [ "$up" != 1 ]; then
+  docker compose -p wingtip stop >/dev/null 2>&1 || true
+  echo "go-live: the live tree is on the branch; the stack is down (go-live.sh --up starts it)"
+  exit 0
+fi
 # The web build's packages for this tree, then every service rebuilt
 # and restarted where its image or settings changed.
 # The packages are installed with the web build stopped: an install
@@ -85,6 +102,16 @@ done
 # A volume made under the bookworm image warns on every connection until
 # its collation version is refreshed; once, then a no-op.
 scripts/dev/pg-refresh-collation.sh
+# The web build, once its first build is out, stops: only go-live.sh
+# changes this tree, so a watching build only holds about 1.4 GB (the
+# owner's efficiency rules, 2026-11-12). GO_LIVE_KEEP_WEB_BUILD=1 keeps it.
+if [ "${GO_LIVE_KEEP_WEB_BUILD:-0}" != 1 ]; then
+  for _ in $(seq 1 60); do
+    docker compose -p wingtip logs --since 20m web-build 2>/dev/null | grep -q "built in" && break
+    sleep 10
+  done
+  docker compose -p wingtip stop web-build >/dev/null 2>&1 || true
+fi
 docker compose -p wingtip ps --format '{{.Service}}: {{.Status}}'
 host=$(grep -E '^PHONE_BASE_URL=' .env 2>/dev/null | cut -d= -f2-)
 echo "go-live: live at ${host:-https://localhost:8443}/app"

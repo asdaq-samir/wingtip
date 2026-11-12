@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.design.generated.WingtipMap
 import app.wingtipmaps.android.settings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -44,28 +45,19 @@ data class AirportWeather(
     val worse: Boolean = true,
 ) {
     /** The station model's zoom, MapLibre's, or null where it is not
-     *  drawn: from Leaflet's 10 (STATION_ZOOM) close in, from a region's
-     *  scale (STATION_ALWAYS) in the Station mode, never with the weather
-     *  off. */
+     *  drawn: from the tokens' close-in zoom (WingtipMap.ZOOM_STATION_CLOSE,
+     *  Leaflet's 10, about a county across a phone, where the barb and two
+     *  lines fit beside a field) close in, from a region's scale
+     *  (ZOOM_STATION_ALWAYS, the web's STATION_ALWAYS) in the Station mode,
+     *  never with the weather off. The tokens are Leaflet's zooms, as
+     *  MapStyle names its zooms. */
     val stationFromZoom: Double?
         get() = when {
             mode == AirportWeatherMode.OFF -> null
-            mode == AirportWeatherMode.STATION -> MapStyle.glZoom(STATION_ALWAYS)
-            stationClose -> MapStyle.glZoom(STATION_ZOOM)
+            mode == AirportWeatherMode.STATION -> MapStyle.glZoom(WingtipMap.ZOOM_STATION_ALWAYS.toDouble())
+            stationClose -> MapStyle.glZoom(WingtipMap.ZOOM_STATION_CLOSE.toDouble())
             else -> null
         }
-
-    companion object {
-        /** Where the station model's barb and two lines fit beside a
-         *  field without running into the next one's (Leaflet's zoom, as
-         *  MapStyle names its zooms): about a county across a phone. */
-        const val STATION_ZOOM = 10.0
-
-        /** The Station mode's zoom (the web's STATION_ALWAYS): a region's
-         *  scale, where the fields' own symbols start keeping only a
-         *  little apart; out past it the country would be one tangle. */
-        const val STATION_ALWAYS = 7.0
-    }
 }
 
 /**

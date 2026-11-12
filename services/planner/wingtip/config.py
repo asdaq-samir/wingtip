@@ -70,10 +70,9 @@ MIN_LABELED_ROWS = 30
 # login around 2026-09-03, then Texas A&M's public mirror of the same
 # data, which had no tile cache and no chart west of Duluth.)
 #
-# Chart editions are listed on the products page, each under a
-# cycle-dated URL; when the page cannot be reached, the cycle is the
-# engine's 56-day arithmetic (wingtip.data_cycles).
-FAA_VFR_PRODUCTS_PAGE = "https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/vfr/"
+# Each sheet's zip is under its cycle's date; the cycle is the one the
+# FAA's APRA names (wingtip.apra), else the engine's 56-day arithmetic
+# (wingtip.data_cycles).
 FAA_VISUAL_ZIP_URL = "https://aeronav.faa.gov/visual/{cycle}/{folder}/{name}.zip"
 FAA_ENROUTE_ZIP_URL = "https://aeronav.faa.gov/enroute/{cycle}/{name}.zip"
 

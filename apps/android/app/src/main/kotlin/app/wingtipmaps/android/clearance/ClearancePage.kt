@@ -41,6 +41,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
@@ -83,7 +84,7 @@ fun ClearancePage(plan: Plan, fix: OwnShip.Fix?, exit: CardExit, onEntered: () -
     val context = LocalContext.current
     val voice = remember(context) { RadioListener.canListen(context) }
     val radio = remember(context) { if (voice) RadioListener.of(context) else null }
-    val model = viewModel { ClearanceModel(radio) }
+    val model = hiltViewModel<ClearanceModel, ClearanceModel.Factory> { it.create(radio) }
     val state by model.state.collectAsStateWithLifecycle()
     val planned by plan.state.collectAsStateWithLifecycle()
     val tail by remember(context) { FlightChoices.of(context) }.tail.collectAsStateWithLifecycle()

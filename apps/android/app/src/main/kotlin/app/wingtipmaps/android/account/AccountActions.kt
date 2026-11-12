@@ -20,8 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.design.Loading
@@ -36,7 +36,7 @@ import app.wingtipmaps.android.ui.ProblemLine
  * under the row (ProblemLine), where it happened.
  */
 @Composable
-fun ExportRow(model: ExportModel = viewModel()) {
+fun ExportRow(model: ExportModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { model.save(it) }
     LaunchedEffect(state.toSave) {

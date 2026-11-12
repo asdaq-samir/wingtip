@@ -8,4 +8,4 @@ import kotlinx.serialization.decodeFromString
  *  written, what else is on the field and the places near it. The
  *  airport card's Fuel rows read it. */
 suspend fun Planner.airportServices(ident: String): AirportServices =
-    Gateway.json.decodeFromString(fetch("/api/airport/$ident/services"))
+    api.airportServices(ident).planned()

@@ -1,0 +1,106 @@
+# One home for the map's projection maths and for colour parsing
+# (CLAUDE.md, "Simplicity rules"; the simplicity audit of 2026-11-12,
+# finding 10: Mercator written four ways, some clamping the latitude and
+# some not, and hex-to-RGB copied four times in one wave).
+rules:
+  - id: mercator-outside-tile-maths
+    message: >-
+      Web Mercator (EPSG:3857) projection maths written here. It has one
+      home per stack: apps/web/src/lib/map/tileMath.ts on the web, wingtip.geo
+      (services/planner/wingtip/geo.py) in Python; import tileFraction /
+      tileOf (or add the export you need there). Four hand copies disagreed on
+      clamping the latitude at 85.0511 (simplicity audit 2026-11-12,
+      finding 10). The phones' copies are baselined until batch G names their
+      home.
+    severity: ERROR
+    languages: [typescript, javascript]
+    paths:
+      exclude: ["apps/web/src/lib/map/tileMath.ts"]
+    pattern-either:
+      - pattern: Math.atan(Math.sinh($X))
+      - pattern: Math.asinh(Math.tan($X))
+      - pattern: Math.log(Math.tan($X))
+      - pattern: Math.log(Math.tan($X) + $Y)
+      - pattern: "85.0511287798"
+      - pattern: "85.05112878"
+  - id: mercator-outside-tile-maths-python
+    message: >-
+      Web Mercator (EPSG:3857) projection maths written here. Python's one
+      home is wingtip.geo (services/planner/wingtip/geo.py): import it from
+      there (simplicity audit 2026-11-12, finding 10).
+    severity: ERROR
+    languages: [python]
+    paths:
+      exclude: ["services/planner/wingtip/geo.py"]
+    pattern-either:
+      - pattern: math.atan(math.sinh($X))
+      - pattern: math.asinh(math.tan($X))
+      - pattern: math.log(math.tan($X))
+      - pattern: math.log(math.tan($X) + $Y)
+      - pattern: $NP.arctan($NP.sinh($X))
+      - pattern: $NP.arcsinh($NP.tan($X))
+      - pattern: $NP.log($NP.tan($X))
+  - id: mercator-outside-tile-maths-phones
+    message: >-
+      Web Mercator (EPSG:3857) projection maths written again on a phone.
+      Use the app's one tile-maths helper (the copies here are baselined until
+      batch G gives each phone one home), never a new copy (simplicity audit
+      2026-11-12, finding 10).
+    severity: ERROR
+    languages: [swift, kotlin, java]
+    pattern-either:
+      - pattern: atan(sinh($X))
+      - pattern: asinh(tan($X))
+      - pattern: log(tan($X))
+      - pattern: log(tan($X) + $Y)
+      - pattern: ln(tan($X))
+      - pattern: ln(tan($X) + $Y)
+      - pattern: Math.atan(Math.sinh($X))
+      - pattern: Math.log(Math.tan($X))
+      - pattern: Math.log(Math.tan($X) + $Y)
+  - id: hex-colour-parsed-by-hand
+    message: >-
+      A "#rrggbb" colour parsed by hand. The web has one helper,
+      deckColour in apps/web/src/lib/map/gl/deckLayers.ts (the phones read
+      their colours from the generated design tokens): use it. Hex-to-RGB
+      was copied four times in one wave (simplicity audit 2026-11-12,
+      finding 10).
+    severity: ERROR
+    languages: [typescript, javascript]
+    paths:
+      exclude: ["apps/web/src/lib/map/gl/deckLayers.ts"]
+    pattern-either:
+      - pattern: parseInt($H.slice($A, $B), 16)
+      - pattern: parseInt($H.substring($A, $B), 16)
+      - pattern: parseInt($H.substr($A, $B), 16)
+      - pattern: Number.parseInt($H.slice($A, $B), 16)
+  - id: hex-colour-parsed-by-hand-other
+    message: >-
+      A "#rrggbb" colour parsed by hand. Colours come from the design tokens
+      (design/tokens.json, generated into each app by
+      scripts/build/design-tokens.sh) as values ready to use; parse none
+      again (simplicity audit 2026-11-12, finding 10).
+    severity: ERROR
+    languages: [python, kotlin, swift]
+    pattern-either:
+      - pattern: int($H[$A:$B], 16)
+      - pattern: $H.substring($A, $B).toInt(16)
+      - pattern: $H.removePrefix("#").toInt(16)
+      - pattern: $H.removePrefix("#").toLong(16)
+      - pattern: 'Int($H, radix: 16)'
+      - pattern: 'UInt64($H, radix: 16)'
+      - pattern: 'UInt32($H, radix: 16)'
+  - id: html-marker-on-the-map
+    message: >-
+      A MapLibre HTML marker (a DOM element over the map). The map's marks are
+      its own layers (symbol and circle layers, CLAUDE.md "Simplicity rules");
+      the only HTML marker is the own-ship arrow
+      (apps/web/src/lib/map/gl/layers/OwnShipGl.tsx). Draw this as a layer.
+    severity: ERROR
+    languages: [typescript, javascript]
+    paths:
+      exclude: ["apps/web/src/lib/map/gl/layers/OwnShipGl.tsx"]
+    pattern-either:
+      - pattern: new maplibregl.Marker(...)
+      - pattern: new Marker(...)
+      - pattern: iconMarker(...)

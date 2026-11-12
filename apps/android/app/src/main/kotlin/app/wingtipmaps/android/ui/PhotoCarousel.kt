@@ -1,7 +1,5 @@
 package app.wingtipmaps.android.ui
 
-import android.graphics.BitmapFactory
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -25,21 +23,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.R
-import app.wingtipmaps.android.api.Gateway
-import app.wingtipmaps.android.api.picture
 import app.wingtipmaps.android.design.generated.WingtipSpace
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import coil3.SingletonImageLoader
+import coil3.compose.AsyncImage
+import coil3.compose.LocalPlatformContext
+import coil3.request.ImageRequest
+import coil3.request.SuccessResult
+import me.saket.telephoto.zoomable.coil3.ZoomableAsyncImage
 
 /** A picture on a card: what it is (TalkBack's words and the viewer's
  *  title), its address or gateway path, and its credit where it has one. */
@@ -49,16 +47,20 @@ data class CardPicture(val label: String, val address: String, val credit: Strin
  * A card's pictures under its tabs, as Google Maps' place sheet has its
  * previews: Material's multi-browse carousel,
  * each picture a tap to the full-screen viewer, a stock Dialog, which
- * Back closes. A picture that cannot be had is left out.
+ * Back closes. A picture that cannot be had is left out. Coil loads them
+ * (the app's one loader, on the app's OkHttp client): asked once here to
+ * learn which can be had, then drawn from its memory cache.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhotoCarousel(pictures: List<CardPicture>, modifier: Modifier = Modifier) {
-    val loaded by produceState(emptyList<Pair<CardPicture, ImageBitmap>>(), pictures) {
-        value = pictures.mapNotNull { p -> load(p.address)?.let { p to it } }
+    val context = LocalPlatformContext.current
+    val loaded by produceState(emptyList<CardPicture>(), pictures) {
+        val loader = SingletonImageLoader.get(context)
+        value = pictures.filter { p -> loader.execute(ImageRequest.Builder(context).data(address(p)).build()) is SuccessResult }
     }
     if (loaded.isEmpty()) return
-    var open by remember { mutableStateOf<Pair<CardPicture, ImageBitmap>?>(null) }
+    var open by remember { mutableStateOf<CardPicture?>(null) }
     val state = rememberCarouselState { loaded.size }
     HorizontalMultiBrowseCarousel(
         state = state,
@@ -66,16 +68,16 @@ fun PhotoCarousel(pictures: List<CardPicture>, modifier: Modifier = Modifier) {
         itemSpacing = WingtipSpace.Sm,
         modifier = modifier.fillMaxWidth().height(PictureHeight).padding(horizontal = WingtipSpace.Lg),
     ) { i ->
-        val (picture, bitmap) = loaded[i]
-        Image(
-            bitmap = bitmap,
+        val picture = loaded[i]
+        AsyncImage(
+            model = address(picture),
             contentDescription = picture.label,
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize().maskClip(MaterialTheme.shapes.extraLarge)
-                .clickable(role = Role.Image) { open = picture to bitmap },
+                .clickable(role = Role.Image) { open = picture },
         )
     }
-    open?.let { (picture, bitmap) -> PictureViewer(picture, bitmap) { open = null } }
+    open?.let { picture -> PictureViewer(picture) { open = null } }
 }
 
 /** A picture's width in the carousel and the carousel's height: two
@@ -83,13 +85,19 @@ fun PhotoCarousel(pictures: List<CardPicture>, modifier: Modifier = Modifier) {
 private val PictureWidth = 240.dp
 private val PictureHeight = 180.dp
 
-/** One picture at the whole screen, its credit under it; Back (the
+/** A picture's address, or the gateway path the planner gave
+ *  ("/api/planner/airport-aerial/KOSH.jpg") on the gateway. */
+private fun address(picture: CardPicture): String =
+    if (picture.address.startsWith("/")) Config.gateway + picture.address else picture.address
+
+/** One picture at the whole screen, its credit under it, pinched and
+ *  double-tapped to zoom (telephoto's ZoomableAsyncImage); Back (the
  *  Dialog's own) and the close go back to the card. */
 @Composable
-private fun PictureViewer(picture: CardPicture, bitmap: ImageBitmap, onClose: () -> Unit) {
+private fun PictureViewer(picture: CardPicture, onClose: () -> Unit) {
     Dialog(onDismissRequest = onClose, properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)) {
         Box(Modifier.fillMaxSize().background(Color.Black)) {
-            Image(bitmap = bitmap, contentDescription = picture.label, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
+            ZoomableAsyncImage(model = address(picture), contentDescription = picture.label, contentScale = ContentScale.Fit, modifier = Modifier.fillMaxSize())
             IconButton(onClick = onClose, modifier = Modifier.align(Alignment.TopEnd).padding(WingtipSpace.Lg)) {
                 Icon(WingtipIcons.close, contentDescription = stringResource(R.string.close), tint = Color.White)
             }
@@ -98,12 +106,4 @@ private fun PictureViewer(picture: CardPicture, bitmap: ImageBitmap, onClose: ()
             }
         }
     }
-}
-
-private suspend fun load(path: String): ImageBitmap? = try {
-    Gateway.picture(path)?.let { bytes -> withContext(Dispatchers.Default) { BitmapFactory.decodeByteArray(bytes, 0, bytes.size)?.asImageBitmap() } }
-} catch (e: CancellationException) {
-    throw e
-} catch (e: Exception) {
-    null
 }

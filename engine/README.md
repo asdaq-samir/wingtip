@@ -21,7 +21,7 @@ issue #482.
   the engine was one crate (`wingtip_engine::gonogo`, `::pack` ...), so
   `bindings/py`, `bindings/ffi`, `bindings/wasm` and the tests name them
   as before. Plain Rust
-  with no dependencies but its own crates, so it builds as it is for the phones: aarch64-apple-ios
+  with no dependencies but its own crates (its build script's aside, below), so it builds as it is for the phones: aarch64-apple-ios
   (the native iOS app, from Swift) and aarch64-linux-android (the native
   Android app, from Kotlin), both through `bindings/ffi`.
   Keep it that way: no PyO3, no host-only crates, no network, and files
@@ -43,7 +43,7 @@ the Go / No-Go) and a build or a test can take one area alone
 (`cargo test -p wingtip-weather`). The layers come from the modules'
 own uses of each other when the engine was one crate; two that use each
 other share a crate. Like the engine, none has a dependency outside the
-workspace. The table below is held to the crates' Cargo.toml files by
+workspace but the few named below ("Outside the workspace"). The table below is held to the crates' Cargo.toml files by
 `scripts/ci/engine_layers.py` (CI's test job and check.sh's engine area):
 a crate's wingtip-* dependencies must be its "Uses" exactly, "route
 (without its options)" with route's default features off, and a binding
@@ -52,7 +52,7 @@ table, and its why below, in the same commit.
 
 | Crate | Modules | Uses |
 |---|---|---|
-| `core` | base64, geo, wmm, grid, sums, time, json, xml, sort | nothing |
+| `core` | base64, geo, wmm, grid, sums, time, json, xml, sort, text (a whole number with its thousands grouped, "12,500") | nothing |
 | `flight` | flight (the wind triangle, 91.159's altitudes, 91.151's reserve, the atmosphere, the turnaround and cruise reference), performance (the airplane's cruise and climbs in the day's air), limits (the altitudes a flight may be planned at: 71.33, 91.119(c), 91.121, 91.159, 91.179), filing (FAA Form 7233-4's items), sun (1.1's night and 61.57(b)'s night-passenger period), vfr (91.155's minimums, one copy) | nothing |
 | `weather` | metar, sky (a report's ceiling and its cover, for the station model), taf, winds, forecast (with run: the dry run against the forecast), validity, notam, notam_read (a NOTAM as a pilot reads it: its keyword as a heading, its words written out, its window) over contractions (the FAA's contractions, the one table, which the radio's D-ATIS reads by too), notam_rank (the NOTAMs that matter to a flight, best first), tfr, cycles, rvr (RVR against a minimum, 91.175(h)'s table), ready (ready to fly: what the device holds against the cycles and the weather's age; kept: a kept answer's age), worse (a route's weather worse since the briefing) | core, flight |
 | `procedures` | figures (debrief, diversion, endurance (91.151(a) and 91.167(a)(3)'s reserve kept back), holding, lost comms, words), paths (a procedure's legs as drawn: arcs, CIFP holds, procedure turns), occurrence (an accident report, the registry and an ADS-B track as one airplane: the Studio's crash drafts) | core, flight |
@@ -118,6 +118,23 @@ Why these lines:
   handed on as sent, for `weather` to read where a screen asks, so it
   sits beside `weather`, not on it.
 - `call.rs` dispatches every rule, so it alone stays in the facade, over all.
+
+### Outside the workspace
+
+What the phones and the WebAssembly carry is plain Rust the engine holds
+itself, with these exceptions, each weighed for its bytes and its build
+(`scripts/ci/engine_layers.py` holds the crates to this list, its
+`OUTSIDE`):
+
+- `crc32fast` (airspace's `pack`): the cycle pack's checksum, zlib's
+  CRC-32, the stock crate rather than a table of our own. No system
+  library; the web's rules never verify a pack, so it is not in the
+  WebAssembly.
+
+A build-dependency runs on the host when a crate is built and is in no
+build of the engine, so it needs no entry: the facade's `build.rs` reads
+the rules' contract files with `serde_json`. A dev-dependency is the
+tests' alone.
 
 Inside a crate, the modules under it are used at the root by the names
 they had in the one crate (`use wingtip_core::json;` in its lib.rs), so

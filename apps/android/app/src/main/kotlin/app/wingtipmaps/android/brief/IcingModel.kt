@@ -5,11 +5,14 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Leg
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.generated.IcingForecast
+import app.wingtipmaps.android.api.generated.client.apis.PlannerApi
 import app.wingtipmaps.android.api.icingRoute
+import app.wingtipmaps.android.api.planned
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.route.RoutePoint
 import app.wingtipmaps.android.route.RoutePoints
 import app.wingtipmaps.android.strip.Finding
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.util.Locale
+import javax.inject.Inject
 import kotlin.math.roundToInt
 
 /**
@@ -30,7 +34,11 @@ import kotlin.math.roundToInt
  * log is whole with each leg's time, so with an airplane chosen; a
  * forecast that cannot be had is said, never shown as no icing.
  */
+@HiltViewModel
 class IcingModel(private val ask: suspend (fixes: String, altFt: String, legMin: String, groundMin: String) -> IcingForecast = { f, a, l, g -> Planner.icingRoute(f, a, l, g) }) : ViewModel() {
+    /** Hilt's: the planner's icing on the route (GET /api/icing/route). */
+    @Inject
+    constructor(planner: PlannerApi) : this({ f, a, l, g -> planner.icingOnTheRoute(f, a, l, g).planned() })
     data class Row(val title: String, val value: String, val layer: String?, val finding: Finding)
 
     data class State(

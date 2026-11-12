@@ -11,11 +11,11 @@ phases and gates are the iOS plan's. Its package is `app.wingtipmaps.android.nat
 
 - `apps/android/`: a Gradle project of one module, `app`, in the Kotlin DSL,
   every version in the catalog `gradle/libs.versions.toml`, on Gradle
-  9.9.1 and AGP 9.5.1, whose built-in Kotlin compiles the app (no Kotlin
+  9.9.1 and AGP 9.6.0-alpha03, whose built-in Kotlin compiles the app (no Kotlin
   Android plugin), for API 37 (compiled against 37.2, the newest minor SDK), on Java 25 (the gateway's LTS): Gradle
   runs on the Temurin 25 that `gradle/gradle-daemon-jvm.properties`
   names, fetched once into `~/.gradle/jdks` by the foojay resolver, and
-  the app compiles to Java 25 bytecode, which AGP 9.5's D8 dexes. Every
+  the app compiles to Java 25 bytecode, which AGP 9.6's D8 dexes. Every
   Kotlin and lint warning fails the build, as a Gradle deprecation does
   (`org.gradle.warning.mode=fail`).
 - `app/src/main/cpp`: the JNI shim round the engine, in C

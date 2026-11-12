@@ -1,18 +1,14 @@
 import SwiftUI
 
 /// A stopwatch kept as the moment it was started and the time it had run
-/// before that, so the time shown is worked out from the clock at each
-/// draw: nothing counts in the background, and the figure is right when
-/// the display wakes.
+/// before that. The system's own timer text counts it (TimerRow), so
+/// nothing counts in the background here, and the figure is right when
+/// the display wakes and in the always-on display.
 struct Stopwatch: Equatable {
     var startedAt: Date?
     var before: TimeInterval = 0
 
     var running: Bool { startedAt != nil }
-
-    func elapsed(at now: Date) -> TimeInterval {
-        before + (startedAt.map { now.timeIntervalSince($0) } ?? 0)
-    }
 
     mutating func startOrStop(at now: Date) {
         if let startedAt {
@@ -28,11 +24,12 @@ struct Stopwatch: Equatable {
         before = 0
     }
 
-    /// h:mm:ss past an hour, else m:ss, as a cockpit timer reads.
-    static func text(_ seconds: TimeInterval) -> String {
-        let whole = Int(seconds.rounded(.down))
-        let h = whole / 3600, m = (whole % 3600) / 60, s = whole % 60
-        return h > 0 ? String(format: "%d:%02d:%02d", h, m, s) : String(format: "%d:%02d", m, s)
+    /// The span the system's timer text counts up over (Text(timerInterval:
+    /// pauseTime:)): from the moment the stopwatch would have started had
+    /// it never stopped, and, while stopped, where it was paused.
+    func timer(at now: Date) -> (interval: ClosedRange<Date>, pause: Date?) {
+        let from = (startedAt ?? now).addingTimeInterval(-before)
+        return (from...Date.distantFuture, running ? nil : from.addingTimeInterval(before))
     }
 }
 
@@ -45,12 +42,10 @@ struct TimersView: View {
     @State private var hold = Stopwatch()
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 1)) { timeline in
-            // A stock list: watchOS's own rows, spacing and corners.
-            List {
-                TimerRow(title: "Flight", stopwatch: $flight, now: timeline.date)
-                TimerRow(title: "Hold / Approach", stopwatch: $hold, now: timeline.date)
-            }
+        // A stock list: watchOS's own rows, spacing and corners.
+        List {
+            TimerRow(title: "Flight", stopwatch: $flight)
+            TimerRow(title: "Hold / Approach", stopwatch: $hold)
         }
         .navigationTitle("Timers")
     }
@@ -59,7 +54,6 @@ struct TimersView: View {
 struct TimerRow: View {
     let title: String
     @Binding var stopwatch: Stopwatch
-    let now: Date
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -67,7 +61,10 @@ struct TimerRow: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             HStack {
-                Text(Stopwatch.text(stopwatch.elapsed(at: now)))
+                // The system's timer text: m:ss, and h:mm:ss past an hour,
+                // as a cockpit timer reads, counted by the system each second.
+                let timer = stopwatch.timer(at: Date())
+                Text(timerInterval: timer.interval, pauseTime: timer.pause, countsDown: false, showsHours: true)
                     .font(.system(.title2, design: .rounded).monospacedDigit())
                     .foregroundStyle(stopwatch.running ? .primary : .secondary)
                 Spacer()

@@ -5,8 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.AskFigures
@@ -28,7 +28,7 @@ import app.wingtipmaps.android.ui.OwnShipControl
  * the sheet and left the assistant open over it.
  */
 @Composable
-fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = viewModel(), airplanes: AirplaneModel = viewModel()) {
+fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = hiltViewModel(), airplanes: AirplaneModel = hiltViewModel()) {
     val from by EmergencyOpen.from.collectAsStateWithLifecycle()
     if (from == null) return
     BackHandler(onBack = EmergencyOpen::close)

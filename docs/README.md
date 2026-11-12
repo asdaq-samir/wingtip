@@ -74,4 +74,4 @@ a service, crate, app or outside source edits the `.drawio` and
 re-exports the `.svg` with the `rlespinasse/drawio-export` image (run
 through `scripts/dev/one-at-a-time.sh`).
 
-The links in every doc are checked in CI (`scripts/ci/check_links.py`).
+The links in every doc are checked in CI (`scripts/ci/check_links.sh`, lychee).

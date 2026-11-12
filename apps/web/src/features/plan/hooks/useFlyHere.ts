@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from "react";
 import { flushSync } from "react-dom";
-import type { SetURLSearchParams } from "react-router";
+import { ADDRESS_CLEARED, type AddressChange, type SetAddress } from "../../../lib/address";
 import type { PanelState } from "../../../lib/mapChrome";
 import type { AircraftChoice, AirportPlace } from "../../../lib/api/types";
 import { api } from "../../../lib/api/client";
@@ -65,7 +65,7 @@ export function useFlyHere({
   showWaypoints,
   flightRules,
   setPanel,
-  setSearchParams,
+  setAddress,
 }: {
   planned: PlannedRoute;
   /** The airport whose card is open. */
@@ -80,7 +80,7 @@ export function useFlyHere({
   showWaypoints: boolean;
   flightRules: "vfr" | "ifr";
   setPanel: (state: PanelState) => void;
-  setSearchParams: SetURLSearchParams;
+  setAddress: SetAddress;
 }) {
   // Fly Here, as an EFB's Direct-To, at the pilot's ask: the card's
   // airport as the destination, from where the pilot is now -- own ship's
@@ -182,7 +182,8 @@ export function useFlyHere({
       feel("directTo");
       flownTo.current = to.ident;
       const from = await fromFor(to.ident, await positionNow());
-      const next: Record<string, string> = { dest: to.ident };
+      // The address this route alone: the rest of the plan left behind.
+      const next: AddressChange = { ...ADDRESS_CLEARED, dest: to.ident };
       if (from) next.dep = from;
       if (depart) next.depart = depart;
       // The route a layer over the card, at the height the card was, as
@@ -223,10 +224,10 @@ export function useFlyHere({
         // The route in sight: half way up from the pill, else where the
         // pilot left the sheet.
         riseToSee(setPanel);
-        setSearchParams(next, { replace: true, flushSync: true });
+        void setAddress(next);
       });
     },
-    [fromFor, depart, setSearchParams, setPanel, showWaypoints, aircraft, load, flightRules, setLoad, setUnder],
+    [fromFor, depart, setAddress, setPanel, showWaypoints, aircraft, load, flightRules, setLoad, setUnder],
   );
   return { flyHere };
 }

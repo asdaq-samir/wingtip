@@ -6,6 +6,7 @@ import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.ai.Nano
 import app.wingtipmaps.android.ai.OnPhoneAsk
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,6 +26,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import javax.inject.Inject
 
 /**
  * One line of the assistant's stream (POST /api/assistant, newline-
@@ -238,7 +240,8 @@ object Assistant {
  * A ViewModel, as Plan and Session are, with the conversation in a flow
  * for AskScreen to draw.
  */
-class AssistantClient : ViewModel() {
+@HiltViewModel
+class AssistantClient @Inject constructor() : ViewModel() {
     private val _conversation = MutableStateFlow(AssistantConversation())
     val conversation: StateFlow<AssistantConversation> = _conversation.asStateFlow()
 

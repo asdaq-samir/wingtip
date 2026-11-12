@@ -25,12 +25,6 @@ final class SavedFlightsModel {
                                    update: { try await Gateway.updateFlight($0, $1) }, delete: { try await Gateway.deleteFlight($0) })
     }
 
-    /// A link to send, from Share: the system's share sheet takes it.
-    struct Sending: Identifiable {
-        let id = UUID()
-        let url: URL
-    }
-
     /// The gateway's own limits on the two (UpdateFlightRequest), said in
     /// the row before it is asked.
     static let nameLimit = 80
@@ -54,8 +48,6 @@ final class SavedFlightsModel {
     /// Why the name and notes were not kept, said in their row.
     private(set) var rowProblem: String?
     private(set) var sending = false
-    /// The link just made, for the share sheet; nil once it is put away.
-    var sendingLink: Sending?
     @ObservationIgnored private let calls: Calls
     @ObservationIgnored private let pending: PendingDeletes
 
@@ -181,15 +173,19 @@ final class SavedFlightsModel {
     }
 
     /// Shared by link (the same link while it stays shared), the N-number
-    /// with it only where the pilot chose; the share sheet then opens with it.
-    func share(_ flight: SavedFlight, includeTail: Bool) async {
+    /// with it only where the pilot chose: the link, for the share sheet
+    /// that asked for it (ShareLink, SharedLink). Why it could not be had
+    /// is said under the list, and thrown so the sheet sends nothing.
+    func link(_ flight: SavedFlight, includeTail: Bool) async throws -> URL {
         do {
             let share = try await calls.share(flight.id, includeTail)
             if let at = flights.firstIndex(where: { $0.id == flight.id }) { flights[at].share = share }
-            if let url = URL(string: share.url) { sendingLink = Sending(url: url) }
+            guard let url = URL(string: share.url) else { throw URLError(.badURL) }
             problem = nil
+            return url
         } catch {
             problem = "\(Self.title(flight)) could not be shared: \(error.localizedDescription)"
+            throw error
         }
     }
 

@@ -57,7 +57,7 @@ export function modeOf(pathname: string): AppMode {
 export function useDevMode() {
   const { data: pilot, isSuccess: pilotKnown } = useQuery(pilotQuery);
   const { data: capabilities } = useQuery(capabilitiesQuery);
-  const { pathname, search, state } = useLocation();
+  const { pathname, state } = useLocation();
   const navigate = useNavigate();
   const mode = modeOf(pathname);
   const on = mode === "developer";
@@ -67,6 +67,9 @@ export function useDevMode() {
   // and goes as it does to Dev.
   const go = (next: AppMode) => {
     if (next === mode) return;
+    // The query as the browser has it: nuqs (lib/address) writes it
+    // without the router, whose location keeps the one it last landed.
+    const search = window.location.search;
     if (next === "pilot") {
       // No state at all (opened directly, a bookmark or a fresh tab)
       // falls back to the map, with the page's own route.
@@ -84,5 +87,5 @@ export function useDevMode() {
   // the answer does, rather than flashing in and out.
   const allowed = pilot?.developer === true || capabilities?.access === "OPEN";
   const refused = mode !== "pilot" && pilotKnown && capabilities !== undefined && !allowed;
-  return { on, mode, go, flip, allowed, refused, navigate, search };
+  return { on, mode, go, flip, allowed, refused, navigate };
 }

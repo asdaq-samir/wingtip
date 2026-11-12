@@ -1,0 +1,19 @@
+# The jobs' import contracts, held by import-linter (`lint-imports`, run
+# from this directory with services/planner on the path by
+# scripts/ci/guards.sh's "Python imports"). Each job is one pipeline in one
+# package, sharing only wingtip: the charts and the crash films never import
+# each other (retrain/ is an image over the planner's code, no package) (the simplicity audit of
+# 2026-11-12, finding 8: one pipeline, one home).
+[importlinter]
+root_packages =
+    charts
+    crash
+    wingtip
+include_external_packages = False
+
+[importlinter:contract:jobs-independent]
+name = no job imports another
+type = independence
+modules =
+    charts
+    crash

@@ -3716,6 +3716,10 @@ object EngineContract {
         val value: Double,
         @SerialName("from_deg")
         val fromDeg: Double? = null,
+        /**
+         * A wind under 1 kt, which has no direction (FMH-1 Table 5-1, 5.5.2); false for a scalar.
+         */
+        val calm: Boolean,
     )
 
     @Serializable
@@ -4171,6 +4175,22 @@ object EngineContract {
     data class GairmetTitleInput(
         val hazard: String? = null,
         val severity: String? = null,
+    )
+
+    @Serializable
+    data class GairmetWindowAnswer(
+        @SerialName("valid_from")
+        val validFrom: Double,
+        @SerialName("valid_to")
+        val validTo: Double,
+    )
+
+    @Serializable
+    data class GairmetWindowInput(
+        /**
+         * The snapshot's valid time, UNIX seconds.
+         */
+        val valid: Double,
     )
 
     @Serializable
@@ -6936,6 +6956,35 @@ object EngineContract {
         override fun equals(other: Any?): Boolean = other is ModelWeatherBandsInput
         override fun hashCode(): Int = 0
     }
+
+    @Serializable
+    data class ModelWindLevelsAnswerItem(
+        @SerialName("altitude_ft")
+        val altitudeFt: Double,
+        @SerialName("wind_dir_true_deg")
+        val windDirTrueDeg: Double,
+        @SerialName("wind_speed_kt")
+        val windSpeedKt: Double,
+        @SerialName("temp_c")
+        val tempC: Double,
+    )
+
+    @Serializable
+    data class ModelWindLevelsInput(
+        val levels: List<EngineContract.ModelWindLevelsInputLevelsItem>,
+    )
+
+    @Serializable
+    data class ModelWindLevelsInputLevelsItem(
+        @SerialName("height_m")
+        val heightM: Double? = null,
+        @SerialName("temp_k")
+        val tempK: Double? = null,
+        @SerialName("u_m_s")
+        val uMS: Double? = null,
+        @SerialName("v_m_s")
+        val vMS: Double? = null,
+    )
 
     @Serializable
     data class MorseInput(
@@ -11425,6 +11474,24 @@ object EngineContract {
     data class UnderwayInput(
         @SerialName("speed_kt")
         val speedKt: Double? = null,
+    )
+
+    @Serializable
+    data class VelocityTrackAnswerItem(
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        val speed: Double,
+    )
+
+    @Serializable
+    data class VelocityTrackInput(
+        val velocities: List<EngineContract.VelocityTrackInputVelocitiesItem>,
+    )
+
+    @Serializable
+    data class VelocityTrackInputVelocitiesItem(
+        val east: Double,
+        val north: Double,
     )
 
     /**

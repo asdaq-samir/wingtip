@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLocation } from "react-router";
+import { useAddressKey } from "../../../lib/address";
 import { BrainCircuit, ExternalLink, RefreshCw } from "lucide-react";
 import { done } from "../../../lib/doneNote";
 import { showError } from "../../../lib/problems";
@@ -580,8 +580,7 @@ function StackLink({ link }: { link: { label: string; href: string; service?: st
  *  the Routes section marks its row and says how far its rating has
  *  got. */
 function useOnMap(corridors: Status["corridors"]) {
-  const params = new URLSearchParams(useLocation().search);
-  const onMapKey = `${params.get("dep") ?? ""}-${params.get("dest") ?? ""}`.toUpperCase();
+  const onMapKey = `${useAddressKey("dep")[0] ?? ""}-${useAddressKey("dest")[0] ?? ""}`.toUpperCase();
   return corridors.find((c) => `${c.departure_ident}-${c.destination_ident}`.toUpperCase() === onMapKey);
 }
 

@@ -21,7 +21,7 @@ S13). Tick each as it is done.
       `docs/legal/support.md` (the owner's note at its foot) and the
       policy's contact block, with the legal name and postal address of
       whoever runs Wingtip Maps (`docs/legal/privacy.md`, its last note);
-      run `python3 scripts/build/legal_pages.py` and commit the pages.
+      run `scripts/build/legal_pages.py` and commit the pages.
 - [ ] Put the same support address in App Store Connect's and Play
       Console's contact fields.
 

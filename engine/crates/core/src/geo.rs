@@ -114,6 +114,26 @@ pub fn corridor_bbox(a: (f64, f64), b: (f64, f64), buffer_nm: f64) -> (f64, f64,
     (a.0.min(b.0) - pad_lat, a.1.min(b.1) - pad_lon, a.0.max(b.0) + pad_lat, a.1.max(b.1) + pad_lon)
 }
 
+/// Whether a ring of (x, y) points (longitude, latitude, on a plane of
+/// degrees) holds the point (x, y), by the even-odd rule: a ray east of
+/// the point crosses its edges an odd number of times. A point on an
+/// edge may read either way. The one copy for the airspace ahead, the
+/// map's overlays in view and 91.119(b)'s congested areas; fewer than
+/// three points hold nothing.
+pub fn ring_holds(ring: &[(f64, f64)], x: f64, y: f64) -> bool {
+    let Some(&last) = ring.last() else { return false };
+    let mut inside = false;
+    let mut prev = last;
+    for &cur in ring {
+        let ((xi, yi), (xj, yj)) = (cur, prev);
+        if (yi > y) != (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi {
+            inside = !inside;
+        }
+        prev = cur;
+    }
+    inside
+}
+
 /// Whether a path of (lat, lon) points crosses or lies in a polygon given
 /// as its ring of (lat, lon) points, on a plane of degrees as the
 /// planner's shapely test read them (LineString.intersects(Polygon)): a
@@ -157,6 +177,15 @@ pub fn path_meets_polygon(path: &[(f64, f64)], ring: &[(f64, f64)]) -> bool {
     path.windows(2).any(|s| (0..n).any(|i| meet(s[0], s[1], ring[i], ring[(i + 1) % n])))
 }
 
+/// A velocity's east and north parts as a track, degrees true 0 to 360
+/// toward where it goes, and a speed, in the parts' own unit: a ground
+/// track from a surveillance report's parts (the FAA's STDDS tracks, read
+/// by the ingest service's swim). No track where it does not move.
+pub fn velocity_track(east: f64, north: f64) -> (Option<f64>, f64) {
+    let speed = east.hypot(north);
+    (if speed > 0.0 { Some(py_mod(east.atan2(north).to_degrees(), 360.0)) } else { None }, speed)
+}
+
 // --- By name (the facade's dispatcher, contract/*.json) -----------------
 
 fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
@@ -169,7 +198,9 @@ fn num(name: &str, v: &Value, key: &str) -> Result<f64, String> {
 /// from `{"lat1", "lon1", "lat2", "lon2"}`, and `destination` from
 /// `{"points": [{"lat", "lon", "bearing_deg", "nm"}]}` to `[{"lat",
 /// "lon"}]`, a list so a map's airplanes carried on a step a second cross
-/// into the engine once, not once each.
+/// into the engine once, not once each; `velocity_track` from
+/// `{"velocities": [{"east", "north"}]}` to `[{"track_deg", "speed"}]`,
+/// a list for the same reason.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     match name {
@@ -191,6 +222,19 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             }
             out.push(']');
         }
+        "velocity_track" => {
+            let parts = v.get("velocities").and_then(Value::as_array).ok_or("velocity_track: \"velocities\" is missing or not a list")?;
+            out.push('[');
+            for (i, p) in parts.iter().enumerate() {
+                let (track, speed) = velocity_track(num(name, p, "east")?, num(name, p, "north")?);
+                out.push_str(if i > 0 { ",{\"track_deg\":" } else { "{\"track_deg\":" });
+                json::opt_number(&mut out, track);
+                out.push_str(",\"speed\":");
+                json::number(&mut out, speed);
+                out.push('}');
+            }
+            out.push(']');
+        }
         _ => return Err(format!("the engine has no rule called {name:?}")),
     }
     Ok(out)
@@ -206,6 +250,29 @@ mod tests {
         assert!(path_meets_polygon(&[(0.5, -1.0), (0.5, 2.0)], &square));
         assert!(path_meets_polygon(&[(0.2, 0.2), (0.4, 0.4)], &square));
         assert!(!path_meets_polygon(&[(2.0, 2.0), (3.0, 3.0)], &square));
+    }
+
+    #[test]
+    fn a_velocity_is_a_track_toward_where_it_goes() {
+        let close = |a: f64, b: f64| (a - b).abs() < 1e-9;
+        let (t, s) = velocity_track(3.0, 4.0);
+        assert!(close(s, 5.0) && close(t.unwrap(), 36.869_897_645_844_02));
+        assert!(close(velocity_track(-10.0, 0.0).0.unwrap(), 270.0));
+        assert!(close(velocity_track(0.0, -10.0).0.unwrap(), 180.0));
+        assert!(close(velocity_track(0.0, 10.0).0.unwrap(), 0.0));
+        assert_eq!(velocity_track(0.0, 0.0), (None, 0.0));
+    }
+
+    #[test]
+    fn a_ring_holds_by_the_even_odd_rule() {
+        let square = [(0.0, 0.0), (1.0, 0.0), (1.0, 1.0), (0.0, 1.0)];
+        assert!(ring_holds(&square, 0.5, 0.5));
+        assert!(!ring_holds(&square, 1.5, 0.5));
+        // A bow tie crossing itself at (0.5, 0.5): each lobe holds, as
+        // the even-odd rule reads it.
+        let bow = [(0.0, 0.0), (1.0, 1.0), (1.0, 0.0), (0.0, 1.0)];
+        assert!(ring_holds(&bow, 0.1, 0.5) && ring_holds(&bow, 0.9, 0.5) && !ring_holds(&bow, 0.5, 0.9));
+        assert!(!ring_holds(&[], 0.0, 0.0) && !ring_holds(&[(0.0, 0.0), (1.0, 1.0)], 0.5, 0.5));
     }
 
     #[test]

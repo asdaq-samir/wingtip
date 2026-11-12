@@ -2,14 +2,17 @@ package app.wingtipmaps.android.map
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.reportingInView
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -23,7 +26,8 @@ import kotlin.math.floor
  * change by the hour; what was heard is kept, so a pan back, or a pan
  * with no signal, keeps its pips, greyed once old (WeatherAge).
  */
-class MapWeather : ViewModel() {
+@HiltViewModel
+class MapWeather @Inject constructor() : ViewModel() {
     private val _categories = MutableStateFlow<Map<String, String>>(emptyMap())
     val categories: StateFlow<Map<String, String>> = _categories.asStateFlow()
 
@@ -66,7 +70,7 @@ class MapWeather : ViewModel() {
      *  airports are drawn. */
     fun view(view: MapRest) {
         if (view.zoom < MapStyle.glZoom(MapStyle.AIRPORTS_FARTHEST_ZOOM)) return
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         val box = asked
         if (box != null && box.holds(view) && now - askedAtMs < EVERY_MS) return
         if (asking?.isActive == true && box != null && box.holds(view)) return
@@ -79,7 +83,7 @@ class MapWeather : ViewModel() {
                 val fields = Planner.reportingInView(next.south, next.west, next.north, next.east)
                 _categories.value = merged(_categories.value, fields.associate { it.ident to it.flightCategory.orEmpty() })
                 _fields.value = merged(_fields.value, fields.associate { it.ident to StationLines.fieldOf(it) }) { true }
-                val heard = System.currentTimeMillis()
+                val heard = AppClock.nowMs()
                 _heardAtMs.value = merged(_heardAtMs.value, fields.associate { it.ident to heard }) { true }
             } catch (e: CancellationException) {
                 throw e

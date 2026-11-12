@@ -25,8 +25,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.Session
 import app.wingtipmaps.android.api.AssistantClient
@@ -77,9 +78,9 @@ fun StripLayout(
     covered: Boolean,
     cards: @Composable (Modifier) -> Unit,
     raise: Int = 0,
-    model: StripModel = viewModel(),
-    assistant: AssistantClient = viewModel(),
-    brief: BriefModel = viewModel(),
+    model: StripModel = hiltViewModel(),
+    assistant: AssistantClient = hiltViewModel(),
+    brief: BriefModel = hiltViewModel(),
 ) {
     val state by plan.state.collectAsStateWithLifecycle()
     val strip by model.state.collectAsStateWithLifecycle()
@@ -99,7 +100,7 @@ fun StripLayout(
     // When the flight leaves: the plan's time where it has one (Plan.setDepart,
     // a trip leg used), else now; the times down the strip are this plus
     // the planner's minutes.
-    val leaveMs = remember(state.legs, state.depart) { Plan.departMs(state.depart) ?: System.currentTimeMillis() }
+    val leaveMs = remember(state.legs, state.depart) { Plan.departMs(state.depart) ?: AppClock.nowMs() }
     var unfolded by rememberSaveable { mutableStateOf(false) }
     var source by remember { mutableStateOf<AssistantSource?>(null) }
     val verdict = briefed.verdict.takeIf { state.routed }

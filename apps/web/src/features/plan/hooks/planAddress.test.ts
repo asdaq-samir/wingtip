@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { loadAddress } from "../../../lib/address";
 import type { FuelStopSuggestion } from "../../../lib/api/types";
 import {
-  altitudeChoiceOf,
   approximateOf,
   autoOf,
   departureRunways,
@@ -12,49 +12,47 @@ import {
   suggestedStopAt,
 } from "./planAddress";
 
-const address = (text: string) => new URLSearchParams(text);
+const address = (text: string) => loadAddress(text);
 
 describe("the altitude's plan from the address", () => {
   it("is fastest unless the address names another", () => {
-    expect(altitudeChoiceOf(null)).toBe("fastest");
-    expect(altitudeChoiceOf("economical")).toBe("economical");
-    expect(altitudeChoiceOf("sideways")).toBe("fastest");
+    expect(address("").altitude_choice).toBe("fastest");
+    expect(address("altitude_choice=economical").altitude_choice).toBe("economical");
+    expect(address("altitude_choice=sideways").altitude_choice).toBe("fastest");
   });
 });
 
 describe("a Direct to", () => {
   it("flies from the departure to the point and on, the route kept for Cancel", () => {
     const next = directToPatch(address("dep=C81&stops=KJVL,KMSN&dest=KDLH"), "KMSN", null);
-    expect(next.get("dep")).toBe("C81");
-    expect(next.get("stops")).toBe("KMSN");
-    expect(next.get("direct")).toBe("KMSN");
-    expect(next.get("was")).toBe("C81|KJVL,KMSN|KDLH");
+    expect(next.dep).toBe("C81");
+    expect(next.stops).toBe("KMSN");
+    expect(next.direct).toBe("KMSN");
+    expect(next.was).toBe("C81|KJVL,KMSN|KDLH");
   });
 
   it("flies from where the airplane is, with its altitude", () => {
     const next = directToPatch(address("dep=C81&dest=KDLH"), "KDLH", { lat: 42.5, lon: -88.25, altitudeFt: 4520 });
-    expect(next.get("dep")).toBe("@42.5000,-88.2500,4500");
-    expect(next.has("stops")).toBe(false);
+    expect(next.dep).toBe("@42.5000,-88.2500,4500");
+    expect(next.stops).toBeNull();
   });
 
-  it("leaves the address alone for a point not on the route", () => {
-    const prev = address("dep=C81&dest=KDLH");
-    expect(directToPatch(prev, "KORD", null)).toBe(prev);
+  it("changes nothing for a point not on the route", () => {
+    expect(directToPatch(address("dep=C81&dest=KDLH"), "KORD", null)).toEqual({});
   });
 
   it("gives the route back on Cancel, and nothing with none to cancel", () => {
-    const direct = directToPatch(address("dep=C81&stops=KJVL,KMSN&dest=KDLH"), "KMSN", null);
-    const back = directToPatch(direct, null, null);
-    expect(back.toString()).toBe("dep=C81&stops=KJVL%2CKMSN&dest=KDLH");
+    const prev = address("dep=C81&stops=KJVL,KMSN&dest=KDLH");
+    const direct = { ...prev, ...directToPatch(prev, "KMSN", null) };
+    expect(directToPatch(direct, null, null)).toEqual({ dep: "C81", stops: "KJVL,KMSN", dest: "KDLH", direct: null, was: null });
     expect(routeBeforeDirect(address("dep=C81&dest=KDLH"))).toEqual({});
   });
 });
 
 describe("a field renamed", () => {
-  it("is renamed at the route's ends", () => {
-    const next = renamed(address("dep=ORD&dest=KMSN"), "ORD", "KORD");
-    expect(next.get("dep")).toBe("KORD");
-    expect(next.get("dest")).toBe("KMSN");
+  it("is renamed at the route's ends, and only what changes is changed", () => {
+    expect(renamed(address("dep=ORD&dest=KMSN"), "ORD", "KORD")).toEqual({ dep: "KORD" });
+    expect(renamed(address("dep=ORD&dest=KMSN&pattern=ORD:27"), "ORD", "KORD")).toEqual({ dep: "KORD", pattern: "KORD:27" });
   });
 });
 

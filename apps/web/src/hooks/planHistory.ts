@@ -14,7 +14,7 @@
 /** The address's keys that are the plan: the route, what was picked at
  *  its fields (features/plan/lib/fieldLists), its altitude and its Class B choice. Not
  *  the page's own (the card open, the panel, the departure time). */
-const PLAN_KEYS = [
+export const PLAN_KEYS = [
   "dep",
   "dest",
   "stops",

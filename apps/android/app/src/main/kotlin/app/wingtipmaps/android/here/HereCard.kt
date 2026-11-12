@@ -20,8 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.AirspaceBand
 import app.wingtipmaps.android.api.generated.TfrHere
@@ -41,7 +41,7 @@ import app.wingtipmaps.android.ui.SectionTitle
  * figure and rule is the planner's answer, written here.
  */
 @Composable
-fun HereCard(lat: Double, lon: Double, model: HereModel = viewModel()) {
+fun HereCard(lat: Double, lon: Double, model: HereModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     LaunchedEffect(lat, lon) { model.at(lat, lon) }
     val here = state.here

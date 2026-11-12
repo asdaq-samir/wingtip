@@ -1,0 +1,62 @@
+{
+  "x-call": "wingtip_core::geo::call",
+  "description": "Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "VelocityTrackInput",
+      "type": "object",
+      "properties": {
+        "velocities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "east": {
+                "type": "number"
+              },
+              "north": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "east",
+              "north"
+            ]
+          }
+        }
+      },
+      "required": [
+        "velocities"
+      ]
+    },
+    "answer": {
+      "title": "VelocityTrackAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "track_deg": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "speed": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "track_deg",
+          "speed"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

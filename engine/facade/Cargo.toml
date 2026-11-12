@@ -25,6 +25,11 @@ wingtip-route = { path = "../crates/route", default-features = false }
 wingtip-weather = { path = "../crates/weather" }
 wingtip-wording = { path = "../crates/wording" }
 
+# build.rs reads the rules' contract files: on the host only, so none of
+# it is in the engine's builds, the phones' or the WebAssembly.
+[build-dependencies]
+serde_json = "1.0.154"
+
 # Route options (wingtip_route's `options`), which the planner asks and the
 # web does not: on by default, off in the WebAssembly (bindings/wasm).
 [features]

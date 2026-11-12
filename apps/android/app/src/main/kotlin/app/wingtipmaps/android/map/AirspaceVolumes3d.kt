@@ -1,6 +1,9 @@
 package app.wingtipmaps.android.map
 
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.engine.Engine
+import app.wingtipmaps.android.engine.generated.EngineContract
+import app.wingtipmaps.android.engine.generated.airspaceVolumeSpan
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -26,22 +29,18 @@ import kotlin.math.min
  * into slabs with stepped tops (the web's move to the volumes endpoint).
  * Pure, so it is tested without a map.
  *
- * MapLibre Native has no 3D ground (see docs/NATIVE-ANDROID.md, "3D"), so
- * the map stands at sea level: an MSL figure is drawn as it is, and a
- * figure above the ground (AGL, or SFC with a figure) has no ground to
- * stand on and is left out, as the web leaves a volume out until its
- * terrain is in.
+ * How high each stands is the engine's (`airspace_volume_span`), as the
+ * web's: the FAA's codes and descriptors read, the top drawn no higher
+ * than Class A's floor. MapLibre Native has no 3D ground (see
+ * docs/NATIVE-ANDROID.md, "3D"), so the map stands at sea level and asks
+ * with no ground: a limit above the ground (AGL, or SFC with a figure)
+ * has nothing to stand on and the rule leaves it out, as the web leaves a
+ * volume out until its terrain is in.
  */
 object AirspaceVolumes3d {
     /** Metres in a foot: the international foot, exactly 0.3048 m (NIST
      *  Handbook 44, Appendix C). */
     const val M_PER_FT = 0.3048
-
-    /** Where a volume with no top, or one above it, is drawn to, ft MSL:
-     *  the floor of Class A (14 CFR 71.33), the top of the airspace a VFR
-     *  pilot flies in. A drawing bound, not a rule: Class A itself is
-     *  never drawn, and the card writes the FAA's own figure. */
-    const val UNLIMITED_DRAWN_TO_FT = 18_000.0
 
     /** A kind's ink, how see-through, and the app's zoom it is drawn from
      *  (the web's KINDS): far out only Class B and the special use areas,
@@ -93,26 +92,23 @@ object AirspaceVolumes3d {
             text(p["class"]) ?: ""
         }
 
-    /** Whether a height is above the ground rather than the sea: AGL, and
-     *  SFC with a figure (the FAA's special use airspace service codes a
-     *  500 ft AGL floor as SFC with 500, wingtip.sua._height_ft). */
-    fun aboveGround(ft: Double?, ref: String?): Boolean {
-        val r = (ref ?: "MSL").uppercase()
-        return r == "AGL" || (r == "SFC" && ft != null && ft != 0.0)
-    }
+    /** A volume's limits as its data set has them, for the engine
+     *  (`airspace_volume_span`): the NASR file's ceiling is MSL
+     *  (wingtip.airspace_at._ceiling), its floor SFC, AGL or MSL; a special
+     *  use area carries the FAA's own codes and descriptors (wingtip.sua),
+     *  a TFR its references (the web's heightsOf). No ground: this map has
+     *  none, so a limit above the ground is left out by the rule. */
+    fun spanInput(p: JsonObject): EngineContract.AirspaceVolumeSpanInput = EngineContract.AirspaceVolumeSpanInput(
+        floor = EngineContract.SpecialUseTabLimit(number(p["floor_ft"]), text(p["floor_ref"]), text(p["floor_desc"])),
+        ceiling = EngineContract.SpecialUseTabLimit(
+            number(p["ceiling_ft"]),
+            if (text(p["layer"]) == "airspace") "MSL" else text(p["ceiling_ref"]),
+            text(p["ceiling_desc"]),
+        ),
+    )
 
-    /** A volume's floor and top, metres MSL, the top no higher than
-     *  UNLIMITED_DRAWN_TO_FT; null where it needs the ground (none on this
-     *  map) or nothing is left to draw. The NASR file's ceiling is MSL
-     *  (wingtip.airspace_at._ceiling); a special use area's carries its own
-     *  reference. A flight level (STD) is drawn as if MSL. */
-    fun span(floorFt: Double?, floorRef: String?, ceilingFt: Double?, ceilingRef: String?): Pair<Double, Double>? {
-        if (aboveGround(floorFt, floorRef) || aboveGround(ceilingFt, ceilingRef)) return null
-        val floorM = (floorFt ?: 0.0) * M_PER_FT
-        val top = UNLIMITED_DRAWN_TO_FT * M_PER_FT
-        val ceilingM = if (ceilingFt == null) top else min(top, ceilingFt * M_PER_FT)
-        return if (ceilingM > floorM) floorM to ceilingM else null
-    }
+    /** The engine's floor and top, ft MSL (Engine.rule logs a failure). */
+    private fun engineSpan(input: EngineContract.AirspaceVolumeSpanInput) = Engine.airspaceVolumeSpan(input.floor, input.ceiling, input.ground)
 
     /**
      * The planner's features as one GeoJSON collection for the
@@ -120,7 +116,11 @@ object AirspaceVolumes3d {
      * `kind`, `base_m` and `height_m`; the planner's own fields kept
      * besides, so a tap reads what the card needs.
      */
-    fun geoJson(features: JsonArray, appZoom: Double): String = buildJsonObject {
+    fun geoJson(
+        features: JsonArray,
+        appZoom: Double,
+        span: (EngineContract.AirspaceVolumeSpanInput) -> Result<EngineContract.AirspaceVolumeSpanAnswer?> = ::engineSpan,
+    ): String = buildJsonObject {
         put("type", "FeatureCollection")
         putJsonArray("features") {
             for (element in features) {
@@ -130,8 +130,9 @@ object AirspaceVolumes3d {
                 val kind = kindOf(p)
                 val ink = KINDS[kind] ?: continue
                 if (appZoom < ink.from) continue
-                val ceilingRef = if (text(p["layer"]) == "airspace") "MSL" else text(p["ceiling_ref"])
-                val (floorM, ceilingM) = span(number(p["floor_ft"]), text(p["floor_ref"]), number(p["ceiling_ft"]), ceilingRef) ?: continue
+                // Nothing to draw, or a rule that failed (logged): the
+                // volume is left out rather than drawn at a guess.
+                val v = span(spanInput(p)).getOrNull() ?: continue
                 add(
                     buildJsonObject {
                         put("type", "Feature")
@@ -139,8 +140,8 @@ object AirspaceVolumes3d {
                         putJsonObject("properties") {
                             p.forEach { (k, v) -> if (v is JsonPrimitive) put(k, v) }
                             put("kind", kind)
-                            put("base_m", floorM)
-                            put("height_m", ceilingM)
+                            put("base_m", v.floorFt * M_PER_FT)
+                            put("height_m", v.ceilingFt * M_PER_FT)
                         }
                     },
                 )

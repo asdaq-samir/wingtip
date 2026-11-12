@@ -1,0 +1,108 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Dashboard only. Renovate lists what has a newer release (every toolchain, library, image and pinned Action) in one issue, the Dependency Dashboard, and opens no pull request and merges nothing by itself: every update waits for a tick the owner puts in that issue, one pull request at a time. The owner's GitHub account was suspended once for a burst of writes (October 2026), so nothing here writes more than that issue. docs/versions.md and docs/CI.md say how to read it.",
+  "extends": ["helpers:pinGitHubActionDigests"],
+  "dependencyDashboard": { "enabled": true, "title": "Newer versions (Renovate dashboard)" },
+  "dependencyDashboardApproval": true,
+  "prCreation": "approval",
+  "prConcurrentLimit": 1,
+  "prHourlyLimit": 1,
+  "branchConcurrentLimit": 1,
+  "automerge": false,
+  "platformAutomerge": false,
+  "onboarding": false,
+  "requireConfig": "required",
+  "configMigration": false,
+  "lockFileMaintenance": { "enabled": false },
+  "vulnerabilityAlerts": { "enabled": false },
+  "osvVulnerabilityAlerts": false,
+  "schedule": ["before 9am on monday"],
+  "timezone": "UTC",
+  "labels": [],
+  "rangeStrategy": "pin",
+  "ignoreUnstable": false,
+  "separateMajorMinor": true,
+  "separateMultipleMajor": true,
+  "semanticCommits": "disabled",
+  "customManagers": [
+    {
+      "description": "The tools .tool-versions pins that Renovate's asdf manager has no registry for, read by name.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.tool-versions$/"],
+      "matchStrings": [
+        "^(?<depName>shellcheck|actionlint|zizmor|lychee|mise|swiftformat|ktlint|swiftlint|sccache|palantir-java-format|detekt) (?<currentValue>\\S+)\\s*$"
+      ],
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "description": "ruff and semgrep from PyPI, jscpd and dependency-cruiser from npm.",
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.tool-versions$/"],
+      "matchStrings": ["^(?<depName>ruff|semgrep) (?<currentValue>\\S+)\\s*$"],
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.tool-versions$/"],
+      "matchStrings": ["^(?<depName>jscpd|dependency-cruiser) (?<currentValue>\\S+)\\s*$"],
+      "datasourceTemplate": "npm"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Where each .tool-versions tool's releases are.",
+      "matchDepNames": ["shellcheck"],
+      "overridePackageName": "koalaman/shellcheck",
+      "extractVersion": "^v(?<version>.+)$"
+    },
+    {
+      "matchDepNames": ["actionlint"],
+      "overridePackageName": "rhysd/actionlint",
+      "extractVersion": "^v(?<version>.+)$"
+    },
+    {
+      "matchDepNames": ["zizmor"],
+      "overridePackageName": "zizmorcore/zizmor",
+      "extractVersion": "^v(?<version>.+)$"
+    },
+    {
+      "matchDepNames": ["lychee"],
+      "overridePackageName": "lycheeverse/lychee",
+      "extractVersion": "^lychee-v(?<version>.+)$"
+    },
+    {
+      "matchDepNames": ["mise"],
+      "overridePackageName": "jdx/mise",
+      "extractVersion": "^v(?<version>.+)$"
+    },
+    { "matchDepNames": ["swiftformat"], "overridePackageName": "nicklockwood/SwiftFormat" },
+    {
+      "matchDepNames": ["ktlint"],
+      "overridePackageName": "pinterest/ktlint"
+    },
+    { "matchDepNames": ["swiftlint"], "overridePackageName": "realm/SwiftLint" },
+    {
+      "matchDepNames": ["sccache"],
+      "overridePackageName": "mozilla/sccache",
+      "extractVersion": "^v(?<version>.+)$"
+    },
+    {
+      "matchDepNames": ["palantir-java-format"],
+      "overridePackageName": "palantir/palantir-java-format"
+    },
+    { "matchDepNames": ["detekt"], "overridePackageName": "detekt/detekt" },
+    {
+      "description": "Held back (docs/versions.md, \"Held back, and why\"): TypeScript 7 until typescript-eslint and openapi-typescript run on it; Java stays on the LTS 25, which the gateway and Android share.",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7"
+    },
+    {
+      "matchDepNames": ["java"],
+      "enabled": false
+    },
+    {
+      "matchPackageNames": ["eclipse-temurin"],
+      "allowedVersions": "<26"
+    }
+  ]
+}

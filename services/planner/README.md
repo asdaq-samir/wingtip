@@ -166,7 +166,7 @@ as due, draws every tile again (serving the old ones meanwhile), and
 bumps the tile revision at the end, as `unmask` does below.
 
 The planner keeps up with the 56-day cycle by itself: at start-up and
-once an hour it asks the FAA's products page which cycle is current
+once an hour it asks the FAA's APRA (wingtip.apra) which cycle is current
 and, if that cycle's pyramid is not complete on disk, starts the charts
 job's `charts` container through the dev-services sidecar (prepare,
 render, pack, then delete the previous cycle; `docker compose create

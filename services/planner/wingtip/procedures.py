@@ -28,7 +28,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
-from . import data_cycles, geo
+from . import apra, data_cycles, geo
 from .engine import ask as engine
 from .config import DATA_DIR
 from .faa_data import download_and_extract
@@ -37,8 +37,7 @@ from .single_flight import once
 log = logging.getLogger(__name__)
 
 CIFP_DIR = DATA_DIR / "raw" / "faa_cifp"
-#: The cycle's zip, by the date it takes effect ("CIFP_261001.zip"), as
-#: the FAA's CIFP download page links it.
+#: The cycle's zip by its start, where APRA names none (wingtip.apra).
 CIFP_URL = "https://aeronav.faa.gov/Upload_313-d/cifp/CIFP_{start:%y%m%d}.zip"
 CIFP_FILE = "FAACIFP18"
 
@@ -122,7 +121,7 @@ def cifp_path(on: date | None = None) -> Path:
     with _LOCK:
         if not path.exists():
             try:
-                _fetch(CIFP_URL.format(start=start), folder)
+                _fetch(apra.cifp_url(start) or CIFP_URL.format(start=start), folder)
             except RuntimeError:
                 held = sorted(CIFP_DIR.glob(f"*/{CIFP_FILE}"))
                 if not held:

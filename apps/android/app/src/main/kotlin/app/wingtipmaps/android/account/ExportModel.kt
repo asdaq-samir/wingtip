@@ -8,6 +8,7 @@ import app.wingtipmaps.android.api.AccountExport
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.exportAccount
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 /**
  * Export My Data: the pilot's file fetched from the gateway, then saved
@@ -24,7 +26,8 @@ import kotlinx.coroutines.withContext
  * no FileProvider of its own. The file is held here between the two, as
  * the picker is another activity and the screen may be recreated under it.
  */
-class ExportModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class ExportModel @Inject constructor(app: Application) : AndroidViewModel(app) {
     data class State(
         val fetching: Boolean = false,
         /** The name to offer the picker, once, while a file waits for it. */
