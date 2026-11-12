@@ -36,7 +36,7 @@ from datetime import datetime
 
 import numpy as np
 
-from . import weather_store
+from . import geo, weather_store
 from .engine import ask as _ask
 from .units import NM_PER_SM
 
@@ -342,9 +342,8 @@ def forecast_wind(lat: float, lon: float, at_unix: float, ident: str | None = No
         best = (0.0, own)
     else:
         best = None
-        coslat = np.cos(np.radians(lat))
         for station in stations:
-            nm = float(np.hypot((station["lat"] - lat) * 60, (station["lon"] - lon) * 60 * coslat))
+            nm = geo.distance_nm(lat, lon, station["lat"], station["lon"])
             if nm <= within_nm and (best is None or nm < best[0]):
                 best = (nm, station)
     if best is None:
@@ -394,13 +393,11 @@ def ceiling_visibility_along_route(
     and its field's elevation, which wingtip.altitude keeps each leg's
     altitudes under the clouds with (14 CFR 91.155).
     """
-    from .geo import corridor_bbox
-
     start, end = window if window else (time.time(), time.time())
     # Only the stations in the corridor's box are handed over, so the
     # national set is not written out for every leg; the engine holds them
     # to the same box.
-    s, w, n, e = corridor_bbox(route_start, route_end, corridor_buffer_nm)
+    s, w, n, e = geo.corridor_bbox(route_start, route_end, corridor_buffer_nm)
     near = [t for t in _dataset("tafs") if s <= t["lat"] <= n and w <= t["lon"] <= e]
     return _ask(
         "tafs_along_route",

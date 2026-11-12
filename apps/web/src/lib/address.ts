@@ -153,3 +153,35 @@ const serializeAddress = createSerializer(addressParsers);
 /** The keys of the address set, as text, for what keeps them as text (the
  *  route's history, a saved flight's picks). */
 export const addressParams = (address: Partial<Address>) => new URLSearchParams(serializeAddress(address));
+
+/** The route's two ends, and with the stops its whole route. */
+export const ENDS_KEYS = ["dep", "dest"] as const satisfies readonly (keyof AddressParsers)[];
+const ROUTE_KEYS = [...ENDS_KEYS, "stops"] as const satisfies readonly (keyof AddressParsers)[];
+
+/** What the pilot picked for a flight beyond its route: the altitude flown
+ *  (a pilot's own, the wheel's, or a plan), the runways (and which were
+ *  picked into the wind, `auto`), procedures and crossing altitudes, the
+ *  times on the ground, the holds, the Class B avoided and its detour and
+ *  the IFR alternate. A saved flight (the gateway's SaveFlightRequest.PICK,
+ *  the same keys) and a recent route keep them (lib/flightLink). */
+export const PICK_KEYS = [
+  "altitude_ft",
+  "altitude_nearest",
+  "altitude_choice",
+  "pattern",
+  "takeoff",
+  "auto",
+  "procs",
+  "cross",
+  "ground",
+  "holds",
+  "class_b",
+  "class_b_via",
+  "alternate",
+] as const satisfies readonly (keyof AddressParsers)[];
+
+/** The keys that are the plan, for undo and redo (hooks/planHistory): the
+ *  route, a Direct to and the route before it, the fuel stops, the picks
+ *  and the points' own altitudes. Not the page's own (the card open, the
+ *  panel, the departure time). */
+export const PLAN_KEYS = [...ROUTE_KEYS, "direct", "was", "fuel", ...PICK_KEYS, "altitudes"] as const satisfies readonly (keyof AddressParsers)[];

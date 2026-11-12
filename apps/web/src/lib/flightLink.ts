@@ -1,36 +1,14 @@
+import { PICK_KEYS } from "./address";
 import type { FlightSummary } from "./api/types";
 
-/** The address's keys for what the pilot picked for a flight beyond its
- *  route: the altitude flown (a pilot's own, the wheel's, or a plan), the
- *  runways (and which were picked into the wind, `auto`, to follow it
- *  still), procedures and crossing altitudes, the times on the ground,
- *  the holds, the Class B avoided and its detour, the IFR alternate and a
- *  local flight's time aloft. A saved flight (the gateway's
- *  SaveFlightRequest.PICK, the same keys) and a recent route keep them, so
- *  one opened again is planned as it was: they kept the route alone, and
- *  its totals differed from the ones filed (the 20 Oct audit). */
-const PICK_KEYS = [
-  "altitude_ft",
-  "altitude_nearest",
-  "altitude_choice",
-  "pattern",
-  "takeoff",
-  "auto",
-  "procs",
-  "cross",
-  "ground",
-  "holds",
-  "class_b",
-  "class_b_via",
-  "alternate",
-  "local_min",
-] as const;
+/** A local flight's time aloft is kept with the picks (lib/address PICK_KEYS). */
+const KEPT_KEYS: readonly string[] = [...PICK_KEYS, "local_min"];
 
 /** The picks of an address, as it writes them ("pattern=KMSN%3A18&…"), or
  *  "" with none; `also` the keys a caller keeps besides (a recent route
  *  its points' altitudes, which a saved flight files apart). */
 export function picksOf(params: URLSearchParams, also: readonly string[] = []): string {
-  const keys = [...PICK_KEYS, ...also];
+  const keys = [...KEPT_KEYS, ...also];
   return new URLSearchParams([...params].filter(([key]) => keys.includes(key))).toString();
 }
 
@@ -54,7 +32,7 @@ export function planHrefOf(
     ...(f.altitudes ? { altitudes: f.altitudes } : {}),
     ...(Number.isFinite(planned) && planned > now ? { depart: f.plannedFor! } : {}),
   });
-  for (const [key, value] of picks) if ((PICK_KEYS as readonly string[]).includes(key)) params.set(key, value);
+  for (const [key, value] of picks) if (KEPT_KEYS.includes(key)) params.set(key, value);
   return `/plan?${params}`;
 }
 
