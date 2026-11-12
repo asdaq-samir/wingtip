@@ -87,7 +87,7 @@ struct WingtipApp: App {
                 // a look every quarter hour while the app runs, and iOS's
                 // background refresh asked for as it goes behind.
                 .task { await Repeating.every(60) { WeatherWatch.shared.tick(plan: plan) } }
-                .onChange(of: scenePhase) { _, phase in if phase == .background { WeatherWatch.schedule() } }
+                .onChange(of: scenePhase) { _, phase in if phase == .background { Task { await WeatherWatch.schedule() } } }
                 .task { await WatchLink.shared.run(plan: plan, ownShip: ownShip) }
                 // The cockpit's ADS-B receiver on the Wi-Fi, read once a
                 // second while the setting is Auto (Receiver).

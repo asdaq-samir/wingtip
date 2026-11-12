@@ -7,7 +7,7 @@ import os
 /// resting on figures the pilot can read raw. The figures are always the
 /// engine's or the planner's; the words are a model's: the planner's
 /// (POST /api/words/{kind}, app.ai_words, Claude) while the planner can be
-/// reached, else Apple's on-device model (FoundationModels, iOS 26), with
+/// reached, else Apple's on-device model (FoundationModels), with
 /// no signal in the air. A sentence cites the figures it rests on by
 /// their ids, and a sentence citing an id it was not given is dropped,
 /// here as on the planner (app.ai_words.checked): the model can cite

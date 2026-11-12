@@ -115,11 +115,13 @@ final class WeatherWatch {
 
     /// iOS's background refresh asked for a quarter hour on, while a plan
     /// is watched; iOS picks the moment, and may not give one.
-    static func schedule(now: Date = Date()) {
+    static func schedule(now: Date = Date()) async {
         guard watching(Kept.load(), now: now) else { return }
         let request = BGAppRefreshTaskRequest(identifier: taskId)
         request.earliestBeginDate = now.addingTimeInterval(every)
-        do { try BGTaskScheduler.shared.submit(request) } catch {
+        // iOS 27's submitTaskRequest, which reports every error the older
+        // submit could not.
+        do { try await BGTaskScheduler.shared.submitTaskRequest(request) } catch {
             Log.records.notice("the weather watch's refresh could not be asked for: \(error.localizedDescription, privacy: .public)")
         }
     }

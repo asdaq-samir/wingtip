@@ -125,9 +125,9 @@ final class ClearanceListener {
         // One tap for the whole time listening, each buffer into whichever
         // transmission's request is being heard.
         let input = audio.inputNode
-        Self.tap(input, into: feed)
-        audio.prepare()
         do {
+            try Self.tap(input, into: feed)
+            audio.prepare()
             try audio.start()
         } catch {
             input.removeTap(onBus: 0)
@@ -146,16 +146,16 @@ final class ClearanceListener {
         Log.radio.notice("listening to the radio, \(words.count) names to listen for")
         hear()
         // Taken away by a phone call or Siri, the microphone is listened
-        // to again once the system gives it back, as Apple's audio guidance
+        // to again once the system recommends resuming (iOS 27's
+        // resumptionRecommendationNotification, in place of the
+        // interruption's ended-and-shouldResume), as Apple's audio guidance
         // has a recorder do; otherwise the radio went quiet for good until
         // the pilot tapped the microphone again.
         interruptions?.cancel()
         interruptions = Task { [weak self] in
-            for await note in NotificationCenter.default.notifications(named: AVAudioSession.interruptionNotification) {
-                guard let self, let kind = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
-                      kind == AVAudioSession.InterruptionType.ended.rawValue else { continue }
-                let options = AVAudioSession.InterruptionOptions(rawValue: note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0)
-                guard options.contains(.shouldResume) else { continue }
+            for await note in NotificationCenter.default.notifications(named: AVAudioSession.resumptionRecommendationNotification) {
+                guard let self, let context = note.userInfo?[AVAudioSession.resumptionContextKey] as? AVAudioSession.ResumptionContext,
+                      context.recommendation == .shouldResume else { continue }
                 let words = self.words
                 await self.start(words: words)
             }
@@ -321,9 +321,11 @@ final class ClearanceListener {
     }
 
     /// The microphone's tap, made off the main actor: its block runs on
-    /// the audio thread.
-    private nonisolated static func tap(_ input: AVAudioInputNode, into feed: Feed) {
-        input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in feed.append(buffer) }
+    /// the audio thread. iOS 27's throwing installTap; the 27.2 SDK
+    /// imports its NSError out-parameter as `error: ()` under the
+    /// refined name, so it is called by that name.
+    private nonisolated static func tap(_ input: AVAudioInputNode, into feed: Feed) throws {
+        try input.__installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0), error: ()) { buffer, _ in feed.append(buffer) }
     }
 
     static func allowed() async -> Bool {

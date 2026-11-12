@@ -1,11 +1,10 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// A file handed to iOS 27's document exporter: the new WritableDocument
+/// A file handed to the system's document exporter: the new WritableDocument
 /// (SwiftUI, iOS 27.0 SDK; FileDocument is deprecated there), written by
 /// the SDK's own FileWrapperDocumentWriter, its snapshot the file's bytes
 /// as made. Nothing is kept or edited after: the pilot picks where it goes.
-@available(iOS 27.0, *)
 final class ExportedFile: WritableDocument {
     let file: SavedFile
 
@@ -21,43 +20,29 @@ final class ExportedFile: WritableDocument {
     func snapshot(contentType: UTType) async throws -> sending Data { file.data }
 }
 
-/// Save as File on iOS 27: the system's file exporter (fileExporter with
-/// a WritableDocument), where the pilot picks a folder in Files. Below iOS
-/// 27 the row is a ShareLink of the file instead (SaveFileLink), whose
-/// Save to Files, AirDrop and Mail do the same, and this does nothing.
+/// Save as File: the system's file exporter (fileExporter with a
+/// WritableDocument), where the pilot picks a folder in Files.
 struct SaveFileExporter: ViewModifier {
     @Binding var saving: SavedFile?
 
     func body(content: Content) -> some View {
-        if #available(iOS 27.0, *) {
-            content.fileExporter(
-                isPresented: Binding(get: { saving != nil }, set: { if !$0 { saving = nil } }),
-                document: saving.map(ExportedFile.init), contentType: saving?.type,
-                defaultFilename: saving.map { ($0.name as NSString).deletingPathExtension },
-                onCompletion: { _ in saving = nil }, onCancellation: { saving = nil })
-        } else {
-            content
-        }
+        content.fileExporter(
+            isPresented: Binding(get: { saving != nil }, set: { if !$0 { saving = nil } }),
+            document: saving.map(ExportedFile.init), contentType: saving?.type,
+            defaultFilename: saving.map { ($0.name as NSString).deletingPathExtension },
+            onCompletion: { _ in saving = nil }, onCancellation: { saving = nil })
     }
 }
 
-/// A Save as File row: on iOS 27 a button that hands the file to the
-/// exporter (SaveFileExporter); below it the system's ShareLink, the file
-/// made when the share sheet asks for it.
+/// A Save as File row: a button that hands the file to the exporter
+/// (SaveFileExporter).
 struct SaveFileLink<Label: View>: View {
-    let name: String
-    let type: UTType
     @Binding var saving: SavedFile?
     let make: @MainActor @Sendable () throws -> SavedFile?
     @ViewBuilder let label: () -> Label
 
     var body: some View {
-        if #available(iOS 27.0, *) {
-            Button { saving = try? make() } label: { label() }
-        } else {
-            ShareLink(item: SharedFile(name: name, type: type) { try SharedFile.written(make()) },
-                      preview: SharePreview(name)) { label() }
-        }
+        Button { saving = try? make() } label: { label() }
     }
 }
 
@@ -84,13 +69,6 @@ struct SharedFile: Transferable {
         FileRepresentation(exportedContentType: type) { SentTransferredFile(try await $0.make()) }
             .suggestedFileName { $0.name }
             .exportingCondition { $0.type == type }
-    }
-
-    /// A file made on the phone, written out for the share sheet; nothing
-    /// made is said as a failure the sheet shows.
-    static func written(_ file: SavedFile?) throws -> URL {
-        guard let file else { throw CocoaError(.fileWriteUnknown) }
-        return try file.temporaryURL()
     }
 }
 

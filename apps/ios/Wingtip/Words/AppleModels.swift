@@ -39,20 +39,17 @@ enum AppleModels {
     /// Why Private Cloud Compute cannot answer here, else nil.
     static var cloudUnavailableWhy: String? {
         guard cloudEnabled else { return "Apple's Private Cloud Compute is not set up for this app." }
-        if #available(iOS 27, *) {
-            let model = PrivateCloudComputeLanguageModel()
-            switch model.availability {
-            case .available:
-                return model.quotaUsage.isLimitReached ? "Today's use of Apple's Private Cloud Compute is used up." : nil
-            case .unavailable(let reason):
-                switch reason {
-                case .deviceNotEligible: return "This iPhone cannot use Apple's Private Cloud Compute."
-                case .systemNotReady: return "Apple's Private Cloud Compute is not ready on this iPhone."
-                @unknown default: return "Apple's Private Cloud Compute is not available."
-                }
+        let model = PrivateCloudComputeLanguageModel()
+        switch model.availability {
+        case .available:
+            return model.quotaUsage.isLimitReached ? "Today's use of Apple's Private Cloud Compute is used up." : nil
+        case .unavailable(let reason):
+            switch reason {
+            case .deviceNotEligible: return "This iPhone cannot use Apple's Private Cloud Compute."
+            case .systemNotReady: return "Apple's Private Cloud Compute is not ready on this iPhone."
+            @unknown default: return "Apple's Private Cloud Compute is not available."
             }
         }
-        return "Apple's Private Cloud Compute needs iOS 27."
     }
 
     /// Where a model can answer now, in order.
@@ -71,14 +68,13 @@ enum AppleModels {
 
     /// A session on the model at `place`.
     static func session(_ place: ModelPlace, tools: [any Tool] = [], instructions: String) -> LanguageModelSession {
-        if place == .cloud, #available(iOS 27, *) {
+        if place == .cloud {
             return LanguageModelSession(model: PrivateCloudComputeLanguageModel(), tools: tools, instructions: instructions)
         }
         return LanguageModelSession(tools: tools, instructions: instructions)
     }
 
-    /// Whether the model at `place` takes images (iOS 27's `.vision`).
-    @available(iOS 27, *)
+    /// Whether the model at `place` takes images (`.vision`).
     static func reads(images place: ModelPlace) -> Bool {
         place == .cloud ? PrivateCloudComputeLanguageModel().capabilities.contains(.vision)
             : SystemLanguageModel.default.capabilities.contains(.vision)

@@ -74,7 +74,7 @@ final class VoiceInput {
             let session = AVAudioSession.sharedInstance()
             try session.setCategory(.record, mode: .measurement, options: .duckOthers)
             try session.setActive(true, options: .notifyOthersOnDeactivation)
-            Self.tap(audio.inputNode, into: feed)
+            try Self.tap(audio.inputNode, into: feed)
             audio.prepare()
             try audio.start()
         } catch {
@@ -149,8 +149,10 @@ final class VoiceInput {
     }
 
     /// The microphone's tap, made off the main actor: its block runs on
-    /// the audio thread.
-    private nonisolated static func tap(_ input: AVAudioInputNode, into feed: Feed) {
-        input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in feed.append(buffer) }
+    /// the audio thread. iOS 27's throwing installTap; the 27.2 SDK
+    /// imports its NSError out-parameter as `error: ()` under the
+    /// refined name, so it is called by that name.
+    private nonisolated static func tap(_ input: AVAudioInputNode, into feed: Feed) throws {
+        try input.__installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0), error: ()) { buffer, _ in feed.append(buffer) }
     }
 }

@@ -81,7 +81,7 @@ protocol AskModel: Sendable {
                    partial: @escaping @Sendable ([WordsSentence]) -> Void) async throws -> [WordsSentence]
 }
 
-/// Apple's on-device model (Foundation Models, iOS 26 with Apple
+/// Apple's on-device model (Foundation Models, with Apple
 /// Intelligence on), its tools the engine's rules (OnDeviceTools).
 struct AppleAskModel: AskModel {
     var unavailableWhy: String? { AppleModels.unavailableWhy }

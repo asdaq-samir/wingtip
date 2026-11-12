@@ -42,7 +42,7 @@ enum Notifications {
         content.body = body
         content.sound = .default
         content.interruptionLevel = .timeSensitive
-        if #available(iOS 27, *), !about.isEmpty { content.appEntityIdentifiers = about }
+        if !about.isEmpty { content.appEntityIdentifiers = about }
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
         Log.records.notice("notified: \(title, privacy: .public)")
         return true

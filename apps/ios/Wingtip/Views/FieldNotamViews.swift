@@ -202,7 +202,6 @@ struct FieldNotamPage: View {
         List {
             Section {
                 VStack(alignment: .leading, spacing: WingtipSpace.sm) {
-                    if #unavailable(iOS 26) { Text(number).font(WingtipType.detail).foregroundStyle(.secondary) }
                     NotamStateBadge(notam: notam)
                     NotamWhatText(what: notams.what(notam)).font(WingtipType.title)
                         .foregroundStyle(notam.inForce == false ? .secondary : .primary)
