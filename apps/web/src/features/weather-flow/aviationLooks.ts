@@ -1,6 +1,6 @@
 import { callEngine, type EngineAnswer } from "../../lib/engine/engine";
 import { mapLevel } from "../../lib/format/figures";
-import { WEATHER } from "../../lib/tokens";
+import { FLOW, WEATHER } from "../../lib/tokens";
 import type { FieldLook } from "./flowLook";
 
 type Stop = FieldLook["ramp"][number];
@@ -35,8 +35,8 @@ function steps(froms: number[], colours: string[], alpha: number, top: number): 
  *  block's middle. */
 function blocks(words: string[], colours: string[]) {
   const bar: Stop[] = words.flatMap((_, i): Stop[] => [
-    [i, tone(colours[i]!, 220)],
-    [i + 0.999, tone(colours[i]!, 220)],
+    [i, tone(colours[i]!, FLOW.alpha.block)],
+    [i + 0.999, tone(colours[i]!, FLOW.alpha.block)],
   ]);
   return { bar, ticks: words.map((word, i) => ({ at: i + 0.5, label: word })) };
 }
@@ -55,7 +55,7 @@ export function aviationLooks(bands: Bands): Record<"icing" | "turb" | "frzlvl" 
   const icingRamp = steps(
     icingWords.map((b) => b.from - 0.5),
     icingColours,
-    210,
+    FLOW.alpha.icing,
     icingWords[icingWords.length - 1]!.from + 0.5,
   );
   const turbRow = bands.turbulence[TURBULENCE_CLASS];
@@ -63,7 +63,7 @@ export function aviationLooks(bands: Bands): Record<"icing" | "turb" | "frzlvl" 
   const turbRamp = steps(
     turbRow.map((b) => b.from),
     turbColours,
-    200,
+    FLOW.alpha.turb,
     1,
   );
   const level = (ft: number) => (ft <= 0 ? "Sfc" : mapLevel(ft));
@@ -72,7 +72,7 @@ export function aviationLooks(bands: Bands): Record<"icing" | "turb" | "frzlvl" 
       name: "Icing",
       title: "Icing severity",
       ramp: icingRamp,
-      opacity: 0.8,
+      opacity: FLOW.cover.hazard,
       ...blocks(
         icingWords.map((b) => b.word),
         icingColours,
@@ -82,7 +82,7 @@ export function aviationLooks(bands: Bands): Record<"icing" | "turb" | "frzlvl" 
       name: "Turbulence",
       title: "Turbulence, under 15,500 lb",
       ramp: turbRamp,
-      opacity: 0.8,
+      opacity: FLOW.cover.hazard,
       ...blocks(
         turbRow.map((b) => b.word),
         turbColours,
@@ -91,32 +91,18 @@ export function aviationLooks(bands: Bands): Record<"icing" | "turb" | "frzlvl" 
     frzlvl: {
       name: "Freezing level",
       title: "Freezing level (MSL)",
-      ramp: [
-        [0, tone(WEATHER.flowFrzLow, 200)],
-        [8000, tone(WEATHER.flowFrzMid, 180)],
-        [16000, tone(WEATHER.flowFrzHigh, 170)],
-      ],
-      bar: [
-        [0, tone(WEATHER.flowFrzLow, 200)],
-        [8000, tone(WEATHER.flowFrzMid, 180)],
-        [16000, tone(WEATHER.flowFrzHigh, 170)],
-      ],
+      ramp: FLOW.ramp.frzlvl,
+      bar: FLOW.ramp.frzlvl,
       ticks: [0, 4000, 8000, 12000, 16000].map((at) => ({ at, label: level(at) })),
-      opacity: 0.75,
+      opacity: FLOW.cover.wash,
     },
     tops: {
       name: "Cloud tops",
       title: "Cloud tops (MSL)",
-      ramp: [
-        [0, tone(WEATHER.flowTopsLow, 120)],
-        [40000, tone(WEATHER.flowTopsHigh, 220)],
-      ],
-      bar: [
-        [0, tone(WEATHER.flowTopsLow, 120)],
-        [40000, tone(WEATHER.flowTopsHigh, 220)],
-      ],
+      ramp: FLOW.ramp.tops,
+      bar: FLOW.ramp.tops,
       ticks: [10000, 20000, 30000, 40000].map((at) => ({ at, label: level(at) })),
-      opacity: 0.75,
+      opacity: FLOW.cover.wash,
     },
   };
 }

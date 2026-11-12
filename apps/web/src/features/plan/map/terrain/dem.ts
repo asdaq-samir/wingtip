@@ -25,12 +25,6 @@ export const SV_TINT = "terrain-sv";
  *  (wingtip.terrain_view.MAX_ZOOM). */
 const DEM_MAX_ZOOM = 13;
 export const EXAGGERATION = 1;
-/** As far as the map tilts in 3D. */
-export const MAX_PITCH = 75;
-/** MapLibre's own most, as the map is made (GlMapShell keeps it flat). */
-export const FLAT_MAX_PITCH = 60;
-/** The tilt 3D opens at, for the ground to read as ground at once. */
-export const OPEN_PITCH = 50;
 
 export const demSource = (origin: string): RasterDEMSourceSpecification => ({
   type: "raster-dem",

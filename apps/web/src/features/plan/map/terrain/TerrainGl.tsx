@@ -5,7 +5,8 @@ import AloftGl from "./AloftGl";
 import ApproachGl from "./ApproachGl";
 import type { ProcedureDrawing } from "../../../../lib/api/types";
 import ClearanceGl from "./ClearanceGl";
-import { DEM, EXAGGERATION, FLAT_MAX_PITCH, HILLSHADE, HILLSHADE_LAYER, MAX_PITCH, OPEN_PITCH, SV_TINT, demSource } from "./dem";
+import { MAP } from "../../../../lib/tokens";
+import { DEM, EXAGGERATION, HILLSHADE, HILLSHADE_LAYER, SV_TINT, demSource } from "./dem";
 import type { AloftPoint } from "./geometry";
 import ObstaclesGl from "./ObstaclesGl";
 import PilotCamera from "./PilotCamera";
@@ -77,12 +78,12 @@ export default function TerrainGl({
     if (!raised) return;
     const el = map.getContainer();
     map.setTerrain({ source: DEM, exaggeration: EXAGGERATION });
-    map.setMaxPitch(MAX_PITCH);
+    map.setMaxPitch(MAP.pitchMax);
     map.dragRotate.enable();
     map.touchPitch.enable();
     map.touchZoomRotate.enableRotation();
     el.dataset.terrain = "3d";
-    if (map.getPitch() < 1) map.easeTo({ pitch: OPEN_PITCH, duration: TILT_MS });
+    if (map.getPitch() < 1) map.easeTo({ pitch: MAP.pitchOpen, duration: TILT_MS });
     return () => {
       delete el.dataset.terrain;
       if (!map.style) return;
@@ -91,7 +92,7 @@ export default function TerrainGl({
       map.touchPitch.disable();
       map.touchZoomRotate.disableRotation();
       map.easeTo({ pitch: 0, bearing: 0, duration: TILT_MS });
-      map.setMaxPitch(FLAT_MAX_PITCH);
+      map.setMaxPitch(MAP.pitchFlatMax);
     };
   }, [map, raised]);
   if (!raised) return null;

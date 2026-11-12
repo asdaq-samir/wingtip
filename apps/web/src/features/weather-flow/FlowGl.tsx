@@ -9,7 +9,7 @@ import { useGlLayer, useGlMap } from "../../lib/map/gl/glLayer";
 import { useGlView } from "../../lib/map/gl/useGlView";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 import { prefersReducedMotion } from "../../lib/motion";
-import { WEATHER } from "../../lib/tokens";
+import { MAP, WEATHER } from "../../lib/tokens";
 import { FlowBar } from "./FlowBar";
 import { FlowAirmets } from "./FlowAirmets";
 import { FlowBubble } from "./FlowBubble";
@@ -31,7 +31,7 @@ const RADAR_CREDIT = "Radar: NWS NEXRAD via Iowa Environmental Mesonet";
 /** At this zoom and out, the GFS's world wind streaks run past AWC's box,
  *  across the oceans, as Apple Weather's do zoomed out (the owner,
  *  2026-11-12); closer in, AWC's alone. */
-const WORLD_ZOOM = 4;
+const WORLD_ZOOM = MAP.zoomWorldWind;
 
 /** Whether the page is in sight: nothing animates in a hidden tab. */
 function usePageShown() {

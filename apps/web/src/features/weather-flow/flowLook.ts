@@ -1,7 +1,7 @@
 import type { FlowField } from "../../lib/map/sources/weatherLayers";
 import { callEngine } from "../../lib/engine/engine";
 import type { EngineAnswer } from "../../lib/engine/engine";
-import { WEATHER } from "../../lib/tokens";
+import { FLOW, MAP, WEATHER } from "../../lib/tokens";
 import { aviationLooks } from "./aviationLooks";
 
 /** A field that is on: the store's choices but Off. */
@@ -36,7 +36,7 @@ export interface FieldLook {
 }
 
 /** The field's cover over the chart by kind (FieldLook.opacity). */
-const COVER = { tint: 0.6, wash: 0.75, solid: 0.9 } as const;
+const COVER = FLOW.cover;
 
 /** The menu's names, in its order (the owner's pick, 2026-11-12): the wind
  *  and what it carries first, then the sky, then the air, then the
@@ -78,12 +78,7 @@ const tone = (hex: string, alpha: number): [number, number, number, number] => [
 /** The wind's field and the gusts': one hue deepening with speed, the
  *  map tinted rather than a rainbow, as Apple Weather's wind map is (the
  *  owner's screenshot, 2026-11-11); calm nearly clear. */
-const WIND_RAMP: Stop[] = [
-  [0, tone(WEATHER.flowWindCalm, 40)],
-  [25, tone(WEATHER.flowWindBreeze, 140)],
-  [50, tone(WEATHER.flowWindStrong, 190)],
-  [75, tone(WEATHER.flowWindGale, 220)],
-];
+const WIND_RAMP = FLOW.ramp.wind;
 const KNOT_TICKS = [0, 25, 50, 75].map((at) => ({ at, label: String(at) }));
 
 type Bands = EngineAnswer<"model_weather_bands">;
@@ -93,8 +88,8 @@ type Band = Bands["cape"][number];
  *  word (and least figure, where `figure`) at the block's middle. */
 function blocks(bands: Band[], colours: string[], figure: (from: number) => string | null) {
   const bar: Stop[] = bands.flatMap((_, i): Stop[] => [
-    [i, tone(colours[i]!, 220)],
-    [i + 0.999, tone(colours[i]!, 220)],
+    [i, tone(colours[i]!, FLOW.alpha.block)],
+    [i + 0.999, tone(colours[i]!, FLOW.alpha.block)],
   ]);
   const ticks = bands.map((b, i) => {
     const f = figure(b.from);
@@ -121,13 +116,14 @@ function looks(bands: Bands): Record<ShownField, FieldLook> {
   // top a step past extreme's floor, where the brightest returns are.
   const least = bands.precip.least_dbz;
   const top = extreme!.from + 15;
+  const a = FLOW.alpha.rain;
   const rain: Stop[] = [
-    [least - 0.1, tone(WEATHER.flowRainLight, 0)],
-    [least, tone(WEATHER.flowRainLight, 160)],
-    [moderate!.from, tone(WEATHER.flowRainModerate, 190)],
-    [heavy!.from, tone(WEATHER.flowRainHeavy, 215)],
-    [extreme!.from, tone(WEATHER.flowRainExtreme, 235)],
-    [top, tone(WEATHER.flowRainExtremeTop, 245)],
+    [least - 0.1, tone(WEATHER.flowRainLight, a[0]!)],
+    [least, tone(WEATHER.flowRainLight, a[1]!)],
+    [moderate!.from, tone(WEATHER.flowRainModerate, a[2]!)],
+    [heavy!.from, tone(WEATHER.flowRainHeavy, a[3]!)],
+    [extreme!.from, tone(WEATHER.flowRainExtreme, a[4]!)],
+    [top, tone(WEATHER.flowRainExtremeTop, a[5]!)],
   ];
   const edges = [light!.from, moderate!.from, heavy!.from, extreme!.from, top];
   const rainTicks = bands.precip.bands.map((b, i) => ({ at: (edges[i]! + edges[i + 1]!) / 2, label: b.word }));
@@ -136,7 +132,7 @@ function looks(bands: Bands): Record<ShownField, FieldLook> {
   // bands, strongest lowest; over VFR's floor it fades to clear by twice
   // that, so the map is tinted where a ceiling matters, not everywhere.
   const ceilingColours = [WEATHER.flowCeilingLifr, WEATHER.flowCeilingIfr, WEATHER.flowCeilingMvfr, WEATHER.flowCeilingVfr];
-  const ceilingAlpha = [220, 200, 170, 110];
+  const ceilingAlpha = FLOW.alpha.ceiling;
   const vfr = bands.ceiling[bands.ceiling.length - 1]!.from;
   const ceiling: Stop[] = bands.ceiling.flatMap((b, i): Stop[] => {
     const next = bands.ceiling[i + 1]?.from;
@@ -148,12 +144,13 @@ function looks(bands: Bands): Record<ShownField, FieldLook> {
   // band's lower half, so a calm map stays the chart.
   const capeColours = [WEATHER.flowCapeWeak, WEATHER.flowCapeModerate, WEATHER.flowCapeStrong, WEATHER.flowCapeExtreme];
   const [, capeModerate, capeStrong, capeExtreme] = bands.cape;
+  const c = FLOW.alpha.cape;
   const cape: Stop[] = [
-    [0, tone(WEATHER.flowCapeWeak, 0)],
-    [capeModerate!.from / 2, tone(WEATHER.flowCapeWeak, 130)],
-    [capeModerate!.from, tone(WEATHER.flowCapeModerate, 170)],
-    [capeStrong!.from, tone(WEATHER.flowCapeStrong, 200)],
-    [capeExtreme!.from, tone(WEATHER.flowCapeExtreme, 225)],
+    [0, tone(WEATHER.flowCapeWeak, c[0]!)],
+    [capeModerate!.from / 2, tone(WEATHER.flowCapeWeak, c[1]!)],
+    [capeModerate!.from, tone(WEATHER.flowCapeModerate, c[2]!)],
+    [capeStrong!.from, tone(WEATHER.flowCapeStrong, c[3]!)],
+    [capeExtreme!.from, tone(WEATHER.flowCapeExtreme, c[4]!)],
   ];
 
   const plain = (name: ShownField, title: string, ramp: Stop[], ticks: FieldLook["ticks"], opacity: number = COVER.wash): FieldLook => ({
@@ -171,11 +168,7 @@ function looks(bands: Bands): Record<ShownField, FieldLook> {
     cloud: plain(
       "cloud",
       "Cloud cover (%)",
-      [
-        [0, tone(WEATHER.flowCloud, 0)],
-        [50, tone(WEATHER.flowCloud, 110)],
-        [100, tone(WEATHER.flowCloud, 215)],
-      ],
+      FLOW.ramp.cloud,
       [0, 50, 100].map((at) => ({ at, label: String(at) })),
     ),
     ceiling: {
@@ -197,29 +190,14 @@ function looks(bands: Bands): Record<ShownField, FieldLook> {
     temp: plain(
       "temp",
       "Temperature (°C)",
-      [
-        // To -60, so the flight levels' cold is told apart too.
-        [-60, tone(WEATHER.flowTempFrigid, 235)],
-        [-30, tone(WEATHER.flowTempFrigid, 235)],
-        [-10, tone(WEATHER.flowTempCold, 235)],
-        [0, tone(WEATHER.flowTempFreezing, 235)],
-        [10, tone(WEATHER.flowTempCool, 235)],
-        [20, tone(WEATHER.flowTempMild, 235)],
-        [30, tone(WEATHER.flowTempWarm, 235)],
-        [40, tone(WEATHER.flowTempHot, 235)],
-        [45, tone(WEATHER.flowTempHot, 235)],
-      ],
+      FLOW.ramp.temp,
       [-30, -15, 0, 15, 30, 45].map((at) => ({ at, label: String(at) })),
       COVER.solid,
     ),
     vis: plain(
       "vis",
       "Visibility (SM)",
-      [
-        [0, tone(WEATHER.flowVisLow, 200)],
-        [5, tone(WEATHER.flowVisHigh, 90)],
-        [10, tone(WEATHER.flowVisHigh, 0)],
-      ],
+      FLOW.ramp.vis,
       [0, 5, 10].map((at) => ({ at, label: String(at) })),
     ),
     ...aviationLooks(callEngine("aviation_grid_bands", {})),
@@ -240,11 +218,7 @@ export function lookOf(field: ShownField): FieldLook {
  *  at its head: weatherlayers-gl fades a streak's tail to nothing along
  *  its length (ParticleLineLayer's opacity, 1 - age / maxAge), so the
  *  head can be near white without the lines reading as solid. */
-export const STREAK_RAMP: Stop[] = [
-  [0, tone(WEATHER.flowStreak, 90)],
-  [15, tone(WEATHER.flowStreak, 180)],
-  [40, tone(WEATHER.flowStreak, 250)],
-];
+export const STREAK_RAMP = FLOW.ramp.streak;
 
 /** The legend's bar as a CSS gradient, top the highest, its stops at their
  *  places between the ramp's first and last values. */
@@ -292,7 +266,7 @@ const SEGMENTS_WIDE = 480_000;
  * of life rebuilds the layer's buffers.
  */
 function streakLife(zoom: number) {
-  const out = Math.max(0, 7 - Math.round(zoom));
+  const out = Math.max(0, MAP.zoomStreakNear - Math.round(zoom));
   return { age: Math.min(64, 24 + out * 10), speed: Math.min(2, 1.3 + out * 0.175) };
 }
 
