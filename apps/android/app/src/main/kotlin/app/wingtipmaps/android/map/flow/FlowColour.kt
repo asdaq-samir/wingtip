@@ -2,7 +2,11 @@ package app.wingtipmaps.android.map.flow
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import kotlin.math.atan
+import kotlin.math.ln
 import kotlin.math.roundToInt
+import kotlin.math.sinh
+import kotlin.math.tan
 
 /** A ramp's stop: a value in the field's unit and its colour, ARGB, its
  *  alpha how strongly it covers (the web's [value, [r, g, b, a]]). */
@@ -64,6 +68,12 @@ data class Painted(val pixels: IntArray, val width: Int, val height: Int, val we
         /** The highest latitude painted: Web Mercator's own edge. */
         private const val MERCATOR_EDGE = 85.0511
 
+        /** Web Mercator's y of a latitude, radians (EPSG:3857 over the earth's radius). */
+        private fun mercY(lat: Double): Double = ln(tan(Math.PI / 4 + Math.toRadians(lat) / 2))
+
+        /** The latitude of a Web Mercator y. */
+        private fun latOf(y: Double): Double = Math.toDegrees(atan(sinh(y)))
+
         /** `grid` painted by `ramp`, as wide as the grid and as tall as the
          *  same span of Mercator at that width. */
         fun of(grid: FlowGrid, ramp: Ramp): Painted {
@@ -71,12 +81,12 @@ data class Painted(val pixels: IntArray, val width: Int, val height: Int, val we
             val south = maxOf(grid.south, -MERCATOR_EDGE)
             val width = grid.width
             val xSpan = Math.toRadians(grid.east - grid.west)
-            val yTop = FlowGrid.mercatorY(north)
-            val yBottom = FlowGrid.mercatorY(south)
+            val yTop = mercY(north)
+            val yBottom = mercY(south)
             val height = maxOf(1, (width * (yTop - yBottom) / xSpan).roundToInt())
             val out = IntArray(width * height)
             for (row in 0 until height) {
-                val lat = FlowGrid.latOfMercatorY(yTop - (row + 0.5) / height * (yTop - yBottom))
+                val lat = latOf(yTop - (row + 0.5) / height * (yTop - yBottom))
                 val gridRow = ((grid.north - lat) / (grid.north - grid.south) * grid.height).toInt().coerceIn(0, grid.height - 1)
                 for (col in 0 until width) out[row * width + col] = ramp.colour(grid.at(col, gridRow))
             }
