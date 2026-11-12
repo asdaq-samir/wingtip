@@ -28,6 +28,7 @@ import {
   suaHatch,
 } from "./glStyle";
 import { GL_FONT_BOLD, LABEL_HALO } from "./layers/common";
+import { SUA_TAB_PICTURES, specialUseLabelLayer } from "./glSuaLabels";
 import { CHART } from "../../tokens";
 
 export { OVERLAY_SOURCE };
@@ -101,11 +102,13 @@ const AIRSPACE_TAB_PICTURES: Picture[] = (["B", "C", "D"] as const).map((c) => [
  *  in the area's ink on a faint wash of it, repeated along the band
  *  (specialUseLayers' line-pattern), as ForeFlight and the sectional
  *  hatch the inside of the boundary. */
-const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[]).map((ink) => [
-  suaHatch(ink),
-  () =>
-    `<svg width="7" height="10" viewBox="0 0 7 10"><rect width="7" height="10" fill="${SUA_INK[ink]}" fill-opacity="0.14"/><path d="M1.5 9.5L5.5 0.5" stroke="${SUA_INK[ink]}" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.9"/></svg>`,
-]);
+const SUA_PICTURES: Picture[] = (Object.keys(SUA_INK) as (keyof typeof SUA_INK)[])
+  .map((ink): Picture => [
+    suaHatch(ink),
+    () =>
+      `<svg width="7" height="10" viewBox="0 0 7 10"><rect width="7" height="10" fill="${SUA_INK[ink]}" fill-opacity="0.14"/><path d="M1.5 9.5L5.5 0.5" stroke="${SUA_INK[ink]}" stroke-width="1.3" stroke-linecap="round" stroke-opacity="0.9"/></svg>`,
+  ])
+  .concat(SUA_TAB_PICTURES); // and their tabs (glSuaLabels)
 
 let drawn: Promise<Map<string, DrawnImage>> | null = null;
 /** Every picture the overlay layers wear, drawn once a page at the
@@ -305,6 +308,7 @@ export function overlayStyle(
     ...(has.has("runways") ? runwayLayers() : []),
     ...(has.has("special_use") ? specialUseLayers() : []),
     ...(has.has("airspace") ? airspaceLayers(GL_FONT_BOLD, has.has("airspace_labels")) : []),
+    ...(has.has("special_use") ? [specialUseLabelLayer(GL_FONT_BOLD, has.has("special_use_labels"))] : []),
   ];
   const marks: LayerSpecification[] = [
     ...(has.has("navaids")

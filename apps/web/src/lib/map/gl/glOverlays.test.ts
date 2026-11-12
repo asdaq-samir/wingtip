@@ -58,6 +58,7 @@ describe("the overlay tiles' layers", () => {
       "airspace-B-band",
       "airspace-B",
       "airspace-labels",
+      "sua-labels",
     ]);
     expect(layers.marks!.map((l) => l.id)).toEqual([
       "navaids",
@@ -96,7 +97,7 @@ describe("the overlay tiles' layers", () => {
 
   it("turn the airspace, its bands and labels, and the special-use areas off with the Airspace setting", () => {
     expect(AIRSPACE_TILE_LAYERS).toEqual(
-      expect.arrayContaining(["airspace-C-band", "airspace-C", "airspace-labels", "sua-band", "sua-line"]),
+      expect.arrayContaining(["airspace-C-band", "airspace-C", "airspace-labels", "sua-band", "sua-line", "sua-labels"]),
     );
   });
 
