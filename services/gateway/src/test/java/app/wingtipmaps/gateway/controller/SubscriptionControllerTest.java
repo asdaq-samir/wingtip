@@ -94,6 +94,8 @@ class SubscriptionControllerTest {
     @Test
     void a_deployment_that_sells_none_says_nothing_of_one() throws Exception {
         given(subscriptions.sold()).willReturn(false);
+        // A signed-in pilot: signed out is CurrentPilot's 401 before the controller is asked.
+        given(pilots.current(any())).willReturn(Optional.of(PILOT));
         mockMvc.perform(get("/api/subscription").with(oidcLogin())).andExpect(status().isNotFound());
         mockMvc.perform(post("/api/subscription/trial").with(oidcLogin()).with(csrf()))
                 .andExpect(status().isNotFound());

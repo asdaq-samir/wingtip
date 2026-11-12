@@ -130,6 +130,8 @@ abstract class AccountTestBase {
                                     ? NOTES
                                     : "{\"removed\":1}")
                     .getBytes();
+            // As FastAPI answers: without it, Spring reads the body as octet-stream.
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(plannerStatus, body.length);
             exchange.getResponseBody().write(body);
             exchange.close();

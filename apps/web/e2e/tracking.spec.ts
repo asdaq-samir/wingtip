@@ -320,7 +320,7 @@ test("in the air, own ship's path flown is drawn behind it", async ({ page }) =>
           accuracy: 10,
           heading: 90,
           speed: 360 / 1.943844,
-          altitude: 3000 / 3.28084,
+          altitude: 3000 * 0.3048, // 3,000 ft in metres, by the international foot (0.3048 m exactly)
           altitudeAccuracy: 10,
           toJSON() {
             return this;

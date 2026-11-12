@@ -47,6 +47,11 @@ def _dof_line(lat: float, lon: float, amsl_ft: int, agl_ft: int = 400) -> str:
     return "".join(line) + "\n"
 
 
+# "No obstacles near the route": one tower far off, in the Florida Keys, since
+# a DOF.DAT is never empty and wingtip.dof refuses one as a broken download.
+FAR_AWAY = _dof_line(24.6, -81.8, amsl_ft=500)
+
+
 @pytest.fixture
 def ground(tmp_path, monkeypatch):
     """Flat ground everywhere, and whatever obstacles a test writes."""
@@ -58,7 +63,7 @@ def ground(tmp_path, monkeypatch):
     dof = tmp_path / "DOF.DAT"
 
     def obstacles(*lines: str):
-        dof.write_text("".join(lines), encoding="latin-1")
+        dof.write_text("".join(lines) or FAR_AWAY, encoding="latin-1")
         monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda name, cache_dir: dof, raising=False)
         monkeypatch.setattr(faa_data, "ensure_nasr_data", lambda cache_dir: (None, None, dof))
         return dof

@@ -21,7 +21,8 @@ TFRS = [
         "effective": "2026-10-06T23:00:00Z",
         "expires": None,
         "floor_ft": 0,
-        "floor_ref": "SFC",
+        # A surface floor, as the engine writes one: 0 feet AGL (tfr.rs gives only MSL or AGL).
+        "floor_ref": "AGL",
         "ceiling_ft": 3000,
         "ceiling_ref": "AGL",
         "rule": "99.7",

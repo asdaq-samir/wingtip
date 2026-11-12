@@ -4,6 +4,7 @@ floor read from it (wingtip.terrain.floor_profile)."""
 import numpy as np
 import pytest
 
+from tests_wingtip.test_terrain import FAR_AWAY
 from wingtip import congested, elevation, faa_data, geo, ground_grid, terrain
 
 START, END = (45.0, -90.0), (45.0, -89.0)  # due east, about 42.4 nm
@@ -25,7 +26,7 @@ def grid(monkeypatch, tmp_path):
     # Over a town everywhere: 14 CFR 91.119(b)'s 1,000 ft (wingtip.congested).
     monkeypatch.setattr(congested, "congested", lambda lats, lons: np.ones(len(lats), dtype=bool))
     dof = tmp_path / "DOF.DAT"
-    dof.write_text("", encoding="latin-1")
+    dof.write_text(FAR_AWAY, encoding="latin-1")
     monkeypatch.setattr(faa_data, "ensure_nasr_file", lambda name, cache_dir: dof, raising=False)
     return high, low
 

@@ -23,7 +23,7 @@ async function flying(page: Page, speedKt = 120, accuracyM = 10) {
             accuracy,
             heading: 90,
             speed: knots / 1.943844,
-            altitude: 3000 / 3.28084,
+            altitude: 3000 * 0.3048, // 3,000 ft in metres, by the international foot (0.3048 m exactly)
             altitudeAccuracy: 10,
             toJSON() {
               return this;

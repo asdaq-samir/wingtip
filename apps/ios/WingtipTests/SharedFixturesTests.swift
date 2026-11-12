@@ -189,9 +189,9 @@ struct SharedFixturesTests {
     }
 
     @Test func trafficIsLabelledAsTheWebLabelsIt() throws {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        let f = try fixture("traffic", as: TrafficFixture.self, decoder: decoder)
+        // A plain decoder: the case's own keys are the fixture's (ownFt), and the
+        // airplane is the planner's generated type, which names its snake-case keys.
+        let f = try fixture("traffic", as: TrafficFixture.self)
         #expect(!f.cases.isEmpty)
         for c in f.cases {
             let said = "\(c.plane.altitudeFt.map { "\($0)" } ?? "none") ft against \(c.ownFt.map { "\($0)" } ?? "none")"

@@ -44,13 +44,14 @@ describe("a section of words", () => {
     expect(screen.getByTestId("w-unavailable").textContent).toBe("The planner is not answering.");
   });
 
-  test("the sentences read as one paragraph, each source one chip that opens the report as sent", () => {
+  test("the sentences read as one paragraph, each source one chip that opens the report as sent", async () => {
     render(<WordsSection title="The weather, in words" testId="w" state={wordsState({ data: ANSWER, error: null })} />);
     expect(screen.getByTestId("w-words").textContent).toBe(ANSWER.sentences.map((s) => s.text).join(" "));
     const chips = screen.getAllByTestId("w-source");
     expect(chips).toHaveLength(1);
     expect(chips[0]!.textContent).toBe("METAR KDLH 1753Z");
     fireEvent.click(chips[0]!);
-    expect(screen.getByTestId("source-text").textContent).toBe(ANSWER.sources[0]!.text);
+    // SheetDialog draws its body from its own chunk, so the report is there a moment after the tap.
+    expect((await screen.findByTestId("source-text")).textContent).toBe(ANSWER.sources[0]!.text);
   });
 });

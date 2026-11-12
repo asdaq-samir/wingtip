@@ -101,6 +101,14 @@ class UpstreamRoutesTest {
             Map.entry("POST /api/studio/drafts/{draft_id}/rendered", "planner developer csrf"),
             Map.entry("POST /api/studio/drafts/{draft_id}/dismiss", "planner developer csrf"));
 
+    /** Routes whose passed headers changed on purpose since the hand list
+     *  was recorded: what each passes now. */
+    static final Map<String, Set<String>> HEADERS_SINCE = Map.of(
+            // The TFR list is the same for every pilot: kept a minute, with
+            // its ETag for a 304 rather than the whole list again (the
+            // planner's /api/tfrs, 2026-11-12).
+            "GET /api/tfrs", Set.of("Cache-Control", "ETag"));
+
     @Test
     void theEmergencyFieldsArePublicFromThePlanner() {
         var route =
@@ -173,7 +181,12 @@ class UpstreamRoutesTest {
                     "GET".equals(route.method()) ? "-" : route.csrf() ? "checked" : "exempt");
             compare(differences, name, "pilot", old.pilot(), route.pilot());
             compare(differences, name, "range", old.range(), route.range());
-            compare(differences, name, "headers", new HashSet<>(old.passedHeaders()), passed);
+            compare(
+                    differences,
+                    name,
+                    "headers",
+                    HEADERS_SINCE.getOrDefault(name, new HashSet<>(old.passedHeaders())),
+                    passed);
         }
         assertThat(differences).isEmpty();
     }

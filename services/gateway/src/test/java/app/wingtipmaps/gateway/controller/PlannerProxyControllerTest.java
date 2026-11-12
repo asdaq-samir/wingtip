@@ -513,15 +513,12 @@ class PlannerProxyControllerTest {
         // The front end's own stream reader reports `detail`; a 502 with
         // an empty body or an HTML error page would show a pilot nothing.
         MockMvc unreachable = unreachablePlanner();
-        MvcResult started = unreachable
-                .perform(get("/api/planner/course"))
-                .andExpect(request().asyncStarted())
-                .andReturn();
-
+        // Answered at once, as a problem (StreamingProxy.problem): no stream starts.
         unreachable
-                .perform(asyncDispatch(started))
+                .perform(get("/api/planner/course"))
+                .andExpect(request().asyncNotStarted())
                 .andExpect(status().is(502))
-                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.detail").value("planner service unreachable"));
     }
 
@@ -563,6 +560,9 @@ class PlannerProxyControllerTest {
                 40,
                 20,
                 150);
-        return standaloneSetup(controller).build();
+        // With the app's own handler, which writes a refusal as a problem.
+        return standaloneSetup(controller)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 }

@@ -67,7 +67,17 @@ final class CardRuleTests: XCTestCase {
             let app = CardTests.launch(["-screen", "emergency"], size: size.arguments)
             let shown = CardTests.card(app, "card-emergency")
             XCTAssertTrue(shown.waitForExistence(timeout: 20), "the emergency assistant did not open at \(size.name)")
-            XCTAssertFalse(app.buttons.matching(identifier: "Sheet Grabber").firstMatch.isHittable, "a sheet's grabber is in reach over the emergency assistant at \(size.name)")
+            // Out of reach: a tap where the sheet's grabber is lands on the
+            // cover, so the sheet keeps its size and the assistant stays.
+            // (isHittable cannot say so: it answers for the grabber in the
+            // window under the cover, as if nothing were over it.)
+            let grabber = app.buttons.matching(identifier: "Sheet Grabber").firstMatch
+            if grabber.exists {
+                let detent = grabber.value as? String
+                grabber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+                XCTAssertTrue(shown.exists, "a tap on the sheet's grabber put the emergency assistant away at \(size.name)")
+                XCTAssertEqual(grabber.value as? String, detent, "a sheet's grabber is in reach over the emergency assistant at \(size.name)")
+            }
             let close = CardTests.close(app)
             XCTAssertTrue(close.waitForExistence(timeout: 10), "no close at \(size.name)")
             XCTAssertGreaterThan(close.frame.midX, app.frame.midX, "the close is not at the right at \(size.name)")

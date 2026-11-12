@@ -1,9 +1,13 @@
 import type { TextureData } from "weatherlayers-gl";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { callEngine } from "../../lib/engine/engine";
 import fixture from "../../lib/fixtures/flowSample.json";
 import { valueAt } from "./flowTexture";
 import type { FlowLayer } from "./useWeatherFlow";
+
+// weatherlayers-gl starts a Web Worker as it is imported, and jsdom has none;
+// valueAt reads a picture already loaded, so its loader is not needed here.
+vi.mock("weatherlayers-gl", () => ({ loadTextureData: vi.fn() }));
 
 describe("the engine's reading of a picture", () => {
   // The engine's cases (engine/facade/tests/flow_sample.rs), which the

@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
@@ -24,7 +23,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -147,10 +145,8 @@ class PaidFeatureGateTest {
                 .orElse(null);
     }
 
-    /** See PaidCallAllowanceTest: the answer is written on another thread. */
+    /** See PaidCallAllowanceTest: a refusal is answered at once, not streamed. */
     private ResultActions finish(RequestBuilder call) throws Exception {
-        MvcResult started =
-                mockMvc.perform(call).andExpect(request().asyncStarted()).andReturn();
-        return mockMvc.perform(asyncDispatch(started));
+        return mockMvc.perform(call).andExpect(request().asyncNotStarted());
     }
 }

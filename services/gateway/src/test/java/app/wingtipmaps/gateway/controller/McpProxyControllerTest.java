@@ -1,9 +1,11 @@
 package app.wingtipmaps.gateway.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.ErrorResponseException;
 
 /** /mcp's body limit, held on the bytes read (the security audit's L6). */
 class McpProxyControllerTest {
@@ -29,7 +31,11 @@ class McpProxyControllerTest {
     void aChunkedBodyOverTheLimitIsRefusedUnread() throws Exception {
         // No proxy: a request that got as far as the planner would fail here.
         var controller = new McpProxyController(null, "http://planner.test");
-        var answer = controller.mcp(chunked((int) McpProxyController.BODY_LIMIT + 1));
-        assertThat(answer.getStatusCode().value()).isEqualTo(413);
+        // Refused as a problem (StreamingProxy.problem), which
+        // GlobalExceptionHandler answers as a 413.
+        assertThatThrownBy(() -> controller.mcp(chunked((int) McpProxyController.BODY_LIMIT + 1)))
+                .isInstanceOfSatisfying(
+                        ErrorResponseException.class,
+                        refused -> assertThat(refused.getStatusCode().value()).isEqualTo(413));
     }
 }
