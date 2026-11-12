@@ -169,10 +169,9 @@ test("the airport's Info says its fuel in its details, and what is on the field 
   const services = card.getByTestId("place-services");
   await expect(services.getByTestId("services-fuel")).toContainText("100LL, Jet A");
   await expect(services).not.toContainText("24 hours self service fuel");
-  await inSheet(page, services.getByTestId("services-fuel-remarks"));
-  await services.getByTestId("services-fuel-remarks").click();
-  // In words (the owner, 2026-11-11: "Decode fuel remarks too"), as sent
-  // under As Written, as the card's Lights.
+  await inSheet(page, services.getByTestId("services-fuel"));
+  // In words under Fuel, in sight (the owner, 2026-11-11: "Decode fuel
+  // remarks too"), as sent under As Written, as the card's Lights.
   await expect(services.getByTestId("services-fuel-note")).toHaveText("24 hours self service fuel available with credit card.");
   await expect(services.getByTestId("services-fuel-raw")).toBeHidden();
   await services.getByTestId("services-fuel-sent").click();

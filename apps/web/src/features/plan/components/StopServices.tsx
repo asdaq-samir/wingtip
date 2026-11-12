@@ -126,9 +126,9 @@ export function StopServices({
   // "Fuel should move to on the field section"), from its Chart Supplement
   // entry, the remarks in words as the planner gives them (the engine's
   // remarks_read: self-serve, its hours, the FBO's; the owner, 2026-11-11,
-  // "Decode fuel remarks too") and as sent under As Written, as the card's
-  // Lights have them, folded under it, so a field's paragraph of them
-  // (Duluth's) does not stand between the fuel and the rest.
+  // "Decode fuel remarks too") under the Fuel row in sight, as the card's
+  // Lights give their words, and only as sent folded under As Written
+  // (the owner's screenshot, 2026-11-11: the words were folded away too).
   const field = [
     <ListRow
       key="fuel"
@@ -141,36 +141,30 @@ export function StopServices({
       onClick={fuelNotam?.onClick}
       chevron={!!fuelNotam}
       value={<span className="font-semibold text-foreground">{s.fuel_types.length ? fuelNames(s.fuel_types) : "None listed"}</span>}
+      description={
+        s.fuel_notes.length > 0 &&
+        s.fuel_notes.map((note) => (
+          <span key={note} className="block" data-testid="services-fuel-note">
+            {note}
+          </span>
+        ))
+      }
       data-testid="services-fuel"
     />,
-    s.fuel_notes.length > 0 && (
-      <Collapsible key="fuel-notes">
-        <CollapsibleTrigger render={<ListRow title="Fuel remarks" chevron data-testid="services-fuel-remarks" />} />
+    s.fuel_remarks.length > 0 && (
+      <Collapsible key="fuel-sent">
+        <CollapsibleTrigger render={<ListRow title="As Written" chevron data-testid="services-fuel-sent" />} />
         <CollapsibleContent>
-          {s.fuel_notes.map((note) => (
-            <ListRow
-              key={note}
-              title={<span className={cn("text-muted-foreground", TEXT.detail)}>{note}</span>}
-              data-testid="services-fuel-note"
-            />
-          ))}
-          {s.fuel_remarks.length > 0 && (
-            <Collapsible>
-              <CollapsibleTrigger render={<ListRow title="As Written" chevron data-testid="services-fuel-sent" />} />
-              <CollapsibleContent>
-                <ListRow
-                  title={
-                    <span
-                      className={cn("font-mono break-words whitespace-pre-wrap text-muted-foreground", TEXT.detail)}
-                      data-testid="services-fuel-raw"
-                    >
-                      {s.fuel_remarks.join("\n")}
-                    </span>
-                  }
-                />
-              </CollapsibleContent>
-            </Collapsible>
-          )}
+          <ListRow
+            title={
+              <span
+                className={cn("font-mono break-words whitespace-pre-wrap text-muted-foreground", TEXT.detail)}
+                data-testid="services-fuel-raw"
+              >
+                {s.fuel_remarks.join("\n")}
+              </span>
+            }
+          />
         </CollapsibleContent>
       </Collapsible>
     ),
