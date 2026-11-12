@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { cn } from "cn";
 import { PanelSize, type PanelState } from "../../lib/mapChrome";
 import TabKept from "../TabKept";
+import { AT_PILL, PILL_BODY } from "./insets";
 import { SheetPager, type SheetPages } from "./SheetPager";
 
 /** The first row's room under the grabber: ten points, the grabber's bar
@@ -223,8 +224,7 @@ export function SheetParts(p: PartsProps) {
           "flex min-h-0 flex-1 flex-col",
           size !== "peek" && !fromBottom && "pb-4",
           SHEET_BELOW,
-          (p.resting || cardsUp) && "invisible",
-          p.resting && alone && !cardsUp && "[&_[data-sheet-head]]:visible",
+          cardsUp ? "invisible" : p.resting && (alone ? AT_PILL : PILL_BODY),
           !p.onPhone && size === "peek" && "hidden",
         )}
         inert={off || cardsUp || (p.resting && !alone)}
