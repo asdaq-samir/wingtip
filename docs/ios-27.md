@@ -1,7 +1,7 @@
 # iOS 27 on the iPhone app
 
 The app builds with Xcode 27.2 and the iOS 27.2 SDK, and its oldest iOS is
-27.0 (watchOS 27.0 for the Watch): each iOS 27 feature below is used as it
+27.0 (watchOS 26.0 for the Watch, decision 0040's amendment): each iOS 27 feature below is used as it
 is, with no `#available` branch and no older fallback. The owner asked for
 iOS 27's features and look on 2026-11-09 ("I want iOS 27 features and look
 rather than 26"), and for the floor at 27 on 2026-11-12 ("Why did you move

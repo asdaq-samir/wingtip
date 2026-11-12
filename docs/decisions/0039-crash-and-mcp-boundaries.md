@@ -1,8 +1,9 @@
 # 0039. The crash pipeline's schedule and the MCP tools' source, weighed against their alternatives
 
 - **Date:** 2026-11-12
-- **Status:** Proposed (a recommendation for each; the owner confirms or
-  picks the other, then this page becomes Accepted)
+- **Status:** Accepted (owner, 2026-11-12: both recommendations: the crash
+  loop stays in the jobs service until the host is chosen (#115); the MCP
+  tools stay hand-written)
 
 ## Context
 
