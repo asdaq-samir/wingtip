@@ -167,6 +167,48 @@ enum WingtipColor {
         static let other = rgb(0x9333EA)
         /// An urgent PIREP (UUA).
         static let urgent = rgb(0xDC2626)
+        /// The flow layer's wind streaks (features/weather-flow), white with a breath of blue as Apple Weather's wind map draws them, the owner's screenshot (2026-11-11).
+        static let flowStreak = rgb(0xF4F8FF)
+        /// The wind's field, one hue deepening with speed, the map tinted rather than a rainbow (Apple Weather's wind map): calm.
+        static let flowWindCalm = rgb(0x3A6DB0)
+        /// 25 kt.
+        static let flowWindBreeze = rgb(0x4A62C4)
+        /// 50 kt.
+        static let flowWindStrong = rgb(0x6A4FC6)
+        /// 75 kt and more.
+        static let flowWindGale = rgb(0x9A3FB4)
+        /// Precipitation by intensity, blue to violet to magenta to yellow (Apple Weather's precipitation map): light.
+        static let flowRainLight = rgb(0x3F8CF2)
+        /// Moderate.
+        static let flowRainModerate = rgb(0x7A52E0)
+        /// Heavy.
+        static let flowRainHeavy = rgb(0xD53FB2)
+        /// Extreme.
+        static let flowRainExtreme = rgb(0xF6C445)
+        /// The strongest returns.
+        static let flowRainExtremeTop = rgb(0xFFF4B8)
+        /// Cloud cover, the same grey-white thicker with cover.
+        static let flowCloud = rgb(0xEEF2F6)
+        /// The 2 m temperature, violet through blue, teal, green and yellow to red (Apple Weather's temperature map): -30 C.
+        static let flowTempFrigid = rgb(0x5A4FCF)
+        /// -10 C.
+        static let flowTempCold = rgb(0x3E8DDB)
+        /// 0 C.
+        static let flowTempFreezing = rgb(0x46C0B4)
+        /// 10 C.
+        static let flowTempCool = rgb(0x98D36A)
+        /// 20 C.
+        static let flowTempMild = rgb(0xF1C64B)
+        /// 30 C.
+        static let flowTempWarm = rgb(0xEF893C)
+        /// 40 C.
+        static let flowTempHot = rgb(0xD5443C)
+        /// Visibility, a slate veil that clears as it rises: the least.
+        static let flowVisLow = rgb(0x4B4D7A)
+        /// Ten miles, where the veil has gone.
+        static let flowVisHigh = rgb(0xC9CCDC)
+        /// The thin diagonal lines over where the layer has no data, as Apple Weather hatches it.
+        static let flowHatch = rgb(0x7B8494)
     }
     enum Score {
         /// Under 3.

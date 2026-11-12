@@ -38,6 +38,7 @@ import { ForecastRunGl } from "../forecastRun/ForecastRunGl";
 import { TrafficGl } from "./layers/TrafficGl";
 import { WeatherGl } from "./layers/WeatherGl";
 import { WeatherLoopGl } from "../../weather-loop";
+import { FlowGl } from "../../weather-flow";
 import { PlatesGl } from "../../plates";
 import { FaaChart } from "../components/AirportDiagram";
 import { useWeatherLayers } from "../../../lib/map/sources/weatherLayers";
@@ -183,6 +184,8 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
   const terrain = useTerrainView();
   // The radar and satellite loop under the advisories, while one is on.
   const loop = useWeatherLayers((s) => s.loop !== "off");
+  // The model weather's flow layer, its own chunk, while a field is picked.
+  const flow = useWeatherLayers((s) => s.flow !== "off");
   return (
     <>
       {terrain.mode !== "flat" && (
@@ -191,6 +194,11 @@ function EngineLayers(p: GlRouteMapProps & { onPreview: (on: boolean) => void })
         </Suspense>
       )}
       {loop && <WeatherLoopGl />}
+      {flow && (
+        <Suspense fallback={null}>
+          <FlowGl />
+        </Suspense>
+      )}
       <WeatherGl line={p.courseLine} altitudeFt={p.cruiseFt} />
       <TfrGl />
       {/* A search sent, its fields marked (the one search's results). */}

@@ -3,6 +3,7 @@ import SwitchRow from "./SwitchRow";
 import MenuPick from "./MenuPick";
 import { useWeatherLayers, type WindsAt } from "../lib/map/sources/weatherLayers";
 import { LoopSettingsRows } from "../features/weather-loop";
+import { FlowSettingsRow } from "../features/weather-flow";
 import { WINDS_MODELLED_LABEL } from "../lib/windsAloft";
 
 /** The winds aloft's altitudes: the plan's cruise, or one of the FD
@@ -34,6 +35,7 @@ export default function WeatherSettings() {
   return (
     <ListGroup title="Weather">
       <LoopSettingsRows />
+      <FlowSettingsRow />
       {/* The stock switch, whose state reads at a glance: a "Show" pill
           looked the same on and off (the UI audit, 2026-11-09). */}
       <SwitchRow title="AIRMETs and SIGMETs" on={areas} onChange={(on) => set({ areas: on })} testId="weather-areas-toggle" />

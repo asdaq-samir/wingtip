@@ -10,6 +10,12 @@ export type WindsAt = "off" | "plan" | 3000 | 6000 | 9000 | 12000 | 18000;
  *  (the owner's five, 2026-11-09). */
 export type LoopKind = "off" | "radar" | "ir" | "visible" | "both";
 
+/** The flow layer's field (features/weather-flow): the wind's streaks
+ *  over a colour field of the model's wind, gusts, precipitation, cloud,
+ *  temperature or visibility, Windy's and Apple Weather's map (the owner,
+ *  2026-11-11), or off -- off by default, so it never fights the chart. */
+export type FlowField = "off" | "wind" | "gust" | "precip" | "cloud" | "temp" | "vis";
+
 /** How fast the loop plays: a menu, as a discrete setting is (the owner,
  *  2026-09-30), not a slider. */
 export type LoopSpeed = "slow" | "normal" | "fast";
@@ -31,12 +37,13 @@ interface WeatherLayers {
   areas: boolean;
   pireps: boolean;
   winds: WindsAt;
+  flow: FlowField;
   set: (patch: Partial<Omit<WeatherLayers, "set">>) => void;
 }
 
 export const useWeatherLayers = create<WeatherLayers>()(
-  persist((set) => ({ loop: "off", loopSpeed: "normal", areas: false, pireps: false, winds: "off", set: (patch) => set(patch) }), {
-    name: "wingtip.weatherLayers",
-    partialize: ({ set: _set, ...kept }) => kept,
-  }),
+  persist(
+    (set) => ({ loop: "off", loopSpeed: "normal", areas: false, pireps: false, winds: "off", flow: "off", set: (patch) => set(patch) }),
+    { name: "wingtip.weatherLayers", partialize: ({ set: _set, ...kept }) => kept },
+  ),
 );

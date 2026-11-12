@@ -260,6 +260,69 @@ object WingtipColors {
         /** An urgent PIREP (UUA). */
         val Urgent = Color(0xFFDC2626)
         const val URGENT_HEX = "#dc2626"
+        /** The flow layer's wind streaks (features/weather-flow), white with a breath of blue as Apple Weather's wind map draws them, the owner's screenshot (2026-11-11). */
+        val FlowStreak = Color(0xFFF4F8FF)
+        const val FLOW_STREAK_HEX = "#f4f8ff"
+        /** The wind's field, one hue deepening with speed, the map tinted rather than a rainbow (Apple Weather's wind map): calm. */
+        val FlowWindCalm = Color(0xFF3A6DB0)
+        const val FLOW_WIND_CALM_HEX = "#3a6db0"
+        /** 25 kt. */
+        val FlowWindBreeze = Color(0xFF4A62C4)
+        const val FLOW_WIND_BREEZE_HEX = "#4a62c4"
+        /** 50 kt. */
+        val FlowWindStrong = Color(0xFF6A4FC6)
+        const val FLOW_WIND_STRONG_HEX = "#6a4fc6"
+        /** 75 kt and more. */
+        val FlowWindGale = Color(0xFF9A3FB4)
+        const val FLOW_WIND_GALE_HEX = "#9a3fb4"
+        /** Precipitation by intensity, blue to violet to magenta to yellow (Apple Weather's precipitation map): light. */
+        val FlowRainLight = Color(0xFF3F8CF2)
+        const val FLOW_RAIN_LIGHT_HEX = "#3f8cf2"
+        /** Moderate. */
+        val FlowRainModerate = Color(0xFF7A52E0)
+        const val FLOW_RAIN_MODERATE_HEX = "#7a52e0"
+        /** Heavy. */
+        val FlowRainHeavy = Color(0xFFD53FB2)
+        const val FLOW_RAIN_HEAVY_HEX = "#d53fb2"
+        /** Extreme. */
+        val FlowRainExtreme = Color(0xFFF6C445)
+        const val FLOW_RAIN_EXTREME_HEX = "#f6c445"
+        /** The strongest returns. */
+        val FlowRainExtremeTop = Color(0xFFFFF4B8)
+        const val FLOW_RAIN_EXTREME_TOP_HEX = "#fff4b8"
+        /** Cloud cover, the same grey-white thicker with cover. */
+        val FlowCloud = Color(0xFFEEF2F6)
+        const val FLOW_CLOUD_HEX = "#eef2f6"
+        /** The 2 m temperature, violet through blue, teal, green and yellow to red (Apple Weather's temperature map): -30 C. */
+        val FlowTempFrigid = Color(0xFF5A4FCF)
+        const val FLOW_TEMP_FRIGID_HEX = "#5a4fcf"
+        /** -10 C. */
+        val FlowTempCold = Color(0xFF3E8DDB)
+        const val FLOW_TEMP_COLD_HEX = "#3e8ddb"
+        /** 0 C. */
+        val FlowTempFreezing = Color(0xFF46C0B4)
+        const val FLOW_TEMP_FREEZING_HEX = "#46c0b4"
+        /** 10 C. */
+        val FlowTempCool = Color(0xFF98D36A)
+        const val FLOW_TEMP_COOL_HEX = "#98d36a"
+        /** 20 C. */
+        val FlowTempMild = Color(0xFFF1C64B)
+        const val FLOW_TEMP_MILD_HEX = "#f1c64b"
+        /** 30 C. */
+        val FlowTempWarm = Color(0xFFEF893C)
+        const val FLOW_TEMP_WARM_HEX = "#ef893c"
+        /** 40 C. */
+        val FlowTempHot = Color(0xFFD5443C)
+        const val FLOW_TEMP_HOT_HEX = "#d5443c"
+        /** Visibility, a slate veil that clears as it rises: the least. */
+        val FlowVisLow = Color(0xFF4B4D7A)
+        const val FLOW_VIS_LOW_HEX = "#4b4d7a"
+        /** Ten miles, where the veil has gone. */
+        val FlowVisHigh = Color(0xFFC9CCDC)
+        const val FLOW_VIS_HIGH_HEX = "#c9ccdc"
+        /** The thin diagonal lines over where the layer has no data, as Apple Weather hatches it. */
+        val FlowHatch = Color(0xFF7B8494)
+        const val FLOW_HATCH_HEX = "#7b8494"
     }
     object Score {
         /** Under 3. */
