@@ -13,10 +13,10 @@ rest of the stack moves there (#115).
 |---|---|---|---|
 | 1. Leads | The FAA's statements page is read every half hour, and the preliminary notices a person saves from the FAA's dashboard, into `crash_leads` (one lead an event: its local date and its town) | `services/jobs/crash` (`statements.py`, `notices.py`, `ntsb.py`), the store `wingtip.crash_drafts` | Yes |
 | 2. Identity | The report's N-number, the FAA registry's Mode S code for it and an ADS-B track by that code must agree, in time and place | the engine's `occurrence_identity` (`engine/crates/procedures/src/occurrence.rs`), asked by `crash/identity.py` | Yes, and a person where they do not agree |
-| 3. Kit | The track, the TFRs near the place then, the captions; the weather then and the NTSB's record later | `crash/kit.py`, into the draft's folder in the shared store | Yes |
+| 3. Kit | The track, the TFRs near the place then, the captions; then, on each run until they are in, the weather then, the NOTAMs then and the NTSB's record | `crash/kit.py`, `crash/then.py`, into the draft's folder in the shared store | Yes |
 | 4. Notice | The developer is mailed when a draft is ready, with its link in the Studio | the gateway's `CrashDraftMail` (Mailpit locally) | Yes |
 | 5. Drafts | The Studio's Drafts list: each draft's status, what the identity check found, the sources' own words; Identity is right, Not this airplane, Dismiss | `apps/web/src/features/studio` (`StudioDrafts`, `useDrafts`), the planner's `/api/studio/drafts` | A person |
-| 6. Film | Each ready draft opened in the Studio in a headless Chromium on the Mac's GPU, its export driven, the film saved, the draft marked rendered | `scripts/dev/studio-render.mjs`, every half hour by its LaunchAgent | Yes, once installed |
+| 6. Film | Each ready draft with a track opened in the Studio in a headless Chromium on the Mac's GPU, its export driven (the finished 16:9 film and its layers zip), the files saved, the draft marked rendered | `scripts/dev/studio-render.mjs`, every half hour by its LaunchAgent; the Studio's `useRenderEntry` | Yes, once installed |
 | 7. Publishing | Watching the film, checking it against the rules below, publishing it | a person | **Never automatic** |
 
 A draft's status is one of: **needs identity check** (the sources do not
@@ -40,9 +40,16 @@ developer confirmed it), **rendered** (the film is made) and **dismissed**.
   and each run reads every CSV there.
   The notices give the N-number, a day or two after the event, and the
   statement's lead takes it.
-- **NTSB avdata** (the weekly `upDDMON.zip` and the monthly `avall.zip`):
-  `TODO(claude/studio-2)`, whose reader (`services/ingest/ingest/ntsb.py`)
-  lands there; `crash/ntsb.py` is the seam.
+- **NTSB avdata** (the weekly `upDDMON.zip` and the monthly `avall.zip`),
+  which ingest reads into `ntsb.sqlite` on the data volume
+  (`services/ingest/ingest/ntsb.py`, `wingtip.history.ntsb`). The job reads
+  that store as the planner's `/api/studio/ntsb` does (`crash/ntsb.py`):
+  the NTSB's case of the draft's N-number on the event's local date goes
+  into the kit as `ntsb.json` when it appears, usually a week or more on,
+  and its narrative is quoted in the captions as written, its kind
+  (preliminary or final) said; its probable cause stays in `ntsb.json` and
+  out of the captions. It makes no leads: the store keeps no time of day
+  and no point, so the identity check could only send one to a person.
 - Not used: the Aviation Herald (its terms prohibit reuse) and the Aviation
   Safety Network (terms not verified). A news story is a lead for a person,
   never for the job.
@@ -107,6 +114,24 @@ The gateway mails each ready draft to `APP_DEVELOPER_EMAILS` every five
 minutes (`APP_STUDIO_DRAFTS_CRON`, `-` to stop it), its link under
 `APP_PUBLIC_BASE_URL`.
 
+### The kit
+
+A draft's folder (`crash_kits/<id>` beside the live store) holds one JSON
+file a part:
+
+| Part | What | When |
+|---|---|---|
+| `lead.json` | the facts, the identity check's findings, the sources' words, the captions | when the draft is ready |
+| `track.json` | the ADS-B track (none for "No ADS-B track") | when the draft is ready |
+| `tfrs.json` | the TFRs within 30 nm in the event's window (the weather store's list of today) | an event within the day only |
+| `weather.json` | IEM's METARs and TAFs of the fields near the place over the hour before the event's moment, and the radar frames (`wingtip.history.weather_then`, the planner's `POST /api/studio/weather`'s own code) | once the hour after the event has passed and IEM answers |
+| `notams.json` | the NOTAMs and TFRs in force at the event's moment within 30 nm, from that UTC day's snapshot (`wingtip.history.notam_archive`, `/api/studio/notams`' code) | once that day's snapshot is kept, or the day has passed without one (`archived: false`: no archive of past NOTAMs exists to fill it from) |
+| `ntsb.json` | the NTSB's case(s) on the event's local date, as written | when the NTSB publishes it |
+
+The event's moment is the reported local time where the state keeps one
+offset from UTC that day, else the confirmed track's report nearest the
+place. A part not yet given is asked again on each run (`kit.fill`).
+
 ### Installing the render agent
 
 The film needs the Mac's GPU, so it runs on the Mac, not in Docker. With
@@ -127,23 +152,65 @@ launchctl bootout gui/$(id -u)/app.wingtipmaps.studio-render && rm ~/Library/Lau
 ```
 
 Its log is `~/Library/Logs/wingtip-studio-render.log`; the films go to
-`~/Movies/Wingtip Studio` (`STUDIO_RENDER_OUT`). A page that draws with
-SwiftShader rather than the GPU is refused, not filmed slowly.
+`~/Movies/Wingtip Studio` (`STUDIO_RENDER_OUT`), each named for its draft.
+A page that draws with SwiftShader rather than the GPU is refused, not
+filmed slowly.
+
+### One draft end to end, by hand
+
+1. The stack up (`scripts/dev/go-live.sh`) with ingest's history thread
+   running (the NTSB store and the daily NOTAM snapshots).
+2. `docker compose run --rm crash-leads`: leads read, identities checked,
+   kits made and filled. The Studio's Drafts list shows each.
+3. A draft waiting for a person: open it in the Studio
+   (`/app/studio?draft=<id>`), read what the identity check found, and
+   press Identity is right (or Not this airplane, or Dismiss). The next
+   run makes its kit.
+4. `node scripts/dev/studio-render.mjs` (signed in once with `--sign-in`):
+   each ready draft with a track opened at
+   `/app/studio?draft=<id>&render=1`; once its track, the weather then and
+   the map are in, the page offers `window.__studioExport`; the script asks
+   for each preset of `STUDIO_RENDER_PRESET`, saves each download, and
+   marks the draft rendered. To watch it, open the same address in a
+   browser signed in as the developer and call
+   `await window.__studioExport({ draftId: "<id>", preset: "draft-1080p" })`
+   in the console.
+5. Check the film: `docker run --rm --platform linux/amd64 -v "$HOME/Movies/Wingtip Studio:/m"
+   --entrypoint ffprobe jrottenberg/ffmpeg:7-alpine -hide_banner /m/<file>.mp4`.
+
+### The export's presets
+
+`window.__studioExport({ draftId, preset })` (`features/replay/export/useRenderEntry.ts`)
+makes the whole track, its gaps included, with the export the panel uses
+(MapLibre's `setNow` frame by frame, mediabunny), at the slowest of the
+Studio's speeds that keeps the film to three minutes (16x at most). It
+resolves `{ filename }` once the file is handed to the browser as a
+download, which the script then saves, and rejects with the reason where
+the draft is not the one open, the preset is not known, an export is
+running, or the video could not be made. It is set only at `?render=1` on
+the Studio, the developer's page.
+
+| Preset | What |
+|---|---|
+| `draft-1080p` | one MP4, 1920×1080 (16:9), 30 fps, the credit line, the disclaimer ("Reconstruction from ADS-B data. Not an official finding.") and the captions burned in |
+| `draft-1080p-layers` | the same as the layers zip: the map's MP4, the overlays as WebM with alpha, the captions as SRT, the credits |
+
+The radio's captions use Whisper on the device; behind the gateway its
+model downloads from huggingface.co and its CDN, which the gateway's
+content security policy allows (`ModelHosts`).
 
 ## What is still a seam
 
-- **The export** (`TODO(claude/studio-2)`): MapLibre's `setNow` on the
-  replay clock, encoded with mediabunny, is claude/studio-2's. The render
-  script calls `window.__studioExport({ draftId, preset })`, which must
-  resolve `{ filename }` once the film is whole, after handing it to the
-  browser as a download, and reject with a reason where it cannot. The
-  Studio opened at `/app/studio?draft=<id>&render=1` loads the draft's
-  track; the export panel sets the function once the map is ready.
-- **The weather then and the NTSB's record** (`TODO(claude/studio-2)`):
-  IEM's reports (`wingtip/history/iem.py`) and the NTSB reader go into the
-  kit once they land.
-- **NOTAMs other than TFRs**: the store keeps today's NOTAMs by field, and
-  a past day's are not kept, so only the TFRs near the place are kept, and
-  only for an event within the day.
+Closed (claude/crash-wire): the export's entry (`useRenderEntry`), the
+NTSB's record, the weather then, and the NOTAMs then from the daily
+snapshots, each in the kit as above. Left:
+
+- **The kit's captions in the film**: the film's overlays are the
+  Studio's own (the data block, the METAR, the radio's captions, the
+  credit line and the disclaimer); the kit's title, "Preliminary" and the
+  sources' quotes are in `lead.json` and the Drafts list, not yet drawn
+  into the film.
+- **NOTAMs before the snapshots began**: no public archive of past NOTAMs
+  exists, so an event on a day ingest kept none of has `archived: false`.
 - **The notices' fetch**: the job reads the CSVs a person saves for it; a
   fetch of its own waits for a way in the FAA allows.

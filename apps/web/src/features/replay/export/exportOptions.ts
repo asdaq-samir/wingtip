@@ -48,3 +48,23 @@ export function outputSize(resolution: Resolution, aspect: Aspect): { width: num
  *  video's size by its pixel ratio: a 4K video is a 1080p one's layout,
  *  sharper, rather than its labels a quarter the size. */
 export const LAYOUT_SHORT_PX = 540;
+
+/**
+ * The presets the crash pipeline's render (scripts/dev/studio-render.mjs,
+ * through useRenderEntry) asks for by name, each a whole choice:
+ * "draft-1080p" the finished film, 16:9 at 1080p and 30 fps, the credit
+ * line, the reconstruction's disclaimer and the captions burned in;
+ * "draft-1080p-layers" the same as the layers zip for an editor.
+ */
+export const RENDER_PRESETS: Record<string, ExportChoice> = {
+  "draft-1080p": { ...DEFAULT_CHOICE, resolution: "1080p", aspect: "16:9", fps: 30, kind: "finished", credits: true, disclaimer: true },
+  "draft-1080p-layers": {
+    ...DEFAULT_CHOICE,
+    resolution: "1080p",
+    aspect: "16:9",
+    fps: 30,
+    kind: "layers",
+    credits: true,
+    disclaimer: true,
+  },
+};

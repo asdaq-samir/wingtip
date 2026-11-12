@@ -28,7 +28,9 @@ function creditLine(track: ReplayTrack, extra: string[]): string {
  * exporting its content), so each frame asks first (closeZoom's
  * imageryForExport) and the export stops if it comes under the map; the
  * Studio's map draws only the USGS's (ChartGl publicOnly) and leaves out
- * Google's overlay while one runs.
+ * Google's overlay while one runs. `start` answers the file made (its
+ * name and object URL) or the problem said, for the render entry
+ * (useRenderEntry) as for the panel.
  */
 export function useVideoExport() {
   const stop = useRef<AbortController | null>(null);
@@ -40,9 +42,11 @@ export function useVideoExport() {
       range: { start: number; end: number };
       scene: Omit<OverlayScene, "track" | "captions" | "credit" | "disclaimer">;
       credits: string[];
-    }) => {
+      /** The replay's speed for this video; the timeline's where not given. */
+      speed?: number;
+    }): Promise<{ made: { name: string; url: string } | null; problem: string | null }> => {
       const { map, made } = useExporting.getState();
-      if (!map) return;
+      if (!map) return { made: null, problem: "The map isn't ready yet." };
       if (made) URL.revokeObjectURL(made.url);
       stop.current = new AbortController();
       useExporting.setState({ running: true, done: 0, problem: null, made: null });
@@ -53,7 +57,7 @@ export function useVideoExport() {
         const file = await exportReplay(
           {
             map,
-            range: { ...job.range, speed: usePastFlight.getState().speed, fps: job.choice.fps },
+            range: { ...job.range, speed: job.speed ?? usePastFlight.getState().speed, fps: job.choice.fps },
             size: outputSize(job.choice.resolution, job.choice.aspect),
             choice: job.choice,
             scene: {
@@ -71,11 +75,14 @@ export function useVideoExport() {
           stop.current.signal,
           (done) => useExporting.setState({ done }),
         );
-        useExporting.setState({ made: { name: file.name, url: URL.createObjectURL(file.blob), bytes: file.blob.size } });
+        const kept = { name: file.name, url: URL.createObjectURL(file.blob), bytes: file.blob.size };
+        useExporting.setState({ made: kept });
+        return { made: kept, problem: null };
       } catch (err) {
         const problem =
           err instanceof ExportCancelled ? null : err instanceof ExportRefused ? err.message : `The video couldn't be made: ${String(err)}`;
         useExporting.setState({ problem });
+        return { made: null, problem: problem ?? "The export was cancelled." };
       } finally {
         useExporting.setState({ running: false });
       }

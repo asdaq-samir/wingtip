@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useMemo, type ReactNode } from "react";
 import SectionTitle from "../../components/SectionTitle";
 import { loadStudioParts, sampleAt, type ReplayTrack } from "../replay";
 import { NotamsThen, NtsbEvents, WeatherThen } from "./StudioHistory";
@@ -24,18 +24,22 @@ function Section({ title, children, testId }: { title: string; children: ReactNo
  * moment (the weather, the NTSB's events, the NOTAMs and TFRs), then
  * what makes a video of it -- the camera's keyframes, the radio and its
  * captions, and the export -- the replay's own parts (features/replay),
- * which Plan and Dev can take up too.
+ * which Plan and Dev can take up too. `renderDraft`, the crash draft open
+ * at ?render=1, opens the export to the render script once the weather
+ * then has come (or could not), so its METARs are in the film.
  */
 export function StudioTools({
   track,
   ground,
   history,
   callsign,
+  renderDraft = null,
 }: {
   track: ReplayTrack;
   ground: { along_nm: number; ground_ft: number }[];
   history: StudioHistory;
   callsign: string | null;
+  renderDraft?: string | null;
 }) {
   // The METARs credited in a video where any are drawn, the radar where shown.
   const credits = [
@@ -43,6 +47,8 @@ export function StudioTools({
     history.metars.length ? "METARs: Iowa Environmental Mesonet" : null,
   ].filter((c): c is string => !!c);
   const scene = { ground, metar: (t: number) => history.metarNear(t, sampleAt(track.points, t)) };
+  const weatherIn = !!history.weather || !!history.weatherProblem;
+  const render = useMemo(() => (renderDraft && weatherIn ? { draftId: renderDraft } : null), [renderDraft, weatherIn]);
   return (
     <>
       <Section title="Weather then">
@@ -65,7 +71,7 @@ export function StudioTools({
           <CaptionsPanel callsign={callsign} />
         </Section>
         <Section title="Video" testId="studio-video">
-          <ExportPanel key={track.id} track={track} scene={scene} credits={credits} />
+          <ExportPanel key={track.id} track={track} scene={scene} credits={credits} render={render} />
         </Section>
       </Suspense>
     </>
