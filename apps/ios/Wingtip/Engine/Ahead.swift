@@ -9,7 +9,7 @@ import WingtipEngine
 /// The obstacles are the planner's alone, and the TFRs are not kept on
 /// the phone yet: both are said to be missing, never read as clear.
 extension CyclePacks {
-    struct Ahead: Decodable {
+    struct Ahead: Decodable, Sendable {
         let alerts: [AheadAlert]
         let unavailable: [String]
         /// The packs' ground under the airplane (their terrain grid's
@@ -49,6 +49,12 @@ extension CyclePacks {
         guard let answer else { return nil }
         defer { wt_string_free(answer) }
         return try? Planner.json.decode(Ahead.self, from: Data(String(cString: answer).utf8))
+    }
+
+    /// The same off the main actor: OwnShip asks it every ten seconds in
+    /// the air, and it reads the packs round the airplane.
+    @concurrent func aheadOffMain(lat: Double, lon: Double, trackDeg: Double, groundspeedKt: Double, altitudeFt: Double?) async -> Ahead? {
+        ahead(lat: lat, lon: lon, trackDeg: trackDeg, groundspeedKt: groundspeedKt, altitudeFt: altitudeFt)
     }
 
     // withPointers: InView.swift, shared with the in-view readers.

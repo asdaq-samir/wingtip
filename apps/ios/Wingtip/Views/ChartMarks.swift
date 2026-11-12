@@ -18,7 +18,7 @@ import UIKit
 final class ChartMarks {
     /// A special-use area as the engine answers it, its rings [lat, lon]
     /// with the area on their left.
-    struct Area: Decodable, Equatable {
+    struct Area: Decodable, Equatable, Sendable {
         let type: String
         let name: String
         let floorFt: Double?
@@ -46,7 +46,7 @@ final class ChartMarks {
 
     /// A fix as the engine answers it: the Enroute Low chart's (a star) or
     /// a charted VFR waypoint.
-    struct Fix: Decodable, Equatable {
+    struct Fix: Decodable, Equatable, Sendable {
         let ident: String
         let lat: Double
         let lon: Double
@@ -83,23 +83,35 @@ final class ChartMarks {
     /// The view moved: each kind off below its zoom, else asked of the
     /// packs where the view wants a new answer.
     func moved(_ map: MKMapView, view: ViewBox, zoom: Double) {
-        let wide = view.widened
         if zoom < Self.areasFrom {
             take([], map: map)
             areaFetch.forget()
-        } else if areaFetch.wants(view, zoom: zoom),
-                  let areas = CyclePacks.shared.specialUseInView(south: wide.south, west: wide.west, north: wide.north, east: wide.east) {
-            _ = areaFetch.ask(view, zoom: zoom)
-            take(areas, map: map)
+        } else if areaFetch.wants(view, zoom: zoom) {
+            let asked = areaFetch.ask(view, zoom: zoom)
+            Task { [weak self, weak map] in
+                let areas = await CyclePacks.shared.specialUseInView(asked)
+                // Taken only while the view still wants this box; no pack
+                // for it, asked again at the next move, as before.
+                guard let self, let map, areaFetch.box == asked else { return }
+                guard let areas else { return areaFetch.forget() }
+                take(areas, map: map)
+                // The tabs of the areas just come, at the zoom the map is at now.
+                let now = MapExtras.zoom(longitudeDelta: map.region.span.longitudeDelta, width: Double(map.bounds.width))
+                showTabs(now >= SpecialUseTab.from, heading: map.camera.heading, map: map)
+            }
         }
         showTabs(zoom >= SpecialUseTab.from, heading: map.camera.heading, map: map)
         if zoom < Self.fixesFrom {
             takeFixes([], map: map)
             fixFetch.forget()
-        } else if fixFetch.wants(view, zoom: zoom),
-                  let found = CyclePacks.shared.fixesInView(south: wide.south, west: wide.west, north: wide.north, east: wide.east) {
-            _ = fixFetch.ask(view, zoom: zoom)
-            takeFixes(found.filter { !$0.vfr }, map: map)
+        } else if fixFetch.wants(view, zoom: zoom) {
+            let asked = fixFetch.ask(view, zoom: zoom)
+            Task { [weak self, weak map] in
+                let found = await CyclePacks.shared.fixesInView(asked)
+                guard let self, let map, fixFetch.box == asked else { return }
+                guard let found else { return fixFetch.forget() }
+                takeFixes(found.filter { !$0.vfr }, map: map)
+            }
         }
     }
 

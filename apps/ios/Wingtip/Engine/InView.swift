@@ -110,6 +110,45 @@ extension CyclePacks {
         return Data(String(cString: answer).utf8)
     }
 
+    // MARK: Off the main actor
+
+    // The map's asks as it moves, each off the main actor (@concurrent):
+    // a pinch that crossed a zoom level asked up to five of these within
+    // one frame, each reading the packs and decoding the engine's answer.
+    // The map takes each answer back on the main actor if its view still
+    // wants it (ViewFetch).
+
+    /// The special-use areas in a box; nil with no pack.
+    @concurrent func specialUseInView(_ box: ViewBox) async -> [ChartMarks.Area]? {
+        specialUseInView(south: box.south, west: box.west, north: box.north, east: box.east)
+    }
+
+    /// The fixes and VFR waypoints in a box; nil with no pack.
+    @concurrent func fixesInView(_ box: ViewBox) async -> [ChartMarks.Fix]? {
+        fixesInView(south: box.south, west: box.west, north: box.north, east: box.east)
+    }
+
+    /// The fields in a box; nil with no pack.
+    @concurrent func airportsInView(_ box: ViewBox) async -> [AirportPin]? {
+        airportsInView(south: box.south, west: box.west, north: box.north, east: box.east)
+    }
+
+    /// The airspace volumes in a box: nil with no pack, .some(nil) where
+    /// the engine's answer could not be read.
+    @concurrent func airspaceVolumesInView(_ box: ViewBox) async -> [AirspaceVolume]?? {
+        struct Answer: Decodable { let volumes: [AirspaceVolume] }
+        guard let data = airspaceInView(south: box.south, west: box.west, north: box.north, east: box.east) else { return nil }
+        return .some(try? Planner.snakeCase.decode(Answer.self, from: data).volumes)
+    }
+
+    /// The VORs in a box: nil with no pack, .some(nil) where the engine's
+    /// answer could not be read.
+    @concurrent func vorsInView(_ box: ViewBox) async -> [VorPin]?? {
+        struct Answer: Decodable { let vors: [VorPin] }
+        guard let data = navaidsInView(south: box.south, west: box.west, north: box.north, east: box.east) else { return nil }
+        return .some(try? Planner.snakeCase.decode(Answer.self, from: data).vors)
+    }
+
     /// Each pack's bytes held for the one call (as Ahead.swift holds them).
     static func withPointers<R>(_ packs: ArraySlice<Data>, _ ptrs: [UnsafePointer<UInt8>?], _ lens: [Int],
                                 _ body: ([UnsafePointer<UInt8>?], [Int]) -> R) -> R {

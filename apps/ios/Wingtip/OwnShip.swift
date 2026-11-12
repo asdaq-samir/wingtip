@@ -129,7 +129,8 @@ final class OwnShip: NSObject, CLLocationManagerDelegate {
             let alerts: [AheadAlert]
             // The packs' answer is asked either way, for the ground under
             // the airplane the glide ring stands on, network or none.
-            let offline = CyclePacks.shared.ahead(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt)
+            // Off the main actor (CyclePacks.aheadOffMain).
+            let offline = await CyclePacks.shared.aheadOffMain(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt)
             self?.groundFt = offline?.groundFt
             if let online = try? await Planner.ahead(lat: lat, lon: lon, trackDeg: track, groundspeedKt: gs, altitudeFt: fix.altitudeFt) {
                 alerts = online

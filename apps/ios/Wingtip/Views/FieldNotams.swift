@@ -41,7 +41,7 @@ final class FieldNotams {
         self.ident = ident
         do {
             let fresh = try await KeptForAir.answer(.notams, key: KeptForAir.fieldNotamsKey(ident)) { try await Planner.notams(ident) }.value
-            take(fresh, for: ident)
+            await take(fresh, for: ident)
         } catch {
             if ranked == nil || force {
                 problem = "Its NOTAMs couldn't be had, so closures and TFRs aren't shown: \(error.localizedDescription)"
@@ -49,22 +49,32 @@ final class FieldNotams {
         }
     }
 
-    /// The answer read: each NOTAM by notam_read, each TFR by tfr_read, once.
-    func take(_ fresh: APINotamsRanked, for ident: String) {
-        self.ident = ident
+    /// The answer read: each NOTAM by notam_read, each TFR by tfr_read,
+    /// once, off the main actor (a busy field has dozens), and taken while
+    /// the card still shows the field.
+    private func take(_ fresh: APINotamsRanked, for ident: String) async {
+        let read = await Self.read(fresh.notams, idents: FieldNotamWords.idents(ident))
+        guard ident == self.ident else { return }
         ranked = fresh
         problem = nil
-        let idents = FieldNotamWords.idents(ident)
-        readings = [:]
-        tfrs = [:]
-        for notam in fresh.notams {
+        readings = read.readings
+        tfrs = read.tfrs
+        remark()
+    }
+
+    @concurrent
+    private nonisolated static func read(_ notams: [APIRankedNotam], idents: [String]) async
+        -> (readings: [String: EngineContract.NotamReadAnswer], tfrs: [String: EngineContract.TfrReadAnswer]) {
+        var readings: [String: EngineContract.NotamReadAnswer] = [:]
+        var tfrs: [String: EngineContract.TfrReadAnswer] = [:]
+        for notam in notams {
             if notam.kind == "tfr" {
                 tfrs[notam.id] = try? FieldNotamWords.readTfr(notam)
             } else {
                 readings[notam.id] = try? Engine.notamRead(text: notam.raw, idents: idents)
             }
         }
-        remark()
+        return (readings, tfrs)
     }
 
     /// The card's place, which the badges go next to.

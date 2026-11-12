@@ -1,5 +1,6 @@
 import Foundation
 import os
+import Synchronization
 import WingtipEngine
 
 /// wingtip-engine, the planner's own Rust, through its C functions
@@ -43,10 +44,21 @@ enum Engine {
     }
 
     /// The region whose pack holds a point ("n40w088"), the engine's
-    /// `region_of` by name.
+    /// `region_of` by name, remembered by the whole degree the point is
+    /// in: the engine's regions are squares of REGION_DEG (4) whole
+    /// degrees from the equator and the meridian (airspace pack_query.rs
+    /// region_of), so every point of one degree's cell is in the same
+    /// region. A pan asked tens of these a frame (CyclePacks.packs).
     static func region(lat: Double, lon: Double) -> String {
-        (try? call("region_of", json: ["lat": lat, "lon": lon]) as String) ?? ""
+        let cell = RegionCell(lat: Int(lat.rounded(.down)), lon: Int(lon.rounded(.down)))
+        if let known = regions.withLock({ $0[cell] }) { return known }
+        guard let name = try? call("region_of", json: ["lat": lat, "lon": lon]) as String else { return "" }
+        regions.withLock { $0[cell] = name }
+        return name
     }
+
+    private struct RegionCell: Hashable { let lat: Int; let lon: Int }
+    private static let regions = Mutex<[RegionCell: String]>([:])
 
     /// What the radio said, all the phone can make of it with no signal
     /// (wingtip_engine::spoken::hear): the clearance read into its items,

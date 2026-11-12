@@ -7,15 +7,6 @@ import SwiftUI
 /// thing once they are in (the reveal).
 /// MKMapView rather than SwiftUI's Map, for the tile overlay and the
 /// renderers the route and the marks need.
-/// A procedure's path, told from the course line by its class.
-final class ProcedurePolyline: MKPolyline {}
-
-/// The thin edge round the course's magenta, so it keeps its contrast on
-/// the chart (the web's route-edge). The green casing is drawn only on the
-/// leg whose sheet is open (RouteLegLayer), as ForeFlight shows it on a
-/// selected course (the owner, 2026-11-09).
-final class CourseEdgePolyline: MKPolyline {}
-
 struct ChartMap: UIViewRepresentable {
     let template: TileTemplate?
     let minZoom: Int
@@ -299,6 +290,7 @@ struct ChartMap: UIViewRepresentable {
         }
         var onRegion: ((CLLocationCoordinate2D, Double) -> Void)?
         private var trafficShown: [String: TrafficAnnotation] = [:]
+        private var trafficDrawn: (planes: [TrafficAircraft], ownFt: Double?)?
         var setFollowing: ((Bool) -> Void)?
         var setRouteAway: ((Bool) -> Void)?
         var fitted = 0
@@ -575,9 +567,13 @@ struct ChartMap: UIViewRepresentable {
                 weather.moved(mapView, zoom: zoom)
                 let view = ViewBox(mapView.region)
                 guard liveAirports.wants(view, zoom: zoom) else { return }
-                let wide = view.widened
-                if let pins = CyclePacks.shared.airportsInView(south: wide.south, west: wide.west, north: wide.north, east: wide.east) {
-                    _ = liveAirports.ask(view, zoom: zoom)
+                let asked = liveAirports.ask(view, zoom: zoom)
+                // Off the main actor (CyclePacks.airportsInView), taken back
+                // only while the view still wants this box.
+                Task { @MainActor [weak self, weak mapView] in
+                    let pins = await CyclePacks.shared.airportsInView(asked)
+                    guard let self, let mapView, liveAirports.box == asked else { return }
+                    guard let pins else { return liveAirports.forget() }
                     self.pins = pins
                     showFields(on: mapView)
                 }
@@ -644,6 +640,10 @@ struct ChartMap: UIViewRepresentable {
         /// heard taken off, the new ones added.
         @MainActor
         func show(_ planes: [TrafficAircraft], ownFt: Double?, on map: MKMapView) {
+            // The map's update runs at every fix; the traffic and own ship's
+            // height as last drawn need no engine call (traffic_marks) again.
+            guard trafficDrawn?.planes != planes || trafficDrawn?.ownFt != ownFt else { return }
+            trafficDrawn = (planes, ownFt)
             let fresh = Dictionary(planes.map { ($0.hex, $0) }, uniquingKeysWith: { a, _ in a })
             let gone = trafficShown.filter { fresh[$0.key] == nil }
             map.removeAnnotations(Array(gone.values))
