@@ -264,6 +264,14 @@ public class PlannerProxyController {
         if (route.range() && range != null) {
             upstreamBuilder.header(HttpHeaders.RANGE, range);
         }
+        // An answer the same for every pilot (x-gateway's cache) may carry
+        // an ETag (the TFRs' list): the copy the browser holds is named to
+        // the upstream, so an unchanged one comes back a 304 with no body
+        // rather than the whole list again.
+        String ifNoneMatch = request.getHeader(HttpHeaders.IF_NONE_MATCH);
+        if (route.cache() && ifNoneMatch != null) {
+            upstreamBuilder.header(HttpHeaders.IF_NONE_MATCH, ifNoneMatch);
+        }
         HttpRequest upstream = upstreamBuilder.build();
 
         return proxy.exchange(toAssistant ? ASSISTANT : PLANNER, upstream, response -> {
@@ -294,6 +302,13 @@ public class PlannerProxyController {
                         }
                     }
                 });
+                // Its ETag, on the answer and on a 304 (whose status is
+                // passed as it came), for the browser to name next time.
+                if (!route.headers().contains(HttpHeaders.ETAG)) {
+                    response.headers()
+                            .firstValue(HttpHeaders.ETAG)
+                            .ifPresent(value -> builder.header(HttpHeaders.ETAG, value));
+                }
             }
             // What the route passes on as it came (x-gateway's headers):
             // the airport index's gzip encoding, the ForeFlight pack's file

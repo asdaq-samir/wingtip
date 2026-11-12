@@ -45,3 +45,4 @@ To change a decision, the owner says so in an issue (the `owner` label); then ad
 | 0037 | [The order of a wave is enforced, not remembered](0037-order-enforced.md) | 2026-11-11 | Accepted |
 | 0038 | [Web first; the phones on the owner's word](0038-web-first.md) | 2026-11-11 | Accepted |
 | 0039 | [The crash pipeline's schedule and the MCP tools' source, weighed against their alternatives](0039-crash-and-mcp-boundaries.md) | 2026-11-12 | Proposed |
+| 0040 | [The iPhone app's oldest iOS is 27, and the Watch's watchOS 27](0040-ios-27-floor.md) | 2026-11-12 | Accepted |

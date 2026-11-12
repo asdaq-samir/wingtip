@@ -239,7 +239,9 @@ test("a finger pulled on past the Nearest row's end turns the page, and not befo
       const point = (x: number) => new Touch({ identifier: 1, target: el, clientX: x, clientY: at.top + at.height / 2 });
       let x = at.left + at.width * 0.8;
       const send = (type: string, touches: Touch[]) =>
-        el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches, targetTouches: touches, changedTouches: touches }));
+        el.dispatchEvent(
+          new TouchEvent(type, { bubbles: true, cancelable: true, touches, targetTouches: touches, changedTouches: touches }),
+        );
       send("touchstart", [point(x)]);
       for (const dx of steps) {
         x += dx;

@@ -141,7 +141,15 @@ export function AirportRow({
  *  the route box's suggestions): the icon and the two lines. Its magenta
  *  is fill and stroke, not the text colour: a row's highlight recolours
  *  its icons' text, and the diamond went black. */
-export function AirportRowFace({ airport, recent = false, waypoint = false }: { airport: RecentAirport; recent?: boolean; waypoint?: boolean }) {
+export function AirportRowFace({
+  airport,
+  recent = false,
+  waypoint = false,
+}: {
+  airport: RecentAirport;
+  recent?: boolean;
+  waypoint?: boolean;
+}) {
   return (
     <>
       {waypoint ? (

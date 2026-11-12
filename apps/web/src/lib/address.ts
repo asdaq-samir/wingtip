@@ -184,4 +184,11 @@ export const PICK_KEYS = [
  *  route, a Direct to and the route before it, the fuel stops, the picks
  *  and the points' own altitudes. Not the page's own (the card open, the
  *  panel, the departure time). */
-export const PLAN_KEYS = [...ROUTE_KEYS, "direct", "was", "fuel", ...PICK_KEYS, "altitudes"] as const satisfies readonly (keyof AddressParsers)[];
+export const PLAN_KEYS = [
+  ...ROUTE_KEYS,
+  "direct",
+  "was",
+  "fuel",
+  ...PICK_KEYS,
+  "altitudes",
+] as const satisfies readonly (keyof AddressParsers)[];
