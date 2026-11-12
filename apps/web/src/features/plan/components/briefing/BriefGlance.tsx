@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, GraduationCap } from "lucide-react";
 import { cn } from "cn";
+import { Button } from "../../../../components/ui/button";
 import { Alert, AlertDescription } from "../../../../components/ui/alert";
 import FindingIcon from "../../../../components/FindingIcon";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../../components/ui/accordion";
@@ -168,16 +169,14 @@ function Line({ line, onOpen }: { line: GlanceLine; onOpen: (tab: PanelTab) => v
             ))}
           </div>
         )}
-        <button
-          type="button"
+        <Button
+          variant="link"
+          size="inline"
           onClick={() => onOpen(line.tab)}
-          className={cn(
-            "relative ml-1 font-semibold text-tint no-underline! after:absolute after:-inset-x-2 after:-inset-y-3",
-            TEXT.detail,
-          )}
+          className={cn("relative ml-1 font-semibold no-underline! after:absolute after:-inset-x-2 after:-inset-y-3", TEXT.detail)}
         >
           See it in full
-        </button>
+        </Button>
       </AccordionContent>
     </AccordionItem>
   );

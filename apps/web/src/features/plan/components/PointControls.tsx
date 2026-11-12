@@ -14,7 +14,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "cn";
-import { GLASS_BUTTON } from "../../../components/ui/button";
+import { Button } from "../../../components/ui/button";
 import RoundButton from "../../../components/RoundButton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../../../components/ui/dropdown-menu";
 import { DROPDOWN, useAfterMenu, type MenuKit } from "./pointMenu";
@@ -214,8 +214,9 @@ export function PointMenu({ testId = "point-menu", face, ...actions }: PointActi
       <DropdownMenuTrigger
         render={
           face ? (
-            <button
-              type="button"
+            <Button
+              variant="glass"
+              size="icon"
               aria-label={`${actions.ident}: more`}
               data-testid={testId}
               data-point-mark=""
@@ -228,13 +229,12 @@ export function PointMenu({ testId = "point-menu", face, ...actions }: PointActi
               // centred on the route's line as the bare symbol was, and on the
               // point's two lines, at the owner's ask ("Center it on the two
               // lines"): its column centres it (ProceduresRoute).
-              className={cn(
-                "relative -mx-1 grid size-9 shrink-0 place-items-center rounded-full outline-none after:absolute after:-inset-1 after:content-[''] focus-visible:ring-2 focus-visible:ring-ring",
-                GLASS_BUTTON,
-              )}
+              // The stock Button's glass at its icon size; the mark's picture
+              // filling its own box (AirportMark's), not the stock 16 a glyph.
+              className="relative -mx-1 rounded-full after:absolute after:-inset-1 after:content-[''] [&_svg:not([class*='size-'])]:size-full"
             >
               {face}
-            </button>
+            </Button>
           ) : (
             <RoundButton label={`${actions.ident}: more`} className="shrink-0" data-testid={testId}>
               <Ellipsis className="size-5" aria-hidden="true" />

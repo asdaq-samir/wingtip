@@ -1,8 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
-import { grabberTo, settle, slow } from "./helpers";
+import { drawn, grabberTo, settle, slow } from "./helpers";
 
 /**
- * The traffic about the map (TrafficLayer), from adsb.lol through the
+ * The traffic about the map (TrafficGl's symbol layers, read through
+ * their probes: traffic-marks, traffic-trends), from adsb.lol through the
  * planner, when the map's settings show it: stubbed here, adsb.lol's sky
  * not being the suite's. Two airplanes near Campbell Airport (C81).
  */
@@ -65,14 +66,13 @@ test(
     const asks = await showTraffic(page, true);
     await page.goto("/app/plan?place=C81");
     await settle(page);
-    const marks = page.locator("svg[data-traffic]");
-    await expect(marks).toHaveCount(2, { timeout: slow(15_000) });
+    await expect.poll(async () => (await drawn(page, "traffic-marks")).length, { timeout: slow(15_000) }).toBe(2);
+    const marks = await drawn(page, "traffic-marks");
     // With no own ship, each one's own height, a descent's arrow with it.
-    const labels = page.locator(".maplibregl-map").getByText(/^(4,500↓|9,800)/);
-    await expect(labels).toHaveCount(2);
-    // Turned by MapLibre against the map (rotationAlignment "map"), the
-    // flat chart's bearing 0, so the marker's own turn is the track.
-    await expect(page.locator(".maplibregl-marker:has(svg[data-traffic])").first()).toHaveAttribute("style", /rotateZ\(320deg\)/);
+    expect(marks.map((m) => String(m.label)).sort()).toEqual([expect.stringMatching(/^4,500↓/), expect.stringMatching(/^9,800/)]);
+    // Turned by MapLibre against the map (icon-rotation-alignment "map"),
+    // the flat chart's bearing 0, so its turn is the track.
+    expect(marks.find((m) => m.hex === "a1")?.track).toBe(320);
     // Credited in Status and About, not on the map (the owner, 2026-11-11).
     await expect(page.locator(".maplibregl-ctrl-attrib")).toHaveCount(0);
     expect(asks.length).toBeGreaterThan(0);
@@ -97,13 +97,13 @@ test("between reports each airplane is carried on along its track, as ForeFlight
   );
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  const mark = page.locator("svg[data-traffic]");
-  await expect(mark).toHaveCount(1, { timeout: slow(15_000) });
+  const mark = async () => (await drawn(page, "traffic-marks")) as { x: number; y: number }[];
+  await expect.poll(async () => (await mark()).length, { timeout: slow(15_000) }).toBe(1);
   // Its line out to where it will be in a minute.
-  await expect(mark.locator("[data-trend]")).toHaveCount(1);
-  const first = (await mark.boundingBox())!;
+  await expect.poll(async () => (await drawn(page, "traffic-trends")).length).toBe(1);
+  const first = (await mark())[0]!;
   await page.waitForTimeout(3000);
-  const later = (await mark.boundingBox())!;
+  const later = (await mark())[0]!;
   // East, some 0.4 nm in three seconds: points to the right at this
   // zoom, and no jump back as the same report comes again.
   expect(later.x - first.x).toBeGreaterThan(2);
@@ -116,7 +116,7 @@ test("off, as it is unless shown, nothing is asked and nothing drawn", async ({ 
   await settle(page);
   await page.waitForTimeout(2000);
   expect(asks).toHaveLength(0);
-  await expect(page.locator("svg[data-traffic]")).toHaveCount(0);
+  expect(await drawn(page, "traffic-marks")).toHaveLength(0);
   // No small print on the map at all (MapCredits).
   await expect(page.locator(".maplibregl-ctrl-attrib")).toHaveCount(0);
 });
@@ -177,7 +177,7 @@ test("an answer missed while the map is panned is not said; traffic is said unav
   await page.clock.install();
   await page.goto("/app/plan?place=C81");
   await settle(page);
-  await expect(page.locator("svg[data-traffic]")).toHaveCount(2, { timeout: slow(15_000) });
+  await expect.poll(async () => (await drawn(page, "traffic-marks")).length, { timeout: slow(15_000) }).toBe(2);
   down = true;
   await page.clock.runFor(10_000);
   await expect(page.getByText("Traffic isn't available right now.")).toHaveCount(0);

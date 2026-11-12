@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 import type { TrafficAircraft } from "../../../lib/api/types";
-import { agedBy, carriedOn, closestApproach, colourRuns, heightColour, ownShipHex, nearOwnHeight, trafficLabel, trendPx } from "./traffic";
+import {
+  agedBy,
+  carriedOn,
+  closestApproach,
+  colourRuns,
+  heightColour,
+  ownShipHex,
+  nearOwnHeight,
+  trafficLabel,
+  trendPx,
+  trendSeconds,
+} from "./traffic";
 import type { Fix } from "../../../lib/map/position/ownShip";
 import trafficFixture from "../../../lib/fixtures/traffic.json";
 
@@ -111,6 +122,15 @@ describe("trendPx", () => {
     expect(trendPx(0, 42, 10)).toBe(0);
     expect(trendPx(null, 42, 10)).toBe(0);
     expect(trendPx(500, 42, 14)).toBe(160);
+  });
+});
+
+describe("trendSeconds", () => {
+  it("is the minute where the line fits in 160 points, and shorter where it would not", () => {
+    expect(trendSeconds(120, 42, 10)).toBe(60);
+    // 500 kt at zoom 14 is some 2,170 points a minute: cut to 160.
+    expect(trendSeconds(500, 42, 14)).toBeCloseTo((60 * 160) / trendPx(500, 42, 14, Infinity), 6);
+    expect(trendSeconds(null, 42, 10)).toBe(0);
   });
 });
 

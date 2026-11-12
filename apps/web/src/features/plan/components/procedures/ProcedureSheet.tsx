@@ -154,11 +154,11 @@ export function ProcedurePage({
         <div className="space-y-2">
           <h4 className={cn("px-1 font-semibold", TEXT.detail)}>Transition</h4>
           <Chips label="Transition" value={transition ?? NONE} onChange={(v) => setTransition(v === NONE ? null : v)}>
-            <ToggleGroupItem value={NONE} className={CHIP} data-testid="procedure-transition">
+            <ToggleGroupItem variant="glass" value={NONE} className={CHIP} data-testid="procedure-transition">
               {transitionWords(kind, null)}
             </ToggleGroupItem>
             {procedure.transitions.map((t) => (
-              <ToggleGroupItem key={t} value={t} className={CHIP} data-testid="procedure-transition">
+              <ToggleGroupItem variant="glass" key={t} value={t} className={CHIP} data-testid="procedure-transition">
                 {transitionWords(kind, t)}
               </ToggleGroupItem>
             ))}

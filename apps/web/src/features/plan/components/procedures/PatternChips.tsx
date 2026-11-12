@@ -311,6 +311,7 @@ export function PatternChips({
           className={cn(TRAY_BODY, "rounded-l-none")}
         >
           <ToggleGroupItem
+            variant="glass"
             value={c.id}
             onClick={() => setOpen(true)}
             // One line, the wind's mark, the runway and the arrow side by
@@ -318,15 +319,13 @@ export function PatternChips({
             // screenshot, 2026-10-20): laid out in a row here, not left to
             // the chip's own.
             // Its area from the tray's head to the tray's own right edge, the
-            // 3 of padding past the chip: on a finger index.css's touch rule
-            // sizes a button's area to its own 44 across, outside the
-            // utilities' layer, so it stopped at the chip and the tray's
-            // 44-point square, 47 across, lost its two corners there above
-            // and below (the iOS audit's P1, on KDLH's folded runway,
-            // 2026-11-06). Marked important to win over that rule.
+            // 3 of padding past the chip: sized to its own 44 across, it
+            // stopped at the chip and the tray's 44-point square, 47 across,
+            // lost its two corners there above and below (the iOS audit's
+            // P1, on KDLH's folded runway, 2026-11-06), over index.css's rule.
             className={cn(
               CHIP,
-              "inline-flex items-center gap-0.5 whitespace-nowrap after:left-0 after:-right-[3px]! motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-3 motion-safe:duration-300",
+              "inline-flex items-center gap-0.5 whitespace-nowrap after:left-0 after:-right-[3px] motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-right-3 motion-safe:duration-300",
               c.ring,
             )}
             aria-label={`${c.words}${note ? `, ${note}` : ""}, picked: tap for the other runways`}
@@ -406,6 +405,7 @@ export function PatternChips({
                 const circleNa = !allowed(c.id);
                 return (
                   <ToggleGroupItem
+                    variant="glass"
                     key={end.ident}
                     value={c.id}
                     disabled={circleNa || (!landing && !drawn)}

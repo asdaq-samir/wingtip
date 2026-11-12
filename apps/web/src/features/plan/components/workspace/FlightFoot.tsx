@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { cn } from "cn";
+import { Button } from "../../../../components/ui/button";
 import { EngineGate } from "../../../../lib/engine/engineGate";
 import { TEXT } from "../../../../lib/text";
 import FlightLine from "../FlightLine";
@@ -18,14 +19,15 @@ export default function FlightFoot({ vm }: { vm: PlanWorkspaceModel }) {
   const doneFlyingRow = flying && (
     <div className={cn("flex items-center justify-between pt-1 text-foreground/65", TEXT.note)} data-testid="flying-foot">
       <span>Flying</span>
-      <button
-        type="button"
-        className="relative font-semibold text-tint after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
+      <Button
+        variant="link"
+        size="inline"
+        className="relative font-semibold after:absolute after:-inset-x-2 after:-inset-y-3 after:content-['']"
         data-testid="done-flying"
         onClick={doneFlying}
       >
         Done flying
-      </button>
+      </Button>
     </div>
   );
   // The figures ask the engine as they draw (figures.ts' strip_fuel), and

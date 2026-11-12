@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "cn";
+import { Button } from "../../../components/ui/button";
 import AirportPicker from "../../../components/AirportPicker";
 import { PillStrip, SmallTile, StripNote, StripSection } from "../../../components/Favorites";
 import { PlaneMark } from "../../../components/PlaneMarks";
@@ -161,14 +162,15 @@ export default function AircraftPill({
         ) : shows === "recents" ? (
           <AircraftRecentTiles onPick={(kept) => pickKeptAircraft(kept, onOpen)} />
         ) : question === "near" && !from ? (
-          <button
-            type="button"
+          <Button
+            variant="link"
+            size="inline"
             onClick={() => setOwnShip(true)}
             data-testid="aircraft-strip-position"
-            className={cn("relative mx-auto block px-2 py-1 text-tint after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
+            className={cn("relative mx-auto flex px-2 py-1 after:absolute after:-inset-y-2 after:inset-x-0", TEXT.row)}
           >
             Show my position
-          </button>
+          </Button>
         ) : asks?.airport && !field ? (
           <StripNote>Pick an airport</StripNote>
         ) : rows.length ? (

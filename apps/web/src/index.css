@@ -309,13 +309,6 @@ body[data-map-sheet][data-map-panel="full"] .maplibregl-map :is(.maplibregl-ctrl
   background: var(--background);
 }
 
-/* The traffic in 3D (features/plan/map/terrain/TrafficAloftGl) stands
-   each airplane at its height with a line down to the ground: the 2D
-   marks on the ground (TrafficGl) are hidden meanwhile, not drawn twice. */
-[data-traffic-aloft] [data-traffic-ground] {
-  visibility: hidden;
-}
-
 /* The chart in sunlight (the map's settings' Sunlight, lib/preferences
    chartLight, set on <html> by lib/sunlight from the light sensor or by
    hand; the owner's canvas "Sunlight mode", 2026-11-03): a screen held
@@ -419,20 +412,21 @@ html[data-brand="ink"]:not([data-chart-light="bright"]) :is([data-slot="card"], 
    to a finger (calendar.tsx), so theirs is the cell itself, square, its
    rounded corners included; its month buttons get the 44 round them. A
    desktop keeps the tighter targets. The map's markers are placed by
-   their own size and are left alone. */
-@media (pointer: coarse) {
-  button:not([data-slot="tabs-trigger"])::after,
-  a[data-slot="button"]::after {
-    content: "";
-    position: absolute;
-    inset: min(0px, calc(50% - 22px));
-  }
-}
-/* Positioned so the pseudo-element is placed against the button: in
-   the base layer, so a button's own `absolute` or `fixed` utility
-   still wins. */
+   their own size and are left alone. In the base layer, under Tailwind's
+   utilities, so a control's own area (`after:-inset-1.5`, a chip's six
+   round it to meet its neighbours') wins over the default: outside any
+   layer it beat every utility, and each control's own was ignored on a
+   phone (the hand-built audit's row 6, 2026-11-12). The button is
+   positioned there too, so the pseudo-element is placed against it,
+   and a button's own `absolute` or `fixed` utility still wins. */
 @layer base {
   @media (pointer: coarse) {
+    button:not([data-slot="tabs-trigger"])::after,
+    a[data-slot="button"]::after {
+      content: "";
+      position: absolute;
+      inset: min(0px, calc(50% - 22px));
+    }
     button,
     a[data-slot="button"] {
       position: relative;
