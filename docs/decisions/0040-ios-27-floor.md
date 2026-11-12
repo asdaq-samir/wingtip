@@ -35,10 +35,19 @@ target's floor.
 ## Consequences
 
 - `apps/ios/project.yml`'s `deploymentTarget` is iOS 27.0 and watchOS
-  27.0; nothing in the app is behind `#available`.
+  26.0 since the amendment below; nothing in the app is behind `#available`.
 - Each new major iOS raises the question again: before launch, the floor
   follows the newest; after it, a decision record weighs who is lost.
 - docs/NATIVE.md, docs/versions.md and docs/ios-27.md say the floors.
+
+## Amendment, 2026-11-12: the Watch stays on watchOS 26
+
+The owner kept the Watch on watchOS 26 until launch (option D for the
+Watch alone): watchOS 27 drops Apple Watch Series 6, 7 and 8, SE (2nd
+generation) and the first Ultra, which watchOS 26 runs on. The iPhone app
+and its widgets stay on iOS 27. The Watch app used no watchOS 27 API, so
+nothing went behind `#available`; `apps/ios/project.yml`'s watchOS
+`deploymentTarget` is 26.0.
 
 ## Source
 

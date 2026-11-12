@@ -321,8 +321,8 @@ passengers waits for the server on AWS.
 ## The Apple Watch app
 
 `apps/ios/WingtipWatch/` (the owner's ask, 2026-11-03) is a companion of the
-iOS app, bundle id `app.wingtipmaps.ios.watchkitapp`, watchOS 27 and
-later, embedded in the phone's app and installed with it: three pages,
+iOS app, bundle id `app.wingtipmaps.ios.watchkitapp`, watchOS 26 and
+later (decision 0040's amendment), embedded in the phone's app and installed with it: three pages,
 Timers (a flight timer and a hold/approach timer, each a `Stopwatch`
 worked out from the clock at each draw under a `TimelineView`, so it is
 right when the display wakes), Checklist (the picked airplane's sections

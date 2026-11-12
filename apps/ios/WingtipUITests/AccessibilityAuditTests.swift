@@ -18,7 +18,12 @@ final class AccessibilityAuditTests: XCTestCase {
         app.launchArguments += arguments + ["-fresh"]
         app.launch()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 30), "the app did not come to the foreground")
-        XCTAssertTrue(app.staticTexts.firstMatch.waitForExistence(timeout: 20), "no text on the screen")
+        // A label, or a field's placeholder: FPL with no route is the empty
+        // route box, whose From and To are its only words.
+        let readable = app.descendants(matching: .any).matching(NSPredicate(
+            format: "elementType == %d OR elementType == %d",
+            XCUIElement.ElementType.staticText.rawValue, XCUIElement.ElementType.textField.rawValue)).firstMatch
+        XCTAssertTrue(readable.waitForExistence(timeout: 20), "no text on the screen")
         return app
     }
 
@@ -76,6 +81,13 @@ final class AccessibilityAuditTests: XCTestCase {
             // FPL's Plan button no longer needs one: at the accessibility
             // sizes it has a line of its own under From and To
             // (RouteEndsRow).
+            // That Plan, in the empty route box at the largest size: the
+            // audit says only that its word "may be clipped at larger
+            // sizes", past AccessibilityXXXL, the largest there is; its
+            // screenshot (2026-11-12, iPhone Air) shows "Plan" whole on a
+            // line of its own with room to spare.
+            if type == .button && id == "plan-button"
+                && issue.detailedDescription.localizedCaseInsensitiveContains("larger") { return true }
             return type == .textField || type == .searchField
         default:
             return false

@@ -45,6 +45,8 @@ class PlannerClientPilotTest {
                 return;
             }
             byte[] body = answer.getBytes(StandardCharsets.UTF_8);
+            // As FastAPI answers: without it, Spring reads the body as octet-stream.
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(status, body.length);
             exchange.getResponseBody().write(body);
             exchange.close();

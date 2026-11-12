@@ -106,9 +106,15 @@ final class CardScrollTests: XCTestCase {
             // is an action sheet, and a tap outside it where iOS 26 shows
             // it as a popover from Cancel, which leaves its cancel out.
             let keep = app.buttons["Keep Editing"]
-            if keep.exists { keep.tap() } else { app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)).tap() }
+            // Outside it is the popover's own dismiss region (UIKit's
+            // "dismiss popup"), at its middle, under the popover and above
+            // the keyboard still up for the field being typed in.
+            if keep.exists { keep.tap() } else { app.otherElements["PopoverDismissRegion"].tap() }
             XCTAssertTrue(asked.waitForNonExistence(timeout: 5), "Keep Editing did not put the question away at \(size.name)")
             XCTAssertTrue(card.exists, "Keep Editing put the form away at \(size.name)")
+            // Once the pilot leaves the field, the words read as a clearance
+            // fold into its Transcript, the field with them.
+            if !field.exists { app.buttons["Transcript"].tap() }
             XCTAssertTrue((field.value as? String ?? "").contains("KOSH"), "Keep Editing lost the words at \(size.name)")
             app.terminate()
         }

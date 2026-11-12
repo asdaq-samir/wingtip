@@ -37,6 +37,11 @@ struct PlanSheet: View {
                 .accessibilityIdentifier("sheet-page-search")
             } fpl: {
                 PlanView(open: openScreen, addStop: { search.presented = true })
+                    // On the iPhone FPL has no bar (below), and the pager's
+                    // pages reach up under the dots' row: its first row --
+                    // the route, or the empty box's close -- starts under
+                    // the dots, where their control took the close's taps.
+                    .contentMargins(.top, split ? 0 : PageDots.row, for: .scrollContent)
                     .accessibilityIdentifier("sheet-page-fpl")
             }
             .oneSearch(search, host: host, oneRow: !split)

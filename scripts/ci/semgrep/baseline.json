@@ -1,16 +1,6 @@
 {
- "great-circle-outside-engine": {
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/ApproachScene3d.kt": 2
- },
  "great-circle-outside-geo-python": {
   "tools/xplane-driver/wingtip_replay/track.py": 1
- },
- "hex-colour-parsed-by-hand": {
-  "apps/web/src/features/weather-flow/aviationLooks.ts": 3,
-  "apps/web/src/features/weather-flow/flowLook.ts": 3
- },
- "hex-colour-parsed-by-hand-other": {
-  "apps/android/app/src/main/kotlin/app/wingtipmaps/android/map/flow/FlowColour.kt": 1
  },
  "html-marker-on-the-map": {
   "apps/web/src/features/plan/map/layers/TracksGl.tsx": 2,
@@ -48,7 +38,6 @@
   "apps/ios/Wingtip/Map/ApproachLines.swift": 1,
   "apps/ios/Wingtip/OwnShip.swift": 2,
   "apps/ios/Wingtip/Views/ChartOverlays.swift": 1,
-  "apps/web/src/components/ZoomBanner.tsx": 1,
   "apps/web/src/lib/map/position/ownShip.ts": 1,
   "services/planner/wingtip/elevation.py": 1,
   "tools/msfs-agent/Replay.Core/Geo.cs": 1,

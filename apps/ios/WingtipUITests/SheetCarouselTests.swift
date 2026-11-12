@@ -53,7 +53,10 @@ final class SheetCarouselTests: XCTestCase {
         let app = launch()
         let pager = app.descendants(matching: .any)["sheet-pager"]
         XCTAssertTrue(pager.waitForExistence(timeout: 20), "no pager")
-        CardTests.dragSideways(pager, in: app, left: true)
+        // A swipe, as a pilot turns the page (and as the swipe test above
+        // does): a press held before the drag is the list's, not the pager's.
+        pager.swipeLeft()
+        XCTAssertTrue(app.textFields["To"].waitForExistence(timeout: 10), "a swipe did not go to FPL")
         XCTAssertFalse(app.otherElements["plan-a-flight"].exists, "FPL still says Plan a Flight")
         let close = app.buttons["route-close"]
         XCTAssertTrue(close.waitForExistence(timeout: 10), "no close on the empty route box")

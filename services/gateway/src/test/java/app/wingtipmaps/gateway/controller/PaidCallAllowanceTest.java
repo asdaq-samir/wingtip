@@ -1,7 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.request;
@@ -20,7 +19,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.ResultActions;
 
@@ -154,13 +152,10 @@ class PaidCallAllowanceTest {
                 .isTrue();
     }
 
-    /** Every answer here, a 429 included, is a StreamingResponseBody,
-     *  written on another thread: its status and body are only there
-     *  once the async dispatch has run. Read before it, the body can be
-     *  empty -- as it was on CI's runner, never locally. */
+    /** Every answer here is a refusal or an unreachable planner, which
+     *  StreamingProxy.problem throws before any stream starts: answered at
+     *  once, as a problem (RFC 9457), never written on another thread. */
     private ResultActions finish(RequestBuilder call) throws Exception {
-        MvcResult started =
-                mockMvc.perform(call).andExpect(request().asyncStarted()).andReturn();
-        return mockMvc.perform(asyncDispatch(started));
+        return mockMvc.perform(call).andExpect(request().asyncNotStarted());
     }
 }

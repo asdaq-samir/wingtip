@@ -30,7 +30,7 @@ struct NoAirplaneTests {
     }
 
     @Test func theBriefLeavesOutWhatNeedsAnAirplane() throws {
-        let json = #"{"line":{"finding":"caution","words":"Go, with cautions"},"items":[{"key":"weather","label":"Weather","finding":"ok","detail":"VFR","tab":"brief"},{"key":"fuel","label":"Fuel","finding":"caution","detail":"8.4 gal at landing","tab":"navlog"},{"key":"runways","label":"Runways","finding":"ok","detail":"Long enough","tab":"arrive"},{"key":"balance","label":"Weight & balance","finding":"ok","detail":"Within","tab":"preflight"}],"selfChecks":[]}"#
+        let json = #"{"line":{"finding":"caution","words":"Go, with cautions"},"items":[{"key":"weather","label":"Weather","finding":"ok","detail":"VFR","tab":"brief"},{"key":"fuel","label":"Fuel","finding":"caution","detail":"8.4 gal at landing","tab":"navlog"},{"key":"runways","label":"Runways","finding":"ok","detail":"Long enough","tab":"arrive"},{"key":"balance","label":"Weight & balance","finding":"ok","detail":"Within","tab":"preflight"}],"self_checks":[]}"#
         let answer = try JSONDecoder().decode(GoNoGoAnswer.self, from: Data(json.utf8))
         #expect(Verdict.shown(answer, airplane: true) == answer)
         let none = Verdict.shown(answer, airplane: false)
