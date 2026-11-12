@@ -213,3 +213,27 @@ def test_a_restart_reads_the_areas_from_the_cycle_pack_as_downloaded(monkeypatch
     with patch("wingtip.sua.requests.get", side_effect=AssertionError("asked the service again")):
         again = sua.areas_in((44.0, -91.0, 47.0, -87.0))
     assert [(a, s.wkt) for a, s in again] == [(a, s.wkt) for a, s in first]
+    # Areas kept with other fields than those asked now are read again,
+    # from the pack and from the disk alike.
+    sua._CACHE.clear()
+    monkeypatch.setattr(sua, "FIELDS", sua.FIELDS + ",NEW_FIELD")
+    with patch("wingtip.sua.requests.get", return_value=_service(features)) as get:
+        sua.areas_in((44.0, -91.0, 47.0, -87.0))
+    assert get.called
+
+
+def test_an_areas_limits_keep_the_faas_but_not_including_and_its_exclusion():
+    """Brady Low MOA's piece above but not including 1,500 ft AGL, which
+    the FAA cuts out of the area, as ADDS gave it on 2026-11-12: its DESC
+    and EXCLUSION kept for the engine's special_use_tab."""
+    feature = _feature("BRADY LOW MOA", "MOA", BOX_ON_ROUTE, lower=("1500", "FT", "SFC"), upper=("6000", "FT", "MSL"))
+    feature["properties"].update(LOWER_DESC="ANI", UPPER_DESC=" tni ", EXCLUSION="1")
+    area = sua._area(feature["properties"])
+    assert (area["floor_ft"], area["floor_ref"], area["floor_desc"]) == (1500.0, "SFC", "ANI")
+    assert (area["ceiling_ft"], area["ceiling_ref"], area["ceiling_desc"]) == (6000.0, "MSL", "TNI")
+    assert area["excluded"] is True
+    # A row read before the fields were asked: no DESC, not excluded.
+    plain = sua._area(_feature("BRADY NORTH MOA", "MOA", BOX_ON_ROUTE)["properties"])
+    assert (plain["floor_desc"], plain["ceiling_desc"], plain["excluded"]) == (None, None, False)
+    for name in ("UPPER_DESC", "LOWER_DESC", "EXCLUSION"):
+        assert name in sua.FIELDS.split(",")

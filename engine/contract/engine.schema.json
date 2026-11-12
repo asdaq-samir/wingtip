@@ -24967,6 +24967,101 @@
       ],
       "additionalProperties": false
     },
+    "special_use_tab": {
+      "description": "The tab ForeFlight writes on a special-use area's boundary, its words: the area's name cut to nine characters after the type's letter (\"M-BRADY NOR*\"), and its floor and ceiling as figures with their references (SFC, AGL, MSL, FL, UNL), from the FAA's special use airspace data (ADDS: each limit's VAL in feet, a flight level times 100, its CODE SFC, MSL, STD or UNLTD and its DESC TI, TNI or ANI). Written as the FAA's CIFP writes the same areas: a ceiling \"to but not including\" FL180 is 17,999 ft MSL, as Class A begins at 18,000 ft MSL (14 CFR 71.33); another ceiling TNI a foot under its figure, a floor ANI a foot over it; SFC above 0 is that height AGL. Null for a piece the FAA cuts out of its area (EXCLUSION 1), or where a limit has no figure.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "SpecialUseTabInput",
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "type": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "floor": {
+              "$ref": "#/definitions/SpecialUseTabLimit"
+            },
+            "ceiling": {
+              "$ref": "#/definitions/SpecialUseTabLimit"
+            },
+            "excluded": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "name"
+          ]
+        },
+        "answer": {
+          "anyOf": [
+            {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "floor_ft": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "floor_ref": {
+                  "enum": [
+                    "SFC",
+                    "AGL",
+                    "MSL",
+                    "FL",
+                    "UNL"
+                  ]
+                },
+                "ceiling_ft": {
+                  "type": [
+                    "number",
+                    "null"
+                  ]
+                },
+                "ceiling_ref": {
+                  "enum": [
+                    "SFC",
+                    "AGL",
+                    "MSL",
+                    "FL",
+                    "UNL"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "floor_ft",
+                "floor_ref",
+                "ceiling_ft",
+                "ceiling_ref"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "SpecialUseTabAnswer"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "squawk_meaning": {
       "description": "What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.",
       "x-tool": true,
@@ -28289,6 +28384,7 @@
     "sim_flight",
     "solo_standing",
     "solo_xc_determinations",
+    "special_use_tab",
     "squawk_meaning",
     "strip_fuel",
     "sua_altitudes",
@@ -35427,6 +35523,30 @@
         "grass_ground_roll_pct"
       ],
       "description": "A POH's short-field takeoff or landing table: at least two altitudes and two temperatures, a grid of them for every weight."
+    },
+    "SpecialUseTabLimit": {
+      "description": "One limit of a special-use area as the FAA's data gives it: its figure in feet (a flight level times 100), its CODE (SFC, MSL, STD, UNLTD) and its DESC (TI, TNI to but not including, ANI above but not including).",
+      "type": "object",
+      "properties": {
+        "ft": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "desc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
     },
     "TafPeriod": {
       "title": "TafPeriod",

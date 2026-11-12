@@ -1,0 +1,213 @@
+{
+  "_note": "A special-use area's tab, the engine's special_use_tab (engine/crates/airspace/src/sua_tab.rs): the areas near Brady and Brownwood, TX as the FAA's special use airspace feature service (ADDS) gave them on 2026-11-12, against what the FAA's CIFP (cycle 2610, ARINC 424 restrictive airspace) writes for the same areas and ForeFlight's tabs over them (the owner's screenshot, 2026-11-12). Each limit's ft is ADDS' VAL in feet (a flight level times 100, wingtip.sua _height_ft), its code ADDS' CODE and its desc ADDS' DESC. engine/facade/tests/special_use_tab.rs asks the engine each case; the charts job's test_sua_labels.py reads the same.",
+  "cases": [
+    {
+      "about": "Brady North MOA, 3600 FT MSL to FL180 TNI: CIFP's 03600M to 17999M, as Class A begins at 18,000 ft MSL (14 CFR 71.33)",
+      "input": {
+        "name": "BRADY NORTH MOA",
+        "type": "MOA",
+        "floor": {
+          "ft": 3600.0,
+          "code": "MSL",
+          "desc": null
+        },
+        "ceiling": {
+          "ft": 18000.0,
+          "code": "STD",
+          "desc": "TNI"
+        },
+        "excluded": false
+      },
+      "answer": {
+        "name": "M-BRADY NOR*",
+        "floor_ft": 3600.0,
+        "floor_ref": "MSL",
+        "ceiling_ft": 17999.0,
+        "ceiling_ref": "MSL"
+      }
+    },
+    {
+      "about": "Brady Low MOA, 500 FT SFC to 6000 FT MSL TNI: CIFP's 00500A to 05999M",
+      "input": {
+        "name": "BRADY LOW MOA",
+        "type": "MOA",
+        "floor": {
+          "ft": 500.0,
+          "code": "SFC",
+          "desc": null
+        },
+        "ceiling": {
+          "ft": 6000.0,
+          "code": "MSL",
+          "desc": "TNI"
+        },
+        "excluded": false
+      },
+      "answer": {
+        "name": "M-BRADY LOW",
+        "floor_ft": 500.0,
+        "floor_ref": "AGL",
+        "ceiling_ft": 5999.0,
+        "ceiling_ref": "MSL"
+      }
+    },
+    {
+      "about": "One of Brady Low's pieces above but not including 1,500 ft AGL, which the FAA cuts out of the area (EXCLUSION 1): no tab",
+      "input": {
+        "name": "BRADY LOW MOA",
+        "type": "MOA",
+        "floor": {
+          "ft": 1500.0,
+          "code": "SFC",
+          "desc": "ANI"
+        },
+        "ceiling": {
+          "ft": 6000.0,
+          "code": "MSL",
+          "desc": "TNI"
+        },
+        "excluded": true
+      },
+      "answer": null
+    },
+    {
+      "about": "The same piece were it an area: CIFP's 01501A",
+      "input": {
+        "name": "BRADY LOW MOA",
+        "type": "MOA",
+        "floor": {
+          "ft": 1500.0,
+          "code": "SFC",
+          "desc": "ANI"
+        },
+        "ceiling": {
+          "ft": 6000.0,
+          "code": "MSL",
+          "desc": "TNI"
+        },
+        "excluded": false
+      },
+      "answer": {
+        "name": "M-BRADY LOW",
+        "floor_ft": 1501.0,
+        "floor_ref": "AGL",
+        "ceiling_ft": 5999.0,
+        "ceiling_ref": "MSL"
+      }
+    },
+    {
+      "about": "FL180 included (TI): the flight level",
+      "input": {
+        "name": "BROWNWOOD 2 WEST MOA",
+        "type": "MOA",
+        "floor": {
+          "ft": 7000.0,
+          "code": "MSL",
+          "desc": null
+        },
+        "ceiling": {
+          "ft": 18000.0,
+          "code": "STD",
+          "desc": "TI"
+        }
+      },
+      "answer": {
+        "name": "M-BROWN 2 W*",
+        "floor_ft": 7000.0,
+        "floor_ref": "MSL",
+        "ceiling_ft": 18000.0,
+        "ceiling_ref": "FL"
+      }
+    },
+    {
+      "about": "A flight level above Class A's floor TNI is written as the flight level",
+      "input": {
+        "name": "R-2602",
+        "type": "R",
+        "floor": {
+          "ft": 0.0,
+          "code": "SFC",
+          "desc": null
+        },
+        "ceiling": {
+          "ft": 23000.0,
+          "code": "STD",
+          "desc": "TNI"
+        }
+      },
+      "answer": {
+        "name": "R-2602",
+        "floor_ft": 0.0,
+        "floor_ref": "SFC",
+        "ceiling_ft": 23000.0,
+        "ceiling_ref": "FL"
+      }
+    },
+    {
+      "about": "A pack written before the FAA's DESC was kept: the limits as coded",
+      "input": {
+        "name": "BRADY NORTH MOA",
+        "type": "MOA",
+        "floor": {
+          "ft": 3600.0,
+          "code": "MSL",
+          "desc": null
+        },
+        "ceiling": {
+          "ft": 18000.0,
+          "code": "STD",
+          "desc": null
+        }
+      },
+      "answer": {
+        "name": "M-BRADY NOR*",
+        "floor_ft": 3600.0,
+        "floor_ref": "MSL",
+        "ceiling_ft": 18000.0,
+        "ceiling_ref": "FL"
+      }
+    },
+    {
+      "about": "No ceiling (UNLTD)",
+      "input": {
+        "name": "P-56A",
+        "type": "P",
+        "floor": {
+          "ft": 0.0,
+          "code": "SFC",
+          "desc": null
+        },
+        "ceiling": {
+          "ft": null,
+          "code": "UNLTD",
+          "desc": null
+        }
+      },
+      "answer": {
+        "name": "P-56A",
+        "floor_ft": 0.0,
+        "floor_ref": "SFC",
+        "ceiling_ft": null,
+        "ceiling_ref": "UNL"
+      }
+    },
+    {
+      "about": "A floor with no figure: no tab",
+      "input": {
+        "name": "A-220",
+        "type": "A",
+        "floor": {
+          "ft": null,
+          "code": "MSL",
+          "desc": null
+        },
+        "ceiling": {
+          "ft": 4000.0,
+          "code": "MSL",
+          "desc": null
+        }
+      },
+      "answer": null
+    }
+  ]
+}

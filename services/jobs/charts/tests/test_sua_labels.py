@@ -2,12 +2,17 @@
 Brady, TX as the FAA's special use airspace feature service (ADDS) gives
 them, read 2026-11-12, against what the FAA's CIFP (cycle 2610) writes for
 the same areas and ForeFlight's tabs over them (the owner's screenshot,
-2026-11-12): "M-BRADY NOR*: 3600-17999", "M-BRADY LOW: 500AGL-5999"."""
+2026-11-12): "M-BRADY NOR*: 3600-17999", "M-BRADY LOW: 500AGL-5999".
+The words are the engine's special_use_tab (held to every case in
+apps/web/src/lib/fixtures/specialUseTab.json by
+engine/facade/tests/special_use_tab.rs); here, that the job asks it of
+ADDS' rows as wingtip.sua reads them."""
 
 import json
 
 import pytest
 from shapely.geometry import Polygon
+from wingtip import sua
 
 from charts import sua_labels
 
@@ -40,52 +45,37 @@ BRADY_LOW = {
 BRADY_LOW_EXCLUDED = {**BRADY_LOW, "LOWER_DESC": "ANI", "LOWER_VAL": "1500", "EXCLUSION": "1"}
 
 
-@pytest.mark.parametrize(
-    ("name", "type_code", "label"),
-    [
-        ("BRADY NORTH MOA", "MOA", "M-BRADY NOR*"),
-        ("BRADY LOW MOA", "MOA", "M-BRADY LOW"),
-        # The four Brownwood MOAs stay apart when cut.
-        ("BROWNWOOD 2 WEST MOA", "MOA", "M-BROWN 2 W*"),
-        ("BROWNWOOD 2 EAST MOA", "MOA", "M-BROWN 2 E*"),
-        ("BROWNWOOD 1 WEST MOA", "MOA", "M-BROWN 1 W*"),
-        # A designator carries its letter already.
-        ("R-2602", "R", "R-2602"),
-        ("A-220", "A", "A-220"),
-        ("W-291W", "W", "W-291W"),
-        ("P-56A", "P", "P-56A"),
-    ],
-)
-def test_the_tabs_name_is_the_types_letter_and_the_name_cut_as_foreflight_cuts_it(name, type_code, label):
-    assert sua_labels.label_name(name, type_code) == label
+def _row(base, **fields):
+    return {**base, **fields}
 
 
 @pytest.mark.parametrize(
-    ("row", "upper", "expected"),
+    ("row", "expected"),
     [
         # FL180 TNI: 17,999 ft MSL, CIFP's "17999M" (Class A from 18,000 MSL, 14 CFR 71.33).
-        (("180", "FL", "STD", "TNI"), True, (17999.0, "MSL")),
+        (BRADY_NORTH, ("M-BRADY NOR*", 3600.0, "MSL", 17999.0, "MSL")),
         # FL180 included: the flight level.
-        (("180", "FL", "STD", "TI"), True, (18000.0, "FL")),
-        (("230", "FL", "STD", "TI"), True, (23000.0, "FL")),
-        # 6,000 MSL TNI: CIFP's "05999M"; included, the figure.
-        (("6000", "FT", "MSL", "TNI"), True, (5999.0, "MSL")),
-        (("6000", "FT", "MSL", "TI"), True, (6000.0, "MSL")),
-        # A ceiling above the ground.
-        (("700", "FT", "SFC", "TI"), True, (700.0, "AGL")),
-        (("-9998", None, "UNLTD", None), True, (None, "UNL")),
-        # The surface, and a floor 500 ft above it: CIFP's "00500A".
-        (("0", "FT", "SFC", None), False, (0.0, "SFC")),
-        (("500", "FT", "SFC", None), False, (500.0, "AGL")),
+        (_row(BRADY_NORTH, UPPER_DESC="TI"), ("M-BRADY NOR*", 3600.0, "MSL", 18000.0, "FL")),
+        # 500 FT SFC to 6,000 MSL TNI: CIFP's "00500A" to "05999M".
+        (BRADY_LOW, ("M-BRADY LOW", 500.0, "AGL", 5999.0, "MSL")),
         # Above but not including 1,500 AGL: CIFP's "01501A".
-        (("1500", "FT", "SFC", "ANI"), False, (1501.0, "AGL")),
-        (("3600", "FT", "MSL", None), False, (3600.0, "MSL")),
-        (("180", "FL", "STD", None), False, (18000.0, "FL")),
-        (("", "FT", "MSL", None), False, (None, None)),
+        (_row(BRADY_LOW, LOWER_DESC="ANI", LOWER_VAL="1500"), ("M-BRADY LOW", 1501.0, "AGL", 5999.0, "MSL")),
+        # No ceiling.
+        (
+            _row(BRADY_LOW, UPPER_VAL="-9998", UPPER_UOM=None, UPPER_CODE="UNLTD", UPPER_DESC=None),
+            ("M-BRADY LOW", 500.0, "AGL", None, "UNL"),
+        ),
+        # A row read before the DESC fields were asked: as coded.
+        ({k: v for k, v in BRADY_NORTH.items() if k not in ("UPPER_DESC", "EXCLUSION")}, ("M-BRADY NOR*", 3600.0, "MSL", 18000.0, "FL")),
     ],
 )
-def test_a_limit_is_written_as_the_faas_cifp_writes_it(row, upper, expected):
-    assert sua_labels.limit(*row, upper=upper) == expected
+def test_the_tab_is_the_engines_from_the_faas_row(row, expected):
+    tab = sua_labels.tab_words(sua._area(row))
+    assert (tab["name"], tab["floor_ft"], tab["floor_ref"], tab["ceiling_ft"], tab["ceiling_ref"]) == expected
+
+
+def test_a_piece_cut_out_of_its_area_has_no_tab():
+    assert sua_labels.tab_words(sua._area(BRADY_LOW_EXCLUDED)) is None
 
 
 class _Pack:

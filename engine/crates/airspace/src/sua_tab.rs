@@ -1,19 +1,30 @@
 //! The tab ForeFlight writes on a special-use area's boundary over the
 //! sectional (the owner's screenshot near Brady, TX, 2026-11-12): the
-//! area's short name over its limits, "M-BRADY NOR*:" over "3600-FL180",
-//! along the area's longest side and just inside it. The same tab the web
-//! and Android draw from the overlay tiles' `special_use_labels` layer
-//! (services/jobs/charts/sua_labels.py), worked out here from a phone's
-//! pack for the iPhone, which reads no vector tiles: the name cut as that
-//! job cuts it, the limits as figures with their references (the app
-//! writes their words), and where the tab sits and how it is turned.
+//! area's short name over its limits, "M-BRADY NOR*:" over "3600-17999",
+//! along the area's longest side and just inside it. The one copy of the
+//! tab's words: the iPhone's map asks it of a phone's pack
+//! (view_marks::special_use_in_view), and the charts job asks it by name
+//! (`special_use_tab`) for the overlay tiles' `special_use_labels` layer
+//! that the web and Android draw (services/jobs/charts/sua_labels.py).
+//! The name cut as ForeFlight cuts it, the limits as figures with their
+//! references (each app writes their words), and where the tab sits and
+//! how it is turned.
 //!
-//! A phone pack keeps each area's figures and the FAA's codes (SFC, MSL,
-//! STD, UNLTD; wingtip.sua `_area`) but not ADDS' LOWER_DESC/UPPER_DESC,
-//! so a ceiling "to but not including" FL180 is written FL180 here where
-//! the tiles, from the FAA's CIFP, write 17999, and a piece the FAA cuts
-//! out of its area (EXCLUSION) is not told apart.
+//! The limits are read from the FAA's special use airspace data (AIS's
+//! Special_Use_Airspace layer on ADDS, published every eight weeks; its
+//! metadata, read 2026-11-12 for 29 Oct to 24 Dec 2026, names the fields
+//! but not their values): LOWER_/UPPER_VAL with its UOM (FT, or FL, a
+//! flight level), LOWER_/UPPER_CODE (SFC, MSL, STD for a flight level,
+//! UNLTD), LOWER_/UPPER_DESC (TI to and including, TNI to but not
+//! including, ANI above but not including; the only values the layer
+//! holds besides OTHER and none, and read so because the FAA's CIFP
+//! writes the same areas' limits that way, below) and EXCLUSION (1: a
+//! piece cut out of its area, which carries its area's NAME: Brady Low
+//! MOA's two pieces above but not including 1,500 ft AGL), as wingtip.sua
+//! `_area` keeps them in a pack.
 
+use crate::json::{self, Value};
+use crate::rules::CLASS_A_FLOOR_FT;
 use crate::view::{Polygon, Pt};
 
 /// The longest a name is written in its tab, as ForeFlight cuts them:
@@ -65,25 +76,111 @@ pub fn label_name(name: &str, type_code: &str) -> String {
     format!("{prefix}{cut}{CUT}")
 }
 
-/// A floor or ceiling as the tab writes it, (feet, reference), from the
-/// pack's figure and the FAA's code (sua_labels.py `limit`, less the
-/// DESC the pack lacks): "UNL" for no ceiling (UNLTD); "FL" for a flight
-/// level (STD, standard pressure, 14 CFR 1.1); "SFC" at the surface, and
-/// a height the FAA codes SFC above 0 is that height above the ground,
-/// "AGL" (Brady Low's 500 FT SFC, the CIFP's "00500A"); else "MSL".
+/// One limit as the FAA's data gives it: the figure in feet (a flight
+/// level already times 100, wingtip.sua `_height_ft`), its CODE and its
+/// DESC.
+#[derive(Clone, Copy, Default)]
+pub struct Limit<'a> {
+    pub ft: Option<f64>,
+    pub code: Option<&'a str>,
+    pub desc: Option<&'a str>,
+}
+
+/// A floor or ceiling as the tab writes it, (feet, reference), written as
+/// the FAA's own CIFP (FAACIFP18, ARINC 424's restrictive airspace record,
+/// each limit with M for MSL or A for AGL) writes the same areas, which is
+/// how ForeFlight writes them (cycle 2610, read 2026-11-12):
+///
+/// - "UNL" for no ceiling (UNLTD), with no figure.
+/// - "SFC" at the surface; a height the FAA codes SFC above 0 is that
+///   height above the ground, "AGL" (Brady Low's 500 FT SFC, CIFP's
+///   "00500A").
+/// - "FL" for a flight level (STD, standard pressure, 14 CFR 1.1); but a
+///   ceiling at FL180 "to but not including" is 17,999 ft MSL, CIFP's
+///   "17999M" (Brady North): below 18,000 ft MSL, where Class A begins
+///   (14 CFR 71.33(a), "from 18,000 feet MSL"), altitudes are MSL. A higher flight level is written
+///   as it is: a flight level has no foot below it to write.
+/// - Otherwise "MSL", or "AGL" as coded; a ceiling TNI a foot under its
+///   figure and a floor ANI a foot over it, as CIFP writes them (Brady
+///   Low's 6,000 TNI "05999M", its pieces above 1,500 AGL "01501A").
+///
 /// (None, None) where there is no figure to write.
-pub fn limit(ft: Option<f64>, code: Option<&str>) -> (Option<f64>, Option<&'static str>) {
-    let code = code.unwrap_or("").trim().to_uppercase();
+pub fn limit(limit: Limit, upper: bool) -> (Option<f64>, Option<&'static str>) {
+    let code = limit.code.unwrap_or("").trim().to_uppercase();
     if code == "UNLTD" {
         return (None, Some("UNL"));
     }
-    let Some(ft) = ft.filter(|v| v.is_finite()) else { return (None, None) };
+    let Some(ft) = limit.ft.filter(|v| v.is_finite()) else { return (None, None) };
+    let desc = limit.desc.unwrap_or("").trim().to_uppercase();
+    let step = match (upper, desc.as_str()) {
+        (true, "TNI") => -1.0,
+        (false, "ANI") => 1.0,
+        _ => 0.0,
+    };
     match code.as_str() {
+        "STD" if upper && step != 0.0 && ft == CLASS_A_FLOOR_FT => (Some(ft + step), Some("MSL")),
         "STD" => (Some(ft), Some("FL")),
-        "SFC" if ft == 0.0 => (Some(0.0), Some("SFC")),
-        "SFC" | "AGL" => (Some(ft), Some("AGL")),
-        _ => (Some(ft), Some("MSL")),
+        "SFC" if ft == 0.0 && step == 0.0 => (Some(0.0), Some("SFC")),
+        "SFC" | "AGL" => (Some(ft + step), Some("AGL")),
+        _ => (Some(ft + step), Some("MSL")),
     }
+}
+
+/// A tab's words: its name and its limits as figures with references.
+pub struct Tab {
+    pub name: String,
+    pub floor: (Option<f64>, &'static str),
+    pub ceiling: (Option<f64>, &'static str),
+}
+
+/// An area's tab, or None: for a piece the FAA marks as cut out of its
+/// area (EXCLUSION 1, Brady Low's parts below 1,500 ft AGL), which is no
+/// area of its own, and where a limit has no figure to write.
+pub fn tab(name: &str, type_code: &str, floor: Limit, ceiling: Limit, excluded: bool) -> Option<Tab> {
+    if excluded {
+        return None;
+    }
+    let (floor_ft, floor_ref) = limit(floor, false);
+    let (ceiling_ft, ceiling_ref) = limit(ceiling, true);
+    Some(Tab { name: label_name(name, type_code), floor: (floor_ft, floor_ref?), ceiling: (ceiling_ft, ceiling_ref?) })
+}
+
+/// The tab's members, `"name","floor_ft","floor_ref","ceiling_ft","ceiling_ref"`,
+/// with no braces, for an answer to add to.
+pub(crate) fn write_words(o: &mut String, t: &Tab) {
+    o.push_str("\"name\":");
+    json::string(o, &t.name);
+    o.push_str(",\"floor_ft\":");
+    json::opt_number(o, t.floor.0);
+    o.push_str(",\"floor_ref\":");
+    json::string(o, t.floor.1);
+    o.push_str(",\"ceiling_ft\":");
+    json::opt_number(o, t.ceiling.0);
+    o.push_str(",\"ceiling_ref\":");
+    json::string(o, t.ceiling.1);
+}
+
+/// `special_use_tab`: `{"name", "type", "floor": {"ft", "code", "desc"},
+/// "ceiling": {...}, "excluded"}` to the tab's words, or null.
+pub fn call(name: &str, v: &Value) -> Result<String, String> {
+    fn text<'a>(o: Option<&'a Value>, key: &str) -> Option<&'a str> {
+        o.and_then(|o| o.get(key)).and_then(Value::as_str)
+    }
+    let read = |key: &str| {
+        let o = v.get(key).filter(|o| !matches!(o, Value::Null));
+        Limit { ft: o.and_then(|o| o.get("ft")).and_then(Value::as_f64), code: text(o, "code"), desc: text(o, "desc") }
+    };
+    let area = text(Some(v), "name").ok_or_else(|| format!("{name}: \"name\" is not text"))?;
+    let excluded = matches!(v.get("excluded"), Some(Value::Bool(true)));
+    Ok(match tab(area, text(Some(v), "type").unwrap_or(""), read("floor"), read("ceiling"), excluded) {
+        None => "null".to_owned(),
+        Some(t) => {
+            let mut o = String::from("{");
+            write_words(&mut o, &t);
+            o.push('}');
+            o
+        }
+    })
 }
 
 /// Twice a ring's area, unsigned, for the largest of an area's polygons.
@@ -148,14 +245,36 @@ mod tests {
         assert_eq!(label_name("A-220", "A"), "A-220");
     }
 
+    fn lim<'a>(ft: Option<f64>, code: &'a str, desc: Option<&'a str>) -> Limit<'a> {
+        Limit { ft, code: Some(code), desc }
+    }
+
     #[test]
-    fn limits_take_their_reference_from_the_faas_code() {
-        assert_eq!(limit(Some(500.0), Some("SFC")), (Some(500.0), Some("AGL")));
-        assert_eq!(limit(Some(0.0), Some("SFC")), (Some(0.0), Some("SFC")));
-        assert_eq!(limit(Some(18000.0), Some("STD")), (Some(18000.0), Some("FL")));
-        assert_eq!(limit(Some(3600.0), Some("MSL")), (Some(3600.0), Some("MSL")));
-        assert_eq!(limit(None, Some("UNLTD")), (None, Some("UNL")));
-        assert_eq!(limit(None, Some("MSL")), (None, None));
+    fn limits_are_written_as_the_faas_cifp_writes_them() {
+        // Brady North's FL180 TNI: CIFP's "17999M" (Class A, 14 CFR 71.33).
+        assert_eq!(limit(lim(Some(18000.0), "STD", Some("TNI")), true), (Some(17999.0), Some("MSL")));
+        assert_eq!(limit(lim(Some(18000.0), "STD", Some("TI")), true), (Some(18000.0), Some("FL")));
+        assert_eq!(limit(lim(Some(23000.0), "STD", Some("TNI")), true), (Some(23000.0), Some("FL")));
+        // Brady Low's 6,000 MSL TNI, "05999M", over 500 FT SFC, "00500A".
+        assert_eq!(limit(lim(Some(6000.0), "MSL", Some("TNI")), true), (Some(5999.0), Some("MSL")));
+        assert_eq!(limit(lim(Some(500.0), "SFC", None), false), (Some(500.0), Some("AGL")));
+        // Its pieces above but not including 1,500 AGL, "01501A".
+        assert_eq!(limit(lim(Some(1500.0), "SFC", Some("ANI")), false), (Some(1501.0), Some("AGL")));
+        // TNI on a floor and ANI on a ceiling say nothing of the figure.
+        assert_eq!(limit(lim(Some(3600.0), "MSL", Some("TNI")), false), (Some(3600.0), Some("MSL")));
+        assert_eq!(limit(lim(Some(0.0), "SFC", None), false), (Some(0.0), Some("SFC")));
+        // A pack with no DESC: the figure as coded.
+        assert_eq!(limit(lim(Some(18000.0), "STD", None), true), (Some(18000.0), Some("FL")));
+        assert_eq!(limit(lim(None, "UNLTD", None), true), (None, Some("UNL")));
+        assert_eq!(limit(lim(None, "MSL", None), true), (None, None));
+    }
+
+    #[test]
+    fn an_excluded_piece_has_no_tab() {
+        let (floor, ceiling) = (lim(Some(1500.0), "SFC", Some("ANI")), lim(Some(6000.0), "MSL", Some("TNI")));
+        assert!(tab("BRADY LOW MOA", "MOA", floor, ceiling, true).is_none());
+        let t = tab("BRADY LOW MOA", "MOA", floor, ceiling, false).unwrap();
+        assert_eq!((t.name.as_str(), t.floor, t.ceiling), ("M-BRADY LOW", (Some(1501.0), "AGL"), (Some(5999.0), "MSL")));
     }
 
     #[test]

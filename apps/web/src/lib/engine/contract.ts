@@ -853,6 +853,13 @@ export type ShortAirspaceNameAnswer = string;
 export type SigmetHazardAnswer = string;
 export type SigmetsAlongRouteAnswer = {}[];
 export type SoloXcDeterminationsAnswer = SoloXcDetermination[];
+export type SpecialUseTabAnswer = {
+  name: string;
+  floor_ft: number | null;
+  floor_ref: "SFC" | "AGL" | "MSL" | "FL" | "UNL";
+  ceiling_ft: number | null;
+  ceiling_ref: "SFC" | "AGL" | "MSL" | "FL" | "UNL";
+} | null;
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type SuaAltitudesAnswer = string;
 export type SunDownAnswer = boolean;
@@ -3139,6 +3146,13 @@ export interface EngineContract {
   solo_xc_determinations: {
     input: SoloXcDeterminationsInput;
     answer: SoloXcDeterminationsAnswer;
+  };
+  /**
+   * The tab ForeFlight writes on a special-use area's boundary, its words: the area's name cut to nine characters after the type's letter ("M-BRADY NOR*"), and its floor and ceiling as figures with their references (SFC, AGL, MSL, FL, UNL), from the FAA's special use airspace data (ADDS: each limit's VAL in feet, a flight level times 100, its CODE SFC, MSL, STD or UNLTD and its DESC TI, TNI or ANI). Written as the FAA's CIFP writes the same areas: a ceiling "to but not including" FL180 is 17,999 ft MSL, as Class A begins at 18,000 ft MSL (14 CFR 71.33); another ceiling TNI a foot under its figure, a floor ANI a foot over it; SFC above 0 is that height AGL. Null for a piece the FAA cuts out of its area (EXCLUSION 1), or where a limit has no figure.
+   */
+  special_use_tab: {
+    input: SpecialUseTabInput;
+    answer: SpecialUseTabAnswer;
   };
   /**
    * What a squawk says, where it says more than a code: 7500 unlawful interference (AIM 6-3-4), 7600 two-way radio failure (AIM 6-4-2), 7700 an emergency (AIM 6-2-2); null for any other.
@@ -11238,6 +11252,24 @@ export interface SoloXcDeterminationsInput {}
 export interface SoloXcDetermination {
   rule: string;
   label: string;
+}
+export interface SpecialUseTabInput {
+  name: string;
+  type?: string | null;
+  floor?: SpecialUseTabLimit;
+  ceiling?: SpecialUseTabLimit;
+  excluded?: boolean | null;
+}
+/**
+ * One limit of a special-use area as the FAA's data gives it: its figure in feet (a flight level times 100), its CODE (SFC, MSL, STD, UNLTD) and its DESC (TI, TNI to but not including, ANI above but not including).
+ *
+ * This interface was referenced by `EngineContract`'s JSON-Schema
+ * via the `definition` "SpecialUseTabLimit".
+ */
+export interface SpecialUseTabLimit {
+  ft?: number | null;
+  code?: string | null;
+  desc?: string | null;
 }
 export interface SquawkMeaningInput {
   squawk?: string | null;

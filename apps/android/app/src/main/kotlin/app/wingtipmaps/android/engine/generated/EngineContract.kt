@@ -10735,6 +10735,38 @@ object EngineContract {
     }
 
     @Serializable
+    data class SpecialUseTabAnswer(
+        val name: String,
+        @SerialName("floor_ft")
+        val floorFt: Double? = null,
+        @SerialName("floor_ref")
+        val floorRef: String,
+        @SerialName("ceiling_ft")
+        val ceilingFt: Double? = null,
+        @SerialName("ceiling_ref")
+        val ceilingRef: String,
+    )
+
+    @Serializable
+    data class SpecialUseTabInput(
+        val name: String,
+        val type: String? = null,
+        val floor: EngineContract.SpecialUseTabLimit? = null,
+        val ceiling: EngineContract.SpecialUseTabLimit? = null,
+        val excluded: Boolean? = null,
+    )
+
+    /**
+     * One limit of a special-use area as the FAA's data gives it: its figure in feet (a flight level times 100), its CODE (SFC, MSL, STD, UNLTD) and its DESC (TI, TNI to but not including, ANI above but not including).
+     */
+    @Serializable
+    data class SpecialUseTabLimit(
+        val ft: Double? = null,
+        val code: String? = null,
+        val desc: String? = null,
+    )
+
+    @Serializable
     data class SquawkMeaningInput(
         val squawk: String? = null,
     )

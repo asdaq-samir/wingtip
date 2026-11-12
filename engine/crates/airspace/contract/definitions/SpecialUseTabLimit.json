@@ -1,0 +1,24 @@
+{
+  "description": "One limit of a special-use area as the FAA's data gives it: its figure in feet (a flight level times 100), its CODE (SFC, MSL, STD, UNLTD) and its DESC (TI, TNI to but not including, ANI above but not including).",
+  "type": "object",
+  "properties": {
+    "ft": {
+      "type": [
+        "number",
+        "null"
+      ]
+    },
+    "code": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "desc": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}
