@@ -1,5 +1,5 @@
-import { useContext, useEffect, useEffectEvent, useRef } from "react";
-import { MapInsetsContext, SHEET_SECONDS } from "../../../lib/mapChrome";
+import { useEffect, useEffectEvent, useRef } from "react";
+import { SHEET_SECONDS, useMapInsets } from "../../../lib/mapChrome";
 import { useOwnShip } from "../../../lib/map/position/ownShip";
 import { useGlMap } from "../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../lib/map/gl/glStyle";
@@ -27,11 +27,12 @@ export function useGlFit(
   held = false,
 ) {
   const { map } = useGlMap();
-  const insets = useContext(MapInsetsContext);
+  const insetTop = useMapInsets((i) => i.top);
+  const insetBottom = useMapInsets((i) => i.bottom);
   // Over the map's own padding (the panel's room, which MapLibre adds):
   // what a sheet over the panel covers beyond it.
-  const top = Math.max(0, cover.top - insets.top),
-    bottom = Math.max(0, cover.bottom - insets.bottom);
+  const top = Math.max(0, cover.top - insetTop),
+    bottom = Math.max(0, cover.bottom - insetBottom);
   // The subject last picked, and the one fitted (or let go).
   const seen = useRef<string | null>(null);
   const fitted = useRef<string | null>(null);

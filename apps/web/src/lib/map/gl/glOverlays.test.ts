@@ -108,12 +108,9 @@ describe("the overlay tiles' layers", () => {
     setSelectedAirport(map, null);
     expect(set.state.get("selectedAirport")).toBeNull();
     const airports = overlayStyle(TILES, ORIGIN).layers.marks!.find((l) => l.id === "airports") as SymbolLayerSpecification;
-    expect(airports.layout!["text-field"]).toEqual([
-      "case",
-      ["==", ["get", "ident"], ["global-state", "selectedAirport"]],
-      "",
-      ["get", "ident"],
-    ]);
+    // Hidden by its paint, so the tiles are not laid out again at a tap.
+    expect(airports.layout!["text-field"]).toEqual(["get", "ident"]);
+    expect(airports.paint!["text-opacity"]).toEqual(["case", ["==", ["get", "ident"], ["global-state", "selectedAirport"]], 0, 1]);
   });
 
   it("hide the armed services' and private fields unless asked for, and the route's own fields", () => {

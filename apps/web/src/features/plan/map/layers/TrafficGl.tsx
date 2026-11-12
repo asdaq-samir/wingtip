@@ -8,7 +8,7 @@ import { clearProblem, raiseProblem } from "../../../../lib/problems";
 import { usePreferences } from "../../../../lib/preferences";
 import { TRAFFIC_COLOURS } from "../../../../lib/map/marks/icons";
 import { CHART } from "../../../../lib/tokens";
-import { useOwnFix, useOwnShip } from "../../../../lib/map/position/ownShip";
+import { useOwnShip } from "../../../../lib/map/position/ownShip";
 import { usePastFlight } from "../pastFlight";
 import { CARRY_S, agedBy, carriedOn, markTraffic, nearOwnHeight, ownShipHex, trafficLabel, trendSeconds } from "../traffic";
 import { trafficCredit } from "../trafficCredit";
@@ -83,7 +83,10 @@ function viewOf(map: ReturnType<typeof useGlMap>["map"]) {
 
 function Traffic() {
   const { map } = useGlMap();
-  const fix = useOwnFix();
+  // Own ship's height alone, exact (the 1,000 ft "near own height" rule is
+  // the engine's traffic_marks, read against it as it is, not rounded), so
+  // the traffic is not drawn again at a fix that moved only sideways.
+  const ownFt = useOwnShip((s) => (s.enabled ? (s.fix?.altitudeFt ?? null) : null));
   const hex = useTracking((s) => s.hex);
   const follow = useTracking((s) => s.follow);
   const followed = useTracking((s) => (s.hex && s.follow && s.latest ? s.latest.plane : null));
@@ -151,9 +154,9 @@ function Traffic() {
     if (gone) raiseProblem({ id: PROBLEM, title: "Traffic isn't available right now." });
     else clearProblem(PROBLEM);
   }, [gone]);
-  // Own ship's own transponder, not drawn as traffic over itself.
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- once an answer
-  const own = useMemo(() => (answer ? ownShipHex(agedBy(answer.data.aircraft, answer.data.age_s ?? 0), fix) : null), [answer]);
+  // Own ship's own transponder, not drawn as traffic over itself: its fix
+  // as each answer comes.
+  const own = useMemo(() => (answer ? ownShipHex(agedBy(answer.data.aircraft, answer.data.age_s ?? 0), ownFix()) : null), [answer]);
   const merged = useMemo(
     () =>
       answer
@@ -190,7 +193,6 @@ function Traffic() {
     useTracking.setState({ seen: reports });
   }, [merged]);
 
-  const ownFt = fix?.altitudeFt ?? null;
   const only = useTrafficFocus((s) => (s.on ? s.only : null));
   useEffect(() => {
     const heights = view.zoom >= HEIGHT_ZOOM,
@@ -225,14 +227,24 @@ function Traffic() {
     map.flyTo({ center: [latest.plane.lon, latest.plane.lat], zoom: Math.max(map.getZoom(), glZoom(9)), duration: 800 });
   }, [map, hex, follow, heard]);
 
+  // The frames stop while the page is hidden (the app put away, the phone
+  // locked) and start again as it is back; the answers stop with them
+  // (TanStack Query's refetchIntervalInBackground, false).
   useEffect(() => {
     let timer = 0;
     const step = () => {
-      timer = window.setTimeout(step, frameMs(appZoomOf(map.getZoom())));
+      timer = document.hidden ? 0 : window.setTimeout(step, frameMs(appZoomOf(map.getZoom())));
       if (!map.isZooming()) drawTargets(map, targets.current);
     };
+    const back = () => {
+      if (!document.hidden && !timer) timer = window.setTimeout(step, 0);
+    };
     timer = window.setTimeout(step, 0);
-    return () => window.clearTimeout(timer);
+    document.addEventListener("visibilitychange", back);
+    return () => {
+      document.removeEventListener("visibilitychange", back);
+      window.clearTimeout(timer);
+    };
   }, [map]);
   return null;
 }
@@ -300,10 +312,30 @@ function drawTargets(map: MlMap, targets: Map<string, Target>) {
       });
     }
   }
-  map.getSource<GeoJSONSource>(POINTS)?.setData({ type: "FeatureCollection", features: points });
-  map.getSource<GeoJSONSource>(TRENDS)?.setData({ type: "FeatureCollection", features: trends });
+  setIfNew(map, POINTS, points);
+  setIfNew(map, TRENDS, trends);
   const { follow } = useTracking.getState();
   const replaying = usePastFlight.getState().hex === tracked;
   const target = tracked && follow && !replaying ? targets.get(tracked) : undefined;
   if (target?.pos) map.jumpTo({ center: [target.pos.lon, target.pos.lat] });
+}
+
+/** Own ship's fix while it is on, read once (useOwnFix's, not followed). */
+function ownFix() {
+  const ship = useOwnShip.getState();
+  return ship.enabled ? ship.fix : null;
+}
+
+/** What each source was last sent, as JSON: a frame with nothing moved
+ *  (none in sight, or every one on the ground and still) sends nothing to
+ *  the map's worker, where each setData is indexed again from nothing. By
+ *  the source itself, so one made again (a new style) is sent afresh. */
+const lastSent = new WeakMap<GeoJSONSource, string>();
+function setIfNew(map: MlMap, id: string, features: GeoJSON.Feature[]) {
+  const source = map.getSource<GeoJSONSource>(id);
+  if (!source) return;
+  const json = JSON.stringify(features);
+  if (lastSent.get(source) === json) return;
+  lastSent.set(source, json);
+  source.setData({ type: "FeatureCollection", features });
 }

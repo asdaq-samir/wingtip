@@ -7,11 +7,11 @@ import "../../lib/map/gl/worker";
 // the font file, no glyph server): the Latin subset the page loads.
 import interUrl from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import MapControls from "../MapControls";
 import MapBanners from "../MapBanners";
 import MapLoading from "../MapLoading";
-import { MapInsetsContext, SHEET_SECONDS, type MapInsets } from "../../lib/mapChrome";
+import { SHEET_SECONDS, useMapInsets, type MapInsets } from "../../lib/mapChrome";
 import { SheetCard } from "../SheetCard";
 import { DRAWER_MS } from "../sheet/insets";
 import { drawerEasing } from "./drawerEasing";
@@ -252,7 +252,7 @@ export default function GlMapShell({ course, focus, focusZoom, place, children, 
   const [overlays, setOverlays] = useState(false);
   // Whether the map is shown yet: till then, the loading mark in its middle.
   const [revealed, setRevealed] = useState(() => !!parked && "revealed" in parked.holder.dataset);
-  const insets = useContext(MapInsetsContext);
+  const insets = useMapInsets();
   const insetsRef = useRef(insets);
   // Where a point picked is being flown to (flyTo below), for the sheet
   // turning under the flight to aim it again rather than stop it.

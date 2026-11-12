@@ -32,6 +32,9 @@ export function OwnShipGl() {
   const recentred = useOwnShip((s) => s.recentred);
   const recentreZoom = useOwnShip((s) => s.recentreZoom);
   const marker = useRef<Marker | null>(null);
+  // The mark's HTML as last written: the same at nearly every fix (only
+  // its place and turn change), so the element is not built again each second.
+  const drawn = useRef("");
   const flown = useRef(recentred);
   useEffect(() => {
     const el = document.createElement("div");
@@ -66,8 +69,11 @@ export function OwnShipGl() {
     const heading = enabled ? fix.headingDeg : null;
     const { size, html } = ownShipHtml(heading == null ? null : 0, !enabled, look, enabled && (simulated || underway(fix)));
     const el = m.getElement();
-    el.style.width = el.style.height = `${size}px`;
-    el.innerHTML = html;
+    if (drawn.current !== html || el.childElementCount === 0) {
+      drawn.current = html;
+      el.style.width = el.style.height = `${size}px`;
+      el.innerHTML = html;
+    }
     m.setLngLat([fix.lon, fix.lat])
       .setRotation(heading ?? 0)
       .addTo(map);
