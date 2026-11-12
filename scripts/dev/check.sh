@@ -210,7 +210,7 @@ run_py() {
   local dir=$1 dev=$2 py=$3 lint=$4 tests=$5 extra=${6:-} tag
   tag=$(py_image "$dir" "$dev" "$py" "$extra")
   docker run --rm -v "$here:/repo" -v wingtip-check-raw:/repo/data/raw -w "/repo/$dir" "$tag" \
-    sh -c "ruff check $lint $tests && { [ ! -f .importlinter ] || lint-imports; } && pytest $tests/ -q -p no:cacheprovider"
+    sh -c "ruff check $lint $tests && { [ ! -f .importlinter ] || PYTHONPATH=../planner lint-imports; } && pytest $tests/ -q -p no:cacheprovider"
 }
 
 # The newest iPhone this Xcode has, by its id (native-ios.yml's pick).

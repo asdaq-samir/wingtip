@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -9,7 +10,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.time.Instant;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,9 +42,8 @@ public class MagicLinkAccountController {
     private final int perClientPerHour;
     private final SlidingWindowLimiter recent = new SlidingWindowLimiter(Duration.ofHours(1));
 
-    public MagicLinkAccountController(
-            MagicLinkRepository magicLinks,
-            @Value("${app.magic-link.account-per-client-per-hour:30}") int perClientPerHour) {
+    public MagicLinkAccountController(MagicLinkRepository magicLinks, AppProperties app) {
+        int perClientPerHour = app.magicLink().accountPerClientPerHour();
         this.magicLinks = magicLinks;
         this.perClientPerHour = perClientPerHour;
     }

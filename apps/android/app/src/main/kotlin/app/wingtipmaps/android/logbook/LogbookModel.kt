@@ -4,15 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Problems
+import app.wingtipmaps.android.api.accepted
 import app.wingtipmaps.android.api.addLogbook
+import app.wingtipmaps.android.api.generated.client.apis.GatewayApi
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryRequest
+import app.wingtipmaps.android.di.Writes
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * The Logbook's view model (the web's LogbookPanel, at its least): the
@@ -24,11 +29,15 @@ import kotlinx.coroutines.launch
  * A flight is added by hand from Add Flight (`add`), in the same fields.
  * Signed out, nothing.
  */
+@HiltViewModel
 class LogbookModel(
     private val source: LogbookSource = ServerLogbook,
     private val edits: LogbookEdits = ServerLogbookEdits,
     private val adds: suspend (LogbookEntryRequest) -> LogbookEntryDto = { Gateway.addLogbook(it) },
 ) : ViewModel() {
+    /** Hilt's: the gateway's logbook, and an entry added by its POST /api/logbook. */
+    @Inject
+    constructor(source: LogbookSource, edits: LogbookEdits, @Writes gateway: GatewayApi) : this(source, edits, { gateway.logbookAdd(it).accepted() })
     /** An entry taken out of the list and where it was, for its Undo. */
     data class Removed(val entry: LogbookEntryDto, val index: Int)
 

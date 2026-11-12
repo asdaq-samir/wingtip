@@ -53,7 +53,7 @@ const props = (place: string | null) => ({
   showWaypoints: true,
   flightRules: "vfr" as const,
   setPanel: vi.fn(),
-  setSearchParams: vi.fn(),
+  setAddress: vi.fn(),
 });
 
 describe("Fly Here read ahead as a card opens", () => {

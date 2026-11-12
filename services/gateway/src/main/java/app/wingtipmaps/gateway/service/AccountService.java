@@ -4,23 +4,18 @@ import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.repository.MagicLinkRepository;
 import app.wingtipmaps.gateway.repository.PilotRepository;
 import app.wingtipmaps.gateway.security.mcp.ConnectorGrants;
-import app.wingtipmaps.gateway.tracing.TraceHeaders;
-import java.io.IOException;
+import app.wingtipmaps.gateway.upstream.PlannerApi;
 import java.io.Serial;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.session.FindByIndexNameSessionRepository;
 import org.springframework.session.Session;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 /**
  * Deleting a pilot's account, everything that was theirs with it --
@@ -51,9 +46,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 public class AccountService {
 
-    /** Who a note belongs to, as the planner reads it (PlannerProxyController's). */
-    static final String PILOT_HEADER = "X-Pilot-Id";
-
     private static final Logger log = LoggerFactory.getLogger(AccountService.class);
 
     private final PilotRepository pilots;
@@ -61,11 +53,8 @@ public class AccountService {
     private final FindByIndexNameSessionRepository<? extends Session> sessions;
     private final TransactionTemplate transaction;
     private final AppleRevocation apple;
-    private final String plannerBaseUrl;
-    private final HttpClient http =
-            HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
-    /** The trace's and the page's headers on the planner's request (TraceHeaders). */
-    private TraceHeaders traceHeaders = TraceHeaders.NONE;
+    /** The planner's client (UpstreamClients): HTTP/1.1, as StreamingProxy says why. */
+    private final PlannerApi planner;
     /** The AI apps the pilot connected (the MCP connector), absent in a
      *  slice test that has no database. */
     private ConnectorGrants connections;
@@ -76,18 +65,13 @@ public class AccountService {
             FindByIndexNameSessionRepository<? extends Session> sessions,
             TransactionTemplate transaction,
             AppleRevocation apple,
-            @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl) {
+            PlannerApi planner) {
         this.pilots = pilots;
         this.magicLinks = magicLinks;
         this.sessions = sessions;
         this.transaction = transaction;
         this.apple = apple;
-        this.plannerBaseUrl = plannerBaseUrl.replaceAll("/+$", "");
-    }
-
-    @Autowired(required = false)
-    void setTraceHeaders(TraceHeaders traceHeaders) {
-        this.traceHeaders = traceHeaders;
+        this.planner = planner;
     }
 
     @Autowired(required = false)
@@ -134,22 +118,13 @@ public class AccountService {
     }
 
     private void forgetNotes(Pilot pilot) {
-        HttpRequest request = HttpRequest.newBuilder(URI.create(plannerBaseUrl + "/api/checkpoint-notes/mine"))
-                .DELETE()
-                .header(PILOT_HEADER, String.valueOf(pilot.getId()))
-                .timeout(Duration.ofSeconds(15))
-                .build();
         try {
-            HttpResponse<Void> response =
-                    http.send(traceHeaders.traced(request), HttpResponse.BodyHandlers.discarding());
-            if (response.statusCode() != 200) {
-                throw new AccountNotDeletedException("the planner answered " + response.statusCode());
-            }
-        } catch (IOException failed) {
+            planner.forgetNotes(String.valueOf(pilot.getId()));
+        } catch (RestClientResponseException refused) {
+            throw new AccountNotDeletedException(
+                    "the planner answered " + refused.getStatusCode().value());
+        } catch (RestClientException failed) {
             throw new AccountNotDeletedException("the planner could not be reached", failed);
-        } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            throw new AccountNotDeletedException("interrupted", interrupted);
         }
     }
 

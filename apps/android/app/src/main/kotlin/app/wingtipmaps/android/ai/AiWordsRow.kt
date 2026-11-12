@@ -19,8 +19,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.AssistantSource
 import app.wingtipmaps.android.design.Loading
@@ -40,7 +40,7 @@ import app.wingtipmaps.android.ui.WingtipIcons
  */
 @Composable
 fun AiWordsRow(task: AiTask, key: String, sources: () -> List<AssistantSource>, modifier: Modifier = Modifier) {
-    val model: AiWordsModel = viewModel(key = "ai-words-${task.name}-$key")
+    val model: AiWordsModel = hiltViewModel(key = "ai-words-${task.name}-$key")
     val state by model.state.collectAsStateWithLifecycle()
     LaunchedEffect(key) { model.sourcesAre(key) }
     if (!state.offered) return

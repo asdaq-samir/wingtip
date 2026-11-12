@@ -18,16 +18,21 @@ import logging
 import os
 import re
 import tempfile
-import threading
 import zipfile
 from collections.abc import Iterable
+from datetime import date
 from pathlib import Path
-from urllib.parse import urljoin
 
 import numpy as np
 import pandas as pd
 import requests
 import wingtip_native
+
+from . import apra, dof
+
+# The obstacle file's reader is wingtip.dof; its callers read the table
+# through this module, which downloads it with the NASR tables.
+from .dof import _DOF_COLUMNS, _OBSTACLES_CACHE, load_obstacles  # noqa: F401
 
 # FAA's site 403s a bare python-requests User-Agent.
 from .config import FAA_HEADERS
@@ -36,60 +41,7 @@ from .single_flight import once
 
 log = logging.getLogger(__name__)
 
-NASR_INDEX_URL = "https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/"
-DOF_INDEX_URL = "https://www.faa.gov/air_traffic/flight_info/aeronav/digital_products/dof/"
-
 VOR_NAV_TYPES = {"VOR", "VOR/DME", "VORTAC"}
-
-# Fixed-width column layout for DOF.DAT, reverse-engineered from the raw
-# file against the 06 Aug 2026 cycle (verified against all ~18,500 rows
-# of the WI state extract with zero parse failures) since the FAA's own
-# DOF_README.pdf isn't renderable in this environment. AGL/AMSL start
-# columns were cross-checked independently via frequency analysis across
-# thousands of rows, and everything else derived from there -- if a
-# future FAA cycle shifts this layout, _parse_dof_line will start raising
-# ValueError on the int()/float() conversions, which is a loud enough
-# failure to notice rather than silently misreading obstacle heights.
-_DOF_COLUMNS = {
-    "city": (18, 34),
-    "lat_deg": (35, 37),
-    "lat_min": (38, 40),
-    "lat_sec": (41, 46),
-    "lat_hem": (46, 47),
-    "lon_deg": (48, 51),
-    "lon_min": (52, 54),
-    "lon_sec": (55, 60),
-    "lon_hem": (60, 61),
-    "type": (62, 81),
-    "agl": (83, 88),
-    "amsl": (89, 94),
-    "lt": (95, 96),
-}
-
-
-def find_current_cycle_page(index_url: str) -> str:
-    """The NASR index page marks the in-effect cycle under an <h2>Current</h2>
-    heading (as opposed to "Preview" for an upcoming cycle, or "Archives"
-    for past ones) -- pull the first link under that heading.
-    """
-    resp = requests.get(index_url, headers=FAA_HEADERS, timeout=30)
-    resp.raise_for_status()
-    m = re.search(r'<h2>Current</h2>\s*<ul>\s*<li><a href="([^"]+)"', resp.text)
-    if not m:
-        raise RuntimeError(f"Couldn't find the current NASR cycle link on {index_url}")
-    return urljoin(index_url, m.group(1))
-
-
-def find_download_link(page_url: str, href_pattern: str) -> str:
-    """The first href on page_url matching href_pattern -- FAA NASR/DOF
-    download pages don't have a stable direct URL, it has to be scraped
-    off the current listing page each time."""
-    resp = requests.get(page_url, headers=FAA_HEADERS, timeout=30)
-    resp.raise_for_status()
-    m = re.search(href_pattern, resp.text)
-    if not m:
-        raise RuntimeError(f"Couldn't find a link matching {href_pattern!r} on {page_url}")
-    return m.group(1)
 
 
 def download_and_extract(url: str, dest_dir: Path, retries: int = 3, only: Iterable[str] | None = None) -> None:
@@ -135,40 +87,49 @@ def _is_icloud_evicted(path: Path) -> bool:
     return not path.exists() and (path.parent / f".{path.name}.icloud").exists()
 
 
-# Where each file comes from: NAV and APT from the current NASR cycle's
-# page, DOF from its own index. Each is its own download, published on its
-# own, and read by different callers.
+# Which zip each file comes in: a NASR table's CSV zip of the edition
+# in force (wingtip.apra), or the obstacle file's own.
 _NASR_FILES = {
-    "NAV_BASE.csv": lambda: find_download_link(find_current_cycle_page(NASR_INDEX_URL), r'href="([^"]*NAV_CSV\.zip)"'),
+    "NAV_BASE.csv": "NAV",
     # In the same zip: each navaid's remarks, where its service volume's
     # restrictions are ("VOR UNUSBL 072-090 BYD 34 NM", wingtip.fixes).
-    "NAV_RMK.csv": lambda: find_download_link(find_current_cycle_page(NASR_INDEX_URL), r'href="([^"]*NAV_CSV\.zip)"'),
-    "APT_BASE.csv": lambda: find_download_link(find_current_cycle_page(NASR_INDEX_URL), r'href="([^"]*APT_CSV\.zip)"'),
+    "NAV_RMK.csv": "NAV",
+    "APT_BASE.csv": "APT",
     # In the same zip as APT_BASE: every airport's remarks, the Chart
     # Supplement's own text (wingtip.remarks).
-    "APT_RMK.csv": lambda: find_download_link(find_current_cycle_page(NASR_INDEX_URL), r'href="([^"]*APT_CSV\.zip)"'),
+    "APT_RMK.csv": "APT",
     # And each runway end's: which way its traffic pattern is flown
     # (wingtip.pattern).
-    "APT_RWY_END.csv": lambda: find_download_link(find_current_cycle_page(NASR_INDEX_URL), r'href="([^"]*APT_CSV\.zip)"'),
+    "APT_RWY_END.csv": "APT",
     # And each runway's length and surface (RWY_LEN, SURFACE_TYPE_CODE):
     # what the map's airport symbol is drawn by (wingtip.vector_tiles).
-    "APT_RWY.csv": lambda: find_download_link(find_current_cycle_page(NASR_INDEX_URL), r'href="([^"]*APT_CSV\.zip)"'),
+    "APT_RWY.csv": "APT",
     # And each field's contacts: its manager's and its owner's office
     # address and phone, what an airport's card calls and finds in Maps.
-    "APT_CON.csv": lambda: find_download_link(find_current_cycle_page(NASR_INDEX_URL), r'href="([^"]*APT_CSV\.zip)"'),
-    "DOF.DAT": lambda: find_download_link(DOF_INDEX_URL, r'href="(https://aeronav\.faa\.gov/Obst_Data/DOF_\d+\.zip)"'),
+    "APT_CON.csv": "APT",
+    "DOF.DAT": "DOF",
     # Every named fix: the RNAV (GPS) waypoints, the reporting points and
     # the VFR waypoints charted on the sectionals (VPBNG) -- what a route
     # may fly through on the way (wingtip.fixes).
-    "FIX_BASE.csv": lambda: find_download_link(find_current_cycle_page(NASR_INDEX_URL), r'href="([^"]*FIX_CSV\.zip)"'),
+    "FIX_BASE.csv": "FIX",
     # Every facility's frequencies, by the field each serves: the CTAF,
     # UNICOM, tower, ground, ATIS and approach the Chart Supplement lists
     # (airport_frequencies).
-    "FRQ.csv": lambda: find_download_link(find_current_cycle_page(NASR_INDEX_URL), r'href="([^"]*FRQ_CSV\.zip)"'),
+    "FRQ.csv": "FRQ",
     # Every airway segment, Victor and T routes among them, in order, each
     # with its MEA, MOCA and MAA (wingtip.airways).
-    "AWY_SEG_ALT.csv": lambda: find_download_link(find_current_cycle_page(NASR_INDEX_URL), r'href="([^"]*AWY_CSV\.zip)"'),
+    "AWY_SEG_ALT.csv": "AWY",
 }
+
+
+def nasr_zip_url(table: str, cycle: date | None = None) -> str:
+    """Where a table's zip is: the DOF page's current one, the Class
+    Airspace shapes or a NASR CSV zip of `cycle` (APRA's current NASR
+    edition when not given)."""
+    if table == "DOF":
+        return dof.dof_link()
+    cycle = cycle or apra.nasr_cycle()
+    return apra.class_airspace_url(cycle) if table == "Class_Airspace" else apra.nasr_csv_url(table, cycle)
 
 
 def ensure_nasr_file(name: str, cache_dir) -> Path:
@@ -184,7 +145,7 @@ def ensure_nasr_file(name: str, cache_dir) -> Path:
     cache_dir = Path(cache_dir)
     path = cache_dir / name
     if not path.exists():
-        download_and_extract(_NASR_FILES[name](), cache_dir, only=_NASR_FILES)
+        download_and_extract(nasr_zip_url(_NASR_FILES[name]), cache_dir, only=_NASR_FILES)
     if path.exists():
         return path
     if _is_icloud_evicted(path):
@@ -198,26 +159,25 @@ def ensure_nasr_file(name: str, cache_dir) -> Path:
 
 
 # The zips the files above come in, for a new edition of each (refresh):
-# its files, the page its link is on (None: the current NASR cycle's), and
-# the link. A zip's files are refreshed together -- APT_BASE was a cycle
+# its files and the table its link is found by (nasr_zip_url). A zip's files
+# are refreshed together -- APT_BASE was a cycle
 # behind APT_RMK and APT_RWY_END from the same zip, each fetched when it
 # went missing (2026-10-07).
 _EDITIONS = {
-    "NAV_CSV": (("NAV_BASE.csv", "NAV_RMK.csv"), None, r'href="([^"]*NAV_CSV\.zip)"'),
-    "APT_CSV": (("APT_BASE.csv", "APT_RMK.csv", "APT_RWY_END.csv", "APT_RWY.csv", "APT_CON.csv"), None, r'href="([^"]*APT_CSV\.zip)"'),
-    "FIX_CSV": (("FIX_BASE.csv",), None, r'href="([^"]*FIX_CSV\.zip)"'),
-    "FRQ_CSV": (("FRQ.csv",), None, r'href="([^"]*FRQ_CSV\.zip)"'),
-    "AWY_CSV": (("AWY_SEG_ALT.csv",), None, r'href="([^"]*AWY_CSV\.zip)"'),
+    "NAV_CSV": (("NAV_BASE.csv", "NAV_RMK.csv"), "NAV"),
+    "APT_CSV": (("APT_BASE.csv", "APT_RMK.csv", "APT_RWY_END.csv", "APT_RWY.csv", "APT_CON.csv"), "APT"),
+    "FIX_CSV": (("FIX_BASE.csv",), "FIX"),
+    "FRQ_CSV": (("FRQ.csv",), "FRQ"),
+    "AWY_CSV": (("AWY_SEG_ALT.csv",), "AWY"),
     # The Class B, C and D shapes (wingtip.airspace), from the same cycle.
+    # The .shp last, which wingtip.airspace keys its parse on: its
+    # companions are in place before it.
     "Class_Airspace": (
-        # The .shp last, which wingtip.airspace keys its parse on: its
-        # companions are in place before it.
         ("Shape_Files/Class_Airspace.shx", "Shape_Files/Class_Airspace.dbf", "Shape_Files/Class_Airspace.shp"),
-        None,
-        r'href="([^"]*class_airspace_shape_files\.zip)"',
+        "Class_Airspace",
     ),
     # The obstacles, on their own 56-day edition and page.
-    "DOF": (("DOF.DAT",), DOF_INDEX_URL, r'href="(https://aeronav\.faa\.gov/Obst_Data/DOF_\d+\.zip)"'),
+    "DOF": (("DOF.DAT",), "DOF"),
 }
 # Which edition each file on disk is, by the link it came from (the
 # FAA's links name their cycle: ".../01_Oct_2026_NAV_CSV.zip").
@@ -254,16 +214,16 @@ def refresh_editions(cache_dir) -> list[str]:
     current one where its own EFF_DATE says so, rather than fetched again."""
     cache_dir = Path(cache_dir)
     on_disk = _editions_on_disk(cache_dir)
-    cycle_page = find_current_cycle_page(NASR_INDEX_URL)
-    cycle = cycle_page.rstrip("/").rsplit("/", 1)[-1].replace("-", "/")
+    nasr = apra.nasr_cycle()
+    cycle = nasr.strftime("%Y/%m/%d")
     refreshed = []
-    for key, (names, page, pattern) in _EDITIONS.items():
+    for key, (names, table) in _EDITIONS.items():
         try:
-            url = find_download_link(page or cycle_page, pattern)
+            url = nasr_zip_url(table, nasr)
             paths = [cache_dir / name for name in names]
             if on_disk.get(key) == url and all(p.exists() for p in paths):
                 continue
-            if page is None and key != "Class_Airspace" and all(_effective_date(p) == cycle for p in paths):
+            if table not in ("DOF", "Class_Airspace") and all(_effective_date(p) == cycle for p in paths):
                 on_disk[key] = url
                 continue
             with tempfile.TemporaryDirectory(dir=cache_dir, prefix=".edition-") as staging:
@@ -854,129 +814,7 @@ def load_vor_navaids(nav_csv_path, bbox: tuple) -> pd.DataFrame:
     ).reset_index(drop=True)
 
 
-def _dms_to_decimal(deg: str, minute: str, sec: str, hemisphere: str) -> float:
-    value = int(deg) + int(minute) / 60 + float(sec) / 3600
-    return -value if hemisphere in ("S", "W") else value
-
-
-def _parse_dof_line(line: str) -> dict | None:
-    if len(line) < 96:
-        return None
-    fields = {name: line[start:end] for name, (start, end) in _DOF_COLUMNS.items()}
-    try:
-        lat = _dms_to_decimal(fields["lat_deg"], fields["lat_min"], fields["lat_sec"], fields["lat_hem"])
-        lon = _dms_to_decimal(fields["lon_deg"], fields["lon_min"], fields["lon_sec"], fields["lon_hem"])
-        agl_ft = int(fields["agl"])
-        amsl_ft = int(fields["amsl"])
-    except ValueError:
-        return None
-    return {
-        "lat": lat,
-        "lon": lon,
-        "city": fields["city"].strip(),
-        "type": fields["type"].strip(),
-        "agl_ft": agl_ft,
-        "amsl_ft": amsl_ft,
-        "lit": fields["lt"].strip() not in ("", "N"),
-    }
-
-
-_OBSTACLES_CACHE: dict = {}
-_OBSTACLES_LOCK = threading.Lock()
-_OBSTACLE_CACHE_KEY = b"vfr.dof_key"
-
-
-def _load_all_obstacles(dof_dat_path) -> pd.DataFrame:
-    """Every obstacle in the national DOF.DAT extract, parsed once per
-    process and held in memory: from memory, else from the Parquet copy
-    beside the file, else parsed from the 640,000-line text (about nine
-    seconds) and written back as Parquet, which reads in a fraction of a
-    second. The two filters (min_agl_ft, bbox) differ per caller, so
-    what's cached is the unfiltered rows; filtering that afterward is a
-    cheap pandas boolean mask, not a second file read.
-    """
-    dof_dat_path = Path(dof_dat_path)
-    stat = dof_dat_path.stat()
-    key = (str(dof_dat_path), stat.st_size, stat.st_mtime)
-    with _OBSTACLES_LOCK:
-        if key not in _OBSTACLES_CACHE:
-            df = _read_obstacle_cache(dof_dat_path, key)
-            if df is None:
-                df = _parse_dof(dof_dat_path)
-                _write_obstacle_cache(dof_dat_path, key, df)
-            _OBSTACLES_CACHE[key] = df
-        return _OBSTACLES_CACHE[key]
-
-
-def _parse_dof(dof_dat_path: Path) -> pd.DataFrame:
-    rows = []
-    with open(dof_dat_path, encoding="latin-1") as f:
-        for line in f:
-            parsed = _parse_dof_line(line)
-            if parsed is not None:
-                rows.append(parsed)
-    return pd.DataFrame(rows, columns=["lat", "lon", "city", "type", "agl_ft", "amsl_ft", "lit"])
-
-
-def _obstacle_cache_path(dof_dat_path: Path) -> Path:
-    return dof_dat_path.with_suffix(".parquet")
-
-
-def _read_obstacle_cache(dof_dat_path: Path, key: tuple) -> pd.DataFrame | None:
-    path = _obstacle_cache_path(dof_dat_path)
-    if not path.exists():
-        return None
-    try:
-        import pyarrow.parquet as pq
-
-        table = pq.read_table(path)
-    except Exception:  # noqa: BLE001 -- no pyarrow here, or a damaged file: parse instead
-        return None
-    stamp = (table.schema.metadata or {}).get(_OBSTACLE_CACHE_KEY, b"null")
-    if json.loads(stamp) != list(key):
-        return None
-    return table.to_pandas()
-
-
-def _write_obstacle_cache(dof_dat_path: Path, key: tuple, df: pd.DataFrame) -> None:
-    path = _obstacle_cache_path(dof_dat_path)
-    part = path.with_suffix(".parquet.part")
-    try:
-        import pyarrow as pa
-        import pyarrow.parquet as pq
-
-        table = pa.Table.from_pandas(df, preserve_index=False)
-        metadata = {**(table.schema.metadata or {}), _OBSTACLE_CACHE_KEY: json.dumps(key).encode()}
-        pq.write_table(table.replace_schema_metadata(metadata), part)
-        part.replace(path)
-    except (ImportError, OSError):
-        # Without pyarrow, or on a read-only data directory, only the
-        # speed-up is lost: the parse runs again next process.
-        part.unlink(missing_ok=True)
-
-
 def preload_obstacles(cache_dir) -> None:
     """Parses (or reads back) the obstacle table now, so a service can
     pay the cold cost at startup rather than on a pilot's first request."""
-    _load_all_obstacles(ensure_nasr_file("DOF.DAT", cache_dir))
-
-
-def load_obstacles(dof_dat_path, bbox: tuple, min_agl_ft: float = 200) -> pd.DataFrame:
-    """Obstacles from the national DOF.DAT extract, within bbox and at
-    least min_agl_ft tall. Replaces the old generic OSM man_made=tower
-    category -- the boldmethod checkpoint guide flags plain "towers" as
-    blending into terrain, and FAA obstacle height/lighting data lets us
-    filter to the ones actually significant enough to have been surveyed
-    and registered as an aeronautical obstruction (FAA/Part 77 uses 200ft
-    AGL as its own general obstruction-notification threshold, hence the
-    default here) rather than guessing from an OSM tag alone.
-
-    The DOF's own typed columns -- lat, lon, city, type, agl_ft, amsl_ft,
-    lit -- as the cache holds them. It used to rebuild each row into a
-    checkpoint-shaped record with a dict of tags, for candidates the
-    pipeline had long stopped collecting, and its one caller unpacked the
-    height back out of the dict, ten thousand rows at a time.
-    """
-    all_obstacles = _load_all_obstacles(dof_dat_path)
-    wanted = (all_obstacles["agl_ft"] >= min_agl_ft) & _in_bbox(all_obstacles["lat"], all_obstacles["lon"], bbox)
-    return all_obstacles[wanted].reset_index(drop=True)
+    dof._load_all_obstacles(ensure_nasr_file("DOF.DAT", cache_dir))

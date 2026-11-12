@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.api
 
+import app.wingtipmaps.android.AppClock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
@@ -58,7 +59,7 @@ class CookieStore(private val shelf: CookieShelf) : CookieJar {
 
     @Synchronized
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         for (cookie in cookies) {
             // A cookie set in the past is the server deleting it (a sign-out).
             if (cookie.expiresAt <= now) kept.remove(key(cookie)) else kept[key(cookie)] = cookie
@@ -68,7 +69,7 @@ class CookieStore(private val shelf: CookieShelf) : CookieJar {
 
     @Synchronized
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         kept.values.removeAll { it.expiresAt <= now }
         return kept.values.filter { it.matches(url) }
     }

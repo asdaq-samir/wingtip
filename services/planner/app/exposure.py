@@ -16,7 +16,7 @@ that, which can say "during" when it is not, never the other way."""
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from itertools import pairwise
 
 import shapely
@@ -26,16 +26,6 @@ from wingtip import geo
 
 from .gonogo import ask
 from .gonogo.pass_times import instant
-
-#: G-AIRMETs are valid "at discrete times no more than 3 hours apart"
-#: (AIM 7-1-6), and between two of them "the user should assume the
-#: hazardous weather condition is occurring between the snap shots unless
-#: informed otherwise" -- a hazard at 03 and none at 00 or 06 is taken to
-#: exist from 0001 to 0559 (AIM 7-1-6, interpolation of time periods): so a
-#: snapshot stands for up to 3 hours either side of it. It stood for an
-#: hour and a half, and an airplane there at 0020Z or 0540Z was told the
-#: hazard was before or after it (the aviation check, 2026-10-27).
-GAIRMET_HALF_INTERVAL = timedelta(hours=3)
 
 
 def iso(t: float | None) -> str | None:
@@ -259,18 +249,20 @@ def sigmets(legs: Legs, hazards: list[dict]) -> list[dict]:
 
 def gairmets(legs: Legs, snapshots: list[dict], order: list[str]) -> list[dict]:
     """One G-AIRMET per hazard -- the snapshot valid nearest the time the
-    airplane is in its area, since each stands for up to three hours
-    either side of it (GAIRMET_HALF_INTERVAL) -- with its `on_route`."""
+    airplane is in its area, each held to the window it stands for (the
+    engine's gairmet_window: three hours either side, AIM 7-1-6) -- with
+    its `on_route`."""
     best: dict = {}
     for snap in snapshots:
         valid = snap.get("valid") or _unix(snap.get("valid_at"))
+        window = ask("gairmet_window", valid=valid) if valid else {"valid_from": None, "valid_to": None}
         place = over_area(
             legs,
             polygon(snap.get("coords")),
             source="G-AIRMET",
             issued=snap.get("issued"),
-            valid_from=valid - GAIRMET_HALF_INTERVAL.total_seconds() if valid else None,
-            valid_to=valid + GAIRMET_HALF_INTERVAL.total_seconds() if valid else None,
+            valid_from=window["valid_from"],
+            valid_to=window["valid_to"],
         )
         if place is None or valid is None:
             at = legs.starts[0] if legs.starts else 0.0

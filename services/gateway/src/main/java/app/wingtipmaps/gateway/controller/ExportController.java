@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.AccountRecordsDto;
 import app.wingtipmaps.gateway.dto.AircraftDto;
 import app.wingtipmaps.gateway.dto.ConnectorGrantDto;
@@ -19,7 +20,6 @@ import app.wingtipmaps.gateway.planner.model.PlannerCheckpointNote;
 import app.wingtipmaps.gateway.security.mcp.ConnectorGrants;
 import app.wingtipmaps.gateway.service.AccountRecords;
 import app.wingtipmaps.gateway.service.CheckpointNotesClient;
-import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.PlannerUnavailableException;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -33,6 +33,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -65,7 +66,6 @@ public class ExportController {
     /** The file's own format, for a reader to check before it reads. */
     static final String FORMAT = "wingtip-maps-export/1";
 
-    private final PilotService pilots;
     private final PilotController account;
     private final AircraftController airplanes;
     private final FlightController flights;
@@ -79,7 +79,6 @@ public class ExportController {
     private ConnectorGrants connections;
 
     public ExportController(
-            PilotService pilots,
             PilotController account,
             AircraftController airplanes,
             FlightController flights,
@@ -89,7 +88,6 @@ public class ExportController {
             FlightWatchController watches,
             CheckpointNotesClient notes,
             AccountRecords records) {
-        this.pilots = pilots;
         this.account = account;
         this.airplanes = airplanes;
         this.flights = flights;
@@ -144,46 +142,46 @@ public class ExportController {
         @ApiResponse(responseCode = "401", description = "No session")
     })
     @GetMapping("/api/me/export")
-    public ResponseEntity<AccountExport> export(Authentication authentication) {
-        return PilotResponses.withPilot(pilots, authentication, pilot -> {
-            List<ExportedAirplane> planes = body(airplanes.list(authentication), List.<AircraftDto>of()).stream()
-                    .map(a -> new ExportedAirplane(a, body(airplanes.squawks(authentication, a.id()), List.of())))
-                    .toList();
-            List<ExportedFlight> saved = body(flights.list(authentication), List.<FlightSummaryDto>of()).stream()
-                    .map(f -> exported(authentication, f))
-                    .filter(Objects::nonNull)
-                    .toList();
-            AccountExport file = new AccountExport(
-                    FORMAT,
-                    Instant.now(),
-                    body(account.me(authentication), null),
-                    planes,
-                    saved,
-                    body(logbook.list(authentication), List.of()),
-                    worked(() -> body(logbook.currency(authentication), null)),
-                    worked(() -> body(training.get(authentication), null)),
-                    worked(() -> body(instructing.get(authentication), null)),
-                    worked(() -> notes.mine(pilot)),
-                    new RemindersDto(pilot.isReminders()),
-                    records.of(pilot),
-                    connections == null ? List.of() : connections.of(pilot.getId()));
-            String name = "wingtip-maps-" + LocalDate.now(ZoneOffset.UTC) + ".json";
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"")
-                    .body(file);
-        });
+    public ResponseEntity<AccountExport> export(Authentication authentication, Pilot pilot) {
+        List<ExportedAirplane> planes = body(airplanes.list(pilot), List.<AircraftDto>of()).stream()
+                .map(a -> new ExportedAirplane(a, body(airplanes.squawks(pilot, a.id()), List.of())))
+                .toList();
+        List<ExportedFlight> saved = body(flights.list(pilot), List.<FlightSummaryDto>of()).stream()
+                .map(f -> exported(pilot, f))
+                .filter(Objects::nonNull)
+                .toList();
+        AccountExport file = new AccountExport(
+                FORMAT,
+                Instant.now(),
+                body(account.me(authentication), null),
+                planes,
+                saved,
+                body(logbook.list(pilot), List.of()),
+                worked(() -> body(logbook.currency(pilot), null)),
+                worked(() -> body(training.get(pilot), null)),
+                worked(() -> body(instructing.get(pilot), null)),
+                worked(() -> notes.mine(pilot)),
+                new RemindersDto(pilot.isReminders()),
+                records.of(pilot),
+                connections == null ? List.of() : connections.of(pilot.getId()));
+        String name = "wingtip-maps-" + LocalDate.now(ZoneOffset.UTC) + ".json";
+        return ResponseEntity.ok()
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename(name).build().toString())
+                .body(file);
     }
 
     /** A flight in full, with what hangs off it; null where it went meanwhile. */
-    private @Nullable ExportedFlight exported(Authentication authentication, FlightSummaryDto summary) {
-        FlightDto flight = body(flights.get(authentication, summary.id()), null);
+    private @Nullable ExportedFlight exported(Pilot pilot, FlightSummaryDto summary) {
+        FlightDto flight = body(flights.get(pilot, summary.id()), null);
         return flight == null
                 ? null
                 : new ExportedFlight(
                         flight,
-                        body(flights.track(authentication, flight.id()), null),
+                        body(flights.track(pilot, flight.id()), null),
                         summary.share(),
-                        body(watches.get(authentication, flight.id()), null));
+                        body(watches.get(pilot, flight.id()), null));
     }
 
     /** A part the planner works out from the records (currency, training,

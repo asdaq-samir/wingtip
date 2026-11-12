@@ -11,6 +11,7 @@ import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
+import okhttp3.coroutines.executeAsync
 import java.io.File
 import java.io.IOException
 import kotlin.math.PI
@@ -53,7 +54,7 @@ class KeptLoopTiles(private val dir: File) {
                 if (bytes >= MAX_BYTES) break
                 val url = url(template, tile)
                 val got = try {
-                    client.newCall(Request.Builder().url(url).build()).execute().use { r -> if (r.isSuccessful) r.body.bytes() else null }
+                    client.newCall(Request.Builder().url(url).build()).executeAsync().use { r -> if (r.isSuccessful) r.body.bytes() else null }
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: IOException) {

@@ -4,18 +4,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Problems
+import app.wingtipmaps.android.api.accepted
 import app.wingtipmaps.android.api.addAircraft
 import app.wingtipmaps.android.api.aircraft
 import app.wingtipmaps.android.api.deleteAircraft
+import app.wingtipmaps.android.api.done
+import app.wingtipmaps.android.api.generated.client.apis.GatewayApi
 import app.wingtipmaps.android.api.generated.gateway.AircraftDto
 import app.wingtipmaps.android.api.generated.gateway.AircraftRequest
+import app.wingtipmaps.android.api.readOrNone
 import app.wingtipmaps.android.api.updateAircraft
+import app.wingtipmaps.android.di.Writes
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * "Your Airplanes" (the web's own-airplane list in AccountPanels, the
@@ -25,6 +32,7 @@ import kotlinx.coroutines.launch
  * The four calls, and the engine's check of the form, are passed in so
  * the JVM tests answer them.
  */
+@HiltViewModel
 class AircraftModel(
     private val list: suspend () -> List<AircraftDto>? = { Gateway.aircraft() },
     private val add: suspend (AircraftRequest) -> AircraftDto = { Gateway.addAircraft(it) },
@@ -32,6 +40,15 @@ class AircraftModel(
     private val delete: suspend (Long) -> Unit = { Gateway.deleteAircraft(it) },
     private val rules: AircraftForm.Rules = AircraftForm.EngineRules,
 ) : ViewModel() {
+    /** Hilt's: the pilot's airplanes from the gateway (/api/aircraft), its writes on their longer limit. */
+    @Inject
+    constructor(gateway: GatewayApi, @Writes writes: GatewayApi, rules: AircraftForm.Rules) : this(
+        { gateway.aircraftList().readOrNone() },
+        { writes.aircraftAdd(it).accepted() },
+        { id, r -> writes.aircraftUpdate(id, r).accepted() },
+        { writes.aircraftDelete(it).done() },
+        rules,
+    )
     /** One airplane's form open: a new one (id null) or one kept. */
     data class Editing(
         val id: Long? = null,

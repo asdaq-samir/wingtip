@@ -9,7 +9,7 @@ import logging
 import math
 import threading
 
-from ..geo import box_around
+from ..geo import box_around, distance_nm
 from . import store
 from .adsb_lol import NEAR_RADIUS_NM, REGION_DEG, WIDE_REGION_DEG, _region
 from .common import STALE_S, _NM_PER_DEG, _wall
@@ -132,12 +132,11 @@ def _elsewhere_near(lat: float, lon: float, radius_nm: float, have: set[str]) ->
     """The airplanes heard elsewhere in the last STALE_S within `radius_nm`
     that the region's answer left out."""
     now = _wall()
-    cos = math.cos(math.radians(lat))
     south, west, north, east = box_around(lat, lon, radius_nm)
     out = []
     for p, at in store.radar_within(south, north, west, east, now - STALE_S):
         if p["hex"] in have:
             continue
-        if math.hypot((p["lat"] - lat) * _NM_PER_DEG, (p["lon"] - lon) * _NM_PER_DEG * cos) <= radius_nm:
+        if distance_nm(lat, lon, p["lat"], p["lon"]) <= radius_nm:
             out.append(p | {"seen_s": round(now - at, 1)})
     return out

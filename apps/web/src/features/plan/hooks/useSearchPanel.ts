@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { SetURLSearchParams } from "react-router";
+import type { Address, SetAddress } from "../../../lib/address";
 import { identOf } from "../../../lib/identSchema";
 import { usePreferences, type RecentAirport } from "../../../lib/preferences";
 import { airportQuery, queryClient } from "../../../lib/queryClient";
 import { useTabSearch } from "../lib/tabSearch";
 import { useAirportSearch } from "../../../lib/useAirportSearch";
-import { patched } from "../../../lib/useSearchParamsNow";
 import type { PanelView } from "./usePanelView";
 
 /**
@@ -22,15 +21,15 @@ export function useSearchPanel({
   view,
   selectPlace,
   listAway,
-  searchParams,
-  setSearchParams,
+  address,
+  setAddress,
 }: {
   view: PanelView;
   selectPlace: (ident: string | null) => void;
   /** A list in full put away, where it is the one open. */
   listAway: (name: "favorites") => void;
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
+  address: Address;
+  setAddress: SetAddress;
 }) {
   const [query, setQuery] = useState("");
   const [picking, setPicking] = useState<"place" | "home" | "favorite">("place");
@@ -100,8 +99,8 @@ export function useSearchPanel({
   // to try) arrives on another; the address drops them once read.
   const seeded = useRef(false);
   useEffect(() => {
-    const listed = searchParams.get("favorites");
-    const homeListed = searchParams.get("home");
+    const listed = address.favorites;
+    const homeListed = address.home;
     if (seeded.current || (!listed && !homeListed)) return;
     seeded.current = true;
     const look = (ident: string) =>
@@ -117,14 +116,9 @@ export function useSearchPanel({
       }
       const home = homeListed && (await look(identOf(homeListed)));
       if (home) usePreferences.getState().setHomeAirport(home);
-      setSearchParams(
-        (prev) => {
-          return patched(prev, { favorites: null, home: null });
-        },
-        { replace: true },
-      );
+      void setAddress({ favorites: null, home: null });
     })();
-  }, [searchParams, setSearchParams]);
+  }, [address, setAddress]);
   return {
     query,
     setQuery,

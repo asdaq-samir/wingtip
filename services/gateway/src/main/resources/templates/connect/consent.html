@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{page :: head('Connect')}"></head>
+<body>
+<!--/* The pilot's consent: who asks, where the answer goes (the MCP spec's
+     "Security Considerations"), and for what. Posted to Spring's
+     authorization endpoint as it reads a consent, so no th:action. */-->
+<h1 th:text="'Connect ' + ${clientName} + ' to Wingtip Maps?'">Connect?</h1>
+<p>Your answer is sent to <span class="host" th:text="${redirectHost}"></span>. Connect only if that is the AI app
+  you are using.</p>
+<p>It will be able to:</p>
+<ul>
+  <li th:each="scope : ${scopes}" th:text="${scopeWords.getOrDefault(scope, scope)}"></li>
+</ul>
+<p class="muted">Only what you ask it about leaves Wingtip, and only to this app. You can remove the connector in
+  that app's settings at any time.</p>
+<form method="post" action="/oauth2/authorize">
+  <input type="hidden" name="client_id" th:value="${clientId}">
+  <input type="hidden" name="state" th:value="${state}">
+  <input th:each="scope : ${scopes}" type="hidden" name="scope" th:value="${scope}">
+  <button class="button" type="submit">Connect</button>
+</form>
+<form method="post" action="/oauth2/authorize">
+  <input type="hidden" name="client_id" th:value="${clientId}">
+  <input type="hidden" name="state" th:value="${state}">
+  <button class="button plain" type="submit">Don't Connect</button>
+</form>
+</body>
+</html>

@@ -35,15 +35,18 @@ const drawnBelowHead = (page: Page) =>
   frontSheet(page).evaluate((sheet) => {
     const head = sheet.querySelector("[data-sheet-head]")?.getBoundingClientRect().bottom ?? sheet.getBoundingClientRect().top + 80;
     let inSight = 0;
-    let painted = 0;
+    const unpainted: string[] = [];
     for (const el of sheet.querySelectorAll("button, img, [role=tab], h2, h3, p, li")) {
       const r = el.getBoundingClientRect();
       if (r.width < 4 || r.height < 4 || r.top < head + 4 || r.bottom > innerHeight) continue;
       if (el.closest("[data-sheet-head], [data-sheet-top]")) continue;
       inSight++;
-      if (el.checkVisibility({ visibilityProperty: true, opacityProperty: true })) painted++;
+      if (!el.checkVisibility({ visibilityProperty: true, opacityProperty: true }))
+        unpainted.push(
+          `${el.tagName.toLowerCase()} ${el.getAttribute("data-testid") ?? el.getAttribute("aria-label") ?? el.textContent?.slice(0, 30)}`,
+        );
     }
-    return [inSight, painted];
+    return [inSight, unpainted] as const;
   });
 
 test.beforeEach(({ page }) => {
@@ -56,9 +59,9 @@ test("an airport card dragged up from its pill shows its content before it is le
   await grabberTo(page, "peek");
   await settled(frontSheet(page));
   await slowDragUp(page, 360, async () => {
-    const [inSight, painted] = await drawnBelowHead(page);
+    const [inSight, unpainted] = await drawnBelowHead(page);
     expect(inSight, "the card's content risen into sight").toBeGreaterThan(0);
-    expect(painted, "of it, painted mid-drag").toBe(inSight);
+    expect(unpainted, "of it, not painted mid-drag").toEqual([]);
   });
 });
 
@@ -68,8 +71,8 @@ test("the sheet dragged up from its pill shows its content before it is let go",
   await grabberTo(page, "peek");
   await settled(sideDrawer(page));
   await slowDragUp(page, 360, async () => {
-    const [inSight, painted] = await drawnBelowHead(page);
+    const [inSight, unpainted] = await drawnBelowHead(page);
     expect(inSight, "the sheet's content risen into sight").toBeGreaterThan(0);
-    expect(painted, "of it, painted mid-drag").toBe(inSight);
+    expect(unpainted, "of it, not painted mid-drag").toEqual([]);
   });
 });

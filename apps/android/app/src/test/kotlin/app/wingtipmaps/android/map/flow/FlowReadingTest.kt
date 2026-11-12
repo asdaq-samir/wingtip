@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.map.flow
 
 import app.wingtipmaps.android.engine.EngineException
+import app.wingtipmaps.android.engine.generated.EngineContract
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -14,6 +15,15 @@ class FlowReadingTest {
     fun theEnginesNullIsNone() {
         assertEquals("None", FlowReading.wordOrNone(Result.success(null), "None").getOrThrow())
         assertEquals("Moderate", FlowReading.wordOrNone(Result.success("Moderate"), "None").getOrThrow())
+    }
+
+    @Test
+    fun aWindUnderAKnotIsCalmWithNoDirection() {
+        // The shared fixture's half-knot case (flowSample.json): value 0.5, no direction, calm.
+        val calmRead = EngineContract.FlowSampleAnswer(0.5, null, true)
+        assertEquals("Calm", FlowReading.wind(calmRead, "Calm") { from, kt -> "$from $kt" })
+        val westerly = EngineContract.FlowSampleAnswer(50.0, 270.0, false)
+        assertEquals("270 50", FlowReading.wind(westerly, "Calm") { from, kt -> "$from $kt" })
     }
 
     @Test

@@ -32,6 +32,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.test.util.ReflectionTestUtils;
+import tools.jackson.databind.json.JsonMapper;
 
 /** The flight watch without a database or a planner: a watch starts from
  *  the briefing now; a check that finds a change keeps it, moves the
@@ -83,7 +84,8 @@ class FlightWatchServiceTest {
                 lines,
                 SubscriptionService.ClaudeFeatures.EVERYONE,
                 mail,
-                "https://maps.example.com/");
+                "https://maps.example.com/",
+                JsonMapper.shared());
     }
 
     private static Pilot pilotWithId(long id) {
@@ -208,7 +210,8 @@ class FlightWatchServiceTest {
                 lines,
                 SubscriptionService.ClaudeFeatures.OFF,
                 mail,
-                "https://maps.example.com/");
+                "https://maps.example.com/",
+                JsonMapper.shared());
         FlightWatch watch = new FlightWatch(7L, 1L, DEPART, THEN, NOW.minus(Duration.ofHours(1)));
         given(watches.due(any(), any(), any(), any())).willReturn(List.of(watch));
         given(flights.findById(7L)).willReturn(Optional.of(flightWithId(7L, pilot)));

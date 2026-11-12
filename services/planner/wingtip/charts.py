@@ -66,6 +66,7 @@ from pathlib import Path
 
 import numpy as np
 import requests
+from cachetools import TTLCache
 from PIL import Image
 
 from .config import (
@@ -75,7 +76,6 @@ from .config import (
     CHART_TILES_URL,
     CHARTS_DIR,
     FAA_ENROUTE_ZIP_URL,
-    FAA_VFR_PRODUCTS_PAGE,
     FAA_VISUAL_ZIP_URL,
     IFR_AREA_MAX_ZOOM,
     IFR_AREA_MIN_ZOOM,
@@ -89,7 +89,7 @@ from .config import (
     VFR_TAC_MIN_ZOOM,
     get_settings,
 )
-from . import chart_faces, tile_archive
+from . import apra, chart_faces, tile_archive
 from .geo import tile_lat_lon, tile_xy
 
 log = logging.getLogger(__name__)
@@ -420,57 +420,35 @@ COVERAGE: dict[str, dict] = {
 # The chart cycle
 # ---------------------------------------------------------------------------
 
-_CYCLE_RE = re.compile(r"aeronav\.faa\.gov/visual/(\d{2}-\d{2}-\d{4})/sectional-files")
-_CYCLE_TTL_S = 6 * 3600
-_cycle_cache: dict = {"value": None, "at": 0.0}
+# The cycle asked of APRA, held for six hours (it changes every 56 days):
+# a TTLCache of one, so it is asked again when that is up.
+_cycle_cache: TTLCache = TTLCache(maxsize=1, ttl=6 * 3600)
 _cycle_lock = threading.Lock()
 
 
 def cycle_from_anchor(today: date) -> str:
     """The cycle date in effect on `today`, by the 56-day charting cycle
     (the engine's `data_cycle`, from the FAA's 28 and 56 Day Product
-    Schedule) -- what the FAA's page would say, without asking it."""
+    Schedule) -- what APRA would say, without asking it."""
     from .data_cycles import start_on
 
     return start_on("chart", today).strftime("%m-%d-%Y")
 
 
-def cycle_from_products_page(html: str, today: date) -> str | None:
-    """The latest cycle the products page links that is already in
-    effect. The page lists the current edition and, near a changeover,
-    the next one too; a chart file for a cycle that has not started is
-    not there to download yet."""
-    dates = set()
-    for text in _CYCLE_RE.findall(html):
-        try:
-            dates.add(datetime.strptime(text, "%m-%d-%Y").date())
-        except ValueError:
-            continue
-    live = sorted(d for d in dates if d <= today)
-    return live[-1].strftime("%m-%d-%Y") if live else None
-
-
 def current_cycle(today: date | None = None, fetch: bool = True) -> str:
-    """The cycle whose charts are downloaded and drawn. From the FAA's
-    products page when it answers (held for six hours -- the answer
-    changes every 56 days), else the anchor arithmetic. `fetch=False`
+    """The cycle whose charts are downloaded and drawn: the sectionals'
+    current edition by the FAA's APRA (wingtip.apra) where it answers and
+    that edition has begun, else the anchor arithmetic. `fetch=False`
     never touches the network: the status endpoint's own choice."""
     today = today or datetime.now(tz=timezone.utc).date()
     with _cycle_lock:
-        if _cycle_cache["value"] and time.time() - _cycle_cache["at"] < _CYCLE_TTL_S:
-            return _cycle_cache["value"]
-    if not fetch:
-        return _cycle_cache["value"] or cycle_from_anchor(today)
-    value = None
-    try:
-        resp = requests.get(FAA_VFR_PRODUCTS_PAGE, headers=REQUEST_HEADERS, timeout=15)
-        if resp.ok:
-            value = cycle_from_products_page(resp.text, today)
-    except requests.RequestException:
-        log.info("FAA VFR products page unreachable; using the cycle arithmetic")
-    value = value or cycle_from_anchor(today)
+        held = _cycle_cache.get("cycle")
+    if held or not fetch:
+        return held or cycle_from_anchor(today)
+    asked = apra.sectional_cycle(today)
+    value = asked.strftime("%m-%d-%Y") if asked else cycle_from_anchor(today)
     with _cycle_lock:
-        _cycle_cache.update(value=value, at=time.time())
+        _cycle_cache["cycle"] = value
     return value
 
 
@@ -535,7 +513,9 @@ _READY = "ready.json"
 _FAIL_TTL_S = 600
 _locks: dict = {}
 _locks_guard = threading.Lock()
-_failed: dict[tuple, float] = {}
+# A sheet whose download failed, held for ten minutes (_FAIL_TTL_S): a map
+# full of tiles does not turn one outage into a request storm.
+_failed: TTLCache = TTLCache(maxsize=256, ttl=_FAIL_TTL_S)
 
 
 def _chart_dir(cycle: str, kind: ChartKind, name: str) -> Path:
@@ -651,15 +631,14 @@ def ensure_chart(kind: ChartKind, name: str, cycle: str | None = None, *, fetch:
         chart = _load_ready(directory, kind, name, cycle)
         if chart is not None:
             return chart
-        failed_at = _failed.get((kind.key, name))
-        if failed_at and time.time() - failed_at < _FAIL_TTL_S:
+        if (kind.key, name) in _failed:
             return _latest_on_disk(kind, name)
         try:
             with _PREPARE_SLOTS:
                 chart = _download_and_prepare(kind, name, cycle)
         except (requests.RequestException, OSError, zipfile.BadZipFile, RuntimeError) as err:
             log.warning("chart %s/%s (%s) unavailable: %s", kind.key, name, cycle, err)
-            _failed[(kind.key, name)] = time.time()
+            _failed[(kind.key, name)] = True
             return _latest_on_disk(kind, name)
         _failed.pop((kind.key, name), None)
         return chart
@@ -1313,7 +1292,7 @@ def serving_cycle() -> str:
     return value
 
 
-_kind_serving: dict = {}
+_kind_serving: TTLCache = TTLCache(maxsize=8, ttl=_SERVING_TTL_S)
 
 
 def serving_cycle_of(kind: str) -> str:
@@ -1330,12 +1309,12 @@ def serving_cycle_of(kind: str) -> str:
     if kind == "sec" or CHART_TILES_URL:
         return serving_cycle()
     held = _kind_serving.get(kind)
-    if held and time.time() - held[1] < _SERVING_TTL_S:
-        return held[0]
+    if held:
+        return held
     value = (
         next((c for c in _cycles_on_disk(CHART_TILE_CACHE_DIR) if in_force(c) and pyramid_complete(c, (kind,))), None) or serving_cycle()
     )
-    _kind_serving[kind] = (value, time.time())
+    _kind_serving[kind] = value
     return value
 
 

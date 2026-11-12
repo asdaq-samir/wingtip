@@ -25,8 +25,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -43,7 +43,7 @@ import app.wingtipmaps.android.ui.WingtipIcons
  */
 @Composable
 fun PassengerScreen(plan: Plan, modifier: Modifier = Modifier) {
-    val model: PassengerModel = viewModel()
+    val model: PassengerModel = hiltViewModel()
     val state by model.state.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
     LaunchedEffect(planState.dep, planState.dest, planState.stops) { model.show(planState) }

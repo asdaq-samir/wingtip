@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.api.generated.assistant.DocumentRead
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * The clearance card's "From a Photo" (the iPhone's ClearancePhotoRow,
@@ -21,7 +23,8 @@ import kotlinx.coroutines.launch
  * check against the paper; Use It hands the words said to the card's own
  * reader, which makes the card as from words typed. Nothing else changes.
  */
-class ClearancePhotoModel : ViewModel() {
+@HiltViewModel
+class ClearancePhotoModel @Inject constructor() : ViewModel() {
     data class State(
         val reading: Boolean = false,
         val problem: String? = null,

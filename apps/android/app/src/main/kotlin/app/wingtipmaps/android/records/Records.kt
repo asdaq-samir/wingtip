@@ -11,6 +11,7 @@ import androidx.room3.Query
 import androidx.room3.Room
 import androidx.room3.RoomDatabase
 import androidx.sqlite.driver.AndroidSQLiteDriver
+import app.wingtipmaps.android.AppClock
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -18,7 +19,7 @@ import kotlinx.coroutines.flow.Flow
  * Favorites and Recents, the watches set on them, the routes planned --
  * in one Room database, the twin of the iOS app's SwiftData store
  * (Records.swift, PlannedRoute.swift). Phase 0 kept no records (its
- * SharedPreferences hold the last plan and the cookie jar, neither a
+ * preferences, now DataStores (Kept), hold the last plan and the cookie jar, neither a
  * record), so there is nothing to take in.
  *
  * iOS carries its store to the pilot's other devices through iCloud.
@@ -242,7 +243,7 @@ object Keeping {
 /** A route planned, kept (the iOS app's PlanHistory.planned): the same
  *  points and altitude planned again move to the top with the new time
  *  rather than repeat, and the list stays at its limit. */
-suspend fun RecordsDao.planned(dep: String, dest: String, stops: List<String>, altitudeFt: Double?, altitudeChoice: String?, atMs: Long = System.currentTimeMillis()) {
+suspend fun RecordsDao.planned(dep: String, dest: String, stops: List<String>, altitudeFt: Double?, altitudeChoice: String?, atMs: Long = AppClock.nowMs()) {
     if (dep.isEmpty() && dest.isEmpty() && stops.isEmpty()) return
     val (row, gone) = Keeping.planned(plannedRoutes(), dep, dest, stops, altitudeFt, altitudeChoice, atMs)
     putRoute(row)

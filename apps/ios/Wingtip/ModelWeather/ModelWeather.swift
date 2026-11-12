@@ -271,16 +271,17 @@ final class ModelWeather {
         // level (Max is no one level, so has none).
         let tempFile: String? = field == .precip ? "temp" : (field == .wind && level != nil && level != "max" ? FlowLevels.file("temp", level) : nil)
         Task {
-            guard let grid = await grid(frame, file), let value = grid.value(lat: point.latitude, lon: point.longitude) else {
-                (reading, readingProblem) = (nil, nil)
-                return
-            }
-            var temp: Double?
-            if let tempFile { temp = await self.grid(frame, tempFile)?.value(lat: point.latitude, lon: point.longitude) }
+            guard let grid = await grid(frame, file) else { (reading, readingProblem) = (nil, nil); return }
+            let tempGrid: FlowGrid? = if let tempFile { await self.grid(frame, tempFile) } else { nil }
             guard self.point?.latitude == point.latitude, self.point?.longitude == point.longitude else { return }
             do {
-                reading = try FlowReading.of(field, value: value, unit: spec?.unit ?? "", top: spec?.unscale.last,
-                                             fromDeg: grid.fromDeg(lat: point.latitude, lon: point.longitude), tempC: temp)
+                guard let at = try grid.reading(lat: point.latitude, lon: point.longitude) else {
+                    (reading, readingProblem) = (nil, nil)
+                    return
+                }
+                let temp = try tempGrid?.reading(lat: point.latitude, lon: point.longitude)?.value
+                reading = try FlowReading.of(field, value: at.value, unit: spec?.unit ?? "", top: spec?.unscale.last,
+                                             fromDeg: at.fromDeg, calm: at.calm, tempC: temp)
                 readingProblem = nil
             } catch {
                 (reading, readingProblem) = (nil, "The \(field.label.lowercased()) there couldn't be worked out: \(error.localizedDescription)")

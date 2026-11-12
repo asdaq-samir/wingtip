@@ -50,6 +50,11 @@ extension Engine {
         try Self.rule("airspace_entry_rules", EngineContract.AirspaceEntryRulesInput(class: `class`))
     }
 
+    /// How high a 3D map stands an airspace volume: its floor and top in feet MSL, from its limits as the FAA's data gives them (each its figure in feet, a flight level times 100, its CODE SFC, AGL, MSL, STD or UNLTD and its DESC TI, TNI or ANI), read as special_use_tab reads them: SFC above 0 is that height above the ground, a ceiling "to but not including" a foot under its figure (FL180 TNI 17,999 ft MSL), a floor "above but not including" a foot over it. A floor above the ground stands on the lowest of `ground`, a ceiling on its highest; the surface is 0 ft MSL with `surface` true; a flight level is drawn as if MSL; no ceiling, or one above it, is drawn to 18,000 ft MSL, where Class A begins (14 CFR 71.33(a)), a drawing bound. Null where nothing is left to draw, or where a limit above the ground has no `ground`.
+    static func airspaceVolumeSpan(floor: EngineContract.SpecialUseTabLimit? = nil, ceiling: EngineContract.SpecialUseTabLimit? = nil, ground: EngineContract.AirspaceVolumeSpanInputGround? = nil) throws -> EngineContract.AirspaceVolumeSpanAnswer? {
+        try Self.rule("airspace_volume_span", EngineContract.AirspaceVolumeSpanInput(floor: floor, ceiling: ceiling, ground: ground))
+    }
+
     /// An airway segment's minimum IFR altitude (14 CFR 91.177(a)(1)): its MEA, else its GNSS MEA; null where it publishes neither.
     static func airwayFloorFt(meaFt: Double? = nil, gnssMeaFt: Double? = nil) throws -> Double? {
         try Self.rule("airway_floor_ft", EngineContract.AirwayFloorFtInput(meaFt: meaFt, gnssMeaFt: gnssMeaFt))
@@ -605,9 +610,19 @@ extension Engine {
         try Self.rule("floor_corridor_nm", EngineContract.FloorCorridorNmInput())
     }
 
+    /// The four pixels of a Model Weather picture (the weather service's flow_grid: a latitude-longitude grid, north row first, `bounds` [west, south, east, north] its pixels' outer edges) round a point, by index row by row from the north, north-west, north-east, south-west and south-east of it, and how far east (`fx`) and south (`fy`) of the first the point is, each 0 to 1, for flow_sample to read. Within half a pixel of the edge, the edge's pixels. Null off the picture.
+    static func flowCell(bounds: [Double], width: Int, height: Int, lat: Double, lon: Double) throws -> EngineContract.FlowCellAnswer? {
+        try Self.rule("flow_cell", EngineContract.FlowCellInput(bounds: bounds, width: width, height: height, lat: lat, lon: lon))
+    }
+
     /// The map's model weather levels by field, as the Aviation Weather Center names them ("060" is 6,000 ft MSL, "180" FL180; "sfc" the surface, "max" the strongest at any level; aviationweather.gov GFA help): the wind's (the owner's ladder, 2026-11-12), the icing's and the turbulence's; each level's standard-atmosphere pressure, hPa, to the tenth (a flight level is where that pressure is; ICAO Doc 7488); the GFS isobaric levels, hPa, the temperature at the levels is read between (each level's standard-atmosphere pressure, ICAO Doc 7488, and one level beyond each side); and the altitude, ft, from which a level is a flight level (14 CFR 71.33).
     static func flowLevels() throws -> EngineContract.FlowLevelsAnswer {
         try Self.rule("flow_levels", EngineContract.FlowLevelsInput())
+    }
+
+    /// A Model Weather picture's value at a point, from the four pixels flow_cell gives (each its red, green and alpha bytes): read between them linearly, as weatherlayers-gl's LINEAR reading does, each byte a 255th of `unscale` [least, most] a step. For the wind (`vector`) its east part in red and north part in green are each read so, and its speed and the direction it blows from (degrees true) come from those parts, the vector average, so the same point reads the same wind on every app. A wind under 1 kt is calm (`calm` true, `from_deg` null): FMH-1 (FCM-H1-2019) Table 5-1 gives under a knot as "Calm; smoke rises vertically", reported as calm with no direction, 00000KT (5.5.2, 12.6.5 d), so the apps write "Calm" rather than a direction the picture's rounding made up. `calm` is false for a scalar field. Null where a pixel the point is read from has no value (alpha 0).
+    static func flowSample(pixels: [[Double]], fx: Double, fy: Double, unscale: [Double], vector: Bool) throws -> EngineContract.FlowSampleAnswer? {
+        try Self.rule("flow_sample", EngineContract.FlowSampleInput(pixels: pixels, fx: fx, fy: fy, unscale: unscale, vector: vector))
     }
 
     /// The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).
@@ -678,6 +693,11 @@ extension Engine {
     /// A G-AIRMET's title in words.
     static func gairmetTitle(hazard: String? = nil, severity: String? = nil) throws -> String {
         try Self.rule("gairmet_title", EngineContract.GairmetTitleInput(hazard: hazard, severity: severity))
+    }
+
+    /// The time a G-AIRMET snapshot stands for: three hours either side of its valid time (UNIX seconds). AIM 7-1-6: G-AIRMETs are "valid at discrete times no more than 3 hours apart", and "the user should assume the hazardous weather condition is occurring between the snap shots unless informed otherwise" (a hazard at 03 and none at 00 or 06 exists from 0001 to 0559), so a snapshot stands for the whole gap either side, erring toward telling of the hazard.
+    static func gairmetWindow(valid: Double) throws -> EngineContract.GairmetWindowAnswer {
+        try Self.rule("gairmet_window", EngineContract.GairmetWindowInput(valid: valid))
     }
 
     /// The G-AIRMET snapshots whose area the route crosses, valid within 90 minutes of some time of the flight (FAA-H-8083-28B 26.3.1.1).
@@ -1038,6 +1058,11 @@ extension Engine {
     /// The bands the map's model weather is coloured and labelled by: precipitation's intensity words by reflectivity, dBZ (AIM 7-1-12: light under 26, moderate 26 to 40, heavy over 40 to 50, extreme over 50; drawn from 10 dBZ, the app's least), the ceiling's by AIM 7-1-7's categories, ft above the ground (14 CFR 1.1), and CAPE's, J/kg (NWS: weak under 1,000, moderate to 2,500, strong to 4,000, extreme over).
     static func modelWeatherBands() throws -> EngineContract.ModelWeatherBandsAnswer {
         try Self.rule("model_weather_bands", EngineContract.ModelWeatherBandsInput())
+    }
+
+    /// The GFS's pressure levels at a station (the weather service's model winds, from NOMADS' GRIB2 HGT, TMP, UGRD and VGRD) in the units the winds aloft are kept in, as the FB's columns were (FAA-H-8083-28B 27.2.1.1.1): the geopotential height in feet by the international foot (0.3048 m, NIST SP 811 B.9), the temperature in degrees Celsius (kelvin less 273.15, NIST SP 811 4.2.1.1), and the wind's east and north parts in metres a second turned into knots (1,852 m a nautical mile, NIST SP 811 B.9) and the direction it blows from, degrees true (360 for no wind at all), and its speed. Unrounded, in the levels' order; a level with any figure missing is left out.
+    static func modelWindLevels(levels: [EngineContract.ModelWindLevelsInputLevelsItem]) throws -> [EngineContract.ModelWindLevelsAnswerItem] {
+        try Self.rule("model_wind_levels", EngineContract.ModelWindLevelsInput(levels: levels))
     }
 
     /// A navaid's ident in Morse code (AIM 1-1-3), the letters two spaces apart.
@@ -1668,6 +1693,11 @@ extension Engine {
     /// Whether own ship moves at flying speed.
     static func underway(speedKt: Double? = nil) throws -> Bool {
         try Self.rule("underway", EngineContract.UnderwayInput(speedKt: speedKt))
+    }
+
+    /// Velocities' east and north parts as tracks and speeds, for a surveillance report that sends its parts (the FAA's STDDS tracks, which the ingest service reads from SWIM): each track degrees true 0 to 360 toward where it goes, and its speed in the parts' own unit (knots for STDDS). The track is null where the speed is 0: what does not move has no track. A list, so a message's tracks cross into the engine once.
+    static func velocityTrack(velocities: [EngineContract.VelocityTrackInputVelocitiesItem]) throws -> [EngineContract.VelocityTrackAnswerItem] {
+        try Self.rule("velocity_track", EngineContract.VelocityTrackInput(velocities: velocities))
     }
 
     /// The vertical speed in feet a minute from GPS altitudes: the least-squares slope of the last 10 seconds of samples; null with fewer than three of them or under 2 seconds.

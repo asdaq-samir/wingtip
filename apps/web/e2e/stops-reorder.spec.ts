@@ -68,6 +68,14 @@ test("a point's grip in FPL's list moves it anywhere, by a mouse or the keyboard
     (url) => /\/(checkpoints|navlog|briefing)$/.test(url.pathname),
     (route) => route.abort(),
   );
+  // FPL's list changes the route in Setup's Layouts that fold the box (A)
+  // or have none (B), where it is the route's editor (PlanWorkspace's
+  // `edit`); with the box out (the default) the box does, and the list
+  // has no grips. Layout B, the list alone.
+  await page.addInitScript(() => {
+    const kept = JSON.parse(localStorage.getItem("wingtip.preferences") ?? '{"state":{},"version":7}');
+    localStorage.setItem("wingtip.preferences", JSON.stringify({ ...kept, state: { ...kept.state, routeEdit: "plan" } }));
+  });
   await page.goto("/app/plan?dep=C81&dest=KDLH&stops=KRYV,KMSN");
   await settle(page);
   await openPanel(page);

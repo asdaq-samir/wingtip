@@ -5,7 +5,7 @@ import { showError } from "../../../lib/problems";
 import { cancelled, shareOrCopy } from "../../../lib/share";
 import { airplaneOfChoice, sharedPlanLink } from "../../../lib/sharedFlight";
 import { routeName } from "../../../lib/identSchema";
-import { useSearchParam } from "../lib/useSearchParam";
+import { useAddressKey } from "../../../lib/address";
 
 /**
  * The route's Share link (ShareMenu): the plan sent in the link itself --
@@ -17,7 +17,7 @@ import { useSearchParam } from "../lib/useSearchParam";
  * ADS-B, as ForeFlight's shared flights carry it).
  */
 export function useShareLink(planned: { dep: string; dest: string; stops: string[] }, altitudeFt: number | undefined) {
-  const depart = useSearchParam("depart");
+  const [depart] = useAddressKey("depart");
   const rules = usePreferences((p) => p.flightRules);
   const aircraft = usePreferences((p) => p.aircraft);
   const { type, tail } = airplaneOfChoice(aircraft);

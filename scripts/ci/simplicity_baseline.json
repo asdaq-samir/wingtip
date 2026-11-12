@@ -1,0 +1,19 @@
+{
+ "ios_shared_references": 463,
+ "ios_root_view_lines": 354,
+ "android_root_screen_lines": 388,
+ "android_map_pane_lines": 332,
+ "android_map_pane_state_lines": 66,
+ "web_plan_workspace_lines": 1201,
+ "android_composables_calling_engine": 8,
+ "ios_views_calling_engine": 2,
+ "ios_try_engine_default": 12,
+ "gateway_http_client_builders": 8,
+ "python_unit_constants": 10,
+ "web_unit_constants": 8,
+ "copy_paste_clones": 46,
+ "one_home_findings": 86,
+ "rules_outside_engine": 23,
+ "hand_built_web_controls": 60,
+ "files_over_400_lines": 139
+}

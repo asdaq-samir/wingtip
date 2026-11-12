@@ -3,7 +3,7 @@ package app.wingtipmaps.android
 import android.app.Application
 import android.content.Context
 import android.net.Uri
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.account.PhoneWipe
@@ -15,11 +15,13 @@ import app.wingtipmaps.android.api.deleteAccount
 import app.wingtipmaps.android.api.setContact
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.HomeAirport
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Who is signed in, and the way in: the emailed link, which opens the
@@ -28,7 +30,8 @@ import kotlinx.coroutines.launch
  * cookie, kept by CookieStore, is the sign-in itself. The twin of the iOS
  * app's Session.swift, as a ViewModel with its state in flows.
  */
-class Session(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class Session @Inject constructor(app: Application) : AndroidViewModel(app) {
     private val _pilot = MutableStateFlow<Pilot?>(null)
     val pilot: StateFlow<Pilot?> = _pilot.asStateFlow()
 
@@ -55,7 +58,7 @@ class Session(app: Application) : AndroidViewModel(app) {
 
     /** The address this phone last asked a link for, kept so a link
      *  opened after the app was closed still names it. */
-    private val asked = app.getSharedPreferences("sign_in", Context.MODE_PRIVATE)
+    private val asked = Kept.of(app, "sign_in")
 
     init {
         refresh()
@@ -92,7 +95,7 @@ class Session(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch {
             try {
                 Gateway.requestMagicLink(email.trim())
-                asked.edit { putString(ASKED, email.trim()) }
+                asked.edit { it[ASKED] = email.trim() }
                 _problem.value = null
                 _linkSent.value = true
             } catch (e: CancellationException) {
@@ -109,7 +112,7 @@ class Session(app: Application) : AndroidViewModel(app) {
      *  screens' (Links, MainActivity). */
     fun open(uri: Uri) {
         val link = Links.parse(uri.toString()) as? Links.SignIn ?: return
-        _signInAsk.value = SignInAsk(link.token, asked.getString(ASKED, null), _pilot.value?.email, checking = true)
+        _signInAsk.value = SignInAsk(link.token, asked[ASKED], _pilot.value?.email, checking = true)
         // Whose link it is, asked of the gateway without spending it; where
         // it cannot be reached, the question names the address asked for.
         viewModelScope.launch {
@@ -156,12 +159,12 @@ class Session(app: Application) : AndroidViewModel(app) {
         val wipe = PhoneWipe.of(context)
         viewModelScope.launch {
             if (ask.current != null) {
-                runCatching { Gateway.signOut() }
+                val _ = runCatching { Gateway.signOut() }
                 forget(wipe)
             }
             try {
                 Gateway.verifyMagicLink(ask.token)
-                asked.edit { remove(ASKED) }
+                asked.edit { it.remove(ASKED) }
                 _linkSent.value = false
                 load()
             } catch (e: CancellationException) {
@@ -181,7 +184,7 @@ class Session(app: Application) : AndroidViewModel(app) {
     fun signOut(context: Context) {
         val wipe = PhoneWipe.of(context)
         viewModelScope.launch {
-            runCatching { Gateway.signOut() }
+            val _ = runCatching { Gateway.signOut() }
             forget(wipe)
             ClaudeGate.refresh(developer = false)
         }
@@ -239,7 +242,7 @@ class Session(app: Application) : AndroidViewModel(app) {
     }
 
     private companion object {
-        const val ASKED = "asked"
+        val ASKED = stringPreferencesKey("asked")
     }
 
     private suspend fun forget(wipe: PhoneWipe) {

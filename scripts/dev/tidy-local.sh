@@ -55,7 +55,7 @@ while IFS= read -r line; do
     "") [ -n "${wt:-}" ] || continue
         if [ "$wt" = "$main" ] || [ "$wt" = "$live" ]; then wt=""; continue; fi
         case $wt in */.claude/worktrees/*|*/wingtip-*) ;; *) wt=""; continue;; esac
-        if [ $locked = 1 ]; then echo "keep (running agent): $wt"; kept=$((kept+1))
+        if [ "$locked" = 1 ]; then echo "keep (running agent): $wt"; kept=$((kept+1))
         elif [ -n "$(git -C "$wt" status --porcelain 2>/dev/null)" ]; then echo "keep (uncommitted changes): $wt"; kept=$((kept+1))
         elif [ "$(idle_minutes "$wt")" -lt 360 ]; then echo "keep (in use in the last six hours): $wt"; kept=$((kept+1))
         elif landed "$head"; then run git worktree remove "$wt" && removed=$((removed+1))

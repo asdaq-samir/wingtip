@@ -1,12 +1,12 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.security.SignInOptions;
 import app.wingtipmaps.gateway.service.SubscriptionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -68,10 +68,9 @@ public class SignInCapabilitiesController {
 
     /** The two settings read as SubscriptionService reads them, not through
      *  it: this answers before anyone signs in, from settings alone. */
-    public SignInCapabilitiesController(
-            SignInOptions signIn,
-            @Value("${app.subscription.enabled:false}") boolean sold,
-            @Value("${app.claude-features:OFF}") SubscriptionService.ClaudeFeatures claude) {
+    public SignInCapabilitiesController(SignInOptions signIn, AppProperties app) {
+        boolean sold = app.subscription().enabled();
+        SubscriptionService.ClaudeFeatures claude = app.claudeFeatures();
         this.signIn = signIn;
         this.sold = sold;
         this.claude = claude;

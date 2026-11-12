@@ -77,16 +77,10 @@ function flapsNotch(flaps: number): number {
   return flaps <= 0 ? 0 : flaps < 0.5 ? 1 : 3;
 }
 
-/** The thrust levers, estimated for the picture and the sound: forward
- *  for a takeoff roll or a climb, back on the ground and in a descent. */
-function throttle(r: SimRow): number {
-  if (r.ground) return r.gs_kt >= 40 ? 1 : 0.1;
-  return r.vs_fpm > 300 ? 0.9 : r.vs_fpm < -300 ? 0.3 : 0.6;
-}
-
 function row(r: SimRow, start: number): (number | string)[] {
   const bit = (b: boolean) => (b ? 1 : 0);
-  const thrust = throttle(r);
+  // The engine's estimate (sim_flight), for the picture and the sound.
+  const thrust = r.throttle;
   const flaps = Number(r.flaps.toFixed(2));
   return [
     Math.round((r.t - start) * 1000),

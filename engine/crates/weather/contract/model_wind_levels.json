@@ -1,0 +1,87 @@
+{
+  "x-call": "wingtip_weather::model_levels::call",
+  "description": "The GFS's pressure levels at a station (the weather service's model winds, from NOMADS' GRIB2 HGT, TMP, UGRD and VGRD) in the units the winds aloft are kept in, as the FB's columns were (FAA-H-8083-28B 27.2.1.1.1): the geopotential height in feet by the international foot (0.3048 m, NIST SP 811 B.9), the temperature in degrees Celsius (kelvin less 273.15, NIST SP 811 4.2.1.1), and the wind's east and north parts in metres a second turned into knots (1,852 m a nautical mile, NIST SP 811 B.9) and the direction it blows from, degrees true (360 for no wind at all), and its speed. Unrounded, in the levels' order; a level with any figure missing is left out.",
+  "type": "object",
+  "properties": {
+    "input": {
+      "title": "ModelWindLevelsInput",
+      "type": "object",
+      "properties": {
+        "levels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "height_m": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "temp_k": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "u_m_s": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "v_m_s": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "required": [
+              "height_m",
+              "temp_k",
+              "u_m_s",
+              "v_m_s"
+            ]
+          }
+        }
+      },
+      "required": [
+        "levels"
+      ]
+    },
+    "answer": {
+      "title": "ModelWindLevelsAnswer",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "altitude_ft": {
+            "type": "number"
+          },
+          "wind_dir_true_deg": {
+            "type": "number"
+          },
+          "wind_speed_kt": {
+            "type": "number"
+          },
+          "temp_c": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "altitude_ft",
+          "wind_dir_true_deg",
+          "wind_speed_kt",
+          "temp_c"
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": [
+    "input",
+    "answer"
+  ],
+  "additionalProperties": false
+}

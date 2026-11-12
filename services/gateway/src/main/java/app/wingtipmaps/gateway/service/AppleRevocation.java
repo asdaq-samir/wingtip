@@ -1,20 +1,18 @@
 package app.wingtipmaps.gateway.service;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
+import app.wingtipmaps.gateway.config.AppProperties;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 /**
  * Ends the grant Apple gave this app for a pilot, as their account goes:
@@ -35,13 +33,19 @@ public class AppleRevocation {
 
     private final Optional<ClientRegistrationRepository> registrations;
     private final String revokeUrl;
-    private final HttpClient http =
-            HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+    /** Boot's RestClient: its waits are spring.http.clients' (application.yml). */
+    private final RestClient http;
+
+    @Autowired
+    public AppleRevocation(
+            Optional<ClientRegistrationRepository> registrations, RestClient.Builder http, AppProperties app) {
+        this(registrations, http, app.apple().revokeUrl());
+    }
 
     public AppleRevocation(
-            Optional<ClientRegistrationRepository> registrations,
-            @Value("${apple.revoke-url:https://appleid.apple.com/auth/revoke}") String revokeUrl) {
+            Optional<ClientRegistrationRepository> registrations, RestClient.Builder http, String revokeUrl) {
         this.registrations = registrations;
+        this.http = http.build();
         this.revokeUrl = revokeUrl;
     }
 
@@ -56,29 +60,20 @@ public class AppleRevocation {
             log.warn("A pilot's Apple token was kept but Sign in with Apple is not configured; not revoked");
             return;
         }
-        String body = "client_id=" + encode(apple.getClientId())
-                + "&client_secret=" + encode(apple.getClientSecret())
-                + "&token=" + encode(refreshToken)
-                + "&token_type_hint=refresh_token";
-        HttpRequest request = HttpRequest.newBuilder(URI.create(revokeUrl))
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .timeout(Duration.ofSeconds(15))
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("client_id", apple.getClientId());
+        form.add("client_secret", apple.getClientSecret());
+        form.add("token", refreshToken);
+        form.add("token_type_hint", "refresh_token");
         try {
-            HttpResponse<Void> response = http.send(request, HttpResponse.BodyHandlers.discarding());
-            if (response.statusCode() != 200) {
-                log.error("Apple answered {} to revoking a deleted pilot's token", response.statusCode());
-            }
-        } catch (IOException failed) {
-            log.error("Apple could not be reached to revoke a deleted pilot's token", failed);
-        } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            log.error("Interrupted revoking a deleted pilot's Apple token", interrupted);
+            http.post()
+                    .uri(revokeUrl)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(form)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientException failed) {
+            log.error("Apple refused or could not be reached to revoke a deleted pilot's token", failed);
         }
-    }
-
-    private static String encode(String value) {
-        return URLEncoder.encode(value, StandardCharsets.UTF_8);
     }
 }

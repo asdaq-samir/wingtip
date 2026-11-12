@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.coach
 
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.generated.CoachDebrief
@@ -37,7 +38,7 @@ object CoachDebriefs {
     const val RECENT_DAYS = 183L
 
     /** The flights the coach looks at: the last half year's, newest first. */
-    fun recent(flights: List<FlightSummaryDto>, now: Instant = Instant.now()): List<FlightSummaryDto> {
+    fun recent(flights: List<FlightSummaryDto>, now: Instant = AppClock.javaNow()): List<FlightSummaryDto> {
         val oldest = now.minusSeconds(RECENT_DAYS * 86_400)
         val whenOf = { f: FlightSummaryDto -> runCatching { Instant.parse(f.plannedFor ?: f.createdAt) }.getOrDefault(Instant.EPOCH) }
         return flights.filter { !whenOf(it).isBefore(oldest) }.sortedByDescending(whenOf).take(MOST_FLIGHTS)

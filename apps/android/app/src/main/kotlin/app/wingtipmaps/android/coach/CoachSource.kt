@@ -1,8 +1,8 @@
 package app.wingtipmaps.android.coach
 
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
@@ -18,6 +18,8 @@ import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.TrainingDto
 import app.wingtipmaps.android.api.logbook
 import app.wingtipmaps.android.api.training
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 
 /** The Coach's servers: what the gateway keeps of the pilot, the
  *  planner's plan and the assistant's words; a fake in the tests. */
@@ -52,13 +54,16 @@ interface CertificateKeeper {
     fun keep(certificate: Certificate)
 }
 
-class CertificatePreference(private val prefs: SharedPreferences) : CertificateKeeper {
-    override fun read(): Certificate? = Certificate.of(prefs.getString(KEY, null))
-    override fun keep(certificate: Certificate) = prefs.edit { putString(KEY, certificate.wire) }
+class CertificatePreference(private val prefs: Kept) : CertificateKeeper {
+    /** The app's "wingtip" store's, for Hilt. */
+    @Inject constructor(@ApplicationContext context: Context) : this(Kept.of(context, "wingtip"))
+
+    override fun read(): Certificate? = Certificate.of(prefs[KEY])
+    override fun keep(certificate: Certificate) = prefs.edit { it[KEY] = certificate.wire }
 
     companion object {
-        private const val KEY = "coach.certificate"
+        private val KEY = stringPreferencesKey("coach.certificate")
 
-        fun of(context: Context) = CertificatePreference(context.applicationContext.getSharedPreferences("wingtip", Context.MODE_PRIVATE))
+        fun of(context: Context) = CertificatePreference(context)
     }
 }

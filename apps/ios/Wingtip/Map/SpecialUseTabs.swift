@@ -6,10 +6,9 @@ import UIKit
 /// near Brady, TX, 2026-11-12) and the web draws them (glSuaLabels): a
 /// dark tab bordered in the area's ink, white bold type, its name over its
 /// altitudes, "M-BRADY NOR*:" over "3600-17999", its long side along the
-/// area's longest side and just inside it. The name, the limits' figures
-/// and references, the place and the turn are the engine's
-/// (special_use_in_view's `tab`, crate::sua_tab); the words of the limits
-/// are written here, as the web's style writes them.
+/// area's longest side and just inside it. Its words, place and turn are
+/// all the engine's (special_use_in_view's `tab`, crate::sua_tab), as the
+/// web draws the tiles' `tab`; the app only turns it with the map.
 enum SpecialUseTab {
     /// From the zoom of the Class B, C and D tabs (the web's
     /// AIRSPACE_LABELS_FROM).
@@ -18,30 +17,6 @@ enum SpecialUseTab {
     /// half its two lines' height, so its edge meets the line (the web's
     /// INSIDE_EM, 1.35 ems of 11 points).
     static let inside: CGFloat = 15
-
-    /// A limit as the tab writes it, whole feet and no comma (the web's
-    /// limitText): "SFC", "UNL", "500AGL", "FL180", "3600"; nil with no
-    /// figure where one is needed.
-    static func limit(_ ft: Double?, ref: String) -> String? {
-        switch ref {
-        case "SFC": return "SFC"
-        case "UNL": return "UNL"
-        default:
-            guard let ft else { return nil }
-            switch ref {
-            case "AGL": return "\(Int(ft.rounded()))AGL"
-            case "FL": return "FL\(Int((ft / 100).rounded()))"
-            default: return "\(Int(ft.rounded()))"
-            }
-        }
-    }
-
-    /// The tab's floor and ceiling as it writes them, nil where either
-    /// has no words.
-    static func limits(_ tab: ChartMarks.Area.Tab) -> (floor: String, ceiling: String)? {
-        guard let floor = limit(tab.floorFt, ref: tab.floorRef), let ceiling = limit(tab.ceilingFt, ref: tab.ceilingRef) else { return nil }
-        return (floor, ceiling)
-    }
 
     /// The tab's turn on the screen with the map's heading taken off,
     /// kept upright (-90 to 90), and which side of the text the area then
@@ -58,16 +33,14 @@ enum SpecialUseTab {
 final class SpecialUseTabAnnotation: NSObject, MKAnnotation {
     let area: ChartMarks.Area
     let tab: ChartMarks.Area.Tab
-    let limits: (floor: String, ceiling: String)
     let coordinate: CLLocationCoordinate2D
-    /// Its two lines: "M-BRADY NOR*:" over "3600-17999".
-    var text: String { "\(tab.name):\n\(limits.floor)-\(limits.ceiling)" }
+    /// Its two lines as the engine writes them: "M-BRADY NOR*:" over "3600-17999".
+    var text: String { tab.text }
 
     init?(_ area: ChartMarks.Area) {
-        guard let tab = area.tab, tab.at.count == 2, let limits = SpecialUseTab.limits(tab) else { return nil }
+        guard let tab = area.tab, tab.at.count == 2, !tab.text.isEmpty else { return nil }
         self.area = area
         self.tab = tab
-        self.limits = limits
         coordinate = CLLocationCoordinate2D(latitude: tab.at[0], longitude: tab.at[1])
     }
 }
@@ -119,7 +92,7 @@ final class SpecialUseTabView: MKAnnotationView {
         box.bounds = CGRect(origin: .zero, size: size)
         label.frame.origin = CGPoint(x: 6, y: 2)
         displayPriority = MKFeatureDisplayPriority(rawValue: mark.area.restricted ? 200 : 190)
-        accessibilityLabel = "\(mark.area.name), \(mark.limits.floor) to \(mark.limits.ceiling)"
+        accessibilityLabel = "\(mark.area.name), \(mark.text)"
         turn()
     }
 

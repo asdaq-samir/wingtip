@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { openMapSettings, settle, slow } from "./helpers";
+import { grabberTo, openMapSettings, settle, slow } from "./helpers";
 
 /**
  * The model weather's flow layer (features/weather-flow, the owner's
@@ -148,6 +148,8 @@ test("model weather is off by default, turned on from the Map menu, and its lege
   expect(asked).toHaveLength(0);
 
   await openMapSettings(page);
+  // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
+  await grabberTo(page, "full");
   await page.getByTestId("weather-flow").click();
   await page.getByTestId("weather-flow-wind").click();
   await expect(async () => {
@@ -161,8 +163,10 @@ test("model weather is off by default, turned on from the Map menu, and its lege
   await expect(legend).toBeVisible({ timeout: slow(15000) });
   await expect(legend).toContainText("Wind (kt)");
   // Whose it is, the Aviation Weather Center's, and its cycle's hour: no
-  // "not an observation" caveat (the owner, 2026-11-12).
-  await expect(page.getByTestId("weather-flow-source")).toHaveText("AWC winds, 12Z");
+  // "not an observation" caveat (the owner, 2026-11-12). The timeline has
+  // the world's wind too (world_bounds), drawn past AWC's box from the GFS,
+  // and the line says so (flowSource's sourceLine, 8d941d4e0).
+  await expect(page.getByTestId("weather-flow-source")).toHaveText("AWC winds, 12Z; NOAA GFS beyond");
   await expect(legend).not.toContainText("not an observation");
   await expect(page.getByTestId("weather-flow-time")).toContainText(/\d{4}Z/);
   await expect(page.getByTestId("weather-flow-bar")).toContainText("Now");

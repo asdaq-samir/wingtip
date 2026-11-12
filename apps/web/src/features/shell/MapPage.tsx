@@ -1,6 +1,6 @@
 import { Suspense, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { showError } from "../../lib/problems";
-import { patched, useSearchParamsNow } from "../../lib/useSearchParamsNow";
+import { useAddress } from "../../lib/address";
 import { Shown } from "../../lib/shown";
 import DevGuard from "../../components/DevGuard";
 import MapPanel from "../../components/MapPanel";
@@ -44,7 +44,7 @@ export default function MapPage({ mode }: { mode: Mode }) {
   const navBar = usePreferences((s) => s.navBar);
   const edge = useNavEdge();
   useShortcuts(useIsDesktop()); // a desktop's keys: / the search, B, N, D, Escape back
-  const [searchParams, setSearchParams] = useSearchParamsNow();
+  const [address, setAddress] = useAddress();
   // The route in the panel: the address's, unless the pilot has typed
   // over it -- and a draft belongs to the address it was typed over. The
   // address is what every query keys on, and it changes in more ways
@@ -52,8 +52,8 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // console, Back. The form used to read it once, and was kept in step
   // for only one of those, so after opening a saved flight it still
   // showed the old route, and Load quietly re-planned that instead.
-  const addressDep = searchParams.get("dep")?.toUpperCase() || route[0];
-  const addressDest = searchParams.get("dest")?.toUpperCase() || route[1];
+  const addressDep = address.dep?.toUpperCase() || route[0];
+  const addressDest = address.dest?.toUpperCase() || route[1];
   const addressKey = `${addressDep}-${addressDest}`;
   const [draft, setDraft] = useState<{ of: string; dep: string; dest: string } | null>(null);
   const typed = draft?.of === addressKey ? draft : null;
@@ -65,20 +65,15 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // A Google or Apple sign-in the gateway refused comes back here: an
   // address the provider has not verified can be nobody's pilot. Said
   // once, and taken off the address.
-  const refused = searchParams.get("signin") === "refused";
+  const refused = address.signin === "refused";
   useEffect(() => {
     if (!refused) return;
     showError(
       "That sign-in was refused",
       "The provider has not verified that account's email address. Verify it there, or sign in with an emailed link.",
     );
-    setSearchParams(
-      (prev) => {
-        return patched(prev, { signin: null });
-      },
-      { replace: true },
-    );
-  }, [refused, setSearchParams]);
+    void setAddress({ signin: null });
+  }, [refused, setAddress]);
 
   // How far the panel is out. All the way, on the planner, is the
   // address; resting is this page's own. Opened, the panel rests as its
@@ -92,7 +87,10 @@ export default function MapPage({ mode }: { mode: Mode }) {
   const [localPanel, setLocalPanel] = useState<PanelState>(() =>
     mode !== "pilot"
       ? "peek"
-      : ["place", "at", "flight", "past", "aircraft", "near", "saved", "list"].some((key) => searchParams.has(key))
+      : [address.place, address.at, address.flight, address.past, address.list].some((open) => open !== null) ||
+          address.aircraft ||
+          address.near ||
+          address.saved
         ? "half"
         : // A desktop's side panel out from the start, the search and the
           // plan in it (the one-search design's Desktop, 2026-11-09).
@@ -104,25 +102,20 @@ export default function MapPage({ mode }: { mode: Mode }) {
   // is out of sight (lib/airportIndex).
   useWarmAirportIndex(mode === "pilot");
   useHomeAirportSync(); // the account's home base and this device's home airport, one field
-  const briefingInAddress = searchParams.get("view") === "briefing";
+  const briefingInAddress = address.view === "briefing";
   const panel: PanelState = mode === "pilot" ? (briefingInAddress ? "full" : localPanel === "full" ? "peek" : localPanel) : localPanel;
-  // flushSync: the panel moves the moment the address says so. React
-  // Router lands a navigation in a transition, which a busy page (the
-  // plan streaming in) holds back, and the toggle read the state from
-  // before it: a close pressed then opened it again, one run in three
-  // under load.
+  // The panel moves the moment the address says so: nuqs changes the
+  // address's state at once, where React Router landed a navigation in a
+  // transition, which a busy page (the plan streaming in) held back, and
+  // the toggle read the state from before it: a close pressed then opened
+  // it again, one run in three under load.
   const setPanel = useCallback(
     (next: PanelState) => {
       setLocalPanel(next);
       if (mode !== "pilot" || (next === "full") === briefingInAddress) return;
-      setSearchParams(
-        (prev) => {
-          return patched(prev, { view: next === "full" ? "briefing" : null });
-        },
-        { replace: true, flushSync: true },
-      );
+      void setAddress({ view: next === "full" ? "briefing" : null });
     },
-    [mode, briefingInAddress, setSearchParams],
+    [mode, briefingInAddress, setAddress],
   );
 
   // What the panel covers of the map at rest, for the map to fit a
@@ -196,7 +189,6 @@ export default function MapPage({ mode }: { mode: Mode }) {
     <ConsoleInPanelContext.Provider value={consoleInPanel}>
       <ConsoleLayer
         label={consoleLabel}
-        detent={panel === "full" ? "large" : "medium"}
         edge={edge}
         onClose={closeConsole}
         finalFocus={consoleButton}

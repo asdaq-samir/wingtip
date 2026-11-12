@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo } from "react";
-import type { SetURLSearchParams } from "react-router";
+import { addressParams, type Address, type SetAddress } from "../../../lib/address";
 import type { AircraftChoice } from "../../../lib/api/types";
 import { NO_PLAN, useBriefPlan } from "../../../lib/briefPlan";
 import { picksOf } from "../../../lib/flightLink";
 import { identOf } from "../../../lib/identSchema";
-import { patched } from "../../../lib/useSearchParamsNow";
 import { useWindPicks } from "../lib/windPicks";
 import { useAsk } from "../../../lib/ask/useAsk";
 import { useTabAsk } from "../components/navlog/panelTab";
@@ -31,8 +30,8 @@ export function useFlightToSave({
   depart,
   altitudes,
   localMin,
-  searchParams,
-  setSearchParams,
+  address,
+  setAddress,
   setRoute,
   flyAltitude,
   changeDepart,
@@ -47,8 +46,8 @@ export function useFlightToSave({
   altitudes: string;
   /** A local flight's time aloft, in minutes. */
   localMin: number;
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
+  address: Address;
+  setAddress: SetAddress;
   setRoute: RouteEdits["setRoute"];
   flyAltitude: RouteEdits["flyAltitude"];
   changeDepart: (iso: string) => void;
@@ -59,10 +58,10 @@ export function useFlightToSave({
   // one: a route from an airport, its nav log in.
   const fileable = !!identOf(planned.dep) && !!s.totals;
   const fileFlightPlan = useCallback(() => {
-    setSearchParams((prev) => patched(prev, { brief: "1" }), { replace: true });
+    void setAddress({ brief: true });
     // The Brief's own card all the way up for the form (PanelTabs).
     useTabAsk.getState().go("preflight", "Flight Plan", true);
-  }, [setSearchParams]);
+  }, [setAddress]);
 
   // The plan as a flight to save: Save's, and the solo cross-country
   // review's, which saves it as it asks.
@@ -88,7 +87,7 @@ export function useFlightToSave({
     aircraftId: aircraft.aircraftId ?? null,
     depart,
     altitudes,
-    picks: picksOf(searchParams),
+    picks: picksOf(addressParams(address)),
   };
   // The flight as the Brief reads it (lib/briefPlan), for its Ask, its
   // words and its watch, which draw outside the route's props: the

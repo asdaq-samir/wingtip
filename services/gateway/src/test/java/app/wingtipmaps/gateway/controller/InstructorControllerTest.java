@@ -96,7 +96,7 @@ class InstructorControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(SIGN))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error").value("The words have changed since you read them."));
+                .andExpect(jsonPath("$.detail").value("The words have changed since you read them."));
     }
 
     @Test

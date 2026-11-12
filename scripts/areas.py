@@ -70,6 +70,12 @@ def glob_regex(pattern):
     out, i = "", 0
     while i < len(pattern):
         c = pattern[i]
+        # `**/` is zero or more folders, so `**/x` also matches a root `x`;
+        # a bare `**` is anything.
+        if pattern.startswith("**/", i):
+            out += "(?:.*/)?"
+            i += 3
+            continue
         if pattern.startswith("**", i):
             out += ".*"
             i += 2

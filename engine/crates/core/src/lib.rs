@@ -10,6 +10,7 @@
 //! - time: UTC dates;
 //! - json: the little JSON every rule reads and writes;
 //! - sort: the one stable sort every crate's sorting goes through;
+//! - text: a whole number with its thousands grouped, "12,500";
 //! - xml: the small XML reader the weather products share.
 
 pub mod base64;
@@ -18,6 +19,7 @@ pub mod grid;
 pub mod json;
 pub mod sort;
 pub mod sums;
+pub mod text;
 pub mod time;
 pub mod wmm;
 pub mod xml;

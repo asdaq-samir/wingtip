@@ -84,37 +84,23 @@ object SpecialUseLayers {
         )
     }
 
-    /** A figure of the tab's as ForeFlight writes it: whole feet, no comma. */
-    private fun feet(field: String) = e("to-string", e("round", e("get", field)))
-
-    /** A limit in the tab's words, from the tiles' figure and its reference
-     *  (services/jobs/charts/sua_labels.py `limit`, which turns the FAA's
-     *  "to but not including" FL180 into 17999 as the FAA's CIFP does): the
-     *  surface "SFC", above the ground "500AGL", a flight level "FL230", no
-     *  ceiling "UNL", else feet MSL, "7000". */
-    private fun limit(ft: String, ref: String) = e(
-        "match", e("get", ref),
-        "SFC", "SFC",
-        "UNL", "UNL",
-        "AGL", e("concat", feet(ft), "AGL"),
-        "FL", e("concat", "FL", e("to-string", e("round", e("/", e("get", ft), 100)))),
-        feet(ft),
-    )
-
-    /** "M-BRNWD 2 W*:" over "7000-17999": the charts job's name (its
-     *  letter and the name, "*" where cut), then the floor and the ceiling. */
-    val TAB_TEXT: JsonArray = e("concat", e("get", "label"), ":\n", limit("floor_ft", "floor_ref"), "-", limit("ceiling_ft", "ceiling_ref"))
+    /** "M-BRNWD 2 W*:" over "7000-17999": the engine's words for the tab
+     *  (special_use_tab's `text`), which the charts job writes into the
+     *  tiles as `tab`, so the map only draws them; the name alone in an
+     *  archive written before the tiles carried them (vector_tiles.VERSION
+     *  5), as the web's glSuaLabels does. */
+    val TAB_TEXT: JsonArray = e("coalesce", e("get", "tab"), e("get", "label"))
 
     /** How far off its point a tab sits, ems towards the area's side:
      *  about half its two lines' height, so its edge meets the line. */
     private const val INSIDE_EM = 1.35
 
     /** The tabs' one layer, from the tiles' `special_use_labels` (the
-     *  charts job's points, one an area on its longest side, `angle` its
-     *  turn and `side` where the area lies); or where an older archive has
-     *  none of them, the area's name alone along its `special_use`
-     *  boundary, whose floor reads 0 for a floor the FAA gives above the
-     *  ground, so its figures are not written. The map never turns
+     *  charts job's points, one an area on its longest side, `tab` its
+     *  words, `angle` its turn and `side` where the area lies); or where
+     *  an older archive has none of them, the area's name alone along its
+     *  `special_use` boundary, whose floor reads 0 for a floor the FAA
+     *  gives above the ground, so its figures are not written. The map never turns
      *  (ChartMap), so the tiles' turn is the screen's. */
     fun labels(labelPoints: Boolean): JsonObject = buildJsonObject {
         put("id", LABELS)

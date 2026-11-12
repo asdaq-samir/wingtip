@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { settle, settled, sideDrawer, slow, frontSheet } from "./helpers";
+import { grabberTo, settle, settled, sideDrawer, slow, frontSheet } from "./helpers";
 
 // A route's handler still running as the test ends -- the Recents and
 // Saved planned ahead at idle ask the planner then -- found the page
@@ -38,7 +38,9 @@ async function noPhotos(page: Page) {
 /** The card's Charts tab, which takes the panel all the way up. */
 async function toCharts(page: Page) {
   await card(page).getByTestId("place-tab-diagrams").click();
-  await expect(frontSheet(page)).toHaveAttribute("data-panel", "full");
+  // A card stays half way on a tab, as it opened (e7bb15ec8, the card
+  // rule's 2): pulled all the way up for the charts, as a pilot would.
+  await grabberTo(page, "full");
 }
 
 async function withDiagram(page: Page, picture: "drawn" | "missing", pdf = true) {

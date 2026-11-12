@@ -18,7 +18,7 @@ import { chartPair, kindCycle, tileDensity } from "../../lib/map/sources/tiles";
 import { requestAirplanePick } from "../../lib/pickAirplane";
 import { usePreferences } from "../../lib/preferences";
 import { useMinuteClock } from "../../lib/useMinuteClock";
-import { useSearchParamsNow } from "../../lib/useSearchParamsNow";
+import { useAddressKey } from "../../lib/address";
 import { keepForAir, useKeptForAir } from "../keptForAir";
 import { notamRankingQuery } from "../notamRanking";
 import { readyInput } from "./readyFacts";
@@ -76,7 +76,7 @@ export function useReadyToFly() {
   );
   const cycles = useDataCycles();
   const briefing = useBriefingOf(plan.dep, plan.dest);
-  const alternate = useSearchParamsNow()[0].get("alternate") || null;
+  const alternate = useAddressKey("alternate")[0] || null;
   const notams = useQuery({ ...notamRankingQuery(plan), enabled: false });
   const device = useDevice();
   const kept = useKeptForAir(course, alternate, keepingAvailable());

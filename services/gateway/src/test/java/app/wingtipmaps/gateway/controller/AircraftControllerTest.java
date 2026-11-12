@@ -116,7 +116,7 @@ class AircraftControllerTest {
                                 .content(
                                         "{\"tailNumber\":\"\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,\"fuelBurnGph\":8.5}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error").value("Invalid request"));
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.startsWith("Invalid request: ")));
     }
 
     /** Longer than the column was a database error, reported as a
@@ -133,7 +133,7 @@ class AircraftControllerTest {
                                 .content(
                                         "{\"tailNumber\":\"N12345678901234567\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,\"fuelBurnGph\":8.5}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.details[0]").value("tailNumber: tailNumber must be at most 16 characters"));
+                .andExpect(jsonPath("$.errors[0]").value("tailNumber: tailNumber must be at most 16 characters"));
     }
 
     @Test
@@ -270,7 +270,7 @@ class AircraftControllerTest {
                             .content("{\"tailNumber\":\"N1\",\"typeDesignator\":\"C172\",\"cruiseTasKt\":110,"
                                     + "\"fuelBurnGph\":8.5," + c[0] + "}"))
                     .andExpect(status().isBadRequest())
-                    .andExpect(jsonPath("$.details[0]").value(org.hamcrest.Matchers.startsWith(c[1] + ":")));
+                    .andExpect(jsonPath("$.errors[0]").value(org.hamcrest.Matchers.startsWith(c[1] + ":")));
         }
     }
 

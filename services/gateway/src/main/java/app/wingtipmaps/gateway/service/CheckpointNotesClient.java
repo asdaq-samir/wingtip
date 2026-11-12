@@ -2,7 +2,6 @@ package app.wingtipmaps.gateway.service;
 
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.planner.model.PlannerCheckpointNote;
-import app.wingtipmaps.gateway.planner.model.PlannerPilotNotes;
 import java.util.List;
 import org.springframework.stereotype.Component;
 
@@ -30,13 +29,7 @@ public class CheckpointNotesClient {
      * @throws PlannerUnavailableException when the planner cannot be asked or answers otherwise
      */
     public List<PlannerCheckpointNote> mine(Pilot pilot) {
-        List<PlannerCheckpointNote> notes = planner.get(
-                        "/api/checkpoint-notes/mine",
-                        PlannerPilotNotes.class,
-                        "the notes",
-                        AccountService.PILOT_HEADER,
-                        String.valueOf(pilot.getId()))
-                .getNotes();
+        List<PlannerCheckpointNote> notes = planner.notes(pilot.getId()).getNotes();
         return notes == null ? List.of() : notes;
     }
 }

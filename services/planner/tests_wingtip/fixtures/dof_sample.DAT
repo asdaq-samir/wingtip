@@ -1,0 +1,10 @@
+  CURRENCY DATE = 08/02/26
+                                   LATITUDE     LONGITUDE     OBSTACLE             AGL   AMSL LT ACC MAR FAA          ACTION
+OAS#      V CO ST CITY             DEG MIN SEC  DEG MIN SEC   TYPE                 HT    HT     H V IND STUDY           JDATE
+-------------------------------------------------------------------------------------------------------------------------------
+01-001307 O US AL DAUPHIN ISLAND   30 10 45.00N 088 04 39.00W RIG                1 00236 00236 R 5 D M 1990ASO01578OE C 2014138 
+06-327052 U US CA EL CENTRO        32 49 19.30N 115 35 44.35W TOWER              1 00031 -0018 N 4 D N 2026AWP06919OE A 2026188 
+AS-000023 O AS    LEONE            14 21 19.00S 170 46 41.00W TOWER              1 00218 00278 U 9 I U                A 1992209 
+02-292529 U US AK EARECKSON AIR ST 52 43 15.70N 174 06 36.60E TANK               1 00013 00187 N 4 D N 2020AAL00320OE A 2020246 
+01-021529 O US AL GULF SHORES      30 17 15.34N 087 40 55.26W BLDG               1 00034 00047 U 2 C U                A 2012334 
+08-081433 O US CO NUCLA            37 46 04.00N 108 44 54.00W CATENARY           1 01380 07673 N 4 D S 2016ANM03124OE A 2020346 

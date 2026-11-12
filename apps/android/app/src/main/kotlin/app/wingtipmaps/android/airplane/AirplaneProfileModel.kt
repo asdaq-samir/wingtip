@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.Gateway
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Locale
+import javax.inject.Inject
 
 /** Where an airplane's figures are saved: OwnAirplanes, a fake in the tests. */
 interface OwnSaving {
@@ -27,7 +29,8 @@ interface OwnSaving {
  * N-number from its type's book figures (AirplaneNow.base), and theirs
  * then stands over the book's for that N-number alone.
  */
-class AirplaneProfileModel : ViewModel() {
+@HiltViewModel
+class AirplaneProfileModel @Inject constructor() : ViewModel() {
     data class State(
         val editing: String? = null,
         val text: String = "",

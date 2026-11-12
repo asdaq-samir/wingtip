@@ -69,7 +69,8 @@ own settings (`LIVE_STORE`, `NOTAM_STORE`, `FILED_STORE`,
 
 ```
 ingest/main.py      the entry point: the feeds, the following, the beat
-ingest/swim.py      the SWIM feeds: the Solace connection per feed, the radar's tracks, the handlers
+ingest/swim.py      the SWIM feeds: the Solace connection per feed, the radar's tracks kept, the handlers
+ingest/radar_tracks.py  STDDS's tracks read, their course and speed the engine's
 ingest/health.py    the health check
 ingest/settings.py  its environment
 tests/              its suite

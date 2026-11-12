@@ -8,7 +8,8 @@ import { altitudesOf, altitudesParam, routeOf, stopsOf } from "../../../lib/iden
 import { usePreferences } from "../../../lib/preferences";
 import { chartCycle, courseQuery, flightsQuery, queryClient } from "../../../lib/queryClient";
 import { sameStops } from "../lib/routeWays";
-import { altitudeChoiceOf, type PlannedRoute } from "./planAddress";
+import { loadAddress } from "../../../lib/address";
+import type { PlannedRoute } from "./planAddress";
 import { navlogQuery, type PlanParams } from "./usePlan";
 
 /** How many of the latest Recents, and of Saved, are planned ahead. */
@@ -65,10 +66,12 @@ export function usePlanAhead({
     const cancel = window.cancelIdleCallback ?? window.clearTimeout;
     const handle = idle(async () => {
       for (const href of aheadRoutes.slice(0, PLANNED_AHEAD * 2)) {
-        const q = new URLSearchParams(href.split("?")[1]);
-        const dep = q.get("dep") ?? "",
-          dest = q.get("dest") ?? "";
-        const via = stopsOf(q.get("stops"));
+        // Read as the page reads its own address (lib/address), so the plan
+        // asked for ahead is the one the page will ask for.
+        const q = loadAddress(href.split("?")[1] ?? "");
+        const dep = q.dep ?? "",
+          dest = q.dest ?? "";
+        const via = stopsOf(q.stops);
         const mark = [href, aircraftKey(aircraft), load, showWaypoints, flightRules].join("|");
         if (gone) return;
         if (plannedAhead.current.has(mark) || !routeOf(dep, dest, via) || (dep === dest && via.length === 0)) continue;
@@ -78,14 +81,14 @@ export function usePlanAhead({
           dep,
           dest,
           stops: via,
-          altitudeFt: q.get("altitude_ft") ?? "",
-          altitudeNearest: q.get("altitude_nearest") === "1",
-          altitudeChoice: altitudeChoiceOf(q.get("altitude_choice")),
-          depart: q.get("depart") ?? "",
+          altitudeFt: q.altitude_ft?.toString() ?? "",
+          altitudeNearest: q.altitude_nearest,
+          altitudeChoice: q.altitude_choice,
+          depart: q.depart ?? "",
           aircraft,
           load,
-          classBClearance: q.get("class_b") !== "0",
-          altitudes: altitudesParam(altitudesOf(q.get("altitudes"))),
+          classBClearance: q.class_b,
+          altitudes: altitudesParam(altitudesOf(q.altitudes)),
           checkpoints: showWaypoints,
           rules: flightRules,
         };

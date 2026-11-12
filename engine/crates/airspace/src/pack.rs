@@ -60,31 +60,11 @@ fn text(b: &[u8]) -> String {
     String::from_utf8_lossy(b.split(|&c| c == 0).next().unwrap_or(&[])).into_owned()
 }
 
-const fn crc_table() -> [u32; 256] {
-    let mut table = [0u32; 256];
-    let mut i = 0;
-    while i < 256 {
-        let mut c = i as u32;
-        let mut k = 0;
-        while k < 8 {
-            c = if c & 1 != 0 { 0xEDB8_8320 ^ (c >> 1) } else { c >> 1 };
-            k += 1;
-        }
-        table[i] = c;
-        i += 1;
-    }
-    table
-}
-
-static CRC_TABLE: [u32; 256] = crc_table();
-
-/// CRC-32 as zlib's crc32 gives it.
+/// CRC-32 (IEEE 802.3) as zlib's crc32 gives it, which the planner's
+/// pack writer stamps: crc32fast's, the stock one, rather than a table of
+/// our own.
 pub fn crc32(bytes: &[u8]) -> u32 {
-    let mut c = 0xFFFF_FFFFu32;
-    for &b in bytes {
-        c = CRC_TABLE[((c ^ b as u32) & 0xFF) as usize] ^ (c >> 8);
-    }
-    c ^ 0xFFFF_FFFF
+    crc32fast::hash(bytes)
 }
 
 impl<'a> Pack<'a> {

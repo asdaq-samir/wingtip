@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.ui
 
+import android.content.ClipData
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,11 +16,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.ClipEntry
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
@@ -27,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * A frequency wherever one is shown -- the field's card, an airspace's
@@ -39,7 +43,8 @@ import kotlinx.coroutines.delay
  */
 @Composable
 fun FrequencyRow(name: String, frequency: String, line: String? = null, badge: (@Composable () -> Unit)? = null) {
-    val context = LocalContext.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     var copied by remember(frequency) { mutableStateOf(false) }
     LaunchedEffect(copied) {
         if (copied) {
@@ -49,9 +54,13 @@ fun FrequencyRow(name: String, frequency: String, line: String? = null, badge: (
     }
     val copyLabel = stringResource(R.string.frequency_copy, frequency)
     ListItem(
+        // Compose's own clipboard (Android's, which shows the system's
+        // own copied notice from Android 13); the tick once it is taken.
         onClick = {
-            CardIntents.copy(context, name, frequency)
-            copied = true
+            scope.launch {
+                clipboard.setClipEntry(ClipEntry(ClipData.newPlainText(name, frequency)))
+                copied = true
+            }
         },
         supportingContent = line?.let { { Text(it, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
         trailingContent = {

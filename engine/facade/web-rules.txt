@@ -7,6 +7,7 @@ aircraft_problems
 airplane_figures
 airplane_needs
 airspace_entry_rules
+airspace_volume_span
 alert_fires
 altitude_advisor
 altitude_allowed
@@ -83,7 +84,9 @@ filed_zzzz
 fix_radial_distance
 flight_category
 floor_corridor_nm
+flow_cell
 flow_levels
+flow_sample
 frd_read
 frd_write
 frequency_line

@@ -233,6 +233,38 @@ enum EngineContract {
         var `class`: String
     }
 
+    struct AirspaceVolumeSpanAnswer: Codable, Equatable, Sendable {
+        /// Feet MSL.
+        var floorFt: Double
+        /// Feet MSL, at most 18,000.
+        var ceilingFt: Double
+        /// Whether the floor is the surface, drawn from the sea up.
+        var surface: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case floorFt = "floor_ft"
+            case ceilingFt = "ceiling_ft"
+            case surface
+        }
+    }
+
+    struct AirspaceVolumeSpanInput: Codable, Equatable, Sendable {
+        var floor: EngineContract.SpecialUseTabLimit?
+        var ceiling: EngineContract.SpecialUseTabLimit?
+        /// The ground under the volume, ft MSL: its lowest and its highest. Null where the map has none in yet.
+        var ground: EngineContract.AirspaceVolumeSpanInputGround?
+    }
+
+    struct AirspaceVolumeSpanInputGround: Codable, Equatable, Sendable {
+        var lowFt: Double
+        var highFt: Double
+
+        enum CodingKeys: String, CodingKey {
+            case lowFt = "low_ft"
+            case highFt = "high_ft"
+        }
+    }
+
     struct AirwayFloorFtInput: Codable, Equatable, Sendable {
         var meaFt: Double?
         var gnssMeaFt: Double?
@@ -3679,6 +3711,22 @@ enum EngineContract {
     struct FloorCorridorNmInput: Codable, Equatable, Sendable {
     }
 
+    struct FlowCellAnswer: Codable, Equatable, Sendable {
+        /// Four indices: north-west, north-east, south-west, south-east.
+        var pixels: [Int]
+        var fx: Double
+        var fy: Double
+    }
+
+    struct FlowCellInput: Codable, Equatable, Sendable {
+        /// [west, south, east, north], degrees.
+        var bounds: [Double]
+        var width: Int
+        var height: Int
+        var lat: Double
+        var lon: Double
+    }
+
     struct FlowLevelsAnswer: Codable, Equatable, Sendable {
         var wind: [EngineContract.FlowLevelsAnswerWindItem]
         var icing: [EngineContract.FlowLevelsAnswerIcingItem]
@@ -3732,6 +3780,29 @@ enum EngineContract {
     }
 
     struct FlowLevelsInput: Codable, Equatable, Sendable {
+    }
+
+    struct FlowSampleAnswer: Codable, Equatable, Sendable {
+        var value: Double
+        var fromDeg: Double?
+        /// A wind under 1 kt, which has no direction (FMH-1 Table 5-1, 5.5.2); false for a scalar.
+        var calm: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case value
+            case fromDeg = "from_deg"
+            case calm
+        }
+    }
+
+    struct FlowSampleInput: Codable, Equatable, Sendable {
+        /// Four pixels, as flow_cell orders them, each [red, green, alpha] bytes.
+        var pixels: [[Double]]
+        var fx: Double
+        var fy: Double
+        /// [least, most].
+        var unscale: [Double]
+        var vector: Bool
     }
 
     struct ForecastHourInput: Codable, Equatable, Sendable {
@@ -4206,6 +4277,21 @@ enum EngineContract {
     struct GairmetTitleInput: Codable, Equatable, Sendable {
         var hazard: String?
         var severity: String?
+    }
+
+    struct GairmetWindowAnswer: Codable, Equatable, Sendable {
+        var validFrom: Double
+        var validTo: Double
+
+        enum CodingKeys: String, CodingKey {
+            case validFrom = "valid_from"
+            case validTo = "valid_to"
+        }
+    }
+
+    struct GairmetWindowInput: Codable, Equatable, Sendable {
+        /// The snapshot's valid time, UNIX seconds.
+        var valid: Double
     }
 
     struct GfaCloudLayersAnswer: Codable, Equatable, Sendable {
@@ -6891,6 +6977,38 @@ enum EngineContract {
     }
 
     struct ModelWeatherBandsInput: Codable, Equatable, Sendable {
+    }
+
+    struct ModelWindLevelsAnswerItem: Codable, Equatable, Sendable {
+        var altitudeFt: Double
+        var windDirTrueDeg: Double
+        var windSpeedKt: Double
+        var tempC: Double
+
+        enum CodingKeys: String, CodingKey {
+            case altitudeFt = "altitude_ft"
+            case windDirTrueDeg = "wind_dir_true_deg"
+            case windSpeedKt = "wind_speed_kt"
+            case tempC = "temp_c"
+        }
+    }
+
+    struct ModelWindLevelsInput: Codable, Equatable, Sendable {
+        var levels: [EngineContract.ModelWindLevelsInputLevelsItem]
+    }
+
+    struct ModelWindLevelsInputLevelsItem: Codable, Equatable, Sendable {
+        var heightM: Double?
+        var tempK: Double?
+        var uMS: Double?
+        var vMS: Double?
+
+        enum CodingKeys: String, CodingKey {
+            case heightM = "height_m"
+            case tempK = "temp_k"
+            case uMS = "u_m_s"
+            case vMS = "v_m_s"
+        }
     }
 
     struct MorseInput: Codable, Equatable, Sendable {
@@ -10681,6 +10799,8 @@ enum EngineContract {
         var gearDown: Bool
         /// Estimated flap handle, 0 up to 1 full.
         var flaps: Double
+        /// Estimated thrust levers, 0 idle to 1 full: forward for the takeoff roll and the takeoff, 0.9 climbing, 0.6 level, 0.3 descending, 0.1 on the ground otherwise, the landing's roll-out included. For the picture and the sound only.
+        var throttle: Double
         /// Estimated.
         var lights: EngineContract.SimFlightAnswerSegmentsItemRowsItemLights
 
@@ -10699,6 +10819,7 @@ enum EngineContract {
             case ground
             case gearDown = "gear_down"
             case flaps
+            case throttle
             case lights
         }
     }
@@ -11433,6 +11554,25 @@ enum EngineContract {
         enum CodingKeys: String, CodingKey {
             case speedKt = "speed_kt"
         }
+    }
+
+    struct VelocityTrackAnswerItem: Codable, Equatable, Sendable {
+        var trackDeg: Double?
+        var speed: Double
+
+        enum CodingKeys: String, CodingKey {
+            case trackDeg = "track_deg"
+            case speed
+        }
+    }
+
+    struct VelocityTrackInput: Codable, Equatable, Sendable {
+        var velocities: [EngineContract.VelocityTrackInputVelocitiesItem]
+    }
+
+    struct VelocityTrackInputVelocitiesItem: Codable, Equatable, Sendable {
+        var east: Double
+        var north: Double
     }
 
     /// The web's VerdictInput: each tab's say, and the risk assessment's level and line (null while the briefing is awaited).

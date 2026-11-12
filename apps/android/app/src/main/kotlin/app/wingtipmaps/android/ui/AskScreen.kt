@@ -40,8 +40,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
@@ -80,7 +80,7 @@ val askSuggestions = listOf(
  * sparkle button beside the map's buttons.
  */
 @Composable
-fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantClient = viewModel()) {
+fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantClient = hiltViewModel()) {
     val conversation by client.conversation.collectAsStateWithLifecycle()
     val planState by plan.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()
@@ -90,7 +90,7 @@ fun AskScreen(plan: Plan, session: Session, ownShip: OwnShip, client: AssistantC
     // "Plan a trip…": the trip planner in the conversation's place until
     // closed, as the web's Ask has it.
     var trip by rememberSaveable { mutableStateOf(false) }
-    val tripModel: TripPlannerModel = viewModel()
+    val tripModel: TripPlannerModel = hiltViewModel()
     val list = rememberLazyListState()
     val claude by ClaudeGate.on.collectAsStateWithLifecycle()
 

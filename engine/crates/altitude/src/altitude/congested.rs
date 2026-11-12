@@ -15,6 +15,8 @@
 //! that far outside it. Neither data set knows an open air assembly of
 //! persons (a fair, a race), which is the pilot's to see.
 
+use crate::geo;
+
 /// 14 CFR 91.119(b): "within a horizontal radius of 2,000 feet of the
 /// aircraft".
 pub const RADIUS_FT: f64 = 2000.0;
@@ -27,24 +29,10 @@ pub const FT_PER_DEG_LAT: f64 = 60.0 * 6076.12;
 /// ring (lon, lat) points.
 pub type Area = Vec<Vec<Vec<(f64, f64)>>>;
 
-/// Whether a ring holds a point, by the even-odd rule.
-fn ring_holds(ring: &[(f64, f64)], x: f64, y: f64) -> bool {
-    let mut inside = false;
-    let mut j = ring.len() - 1;
-    for i in 0..ring.len() {
-        let ((xi, yi), (xj, yj)) = (ring[i], ring[j]);
-        if (yi > y) != (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi {
-            inside = !inside;
-        }
-        j = i;
-    }
-    inside
-}
-
 /// Whether an area holds a point: inside a polygon's outline and none of
 /// its holes.
 pub fn inside(area: &Area, lat: f64, lon: f64) -> bool {
-    area.iter().any(|rings| rings.iter().filter(|r| r.len() >= 3 && ring_holds(r, lon, lat)).count() % 2 == 1)
+    area.iter().any(|rings| rings.iter().filter(|r| r.len() >= 3 && geo::ring_holds(r, lon, lat)).count() % 2 == 1)
 }
 
 /// The least distance from the point to the area's edges, feet: degrees of

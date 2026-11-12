@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState, useEffectEvent } from "react";
-import type { SetURLSearchParams } from "react-router";
+import { addressPoint, type Address, type SetAddress } from "../../../lib/address";
 import type { PanelState } from "../../../lib/mapChrome";
 import { takePlace, useWanted } from "../../../lib/navigation/wanted";
-import { patched } from "../../../lib/useSearchParamsNow";
 import { useAddressCards, type PanelView } from "./usePanelView";
 
 /**
@@ -13,24 +12,24 @@ import { useAddressCards, type PanelView } from "./usePanelView";
  * under it stays where it was, so nothing here sizes the sheet for a card.
  */
 export function usePlaceCards({
-  searchParams,
-  setSearchParams,
+  address,
+  setAddress,
   setPanel,
 }: {
-  searchParams: URLSearchParams;
-  setSearchParams: SetURLSearchParams;
+  address: Address;
+  setAddress: SetAddress;
   setPanel: (state: PanelState) => void;
 }) {
   // The cards the address holds -- an airport's, the airspace over a
   // point, Nearest's, Aircraft's, an airplane's and its past flight's
   // (usePanelView), the airport's opened here (selectPlace), which the
   // route's Approaches ask for too.
-  const cards = useAddressCards(searchParams, setSearchParams, setPanel);
+  const cards = useAddressCards(address, setAddress, setPanel);
   const { place, heldPoint, nearOpen, flight, selectFlight } = cards;
   const cardOpen = !!place || !!heldPoint || !!flight;
   // FPL's Brief, a card over it (BriefCard): `?brief=1`, kept for FPL as
   // its other cards are (usePanelView).
-  const briefOpen = searchParams.get("brief") === "1";
+  const briefOpen = address.brief;
   // The tab an airplane's card was opened over from the route box's
   // N-number (openAirplaneCard), and the tab setter, set once the tabs
   // are (usePanelView, in the workspace): its close goes back there, FPL,
@@ -54,18 +53,13 @@ export function usePlaceCards({
       // first) does not jump to its approaches when it is next opened.
       setApproachesOf((of) => (of === ident ? of : null));
       if ((ident ?? null) === place && !heldPoint) return;
-      setSearchParams(
-        (prev) => {
-          // Its card opens half way (PlaceCard's `opens`), from the map, a
-          // strip or a list all the way up alike, at the owner's ask ("should
-          // have the half layout ... that should expand to full, not the
-          // other way around").
-          return patched(prev, { place: ident ?? null, at: null });
-        },
-        { replace: true },
-      );
+      // Its card opens half way (PlaceCard's `opens`), from the map, a
+      // strip or a list all the way up alike, at the owner's ask ("should
+      // have the half layout ... that should expand to full, not the
+      // other way around").
+      void setAddress({ place: ident || null, at: null });
     },
-    [place, heldPoint, setSearchParams, setApproachesOf],
+    [place, heldPoint, setAddress, setApproachesOf],
   );
   // A field's card asked for from anywhere -- its name tapped in the nav
   // log (lib/navigation/wanted) -- opened as a tap on the chart opens it.
@@ -103,15 +97,10 @@ export function usePlaceCards({
   );
   const holdPoint = useCallback(
     (point: { lat: number; lon: number }) => {
-      setSearchParams(
-        (prev) => {
-          return patched(prev, { at: `${point.lat.toFixed(4)},${point.lon.toFixed(4)}`, place: null });
-        },
-        { replace: true },
-      );
+      void setAddress({ at: addressPoint(point), place: null });
       // A point held on the chart: its card half way (AirspaceCard's `opens`).
     },
-    [setSearchParams],
+    [setAddress],
   );
   return {
     cards,

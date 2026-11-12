@@ -2,6 +2,7 @@ package app.wingtipmaps.android.map
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.alternate.PlanAlternate
 import app.wingtipmaps.android.api.Planner
@@ -9,6 +10,7 @@ import app.wingtipmaps.android.api.generated.AlternateLeg
 import app.wingtipmaps.android.api.generated.Briefing
 import app.wingtipmaps.android.api.routeBriefing
 import app.wingtipmaps.android.engine.generated.EngineContract
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 /**
  * The plan's fields whose weather gets worse by the pilot's time there
@@ -31,7 +34,8 @@ import kotlinx.coroutines.withContext
  * same briefing asked of that leg. Off the route, no badge. Asked again
  * as the route or its time changes, and every ten minutes.
  */
-class RouteWorse : ViewModel() {
+@HiltViewModel
+class RouteWorse @Inject constructor() : ViewModel() {
     private val _idents = MutableStateFlow<Set<String>>(emptySet())
     val idents: StateFlow<Set<String>> = _idents.asStateFlow()
 
@@ -50,7 +54,7 @@ class RouteWorse : ViewModel() {
             return
         }
         val key = Key(state.dep, state.stops, state.dest, state.depart, state.totals?.eteMin, state.totals?.alternate)
-        val now = System.currentTimeMillis()
+        val now = AppClock.nowMs()
         if (key == asked && now - askedAtMs < MapWeather.EVERY_MS) return
         asked = key
         askedAtMs = now
@@ -78,7 +82,7 @@ class RouteWorse : ViewModel() {
      *  standing on their own. */
     private suspend fun alternateReadings(key: Key): Pair<List<EngineContract.WorseField>, List<EngineContract.WorseField>> {
         val leg = key.alternate ?: return NONE
-        val landsAt = PlanAlternate.landsAt(key.depart, key.eteMin, System.currentTimeMillis()) ?: return NONE
+        val landsAt = PlanAlternate.landsAt(key.depart, key.eteMin, AppClock.nowMs()) ?: return NONE
         val briefing = try {
             Planner.routeBriefing(key.dest, leg.ident, emptyList(), landsAt, leg.eteMin)
         } catch (e: CancellationException) {

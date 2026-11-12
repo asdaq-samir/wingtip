@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.service;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.PaidFeature;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.domain.Subscription;
@@ -23,10 +24,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.ErrorResponseException;
 
 /**
  * The one entitlement to the paid features ({@link PaidFeature}), kept
@@ -77,13 +80,16 @@ public class SubscriptionService {
         EVERYONE
     }
 
-    /** The trial is already started, or was once: once an account. */
-    public static class TrialUsedException extends RuntimeException {
+    /** The trial is already started, or was once: once an account. A 409 problem. */
+    public static class TrialUsedException extends ErrorResponseException {
         @Serial
         private static final long serialVersionUID = 1L;
 
         public TrialUsedException() {
-            super("Your free month has already been used.");
+            super(
+                    HttpStatus.CONFLICT,
+                    ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Your free month has already been used."),
+                    null);
         }
     }
 
@@ -101,38 +107,27 @@ public class SubscriptionService {
 
     @Autowired
     public SubscriptionService(
-            SubscriptionRepository subscriptions,
-            PilotService pilots,
-            SignInOptions signIn,
-            @Value("${app.subscription.trial-days:30}") int trialDays,
-            @Value("${app.subscription.caps.narrative:60}") int narrativeCap,
-            @Value("${app.subscription.caps.checkpoint-notes:60}") int notesCap,
-            @Value("${app.subscription.caps.oral:60}") int oralCap,
-            @Value("${app.subscription.caps.assistant:100}") int assistantCap,
-            @Value("${app.subscription.caps.words:1000}") int wordsCap,
-            @Value("${app.subscription.comped-emails:}") String compedEmails,
-            @Value("${app.subscription.enabled:false}") boolean sold,
-            @Value("${app.claude-features:OFF}") ClaudeFeatures claude) {
+            SubscriptionRepository subscriptions, PilotService pilots, SignInOptions signIn, AppProperties app) {
         this(
                 subscriptions,
                 pilots,
                 signIn,
                 Clock.systemUTC(),
-                trialDays,
+                app.subscription().trialDays(),
                 Map.of(
                         PaidFeature.NARRATIVE,
-                        narrativeCap,
+                        app.subscription().caps().narrative(),
                         PaidFeature.CHECKPOINT_NOTES,
-                        notesCap,
+                        app.subscription().caps().checkpointNotes(),
                         PaidFeature.ORAL,
-                        oralCap,
+                        app.subscription().caps().oral(),
                         PaidFeature.ASSISTANT,
-                        assistantCap,
+                        app.subscription().caps().assistant(),
                         PaidFeature.WORDS,
-                        wordsCap),
-                compedEmails,
-                sold,
-                claude);
+                        app.subscription().caps().words()),
+                app.subscription().compedEmails(),
+                app.subscription().enabled(),
+                app.claudeFeatures());
     }
 
     /** A deployment that sells the subscription, as the tests mostly ask about. */

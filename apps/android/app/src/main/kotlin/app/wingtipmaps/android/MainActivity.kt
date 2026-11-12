@@ -5,13 +5,14 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowCompat
 import app.wingtipmaps.android.ai.ScreenContext
 import app.wingtipmaps.android.plan.KeptPlan
 import app.wingtipmaps.android.ui.RootScreen
 import app.wingtipmaps.android.ui.WingtipTheme
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
@@ -19,8 +20,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
  * edge under the status and navigation bars as a map app is. A link that
  * opened the app -- at launch, or while it is open (onNewIntent, the
  * manifest's singleTask) -- is read by Links: the sign-in link is the
- * session's; a route or a field is handed to the screens.
+ * session's; a route or a field is handed to the screens. Hilt's entry
+ * point (AndroidEntryPoint), so hiltViewModel makes the screens' models.
  */
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val session: Session by viewModels()
 
@@ -31,7 +34,9 @@ class MainActivity : ComponentActivity() {
         // The launch's splash screen, the same from Android 8 on (the
         // manifest's Theme.WingtipMaps.Starting), gone as the first frame draws.
         installSplashScreen()
-        enableEdgeToEdge()
+        // Edge to edge, the bars see-through (Activity 1.14 hands this to
+        // core's WindowCompat, its own enableEdgeToEdge deprecated).
+        WindowCompat.enableEdgeToEdge(window)
         super.onCreate(savedInstanceState)
         setContent {
             WingtipTheme {

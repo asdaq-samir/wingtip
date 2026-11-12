@@ -77,6 +77,9 @@ final class Plan {
     /// (RouteEdits), put back where the planner can't be reached, and why.
     @ObservationIgnored var directFrom: RouteState?
     private(set) var directProblem: String?
+    /// Why a share or a saved file from the route's Share menu sent nothing,
+    /// said under the route where the menu is (ShareMenu); nil once one goes.
+    var shareProblem: String?
 
     /// When the plan shown was made; nil while it is being made now.
     private(set) var plannedAt: Date?

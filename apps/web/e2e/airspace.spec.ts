@@ -38,7 +38,7 @@ test("a right-click on the chart asks what is there, and Close puts the card awa
   const map = page.locator(".maplibregl-map");
   const box = (await map.boundingBox())!;
   await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.3, { button: "right" });
-  await expect(page).toHaveURL(/[?&]at=-?\d+\.\d+%2C-?\d+\.\d+/);
+  await expect(page).toHaveURL(/[?&]at=-?\d+\.\d+(%2C|,)-?\d+\.\d+/);
   const card = page.getByTestId("airspace-card");
   await expect(card.getByTestId("airspace-band").first()).toBeVisible({ timeout: slow(30000) });
   await closeCard(page, "airspace-close");

@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import app.wingtipmaps.gateway.domain.Aircraft;
 import app.wingtipmaps.gateway.domain.Pilot;
+import app.wingtipmaps.gateway.dto.HandbookFigures;
 import app.wingtipmaps.gateway.planner.model.PlannerInspections;
 import app.wingtipmaps.gateway.service.AircraftService;
 import app.wingtipmaps.gateway.service.DueItemService;
@@ -19,7 +20,6 @@ import app.wingtipmaps.gateway.service.PilotService;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.SquawkService;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -75,8 +75,21 @@ class AircraftHandbookControllerTest {
     @Test
     void handbook_keepsTheConfirmedFiguresAsSent() throws Exception {
         given(pilotService.current(any())).willReturn(Optional.of(samplePilot()));
-        Map<String, Object> figures = Map.of(
-                "glide_speed_kias", 68, "glide_ratio", 9, "envelope", List.of(Map.of("arm_in", 35, "weight_lb", 1500)));
+        HandbookFigures figures = new HandbookFigures(
+                null,
+                null,
+                null,
+                null,
+                68.0,
+                9.0,
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of(new HandbookFigures.Corner(35, 1500)),
+                null,
+                null);
         given(aircraftService.keepHandbook(
                         any(),
                         eq(7L),

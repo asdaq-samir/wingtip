@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { slow, settle, openMapSettings } from "./helpers";
+import { grabberTo, openMapSettings, settle, slow } from "./helpers";
 import { markWith } from "./marks";
 
 /**
@@ -55,6 +55,8 @@ for (const path of ["/app/dev"] as const) {
 
     // Pinned: both chart layers are asked for, the sectional and the TAC.
     await openMapSettings(page);
+    // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
+    await grabberTo(page, "full");
     const pin = page.getByTestId("tac-toggle");
     await expect(pin).toHaveAttribute("aria-checked", "false");
     await pin.click();
@@ -68,6 +70,7 @@ for (const path of ["/app/dev"] as const) {
     await page.reload();
     await settle(page);
     await openMapSettings(page);
+    await grabberTo(page, "full");
     const toggle = page.getByTestId("tac-toggle");
     await expect(toggle).toHaveAttribute("aria-checked", "true");
     await toggle.click();
@@ -92,6 +95,7 @@ for (const path of ["/app/dev"] as const) {
     await expect.poll(kinds, { timeout: slow(15000) }).toBe("sec");
 
     await openMapSettings(page);
+    await grabberTo(page, "full");
     await page.getByTestId("base-chart-select").getByRole("button", { name: "IFR low" }).click();
     // The terminal sheet's row is the IFR area chart over the IFR charts.
     await expect(page.getByTestId("map-settings").getByText("IFR Area Charts")).toBeVisible();

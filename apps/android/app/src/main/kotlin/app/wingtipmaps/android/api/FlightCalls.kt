@@ -16,37 +16,30 @@ import kotlinx.serialization.encodeToString
  *  (/api/airspace/ahead): the planner's alerts, in its words. Waits no
  *  longer than IN_FLIGHT_MS, so OwnShip falls back to the packs. */
 suspend fun Planner.ahead(lat: Double, lon: Double, trackDeg: Double, groundspeedKt: Double, altitudeFt: Double?): List<AheadAlert> {
-    val query = mapOf(
-        "lat" to lat.toString(), "lon" to lon.toString(),
-        "track" to Math.round(trackDeg).toString(), "gs" to Math.round(groundspeedKt).toString(),
-        "alt" to altitudeFt?.let { Math.round(it).toString() },
-    )
-    return Gateway.json.decodeFromString<AlertsAhead>(fetch("/api/airspace/ahead", query, timeoutMs = IN_FLIGHT_MS)).alerts
+    // Whole degrees, knots and feet, so a flight's asks share the cache.
+    val alt = altitudeFt?.let { Math.round(it).toDouble() }
+    return inFlight.airspaceAhead(lat, lon, Math.round(trackDeg).toDouble(), Math.round(groundspeedKt).toDouble(), alt).planned().alerts
 }
 
 /** The fields nearest a point (/api/airports/nearest), nearest first, as
  *  the iOS app's Planner.nearest: asked in the air (Nearest, the glide
  *  ring's ground), so it waits no longer than IN_FLIGHT_MS. */
 suspend fun Planner.nearest(lat: Double, lon: Double, limit: Int = 10): List<NearestAirport> =
-    Gateway.json.decodeFromString<NearestAirports>(
-        fetch("/api/airports/nearest", mapOf("lat" to lat.toString(), "lon" to lon.toString(), "limit" to limit.toString()), timeoutMs = IN_FLIGHT_MS),
-    ).airports
+    inFlight.nearestAirports(lat, lon, limit).planned().airports
 
 /** The airplanes heard about a point (/api/traffic), out to a radius in nm. */
 suspend fun Planner.traffic(lat: Double, lon: Double, radiusNm: Double): TrafficAnswer =
-    Gateway.json.decodeFromString(
-        fetch("/api/traffic", mapOf("lat" to lat.toString(), "lon" to lon.toString(), "radius" to Math.round(radiusNm).toString())),
-    )
+    api.trafficNear(lat, lon, Math.round(radiusNm).toDouble()).planned()
 
 /** A tracked airplane's state now (/api/traffic/flight/{hex}/status). */
 suspend fun Planner.flightStatus(hex: String): FlightStatus =
-    Gateway.json.decodeFromString(fetch("/api/traffic/flight/$hex/status"))
+    api.trafficStatus(hex).planned()
 
 /** The flown track kept with a saved flight (PUT /api/flights/{id}/track):
  *  own ship's path (OwnTrail.asSavedTrack) once the flight is saved. */
 suspend fun Gateway.saveTrack(flight: Long, track: SavedTrack) {
-    send("PUT", "/api/flights/$flight/track", json = json.encodeToString(track))
+    writes.saveTrack(flight, track).done()
 }
 
 /** A saved flight's track, or null where it has none (204, 404). */
-suspend fun Gateway.track(flight: Long): SavedTrack? = read("/api/flights/$flight/track", none = setOf(204, 404))
+suspend fun Gateway.track(flight: Long): SavedTrack? = api.track(flight).readOrNone(none = setOf(204, 404))

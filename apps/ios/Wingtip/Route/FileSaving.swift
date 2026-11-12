@@ -11,7 +11,7 @@ final class ExportedFile: WritableDocument {
 
     init(_ file: SavedFile) { self.file = file }
 
-    static var writableContentTypes: [UTType] { [.wingtipFlight, .pdf] }
+    static var writableContentTypes: [UTType] { [.wingtipFlight, .pdf, .commaSeparatedText] }
 
     func writer(configuration: sending WriteConfiguration) -> sending FileWrapperDocumentWriter<Data> {
         FileWrapperDocumentWriter(configuration) { data, _ in FileWrapper(regularFileWithContents: data) }
@@ -21,14 +21,12 @@ final class ExportedFile: WritableDocument {
     func snapshot(contentType: UTType) async throws -> sending Data { file.data }
 }
 
-/// Save as File: on iOS 27 the system's file exporter (fileExporter with a
-/// WritableDocument), where the pilot picks a folder in Files; on iOS 18
-/// to 26 the share sheet with the file in it, whose Save to Files, AirDrop
-/// and Mail do the same (`fallback`).
+/// Save as File on iOS 27: the system's file exporter (fileExporter with
+/// a WritableDocument), where the pilot picks a folder in Files. Below iOS
+/// 27 the row is a ShareLink of the file instead (SaveFileLink), whose
+/// Save to Files, AirDrop and Mail do the same, and this does nothing.
 struct SaveFileExporter: ViewModifier {
     @Binding var saving: SavedFile?
-    /// The file's URL handed to the share sheet below iOS 27.
-    let fallback: (URL) -> Void
 
     func body(content: Content) -> some View {
         if #available(iOS 27.0, *) {
@@ -38,11 +36,71 @@ struct SaveFileExporter: ViewModifier {
                 defaultFilename: saving.map { ($0.name as NSString).deletingPathExtension },
                 onCompletion: { _ in saving = nil }, onCancellation: { saving = nil })
         } else {
-            content.onChange(of: saving?.name) { _, name in
-                guard name != nil, let file = saving else { return }
-                saving = nil
-                if let url = try? file.temporaryURL() { fallback(url) }
-            }
+            content
         }
+    }
+}
+
+/// A Save as File row: on iOS 27 a button that hands the file to the
+/// exporter (SaveFileExporter); below it the system's ShareLink, the file
+/// made when the share sheet asks for it.
+struct SaveFileLink<Label: View>: View {
+    let name: String
+    let type: UTType
+    @Binding var saving: SavedFile?
+    let make: @MainActor @Sendable () throws -> SavedFile?
+    @ViewBuilder let label: () -> Label
+
+    var body: some View {
+        if #available(iOS 27.0, *) {
+            Button { saving = try? make() } label: { label() }
+        } else {
+            ShareLink(item: SharedFile(name: name, type: type) { try SharedFile.written(make()) },
+                      preview: SharePreview(name)) { label() }
+        }
+    }
+}
+
+/// A file for the system's ShareLink, made when the share sheet asks for
+/// it rather than each time the menu is drawn: the kneeboard's PDF, the
+/// flight file, the account's export. Its types are the ones the app
+/// sends; a file of another type is not offered.
+struct SharedFile: Transferable {
+    /// The name the file goes out under, with its extension; nil to keep
+    /// the one `make` writes (the gateway's, for the account's export).
+    let name: String?
+    let type: UTType
+    /// The file written, in the temporary folder.
+    let make: @MainActor @Sendable () async throws -> URL
+
+    static var transferRepresentation: some TransferRepresentation {
+        file(.pdf)
+        file(.wingtipFlight)
+        file(.commaSeparatedText)
+        file(.json)
+    }
+
+    private static func file(_ type: UTType) -> some TransferRepresentation<SharedFile> {
+        FileRepresentation(exportedContentType: type) { SentTransferredFile(try await $0.make()) }
+            .suggestedFileName { $0.name }
+            .exportingCondition { $0.type == type }
+    }
+
+    /// A file made on the phone, written out for the share sheet; nothing
+    /// made is said as a failure the sheet shows.
+    static func written(_ file: SavedFile?) throws -> URL {
+        guard let file else { throw CocoaError(.fileWriteUnknown) }
+        return try file.temporaryURL()
+    }
+}
+
+/// A link for the system's ShareLink made when the share sheet asks for
+/// it (a saved flight's, by the gateway), sent as its text, which Messages,
+/// Mail and Copy all take and show as the link.
+struct SharedLink: Transferable {
+    let make: @MainActor @Sendable () async throws -> URL
+
+    static var transferRepresentation: some TransferRepresentation {
+        DataRepresentation(exportedContentType: .utf8PlainText) { Data(try await $0.make().absoluteString.utf8) }
     }
 }

@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.map
 
+import app.wingtipmaps.android.AppClock
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.CacheControl
@@ -11,6 +12,7 @@ import okhttp3.Protocol
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
+import okhttp3.coroutines.executeAsync
 import java.io.File
 import java.io.RandomAccessFile
 
@@ -60,7 +62,7 @@ class OverlayStore(private val dir: File, private val limitBytes: Long = LIMIT_B
         val kept = rangeFile(name, start, end)
         if (!kept.isFile) return null
         // Touched, so the ranges in use are the last dropped.
-        kept.setLastModified(System.currentTimeMillis())
+        kept.setLastModified(AppClock.nowMs())
         return kept.readBytes() to null
     }
 
@@ -116,7 +118,7 @@ class OverlayStore(private val dir: File, private val limitBytes: Long = LIMIT_B
             .cacheControl(CacheControl.Builder().noStore().build())
             .apply { if (from > 0) header("Range", "bytes=$from-") }
             .build()
-        client.newCall(request).execute().use { response ->
+        client.newCall(request).executeAsync().use { response ->
             val append = response.code == 206 && from > 0
             if (response.code != 200 && !append) return@withContext false
             java.io.FileOutputStream(part, append).use { out -> response.body.byteStream().copyTo(out) }
@@ -179,7 +181,7 @@ class OverlayCache(private val store: OverlayStore) : Interceptor {
         val body = response.body
         val type = body.contentType() ?: OCTETS
         val bytes = body.bytes()
-        runCatching { store.store(name, start, end, bytes) }
+        val _ = runCatching { store.store(name, start, end, bytes) }
         return response.newBuilder().body(bytes.toResponseBody(type)).build()
     }
 

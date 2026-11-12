@@ -23,8 +23,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.OfflineRegion
@@ -54,7 +54,7 @@ import org.maplibre.android.style.layers.FillLayer
 @Composable
 fun DownloadsMap(model: DownloadsModel, sheets: List<OfflineRegion>, archives: List<String>) {
     val context = LocalContext.current
-    val charts: Charts = viewModel()
+    val charts: Charts = hiltViewModel()
     val info by charts.info.collectAsStateWithLifecycle()
     val problem by model.problem.collectAsStateWithLifecycle()
     var picked by remember { mutableStateOf<OfflineRegion?>(null) }

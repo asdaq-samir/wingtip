@@ -1,11 +1,10 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.PaperworkDto;
 import app.wingtipmaps.gateway.service.PaperworkService;
-import app.wingtipmaps.gateway.service.PilotService;
 import java.time.LocalDate;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -21,19 +20,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class PaperworkController {
 
     private final PaperworkService paperwork;
-    private final PilotService pilots;
 
-    public PaperworkController(PaperworkService paperwork, PilotService pilots) {
+    public PaperworkController(PaperworkService paperwork) {
         this.paperwork = paperwork;
-        this.pilots = pilots;
     }
 
     @GetMapping
-    public ResponseEntity<PaperworkDto> due(Authentication authentication) {
+    public ResponseEntity<PaperworkDto> due(Pilot pilot) {
         LocalDate today = LocalDate.now();
-        return PilotResponses.withPilot(
-                pilots,
-                authentication,
-                pilot -> ResponseEntity.ok(PaperworkService.toDto(paperwork.of(pilot, today), today)));
+        return ResponseEntity.ok(PaperworkService.toDto(paperwork.of(pilot, today), today));
     }
 }

@@ -1,7 +1,21 @@
-import { test, expect, type Page } from "@playwright/test";
-import { chartZoom, grabberTo, openPanel, openProfile, closeProfile, settle, settled, sideDrawer, slow, pressDryRunStart } from "./helpers";
+import { test, expect } from "@playwright/test";
+import {
+  chartZoom,
+  closeProfile,
+  grabberTo,
+  inSheet,
+  openPanel,
+  openProfile,
+  pressDryRunStart,
+  settle,
+  settled,
+  sideDrawer,
+  slow,
+} from "./helpers";
 import { markWith } from "./marks";
 import { pickAirplane } from "./startState";
+import { middleOfMap, shipAt } from "./ownShipProbes";
+import { R27 } from "./approachR27";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -134,7 +148,9 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   const start = sideDrawer(page).getByTestId("dry-run-start");
   await expect(start).toBeEnabled({ timeout: slow(60_000) });
   const line = sideDrawer(page).getByTestId("flight-line");
-  const planned = await line.locator("dt").allTextContents();
+  // Each figure's name as shown: FlightLine's dt also holds the words a
+  // screen reader hears ("To KDLH"), hidden from sight (sr-only).
+  const planned = await line.locator("dt > [aria-hidden]").allTextContents();
   expect(planned).toEqual(["To", "Dist", "ETE", "Fuel req"]);
   // The figures once the plan has settled: the runways picked into the
   // wind as the route comes in plan it again with their patterns flown
@@ -154,7 +170,7 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
 
   await pressDryRunStart(page, start);
   const figures = sideDrawer(page).getByTestId("dry-run-figures");
-  await expect(figures.locator("dt")).toHaveText(planned);
+  await expect(figures.locator("dt > [aria-hidden]")).toHaveText(planned);
   await expect(figures.getByTestId("navlog-to")).toHaveText("KDLH");
   await expect(figures.getByTestId("ete-eta-toggle")).toBeVisible();
   await expect(figures.getByTestId("fuel-breakdown-open")).toBeVisible();
@@ -163,32 +179,13 @@ test("the dry run keeps the flight's own figures at the foot, counting down from
   await expect.poll(leftNm, { timeout: slow(15_000) }).toBeLessThan(plannedNm - 1);
 });
 
-/** Own ship's marker, on screen. */
-async function shipAt(page: Page) {
-  const box = (await page
-    .locator(".maplibregl-marker")
-    .filter({ has: page.locator('[data-own-ship="on"]') })
-    .last()
-    .boundingBox())!;
-  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-}
-
-/** The middle of what the panel leaves of the map: above a phone's sheet,
- *  beside a desktop's card out, under it at rest. */
-async function middleOfMap(page: Page) {
-  const viewport = page.viewportSize()!;
-  const sheet = (await sideDrawer(page).boundingBox())!;
-  if (viewport.width < 768) return { x: viewport.width / 2, y: sheet.y / 2 };
-  return (await sideDrawer(page).getAttribute("data-panel")) !== "peek"
-    ? { x: (sheet.x + sheet.width + viewport.width) / 2, y: viewport.height / 2 }
-    : { x: viewport.width / 2, y: (sheet.y + sheet.height + viewport.height) / 2 };
-}
-
-test("the dry run's airplane is brought back to the middle of what the panel leaves as the sheet goes down and up, after a pan too", async ({
+test("the dry run's airplane is kept in the middle of what the panel leaves as the sheet goes down and up; panned, it is the pilot's map until the arrow", async ({
   page,
 }) => {
   // The owner's notice: "during dry run map should adjust as well to the
-  // pill and half card".
+  // pill and half card". A pan makes the map the pilot's, as Apple Maps'
+  // tracking ends on a drag (4087efc57, "I like the stock behavior"): the
+  // sheet then only pads it, and the location arrow takes it back.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await openPanel(page);
@@ -197,17 +194,10 @@ test("the dry run's airplane is brought back to the middle of what the panel lea
   await expect(start).toBeVisible({ timeout: slow(60_000) });
   await pressDryRunStart(page, start);
   await expect(page.locator('[data-own-ship="on"]')).toHaveCount(1);
-  // Panned by hand, off the middle: the map no longer follows it.
-  const viewport = page.viewportSize()!;
-  const from = { x: viewport.width < 768 ? viewport.width / 2 : viewport.width * 0.75, y: 150 };
-  await page.mouse.move(from.x, from.y);
-  await page.mouse.down();
-  await page.mouse.move(from.x - 90, from.y - 60, { steps: 8 });
-  await page.mouse.up();
   const inTheMiddle = async () => {
     await settled(sideDrawer(page));
     await expect(async () => {
-      const at = await shipAt(page),
+      const at = await shipAt(page, true),
         middle = await middleOfMap(page);
       expect(Math.abs(at.x - middle.x)).toBeLessThan(40);
       expect(Math.abs(at.y - middle.y)).toBeLessThan(40);
@@ -216,6 +206,18 @@ test("the dry run's airplane is brought back to the middle of what the panel lea
   await grabberTo(page, "peek");
   await inTheMiddle();
   await grabberTo(page, "half");
+  await inTheMiddle();
+  // Panned by hand, off the middle: the map no longer follows it, and the
+  // arrow offers to again.
+  const viewport = page.viewportSize()!;
+  const from = { x: viewport.width < 768 ? viewport.width / 2 : viewport.width * 0.75, y: 150 };
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x - 90, from.y - 60, { steps: 8 });
+  await page.mouse.up();
+  const arrow = page.locator("[data-map-controls]").getByTestId("my-position-button");
+  await expect(arrow).toHaveAccessibleName("Follow the airplane");
+  await arrow.click();
   await inTheMiddle();
 });
 
@@ -299,7 +301,10 @@ test("the profile is a card from its button beside the AI brief's, no swipe at t
   // owner, 2026-11-04), the nav log in the route's ••• menu.
   await expect(panel.getByTestId("route-navlog")).toHaveCount(0);
   const card = await openProfile(page);
-  await expect(card.getByTestId("profile-name")).toHaveText("C81 → KDLH");
+  // Named Profile, its cruise and clearance verdict the short line under
+  // the name, as the cards canvas draws it (95f9e953b's ProfileLine).
+  await expect(card.getByTestId("profile-name")).toHaveText("Profile");
+  await expect(card.getByTestId("card-sub").first()).toContainText(/^Cruise /);
   await expect(card.getByTestId("mini-profile")).toBeVisible();
   // Flown in the card, in the side view's place (the owner's "profile
   // should play the dry run within profile card"); stopped, the side view
@@ -335,56 +340,6 @@ test("the dry run is the Profile card's: closed, the run is put away and FPL's f
   await expect(panel.getByTestId("flight-line")).toBeVisible();
 });
 
-// Duluth's RNAV (GPS) RWY 27 via PLANE as the planner draws it
-// (wingtip.procedures, the 2026-10 cycle), stubbed: the FAA's file is not read
-// on CI's runner. From PLANE, south-east of the field, north to HOMUV, and
-// west down its final through CIRUS to the runway.
-const R27 = {
-  airport: "KDLH",
-  kind: "approach",
-  id: "R27",
-  name: "RNAV (GPS) RWY 27",
-  transition: "PLANE",
-  cycle: "261001",
-  stale: false,
-  lines: [
-    {
-      role: "transition",
-      name: "PLANE",
-      points: [
-        [46.733597, -91.910758],
-        [46.833461, -91.904417],
-      ],
-    },
-    {
-      role: "final",
-      name: null,
-      points: [
-        [46.833461, -91.904417],
-        [46.837675, -92.048269],
-        [46.841361, -92.180119],
-      ],
-    },
-    {
-      role: "missed",
-      name: null,
-      points: [
-        [46.841361, -92.180119],
-        [46.842746, -92.228777],
-        [46.849967, -92.511453],
-      ],
-    },
-  ],
-  holds: [],
-  fixes: [
-    { ident: "PLANE", lat: 46.733597, lon: -91.910758, roles: ["IAF"], min_ft: null, max_ft: null, speed_kt: null, missed: false },
-    { ident: "HOMUV", lat: 46.833461, lon: -91.904417, roles: ["IF", "FACF"], min_ft: 4000, max_ft: null, speed_kt: null, missed: false },
-    { ident: "CIRUS", lat: 46.837675, lon: -92.048269, roles: ["FAF"], min_ft: 3200, max_ft: null, speed_kt: null, missed: false },
-    { ident: "RW27", lat: 46.841361, lon: -92.180119, roles: ["MAP"], min_ft: null, max_ft: null, speed_kt: null, missed: false },
-    { ident: "UDTEG", lat: 46.849967, lon: -92.511453, roles: ["hold"], min_ft: 3300, max_ft: null, speed_kt: null, missed: true },
-  ],
-};
-
 test("with an approach picked, the dry run flies it into the field: out to its first fix and down its final", async ({ page }) => {
   // The owner's notice: "Dry run is not following approach when selected".
   await page.route(
@@ -409,19 +364,27 @@ test("with an approach picked, the dry run flies it into the field: out to its f
   // takes the run there, within a pixel's tenths of a mile; End to the end.
   const scrub = panel.getByTestId("dry-run-scrub");
   const thumb = scrub.getByRole("slider", { name: "Where the dry run is along the course" });
+  // The Profile card is half way, as every card opens (e7bb15ec8): pulled up
+  // to the scrubber, as a finger would, before a tap at its end.
+  await inSheet(page, scrub);
   const box = (await scrub.boundingBox())!;
-  const end = Number(await thumb.getAttribute("aria-valuemax"));
+  // The stock Slider's range input says its end as its own max.
+  const end = Number(await thumb.getAttribute("max"));
+  expect(end).toBeGreaterThan(0);
   await page.mouse.click(box.x + box.width - 0.5, box.y + box.height / 2);
   await expect.poll(async () => Number(await thumb.getAttribute("aria-valuenow"))).toBeGreaterThan(end - 2);
   await expect(thumb).toHaveAttribute("aria-valuetext", /^\d+ nm, [\d,]+ feet, (\d+ knots|no ground speed)$/);
   await thumb.focus();
   await page.keyboard.press("End");
   await expect(thumb).toHaveAttribute("aria-valuenow", String(end));
-  await page.keyboard.press("ArrowLeft");
-  await page.keyboard.press("ArrowLeft");
+  // Ten miles back: Page Down is the stock Slider's large step, five miles
+  // (923b30ba7; an arrow is its step, a tenth of a mile).
+  await page.keyboard.press("PageDown");
+  await page.keyboard.press("PageDown");
+  await expect.poll(async () => Number(await thumb.getAttribute("aria-valuenow"))).toBeCloseTo(end - 10, 0);
   const fixAt = async (ident: string) => (await markWith(page, "procedure-fixes", ident)())!; // its point (ProceduresGl's probe)
   await expect(async () => {
-    const ship = await shipAt(page),
+    const ship = await shipAt(page, true),
       from = await fixAt("HOMUV"),
       to = await fixAt("CIRUS");
     // HOMUV to CIRUS is 5.9 nm: the ship within half a mile of the line
@@ -453,7 +416,7 @@ test("with an approach picked, the dry run flies it into the field: out to its f
   await thumb.focus();
   await page.keyboard.press("End");
   await expect(async () => {
-    const ship = await shipAt(page),
+    const ship = await shipAt(page, true),
       udteg = await fixAt("UDTEG");
     expect(Math.hypot(ship.x - udteg.x, ship.y - udteg.y)).toBeLessThan(12);
   }).toPass({ timeout: slow(10_000) });

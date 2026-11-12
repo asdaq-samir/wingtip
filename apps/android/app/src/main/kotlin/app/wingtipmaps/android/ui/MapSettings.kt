@@ -12,8 +12,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.airplane.GlideRingRow
@@ -41,7 +41,7 @@ fun MapSettingsRows() {
     val context = LocalContext.current
     // The plan the root holds (the activity's one Plan), for the glide
     // ring's airplane.
-    val plan: Plan = viewModel()
+    val plan: Plan = hiltViewModel()
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),
         verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md),

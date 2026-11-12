@@ -1,6 +1,7 @@
 package app.wingtipmaps.gateway.service;
 
-import org.springframework.beans.factory.annotation.Value;
+import app.wingtipmaps.gateway.config.AppProperties;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
@@ -18,7 +19,12 @@ public class Mailer {
     private final JavaMailSender sender;
     private final String from;
 
-    public Mailer(JavaMailSender sender, @Value("${MAIL_FROM:no-reply@wingtipmaps.app}") String from) {
+    @Autowired
+    public Mailer(JavaMailSender sender, AppProperties app) {
+        this(sender, app.mail().from());
+    }
+
+    public Mailer(JavaMailSender sender, String from) {
         this.sender = sender;
         this.from = from;
     }

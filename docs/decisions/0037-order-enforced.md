@@ -35,3 +35,9 @@ and to this record, made deliberately.
 - The lead merges, tidies and runs `scripts/dev/go-live.sh` before any
   suite, so the owner tries a change first.
 - CI is unaffected: it runs on GitHub, outside the hook.
+
+## Amendment, 2026-11-12: changes first, whoever asks
+
+The owner: "make it hard rule to stop validation if new changes are requested by anyone the audit, me or bug fixes. Make the code changes first".
+
+`guard.py` also refuses a long test while code is in flight: a `claude/<topic>` branch pushed in the last 24 hours and not merged into `claude/integration`, or a `~/Developer/wingtip-<topic>` worktree on a `claude/` branch with uncommitted changes or unmerged commits, touched in the last day. Validation's own branches (`val-*`, `validate-*`, `*-val`) and the record-only topics in `~/.config/wingtip/validation-ignore` don't count. A validation under way when new changes are asked for stops its tests, keeps the fixes it made, and runs once after they merge.

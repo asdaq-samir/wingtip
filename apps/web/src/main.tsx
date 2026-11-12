@@ -5,6 +5,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { createBrowserRouter, Navigate, redirect } from "react-router";
 import { RouterProvider } from "react-router/dom";
+import { NuqsAdapter } from "nuqs/adapters/react-router/v8";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
 import { chartQuery, courseQuery, flightsQuery, overlayTilesQuery, queryClient } from "./lib/queryClient";
@@ -183,10 +184,9 @@ void queryClient
 const unshared = takeSharedLinkFrom(window.location.search);
 if (unshared) {
   const rest = unshared.toString();
-  void router.navigate(
-    { pathname: router.state.location.pathname, search: rest ? `?${rest}` : "", hash: window.location.hash },
-    { replace: true },
-  );
+  // No pathname: the page it is on, whatever the router's basename does
+  // to one (given router.state's, the shared link's page was a 404).
+  void router.navigate({ search: rest ? `?${rest}` : "", hash: window.location.hash }, { replace: true });
 }
 const opening = unshared ?? new URLSearchParams(window.location.search);
 const openingDep = opening.get("dep")?.trim().toUpperCase();
@@ -261,7 +261,12 @@ const render = () =>
           provider would bring Base UI's tooltips into the first load
           (popupsChunk). */}
           <>
-            <RouterProvider router={router} />
+            {/* The address's keys read and written by nuqs (lib/address),
+            through React Router: a key's change is the browser's
+            address at once, not a navigation the router lands. */}
+            <NuqsAdapter>
+              <RouterProvider router={router} />
+            </NuqsAdapter>
             <AppToaster />
             <ErrorAlert />
             <BrandLook />

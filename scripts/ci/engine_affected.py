@@ -20,7 +20,9 @@ generator run on every engine change: each crate's rules answer to it.
       needs a run of its own) and `wasm` (whether the WebAssembly's
       inputs changed) written to $GITHUB_OUTPUT
 
-The standard library only, for the Mac's python3 (3.9) and CI's.
+The crates and what they use are Cargo's own word (`cargo metadata
+--no-deps`, engine_layers.metadata); the standard library besides, for
+the Mac's python3 (3.9) and CI's.
 """
 
 from __future__ import annotations
@@ -30,6 +32,8 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+
+from engine_layers import metadata
 
 ROOT = Path(__file__).resolve().parents[2]
 ENGINE = ROOT / "engine"
@@ -49,16 +53,14 @@ GENERATOR = "wingtip-contract-gen"
 
 
 def crates() -> dict[str, tuple[str, set[str]]]:
-    """{name: (directory under engine/, the wingtip-* crates it uses)}."""
-    members = re.search(r"members\s*=\s*\[(.*?)\]", (ENGINE / "Cargo.toml").read_text(), re.S)
+    """{name: (directory under engine/, the wingtip-* crates it uses)}:
+    every workspace member but the bindings, and what each uses to build,
+    test or build its build script, as a change to any of them is one
+    to it."""
     out = {}
-    for member in re.findall(r'"([^"]+)"', members.group(1) if members else ""):
-        if member.startswith("bindings/"):
-            continue
-        text = (ENGINE / member / "Cargo.toml").read_text()
-        name = re.search(r'^name\s*=\s*"([^"]+)"', text, re.M)
-        if name:
-            out[name.group(1)] = (member + "/", set(re.findall(r"^(wingtip-[a-z-]+)\s*=", text, re.M)))
+    for p in metadata():
+        if not p["dir"].startswith("bindings/"):
+            out[p["name"]] = (p["dir"], {d["name"] for d in p["dependencies"] if d["name"].startswith("wingtip-")})
     return out
 
 

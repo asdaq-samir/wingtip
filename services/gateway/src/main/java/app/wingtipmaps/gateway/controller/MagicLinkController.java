@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.domain.MagicLink;
 import app.wingtipmaps.gateway.domain.Pilot;
 import app.wingtipmaps.gateway.dto.MagicLinkRequest;
@@ -29,7 +30,6 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -81,14 +81,11 @@ public class MagicLinkController {
     /** The store reviewers' fixed code (ReviewSignIn); off where no bean is. */
     private ReviewSignIn review = ReviewSignIn.OFF;
 
-    public MagicLinkController(
-            MagicLinkRepository magicLinks,
-            PilotService pilots,
-            Mailer mailer,
-            @Value("${spring.mail.host:}") String mailHost,
-            @Value("${app.public-base-url:}") String publicBaseUrl,
-            @Value("${app.magic-link.per-address-per-hour:5}") int perAddressPerHour,
-            @Value("${app.magic-link.per-client-per-hour:20}") int perClientPerHour) {
+    public MagicLinkController(MagicLinkRepository magicLinks, PilotService pilots, Mailer mailer, AppProperties app) {
+        String mailHost = app.mail().host();
+        String publicBaseUrl = app.publicBaseUrl();
+        int perAddressPerHour = app.magicLink().perAddressPerHour();
+        int perClientPerHour = app.magicLink().perClientPerHour();
         this.magicLinks = magicLinks;
         this.pilots = pilots;
         this.mailer = mailer;

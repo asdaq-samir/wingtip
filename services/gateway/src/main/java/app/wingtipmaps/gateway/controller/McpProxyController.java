@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -7,7 +8,7 @@ import java.net.URI;
 import java.net.http.HttpRequest;
 import java.time.Duration;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -66,8 +67,12 @@ public class McpProxyController {
     private final StreamingProxy proxy;
     private final String plannerBaseUrl;
 
-    public McpProxyController(
-            StreamingProxy proxy, @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl) {
+    @Autowired
+    public McpProxyController(StreamingProxy proxy, AppProperties app) {
+        this(proxy, app.planner().baseUrl());
+    }
+
+    public McpProxyController(StreamingProxy proxy, String plannerBaseUrl) {
         this.proxy = proxy;
         this.plannerBaseUrl = plannerBaseUrl.replaceAll("/+$", "");
     }
@@ -82,7 +87,7 @@ public class McpProxyController {
         byte[] body =
                 "POST".equals(request.getMethod()) ? request.getInputStream().readNBytes((int) BODY_LIMIT + 1) : null;
         if (body != null && body.length > BODY_LIMIT) {
-            return StreamingProxy.error(413, "an MCP request is at most " + (BODY_LIMIT / 1024) + " KB");
+            throw StreamingProxy.problem(413, "an MCP request is at most " + (BODY_LIMIT / 1024) + " KB");
         }
         return forward(request, "/mcp", body);
     }

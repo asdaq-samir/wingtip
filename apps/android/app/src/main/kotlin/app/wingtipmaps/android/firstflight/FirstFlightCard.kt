@@ -36,8 +36,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -70,7 +70,7 @@ fun FirstFlightCard(plan: Plan, search: SearchControl, onPlanned: () -> Unit, mo
     val seen by remember(context) { FirstFlightMemory.of(context) }.seen.collectAsStateWithLifecycle()
     val planned by plan.state.collectAsStateWithLifecycle()
     if (seen || planned.routed) return
-    val model: FirstFlightModel = viewModel()
+    val model: FirstFlightModel = hiltViewModel()
     val state by model.state.collectAsStateWithLifecycle()
     // Asked once, at the first Plan It with no departure given; answered
     // either way, the plan goes on (refused, it asks where from).

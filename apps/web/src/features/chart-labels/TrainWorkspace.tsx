@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router";
+import { ADDRESS_CLEARED, useAddress } from "../../lib/address";
 import { identOf, routeOf } from "../../lib/identSchema";
 import { statusQuery } from "../../lib/queryClient";
 import { useProgressToast } from "../../lib/useProgressToast";
@@ -32,11 +32,11 @@ type DevChunk = typeof import("./dev/DevPanel") & { PilotPanel: PilotPanelPart }
  * typed into its form; this owns everything about the labels.
  */
 export default function TrainWorkspace({ dep, dest, panel, setPanel, children }: WorkspaceProps) {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [address, setAddress] = useAddress();
   // The address is the route the labels are for -- what the queries
   // read, and what a load writes; the header's form is a draft until
   // then. The default corridor when it names none.
-  const planned = { dep: identOf(searchParams.get("dep")) || "C81", dest: identOf(searchParams.get("dest")) || "KDLH" };
+  const planned = { dep: identOf(address.dep) || "C81", dest: identOf(address.dest) || "KDLH" };
   const store = useTraining(planned.dep, planned.dest);
   // Named, not read as `store.x` inside the hooks below: each hook then
   // lists exactly what it reads, and the actions are stable (useTraining
@@ -229,8 +229,9 @@ export default function TrainWorkspace({ dep, dest, panel, setPanel, children }:
   const submit = useCallback(() => {
     const route = routeOf(dep, dest);
     if (!route) return;
-    setSearchParams(route, { replace: true });
-  }, [dep, dest, setSearchParams]);
+    // The address this route alone.
+    void setAddress({ ...ADDRESS_CLEARED, dep: route.dep, dest: route.dest });
+  }, [dep, dest, setAddress]);
 
   // Stable identities for ChartMap's own effects, which list them as
   // dependencies (see its comment) -- an inline arrow at the call site

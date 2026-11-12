@@ -1,0 +1,47 @@
+{
+  "about": "Model Weather's reading of a field's picture at a point (the engine's flow_cell and flow_sample), held by the engine (engine/facade/tests/flow_sample.rs) and the web (features/weather-flow/flowTexture.test.ts), and to be by the phones' FlowGrid. The picture as the weather service's flow_grid writes it: bounds its pixels' outer edges, north row first; each pixel [red, green, alpha] bytes, a 255th of unscale a step, the wind's east part in red and north in green.",
+  "cells": [
+    {
+      "about": "Between four pixel middles: half way east, a quarter south",
+      "input": { "bounds": [0, 0, 4, 2], "width": 4, "height": 2, "lat": 1.25, "lon": 1 },
+      "answer": { "pixels": [0, 1, 4, 5], "fx": 0.5, "fy": 0.25 }
+    },
+    {
+      "about": "On a pixel's middle",
+      "input": { "bounds": [0, 0, 4, 2], "width": 4, "height": 2, "lat": 1.5, "lon": 0.5 },
+      "answer": { "pixels": [0, 1, 4, 5], "fx": 0.0, "fy": 0.0 }
+    },
+    {
+      "about": "Off the picture",
+      "input": { "bounds": [0, 0, 4, 2], "width": 4, "height": 2, "lat": 2.1, "lon": 1 },
+      "answer": null
+    }
+  ],
+  "samples": [
+    {
+      "about": "A westerly of 50 kt beside an easterly of 50 kt, half way: calm, where an average of the speeds would read 50",
+      "input": { "pixels": [[255, 127.5, 255], [0, 127.5, 255], [255, 127.5, 255], [0, 127.5, 255]], "fx": 0.5, "fy": 0, "unscale": [-50, 50], "vector": true },
+      "answer": { "value": 0.0, "from_deg": null, "calm": true }
+    },
+    {
+      "about": "A wind from the west at 50 kt",
+      "input": { "pixels": [[255, 127.5, 255], [255, 127.5, 255], [255, 127.5, 255], [255, 127.5, 255]], "fx": 0, "fy": 0, "unscale": [-50, 50], "vector": true },
+      "answer": { "value": 50.0, "from_deg": 270.0, "calm": false }
+    },
+    {
+      "about": "Calm: half a knot from the west is under FMH-1 Table 5-1's knot, so calm and no direction (FMH-1 5.5.2, 00000KT)",
+      "input": { "pixels": [[128, 127.5, 255], [128, 127.5, 255], [128, 127.5, 255], [128, 127.5, 255]], "fx": 0, "fy": 0, "unscale": [-127.5, 127.5], "vector": true },
+      "answer": { "value": 0.5, "from_deg": null, "calm": true }
+    },
+    {
+      "about": "A scalar a quarter of the way from 0 to 100",
+      "input": { "pixels": [[0, 0, 255], [255, 0, 255], [0, 0, 255], [255, 0, 255]], "fx": 0.25, "fy": 0.5, "unscale": [0, 100], "vector": false },
+      "answer": { "value": 25.0, "from_deg": null, "calm": false }
+    },
+    {
+      "about": "None where a pixel it is read from has none",
+      "input": { "pixels": [[0, 0, 255], [0, 0, 0], [0, 0, 255], [0, 0, 0]], "fx": 0.25, "fy": 0.5, "unscale": [0, 100], "vector": false },
+      "answer": null
+    }
+  ]
+}

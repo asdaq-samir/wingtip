@@ -2,12 +2,11 @@
 when the FAA has a newer edition, a zip's files together, and a file on
 disk of the current cycle left alone."""
 
+from datetime import date
 from pathlib import Path
 
 import pytest
 from wingtip import faa_data
-
-CYCLE_PAGE = "https://www.faa.gov/air_traffic/flight_info/aeronav/aero_data/NASR_Subscription/2026-10-01"
 
 
 def _csv(path: Path, eff_date: str) -> None:
@@ -16,22 +15,13 @@ def _csv(path: Path, eff_date: str) -> None:
 
 @pytest.fixture
 def faa(monkeypatch, tmp_path):
-    """The FAA's pages and zips, as files written into the staging folder;
-    the zips fetched, in order, and which ones fail."""
+    """The NASR edition APRA names (1 Oct 2026), the DOF page's zip, and
+    the zips as files written into the staging folder; the zips fetched,
+    in order, and which ones fail."""
     fetched: list[str] = []
     failing: set[str] = set()
-    monkeypatch.setattr(faa_data, "find_current_cycle_page", lambda index: CYCLE_PAGE)
-
-    def link(page, pattern):
-        name = {
-            "NAV_CSV": "NAV_CSV",
-            "APT_CSV": "APT_CSV",
-            "FIX_CSV": "FIX_CSV",
-            "class_airspace": "class_airspace_shape_files",
-            "DOF_": "DOF_261001",
-        }
-        key = next(k for k in name if k in pattern)
-        return f"https://faa.example/01_Oct_2026_{name[key]}.zip"
+    monkeypatch.setattr(faa_data.apra, "nasr_cycle", lambda: date(2026, 10, 1))
+    monkeypatch.setattr(faa_data.dof, "dof_link", lambda: "https://aeronav.faa.gov/Obst_Data/DOF_261001.zip")
 
     def download(url, dest, retries=3, only=None):
         fetched.append(url.rsplit("/", 1)[-1])
@@ -45,7 +35,6 @@ def faa(monkeypatch, tmp_path):
             else:
                 target.write_text(f"new {name}")
 
-    monkeypatch.setattr(faa_data, "find_download_link", link)
     monkeypatch.setattr(faa_data, "download_and_extract", download)
     return tmp_path, fetched, failing
 
@@ -83,4 +72,4 @@ def test_one_edition_failing_leaves_the_rest_to_refresh_and_itself_for_next_time
     assert "NAV_BASE.csv" in refreshed
     failing.clear()
     fetched.clear()
-    assert faa_data.refresh_editions(folder) == ["DOF.DAT"] and fetched == ["01_Oct_2026_DOF_261001.zip"]
+    assert faa_data.refresh_editions(folder) == ["DOF.DAT"] and fetched == ["DOF_261001.zip"]

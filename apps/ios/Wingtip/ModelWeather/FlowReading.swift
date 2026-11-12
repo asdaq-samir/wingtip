@@ -13,14 +13,14 @@ struct FlowReading: Equatable, Sendable {
     var figure: String
     var under: String
 
-    /// The badge for `field`'s `value` (FlowGrid.value), where `top` is the
+    /// The badge for `field`'s `value` (FlowGrid.reading), where `top` is the
     /// field's picture's highest value, `fromDeg` the wind's direction and
     /// `tempC` the temperature there (the precipitation's, and the wind's
     /// at its level). An engine rule that fails throws, as the web's
     /// callEngine does, and the caller shows no reading and says why: the
     /// engine's nil is "none" (no icing, turbulence under its lightest
     /// band), but a failed rule is not, and must never read as no hazard.
-    static func of(_ field: FlowFieldKind, value: Double, unit: String, top: Double?, fromDeg: Double? = nil, tempC: Double? = nil) throws -> FlowReading {
+    static func of(_ field: FlowFieldKind, value: Double, unit: String, top: Double?, fromDeg: Double? = nil, calm: Bool = false, tempC: Double? = nil) throws -> FlowReading {
         switch field {
         case .precip:
             let said = try Engine.precipIntensity(dbz: value, tempC: tempC)
@@ -46,8 +46,12 @@ struct FlowReading: Equatable, Sendable {
         case .vis:
             return FlowReading(over: nil, figure: Format.number(value, decimals: value < 3 ? 1 : 0), under: unit)
         case .wind:
+            let temp = tempC.map { "\(Int($0.rounded()))°" }
+            // A wind under a knot is calm and has no direction (FMH-1
+            // Table 5-1, 5.5.2): the word alone, with no point above it.
+            if calm { return FlowReading(over: nil, figure: "Calm", under: temp ?? "") }
             let over = try fromDeg.map { try Engine.compassPoint(bearingDeg: $0) }
-            let under = tempC.map { "\(unit) \(Int($0.rounded()))°" } ?? unit
+            let under = temp.map { "\(unit) \($0)" } ?? unit
             return FlowReading(over: over, figure: String(Int(value.rounded())), under: under)
         case .gust, .cloud, .temp, .off:
             return FlowReading(over: nil, figure: String(Int(value.rounded())), under: unit)
