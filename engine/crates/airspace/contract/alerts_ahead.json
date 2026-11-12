@@ -119,6 +119,20 @@
                   "null"
                 ]
               },
+              "floor_desc": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The FAA's LOWER_DESC: ANI, above but not including."
+              },
+              "ceiling_desc": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The FAA's UPPER_DESC: TNI, to but not including; TI, to and including."
+              },
               "times_of_use": {
                 "type": [
                   "string",

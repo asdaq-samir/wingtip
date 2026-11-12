@@ -5,9 +5,8 @@
 //! FAA's published data: not a terrain awareness and warning system
 //! (TSO-C151), nor a substitute for the chart, the pilot's own planning
 //! (14 CFR 91.103) or looking outside. From the packs: the Class B, C and
-//! D and special-use
-//! areas the track goes into in the next five minutes, the TFRs as the
-//! phone last downloaded them, and the ground it comes within 500 ft of
+//! D and special-use areas the track goes into in the next five minutes,
+//! the TFRs as the phone last downloaded them, and the ground it comes within 500 ft of
 //! in the next minute -- as the planner's /api/alerts/ahead answers it
 //! (AheadAlert, the same names), with what cannot be known offline said
 //! so: the obstacles (the FAA's Digital Obstacle File is not in a pack),
@@ -21,7 +20,7 @@
 
 use crate::geo::destination;
 use crate::json::{self, Value};
-use crate::{pack::Pack, sort::StableSort};
+use crate::{pack::Pack, sort::StableSort, sua_tab};
 
 /// How far ahead the airspace is looked at: the minutes it takes to find
 /// the frequency, call and be answered before a Class C or D, or to be
@@ -310,10 +309,7 @@ fn height_msl(value: Option<f64>, agl: bool, ground: Option<f64>, missing: f64) 
 struct Area<'a> {
     kind: String,
     name: String,
-    floor: Option<f64>,
-    floor_agl: bool,
-    ceiling: Option<f64>,
-    ceiling_agl: bool,
+    heights: sua_tab::Heights,
     under: Option<f64>,
     times_of_use: Option<String>,
     holds: Box<dyn Fn(f64, f64) -> bool + 'a>,
@@ -324,8 +320,9 @@ fn special_use_alerts(track: &Track, areas: Vec<Area>) -> Vec<Alert> {
     let mut found: Vec<Alert> = Vec::new();
     for a in areas {
         let Some((level, need)) = special_use_need(&a.kind) else { continue };
-        let floor = height_msl(a.floor, a.floor_agl, a.under, 0.0);
-        let ceiling = height_msl(a.ceiling, a.ceiling_agl, a.under, f64::INFINITY);
+        let h = a.heights;
+        let floor = height_msl(h.floor, h.floor_agl, a.under, 0.0);
+        let ceiling = height_msl(h.ceiling, h.ceiling_agl, a.under, f64::INFINITY);
         let (inside, index) = track.entry(&*a.holds, floor, ceiling);
         let Some(index) = index else { continue };
         if found.iter().any(|f| f.name == a.name && f.seconds <= track.times[index]) {
@@ -340,8 +337,8 @@ fn special_use_alerts(track: &Track, areas: Vec<Area>) -> Vec<Alert> {
             need: need.to_string(),
             inside: inside && index == 0,
             class: Some(a.kind.clone()),
-            floor_ft: if a.floor_agl { Some(floor) } else { a.floor },
-            ceiling_ft: if a.ceiling_agl { Some(ceiling).filter(|c| c.is_finite()) } else { a.ceiling },
+            floor_ft: if h.floor_agl { Some(floor) } else { h.floor },
+            ceiling_ft: if h.ceiling_agl { Some(ceiling).filter(|c| c.is_finite()) } else { h.ceiling },
             times_of_use: a.times_of_use.clone().filter(|t| !t.is_empty()),
             ..at(track, index)
         });
@@ -369,10 +366,12 @@ fn special_use(packs: &[Pack], track: &Track, ground: Option<f64>) -> Vec<Alert>
                 continue;
             }
             let (Some(wkb), Some(name)) = (layer.wkb(i), text(names, r, 16)) else { continue };
-            let (floor_agl, ceiling_agl) = (a[4] == 2, a[5] == 2);
+            // The FAA's codes and DESC as the pack keeps them (wingtip.sua `_area`).
+            let codes = p.section("sua.json").and_then(|d| text(d, r, 8)).and_then(|t| json::parse(t).ok());
+            let heights = sua_tab::heights(codes.as_ref(), f64_at(a, 8), f64_at(a, 16), [a[4], a[5]]);
             // The ground under the area for its AGL heights: the middle of
             // its box, the airplane's own where that cannot be read.
-            let under = if floor_agl || ceiling_agl {
+            let under = if heights.floor_agl || heights.ceiling_agl {
                 ground_ft(packs, (bbox[1] + bbox[3]) / 2.0, (bbox[0] + bbox[2]) / 2.0).or(ground)
             } else {
                 ground
@@ -380,10 +379,7 @@ fn special_use(packs: &[Pack], track: &Track, ground: Option<f64>) -> Vec<Alert>
             areas.push(Area {
                 kind,
                 name: name.to_string(),
-                floor: f64_at(a, 8).filter(|v| !v.is_nan()),
-                floor_agl,
-                ceiling: f64_at(a, 16).filter(|v| !v.is_nan()),
-                ceiling_agl,
+                heights,
                 under,
                 times_of_use: text(times, a, 24).map(str::to_string),
                 holds: Box::new(move |x: f64, y: f64| crate::airspace::wkb_holds(wkb, x, y).unwrap_or(false)),
@@ -947,13 +943,11 @@ fn alerts_ahead(v: &Value) -> R<String> {
             let mut areas = Vec::new();
             for a in list {
                 let shape = polygons_of(name, a)?;
+                let (floor_ft, ceiling_ft) = (opt_num_of(name, a, "floor_ft")?, opt_num_of(name, a, "ceiling_ft")?);
                 areas.push(Area {
                     kind: str_of(a, "type").to_string(),
                     name: str_of(a, "name").to_string(),
-                    floor: opt_num_of(name, a, "floor_ft")?,
-                    floor_agl: str_of(a, "floor_ref") == "AGL",
-                    ceiling: opt_num_of(name, a, "ceiling_ft")?,
-                    ceiling_agl: str_of(a, "ceiling_ref") == "AGL",
+                    heights: sua_tab::heights(Some(a), floor_ft, ceiling_ft, [0, 0]),
                     under: opt_num_of(name, a, "ground_ft")?.or(ground),
                     times_of_use: a.get("times_of_use").and_then(Value::as_str).map(str::to_string),
                     holds: Box::new(move |x: f64, y: f64| polygons_hold(&shape, x, y)),

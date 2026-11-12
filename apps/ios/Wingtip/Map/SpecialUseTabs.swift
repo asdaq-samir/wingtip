@@ -5,7 +5,7 @@ import UIKit
 /// restricted area's boundary over the sectional (the owner's screenshot
 /// near Brady, TX, 2026-11-12) and the web draws them (glSuaLabels): a
 /// dark tab bordered in the area's ink, white bold type, its name over its
-/// altitudes, "M-BRADY NOR*:" over "3600-FL180", its long side along the
+/// altitudes, "M-BRADY NOR*:" over "3600-17999", its long side along the
 /// area's longest side and just inside it. The name, the limits' figures
 /// and references, the place and the turn are the engine's
 /// (special_use_in_view's `tab`, crate::sua_tab); the words of the limits
@@ -60,7 +60,7 @@ final class SpecialUseTabAnnotation: NSObject, MKAnnotation {
     let tab: ChartMarks.Area.Tab
     let limits: (floor: String, ceiling: String)
     let coordinate: CLLocationCoordinate2D
-    /// Its two lines: "M-BRADY NOR*:" over "3600-FL180".
+    /// Its two lines: "M-BRADY NOR*:" over "3600-17999".
     var text: String { "\(tab.name):\n\(limits.floor)-\(limits.ceiling)" }
 
     init?(_ area: ChartMarks.Area) {

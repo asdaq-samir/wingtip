@@ -245,6 +245,21 @@ def test_an_agl_ceiling_is_over_the_ground_under_the_area_and_no_limit_where_unr
     assert [a["name"] for a in ahead(alt=4300.0)["alerts"] if a["kind"] == "special_use"] == ["HIGH MOA"]
 
 
+def test_a_floor_coded_sfc_above_zero_is_over_the_ground_under_the_area(ahead):
+    # Brady Low MOA's piece round Curtis Field as the FAA's special use
+    # airspace data has it (ADDS, 2026-11-12): 1,500 FT SFC "above but not
+    # including" to 6,000 MSL "to but not including", EXCLUSION 1, REMARKS
+    # "EXCLUDES SFC TO 1500 FT AGL". Over 1,800 ft ground it begins at
+    # 3,301 MSL: nothing at 2,500, where reading SFC as MSL alerted.
+    area, geometry = _area("BRADY LOW MOA", "MOA", _east(3, 5), floor=1500.0, floor_ref="SFC", ceiling=6000.0)
+    area.update(floor_desc="ANI", ceiling_desc="TNI", excluded=True)
+    ahead.world["areas"] = [(area, geometry)]
+    ahead.world["ground_ft"] = lambda lat, lon: 1800.0 if lon > LON + 2.0 * MILE else 800.0
+    assert [a for a in ahead(alt=2500.0)["alerts"] if a["kind"] == "special_use"] == []
+    [moa] = [a for a in ahead(alt=4500.0)["alerts"] if a["kind"] == "special_use"]
+    assert (moa["floor_ft"], moa["ceiling_ft"]) == (3301.0, 5999.0)
+
+
 def test_without_an_altitude_the_ground_is_said_not_read(ahead):
     assert ahead(alt=None)["unavailable"] == ["terrain and obstacles, with no GPS altitude"]
 

@@ -425,6 +425,16 @@ object EngineContract {
         val ceilingFt: Double? = null,
         @SerialName("ceiling_ref")
         val ceilingRef: String? = null,
+        /**
+         * The FAA's LOWER_DESC: ANI, above but not including.
+         */
+        @SerialName("floor_desc")
+        val floorDesc: String? = null,
+        /**
+         * The FAA's UPPER_DESC: TNI, to but not including; TI, to and including.
+         */
+        @SerialName("ceiling_desc")
+        val ceilingDesc: String? = null,
         @SerialName("times_of_use")
         val timesOfUse: String? = null,
         /**

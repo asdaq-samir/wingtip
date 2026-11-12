@@ -58,7 +58,7 @@ fn point(out: &mut String, p: Pt) {
 /// on its boundary (crate::sua_tab), `{"name", "floor_ft", "floor_ref",
 /// "ceiling_ft", "ceiling_ref", "at": [lat, lon], "angle", "side"}`, null
 /// where its limits have no figure to write, the pack keeps no codes, or
-/// the piece is one the FAA cuts out of its area (EXCLUSION). A pack
+/// the piece is one the FAA marks EXCLUSION (crate::sua_tab). A pack
 /// written before the FAA's DESC was kept writes its limits as coded
 /// (FL180 where the area stops below it).
 pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, east: f64) -> String {
@@ -82,8 +82,9 @@ pub fn special_use_in_view(packs: &[Pack], south: f64, west: f64, north: f64, ea
             }
             let (Some(wkb), Some(name)) = (layer.wkb(i), text_at(names, r, 16)) else { continue };
             // What the pack keeps of the area besides (wingtip.sua `_area`):
-            // a piece cut out of an area has the area's name, and is told
-            // apart by it, so it neither hides the area nor has its tab.
+            // a piece marked EXCLUSION (the area above what the FAA
+            // excludes lower down) has the area's name, and is told apart
+            // by it, so it neither hides the area nor has its tab.
             let codes = described.and_then(|d| text_at(d, r, 8)).and_then(|t| json::parse(t).ok());
             let excluded = matches!(codes.as_ref().and_then(|c| c.get("excluded")), Some(json::Value::Bool(true)));
             if found.iter().any(|(_, k, n, x)| *k == kind && n == name && *x == excluded) {
@@ -329,7 +330,7 @@ mod tests {
     fn a_tab_writes_to_but_not_including_and_an_excluded_piece_has_none() {
         // R-1 SFC to 9,000 MSL "to but not including" (ADDS' UPPER_DESC
         // TNI): 8999, as the FAA's CIFP writes it. "Ash" a piece the FAA
-        // cuts out of its area (EXCLUSION 1): drawn, with no tab.
+        // marks EXCLUSION 1: drawn, with no tab.
         let r = br#"{"floor_ref":"SFC","floor_desc":null,"ceiling_ref":"MSL","ceiling_desc":"TNI","excluded":false}"#;
         let ash = br#"{"floor_ref":"SFC","ceiling_ref":"UNLTD","excluded":true}"#;
         let described = [r.as_slice(), ash.as_slice()].concat();

@@ -52,7 +52,7 @@
       }
     },
     {
-      "about": "One of Brady Low's pieces above but not including 1,500 ft AGL, which the FAA cuts out of the area (EXCLUSION 1): no tab",
+      "about": "One of Brady Low's pieces above but not including 1,500 ft AGL (EXCLUSION 1, REMARKS \"EXCLUDES SFC TO 1500 FT AGL\"): the area's own airspace over a field it excludes below that, no tab of its own",
       "input": {
         "name": "BRADY LOW MOA",
         "type": "MOA",

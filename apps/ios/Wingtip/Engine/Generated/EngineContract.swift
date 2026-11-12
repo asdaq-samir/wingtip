@@ -431,6 +431,10 @@ enum EngineContract {
         var floorRef: String?
         var ceilingFt: Double?
         var ceilingRef: String?
+        /// The FAA's LOWER_DESC: ANI, above but not including.
+        var floorDesc: String?
+        /// The FAA's UPPER_DESC: TNI, to but not including; TI, to and including.
+        var ceilingDesc: String?
         var timesOfUse: String?
         /// The ground under the area, for AGL heights.
         var groundFt: Double?
@@ -443,6 +447,8 @@ enum EngineContract {
             case floorRef = "floor_ref"
             case ceilingFt = "ceiling_ft"
             case ceilingRef = "ceiling_ref"
+            case floorDesc = "floor_desc"
+            case ceilingDesc = "ceiling_desc"
             case timesOfUse = "times_of_use"
             case groundFt = "ground_ft"
             case polygons

@@ -49,7 +49,10 @@ def _ground_under(geometry, refs: tuple) -> float | None:
     miles from a ridge or valley the area may lie over. None where the
     area has no AGL height or the ground cannot be read (the engine then
     takes the airplane's)."""
-    if "AGL" not in refs:
+    # The FAA's special use airspace data codes a height above the ground
+    # SFC with its figure (Brady Low MOA's 500 FT SFC), which the engine
+    # reads as AGL (its sua_tab::limit), so SFC wants the ground too.
+    if "AGL" not in refs and "SFC" not in refs:
         return None
     point = geometry.representative_point()
     return _ground_ft(point.y, point.x)
@@ -86,6 +89,10 @@ def _special_use(box: tuple) -> list | None:
             "floor_ref": area["floor_ref"],
             "ceiling_ft": area["ceiling_ft"],
             "ceiling_ref": area["ceiling_ref"],
+            # "To but not including" and "above but not including", which
+            # the engine reads a foot inside the figure.
+            "floor_desc": area.get("floor_desc"),
+            "ceiling_desc": area.get("ceiling_desc"),
             "times_of_use": area["times_of_use"],
             "ground_ft": _ground_under(geometry, (area["floor_ref"], area["ceiling_ref"])),
             "polygons": _polygons(geometry),
