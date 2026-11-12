@@ -1,9 +1,10 @@
 package app.wingtipmaps.android.briefing
 
 import android.app.Application
-import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.checklist.PreferencesStore
@@ -33,7 +34,7 @@ class PassengerModel @Inject constructor(app: Application) : AndroidViewModel(ap
         /** When the message says the flight leaves: when the briefing was
          *  opened, as this app's plan has no departure time of its own
          *  and leaves at the planner's now (the strip's leaveMs). */
-        val departMs: Long = System.currentTimeMillis(),
+        val departMs: Long = AppClock.nowMs(),
         /** The briefing's items, the engine's; none where it failed. */
         val items: List<PassengerItem> = PassengerBriefing.ITEMS.getOrDefault(emptyList()),
         /** Why there are no items: the engine's words where its
@@ -41,7 +42,7 @@ class PassengerModel @Inject constructor(app: Application) : AndroidViewModel(ap
         val problem: String? = PassengerBriefing.ITEMS.exceptionOrNull()?.let { "The briefing's items could not be had: ${it.message}" },
     )
 
-    private val ticks = PassengerTicks(PreferencesStore(app.getSharedPreferences("passengers", Context.MODE_PRIVATE)))
+    private val ticks = PassengerTicks(PreferencesStore(Kept.of(app, "passengers")))
 
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()

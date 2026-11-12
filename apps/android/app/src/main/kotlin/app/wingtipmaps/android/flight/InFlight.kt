@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.flight
 
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.nearest
@@ -77,7 +78,7 @@ class InFlight private constructor() {
 
     /** The fix taken: the instruments worked out again from it and the
      *  plan. A null fix (own ship off) clears them. */
-    fun took(fix: OwnShip.Fix?, plan: Plan.State, nowMs: Long = System.currentTimeMillis()) {
+    fun took(fix: OwnShip.Fix?, plan: Plan.State, nowMs: Long = AppClock.nowMs()) {
         if (fix == null) {
             altitudes.clear()
             _state.value = State()
@@ -142,7 +143,7 @@ class InFlight private constructor() {
         /** The engine's `in_flight` for a fix on the plan's route: the
          *  fields in order (the departure, the stops, the destination) are
          *  its waypoints. Null with no route. */
-        fun progress(fix: OwnShip.Fix, plan: Plan.State, nowMs: Long = System.currentTimeMillis()): Result<EngineContract.InFlightAnswer?> {
+        fun progress(fix: OwnShip.Fix, plan: Plan.State, nowMs: Long = AppClock.nowMs()): Result<EngineContract.InFlightAnswer?> {
             val course = plan.course ?: return Result.success(null)
             val line = course.courseLine.filter { it.size == 2 }
             if (line.size < 2) return Result.success(null)

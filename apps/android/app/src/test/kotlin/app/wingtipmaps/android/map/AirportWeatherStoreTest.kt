@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.map
 
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import app.wingtipmaps.android.design.generated.WingtipMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -45,9 +46,9 @@ class AirportWeatherStoreTest {
 
     @Test
     fun theStationModelIsDrawnCloseInAtEveryZoomInStationAndNeverOff() {
-        assertEquals(MapStyle.glZoom(AirportWeather.STATION_ZOOM), AirportWeather().stationFromZoom!!, 0.0)
+        assertEquals(MapStyle.glZoom(WingtipMap.ZOOM_STATION_CLOSE.toDouble()), AirportWeather().stationFromZoom!!, 0.0)
         assertNull(AirportWeather(stationClose = false).stationFromZoom)
-        assertEquals(MapStyle.glZoom(AirportWeather.STATION_ALWAYS), AirportWeather(AirportWeatherMode.STATION, stationClose = false).stationFromZoom!!, 0.0)
+        assertEquals(MapStyle.glZoom(WingtipMap.ZOOM_STATION_ALWAYS.toDouble()), AirportWeather(AirportWeatherMode.STATION, stationClose = false).stationFromZoom!!, 0.0)
         assertNull(AirportWeather(AirportWeatherMode.OFF).stationFromZoom)
     }
 }

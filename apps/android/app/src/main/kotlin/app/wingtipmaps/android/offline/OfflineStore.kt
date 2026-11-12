@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.offline
 
 import android.content.Context
+import app.wingtipmaps.android.AppClock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,7 +40,7 @@ data class OfflineKept(
      *  effective day (the FAA's 28 and 56 Day Product Schedule, as the
      *  planner's wingtip.data_cycles.in_force_day has it). Said on the
      *  list, never removed for it alone (warn, never limit; decision 0008). */
-    fun expired(now: Instant = Instant.now()): Boolean {
+    fun expired(now: Instant = AppClock.javaNow()): Boolean {
         val day = expires?.let { runCatching { LocalDate.parse(it) }.getOrNull() } ?: return false
         return !now.isBefore(day.atTime(9, 1).toInstant(ZoneOffset.UTC))
     }
@@ -111,7 +112,7 @@ class OfflineStore(val root: File) {
      *  whole on the phone: the update replaces it. One not yet updated is
      *  kept and said to be expired, so a pilot with no signal on the
      *  changeover day still has a chart. */
-    fun sweep(now: Instant = Instant.now()) {
+    fun sweep(now: Instant = AppClock.javaNow()) {
         val list = all()
         for (old in list.filter { it.expired(now) }) {
             if (list.any { it.region == old.region && it.complete && sortable(it.cycle) > sortable(old.cycle) }) update(old.id) { null }

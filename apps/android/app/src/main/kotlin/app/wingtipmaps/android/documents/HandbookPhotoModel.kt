@@ -14,6 +14,7 @@ import app.wingtipmaps.android.api.generated.assistant.HandbookRead
 import app.wingtipmaps.android.api.saveHandbook
 import app.wingtipmaps.android.api.updateAircraft
 import app.wingtipmaps.android.engine.Engine
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * "Add from a Photo" for the airplane's own figures (the web's handbook
@@ -31,13 +33,14 @@ import kotlinx.coroutines.launch
  * figures; then, on the pilot's own Save, the airplane's record and its
  * handbook figures at the gateway. Nothing is saved before that Save.
  */
+@HiltViewModel
 class HandbookPhotoModel(
     private val check: (HandbookRead) -> Result<HandbookCheck> = { Engine.rule("handbook_read_check", it) },
     private val rules: AircraftForm.Rules = AircraftForm.EngineRules,
 ) : ViewModel() {
-    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
-    // constructor once the sources and seams it is given are injectable
-    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
+    /** Hilt's: the engine's handbook_read_check and the form's rules. */
+    @Inject
+    constructor(rules: AircraftForm.Rules) : this({ Engine.rule("handbook_read_check", it) }, rules)
     data class State(
         val page: Documents.Kind = Documents.Kind.PERFORMANCE,
         val reading: Boolean = false,

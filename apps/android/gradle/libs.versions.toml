@@ -92,6 +92,23 @@ androidxHilt = "1.4.0"
 benchmark = "1.5.0"
 uiautomator = "2.4.1"
 profileinstaller = "1.4.1"
+# Coil 3, the images (a field's pictures on its card, ui/PhotoCarousel.kt):
+# decoded off the main thread, sized to where they are drawn, kept in
+# memory and on disk, fetched through the app's OkHttp client so the
+# gateway's paths carry the session. 3.6.3, the newest on Maven Central
+# and GitHub (coil-kt/coil releases, 2026-09-18).
+coil = "3.6.3"
+# Telephoto's zoomable images and Modifier.zoomable (saket/telephoto):
+# pinch, double tap, fling and over-zoom as Google Photos has them, for the
+# full-screen picture and the airport diagram. 0.19.0, the newest release on
+# GitHub (2026-04-02); Maven Central's "1.0.0-alpha02" is an older 2023
+# preview on Coil 2, not a newer one.
+telephoto = "0.19.0"
+# Retrofit 3, the calls to our servers: the interfaces openapi-generator
+# writes from their OpenAPI documents (api/generated/client,
+# scripts/build/api-models-apps.sh), read with kotlinx.serialization, on
+# the app's OkHttp client. 3.0.0, the newest on Maven Central (2025-05-15).
+retrofit = "3.0.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -177,6 +194,19 @@ hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref
 hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
 androidx-hilt-lifecycle-viewmodel-compose = { group = "androidx.hilt", name = "hilt-lifecycle-viewmodel-compose", version.ref = "androidxHilt" }
 androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "profileinstaller" }
+# OkHttp's own coroutine call (Call.executeAsync), its release train's:
+# cancelled with the coroutine, and the response closed if it lands after.
+okhttp-coroutines = { group = "com.squareup.okhttp3", name = "okhttp-coroutines", version.ref = "okhttp" }
+# Coil 3's Compose images and its OkHttp fetcher (the app's one client).
+coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
+coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
+# Telephoto: Coil 3's AsyncImage made zoomable, and Modifier.zoomable for
+# any content (the diagram with the airplane drawn on it).
+telephoto-zoomable-image-coil3 = { group = "me.saket.telephoto", name = "zoomable-image-coil3", version.ref = "telephoto" }
+telephoto-zoomable = { group = "me.saket.telephoto", name = "zoomable", version.ref = "telephoto" }
+# Retrofit and its kotlinx.serialization converter.
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-converter-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

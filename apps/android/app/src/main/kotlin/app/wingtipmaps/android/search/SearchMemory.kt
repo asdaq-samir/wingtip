@@ -1,7 +1,8 @@
 package app.wingtipmaps.android.search
 
 import android.content.Context
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.api.Gateway
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,8 +61,8 @@ class SearchMemory(private val read: (String) -> String?, private val write: (St
 
         fun of(context: Context): SearchMemory = shared ?: synchronized(this) {
             shared ?: run {
-                val prefs = context.applicationContext.getSharedPreferences("search", Context.MODE_PRIVATE)
-                SearchMemory({ prefs.getString(it, null) }, { k, v -> prefs.edit { putString(k, v) } })
+                val prefs = Kept.of(context, "search")
+                SearchMemory({ prefs[stringPreferencesKey(it)] }, { k, v -> prefs.edit { it[stringPreferencesKey(k)] = v } })
             }.also { shared = it }
         }
 

@@ -1,7 +1,8 @@
 package app.wingtipmaps.android.airplane
 
 import android.content.Context
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.addAircraft
 import app.wingtipmaps.android.api.aircraft
@@ -131,8 +132,9 @@ class OwnAirplanes(private val store: OwnStore, private val remote: OwnRemote = 
 
         fun of(context: Context): OwnAirplanes = shared ?: synchronized(this) {
             shared ?: run {
-                val prefs = context.applicationContext.getSharedPreferences("own_airplanes", Context.MODE_PRIVATE)
-                OwnAirplanes(OwnStore({ prefs.getString("records", null) }, { text -> prefs.edit { putString("records", text) } }))
+                val prefs = Kept.of(context, "own_airplanes")
+                val records = stringPreferencesKey("records")
+                OwnAirplanes(OwnStore({ prefs[records] }, { text -> prefs.edit { it[records] = text } }))
             }.also { shared = it }
         }
 

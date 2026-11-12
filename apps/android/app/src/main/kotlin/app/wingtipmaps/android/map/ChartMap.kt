@@ -378,7 +378,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
         if (destroyed) return
         view.getMapAsync { map ->
             map.getStyle { style ->
-                val (points, trends) = TrafficDrawing.features(lastTraffic, lastTracked, System.currentTimeMillis())
+                val (points, trends) = TrafficDrawing.features(lastTraffic, lastTracked, app.wingtipmaps.android.AppClock.nowMs())
                 style.getSourceAs<GeoJsonSource>(MapStyle.TRAFFIC)?.setGeoJson(points.toString())
                 style.getSourceAs<GeoJsonSource>(MapStyle.TRAFFIC_TREND)?.setGeoJson(trends.toString())
             }

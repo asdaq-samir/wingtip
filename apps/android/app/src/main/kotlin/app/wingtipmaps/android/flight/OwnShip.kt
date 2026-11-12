@@ -8,9 +8,10 @@ import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Looper
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
 import androidx.core.location.LocationCompat
 import androidx.core.location.altitude.AltitudeConverterCompat
+import androidx.datastore.preferences.core.longPreferencesKey
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.api.AheadAlert
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.ahead
@@ -116,21 +117,21 @@ class OwnShip private constructor(private val context: Context) {
     /** Where the airplane last was, kept across launches so the map opens
      *  on it (the web's useOwnShip lastFix): written at most once a
      *  minute, the position alone. */
-    private val kept = context.getSharedPreferences("own-ship", Context.MODE_PRIVATE)
+    private val kept = Kept.of(context, "own-ship")
     private var keptAtMs = 0L
 
     /** The last position kept, latitude and longitude; null before the
      *  first fix the phone ever read. */
     val lastPosition: Pair<Double, Double>?
-        get() = if (!kept.contains("lat")) {
+        get() = if (KEPT_LAT !in kept) {
             null
         } else {
-            Double.fromBits(kept.getLong("lat", 0)) to Double.fromBits(kept.getLong("lon", 0))
+            Double.fromBits(kept[KEPT_LAT] ?: 0) to Double.fromBits(kept[KEPT_LON] ?: 0)
         }
 
     /** The last position forgotten: signed out, or the account deleted. */
     fun forgetLastPosition() {
-        kept.edit { clear() }
+        kept.edit { it.clear() }
         keptAtMs = 0L
     }
 
@@ -238,8 +239,8 @@ class OwnShip private constructor(private val context: Context) {
         if (fix.atMs - keptAtMs >= KEEP_EVERY_MS) {
             keptAtMs = fix.atMs
             kept.edit {
-                putLong("lat", fix.lat.toRawBits())
-                putLong("lon", fix.lon.toRawBits())
+                it[KEPT_LAT] = fix.lat.toRawBits()
+                it[KEPT_LON] = fix.lon.toRawBits()
             }
         }
         // The path flown, and the phone's position kept with the screen
@@ -344,6 +345,10 @@ class OwnShip private constructor(private val context: Context) {
 
         /** How often the position is kept for the next launch's map. */
         const val KEEP_EVERY_MS = 60_000L
+
+        /** The last position's latitude and longitude, kept as their bits. */
+        private val KEPT_LAT = longPreferencesKey("lat")
+        private val KEPT_LON = longPreferencesKey("lon")
         /** One fix a second. */
         const val EVERY_MS = 1000L
         /** How often what is ahead is asked while moving; the planner looks

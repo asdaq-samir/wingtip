@@ -3,6 +3,7 @@ package app.wingtipmaps.android.share
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Links
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Gateway
@@ -89,7 +90,7 @@ class SharedFlightModel @Inject constructor(app: Application) : AndroidViewModel
         val shown = _state.value as? State.Shown ?: return
         val p = shown.plan
         p.rules?.let { FlightChoices.of(getApplication()).setRules(FlightRules.of(it)) }
-        val depart = p.depart?.takeIf { runCatching { Instant.parse(it).isAfter(Instant.now()) }.getOrDefault(false) }
+        val depart = p.depart?.takeIf { runCatching { Instant.parse(it).isAfter(AppClock.javaNow()) }.getOrDefault(false) }
         plan.useLeg(p.dep, p.dest, p.stops, p.altitudeFt?.toDouble(), depart)
         ScreenRequests.ask(Screen.NAVLOG)
         _state.value = State.Closed

@@ -2,6 +2,7 @@ package app.wingtipmaps.android.coach
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.CoachAsk
@@ -13,6 +14,10 @@ import app.wingtipmaps.android.api.generated.assistant.CoachWordsAnswer
 import app.wingtipmaps.android.api.generated.gateway.CurrencyDto
 import app.wingtipmaps.android.api.generated.gateway.LogbookEntryDto
 import app.wingtipmaps.android.api.generated.gateway.TrainingDto
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedFactory
+import dagger.assisted.AssistedInject
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,6 +26,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.ZoneId
+import kotlin.time.Clock
+import kotlin.time.toJavaInstant
 
 /** What the pilot holds, as the plan reads it: a student is held to the
  *  solo endorsement (14 CFR 61.56(g), 61.87(n), (p)); an instrument
@@ -43,14 +51,23 @@ enum class Certificate(val wire: String, val ratings: List<String>) {
  * assistant. The plan is the engine's; the words come after it and never
  * hold it up, so a plan shows whether or not they come.
  */
+@HiltViewModel(assistedFactory = CoachModel.Factory::class)
 class CoachModel(
     private val source: CoachSource = ServerCoach,
     private val keeper: CertificateKeeper,
-    private val today: () -> LocalDate = LocalDate::now,
+    private val today: () -> LocalDate = { AppClock.today() },
 ) : ViewModel() {
-    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
-    // constructor once the sources and seams it is given are injectable
-    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
+    /** Hilt's, the certificate's keeping handed in by the screen: the
+     *  server's sources and today by the app's clock. */
+    @AssistedInject
+    constructor(source: CoachSource, @Assisted keeper: CertificateKeeper, clock: Clock) :
+        this(source, keeper, { clock.now().toJavaInstant().atZone(ZoneId.systemDefault()).toLocalDate() })
+
+    @AssistedFactory
+    interface Factory {
+        fun create(keeper: CertificateKeeper): CoachModel
+    }
+
     data class State(
         /** The logbook has been read, so a plan can be asked for. */
         val ready: Boolean = false,

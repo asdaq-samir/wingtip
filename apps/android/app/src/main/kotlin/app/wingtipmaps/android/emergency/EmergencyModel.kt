@@ -8,6 +8,7 @@ import app.wingtipmaps.android.checklist.ChecklistSection
 import app.wingtipmaps.android.engine.CyclePacks
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.flight.OwnShip
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
@@ -32,6 +34,7 @@ import kotlin.math.roundToLong
  * (PhoneFields), ranked by the same engine and said to be the phone's,
  * without weather (`onPhone`).
  */
+@HiltViewModel
 class EmergencyModel(
     private val source: EmergencySource = PlannerEmergency,
     private val rules: EmergencyRules = EngineEmergency,
@@ -39,9 +42,9 @@ class EmergencyModel(
     /** Where the packs are read, off the main thread. */
     private val work: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
-    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
-    // constructor once the sources and seams it is given are injectable
-    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
+    /** Hilt's: the planner's fields and the engine's rules, the packs' fields on the phone where the planner cannot be reached. */
+    @Inject
+    constructor(source: EmergencySource, rules: EmergencyRules) : this(source, rules, null, Dispatchers.Default)
     data class State(
         val fix: OwnShip.Fix? = null,
         val ranked: EngineContract.BestFieldsAnswer? = null,

@@ -3,6 +3,7 @@ package app.wingtipmaps.android.flight
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import app.wingtipmaps.android.AppClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -26,7 +27,7 @@ import kotlinx.coroutines.launch
  *
  * The scope and the clock come in so a test runs it on virtual time.
  */
-class Ticker(private val scope: CoroutineScope, private val now: () -> Long = System::currentTimeMillis) {
+class Ticker(private val scope: CoroutineScope, private val now: () -> Long = AppClock::nowMs) {
     /** A piece of work registered: cancel it to take it off the clock. */
     inner class Registration internal constructor(val everyMs: Long, val work: suspend () -> Unit) {
         internal var dueMs: Long = now()

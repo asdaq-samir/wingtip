@@ -2,6 +2,7 @@ package app.wingtipmaps.android.dryrun
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.dryRun
@@ -63,7 +64,7 @@ class DryRun @Inject constructor() : ViewModel() {
             _state.update { it.copy(problem = NOT_YET) }
             return
         }
-        val startS = (Plan.departMs(plan.depart) ?: System.currentTimeMillis()) / 1000.0
+        val startS = (Plan.departMs(plan.depart) ?: AppClock.nowMs()) / 1000.0
         val line = course.courseLine.map { p -> p.map { JsonPrimitive(it) } }
         viewModelScope.launch {
             val answer = withContext(Dispatchers.Default) { Engine.dryRun(rows, startS, line) }

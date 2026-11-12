@@ -1,12 +1,12 @@
 package app.wingtipmaps.android.engine
 
 import android.content.Context
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Ahead
 import app.wingtipmaps.android.api.AirspaceAt
 import app.wingtipmaps.android.api.CyclePackIndex
 import app.wingtipmaps.android.api.Gateway
 import app.wingtipmaps.android.api.Planner
-import app.wingtipmaps.android.api.await
 import app.wingtipmaps.android.engine.generated.distanceNm
 import app.wingtipmaps.android.engine.generated.regionOf
 import kotlinx.coroutines.CancellationException
@@ -15,6 +15,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
+import okhttp3.coroutines.executeAsync
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
@@ -166,7 +167,7 @@ class CyclePacks(private val root: File) {
     private suspend fun fetchPack(cycle: String, region: String, crc32: Long): ByteArray? {
         val request = Planner.get("/api/cycle-pack/$cycle/$region.pack", mapOf("crc32" to crc32.toString()))
         return runCatching {
-            Gateway.streaming.newCall(request).await().use { response ->
+            Gateway.streaming.newCall(request).executeAsync().use { response ->
                 if (response.code != 200) null else response.body.bytes()
             }
         }.getOrNull()
@@ -198,7 +199,7 @@ class CyclePacks(private val root: File) {
      *  round the airplane. Null where no pack round the point was ever
      *  kept. The obstacles are the planner's alone and the TFRs are not
      *  kept on the phone yet: both are said to be missing, never clear. */
-    fun ahead(lat: Double, lon: Double, trackDeg: Double, groundspeedKt: Double, altitudeFt: Double?, nowMs: Long = System.currentTimeMillis()): Ahead? {
+    fun ahead(lat: Double, lon: Double, trackDeg: Double, groundspeedKt: Double, altitudeFt: Double?, nowMs: Long = AppClock.nowMs()): Ahead? {
         // The regions within a third of a degree: five minutes' track at
         // 200 kt is 17 nm, a quarter of a degree.
         val names = HashSet<String>()
