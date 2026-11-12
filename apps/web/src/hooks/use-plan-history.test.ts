@@ -6,6 +6,7 @@
  */
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { loadAddress } from "../lib/address";
 import { SETTLE_MS } from "./planHistory";
 import { usePlanHistory } from "./use-plan-history";
 
@@ -30,30 +31,30 @@ afterEach(() => {
 describe("the route's Undo", () => {
   it("says what a clearing took and gives it back", () => {
     vi.useFakeTimers();
-    const route = new URLSearchParams({ dep: "C81", dest: "KDLH", stops: "KMSN" });
+    const route = loadAddress("dep=C81&dest=KDLH&stops=KMSN");
     const set = vi.fn();
-    const { rerender } = renderHook(({ params }) => usePlanHistory(params, set), { initialProps: { params: route } });
+    const { rerender } = renderHook(({ address }) => usePlanHistory(address, set), { initialProps: { address: route } });
     expect(shown.toasts.size).toBe(0);
 
     // Past the page's own settling after a load, the pilot clears it.
     vi.advanceTimersByTime(SETTLE_MS + 100);
-    rerender({ params: new URLSearchParams() });
+    rerender({ address: loadAddress("") });
     const [toast] = [...shown.toasts.values()];
     expect(toast?.words).toBe("Route Cleared");
 
     act(() => toast!.undo());
     expect(set).toHaveBeenCalledTimes(1);
-    const restore = set.mock.calls[0]![0] as (prev: URLSearchParams) => URLSearchParams;
-    expect(Object.fromEntries(restore(new URLSearchParams()))).toEqual({ dep: "C81", dest: "KDLH", stops: "KMSN" });
+    // The plan's keys put back, the rest of the plan's taken out.
+    expect(set.mock.calls[0]![0]).toMatchObject({ dep: "C81", dest: "KDLH", stops: "KMSN", direct: null, procs: null });
     expect(shown.toasts.size).toBe(0);
   });
 
   it("goes with the page", () => {
     vi.useFakeTimers();
-    const route = new URLSearchParams({ dep: "C81", dest: "KDLH" });
-    const { rerender, unmount } = renderHook(({ params }) => usePlanHistory(params, vi.fn()), { initialProps: { params: route } });
+    const route = loadAddress("dep=C81&dest=KDLH");
+    const { rerender, unmount } = renderHook(({ address }) => usePlanHistory(address, vi.fn()), { initialProps: { address: route } });
     vi.advanceTimersByTime(SETTLE_MS + 100);
-    rerender({ params: new URLSearchParams() });
+    rerender({ address: loadAddress("") });
     expect(shown.toasts.size).toBe(1);
     unmount();
     expect(shown.toasts.size).toBe(0);

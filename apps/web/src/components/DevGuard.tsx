@@ -12,12 +12,13 @@ import { useWanted } from "../lib/navigation/wanted";
  *  the console again over the map just signed out to. Mounted with the
  *  page, not with the console, which is only in the page while it is out. */
 export default function DevGuard() {
-  const { refused, navigate, search } = useDevMode();
+  const { refused, navigate } = useDevMode();
   useEffect(() => {
     if (!refused) return;
     useConsoleOpen.getState().setOpen(false);
     useWanted.setState({ screen: null });
-    void navigate(`/plan${routeSearch(search)}`, { replace: true });
-  }, [refused, navigate, search]);
+    // The query as the browser has it, which nuqs writes (lib/address).
+    void navigate(`/plan${routeSearch(window.location.search)}`, { replace: true });
+  }, [refused, navigate]);
   return null;
 }

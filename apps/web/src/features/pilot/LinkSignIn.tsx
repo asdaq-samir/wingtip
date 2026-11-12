@@ -34,9 +34,10 @@ function linkToken(): string | null {
 export default function LinkSignIn() {
   const [token] = useState(linkToken);
   // The token taken off the address by the router (React Router's
-  // navigate, replacing), so a reload or a shared link does not ask again.
+  // navigate, replacing), so a reload or a shared link does not ask again:
+  // the query as the browser has it, which nuqs writes without the router.
   const navigate = useNavigate();
-  const { pathname, search } = useLocation();
+  const { pathname } = useLocation();
   const [open, setOpen] = useState(token !== null);
   const account = useQuery({
     queryKey: ["linkAccount", token],
@@ -56,7 +57,7 @@ export default function LinkSignIn() {
   const spent = (finish.error instanceof ApiError && finish.error.status === 400) || account.data === null;
   const close = () => {
     setOpen(false);
-    void navigate({ pathname, search }, { replace: true });
+    void navigate({ pathname, search: window.location.search }, { replace: true });
   };
 
   return (

@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useSearchParams } from "react-router";
 import { describeError } from "../../lib/api/client";
 import { confirmDraft, dismissDraft, draftRendered, studioDraftQuery, studioDraftsQuery, type StudioDraft } from "./draftsApi";
+import { useStudioAddress } from "./studioAddress";
 
 /** The UTC day a draft's track is on: its nearest report's, else the middle of its window. */
 export function draftDay(draft: StudioDraft): string | null {
@@ -27,8 +27,8 @@ declare global {
  * useStudio reads, the draft kept open beside them.
  */
 export function useDrafts() {
-  const [params, setParams] = useSearchParams();
-  const id = params.get("draft") ?? "";
+  const [{ draft: open }, setAddress] = useStudioAddress();
+  const id = open ?? "";
   const queryClient = useQueryClient();
   const list = useQuery(studioDraftsQuery);
   const one = useQuery(studioDraftQuery(id));
@@ -56,16 +56,8 @@ export function useDrafts() {
   const day = draft && tail ? draftDay(draft) : null;
   useEffect(() => {
     if (!tail || !day) return;
-    setParams(
-      (was) => {
-        const next = new URLSearchParams(was);
-        next.set("q", tail);
-        next.set("day", day);
-        return next;
-      },
-      { replace: true },
-    );
-  }, [tail, day, setParams]);
+    void setAddress({ q: tail || null, day: day || null });
+  }, [tail, day, setAddress]);
 
   const failed = identity.error ?? dismiss.error ?? one.error;
   return {
@@ -74,16 +66,7 @@ export function useDrafts() {
     problem: failed ? describeError(failed, "The draft couldn't be changed") : null,
     busy: identity.isPending || dismiss.isPending,
     /** Open a draft (null: back to the list). */
-    select: (draftId: string | null) =>
-      setParams(
-        (was) => {
-          const next = new URLSearchParams(was);
-          if (draftId) next.set("draft", draftId);
-          else next.delete("draft");
-          return next;
-        },
-        { replace: true },
-      ),
+    select: (draftId: string | null) => void setAddress({ draft: draftId || null }),
     confirm: () => identity.mutate(true),
     reject: () => identity.mutate(false),
     dismiss: () => dismiss.mutate(),

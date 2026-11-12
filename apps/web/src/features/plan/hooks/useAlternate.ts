@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../../lib/api/client";
 import type { Alternates } from "../../../lib/api/types";
-import { useSearchParam } from "../lib/useSearchParam";
+import { useAddressKey } from "../../../lib/address";
 
 export interface AlternateWhere {
   /** The destination, its ident. */
@@ -16,7 +16,7 @@ export interface AlternateWhere {
 /** The alternate filed (the address's `alternate`, per route), and the
  *  planner's check of it and of the destination (wingtip.alternates). */
 export function useAlternate({ dest, eta, tasKt }: AlternateWhere) {
-  const filed = useSearchParam("alternate") ?? "";
+  const filed = useAddressKey("alternate")[0] ?? "";
   const query = useQuery({
     queryKey: ["alternate", dest, eta, tasKt, filed],
     queryFn: () => api.alternate(dest, eta!, tasKt!, filed),

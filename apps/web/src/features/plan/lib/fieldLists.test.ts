@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { loadAddress } from "../../../lib/address";
 import { fieldListParams, fieldListsOf, prunedFieldLists, renamedFieldLists } from "./fieldLists";
 
-const address = new URLSearchParams(
+const address = loadAddress(
   "pattern=C81:24,KMSN:18,KORD:27&takeoff=KMSN:36&procs=KMSN:I18:MSN,KDLH:I09,KORD:R27&altitudes=VPBNG:4500,KORD:2000",
 );
 
@@ -20,7 +21,7 @@ describe("the flight's field lists", () => {
       ground: null,
       holds: null,
     });
-    expect(fieldListParams(fieldListsOf(new URLSearchParams()))).toEqual({
+    expect(fieldListParams(fieldListsOf(loadAddress("")))).toEqual({
       pattern: null,
       takeoff: null,
       procs: null,
@@ -54,9 +55,7 @@ describe("the flight's field lists", () => {
 
   it("rename a field in every list naming fields, the crossings' fixes left", () => {
     const renamed = renamedFieldLists(
-      fieldListsOf(
-        new URLSearchParams("pattern=ORD:27&procs=ORD:R27&altitudes=ORD:2000&ground=ORD:45&holds=ORD:270:R:1M:1T&cross=BXCMB:3000"),
-      ),
+      fieldListsOf(loadAddress("pattern=ORD:27&procs=ORD:R27&altitudes=ORD:2000&ground=ORD:45&holds=ORD:270:R:1M:1T&cross=BXCMB:3000")),
       "ORD",
       "KORD",
     );
@@ -73,7 +72,7 @@ describe("the flight's field lists", () => {
 
   it("drop a hold and a time on the ground with their point, and crossings with the last procedure", () => {
     const lists = fieldListsOf(
-      new URLSearchParams("procs=KMSN:I18&cross=BXCMB:3000&ground=KMSN:45,KORD:30&holds=KMSN:180:L:1M:2T,VPBNG:090:R:1M:1T"),
+      loadAddress("procs=KMSN:I18&cross=BXCMB:3000&ground=KMSN:45,KORD:30&holds=KMSN:180:L:1M:2T,VPBNG:090:R:1M:1T"),
     );
     const kept = prunedFieldLists(lists, { dep: "C81", stops: ["KORD"], dest: "KDLH" });
     expect(fieldListParams(kept)).toMatchObject({ procs: null, cross: null, ground: "KORD:30", holds: null });
