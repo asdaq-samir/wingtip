@@ -22,6 +22,7 @@ import {
   tapTheChart,
   frontSheet,
 } from "./helpers";
+import { appMarks, markWith } from "./marks";
 
 /** Airports as places, as Maps has them: a tap on one on the chart opens its card in the panel -- its name, what kind of field it is, the
  *  weather there as pilots read it -- with Fly Here, Weather and Frequencies; the card is the address's (?place=) and puts itself away. */
@@ -545,22 +546,22 @@ async function airportToTap(page: Page) {
   // Once the map has stopped: the panel coming back to rest fits the route
   // again (MapShell), and a wheel turned while it flies is lost to it.
   await mapStill(page);
-  const departure = page.locator(".maplibregl-marker", { hasText: "C81" }).first();
-  await expect(departure).toBeVisible({ timeout: slow(30000) });
+  const departure = markWith(page, "route-marks", "C81");
+  await expect.poll(departure, { timeout: slow(30000) }).not.toBeNull();
   // The departure to the middle of the map first: with the whole route
   // fitted to a phone it sits just above the capsule, and the airports
   // round it closer in were under the capsule and the route's markers.
   const viewport = page.viewportSize()!;
-  let box = (await departure.boundingBox())!;
+  let box = (await departure())!;
   const middle = { x: viewport.width / 2, y: viewport.height * 0.4 };
-  const from = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+  const from = { x: box.x, y: box.y };
   await page.mouse.move(from.x, from.y);
   await page.mouse.down();
   await page.mouse.move(middle.x, middle.y, { steps: 10 });
   await page.mouse.up();
   await mapStill(page);
-  box = (await departure.boundingBox())!;
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  box = (await departure())!;
+  await page.mouse.move(box.x, box.y);
   for (let i = 0; i < 4; i++) {
     await page.mouse.wheel(0, -60);
     await page.waitForTimeout(400);
@@ -580,10 +581,10 @@ async function airportToTap(page: Page) {
     expect(still).toBe(true);
   }).toPass({ timeout: slow(15_000) });
   // One whose middle nothing else covers -- the chart itself under it, no
-  // marker or control -- asked again while the map is still drawing under
-  // a busy runner.
+  // marker, control or route mark -- asked again while the map draws.
   const find = async () => {
-    const marks = (await airportMarks(page)).filter((m) => m.x > 20 && m.y > 20);
+    const own = await appMarks(page);
+    const marks = (await airportMarks(page)).filter((m) => m.x > 20 && m.y > 20 && own.every((o) => Math.hypot(o.x - m.x, o.y - m.y) > 30));
     return page.evaluate(
       (points) => {
         for (const { x, y } of points) {
@@ -863,7 +864,7 @@ test("closer in, the airports that report wear their weather's colour, and a tap
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   const chips = { count: async () => (await airportMarks(page)).filter((m) => m.chip).length };
-  await expect(page.locator(".maplibregl-marker", { hasText: "KDLH" }).first()).toBeVisible({ timeout: slow(30000) });
+  await expect.poll(markWith(page, "route-marks", "KDLH"), { timeout: slow(30000) }).not.toBeNull();
   // At the whole route's zoom on a phone, past the sectional's scale, only
   // the biggest fields that report wear their marks, each with its room
   // round it (AirportsLayer's OUT_APART_PX, 80 px), where a state's worth
@@ -886,11 +887,11 @@ test("closer in, the airports that report wear their weather's colour, and a tap
   // them, as tapTheChart waits: turned while the route was still being
   // fitted, a wheel's zoom can be undone by the fit. On a loaded machine
   // the chips never came, three runs of 2026-10-09.
-  const departure = page.locator(".maplibregl-marker", { hasText: "C81" }).first();
+  const departure = markWith(page, "route-marks", "C81");
   for (let notch = 0; notch < 3; notch++) {
     await mapStill(page);
-    const box = (await departure.boundingBox())!;
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    const at = (await departure())!;
+    await page.mouse.move(at.x, at.y);
     await page.mouse.wheel(0, -60);
   }
   await mapStill(page);
@@ -947,8 +948,8 @@ test("a tap a little off an airport's mark opens its card, the route's own as an
   await page.goto("/app/plan?dep=C81&dest=KDLH&place=KUGN");
   await settle(page);
   await expect(card(page)).toBeVisible({ timeout: slow(15000) });
-  // The departure's chip, the route's (the marker pane), not the chart's.
-  await tapNear(page, page.locator(".maplibregl-marker", { hasText: "C81" }).first(), /[?&]place=C81(&|$)/);
+  // The departure's mark, the route's own, not the chart's.
+  await tapNear(page, markWith(page, "route-marks", "C81"), /[?&]place=C81(&|$)/);
   await tapNear(page, () => airportMark(page, "KUGN"), /[?&]place=KUGN(&|$)/);
 });
 

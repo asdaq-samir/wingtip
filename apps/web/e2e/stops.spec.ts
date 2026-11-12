@@ -17,6 +17,7 @@ import {
   slow,
   waypointMarks,
 } from "./helpers";
+import { markWith } from "./marks";
 import { pickAirplane } from "./startState";
 import { fillTime } from "./ariaFields";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
@@ -239,7 +240,7 @@ test("a link with a stop opens on the route through it", { tag: "@smoke" }, asyn
   await openPanel(page);
   await expect(sideDrawer(page).getByRole("group", { name: "Stop 1 KMSN" })).toBeVisible({ timeout: slow(15000) });
   // Its airport on the map, as the route's two ends are.
-  await expect(page.locator(".maplibregl-marker", { hasText: "KMSN" }).first()).toBeVisible({ timeout: slow(15000) });
+  await expect.poll(markWith(page, "route-marks", "KMSN"), { timeout: slow(15000) }).not.toBeNull();
 });
 
 test("a stop is left again at the time picked on its Depart step, 30 minutes after it lands until one is", async ({ page }) => {
@@ -679,7 +680,7 @@ test("a stop may be a VFR waypoint, offered after the airports as it is typed an
   await expect(page).toHaveURL(/[?&]stops=VPBNG(&|$)/);
 
   // On the map in the sectional's magenta, not as an airport's chip.
-  await expect(page.locator(".maplibregl-marker", { hasText: "VPBNG" }).first()).toBeVisible({ timeout: slow(15000) });
+  await expect.poll(async () => (await markWith(page, "route-marks", "VPBNG")())?.kind, { timeout: slow(15000) }).toBe("fix");
 });
 
 test("a point's menu has its altitude before Remove: an airport's pattern in feet, a waypoint's cruise as a flight level, each the pilot's to set and give back", async ({
@@ -768,15 +769,14 @@ test("a VFR waypoint on the chart is a magenta triangle with its ident, and its 
   // VPBNG, by Campbell, from the map's overlay tiles. In close enough for
   // the waypoints' marks -- the wheel over C81, a level at a time.
   await page.goto("/app/plan?dep=C81&dest=KDLH");
-  const departure = page.locator(".maplibregl-marker", { hasText: "C81" }).first();
-  await expect(departure).toBeVisible({ timeout: slow(30000) });
-  const box = (await departure.boundingBox())!;
+  await expect.poll(markWith(page, "route-marks", "C81"), { timeout: slow(30000) }).not.toBeNull();
+  const departure = (await markWith(page, "route-marks", "C81")())!;
   // C81 dragged to the middle of the map first: the route's fit leaves it
   // near the screen's foot, and VPBNG, 4 nm south-west, was zoomed in to
   // past it, under the bottom edge (2026-11-03).
   const map = (await page.locator(".maplibregl-map").boundingBox())!;
   const middle = { x: map.x + map.width / 2, y: map.y + map.height / 2 };
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.move(departure.x, departure.y);
   await page.mouse.down();
   await page.mouse.move(middle.x, middle.y, { steps: 12 });
   await page.mouse.up();

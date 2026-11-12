@@ -12,7 +12,9 @@ import {
   sideDrawer,
   slow,
   tapTheChart,
+  mapStill,
 } from "./helpers";
+import { drawnMarks, markWith, tapMark } from "./marks";
 
 /**
  * On a phone, what a control opens (ResponsivePopover) and what a tap on
@@ -135,14 +137,10 @@ test("a checkpoint tapped on the chart opens its card in the sheet; one opened o
   await settle(page);
   const panel = sideDrawer(page);
   await settled(panel);
-  // One in sight: a checkpoint whose badge would lie over a higher mark is
-  // left out until the map is closer in (lib/map/gl/declutter), and the
-  // first in the page was one of those on the fitted route.
-  const marker = page.locator(".maplibregl-marker", { hasText: /^\d+$/ }).filter({ visible: true }).first();
-  await expect(marker).toBeVisible({ timeout: slow(60000) });
-  // Its own click, not one at its place: neighbouring checkpoints stack
-  // on a phone's fitted route (map.spec).
-  await marker.dispatchEvent("click");
+  // One drawn: a checkpoint whose badge would lie over a higher mark is
+  // left out by MapLibre's collision until the map is closer in, and a tap
+  // goes to the nearest drawn within a finger's reach (useGlSymbols).
+  await tapMark(page, "route-marks", /^\d+$/);
   await expect(panel.locator("[data-sheet-card]")).toBeVisible();
   // Its name in its own head beside its close, which names the card.
   const head = panel.locator("[data-sheet-card]");
@@ -266,17 +264,17 @@ test("a card tapped open on the chart rises once to half, the map still and its 
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   await settled(sideDrawer(page));
-  const marker = page.locator(".maplibregl-marker", { hasText: /^\d+$/ }).filter({ visible: true }).first();
-  await expect(marker).toBeVisible({ timeout: slow(60000) });
-  await marker.evaluate((el) => el.setAttribute("data-tapped", ""));
+  await mapStill(page);
+  await expect.poll(markWith(page, "route-marks", /^\d+$/), { timeout: slow(60000) }).not.toBeNull();
+  const tapped = (await markWith(page, "route-marks", /^\d+$/)())!;
   // Every frame for a second and a half from the tap, as painted: the
-  // card's top, the map's buttons, and where the chart's marks are.
-  const frames = await page.evaluate(
+  // card's top, the map's buttons, and whether the chart is moving (the
+  // map's data-moving, from a move's start to its end).
+  const recording = page.evaluate(
     () =>
-      new Promise<{ card: number | null; buttons: number | null; shown: boolean; mark: number; other: number | null }[]>((done) => {
-        const out: { card: number | null; buttons: number | null; shown: boolean; mark: number; other: number | null }[] = [];
-        const tapped = document.querySelector<HTMLElement>("[data-tapped]")!;
-        const other = [...document.querySelectorAll<HTMLElement>(".maplibregl-marker")].find((m) => m !== tapped);
+      new Promise<{ card: number | null; buttons: number | null; shown: boolean; moving: boolean }[]>((done) => {
+        const out: { card: number | null; buttons: number | null; shown: boolean; moving: boolean }[] = [];
+        const map = document.querySelector<HTMLElement>("[data-testid=gl-map]")!;
         const start = performance.now();
         const frame = () => {
           const card = document.querySelector("[data-sheet-card][data-open]");
@@ -285,16 +283,16 @@ test("a card tapped open on the chart rises once to half, the map still and its 
             card: card ? card.getBoundingClientRect().top : null,
             buttons: buttons ? buttons.getBoundingClientRect().bottom : null,
             shown: !!buttons && getComputedStyle(buttons).opacity !== "0",
-            mark: tapped.getBoundingClientRect().top,
-            other: other ? other.getBoundingClientRect().top : null,
+            moving: "moving" in map.dataset,
           });
           if (performance.now() - start < 1500) requestAnimationFrame(frame);
           else done(out);
         };
-        tapped.dispatchEvent(new MouseEvent("click", { bubbles: true }));
         requestAnimationFrame(frame);
       }),
   );
+  await page.mouse.click(tapped.x, tapped.y);
+  const frames = await recording;
   const card = sideDrawer(page).locator("[data-sheet-card][data-open]");
   await expect(card).toHaveAttribute("data-panel", "half");
   const tops = frames.map((f) => f.card).filter((top): top is number => top !== null);
@@ -304,17 +302,20 @@ test("a card tapped open on the chart rises once to half, the map still and its 
   tops.slice(1).forEach((top, i) => expect(top).toBeLessThanOrEqual(tops[i]! + 1));
   // The buttons, wherever they are in sight, are over the card's top.
   for (const f of frames) if (f.shown && f.card !== null && f.buttons !== null) expect(f.buttons).toBeLessThanOrEqual(f.card + 1);
-  // The chart moves at most once, one way, and only to bring the
-  // checkpoint out from under the card; the mark tapped ends in sight.
-  const marks = frames.map((f) => f.other).filter((y): y is number => y !== null);
-  const steps = marks.slice(1).map((y, i) => Math.sign(Math.round(y - marks[i]!)));
-  expect(new Set(steps.filter((s) => s !== 0)).size).toBeLessThanOrEqual(1);
-  expect(frames[frames.length - 1]!.mark).toBeLessThan(rest);
+  // The chart moves at most once, to bring the checkpoint out from under
+  // the card; the mark tapped ends in sight over it.
+  const starts = frames.filter((f, i) => f.moving && !frames[i - 1]?.moving).length;
+  expect(starts).toBeLessThanOrEqual(1);
+  await mapStill(page);
+  const key = tapped.key;
+  const at = async () => (await drawnMarks(page, "route-marks")).find((m) => m.key === key) ?? null;
+  await expect.poll(async () => (await at())?.y ?? Infinity).toBeLessThan(rest);
 
   // Put away, the chart stays where it is.
-  const before = await marker.evaluate((el) => el.getBoundingClientRect().top);
+  const before = (await at())!.y;
   await closeCard(page, "sheet-card-close");
   await expect(card).toHaveCount(0);
   await settled(sideDrawer(page));
-  expect(await marker.evaluate((el) => el.getBoundingClientRect().top)).toBeCloseTo(before, 0);
+  await mapStill(page);
+  expect((await at())!.y).toBeCloseTo(before, 0);
 });

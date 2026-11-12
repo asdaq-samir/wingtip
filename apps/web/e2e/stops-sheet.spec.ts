@@ -1,5 +1,6 @@
 import { test, expect, type BrowserContext, type Page } from "@playwright/test";
 import { grabberTo, inSheet, settle, showSearch, sideDrawer, slow, frontSheet } from "./helpers";
+import { drawnMarks } from "./marks";
 
 const origin = new URL(process.env.BASE_URL ?? "http://localhost:8080").origin;
 
@@ -157,17 +158,21 @@ test("with a course drawn, the Stops along it, each with a line for each kind it
   await card.getByTestId("stops-kind-food").click();
   await expect(card.getByTestId("stops-kind-food")).toHaveAttribute("aria-pressed", "true");
   await expect(rows).toHaveCount(1);
-  await expect(page.getByTitle("KAAA: Food")).toHaveCount(1);
+  // The pins on the map's canvas, as their probe says (StopFieldsGl).
+  const pins = async (title: string) => (await drawnMarks(page, "stop-fields")).filter((m) => m.title === title).length;
+  await expect.poll(() => pins("KAAA: Food")).toBe(1);
   await card.getByTestId("stops-kind-all").click();
   await expect(rows).toHaveCount(2);
-  await expect(page.getByTitle("KAAA: Fuel, Food, Repair, Training")).toHaveCount(1);
+  await expect.poll(() => pins("KAAA: Fuel, Food, Repair, Training")).toBe(1);
 
   // A field's pin tapped with the sheet at its pill: its row picked, the
   // sheet up to show it, and no card opened over the list; the row
   // scrolled into sight (StopsCard), the sheet left at the size it is at
   // (the owner, 2026-11-11: "Just let the drawer do what it does").
   await grabberTo(page, "peek");
-  await page.getByTitle("KBBB: Fuel").click();
+  await expect.poll(() => pins("KBBB: Fuel")).toBe(1);
+  const kbbb = (await drawnMarks(page, "stop-fields")).find((m) => m.title === "KBBB: Fuel")!;
+  await page.mouse.click(kbbb.x, kbbb.y);
   await expect(frontSheet(page)).toHaveAttribute("data-panel", /^(half|full)$/);
   await expect(rows.nth(1)).toHaveAttribute("aria-current", "true");
   await expect(rows.nth(0)).not.toHaveAttribute("aria-current", "true");

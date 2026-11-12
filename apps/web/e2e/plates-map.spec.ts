@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { test, expect } from "@playwright/test";
-import { settle, slow } from "./helpers";
+import { drawn, settle, slow } from "./helpers";
+import { drawnMarks } from "./marks";
 
 /**
  * An approach's FAA plate on the map, ForeFlight's way (the owner's
@@ -57,15 +58,17 @@ test("a tap on the plate opens its card; Show Annotations and Hide Plate change 
 
   // The fixes tagged: POBER at or above 2,700 (underlined) with the glide
   // slope's 2,610; the runway its TCH and TDZE.
-  const pober = page.locator('[data-plate-tag="POBER"]');
-  await expect(pober).toHaveCount(1, { timeout: slow(20_000) });
-  await expect(pober).toContainText("GS 2,610'");
-  await expect(page.locator('[data-plate-tag="RW36"]')).toContainText("TCH 53'");
+  // Drawn on the map's canvas, as the tags' probe says (PlateTagsGl).
+  const tags = () => drawnMarks(page, "plate-tags");
+  const tag = async (ident: string) => (await tags()).find((t) => t.ident === ident) ?? null;
+  await expect.poll(() => tag("POBER"), { timeout: slow(20_000) }).not.toBeNull();
+  expect(String((await tag("POBER"))!.lines)).toContain("GS 2,610'");
+  expect(String((await tag("RW36"))!.lines)).toContain("TCH 53'");
 
   // A tap on the page west of the final, clear of the marks: its card.
-  const a = (await pober.boundingBox())!;
-  const b = (await page.locator('[data-plate-tag="RW36"]').boundingBox())!;
-  await page.mouse.click((a.x + b.x) / 2 - 90, (a.y + a.height + b.y + b.height) / 2);
+  const a = (await tag("POBER"))!;
+  const b = (await tag("RW36"))!;
+  await page.mouse.click((a.x + b.x) / 2 - 90, (a.y + b.y) / 2);
   const card = page.getByTestId("plate-card");
   await expect(card).toBeVisible({ timeout: slow(10_000) });
   await expect(page.getByRole("heading", { name: "KOSH ILS or LOC rwy 36" })).toBeVisible();
@@ -73,14 +76,14 @@ test("a tap on the plate opens its card; Show Annotations and Hide Plate change 
 
   // Show Annotations off takes the tags away, on puts them back.
   await card.getByTestId("plate-annotations").click();
-  await expect(page.locator("[data-plate-tag]")).toHaveCount(0);
+  await expect.poll(async () => (await tags()).length).toBe(0);
   await card.getByTestId("plate-annotations").click();
-  await expect(pober).toHaveCount(1);
+  await expect.poll(() => tag("POBER")).not.toBeNull();
 
   // Hide Plate: the card put away, the plate and its tags gone, the
   // approach's own fixes still drawn on the route.
   await card.getByTestId("plate-hide").click();
   await expect(card).toHaveCount(0);
-  await expect(page.locator("[data-plate-tag]")).toHaveCount(0);
-  await expect(page.locator('[data-procedure-fix="POBER"]')).toHaveCount(1);
+  await expect.poll(async () => (await tags()).length).toBe(0);
+  await expect.poll(async () => (await drawn(page, "procedure-fixes")).filter((f) => f.ident === "POBER").length).toBe(1);
 });

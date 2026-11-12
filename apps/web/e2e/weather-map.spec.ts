@@ -89,9 +89,12 @@ test(
     // The area on the map's canvas, as its probe says (WeatherGl).
     const areas = async () => (await drawn(page, "weather-areas")).filter((a) => a.colour === "#c2410c");
     await expect.poll(async () => (await areas()).length, { timeout: slow(30000) }).toBeGreaterThan(0);
-    await expect(page.locator(".maplibregl-marker", { hasText: "065" })).toHaveCount(1);
+    // The marks on the canvas too, as their probe says (WeatherGl's wx-marks).
+    await expect.poll(async () => (await drawn(page, "wx-marks")).filter((m) => m.kind === "pirep" && m.text === "065").length).toBe(1);
     await expect.poll(() => asked.some((u) => u.searchParams.get("altitude_ft") === "9000")).toBe(true);
-    await expect(page.locator('.maplibregl-marker[title^="MSN: 265° true at 34 kt"]')).toHaveCount(1);
+    await expect
+      .poll(async () => (await drawn(page, "wx-marks")).filter((m) => String(m.title).startsWith("MSN: 265° true at 34 kt")).length)
+      .toBe(1);
 
     // The areas off: gone from the chart; and on again for the tap below.
     // Both before any card is open: on a phone a card is a sheet over the
@@ -121,9 +124,12 @@ test(
         (await page.evaluate(([x0, y0, x1, y1]) => {
           const map = document.querySelector(".maplibregl-map")!.getBoundingClientRect();
           const width = window.innerWidth;
-          // Clear of the marks on the canvas (their probes) by a finger's reach.
+          // Clear of the marks on the canvas (their probes) by a finger's
+          // reach: the chart's, and the weather's and the route's own.
           const marks: { x: number; y: number }[] = [];
-          for (const probe of document.querySelectorAll<HTMLElement>("[data-airport-marks], [data-navaid-marks]")) {
+          for (const probe of document.querySelectorAll<HTMLElement>(
+            "[data-airport-marks], [data-navaid-marks], [data-wx-marks], [data-route-marks]",
+          )) {
             for (const m of JSON.parse(probe.getAttribute(`data-${probe.dataset.glProbe}`) ?? "[]") as { x: number; y: number }[])
               marks.push({ x: map.left + m.x, y: map.top + m.y });
           }

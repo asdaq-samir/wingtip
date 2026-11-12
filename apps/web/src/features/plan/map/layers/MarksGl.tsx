@@ -1,22 +1,28 @@
+import type { CircleLayerSpecification } from "maplibre-gl";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import type { ChartInfo } from "../../../../lib/api/types";
 import { usePreferences } from "../../../../lib/preferences";
 import { classBQuery } from "../../../../lib/queryClient";
 import { useAhead } from "../../../../lib/map/position/ahead";
 import { colourOf } from "../../../../lib/map/marks/flightCategory";
-import { airportMarkIcon } from "../../../../lib/map/marks/icons";
+import { fieldMarkPicture } from "../../../../lib/map/marks/markPictures";
 import { useOwnShip } from "../../../../lib/map/position/ownShip";
 import { chartPair, sheetAt } from "../../../../lib/map/sources/tiles";
-import { useGlMap } from "../../../../lib/map/gl/glLayer";
+import { EMPTY, useGlData, useGlLayer, useGlMap } from "../../../../lib/map/gl/glLayer";
 import { glZoom } from "../../../../lib/map/gl/glStyle";
-import type { IconLike } from "../../../../lib/map/gl/htmlMarker";
-import { useGlMarks, type GlMark } from "../../../../lib/map/gl/useGlMarks";
+import { labelledLayer } from "../../../../lib/map/gl/markLayers";
+import { useGlProbe } from "../../../../lib/map/gl/useGlProbe";
+import { useGlSymbols, type GlSymbol } from "../../../../lib/map/gl/useGlSymbols";
 import { useGlLines, type GlRun } from "../../../../lib/map/gl/useGlLines";
 import { CHART } from "../../../../lib/tokens";
 
+const CLASS_B = "class-b-fields";
+/** Each field's mark and its ident on the chart's halo. */
+const CLASS_B_LAYERS = [labelledLayer(CLASS_B, CLASS_B)];
+
 /**
- * The Class B fields' weather, as chips over the chart, at
+ * The Class B fields' weather, as marks over the chart, at
  * the settings' Class B Weather: a tap the field's card; a hover shows the
  * terminal sheet over it while the pointer is there.
  */
@@ -37,7 +43,7 @@ export function ClassBGl({
   const { overlay } = chartPair(chart.chart_layers, base);
   const overlayFromZoom = overlay?.min_zoom ?? 10;
   const { data } = useQuery({ ...classBQuery, enabled: show });
-  const marks = useMemo<GlMark[]>(
+  const marks = useMemo<GlSymbol[]>(
     () =>
       show && data
         ? data
@@ -48,9 +54,10 @@ export function ClassBGl({
                 key: a.ident,
                 lat: a.lat,
                 lon: a.lon,
-                icon: airportMarkIcon(a.ident, "B", colourOf(a.flight_category)),
-                title: `${a.ident} · ${a.name} · ${a.flight_category ?? "no report"}`,
-                onHover: (on) => onPreview(on && !!sheet),
+                text: a.ident,
+                picture: fieldMarkPicture("B", colourOf(a.flight_category)),
+                props: { title: `${a.ident} · ${a.name} · ${a.flight_category ?? "no report"}`, weather: colourOf(a.flight_category) },
+                onHover: (on: boolean) => onPreview(on && !!sheet),
                 onTap: () => {
                   onPreview(false);
                   if (onSelectPlace) onSelectPlace(a.ident);
@@ -61,7 +68,12 @@ export function ClassBGl({
         : [],
     [show, data, route, overlay, overlayFromZoom, onPreview, onSelectPlace, map],
   );
-  useGlMarks(marks);
+  useGlSymbols(CLASS_B, CLASS_B_LAYERS, marks);
+  // Every field given, in sight or not, for the browser tests (the probe
+  // has only those drawn in the view): their idents and weather colours.
+  useEffect(() => {
+    map.getContainer().dataset.classBFields = JSON.stringify(marks.map((m) => ({ ident: m.text, weather: m.props?.weather })));
+  }, [map, marks]);
   return null;
 }
 
@@ -97,31 +109,39 @@ export function AheadGl() {
     [ahead, fix],
   );
   useGlLines("ahead", "top", runs, null, [3, 3]);
-  const rings = useMemo<GlMark[]>(
-    () => (ahead && fix ? ahead.alerts.map((a) => ({ key: a.id, lat: a.lat, lon: a.lon, icon: aheadIcon(a.level) })) : []),
+  useGlLayer("top", { [AHEAD]: { type: "geojson", data: EMPTY } }, [AHEAD_RINGS]);
+  const rings = useMemo<GeoJSON.FeatureCollection | null>(
+    () =>
+      ahead && fix
+        ? {
+            type: "FeatureCollection",
+            features: ahead.alerts.map((a) => ({
+              type: "Feature",
+              properties: { id: a.id, level: a.level },
+              geometry: { type: "Point", coordinates: [a.lon, a.lat] },
+            })),
+          }
+        : null,
     [ahead, fix],
   );
-  useGlMarks(rings);
+  useGlData(AHEAD, rings);
+  // The rings drawn, by level, for the browser tests.
+  useGlProbe("ahead-rings", [AHEAD], (f) => ({ level: f.properties.level }));
   return null;
 }
 
-const aheadIcons = new Map<string, IconLike>();
-/** An alert's ring, a circle in its level's colour over a wash. */
-function aheadIcon(level: "warning" | "caution"): IconLike {
-  let icon = aheadIcons.get(level);
-  if (!icon) {
-    // The wash: the ink at a quarter (an 8-digit hex's alpha, 0x40).
-    const line = AHEAD_INK[level];
-    const fill = `${line}40`;
-    icon = {
-      options: {
-        className: `ahead-${level}`,
-        iconSize: [22, 22],
-        iconAnchor: [11, 11],
-        html: `<span style="position:absolute;inset:0;border-radius:9999px;border:3px solid ${line};background:${fill}"></span>`,
-      },
-    };
-    aheadIcons.set(level, icon);
-  }
-  return icon;
-}
+const AHEAD = "ahead-rings";
+/** An alert's ring, a circle in its level's colour over a wash of it (a
+ *  quarter of the ink), 22 points across. */
+const AHEAD_RINGS: CircleLayerSpecification = {
+  id: AHEAD,
+  type: "circle",
+  source: AHEAD,
+  paint: {
+    "circle-radius": 9.5,
+    "circle-color": ["match", ["get", "level"], "warning", AHEAD_INK.warning, AHEAD_INK.caution],
+    "circle-opacity": 0.25,
+    "circle-stroke-color": ["match", ["get", "level"], "warning", AHEAD_INK.warning, AHEAD_INK.caution],
+    "circle-stroke-width": 3,
+  },
+};

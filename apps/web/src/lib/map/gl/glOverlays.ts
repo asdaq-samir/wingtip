@@ -177,8 +177,8 @@ function airportMarksLayer(from: { source: string; "source-layer"?: string }): S
 }
 
 /** The mark, its ident beside it on whichever side is clear: MapLibre's
- *  variable anchor and collision, where declutter.ts picked a VOR's tag
- *  side by hand. A VOR's ident and frequency on its blue tag, "GCO
+ *  variable anchor and collision, where a VOR's tag side was once
+ *  picked by hand. A VOR's ident and frequency on its blue tag, "GCO
  *  (108.25)" as ForeFlight writes it; a fix's and a waypoint's bold, dark
  *  or green on a white halo. `kind` is the feature's ("vor", "fix",
  *  "vfr"), or the one kind every feature of a tile layer is. */

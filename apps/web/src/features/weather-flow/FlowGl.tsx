@@ -6,6 +6,7 @@ import { GridLayer, GridStyle, ImageType, ParticleLayer, RasterLayer, type Textu
 import { useEngineWhen } from "../../lib/engine/useEngineReady";
 import { deckSlot, useDeckLayers } from "../../lib/map/gl/deckLayers";
 import { useGlLayer, useGlMap } from "../../lib/map/gl/glLayer";
+import { useGlView } from "../../lib/map/gl/useGlView";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 import { prefersReducedMotion } from "../../lib/motion";
 import { WEATHER } from "../../lib/tokens";
@@ -23,18 +24,9 @@ import { useWeatherFlow, type FlowFrame, type FlowLayer } from "./useWeatherFlow
 /** A streak's width, CSS pixels: a hairline, as Apple's are. */
 const STREAK_WIDTH = 0.7;
 
-/** The map's zoom, by whole levels. */
-function useWholeZoom(map: MlMap): number {
-  return useSyncExternalStore(
-    (on) => {
-      map.on("zoomend", on);
-      return () => {
-        map.off("zoomend", on);
-      };
-    },
-    () => Math.round(map.getZoom()),
-  );
-}
+/** The map's zoom, by whole levels, as the camera comes to rest. */
+const wholeZoom = (map: MlMap) => Math.round(map.getZoom());
+
 const RADAR_CREDIT = "Radar: NWS NEXRAD via Iowa Environmental Mesonet";
 /** At this zoom and out, the GFS's world wind streaks run past AWC's box,
  *  across the oceans, as Apple Weather's do zoomed out (the owner,
@@ -85,7 +77,7 @@ export default function FlowGl() {
   const file = field === "gust" ? "gust" : fileOf(field, level);
   const windFile = field === "wind" ? file : "wind";
   const radar = field === "precip" && frame?.past && frame.radar_tiles ? frame.radar_tiles : null;
-  const zoom = useWholeZoom(map);
+  const { box: zoom } = useGlView(wholeZoom, "rest");
   const world = streaks && windFile === "wind" && zoom <= WORLD_ZOOM && !!layer?.world_bounds;
   const fieldTexture = useFlowTexture(frame, file, !radar);
   const windTexture = useFlowTexture(frame, windFile, streaks);

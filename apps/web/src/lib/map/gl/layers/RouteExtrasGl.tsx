@@ -1,66 +1,137 @@
-import { useQueries } from "@tanstack/react-query";
-import type { CircleLayerSpecification } from "maplibre-gl";
-import { useEffect, useMemo, useState, useEffectEvent } from "react";
+import type { CircleLayerSpecification, ExpressionSpecification, SymbolLayerSpecification } from "maplibre-gl";
+import { useEffect, useMemo, useEffectEvent } from "react";
 import type { Leg, ProcedureDrawing } from "../../../api/types";
 import { bearingDeg, type LatLon } from "../../../geo";
-import { pointName } from "../../../identSchema";
-import { prefersReducedMotion } from "../../../motion";
 import { useAirplaneChosen } from "../../../preferences";
-import { airportQuery } from "../../../queryClient";
-import { STOP_KINDS, type StopKind } from "../../../stopKinds";
 import type { TrafficPattern } from "../../../trafficPattern";
 import { altFt } from "../../../format";
 import { COURSE_MAGENTA, MAP_BLUE } from "../../marks/chartColors";
-import { colourOf } from "../../marks/flightCategory";
-import { airportMarkIcon, fixMarkIcon, trafficIcon } from "../../marks/icons";
-import { useLessonMap } from "../../route/lessonMap";
-import { PATTERN_WORDS_FROM_ZOOM, TEAL, arrowIcon, labelIcon } from "../../marks/patternMarks";
-import { PROCEDURE_INK, PROCEDURE_WORDS_FROM_ZOOM, STALE_INK, fixIcon } from "../../marks/procedureMarks";
-import { WAY_SHARES, wayAt, wayIcon, type RouteWay } from "../../route/routeWays";
-import { BREAK_PIN, FUEL_PIN, stackedPin, type StopPin } from "../../marks/stopPins";
+import { FIX_PILL, FIX_PILL_SHIFT } from "../../marks/markPictures";
+import { PATTERN_ARROW, PATTERN_LABEL, PATTERN_WORDS_FROM_ZOOM, TEAL } from "../../marks/patternMarks";
+import { PROCEDURE_INK, PROCEDURE_WORDS_FROM_ZOOM, STALE_INK, fixMarks } from "../../marks/procedureMarks";
+import { ROUTE_MARKS_LOWEST } from "../../marks/routeMarks";
+import { WAY_CHIP_PLACE, WAY_SHARES, wayAt, wayChip, wayInk, type RouteWay } from "../../route/routeWays";
 import { useGlData, useGlLayer, useGlMap } from "../glLayer";
-import { appZoomOf } from "../glStyle";
-import { iconMarker } from "../htmlMarker";
+import { chipLayer, pictureLayer } from "../markLayers";
 import { useGlLines, type GlRun } from "../useGlLines";
-import { ROUTE_PRIORITY } from "../declutter";
-import { useGlMarks, type GlMark } from "../useGlMarks";
+import { useGlSymbols, type GlSymbol } from "../useGlSymbols";
+import { useGlView } from "../useGlView";
+import { GL_FONT, GL_FONT_BOLD, TAP } from "./common";
 import { CHART } from "../../../tokens";
 
-const levelOf = (map: ReturnType<typeof useGlMap>["map"]) => Math.floor(appZoomOf(map.getZoom()) + 1e-9);
+/** The level the map is at, the app's, as the camera comes to rest: what
+ *  the words on the procedures and the patterns come in at. */
+const useGlLevel = () => useGlView(noBox, "rest").level;
+const noBox = () => null;
 
-/** The level the map is at, the app's, as it changes: what the words on
- *  the procedures and the patterns come in at. */
-function useGlLevel(): number {
-  const { map } = useGlMap();
-  const [level, setLevel] = useState(() => levelOf(map));
-  useEffect(() => {
-    const zoomed = () => setLevel(levelOf(map));
-    map.on("zoomend", zoomed);
-    return () => {
-      map.off("zoomend", zoomed);
-    };
-  }, [map]);
-  return level;
-}
+const KIND = (kind: string) => ["==", ["get", "kind"], kind] as ExpressionSpecification;
+
+/** A way's chip: its time in bold, and on the one shown its name under it. */
+const WAY_LAYERS: SymbolLayerSpecification[] = [
+  chipLayer(
+    "route-way-chips",
+    "route-way-chips",
+    {},
+    {
+      "text-field": [
+        "case",
+        ["!=", ["get", "name"], ""],
+        [
+          "format",
+          ["get", "label"],
+          { "text-font": ["literal", GL_FONT_BOLD] },
+          "\n",
+          {},
+          ["get", "name"],
+          { "text-font": ["literal", GL_FONT] },
+        ],
+        ["get", "label"],
+      ] as ExpressionSpecification,
+      "text-size": 13,
+      "text-line-height": 1.25,
+      "text-justify": "left",
+      ...WAY_CHIP_PLACE,
+    },
+    { "text-color": ["get", "ink"] as ExpressionSpecification },
+  ),
+];
+
+/** A pattern's arrows turned along their legs on the chart, its names on
+ *  their teal chips. */
+const PATTERN_LAYERS: SymbolLayerSpecification[] = [
+  {
+    ...pictureLayer("pattern-arrows", "pattern-marks", {}, { "icon-rotate": ["get", "rotate"], "icon-rotation-alignment": "map" }),
+    filter: KIND("arrow"),
+  },
+  { ...chipLayer("pattern-labels", "pattern-marks", {}, {}, { "text-color": CHART.casing }), filter: KIND("label") },
+];
+
+/** A procedure's fixes: the tag beside each diamond, its left edge seven
+ *  points right of the fix (the tag's picture has four of shadow round it). */
+const PROCEDURE_LAYERS: SymbolLayerSpecification[] = [
+  {
+    ...pictureLayer(
+      "procedure-fix-tags",
+      "procedure-fixes",
+      {},
+      { "icon-image": ["get", "tag"], "icon-anchor": "left", "icon-offset": [3, 0] },
+    ),
+    filter: ["!=", ["get", "tag"], ""],
+  },
+  pictureLayer("procedure-fix-diamonds", "procedure-fixes"),
+];
+
+/** A top of climb's or descent's pill: on its point where that is clear,
+ *  else a little above, below, then to either side of it (ems of its 11
+ *  points; the pill's middle 5 points right of its words'), else left out. */
+const LEG_POINT_LAYERS: SymbolLayerSpecification[] = [
+  chipLayer(
+    "leg-points",
+    "leg-points",
+    { collide: true, sort: 0 },
+    {
+      "text-variable-anchor-offset": [
+        "center",
+        [FIX_PILL_SHIFT, 0],
+        "bottom",
+        [FIX_PILL_SHIFT, -0.9],
+        "top",
+        [FIX_PILL_SHIFT, 0.9],
+        "right",
+        [-1.3, 0],
+        "left",
+        [2.2, 0],
+      ],
+    },
+  ),
+];
 
 /** FPL's Routes' other ways beside the route: each a wide
  *  faint magenta line, the one shown solid, with its chip a tap picks. */
-export function WaysGl({ ways, shown, onPick }: { ways: RouteWay[]; shown: string | null; onPick: (key: string) => void }) {
+export function WaysGl({ ways, shown: shown_, onPick }: { ways: RouteWay[]; shown: string | null; onPick: (key: string) => void }) {
   const runs = useMemo<GlRun[]>(
     () =>
-      ways.map((w) => ({ points: w.path, colour: COURSE_MAGENTA, width: w.key === shown ? 7 : 6, opacity: w.key === shown ? 1 : 0.35 })),
-    [ways, shown],
+      ways.map((w) => ({ points: w.path, colour: COURSE_MAGENTA, width: w.key === shown_ ? 7 : 6, opacity: w.key === shown_ ? 1 : 0.35 })),
+    [ways, shown_],
   );
   useGlLines("route-ways", "lines", runs, null);
-  const marks = useMemo<GlMark[]>(
+  const marks = useMemo<GlSymbol[]>(
     () =>
       ways.map((w, i) => {
         const [lat, lon] = wayAt(w.path, w.share ?? WAY_SHARES[i % WAY_SHARES.length]!);
-        return { key: w.key, lat, lon, icon: wayIcon(w.key, w.label, w.name ?? "", w.key === shown), onTap: () => onPick(w.key) };
+        const shown = w.key === shown_;
+        return {
+          key: w.key,
+          lat,
+          lon,
+          picture: wayChip(shown),
+          props: { label: w.label, name: shown ? (w.name ?? "") : "", ink: wayInk(shown) },
+          onTap: () => onPick(w.key),
+        };
       }),
-    [ways, shown, onPick],
+    [ways, shown_, onPick],
   );
-  useGlMarks(marks);
+  useGlSymbols("route-way-chips", WAY_LAYERS, marks);
   return null;
 }
 
@@ -87,7 +158,7 @@ export function PatternsGl({ patterns }: { patterns: TrafficPattern[] }) {
   );
   useGlLines("patterns", "route", circuits, { colour: CHART.casing, width: 7, opacity: 0.9 });
   useGlLines("pattern-entries", "route", entries, { colour: CHART.casing, width: 7, opacity: 0.9 }, [7 / 3, 2]);
-  const marks = useMemo<GlMark[]>(
+  const marks = useMemo<GlSymbol[]>(
     () =>
       level < PATTERN_WORDS_FROM_ZOOM
         ? []
@@ -99,14 +170,20 @@ export function PatternsGl({ patterns }: { patterns: TrafficPattern[] }) {
             const entryWords = p.kind === "departure" ? `${p.entry.name} · ${p.runway}` : p.entry.name;
             const at = (point: LatLon, key: string) => ({ key: `${p.ident}-${p.runway}-${key}`, lat: point.lat, lon: point.lon });
             return [
-              ...p.legs.map((l) => ({ ...at(along(l.from, l.to, 0.3), l.name), icon: arrowIcon(bearingDeg(l.from, l.to)) })),
-              ...(downwindAt ? [{ ...at(downwindAt, "downwind"), icon: labelIcon(downwindWords) }] : []),
-              { ...at(entryAt, "entry"), icon: labelIcon(entryWords) },
+              ...p.legs.map((l) => ({
+                ...at(along(l.from, l.to, 0.3), l.name),
+                picture: PATTERN_ARROW,
+                props: { kind: "arrow", rotate: Math.round(bearingDeg(l.from, l.to)) },
+              })),
+              ...(downwindAt
+                ? [{ ...at(downwindAt, "downwind"), picture: PATTERN_LABEL, text: downwindWords, props: { kind: "label" } }]
+                : []),
+              { ...at(entryAt, "entry"), picture: PATTERN_LABEL, text: entryWords, props: { kind: "label" } },
             ];
           }),
     [patterns, level],
   );
-  useGlMarks(marks);
+  useGlSymbols("pattern-marks", PATTERN_LAYERS, marks);
   return null;
 }
 
@@ -148,29 +225,32 @@ export function ProceduresGl({
   );
   useGlLines("procedures", "route", lines, { colour: CHART.casing, width: 7, opacity: 0.9 });
   useGlLines("procedures-missed", "route", missed, { colour: CHART.casing, width: 6, opacity: 0.9 }, [8 / 3, 7 / 3]);
-  const marks = useMemo<GlMark[]>(
+  const marks = useMemo<GlSymbol[]>(
     () =>
       drawings.flatMap((d) =>
         d.fixes.map((fix) => {
           const tappable = !!onFix && !fix.missed && !/^RW\d/.test(fix.ident);
+          const { diamond, tag } = fixMarks(
+            fix,
+            words,
+            !!d.stale,
+            fix.missed ? null : (crossings[fix.ident] ?? null),
+            directs.split(",").includes(`${d.airport}:${d.id}:${fix.ident}`),
+          );
           return {
             key: `${d.airport}-${d.id}-${d.transition ?? ""}-${fix.ident}`,
             lat: fix.lat,
             lon: fix.lon,
-            icon: fixIcon(
-              fix,
-              words,
-              !!d.stale,
-              fix.missed ? null : (crossings[fix.ident] ?? null),
-              directs.split(",").includes(`${d.airport}:${d.id}:${fix.ident}`),
-            ),
+            picture: diamond,
+            also: tag ? [tag] : [],
+            props: { ident: fix.ident, tag: tag?.id ?? "" },
             onTap: tappable ? () => onFix!(d.airport, d.kind, fix.ident) : undefined,
           };
         }),
       ),
     [drawings, words, crossings, directs, onFix],
   );
-  useGlMarks(marks);
+  useGlSymbols("procedure-fixes", PROCEDURE_LAYERS, marks);
   return null;
 }
 
@@ -186,115 +266,40 @@ export function HoldTracksGl({ legs }: { legs: Leg[] }) {
 }
 
 /** Each leg's top of climb and of descent (RouteMap's LegPoints): a pill on
- *  the course, a tap brings the map to it. MapLibre's markers keep no
- *  room of their own: a pill on a checkpoint's badge or a field's ident
- *  moves a little clear of it, or is left out (declutter). */
+ *  the course, a tap brings the map to it. Under the route's own marks,
+ *  so it gives way to them: a little above, below or to either side of
+ *  its point where one is on it, or left out (MapLibre's variable anchor
+ *  and collision; routeMarks). */
 export function LegPointsGl({ legs: allLegs, onSelectPoint }: { legs: Leg[]; onSelectPoint: (lat: number, lon: number) => void }) {
   // No airplane picked, no tops of climb and descent: they are its climb and descent (the owner, 2026-11-08: "don't assume").
   const airplane = useAirplaneChosen();
   const legs = airplane ? allLegs : NO_LEGS;
-  const marks = useMemo<GlMark[]>(
+  const marks = useMemo<GlSymbol[]>(
     () =>
-      legs.flatMap((leg, i) => [
-        ...(leg.toc
-          ? [
-              {
-                key: `toc-${i}`,
-                lat: leg.toc.lat,
-                lon: leg.toc.lon,
-                icon: fixMarkIcon("TOC"),
-                title: `Top of climb`,
-                priority: ROUTE_PRIORITY.legPoint,
-                nudge: true,
-                onTap: () => onSelectPoint(leg.toc!.lat, leg.toc!.lon),
-              },
-            ]
-          : []),
-        ...(leg.tod
-          ? [
-              {
-                key: `tod-${i}`,
-                lat: leg.tod.lat,
-                lon: leg.tod.lon,
-                icon: fixMarkIcon("TOD"),
-                title: `Top of descent`,
-                priority: ROUTE_PRIORITY.legPoint,
-                nudge: true,
-                onTap: () => onSelectPoint(leg.tod!.lat, leg.tod!.lon),
-              },
-            ]
-          : []),
-      ]),
+      legs.flatMap((leg, i) =>
+        (
+          [
+            ["toc", "TOC", leg.toc],
+            ["tod", "TOD", leg.tod],
+          ] as const
+        ).flatMap(([kind, words, at]) =>
+          at
+            ? [
+                {
+                  key: `${kind}-${i}`,
+                  lat: at.lat,
+                  lon: at.lon,
+                  text: words,
+                  picture: FIX_PILL,
+                  onTap: () => onSelectPoint(at.lat, at.lon),
+                },
+              ]
+            : [],
+        ),
+      ),
     [legs, onSelectPoint],
   );
-  useGlMarks(marks);
-  return null;
-}
-
-/** The planner's suggested fuel stops and breaks (FuelStopPins): each
- *  field's own mark under its pin, a tap its card. */
-export function FuelStopsGl({ stops, onSelect }: { stops: StopPin[]; onSelect: (ident: string) => void }) {
-  const places = useQueries({ queries: stops.map((s) => airportQuery(s.ident)) });
-  const marks = useMemo<GlMark[]>(
-    () =>
-      stops.flatMap((s, i) => {
-        const place = places[i]?.data;
-        const use = place?.military === "military" ? ("military" as const) : null;
-        return [
-          {
-            key: `${s.ident}-field`,
-            lat: s.lat,
-            lon: s.lon,
-            icon: airportMarkIcon(pointName(s.ident), place?.airspace_class ?? null, colourOf(place?.metar?.flight_category), use),
-            onTap: () => onSelect(s.ident),
-          },
-          {
-            key: `${s.ident}-pin`,
-            lat: s.lat,
-            lon: s.lon,
-            icon: s.reason === "break" ? BREAK_PIN : FUEL_PIN,
-            title: `Suggested ${s.reason === "break" ? "stop" : "fuel stop"} ${s.ident}`,
-            onTap: () => onSelect(s.ident),
-          },
-        ];
-      }),
-    [stops, places, onSelect],
-  );
-  useGlMarks(marks);
-  return null;
-}
-
-/** The map's Stops while their sheet is open (StopFieldMark): each field's
- *  mark under its stacked pins, a tap its row. */
-export function StopFieldsGl({
-  fields,
-  onSelect,
-}: {
-  fields: { ident: string; lat: number; lon: number; kinds: StopKind[] }[];
-  onSelect: (ident: string) => void;
-}) {
-  const marks = useMemo<GlMark[]>(
-    () =>
-      fields.flatMap((f) => [
-        {
-          key: `${f.ident}-field`,
-          lat: f.lat,
-          lon: f.lon,
-          icon: airportMarkIcon(pointName(f.ident), null, colourOf(undefined)),
-          onTap: () => onSelect(f.ident),
-        },
-        {
-          key: `${f.ident}-pins-${f.kinds.join(",")}`,
-          lat: f.lat,
-          lon: f.lon,
-          icon: stackedPin(f.kinds),
-          title: `${f.ident}: ${f.kinds.map((k) => STOP_KINDS[k].name).join(", ")}`,
-          onTap: () => onSelect(f.ident),
-        },
-      ]),
-    [fields, onSelect],
-  );
-  useGlMarks(marks);
+  useGlSymbols("leg-points", LEG_POINT_LAYERS, marks, { under: ROUTE_MARKS_LOWEST, rank: TAP.rank.checkpoint });
   return null;
 }
 
@@ -362,80 +367,6 @@ export function PickedGl({
       map.off("contextmenu", menu);
     };
   }, [map]);
-  return null;
-}
-
-/** The approach lesson's step: its part of the procedure
- *  in a wide blue band, its fix ringed, its airplane flown along. */
-export function LessonGl() {
-  const { map } = useGlMap();
-  const drawing = useLessonMap((s) => s.drawing);
-  const focus = useLessonMap((s) => s.focus);
-  const flight = useLessonMap((s) => s.flight);
-  const fix = drawing && focus.fix ? (drawing.fixes.find((f) => f.ident === focus.fix) ?? null) : null;
-  const runs = useMemo<GlRun[] | null>(
-    () =>
-      drawing && focus.segment
-        ? drawing.lines
-            .filter((l) => l.role === focus.segment)
-            .map((l) => ({ points: l.points as [number, number][], colour: MAP_BLUE, width: 10, opacity: 0.35 }))
-        : null,
-    [drawing, focus.segment],
-  );
-  useGlLines("lesson", "route", runs, null);
-  const ring = useMemo<GlMark[]>(
-    () =>
-      fix
-        ? [
-            {
-              key: `lesson-${fix.ident}`,
-              lat: fix.lat,
-              lon: fix.lon,
-              icon: {
-                options: {
-                  className: "",
-                  iconSize: [34, 34],
-                  iconAnchor: [17, 17],
-                  html: `<span style="position:absolute;inset:0;border-radius:9999px;border:3px solid ${MAP_BLUE};background:${MAP_BLUE}1f"></span>`,
-                },
-              },
-            },
-          ]
-        : [],
-    [fix],
-  );
-  useGlMarks(ring);
-  useEffect(() => {
-    if (fix) map.easeTo({ center: [fix.lon, fix.lat], duration: 400 });
-  }, [map, fix]);
-  // The airplane flown from the last fix to this one over a second and a half.
-  useEffect(() => {
-    if (!flight || flight.path.length === 0) return;
-    const marker = iconMarker(trafficIcon(flight.track, MAP_BLUE, 0, false))
-      .setLngLat([flight.path[0]!.lon, flight.path[0]!.lat])
-      .addTo(map);
-    const end = flight.path.at(-1)!;
-    if (prefersReducedMotion() || flight.path.length < 2) {
-      marker.setLngLat([end.lon, end.lat]);
-      return () => {
-        marker.remove();
-      };
-    }
-    const began = performance.now();
-    let frame = requestAnimationFrame(function step(now) {
-      const f = Math.min(1, (now - began) / 1600);
-      const i = Math.min(flight.path.length - 2, Math.floor(f * (flight.path.length - 1)));
-      const k = f * (flight.path.length - 1) - i;
-      const a = flight.path[i]!,
-        b = flight.path[i + 1]!;
-      marker.setLngLat([a.lon + (b.lon - a.lon) * k, a.lat + (b.lat - a.lat) * k]);
-      if (f < 1) frame = requestAnimationFrame(step);
-    });
-    return () => {
-      cancelAnimationFrame(frame);
-      marker.remove();
-    };
-  }, [map, flight]);
   return null;
 }
 

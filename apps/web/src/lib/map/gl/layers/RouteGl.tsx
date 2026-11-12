@@ -3,8 +3,7 @@ import { useEffect, useMemo, type ReactNode } from "react";
 import type { Course } from "../../../api/types";
 import type { AirspaceClass } from "../../../preferences";
 import { courseColour } from "../../marks/chartColors";
-import { dotIcon, fixMarkIcon } from "../../marks/icons";
-import { routeFieldIcon } from "../../marks/routeMarks";
+import { ROUTE_MARKS, ROUTE_MARK_LAYERS, routeMarks } from "../../marks/routeMarks";
 import { usePreferences } from "../../../preferences";
 import { useSunlight } from "../../../sunlight";
 import { useGlData, useGlLayer, useGlMap, useGlPaint, useGlTap } from "../glLayer";
@@ -23,8 +22,7 @@ import {
 } from "../glStyle";
 import { useGlProbe } from "../useGlProbe";
 import { GL_FONT, TAP } from "./common";
-import { ROUTE_PRIORITY } from "../declutter";
-import { useGlMarks, type GlMark } from "../useGlMarks";
+import { useGlSymbols } from "../useGlSymbols";
 import { LEG_RANK, LEG_REACH, nearestLeg, type GlLeg } from "../legTap";
 import { CHART } from "../../../tokens";
 
@@ -111,7 +109,7 @@ const NAMES: SymbolLayerSpecification = {
  * order and named closer in (a tap the checkpoint's card, the map flying
  * in to it), the points they were chosen from, and its departure, stops
  * and destination as every airport's mark on the chart, in its weather,
- * the ident on a dark pill (routeFieldIcon; a tap its card).
+ * the ident on a dark pill (routeMarks; a tap its card).
  */
 export function RouteGl({
   course,
@@ -181,43 +179,25 @@ export function RouteGl({
     [candidates],
   );
   useGlData(CANDIDATES, others);
-  // The route's marks give way by priority (declutter): its destination's
-  // ident over every other, its other fields next, the checkpoints in
-  // flight order after them, the tops of climb and descent last.
-  const fields = useMemo<GlMark[]>(
-    () =>
-      endpoints.map((e, i) => ({
-        priority: i === endpoints.length - 1 ? ROUTE_PRIORITY.destination : ROUTE_PRIORITY.field,
-        key: e.ident,
-        lat: e.lat,
-        lon: e.lon,
-        onTap: e.select,
-        icon: e.fix ? fixMarkIcon(e.ident) : routeFieldIcon(e.ident, e.space, e.colour),
-      })),
-    [endpoints],
-  );
-  useGlMarks(fields);
-  // The chosen checkpoints as the app's numbered dots (icons.ts dotIcon),
-  // markers a tap selects and opens the card of, the map flying in to it:
-  // a route's few dozen, the nav log's numbers on them.
+  // The route's fields and its checkpoints as numbered dots, which give
+  // way to each other by priority (routeMarks): a tap on a field its card,
+  // on a checkpoint selects it and opens its card, the map flying in to it.
   const { openCard } = useGlMap();
-  const numbered = useMemo<GlMark[]>(
+  const marks = useMemo(
     () =>
-      checkpoints.map((c) => ({
-        key: `cp-${c.key}`,
-        lat: c.lat,
-        lon: c.lon,
-        icon: dotIcon(c.colour, c.number),
-        // The earlier of two that meet kept: the one flown to first.
-        priority: ROUTE_PRIORITY.checkpoint - c.number / 1000,
-        onTap: () => {
-          c.select();
-          openCard(c.card);
-        },
-      })),
-    [checkpoints, openCard],
+      routeMarks(
+        endpoints,
+        checkpoints.map((c) => ({
+          ...c,
+          onTap: () => {
+            c.select();
+            openCard(c.card);
+          },
+        })),
+      ),
+    [endpoints, checkpoints, openCard],
   );
-  useGlMarks(numbered);
+  useGlSymbols(ROUTE_MARKS, ROUTE_MARK_LAYERS, marks, { rank: TAP.rank.field });
   // A tap on the course within a finger's reach of it, nothing nearer
   // taken first (LEG_RANK), the nearest leg's sheet.
   const { map } = useGlMap();

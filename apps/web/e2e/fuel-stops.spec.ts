@@ -1,5 +1,9 @@
 import { test, expect, type Page } from "@playwright/test";
-import { inSheet, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { inSheet, mapStill, openPanel, settle, sideDrawer, slow } from "./helpers";
+import { drawnMarks } from "./marks";
+
+/** KRPD's pin on the map's canvas, as its probe says (FuelStopsGl). */
+const pinned = async (page: Page) => (await drawnMarks(page, "fuel-stops")).filter((m) => m.title === "Suggested fuel stop KRPD").length;
 
 /**
  * Fuel stops suggested as Tesla suggests chargers, at the owner's pick
@@ -69,7 +73,7 @@ test("a fuel stop the planner suggests is dashed in the route's box and pinned o
   await settle(page);
   await openPanel(page);
   await expect(sideDrawer(page).getByTestId("route-fuel-stop")).toHaveText("KRPD", { timeout: slow(60_000) });
-  await expect(page.getByTitle("Suggested fuel stop KRPD")).toHaveCount(1);
+  await expect.poll(() => pinned(page)).toBe(1);
   // No cards of it in FPL's list: the route line does their job.
   await expect(sideDrawer(page).getByTestId("fuel-stop-card")).toHaveCount(0);
 });
@@ -83,7 +87,7 @@ test("a stop suggested on a flight from a present position is dashed in the rout
   await settle(page);
   await openPanel(page);
   await expect(sideDrawer(page).getByTestId("route-fuel-stop")).toHaveText("KRPD", { timeout: slow(60_000) });
-  await expect(page.getByTitle("Suggested fuel stop KRPD")).toHaveCount(1);
+  await expect.poll(() => pinned(page)).toBe(1);
 });
 
 test("a suggested fuel stop can be taken out of the route box and put back, or added from its menu", async ({ page }) => {
@@ -141,9 +145,10 @@ test("a suggested stop's pin opens its card with its figures", async ({ page }) 
   );
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  const pin = page.getByTitle("Suggested fuel stop KRPD");
-  await expect(pin).toHaveCount(1, { timeout: slow(60_000) });
-  await pin.click();
+  await expect.poll(() => pinned(page), { timeout: slow(60_000) }).toBe(1);
+  await mapStill(page);
+  const pin = (await drawnMarks(page, "fuel-stops")).find((m) => m.title === "Suggested fuel stop KRPD")!;
+  await page.mouse.click(pin.x, pin.y);
   const card = page.getByTestId("place-card");
   await expect(card.getByTestId("place-stop")).toContainText("Suggested fuel stop");
   await expect(card.getByTestId("place-stop-after")).toContainText("From C81");

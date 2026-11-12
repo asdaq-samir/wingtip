@@ -1,5 +1,5 @@
 import { test, expect, type Page, type Route } from "@playwright/test";
-import { openMapSettings, settle, slow } from "./helpers";
+import { drawn, openMapSettings, settle, slow } from "./helpers";
 
 /**
  * What is ahead of own ship in the air (lib/map/position/ahead), said over the map
@@ -131,14 +131,15 @@ test("in the air, what is ahead is said over the map, a warning first, and drawn
   // Under the line, not inside its button (shadcn's Collapsible).
   await expect(banner(page)).toContainText("91.131(a)(1)");
   await expect(banner(page)).toContainText("Tower 2,700 ft: In 40 s · 300 ft below you");
-  // A ring where each is (a marker in its colour; the line out to it is
-  // on the map's canvas).
-  await expect(page.locator(".maplibregl-marker.ahead-warning")).toHaveCount(1);
-  await expect(page.locator(".maplibregl-marker.ahead-caution")).toHaveCount(1);
+  // A ring where each is, in its colour, and the line out to it, on the
+  // map's canvas (AheadGl's probe).
+  const rings = async (level: string) => (await drawn(page, "ahead-rings")).filter((r) => r.level === level).length;
+  await expect.poll(() => rings("warning")).toBe(1);
+  await expect.poll(() => rings("caution")).toBe(1);
   // OK puts them away, and they stay away while they are what is ahead.
   await banner(page).getByTestId("alerts-acknowledge").click();
   await expect(banner(page)).toHaveCount(0);
-  await expect(page.locator(".maplibregl-marker.ahead-warning")).toHaveCount(0);
+  await expect.poll(() => rings("warning")).toBe(0);
 });
 
 test("a planner that does not answer is said, not shown as a clear sky", { tag: "@smoke" }, async ({ page }) => {

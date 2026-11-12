@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import type { Map as MlMap } from "maplibre-gl";
 import { cn } from "cn";
 import type { AirportsInView } from "../../../../lib/api/types";
 import { TEXT } from "../../../../lib/text";
-import { useGlMap } from "../../../../lib/map/gl/glLayer";
+import { useGlView } from "../../../../lib/map/gl/useGlView";
 import { spokenWeather } from "../../../../lib/map/marks/airportWeather";
 
 type Field = AirportsInView["airports"][number];
@@ -41,15 +41,7 @@ function fieldWords(f: Field): string {
  * map's top corner, as a skip link is.
  */
 export default function MapMarksList({ fields, onSelect }: { fields: Field[]; onSelect: (ident: string) => void }) {
-  const { map } = useGlMap();
-  const [bounds, setBounds] = useState(() => boxOf(map.getBounds()));
-  useEffect(() => {
-    const look = () => setBounds(boxOf(map.getBounds()));
-    map.on("moveend", look);
-    return () => {
-      map.off("moveend", look);
-    };
-  }, [map]);
+  const { box: bounds } = useGlView(boxOf, "rest");
   const shown = inSight(fields, bounds);
   if (!shown.length) return null;
   return (
@@ -71,6 +63,8 @@ export default function MapMarksList({ fields, onSelect }: { fields: Field[]; on
   );
 }
 
-function boxOf(b: { getSouth(): number; getWest(): number; getNorth(): number; getEast(): number }) {
+/** The view's edges as the map comes to rest. */
+function boxOf(map: MlMap) {
+  const b = map.getBounds();
   return { south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() };
 }

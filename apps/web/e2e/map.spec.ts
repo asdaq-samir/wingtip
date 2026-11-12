@@ -15,6 +15,7 @@ import {
   openNavLog,
   navLogSheet,
 } from "./helpers";
+import { drawnMarks, markWith, tapMark } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -63,7 +64,7 @@ test("plan page: every popup the map opens dismisses the same way", async ({ pag
   // airport on the chart does -- it was a weather card over the chart --
   // and a tap on the chart puts it away. The card brings the map in to
   // the field, so the wheel takes it back out before KORD can be found.
-  await page.locator(".maplibregl-marker", { hasText: "C81" }).first().click();
+  await tapMark(page, "route-marks", "C81");
   await expect(page.getByTestId("place-card")).toBeVisible({ timeout: slow(15000) });
   await expect(popups).toHaveCount(0);
   await tapTheChart(page);
@@ -75,14 +76,10 @@ test("plan page: every popup the map opens dismisses the same way", async ({ pag
     await page.waitForTimeout(400);
   }
 
-  const chip = page
-    .locator(".maplibregl-marker")
-    .filter({ has: page.locator('[data-airspace="B"]'), hasText: "KORD" })
-    .first();
-  await expect(chip).toBeVisible({ timeout: slow(25000) });
-  // A Class B chip opens the field's card in the panel, as every
+  await expect.poll(markWith(page, "class-b-fields", "KORD"), { timeout: slow(25000) }).not.toBeNull();
+  // A Class B mark opens the field's card in the panel, as every
   // airport on the chart does, not a popup of its own on the map.
-  await chip.click();
+  await tapMark(page, "class-b-fields", "KORD");
   await expect(page.getByTestId("place-card")).toBeVisible({ timeout: slow(15000) });
   await expect(popups).toHaveCount(0);
 
@@ -106,13 +103,8 @@ test(
     const before = await zoomOfTiles();
     // A checkpoint drawn at this zoom: those without room for their dots
     // wait for the map to come in (RouteMap's useSpaced), and those a
-    // higher mark covers are left out until then (lib/map/gl/declutter).
-    const marker = page.locator('.maplibregl-marker:not([data-declutter="hidden"])', { hasText: /^\d+$/ }).first();
-    await expect(marker).toBeVisible({ timeout: slow(60000) });
-    // Its own click, not one at its place: the route fitted to a phone
-    // stacks neighbouring checkpoints, and a click there lands on the one
-    // drawn over it.
-    await marker.dispatchEvent("click");
+    // higher mark covers are left out until then (MapLibre's collision).
+    await tapMark(page, "route-marks", /^\d+$/);
     await expect.poll(zoomOfTiles, { timeout: slow(10000) }).toBeGreaterThan(before);
     await expect.poll(async () => (await drawn(page, "route-line")).length).toBeGreaterThan(0);
   },
@@ -147,9 +139,9 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
   // The badges the map shows: one a higher mark covers is left out
-  // (lib/map/gl/declutter).
-  const numbered = page.locator('.maplibregl-marker:not([data-declutter="hidden"])', { hasText: /^\d+$/ });
-  await expect(numbered.first()).toBeVisible({ timeout: slow(60000) });
+  // (MapLibre's collision).
+  const numbered = async () => (await drawnMarks(page, "route-marks")).filter((m) => m.kind === "checkpoint").length;
+  await expect.poll(numbered, { timeout: slow(60000) }).toBeGreaterThan(0);
 
   // Out to the zoom a whole region fits at: the tiles say which.
   const zoomOfTiles = () => chartZoom(page);
@@ -180,8 +172,8 @@ test("plan page: VFR Checkpoints draws the route's checkpoints and the landmarks
   });
   await page.goto("/app/plan?dep=C81&dest=KDLH");
   await settle(page);
-  await expect(page.locator(".maplibregl-marker", { hasText: "KDLH" }).first()).toBeVisible({ timeout: slow(30000) });
-  await expect(numbered).toHaveCount(0);
+  await expect.poll(markWith(page, "route-marks", "KDLH"), { timeout: slow(30000) }).not.toBeNull();
+  expect(await numbered()).toBe(0);
   await expect.poll(async () => (await drawn(page, "candidate-marks")).length).toBe(0);
   await openPanel(page);
   await expect(page.getByTestId("navlog-fuel")).toBeAttached({ timeout: slow(60000) });
