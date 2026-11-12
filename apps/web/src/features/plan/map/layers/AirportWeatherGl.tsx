@@ -72,8 +72,22 @@ const LINES: SymbolLayerSpecification = {
 
 /** Farther out, at any zoom the station model is not drawn at, the barb
  *  only where the wind earns it (the engine's wind_arrow), so a region's
- *  calm and light winds don't crowd the chart. */
-const FAR = wind("airport-wx-wind", ["==", ["get", "far"], true]);
+ *  calm and light winds don't crowd the chart; none out past a region's
+ *  scale, smaller there and growing in, and giving way to one another
+ *  rather than piled up (the owner's iPhone at zoom 3, 2026-11-12: the
+ *  country one tangle of barbs). */
+const FAR_FROM = 6;
+const farWind = wind("airport-wx-wind", ["==", ["get", "far"], true]);
+const FAR: SymbolLayerSpecification = {
+  ...farWind,
+  layout: {
+    ...farWind.layout,
+    "icon-allow-overlap": false,
+    "icon-ignore-placement": false,
+    "icon-padding": 2,
+    "icon-size": ["interpolate", ["linear"], ["zoom"], glZoom(FAR_FROM), 0.6, glZoom(9), 1],
+  },
+};
 
 /** The amber ↓ at a plan's field whose weather gets worse by the pilot's
  *  time there, at its upper left. */
@@ -138,7 +152,7 @@ export default function AirportWeatherGl({ fields, worse }: { fields: AirportPin
     // Farther out, the barbs the wind earns; close in the station model's
     // own, every wind.
     show(FAR.id, on && windArrows);
-    if (map.getLayer(FAR.id)) map.setLayerZoomRange(FAR.id, 0, station ? from : 24);
+    if (map.getLayer(FAR.id)) map.setLayerZoomRange(FAR.id, glZoom(FAR_FROM), station ? from : 24);
     show(WORSE.id, on && worseByArrival);
   }, [map, look, stationClose, windArrows, worseByArrival]);
   // The specs' view of the marks drawn (data-airport-weather, useGlProbe).
