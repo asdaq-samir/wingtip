@@ -124,7 +124,8 @@ apps/        web/ (React), ios/ (SwiftUI), android/ (Compose)
 engine/      the Rust engine: facade/, crates/ (thirteen domains), contract/, bindings/
 services/    planner/, ingest/, weather/, assistant/, gateway/, jobs/, Dockerfile.base
 ml/          the notebooks and their image
-infra/       AWS CloudFormation, the server's compose file, CI's, local HTTPS
+infra/       AWS CloudFormation, the server's compose file, CI's, local HTTPS, sim-trial/ (MSFS on EC2)
+tools/       msfs-agent/ (the MSFS 2024 replay agent for infra/sim-trial)
 scripts/     build/ (WebAssembly, the phones' models), ci/, dev/ (checks, go-live, tidy)
 data/        fetched and made data (mostly gitignored); stock aircraft profiles
 docs/        the docs below, and the architecture diagrams

@@ -549,6 +549,9 @@ jobs:
                 - apps/web/public/privacy.html
                 - apps/web/public/terms.html
                 - apps/web/public/support.html
+              sim:
+                - tools/msfs-agent/**
+                - infra/sim-trial/**
               arch:
                 - '**/*.ts'
                 - '**/*.tsx'

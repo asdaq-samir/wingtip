@@ -1,0 +1,359 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Wingtip Maps' one-evening trial of Microsoft Flight Simulator 2024 on an EC2
+  GPU instance (infra/sim-trial/README.md): one Windows Server instance with the
+  NVIDIA gaming driver, Amazon DCV, OBS Studio, Steam and the .NET SDK; a bucket
+  for the recordings and logs; a stop when idle, a stop after a set time
+  (trial.sh), and a $ budget that stops the instance when it is spent.
+  Everything here is deleted by `trial.sh destroy`.
+
+Parameters:
+  InstanceType:
+    Type: String
+    # g6e: NVIDIA L40S, 48 GB; g6: NVIDIA L4, 24 GB. Both take the gaming
+    # driver (EC2 User Guide, "Install NVIDIA gaming drivers (G7, G7e, G6,
+    # G6e, G5, and G4dn instances)", checked 2026-11-12).
+    Default: g6e.2xlarge
+    AllowedValues: [g6e.xlarge, g6e.2xlarge, g6e.4xlarge, g6.2xlarge, g6.4xlarge]
+  ImageId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    # Amazon's newest Windows Server 2025 image, by its public parameter
+    # (Systems Manager User Guide, "Calling AMI public parameters").
+    # Windows_Server-2022-English-Full-Base is the fallback (trial.sh up --windows 2022).
+    Default: /aws/service/ami-windows-latest/Windows_Server-2025-English-Full-Base
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The account's default VPC (trial.sh finds it)
+  SubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: A public subnet of it in a zone that has the instance type (trial.sh finds it)
+  OwnerCidr:
+    Type: String
+    Description: The owner's address, a.b.c.d/32 (trial.sh reads it); the only one DCV answers
+    AllowedPattern: '^\d{1,3}(\.\d{1,3}){3}/32$'
+  DiskGiB:
+    Type: Number
+    # MSFS 2024 asks 50 GB on Steam and streams the rest; a full install
+    # of its content and the rolling cache take far more.
+    Default: 250
+    MinValue: 150
+  BudgetUsd:
+    Type: Number
+    Default: 50
+  BudgetEmail:
+    Type: String
+    Description: Where the budget's warnings go
+    AllowedPattern: '^[^@\s]+@[^@\s]+$'
+  IdleChecks:
+    Type: Number
+    Description: Stop the instance after this many 5-minute periods under 3% CPU (9 is 45 minutes)
+    Default: 9
+    MinValue: 3
+  MaxHours:
+    Type: Number
+    Description: Windows shuts the instance down (a stop) this long after every boot, a backstop to trial.sh's schedule
+    Default: 6
+    MinValue: 1
+  ObsVersion:
+    Type: String
+    # OBS Studio's newest release on 2026-11-12 (github.com/obsproject/obs-studio/releases).
+    Default: 33.0.1
+  DotnetVersion:
+    Type: String
+    # tools/msfs-agent/global.json's, .tool-versions' dotnet.
+    Default: 11.0.100
+
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      OwnershipControls:
+        Rules: [{ ObjectOwnership: BucketOwnerEnforced }]
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault: { SSEAlgorithm: AES256 }
+      LifecycleConfiguration:
+        Rules:
+          # A trial's: download what you keep within two weeks.
+          - Id: expire-after-14-days
+            Status: Enabled
+            ExpirationInDays: 14
+            AbortIncompleteMultipartUpload: { DaysAfterInitiation: 1 }
+
+  InstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        # SSM Run Command and Session Manager.
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: sim-trial
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: TheTrialsBucket
+                Effect: Allow
+                Action: [s3:GetObject, s3:PutObject, s3:ListBucket, s3:AbortMultipartUpload]
+                Resource: [!GetAtt Bucket.Arn, !Sub "${Bucket.Arn}/*"]
+              # The gaming driver, from AWS's own bucket (EC2 User Guide,
+              # "Install NVIDIA gaming drivers": AmazonS3ReadOnlyAccess,
+              # narrowed here to the one bucket).
+              - Sid: NvidiaGamingDriver
+                Effect: Allow
+                Action: [s3:GetObject, s3:ListBucket]
+                Resource: [!Sub "arn:${AWS::Partition}:s3:::nvidia-gaming", !Sub "arn:${AWS::Partition}:s3:::nvidia-gaming/*"]
+              # DCV's free licence on EC2 (DCV Administrator Guide, "License
+              # the Amazon DCV Server").
+              - Sid: DcvLicence
+                Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub "arn:${AWS::Partition}:s3:::dcv-license.${AWS::Region}/*"
+              # The Administrator and obs-websocket passwords the setup makes.
+              - Sid: TrialPasswords
+                Effect: Allow
+                Action: [ssm:PutParameter, ssm:GetParameter]
+                Resource: !Sub "arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/wingtip/sim-trial/*"
+
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref InstanceRole]
+
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: DCV from the owner address only, nothing else in (SSM goes out)
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        # DCV's port, TCP and QUIC (DCV Administrator Guide, 8443 by default).
+        - { IpProtocol: tcp, FromPort: 8443, ToPort: 8443, CidrIp: !Ref OwnerCidr, Description: DCV }
+        - { IpProtocol: udp, FromPort: 8443, ToPort: 8443, CidrIp: !Ref OwnerCidr, Description: DCV QUIC }
+
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        # IMDSv2 only: the gaming driver takes it from 495.x (EC2 User Guide).
+        MetadataOptions: { HttpTokens: required, HttpEndpoint: enabled }
+        # The disk, here because only a launch template sets gp3's throughput.
+        BlockDeviceMappings:
+          - DeviceName: /dev/sda1
+            Ebs:
+              VolumeType: gp3
+              VolumeSize: !Ref DiskGiB
+              # Above gp3's free 3,000 IOPS and 125 MB/s for the install's
+              # writes; about $1 a day more (EBS pricing).
+              Iops: 6000
+              Throughput: 500
+              DeleteOnTermination: true
+              Encrypted: true
+
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref ImageId
+      InstanceType: !Ref InstanceType
+      IamInstanceProfile: !Ref InstanceProfile
+      SubnetId: !Ref SubnetId
+      SecurityGroupIds: [!Ref SecurityGroup]
+      LaunchTemplate:
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: !GetAtt LaunchTemplate.LatestVersionNumber
+      # Windows shutting down stops the instance (the idle and time stops).
+      InstanceInitiatedShutdownBehavior: stop
+      Tags:
+        - { Key: Name, Value: wingtip-sim-trial }
+      UserData:
+        Fn::Base64: !Sub |
+          <powershell>
+          # First boot, as SYSTEM (EC2Launch v2). Logged to C:\wingtip\setup.log
+          # and to s3://${Bucket}/setup/setup.log.
+          $ErrorActionPreference = 'Stop'
+          $ProgressPreference = 'SilentlyContinue'
+          $root = 'C:\wingtip'
+          New-Item -ItemType Directory -Force $root | Out-Null
+          Start-Transcript -Path "$root\setup.log" -Append
+          function Step($what) { Write-Output "$(Get-Date -Format o) $what" }
+          function Secret {
+            $bytes = New-Object byte[] 18
+            [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+            'Wt-' + ([Convert]::ToBase64String($bytes) -replace '[+/=]', 'x')
+          }
+          try {
+            if (Test-Path "$root\setup.done") { Step 'already set up'; return }
+
+            Step 'Administrator password (for DCV) and auto-logon'
+            $pw = Secret
+            net user Administrator $pw | Out-Null
+            Write-SSMParameter -Name /wingtip/sim-trial/admin-password -Value $pw -Type SecureString -Overwrite $true -Region ${AWS::Region}
+            $wl = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon'
+            Set-ItemProperty $wl -Name AutoAdminLogon -Value '1'
+            Set-ItemProperty $wl -Name DefaultUserName -Value 'Administrator'
+            Set-ItemProperty $wl -Name DefaultPassword -Value $pw
+            Set-ItemProperty $wl -Name DefaultDomainName -Value $env:COMPUTERNAME
+            $obs = Secret
+            Set-Content -Path "$root\obs-password.txt" -Value $obs -NoNewline
+            Write-SSMParameter -Name /wingtip/sim-trial/obs-password -Value $obs -Type SecureString -Overwrite $true -Region ${AWS::Region}
+
+            Step 'Media Foundation (games and OBS want it; Windows Server leaves it out)'
+            Install-WindowsFeature Server-Media-Foundation | Out-Null
+
+            Step 'NVIDIA gaming driver (EC2 User Guide, Install NVIDIA gaming drivers, Windows)'
+            $drv = "$root\nvidia"
+            Get-S3Object -BucketName nvidia-gaming -KeyPrefix windows/latest -Region us-east-1 | Where-Object { $_.Size -gt 0 } | ForEach-Object {
+              Copy-S3Object -BucketName nvidia-gaming -Key $_.Key -LocalFile (Join-Path $drv $_.Key) -Region us-east-1 | Out-Null
+            }
+            Get-ChildItem $drv -Recurse -Filter *.zip | ForEach-Object { Expand-Archive $_.FullName -DestinationPath $_.DirectoryName -Force }
+            # The build for this Windows, where the folder holds several.
+            $exe = Get-ChildItem $drv -Recurse -Filter *.exe | Sort-Object { $_.Name -notmatch 'server2025' }, { $_.Name -notmatch 'server2022' } | Select-Object -First 1
+            Step "installing $($exe.Name)"
+            Start-Process $exe.FullName -ArgumentList '-s', '-noreboot' -Wait
+            New-Item -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\nvlddmkm\Global' -Force | Out-Null
+            New-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\nvlddmkm\Global' -Name vGamingMarketplace -PropertyType DWord -Value 2 -Force | Out-Null
+            # The licence certificate for the driver's version, as the guide lists them.
+            $v = [version]([regex]::Match($exe.Name, '\d{3}\.\d{2}').Value)
+            $cert = if ($v -ge [version]'591.59') { 'GridSwCert_2026_03_02.cert' } elseif ($v -ge [version]'576.80') { 'GridSwCertWindows_2025_07_01.cert' } else { 'GridSwCertWindows_2024_02_22.cert' }
+            Invoke-WebRequest -Uri "https://nvidia-gaming.s3.amazonaws.com/GridSwCert-Archive/$cert" -OutFile "$env:PUBLIC\Documents\GridSwCert.txt"
+
+            Step 'Amazon DCV server (unattended install, console session owned by Administrator)'
+            Invoke-WebRequest -Uri https://d1uj6qtbmh3dt5.cloudfront.net/nice-dcv-server-x64-Release.msi -OutFile "$root\dcv-server.msi"
+            Start-Process msiexec.exe -ArgumentList '/i', "$root\dcv-server.msi", 'ADDLOCAL=ALL', 'AUTOMATIC_SESSION_OWNER=Administrator', '/quiet', '/norestart', '/l*v', "$root\dcv-install.log" -Wait
+            # A 4K console display whether or not a client is connected, so
+            # the simulator and OBS see one when the agent runs alone.
+            $display = 'Registry::HKEY_USERS\S-1-5-18\Software\GSettings\com\nicesoftware\dcv\display'
+            New-Item -Path $display -Force | Out-Null
+            New-ItemProperty -Path $display -Name 'console-session-default-layout' -PropertyType String -Value "[{'w':3840,'h':2160,'x':0,'y':0}]" -Force | Out-Null
+
+            Step 'OBS Studio ${ObsVersion} (the project''s own installer, silent)'
+            Invoke-WebRequest -Uri "https://github.com/obsproject/obs-studio/releases/download/${ObsVersion}/OBS-Studio-${ObsVersion}-Windows-x64-Installer.exe" -OutFile "$root\obs.exe"
+            Start-Process "$root\obs.exe" -ArgumentList '/S' -Wait
+
+            Step 'Steam (Valve''s installer, silent)'
+            Invoke-WebRequest -Uri https://cdn.akamai.steamstatic.com/client/installer/SteamSetup.exe -OutFile "$root\steam.exe"
+            Start-Process "$root\steam.exe" -ArgumentList '/S' -Wait
+
+            Step '.NET SDK ${DotnetVersion} (Microsoft''s dotnet-install script)'
+            Invoke-WebRequest -Uri https://dot.net/v1/dotnet-install.ps1 -OutFile "$root\dotnet-install.ps1"
+            & "$root\dotnet-install.ps1" -Version ${DotnetVersion} -InstallDir 'C:\Program Files\dotnet'
+            [Environment]::SetEnvironmentVariable('Path', [Environment]::GetEnvironmentVariable('Path', 'Machine') + ';C:\Program Files\dotnet', 'Machine')
+
+            Step 'stop ${MaxHours} hours after every boot (a backstop to trial.sh''s schedule)'
+            $act = New-ScheduledTaskAction -Execute shutdown.exe -Argument "/s /t $([int]'${MaxHours}' * 3600) /c `"Wingtip trial: ${MaxHours} hours up, stopping`""
+            Register-ScheduledTask -TaskName 'Wingtip stop after hours' -Trigger (New-ScheduledTaskTrigger -AtStartup) -Action $act -User SYSTEM -RunLevel Highest -Force | Out-Null
+
+            New-Item -ItemType File "$root\setup.done" | Out-Null
+            Step 'set up; restarting for the driver'
+          } catch {
+            Step "FAILED: $_"
+          } finally {
+            Stop-Transcript
+            Write-S3Object -BucketName ${Bucket} -Key setup/setup.log -File "$root\setup.log" -Region ${AWS::Region}
+          }
+          if (Test-Path "$root\setup.done") { Restart-Computer -Force }
+          </powershell>
+
+  # The idle stop: under 3% CPU for IdleChecks five-minute periods, the instance stops
+  # (CloudWatch's EC2 stop action; basic monitoring's 5-minute figures).
+  IdleAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Stop the sim trial's instance when idle
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions: [{ Name: InstanceId, Value: !Ref Instance }]
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: !Ref IdleChecks
+      Threshold: 3
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Sub "arn:${AWS::Partition}:automate:${AWS::Region}:ec2:stop"]
+
+  # trial.sh's one-time stop, set at every `up`: EventBridge Scheduler
+  # calls EC2 StopInstances with this role.
+  StopScheduleRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: scheduler.amazonaws.com }
+            Action: sts:AssumeRole
+            Condition: { StringEquals: { aws:SourceAccount: !Ref AWS::AccountId } }
+      Policies:
+        - PolicyName: stop-the-trial-instance
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ec2:StopInstances
+                Resource: !Sub "arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:instance/${Instance}"
+
+  Budget:
+    Type: AWS::Budgets::Budget
+    Properties:
+      Budget:
+        BudgetName: !Sub "${AWS::StackName}-budget"
+        BudgetType: COST
+        TimeUnit: MONTHLY
+        BudgetLimit: { Amount: !Ref BudgetUsd, Unit: USD }
+      NotificationsWithSubscribers:
+        - Notification: { NotificationType: ACTUAL, ComparisonOperator: GREATER_THAN, Threshold: 50, ThresholdType: PERCENTAGE }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref BudgetEmail }]
+        - Notification: { NotificationType: FORECASTED, ComparisonOperator: GREATER_THAN, Threshold: 100, ThresholdType: PERCENTAGE }
+          Subscribers: [{ SubscriptionType: EMAIL, Address: !Ref BudgetEmail }]
+
+  BudgetActionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal: { Service: budgets.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        # AWS's own policy for a budget action that runs an SSM document.
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AWSBudgetsActions_RolePolicyForResourceAdministrationWithSSM
+
+  # The hard stop: when the month's actual spend reaches the budget, the
+  # instance is stopped with no one asked. AWS Budgets reads costs up to
+  # three times a day, so it can act hours late (Cost Management User
+  # Guide, "Managing your costs with AWS Budgets"): the idle stop and the
+  # schedule are what keep an evening an evening.
+  BudgetStop:
+    Type: AWS::Budgets::BudgetsAction
+    Properties:
+      BudgetName: !Ref Budget
+      NotificationType: ACTUAL
+      ActionType: RUN_SSM_DOCUMENTS
+      ActionThreshold: { Type: PERCENTAGE, Value: 100 }
+      ExecutionRoleArn: !GetAtt BudgetActionRole.Arn
+      ApprovalModel: AUTOMATIC
+      Subscribers: [{ Type: EMAIL, Address: !Ref BudgetEmail }]
+      Definition:
+        SsmActionDefinition:
+          Subtype: STOP_EC2_INSTANCES
+          Region: !Ref AWS::Region
+          InstanceIds: [!Ref Instance]
+
+
+Outputs:
+  InstanceId:
+    Value: !Ref Instance
+  Bucket:
+    Value: !Ref Bucket
+  StopScheduleRoleArn:
+    Value: !GetAtt StopScheduleRole.Arn

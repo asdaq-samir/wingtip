@@ -1,0 +1,4 @@
+# The builds and test results dotnet writes beside each project.
+bin/
+obj/
+TestResults/

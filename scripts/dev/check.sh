@@ -317,6 +317,18 @@ run_area() {
       python3 "$here/apps/site/build.py"
       python3 "$here/apps/site/check.py"
       ;;
+    sim)
+      # The MSFS replay agent: built (without the SDK's SimConnect, which
+      # only the trial's instance has), its format checked and its tests
+      # run, in .NET's own SDK image at .tool-versions' version; then the
+      # trial's template (cfn-lint) and scripts (shellcheck).
+      docker run --rm -v "$here/tools/msfs-agent:/src" -v wingtip-nuget:/root/.nuget/packages -w /src \
+        -e DOTNET_CLI_TELEMETRY_OPTOUT=1 -e DOTNET_NOLOGO=1 "mcr.microsoft.com/dotnet/sdk:$(tool dotnet)" \
+        sh -c 'dotnet build MsfsAgent.slnx -v q && dotnet format MsfsAgent.slnx --verify-no-changes && dotnet test --solution MsfsAgent.slnx --no-build'
+      docker run --rm -v "$here/infra/sim-trial:/data" -w /data "python:$PYTHON-slim" \
+        sh -c 'pip install -q --root-user-action=ignore cfn-lint && cfn-lint template.yaml'
+      docker run --rm -v "$here:/mnt" -w /mnt koalaman/shellcheck:stable infra/sim-trial/trial.sh tools/msfs-agent/prepare-track.sh
+      ;;
     arch)
       # No new or grown source file over 400 lines (seconds); the allow-list
       # compared with main's where this clone has it.
