@@ -1,5 +1,5 @@
 import { test as setup, expect } from "@playwright/test";
-import { DEVELOPER, DEVELOPER_STATE, signInByEmail } from "./emailSignIn";
+import { DEVELOPER, DEVELOPER_STATE, blankHomeBase, signInByEmail } from "./emailSignIn";
 import { noTips, roleMenu, consolePage } from "./helpers";
 
 /**
@@ -33,5 +33,11 @@ setup("the developer signs in from the pilot console, and lands in dev mode", as
   // No airplane picked, as a pilot starts (the owner, 2026-11-09: nothing
   // assumes one): a spec that reads an airplane's times, fuel or figures
   // picks it itself (helpers' pickAirplane).
+  // No home airport either, as a new account has none. The developer's
+  // account lives on in the stack's Postgres from run to run, and a spec
+  // of old set Home on it (KMSN), which the page then brought to every
+  // spec's device (lib/homeAirport). A spec that wants Home keeps its own
+  // to its page (oneSearch's ownHomeBase).
+  await blankHomeBase(page);
   await page.context().storageState({ path: DEVELOPER_STATE });
 });
