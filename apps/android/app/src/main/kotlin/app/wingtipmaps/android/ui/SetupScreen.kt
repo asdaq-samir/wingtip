@@ -53,9 +53,9 @@ import app.wingtipmaps.android.design.ChoiceGroup
 import app.wingtipmaps.android.design.Loading
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import app.wingtipmaps.android.firstflight.FirstFlightMemory
 import app.wingtipmaps.android.pilot.MinimumsRows
 import app.wingtipmaps.android.strip.StripData
-import app.wingtipmaps.android.welcome.WelcomeMemory
 
 /**
  * Settings, the account button's page, opened by its tap alone (what the
@@ -163,11 +163,11 @@ fun SetupScreen(session: Session, onMapSettings: () -> Unit) {
         // Downloads, the passenger briefing and About.
         AppPageRows()
 
-        // The welcome once more, from its first page (WelcomeHost, over
-        // whatever is open): its one home; and the server the build talks
-        // to, for a tester with more than one.
+        // The first flight's card offered again (FirstFlightCard, riding
+        // the sheet while there is no route), the web's Guide row; and the
+        // server the build talks to, for a tester with more than one.
         SettingsGroup(Modifier.padding(top = WingtipSpace.Md)) {
-            ActionSettingRow(stringResource(R.string.welcome_again), index = 0, count = 2) { WelcomeMemory.of(context).reset() }
+            ActionSettingRow(stringResource(R.string.first_flight_again), index = 0, count = 2) { FirstFlightMemory.of(context).reset() }
             ValueSettingRow(stringResource(R.string.server), Config.host, index = 1, count = 2)
         }
     }

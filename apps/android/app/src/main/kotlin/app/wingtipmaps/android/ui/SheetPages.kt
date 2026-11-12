@@ -100,7 +100,7 @@ private fun UnderSearch(head: @Composable () -> Unit, page: @Composable () -> Un
 }
 
 /** Nothing typed: the assistant's answer where there is one, the flight's
- *  card, then Favorites, Recents and Nearest, as the search shows them. */
+ *  card, then Nearest, Favorites and Recents, as the search shows them. */
 @Composable
 internal fun Home(plan: Plan, fix: OwnShip.Fix?, answer: @Composable () -> Unit, onPick: (SearchPick) -> Unit, modifier: Modifier = Modifier) {
     val context = LocalContext.current

@@ -10,7 +10,6 @@
 
     <!-- The one search over the sheet (the owner, 2026-11-09), "Airplane"
          the FAA's word (decision 0020). -->
-    <string name="airport">Airport</string>
     <string name="airplane">Airplane</string>
     <string name="settings">Settings</string>
     <!-- The bar's placeholder, one line at every font scale (Material's
@@ -155,9 +154,6 @@
     <string name="sheet_page_search">Search</string>
     <string name="sheet_page_fpl">FPL</string>
     <string name="sheet_page_of">Page %1$d of %2$d, %3$s</string>
-    <string name="plan_a_flight">Plan a Flight</string>
-    <string name="plan_a_flight_line">Search for where you are flying, or see a whole flight first with the sample.</string>
-    <string name="plan_a_flight_search">Search</string>
     <string name="under_reserve">Under the reserve the planner holds the flight to. Fly it with a fuel stop.</string>
 
     <!-- A leg (LegSheet). -->
@@ -499,28 +495,6 @@
         <item quantity="other">Log %1$d Flights</item>
     </plurals>
 
-    <!-- The welcome, once per install (welcome/): one page a step, Skip on
-         each, the system's permission asks only after Allow. -->
-    <string name="welcome">Welcome</string>
-    <string name="welcome_skip">Skip</string>
-    <string name="welcome_next">Next</string>
-    <string name="welcome_airplane">Your Airplane</string>
-    <string name="welcome_airplane_line">Pick the one you fly for times, fuel and headings, or plan with no airplane.</string>
-    <string name="welcome_home">Home Airport</string>
-    <string name="welcome_home_line">Where your flights usually start. You can leave it empty.</string>
-    <string name="welcome_home_is">Home: %1$s</string>
-    <string name="welcome_rules">VFR or IFR</string>
-    <string name="welcome_rules_line">How you usually fly. Change it any time in the plan.</string>
-    <string name="welcome_location">Location</string>
-    <!-- What location is for, said before Android asks (store audit S1): in flight it goes on with the screen off only after Start Flight. -->
-    <string name="welcome_location_line">Wingtip shows your airplane on the chart and finds the fields near you. In flight, once you tap Start Flight, it keeps following your position with the screen off until you land, for the alerts ahead and the path flown.</string>
-    <string name="welcome_notifications">Notifications</string>
-    <string name="welcome_notifications_line">Wingtip tells you when something on your route changes: a TFR, the weather turning.</string>
-    <string name="welcome_finish">Ready to Fly</string>
-    <string name="welcome_finish_line">See a whole flight first, Madison (KMSN) to Oshkosh (KOSH), with its route, nav log and Brief, or plan your own.</string>
-    <string name="welcome_sample">Open Sample Flight</string>
-    <string name="welcome_own">Plan My Own</string>
-    <string name="welcome_again">Show Welcome Again</string>
     <!-- Emergency and Nearest worked out from the cycle packs, the planner out of reach (PhoneFields). -->
     <string name="from_this_phone">From this phone, without weather</string>
     <!-- Start Flight, at flying speed (flight/StartFlightAsk): the location service only on this tap. -->

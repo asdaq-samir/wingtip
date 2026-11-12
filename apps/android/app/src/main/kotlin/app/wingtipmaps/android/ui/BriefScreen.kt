@@ -98,6 +98,8 @@ fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () 
                 VerdictBlock(state.verdict, state.actions)
                 // The brief kept for the air, shown with no signal: how old.
                 KeptAgeLine(KeptForAir.GO_NO_GO, state.keptAtMs)
+                // The plan it briefs: when it was made and whose winds it flies.
+                PlannedLine(plan.totals)
                 // "When should I go?": the hours across, under the verdict.
                 DepartureWindowStrip(plan, signedIn)
                 state.risk?.let { Text(it, style = MaterialTheme.typography.bodyLarge) }

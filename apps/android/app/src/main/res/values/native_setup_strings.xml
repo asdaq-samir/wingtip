@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Settings, the welcome and the flight's Live Update in their Android
+<!-- Settings and the flight's Live Update in their Android
      form (docs/design/android.md, sections 3.13 to 3.15). -->
 <resources>
-    <!-- The welcome's page indicator, as TalkBack says it. -->
-    <string name="said_welcome_step">Step %1$d of %2$d</string>
     <!-- The flight's Live Update: its action back to the map. -->
     <string name="live_open_map">Open Map</string>
 </resources>

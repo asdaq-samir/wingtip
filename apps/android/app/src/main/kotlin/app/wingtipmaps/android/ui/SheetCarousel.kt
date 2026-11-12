@@ -8,31 +8,30 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSize
 import app.wingtipmaps.android.design.generated.WingtipSpace
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 
 /** The carousel's page dots, for the UI tests ("sheet-dot-0", "sheet-dot-1"). */
@@ -57,10 +56,22 @@ internal val SheetDotsHeight = WingtipSize.TapTarget
  * plan (Add a Stop) as the pager brings it into view.
  *
  * Material 3 has no page indicator for a phone (only Wear's), so the dots
- * are the foundation pager's own state drawn in the theme's colours.
+ * are the foundation pager's own state drawn in the theme's colours, as
+ * Compose's pager guide draws its indicator.
+ *
+ * A page put away gives up the focus, so a field typed in on it (the
+ * search's, the plan's) lets the keyboard go down (the web's 5805b5bfa).
  */
 @Composable
 internal fun SheetCarousel(pager: PagerState, search: @Composable () -> Unit, plan: @Composable () -> Unit) {
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    LaunchedEffect(pager) {
+        snapshotFlow { pager.currentPage }.drop(1).collect {
+            focus.clearFocus()
+            keyboard?.hide()
+        }
+    }
     Column(Modifier.fillMaxSize()) {
         SheetPageDots(pager)
         HorizontalPager(
@@ -99,31 +110,5 @@ private fun SheetPageDots(pager: PagerState) {
                 Box(Modifier.size(WingtipSpace.Sm).background(colour, CircleShape))
             }
         }
-    }
-}
-
-/**
- * The FPL page with no route: "Plan a Flight", with the search (the one
- * search, on the first page, opened and focused) and the welcome's sample
- * flight. Material has no stock empty view, so it is the theme's own
- * type and buttons, centred as an empty list's message is.
- */
-@Composable
-internal fun PlanEmpty(onSearch: () -> Unit, onSample: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier.fillMaxSize().padding(horizontal = WingtipSpace.Xl, vertical = WingtipSpace.Lg),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(WingtipSpace.Md),
-    ) {
-        Icon(WingtipIcons.flightPlan, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(stringResource(R.string.plan_a_flight), style = MaterialTheme.typography.titleLarge, textAlign = TextAlign.Center)
-        Text(
-            stringResource(R.string.plan_a_flight_line),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        Button(onClick = onSearch) { Text(stringResource(R.string.plan_a_flight_search)) }
-        OutlinedButton(onClick = onSample) { Text(stringResource(R.string.welcome_sample)) }
     }
 }

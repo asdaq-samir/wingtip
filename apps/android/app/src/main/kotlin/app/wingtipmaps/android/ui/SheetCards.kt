@@ -76,7 +76,7 @@ private fun Card(
         SheetPage.Home, SheetPage.Plan -> {}
         is SheetPage.Airport -> AirportCard(page.ident, plan, exit, onDone = showPlan, model = airports)
         is SheetPage.Airplane -> AirplaneCard(page.at, plan, exit, onFlown = showPlan, onOpen = sheet::push)
-        is SheetPage.Thing -> ThingCard(page.pick, plan, exit)
+        is SheetPage.Thing -> ThingCard(page.pick, plan, exit, onRouted = showPlan)
         is SheetPage.Leg -> RouteLegCard(page.index, plan, ownShipOn, exit)
         is SheetPage.Plate -> PlateCard(PlatePick(page.ident, page.procedure), exit)
         SheetPage.MapSettings -> Page(stringResource(R.string.map_settings), exit) { MapSettingsRows() }

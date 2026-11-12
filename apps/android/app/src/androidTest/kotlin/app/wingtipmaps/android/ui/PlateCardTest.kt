@@ -9,11 +9,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import app.wingtipmaps.android.MainActivity
 import app.wingtipmaps.android.R
+import app.wingtipmaps.android.firstflight.FirstFlightMemory
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.plates.PlatePick
 import app.wingtipmaps.android.plates.PlatesOnMap
-import app.wingtipmaps.android.welcome.WelcomeMemory
 import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -38,7 +38,7 @@ class PlateCardTest {
 
     @Before
     fun launch() {
-        WelcomeMemory.of(context).markSeen()
+        FirstFlightMemory.of(context).markSeen()
         scenario = ActivityScenario.launch(MainActivity::class.java)
         compose.waitUntil(TIMEOUT_MS) { shown(hasText(context.getString(R.string.search_hint))) }
     }

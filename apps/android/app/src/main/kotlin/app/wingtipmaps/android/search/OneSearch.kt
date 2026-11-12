@@ -73,7 +73,7 @@ import kotlinx.coroutines.launch
  * While a card is
  * open its bar takes this row's place (CardPage). Tapped, the bar opens
  * full screen, as Material's does: with nothing typed the flight's card,
- * Favorites, Recents and Nearest; typing, the results grouped (Airports,
+ * Nearest, Favorites and Recents; typing, the results grouped (Airports,
  * Waypoints and Navaids, Airplanes, Do), each one tap (SearchPick, done by
  * the root). The keyboard's search key does the line as the strip's field
  * did (FieldCommands: a route, a field, a screen's word, else a question).
@@ -182,6 +182,7 @@ fun OneSearch(
         stringResource(
             when {
                 listening -> R.string.voice_speak
+                control.picking != null -> control.pickHint
                 control.addingStop -> R.string.search_add_stop
                 flying && voice -> R.string.search_hint_flying
                 else -> R.string.search_hint

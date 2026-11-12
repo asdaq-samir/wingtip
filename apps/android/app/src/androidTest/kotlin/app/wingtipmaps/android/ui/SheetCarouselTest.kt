@@ -3,14 +3,18 @@ package app.wingtipmaps.android.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -35,9 +39,9 @@ import org.junit.runner.RunWith
 /**
  * The sheet's carousel (the owner, 2026-11-11): a sideways swipe moves
  * between Search and the FPL and the dots follow and take a tap, saying
- * which page to TalkBack; the FPL with no route says "Plan a Flight" and
- * its button asks for the one search; a route made brings the FPL page;
- * and an upward drag on either page still raises the sheet.
+ * which page to TalkBack; a page put away gives up the focus, so the
+ * keyboard goes down; a route made brings the FPL page; and an upward
+ * drag on either page still raises the sheet.
  */
 @RunWith(AndroidJUnit4::class)
 class SheetCarouselTest {
@@ -47,10 +51,7 @@ class SheetCarouselTest {
     private val context get() = InstrumentationRegistry.getInstrumentation().targetContext
     private lateinit var nav: SheetNav
     private lateinit var sheet: MapSheetState
-    private var searches = 0
-    private var samples = 0
-
-    private fun host(routed: Boolean = true) {
+    private fun host(field: Boolean = false) {
         compose.setContent {
             WingtipTheme {
                 sheet = rememberMapSheetState()
@@ -58,8 +59,8 @@ class SheetCarouselTest {
                 MapSheet(state = sheet, peek = PEEK, body = { Box(Modifier.fillMaxSize()) }) {
                     SheetPagesHost(
                         nav, backEnabled = true, modifier = Modifier.weight(1f),
-                        home = { Lines("search") },
-                        plan = { if (routed) Lines("plan") else PlanEmpty(onSearch = { searches++ }, onSample = { samples++ }) },
+                        home = { if (field) TextField(rememberTextFieldState(), Modifier.testTag(FIELD)) else Lines("search") },
+                        plan = { Lines("plan") },
                         card = { Text(it.key) },
                     )
                 }
@@ -99,15 +100,13 @@ class SheetCarouselTest {
     }
 
     @Test
-    fun noRouteSaysPlanAFlightAndItsButtonAsksForTheSearch() {
-        host(routed = false)
+    fun leavingSearchLetsTheKeyboardGo() {
+        host(field = true)
+        compose.onNode(hasTestTag(FIELD)).performClick()
+        compose.onNode(hasTestTag(FIELD)).assertIsFocused()
         dot(1).performClick()
         on(PLAN_PAGE)
-        compose.onNode(hasText(context.getString(R.string.plan_a_flight))).assertExists()
-        compose.onNode(hasText(context.getString(R.string.plan_a_flight_search))).performClick()
-        compose.runOnIdle { assertEquals(1, searches) }
-        compose.onNode(hasText(context.getString(R.string.welcome_sample))).performClick()
-        compose.runOnIdle { assertEquals(1, samples) }
+        compose.onNode(hasTestTag(FIELD)).assertIsNotFocused()
     }
 
     @Test
@@ -140,6 +139,7 @@ class SheetCarouselTest {
 
     private companion object {
         const val TIMEOUT_MS = 5_000L
+        const val FIELD = "search-field"
         val PEEK = 200.dp
     }
 }
