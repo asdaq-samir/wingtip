@@ -308,6 +308,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
             ReceiverChip()
             if (airportWeather.mode != AirportWeatherMode.OFF) WeatherAgeChip(stale, heardAt, nowMs)
             WeatherLoopBar()
+            app.wingtipmaps.android.map.flow.ModelWeatherBar()
             DryRunBar(rules = state.rules)
         }
         if (ownShip.on && !approximate && !denied) {

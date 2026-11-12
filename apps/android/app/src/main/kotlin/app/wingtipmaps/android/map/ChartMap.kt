@@ -124,7 +124,7 @@ fun ChartMap(
 ) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow).also(ForecastAreasLayer::follow).also(StationLayer::follow), density) } }
+    val holder = LocalDensity.current.density.let { density -> remember { MapHolder(MapView(context).also(NexradLayer::follow).also(WeatherLoopLayer::follow).also(ForecastAreasLayer::follow).also(StationLayer::follow).also(Map3dLayer::follow).also(app.wingtipmaps.android.map.flow.ModelWeatherLayer::follow), density) } }
     holder.onDragged = onDragged
     holder.onRevealed = onRevealed
     holder.onPick = onPick
@@ -151,7 +151,7 @@ fun ChartMap(
     // left in landscape as well as the sheet below.
     val leftInset = WindowInsets.safeDrawing.getLeft(LocalDensity.current, LayoutDirection.Ltr)
     LaunchedEffect(holder, bottomInset, leftInset) { holder.inset(bottomInset, leftInset) }
-    LaunchedEffect(holder, line, routePoints) { holder.route(line, routePoints) }
+    LaunchedEffect(holder, line, routePoints) { holder.route(line, routePoints).also { MapTerrain.destination(routePoints.lastOrNull()?.ident) } }
     LaunchedEffect(holder, selectedLeg) { holder.selectLeg(selectedLeg) }
     LaunchedEffect(holder, ownShip, follow) { holder.ownShip(ownShip, follow) }
     LaunchedEffect(holder, trail) { holder.trail(trail) }
@@ -161,7 +161,7 @@ fun ChartMap(
     LaunchedEffect(holder, traffic, tracked) { holder.traffic(traffic, tracked) }
     LaunchedEffect(holder, glide) { holder.glide(glide) }
     LaunchedEffect(holder, emergency) { holder.emergency(emergency) }
-    LaunchedEffect(holder, selectedField) { holder.selectField(selectedField) }
+    LaunchedEffect(holder, selectedField) { holder.selectField(selectedField).also { MapTerrain.selected(selectedField) } }
     LaunchedEffect(holder, plates) { holder.plates(plates) }
 
     AndroidView(factory = { holder.view }, modifier = modifier)
@@ -479,7 +479,7 @@ private class MapHolder(val view: MapView, private val density: Float) {
      *  its padding as it is now, so the place is in the middle of what
      *  the sheet leaves, under the loading mark. A drag by the pilot ends
      *  following, as Apple Maps lets go of the position when the map is
-     *  moved by hand. A chart is read north up: no turn, no tilt. A tap
+     *  moved by hand. North up, no turn, no tilt, but in 3D (Map3dLayer). A tap
      *  opens the card of what is under it; each rest tells the view. */
     private fun open(map: MapLibreMap) {
         if (opened) return
