@@ -81,7 +81,9 @@ enum CardTests {
         case .card(let kept):
             return launch(["-card", kept], size: size)
         case .button(let handle):
-            let app = launch(["-screen", "fpl"], size: size)
+            // The Search page, where the account button sits beside the
+            // field (the FPL page has no bar of its own).
+            let app = launch(["-screen", "search"], size: size)
             let button = app.buttons[handle]
             XCTAssertTrue(button.waitForExistence(timeout: 20), "no \(handle) button")
             button.tap()

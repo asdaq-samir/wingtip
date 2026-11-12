@@ -150,7 +150,8 @@ view without dismissing the sheet").
 - **Code.** `presentationDetents([pill, .half, .large], selection: $detent)`,
   with `presentationBackgroundInteraction(.enabled(upThrough: .half))`
   and a grabber (`presentationDragIndicator(.visible)`).
-  - `pill` is `.height(132)` today (`RootView.pill`).
+  - `pill` is `.height(132)` for the page's first row plus the page
+    dots' 28-point row (`RootView.pill`, `PageDots.row`).
   - **Half height (owner decision 2026-11-10).** `.half` is
     `.fraction(0.45)` (`Navigation/Detents.swift`), 45% of the screen as
     Maps' half covers it, in place of the stock `.medium`'s 53.5% (the
@@ -163,6 +164,30 @@ view without dismissing the sheet").
     (`sheetAtPill`, PlanSheet).
   - The HIG asks for a grabber on a resizable sheet. Tapping it cycles
     through the detents, and VoiceOver reads it ([HIG Sheets][hig-sheets]).
+- **Two pages, Search and FPL (owner decision 2026-11-11, the
+  carousel; docs/design/rules.md).** The sheet's content is SwiftUI's own
+  pager, `TabView` with `.tabViewStyle(.page(indexDisplayMode: .never))`
+  (`SheetPager`), so the swipe is the system's: sideways it turns the
+  page and never moves the sheet; up and down stays the sheet's drag and
+  each page's List keeps its own scroll.
+  - **Search** is the one search in the bar (field, microphone, account)
+    over Favorites, Recents, Find Nearby and Nearest (`BrowseSections`).
+  - **FPL** is the plan (`PlanView`) with the bar hidden, so its first
+    row is the route's own; with no route, the system's
+    `ContentUnavailableView` "Plan a Flight", its Search going to the
+    focused field and its sample flight as the welcome's, over the
+    route's ends. The figures strip is the foot on FPL alone.
+  - **The dots** are UIKit's stock `UIPageControl` under the grabber
+    (`PageDots`; SwiftUI has no page control of its own in the iOS 27.2
+    SDK, only TabView's dots at its foot): a tap moves the page, and
+    VoiceOver hears "Page 1 of 2, Search". Their row is 28 points and
+    the control's frame 44, reaching into the grabber's strip and the
+    bar's margin, so nothing grows for the hit area.
+  - The page is `Navigator.sheetPage`: every "show the plan" (a route
+    made, Fly Here, a link, a saved flight, `-screen fpl`) turns it to
+    FPL, the search coming up (Add a Stop, ⌘F, the microphone) turns it
+    to Search, and clearing the route leaves it. A card opens over both
+    pages and its close comes back to the one it was opened on.
 - **Content changes with the detent.** The owner checked Apple Maps on
   2026-11-09:
   - A place card shows its header photo only at the large detent.
