@@ -3,7 +3,7 @@
 //! crates/altitude/contract, which the dispatcher and
 //! engine/contract/engine.schema.json are generated from.
 
-use super::floor::{self, Ground, Obstacle, IFR_OBSTACLE_RADIUS_NM};
+use super::floor::{self, Ground, Obstacle, CORRIDOR_HALF_WIDTH_NM, IFR_OBSTACLE_RADIUS_NM};
 use super::select;
 use super::words::{self, Via};
 use super::{cautions, clouds, congested, cruising, profile_calls};
@@ -103,6 +103,7 @@ pub fn call(name: &str, v: &Value) -> R<String> {
         "profile_clearance" => profile_calls::profile_clearance(name, v),
         "altitude_advisor" => profile_calls::altitude_advisor(name, v),
         "ifr_obstacle_radius_nm" => Ok(number(Some(IFR_OBSTACLE_RADIUS_NM))),
+        "floor_corridor_nm" => Ok(number(Some(CORRIDOR_HALF_WIDTH_NM))),
         "airway_floor_ft" => Ok(number(floor::published(opt_num(name, v, "mea_ft")?, opt_num(name, v, "gnss_mea_ft")?))),
         "vfr_floors" => {
             let obstacles: Vec<Obstacle> = list(name, v, "obstacles")?

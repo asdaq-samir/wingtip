@@ -709,6 +709,12 @@ fun Engine.floorCaution(segment: Map<String, JsonElement>, altitudeFt: Double): 
     rule("floor_caution", EngineContract.FloorCautionInput(segment = segment, altitudeFt = altitudeFt))
 
 /**
+ * How far either side of the course the VFR floor counts the ground's obstacles: 5 nm, wider than 14 CFR 91.119(b)'s 2,000 ft and 91.177(a)(2)'s 4 nm, so the floor tolerates the airplane off its line. The 3D map colours the ground against the plan within it.
+ */
+fun Engine.floorCorridorNm(): Result<Double> =
+    rule("floor_corridor_nm", EngineContract.FloorCorridorNmInput())
+
+/**
  * The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).
  */
 fun Engine.forecastHour(hoursAhead: Double? = null): Result<String> =

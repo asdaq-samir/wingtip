@@ -18,6 +18,9 @@ export interface AloftPoint {
   lat: number;
   lon: number;
   altFt: number;
+  /** The planned altitude of the leg it is on, ft MSL: the nav log's, which
+   *  the ground near the route is coloured against (ClearanceGl). */
+  legFt?: number;
 }
 
 /** International feet in a metre's place: 0.3048 m a foot. */

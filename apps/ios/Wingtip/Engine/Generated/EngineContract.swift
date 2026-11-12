@@ -3542,6 +3542,9 @@ enum EngineContract {
         }
     }
 
+    struct FloorCorridorNmInput: Codable, Equatable, Sendable {
+    }
+
     struct ForecastHourInput: Codable, Equatable, Sendable {
         var hoursAhead: Double?
 

@@ -29,6 +29,7 @@ import { googleMapsQuery } from "../lib/queryClient";
 import { keepingAvailable } from "../lib/map/route/keepRoute";
 import SearchHint from "./SearchHint";
 import { CHART } from "../lib/tokens";
+import { clearanceWords } from "../lib/map/terrainClearanceWords";
 
 /**
  * The map's settings, the whole of the map's own button's card
@@ -197,8 +198,9 @@ export default function MapSettings({ weather }: { weather?: ReactNode }) {
             relief shaded over it, or stood up in 3D with the map tilted by
             two fingers, the obstacles and the route at its altitudes over
             it. A pick of three, segmented; here alone, as every other way
-            the map is drawn is. */}
-        <ListRow title="Terrain">
+            the map is drawn is. In 3D, what the ground's colours near a
+            route are, and that they are a view, not clearance. */}
+        <ListRow title="Terrain" description={prefs.terrain === "3d" ? clearanceWords() : undefined}>
           <Segmented
             label="Terrain"
             value={prefs.terrain}

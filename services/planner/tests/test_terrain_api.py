@@ -4,7 +4,7 @@ obstacles the map's relief and 3D view draw (app.routers.terrain)."""
 import pandas as pd
 import requests
 from fastapi.testclient import TestClient
-from wingtip import elevation, faa_data
+from wingtip import elevation, faa_data, terrain_fine
 
 from app.main import app
 
@@ -20,10 +20,17 @@ def test_a_terrain_tile_is_a_png_kept_a_month(monkeypatch):
     assert "max-age=2592000" in got.headers["cache-control"]
 
 
-def test_no_terrain_tile_past_the_planners_own_zoom_or_off_the_grid(monkeypatch):
+def test_no_terrain_tile_past_the_built_zoom_or_off_the_grid(monkeypatch):
     monkeypatch.setattr(elevation, "terrain_tile_png", lambda z, x, y: b"tile")
-    assert client.get("/api/terrain-tile/13/0/0.png").status_code == 404
+    assert client.get("/api/terrain-tile/14/0/0.png").status_code == 404
     assert client.get("/api/terrain-tile/2/4/0.png").status_code == 404
+
+
+def test_a_zoom_13_tile_is_the_one_built_ahead(monkeypatch):
+    monkeypatch.setattr(terrain_fine, "fine_tile_png", lambda x, y: b"\x89PNG fine %d %d" % (x, y))
+    got = client.get("/api/terrain-tile/13/1707/3108.png")
+    assert got.status_code == 200
+    assert got.content == b"\x89PNG fine 1707 3108"
 
 
 def test_a_terrain_tile_that_cannot_be_fetched_is_a_503(monkeypatch):

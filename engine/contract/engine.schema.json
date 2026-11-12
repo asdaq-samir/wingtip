@@ -8509,6 +8509,26 @@
       ],
       "additionalProperties": false
     },
+    "floor_corridor_nm": {
+      "description": "How far either side of the course the VFR floor counts the ground's obstacles: 5 nm, wider than 14 CFR 91.119(b)'s 2,000 ft and 91.177(a)(2)'s 4 nm, so the floor tolerates the airplane off its line. The 3D map colours the ground against the plan within it.",
+      "type": "object",
+      "properties": {
+        "input": {
+          "title": "FloorCorridorNmInput",
+          "type": "object",
+          "properties": {}
+        },
+        "answer": {
+          "title": "FloorCorridorNmAnswer",
+          "type": "number"
+        }
+      },
+      "required": [
+        "input",
+        "answer"
+      ],
+      "additionalProperties": false
+    },
     "forecast_hour": {
       "description": "The winds period for a departure hours ahead: 06 to six hours, 12 to fifteen, 24 beyond (the FB's FOR USE windows, FAA-H-8083-28B Table 27-2).",
       "type": "object",
@@ -26611,6 +26631,7 @@
     "fix_radial_distance",
     "flight_category",
     "floor_caution",
+    "floor_corridor_nm",
     "forecast_hour",
     "forecast_run",
     "frd_near",

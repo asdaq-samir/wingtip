@@ -371,5 +371,6 @@
       "caution_from_ft": -200,
       "warning_from_ft": 800
     }
-  ]
+  ],
+  "floorCorridorNm": 5
 }

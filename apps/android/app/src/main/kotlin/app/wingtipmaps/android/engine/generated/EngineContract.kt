@@ -3464,6 +3464,12 @@ object EngineContract {
     )
 
     @Serializable
+    class FloorCorridorNmInput {
+        override fun equals(other: Any?): Boolean = other is FloorCorridorNmInput
+        override fun hashCode(): Int = 0
+    }
+
+    @Serializable
     data class ForecastHourInput(
         @SerialName("hours_ahead")
         val hoursAhead: Double? = null,
