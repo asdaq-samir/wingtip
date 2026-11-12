@@ -56,7 +56,7 @@ struct PermissionAsk: View {
     let notNow: () -> Void
 
     var body: some View {
-        WelcomePage(symbol: permission.symbol, title: permission.title, sentence: permission.sentence) {
+        PermissionPage(symbol: permission.symbol, title: permission.title, sentence: permission.sentence) {
             EmptyView()
         } actions: {
             Button(action: allow) { Text("Allow").frame(maxWidth: .infinity) }
@@ -68,9 +68,9 @@ struct PermissionAsk: View {
     }
 }
 
-/// A welcome page: a glyph in the tint, the title, one sentence, what the
+/// A permission's page: a glyph in the tint, the title, one sentence, what the
 /// step holds, and its buttons at the foot, clear of the home indicator.
-struct WelcomePage<Content: View, Actions: View>: View {
+private struct PermissionPage<Content: View, Actions: View>: View {
     let symbol: String
     let title: String
     let sentence: String

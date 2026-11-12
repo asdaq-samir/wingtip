@@ -6,8 +6,10 @@ import SwiftUI
 /// Airplane and the route's •••), then the route -- its ends, its Routes,
 /// the airplane and the altitude (RouteBoxRow) -- the stops and "Add a
 /// Stop", the route's own edits and the procedures, in FPL's order. With
-/// none, "Plan a Flight" (the system's ContentUnavailableView) over the
-/// route's ends; Favorites, Recents and Nearest are the Search page's.
+/// none, the route box empty, its close a level back (the web's, the
+/// owner's 2026-11-11 "We don't need plan a flight either"), under the
+/// first flight's card the first time; Favorites, Recents and Nearest are
+/// the Search page's.
 struct PlanView: View {
     @Environment(Plan.self) private var plan
     @Environment(Charts.self) private var charts
@@ -20,8 +22,6 @@ struct PlanView: View {
     let open: (Screen) -> Void
     /// "Add a Stop": the search, whose airport card has Add as Stop.
     let addStop: () -> Void
-    /// "Plan a Flight"'s Search: the Search page, its field focused.
-    let findOnSearch: () -> Void
 
     enum Field { case dep, dest }
 
@@ -30,9 +30,8 @@ struct PlanView: View {
         List {
             if plan.routed {
                 RouteCard(open: open)
-            } else {
-                Section { PlanAFlight(search: findOnSearch) }
             }
+            FirstFlightSection()
             Section {
                 RouteEndsRow(focused: $focused)
                 if plan.routed && plan.course != nil && RouteLine.shows(plan.routes, picked: plan.pickedChip, problem: plan.routesProblem) {
@@ -56,6 +55,28 @@ struct PlanView: View {
                 }
                 if plan.routed {
                     RouteBoxRow(open: open)
+                }
+            } header: {
+                if !plan.routeState.hasPoints {
+                    // The box empty -- cleared, or never filled -- its close
+                    // a level back, where the route's ••• is with a route
+                    // (the web's route box, 2026-11-12): to the field's card
+                    // it was flown to from, else to Search.
+                    HStack {
+                        Spacer()
+                        // The close glyph in glass, as a card's close is
+                        // drawn in its bar (CloseButton's role-close in a
+                        // list header drew the word "Close" alone).
+                        Button {
+                            focused = nil
+                            Navigator.shared.closeEmptyRoute()
+                        } label: {
+                            Label("Close", systemImage: WingtipIcon.close).labelStyle(.iconOnly)
+                        }
+                        .glassButton()
+                        .buttonBorderShape(.circle)
+                        .accessibilityIdentifier("route-close")
+                    }
                 }
             }
             if plan.routed {
@@ -111,33 +132,9 @@ struct PlanView: View {
             }
         }
         .siriSees(SiriSaw.flight(plan))
-    }
-}
-
-/// The FPL page before a route: the system's empty view, as the welcome
-/// offers its ways in -- the search, or the sample flight to look round
-/// with (WelcomeModel.openSample).
-private struct PlanAFlight: View {
-    @Environment(Plan.self) private var plan
-    let search: () -> Void
-
-    var body: some View {
-        ContentUnavailableView {
-            Label("Plan a Flight", systemImage: "airplane")
-        } description: {
-            Text("Search for a field, a town or a route, or type the route's ends below.")
-        } actions: {
-            Button("Search", systemImage: "magnifyingglass", action: search)
-                .glassProminentButton()
-                .accessibilityIdentifier("plan-a-flight-search")
-            Button("See a Sample Flight") {
-                WelcomeModel.shared.openSample(plan)
-                Navigator.shared.showPlan()
-            }
-            .accessibilityIdentifier("plan-a-flight-sample")
-        }
-        .listRowBackground(Color.clear)
-        .accessibilityIdentifier("plan-a-flight")
+        // Leaving the page puts the keyboard away (the web's sheet audit,
+        // 2026-11-12: focus left on a page put away kept the keyboard up).
+        .onChange(of: Navigator.shared.sheetPage) { _, _ in focused = nil }
     }
 }
 

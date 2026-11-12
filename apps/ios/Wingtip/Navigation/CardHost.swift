@@ -70,7 +70,7 @@ struct CardStack: View {
 
 extension SheetPage {
     /// A question or an edit form: the map behind it is not live.
-    var modal: Bool { ownClose && self != .welcome }
+    var modal: Bool { ownClose }
 }
 
 /// The alerts that ask and the emergency assistant, hung on the top of
@@ -101,8 +101,7 @@ struct TopHosts: ViewModifier {
     }
 }
 
-/// The cards a model opens by itself: the welcome once per install, a
-/// flight another pilot sent, the flight just ended to log, and the
+/// The cards a model opens by itself: a flight another pilot sent, the flight just ended to log, and the
 /// clearance asked for from the radio. Each opens as the one card when
 /// its model asks and closes when its model is done; put away by the
 /// pilot, Navigator tells the model (Navigator.left).
@@ -111,14 +110,6 @@ struct CardTriggers: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .task {
-                // A moment after launch, once the planner's own sheet is up.
-                try? await Task.sleep(for: .milliseconds(600))
-                // After the planning-aid notice where it is up: its button
-                // brings the welcome then (PlanningAidAlert).
-                if !PlanningAidNotice.wanted() { WelcomeModel.shared.showIfWanted() }
-            }
-            .onChange(of: WelcomeModel.shared.presented, initial: true) { _, up in follow(.welcome, up) }
             .onChange(of: SharedFlightModel.shared.showing, initial: true) { _, up in follow(.sharedFlight, up) }
             .onChange(of: AutoLogbook.shared.isOpen, initial: true) { _, up in follow(.flightLogged, up) }
             .onChange(of: ClearanceListener.shared.sheetShown, initial: true) { _, up in follow(.clearance, up) }

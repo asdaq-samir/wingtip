@@ -127,8 +127,8 @@ struct RootView: View {
         }
         // Ready to Fly given the app's models, for a start from anywhere.
         .modifier(ReadyToFlyHost())
-        // The welcome, a shared flight, the flight just logged and the
-        // clearance, each a card when its model asks (CardTriggers).
+        // A shared flight, the flight just logged and the clearance, each
+        // a card when its model asks (CardTriggers).
         .modifier(CardTriggers())
         .onChange(of: layout, initial: true) { _, now in nav.split = now == .split }
         // The scene's pages kept and brought back (SceneStorage); a launch
@@ -216,6 +216,10 @@ struct RootView: View {
                 onHold: { at in open(AirportRoute.airspace(lat: at.latitude, lon: at.longitude).text) },
                 onWaypoint: plan.course != nil ? { (ident: String, at: CLLocationCoordinate2D, action: CardAction) in
                     plan.drop(ident, at: at, then: action == .directTo ? .direct : .add, from: action == .directTo ? dryRun.fix ?? ownShip.fix : nil)
+                    // Direct To and Add to Route land on FPL, as a card's
+                    // Fly Here does, the sheet at the size it was left.
+                    search.close()
+                    nav.showPlan()
                 } : nil),
             // A tap on the course opens its nearest leg's card, that leg
             // cased in green while it is in sight (RouteLegView).

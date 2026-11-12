@@ -4,7 +4,7 @@ import UIKit
 /// The plan's sheet's two pages, swiped between sideways (the owner's
 /// carousel, 2026-11-11, docs/design/rules.md): Search, the one search
 /// and its home list, and FPL, the flight plan. Always two, so the dots
-/// do not change count; FPL with no route says "Plan a Flight".
+/// do not change count; FPL with no route shows the route box empty.
 enum PlanPage: Int, CaseIterable, Hashable {
     case search, fpl
 

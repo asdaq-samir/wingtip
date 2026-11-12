@@ -25,10 +25,15 @@ struct PlanSheet: View {
         @Bindable var nav = Navigator.shared
         NavigationStack(path: stack) {
             SheetPager(page: $nav.sheetPage) {
-                List { BrowseSections(nearest: search.nearest, pick: browse) }
-                    .accessibilityIdentifier("sheet-page-search")
+                List {
+                    // The first flight's card at the page's top, the first
+                    // time with no route, as on FPL's (FirstFlightSection).
+                    FirstFlightSection()
+                    BrowseSections(nearest: search.nearest, pick: browse)
+                }
+                .accessibilityIdentifier("sheet-page-search")
             } fpl: {
-                PlanView(open: openScreen, addStop: { search.presented = true }, findOnSearch: { search.presented = true })
+                PlanView(open: openScreen, addStop: { search.presented = true })
                     .accessibilityIdentifier("sheet-page-fpl")
             }
             .oneSearch(search, host: host, oneRow: !split)
@@ -51,6 +56,10 @@ struct PlanSheet: View {
         // The search up (a tap on "Add a Stop", ⌘F, the microphone, a
         // link) is on the Search page, the one field's home.
         .onChange(of: search.presented) { _, up in if up { nav.sheetPage = .search } }
+        // Search left (a swipe, the dots, a route shown): the search put
+        // away and the keyboard with it, what was typed kept for the way
+        // back (the web's sheet audit, 2026-11-12).
+        .onChange(of: nav.sheetPage) { _, page in if page != .search, search.presented { search.presented = false } }
         // A route made (Fly Here, a link, a saved flight, typed): the FPL
         // page; a route cleared leaves the page where it is.
         .onChange(of: plan.routed, initial: true) { _, routed in if routed { nav.sheetPage = .fpl } }

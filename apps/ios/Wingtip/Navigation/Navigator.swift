@@ -34,6 +34,11 @@ final class Navigator {
     /// The plan's sheet's page, Search or FPL (SheetPager): kept here so a
     /// link, Siri and every "show the plan" turn it.
     var sheetPage: PlanPage = .search
+    /// The field's card the plan was shown from (Fly Here, Depart From,
+    /// Add as Stop): where the empty route box's close goes back to, a
+    /// level back, as the web's clearRoute goes back to the airport flown
+    /// to (`under`).
+    private(set) var planFrom: SheetPage?
     /// The card's height on the iPhone: half way for a thing, as Maps
     /// opens a place, full for a page.
     var cardDetent: PresentationDetent = .half
@@ -96,9 +101,21 @@ final class Navigator {
     /// the sheet on its FPL page, as a route made or opened shows it (the
     /// carousel, 2026-11-11).
     func showPlan() {
+        if let page = card?.page, page.airportRoute != nil { planFrom = page }
         close()
         planPath = []
         sheetPage = .fpl
+    }
+
+    /// The empty route box's close (PlanView), a level back: the field's
+    /// card the plan was shown from, over the Search page, else the Search
+    /// page itself (the web's clearRoute, its second step).
+    func closeEmptyRoute() {
+        sheetPage = .search
+        if let from = planFrom {
+            planFrom = nil
+            open(from)
+        }
     }
 
     /// The card, as the system sheet's item binding sets it: nil once the
@@ -124,7 +141,7 @@ final class Navigator {
     }
 
     /// The card changed: what the one going away held let go of, as its
-    /// own close would (the airplane no longer tracked, the welcome seen,
+    /// own close would (the airplane no longer tracked,
     /// the shared flight not taken, the flight logged later).
     private func set(_ next: Card?) {
         let was = card
@@ -137,8 +154,6 @@ final class Navigator {
         switch page {
         case .traffic:
             if case .traffic = next {} else { Tracking.shared.track(nil) }
-        case .welcome:
-            if WelcomeModel.shared.presented { WelcomeModel.shared.finish() }
         case .sharedFlight:
             if SharedFlightModel.shared.showing { SharedFlightModel.shared.notNow() }
         case .flightLogged:

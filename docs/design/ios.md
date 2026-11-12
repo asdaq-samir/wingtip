@@ -173,10 +173,15 @@ view without dismissing the sheet").
   - **Search** is the one search in the bar (field, microphone, account)
     over Favorites, Recents, Find Nearby and Nearest (`BrowseSections`).
   - **FPL** is the plan (`PlanView`) with the bar hidden, so its first
-    row is the route's own; with no route, the system's
-    `ContentUnavailableView` "Plan a Flight", its Search going to the
-    focused field and its sample flight as the welcome's, over the
-    route's ends. The figures strip is the foot on FPL alone.
+    row is the route's own; with no route, the route box empty (the
+    owner, 2026-11-11: "We don't need plan a flight either"), its glass
+    close a level back: to the field's card Fly Here came from, else to
+    Search (`Navigator.closeEmptyRoute`, the web's clearRoute). The
+    figures strip is the foot on FPL alone.
+  - Fly Here (to the same field again too), Depart From, Add as Stop and
+    the map's Direct To land on FPL; a card opened over Search (Find
+    Nearby's Stops) closes back to Search; leaving Search puts the search
+    and its keyboard away.
   - **The dots** are UIKit's stock `UIPageControl` under the grabber
     (`PageDots`; SwiftUI has no page control of its own in the iOS 27.2
     SDK, only TabView's dots at its foot): a tap moves the page, and
@@ -1432,7 +1437,7 @@ people take an explicit action to save", [HIG File management][hig-files]).
 
 ---
 
-## 14. The welcome / first run
+## 14. The first run
 
 **Follow:**
 
@@ -1450,20 +1455,22 @@ puts up one stock alert, "A Planning Aid, Not for Navigation", with the
 planning-aid words and the listing's not-for-navigation paragraph and
 one button, I Understand (`Navigation/PlanningAidNotice`). It is the
 pilot-safety position the terms take and what App Review 5.1.5 looks for
-in a moving-map app, so it is said before anything else, once; the
-welcome card comes after it, and About keeps the words.
+in a moving-map app, so it is said before anything else, once, and
+About keeps the words.
 
 **Structure.**
 
 1. **The launch screen** is the brand's ground (`color.brand.launch`,
    or `launch-night`) with the mark only.
-2. **The map** opens at once on the chart. The sheet is at medium, with
-   one welcome card in place of the tab content:
-   - the title "Plan your first flight"
-   - one line
-   - one filled button, **Search an Airport**, which focuses the one
-     search
-   - "Not Now" below, plain
+2. **The map** opens at once on the chart, the sheet at medium. With
+   no route, the first time, "Your First Flight" is the first section of
+   both pages (`FirstFlightSection`, the web's FirstFlight card; the
+   owner, 2026-11-11: "We don't need the welcome"): one line, a
+   Destination field with the planner's airport search under it, Plan
+   It, the three steps (Route, Nav Log, Brief) and Not Now. A List
+   Section, not TipKit: a tip holds no text field. Planned, it is gone
+   for good and the nav log opens over FPL; Setup > Guide > Show First
+   Flight Again brings it back.
 3. **Asks come only when needed.**
    - Location is asked the first time the pilot taps the position
      button or a "Nearest" figure.

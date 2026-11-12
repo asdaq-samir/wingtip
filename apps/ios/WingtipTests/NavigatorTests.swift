@@ -72,6 +72,33 @@ struct NavigatorTests {
         #expect(back.card?.page == .screen(.setup) && back.cardPath == [.screen(.logbook)])
     }
 
+    @Test func flyHereLandsOnFplAndTheEmptyRoutesCloseGoesBackToTheCard() throws {
+        let nav = Navigator()
+        // Fly Here from a field's card, twice to the same field: FPL each time.
+        for _ in 0..<2 {
+            nav.open(.airport("KOSH"))
+            nav.sheetPage = .search
+            nav.showPlan()
+            #expect(nav.card == nil && nav.sheetPage == .fpl)
+        }
+        // The route cleared, its empty box's close: the card, over Search.
+        nav.closeEmptyRoute()
+        #expect(nav.card?.page == .airport("KOSH") && nav.sheetPage == .search)
+        // Again with no card to go back to: Search alone.
+        nav.close()
+        nav.sheetPage = .fpl
+        nav.closeEmptyRoute()
+        #expect(nav.card == nil && nav.sheetPage == .search)
+    }
+
+    @Test func aCardOpenedOverSearchClosesBackToSearch() throws {
+        let nav = Navigator()
+        nav.sheetPage = .search
+        nav.open(.airport(AirportRoute.nearby(.fuel).text))
+        nav.close()
+        #expect(nav.sheetPage == .search)
+    }
+
     @Test func theMapCardIsKeptAndTheFlightsCardsAreNot() throws {
         #expect(SheetPage(stored: "+map") == .mapSettings)
         #expect(SheetPage.traffic("a1b2c3").stored == nil)

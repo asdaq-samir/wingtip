@@ -19,6 +19,19 @@ struct NavLogTests {
         #expect(e.brief == "Ceiling 11,700 ft" && e.reasons?.count == 1)
     }
 
+    @MainActor @Test func theNavLogSaysWhenItWasPlannedAndWhoseWindsItFlies() throws {
+        let done = #"{"type":"done","totals":{"distance_nm":80.0,"unflyable_legs":0,"legs_without_wind":0,"planned_at":"2026-11-12T12:12:00+00:00","winds":{"label":"AWC winds, 12Z","source":"awc","use_from":"2026-11-12T12:00:00Z","use_to":"2026-11-12T14:00:00Z","valid_at":"2026-11-12T13:00:00Z"}}}"#
+        guard case .done(let t)? = try NavLog.decode(line: Data(done.utf8)) else { Issue.record("not done"); return }
+        #expect(NavLogPage.plannedWords(t) == "Planned 1212Z · AWC winds, 12Z · for use 1200–1400Z")
+        var unnamed = t
+        unnamed.winds?.label = nil
+        #expect(NavLogPage.plannedWords(unnamed) == "Planned 1212Z · winds for use 1200–1400Z")
+        unnamed.winds = nil
+        #expect(NavLogPage.plannedWords(unnamed) == "Planned 1212Z")
+        unnamed.plannedAt = nil
+        #expect(NavLogPage.plannedWords(unnamed) == nil)
+    }
+
     @Test func aLineOfAKindNotYetUsedIsSkipped() throws {
         #expect(try NavLog.decode(line: Data(#"{"type":"checkpoint","ident":"X"}"#.utf8)) == nil)
     }
