@@ -168,14 +168,23 @@ object Gateway {
         throw Refusal(status, words(body))
     }
 
+    /** The gateway answers RFC 9457 problem details: the words are in
+     *  `detail`, which already names each broken field, and `errors` lists
+     *  them one by one. The old `error` and `details` keys are still read. */
     @Serializable
-    private class ErrorBody(val error: String? = null, val details: List<String>? = null)
+    private class ErrorBody(
+        val detail: String? = null,
+        val errors: List<String>? = null,
+        val error: String? = null,
+        val details: List<String>? = null,
+    )
 
     fun words(body: String): String? {
         val read = runCatching { json.decodeFromString<ErrorBody>(body) }.getOrNull() ?: return null
-        val error = read.error ?: return null
-        val details = read.details.orEmpty()
-        return if (details.isEmpty()) error else "$error: ${details.joinToString("; ")}"
+        val list = read.errors ?: read.details.orEmpty()
+        read.detail?.let { detail -> return detail }
+        val head = read.error ?: return list.takeIf { it.isNotEmpty() }?.joinToString("; ")
+        return if (list.isEmpty()) head else "$head: ${list.joinToString("; ")}"
     }
 
     /** The pilot signed in, or null (the gateway's 204) when no one is. */
