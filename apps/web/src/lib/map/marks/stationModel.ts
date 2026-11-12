@@ -62,13 +62,18 @@ function barbSvg(barb: { calm: boolean; flags: number; barbs: number; half_barbs
 export const arrowId = (over: boolean) => (over ? "wx-arrow|over" : "wx-arrow|ink");
 
 /** An arrow from the field the way the wind blows, drawn pointing north
- *  (turned by the wind's direction and 180 degrees on the map). */
+ *  (turned by the wind's direction and 180 degrees on the map): a fine
+ *  shaft and a slim head swept back to a notch, as a map's wind arrows
+ *  are drawn, on a thin white casing to read over the chart's print (the
+ *  owner, 2026-11-11: "Can the map arrows be more elegant?", where it was
+ *  a 3 px shaft under a blunt triangle). */
 function arrowSvg(over: boolean): string {
   const ink = over ? CHART.warning : CHART.fixInk;
+  const tip = -REACH;
+  const head = `M0 ${tip}L-4.5 ${tip + 10}L0 ${tip + 7.5}L4.5 ${tip + 10}Z`;
   const shape = (w: number, c: string) =>
-    line(0, -CLEAR, 0, -REACH + 4, w, c) +
-    `<path d="M0 ${-REACH}L-6 ${-REACH + 9}L6 ${-REACH + 9}Z" fill="${c}" stroke="${c}" stroke-width="${w - 2}" stroke-linejoin="round"/>`;
-  return `<svg width="${BOX}" height="${BOX}" viewBox="${-BOX / 2} ${-BOX / 2} ${BOX} ${BOX}">${shape(5.5, CHART.casing)}${shape(3, ink)}</svg>`;
+    line(0, -CLEAR, 0, tip + 8, w, c) + `<path d="${head}" fill="${c}" stroke="${c}" stroke-width="${w - 1.4}" stroke-linejoin="round"/>`;
+  return `<svg width="${BOX}" height="${BOX}" viewBox="${-BOX / 2} ${-BOX / 2} ${BOX} ${BOX}">${shape(3.8, CHART.casing)}${shape(1.6, ink)}</svg>`;
 }
 
 /** The getting-worse badge: a small amber disc with a down chevron. */
