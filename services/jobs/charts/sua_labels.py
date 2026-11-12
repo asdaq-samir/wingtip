@@ -30,7 +30,7 @@ from .overlays import SPECIAL_USE_MIN_ZOOM, _feature, _meets, _orient
 def tab_words(area: dict) -> dict | None:
     """The engine's tab for one area as wingtip.sua `_area` describes it:
     {"name", "floor_ft", "floor_ref", "ceiling_ft", "ceiling_ref"}, or None
-    for a piece cut out of its area or a limit with no figure."""
+    for a piece marked EXCLUSION or a limit with no figure."""
     asked = {
         "name": area["name"],
         "type": area["type"].strip(),
@@ -71,9 +71,9 @@ def special_use_label_features(pack, bbox=None):
     """The `special_use_labels` layer's lines of GeoJSON: one point an
     area's polygon (_edge_place) with `label`, `type`, its floor and
     ceiling as `floor_ft`/`floor_ref` and `ceiling_ft`/`ceiling_ref`
-    (tab_words), `angle` and `side`. A piece the FAA marks as cut out of
-    its area (EXCLUSION 1: Brady Low's parts below 1,500 ft AGL) is no area
-    of its own and has none."""
+    (tab_words), `angle` and `side`. A piece the FAA marks EXCLUSION 1
+    (Brady Low's airspace above 1,500 ft AGL round the fields it excludes
+    below that, the engine's sua_tab) is the area's own and has none."""
     from wingtip import sua
 
     if "sua.attr" not in pack.sections:

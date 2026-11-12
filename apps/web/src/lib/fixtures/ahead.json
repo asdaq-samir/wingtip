@@ -117,6 +117,30 @@
       "alerts": [{ "name": "HIGH MOA" }]
     },
     {
+      "name": "Brady Low MOA's piece over Curtis Field as the FAA's special use airspace data has it (1,500 SFC ANI to 6,000 MSL TNI, EXCLUSION 1, REMARKS \"EXCLUDES SFC TO 1500 FT AGL\"), over ground at 1,800: it begins at 3,301 MSL, so at 2,500 nothing, where reading SFC as MSL alerted",
+      "own": { "alt_ft": 2500.0 },
+      "special_use": [{ "name": "BRADY LOW MOA", "type": "MOA", "floor_ft": 1500, "floor_ref": "SFC", "floor_desc": "ANI", "ceiling_ft": 6000, "ceiling_ref": "MSL", "ceiling_desc": "TNI", "east": [3, 5], "ground_ft": 1800 }],
+      "alerts": []
+    },
+    {
+      "name": "the same piece at 4,500: in the MOA above what is excluded, its floor 1,501 AGL and its ceiling a foot under 6,000",
+      "own": { "alt_ft": 4500.0 },
+      "special_use": [{ "name": "BRADY LOW MOA", "type": "MOA", "floor_ft": 1500, "floor_ref": "SFC", "floor_desc": "ANI", "ceiling_ft": 6000, "ceiling_ref": "MSL", "ceiling_desc": "TNI", "east": [3, 5], "ground_ft": 1800 }],
+      "alerts": [{ "name": "BRADY LOW MOA", "level": "caution", "floor_ft": 3301, "ceiling_ft": 5999 }]
+    },
+    {
+      "name": "Brady Low MOA (500 SFC to 6,000 MSL TNI) over ground at 1,800: under its floor of 2,300 MSL at 2,000, nothing",
+      "own": { "alt_ft": 2000.0 },
+      "special_use": [{ "name": "BRADY LOW MOA", "type": "MOA", "floor_ft": 500, "floor_ref": "SFC", "floor_desc": null, "ceiling_ft": 6000, "ceiling_ref": "MSL", "ceiling_desc": "TNI", "east": [3, 5], "ground_ft": 1800 }],
+      "alerts": []
+    },
+    {
+      "name": "Brady Low MOA at 2,500: in it, from 500 AGL",
+      "own": { "alt_ft": 2500.0 },
+      "special_use": [{ "name": "BRADY LOW MOA", "type": "MOA", "floor_ft": 500, "floor_ref": "SFC", "floor_desc": null, "ceiling_ft": 6000, "ceiling_ref": "MSL", "ceiling_desc": "TNI", "east": [3, 5], "ground_ft": 1800 }],
+      "alerts": [{ "name": "BRADY LOW MOA", "inside": false, "floor_ft": 2300, "ceiling_ft": 5999 }]
+    },
+    {
       "name": "warnings come first, then the soonest",
       "airspace": [
         { "name": "ROCKFORD CLASS C", "class": "C", "floor_ft": 0, "ceiling_ft": 5000, "east": [1, 3] },

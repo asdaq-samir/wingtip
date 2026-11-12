@@ -18,10 +18,15 @@
 //! UNLTD), LOWER_/UPPER_DESC (TI to and including, TNI to but not
 //! including, ANI above but not including; the only values the layer
 //! holds besides OTHER and none, and read so because the FAA's CIFP
-//! writes the same areas' limits that way, below) and EXCLUSION (1: a
-//! piece cut out of its area, which carries its area's NAME: Brady Low
-//! MOA's two pieces above but not including 1,500 ft AGL), as wingtip.sua
-//! `_area` keeps them in a pack.
+//! writes the same areas' limits that way, below) and EXCLUSION, which
+//! the metadata does not define either. The data shows what 1 is: the
+//! area's own airspace over a part the FAA excludes lower down, drawn as
+//! its own polygon with its area's NAME and its own floor, the area's
+//! main polygon cut around it. Brady Low MOA (500 FT SFC to 6,000 MSL
+//! TNI) has two, round Curtis Field and San Saba County, 1,500 FT SFC
+//! ANI to 6,000 MSL TNI, each with the REMARKS "EXCLUDES SFC TO 1500 FT
+//! AGL" (ADDS, queried 2026-11-12): the MOA is there above 1,500 ft AGL,
+//! not under it. As wingtip.sua `_area` keeps them in a pack.
 
 use crate::json::{self, Value};
 use crate::rules::CLASS_A_FLOOR_FT;
@@ -126,6 +131,48 @@ pub fn limit(limit: Limit, upper: bool) -> (Option<f64>, Option<&'static str>) {
     }
 }
 
+/// A special-use area's floor and ceiling for the alerts ahead
+/// (crate::ahead), from the
+/// figures and the area's codes and DESC as wingtip.sua `_area` keeps
+/// them (`floor_ref`, `floor_desc`, `ceiling_ref`, `ceiling_desc`), else
+/// the codes a pack's `sua.alt` keeps (`refs`, wingtip.cycle_pack
+/// `_SUA_REFS`: 1 SFC, 2 AGL, 3 MSL, 0 STD, UNLTD or none, which an absent
+/// figure or MSL reads as rightly). A figure not a number is none. Read as its tab reads them (`limit`,
+/// the one reading of the FAA's special use airspace data): a figure the
+/// FAA codes SFC above 0 is that height above the ground (Brady Low MOA's
+/// 500 FT SFC is CIFP's "00500A"), a ceiling "to but not including" a foot
+/// under its figure and a floor "above but not including" a foot over it.
+/// Read as MSL, as the alerts read them before 2026-11-12, Brady Low's
+/// pieces round Curtis Field and San Saba County (1,500 FT SFC ANI,
+/// REMARKS "EXCLUDES SFC TO 1500 FT AGL") began at 1,500 ft MSL, under
+/// the ground there, and alerted a pilot below the MOA where the FAA
+/// excludes it. No ceiling (UNLTD) is none; a limit with no figure is
+/// none, as before.
+pub fn heights(codes: Option<&Value>, floor_ft: Option<f64>, ceiling_ft: Option<f64>, refs: [u8; 2]) -> Heights {
+    let pack_code = |byte: u8| match byte {
+        1 => Some("SFC"),
+        2 => Some("AGL"),
+        3 => Some("MSL"),
+        _ => None,
+    };
+    let text = |key: &str| codes.and_then(|c| c.get(key)).and_then(Value::as_str);
+    let (floor, floor_ref) = limit(Limit { ft: floor_ft, code: text("floor_ref").or(pack_code(refs[0])), desc: text("floor_desc") }, false);
+    let (ceiling, ceiling_ref) =
+        limit(Limit { ft: ceiling_ft, code: text("ceiling_ref").or(pack_code(refs[1])), desc: text("ceiling_desc") }, true);
+    Heights { floor, floor_agl: floor_ref == Some("AGL"), ceiling, ceiling_agl: ceiling_ref == Some("AGL") }
+}
+
+/// A special-use area's floor and ceiling in feet, each with whether it
+/// is above the ground (else MSL, a flight level as its feet); None where
+/// there is no figure.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Heights {
+    pub floor: Option<f64>,
+    pub floor_agl: bool,
+    pub ceiling: Option<f64>,
+    pub ceiling_agl: bool,
+}
+
 /// A tab's words: its name and its limits as figures with references.
 pub struct Tab {
     pub name: String,
@@ -133,9 +180,11 @@ pub struct Tab {
     pub ceiling: (Option<f64>, &'static str),
 }
 
-/// An area's tab, or None: for a piece the FAA marks as cut out of its
-/// area (EXCLUSION 1, Brady Low's parts below 1,500 ft AGL), which is no
-/// area of its own, and where a limit has no figure to write.
+/// An area's tab, or None: for a piece the FAA marks EXCLUSION 1 (Brady
+/// Low's airspace above 1,500 ft AGL round the two fields it excludes
+/// below that), the area's own airspace whose tab would repeat the
+/// area's name beside the area's own tab, and where a limit has no figure
+/// to write.
 pub fn tab(name: &str, type_code: &str, floor: Limit, ceiling: Limit, excluded: bool) -> Option<Tab> {
     if excluded {
         return None;
@@ -233,6 +282,23 @@ pub(crate) fn edge_place(polygons: &[Polygon]) -> Option<(Pt, f64, i8)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_alerts_read_sfc_above_the_ground_from_the_json_or_the_packs_codes() {
+        // Brady Low MOA's piece round Curtis Field as ADDS has it
+        // (2026-11-12): 1,500 SFC ANI to 6,000 MSL TNI, EXCLUSION 1,
+        // REMARKS "EXCLUDES SFC TO 1500 FT AGL".
+        let piece =
+            json::parse(r#"{"floor_ref":"SFC","floor_desc":"ANI","ceiling_ref":"MSL","ceiling_desc":"TNI","excluded":true}"#).unwrap();
+        let want = Heights { floor: Some(1501.0), floor_agl: true, ceiling: Some(5999.0), ceiling_agl: false };
+        assert_eq!(heights(Some(&piece), Some(1500.0), Some(6000.0), [0, 0]), want);
+        // A pack with no JSON: its sua.alt codes (1 SFC, 3 MSL), no DESC.
+        let coded = Heights { floor: Some(1500.0), floor_agl: true, ceiling: Some(6000.0), ceiling_agl: false };
+        assert_eq!(heights(None, Some(1500.0), Some(6000.0), [1, 3]), coded);
+        // The surface is the ground itself; no ceiling (UNLTD, NaN in a pack) is none.
+        let surface = Heights { floor: Some(0.0), floor_agl: false, ceiling: None, ceiling_agl: false };
+        assert_eq!(heights(None, Some(0.0), Some(f64::NAN), [1, 0]), surface);
+    }
 
     #[test]
     fn names_are_cut_as_foreflight_cuts_them() {

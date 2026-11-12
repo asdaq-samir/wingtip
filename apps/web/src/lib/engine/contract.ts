@@ -3765,6 +3765,14 @@ export interface AlertsAheadInput {
         floor_ref?: string | null;
         ceiling_ft?: number | null;
         ceiling_ref?: string | null;
+        /**
+         * The FAA's LOWER_DESC: ANI, above but not including.
+         */
+        floor_desc?: string | null;
+        /**
+         * The FAA's UPPER_DESC: TNI, to but not including; TI, to and including.
+         */
+        ceiling_desc?: string | null;
         times_of_use?: string | null;
         /**
          * The ground under the area, for AGL heights.

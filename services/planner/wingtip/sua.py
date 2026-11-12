@@ -97,7 +97,8 @@ _FETCH_LOCK = threading.Lock()
 #: The service's most features an answer, paged past.
 PAGE = 2000
 #: UPPER_DESC and LOWER_DESC ("TNI" to, "ANI" above, but not including)
-#: and EXCLUSION (1: a piece cut out of its area) for the map's tabs
+#: and EXCLUSION (1: the area's own airspace above a part it excludes
+#: lower down, the engine's sua_tab says how it reads) for the map's tabs
 #: (the engine's special_use_tab). Areas kept with other fields -- on
 #: disk, in the cycle pack, whose `sources` name them, and so the phones'
 #: packs -- are read again with these.
@@ -339,9 +340,10 @@ def along_route(route_start: tuple, route_end: tuple, fixes: list | None = None)
 def _area(props: dict) -> dict:
     """One area's description, from the feature service's fields; the
     limits' DESC (TI, TNI "to but not including", ANI "above but not
-    including") and whether the FAA cuts the piece out of its area
-    (EXCLUSION 1), which the engine's special_use_tab reads (in the phones'
-    packs too), None and False from areas read before FIELDS held them."""
+    including") and whether the piece is the area's airspace above a
+    part it excludes (EXCLUSION 1), which the engine's special_use_tab
+    reads (in the phones' packs too), None and False from areas read
+    before FIELDS held them."""
     type_code = props.get("TYPE_CODE") or ""
     return {
         "name": props.get("NAME") or "(unnamed)",
