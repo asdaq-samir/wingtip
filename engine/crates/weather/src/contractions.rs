@@ -174,6 +174,16 @@ pub fn compass(word: &str) -> Option<&'static str> {
     lookup(POINTS, word)
 }
 
+/// A bearing (degrees true, any turn) as the nearest of the 16 points,
+/// 3-3-9's abbreviation: each point the middle of its 22.5-degree sector,
+/// so north runs from 348.75 up to 11.25, a bearing on a sector's edge
+/// taken clockwise (11.25 is NNE), as Apple Weather's wind map and the
+/// NWS's point forecasts say a wind's direction.
+pub fn point_of(bearing_deg: f64) -> &'static str {
+    let at = ((bearing_deg.rem_euclid(360.0) + 11.25) / 22.5).floor() as usize % 16;
+    POINTS.lines().nth(at).and_then(|line| line.split_once(':')).map_or("N", |(code, _)| code)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -187,5 +197,19 @@ mod tests {
         assert_eq!(written("ILS"), None);
         assert!(is_code("PAPI") && !is_code("CRANE"));
         assert_eq!(compass("SSW"), Some("south-southwest"));
+    }
+
+    #[test]
+    fn a_bearing_is_the_nearest_of_the_16_points() {
+        assert_eq!(point_of(0.0), "N");
+        assert_eq!(point_of(360.0), "N");
+        assert_eq!(point_of(-10.0), "N");
+        assert_eq!(point_of(11.24), "N");
+        assert_eq!(point_of(11.25), "NNE");
+        assert_eq!(point_of(337.5), "NNW");
+        assert_eq!(point_of(348.74), "NNW");
+        assert_eq!(point_of(348.75), "N");
+        assert_eq!(point_of(202.5), "SSW");
+        assert_eq!(point_of(270.0), "W");
     }
 }

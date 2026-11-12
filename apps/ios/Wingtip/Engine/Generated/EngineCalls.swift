@@ -314,6 +314,11 @@ extension Engine {
         try rule("cloud_cover", EngineContract.CloudCoverInput(percent: percent))
     }
 
+    /// A bearing, degrees true, as the nearest of the 16 points of the compass as FAA Order JO 7930.2 3-3-9 abbreviates them (N, NNE, NE, ... NNW), each the middle of its 22.5-degree sector, an edge taken clockwise. The map's value bubble says a wind's direction this way, where it blows from.
+    static func compassPoint(bearingDeg: Double) throws -> String {
+        try rule("compass_point", EngineContract.CompassPointInput(bearingDeg: bearingDeg))
+    }
+
     /// A bearing as one of the eight compass points.
     static func compassWord(bearingDeg: Double) throws -> String {
         try rule("compass_word", EngineContract.CompassWordInput(bearingDeg: bearingDeg))
@@ -1512,6 +1517,11 @@ extension Engine {
     /// A special-use area's limits in words, STD a flight level (14 CFR 1.1).
     static func suaAltitudes(floorFt: Double? = nil, floorRef: String? = nil, ceilingFt: Double? = nil, ceilingRef: String? = nil, midSentence: Bool? = nil) throws -> String {
         try rule("sua_altitudes", EngineContract.SuaAltitudesInput(floorFt: floorFt, floorRef: floorRef, ceilingFt: ceilingFt, ceilingRef: ceilingRef, midSentence: midSentence))
+    }
+
+    /// Whether the sun is down at a point and an instant: after sunset and before sunrise, the sun's centre 0.833 degrees below the horizon (its upper limb on it; NOAA's solar calculation, the Naval Observatory's definition). Not 14 CFR 1.1's night, which begins only at the end of evening civil twilight: this is the sky as a pilot sees it, the map's day or night glyph.
+    static func sunDown(lat: Double, lon: Double, atS: Double) throws -> Bool {
+        try rule("sun_down", EngineContract.SunDownInput(lat: lat, lon: lon, atS: atS))
     }
 
     /// What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).

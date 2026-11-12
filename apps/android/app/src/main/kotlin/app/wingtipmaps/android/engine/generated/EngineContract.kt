@@ -2038,6 +2038,15 @@ object EngineContract {
     )
 
     @Serializable
+    data class CompassPointInput(
+        /**
+         * Degrees true, any turn.
+         */
+        @SerialName("bearing_deg")
+        val bearingDeg: Double,
+    )
+
+    @Serializable
     data class CompassWordInput(
         @SerialName("bearing_deg")
         val bearingDeg: Double,
@@ -10283,6 +10292,20 @@ object EngineContract {
          */
         @SerialName("mid_sentence")
         val midSentence: Boolean? = null,
+    )
+
+    @Serializable
+    data class SunDownInput(
+        val lat: Double,
+        /**
+         * East positive.
+         */
+        val lon: Double,
+        /**
+         * UNIX seconds.
+         */
+        @SerialName("at_s")
+        val atS: Double,
     )
 
     /**

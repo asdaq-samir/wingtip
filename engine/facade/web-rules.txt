@@ -42,6 +42,7 @@ cleared_route
 closest_approach
 cloud_clearance_at_ft
 cloud_cover
+compass_point
 compass_word
 copilot_watch
 csv_rows
@@ -179,6 +180,7 @@ solo_xc_determinations
 squawk_meaning
 strip_fuel
 sua_altitudes
+sun_down
 terrain_view_bands
 thin_track
 title_case

@@ -8,6 +8,8 @@ function ask(rule: string, input: Record<string, unknown>): unknown {
   if (rule === "precip_intensity") return callEngine("precip_intensity", input as { dbz: number; temp_c?: number | null });
   if (rule === "cloud_cover") return callEngine("cloud_cover", input as { percent: number });
   if (rule === "cape_category") return callEngine("cape_category", input as { j_kg: number });
+  if (rule === "sun_down") return callEngine("sun_down", input as { lat: number; lon: number; at_s: number });
+  if (rule === "compass_point") return callEngine("compass_point", input as { bearing_deg: number });
   return undefined;
 }
 

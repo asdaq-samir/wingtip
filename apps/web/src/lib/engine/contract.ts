@@ -164,6 +164,8 @@ export type ClosestApproachAnswer = {
   above_ft: number | null;
 } | null;
 export type CloudClearanceAtFtAnswer = number;
+export type CompassPointAnswer =
+  "N" | "NNE" | "NE" | "ENE" | "E" | "ESE" | "SE" | "SSE" | "S" | "SSW" | "SW" | "WSW" | "W" | "WNW" | "NW" | "NNW";
 export type CompassWordAnswer =
   "north" | "northeast" | "east" | "southeast" | "south" | "southwest" | "west" | "northwest";
 export type CongestedPointsAnswer = boolean[];
@@ -851,6 +853,7 @@ export type SigmetsAlongRouteAnswer = {}[];
 export type SoloXcDeterminationsAnswer = SoloXcDetermination[];
 export type SquawkMeaningAnswer = "hijack" | "lost radio" | "emergency" | null;
 export type SuaAltitudesAnswer = string;
+export type SunDownAnswer = boolean;
 export type TemperatureAtAnswer = number | null;
 export type TfrDetailReadAnswer = {} | null;
 export type ThinTrackAnswer = unknown[];
@@ -1360,6 +1363,13 @@ export interface EngineContract {
   cloud_cover: {
     input: CloudCoverInput;
     answer: CloudCoverAnswer;
+  };
+  /**
+   * A bearing, degrees true, as the nearest of the 16 points of the compass as FAA Order JO 7930.2 3-3-9 abbreviates them (N, NNE, NE, ... NNW), each the middle of its 22.5-degree sector, an edge taken clockwise. The map's value bubble says a wind's direction this way, where it blows from.
+   */
+  compass_point: {
+    input: CompassPointInput;
+    answer: CompassPointAnswer;
   };
   /**
    * A bearing as one of the eight compass points.
@@ -3040,6 +3050,13 @@ export interface EngineContract {
   sua_altitudes: {
     input: SuaAltitudesInput;
     answer: SuaAltitudesAnswer;
+  };
+  /**
+   * Whether the sun is down at a point and an instant: after sunset and before sunrise, the sun's centre 0.833 degrees below the horizon (its upper limb on it; NOAA's solar calculation, the Naval Observatory's definition). Not 14 CFR 1.1's night, which begins only at the end of evening civil twilight: this is the sky as a pilot sees it, the map's day or night glyph.
+   */
+  sun_down: {
+    input: SunDownInput;
+    answer: SunDownAnswer;
   };
   /**
    * What a TAF says of a window of time: the periods that speak to it (a BECMG lasting past its own window), the worst ceiling and visibility they forecast (TEMPO and PROB included), the prevailing period covering the start, and the prevailing forecast then for its wind (FAA-H-8083-28B 27.4.2.10; BECMG as WMO No. 306 has it).
@@ -4835,6 +4852,12 @@ export interface CloudCoverInput {
 export interface CloudCoverAnswer {
   oktas: number;
   cover: "SKC" | "FEW" | "SCT" | "BKN" | "OVC";
+}
+export interface CompassPointInput {
+  /**
+   * Degrees true, any turn.
+   */
+  bearing_deg: number;
 }
 export interface CompassWordInput {
   bearing_deg: number;
@@ -10798,6 +10821,17 @@ export interface SuaAltitudesInput {
    * Written to go inside a sentence.
    */
   mid_sentence?: boolean | null;
+}
+export interface SunDownInput {
+  lat: number;
+  /**
+   * East positive.
+   */
+  lon: number;
+  /**
+   * UNIX seconds.
+   */
+  at_s: number;
 }
 export interface TafWindowInput {
   fcsts: TafPeriod[];

@@ -12,22 +12,26 @@ import { FlowBar } from "./FlowBar";
 import { FlowBubble } from "./FlowBubble";
 import { FlowHatch } from "./FlowHatch";
 import { FlowLegend } from "./FlowLegend";
-import { STREAK_RAMP, hasStreaks, lookOf, type ShownField } from "./flowLook";
+import { FlowPins } from "./FlowPins";
+import { STREAK_RAMP, hasStreaks, lookOf, streaksAt, type ShownField } from "./flowLook";
 import { pictureQuery, useFlowTexture } from "./flowTexture";
 import { useWeatherFlow, type FlowFrame, type FlowLayer } from "./useWeatherFlow";
 
-/** The streaks on a phone and on a larger screen: dense enough to read the
- *  flow as Apple Weather's map does, few enough to hold the frame rate on
- *  an iPhone (each streak is a line segment the GPU moves every frame). */
-const STREAKS_PHONE = 2500;
-const STREAKS_WIDE = 5000;
-/** How many frames a streak lives, and how far it moves a frame for a knot:
- *  short, fine dashes, as Apple Weather's are, not long lines that read as
- *  falling rain (the owner's iPhone screenshot, 2026-11-12). */
-const STREAK_AGE = 12;
-const STREAK_SPEED = 1.2;
-/** The colour field over the chart: the chart read through it. */
-const FIELD_OPACITY = 0.75;
+/** A streak's width, CSS pixels: a hairline, as Apple's are. */
+const STREAK_WIDTH = 0.7;
+
+/** The map's zoom, by whole levels. */
+function useWholeZoom(map: MlMap): number {
+  return useSyncExternalStore(
+    (on) => {
+      map.on("zoomend", on);
+      return () => {
+        map.off("zoomend", on);
+      };
+    },
+    () => Math.round(map.getZoom()),
+  );
+}
 const RADAR_CREDIT = "Radar: NWS NEXRAD via Iowa Environmental Mesonet";
 
 /** Whether the page is in sight: nothing animates in a hidden tab. */
@@ -56,7 +60,8 @@ function usePageShown() {
  * nothing moves; in a hidden tab the streaks stop. For an hour already
  * past, the precipitation is the radar's mosaic, observed, in place of
  * the model's. With it, the legend (top left, its close and its field
- * menu), the timeline (above the sheet) and the value bubble. The
+ * menu), the timeline (above the sheet), the value bubble and, on the
+ * temperature, its pills at the pilot's position and favourites. The
  * fields' bands and words are the engine's (flowLook), so it waits for it.
  */
 export default function FlowGl() {
@@ -73,6 +78,7 @@ export default function FlowGl() {
   const [reduced] = useState(prefersReducedMotion);
   const overlay = useMemo(() => new MapboxOverlay({ interleaved: true, layers: [] }), []);
   const phone = map.getContainer().clientWidth < 640;
+  const zoom = useWholeZoom(map);
 
   useEffect(() => {
     const control = overlay as unknown as IControl;
@@ -89,8 +95,8 @@ export default function FlowGl() {
 
   useEffect(() => {
     const wind = streaks ? windTexture : undefined;
-    overlay.setProps({ layers: layer ? layersOf(layer, field, fieldTexture, wind, { reduced, animate: shown, phone }) : [] });
-  }, [overlay, layer, field, fieldTexture, windTexture, streaks, reduced, shown, phone]);
+    overlay.setProps({ layers: layer ? layersOf(layer, field, fieldTexture, wind, { reduced, animate: shown, phone, zoom }) : [] });
+  }, [overlay, layer, field, fieldTexture, windTexture, streaks, reduced, shown, phone, zoom]);
 
   return (
     <>
@@ -99,6 +105,7 @@ export default function FlowGl() {
       <FlowLegend field={field} frame={frame} radar={!!radar} />
       <FlowBar />
       {layer && <FlowBubble field={field} layer={layer} frame={frame} />}
+      {layer && field === "temp" && <FlowPins layer={layer} frame={frame} />}
     </>
   );
 }
@@ -140,7 +147,7 @@ function layersOf(
   fieldTexture: TextureData | undefined,
   /** The wind's picture where the field has streaks (hasStreaks), else none. */
   windTexture: TextureData | undefined,
-  { reduced, animate, phone }: { reduced: boolean; animate: boolean; phone: boolean },
+  { reduced, animate, phone, zoom }: { reduced: boolean; animate: boolean; phone: boolean; zoom: number },
 ): Layer[] {
   const bounds = layer.bounds as [number, number, number, number];
   const spec = layer.fields[field];
@@ -160,7 +167,7 @@ function layersOf(
         imageUnscale: spec.unscale as [number, number],
         bounds,
         palette: lookOf(field).ramp,
-        opacity: FIELD_OPACITY,
+        opacity: lookOf(field).opacity,
         ...place,
       }),
     );
@@ -180,10 +187,10 @@ function layersOf(
         : new ParticleLayer({
             id: "flow-streaks",
             ...common,
-            numParticles: phone ? STREAKS_PHONE : STREAKS_WIDE,
-            maxAge: STREAK_AGE,
-            speedFactor: STREAK_SPEED,
-            width: 0.9,
+            numParticles: streaksAt(zoom, phone).count,
+            maxAge: streaksAt(zoom, phone).age,
+            speedFactor: streaksAt(zoom, phone).speed,
+            width: STREAK_WIDTH,
             palette: STREAK_RAMP,
             animate,
           }),

@@ -24,7 +24,18 @@ export interface FieldLook {
   bar: Stop[];
   /** The legend's marks: a value at its place on the bar, or a word. */
   ticks: { at: number; label: string }[];
+  /** How strongly the field covers the chart, 0 to 1: the wind and its
+   *  gusts a light tint, as the chart under them still has to be read;
+   *  the temperature nearly solid, as Apple Weather's temperature map is
+   *  (the owner's screenshot, 2026-11-12), the chart showing faintly; the
+   *  precipitation as strong, but only where it falls (its ramp is clear
+   *  elsewhere). The airports, the route and the airspace stay over all
+   *  of them (FlowGl's slot). */
+  opacity: number;
 }
+
+/** The field's cover over the chart by kind (FieldLook.opacity). */
+const COVER = { tint: 0.6, wash: 0.75, solid: 0.9 } as const;
 
 /** The menu's names, in its order (the owner's pick, 2026-11-12): the wind
  *  and what it carries first, then the sky, then the air. Known without
@@ -139,17 +150,18 @@ function looks(bands: Bands): Record<ShownField, FieldLook> {
     [capeExtreme!.from, tone(WEATHER.flowCapeExtreme, 225)],
   ];
 
-  const plain = (name: ShownField, title: string, ramp: Stop[], ticks: FieldLook["ticks"]): FieldLook => ({
+  const plain = (name: ShownField, title: string, ramp: Stop[], ticks: FieldLook["ticks"], opacity: number = COVER.wash): FieldLook => ({
     name: NAMES[name],
     title,
     ramp,
     bar: ramp,
     ticks,
+    opacity,
   });
   return {
-    wind: plain("wind", "Wind (kt)", WIND_RAMP, KNOT_TICKS),
-    gust: plain("gust", "Gusts (kt)", WIND_RAMP, KNOT_TICKS),
-    precip: plain("precip", "Precipitation", rain, rainTicks),
+    wind: plain("wind", "Wind (kt)", WIND_RAMP, KNOT_TICKS, COVER.tint),
+    gust: plain("gust", "Gusts (kt)", WIND_RAMP, KNOT_TICKS, COVER.tint),
+    precip: plain("precip", "Precipitation", rain, rainTicks, COVER.solid),
     cloud: plain(
       "cloud",
       "Cloud cover (%)",
@@ -160,26 +172,37 @@ function looks(bands: Bands): Record<ShownField, FieldLook> {
       ],
       [0, 50, 100].map((at) => ({ at, label: String(at) })),
     ),
-    ceiling: { name: NAMES.ceiling, title: "Ceiling (ft above ground)", ramp: ceiling, ...blocks(bands.ceiling, ceilingColours, feet) },
+    ceiling: {
+      name: NAMES.ceiling,
+      title: "Ceiling (ft above ground)",
+      ramp: ceiling,
+      opacity: COVER.wash,
+      ...blocks(bands.ceiling, ceilingColours, feet),
+    },
     cape: {
       name: NAMES.cape,
+      opacity: COVER.wash,
       title: "CAPE (J/kg)",
       ramp: cape,
       ...blocks(bands.cape, capeColours, (from) => (from > 0 ? from.toLocaleString("en-US") : null)),
     },
+    // Solid, as Apple Weather's temperature map is, held at the hot end
+    // to 45 so the legend's six marks fall evenly, every 15 degrees.
     temp: plain(
       "temp",
       "Temperature (°C)",
       [
-        [-30, tone(WEATHER.flowTempFrigid, 170)],
-        [-10, tone(WEATHER.flowTempCold, 170)],
-        [0, tone(WEATHER.flowTempFreezing, 170)],
-        [10, tone(WEATHER.flowTempCool, 170)],
-        [20, tone(WEATHER.flowTempMild, 170)],
-        [30, tone(WEATHER.flowTempWarm, 170)],
-        [40, tone(WEATHER.flowTempHot, 170)],
+        [-30, tone(WEATHER.flowTempFrigid, 235)],
+        [-10, tone(WEATHER.flowTempCold, 235)],
+        [0, tone(WEATHER.flowTempFreezing, 235)],
+        [10, tone(WEATHER.flowTempCool, 235)],
+        [20, tone(WEATHER.flowTempMild, 235)],
+        [30, tone(WEATHER.flowTempWarm, 235)],
+        [40, tone(WEATHER.flowTempHot, 235)],
+        [45, tone(WEATHER.flowTempHot, 235)],
       ],
-      [-20, 0, 20, 40].map((at) => ({ at, label: String(at) })),
+      [-30, -15, 0, 15, 30, 45].map((at) => ({ at, label: String(at) })),
+      COVER.solid,
     ),
     vis: plain(
       "vis",
@@ -203,12 +226,15 @@ export function lookOf(field: ShownField): FieldLook {
   return built[field];
 }
 
-/** The streaks, white with a breath of blue (Apple Weather's), fainter and
- *  shorter-lived where the wind is light, brighter where it is fast. */
+/** The streaks, white with a breath of blue (Apple Weather's), fainter
+ *  where the wind is light, brighter where it is fast. Each is brightest
+ *  at its head: weatherlayers-gl fades a streak's tail to nothing along
+ *  its length (ParticleLineLayer's opacity, 1 - age / maxAge), so the
+ *  head can be near white without the lines reading as solid. */
 export const STREAK_RAMP: Stop[] = [
-  [0, tone(WEATHER.flowStreak, 40)],
-  [15, tone(WEATHER.flowStreak, 120)],
-  [40, tone(WEATHER.flowStreak, 220)],
+  [0, tone(WEATHER.flowStreak, 90)],
+  [15, tone(WEATHER.flowStreak, 180)],
+  [40, tone(WEATHER.flowStreak, 250)],
 ];
 
 /** The legend's bar as a CSS gradient, top the highest, its stops at their
@@ -230,4 +256,41 @@ export function tickPlace(ramp: Stop[], at: number): number {
   const low = ramp[0]![0],
     high = ramp[ramp.length - 1]![0];
   return Math.min(1, Math.max(0, (high - at) / (high - low)));
+}
+
+/** The streaks on a phone and on a larger screen: many, as Apple Weather's
+ *  map has them (the owner's screenshots, 2026-11-12). weatherlayers-gl
+ *  draws each streak as maxAge line segments (ParticleLineLayer keeps
+ *  numParticles x maxAge of them on the GPU and moves them every frame),
+ *  so what an iPhone has to draw is the segments: the count is held under
+ *  a budget of them, and a longer life at a low zoom draws fewer streaks. */
+const STREAKS_PHONE = 6000;
+const STREAKS_WIDE = 12000;
+const SEGMENTS_PHONE = 240_000;
+const SEGMENTS_WIDE = 480_000;
+/**
+ * How many frames a streak lives at a zoom, and how far it moves a frame
+ * for a knot, so how long its trail is, the tail fading along it
+ * (ParticleLineLayer's opacity, 1 - age / maxAge; weatherlayers-gl
+ * divides the speed by the zoom's scale, so a trail is as long on the
+ * screen at every zoom unless these change). Close in, mid-length lines,
+ * as Apple Weather's are over a city -- twice the 12 frames at 1.2 that
+ * read as dashes on the owner's iPhone, short of the 22 at 2 that read as
+ * falling rain (the owner's screenshots, 2026-11-12); zoomed out, long
+ * curving flow lines that trace the circulation, a low's spiral seen
+ * whole, as Apple's map over an ocean (the owner's second screenshot):
+ * about four times as long by zoom 3. By whole zoom levels, as a change
+ * of life rebuilds the layer's buffers.
+ */
+function streakLife(zoom: number) {
+  const out = Math.max(0, 7 - Math.round(zoom));
+  return { age: Math.min(64, 24 + out * 10), speed: Math.min(2, 1.3 + out * 0.175) };
+}
+
+/** The streaks at a zoom on a screen: their life and speed, and as many
+ *  as the segment budget allows at that life. */
+export function streaksAt(zoom: number, phone: boolean) {
+  const { age, speed } = streakLife(zoom);
+  const most = phone ? STREAKS_PHONE : STREAKS_WIDE;
+  return { age, speed, count: Math.min(most, Math.floor((phone ? SEGMENTS_PHONE : SEGMENTS_WIDE) / age)) };
 }
