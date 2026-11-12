@@ -64,6 +64,7 @@ import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.flowLevels
 import app.wingtipmaps.android.format.Format
 import app.wingtipmaps.android.ui.LocalWingtipPalette
+import app.wingtipmaps.android.ui.ProblemLine
 import kotlin.math.roundToInt
 
 /**
@@ -271,7 +272,13 @@ private fun Reading(state: FlowState, field: FlowKind) {
     val grid = state.grid ?: return
     val read = grid.valueAt(lat, lon)
     val top = state.layer?.fields?.get(field.key)?.unscale?.getOrNull(1)
-    val words = read?.let { FlowReading.words(context, field, it, top) } ?: stringResource(R.string.flow_no_value)
+    val said = read?.let { FlowReading.words(context, field, it, top) }
+    if (said?.isFailure == true) {
+        // A rule that failed: no reading, and why, where the pilot tapped.
+        Card { ProblemLine(stringResource(R.string.flow_reading_failed), Modifier.padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm)) }
+        return
+    }
+    val words = said?.getOrNull() ?: stringResource(R.string.flow_no_value)
     Card {
         Row(Modifier.padding(horizontal = WingtipSpace.Md, vertical = WingtipSpace.Sm), horizontalArrangement = Arrangement.spacedBy(WingtipSpace.Sm), verticalAlignment = Alignment.CenterVertically) {
             Text(stringResource(R.string.flow_reading), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
