@@ -47,11 +47,15 @@ struct PlanSheet: View {
             .navigationDestination(for: SheetPage.self) { page in SheetPageView(page: page, nearest: search.nearest) }
         }
         // The dots under the grabber, centred, on both pages and at every
-        // size, the pill too.
+        // size, the pill too. The control is its row's height and no more,
+        // so its taps never reach the system's grabber above it or the bar
+        // below; it takes the row's whole width instead, where nothing
+        // else is, and a tap either side of the dots turns the page as the
+        // stock control's does.
         .safeAreaInset(edge: .top, spacing: 0) {
             PageDots(page: $nav.sheetPage)
-                .frame(height: WingtipSize.tapTarget)
-                .padding(.vertical, -(WingtipSize.tapTarget - PageDots.row) / 2)
+                .frame(maxWidth: .infinity)
+                .frame(height: PageDots.row)
         }
         // The search up (a tap on "Add a Stop", ⌘F, the microphone, a
         // link) is on the Search page, the one field's home.

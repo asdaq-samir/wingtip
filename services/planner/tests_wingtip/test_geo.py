@@ -15,9 +15,12 @@ from wingtip.geo import (
     cross_track_distance_nm,
     destination_point,
     distance_nm,
+    great_circle_points,
     nearest,
     nearest_neighbour_nm,
     neighbours_within_nm,
+    path_points,
+    shape_distance_nm,
     tile_lat_lon,
     tile_xy,
     track_distances_nm,
@@ -284,3 +287,45 @@ def test_the_box_around_a_point_holds_every_point_within_its_radius(lat):
     for bearing in range(0, 360, 15):
         p_lat, p_lon = destination_point(lat, -92.2, bearing, 30.0)
         assert south <= p_lat <= north and west <= p_lon <= east, bearing
+
+
+def test_great_circle_points_are_evenly_along_the_course_both_ends_kept():
+    """Every point is on the great circle from start to end: its distance
+    from the start plus to the end is the whole, and the steps are equal.
+    The vertex of KSEA to KJFK's great circle is north of both ends."""
+    start, end = (47.45, -122.31), (40.64, -73.78)
+    lats, lons = great_circle_points(start, end, 11)
+    total = distance_nm(*start, *end)
+    assert (lats[0], lons[0], lats[-1], lons[-1]) == pytest.approx((*start, *end))
+    np.testing.assert_allclose(distance_nm(*start, lats, lons) + distance_nm(lats, lons, *end), total, rtol=1e-9)
+    np.testing.assert_allclose(distance_nm(lats[:-1], lons[:-1], lats[1:], lons[1:]), total / 10, rtol=1e-9)
+    assert lats.max() > start[0]
+    same = great_circle_points(start, start, 3)
+    assert same[0].tolist() == [start[0]] * 3 and same[1].tolist() == [start[1]] * 3
+
+
+def test_path_points_follow_each_leg_in_steps_no_longer_than_asked():
+    path = [(42.0, -88.0), (43.0, -88.0), (43.0, -86.0)]
+    lats, lons = path_points(path, 2.0)
+    steps = distance_nm(lats[:-1], lons[:-1], lats[1:], lons[1:])
+    assert steps.max() <= 2.0 + 1e-9
+    assert steps.sum() == pytest.approx(distance_nm(*path[0], *path[1]) + distance_nm(*path[1], *path[2]))
+    assert (43.0, -88.0) in zip(lats.tolist(), lons.tolist())
+
+
+@pytest.mark.parametrize(("lat", "bearing", "nm"), [(49.0, 90.0, 5.0), (25.0, 0.0, 5.0), (40.0, 225.0, 120.0)])
+def test_shape_distance_from_the_centre_is_the_great_circle_distance(lat, bearing, nm):
+    from shapely.geometry import Point
+
+    there = destination_point(lat, -86.0, bearing, nm)
+    assert shape_distance_nm(Point(-86.0, lat), Point(there[1], there[0]), (lat, -86.0)) == pytest.approx(nm, rel=1e-9)
+
+
+def test_shape_distance_away_from_the_centre_is_never_short():
+    """The azimuthal equidistant projection only stretches: two points
+    100 nm from the centre are drawn a little apart, never nearer."""
+    from shapely.geometry import Point
+
+    a, b = destination_point(40.0, -100.0, 0.0, 100.0), destination_point(40.0, -100.0, 10.0, 100.0)
+    drawn = shape_distance_nm(Point(a[1], a[0]), Point(b[1], b[0]), (40.0, -100.0))
+    assert distance_nm(*a, *b) <= drawn <= distance_nm(*a, *b) * 1.001

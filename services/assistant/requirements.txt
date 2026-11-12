@@ -10,15 +10,16 @@
 # between builds is silent version skew.
 fastapi==0.162.2
 uvicorn[standard]==0.54.0
-anthropic==2.7.0
+anthropic==2.8.0
 requests==2.34.2
 pydantic==2.14.3
 pydantic-settings==2.16.2
 # Traces, only where OTEL_EXPORTER_OTLP_ENDPOINT is set (app.tracing):
 # the SDK and exporter as the base pins them, then the FastAPI app's, the
-# planner calls' (requests). Anthropic's calls are claude_call's own spans:
-# the SDK's 2.x client is httpx2, which no OpenTelemetry instrumentation
-# covers yet (the httpx one patched a client nothing here used any more).
+# planner calls' (requests). Anthropic's calls are the SDK's own spans
+# (anthropic 2.8.0's OpenTelemetry tracing, whose span names are beta, so
+# the pin stays exact); it needs only opentelemetry-api, as the SDK here
+# supplies.
 opentelemetry-sdk==1.45.2
 opentelemetry-exporter-otlp-proto-http==1.45.2
 opentelemetry-instrumentation-fastapi==0.66b2

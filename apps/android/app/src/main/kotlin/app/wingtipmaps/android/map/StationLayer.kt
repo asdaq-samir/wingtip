@@ -3,6 +3,7 @@ package app.wingtipmaps.android.map
 import android.view.View
 import androidx.core.graphics.toColorInt
 import app.wingtipmaps.android.design.generated.WingtipColors
+import app.wingtipmaps.android.design.generated.WingtipMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -109,9 +110,10 @@ object StationLayer {
 
     /** No wind drawn out past a region's scale (the owner's iPhone at zoom
      *  3, 2026-11-12: the country one tangle of barbs), smaller there and
-     *  growing in to their own size by Leaflet's 9 (the web's FAR_FROM). */
-    private const val FAR_FROM = 6.0
-    private const val FAR_FULL = 9.0
+     *  growing in to their own size by Leaflet's 9: the tokens'
+     *  map.zoom-barb-far-from and -full, the web's too. */
+    private const val FAR_FROM = WingtipMap.ZOOM_BARB_FAR_FROM.toDouble()
+    private const val FAR_FULL = WingtipMap.ZOOM_BARB_FULL.toDouble()
     private const val MAX_ZOOM = 24.0
 
     /** The barb from the field toward where the wind is from, turned by

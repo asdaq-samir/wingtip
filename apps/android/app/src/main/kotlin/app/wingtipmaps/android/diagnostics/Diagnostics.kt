@@ -31,7 +31,7 @@ object Diagnostics {
 
     fun start(app: Application) {
         CrashCatcher.install(app.noBackupFilesDir)
-        scope.launch { runCatching { sendFaults(app) } }
+        scope.launch { val _ = runCatching { sendFaults(app) } }
         app.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
             override fun onActivityStarted(activity: Activity) = frames.started(activity)
             override fun onActivityStopped(activity: Activity) = frames.stopped()
@@ -46,7 +46,7 @@ object Diagnostics {
         ProcessLifecycleOwner.get().lifecycle.addObserver(LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_STOP) {
                 val figures = frames.take()
-                if (figures.isNotEmpty()) scope.launch { runCatching { DiagnosticsReporter.send(app, emptyList(), figures) } }
+                if (figures.isNotEmpty()) scope.launch { val _ = runCatching { DiagnosticsReporter.send(app, emptyList(), figures) } }
             }
         })
     }

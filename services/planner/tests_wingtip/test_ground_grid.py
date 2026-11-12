@@ -69,7 +69,7 @@ def test_every_cell_the_line_crosses_holds_a_point(grid):
 def test_a_tiles_pixels_go_into_their_cells_highest_and_lowest(monkeypatch):
     high = np.full((ground_grid.ROWS, ground_grid.COLS), ground_grid.NONE, dtype=np.int16)
     low = high.copy()
-    x, y = int(ground_grid._tile_x(-90.0)), int(ground_grid._tile_y(45.0))
+    x, y = (int(v) for v in geo.tile_xy(45.0, -90.0, ground_grid.ZOOM))
     heights = np.full((256, 256), 100.0)
     heights[10, 10] = 500.0  # one high pixel
     heights[200, 200] = -20.0  # one low one
@@ -116,7 +116,7 @@ def test_a_terrarium_void_is_no_height_and_the_sea_floor_the_seas_surface():
 def test_a_void_or_an_impossible_peak_counts_for_nothing_in_a_cell(monkeypatch):
     high = np.full((ground_grid.ROWS, ground_grid.COLS), ground_grid.NONE, dtype=np.int16)
     low = high.copy()
-    x, y = int(ground_grid._tile_x(-80.45)), int(ground_grid._tile_y(26.41))
+    x, y = (int(v) for v in geo.tile_xy(26.41, -80.45, ground_grid.ZOOM))
     heights = np.full((256, 256), 3.0)
     heights[100:110, 100:110] = np.nan  # a void
     heights[50, 50] = 4933.0  # 16,184 ft: a ringing pixel

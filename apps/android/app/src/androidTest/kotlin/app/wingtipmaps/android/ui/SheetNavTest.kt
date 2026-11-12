@@ -13,9 +13,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * The sheet's stack (SheetNav) on a real NavHost: a card shown from the
- * map or the search takes the place of the cards there, one opened from
- * inside a card goes on top of it, Back steps down one level and ✕
+ * The sheet's stack (SheetNav over MapViewModel) on Navigation 3's
+ * NavDisplay: a card shown from the map or the search takes the place of
+ * the cards there, one opened from inside a card goes on top of it, Back
+ * steps down one level and ✕
  * closes them all, back to the carousel at the page it was on (the plan
  * is its second page, SheetCarousel, and its ✕ the Search page).
  */
@@ -29,7 +30,7 @@ class SheetNavTest {
     private fun host() {
         compose.setContent {
             WingtipTheme {
-                sheet = rememberSheetNav(wide = false, airports = viewModel(), onShown = {})
+                sheet = rememberSheetNav(model = viewModel(), airports = viewModel(), onShown = {})
                 SheetPagesHost(sheet, backEnabled = true, modifier = Modifier, home = { Text("home") }, plan = { Text("plan") }, card = { Text(it.key) })
             }
         }
@@ -92,7 +93,7 @@ class SheetNavTest {
         shows(SheetPage.Nearest)
         compose.runOnIdle { sheet.back() }
         shows(SheetPage.Plan)
-        assertEquals(SheetPage.Plan, sheet.shown)
+        assertEquals(SheetPage.Plan, sheet.top)
     }
 
     private companion object {

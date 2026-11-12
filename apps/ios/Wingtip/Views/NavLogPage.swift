@@ -29,6 +29,12 @@ struct NavLogPage: View {
         .toolbar {
             ToolbarItem(placement: .pinnedTrailing) { ShareMenu() }
         }
+        // Why its Share sent nothing, under the bar it was asked from.
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if let shareProblem = plan.shareProblem {
+                ProblemLine(shareProblem).padding(.horizontal, WingtipSpace.lg)
+            }
+        }
         // A long list: its rows soften under the bar, and
         // the bar folds away while it scrolls down (iOS 27).
         .navigationBarMinimizesOnScroll()

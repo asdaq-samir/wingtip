@@ -25,8 +25,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.Session
@@ -78,9 +78,9 @@ fun StripLayout(
     covered: Boolean,
     cards: @Composable (Modifier) -> Unit,
     raise: Int = 0,
-    model: StripModel = viewModel(),
-    assistant: AssistantClient = viewModel(),
-    brief: BriefModel = viewModel(),
+    model: StripModel = hiltViewModel(),
+    assistant: AssistantClient = hiltViewModel(),
+    brief: BriefModel = hiltViewModel(),
 ) {
     val state by plan.state.collectAsStateWithLifecycle()
     val strip by model.state.collectAsStateWithLifecycle()

@@ -1,0 +1,35 @@
+# One home per unit constant (CLAUDE.md, "Simplicity rules"; the simplicity
+# audit of 2026-11-12, finding 10: Python's unit constants went from 9 to 18
+# and the web's M_PER_FT from 1 to 5 in one wave). A conversion factor is
+# written once per language, in its units module, and imported everywhere
+# else: a copy is where a typo (3.2808 for 3.28084) or a different rounding
+# hides. The factors are exact by definition (NIST Handbook 44, Appendix C:
+# the international foot is 0.3048 m, the nautical mile 1,852 m).
+#
+# Run through scripts/ci/semgrep_check.py, which holds today's copies in
+# scripts/ci/semgrep/baseline.json (a count per file, which only shrinks).
+rules:
+  - id: unit-constant-outside-units-module
+    message: >-
+      A unit conversion factor written here. Each language has one home for
+      them (Python: services/planner/wingtip/units.py; web:
+      apps/web/src/lib/geo.ts or lib/units.ts; iOS: Wingtip/Format/Units.swift;
+      Android: format/Units.kt): import it from there, or add it there with
+      its source (NIST Handbook 44, Appendix C). Copies drift (simplicity
+      audit 2026-11-12, finding 10).
+    severity: ERROR
+    languages: [python, typescript, javascript, swift, kotlin, java, csharp]
+    paths:
+      exclude:
+        - "services/planner/wingtip/units.py"
+        - "apps/web/src/lib/geo.ts"
+        - "apps/web/src/lib/units.ts"
+        - "apps/ios/Wingtip/Format/Units.swift"
+        - "apps/android/app/src/main/kotlin/app/wingtipmaps/android/format/Units.kt"
+    patterns:
+      - pattern: $N
+      - metavariable-regex:
+          metavariable: $N
+          # m per ft, ft per m, ft per NM, m per NM, km per NM, kt per m/s,
+          # m/s per kt, NM per km, ft per km, ft/s per kt.
+          regex: ^(0\.3048|3\.2808\d*|6076(\.\d+)?|1852(\.0*)?|1\.852|1\.9438\d*|0\.51444?\d*|0\.53995\d*|3280\.8\d*|1\.68781\d*)$

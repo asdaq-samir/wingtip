@@ -5,12 +5,14 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.BuildConfig
 import app.wingtipmaps.android.engine.CyclePacks
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 /**
  * About's state: the build, and the cycle of the packs the phone keeps for
@@ -19,7 +21,8 @@ import kotlinx.coroutines.withContext
  * never a cycle the phone does not have. The chart's edition is the
  * map's own (Charts), read by the screen.
  */
-class AboutModel(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class AboutModel @Inject constructor(app: Application) : AndroidViewModel(app) {
     val version: String = BuildConfig.VERSION_NAME
     val build: Int = BuildConfig.VERSION_CODE
 

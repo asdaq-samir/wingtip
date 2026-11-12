@@ -27,8 +27,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.Plan
@@ -52,12 +52,12 @@ import app.wingtipmaps.android.ui.ValueSettingRow
  *   back to the map, where it is drawn.
  */
 @Composable
-fun AboutScreen(onDemo: () -> Unit, model: AboutModel = viewModel(), charts: Charts = viewModel()) {
+fun AboutScreen(onDemo: () -> Unit, model: AboutModel = hiltViewModel(), charts: Charts = hiltViewModel()) {
     val context = LocalContext.current
     val chart by charts.info.collectAsStateWithLifecycle()
     val packsCycle by model.packsCycle.collectAsStateWithLifecycle()
     // The activity's one plan, which the map draws.
-    val plan: Plan = viewModel()
+    val plan: Plan = hiltViewModel()
 
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = WingtipSpace.Lg).padding(bottom = WingtipSpace.Xl),

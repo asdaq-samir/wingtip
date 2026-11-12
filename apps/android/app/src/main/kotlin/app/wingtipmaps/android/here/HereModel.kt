@@ -21,6 +21,9 @@ import kotlinx.coroutines.launch
  * SFDPS's word on each.
  */
 class HereModel(private val source: LiveSource = PlannerLive) : ViewModel() {
+    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
+    // constructor once the sources and seams it is given are injectable
+    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     data class State(
         val at: Pair<Double, Double>? = null,
         val here: AirspaceAt? = null,

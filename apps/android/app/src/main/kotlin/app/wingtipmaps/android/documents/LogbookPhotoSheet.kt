@@ -16,8 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.api.generated.assistant.LogbookEntryDraft
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -33,7 +33,7 @@ import app.wingtipmaps.android.ui.sheet.WingtipSheet
  * Flights" logs the confirmed ones.
  */
 @Composable
-fun LogbookPhotoSheet(onClose: () -> Unit, model: LogbookPhotoModel = viewModel()) {
+fun LogbookPhotoSheet(onClose: () -> Unit, model: LogbookPhotoModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scan = rememberPageScanner(onPage = { model.read(context, it) }, onProblem = model::problem)

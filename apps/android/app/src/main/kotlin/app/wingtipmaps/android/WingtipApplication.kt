@@ -22,7 +22,8 @@ import org.maplibre.android.module.http.HttpRequestUtil
  * through the gateway carries the session's cookie and every tile is
  * kept in the one cache (Gateway.client). Coil's pictures go through the
  * same client, for the same reasons (SingletonImageLoader.Factory). Hilt's
- * root (@HiltAndroidApp), for what is injected (di/).
+ * component lives here (HiltAndroidApp): the view models the screens ask
+ * for are its own, and what they are built from (di/).
  */
 @HiltAndroidApp
 class WingtipApplication : Application(), SingletonImageLoader.Factory {

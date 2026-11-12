@@ -14,8 +14,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.design.generated.WingtipSpace
@@ -34,10 +34,10 @@ import kotlinx.coroutines.withContext
  * and never stops the flight (the owner, 2026-10-23). Once per route.
  */
 @Composable
-fun ReadyToFlyHost(plan: Plan, ownShipOn: Boolean, underway: Boolean, onSetRoute: (() -> Unit)?, model: ReadyToFlyModel = viewModel()) {
+fun ReadyToFlyHost(plan: Plan, ownShipOn: Boolean, underway: Boolean, onSetRoute: (() -> Unit)?, model: ReadyToFlyModel = hiltViewModel()) {
     val context = LocalContext.current
     val fixer = rememberReadyFixer(plan, onSetRoute, model)
-    val brief: BriefModel = viewModel()
+    val brief: BriefModel = hiltViewModel()
     val state by model.state.collectAsStateWithLifecycle()
     // The route it was last shown for, kept across a rotation.
     var shownFor by rememberSaveable { mutableStateOf<String?>(null) }

@@ -15,11 +15,13 @@ import app.wingtipmaps.android.api.deleteAccount
 import app.wingtipmaps.android.api.setContact
 import app.wingtipmaps.android.plan.FlightChoices
 import app.wingtipmaps.android.plan.HomeAirport
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Who is signed in, and the way in: the emailed link, which opens the
@@ -28,7 +30,8 @@ import kotlinx.coroutines.launch
  * cookie, kept by CookieStore, is the sign-in itself. The twin of the iOS
  * app's Session.swift, as a ViewModel with its state in flows.
  */
-class Session(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class Session @Inject constructor(app: Application) : AndroidViewModel(app) {
     private val _pilot = MutableStateFlow<Pilot?>(null)
     val pilot: StateFlow<Pilot?> = _pilot.asStateFlow()
 
@@ -156,7 +159,7 @@ class Session(app: Application) : AndroidViewModel(app) {
         val wipe = PhoneWipe.of(context)
         viewModelScope.launch {
             if (ask.current != null) {
-                runCatching { Gateway.signOut() }
+                val _ = runCatching { Gateway.signOut() }
                 forget(wipe)
             }
             try {
@@ -181,7 +184,7 @@ class Session(app: Application) : AndroidViewModel(app) {
     fun signOut(context: Context) {
         val wipe = PhoneWipe.of(context)
         viewModelScope.launch {
-            runCatching { Gateway.signOut() }
+            val _ = runCatching { Gateway.signOut() }
             forget(wipe)
             ClaudeGate.refresh(developer = false)
         }

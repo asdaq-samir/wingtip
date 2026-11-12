@@ -8,9 +8,9 @@ import UniformTypeIdentifiers
 /// The model weather's pictures read and coloured as the web's
 /// weatherlayers-gl reads and colours them (features/weather-flow): a
 /// channel's 0 to 255 as its field's unscale range, alpha 0 as no value,
-/// the wind's parts into its speed and where it blows from, a value
-/// between pixels mixed between them, and the ramps from the engine's
-/// bands (model_weather_bands, aviation_grid_bands).
+/// the reading at a point the engine's (flow_cell, flow_sample; the
+/// shared cases are FlowFixturesTests'), and the ramps from the engine's
+/// bands (model_weather_bands, aviation_grid_bands) in the tokens' colours.
 @MainActor
 @Suite struct ModelWeatherTests {
     private static let box = [-1.0, -1.0, 1.0, 1.0]
@@ -30,33 +30,33 @@ import UniformTypeIdentifiers
         #expect(grid.values[3] == nil)
     }
 
-    @Test func aPixelsValueStandsAtItsMiddle() {
+    @Test func aPixelsValueStandsAtItsMiddle() throws {
         let grid = scalar([0, 255, 102, 9], alpha: [255, 255, 255, 255])
-        // The north-west pixel's middle is at (-0.5, 0.5).
-        #expect(abs(grid.value(lat: 0.5, lon: -0.5)! - 0) < 1e-6)
-        #expect(abs(grid.value(lat: 0.5, lon: 0.5)! - 75) < 1e-6)
+        // The north-west pixel's middle is at (-0.5, 0.5); the engine reads it.
+        #expect(abs(try #require(try grid.reading(lat: 0.5, lon: -0.5)).value - 0) < 1e-6)
+        #expect(abs(try #require(try grid.reading(lat: 0.5, lon: 0.5)).value - 75) < 1e-6)
         // Half way between the two north pixels.
-        #expect(abs(grid.value(lat: 0.5, lon: 0)! - 37.5) < 1e-6)
-        #expect(grid.value(lat: 0, lon: 5) == nil)
+        #expect(abs(try #require(try grid.reading(lat: 0.5, lon: 0)).value - 37.5) < 1e-6)
+        #expect(try grid.reading(lat: 0, lon: 5) == nil)
     }
 
-    @Test func aMissingNeighbourGivesTheNearest() {
+    @Test func aMissingNeighbourIsNoReading() throws {
         let grid = scalar([0, 255, 102, 9])
-        // Next to the south-east pixel, which has none: the nearest's.
-        #expect(abs(grid.value(lat: -0.4, lon: -0.4)! - 30) < 1e-4)
+        // Next to the south-east pixel, which has none: the engine reads
+        // nothing there (flow_sample), as the web and Android do.
+        #expect(try grid.reading(lat: -0.4, lon: -0.4) == nil)
     }
 
-    @Test func theWindsPartsAreItsSpeedAndWhereItBlowsFrom() {
+    @Test func theWindsPartsAreItsSpeedAndWhereItBlowsFrom() throws {
         // East part 0 kt (red 127.5 of -100..100 is near 0), north part +40 kt.
         let green = UInt8(((40.0 + 100) / 200 * 255).rounded())
         let east = UInt8(((0.0 + 100) / 200 * 255).rounded())
         let bytes = [east, green, 0, 255].repeated(4)
         let grid = FlowGrid(rgba: bytes, width: 2, height: 2, unscale: [-100, 100], vector: true, bounds: Self.box)
-        let speed = grid.value(lat: 0, lon: 0)!
-        #expect(abs(speed - 40) < 1)
+        let read = try #require(try grid.reading(lat: 0, lon: 0))
+        #expect(abs(read.value - 40) < 1)
         // Blowing toward the north is a wind from the south.
-        let from = grid.fromDeg(lat: 0, lon: 0)!
-        #expect(abs(from - 180) < 2)
+        #expect(abs(try #require(read.fromDeg) - 180) < 2)
     }
 
     @Test func thePlannersPNGIsReadAsItsBytes() throws {
@@ -73,6 +73,19 @@ import UniformTypeIdentifiers
         #expect(ramp.colour(at: -5) == (0, 0, 0, 0))
         #expect(ramp.colour(at: 5) == (100, 50, 25, 125))
         #expect(ramp.colour(at: 20) == (200, 100, 50, 250))
+    }
+
+    @Test func theLooksAreTheTokens() throws {
+        // The colours, strengths and covers are design/tokens.json's flow
+        // group (WingtipFlow), the web's FLOW, not numbers of the app's own.
+        let looks = FlowLooks.looks(try Engine.modelWeatherBands(), try Engine.aviationGridBands())
+        let wind = try #require(looks[.wind])
+        #expect(wind.ramp.stops.map(\.at) == WingtipFlow.rampWind.map(\.at))
+        #expect(wind.ramp.stops.map(\.alpha) == WingtipFlow.rampWind.map(\.alpha))
+        #expect(wind.opacity == WingtipFlow.coverTint)
+        #expect(looks[.temp]?.opacity == WingtipFlow.coverSolid)
+        #expect(looks[.turb]?.opacity == WingtipFlow.coverHazard)
+        #expect(looks[.tops]?.ramp.stops.map(\.alpha) == WingtipFlow.rampTops.map(\.alpha))
     }
 
     @Test func thePrecipitationIsClearUnderTheEnginesLeast() throws {
@@ -111,18 +124,19 @@ import UniformTypeIdentifiers
         #expect(bytes[(height - 1) * width * 4 + 3] == 0)
     }
 
-    @Test func theWindBetweenPixelsIsItsPartsMixedNotItsSpeeds() {
+    @Test func theWindBetweenPixelsIsItsPartsMixedNotItsSpeeds() throws {
         // 20 kt from the west in the west column, 20 kt from the east in
         // the east one: half way between, the parts cancel to calm (the
-        // web's and Android's reading), where the speeds' mean said 20 kt.
+        // engine's flow_sample, which every app asks), where the speeds'
+        // mean said 20 kt.
         let toEast = UInt8(((20.0 + 100) / 200 * 255).rounded())
         let toWest = UInt8(((-20.0 + 100) / 200 * 255).rounded())
         let calm = UInt8(((0.0 + 100) / 200 * 255).rounded())
         let bytes = [toEast, calm, 0, 255, toWest, calm, 0, 255].repeated(2)
         let grid = FlowGrid(rgba: bytes, width: 2, height: 2, unscale: [-100, 100], vector: true, bounds: Self.box)
-        #expect(abs(grid.value(lat: 0.5, lon: -0.5)! - 20) < 1)
+        #expect(abs(try #require(try grid.reading(lat: 0.5, lon: -0.5)).value - 20) < 1)
         // Calm but for the 0.39 kt north part the eight bits give "calm".
-        #expect(grid.value(lat: 0.5, lon: 0)! < 1)
+        #expect(try #require(try grid.reading(lat: 0.5, lon: 0)).value < 1)
     }
 
     @Test func theBadgeSaysTheCeilingsTopAsNone() throws {

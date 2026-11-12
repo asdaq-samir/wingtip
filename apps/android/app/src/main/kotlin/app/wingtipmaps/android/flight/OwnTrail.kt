@@ -108,7 +108,7 @@ class OwnTrail(
 
     private fun write() {
         lastWrittenMs = nowMs()
-        runCatching {
+        val _ = runCatching {
             file.parentFile?.mkdirs()
             val part = File(file.path + ".part")
             part.writeText(Gateway.json.encodeToString(_points.value))

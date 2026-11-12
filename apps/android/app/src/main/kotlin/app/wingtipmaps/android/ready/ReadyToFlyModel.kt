@@ -62,6 +62,9 @@ class ReadyToFlyModel(
     private val weather: ReadyWeather = PlannerReadyWeather,
     private val nowMs: () -> Long = AppClock::nowMs,
 ) : ViewModel() {
+    // TODO(claude/android-data-stock): @HiltViewModel with an @Inject
+    // constructor once the sources and seams it is given are injectable
+    // (Hilt, 2026-11-12); until then Hilt's factory hands it to the default one.
     data class State(
         val answer: EngineContract.ReadyToFlyAnswer? = null,
         /** The top NOTAMs as sent, once fetched, shown under their item. */

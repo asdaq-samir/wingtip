@@ -91,37 +91,36 @@ struct DeleteAccountButton: View {
 }
 
 /// Export My Data: everything the gateway keeps of the pilot fetched as
-/// one JSON file (DataExport) and handed to iOS's share sheet, to save to
-/// Files, AirDrop or mail, as the privacy policy promises.
+/// one JSON file (DataExport) when iOS's share sheet asks for it, to save
+/// to Files, AirDrop or mail, as the privacy policy promises: the system's
+/// ShareLink, which shows its own progress while the file comes.
 struct ExportDataButton: View {
-    @State private var exporting = false
-    @State private var file: URL?
-    @State private var problem: String?
+    @State private var export = DataExportState()
 
     var body: some View {
-        Button {
-            exporting = true
-            Task {
-                do {
-                    file = try await DataExport.fetch()
-                    problem = nil
-                } catch {
-                    problem = "Your data could not be exported: \(error.localizedDescription)"
-                }
-                exporting = false
-            }
-        } label: {
-            HStack {
-                Text("Export My Data")
-                Spacer()
-                if exporting { ProgressView() }
-            }
+        ShareLink(item: SharedFile(name: nil, type: .json) { [export] in try await export.fetch() },
+                  preview: SharePreview("Your Wingtip Maps data")) {
+            Text("Export My Data")
         }
-        .disabled(exporting)
-        .sheet(isPresented: Binding(get: { file != nil }, set: { if !$0 { file = nil } })) {
-            if let file { ActivityView(items: [file]).presentationDetents([.medium, .large]) }
+        ProblemLine(export.problem)
+    }
+}
+
+/// Why the export could not be had, said under its row.
+@MainActor
+@Observable
+final class DataExportState {
+    var problem: String?
+
+    func fetch() async throws -> URL {
+        do {
+            let file = try await DataExport.fetch()
+            problem = nil
+            return file
+        } catch {
+            problem = "Your data could not be exported: \(error.localizedDescription)"
+            throw error
         }
-        ProblemLine(problem)
     }
 }
 

@@ -9,6 +9,7 @@ import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.ForecastRunAsk
 import app.wingtipmaps.android.pilot.MinimumsStore
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
+import javax.inject.Inject
 import app.wingtipmaps.android.api.generated.ForecastRun as RunAnswer
 
 /**
@@ -29,7 +31,8 @@ import app.wingtipmaps.android.api.generated.ForecastRun as RunAnswer
  * on -- and the answer kept, which the strip and the map read at the
  * run's time as it plays (ForecastPlay). A new run is asked again.
  */
-class ForecastRun(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class ForecastRun @Inject constructor(app: Application) : AndroidViewModel(app) {
     data class State(
         val on: Boolean = false,
         val loading: Boolean = false,

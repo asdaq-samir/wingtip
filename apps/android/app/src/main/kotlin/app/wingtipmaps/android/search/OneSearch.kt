@@ -45,8 +45,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.account.AccountButton
@@ -101,7 +101,7 @@ fun OneSearch(
     onPick: (SearchPick) -> Unit,
     onProblem: (String) -> Unit,
     modifier: Modifier = Modifier,
-    model: SearchModel = viewModel(),
+    model: SearchModel = hiltViewModel(),
 ) {
     val searchBarState = rememberSearchBarState()
     val textFieldState = rememberTextFieldState()
@@ -157,7 +157,7 @@ fun OneSearch(
     val nothingHeard = stringResource(R.string.nothing_heard)
     val allowMic = stringResource(R.string.allow_microphone)
     val radioBusy = stringResource(R.string.voice_radio_busy)
-    val hearOnce = {
+    val hearOnce: () -> Unit = {
         scope.launch {
             // The radio has the microphone while it is listened to.
             if (RadioListener.of(context).listening.value) {

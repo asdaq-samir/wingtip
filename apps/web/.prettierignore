@@ -24,3 +24,6 @@ src/lib/navigation/generated
 src/lib/fixtures
 src/lib/acs.json
 e2e/fixtures
+# ESLint's bulk suppressions, as `eslint --suppress-rule` and
+# `--prune-suppressions` write them.
+eslint-suppressions.json

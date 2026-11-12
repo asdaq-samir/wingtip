@@ -39,13 +39,13 @@ struct AirportWeatherChoice: Equatable, Sendable {
     var worse = true
 
     /// The station model drawn: at every zoom with Station, from the zoom
-    /// its lines fit (StationModel.fromZoom) with the switch on, never with
+    /// its lines fit (the token WingtipMap.zoomStationClose, as on the web and Android) with the switch on, never with
     /// Off.
     func station(zoom: Double) -> Bool {
         switch style {
         case .off: false
         case .station: true
-        case .halo, .dot: stationClose && zoom >= StationModel.fromZoom
+        case .halo, .dot: stationClose && zoom >= WingtipMap.zoomStationClose
         }
     }
 }

@@ -32,8 +32,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Charts
 import app.wingtipmaps.android.Plan
@@ -104,7 +104,7 @@ import kotlinx.coroutines.withContext
  */
 @Composable
 fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) -> Unit, onAsk: (() -> Unit)?, onNearest: () -> Unit, buttonsOnSheet: Boolean = false) {
-    val charts: Charts = viewModel()
+    val charts: Charts = hiltViewModel()
     val info by charts.info.collectAsStateWithLifecycle()
     val overlays by charts.overlays.collectAsStateWithLifecycle()
     val overlaysSettled by charts.overlaysSettled.collectAsStateWithLifecycle()
@@ -113,9 +113,9 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // The route's points, where its line is cut into legs, and the leg
     // whose sheet is open (RouteLegModel), cased in green.
     val routePoints = remember(state.course) { RoutePoints.of(state.course) }
-    val selectedLeg by viewModel<RouteLegModel>().selected.collectAsStateWithLifecycle()
+    val selectedLeg by hiltViewModel<RouteLegModel>().selected.collectAsStateWithLifecycle()
     // The field whose card is open, ringed on the map.
-    val openField = viewModel<AirportModel>().state.collectAsStateWithLifecycle().value.place?.ident
+    val openField = hiltViewModel<AirportModel>().state.collectAsStateWithLifecycle().value.place?.ident
     val density = LocalDensity.current
     val template = remember(info, density.density) { Charts.template(info, density.density) }
     val base = remember(info) { Charts.base(info) }
@@ -126,7 +126,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     val night = isSystemInDarkTheme()
     val context = LocalContext.current
     val layers by remember { MapLayersStore.of(context) }.layers.collectAsStateWithLifecycle()
-    val mapWeather: MapWeather = viewModel()
+    val mapWeather: MapWeather = hiltViewModel()
     val categories by mapWeather.categories.collectAsStateWithLifecycle()
     val airportWeather by remember { AirportWeatherStore.of(context) }.settings.collectAsStateWithLifecycle()
     // Each mark greyed once its METAR is older than the engine's freshness
@@ -197,7 +197,7 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // arrow red only past the picked airplane's demonstrated crosswind, the
     // badge at the plan's fields whose TAF is worse by the time there,
     // the alternate's among them.
-    val routeWorse: RouteWorse = viewModel()
+    val routeWorse: RouteWorse = hiltViewModel()
     LaunchedEffect(state.dep, state.stops, state.dest, state.depart, state.totals?.eteMin, state.totals?.alternate, airportWeather.worse) {
         if (airportWeather.worse) routeWorse.plan(state)
     }
@@ -223,9 +223,9 @@ fun MapPane(plan: Plan, ownShip: OwnShipControl, covered: Dp, onPick: (MapPick) 
     // While the emergency assistant is open, the line from the airplane
     // to the field it picked (the same model EmergencyHost holds).
     val emergencyFrom by EmergencyOpen.from.collectAsStateWithLifecycle()
-    val emergency by viewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
+    val emergency by hiltViewModel<EmergencyModel>().state.collectAsStateWithLifecycle()
     // The dry run's airplane, drawn as own ship while a run is open (DryRun).
-    val dryRun by viewModel<DryRun>().state.collectAsStateWithLifecycle()
+    val dryRun by hiltViewModel<DryRun>().state.collectAsStateWithLifecycle()
     // The approach plates on the chart, drawn as their card sets them, and
     // their fixes' tags, each approach's asked of the engine once.
     val plateState by PlatesOnMap.shared.state.collectAsStateWithLifecycle()

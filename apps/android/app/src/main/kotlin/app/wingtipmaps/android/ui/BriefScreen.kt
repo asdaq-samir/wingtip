@@ -31,8 +31,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.Session
@@ -75,7 +75,7 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * colour, not a blocking screen.
  */
 @Composable
-fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () -> Unit, model: BriefModel = viewModel()) {
+fun BriefPage(planModel: Plan, session: Session, exit: CardExit, onSetRoute: () -> Unit, model: BriefModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     val plan by planModel.state.collectAsStateWithLifecycle()
     val pilot by session.pilot.collectAsStateWithLifecycle()

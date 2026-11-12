@@ -5,7 +5,8 @@ import XCTest
 /// sheet at half and at the pill, at the screen's right edge, each a full
 /// tap target, and out of reach with the sheet at full height, as Maps'
 /// give way. Offline, at the default text size and accessibility XXL
-/// (CardTests.sizes); the sheet's height read off its grabber's value.
+/// (CardTests.sizes); the sheet's height read off its grabber's value,
+/// and dragged by it (CardTests.drag).
 final class MapButtonsTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = true
@@ -25,14 +26,13 @@ final class MapButtonsTests: XCTestCase {
 
             // Down to the pill: the buttons come down with it.
             let halfY = map.frame.minY
-            grabber.swipeDown()
+            CardTests.dragDown(grabber, in: app)
             CardTests.settled(map)
             XCTAssertGreaterThan(map.frame.minY, halfY + 100, "the buttons did not come down with the sheet at \(size.name)")
             assertOverTheSheet(map, search: search, in: app, at: "pill, \(size.name)")
 
             // All the way up: they give way.
-            grabber.swipeUp()
-            grabber.swipeUp()
+            CardTests.dragUp(grabber, in: app)
             CardTests.settled(grabber)
             XCTAssertEqual(grabber.value as? String, "Expanded", "the sheet did not go to full height at \(size.name)")
             XCTAssertFalse(map.exists && map.isHittable, "the map's buttons are still in reach over a full sheet at \(size.name)")

@@ -24,6 +24,7 @@ import app.wingtipmaps.android.plan.KeptPlan
 import app.wingtipmaps.android.plan.PlanShown
 import app.wingtipmaps.android.route.RouteEdits
 import app.wingtipmaps.android.route.RouteUndo
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,22 +37,22 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 /**
- * The route being planned and what the planner has said of it so far: the
- * course once its ends are found, then the nav log's lines as they stream.
- * The log before a re-plan stays until the new one is whole (as the web's
- * usePlan and iOS's Plan.swift keep it), so the list is never blank. One
- * State, changed only here and read by the screens.
+ * The route being planned and what the planner has said of it so far: the course once its
+ * ends are found, then the nav log's lines as they stream. The log before a re-plan stays until
+ * the new one is whole (as the web's usePlan and iOS's Plan.swift keep it), so the list is
+ * never blank. One State, changed only here and read by the screens.
  */
-class Plan(app: Application) : AndroidViewModel(app) {
+@HiltViewModel
+class Plan @Inject constructor(app: Application) : AndroidViewModel(app) {
     data class State(
         val dep: String = "",
         val dest: String = "",
         val stops: List<String> = emptyList(),
-        /** The planner's aircraft profile; "" for none, the default:
-         *  no airplane is ever assumed (decision 0011), and the figures
-         *  that need one are left out until one is chosen. */
+        /** The planner's aircraft profile; "" for none, the default: no airplane is ever
+         *  assumed (decision 0011), and the figures that need one are left out until one is chosen. */
         val aircraft: String = "",
         /** The holds the pilot put on the route, as the planner reads them
          *  (the engine's hold_write: "VPBNG/090/30:270:R:1M:2T"). */

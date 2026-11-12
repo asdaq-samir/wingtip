@@ -255,10 +255,11 @@ airport weather marks hold on all three apps: [rules.md](rules.md).
   - No back arrow is drawn in a top app bar's navigation slot. That is
     the one place Wingtip departs from Material's top app bar.
   - Back steps down the same ladder as close: lower the sheet
-    (`MapSheet`'s `PredictiveBackHandler`), then a page back (the
-    sheet's Navigation Compose `NavHost`, `ui/PlanSheet`; a card in the
-    wide panes by `NavigableListDetailPaneScaffold`), then leave the
-    app. Overlays are stock `Dialog`s, which Back closes. The
+    (`MapSheet`'s stock `BackHandler`, the sheet's own motion), then a
+    page back (Navigation 3's `NavDisplay` over `MapViewModel`'s back
+    stack, `ui/SheetPages`, with its own transitions and predictive
+    back; a card in the wide panes by Material's
+    `ListDetailSceneStrategy` on the same stack), then leave the app. Overlays are stock `Dialog`s, which Back closes. The
     hand-built shrink-on-back (`design/PredictiveBack`) is gone.
 - **Android 17**: activities are no longer recreated for keyboard,
   navigation-mode or colour-mode changes unless they opt in
@@ -498,7 +499,7 @@ placement wins, and the difference is noted.
   the sheet shows the dots and the page's first row: the search's, or
   the plan's bar.
 - **Stock parts and wiring**: Compose foundation's `HorizontalPager`
-  (`ui/SheetCarousel`) as the NavHost's Home destination, its
+  (`ui/SheetCarousel`) as the NavDisplay's Home entry, its
   `PagerState` held by `SheetNav` so it outlives the cards over it and a
   rotation; both pages stay composed (`beyondViewportPageCount = 1`), so
   each keeps its own scroll and the one search still takes an ask made
@@ -1355,8 +1356,8 @@ recommendation", "Let's try the scrolling recommendations"). Where §3 or
 **Cards cover the search, Google Maps' way.** A thing -- a field, an
 airplane, a VOR, a fix, an airspace, traffic, What's Here, a leg of the
 route, the Map Settings -- opens as one card on the docked sheet's own
-stack (`ui/SheetNav`, Navigation Compose's NavHost in
-`ui/SheetPages`; on a wide window the list-detail scaffold's detail
+stack (`ui/MapViewModel`, drawn by Navigation 3's NavDisplay in
+`ui/SheetPages`; on a wide window the list-detail scene's detail
 pane). While it is open its bar takes the search's place: ← and its name,
 its actions, ✕ at the end (`ui/sheet/CardPage`), and the card fills the
 sheet. ← and system Back go back one level; ✕ closes every card, back to

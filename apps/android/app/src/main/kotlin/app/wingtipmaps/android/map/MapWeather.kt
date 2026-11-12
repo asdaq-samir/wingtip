@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.reportingInView
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 import kotlin.math.ceil
 import kotlin.math.floor
 
@@ -24,7 +26,8 @@ import kotlin.math.floor
  * change by the hour; what was heard is kept, so a pan back, or a pan
  * with no signal, keeps its pips, greyed once old (WeatherAge).
  */
-class MapWeather : ViewModel() {
+@HiltViewModel
+class MapWeather @Inject constructor() : ViewModel() {
     private val _categories = MutableStateFlow<Map<String, String>>(emptyMap())
     val categories: StateFlow<Map<String, String>> = _categories.asStateFlow()
 

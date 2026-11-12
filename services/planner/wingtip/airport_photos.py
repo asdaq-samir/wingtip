@@ -17,7 +17,6 @@ from __future__ import annotations
 import html
 import json
 import logging
-import math
 import re
 import time
 from pathlib import Path
@@ -25,7 +24,9 @@ from urllib.parse import unquote
 
 import requests
 
+from . import geo
 from .config import DATA_DIR
+from .units import M_PER_NM
 
 log = logging.getLogger(__name__)
 
@@ -56,13 +57,12 @@ def aerial_box(lat: float, lon: float, ends: list[tuple[float, float]]) -> tuple
     """(west, south, east, north) round the runways' ends with a margin, or
     round the field's point where none are surveyed, widened to the
     picture's 3:2 so the runways are not stretched."""
-    m_lat = 111_320.0
-    m_lon = m_lat * max(0.2, math.cos(math.radians(lat)))
     if ends:
         lats, lons = [e[0] for e in ends], [e[1] for e in ends]
         cy, cx = (min(lats) + max(lats)) / 2, (min(lons) + max(lons)) / 2
-        w = (max(lons) - min(lons)) * m_lon * (1 + 2 * AERIAL_MARGIN)
-        h = (max(lats) - min(lats)) * m_lat * (1 + 2 * AERIAL_MARGIN)
+        # The runways' extent each way, metres along the great circle.
+        w = geo.distance_nm(cy, min(lons), cy, max(lons)) * M_PER_NM * (1 + 2 * AERIAL_MARGIN)
+        h = geo.distance_nm(min(lats), cx, max(lats), cx) * M_PER_NM * (1 + 2 * AERIAL_MARGIN)
     else:
         cy, cx, w, h = lat, lon, 0.0, 0.0
     w, h = max(w, AERIAL_MIN_M), max(h, AERIAL_MIN_M * AERIAL_PX[1] / AERIAL_PX[0])
@@ -71,7 +71,9 @@ def aerial_box(lat: float, lon: float, ends: list[tuple[float, float]]) -> tuple
         w = h * ratio
     else:
         h = w / ratio
-    dx, dy = w / 2 / m_lon, h / 2 / m_lat
+    # Half of each from the middle, north and east, back in degrees.
+    dy = geo.destination_point(cy, cx, 0.0, h / 2 / M_PER_NM)[0] - cy
+    dx = geo.destination_point(cy, cx, 90.0, w / 2 / M_PER_NM)[1] - cx
     return (round(cx - dx, 6), round(cy - dy, 6), round(cx + dx, 6), round(cy + dy, 6))
 
 

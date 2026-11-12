@@ -24,10 +24,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.aircraft.YourAirplanesRow
@@ -37,15 +37,18 @@ import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.documents.AddFromPhotoRow
 import app.wingtipmaps.android.documents.HandbookPhotoSheet
 import app.wingtipmaps.android.plan.FlightChoices
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /** The airplane card's picker's model: the planner's airplane types
  *  (/api/aircraft-profiles), asked once, and again by Try Again. */
-class AirplaneModel : ViewModel() {
+@HiltViewModel
+class AirplaneModel @Inject constructor() : ViewModel() {
     private val _profiles = MutableStateFlow<List<AircraftProfileSummary>>(emptyList())
     val profiles: StateFlow<List<AircraftProfileSummary>> = _profiles.asStateFlow()
 
@@ -83,7 +86,7 @@ class AirplaneModel : ViewModel() {
  * the card (AirplaneProfileScreen), each a tap to edit in place.
  */
 @Composable
-internal fun FlownAirplaneRows(plan: Plan, onYourAirplanes: () -> Unit, model: AirplaneModel = viewModel()) {
+internal fun FlownAirplaneRows(plan: Plan, onYourAirplanes: () -> Unit, model: AirplaneModel = hiltViewModel()) {
     val profiles by model.profiles.collectAsStateWithLifecycle()
     val problem by model.problem.collectAsStateWithLifecycle()
     val state by plan.state.collectAsStateWithLifecycle()

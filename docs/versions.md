@@ -80,9 +80,13 @@ with complete strict concurrency.
 
 ### Android (`apps/android/gradle/libs.versions.toml`)
 
-AGP 9.5.1 (its built-in Kotlin compiles the app), Kotlin 2.4.21, KSP
-2.3.13, Compose BOM 2026.09.00, Material 3 **1.5.0-rc01** (off the BOM,
-for Material 3 Expressive), navigation-compose 2.10.2, Room 3.0.3
+AGP **9.6.0-alpha03** (its built-in Kotlin compiles the app), Kotlin
+**2.5.0-RC**, KSP 2.3.13, the Compose alpha BOM (`compose-bom-alpha`)
+2026.11.00, which carries Material 3 **1.5.0-rc01** (for Material 3
+Expressive) and Material adaptive 1.4.0-alpha03 with its Navigation 3
+scenes, Navigation 3 **1.3.0-alpha04**, Lifecycle **2.12.0-alpha05**,
+Activity 1.14.0-alpha03, Hilt (Dagger) 2.60.1 with AndroidX Hilt 1.4.0,
+Room 3.0.3
 (`androidx.room3`), DataStore 1.3.0, WorkManager 2.12.0, Glance 1.2.0,
 MapLibre Android 13.7.1, OkHttp 5.5.1, AppFunctions 1.0.0-rc01, ML Kit's
 Prompt API (`genai-prompt`) 1.0.0-beta5. compileSdk 37 (its 37.2 minor
@@ -117,7 +121,7 @@ written here.
 | What | Pinned | Newest | Why it waits | Moves when |
 |---|---|---|---|---|
 | TypeScript | 6.0.3 | 7.x | typescript-eslint 8.72 supports TypeScript below 6.1 only ([its support range](https://typescript-eslint.io/users/dependency-versions/)), and openapi-typescript 7.13, its newest, asks for 5.x (let onto 6 by an override in package.json); on 7 neither the lint nor `npm run types` would run (commit dd9dae944, 2026-11-09) | typescript-eslint declares TypeScript 7, and openapi-typescript runs on it |
-| Material 3 (Android) | 1.5.0-rc01 | 1.5.0-rc01 (1.4.0 the newest stable) | Not held back: the release candidate is taken on purpose, as 1.4.0 keeps Expressive internal (decision 0016) | 1.5.0 stable ships |
+| Material 3 (Android) | 1.5.0-rc01 | 1.5.0-rc01 (1.4.0 the newest stable) | Not held back: the release candidate is taken on purpose, as 1.4.0 keeps Expressive internal (decision 0016); it comes from the alpha BOM since 2026-11-12 | 1.5.0 stable ships |
 | Java | 25 (LTS) | 27 (non-LTS, September 2026) | The gateway and Android stay on one Java, the LTS the owner named on 2026-11-09 ("Java 25 everywhere"), which AGP's D8 and Spring Boot 4.1 both take | The next LTS, or the owner's word |
 | CI's Android emulator | API 35 x86_64 | API 37 | The instrumented tests' emulator image (`native-android.yml`); the app itself compiles against 37.2 | No reason is recorded: try API 37 at the next pass that touches the job |
 

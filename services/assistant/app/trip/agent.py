@@ -28,7 +28,6 @@ import anthropic
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
-from .. import tracing
 from ..assistant import UNREACHABLE, context_block, label_of
 from ..gateway import gateway
 from ..settings import get_settings
@@ -130,24 +129,22 @@ def plan_trip(ask: TripAsk, runner=None, box: TripToolbox | None = None) -> Iter
     now = box.local(datetime.now(timezone.utc)) or ""
     try:
         runner = runner or runner_for(question(ask, now), box)
-        with tracing.claude_call("trip", TRIP_MODEL, current=False) as used:
-            for stream in runner:
-                for event in stream:
-                    if getattr(event, "type", None) == "text":
-                        yield _line({"type": "text", "text": event.text})
-                message = stream.get_final_message()
-                used.add(message)
-                for block in message.content:
-                    if getattr(block, "type", None) == "tool_use":
-                        yield _line({"type": "tool", "name": block.name, "label": label(block.name, dict(block.input or {}))})
-                if message.stop_reason in ("refusal", "max_tokens"):
-                    words = (
-                        "The planner declined this trip."
-                        if message.stop_reason == "refusal"
-                        else "The planner ran out of room; describe the trip in fewer words."
-                    )
-                    yield _line({"type": "error", "words": words})
-                    return
+        for stream in runner:
+            for event in stream:
+                if getattr(event, "type", None) == "text":
+                    yield _line({"type": "text", "text": event.text})
+            message = stream.get_final_message()
+            for block in message.content:
+                if getattr(block, "type", None) == "tool_use":
+                    yield _line({"type": "tool", "name": block.name, "label": label(block.name, dict(block.input or {}))})
+            if message.stop_reason in ("refusal", "max_tokens"):
+                words = (
+                    "The planner declined this trip."
+                    if message.stop_reason == "refusal"
+                    else "The planner ran out of room; describe the trip in fewer words."
+                )
+                yield _line({"type": "error", "words": words})
+                return
     except ValueError as err:
         log.warning("trip tool input unreadable: %s", err)
         yield _line({"type": "error", "words": "The planner lost its place; ask again."})

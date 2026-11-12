@@ -16,29 +16,34 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
-import androidx.compose.material3.adaptive.layout.AnimatedPane
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
-import androidx.compose.material3.adaptive.navigation.NavigableListDetailPaneScaffold
+import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation3.scene.SceneStrategy
 import androidx.window.core.layout.WindowSizeClass
 import app.wingtipmaps.android.design.generated.WingtipSize
 
 /**
  * The panel on a tablet or an unfolded phone, in place of the docked sheet
- * (the owner, 2026-11-09): Material's navigable list-detail scaffold at
- * the screen's start beside the map -- the one search and what it lists,
- * or the plan, in the list pane, and the field's or airplane's card picked
- * in the detail pane. A window wide enough for two panes shows both side
- * by side; one pane wide shows the card in the list's place. The
- * scaffold's navigator (`sheet`'s panes) keeps the card, and its own
- * predictive back closes it.
+ * (the owner, 2026-11-09): Material's list-detail scene for Navigation 3
+ * at the screen's start beside the map -- the one search and what it
+ * lists, or the plan, in the list pane, and the field's or airplane's card
+ * picked in the detail pane. A window wide enough for two panes shows both
+ * side by side; one pane wide shows the card in the list's place. The
+ * sheet's one back stack (MapViewModel) keeps the card in either layout,
+ * and the scene's own predictive back closes it.
+ *
+ * @param pages the sheet's NavDisplay (SheetPagesHost), given its modifier
+ *   and the list-detail scene to lay its stack out in.
  */
 @OptIn(ExperimentalMaterial3AdaptiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun WidePanes(sheet: SheetNav, list: @Composable () -> Unit, detail: @Composable (SheetPage) -> Unit, map: @Composable () -> Unit) {
-    val navigator = sheet.panes
-    val directive = navigator.scaffoldDirective
+fun WidePanes(pages: @Composable (Modifier, SceneStrategy<SheetPage>) -> Unit, map: @Composable () -> Unit) {
+    val directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2())
+    // Back closes the card, not every pane change before it.
+    val scenes = rememberListDetailSceneStrategy<SheetPage>(backNavigationBehavior = BackNavigationBehavior.PopUntilContentChange, directive = directive)
     val panes = directive.maxHorizontalPartitions.coerceIn(1, 2)
     val width = WingtipSize.Panel * panes + directive.horizontalPartitionSpacerSize * (panes - 1)
     Row(Modifier.fillMaxSize()) {
@@ -47,14 +52,7 @@ fun WidePanes(sheet: SheetNav, list: @Composable () -> Unit, detail: @Composable
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = BottomSheetDefaults.Elevation,
         ) {
-            NavigableListDetailPaneScaffold(
-                navigator = navigator,
-                listPane = { AnimatedPane { list() } },
-                detailPane = { AnimatedPane { navigator.currentDestination?.contentKey?.let { detail(SheetPage.of(it)) } } },
-                modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical)),
-                // Back closes the card, not every pane change before it.
-                defaultBackBehavior = BackNavigationBehavior.PopUntilContentChange,
-            )
+            pages(Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Start + WindowInsetsSides.Vertical)), scenes)
         }
         Box(Modifier.weight(1f).fillMaxHeight()) { map() }
     }

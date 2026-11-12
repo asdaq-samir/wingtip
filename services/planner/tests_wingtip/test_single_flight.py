@@ -59,3 +59,19 @@ def test_other_keys_are_built_beside_each_other_and_a_failure_is_tried_again():
     table.cache_clear()
     table("a")
     assert calls.count("a") == 2
+
+
+def test_it_keeps_the_newest_maxsize_keys_and_counts_like_lru_cache():
+    built = []
+
+    @once(maxsize=2)
+    def table(path: str) -> str:
+        built.append(path)
+        return path
+
+    for path in ("a", "b", "a", "c", "b"):
+        table(path)
+    # "b" was the least recently used when "c" came, so it is built again.
+    assert built == ["a", "b", "c", "b"]
+    info = table.cache_info()
+    assert (info.hits, info.misses, info.maxsize, info.currsize) == (1, 4, 2, 2)

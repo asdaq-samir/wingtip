@@ -3,9 +3,11 @@ package app.wingtipmaps.android.route
 import androidx.lifecycle.ViewModel
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Leg
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
 
 /**
  * The leg of the route whose card is open (the web's useLegSheet and
@@ -15,7 +17,8 @@ import kotlinx.coroutines.flow.asStateFlow
  * course), whether it is the leg being flown, and what can be done to its
  * end -- Direct to it, Remove a stop -- each only where the planner does it.
  */
-class RouteLegModel : ViewModel() {
+@HiltViewModel
+class RouteLegModel @Inject constructor() : ViewModel() {
     /** What the card shows. */
     data class View(
         val index: Int,

@@ -26,8 +26,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.pilot.MinimumsStore
 import app.wingtipmaps.android.ui.SectionTitle
@@ -40,7 +40,7 @@ import app.wingtipmaps.android.ui.SectionTitle
  * in force. Nothing at all for a field with none of them.
  */
 @Composable
-fun LiveAirportRows(ident: String, model: LiveAirportModel = viewModel()) {
+fun LiveAirportRows(ident: String, model: LiveAirportModel = hiltViewModel()) {
     val state by model.state.collectAsStateWithLifecycle()
     // The pilot's own visibility minimum (Setup), which each runway's RVR
     // is judged against (rvr_check, 14 CFR 91.175(h)(2)).

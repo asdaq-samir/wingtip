@@ -10,7 +10,8 @@ import threading
 import requests
 from cachetools import TTLCache
 
-from .common import HEADERS, TIMEOUT_S, TrafficUnavailable, _LOCK, _NM_PER_DEG, _aircraft, _clock, _number, _sleep, _wall
+from ..geo import distance_nm
+from .common import HEADERS, TIMEOUT_S, TrafficUnavailable, _LOCK, _aircraft, _clock, _number, _sleep, _wall
 
 URL = "https://api.adsb.lol/v2/point/{lat:.2f}/{lon:.2f}/{radius}"
 
@@ -170,7 +171,7 @@ def _covering(lat: float, lon: float, radius_nm: float) -> tuple[float, list[dic
         for (rlat, rlon, asked), (at, planes) in _REGIONS.items():
             if now - at >= KEEP_S:
                 continue
-            apart = math.hypot((rlat - lat) * _NM_PER_DEG, (rlon - lon) * _NM_PER_DEG * math.cos(math.radians(lat)))
+            apart = distance_nm(rlat, rlon, lat, lon)
             if apart + radius_nm <= asked and (best is None or at > best[0]):
                 best = (at, planes)
     return best

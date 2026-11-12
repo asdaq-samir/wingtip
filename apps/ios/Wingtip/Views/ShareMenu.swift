@@ -7,13 +7,14 @@ import UniformTypeIdentifiers
 /// and Save as File: the flight as a Wingtip flight file (FlightFile),
 /// which opens on another iPhone as the shared link's preview, and the
 /// kneeboard as a PDF, each saved through the system's file exporter
-/// (SaveFileExporter). The route card's ••• (RouteCard) is this menu with
+/// (SaveFileExporter, SaveFileLink). Every share is the system's
+/// ShareLink, a file made only when the share sheet asks for it
+/// (SharedFile). The route card's ••• (RouteCard) is this menu with
 /// its own rows round the sharing, which then sits in a Share submenu, so
 /// the sheets it opens live in one place (`rows`, `more`, `label`).
 struct ShareMenu<Rows: View, More: View, Shown: View>: View {
     @Environment(Plan.self) private var plan
     @Environment(\.openURL) private var openURL
-    @State private var sharing: ShareItems?
     @State private var includeTail = false
     /// The file being saved, while the exporter is up.
     @State private var saving: SavedFile?
@@ -32,11 +33,6 @@ struct ShareMenu<Rows: View, More: View, Shown: View>: View {
         self.nested = nested
     }
 
-    struct ShareItems: Identifiable {
-        let id = UUID()
-        let items: [Any]
-    }
-
     var body: some View {
         Menu {
             if nested {
@@ -52,8 +48,7 @@ struct ShareMenu<Rows: View, More: View, Shown: View>: View {
         }
         .accessibilityLabel(nested ? "More" : "Share")
         .disabled(!nested && plan.legs.isEmpty)
-        .sheet(item: $sharing) { share in ActivityView(items: share.items).presentationDetents([.medium, .large]) }
-        .modifier(SaveFileExporter(saving: $saving) { url in sharing = ShareItems(items: [url]) })
+        .modifier(SaveFileExporter(saving: $saving))
     }
 
     /// The ways the route goes out.
@@ -61,10 +56,14 @@ struct ShareMenu<Rows: View, More: View, Shown: View>: View {
         ShareLink(item: RouteShare.link(plan, includeTail: includeTail)) { Label("Share Link", systemImage: "link") }
         if let tail = plan.tail { Toggle("Include \(tail)", isOn: $includeTail) }
         ShareLink(item: RouteShare.navLogText(plan)) { Label("Nav Log as Text", systemImage: WingtipIcon.navLog) }
-        Button { pdf() } label: { Label("Nav Log as PDF", systemImage: "doc.richtext") }
+        ShareLink(item: navLogPDF, preview: SharePreview("Nav Log")) { Label("Nav Log as PDF", systemImage: "doc.richtext") }
         Menu {
-            Button { saveFlight() } label: { Label("Flight", systemImage: "airplane") }
-            Button { saveKneeboard() } label: { Label("Kneeboard as PDF", systemImage: "doc.richtext") }
+            SaveFileLink(name: FlightFile.name(plan), type: .wingtipFlight, saving: $saving, make: flightFile) {
+                Label("Flight", systemImage: "airplane")
+            }
+            SaveFileLink(name: "\(RouteShare.fileName(plan))-nav-log.pdf", type: .pdf, saving: $saving, make: kneeboardFile) {
+                Label("Kneeboard as PDF", systemImage: "doc.richtext")
+            }
         } label: {
             Label("Save as File", systemImage: "square.and.arrow.down")
         }
@@ -75,21 +74,49 @@ struct ShareMenu<Rows: View, More: View, Shown: View>: View {
     }
 
     /// The flight as a Wingtip flight file, the N-number in it only where
-    /// Include is on, as for Share Link.
-    private func saveFlight() {
-        guard let data = try? FlightFile.of(plan, includeTail: includeTail).data() else { return }
-        saving = SavedFile(data: data, type: .wingtipFlight, name: FlightFile.name(plan))
+    /// Include is on, as for Share Link; made when it is saved.
+    private var flightFile: @MainActor @Sendable () throws -> SavedFile? {
+        { [plan, includeTail] in
+            try Self.said("The flight file", on: plan) {
+                SavedFile(data: try FlightFile.of(plan, includeTail: includeTail).data(), type: .wingtipFlight, name: FlightFile.name(plan))
+            }
+        }
     }
 
-    /// The kneeboard's page as a PDF file (Kneeboard.pdf).
-    private func saveKneeboard() {
-        guard let url = Kneeboard.pdf(plan), let data = try? Data(contentsOf: url) else { return }
-        saving = SavedFile(data: data, type: .pdf, name: url.lastPathComponent)
+    /// The kneeboard's page as a PDF file (Kneeboard.pdf); made when it is saved.
+    private var kneeboardFile: @MainActor @Sendable () throws -> SavedFile? {
+        { [plan] in
+            try Self.said("The kneeboard's PDF", on: plan) {
+                guard let url = Kneeboard.pdf(plan) else { throw CocoaError(.fileWriteUnknown) }
+                return SavedFile(data: try Data(contentsOf: url), type: .pdf, name: url.lastPathComponent)
+            }
+        }
     }
 
-    private func pdf() {
-        guard let url = Kneeboard.pdf(plan) else { return }
-        sharing = ShareItems(items: [url])
+    /// The nav log's page as a PDF, drawn when the share sheet asks for it.
+    private var navLogPDF: SharedFile {
+        SharedFile(name: nil, type: .pdf) { [plan] in
+            try Self.said("The nav log's PDF", on: plan) {
+                guard let url = Kneeboard.pdf(plan) else { throw CocoaError(.fileWriteUnknown) }
+                return url
+            }
+        }
+    }
+
+    /// A file made for the share sheet or the exporter, and why it could
+    /// not be, said under the route (Plan.shareProblem, lib/problems' rule:
+    /// where it happens), since the sheet itself then just sends nothing.
+    /// Thrown on, so nothing half made goes.
+    @MainActor
+    private static func said<T>(_ what: String, on plan: Plan, _ make: () throws -> T) throws -> T {
+        do {
+            let made = try make()
+            plan.shareProblem = nil
+            return made
+        } catch {
+            plan.shareProblem = "\(what) couldn't be made, so nothing was sent: \(error.localizedDescription)"
+            throw error
+        }
     }
 
     /// ForeFlight takes no route and pack in one: the pack the first time a
