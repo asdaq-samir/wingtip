@@ -235,6 +235,15 @@ def airspace_at_point(*, lat: float, lon: float) -> m.AirspaceAt:
     return _AIRSPACE_AT_POINT.validate_python(found)
 
 
+_AIRSPACE_VOLUMES_IN = _Answer(m.AirspaceVolumes)
+
+
+def airspace_volumes_in(*, south: float, west: float, north: float, east: float, classes: str | None = None, special_use: bool | None = None) -> m.AirspaceVolumes:
+    """GET /api/airspace/volumes: Airspace Volumes In"""
+    found = _send('GET', '/api/airspace/volumes', query={'south': south, 'west': west, 'north': north, 'east': east, 'classes': classes, 'special_use': special_use}, body=None, headers={})
+    return _AIRSPACE_VOLUMES_IN.validate_python(found)
+
+
 _ALTERNATE = _Answer(m.Alternates)
 
 
@@ -872,6 +881,132 @@ def stops_near(*, lat: float, lon: float, nm: float | None = None) -> m.StopFiel
     """GET /api/stops/near: Stops Near"""
     found = _send('GET', '/api/stops/near', query={'lat': lat, 'lon': lon, 'nm': nm}, body=None, headers={})
     return _STOPS_NEAR.validate_python(found)
+
+
+_STUDIO_DRAFTS = _Answer(list[m.StudioDraft])
+
+
+def studio_drafts() -> list[m.StudioDraft]:
+    """GET /api/studio/drafts: Studio Drafts"""
+    found = _send('GET', '/api/studio/drafts', query={}, body=None, headers={})
+    return _STUDIO_DRAFTS.validate_python(found)
+
+
+_STUDIO_DRAFTS_TO_NOTICE = _Answer(list[m.StudioDraft])
+
+
+def studio_drafts_to_notice() -> list[m.StudioDraft]:
+    """GET /api/studio/drafts-to-notice: Studio Drafts To Notice"""
+    found = _send('GET', '/api/studio/drafts-to-notice', query={}, body=None, headers={})
+    return _STUDIO_DRAFTS_TO_NOTICE.validate_python(found)
+
+
+_STUDIO_DRAFT = _Answer(m.StudioDraft)
+
+
+def studio_draft(*, draft_id: str) -> m.StudioDraft:
+    """GET /api/studio/drafts/{draft_id}: Studio Draft"""
+    found = _send('GET', f"/api/studio/drafts/{_seg(draft_id)}", query={}, body=None, headers={})
+    return _STUDIO_DRAFT.validate_python(found)
+
+
+_STUDIO_DRAFT_DISMISS = _Answer(m.StudioDraft)
+
+
+def studio_draft_dismiss(*, draft_id: str) -> m.StudioDraft:
+    """POST /api/studio/drafts/{draft_id}/dismiss: Studio Draft Dismiss"""
+    found = _send('POST', f"/api/studio/drafts/{_seg(draft_id)}/dismiss", query={}, body=None, headers={})
+    return _STUDIO_DRAFT_DISMISS.validate_python(found)
+
+
+_STUDIO_DRAFT_IDENTITY = _Answer(m.StudioDraft)
+
+
+def studio_draft_identity(*, body: m.StudioDraftIdentityAsk | dict[str, Any], draft_id: str) -> m.StudioDraft:
+    """POST /api/studio/drafts/{draft_id}/identity: Studio Draft Identity"""
+    found = _send('POST', f"/api/studio/drafts/{_seg(draft_id)}/identity", query={}, body=_body(body), headers={})
+    return _STUDIO_DRAFT_IDENTITY.validate_python(found)
+
+
+_STUDIO_DRAFT_NOTICED = _Answer(m.StudioDraft)
+
+
+def studio_draft_noticed(*, draft_id: str) -> m.StudioDraft:
+    """POST /api/studio/drafts/{draft_id}/noticed: Studio Draft Noticed"""
+    found = _send('POST', f"/api/studio/drafts/{_seg(draft_id)}/noticed", query={}, body=None, headers={})
+    return _STUDIO_DRAFT_NOTICED.validate_python(found)
+
+
+_STUDIO_DRAFT_RENDERED = _Answer(m.StudioDraft)
+
+
+def studio_draft_rendered(*, draft_id: str) -> m.StudioDraft:
+    """POST /api/studio/drafts/{draft_id}/rendered: Studio Draft Rendered"""
+    found = _send('POST', f"/api/studio/drafts/{_seg(draft_id)}/rendered", query={}, body=None, headers={})
+    return _STUDIO_DRAFT_RENDERED.validate_python(found)
+
+
+_STUDIO_DRAFT_TRACK = _Answer(m.StudioTrack)
+
+
+def studio_draft_track(*, draft_id: str) -> m.StudioTrack:
+    """GET /api/studio/drafts/{draft_id}/track: Studio Draft Track"""
+    found = _send('GET', f"/api/studio/drafts/{_seg(draft_id)}/track", query={}, body=None, headers={})
+    return _STUDIO_DRAFT_TRACK.validate_python(found)
+
+
+_STUDIO_GROUND = _Answer(m.StudioGround)
+
+
+def studio_ground(*, body: m.StudioGroundAsk | dict[str, Any]) -> m.StudioGround:
+    """POST /api/studio/ground: Studio Ground"""
+    found = _send('POST', '/api/studio/ground', query={}, body=_body(body), headers={})
+    return _STUDIO_GROUND.validate_python(found)
+
+
+_STUDIO_NOTAMS = _Answer(m.StudioNotams)
+
+
+def studio_notams(*, at: float, lat_min: float, lat_max: float, lon_min: float, lon_max: float) -> m.StudioNotams:
+    """GET /api/studio/notams: Studio Notams"""
+    found = _send('GET', '/api/studio/notams', query={'at': at, 'lat_min': lat_min, 'lat_max': lat_max, 'lon_min': lon_min, 'lon_max': lon_max}, body=None, headers={})
+    return _STUDIO_NOTAMS.validate_python(found)
+
+
+_STUDIO_NTSB = _Answer(list[m.NtsbEvent])
+
+
+def studio_ntsb(*, registration: str, day: str) -> list[m.NtsbEvent]:
+    """GET /api/studio/ntsb: Studio Ntsb"""
+    found = _send('GET', '/api/studio/ntsb', query={'registration': registration, 'day': day}, body=None, headers={})
+    return _STUDIO_NTSB.validate_python(found)
+
+
+_STUDIO_TRACK = _Answer(m.StudioTrack)
+
+
+def studio_track(*, q: str, day: str) -> m.StudioTrack:
+    """GET /api/studio/track: Studio Track"""
+    found = _send('GET', '/api/studio/track', query={'q': q, 'day': day}, body=None, headers={})
+    return _STUDIO_TRACK.validate_python(found)
+
+
+_STUDIO_WATCHED = _Answer(list[m.StudioWatched])
+
+
+def studio_watched() -> list[m.StudioWatched]:
+    """GET /api/studio/watched: Studio Watched"""
+    found = _send('GET', '/api/studio/watched', query={}, body=None, headers={})
+    return _STUDIO_WATCHED.validate_python(found)
+
+
+_STUDIO_WEATHER = _Answer(m.StudioWeather)
+
+
+def studio_weather(*, body: m.StudioWeatherAsk | dict[str, Any]) -> m.StudioWeather:
+    """POST /api/studio/weather: Studio Weather"""
+    found = _send('POST', '/api/studio/weather', query={}, body=_body(body), headers={})
+    return _STUDIO_WEATHER.validate_python(found)
 
 
 _TERRAIN_TILE = _Answer(Any)

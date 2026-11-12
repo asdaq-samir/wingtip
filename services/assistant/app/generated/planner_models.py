@@ -3,7 +3,7 @@
 # ruff: noqa: E501, F821
 """The planner's schemas as pydantic models, every field optional."""
 
-from datetime import date
+from datetime import date as date_aliased
 from typing import Annotated, Any, Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, RootModel
@@ -145,6 +145,17 @@ class AirspaceTransit(BaseModel):
     floor_ft_msl: Annotated[float | None, Field(title='Floor Ft Msl')] = None
     name: Annotated[str | None, Field(title='Name')] = None
     requires: Annotated[str | None, Field(title='Requires')] = None
+
+
+class AirspaceVolumes(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    cycle: Annotated[str | None, Field(title='Cycle')] = None
+    features: Annotated[list[dict[str, Any]] | None, Field(title='Features')] = None
+    type: Annotated[Literal['FeatureCollection'], Field(title='Type')] = (
+        'FeatureCollection'
+    )
 
 
 class AirwayAltitudes(BaseModel):
@@ -489,7 +500,7 @@ class CoachDue(BaseModel):
     )
     days_left: Annotated[int | None, Field(title='Days Left')] = None
     detail: Annotated[str | None, Field(title='Detail')] = None
-    from_: Annotated[date | None, Field(alias='from', title='From')] = None
+    from_: Annotated[date_aliased | None, Field(alias='from', title='From')] = None
     id: Annotated[str | None, Field(title='Id')] = None
     key: Annotated[
         Literal['flight_review', 'solo', 'day_passengers', 'night_passengers', 'instrument', 'medical'] | None,
@@ -501,7 +512,7 @@ class CoachDue(BaseModel):
         Literal['current', 'due_soon', 'lapsed', 'pending', 'unknown'] | None,
         Field(title='Status'),
     ] = None
-    until: Annotated[date | None, Field(title='Until')] = None
+    until: Annotated[date_aliased | None, Field(title='Until')] = None
 
 
 class CoachEndorsement(BaseModel):
@@ -509,7 +520,7 @@ class CoachEndorsement(BaseModel):
         populate_by_name=True,
     )
     code: Annotated[str | None, Field(max_length=32, title='Code')] = None
-    on: Annotated[date | None, Field(title='On')] = None
+    on: Annotated[date_aliased | None, Field(title='On')] = None
 
 
 class CoachEvidence(BaseModel):
@@ -517,7 +528,7 @@ class CoachEvidence(BaseModel):
         populate_by_name=True,
     )
     area: Annotated[str | None, Field(title='Area')] = None
-    flown_on: Annotated[date | None, Field(title='Flown On')] = None
+    flown_on: Annotated[date_aliased | None, Field(title='Flown On')] = None
     id: Annotated[str | None, Field(title='Id')] = None
     place: Annotated[str | None, Field(title='Place')] = None
     procedure: Annotated[
@@ -565,7 +576,7 @@ class CoachLogbookEntry(BaseModel):
         ),
     ] = 0
     dualHours: Annotated[float | None, Field(title='Dualhours')] = 0
-    flownOn: Annotated[date | None, Field(title='Flownon')] = None
+    flownOn: Annotated[date_aliased | None, Field(title='Flownon')] = None
     holding: Annotated[bool | None, Field(title='Holding')] = False
     instrumentHours: Annotated[float | None, Field(title='Instrumenthours')] = 0
     nightHours: Annotated[float | None, Field(title='Nighthours')] = 0
@@ -616,7 +627,7 @@ class CoachReminder(BaseModel):
     days_left: Annotated[int | None, Field(title='Days Left')] = None
     key: Annotated[str | None, Field(title='Key')] = None
     text: Annotated[str | None, Field(title='Text')] = None
-    until: Annotated[date | None, Field(title='Until')] = None
+    until: Annotated[date_aliased | None, Field(title='Until')] = None
 
 
 class CoachWeakArea(BaseModel):
@@ -688,15 +699,15 @@ class Currency(BaseModel):
     ] = None
     crossCountryHours: Annotated[float | None, Field(title='Crosscountryhours')] = None
     dayPassengersUntil: Annotated[
-        date | None,
+        date_aliased | None,
         Field(
             description='90 days after the third most recent landing (14 CFR 61.57(a)).',
             title='Daypassengersuntil',
         ),
     ] = None
-    flightReviewOn: Annotated[date | None, Field(title='Flightreviewon')] = None
+    flightReviewOn: Annotated[date_aliased | None, Field(title='Flightreviewon')] = None
     flightReviewUntil: Annotated[
-        date | None,
+        date_aliased | None,
         Field(
             description="The end of the 24th calendar month after the flight review's (61.56(c)).",
             title='Flightreviewuntil',
@@ -705,32 +716,34 @@ class Currency(BaseModel):
     flights: Annotated[int | None, Field(title='Flights')] = None
     holdingInWindow: Annotated[bool | None, Field(title='Holdinginwindow')] = None
     instrumentCurrentFrom: Annotated[
-        date | None,
+        date_aliased | None,
         Field(
             description='The first day of an instrument currency not begun yet: approaches flown this month count from the first of next month (61.57(c)(1)), and until then the pilot is not current. Null when current now.',
             title='Instrumentcurrentfrom',
         ),
     ] = None
     instrumentCurrentUntil: Annotated[
-        date | None,
+        date_aliased | None,
         Field(
             description="The last day of instrument currency (61.57(c)(1), or 61.57(d)'s check); in the past where it has lapsed.",
             title='Instrumentcurrentuntil',
         ),
     ] = None
     ipcNeededAfter: Annotated[
-        date | None,
+        date_aliased | None,
         Field(
             description='The day after which only an instrument proficiency check restores it (61.57(d)).',
             title='Ipcneededafter',
         ),
     ] = None
-    ipcOn: Annotated[date | None, Field(title='Ipcon')] = None
+    ipcOn: Annotated[date_aliased | None, Field(title='Ipcon')] = None
     landings: Annotated[int | None, Field(title='Landings')] = None
-    medicalExpiresOn: Annotated[date | None, Field(title='Medicalexpireson')] = None
+    medicalExpiresOn: Annotated[
+        date_aliased | None, Field(title='Medicalexpireson')
+    ] = None
     nightHours: Annotated[float | None, Field(title='Nighthours')] = None
     nightPassengersUntil: Annotated[
-        date | None,
+        date_aliased | None,
         Field(
             description='90 days after the third most recent night full-stop landing (61.57(b)).',
             title='Nightpassengersuntil',
@@ -1599,7 +1612,7 @@ class HeldEndorsement(BaseModel):
     )
     code: Annotated[str | None, Field(title='Code')] = None
     makeModel: Annotated[str | None, Field(title='Makemodel')] = None
-    on: Annotated[date | None, Field(title='On')] = None
+    on: Annotated[date_aliased | None, Field(title='On')] = None
 
 
 class HoldLeg(BaseModel):
@@ -1868,7 +1881,7 @@ class LogbookEntry(BaseModel):
     ] = 0
     distanceNm: Annotated[float | None, Field(title='Distancenm')] = 0
     dualHours: Annotated[float | None, Field(title='Dualhours')] = 0
-    flownOn: Annotated[date | None, Field(title='Flownon')] = None
+    flownOn: Annotated[date_aliased | None, Field(title='Flownon')] = None
     holding: Annotated[bool | None, Field(title='Holding')] = False
     instrumentHours: Annotated[float | None, Field(title='Instrumenthours')] = 0
     longestLegNm: Annotated[float | None, Field(title='Longestlegnm')] = 0
@@ -2182,6 +2195,27 @@ class NotesToWrite(BaseModel):
     )
     checkpoints: Annotated[list[NoteToWrite] | None, Field(title='Checkpoints')] = None
     departure_ident: Annotated[str | None, Field(title='Departure Ident')] = None
+
+
+class NtsbEvent(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    carol_url: Annotated[str | None, Field(title='Carol Url')] = None
+    city: Annotated[str | None, Field(title='City')] = None
+    country: Annotated[str | None, Field(title='Country')] = None
+    date: Annotated[str | None, Field(title='Date')] = None
+    docket_url: Annotated[str | None, Field(title='Docket Url')] = None
+    ev_id: Annotated[str | None, Field(title='Ev Id')] = None
+    highest_injury: Annotated[str | None, Field(title='Highest Injury')] = None
+    narrative: Annotated[str | None, Field(title='Narrative')] = None
+    narrative_kind: Annotated[
+        Literal['final', 'preliminary'] | None, Field(title='Narrative Kind')
+    ] = None
+    ntsb_no: Annotated[str | None, Field(title='Ntsb No')] = None
+    phase: Annotated[str | None, Field(title='Phase')] = None
+    probable_cause: Annotated[str | None, Field(title='Probable Cause')] = None
+    state: Annotated[str | None, Field(title='State')] = None
 
 
 class Obstacle(BaseModel):
@@ -3269,6 +3303,192 @@ class StopFields(BaseModel):
     pending: Annotated[int | None, Field(title='Pending')] = 0
 
 
+class StudioDraftCheck(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    check: Annotated[str | None, Field(title='Check')] = None
+    ok: Annotated[bool | None, Field(title='Ok')] = None
+    words: Annotated[str | None, Field(title='Words')] = None
+
+
+class NNumber(RootModel[str | None]):
+    root: Annotated[
+        str | None, Field(pattern='^[Nn]?[1-9][0-9A-Za-z]{0,4}$', title='N Number')
+    ] = None
+
+
+class StudioDraftIdentityAsk(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    confirm: Annotated[bool | None, Field(title='Confirm')] = None
+    n_number: Annotated[NNumber | None, Field(title='N Number')] = None
+
+
+class StudioDraftNearest(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    distance_nm: Annotated[float | None, Field(title='Distance Nm')] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    t: Annotated[float | None, Field(title='T')] = None
+
+
+class StudioDraftQuote(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    source: Annotated[str | None, Field(title='Source')] = None
+    url: Annotated[str | None, Field(title='Url')] = None
+    words: Annotated[str | None, Field(title='Words')] = None
+
+
+class StudioDraftSource(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    heading: Annotated[str | None, Field(title='Heading')] = None
+    source: Annotated[str | None, Field(title='Source')] = None
+    text: Annotated[str | None, Field(title='Text')] = None
+    url: Annotated[str | None, Field(title='Url')] = None
+
+
+class StudioDraftWindow(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    end: Annotated[float | None, Field(title='End')] = None
+    start: Annotated[float | None, Field(title='Start')] = None
+
+
+class StudioGround(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    ground_ft: Annotated[list[float] | None, Field(title='Ground Ft')] = None
+
+
+class StudioGroundAsk(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    points: Annotated[list[Point] | None, Field(max_length=400, title='Points')] = None
+
+
+class StudioMetar(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    raw: Annotated[str | None, Field(title='Raw')] = None
+    station: Annotated[str | None, Field(title='Station')] = None
+    time: Annotated[str | None, Field(title='Time')] = None
+
+
+class StudioNotam(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    end: Annotated[str | None, Field(title='End')] = None
+    id: Annotated[str | None, Field(title='Id')] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    start: Annotated[str | None, Field(title='Start')] = None
+    text: Annotated[str | None, Field(title='Text')] = None
+
+
+class StudioRadarFrame(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    tiles: Annotated[str | None, Field(title='Tiles')] = None
+    valid: Annotated[str | None, Field(title='Valid')] = None
+
+
+class StudioReport(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    alt_ft: Annotated[float | None, Field(title='Alt Ft')] = None
+    ground: Annotated[bool | None, Field(title='Ground')] = False
+    gs_kt: Annotated[float | None, Field(title='Gs Kt')] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    qnh_hpa: Annotated[float | None, Field(title='Qnh Hpa')] = None
+    t: Annotated[float | None, Field(title='T')] = None
+    track_deg: Annotated[float | None, Field(title='Track Deg')] = None
+
+
+class StudioTaf(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    issued: Annotated[str | None, Field(title='Issued')] = None
+    raw: Annotated[str | None, Field(title='Raw')] = None
+    station: Annotated[str | None, Field(title='Station')] = None
+
+
+class StudioTfr(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    end: Annotated[str | None, Field(title='End')] = None
+    geometry: Annotated[dict[str, Any] | None, Field(title='Geometry')] = None
+    id: Annotated[str | None, Field(title='Id')] = None
+    name: Annotated[str | None, Field(title='Name')] = None
+    start: Annotated[str | None, Field(title='Start')] = None
+    text: Annotated[str | None, Field(title='Text')] = None
+
+
+class StudioTrack(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    altitude: Annotated[
+        Literal['pressure', 'reported'] | None, Field(title='Altitude')
+    ] = None
+    day: Annotated[str | None, Field(title='Day')] = None
+    hex: Annotated[str | None, Field(title='Hex')] = None
+    license: Annotated[str | None, Field(title='License')] = None
+    model: Annotated[str | None, Field(title='Model')] = None
+    points: Annotated[list[StudioReport] | None, Field(title='Points')] = None
+    registration: Annotated[str | None, Field(title='Registration')] = None
+    source: Annotated[str | None, Field(title='Source')] = None
+    type: Annotated[str | None, Field(title='Type')] = None
+
+
+class StudioWatched(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    days: Annotated[list[str] | None, Field(title='Days')] = None
+    hex: Annotated[str | None, Field(title='Hex')] = None
+    registration: Annotated[str | None, Field(title='Registration')] = None
+
+
+class StudioWeather(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    credit: Annotated[str | None, Field(title='Credit')] = None
+    metars: Annotated[list[StudioMetar] | None, Field(title='Metars')] = None
+    radar: Annotated[list[StudioRadarFrame] | None, Field(title='Radar')] = None
+    source: Annotated[str | None, Field(title='Source')] = None
+    tafs: Annotated[list[StudioTaf] | None, Field(title='Tafs')] = None
+
+
+class StudioWeatherAsk(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    end: Annotated[float | None, Field(title='End')] = None
+    points: Annotated[list[Point] | None, Field(max_length=200, title='Points')] = None
+    start: Annotated[float | None, Field(title='Start')] = None
+
+
 class TerminalChart(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
@@ -3529,7 +3749,8 @@ class VorCheckOutput(BaseModel):
         ),
     ] = None
     until: Annotated[
-        date | None, Field(description='30 days on (91.171(a)(2)).', title='Until')
+        date_aliased | None,
+        Field(description='30 days on (91.171(a)(2)).', title='Until'),
     ] = None
     within: Annotated[bool | None, Field(title='Within')] = None
 
@@ -3543,7 +3764,7 @@ class VorCheckAsk(BaseModel):
         Literal['VOT', 'REPAIR_STATION', 'GROUND', 'AIRBORNE', 'RADIAL', 'DUAL'] | None,
         Field(title='Kind'),
     ] = None
-    on: Annotated[date | None, Field(title='On')] = None
+    on: Annotated[date_aliased | None, Field(title='On')] = None
 
 
 class WaypointPin(BaseModel):
@@ -3949,7 +4170,7 @@ class CoachDebrief(BaseModel):
         list[CoachFinding] | None,
         Field(max_length=40, title='Findings', validate_default=True),
     ] = []
-    flown_on: Annotated[date | None, Field(title='Flown On')] = None
+    flown_on: Annotated[date_aliased | None, Field(title='Flown On')] = None
     kind: Annotated[Literal['approach', 'flight'] | None, Field(title='Kind')] = None
     legs: Annotated[
         list[CoachLeg] | None, Field(max_length=40, title='Legs', validate_default=True)
@@ -4031,10 +4252,12 @@ class CurrencyAsk(BaseModel):
         populate_by_name=True,
     )
     entries: Annotated[list[LogbookEntry] | None, Field(title='Entries')] = None
-    flightReviewOn: Annotated[date | None, Field(title='Flightreviewon')] = None
-    ipcOn: Annotated[date | None, Field(title='Ipcon')] = None
-    medicalExpiresOn: Annotated[date | None, Field(title='Medicalexpireson')] = None
-    today: Annotated[date | None, Field(title='Today')] = None
+    flightReviewOn: Annotated[date_aliased | None, Field(title='Flightreviewon')] = None
+    ipcOn: Annotated[date_aliased | None, Field(title='Ipcon')] = None
+    medicalExpiresOn: Annotated[
+        date_aliased | None, Field(title='Medicalexpireson')
+    ] = None
+    today: Annotated[date_aliased | None, Field(title='Today')] = None
 
 
 class DayNightMinimums(BaseModel):
@@ -4186,14 +4409,14 @@ class Endorsements(BaseModel):
         ),
     ] = None
     soloUntil: Annotated[
-        date | None,
+        date_aliased | None,
         Field(
             description='The last day of the latest solo endorsement (61.87(n), (p)).',
             title='Solountil',
         ),
     ] = None
     until: Annotated[
-        list[date | None] | None,
+        list[date_aliased | None] | None,
         Field(
             description="Each held endorsement's last good day, in order: 90 days on for a solo (14 CFR 61.87(n), (o), (p)) or Class B one (61.95); null for one that does not run out.",
             title='Until',
@@ -4205,7 +4428,7 @@ class EndorsementsAsk(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    flightOn: Annotated[date | None, Field(title='Flighton')] = None
+    flightOn: Annotated[date_aliased | None, Field(title='Flighton')] = None
     held: Annotated[list[HeldEndorsement] | None, Field(title='Held')] = None
 
 
@@ -4214,7 +4437,7 @@ class ExperienceAsk(BaseModel):
         populate_by_name=True,
     )
     entries: Annotated[list[LogbookEntry] | None, Field(title='Entries')] = None
-    today: Annotated[date | None, Field(title='Today')] = None
+    today: Annotated[date_aliased | None, Field(title='Today')] = None
 
 
 class FeedHealth(BaseModel):
@@ -4430,14 +4653,14 @@ class Inspections(BaseModel):
         populate_by_name=True,
     )
     annualUntil: Annotated[
-        date | None,
+        date_aliased | None,
         Field(
             description='The end of the 12th calendar month after (14 CFR 91.409(a)).',
             title='Annualuntil',
         ),
     ] = None
     eltUntil: Annotated[
-        date | None,
+        date_aliased | None,
         Field(
             description='The end of the 12th calendar month after (91.207(d)).',
             title='Eltuntil',
@@ -4451,14 +4674,14 @@ class Inspections(BaseModel):
         ),
     ] = None
     staticCheckUntil: Annotated[
-        date | None,
+        date_aliased | None,
         Field(
             description='The end of the 24th calendar month after (91.411(a)).',
             title='Staticcheckuntil',
         ),
     ] = None
     transponderCheckUntil: Annotated[
-        date | None,
+        date_aliased | None,
         Field(
             description='The end of the 24th calendar month after (91.413(a)).',
             title='Transpondercheckuntil',
@@ -4471,13 +4694,15 @@ class InspectionsAsk(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
-    annualOn: Annotated[date | None, Field(title='Annualon')] = None
-    eltOn: Annotated[date | None, Field(title='Elton')] = None
+    annualOn: Annotated[date_aliased | None, Field(title='Annualon')] = None
+    eltOn: Annotated[date_aliased | None, Field(title='Elton')] = None
     hundredHourAtHours: Annotated[float | None, Field(title='Hundredhourathours')] = (
         None
     )
-    staticCheckOn: Annotated[date | None, Field(title='Staticcheckon')] = None
-    transponderCheckOn: Annotated[date | None, Field(title='Transpondercheckon')] = None
+    staticCheckOn: Annotated[date_aliased | None, Field(title='Staticcheckon')] = None
+    transponderCheckOn: Annotated[
+        date_aliased | None, Field(title='Transpondercheckon')
+    ] = None
     vorCheck: VorCheckAsk | None = None
 
 
@@ -4812,7 +5037,7 @@ class ProficiencyPlan(BaseModel):
     sessions: Annotated[
         list[CoachSession] | None, Field(max_length=4, title='Sessions')
     ] = None
-    today: Annotated[date | None, Field(title='Today')] = None
+    today: Annotated[date_aliased | None, Field(title='Today')] = None
     weak_areas: Annotated[list[CoachWeakArea] | None, Field(title='Weak Areas')] = None
 
 
@@ -4888,6 +5113,39 @@ class Runway(BaseModel):
     ] = []
     width_ft: Annotated[int | None, Field(title='Width Ft')] = None
     wind: RunwayWind | None = None
+
+
+class StudioDraftCaptions(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    credits: Annotated[list[str] | None, Field(title='Credits')] = None
+    quotes: Annotated[list[StudioDraftQuote] | None, Field(title='Quotes')] = None
+    status: Annotated[str | None, Field(title='Status')] = None
+    title: Annotated[str | None, Field(title='Title')] = None
+    track: Annotated[str | None, Field(title='Track')] = None
+
+
+class StudioDraftIdentity(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    checks: Annotated[list[StudioDraftCheck] | None, Field(title='Checks')] = None
+    nearest: StudioDraftNearest | None = None
+    verdict: Annotated[
+        Literal['confirmed', 'no_track', 'needs_human'] | None, Field(title='Verdict')
+    ] = None
+    window: StudioDraftWindow | None = None
+
+
+class StudioNotams(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    archived: Annotated[bool | None, Field(title='Archived')] = None
+    day: Annotated[str | None, Field(title='Day')] = None
+    notams: Annotated[list[StudioNotam] | None, Field(title='Notams')] = None
+    tfrs: Annotated[list[StudioTfr] | None, Field(title='Tfrs')] = None
 
 
 class TfrFacts(BaseModel):
@@ -5214,7 +5472,7 @@ class CoachAsk(BaseModel):
     entries: Annotated[
         list[CoachLogbookEntry] | None, Field(max_length=5000, title='Entries')
     ] = None
-    flightReviewOn: Annotated[date | None, Field(title='Flightreviewon')] = None
+    flightReviewOn: Annotated[date_aliased | None, Field(title='Flightreviewon')] = None
     held: Annotated[
         list[CoachEndorsement] | None,
         Field(max_length=60, title='Held', validate_default=True),
@@ -5226,14 +5484,16 @@ class CoachAsk(BaseModel):
             title='Home',
         ),
     ] = None
-    ipcOn: Annotated[date | None, Field(title='Ipcon')] = None
-    medicalExpiresOn: Annotated[date | None, Field(title='Medicalexpireson')] = None
+    ipcOn: Annotated[date_aliased | None, Field(title='Ipcon')] = None
+    medicalExpiresOn: Annotated[
+        date_aliased | None, Field(title='Medicalexpireson')
+    ] = None
     ratings: Annotated[
         list[Literal['student', 'private', 'commercial', 'atp', 'instrument', 'cfi']] | None,
         Field(title='Ratings'),
     ] = []
     remindDays: Annotated[RemindDays | None, Field(title='Reminddays')] = None
-    today: Annotated[date | None, Field(title='Today')] = None
+    today: Annotated[date_aliased | None, Field(title='Today')] = None
 
 
 class CopilotField(BaseModel):
@@ -5539,6 +5799,35 @@ class Status(BaseModel):
     ] = []
     services: Services | None = None
     weather: Annotated[list[WeatherDataset] | None, Field(title='Weather')] = None
+
+
+class StudioDraft(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+    )
+    aircraft: Annotated[str | None, Field(title='Aircraft')] = None
+    captions: StudioDraftCaptions | None = None
+    city: Annotated[str | None, Field(title='City')] = None
+    fatal: Annotated[bool | None, Field(title='Fatal')] = None
+    hex: Annotated[str | None, Field(title='Hex')] = None
+    id: Annotated[str | None, Field(title='Id')] = None
+    identity: StudioDraftIdentity | None = None
+    identity_by: Annotated[str | None, Field(title='Identity By')] = None
+    kit_at: Annotated[float | None, Field(title='Kit At')] = None
+    lat: Annotated[float | None, Field(title='Lat')] = None
+    local_date: Annotated[str | None, Field(title='Local Date')] = None
+    local_time: Annotated[str | None, Field(title='Local Time')] = None
+    lon: Annotated[float | None, Field(title='Lon')] = None
+    n_number: Annotated[str | None, Field(title='N Number')] = None
+    noticed_at: Annotated[float | None, Field(title='Noticed At')] = None
+    rendered_at: Annotated[float | None, Field(title='Rendered At')] = None
+    sources: Annotated[list[StudioDraftSource] | None, Field(title='Sources')] = None
+    state: Annotated[str | None, Field(title='State')] = None
+    status: Annotated[
+        Literal['needs_identity', 'ready', 'rendered', 'dismissed'] | None,
+        Field(title='Status'),
+    ] = None
+    track: Annotated[Literal['adsb', 'none'] | None, Field(title='Track')] = None
 
 
 class AirspaceAt(BaseModel):

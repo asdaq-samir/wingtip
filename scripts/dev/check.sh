@@ -6,7 +6,7 @@
 #
 #   scripts/dev/check.sh <area>...       an area of scripts/areas.yml (the table of areas, their
 #                                    paths and checks): web py planner ingest assistant
-#                                    weather jobs engine java ios android site xplane arch
+#                                    weather jobs engine java ios android site sim xplane arch
 #   scripts/dev/check.sh all-changed     the areas `git diff origin/main...` and
 #                                    the uncommitted files touch, in parallel
 #   scripts/dev/check.sh --areas         reads paths on stdin, prints their areas

@@ -78,7 +78,28 @@ class UpstreamRoutesTest {
             Map.entry("GET /api/weather/loop", "planner public csrf"),
             // The dry run played against the forecast: public, and a POST
             // with no CSRF cookie, as the clearance's places are.
-            Map.entry("POST /api/forecast/run", "planner public no-csrf"));
+            Map.entry("POST /api/forecast/run", "planner public no-csrf"),
+            // The 3D map's airspace volumes and the model weather's flow
+            // layer, public as the map's other layers are.
+            Map.entry("GET /api/airspace/volumes", "planner public csrf"),
+            Map.entry("GET /api/weather/flow", "planner public csrf"),
+            Map.entry("GET /api/weather/flow/{frame}/{field}.png", "planner public csrf"),
+            // An approach plate's page as a picture, public as the plates are.
+            Map.entry("GET /api/approach-plate-page/{cycle}/{ident}/{procedure}.png", "planner public csrf"),
+            // The Studio's tracks, history and drafts: the developer's for
+            // now (the owner, 2026-11-12: "You only for now").
+            Map.entry("GET /api/studio/track", "planner developer csrf"),
+            Map.entry("GET /api/studio/watched", "planner developer csrf"),
+            Map.entry("POST /api/studio/ground", "planner developer csrf"),
+            Map.entry("POST /api/studio/weather", "planner developer csrf"),
+            Map.entry("GET /api/studio/notams", "planner developer csrf"),
+            Map.entry("GET /api/studio/ntsb", "planner developer csrf"),
+            Map.entry("GET /api/studio/drafts", "planner developer csrf"),
+            Map.entry("GET /api/studio/drafts/{draft_id}", "planner developer csrf"),
+            Map.entry("GET /api/studio/drafts/{draft_id}/track", "planner developer csrf"),
+            Map.entry("POST /api/studio/drafts/{draft_id}/identity", "planner developer csrf"),
+            Map.entry("POST /api/studio/drafts/{draft_id}/rendered", "planner developer csrf"),
+            Map.entry("POST /api/studio/drafts/{draft_id}/dismiss", "planner developer csrf"));
 
     @Test
     void theEmergencyFieldsArePublicFromThePlanner() {
