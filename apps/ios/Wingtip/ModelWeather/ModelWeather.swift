@@ -279,7 +279,7 @@ final class ModelWeather {
                 }
                 let temp = try tempGrid?.reading(lat: point.latitude, lon: point.longitude)?.value
                 reading = try FlowReading.of(field, value: at.value, unit: spec?.unit ?? "", top: spec?.unscale.last,
-                                             fromDeg: at.fromDeg, tempC: temp)
+                                             fromDeg: at.fromDeg, calm: at.calm, tempC: temp)
                 readingProblem = nil
             } catch {
                 (reading, readingProblem) = (nil, "The \(field.label.lowercased()) there couldn't be worked out: \(error.localizedDescription)")

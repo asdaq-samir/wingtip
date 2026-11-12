@@ -49,5 +49,5 @@ export function valueAt(layer: FlowLayer, file: string, texture: TextureData | u
     unscale: spec.unscale,
     vector: spec.vector,
   });
-  return read && { value: read.value, direction: read.from_deg ?? undefined };
+  return read && { value: read.value, direction: read.from_deg ?? undefined, calm: read.calm };
 }
