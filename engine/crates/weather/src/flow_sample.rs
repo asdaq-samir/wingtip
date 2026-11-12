@@ -70,19 +70,49 @@ pub type Pixel = [f64; 3];
 /// reading says calm and gives no direction, as a report would.
 pub const CALM_BELOW_KT: f64 = 1.0;
 
+/// The ceiling's picture (app.flow_grid's "ceiling", feet above the
+/// ground: 14 CFR 1.1's ceiling is "the height above the earth's surface
+/// of the lowest layer of clouds or obscuring phenomena that is reported
+/// as broken, overcast, or obscuration") holds 0 to 12,750 ft, 50 ft a
+/// step, and writes a ceiling at or over its top, and none at all (the
+/// GFS's 20,000 m, the HRRR's missing value), as the top. Either is no
+/// ceiling the categories turn on: AIM 7-1-7's highest bound is "VFR.
+/// Ceiling greater than 3,000 feet", well under 12,750. So a reading
+/// within half a step of the top is no ceiling, and any other is rounded
+/// to the step, as the picture holds nothing finer: a 25 ft figure from
+/// reading between two pixels would claim a precision the model's ceiling,
+/// a diagnosis from its cloud, never had.
+fn ceiling(value: f64, unscale: [f64; 2]) -> (f64, bool) {
+    let step = (unscale[1] - unscale[0]) / 255.0;
+    let none = value >= unscale[1] - step / 2.0;
+    let rounded = if step > 0.0 { unscale[0] + ((value - unscale[0]) / step).round() * step } else { value };
+    (rounded, none)
+}
+
 /// A reading: the value (the wind's speed) in the field's unit, and for
 /// the wind the direction it blows from, degrees true, and whether it is
-/// calm (CALM_BELOW_KT), when it has no direction.
+/// calm (CALM_BELOW_KT), when it has no direction; for the ceiling,
+/// whether there is none (`ceiling`).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Reading {
     pub value: f64,
     pub from_deg: Option<f64>,
     pub calm: bool,
+    pub no_ceiling: bool,
+}
+
+/// What a picture holds: a plain value, the wind's two parts, or the
+/// ceiling (`ceiling`), whose top is none.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Field {
+    Scalar,
+    Vector,
+    Ceiling,
 }
 
 /// The value read from a cell's four pixels (module note), or None where
 /// one it is read from has none.
-pub fn sample(pixels: [Pixel; 4], fx: f64, fy: f64, unscale: [f64; 2], vector: bool) -> Option<Reading> {
+pub fn sample(pixels: [Pixel; 4], fx: f64, fy: f64, unscale: [f64; 2], field: Field) -> Option<Reading> {
     let weights = [(1.0 - fx) * (1.0 - fy), fx * (1.0 - fy), (1.0 - fx) * fy, fx * fy];
     if pixels.iter().zip(weights).any(|(p, w)| w > 0.0 && p[2] <= 0.0) {
         return None;
@@ -91,15 +121,20 @@ pub fn sample(pixels: [Pixel; 4], fx: f64, fy: f64, unscale: [f64; 2], vector: b
         let byte: f64 = pixels.iter().zip(weights).filter(|(_, w)| *w > 0.0).map(|(p, w)| p[c] * w).sum();
         unscale[0] + byte * (unscale[1] - unscale[0]) / 255.0
     };
-    if !vector {
-        return Some(Reading { value: channel(0), from_deg: None, calm: false });
+    match field {
+        Field::Scalar => return Some(Reading { value: channel(0), from_deg: None, calm: false, no_ceiling: false }),
+        Field::Ceiling => {
+            let (value, no_ceiling) = ceiling(channel(0), unscale);
+            return Some(Reading { value, from_deg: None, calm: false, no_ceiling });
+        }
+        Field::Vector => {}
     }
     let (east, north) = (channel(0), channel(1));
     let speed = east.hypot(north);
     let calm = speed < CALM_BELOW_KT;
     // From where the parts carry the air, turned round; none for a calm.
     let from_deg = (!calm).then(|| (-east).atan2(-north).to_degrees().rem_euclid(360.0));
-    Some(Reading { value: speed, from_deg, calm })
+    Some(Reading { value: speed, from_deg, calm, no_ceiling: false })
 }
 
 fn number(name: &str, v: &Value, key: &str) -> Result<f64, String> {
@@ -126,8 +161,8 @@ fn size(name: &str, v: &Value, key: &str) -> Result<usize, String> {
 
 /// `flow_cell`: `{"bounds", "width", "height", "lat", "lon"}` to
 /// `{"pixels", "fx", "fy"}` or null; `flow_sample`: `{"pixels": [[r, g,
-/// a] x 4], "fx", "fy", "unscale", "vector"}` to `{"value", "from_deg",
-/// "calm"}` or null.
+/// a] x 4], "fx", "fy", "unscale", "vector", "ceiling"?}` to `{"value",
+/// "from_deg", "calm", "no_ceiling"}` or null.
 pub fn call(name: &str, v: &Value) -> Result<String, String> {
     let mut out = String::new();
     match name {
@@ -153,13 +188,18 @@ pub fn call(name: &str, v: &Value) -> Result<String, String> {
             let fx = number(name, v, "fx")?.clamp(0.0, 1.0);
             let fy = number(name, v, "fy")?.clamp(0.0, 1.0);
             let unscale = numbers::<2>(name, v.get("unscale"), "unscale")?;
-            let vector = matches!(v.get("vector"), Some(Value::Bool(true)));
-            let Some(r) = sample(pixels, fx, fy, unscale, vector) else { return Ok("null".to_owned()) };
+            let field = match (v.get("vector"), v.get("ceiling")) {
+                (Some(Value::Bool(true)), _) => Field::Vector,
+                (_, Some(Value::Bool(true))) => Field::Ceiling,
+                _ => Field::Scalar,
+            };
+            let Some(r) = sample(pixels, fx, fy, unscale, field) else { return Ok("null".to_owned()) };
             out.push_str("{\"value\":");
             json::number(&mut out, r.value);
             out.push_str(",\"from_deg\":");
             json::opt_number(&mut out, r.from_deg);
-            out.push_str(if r.calm { ",\"calm\":true}" } else { ",\"calm\":false}" });
+            out.push_str(if r.calm { ",\"calm\":true" } else { ",\"calm\":false" });
+            out.push_str(if r.no_ceiling { ",\"no_ceiling\":true}" } else { ",\"no_ceiling\":false}" });
         }
         _ => return Err(format!("{name}: not a flow rule")),
     }
@@ -192,13 +232,13 @@ mod tests {
         // 50 kt beside an easterly of 50 kt, read half way: calm, where an
         // average of the speeds reads 50.
         let (west, east) = ([255.0, 127.5, 255.0], [0.0, 127.5, 255.0]);
-        let r = sample([west, east, west, east], 0.5, 0.0, [-50.0, 50.0], true).unwrap();
+        let r = sample([west, east, west, east], 0.5, 0.0, [-50.0, 50.0], Field::Vector).unwrap();
         assert!(r.value.abs() < 1e-9 && r.from_deg.is_none() && r.calm);
         // A wind from the west, 50 kt: blowing east.
-        let r = sample([west; 4], 0.3, 0.6, [-50.0, 50.0], true).unwrap();
+        let r = sample([west; 4], 0.3, 0.6, [-50.0, 50.0], Field::Vector).unwrap();
         assert!((r.value - 50.0).abs() < 1e-9 && (r.from_deg.unwrap() - 270.0).abs() < 1e-9 && !r.calm);
         // From the north: the north part negative.
-        let r = sample([[127.5, 0.0, 255.0]; 4], 0.0, 0.0, [-50.0, 50.0], true).unwrap();
+        let r = sample([[127.5, 0.0, 255.0]; 4], 0.0, 0.0, [-50.0, 50.0], Field::Vector).unwrap();
         assert!(r.from_deg.unwrap().abs() < 1e-9);
     }
 
@@ -206,22 +246,45 @@ mod tests {
     fn under_a_knot_is_calm_with_no_direction() {
         // The weather service's wind picture, -100 to 100 kt a part: byte
         // 128 is 0.39 kt, the nearest a calm's parts come to nothing.
-        let r = sample([[128.0, 128.0, 255.0]; 4], 0.0, 0.0, [-100.0, 100.0], true).unwrap();
+        let r = sample([[128.0, 128.0, 255.0]; 4], 0.0, 0.0, [-100.0, 100.0], Field::Vector).unwrap();
         assert!(r.value > 0.5 && r.value < CALM_BELOW_KT && r.calm && r.from_deg.is_none(), "{r:?}");
         // A knot is not calm (FMH-1 Table 5-1: 1-3 kt, smoke drifts).
-        let r = sample([[127.5, 127.5 - 255.0 / 200.0, 255.0]; 4], 0.0, 0.0, [-100.0, 100.0], true).unwrap();
+        let r = sample([[127.5, 127.5 - 255.0 / 200.0, 255.0]; 4], 0.0, 0.0, [-100.0, 100.0], Field::Vector).unwrap();
         assert!((r.value - 1.0).abs() < 1e-9 && !r.calm && r.from_deg.unwrap().abs() < 1e-9, "{r:?}");
     }
 
     #[test]
     fn a_scalar_is_read_linearly_and_none_where_a_pixel_has_none() {
         let p = |red: f64, alpha: f64| [red, 0.0, alpha];
-        let r = sample([p(0.0, 255.0), p(255.0, 255.0), p(0.0, 255.0), p(255.0, 255.0)], 0.25, 0.5, [0.0, 100.0], false).unwrap();
+        let r = sample([p(0.0, 255.0), p(255.0, 255.0), p(0.0, 255.0), p(255.0, 255.0)], 0.25, 0.5, [0.0, 100.0], Field::Scalar).unwrap();
         assert!((r.value - 25.0).abs() < 1e-9 && r.from_deg.is_none());
         let none = p(0.0, 0.0);
-        assert_eq!(sample([p(0.0, 255.0), none, p(0.0, 255.0), none], 0.25, 0.5, [0.0, 100.0], false), None);
+        assert_eq!(sample([p(0.0, 255.0), none, p(0.0, 255.0), none], 0.25, 0.5, [0.0, 100.0], Field::Scalar), None);
         // A pixel the point is not read from at all does not count.
-        assert!(sample([p(0.0, 255.0), none, p(0.0, 255.0), none], 0.0, 0.5, [0.0, 100.0], false).is_some());
+        assert!(sample([p(0.0, 255.0), none, p(0.0, 255.0), none], 0.0, 0.5, [0.0, 100.0], Field::Scalar).is_some());
+    }
+
+    #[test]
+    fn the_ceiling_is_none_at_its_pictures_top_and_rounded_to_its_step() {
+        // app.flow_grid's ceiling: 0 to 12,750 ft, 50 ft a step.
+        let top = [0.0, 12_750.0];
+        let at = |red: f64, fx: f64| {
+            sample([[red, 0.0, 255.0], [red + 1.0, 0.0, 255.0], [red, 0.0, 255.0], [red + 1.0, 0.0, 255.0]], fx, 0.0, top, Field::Ceiling)
+                .unwrap()
+        };
+        // The top byte: a ceiling over 12,750 ft or none, either no ceiling.
+        let r = sample([[255.0, 0.0, 255.0]; 4], 0.0, 0.0, top, Field::Ceiling).unwrap();
+        assert!(r.no_ceiling && r.value == 12_750.0, "{r:?}");
+        // Half a step under the top is still none; the step under it is a ceiling.
+        assert!(at(254.0, 0.5).no_ceiling);
+        let r = at(254.0, 0.0);
+        assert!(!r.no_ceiling && r.value == 12_700.0, "{r:?}");
+        // AIM 7-1-7's MVFR bound, 3,000 ft (byte 60), reads as itself, and
+        // a quarter of the way to 3,050 rounds back to it.
+        assert_eq!(at(60.0, 0.25).value, 3_000.0);
+        assert_eq!(at(60.0, 0.75).value, 3_050.0);
+        // A plain field is never a ceiling, nor rounded.
+        assert!(!sample([[255.0, 0.0, 255.0]; 4], 0.0, 0.0, top, Field::Scalar).unwrap().no_ceiling);
     }
 
     #[test]
@@ -231,7 +294,7 @@ mod tests {
         let s =
             json::parse(r#"{"pixels":[[0,0,255],[255,0,255],[0,0,255],[255,0,255]],"fx":0.25,"fy":0.5,"unscale":[0,100],"vector":false}"#)
                 .unwrap();
-        assert_eq!(call("flow_sample", &s).unwrap(), r#"{"value":25.0,"from_deg":null,"calm":false}"#);
+        assert_eq!(call("flow_sample", &s).unwrap(), r#"{"value":25.0,"from_deg":null,"calm":false,"no_ceiling":false}"#);
         assert!(call("flow_sample", &json::parse(r#"{"pixels":[]}"#).unwrap()).is_err());
     }
 }

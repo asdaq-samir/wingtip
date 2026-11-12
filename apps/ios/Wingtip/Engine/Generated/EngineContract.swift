@@ -3787,11 +3787,14 @@ enum EngineContract {
         var fromDeg: Double?
         /// A wind under 1 kt, which has no direction (FMH-1 Table 5-1, 5.5.2); false for a scalar.
         var calm: Bool
+        /// The ceiling's picture read at its top: a ceiling over it or none, either no ceiling (AIM 7-1-7); false for any other field.
+        var noCeiling: Bool
 
         enum CodingKeys: String, CodingKey {
             case value
             case fromDeg = "from_deg"
             case calm
+            case noCeiling = "no_ceiling"
         }
     }
 
@@ -3803,6 +3806,8 @@ enum EngineContract {
         /// [least, most].
         var unscale: [Double]
         var vector: Bool
+        /// The picture is the ceiling's, feet above the ground (14 CFR 1.1), whose top is no ceiling; false or absent for any other field.
+        var ceiling: Bool?
     }
 
     struct ForecastHourInput: Codable, Equatable, Sendable {
