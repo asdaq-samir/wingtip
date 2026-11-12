@@ -73,7 +73,10 @@ export default function MapSettings({ weather }: { weather?: ReactNode }) {
       {/* Over the chart, at the pilot's ask (OverlayTiles): the USGS's
           aerial imagery, or Google's map or its satellite imagery where
           this deployment has a Google key; and how strongly it covers the
-          chart, the route and the marks over it either way. */}
+          chart, the route and the marks over it either way. Google picked
+          here is Google's imagery close in too, past the chart's own
+          detail, where the USGS's public-domain imagery is otherwise
+          (useCloseImagery). */}
       <div className="flex flex-col gap-2">
         <MapPictureChoices
           title="Overlay"

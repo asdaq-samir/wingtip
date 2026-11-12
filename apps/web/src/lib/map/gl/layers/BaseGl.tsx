@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { googleMapsQuery } from "../../../queryClient";
 import { usePreferences, type OverlayStrength } from "../../../preferences";
 import { googleReferrer, googleTiles, useGoogleSession } from "../../sources/googleSession";
-import { USGS_URL } from "../../sources/imagery";
+import { USGS_CREDIT, USGS_MAX_ZOOM, USGS_URL } from "../../sources/imagery";
 import { useShownOverlay } from "../../sources/useShownOverlay";
 import { useGlLayer, useGlMap, useGlPaint, type Slot } from "../glLayer";
 import { glZoom } from "../glStyle";
@@ -101,10 +101,10 @@ export function OverlayGl() {
 }
 
 function Usgs({ opacity }: { opacity: number }) {
-  useTiles("overlay-usgs", "imagery", USGS_URL, 16);
+  useTiles("overlay-usgs", "imagery", USGS_URL, USGS_MAX_ZOOM);
   useGlPaint(["overlay-usgs"], { "raster-opacity": opacity });
   useImageryShown("usgs", opacity);
-  useMapCredit("imagery", "Imagery USGS The National Map");
+  useMapCredit("imagery", USGS_CREDIT);
   return null;
 }
 
