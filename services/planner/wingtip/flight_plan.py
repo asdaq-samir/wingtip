@@ -60,12 +60,12 @@ from .planning import (
     cruise_altitude,
     flight_totals,
     flight_window,
-    forecast_hour_for,
     join_selections,
     no_altitude,
     own_altitude_caution,
     prohibited_caution,
     route_totals,
+    winds_key_for,
 )
 from .units import M_TO_FT
 from .weather import WeatherServiceError
@@ -201,8 +201,8 @@ def resolve_altitude(
     nearest: bool = False,
 ) -> Flown | Unflyable | NoWinds:
     """What the log flies, decided once for /api/plan and /api/navlog
-    alike. `fcst_hr` is the winds forecast period for the departure (see
-    forecast_hour_for), `window` the flight's own hours the go/no-go
+    alike. `fcst_hr` is the winds key for the departure (see
+    winds_key_for), `window` the flight's own hours the go/no-go
     forecast is read over (see flight_window).
 
     The four plans are made beside a pilot's own altitude as well, as
@@ -349,7 +349,7 @@ def hop_runs(
             HopRun(
                 hop,
                 navlog.fixes(hop.dep_ident, hop.dest_ident, hop.start, hop.end, selected),
-                forecast_hour_for(when),
+                winds_key_for(when),
                 flight_window(when, hop.length_nm, tas),
                 # A later flight's own time, now's flights' too: its night was
                 # judged at now, as the first's is.

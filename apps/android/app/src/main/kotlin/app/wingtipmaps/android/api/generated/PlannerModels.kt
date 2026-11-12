@@ -5244,21 +5244,33 @@ data class FuelStop (
 )
 
 /**
- * The period of the winds and temperatures aloft a plan flies: the
- * GFS model's (fetched by services/weather, read from wingtip.weather_store), since the FB
- * ended with the NAM (NWS
- * Service Change Notice 26-47). Valid at `valid_at`, for use from
- * `use_from` to `use_to` (FAA Order JO 7110.10 TBL 9-3-1's windows round
- * the forecast hour), ISO UTC; `run` the GFS run and `forecast_hour` the
- * hour of it read; `modelled` always true now.
+ * Whose winds and temperatures aloft a plan flies, and for when (read
+ * by services/weather, from wingtip.weather_store; wingtip.winds_aloft):
+ * where the map's timeline holds the departure, the Aviation Weather
+ * Center's GFA winds the map draws (or NOAA's GFS in their place once
+ * AWC's are past their margin), read at each leg's time, `use_from` to
+ * `use_to` the grid's hours round the departure; past it, the GFS's at
+ * the old FB stations by period, for use `use_from` to `use_to` (FAA
+ * Order JO 7110.10 TBL 9-3-1's windows round the forecast hour). ISO
+ * UTC. `run` AWC's cycle or the GFS's run, `forecast_hour` the hour of
+ * it read; `label` the nav log's words ("AWC winds, 12Z"); `source`
+ * "awc", "gfs" (in AWC's place) or "gfs-stations"; `fallback` where
+ * NOAA's stand in for AWC's; `stale` where the run is past its source's
+ * cadence and margin, as the map's legend says it; `modelled` where they
+ * are model output said as such (NOAA's GFS).
  */
 @Serializable
 data class WindsPeriod (
+    val fallback: Boolean? = null,
+
     @SerialName("forecast_hour")
     val forecastHour: Int? = null,
 
+    val label: String? = null,
     val modelled: Boolean? = null,
     val run: String? = null,
+    val source: String? = null,
+    val stale: Boolean? = null,
 
     @SerialName("use_from")
     val useFrom: String,

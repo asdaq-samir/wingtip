@@ -11416,6 +11416,47 @@ object EngineContract {
     )
 
     @Serializable
+    data class WindAloftAtInput(
+        val hours: List<EngineContract.WindAloftAtInputHoursItem>,
+        /**
+         * The time read at, UNIX seconds.
+         */
+        @SerialName("at_s")
+        val atS: Double,
+        @SerialName("altitude_ft")
+        val altitudeFt: Double? = null,
+        val altitudes: List<Double>? = null,
+    )
+
+    @Serializable
+    data class WindAloftAtInputHoursItem(
+        /**
+         * The hour the column is valid at, UNIX seconds.
+         */
+        @SerialName("valid_s")
+        val validS: Double,
+        val levels: List<EngineContract.WindAloftAtInputHoursItemLevelsItem>,
+    )
+
+    @Serializable
+    data class WindAloftAtInputHoursItemLevelsItem(
+        @SerialName("altitude_ft")
+        val altitudeFt: Double,
+        /**
+         * The wind's east part, toward where it blows.
+         */
+        @SerialName("u_kt")
+        val uKt: Double? = null,
+        /**
+         * The wind's north part, toward where it blows.
+         */
+        @SerialName("v_kt")
+        val vKt: Double? = null,
+        @SerialName("temp_c")
+        val tempC: Double? = null,
+    )
+
+    @Serializable
     data class WindArrowAnswer(
         val shown: Boolean,
         val over: Boolean,

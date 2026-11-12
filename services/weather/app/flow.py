@@ -28,6 +28,11 @@ its source has something newer:
 - "aloft" (app.flow_aloft): the GFS's temperature at the wind's levels
   (about 2 MB) and its world wind (0.16 MB).
 
+The AWC and aloft parts keep the wind and temperature at the levels as
+numbers too (app.flow_store's store_numbers), which the planner reads a
+route's winds aloft from, so the plan flies the winds the map draws
+(wingtip.winds_aloft; the owner, 2026-11-12).
+
 When AWC's GFA part of a frame is older than AWC_MARGIN (its hourly
 cadence and two hours more), the frame falls back to NOMADS for what it
 also has -- the surface wind, gusts and cloud (the HRRR and GFS) and the
@@ -62,7 +67,7 @@ from datetime import datetime, timedelta, timezone
 from wingtip import weather_store
 from wingtip.engine import ask
 
-from . import flow_aloft, flow_awc, flow_grid, flow_nomads, flow_parts
+from . import flow_aloft, flow_awc, flow_grid, flow_nomads, flow_parts, flow_store
 
 log = logging.getLogger(__name__)
 
@@ -146,13 +151,24 @@ def fetch(now: datetime | None = None) -> None:
     if not frames:
         raise FlowUnavailable("no source had the timeline")
     names = {name for f in frames for name in f["files"].values()}
+    numbers = {p["numbers"]["array"] for f in frames for p in f["parts"].values() if p.get("numbers")}
     record = {
         "frames": frames,
         "bounds": list(flow_grid.BOUNDS),
         "world_bounds": list(flow_aloft.WORLD_BOUNDS),
+        # Where the parts' numbers (flow_store.store_numbers) are: the
+        # half-degree grid's north-west point, its step and its size.
+        "numbers_grid": {
+            "north": flow_grid.NORTH,
+            "west": flow_grid.WEST,
+            "step": flow_grid.HALF_STEP_DEG,
+            "rows": flow_grid.HALF_ROWS,
+            "cols": flow_grid.HALF_COLS,
+        },
         "levels": {k: [lv["id"] for lv in levels[k]] for k in ("wind", "icing", "turbulence")},
         "fields": {k: {"unit": v["unit"], "unscale": list(v["unscale"]), "vector": v["vector"]} for k, v in flow_grid.FIELDS.items()},
     }
     newest = max(datetime.fromisoformat(f["valid"].replace("Z", "+00:00")) for f in frames)
     weather_store.write("flow", record, fetched_at=time.time(), until=(newest + timedelta(hours=1)).timestamp())
     weather_store.remove_blobs("flow-", names, ".png")
+    weather_store.remove_arrays(flow_store.NUMBERS_PREFIX, numbers)

@@ -8,6 +8,7 @@ from .aircraft_figures import DemonstratedCrosswind, DistanceTable, ShortField  
 from .common import AltitudeChoice, FlightRules, Hazard, Loading, SpecialUse, Wind
 
 from .route_profile import ProfileAirspace, ProfileGround, ProfileObstacle, RouteProfile  # noqa: F401  (the side view, its own file)
+from .winds_period import WindsPeriod
 
 
 class AirportEnd(BaseModel):
@@ -377,23 +378,7 @@ class Totals(BaseModel):
     #: The period of the winds-aloft forecast the legs fly (a route with
     #: stops, its first flight's; each hop has its own): None where it
     #: could not be read.
-    winds: "WindsPeriod | None" = None
-
-
-class WindsPeriod(BaseModel):
-    """The period of the winds and temperatures aloft a plan flies: the
-    GFS model's (fetched by services/weather, read from wingtip.weather_store), since the FB ended with the NAM (NWS
-    Service Change Notice 26-47). Valid at `valid_at`, for use from
-    `use_from` to `use_to` (FAA Order JO 7110.10 TBL 9-3-1's windows round
-    the forecast hour), ISO UTC; `run` the GFS run and `forecast_hour` the
-    hour of it read; `modelled` always true now."""
-
-    valid_at: str
-    use_from: str
-    use_to: str
-    modelled: bool = False
-    run: str | None = None
-    forecast_hour: int | None = None
+    winds: WindsPeriod | None = None
 
 
 class FuelStop(BaseModel):

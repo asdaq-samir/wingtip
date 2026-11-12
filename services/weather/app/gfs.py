@@ -26,7 +26,7 @@ Fetched on the weather service's schedule (app.main), each period a
 product of its own ("winds-06", "-12", "-24"), and stored with the end of
 its window as the time it may be served to (the engine's rule for when a
 winds forecast stops counting, validity.rs): the planner reads it
-(wingtip.weather._fd_stations) and never waits on NOMADS. Moved from the
+(wingtip.winds_stations.fd_stations) and never waits on NOMADS. Moved from the
 planner's wingtip.modelwinds (#535).
 """
 

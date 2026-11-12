@@ -53,7 +53,7 @@ def _issued(part_name: str, key: dict, field: str) -> str | None:
     return key.get("run")
 
 
-def _sources(frame: dict, now: float) -> dict[str, dict]:
+def field_sources(frame: dict, now: float) -> dict[str, dict]:
     """Each field's source as the legend says it: {"label", "issued",
     "stale", "fallback"}."""
     out = {}
@@ -129,7 +129,7 @@ def layer(now: float | None = None) -> dict | None:
                 "past": past,
                 "fields": sorted(f.get("files", {})),
                 "versions": {field: _version(blob) for field, blob in f.get("files", {}).items()},
-                "sources": _sources(f, now),
+                "sources": field_sources(f, now),
                 "radar_tiles": radar,
             }
         )

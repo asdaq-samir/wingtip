@@ -2,11 +2,11 @@ import { useState, type ReactNode } from "react";
 import { cn } from "cn";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../../../components/ui/accordion";
 import { usePrinting } from "../lib/usePrinting";
-import type { AltitudeSegment, Leg, NavLogAltitude } from "../../../lib/api/types";
+import type { AltitudeSegment, Leg, NavLogAltitude, Totals } from "../../../lib/api/types";
 import { cruiseReferenceFt } from "../../../lib/performance";
 import { TEXT } from "../../../lib/text";
 import { flightLevel } from "../../../lib/format";
-import { WINDS_MODELLED } from "../../../lib/windsAloft";
+import { WINDS_MODELLED, windsSource } from "../../../lib/windsAloft";
 import { capitalised, faaWords, suaAltitudes } from "../../../lib/advisories";
 import { altFt, bearing, cruiseByAltitude, describeFuel, describeSteps, describeTime, feetBelowClouds, PLAN_NAME } from "../format";
 import { callEngine } from "../../../lib/engine/engine";
@@ -33,6 +33,8 @@ interface Props {
    *  they were made. Without it (the Brief) the plan flown comes first,
    *  with its time and fuel, as the answer. */
   plansAbove?: boolean;
+  /** Whose winds the plans fly (the totals'), named as the nav log names them. */
+  winds?: Totals["winds"];
 }
 
 /** One step: its name, the reason in a line under it, and its figure at
@@ -110,7 +112,7 @@ function ceilingRuns(segments: AltitudeSegment[]): AltitudeSegment[] {
  * (each fact said once): a list of the plan, the floor and the ceiling
  * sat over the steps, which said all three again.
  */
-export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Props) {
+export default function AltitudeReasoning({ nav, legs, plansAbove = false, winds }: Props) {
   const s = nav.altitude_selection;
   // Under IFR the floor, the ceiling and the rule are IFR's (the
   // planner's wingtip.ifr): said in their words below.
@@ -402,10 +404,8 @@ export default function AltitudeReasoning({ nav, legs, plansAbove = false }: Pro
               }),
           body: (
             <>
-              {/* The winds named as the nav log names them: the GFS's, modelled
-            (lib/windsAloft). */}
               Lowest and highest keep to the bottom and the top of the legal altitudes; fastest takes the winds aloft,
-              {` ${WINDS_MODELLED}, `}for the least time, and economical for the least fuel, every climb counted.{" "}
+              {` ${windsSource(winds) ?? WINDS_MODELLED}, `}for the least time, and economical for the least fuel, every climb counted.{" "}
               {nav.options
                 .map(
                   (o) =>

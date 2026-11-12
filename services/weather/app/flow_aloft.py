@@ -89,6 +89,11 @@ def read_columns(body: bytes) -> tuple[np.ndarray, dict[str, np.ndarray]]:
         if meta.level_type != "isobaric surface" or meta.var_abbrev not in ("TMP", "HGT", "UGRD", "VGRD"):
             continue
         values = np.asarray(message.data(), dtype=np.float64).reshape(meta.grid_shape)
+        # NOMADS' boxed 0.5-degree file runs south to north (its first row
+        # 5 N, read 2026-11-12); the layer's grids run north row first.
+        lats = np.asarray(meta.latlng()[0], dtype=np.float64).ravel()
+        if lats.size > 1 and lats[0] < lats[-1]:
+            values = values[::-1]
         if meta.var_abbrev == "TMP":
             values = values - 273.15
         elif meta.var_abbrev in ("UGRD", "VGRD"):
@@ -125,9 +130,9 @@ def value_at(levels: np.ndarray, columns: dict[str, np.ndarray], name: str, ft: 
     return _between(columns["HGT"], values, np.full(values.shape[1:], ft * M_PER_FT))
 
 
-def at_levels(body: bytes, wind_levels: list[dict], flight_levels_from_ft: float) -> dict[str, np.ndarray]:
-    """Each wind level's temperature on the output grid ("temp-060") and,
-    where the file has the wind, its east and north parts ("u-060",
+def at_levels_half(body: bytes, wind_levels: list[dict], flight_levels_from_ft: float) -> dict[str, np.ndarray]:
+    """Each wind level's temperature on the half-degree grid ("temp-060")
+    and, where the file has the wind, its east and north parts ("u-060",
     "v-060"); the surface's are the NOMADS part's and AWC's."""
     levels, columns = read_columns(body)
     out = {}
@@ -140,7 +145,7 @@ def at_levels(body: bytes, wind_levels: list[dict], flight_levels_from_ft: float
                 continue
             half = value_at(levels, columns, name, ft, hpa, ft >= flight_levels_from_ft)
             if half.shape == (flow_grid.HALF_ROWS, flow_grid.HALF_COLS):
-                out[f"{field}-{level['id']}"] = flow_grid.upsample(half.astype(np.float32))
+                out[f"{field}-{level['id']}"] = half.astype(np.float32)
     return out
 
 

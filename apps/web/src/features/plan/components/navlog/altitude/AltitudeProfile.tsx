@@ -5,7 +5,7 @@ import { Button } from "../../../../../components/ui/button";
 import { Toggle } from "@base-ui/react/toggle";
 import { Slider } from "../../../../../components/ui/slider";
 import Segmented from "../../../../../components/Segmented";
-import type { AltitudeChoice, Detour, Leg, NavLogAltitude } from "../../../../../lib/api/types";
+import type { AltitudeChoice, Detour, Leg, NavLogAltitude, Totals } from "../../../../../lib/api/types";
 import { useAirplaneChosen, type FlightRules } from "../../../../../lib/preferences";
 import { routeProfileQuery } from "../../../../../lib/queryClient";
 import { TEXT } from "../../../../../lib/text";
@@ -38,6 +38,7 @@ const LEVEL_INK: Record<string, string> = { red: "text-destructive-ink", yellow:
 export function AltitudeProfile({
   nav: navNow,
   legs: legsNow,
+  winds,
   ends,
   chart,
   corner,
@@ -84,6 +85,8 @@ export function AltitudeProfile({
   /** Sets a waypoint's own altitude, Start At or Cross At (useRouteEdits'
    *  setPointAltitude). */
   onLegAltitude?: (ident: string, feet: number, startAt: boolean) => void;
+  /** Whose winds the plan flies (the totals'), for the notes to name. */
+  winds?: Totals["winds"];
 }) {
   const airplane = useAirplaneChosen();
   const route = ends ? [ends.departure.ident, ...(ends.stops ?? []).map((s) => s.ident), ends.destination.ident].join(" ") : "";
@@ -233,6 +236,7 @@ export function AltitudeProfile({
       <ProfileNotes
         nav={nav}
         legs={legs}
+        winds={winds}
         profile={profile}
         shownAt={shownAt}
         tight={tight}

@@ -138,11 +138,11 @@ def _blank() -> np.ndarray:
     return np.full((flow_grid.HALF_ROWS, flow_grid.HALF_COLS), np.nan, dtype=np.float32)
 
 
-def wind_grids(answer: dict) -> dict[str, np.ndarray]:
-    """AWC's wind points on the output grid, knots: {"u", "v"} (east and
-    north parts, from where it blows: a wind from 270 at 10 kt is u = 10)
-    and "gust" where it gave gusts; NaN where it gave nothing or the
-    level is under the ground."""
+def wind_half(answer: dict) -> dict[str, np.ndarray]:
+    """AWC's wind points on its own half-degree grid, knots: {"u", "v"}
+    (east and north parts, toward where it blows: a wind from 270 at 10 kt
+    is u = 10) and "gust" where it gave gusts; NaN where it gave nothing
+    or the level is under the ground."""
     features = answer.get("features") or []
     u, v, gust = _blank(), _blank(), _blank()
     if not features:
@@ -157,12 +157,17 @@ def wind_grids(answer: dict) -> dict[str, np.ndarray]:
     # The direction is where it blows from: toward the opposite way.
     u[rows[inside], cols[inside]] = (-speed * np.sin(rad))[inside]
     v[rows[inside], cols[inside]] = (-speed * np.cos(rad))[inside]
-    out = {"u": flow_grid.upsample(u), "v": flow_grid.upsample(v)}
+    out = {"u": u, "v": v}
     if np.isfinite(gusts).any():
         # A point with no gust given gusts no more than its wind.
         gust[rows[inside], cols[inside]] = np.where(np.isfinite(gusts), gusts, speed)[inside]
-        out["gust"] = flow_grid.upsample(gust)
+        out["gust"] = gust
     return out
+
+
+def wind_grids(answer: dict) -> dict[str, np.ndarray]:
+    """wind_half's grids on the output's quarter degree, as drawn."""
+    return {k: flow_grid.upsample(v) for k, v in wind_half(answer).items()}
 
 
 def cloud_grids(answer: dict) -> dict[str, np.ndarray]:
@@ -185,28 +190,40 @@ def cloud_grids(answer: dict) -> dict[str, np.ndarray]:
     return {"cloud": flow_grid.upsample(cover), "tops": flow_grid.upsample(tops)}
 
 
-def frame(valid: datetime, latest: datetime, levels: list[str]) -> tuple[dict, dict[str, bytes]] | None:
-    """One hour's AWC part: its key ({"cycle", "forecast_hour"}) and its
-    PNGs by file name ("wind" the surface's, "wind-060" a level's,
-    "gust", "cloud", "tops"). None where the GFA has no answer for the
-    hour; a level it has none of is left out."""
+def frame(valid: datetime, latest: datetime, levels: list[dict]) -> tuple[dict, dict[str, bytes], dict] | None:
+    """One hour's AWC part: its key ({"cycle", "forecast_hour"}), its PNGs
+    by file name ("wind" the surface's, "wind-060" a level's, "gust",
+    "cloud", "tops"), and the wind at each level of an altitude (the
+    flow levels with "ft") as numbers on the half-degree grid, {"levels":
+    [{"id", "ft"}], "u", "v"} (u and v levels x rows x cols, kt), which the
+    planner reads a route's winds aloft from (wingtip.winds_aloft). None
+    where the GFA has no answer for the hour; a level it has none of is
+    left out of the pictures and NaN in the numbers."""
     picked = cycle_for(valid, latest)
     if picked is None:
         return None
     cycle, step = picked
     common = {"model": MODEL, "zoom": ZOOM, "density": 0, "bbox": BBOX, "wrap": "true", **_cycle_params(cycle, step)}
     files: dict[str, bytes] = {}
+    numbers: dict = {"levels": [], "u": [], "v": []}
     for level in levels:
-        answer = _get("wind", {**common, "level": level})
-        grids = wind_grids(answer) if answer else {}
-        if "u" not in grids:
+        level_id = level["id"]
+        answer = _get("wind", {**common, "level": level_id})
+        half = wind_half(answer) if answer else {}
+        if level.get("ft") is not None:
+            numbers["levels"].append({"id": level_id, "ft": level["ft"]})
+            numbers["u"].append(half.get("u", _blank()))
+            numbers["v"].append(half.get("v", _blank()))
+        if "u" not in half:
             continue
-        files["wind" if level == "sfc" else f"wind-{level}"] = flow_grid.png_wind(grids["u"], grids["v"])
-        if level == "sfc" and "gust" in grids:
-            files["gust"] = flow_grid.png_values("gust", grids["gust"])
+        files["wind" if level_id == "sfc" else f"wind-{level_id}"] = flow_grid.png_wind(
+            flow_grid.upsample(half["u"]), flow_grid.upsample(half["v"])
+        )
+        if level_id == "sfc" and "gust" in half:
+            files["gust"] = flow_grid.png_values("gust", flow_grid.upsample(half["gust"]))
     if not files:
         return None
     clouds = _get("cldlayer", {**common, "level": "sfc"})
     for name, values in (cloud_grids(clouds) if clouds else {}).items():
         files[name] = flow_grid.png_values(name, values)
-    return {"cycle": f"{cycle:%Y-%m-%dT%H:%M:%SZ}", "forecast_hour": step}, files
+    return {"cycle": f"{cycle:%Y-%m-%dT%H:%M:%SZ}", "forecast_hour": step}, files, numbers

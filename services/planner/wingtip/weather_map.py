@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import math
 
-from . import weather, weather_store
+from . import weather, weather_store, winds_stations
 
 #: A SIGMET is a flight's for as long as it is valid; a G-AIRMET is a
 #: snapshot valid at its time, three hours apart (wingtip.weather): the one
@@ -113,10 +113,10 @@ def winds_in(box: tuple, altitude_ft: float, fcst_hr: str) -> dict | None:
     from . import airports
 
     try:
-        stations = weather._fd_stations(fcst_hr)
+        stations = winds_stations.fd_stations(fcst_hr)
     except weather.WeatherServiceError:
         return None
-    codes, lats, lons = weather._station_rows(set(stations), airports.load_airports())
+    codes, lats, lons = winds_stations.station_rows(set(stations), airports.load_airports())
     south, west, north, east = box
     out = []
     for code, lat_r, lon_r in zip(codes, lats, lons):

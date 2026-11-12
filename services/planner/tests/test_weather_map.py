@@ -4,7 +4,7 @@ the part of the chart in sight, from wingtip.weather's held products, stubbed.""
 import time
 
 from fastapi.testclient import TestClient
-from wingtip import weather, weather_map
+from wingtip import weather, weather_map, winds_stations
 
 from app.main import app
 
@@ -139,14 +139,14 @@ def test_the_winds_aloft_are_the_fd_stations_at_the_altitude_asked_for(monkeypat
     from wingtip import airports
 
     _datasets(monkeypatch)
-    product = weather.FdStations({"MSN": {}, "DLH": {}})
+    product = winds_stations.FdStations({"MSN": {}, "DLH": {}})
     product.period = {"valid_at": "2026-10-20T18:00:00Z", "use_from": "2026-10-20T14:00:00Z", "use_to": "2026-10-20T21:00:00Z"}
-    monkeypatch.setattr(weather, "_fd_stations", lambda fcst_hr="06": product)
+    monkeypatch.setattr(winds_stations, "fd_stations", lambda fcst_hr="06": product)
     monkeypatch.setattr(airports, "load_airports", lambda: None)
     # Madison in the box, Duluth north of it.
     monkeypatch.setattr(
-        weather,
-        "_station_rows",
+        winds_stations,
+        "station_rows",
         lambda ids, df: (np.array(["MSN", "DLH"]), np.radians(np.array([43.14, 46.84])), np.radians(np.array([-89.34, -92.19]))),
     )
     wind = {"wind_dir_true_deg": 265.4, "wind_speed_kt": 33.6}

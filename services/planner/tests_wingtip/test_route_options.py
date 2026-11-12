@@ -12,7 +12,7 @@ import pandas as pd
 import pytest
 from shapely.geometry import Polygon
 
-from wingtip import fixes, fuelstops, geo, route_options, sua, terrain_detour, tfr, water, weather
+from wingtip import fixes, fuelstops, geo, route_options, sua, terrain_detour, tfr, water, weather, winds_aloft
 
 # On the equator a degree is about 60 nm either way.
 DEP = {"ident": "AAA", "lat": 0.0, "lon": 0.0}
@@ -78,7 +78,7 @@ def sky(monkeypatch):
     the test puts in `data`."""
     data = {"tafs": [], "metars": {}, "airsigmets": [], "gairmets": []}
     monkeypatch.setattr(weather, "_dataset", lambda name: data[name])
-    monkeypatch.setattr(weather, "wind_stations", lambda fcst_hr="06": ([], np.array([]), np.array([]), []))
+    monkeypatch.setattr(winds_aloft, "wind_points", lambda box, key, altitudes: [])
     monkeypatch.setattr(terrain_detour, "heights_ft", lambda lats, lons: np.zeros(lats.shape))
     monkeypatch.setattr(sua, "areas_in", lambda bbox: [])
     monkeypatch.setattr(tfr, "all_tfrs", lambda: [])

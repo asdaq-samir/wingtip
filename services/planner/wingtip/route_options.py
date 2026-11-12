@@ -35,7 +35,7 @@ from datetime import datetime, timezone
 
 import numpy as np
 
-from . import fixes, fuelstops, terrain_detour, water, weather
+from . import fixes, fuelstops, terrain_detour, water, weather, winds_aloft
 from .engine import ask as engine
 
 logger = logging.getLogger(__name__)
@@ -151,20 +151,13 @@ def _tfrs(frame: dict) -> list[dict]:
 
 
 def _winds(frame: dict, fcst_hr: str) -> list[dict]:
-    """Each FD station's wind at each of the engine's cruising altitudes
-    (wingtip.weather.wind_in_levels: #482 phase 2 moves its interpolation)."""
+    """The wind at each of the engine's cruising altitudes at points over
+    the frame, at the departure's time: the map's grid where its timeline
+    holds it, the GFS stations past it (wingtip.winds_aloft.wind_points)."""
     try:
-        _, lats, lons, levels = weather.wind_stations(fcst_hr)
+        return winds_aloft.wind_points(tuple(frame["data_box"]), fcst_hr, [float(a) for a in frame["altitudes_ft"]])
     except weather.WeatherServiceError:
         return []
-    out = []
-    for lat, lon, station in zip(lats, lons, levels):
-        winds = []
-        for alt in frame["altitudes_ft"]:
-            wind = weather.wind_in_levels(station, float(alt))
-            winds.append([wind["wind_dir_true_deg"], wind["wind_speed_kt"]] if wind else None)
-        out.append({"lat": float(lat), "lon": float(lon), "winds": winds})
-    return out
 
 
 def _fields(frame: dict, table, food) -> list[dict]:
@@ -197,7 +190,7 @@ def options(
     profile: dict | None,
     *,
     depart: datetime | None = None,
-    fcst_hr: str = "06",
+    fcst_hr: str | None = None,
     min_ceiling_ft: float | None = None,
     min_visibility_sm: float | None = None,
     current: list[tuple] | None = None,

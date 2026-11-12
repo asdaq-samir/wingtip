@@ -18,7 +18,7 @@ played against the rest, never failed for it.
 
 from __future__ import annotations
 
-from . import airports, glmp, weather, weather_store
+from . import airports, glmp, weather, weather_store, winds_stations
 from .engine import ask as _ask
 from .geo import corridor_bbox
 
@@ -54,7 +54,7 @@ def _winds(track: list[dict], unavailable: list[str]) -> list[list[dict]]:
     per_point: list[list[dict]] = [[] for _ in track]
     for hr in weather_store.WIND_PERIODS:
         try:
-            stations = weather._fd_stations(hr)
+            stations = winds_stations.fd_stations(hr)
         except weather.WeatherServiceError:
             if "winds" not in unavailable:
                 unavailable.append("winds")
@@ -65,7 +65,7 @@ def _winds(track: list[dict], unavailable: list[str]) -> list[list[dict]]:
             continue
         ids, table = set(stations.keys()), airports.load_airports()
         for i, p in enumerate(track):
-            code = weather._nearest_station(p["lat"], p["lon"], ids, table)
+            code = winds_stations.nearest_station(p["lat"], p["lon"], ids, table)
             if code is None:
                 continue
             levels = {str(alt): level for alt, level in stations[code].items()}

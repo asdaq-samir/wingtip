@@ -3666,9 +3666,15 @@ class WindsPeriod(BaseModel):
     model_config = ConfigDict(
         populate_by_name=True,
     )
+    fallback: Annotated[bool | None, Field(title='Fallback')] = False
     forecast_hour: Annotated[int | None, Field(title='Forecast Hour')] = None
+    label: Annotated[str | None, Field(title='Label')] = None
     modelled: Annotated[bool | None, Field(title='Modelled')] = False
     run: Annotated[str | None, Field(title='Run')] = None
+    source: Annotated[
+        Literal['awc', 'gfs', 'gfs-stations'] | None, Field(title='Source')
+    ] = None
+    stale: Annotated[bool | None, Field(title='Stale')] = False
     use_from: Annotated[str | None, Field(title='Use From')] = None
     use_to: Annotated[str | None, Field(title='Use To')] = None
     valid_at: Annotated[str | None, Field(title='Valid At')] = None

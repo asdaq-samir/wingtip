@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query
 from wingtip import weather_map
 
-from wingtip.planning import forecast_hour_for
+from wingtip.winds_stations import station_period_for
 from ..schemas.weather_map import WeatherMap
 from ..gateway import PUBLIC
 
@@ -37,7 +37,7 @@ def weather_on_the_map(
     """The SIGMETs valid at `at` and the G-AIRMETs nearest it, the PIREPs
     of the last 90 minutes up to 18,000 ft, and -- with `altitude_ft` --
     the FD stations' winds and temperatures there for the period that
-    holds `at` (planning.forecast_hour_for, FAA-H-8083-28B Table 27-2's for-use windows),
+    holds `at` (winds_stations.station_period_for, FAA-H-8083-28B Table 27-2's for-use windows),
     in the box; and when the radar mosaic was made."""
     if north < south or east < west or north - south > MAX_SPAN_DEG or east - west > MAX_SPAN_DEG:
         raise HTTPException(422, "The box is south to north and west to east, at most 70 degrees each way.")
@@ -45,7 +45,7 @@ def weather_on_the_map(
     when = time.time() if at is None else at
     winds = None
     if altitude_ft is not None:
-        winds = weather_map.winds_in(box, altitude_ft, forecast_hour_for(datetime.fromtimestamp(when, timezone.utc)))
+        winds = weather_map.winds_in(box, altitude_ft, station_period_for(datetime.fromtimestamp(when, timezone.utc)))
     return WeatherMap(
         at=when,
         advisories=weather_map.advisories_in(box, when),
