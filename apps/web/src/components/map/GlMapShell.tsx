@@ -40,6 +40,7 @@ import {
 } from "../../lib/map/gl/glLayer";
 import { OVERLAY_SOURCE, addOverlays, applyOverlayFilters, overlayPictures, overlayStyle } from "../../lib/map/gl/glOverlays";
 import { glZoom } from "../../lib/map/gl/glStyle";
+import { probeLayers } from "../../lib/map/gl/useGlProbe";
 import { RulerGl } from "../../lib/map/gl/layers/RulerGl";
 import { picked, watchPilotMoves } from "../../lib/map/gl/pilotCamera";
 import { tvPlatform, zoomInKey, zoomOutKey } from "../../lib/tv";
@@ -166,13 +167,7 @@ function makeMap(holder: HTMLDivElement, onTv: boolean, insets: MapInsets): mapl
     delete el.dataset.moving;
     say();
   });
-  m.on("idle", () => {
-    el.dataset.layers = m
-      .getStyle()
-      .layers.map((l) => l.id)
-      .filter((id) => !id.startsWith("slot-"))
-      .join(" ");
-  });
+  probeLayers(m, el);
   m.once("load", () => loaded.add(m));
   // Once at rest, the overlay tiles one ring outside the view fetched
   // (overlayTiles' prefetchRing), so a pan's first frame has them; again

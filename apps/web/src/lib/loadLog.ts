@@ -68,10 +68,16 @@ const PROBES: Record<string, Milestone> = {
   "airport-marks": "airports",
 };
 
+/** Whether the log is still looking at this load: the map's probes write
+ *  for it until it is done (lib/map/gl/useGlProbe), then only for tests. */
+let looking = false;
+export const loadLogLooking = () => looking;
+
 /** Started once, as the app starts (main.tsx). */
 export function startLoadLog(win: Window = window) {
   const perf = win.performance;
   if (!perf?.getEntriesByType) return;
+  looking = true;
   const ms: LoadEntry["ms"] = {};
   const at = new Date(Date.now() - perf.now()).toISOString();
   const mark = (key: Milestone, when = perf.now()) => {
@@ -113,6 +119,7 @@ export function startLoadLog(win: Window = window) {
   function done() {
     if (kept) return;
     kept = true;
+    looking = false;
     win.clearInterval(timer);
     win.removeEventListener("pagehide", done);
     if (ms.map === undefined) return;

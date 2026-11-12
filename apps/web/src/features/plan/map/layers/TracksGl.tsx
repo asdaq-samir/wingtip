@@ -11,7 +11,7 @@ import { useLegHighlight } from "../legHighlight";
 import { useMapHover } from "../../../../lib/map/marks/mapHover";
 import { useOwnFix, SIMULATED_FIX_MS, endSimulation, simulateFix } from "../../../../lib/map/position/ownShip";
 import { useOwnTrail } from "../../../../lib/map/position/ownTrail";
-import { positionAt, stepPastFlight, usePastFlight } from "../pastFlight";
+import { positionAt, stepPastFlight, usePastFlight, type ReplayPoint } from "../pastFlight";
 import { colourRuns } from "../traffic";
 import { useTracking } from "../../../../lib/map/position/tracking";
 import { useGlMap } from "../../../../lib/map/gl/glLayer";
@@ -25,17 +25,39 @@ import { CHART } from "../../../../lib/tokens";
 const CASING = { colour: CHART.casing, width: 6, opacity: 0.85 };
 
 /** Where own ship has flown, at the pilot's ask: blue on
- *  a white casing, joined to the position now. */
+ *  a white casing, joined to the position now. The path is its own source,
+ *  sent to the map's worker only when a point is added to it (every tenth
+ *  of a mile or ten seconds, lib/map/position/ownTrail), and the stretch from
+ *  its last point to the fix another of two points, the one sent at each
+ *  fix: the whole path (up to 5,000 points) went at every fix. The stretch
+ *  has no casing, so it joins the path's end with its own round cap rather
+ *  than a casing's over it, and is a few seconds of flying long. */
 export function OwnTrailGl() {
   const path = useOwnTrail((s) => s.path);
   const fix = useOwnFix();
-  const runs = useMemo<GlRun[] | null>(() => {
-    if (path.length < 2) return null;
-    const line = path.map((p) => [p.lat, p.lon] as [number, number]);
-    if (fix) line.push([fix.lat, fix.lon]);
-    return [{ points: line, colour: CHART.mapBlue, width: 3 }];
-  }, [path, fix]);
-  useGlLines("own-trail", "route", runs, CASING);
+  const trail = useMemo<GlRun[] | null>(
+    () => (path.length < 2 ? null : [{ points: path.map((p) => [p.lat, p.lon] as [number, number]), colour: CHART.mapBlue, width: 3 }]),
+    [path],
+  );
+  const end = path.length < 2 ? undefined : path.at(-1);
+  const tail = useMemo<GlRun[] | null>(
+    () =>
+      end && fix
+        ? [
+            {
+              points: [
+                [end.lat, end.lon],
+                [fix.lat, fix.lon],
+              ],
+              colour: CHART.mapBlue,
+              width: 3,
+            },
+          ]
+        : null,
+    [end, fix],
+  );
+  useGlLines("own-trail", "route", trail, CASING);
+  useGlLines("own-trail-tail", "route", tail, null);
   return null;
 }
 
@@ -125,14 +147,16 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
     };
     let frame = 0,
       last = performance.now(),
+      stepping = false,
       reported = -Infinity,
       reportedAt: number | null = null,
-      wasPlaying = false;
-    const step = (now: number) => {
-      frame = requestAnimationFrame(step);
-      stepPastFlight(now - last);
-      last = now;
-      const { at, points } = usePastFlight.getState();
+      wasPlaying = false,
+      // What the marker was last drawn at, so a frame with nothing new
+      // writes nothing to it (a paused replay's, or a reduced-motion step's).
+      drawnAt: number | null | undefined,
+      drawnPoints: ReplayPoint[] | undefined;
+    const draw = (now: number) => {
+      const { at, points, playing } = usePastFlight.getState();
       const here = at === null ? null : positionAt(points, at);
       if (asOwnShip) {
         if (!here) endSimulation();
@@ -143,6 +167,13 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
         }
         return;
       }
+      // Kept in sight while it plays, its Play being the pilot's pick
+      // (lib/map/gl/pilotCamera); not once they move the map by hand.
+      if (playing && !wasPlaying) picked();
+      wasPlaying = playing;
+      if (at === drawnAt && points === drawnPoints) return;
+      drawnAt = at;
+      drawnPoints = points;
       if (!here) {
         drop();
         return;
@@ -159,11 +190,6 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
         setMarkerIcon(marker.current.mark, icon);
         setMarkerIcon(marker.current.tag, tag);
       }
-      // Kept in sight while it plays, its Play being the pilot's pick
-      // (lib/map/gl/pilotCamera); not once they move the map by hand.
-      const playing = usePastFlight.getState().playing;
-      if (playing && !wasPlaying) picked();
-      wasPlaying = playing;
       // Not while a replay's camera has the map (features/replay/camera,
       // which marks the map's container): it keeps the airplane in sight.
       if (playing && !pilotMoved() && !map.getContainer().dataset.replayCamera) {
@@ -172,8 +198,29 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
         if (p.x < w * 0.15 || p.x > w * 0.85 || p.y < h * 0.15 || p.y > h * 0.85) map.jumpTo({ center: [here.lon, here.lat] });
       }
     };
-    frame = requestAnimationFrame(step);
+    // The clock stepped at each frame only while it plays; paused, the
+    // frames stop, and a scrub or a new flight (a change to the clock) is
+    // drawn as it comes, as Play starts the frames again.
+    const step = (now: number) => {
+      frame = 0;
+      stepping = true;
+      stepPastFlight(now - last);
+      stepping = false;
+      last = now;
+      draw(now);
+      if (usePastFlight.getState().playing) frame = requestAnimationFrame(step);
+    };
+    const wake = () => {
+      if (stepping || frame) return;
+      if (usePastFlight.getState().playing) {
+        last = performance.now();
+        frame = requestAnimationFrame(step);
+      } else draw(performance.now());
+    };
+    const unsubscribe = usePastFlight.subscribe(wake);
+    wake();
     return () => {
+      unsubscribe();
       cancelAnimationFrame(frame);
       drop();
       if (asOwnShip) endSimulation();

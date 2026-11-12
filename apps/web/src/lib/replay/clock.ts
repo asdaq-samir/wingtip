@@ -104,11 +104,13 @@ export function legStep(clock: number, stops: number[], last: number): number {
  *  end. Under Reduce Motion, with stops, it goes leg by leg: the clock
  *  runs on unseen and the airplane jumps from one point to the next. */
 export function stepPastFlight(ms: number, reduced = prefersReducedMotion()) {
+  // `s` itself where nothing moves, not `{}`: a new object is a change to
+  // every reader of the clock, at each frame, paused or not.
   usePastFlight.setState((s) => {
     const last = s.points.at(-1)?.t;
     if (!s.playing || s.at === null || last === undefined) {
       glide = null;
-      return {};
+      return s;
     }
     // A scrub since the last step (the moment no longer the clock's stop)
     // starts the clock again from where it was put.
@@ -120,7 +122,7 @@ export function stepPastFlight(ms: number, reduced = prefersReducedMotion()) {
     }
     glide = clock;
     const at = legStep(clock, s.stops, last);
-    if (at === s.at && clock < last) return {};
+    if (at === s.at && clock < last) return s;
     return { at, playing: clock < last };
   });
 }

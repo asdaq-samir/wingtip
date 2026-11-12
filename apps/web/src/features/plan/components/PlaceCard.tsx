@@ -174,12 +174,10 @@ export default function PlaceCard({
   // address on a page just loaded, read its ident alone over an empty
   // card while its answer queued behind the page's first requests.
   const kept = useKeptAirport(ident);
-  // How far, from own ship's fix as it is, where there is one: the card's
-  // own, drawn again at each, where the page under it is not (its
-  // useOwnShipNear) -- tenths of a mile from a fix a hundredth of a degree
-  // old would be wrong.
-  const ship = useOwnShip((o) => (o.enabled ? o.fix : null));
-  const measured = ship ? { point: { lat: ship.lat, lon: ship.lon }, name: null } : from;
+  // How far, from own ship's fix as it is (not useOwnShipNear's: tenths
+  // of a mile from a fix a hundredth of a degree old would be wrong), read
+  // as the words, so the card is drawn again only when they change.
+  const distance = useOwnShip((o) => (place ? distanceOf(place, o.enabled && o.fix ? { point: o.fix, name: null } : from) : null));
   const tabsRef = useRef<HTMLDivElement>(null);
   // Fly Here tapped: the tile says so at once, a frame before the route
   // is drawn (PlanWorkspace's flyHere), which is a moment of a phone's --
@@ -538,7 +536,7 @@ export default function PlaceCard({
             <CardTabBar tabs={CARD_TABS} value={tab} onPick={setPicked} activateOnFocus testIdPrefix="place-tab" disabled={!place} />
           </div>
           <CardTabPanel value="radio" className="space-y-0">
-            {place && <PlaceInfoTab place={place} where={where} distance={distanceOf(place, measured)} />}
+            {place && <PlaceInfoTab place={place} where={where} distance={distance} />}
           </CardTabPanel>
           <CardTabPanel value="weather" className="space-y-0">
             <PlaceWeatherTab

@@ -8,7 +8,7 @@ import CloseButton from "./CloseButton";
 import { GLASS } from "../lib/mapChrome";
 import { airborneNow, alertKey, dismissFired as dismiss, fired, useFiredAlerts, type Watched } from "../lib/aircraftAlerts";
 import type { FlightStatus } from "../lib/api/types";
-import { useOwnFix } from "../lib/map/position/ownShip";
+import { useOwnShip } from "../lib/map/position/ownShip";
 import { useTracking } from "../lib/map/position/tracking";
 import { usePreferences } from "../lib/preferences";
 import { flightStatusQuery } from "../lib/queryClient";
@@ -28,10 +28,14 @@ function useAircraftAlertWatch() {
   const alerts = usePreferences((s) => s.aircraftAlerts);
   const hexes = useMemo(() => [...new Set(alerts.map((a) => a.hex))], [alerts]);
   const results = useQueries({ queries: hexes.map((hex) => flightStatusQuery(hex)), combine: answers });
-  const me = useOwnFix();
   const watched = useRef(new Map<string, Watched>());
   const read = useRef(new Map<string, number>());
   useEffect(() => {
+    // Own ship's fix as each answer comes, read then rather than followed:
+    // the alerts are read only at a new answer, and the banners were
+    // drawn again at every fix.
+    const ship = useOwnShip.getState();
+    const me = ship.enabled ? ship.fix : null;
     results.forEach(({ data, at }, i) => {
       const hex = hexes[i];
       if (!hex || !data || read.current.get(hex) === at) return;
@@ -58,7 +62,7 @@ function useAircraftAlertWatch() {
         read.current.delete(hex);
       }
     }
-  }, [results, hexes, alerts, me]);
+  }, [results, hexes, alerts]);
 }
 
 /**

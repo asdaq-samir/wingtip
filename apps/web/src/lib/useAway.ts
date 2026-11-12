@@ -1,6 +1,6 @@
 import { compassPoint } from "./compass";
 import { bearingDeg, distanceNm, type LatLon } from "./geo";
-import { useOwnFix } from "./map/position/ownShip";
+import { useOwnFixShown } from "./map/position/ownShip";
 import type { RecentAirport } from "./preferences";
 
 /** How far, as a figure: to a tenth under 10 nm, where a few tenths are
@@ -21,18 +21,22 @@ export function awayFrom(from: LatLon, to: LatLon): string {
 }
 
 /** How far and which way the point is from the airplane ("12 nm NE of
- *  you"), for a card's pill; none where the position is not known. */
+ *  you"), for a card's pill; none where the position is not known. Read
+ *  only while in sight (lib/shown): a card kept hidden under another was
+ *  drawn again at every fix. */
 export function useAwayWords(lat: number, lon: number): string | undefined {
-  const ship = useOwnFix();
+  const ship = useOwnFixShown();
   return ship ? `${awayFrom(ship, { lat, lon })} of you` : undefined;
 }
 
 /** A kept airport's tile's second line -- Home's, the Favorites', the
  *  Recents', the search's and the route pickers' -- how far it is from own
  *  ship's fix as it is, else its town, else its name. Each strip had its
- *  own: the town in one, nothing or Home's ident in another. */
+ *  own: the town in one, nothing or Home's ident in another. The fix read
+ *  only while in sight (lib/shown): every strip kept hidden under a card
+ *  or another tab was drawn again at every fix. */
 export function useAway(): (airport: RecentAirport) => string {
-  const from = useOwnFix();
+  const from = useOwnFixShown();
   return (a) =>
     from && a.lat !== undefined && a.lon !== undefined ? nmAway(distanceNm(from, { lat: a.lat, lon: a.lon })) : a.municipality || a.name;
 }

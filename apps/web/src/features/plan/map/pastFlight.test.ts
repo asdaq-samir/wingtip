@@ -59,4 +59,16 @@ describe("a past flight replayed", () => {
     stepPastFlight(10_000, true); // past the end: there, stopped
     expect(usePastFlight.getState()).toMatchObject({ at: 1100, playing: false });
   });
+
+  it("tells no reader of the clock anything where nothing moved: paused, or a reduced-motion step inside a leg", () => {
+    let told = 0;
+    const stop = usePastFlight.subscribe(() => told++);
+    stepPastFlight(5000); // never played
+    expect(told).toBe(0);
+    usePastFlight.setState({ hex: "dry-run", id: 0, points: POINTS, stops: [1000, 1040, 1080], at: 1000, playing: true, speed: 10 });
+    told = 0;
+    stepPastFlight(1000, true); // 10 s on: still at the first point
+    stop();
+    expect(told).toBe(0);
+  });
 });
