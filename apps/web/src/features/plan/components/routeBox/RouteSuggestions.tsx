@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Header, ListBox, ListBoxItem, ListBoxSection } from "react-aria-components";
-import { Diamond, Search } from "lucide-react";
 import { cn } from "cn";
+import { AirportRowFace } from "../../../../components/AirportResults";
 import type { Detour } from "../../../../lib/api/types";
 import { bearing } from "../../../../lib/format";
 import { frdOf } from "../../../../lib/identSchema";
@@ -136,17 +136,7 @@ function Row({
       data-testid={testId}
       className="flex min-h-13 cursor-default items-center gap-3 rounded-lg px-2 py-2 outline-hidden select-none data-focused:bg-muted data-hovered:bg-muted"
     >
-      {waypoint ? (
-        <Diamond aria-hidden="true" className="size-5 shrink-0 fill-(--airspace-magenta-text) stroke-(color:--airspace-magenta-text)" />
-      ) : (
-        <Search aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
-      )}
-      <span className="min-w-0 flex-1">
-        <span className={cn("block truncate", TEXT.row)}>
-          <span className="font-mono font-bold">{airport.ident}</span> · {airport.name}
-        </span>
-        {airport.municipality && <span className={cn("block truncate text-muted-foreground", TEXT.detail)}>{airport.municipality}</span>}
-      </span>
+      <AirportRowFace airport={airport} waypoint={waypoint} />
     </ListBoxItem>
   );
 }

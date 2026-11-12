@@ -1,5 +1,5 @@
 import { callEngine } from "../../../../lib/engine/engine";
-import { M_PER_FT } from "./geometry";
+import { M_PER_FT } from "../../../../lib/geo";
 
 /**
  * How high the 3D map stands an airspace volume (AirspaceVolumesGl): its
