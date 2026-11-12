@@ -164,7 +164,9 @@ export function ReplayGl({ asOwnShip = false }: { asOwnShip?: boolean }) {
       const playing = usePastFlight.getState().playing;
       if (playing && !wasPlaying) picked();
       wasPlaying = playing;
-      if (playing && !pilotMoved()) {
+      // Not while a replay's camera has the map (features/replay/camera,
+      // which marks the map's container): it keeps the airplane in sight.
+      if (playing && !pilotMoved() && !map.getContainer().dataset.replayCamera) {
         const p = map.project([here.lon, here.lat]);
         const { clientWidth: w, clientHeight: h } = map.getContainer();
         if (p.x < w * 0.15 || p.x > w * 0.85 || p.y < h * 0.15 || p.y > h * 0.85) map.jumpTo({ center: [here.lon, here.lat] });

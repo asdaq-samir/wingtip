@@ -9449,6 +9449,66 @@ object EngineContract {
     )
 
     @Serializable
+    data class ReplayTrackAnswer(
+        val points: List<EngineContract.ReplayTrackAnswerPointsItem>,
+        val gaps: List<EngineContract.ReplayTrackAnswerGapsItem>,
+        @SerialName("length_nm")
+        val lengthNm: Double,
+    )
+
+    @Serializable
+    data class ReplayTrackAnswerGapsItem(
+        val from: Double,
+        val to: Double,
+    )
+
+    @Serializable
+    data class ReplayTrackAnswerPointsItem(
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+        @SerialName("alt_ft")
+        val altFt: Double? = null,
+        @SerialName("gs_kt")
+        val gsKt: Double? = null,
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        @SerialName("vs_fpm")
+        val vsFpm: Double? = null,
+        @SerialName("along_nm")
+        val alongNm: Double,
+        val gap: Boolean,
+        val ground: Boolean,
+    )
+
+    @Serializable
+    data class ReplayTrackInput(
+        val points: List<EngineContract.ReplayTrackInputPointsItem>,
+        @SerialName("gap_s")
+        val gapS: Double? = null,
+    )
+
+    @Serializable
+    data class ReplayTrackInputPointsItem(
+        /**
+         * s since 1970
+         */
+        val t: Double,
+        val lat: Double,
+        val lon: Double,
+        /**
+         * Pressure altitude, ft; null on the ground or not sent
+         */
+        @SerialName("alt_ft")
+        val altFt: Double? = null,
+        @SerialName("gs_kt")
+        val gsKt: Double? = null,
+        @SerialName("track_deg")
+        val trackDeg: Double? = null,
+        val ground: Boolean? = null,
+    )
+
+    @Serializable
     data class ReserveMinInput(
         val ifr: Boolean? = null,
         val night: Boolean? = null,

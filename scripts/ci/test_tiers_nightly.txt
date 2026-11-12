@@ -90,6 +90,7 @@ speed.spec.ts
 status-feeds.spec.ts
 stops-reorder.spec.ts
 stops-sheet.spec.ts
+studio.spec.ts
 subscription.spec.ts
 sunlight.spec.ts
 switch.spec.ts

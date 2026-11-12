@@ -3,7 +3,8 @@ import { routeSearch, useDevMode } from "../hooks/use-dev-mode";
 import { useConsoleOpen } from "../lib/mapChrome";
 import { useWanted } from "../lib/navigation/wanted";
 
-/** Dev mode's refusal: someone it is not for, on the dev page, is taken
+/** Dev mode's refusal: someone it is not for, on the dev page or the
+ *  Studio, is taken
  *  to the map, with the console put away (it stays out across a change
  *  of page otherwise: useConsoleOpen) and nothing left asked for: the
  *  account menu's Setup asks the planner for its screen (wantScreen), which

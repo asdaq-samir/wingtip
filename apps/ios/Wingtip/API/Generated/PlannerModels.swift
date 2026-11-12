@@ -4577,6 +4577,55 @@ struct APIStopField: Codable, Equatable, Sendable {
     var training: [APINearbyPlace]?
 }
 
+/// The ground's height under each point asked, ft MSL, in order: the
+/// elevation tiles (USGS 3DEP and SRTM, wingtip.elevation).
+// MARK: - APIStudioGround
+struct APIStudioGround: Codable, Equatable, Sendable {
+    var groundFt: [Double]
+}
+
+/// Points along a replayed track, [lat, lon] each, for the ground
+/// under them: the Studio's profile strip.
+// MARK: - APIStudioGroundAsk
+struct APIStudioGroundAsk: Codable, Equatable, Sendable {
+    var points: [[Double]]
+}
+
+/// An airplane's reports on a UTC day, for the Studio's replay
+/// (wingtip.traffic.day_tracks), with where they came from, which the
+/// Studio shows (ODbL 1.0 asks for it).
+// MARK: - APIStudioTrack
+struct APIStudioTrack: Codable, Equatable, Sendable {
+    var altitude, day, hex, license: String
+    var points: [APIStudioReport]
+    var registration: String?
+    var source: String
+    var type: String?
+}
+
+/// One report of the day: when (s since 1970), where, its altitude
+/// (ft; the transponder's pressure altitude for adsb.lol's day, see
+/// `altitude`; None on the ground), ground speed (kt), track (degrees
+/// true) and whether it was on the ground.
+// MARK: - APIStudioReport
+struct APIStudioReport: Codable, Equatable, Sendable {
+    var altFt: Double?
+    var ground: Bool?
+    var gsKt: Double?
+    var lat, lon, t: Double
+    var trackDeg: Double?
+}
+
+/// An airplane followed here (its card opened), whose reports are
+/// recorded (wingtip.traffic.recorded): one the Studio can replay without
+/// asking adsb.lol.
+// MARK: - APIStudioWatched
+struct APIStudioWatched: Codable, Equatable, Sendable {
+    var days: [String]
+    var hex: String
+    var registration: String?
+}
+
 // MARK: - APITfrs
 struct APITfrs: Codable, Equatable, Sendable {
     var tfrs: [APITfr]

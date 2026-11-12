@@ -458,7 +458,8 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   await flight.getByTestId("track-log-all").click();
   await expect(flight.getByTestId("track-log").locator("tbody tr")).toHaveCount(80);
   // Played at 200 times: where the airplane is, said under the controls.
-  await flight.getByTestId("replay-speed").getByText("200×").click();
+  await flight.getByTestId("replay-speed").click();
+  await page.getByTestId("replay-speed-200").click();
   await flight.getByTestId("replay-play").click();
   await expect(flight.getByTestId("replay-now")).toContainText(/ft · 100 kt · S/);
   // The search and back to the traffic, at the owner's ask: the past
@@ -468,7 +469,6 @@ test("an airplane's past flights are listed on its card, and one is drawn on the
   await showTraffic(page);
   await expect(page).toHaveURL(/[?&]past=\d+/);
   await expect(flight.getByTestId("replay-now")).toContainText(/ft · 100 kt · S/);
-  // Its controls all the way up.
   await grabberTo(page, "full");
   await flight.getByTestId("replay-stop").click();
   await expect(flight.getByTestId("replay-now")).toHaveCount(0);

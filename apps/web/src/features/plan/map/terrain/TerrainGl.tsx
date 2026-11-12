@@ -5,6 +5,7 @@ import { DEM, EXAGGERATION, FLAT_MAX_PITCH, HILLSHADE, HILLSHADE_LAYER, MAX_PITC
 import type { AloftPoint } from "./geometry";
 import ObstaclesGl from "./ObstaclesGl";
 import PilotCamera from "./PilotCamera";
+import { ReplayCameraGl } from "../../../replay";
 import type { TerrainMode } from "./useTerrainView";
 
 /** How long the map takes to tilt into 3D and back (MapLibre makes it
@@ -82,6 +83,8 @@ export default function TerrainGl({
       <ObstaclesGl />
       {aloft && aloft.length > 1 && <AloftGl points={aloft} />}
       {pilot && <PilotCamera />}
+      {/* A replay's camera (features/replay), the pilot's view taking it while on. */}
+      {!pilot && <ReplayCameraGl />}
     </>
   );
 }

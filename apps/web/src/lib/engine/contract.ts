@@ -2950,6 +2950,13 @@ export interface EngineContract {
     answer: RemarksReadAnswer;
   };
   /**
+   * A recorded flight made ready to replay (an adsb.lol day, a track watched here, an imported file): the reports in time order, each time once; a report after no report for `gap_s` (60 s where not given: readsb's trace keeps a point at least every 20 s while it hears the airplane) marked `gap`, nothing smoothed or interpolated across it, and each gap listed; the pressure altitude averaged over 10 s each side (a transponder's 25 ft steps, DO-260B) and the position over 2 s; the vertical speed the slope of the heights reported within 15 s each side, as a VSI's lag averages it (FAA-H-8083-15B, Ch. 5); ground speed and track worked out from the positions where not sent; and how far along the flight each report is, nm.
+   */
+  replay_track: {
+    input: ReplayTrackInput;
+    answer: ReplayTrackAnswer;
+  };
+  /**
    * The fuel reserve in minutes at normal cruise: 30 by day and 45 at night under VFR (14 CFR 91.151(a)), 45 under IFR (91.167(a)(3)).
    */
   reserve_min: {
@@ -10372,6 +10379,46 @@ export interface RemarksReadAnswer {
    * Each remark in words, in their order: "Customs clearance 2 hours prior permission required - 847-894-7292. Transient utilize FBO after clearing customs. FBO CBP user fee."
    */
   lines: string[];
+}
+export interface ReplayTrackInput {
+  points: ReplayReport[];
+  gap_s?: number | null;
+}
+export interface ReplayReport {
+  /**
+   * s since 1970
+   */
+  t: number;
+  lat: number;
+  lon: number;
+  /**
+   * Pressure altitude, ft; null on the ground or not sent
+   */
+  alt_ft?: number | null;
+  gs_kt?: number | null;
+  track_deg?: number | null;
+  ground?: boolean | null;
+}
+export interface ReplayTrackAnswer {
+  points: ReplaySample[];
+  gaps: ReplayGap[];
+  length_nm: number;
+}
+export interface ReplaySample {
+  t: number;
+  lat: number;
+  lon: number;
+  alt_ft: number | null;
+  gs_kt: number | null;
+  track_deg: number | null;
+  vs_fpm: number | null;
+  along_nm: number;
+  gap: boolean;
+  ground: boolean;
+}
+export interface ReplayGap {
+  from: number;
+  to: number;
 }
 export interface ReserveMinInput {
   ifr?: boolean | null;

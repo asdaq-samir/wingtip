@@ -133,6 +133,8 @@ const router = createBrowserRouter(
     // CPU, cold). The training workspace inside it stays its own chunk.
     { path: "plan", element: <MapPage mode="pilot" />, errorElement: <PageError /> },
     { path: "dev", element: <MapPage mode="dev" />, errorElement: <PageError /> },
+    // The Studio (features/studio): replays of real flights, the developer's for now.
+    { path: "studio", element: <MapPage mode="studio" />, errorElement: <PageError /> },
     // The old labeling address, kept working with its route: a loader
     // redirect rather than a component, since the router's own
     // `redirect` is the one place a query string can be carried over
