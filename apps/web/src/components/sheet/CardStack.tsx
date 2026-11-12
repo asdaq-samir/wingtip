@@ -43,6 +43,15 @@ const EASE =
  * indicator (a top sheet's: above it, past the status bar). The close's
  * time is the demo's: 400 ms at a still finger, shorter after a throw
  * (--drawer-swipe-strength).
+ *
+ * Base UI plays that entry only for a drawer that opens after it has
+ * mounted; one mounted already open is drawn where it rests from its first
+ * frame (its useTransitionStatus), which before it has measured itself is
+ * all the way up. Every card opened anew -- a tap on the chart, a place, a
+ * NOTAM -- mounted open, and came in at the top and dropped to half (the
+ * owner's iPhone, 2026-11-12, TFR 6/2478; in WebKit at 390x844 its top at
+ * 8 px in its first frame, then easing down to 476). So a card's drawer
+ * opens the render after it mounts (CardDrawer's `open`).
  */
 const SLIDE = {
   bottom:
@@ -122,7 +131,9 @@ function CardDrawer({
   const topSlot = onPhone && fromBottom && riding;
   return (
     <Drawer.Root
-      open={entry.shown}
+      // Mounted closed, opened once its size is set (the layout effect
+      // above, before the first paint): so it rises from the foot (SLIDE).
+      open={entry.shown && entry.at !== undefined}
       modal={false}
       swipeDirection={fromBottom ? "down" : "up"}
       snapPoints={onPhone ? snaps.points : undefined}

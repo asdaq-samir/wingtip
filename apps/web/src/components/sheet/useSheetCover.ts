@@ -16,14 +16,22 @@ const offsetOf = (popup: HTMLElement) => popup.style.getPropertyValue("--drawer-
  * head alone at rest. Read again whenever the Drawer sets an offset or a
  * card's size changes (a MutationObserver on the popup) and when the popup
  * is resized (Safari's toolbar, a turn), never per frame of a drag.
+ * With it, whether what it measured was a card's: a card put away is
+ * measured gone a moment after the page says so, and till then the room is
+ * still the card's (the map keeps still for both, GlMapShell).
  */
-export function useSheetCover(sheet: HTMLElement | null, front: PanelState, onPhone: boolean, fromBottom: boolean): number {
-  const [cover, setCover] = useState(0);
+export function useSheetCover(
+  sheet: HTMLElement | null,
+  front: PanelState,
+  onPhone: boolean,
+  fromBottom: boolean,
+): { cover: number; card: boolean } {
+  const [cover, setCover] = useState({ cover: 0, card: false });
   useLayoutEffect(() => {
     if (!sheet) return;
     let last = "";
     const read = (always: boolean) => {
-      if (!onPhone) return setCover(Math.round(sheet.offsetHeight));
+      if (!onPhone) return setCover({ cover: Math.round(sheet.offsetHeight), card: false });
       const cards = sheet.querySelectorAll<HTMLElement>("[data-sheet-card][data-cover]");
       const popup = cards[cards.length - 1] ?? sheet;
       const offset = offsetOf(popup);
@@ -34,7 +42,9 @@ export function useSheetCover(sheet: HTMLElement | null, front: PanelState, onPh
       const shown = front === "full" ? halfPx(height) : Math.max(0, height - Math.abs(parseFloat(offset) || 0));
       const viewport = sheet.parentElement;
       const below = fromBottom && viewport ? parseFloat(getComputedStyle(viewport).bottom) || 0 : 0;
-      setCover(Math.round(shown + below));
+      const next = Math.round(shown + below),
+        card = popup !== sheet;
+      setCover((was) => (was.cover === next && was.card === card ? was : { cover: next, card }));
     };
     read(true);
     const changes = new MutationObserver(() => read(false));
