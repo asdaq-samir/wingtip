@@ -11,6 +11,8 @@
 import { api } from "../../../lib/api/client";
 import type { Flight, FlightSummary, ProcedureDrawing } from "../../../lib/api/types";
 import { callEngine } from "../../../lib/engine/engine";
+import { localDay } from "../../../lib/format";
+import { procedureQuery, proceduresQuery, queryClient } from "../../../lib/queryClient";
 import { findApproaches, type ApproachDebrief } from "../../../components/approachDebriefModel";
 import type { TrackPoint } from "../../../lib/track";
 import type { CoachDebrief } from "./coachApi";
@@ -74,15 +76,16 @@ export function approachDebrief(a: ApproachDebrief, elevationFt: number | null, 
 }
 
 /** The day a track flew, on the pilot's calendar. */
-const dayOf = (ms: number) => {
-  const d = new Date(ms);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-};
+const dayOf = (ms: number) => localDay(new Date(ms));
 
 async function drawings(ident: string): Promise<ProcedureDrawing[]> {
-  const listed = await api.procedures(ident).catch(() => null);
+  // Through the query cache, under the keys the map and a flight's page
+  // keep them by: a field's approaches already drawn are not asked again.
+  const listed = await queryClient.fetchQuery(proceduresQuery(ident)).catch(() => null);
   const approaches = (listed?.procedures ?? []).filter((p) => p.kind === "approach").slice(0, MOST_APPROACHES);
-  const drawn = await Promise.all(approaches.map((p) => api.procedure(ident, p.id, null).catch(() => null)));
+  const drawn = await Promise.all(
+    approaches.map((p) => queryClient.fetchQuery(procedureQuery({ ident, id: p.id, transition: null })).catch(() => null)),
+  );
   return drawn.filter((d): d is ProcedureDrawing => !!d);
 }
 

@@ -1,22 +1,9 @@
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useMemo } from "react";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { api } from "./api/client";
 import { searchIndex, useAirportIndex } from "./airportIndex";
 import { useOwnShipNear } from "./map/position/ownShip";
-
-/** 100ms, not on every keystroke -- a lookup this app already treats
- *  as cheap server-side (an index of idents and words) still isn't worth
- *  a request per character while someone's still mid-word. It was 200,
- *  which with the answer's own time read as the suggestions lagging the
- *  typing. */
-function useDebounced<T>(value: T, delayMs: number): T {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const id = setTimeout(() => setDebounced(value), delayMs);
-    return () => clearTimeout(id);
-  }, [value, delayMs]);
-  return debounced;
-}
+import { useDebounced } from "./useDebounced";
 
 /**
  * The airports whose ident or name starts with what is typed -- the
@@ -43,6 +30,11 @@ export const SearchNear = createContext("");
 
 export function useAirportSearch(text: string, enabled = true, fixes = false) {
   const typed = text.trim();
+  // 100ms, not on every keystroke -- a lookup this app already treats as
+  // cheap server-side (an index of idents and words) still isn't worth a
+  // request per character while someone's still mid-word. It was 200,
+  // which with the answer's own time read as the suggestions lagging the
+  // typing.
   const q = useDebounced(typed, 100);
   // Of fields alike, the nearest first: to the route where a stop is
   // typed, else to the pilot where own ship has a fix.

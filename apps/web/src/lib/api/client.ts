@@ -250,7 +250,7 @@ planner.use(csrfAndFailures);
  *  the checkpoint notes, the mock oral (and ./assistant, ./words) -- typed
  *  by its own document, at the same /api/planner/... addresses: the
  *  gateway sends them on to the assistant (PlannerProxyController). */
-const assistant = createClient<AssistantPaths>({ baseUrl: "", Request: GatewayRequest });
+export const assistant = createClient<AssistantPaths>({ baseUrl: "", Request: GatewayRequest });
 assistant.use(csrfAndFailures);
 
 /** The Spring Boot endpoints, on this same origin. */

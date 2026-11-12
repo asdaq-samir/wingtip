@@ -5,6 +5,7 @@
 # end-to-end test @smoke (one per journey), or add it here. Paths are
 # relative to apps/web/e2e.
 a11y.spec.ts
+airplane-mode.spec.ts
 airport-diagram.spec.ts
 airport-weather.spec.ts
 airspace-3d.spec.ts

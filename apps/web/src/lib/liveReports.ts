@@ -8,6 +8,7 @@
  * rvr_check, read_datis).
  */
 import { api } from "./api/client";
+import { zuluTime } from "./format";
 import type { FlowProgram, ItwsProduct, SaaStatus } from "./api/types";
 import type { VerdictInput } from "./verdict";
 
@@ -85,8 +86,7 @@ export const departuresQuery = (ident: string | null | undefined) => ({
 
 /** A time as the app says one in Zulu: "2130Z". */
 export function zulu(unixS: number): string {
-  const d = new Date(unixS * 1000);
-  return `${String(d.getUTCHours()).padStart(2, "0")}${String(d.getUTCMinutes()).padStart(2, "0")}Z`;
+  return zuluTime(new Date(unixS * 1000));
 }
 
 /** Each ITWS alert in a line with its airport, as the Go / No-Go's

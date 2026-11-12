@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { create } from "zustand";
 import { api } from "../../lib/api/client";
 import { prefersReducedMotion } from "../../lib/motion";
+import { usePauseWhileHidden } from "../../lib/usePauseWhileHidden";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
 import { dwellMs, firstPlay, nextInPass, playFrom } from "./loopFrames";
 
@@ -24,8 +25,6 @@ interface Player {
   /** Played once by itself for this loop: Reduce Motion, or a pause by
    *  the pilot, is not undone by the next refresh. */
   started: boolean;
-  /** Playing when the app went to the background, to go on with on return. */
-  resume: boolean;
   /** The frame a mouse rests over on the scrubber, shown on the map while
    *  it does (docs/design/web.md §7, desktop only); null with none. */
   peek: number | null;
@@ -37,7 +36,6 @@ const usePlayer = create<Player>()((set) => ({
   playing: false,
   ready: false,
   started: false,
-  resume: false,
   peek: null,
   set: (patch) => set(patch),
 }));
@@ -71,7 +69,7 @@ export function useWeatherLoop({ drive = false }: { drive?: boolean } = {}) {
 
   // A new pick starts afresh: the newest frame, loading.
   useEffect(() => {
-    if (drive) usePlayer.getState().set({ index: null, playing: false, ready: false, started: false, resume: false, peek: null });
+    if (drive) usePlayer.getState().set({ index: null, playing: false, ready: false, started: false, peek: null });
   }, [drive, kind]);
 
   // Played by itself once loaded, unless the pilot asked for less motion.
@@ -94,16 +92,7 @@ export function useWeatherLoop({ drive = false }: { drive?: boolean } = {}) {
   }, [drive, playing, ready, shown, frames.length, speed, set]);
 
   // Paused in the background, and on again on return if it was playing.
-  useEffect(() => {
-    if (!drive) return;
-    const onVisibility = () => {
-      const s = usePlayer.getState();
-      if (document.hidden) s.set({ resume: s.playing, playing: false });
-      else if (s.resume) s.set({ resume: false, playing: true });
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [drive]);
+  usePauseWhileHidden(drive, usePlayer);
 
   return {
     kind,
@@ -129,14 +118,10 @@ export function useWeatherLoop({ drive = false }: { drive?: boolean } = {}) {
     /** Play a pass (from the oldest frame where it stands on the newest),
      *  or pause where it is. */
     toggle: () =>
-      set(
-        playing
-          ? { playing: false, started: true, resume: false }
-          : { playing: true, index: playFrom(shown, frames.length), started: true, resume: false },
-      ),
-    seek: (i: number) => set({ index: i, playing: false, started: true, resume: false }),
+      set(playing ? { playing: false, started: true } : { playing: true, index: playFrom(shown, frames.length), started: true }),
+    seek: (i: number) => set({ index: i, playing: false, started: true }),
     /** The newest frame, followed from then on, the loop paused (the bar's Now). */
-    now: () => set({ index: null, playing: false, started: true, resume: false }),
+    now: () => set({ index: null, playing: false, started: true }),
     setReady: (on: boolean) => set({ ready: on }),
   };
 }

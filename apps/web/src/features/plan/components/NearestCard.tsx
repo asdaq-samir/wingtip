@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef } from "react";
 import type { Drawer } from "@base-ui/react/drawer";
 import { useQuery } from "@tanstack/react-query";
 import { LocateFixed, MapPin, Navigation2 } from "lucide-react";
@@ -25,6 +25,7 @@ import { nearestQuery } from "../../../lib/queryClient";
 import { inkOn } from "../../../lib/scoreScale";
 import { TEXT } from "../../../lib/text";
 import { useTabSearch } from "../lib/tabSearch";
+import { useDebounced } from "../../../lib/useDebounced";
 import { altFt } from "../../../lib/format";
 import { FINDING_TONE } from "../../../lib/findings";
 
@@ -48,7 +49,6 @@ const TYPING_MS = 250;
  */
 function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: NearFrom | null) => void }) {
   const typed = useTabSearch((s) => s.near);
-  const [asked, setAsked] = useState("");
   // The field shows the place picked, as it did when it was this card's.
   // Not emptied as the card first comes up with no place: the field is in
   // the panel's head, there before the card, and what was typed into it
@@ -61,10 +61,7 @@ function NearAnswers({ from, onFrom }: { from: NearFrom | null; onFrom: (from: N
     if (first && label === null) return;
     useTabSearch.setState({ near: label ?? "" });
   }, [from?.label]);
-  useEffect(() => {
-    const later = window.setTimeout(() => setAsked(typed.trim()), TYPING_MS);
-    return () => window.clearTimeout(later);
-  }, [typed]);
+  const asked = useDebounced(typed.trim(), TYPING_MS);
   const searching = asked.length >= 2 && asked !== from?.label && typed.trim() !== from?.label;
   const {
     data: answered,

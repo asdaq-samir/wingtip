@@ -5,14 +5,14 @@ import { cn } from "cn";
 import { ListGroup, ListRow } from "../../../../components/GroupedList";
 import { Button } from "../../../../components/ui/button";
 import { ToggleGroupItem } from "../../../../components/ui/toggle-group";
-import { api } from "../../../../lib/api/client";
 import type { ProcedureDrawing, ProcedureList, ProcedureSummary } from "../../../../lib/api/types";
 import { distanceNm } from "../../../../lib/geo";
 import { runwayNumber, type WindPick } from "../../lib/pattern";
 import { transitionWords, type PickedProcedure } from "../../../../lib/procedures";
 import { TEXT } from "../../../../lib/text";
 import { altFt } from "../../../../lib/format";
-import { PROCEDURE_STALE_MS, type ProcedureKind } from "../../hooks/useProceduresRoute";
+import type { ProcedureKind } from "../../hooks/useProceduresRoute";
+import { procedureQuery } from "../../../../lib/queryClient";
 import { Chips, NONE } from "./PatternChips";
 import { CHIP } from "../routeListStyle";
 import { KIND_TITLE } from "./procedureWords";
@@ -142,11 +142,7 @@ export function ProcedurePage({
   }, [ident, procedure.id, transition, onPreview]);
   // The same drawing the map is given (PlanWorkspace's preview), its
   // fixes listed here: one request for both.
-  const { data: drawing } = useQuery({
-    queryKey: ["procedure", ident, procedure.id, transition],
-    queryFn: () => api.procedure(ident, procedure.id, transition),
-    staleTime: PROCEDURE_STALE_MS,
-  });
+  const { data: drawing } = useQuery(procedureQuery({ ident, id: procedure.id, transition }));
   const inRoute = !!chosen && chosen.transition === transition;
   return (
     <div className="space-y-5">
