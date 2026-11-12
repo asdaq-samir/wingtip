@@ -52,9 +52,13 @@ import app.wingtipmaps.android.ui.sheet.CardPage
  * off it, each from the tapped feature's own fields or the engine
  * (MapRules), and the card kind's actions (CardActionRow), the same set
  * as the web's.
+ *
+ * @param onRouted every card closed and the FPL page shown: after an
+ *   action that changes the route (Direct To, Add to Route, Hold Here), as
+ *   a field's Fly Here shows it (the web's 4ff53c010).
  */
 @Composable
-fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit) {
+fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit, onRouted: () -> Unit) {
     val title = when (pick) {
         is MapPick.Airspace -> stringResource(R.string.airspace_class, pick.airspaceClass)
         is MapPick.Vor -> pick.ident
@@ -67,11 +71,11 @@ fun ThingCard(pick: MapPick, plan: Plan, exit: CardExit) {
         is MapPick.Plate -> pick.ident
     }
     val actions = rememberRouteActions(plan)
-    // An action that changes the route closes the card, so the route is
-    // seen being planned; Call, Address and Copy leave it open.
+    // An action that changes the route closes the card onto the FPL page,
+    // so the route is seen being planned; Call, Address and Copy leave it open.
     val act: (CardAction, () -> Unit) -> Unit = { action, run ->
         run()
-        if (action != CardAction.CALL && action != CardAction.ADDRESS && action != CardAction.COPY) exit.close()
+        if (action != CardAction.CALL && action != CardAction.ADDRESS && action != CardAction.COPY) onRouted()
     }
     CardPage(title = title, exit = exit) { padding ->
         // Traffic is heard again by itself; no pull to refresh in a sheet.

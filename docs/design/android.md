@@ -479,6 +479,43 @@ placement wins, and the difference is noted.
   (rules.md section 7).
 - **Test**: `androidTest/.../ui/MapButtonsOnSheetTest`.
 
+#### The sheet's carousel: Search and FPL (the owner, 2026-11-11)
+
+- **What**: the sheet has two pages side by side, Search (the one
+  search and what it shows with nothing typed) and FPL (the plan), a
+  sideways swipe apart, with two page dots under the stock drag handle
+  (rules.md records the decision). The FPL page has no field of its
+  own: Add a Stop and Find bring the Search page and open its field.
+  With no route the FPL page is the plan with its empty rows and its ✕,
+  which goes back a level to Search (no "Plan a Flight" of its own, the
+  owner, 2026-11-11). A route made, opened or changed from anywhere
+  (Fly Here, Depart From, Direct To, Add a Stop, a link) brings the FPL
+  page, the route's points its key; a card's route action closes the
+  cards onto it, so Fly Here to the same airport again shows it too;
+  clearing it leaves the page as it is. A page put away gives up the
+  focus, so the keyboard goes down. A card opens over both pages,
+  and ✕ or Back comes back to the page it was opened from. At the peek
+  the sheet shows the dots and the page's first row: the search's, or
+  the plan's bar.
+- **Stock parts and wiring**: Compose foundation's `HorizontalPager`
+  (`ui/SheetCarousel`) as the NavHost's Home destination, its
+  `PagerState` held by `SheetNav` so it outlives the cards over it and a
+  rotation; both pages stay composed (`beyondViewportPageCount = 1`), so
+  each keeps its own scroll and the one search still takes an ask made
+  from the plan. The pager takes only a sideways drag; an upward or
+  downward one stays with `BottomSheetScaffold` and the page's list
+  through the stock nested scrolling. Material 3 1.5.0-rc01 has no page
+  indicator for a phone (only Wear's `HorizontalPageIndicator`), so the
+  dots are the pager's state drawn in the theme's colours: each a
+  `selectable` tab, 48 dp a side with an 8 dp dot (nothing grows), read
+  as "Page 1 of 2, Search". The strip layout, whose field and timeline
+  are its search and plan, has no carousel.
+- **Deep links**: `fpl` opens the FPL page; `search` is
+  `TODO(claude/carousel-web)` until that branch's screens.json entry is
+  generated.
+- **Test**: `androidTest/.../ui/SheetCarouselTest`, and `SheetNavTest`
+  for the stack over the carousel.
+
 ### 3.2 The airport card and the airplane card
 
 - **Follow**: Google Maps' place sheet. Its documented parts are the
@@ -1004,31 +1041,26 @@ a Material `Badge` at the top of the map, beside the receiver's, says
   - https://m3.material.io/styles/color/dynamic/choosing-a-source
     **[excerpt]**
 
-### 3.14 The welcome
+### 3.14 The first flight (no welcome)
 
-- **Follow**: plain onboarding pages with one big button at the foot.
-- **Structure** (`welcome/`, `WelcomeSheet`):
-  1. Pages with a picture of the map, a `headlineLargeEmphasized`
-     title, and one `bodyLarge` line each.
-  2. A page indicator.
-  3. At the foot, one full-width filled button ("Continue", then "Start
-     Planning"), with "Skip" as a `TextButton`.
-  4. Location is asked for on the page that explains why, through the
-     system dialog; its line says that in flight the position is
-     followed with the screen off only after Start Flight. The
-     microphone's line names both its uses, the radio and questions
-     asked by voice.
-  5. Before the welcome, once, the planning aid's words in a stock
-     `AlertDialog` with I Understand (`about/PlanningAidNotice`).
-- **No airplane is picked by default** (0011). The last page offers
-  "Add Your Airplane" as a tonal button.
-- **Primary action**: the button at the foot.
-- **Motion**: pages slide with the spatial spring.
-- **Avoid**:
-  - asking for every permission on the first page
-  - a carousel that moves by itself
-- **Sources**:
-  - https://design.google/library/expressive-material-design-google-research
+- **No welcome** (the owner, 2026-11-11, "We don't need the welcome"):
+  a new pilot lands on the map. Each permission is asked where it is
+  needed, by the system's own dialog: location at the position button
+  or the first flight's Plan It, notifications when a watch is set or
+  traffic is near, the microphone at the microphone. Before anything,
+  once, the planning aid's words in a stock `AlertDialog`
+  (`about/PlanningAidNotice`).
+- **The first flight's card** (`firstflight/FirstFlightCard`, the web's
+  FirstFlight): Material's `ElevatedCard` riding the sheet's top under
+  the map's buttons, the first time with no route and no card up: "Your
+  First Flight", its line, a Destination field, Plan It and "Step 1 of 3
+  · Route · Nav Log · Brief", ✕ (Not Now) in its title row. The field is
+  a read-only `OutlinedTextField` that opens the one search to pick the
+  airport (card rule 5; `SearchControl.pickAirport`). Plan It plans from
+  own ship's fix or the phone's position read once (the nearest field),
+  else the home airport, else asks From. Planned, it is gone for good and
+  the nav log opens; Setup's Show First Flight Again brings it back
+  (`FirstFlightMemory`).
 
 ### 3.15 Widgets, Live Updates and shortcuts
 
@@ -1363,7 +1395,7 @@ its sheet in place of the strip.
   logbook's N-numbers open it. The old Airplane page and its sheets are
   gone.
 - **One modal family:** `ui/sheet/WingtipSheet`, only for tasks (Add
-  Flight, a flight logged, a photo read, the welcome, a shared flight's
+  Flight, a flight logged, a photo read, a shared flight's
   preview, the Downloads map). `FlexibleSheet`, `CardSheet`, `Over`,
   `OverRequests` and `OverSheet` are gone.
 - **Questions** are the stock `AlertDialog`: Ready to Fly's prompt, a
@@ -1388,8 +1420,7 @@ at half -- the sheet's peek is half the window while a card is open
 scroll taking the drag before the card's list. No pull to refresh in a
 sheet: the airport card, the map's cards and the Brief fetch by
 themselves. The checklists tab scrolls; each page of Settings is its own
-back stack entry, with its own scroll and title state; the welcome
-starts each page at its top. A form with an edit not saved asks before a
+back stack entry, with its own scroll and title state. A form with an edit not saved asks before a
 swipe or Back throws it away (`DiscardDialog`): Add Flight and Your
 Airplanes' form.
 

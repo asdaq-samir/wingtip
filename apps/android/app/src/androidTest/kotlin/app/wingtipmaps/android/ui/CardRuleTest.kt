@@ -20,6 +20,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import app.wingtipmaps.android.MainActivity
 import app.wingtipmaps.android.R
 import app.wingtipmaps.android.emergency.EmergencyOpen
+import app.wingtipmaps.android.firstflight.FirstFlightMemory
 import app.wingtipmaps.android.map.MapPick
 import app.wingtipmaps.android.navigation.CardRequests
 import app.wingtipmaps.android.navigation.ScreenRequests
@@ -27,7 +28,6 @@ import app.wingtipmaps.android.navigation.generated.Screen
 import app.wingtipmaps.android.ui.sheet.CardPageTags
 import app.wingtipmaps.android.ui.sheet.MAP_SHEET_TAG
 import app.wingtipmaps.android.ui.sheet.SheetDetent
-import app.wingtipmaps.android.welcome.WelcomeMemory
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Before
@@ -79,7 +79,7 @@ class CardRuleTest {
     @Before
     fun launch() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
-        WelcomeMemory.of(context).markSeen()
+        FirstFlightMemory.of(context).markSeen()
         scenario = ActivityScenario.launch(MainActivity::class.java)
         compose.waitUntil(TIMEOUT_MS) { searchShown() }
     }

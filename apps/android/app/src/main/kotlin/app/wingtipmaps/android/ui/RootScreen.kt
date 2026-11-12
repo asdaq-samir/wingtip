@@ -5,11 +5,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -18,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
@@ -44,6 +48,7 @@ import app.wingtipmaps.android.design.generated.WingtipSpace
 import app.wingtipmaps.android.dryrun.DryRun
 import app.wingtipmaps.android.emergency.EmergencyHost
 import app.wingtipmaps.android.emergency.EmergencyOpen
+import app.wingtipmaps.android.firstflight.FirstFlightCard
 import app.wingtipmaps.android.flight.InFlight
 import app.wingtipmaps.android.logbook.AutoLogbookHost
 import app.wingtipmaps.android.map.MapPick
@@ -65,16 +70,20 @@ import app.wingtipmaps.android.ui.OpenScreen.Where
 import app.wingtipmaps.android.ui.sheet.MapSheet
 import app.wingtipmaps.android.ui.sheet.halfWindow
 import app.wingtipmaps.android.ui.sheet.rememberMapSheetState
-import app.wingtipmaps.android.welcome.WelcomeHost
 import app.wingtipmaps.android.widget.NextFlightFeed
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
  * The map under the docked sheet, as Google Maps has it on Android and the
  * card rule of 2026-11-10 lays it out: the sheet's first row the one
  * search with its microphone and the account button (OneSearch), and
- * under it what the search shows with nothing typed or the plan; a thing's
+ * under it what the search shows with nothing typed, the plan a sideways
+ * swipe away on the carousel's second page (SheetCarousel); a thing's
  * card or a page -- a field, an airplane, a fix, a leg, the Brief,
  * Settings -- takes the search's place with its name and ← (CardPage) and
  * fills the sheet below, on the sheet's own stack (SheetNav, SheetCard),
@@ -93,6 +102,7 @@ import kotlinx.coroutines.launch
  * @param pending a link opened in the app (MainActivity); `onHandled`
  *   once it has been taken.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     val plan: Plan = viewModel()
@@ -142,6 +152,21 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         }
     }
     val openField: (String) -> Unit = { ident -> pages.show(SheetPage.Airport(ident)) }
+    // The carousel (SheetCarousel): a route made, opened or changed from
+    // anywhere (Fly Here, Depart From, Direct To, Add a Stop, a link, the
+    // copilot's) brings the FPL page, the route's points its key as the
+    // web's usePanelView has it; clearing it leaves the page as it is, and
+    // the one search asked for from the plan (Add a Stop) or an airport
+    // field brings the Search page, where its field is. Fly Here to the
+    // airport the route already goes to changes no point: its card shows
+    // the plan itself (showPlan).
+    LaunchedEffect(plan, stripLayout) {
+        if (!stripLayout) {
+            plan.state.map { s -> if (s.routed) listOf(s.dep, s.dest) + s.stops else null }
+                .distinctUntilChanged().drop(1).filterNotNull().collect { pages.toPlanPage() }
+        }
+    }
+    LaunchedEffect(search) { snapshotFlow { search.asked }.drop(1).collect { pages.closePlan() } }
 
     val link by pending.collectAsStateWithLifecycle()
     val shared: SharedFlightModel = viewModel()
@@ -203,7 +228,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     }
     val doLine: (String) -> Unit = { line -> strip.submit(line, plan, pilot, fix, assistant, askContext) { OpenScreen.field(it, routed, flyDryRun) } }
     val picks = SearchPicks(
-        plan, fix, search.addingStop, search.stopAfter, onAirport = openField, onPlan = showPlan,
+        plan, fix, search.addingStop, search.stopAfter, search.picking, onAirport = openField, onPlan = showPlan,
         ask = { q -> strip.ask(q, assistant, askContext) },
         say = strip::say, noRoute = { ident -> resources.getString(R.string.plan_a_route_first, ident) },
     )
@@ -233,7 +258,7 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     var searchRowPx by remember { mutableIntStateOf(0) }
     val pagesView: @Composable (Modifier, Boolean, @Composable () -> Unit) -> Unit = { modifier, backEnabled, head ->
         SheetPagesHost(
-            pages, backEnabled, modifier, head = head,
+            pages, backEnabled, modifier, head = head, carousel = !stripLayout,
             // The strip's field and timeline are its Home and its plan. At
             // the peek only the search shows, so what lies under it (the
             // flight's card, under the gesture bar) is kept from TalkBack.
@@ -243,6 +268,10 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
                     Home(plan, fix, answer, picks::pick, Modifier.semantics { if (hidden) hideFromAccessibility() })
                 }
             },
+            // The FPL page, with a route or none: with none its ✕ goes back
+            // one level, to the Search page (the web's empty box's Close),
+            // and its stops' rows ask the one search where from and to;
+            // no "Plan a Flight" of its own (the owner, 2026-11-11).
             plan = {
                 PlanPage(
                     plan, onClose = pages::closePlan, onField = { pages.push(SheetPage.Airport(it)) },
@@ -302,12 +331,28 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
         // every font scale (the sheet audit's S-1).
         val navigationBar = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val searchHeight = with(LocalDensity.current) { searchRowPx.toDp() }.takeIf { it > 0.dp } ?: WingtipSize.TapTarget
-        val peek = if (pages.covered) halfWindow() else SheetHandle + searchHeight + WingtipSpace.Sm + navigationBar
+        // At the peek, the carousel's dots and the first row of its page in
+        // view: the search's, or the plan's bar.
+        val firstRow = if (pages.planShown) TopAppBarDefaults.TopAppBarExpandedHeight else searchHeight + WingtipSpace.Sm
+        val peek = if (pages.covered) halfWindow() else SheetHandle + SheetDotsHeight + firstRow + navigationBar
         // The map's buttons ride the sheet's top at the right, just above
-        // the search (the owner, 2026-11-11), the position button nearest it.
+        // the search (the owner, 2026-11-11), the position button nearest it;
+        // the first flight's card, while it is offered and no card is up,
+        // rides under them, the buttons standing over it rather than on it
+        // (the web's FirstFlight, 2026-11-12). Planned, the nav log opens.
         MapSheet(
             state = sheet, peek = peek, snackbars = snackbars, lowerOnBack = !pages.covered,
-            onTop = { MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, positionLast = true) },
+            onTop = {
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.End) {
+                    MapButtons(ownShip = ownShip.mode, onOwnShip = ownShip::tap, onAsk = onAsk, positionLast = true)
+                    if (!pages.covered) {
+                        FirstFlightCard(
+                            plan, search, onPlanned = { ScreenRequests.ask(Screen.NAVLOG) },
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = WingtipSpace.Lg).padding(top = WingtipSpace.Sm),
+                        )
+                    }
+                }
+            },
             body = { covered -> mapView(covered, true) },
         ) {
             // A card takes the search's place, its name and ← where the
@@ -333,8 +378,6 @@ fun RootScreen(pending: StateFlow<Links.Link?>, onHandled: () -> Unit) {
     ReadyToFlyHost(plan, ownShipOn = ownShip.on, underway = inFlight.underway, onSetRoute = if (stripLayout) null else showPlan)
     AutoLogbookHost(plan, session)
     NextFlightFeed(plan)
-    // The welcome, once per install: at its end the plan, raised a stop.
-    WelcomeHost(plan) { showPlan() }
 }
 
 /** The stock drag handle's height: its 4-dp bar in 22 dp above and below,

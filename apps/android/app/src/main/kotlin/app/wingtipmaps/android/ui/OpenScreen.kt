@@ -34,6 +34,9 @@ internal object OpenScreen {
     fun whereOf(screen: Screen): Where =
         when (screen) {
             Screen.FPL, Screen.NAVLOG -> Where.Plan
+            // TODO(claude/carousel-web): Screen.SEARCH, the carousel's Search
+            // page (design/screens.json "search"), joins AIRPORT here once
+            // that branch's generated screens are merged.
             Screen.AIRPORT -> Where.Search
             Screen.BRIEF -> Where.Page(SheetPage.Brief)
             Screen.NEAREST -> Where.Page(SheetPage.Nearest)

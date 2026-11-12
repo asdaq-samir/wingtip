@@ -69,8 +69,8 @@ fun LazyListScope.kindFilters(chosen: Set<ResultKind>, onToggle: (ResultKind) ->
  * group, each row one tap and read by TalkBack as one thing, a glyph at
  * its start saying what it is: with a line typed, its results grouped
  * (Airports, Waypoints and Navaids, Airplanes, Do), narrowed to the kinds
- * `chosen` where any is; with nothing typed, Favorites, Recents and
- * Nearest.
+ * `chosen` where any is; with nothing typed, Nearest, Favorites and
+ * Recents.
  */
 fun LazyListScope.searchResults(
     state: SearchModel.State,
@@ -98,8 +98,8 @@ fun LazyListScope.searchResults(
     group("do", R.string.group_do, actions) { action -> DoRow(action) { onPick(SearchPick.Do(action)) } }
 }
 
-/** With nothing typed: the pilot's favorite fields and own airplanes,
- *  the fields and airplanes last picked, and the fields nearest. */
+/** With nothing typed: the fields nearest, the pilot's favorite fields
+ *  and own airplanes, and the fields and airplanes last picked. */
 fun LazyListScope.nothingTyped(
     favorites: List<Remembered>,
     own: Collection<OwnRecord>,
@@ -109,6 +109,18 @@ fun LazyListScope.nothingTyped(
     fix: OwnShip.Fix?,
     onPick: (SearchPick) -> Unit,
 ) {
+    // Nearest first, as the web's Search page has it (the owner,
+    // 2026-11-11), then the pilot's own.
+    item(key = "nearest-title") { Heading(R.string.nearest) }
+    nearestProblem?.let { item(key = "nearest-problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg)) } }
+    if (nearest.isNullOrEmpty()) {
+        // No position yet: the Nearest page, which asks for it, named for
+        // what it does rather than the heading's word again.
+        item(key = "nearest-open") { ResultRow(stringResource(R.string.find_nearest), null, null, Icons.Filled.NearMe) { onPick(SearchPick.Do(DoAction.Open(Screen.NEAREST))) } }
+    } else {
+        // The Nearest page's own rows (nearestRows), the three nearest.
+        nearestRows(nearest, fix) { n -> onPick(SearchPick.Airport(n.ident, n.name)) }
+    }
     val starred = (favorites + own.mapNotNull { r -> r.tail?.let { Remembered(Remembered.Kind.AIRPLANE, it, r.type, r.type) } }).distinctBy { it.kind.name + it.ident.uppercase() }
     if (starred.isNotEmpty()) {
         item(key = "favorites-title") { Heading(R.string.favorites) }
@@ -121,16 +133,6 @@ fun LazyListScope.nothingTyped(
         }
     }
     group("recents", R.string.recents, recents) { r -> ResultRow(r.ident, r.name, null, Icons.Filled.History) { onPick(pickOf(r)) } }
-    item(key = "nearest-title") { Heading(R.string.nearest) }
-    nearestProblem?.let { item(key = "nearest-problem") { ProblemLine(it, Modifier.padding(horizontal = WingtipSpace.Lg)) } }
-    if (nearest.isNullOrEmpty()) {
-        // No position yet: the Nearest page, which asks for it, named for
-        // what it does rather than the heading's word again.
-        item(key = "nearest-open") { ResultRow(stringResource(R.string.find_nearest), null, null, Icons.Filled.NearMe) { onPick(SearchPick.Do(DoAction.Open(Screen.NEAREST))) } }
-    } else {
-        // The Nearest page's own rows (nearestRows), the three nearest.
-        nearestRows(nearest, fix) { n -> onPick(SearchPick.Airport(n.ident, n.name)) }
-    }
 }
 
 private fun pickOf(r: Remembered): SearchPick = when (r.kind) {

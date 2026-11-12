@@ -1,5 +1,6 @@
 package app.wingtipmaps.android.emergency
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,12 +22,16 @@ import app.wingtipmaps.android.ui.OwnShipControl
  * Where the emergency assistant opens over the page, and only while it is
  * open (EmergencyOpen): its model follows own ship and asks the planner,
  * so shut it costs nothing. With own ship off it offers to show the
- * position, which the fields are worked out from.
+ * position, which the fields are worked out from. Back closes it: the
+ * dialog's own Back, and the activity's (a Back that reaches the screen
+ * under it, as the nightly CardRuleTest's does), which otherwise went to
+ * the sheet and left the assistant open over it.
  */
 @Composable
 fun EmergencyHost(plan: Plan, ownShip: OwnShipControl, model: EmergencyModel = viewModel(), airplanes: AirplaneModel = viewModel()) {
     val from by EmergencyOpen.from.collectAsStateWithLifecycle()
     if (from == null) return
+    BackHandler(onBack = EmergencyOpen::close)
     val context = LocalContext.current
     val planned by plan.state.collectAsStateWithLifecycle()
     val fix by ownShip.ownShip.fix.collectAsStateWithLifecycle()
