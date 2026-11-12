@@ -276,6 +276,8 @@ ci_only:
     - services/planner/pytest_guards.py
     - scripts/areas.yml
     - scripts/areas.py
+    # What the changes job diffs against.
+    - scripts/ci/changes_since.sh
     # Every language's formatter, its version and how each is run.
     - scripts/dev/format.sh
   # The dependencies' manifests and locks, for dependency-review.
