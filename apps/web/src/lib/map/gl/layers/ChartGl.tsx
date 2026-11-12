@@ -126,10 +126,15 @@ function ChartSources({ spec, night, sunlight, fade }: { spec: ChartStyle; night
       if (chart) map.getContainer().dataset.chartZoom = String(Math.min(chart.maxzoom ?? 22, Math.round(map.getZoom() + 1)));
     };
     level();
+    // On every zoom too: a camera that follows an airplane (the dry run)
+    // eases on fix after fix and never comes to rest, so a level said
+    // only at moveend was the last one before it started.
     map.on("moveend", level);
+    map.on("zoom", level);
     return () => {
       map.off("sourcedata", drawn);
       map.off("moveend", level);
+      map.off("zoom", level);
     };
   }, [map, spec]);
   return null;

@@ -183,10 +183,9 @@ void queryClient
 const unshared = takeSharedLinkFrom(window.location.search);
 if (unshared) {
   const rest = unshared.toString();
-  void router.navigate(
-    { pathname: router.state.location.pathname, search: rest ? `?${rest}` : "", hash: window.location.hash },
-    { replace: true },
-  );
+  // No pathname: the page it is on, whatever the router's basename does
+  // to one (given router.state's, the shared link's page was a 404).
+  void router.navigate({ search: rest ? `?${rest}` : "", hash: window.location.hash }, { replace: true });
 }
 const opening = unshared ?? new URLSearchParams(window.location.search);
 const openingDep = opening.get("dep")?.trim().toUpperCase();
