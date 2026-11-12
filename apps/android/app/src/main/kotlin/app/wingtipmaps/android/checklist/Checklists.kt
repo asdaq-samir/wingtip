@@ -1,8 +1,8 @@
 package app.wingtipmaps.android.checklist
 
 import android.content.Context
-import android.content.SharedPreferences
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
 import app.wingtipmaps.android.engine.generated.checklistPhases
@@ -34,7 +34,7 @@ typealias ChecklistItem = EngineContract.ChecklistReadSectionsItemItemsItem
 /** A heading of a list and the items under it. */
 typealias ChecklistSection = EngineContract.ChecklistReadSectionsItem
 
-/** Where a few short texts are kept: SharedPreferences on the phone, a
+/** Where a few short texts are kept: a DataStore on the phone (Kept), a
  *  map in the tests, so the rules of keeping them are held on the JVM. */
 interface TextStore {
     fun read(key: String): String?
@@ -46,16 +46,17 @@ interface TextStore {
     fun clear()
 }
 
-/** A TextStore over the app's SharedPreferences. */
-class PreferencesStore(private val prefs: SharedPreferences) : TextStore {
-    override fun read(key: String): String? = prefs.getString(key, null)
+/** A TextStore over one of the app's stores (Kept). */
+class PreferencesStore(private val prefs: Kept) : TextStore {
+    override fun read(key: String): String? = prefs[stringPreferencesKey(key)]
 
     override fun write(key: String, value: String?) {
-        prefs.edit { if (value == null) remove(key) else putString(key, value) }
+        val k = stringPreferencesKey(key)
+        prefs.edit { if (value == null) it.remove(k) else it.set(k, value) }
     }
 
     override fun clear() {
-        prefs.edit { clear() }
+        prefs.edit { it.clear() }
     }
 }
 
@@ -84,9 +85,8 @@ class ChecklistStore(private val store: TextStore) {
     fun forgetAll() = store.clear()
 
     companion object {
-        /** The phone's own keeping: a SharedPreferences file of their own. */
-        fun of(context: Context) =
-            ChecklistStore(PreferencesStore(context.getSharedPreferences("checklists", Context.MODE_PRIVATE)))
+        /** The phone's own keeping: a store of their own. */
+        fun of(context: Context) = ChecklistStore(PreferencesStore(Kept.of(context, "checklists")))
     }
 }
 

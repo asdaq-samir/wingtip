@@ -1,6 +1,7 @@
 package app.wingtipmaps.android.offline
 
 import android.content.Context
+import app.wingtipmaps.android.AppClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -34,7 +35,7 @@ class KeptForAir(private val dir: File) {
 
     private fun file(kind: String, key: String, ext: String): File = File(File(dir, kind), "${safe(key)}.$ext")
 
-    fun write(kind: String, key: String, body: String, atMs: Long = System.currentTimeMillis()) {
+    fun write(kind: String, key: String, body: String, atMs: Long = AppClock.nowMs()) {
         val to = file(kind, key, "json")
         runCatching {
             to.parentFile?.mkdirs()
@@ -64,7 +65,7 @@ class KeptForAir(private val dir: File) {
 
     /** The answer from the network, kept as it comes; where the network
      *  fails, the kept one with its time; where there is none, the failure. */
-    suspend fun <T> orKept(kind: String, key: String, serializer: KSerializer<T>, nowMs: Long = System.currentTimeMillis(), fetch: suspend () -> T): Had<T> {
+    suspend fun <T> orKept(kind: String, key: String, serializer: KSerializer<T>, nowMs: Long = AppClock.nowMs(), fetch: suspend () -> T): Had<T> {
         try {
             val value = fetch()
             write(kind, key, JSON.encodeToString(serializer, value), nowMs)
@@ -126,6 +127,6 @@ class KeptForAir(private val dir: File) {
         /** The answer through the app's store where there is one, else
          *  straight from the network. */
         suspend fun <T> had(kind: String, key: String, serializer: KSerializer<T>, fetch: suspend () -> T): Had<T> =
-            current?.orKept(kind, key, serializer, fetch = fetch) ?: Had(fetch(), System.currentTimeMillis(), kept = false)
+            current?.orKept(kind, key, serializer, fetch = fetch) ?: Had(fetch(), AppClock.nowMs(), kept = false)
     }
 }

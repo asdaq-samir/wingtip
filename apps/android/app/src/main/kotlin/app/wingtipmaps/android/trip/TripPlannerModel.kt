@@ -29,6 +29,7 @@ import kotlinx.serialization.encodeToString
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.coroutines.executeAsync
 import java.io.IOException
 import java.time.ZoneId
 
@@ -77,7 +78,7 @@ object TripPlan {
         val builder = Request.Builder().url(Config.gateway + Config.plannerPath("/api/trip-plan"))
             .header("Accept", "application/x-ndjson").post(body)
         Gateway.csrfToken?.let { builder.header("X-XSRF-TOKEN", it) }
-        Gateway.streaming.newCall(builder.build()).execute().use { response ->
+        Gateway.streaming.newCall(builder.build()).executeAsync().use { response ->
             if (response.code != 200) throw Planner.Failure(response.code, Planner.detail(response.body.string()))
             val source = response.body.source()
             while (true) {

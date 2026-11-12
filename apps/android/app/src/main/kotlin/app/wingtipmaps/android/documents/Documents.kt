@@ -2,6 +2,7 @@ package app.wingtipmaps.android.documents
 
 import android.content.Context
 import android.net.Uri
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Config
 import app.wingtipmaps.android.ai.ClaudeGate
 import app.wingtipmaps.android.ai.read.OnPhoneReader
@@ -64,7 +65,7 @@ object Documents {
 
     /** The page read: the photo made a JPEG off the main thread, then
      *  posted with the pilot's session and the CSRF header. */
-    suspend fun read(context: Context, page: Uri, kind: Kind, today: LocalDate = LocalDate.now()): DocumentRead {
+    suspend fun read(context: Context, page: Uri, kind: Kind, today: LocalDate = AppClock.today()): DocumentRead {
         // On the phone first: ML Kit's text recognizer and Gemini Nano,
         // checked by the engine here (OnPhoneReader); the photo goes to the
         // server only where this phone cannot read it (docs/android-ai.md).

@@ -12,11 +12,12 @@ import app.wingtipmaps.android.api.generated.AircraftProfileSummary
 import app.wingtipmaps.android.api.nearest
 import app.wingtipmaps.android.api.searchWithFixes
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -30,6 +31,7 @@ import java.util.Locale
  * the pilot's own airplanes. No figure is worked out here. Why a search
  * failed is said under the field, in the planner's words.
  */
+@OptIn(FlowPreview::class)
 class SearchModel : ViewModel() {
     data class State(
         val query: String = "",
@@ -46,7 +48,10 @@ class SearchModel : ViewModel() {
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
 
-    private var searching: Job? = null
+    /** A line typed, with what it is found against; null for none. */
+    private data class Ask(val q: String, val own: Collection<OwnRecord>, val near: Pair<Double, Double>?)
+
+    private val asks = MutableStateFlow<Ask?>(null)
     private var types: List<AircraftProfileSummary>? = null
     private var nearestAt: Pair<Double, Double>? = null
 
@@ -57,27 +62,38 @@ class SearchModel : ViewModel() {
      * the nearest of fields alike first.
      */
     fun type(text: String, own: Collection<OwnRecord>, near: Pair<Double, Double>?) {
-        searching?.cancel()
         val q = text.trim()
         if (q.isEmpty()) {
+            asks.value = null
             _state.update { it.copy(query = "", airports = emptyList(), waypoints = emptyList(), airplanes = emptyList(), loading = false, problem = null) }
             return
         }
         _state.update { it.copy(query = q, loading = true) }
-        searching = viewModelScope.launch {
-            delay(PAUSE_MS)
-            val problems = mutableListOf<String>()
-            val found = attempt(problems) { Planner.searchWithFixes(q, near?.let { (lat, lon) -> String.format(Locale.US, "%.4f,%.4f", lat, lon) }) }.orEmpty()
-            val (airports, waypoints) = SearchGroups.split(found)
-            val stock = types ?: attempt(problems) { Planner.aircraftProfiles() }?.also { types = it }.orEmpty()
-            var airplanes = SearchGroups.airplanes(q, own, stock)
-            if (SearchGroups.looksLikeTail(q)) {
-                val registered = attempt(problems) { Planner.findAirplane(SearchGroups.compact(q)).registered }
-                if (registered != null && !SearchGroups.isOwn(registered, own)) airplanes = listOf(AirplaneHit.Registered(registered)) + airplanes
-            }
-            _state.update {
-                it.copy(airports = airports, waypoints = waypoints, airplanes = airplanes, loading = false, problem = problems.firstOrNull())
-            }
+        asks.value = Ask(q, own, near)
+    }
+
+    // The lines typed, asked once the typing pauses (Flow's debounce); a
+    // cleared line passes at once, so the search under way stops with it
+    // (collectLatest cancels the one before).
+    init {
+        viewModelScope.launch {
+            asks.debounce { if (it == null) 0L else PAUSE_MS }.collectLatest { ask -> if (ask != null) find(ask) }
+        }
+    }
+
+    private suspend fun find(ask: Ask) {
+        val (q, own, near) = ask
+        val problems = mutableListOf<String>()
+        val found = attempt(problems) { Planner.searchWithFixes(q, near?.let { (lat, lon) -> String.format(Locale.US, "%.4f,%.4f", lat, lon) }) }.orEmpty()
+        val (airports, waypoints) = SearchGroups.split(found)
+        val stock = types ?: attempt(problems) { Planner.aircraftProfiles() }?.also { types = it }.orEmpty()
+        var airplanes = SearchGroups.airplanes(q, own, stock)
+        if (SearchGroups.looksLikeTail(q)) {
+            val registered = attempt(problems) { Planner.findAirplane(SearchGroups.compact(q)).registered }
+            if (registered != null && !SearchGroups.isOwn(registered, own)) airplanes = listOf(AirplaneHit.Registered(registered)) + airplanes
+        }
+        _state.update {
+            it.copy(airports = airports, waypoints = waypoints, airplanes = airplanes, loading = false, problem = problems.firstOrNull())
         }
     }
 

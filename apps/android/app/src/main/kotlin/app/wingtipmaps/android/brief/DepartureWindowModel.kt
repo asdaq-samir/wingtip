@@ -2,6 +2,7 @@ package app.wingtipmaps.android.brief
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.FigureKey
@@ -17,7 +18,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 
 /**
  * "When should I go?"'s view model (the web's useDepartureWindow): the
@@ -30,7 +30,7 @@ import java.time.LocalDate
  */
 class DepartureWindowModel(
     private val ask: suspend (DepartureWindowAsk) -> DepartureWindow = { Planner.departureWindow(it) },
-    private val now: () -> Long = System::currentTimeMillis,
+    private val now: () -> Long = AppClock::nowMs,
 ) : ViewModel() {
     data class State(
         val route: String? = null,
@@ -67,7 +67,7 @@ class DepartureWindowModel(
                 usableFuelGal = g[FigureKey.USABLE.key], climbTasKt = g[FigureKey.CLIMB_TAS.key], climbFuelBurnGph = g[FigureKey.CLIMB_BURN.key],
                 climbRateFpm = g[FigureKey.CLIMB_RATE.key], serviceCeilingFt = g[FigureKey.CEILING.key], taxiFuelGal = g[FigureKey.TAXI.key],
                 glideRatio = g[FigureKey.GLIDE.key],
-                hours = HOURS, day = LocalDate.now().toString(),
+                hours = HOURS, day = AppClock.today().toString(),
             )
             try {
                 val answer = ask(question)

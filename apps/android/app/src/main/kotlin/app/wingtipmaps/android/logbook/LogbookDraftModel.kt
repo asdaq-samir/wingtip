@@ -2,6 +2,7 @@ package app.wingtipmaps.android.logbook
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.Problems
 import app.wingtipmaps.android.api.generated.LogbookDraft
 import app.wingtipmaps.android.api.generated.LogbookDraftAsk
@@ -29,7 +30,7 @@ class LogbookDraftModel(
     private val flight: RecordedFlight,
     private val rules: DraftRules = EngineDraft,
     private val source: LogbookSource = ServerLogbook,
-    private val utcOffsetMin: () -> Double = { TimeZone.getDefault().getOffset(System.currentTimeMillis()) / 60_000.0 },
+    private val utcOffsetMin: () -> Double = { TimeZone.getDefault().getOffset(AppClock.nowMs()) / 60_000.0 },
 ) : ViewModel() {
     data class Logged(val entry: LogbookEntryDto, val currency: List<String>)
 

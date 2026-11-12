@@ -241,7 +241,7 @@ class Plan(app: Application) : AndroidViewModel(app) {
                             _state.update { it.copy(legs = fresh.toList()) }
                         }
                         is NavLogMessage.Done -> {
-                            _state.update { it.copy(legs = fresh.toList(), totals = message.totals, stage = null, plannedAtMs = System.currentTimeMillis(), kept = false) }
+                            _state.update { it.copy(legs = fresh.toList(), totals = message.totals, stage = null, plannedAtMs = AppClock.nowMs(), kept = false) }
                             shown = PlanShown.of(_state.value)
                             keep()
                             keepForTheAir()

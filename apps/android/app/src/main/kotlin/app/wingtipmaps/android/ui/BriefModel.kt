@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.airplane.AirplaneNow
 import app.wingtipmaps.android.airplane.FigureKey
@@ -96,7 +97,7 @@ class BriefModel : ViewModel() {
         items = answer.items,
         risk = answer.risk?.line,
         problem = null,
-        fetchedAtMs = System.currentTimeMillis(),
+        fetchedAtMs = AppClock.nowMs(),
     )
 
     companion object {

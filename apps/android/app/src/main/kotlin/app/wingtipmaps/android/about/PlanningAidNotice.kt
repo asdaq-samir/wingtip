@@ -9,8 +9,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.core.content.edit
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.wingtipmaps.android.Kept
 import app.wingtipmaps.android.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -34,15 +35,15 @@ class PlanningAidMemory(read: () -> Boolean, private val write: (Boolean) -> Uni
 
     companion object {
         private const val FILE = "wingtip"
-        private const val KEY = "planning_aid_accepted"
+        private val KEY = booleanPreferencesKey("planning_aid_accepted")
 
         @Volatile
         private var shared: PlanningAidMemory? = null
 
         fun of(context: Context): PlanningAidMemory =
             shared ?: synchronized(this) {
-                shared ?: context.applicationContext.getSharedPreferences(FILE, Context.MODE_PRIVATE).let { prefs ->
-                    PlanningAidMemory(read = { prefs.getBoolean(KEY, false) }, write = { yes -> prefs.edit { putBoolean(KEY, yes) } })
+                shared ?: Kept.of(context, FILE).let { prefs ->
+                    PlanningAidMemory(read = { prefs[KEY] ?: false }, write = { yes -> prefs.edit { it[KEY] = yes } })
                 }.also { shared = it }
             }
     }

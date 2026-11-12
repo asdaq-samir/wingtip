@@ -7,6 +7,7 @@ import android.util.Base64
 import androidx.core.content.ContextCompat
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.TrafficAircraft
 import app.wingtipmaps.android.engine.Engine
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -85,7 +86,7 @@ class Receiver private constructor(private val context: Context, private val tic
         if (every == null) every = ticker.every(EVERY_MS) { read() }
     }
 
-    fun read(nowMs: Long = System.currentTimeMillis()) {
+    fun read(nowMs: Long = AppClock.nowMs()) {
         if (_mode.value != ReceiverMode.AUTO) return
         socket.start()
         _problem.value = socket.problem
@@ -105,7 +106,7 @@ class Receiver private constructor(private val context: Context, private val tic
     /** The traffic to draw: the receiver's own airplanes first, then the
      *  internet's it does not hear, never own ship (`receiver_traffic`);
      *  the internet's alone where no receiver has been heard. */
-    fun traffic(internet: List<TrafficAircraft>, ownFt: Double?, nowMs: Long = System.currentTimeMillis()): List<TrafficAircraft> {
+    fun traffic(internet: List<TrafficAircraft>, ownFt: Double?, nowMs: Long = AppClock.nowMs()): List<TrafficAircraft> {
         val picture = _picture.value ?: return internet
         if (picture.receiver.heartbeatAt == null) return internet
         val heard = internet.map { Engine.json.decodeFromString<EngineContract.HeardPlane>(Engine.json.encodeToString(it)) }

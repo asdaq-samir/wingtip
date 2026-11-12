@@ -2,6 +2,7 @@ package app.wingtipmaps.android.ready
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.AirportPlace
 import app.wingtipmaps.android.api.Planner
@@ -59,7 +60,7 @@ object PlannerReadyWeather : ReadyWeather {
 class ReadyToFlyModel(
     private val rule: (EngineContract.ReadyToFlyInput) -> Result<EngineContract.ReadyToFlyAnswer> = ::askEngine,
     private val weather: ReadyWeather = PlannerReadyWeather,
-    private val nowMs: () -> Long = System::currentTimeMillis,
+    private val nowMs: () -> Long = AppClock::nowMs,
 ) : ViewModel() {
     data class State(
         val answer: EngineContract.ReadyToFlyAnswer? = null,

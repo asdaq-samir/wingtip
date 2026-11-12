@@ -14,17 +14,20 @@ import app.wingtipmaps.android.api.generated.AirportServices
 import app.wingtipmaps.android.api.generated.NotamsRanked
 import app.wingtipmaps.android.offline.KeptForAir
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** A field's card's model, and the welcome's search for the pilot's home
  *  field: the search's words, what the planner found for them, and the
  *  card of the one picked (the map rings it). */
+@OptIn(FlowPreview::class)
 class AirportModel : ViewModel() {
     data class State(
         val query: String = "",
@@ -61,36 +64,47 @@ class AirportModel : ViewModel() {
     private val _state = MutableStateFlow(State())
     val state: StateFlow<State> = _state.asStateFlow()
 
-    private var searching: Job? = null
+    /** The line typed, for the fields' search; null for none. */
+    private val asks = MutableStateFlow<String?>(null)
     private var departing: Job? = null
 
     /** Fields by ident or name as they are typed, asked a moment after
      *  the typing pauses, so a word is one ask rather than one per letter. */
     fun search(text: String) {
         _state.update { it.copy(query = text) }
-        searching?.cancel()
         val q = text.trim()
         if (q.length < 2) {
+            asks.value = null
             _state.update { it.copy(suggestions = emptyList(), loading = false) }
             return
         }
-        searching = viewModelScope.launch {
-            delay(SEARCH_PAUSE_MS)
-            _state.update { it.copy(loading = true) }
-            try {
-                val found = Planner.search(q)
-                _state.update { it.copy(suggestions = found, problem = null, loading = false) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                _state.update { it.copy(problem = Problems.say("Fields could not be found", e), loading = false) }
-            }
+        asks.value = q
+    }
+
+    // The lines typed, asked once the typing pauses (Flow's debounce); none
+    // passes at once, so a search under way stops with it (collectLatest
+    // cancels the one before).
+    init {
+        viewModelScope.launch {
+            asks.debounce { if (it == null) 0L else SEARCH_PAUSE_MS }.collectLatest { q -> if (q != null) find(q) }
+        }
+    }
+
+    private suspend fun find(q: String) {
+        _state.update { it.copy(loading = true) }
+        try {
+            val found = Planner.search(q)
+            _state.update { it.copy(suggestions = found, problem = null, loading = false) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            _state.update { it.copy(problem = Problems.say("Fields could not be found", e), loading = false) }
         }
     }
 
     /** A field's card opened, by its ident. */
     fun open(ident: String) {
-        searching?.cancel()
+        asks.value = null
         _state.update { it.copy(loading = true) }
         viewModelScope.launch {
             try {

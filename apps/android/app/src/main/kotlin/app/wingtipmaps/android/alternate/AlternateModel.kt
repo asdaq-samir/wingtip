@@ -2,6 +2,7 @@ package app.wingtipmaps.android.alternate
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.Plan
 import app.wingtipmaps.android.api.Planner
 import app.wingtipmaps.android.api.Problems
@@ -28,7 +29,7 @@ import kotlinx.coroutines.launch
  */
 class AlternateModel(
     private val ask: suspend (dest: String, eta: String, tasKt: Double, filed: String?) -> Alternates = { d, e, t, f -> Planner.alternate(d, e, t, f) },
-    private val nowMs: () -> Long = System::currentTimeMillis,
+    private val nowMs: () -> Long = AppClock::nowMs,
 ) : ViewModel() {
     /** What the plan gives the check: the destination, the nav log's time
      *  en route, when it leaves (null for now), the cruise, the one filed. */

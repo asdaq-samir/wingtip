@@ -2,6 +2,7 @@ package app.wingtipmaps.android.copilot
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.wingtipmaps.android.AppClock
 import app.wingtipmaps.android.api.AheadAlert
 import app.wingtipmaps.android.api.generated.CopilotAround
 import app.wingtipmaps.android.engine.generated.EngineContract
@@ -51,7 +52,7 @@ class CopilotModel(
      */
     fun look(
         mode: CopilotMode, flying: Boolean, fix: OwnShip.Fix?, flight: CopilotFlight?, ahead: List<AheadAlert>, voice: CopilotVoice?,
-        minimums: EngineContract.CopilotWatchInputMinimums? = null, nowMs: Long = System.currentTimeMillis(),
+        minimums: EngineContract.CopilotWatchInputMinimums? = null, nowMs: Long = AppClock.nowMs(),
     ) {
         if (mode == CopilotMode.OFF || !flying || fix == null || flight == null) {
             reset()
