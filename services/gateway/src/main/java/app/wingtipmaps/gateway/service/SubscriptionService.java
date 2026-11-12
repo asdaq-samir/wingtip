@@ -24,9 +24,12 @@ import java.util.Optional;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.ErrorResponseException;
 
 /**
  * The one entitlement to the paid features ({@link PaidFeature}), kept
@@ -77,13 +80,16 @@ public class SubscriptionService {
         EVERYONE
     }
 
-    /** The trial is already started, or was once: once an account. */
-    public static class TrialUsedException extends RuntimeException {
+    /** The trial is already started, or was once: once an account. A 409 problem. */
+    public static class TrialUsedException extends ErrorResponseException {
         @Serial
         private static final long serialVersionUID = 1L;
 
         public TrialUsedException() {
-            super("Your free month has already been used.");
+            super(
+                    HttpStatus.CONFLICT,
+                    ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Your free month has already been used."),
+                    null);
         }
     }
 

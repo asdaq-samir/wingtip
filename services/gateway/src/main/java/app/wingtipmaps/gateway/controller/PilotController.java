@@ -1,7 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.domain.Pilot;
-import app.wingtipmaps.gateway.dto.ErrorResponse;
 import app.wingtipmaps.gateway.dto.PilotContactRequest;
 import app.wingtipmaps.gateway.dto.PilotDto;
 import app.wingtipmaps.gateway.service.AccountService;
@@ -15,6 +14,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
@@ -96,10 +97,11 @@ public class PilotController {
                 accounts.delete(pilot);
             } catch (AccountNotDeletedException failed) {
                 log.warn("account {} not deleted: {}", pilot.getId(), failed.getMessage());
-                return ResponseEntity.status(502)
-                        .body(
-                                new ErrorResponse(
-                                        "Your account was not deleted: the planner did not answer. Nothing was removed; try again shortly."));
+                return ResponseEntity.of(
+                                ProblemDetail.forStatusAndDetail(
+                                        HttpStatus.BAD_GATEWAY,
+                                        "Your account was not deleted: the planner did not answer. Nothing was removed; try again shortly."))
+                        .build();
             }
             new SecurityContextLogoutHandler().logout(request, response, authentication);
             return ResponseEntity.noContent().build();

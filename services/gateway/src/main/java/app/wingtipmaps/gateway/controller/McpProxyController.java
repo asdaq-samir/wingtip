@@ -82,7 +82,7 @@ public class McpProxyController {
         byte[] body =
                 "POST".equals(request.getMethod()) ? request.getInputStream().readNBytes((int) BODY_LIMIT + 1) : null;
         if (body != null && body.length > BODY_LIMIT) {
-            return StreamingProxy.error(413, "an MCP request is at most " + (BODY_LIMIT / 1024) + " KB");
+            throw StreamingProxy.problem(413, "an MCP request is at most " + (BODY_LIMIT / 1024) + " KB");
         }
         return forward(request, "/mcp", body);
     }

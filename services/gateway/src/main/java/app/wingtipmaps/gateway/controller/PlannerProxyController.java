@@ -177,7 +177,7 @@ public class PlannerProxyController {
         // would have read all of it before this method could look.
         byte[] bytes = request.getInputStream().readNBytes(BODY_LIMIT + 1);
         if (bytes.length > BODY_LIMIT) {
-            return StreamingProxy.error(
+            throw StreamingProxy.problem(
                     413, "a request to the planner is at most " + (BODY_LIMIT / 1024 / 1024) + " MB");
         }
         return forward(
@@ -196,12 +196,12 @@ public class PlannerProxyController {
         String path = UpstreamRoutes.upstreamPath(request);
         UpstreamRoutes.Route route = routes.find(method, path).orElse(null);
         if (route == null) {
-            return StreamingProxy.error(404, "no such planner endpoint: " + method + " " + path);
+            throw StreamingProxy.problem(404, "no such planner endpoint: " + method + " " + path);
         }
         if (route.bodyLimit() != null
                 && body != null
                 && body.getBytes(StandardCharsets.UTF_8).length > route.bodyLimit()) {
-            return StreamingProxy.error(
+            throw StreamingProxy.problem(
                     413, "a request to " + path + " is at most " + (route.bodyLimit() / 1024) + " KB");
         }
         PaidFeature paid = route.paid();
@@ -211,7 +211,7 @@ public class PlannerProxyController {
             var refused =
                     subscriptions.refusal(SecurityContextHolder.getContext().getAuthentication(), paid);
             if (refused.isPresent()) {
-                return StreamingProxy.error(
+                throw StreamingProxy.problem(
                         refused.get().status(), refused.get().detail());
             }
             Allowance allowance = allowances.get(paid);
@@ -219,7 +219,7 @@ public class PlannerProxyController {
                     && !allowance
                             .limiter()
                             .allow(SlidingWindowLimiter.callerOf(request), allowance.perDay(), Instant.now())) {
-                return StreamingProxy.error(
+                throw StreamingProxy.problem(
                         429,
                         "That is today's " + allowance.perDay() + " " + allowance.used() + ". " + allowance.still());
             }

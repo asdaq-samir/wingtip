@@ -2,10 +2,10 @@ package app.wingtipmaps.gateway.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import app.wingtipmaps.gateway.dto.ErrorResponse;
 import java.io.IOException;
 import org.apache.coyote.CloseNowException;
 import org.junit.jupiter.api.Test;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
@@ -55,7 +55,7 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void anyOtherIOExceptionIsStillAnError() {
-        ResponseEntity<ErrorResponse> answer =
+        ResponseEntity<ProblemDetail> answer =
                 handler.handleUnexpected(new IOException("No space left on device"), new MockHttpServletResponse());
         assertThat(answer.getStatusCode().value()).isEqualTo(500);
     }
@@ -71,9 +71,9 @@ class GlobalExceptionHandlerTest {
 
     @Test
     void anythingElseIsA500WithAGenericMessage() {
-        ResponseEntity<ErrorResponse> answer =
+        ResponseEntity<ProblemDetail> answer =
                 handler.handleUnexpected(new IllegalStateException("boom"), new MockHttpServletResponse());
         assertThat(answer.getStatusCode().value()).isEqualTo(500);
-        assertThat(answer.getBody().error()).isEqualTo("An unexpected error occurred");
+        assertThat(answer.getBody().getDetail()).isEqualTo("An unexpected error occurred");
     }
 }

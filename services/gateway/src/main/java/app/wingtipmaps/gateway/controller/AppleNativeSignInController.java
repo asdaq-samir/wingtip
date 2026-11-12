@@ -1,7 +1,6 @@
 package app.wingtipmaps.gateway.controller;
 
 import app.wingtipmaps.gateway.domain.Pilot;
-import app.wingtipmaps.gateway.dto.ErrorResponse;
 import app.wingtipmaps.gateway.security.SessionSignIn;
 import app.wingtipmaps.gateway.security.SignInLanding;
 import app.wingtipmaps.gateway.service.PilotService;
@@ -20,6 +19,8 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -144,19 +145,22 @@ public class AppleNativeSignInController {
     public ResponseEntity<?> signIn(
             @Valid @RequestBody AppleToken body, HttpServletRequest request, HttpServletResponse response) {
         if (decoder == null) {
-            return ResponseEntity.status(404)
-                    .body(new ErrorResponse("Sign in with Apple is not set up for the app here."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.NOT_FOUND, "Sign in with Apple is not set up for the app here."))
+                    .build();
         }
         Jwt jwt;
         try {
             jwt = decoder.decode(body.identityToken());
         } catch (JwtException refused) {
-            return ResponseEntity.status(401)
-                    .body(new ErrorResponse("Apple's sign-in could not be confirmed. Try again."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.UNAUTHORIZED, "Apple's sign-in could not be confirmed. Try again."))
+                    .build();
         }
         if (!AppleNonce.checks(request, jwt, body.nonce(), requireNonce)) {
-            return ResponseEntity.status(401)
-                    .body(new ErrorResponse("Apple's sign-in could not be confirmed. Try again."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.UNAUTHORIZED, "Apple's sign-in could not be confirmed. Try again."))
+                    .build();
         }
         OidcUser user = new DefaultOidcUser(
                 List.of(new SimpleGrantedAuthority("OIDC_USER")),
@@ -166,9 +170,10 @@ public class AppleNativeSignInController {
         try {
             pilot = pilots.fromOidcUser(user, "apple");
         } catch (UnverifiedEmailException | IllegalArgumentException refused) {
-            return ResponseEntity.status(401)
-                    .body(new ErrorResponse(
-                            "Apple did not share a verified email address, which an account here needs."));
+            return ResponseEntity.of(ProblemDetail.forStatusAndDetail(
+                            HttpStatus.UNAUTHORIZED,
+                            "Apple did not share a verified email address, which an account here needs."))
+                    .build();
         }
         Authentication authentication = new OAuth2AuthenticationToken(user, user.getAuthorities(), "apple");
         SessionSignIn.signIn(authentication, request, response);
