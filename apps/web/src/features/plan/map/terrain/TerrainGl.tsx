@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { slotId, useGlMap } from "../../../../lib/map/gl/glLayer";
+import AirspaceVolumesGl from "./AirspaceVolumesGl";
 import AloftGl from "./AloftGl";
 import { DEM, EXAGGERATION, FLAT_MAX_PITCH, HILLSHADE, HILLSHADE_LAYER, MAX_PITCH, OPEN_PITCH, SKY, SV_TINT, demSource } from "./dem";
 import type { AloftPoint } from "./geometry";
@@ -80,6 +81,7 @@ export default function TerrainGl({
   return (
     <>
       <ObstaclesGl />
+      <AirspaceVolumesGl />
       {aloft && aloft.length > 1 && <AloftGl points={aloft} />}
       {pilot && <PilotCamera />}
     </>
