@@ -12,8 +12,6 @@ import Observation
 @MainActor
 @Observable
 final class SharedFlightModel {
-    static let shared = SharedFlightModel()
-
     /// The gateway's call, a test's own in its place.
     struct Calls: Sendable {
         var fetch: @Sendable (String) async throws -> GWSharedFlightDto?

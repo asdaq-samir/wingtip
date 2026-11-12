@@ -13,8 +13,6 @@ import Observation
 @MainActor
 @Observable
 final class AutoLogbook {
-    static let shared = AutoLogbook()
-
     typealias Draft = APILogbookDraft
 
     /// What the pilot may change of the draft before it is logged.

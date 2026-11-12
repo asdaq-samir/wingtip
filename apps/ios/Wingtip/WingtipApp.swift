@@ -16,8 +16,10 @@ struct WingtipApp: App {
     @State private var verdict = Verdict()
     /// Where every card and page opens (Navigator): one for the app, the
     /// views given it in the environment.
-    @State private var nav = Navigator()
+    @State private var nav: Navigator
     @State private var inFlight = InFlight()
+    /// The screens' own models (ScreenModels), one each for the app.
+    @State private var screens: ScreenModels
     @Environment(\.scenePhase) private var scenePhase
     /// iOS's hand-over of the chart downloads finished in the background.
     @UIApplicationDelegateAdaptor(OfflineAppDelegate.self) private var offlineDelegate
@@ -28,6 +30,14 @@ struct WingtipApp: App {
         // (Metrics), so the figures the owner steers speed by come from
         // real flights rather than a simulator.
         Metrics.shared.start()
+        let screens = ScreenModels()
+        _screens = State(initialValue: screens)
+        // The intents' share of them, by App Intents' own dependencies.
+        AppDependencyManager.shared.add(dependency: screens.briefAsk)
+        AppDependencyManager.shared.add(dependency: screens.autoLogbook)
+        let nav = Navigator()
+        nav.screens = screens
+        _nav = State(initialValue: nav)
     }
 
     var body: some Scene {
@@ -41,7 +51,7 @@ struct WingtipApp: App {
                 // An emailed sign-in link asks before it signs anyone in.
                 .modifier(LinkSignInPrompt(session: session))
                 .modifier(AppModels(session: session, charts: charts, plan: plan, ownShip: ownShip, dryRun: dryRun,
-                                    traffic: traffic, verdict: verdict, nav: nav, inFlight: inFlight))
+                                    traffic: traffic, verdict: verdict, nav: nav, inFlight: inFlight, screens: screens))
                 .task { ownShip.start() }
                 .task { await session.refresh() }
                 // The deletes an earlier launch held behind their Undo and
@@ -60,7 +70,8 @@ struct WingtipApp: App {
                 // owner's ask, 2026-11-03, as Apple recommends for anything
                 // ongoing), watched every few seconds: the dry run's, or
                 // own ship's with a route planned.
-                .task { await Repeating.every(5) { FlightActivity.shared.observe(plan: plan, dryRun: dryRun, ownShip: ownShip, inFlight: inFlight) } }
+                .task { await Repeating.every(5) { FlightActivity.shared.observe(plan: plan, dryRun: dryRun, ownShip: ownShip, inFlight: inFlight,
+                                                                                 copilot: screens.copilot, atc: screens.atcCopilot) } }
                 // The next flight on the Home Screen and the Lock Screen
                 // (WidgetFeed, FlightWidget in WingtipWidgets): the plan, its
                 // verdict and the departure's weather, written to the App

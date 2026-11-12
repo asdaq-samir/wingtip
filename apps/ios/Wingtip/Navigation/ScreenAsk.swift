@@ -9,8 +9,6 @@ import Observation
 @MainActor
 @Observable
 final class ScreenAsk {
-    static let shared = ScreenAsk()
-
     private(set) var wanted: Screen?
 
     func ask(_ screen: Screen) { wanted = screen }

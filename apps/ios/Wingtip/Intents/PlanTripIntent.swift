@@ -21,6 +21,9 @@ struct PlanTripIntent: CommandIntent {
     static let description = IntentDescription("Plans a route to an airport, from your route's departure or the field nearest you, and briefs it for the time you say.")
     static let openAppWhenRun: Bool = true
 
+    /// The app's Brief ask, given by App Intents (WingtipApp).
+    @Dependency private var briefAsk: BriefAsk
+
     @Parameter(title: "Airport", requestValueDialog: "Where to?")
     var airport: AirportEntity
 
@@ -38,7 +41,7 @@ struct PlanTripIntent: CommandIntent {
 
     /// The hour said is left with the Brief as the route is asked for.
     func appCommand() -> AppCommand? {
-        if let departure { BriefAsk.shared.expect(departAt: departure) }
+        if let departure { briefAsk.expect(departAt: departure) }
         return Self.command(airport, departure: departure)
     }
 

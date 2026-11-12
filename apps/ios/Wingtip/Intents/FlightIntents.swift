@@ -41,11 +41,14 @@ struct LogFlightIntent: CommandIntent {
     static let description = IntentDescription("Opens the entry drafted from the flight you just flew, for you to check and log.")
     static let openAppWhenRun: Bool = true
 
+    /// The app's automatic logbook, given by App Intents (WingtipApp).
+    @Dependency private var autoLogbook: AutoLogbook
+
     /// The flight's entry is up already where one ended; else the logbook.
-    func appCommand() -> AppCommand? { AutoLogbook.shared.isOpen ? nil : .open(.logbook) }
+    func appCommand() -> AppCommand? { autoLogbook.isOpen ? nil : .open(.logbook) }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        let ended = await MainActor.run { AutoLogbook.shared.isOpen }
+        let ended = await MainActor.run { autoLogbook.isOpen }
         return .result(dialog: ended ? "Here's the entry from your flight; check it and log it."
             : "No flight has ended on this iPhone yet. Here's your logbook.")
     }

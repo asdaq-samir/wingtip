@@ -9,8 +9,6 @@ import Observation
 @MainActor
 @Observable
 final class AtcCopilot {
-    static let shared = AtcCopilot()
-
     /// Off until the pilot turns it on: Setup's Alerts (the web's ATC).
     enum Mode: String, CaseIterable, Identifiable, Sendable {
         case off, flying

@@ -8,8 +8,6 @@ import SwiftUI
 @MainActor
 @Observable
 final class FlightUI {
-    static let shared = FlightUI()
-
     /// The point whose altitude the Profile opens on, its Start At / Cross
     /// At popover up (a stop's "Set Altitude…"): the profile's one
     /// altitude control, taken and cleared there (ProfileCard).

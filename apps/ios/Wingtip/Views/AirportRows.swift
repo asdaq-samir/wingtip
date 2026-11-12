@@ -259,6 +259,7 @@ struct RunwaySketch: View {
 /// One of the card's actions, as Maps' place card has them: a glyph over
 /// its name on a rounded pane, the first in the tint.
 struct CardActionLabel: View {
+    @Environment(Feel.self) private var feel
     /// The action, whose one name and glyph every card uses (CardAction).
     let action: CardAction
 
@@ -268,7 +269,7 @@ struct CardActionLabel: View {
         VStack(spacing: WingtipSpace.xs) {
             Image(systemName: action.systemImage).font(WingtipType.heading)
                 // Fly Here and Direct To bounce as they are taken.
-                .symbolBounce(on: action == .flyHere || action == .directTo ? Feel.shared.directTo : 0)
+                .symbolBounce(on: action == .flyHere || action == .directTo ? feel.directTo : 0)
             Text(action.title).font(WingtipType.tabBar.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity, minHeight: WingtipSize.tapTarget)

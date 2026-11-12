@@ -8,7 +8,6 @@ import UIKit
 /// 2026-11-09, in the tabs' place). The system's own sheet, so the drag,
 /// the detents and the glass are iOS's, not a copy.
 struct RootView: View {
-    @Environment(SheetEdge.self) var sheetEdge
     @Environment(Replay.self) var replay
     @Environment(Emergency.self) var emergency
     @Environment(AirportShelf.self) var shelf
@@ -22,6 +21,7 @@ struct RootView: View {
     @Environment(DryRun.self) var dryRun
     @Environment(Traffic.self) var traffic
     @Environment(Verdict.self) var verdict
+    @Environment(ScreenModels.self) var screens
     @Environment(\.horizontalSizeClass) private var sizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     @State var detent: PresentationDetent = .half
@@ -78,7 +78,7 @@ struct RootView: View {
                             if !mapShown { sheetHeight = height }
                             // The map's buttons ride its top (MapButtonsDock),
                             // read there alone, so this body is not run again.
-                            sheetEdge.plan = height
+                            screens.sheetEdge.plan = height
                         }
                         .environment(\.sheetAtPill, detent == RootView.pill)
                         .presentationDetents([RootView.pill, .half, .large], selection: $detent)
@@ -176,5 +176,5 @@ struct RootView: View {
 #Preview("RootView") {
     RootView()
         .modifier(AppModels(session: Session(), charts: Charts(), plan: Plan(), ownShip: OwnShip(), dryRun: DryRun(),
-                            traffic: Traffic(), verdict: Verdict(), nav: Navigator(), inFlight: InFlight()))
+                            traffic: Traffic(), verdict: Verdict(), nav: Navigator(), inFlight: InFlight(), screens: ScreenModels()))
 }

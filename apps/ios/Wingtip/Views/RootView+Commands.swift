@@ -74,7 +74,7 @@ extension RootView {
         case .sharedFlight(let link):
             // Shown, not planned: the pilot's own plan stays until they
             // tap Use This Plan.
-            SharedFlightModel.shared.open(link)
+            screens.sharedFlight.open(link)
         case .track(let url):
             // A GPX or KML file handed over from Files or Mail: its track
             // flown again on the map (Replay), at the replay's pace, as a
@@ -93,7 +93,7 @@ extension RootView {
     /// card (the iPad's inspector).
     func openBrief() {
         if layout == .sheet, layoutName == "strip" {
-            BriefAsk.shared.ask()
+            screens.briefAsk.ask()
         } else {
             nav.open(.screen(.brief))
         }

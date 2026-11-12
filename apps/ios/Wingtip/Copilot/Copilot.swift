@@ -14,8 +14,6 @@ import PlannerAPI
 @MainActor
 @Observable
 final class Copilot {
-    static let shared = Copilot()
-
     /// Off, shown, or shown and said: Setup's Alerts (the web's copilotMode).
     enum Mode: String, CaseIterable, Identifiable, Sendable {
         case off, on, spoken

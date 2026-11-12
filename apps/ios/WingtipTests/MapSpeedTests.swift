@@ -66,3 +66,22 @@ struct MapSpeedTests {
         #expect(!FileManager.default.fileExists(atPath: url.path))
     }
 }
+
+/// The screens' models the app makes once (ScreenModels) reach what the
+/// singletons did: a card going away lets go of the app's own shared
+/// flight and drafted entry, and a navigator with none lets go of nothing.
+@MainActor
+struct ScreenModelsTests {
+    @Test func aCardGoingAwayLetsGoOfTheAppsOwnModels() {
+        let screens = ScreenModels()
+        let nav = Navigator()
+        nav.screens = screens
+        nav.open(.flightLogged)
+        nav.open(.mapSettings)
+        #expect(!screens.autoLogbook.isOpen)
+        let bare = Navigator()
+        bare.open(.sharedFlight)
+        bare.open(.mapSettings)
+        #expect(!screens.sharedFlight.showing)
+    }
+}

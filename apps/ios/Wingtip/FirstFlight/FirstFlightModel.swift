@@ -18,8 +18,6 @@ import Observation
 @MainActor
 @Observable
 final class FirstFlightModel {
-    static let shared = FirstFlightModel()
-
     /// Set once the card has planned a route or been put away, beside the
     /// app's other first-run keys in the standard defaults.
     static let seenKey = "firstFlightSeen"
