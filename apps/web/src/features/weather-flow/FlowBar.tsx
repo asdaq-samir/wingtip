@@ -1,7 +1,8 @@
 import { cn } from "cn";
 import { PlaybackToolbar, PlayToggle } from "../../components/PlaybackBar";
 import Segmented from "../../components/Segmented";
-import { GLASS } from "../../lib/mapChrome";
+import { Card, CardContent } from "../../components/ui/card";
+import { GLASS_CARD } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
 import { lookOf, type ShownField } from "./flowLook";
 import { FlowTrack } from "./FlowTrack";
@@ -58,58 +59,67 @@ export function FlowBar() {
   const ahead = !frame ? null : observed ? "Observed" : frame.past ? "Forecast" : `Forecast ${hourName(flow.frames, flow.shown)}`;
   return (
     <div className="pointer-events-none absolute right-[calc(max(0.5rem,env(safe-area-inset-right))+3.25rem)] bottom-[calc(max(env(safe-area-inset-bottom),var(--map-inset-bottom,0px))+0.75rem)] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px)+3.25rem)] z-[1000] flex justify-center">
-      <PlaybackToolbar
-        label={`${name} timeline`}
-        onToggle={() => {
-          if (flow.steps.length > 1) flow.toggle();
-        }}
-        className={cn(GLASS, "pointer-events-auto flex w-[min(100%,26rem)] flex-col gap-2 rounded-(--radius-card) px-3 pt-2.5 pb-1.5")}
-        data-testid="weather-flow-bar"
+      {/* The stock Card in the map's glass; its content is the Base UI
+          toolbar, so the bar keeps its one tab stop and its keys. */}
+      <Card
+        className={cn(
+          GLASS_CARD,
+          "pointer-events-auto w-[min(100%,26rem)] gap-0 rounded-(--radius-card) border-0 py-0 shadow-(--depth-float)",
+        )}
       >
-        <div className="flex items-center gap-2.5">
-          <PlayToggle playing={flow.playing} onToggle={flow.toggle} disabled={flow.steps.length < 2} testId="weather-flow-play" />
-          {status ? (
-            <span className={cn("min-w-0 flex-1 truncate font-medium", TEXT.detail, flow.failed && "text-destructive-ink")} role="status">
-              {status}
-            </span>
-          ) : (
-            <span className="flex min-w-0 flex-1 flex-col">
-              <span className={cn("truncate font-semibold", TEXT.row)}>{titleOf(flow.field, flow.span, flow.frames)}</span>
-              {at && (
-                <span className={cn("truncate text-muted-foreground", TEXT.note)}>
-                  {(flow.field === "precip" ? SHORT_DATE : DATE).format(at)}
-                </span>
-              )}
-              {frame && (
-                <span className={cn("truncate text-muted-foreground tabular-nums", TEXT.caption)} data-testid="weather-flow-time">
-                  {frame.valid.slice(11, 13)}
-                  {frame.valid.slice(14, 16)}Z{ahead && <span className="font-semibold text-tint"> · {ahead}</span>}
-                </span>
-              )}
-            </span>
-          )}
-          {flow.field === "precip" && (
-            <Segmented
-              label="Precipitation span"
-              value={flow.span}
-              onChange={(v) => flow.pickSpan(v as Span)}
-              options={SPANS}
-              testId="weather-flow-span"
+        <PlaybackToolbar
+          render={<CardContent className="flex flex-col gap-2 px-3 pt-2.5 pb-1.5" />}
+          label={`${name} timeline`}
+          onToggle={() => {
+            if (flow.steps.length > 1) flow.toggle();
+          }}
+          data-testid="weather-flow-bar"
+        >
+          <div className="flex items-center gap-2.5">
+            <PlayToggle playing={flow.playing} onToggle={flow.toggle} disabled={flow.steps.length < 2} testId="weather-flow-play" />
+            {status ? (
+              <span className={cn("min-w-0 flex-1 truncate font-medium", TEXT.detail, flow.failed && "text-destructive-ink")} role="status">
+                {status}
+              </span>
+            ) : (
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className={cn("truncate font-semibold", TEXT.row)}>{titleOf(flow.field, flow.span, flow.frames)}</span>
+                {at && (
+                  <span className={cn("truncate text-muted-foreground", TEXT.note)}>
+                    {(flow.field === "precip" ? SHORT_DATE : DATE).format(at)}
+                  </span>
+                )}
+                {frame && (
+                  <span className={cn("truncate text-muted-foreground tabular-nums", TEXT.caption)} data-testid="weather-flow-time">
+                    {frame.valid.slice(11, 13)}
+                    {frame.valid.slice(14, 16)}Z{ahead && <span className="font-semibold text-tint"> · {ahead}</span>}
+                  </span>
+                )}
+              </span>
+            )}
+            {flow.field === "precip" && (
+              <Segmented
+                label="Precipitation span"
+                value={flow.span}
+                onChange={(v) => flow.pickSpan(v as Span)}
+                options={SPANS}
+                testId="weather-flow-span"
+              />
+            )}
+          </div>
+          {!status && (
+            <FlowTrack
+              frames={flow.frames}
+              steps={flow.steps}
+              shown={flow.shown}
+              name={name}
+              seek={flow.seek}
+              onNow={flow.now}
+              testIdNow="weather-flow-now"
             />
           )}
-        </div>
-        {!status && (
-          <FlowTrack
-            frames={flow.frames}
-            steps={flow.steps}
-            shown={flow.shown}
-            name={name}
-            seek={flow.seek}
-            onNow={flow.now}
-            testIdNow="weather-flow-now"
-          />
-        )}
-      </PlaybackToolbar>
+        </PlaybackToolbar>
+      </Card>
     </div>
   );
 }

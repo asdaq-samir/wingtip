@@ -86,6 +86,11 @@ export const MATERIAL =
  */
 export const GLASS = "liquid-glass";
 
+/** GLASS on a stock Card, whose own `bg-card` and shadow would otherwise
+ *  win over it: the same glass, important, so the card keeps the map's
+ *  see-through look (the weather flow's legend and timeline). */
+export const GLASS_CARD = "liquid-glass!";
+
 /** The same glass for a sheet, frostier -- more of the material, less of
  *  the chart -- as what is on it is read: the console, the dialogs. */
 export const GLASS_SHEET = "bg-[var(--sheet)] shadow-(--depth-sheet)";
