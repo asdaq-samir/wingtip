@@ -6,7 +6,7 @@ planner does, from the shared store and not through a request (CLAUDE.md,
 "data comes in at the edges"). The NTSB's words are given as it wrote
 them, its narrative's kind ("preliminary" or "final") with them.
 
-No leads come from it: the store keeps each case's local date, town and
+It is no source of leads: the store keeps each case's local date, town and
 state, but no time of day and no point (wingtip.history.ntsb's tables),
 so the engine's identity check (occurrence_identity) could only ever
 send such a lead to a person. The FAA's statements name the same events
@@ -16,13 +16,6 @@ appears, a week or so later."""
 from __future__ import annotations
 
 from wingtip.history import ntsb as store
-
-SOURCE = "ntsb"
-
-
-def leads() -> list[dict]:
-    """The NTSB's events as leads: none (above)."""
-    return []
 
 
 def record(n_number: str, local_date: str) -> dict | None:

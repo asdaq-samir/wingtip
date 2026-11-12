@@ -53,7 +53,7 @@ from pathlib import Path
 import numpy as np
 import requests
 
-from . import elevation, faa_data, ground_grid
+from . import elevation, faa_data, geo, ground_grid
 from .config import REQUEST_HEADERS
 
 #: The finest zoom built and served (terrain_view.MAX_ZOOM).
@@ -104,9 +104,8 @@ def airport_tiles(points: list[tuple[float, float]], radius_nm: float = AIRPORT_
     flat earth so short a distance is."""
     found: set[tuple[int, int]] = set()
     for lat, lon in points:
-        d_lat = radius_nm / 60.0
-        d_lon = radius_nm / (60.0 * max(0.01, math.cos(math.radians(lat))))
-        (x0, x1), (y1, y0) = _tile_of([lat - d_lat, lat + d_lat], [lon - d_lon, lon + d_lon])
+        south, west, north, east = geo.box_around(lat, lon, radius_nm)
+        (x0, x1), (y1, y0) = _tile_of([south, north], [west, east])
         for x in range(int(x0), int(x1) + 1):
             for y in range(int(y0), int(y1) + 1):
                 south, west, north, east = _tile_bounds(x, y)

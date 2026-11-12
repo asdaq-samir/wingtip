@@ -102,14 +102,14 @@ These hold for every film, whatever the tools do:
 ## Running it on the Mac
 
 ```bash
-docker compose build crash-leads              # once; `run` reuses the image
-docker compose create crash-leads             # so the planner can start it
-docker compose run --rm crash-leads           # one run of stages 1 to 3 by hand
+docker compose up -d crash-leads              # its own schedule: a run every half hour
+docker compose run --rm crash-leads poll      # one run of stages 1 to 3 by hand
 docker compose run --rm crash-leads parse-check   # the statements page read, nothing written
 ```
 
-The planner starts it every `CRASH_LEADS_EVERY_MIN` (30) through the
-dev-services sidecar (`app.crash_leads`); `CRASH_LEADS_AUTO=0` stops it.
+The job keeps its own schedule (`python -m crash every`, the compose
+service's command): a run every `CRASH_LEADS_EVERY_MIN` (30), none with
+`CRASH_LEADS_AUTO=0`. No other service starts it.
 The gateway mails each ready draft to `APP_DEVELOPER_EMAILS` every five
 minutes (`APP_STUDIO_DRAFTS_CRON`, `-` to stop it), its link under
 `APP_PUBLIC_BASE_URL`.
@@ -163,7 +163,7 @@ filmed slowly.
 
 1. The stack up (`scripts/dev/go-live.sh`) with ingest's history thread
    running (the NTSB store and the daily NOTAM snapshots).
-2. `docker compose run --rm crash-leads`: leads read, identities checked,
+2. `docker compose run --rm crash-leads poll`: leads read, identities checked,
    kits made and filled. The Studio's Drafts list shows each.
 3. A draft waiting for a person: open it in the Studio
    (`/app/studio?draft=<id>`), read what the identity check found, and

@@ -33,11 +33,10 @@ import wingtip_native
 from pyproj import Proj
 
 from . import weather_store
-from .units import M_TO_FT
+from .units import M_PER_SM, M_TO_FT
 
 log = logging.getLogger(__name__)
 
-_M_PER_SM = 1609.344
 #: GLMP's ceiling where there is none: no layer broken or overcast.
 _NO_CEILING_M = -100.0
 
@@ -126,7 +125,7 @@ def at(lat: float, lon: float, now: datetime | None = None) -> dict | None:
     if ceiling_m is None or visibility_m is None:
         return None
     ceiling_ft = None if ceiling_m <= _NO_CEILING_M else ceiling_m * M_TO_FT
-    visibility_sm = visibility_m / _M_PER_SM
+    visibility_sm = visibility_m / M_PER_SM
     # The category from the figures as modelled, before they are rounded
     # to say: 3,040 ft is VFR, though it reads 3,000.
     return {
@@ -183,7 +182,7 @@ def forecast_at(lat: float, lon: float, start: float, end: float) -> list[dict]:
             {
                 "valid": valid,
                 "ceiling_ft": None if ceiling_m <= _NO_CEILING_M else round(ceiling_m * M_TO_FT, -1),
-                "visibility_sm": round(visibility_m / _M_PER_SM, 2),
+                "visibility_sm": round(visibility_m / M_PER_SM, 2),
             }
         )
     return out

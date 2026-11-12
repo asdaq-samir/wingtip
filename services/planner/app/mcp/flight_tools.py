@@ -15,7 +15,8 @@ from pydantic import Field
 from ..settings import get_settings
 from . import airplane
 from .airport_tools import Ident
-from .calls import ENGINE_SOURCE, METAR_SOURCE, NOTAM_SOURCE, WINDS_SOURCE, editions, pick, pilot, planner, rounded
+from ..generated.planner_calls import go_no_go, plan
+from .calls import ENGINE_SOURCE, METAR_SOURCE, NOTAM_SOURCE, WINDS_SOURCE, editions, pick, pilot, rounded
 from .tool_meta import READS, read_only
 
 Stops = Annotated[list[str], Field(max_length=8, description="Airports or waypoints landed at or flown by, in order.")]
@@ -64,7 +65,7 @@ def app_link(fields: dict) -> str | None:
 
 
 async def planned(fields: dict) -> dict:
-    return await planner("GET", "/api/plan", params=fields)
+    return await plan(**fields)
 
 
 def route_of(p: dict) -> str:
@@ -126,7 +127,7 @@ def register(server: MCPServer) -> None:
     ) -> dict[str, Any]:
         who = pilot()
         fields, flown = await route_fields(who, departure, destination, stops, cruise_altitude_ft, airplane_tail, depart_at, rules)
-        verdict = await planner("POST", "/api/go-no-go", body={k: v for k, v in fields.items() if v is not None})
+        verdict = await go_no_go(body={k: v for k, v in fields.items() if v is not None})
         return {
             "airplane": airplane.label(flown) if flown else None,
             "line": verdict["line"],

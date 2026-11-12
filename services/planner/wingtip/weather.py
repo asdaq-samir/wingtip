@@ -38,6 +38,7 @@ import numpy as np
 
 from . import weather_store
 from .engine import ask as _ask
+from .units import NM_PER_SM
 
 log = logging.getLogger(__name__)
 
@@ -252,7 +253,6 @@ NEAREST_REPORT_MAX_AGE_S = 2 * 3600
 #: field's nearest METAR: about a quarter hour's flight in a light
 #: airplane.
 NEAREST_REPORT_NM = 30.0
-_NM_PER_SM = 0.868976
 
 
 def nearest_report(lat: float, lon: float, exclude: str | None = None, within_nm: float = NEAREST_REPORT_NM) -> dict | None:
@@ -285,7 +285,7 @@ def nearest_report(lat: float, lon: float, exclude: str | None = None, within_nm
         "ident": ident,
         "distance_nm": round(nm, 1),
         "bearing_deg": round(bearing),
-        "near": nm <= NEAR_REPORT_SM * _NM_PER_SM,
+        "near": nm <= NEAR_REPORT_SM * NM_PER_SM,
         "metar": report,
     }
 

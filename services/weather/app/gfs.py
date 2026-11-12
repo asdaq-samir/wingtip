@@ -44,7 +44,7 @@ import requests
 import wingtip_native
 from wingtip import weather_store
 from wingtip.config import REQUEST_HEADERS as HEADERS
-from wingtip.units import M_TO_FT
+from wingtip.units import M_TO_FT, MS_TO_KT
 
 log = logging.getLogger(__name__)
 
@@ -371,7 +371,7 @@ def _at_stations(fields: dict) -> dict:
             u, v = _at(fields[("UGRD", hpa)], lat, lon), _at(fields[("VGRD", hpa)], lat, lon)
             if None in (height_m, temp_k, u, v):
                 continue
-            speed_kt = math.hypot(u, v) * 1.943844  # m/s to kt
+            speed_kt = math.hypot(u, v) * MS_TO_KT
             # Where the wind blows from, true: u, v are toward east, north.
             direction = (math.degrees(math.atan2(-u, -v)) + 360) % 360
             levels[int(round(height_m * M_TO_FT))] = {

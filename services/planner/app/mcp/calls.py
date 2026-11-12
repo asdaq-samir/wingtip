@@ -9,12 +9,14 @@ directory reviews both refuse a bare "Internal Server Error"
 The tools ask the planner's HTTP API (GET /api/plan, POST /api/go-no-go,
 ...) through its ASGI app, not its routers' functions: the answers are the
 ones the app and the assistant get, shaped and checked by their response
-models, and only app.main imports a router (.importlinter)."""
+models, and only app.main imports a router (.importlinter). Each operation
+is a function generated from the planner's OpenAPI document
+(app.generated.planner_calls, by scripts/build/assistant_client.py, as
+the assistant's own client is), which sends through planner() here."""
 
 from __future__ import annotations
 
 from typing import Any
-from urllib.parse import quote
 
 import httpx2
 from limits import RateLimitItemPerDay, RateLimitItemPerMinute, storage, strategies
@@ -62,9 +64,10 @@ def pilot(scope: str = READ) -> str:
     return token.subject
 
 
-def seg(value: str) -> str:
-    """An identifier as one path segment, so a stray slash reaches no other path."""
-    return quote(value.strip().upper(), safe="")
+def ident(value: str) -> str:
+    """An identifier as the planner reads one; the generated call quotes it
+    as one path segment, so a stray slash reaches no other path."""
+    return value.strip().upper()
 
 
 def _said(resp: httpx2.Response) -> str:
@@ -78,15 +81,17 @@ def _said(resp: httpx2.Response) -> str:
     return str(detail or resp.text[:300] or resp.status_code)
 
 
-async def planner(method: str, path: str, *, params: dict | None = None, body: Any = None) -> Any:
+async def planner(method: str, path: str, *, query: dict | None = None, body: Any = None, headers: dict | None = None) -> Any:
     """One of the planner's endpoints, its JSON answer, or a tool error in
-    its own words with what to do about it."""
-    query = {k: v for k, v in (params or {}).items() if v is not None and v != ""}
+    its own words with what to do about it. None and "" are left out of a
+    query and the headers, as the planner reads an absent field."""
+    params = {k: v for k, v in (query or {}).items() if v is not None and v != ""}
+    sent = {k: str(v) for k, v in (headers or {}).items() if v is not None}
     # A fault in the planner is its 500, said as one, not a raised error
     # the SDK would hide behind "Error executing tool".
     transport = httpx2.ASGITransport(app=PLANNER["app"], raise_app_exceptions=False)
     async with httpx2.AsyncClient(transport=transport, base_url="http://planner", timeout=PLANNER_TIMEOUT_S) as client:
-        resp = await client.request(method, path, params=query, json=body)
+        resp = await client.request(method, path, params=params, json=body, headers=sent)
     if resp.status_code < 400:
         return resp.json()
     said = _said(resp)

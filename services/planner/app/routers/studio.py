@@ -8,6 +8,7 @@ import datetime as dt
 from fastapi import APIRouter, HTTPException, Query
 from wingtip import elevation, traffic
 from wingtip.traffic import day_tracks
+from wingtip.units import M_PER_FT
 
 from ..gateway import DEVELOPER
 from ..schemas.studio import StudioGround, StudioGroundAsk, StudioTrack, StudioWatched
@@ -41,14 +42,10 @@ def studio_watched() -> list[StudioWatched]:
     return [StudioWatched(**w) for w in day_tracks.watched_days()]
 
 
-#: Feet in a metre (the international foot, 0.3048 m exactly).
-_FT_PER_M = 1 / 0.3048
-
-
 @router.post("/api/studio/ground", response_model=StudioGround, openapi_extra=DEVELOPER)
 def studio_ground(ask: StudioGroundAsk) -> StudioGround:
     """The ground under a replayed track's points, ft MSL, for its profile
     strip (wingtip.elevation: the elevation tiles, then USGS's EPQS)."""
     points = [(lat, lon) for lat, lon in ask.points]
     found = elevation.get_elevations_m(points)
-    return StudioGround(ground_ft=[round(found[p] * _FT_PER_M) for p in points])
+    return StudioGround(ground_ft=[round(found[p] / M_PER_FT) for p in points])

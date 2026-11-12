@@ -27,8 +27,7 @@ import numpy as np
 
 from . import elevation, fixes, fuelstops
 from .engine import ask as engine
-
-M_TO_FT = 3.28084
+from .units import M_TO_FT
 
 #: The terrarium tiles' zoom read: a pixel about 0.02 degrees, 1.3 nm.
 ZOOM = 6

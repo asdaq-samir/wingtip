@@ -62,6 +62,7 @@ import gribberish
 import numpy as np
 from PIL import Image
 from wingtip.engine import ask
+from wingtip.units import M_PER_FT, M_PER_SM, MS_TO_KT
 
 #: The output grid: the GFS 0.25-degree points from 5 to 75 N, 180 to 50 W
 #: (the filter's box), north row first as a picture is.
@@ -86,9 +87,6 @@ HRRR_LEAST_POINTS = 30
 HRRR_LON0 = -97.5
 HRRR_CONE = math.sin(math.radians(38.5))
 
-MS_TO_KT = 1.943844  # 1 kt = 1852 m per 3600 s (NIST Handbook 44, Appendix C)
-M_PER_SM = 1609.344  # the statute mile, exactly (NIST Handbook 44, Appendix C)
-FT_PER_M = 1 / 0.3048  # the international foot, exactly 0.3048 m (NIST Handbook 44, Appendix C)
 #: A ceiling at or over this many metres MSL is the GFS's "none" (it
 #: writes 20,000 m where there is no ceiling, measured 2026-11-12).
 NO_CEILING_M = 19_999.0
@@ -192,7 +190,7 @@ def ceiling_agl_ft(ceiling_msl_m: np.ndarray, terrain_m: np.ndarray) -> np.ndarr
     value), so it reads as clear; a ceiling the model puts under the
     ground's height, at the ground."""
     none = np.isnan(ceiling_msl_m) | (ceiling_msl_m >= NO_CEILING_M)
-    above = np.maximum(ceiling_msl_m - terrain_m, 0.0) * FT_PER_M
+    above = np.maximum(ceiling_msl_m - terrain_m, 0.0) / M_PER_FT
     return np.where(none, np.inf, above)
 
 
@@ -308,7 +306,7 @@ def freezing_level_ft(height_m: np.ndarray, terrain_m: np.ndarray | None) -> np.
     G-AIRMET's "lowest freezing level above the ground or at the surface
     as appropriate" (aviationweather.gov GFA help), its heights MSL (AIM
     7-1-14). At the ground's height to within a metre is at the surface."""
-    feet = np.asarray(height_m, dtype=np.float64) * FT_PER_M
+    feet = np.asarray(height_m, dtype=np.float64) / M_PER_FT
     if terrain_m is None or terrain_m.size != height_m.size:
         return feet
     return np.where(height_m <= terrain_m + 1.0, 0.0, feet)

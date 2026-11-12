@@ -63,6 +63,7 @@ import time
 from pathlib import Path
 
 from wingtip import cycle_pack, vector_tiles
+from wingtip.units import M_PER_FT
 from wingtip.vector_tiles import INDEX, LAYERS, VERSION, archive_name
 
 log = logging.getLogger(__name__)
@@ -123,8 +124,6 @@ FIX_MIN_ZOOM = 10
 #: Runways from zoom 10 (a tile 39 km across): the map draws them closer
 #: in, past the chart's own detail, where they are a few pixels wide.
 RUNWAY_MIN_ZOOM = 10
-#: Feet to metres, exactly (the international foot, 0.3048 m).
-FT_M = 0.3048
 #: WGS 84's equatorial radius, m: the local frame a runway's corners are
 #: put in (_runway_corners) is a plane tangent there, which over a
 #: 4-km runway is out by well under a centimetre.
@@ -538,7 +537,7 @@ def runway_features(rwy_path: Path, rwy_end_path: Path, bbox=None):
             continue
         width_ft, surface = widths.get(key, (None, ""))
         props = {"site_no": key[0], "runway": key[1], "width_ft": width_ft, "surface": surface, "hard": _hard(surface)}
-        ring = _runway_corners(a, b, (width_ft or 75) * FT_M)
+        ring = _runway_corners(a, b, (width_ft or 75) * M_PER_FT)
         yield _feature({**props, "part": "surface"}, json.dumps({"type": "Polygon", "coordinates": [ring]}), RUNWAY_MIN_ZOOM)
         yield _feature(
             {**props, "part": "centreline"}, json.dumps({"type": "LineString", "coordinates": [list(a), list(b)]}), RUNWAY_MIN_ZOOM

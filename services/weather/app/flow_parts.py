@@ -20,6 +20,7 @@ from datetime import datetime, timedelta
 
 import numpy as np
 from wingtip import weather_store
+from wingtip.units import M_PER_FT
 
 from . import flow_aloft, flow_awc, flow_dafs, flow_grid, flow_nomads, flow_store
 
@@ -143,7 +144,7 @@ def _under_ground(ft: float | None, terrain, levels: dict):
     extrapolated, not air a flight is in. None where none is known."""
     if terrain is None or ft is None or ft >= levels["flight_levels_from_ft"]:
         return None
-    return ft * flow_aloft.M_PER_FT < terrain.reshape(flow_grid.ROWS, flow_grid.COLS)
+    return ft * M_PER_FT < terrain.reshape(flow_grid.ROWS, flow_grid.COLS)
 
 
 def aloft(valid: datetime, now: datetime, levels: dict, held: dict | None, fallback: bool = False) -> dict | None:
