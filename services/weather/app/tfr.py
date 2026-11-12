@@ -35,7 +35,7 @@ import xml.etree.ElementTree as ET
 import requests
 import wingtip_native
 from cachetools import LRUCache
-from wingtip import weather_store
+from wingtip import outside, weather_store
 
 # The site turns away a bare python-requests User-Agent, as the FAA's
 # others do (wingtip.faa_data).
@@ -109,7 +109,7 @@ def _detail(notam_id: str, modified: str) -> dict:
         return hit
     time.sleep(DETAIL_PAUSE_S)
     try:
-        resp = requests.get(DETAIL_URL.format(notam_id.replace("/", "_")), headers=HEADERS, timeout=20)
+        resp = outside.get(DETAIL_URL.format(notam_id.replace("/", "_")), headers=HEADERS, timeout=20)
         resp.raise_for_status()
         detail = parse_detail(resp.content)
     except (requests.RequestException, ET.ParseError):
@@ -122,7 +122,7 @@ def _shapes() -> list:
     """Every TFR area's GeoJSON feature; TfrUnavailable where the site does
     not answer."""
     try:
-        resp = requests.get(SHAPES_URL, headers=HEADERS, timeout=30)
+        resp = outside.get(SHAPES_URL, headers=HEADERS, timeout=30)
         resp.raise_for_status()
         return resp.json().get("features", [])
     except (requests.RequestException, ValueError) as err:

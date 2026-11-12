@@ -14,7 +14,7 @@ from datetime import datetime
 
 import requests
 
-from wingtip import charts
+from wingtip import charts, outside
 from wingtip.chart_next import (
     FAILED,
     NO_TURN,
@@ -34,7 +34,7 @@ from wingtip.config import REQUEST_HEADERS
 log = logging.getLogger(__name__)
 
 
-def published(cycle: str, get=requests.head) -> bool:
+def published(cycle: str, get=outside.head) -> bool:
     """Whether the FAA has put up the cycle's sectionals yet: one sheet's
     zip asked for by a HEAD, as the download will ask for it."""
     name = sorted(charts.COVERAGE["sec"])[0]

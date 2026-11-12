@@ -49,7 +49,7 @@ def test_the_ground_photo_is_fetched_once_and_kept(tmp_path, monkeypatch):
         def raise_for_status(self):
             pass
 
-    monkeypatch.setattr(airport_photos.requests, "get", lambda url, **kw: fetched.append(url) or Answer())
+    monkeypatch.setattr(airport_photos.outside, "get", lambda url, **kw: fetched.append(url) or Answer())
     path = airport_photos.ground_photo_file("KSCD", "https://upload.wikimedia.org/x.jpg", tmp_path)
     assert path.read_bytes() == b"\xff\xd8jpeg"
     airport_photos.ground_photo_file("KSCD", "https://upload.wikimedia.org/x.jpg", tmp_path)

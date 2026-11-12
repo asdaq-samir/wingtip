@@ -38,6 +38,7 @@ from pathlib import Path
 import numpy as np
 from cachetools import LRUCache
 from wingtip import charts, chartvision
+from wingtip.atomic import atomic_path
 from wingtip.config import CHART_TILE_CACHE_DIR, get_settings
 from wingtip.geo import along_track_distance_nm, cross_track_distance_nm, distance_nm
 
@@ -171,9 +172,7 @@ def build_cell(cell: tuple, root: Path) -> Path:
     blobs = np.array(rows, dtype=float).reshape(-1, 6)
     tiles = np.array([(x, y, b) for (x, y), b in sorted(bits.items())], dtype=np.int64).reshape(-1, 3)
     path = _cell_path(root, cell)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    part = path.with_name(f"{path.name}.{os.getpid()}.part")
-    with part.open("wb") as handle:
+    with atomic_path(path) as part, part.open("wb") as handle:
         np.savez_compressed(
             handle,
             kind=blobs[:, 0].astype(np.int8),
@@ -184,7 +183,6 @@ def build_cell(cell: tuple, root: Path) -> Path:
             first_x=blobs[:, 5].astype(np.int64),
             tiles=tiles,
         )
-    part.replace(path)
     return path
 
 

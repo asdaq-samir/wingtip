@@ -9,10 +9,11 @@ and has no scikit-learn of its own.
 """
 
 import json
-import os
 import shutil
 import time
 from pathlib import Path
+
+from .atomic import atomic_path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 MODELS_DIR = PROJECT_ROOT / "data" / "models"
@@ -109,9 +110,8 @@ def _copy_into_place(source: Path, dest: Path) -> None:
     """Copy beside `dest` and rename over it, so the planner -- which
     reloads when these files change (planner's app.chart_scorer)
     -- never reads a half-copied one."""
-    tmp = dest.with_name(f".{dest.name}.tmp")
-    shutil.copy2(source, tmp)
-    os.replace(tmp, dest)
+    with atomic_path(dest) as tmp:
+        shutil.copy2(source, tmp)
 
 
 def promote(candidate_dir: Path = CANDIDATE_MODEL_DIR, current_dir: Path = CURRENT_MODEL_DIR) -> Path:

@@ -36,7 +36,7 @@ from pathlib import Path
 import numpy as np
 import requests
 
-from . import geo
+from . import geo, outside
 from .elevation import terrarium_m
 from .units import M_TO_FT
 
@@ -148,19 +148,14 @@ def _fetch(session: requests.Session, x: int, y: int) -> np.ndarray | None:
     """A tile's heights, m; None for one the bucket has not (the sea)."""
     from PIL import Image
 
-    for attempt in range(4):
-        try:
-            resp = session.get(TILE_URL.format(z=ZOOM, x=x, y=y), headers=HEADERS, timeout=30)
-            if resp.status_code in (403, 404):
-                return None
-            resp.raise_for_status()
-            rgb = np.asarray(Image.open(io.BytesIO(resp.content)).convert("RGB")).astype(np.float64)
-            # Voids NaN, not the encoding's +-32,768 m (wingtip.elevation).
-            return terrarium_m(rgb)
-        except (requests.RequestException, OSError):
-            if attempt == 3:
-                raise
-    return None
+    # The session asks again after a dropped connection or a busy bucket (wingtip.outside).
+    resp = session.get(TILE_URL.format(z=ZOOM, x=x, y=y), headers=HEADERS, timeout=30)
+    if resp.status_code in (403, 404):
+        return None
+    resp.raise_for_status()
+    rgb = np.asarray(Image.open(io.BytesIO(resp.content)).convert("RGB")).astype(np.float64)
+    # Voids NaN, not the encoding's +-32,768 m (wingtip.elevation).
+    return terrarium_m(rgb)
 
 
 def _into(high: np.ndarray, low: np.ndarray, x: int, y: int, heights: np.ndarray) -> None:
@@ -209,8 +204,7 @@ def build(workers: int = 12) -> None:
     done = set(json.loads(DONE_PATH.read_text())) if DONE_PATH.exists() else set()
     x0, y0 = (int(v) for v in geo.tile_xy(NORTH, WEST, ZOOM))
     x1, y1 = (int(v) for v in geo.tile_xy(SOUTH, EAST, ZOOM))
-    session = requests.Session()
-    session.mount("https://", requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=workers))
+    session = outside.session(pool=workers)
     with ThreadPoolExecutor(workers) as pool:
         for y in range(y0, y1 + 1):
             if y in done:

@@ -4,7 +4,7 @@ mount (WEATHER_STORE, data/raw/weather by default), so no pilot's request
 ever waits on aviationweather.gov, NOMADS, tfr.faa.gov or IEM (#535).
 
 The service is the only writer. Each product is a gzipped JSON record,
-written whole to a file of its own and moved into place (os.replace), so
+written whole to a file of its own and moved into place (wingtip.atomic), so
 a reader sees the old copy or the new one and never half of either:
 
     {"name", "fetched_at" (UNIX s), "until" (UNIX s, or null for no
@@ -32,13 +32,13 @@ from __future__ import annotations
 import gzip
 import json
 import os
-import tempfile
 import threading
 import time
 from pathlib import Path
 from typing import NamedTuple
 
 from . import tracing
+from .atomic import atomic_path
 from .config import get_settings
 
 #: The winds aloft's periods, each a product of its own ("winds-06" ...):
@@ -68,15 +68,8 @@ def _path(name: str, suffix: str = ".json.gz") -> Path:
 
 
 def _write_atomic(path: Path, body: bytes) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.")
-    try:
-        with os.fdopen(fd, "wb") as f:
-            f.write(body)
-        os.replace(tmp, path)
-    except BaseException:
-        Path(tmp).unlink(missing_ok=True)
-        raise
+    with atomic_path(path) as tmp:
+        tmp.write_bytes(body)
 
 
 def write(name: str, data, fetched_at: float, until: float | None, meta: dict | None = None) -> None:

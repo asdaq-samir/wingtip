@@ -19,12 +19,11 @@ from __future__ import annotations
 
 import csv
 import fcntl
-import os
-import tempfile
 import threading
 from contextlib import contextmanager
 from pathlib import Path
 
+from .atomic import atomic_path
 from .geo import distance_nm
 
 #: Two rows closer than this on the same route are the same place, not
@@ -86,22 +85,11 @@ def write_rows(path: Path, columns: list, rows) -> None:
     the new one, never half of one, and a process killed mid-write leaves
     the old file where it was instead of a truncated training set. Call
     it inside `locked`."""
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
-    try:
-        with os.fdopen(fd, "w", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=columns)
-            writer.writeheader()
-            for row in rows:
-                writer.writerow({column: row.get(column) for column in columns})
-            f.flush()
-            os.fsync(f.fileno())
-        os.chmod(tmp, 0o644)  # mkstemp's 0600 would hide it from the other services' users
-        os.replace(tmp, path)
-    except BaseException:
-        Path(tmp).unlink(missing_ok=True)
-        raise
+    with atomic_path(path) as tmp, open(tmp, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=columns)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({column: row.get(column) for column in columns})
 
 
 def same_place(row: dict, route: str, lat: float, lon: float) -> bool:

@@ -20,6 +20,7 @@ import numpy as np
 import requests
 from cachetools import LRUCache
 
+from . import atomic, outside
 from .config import REQUEST_HEADERS
 from .geo import destination_point, tile_xy
 from .retry import with_retries
@@ -309,8 +310,7 @@ _TERRAIN_LOCK = threading.Lock()
 # One pool of connections to the tiles' bucket, kept open: a new route's
 # hundreds of tiles each opened their own TLS connection, most of the
 # time a first plan took (2026-10-21, C81-KTPA under IFR).
-_TERRAIN_SESSION = requests.Session()
-_TERRAIN_SESSION.mount("https://", requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=16))
+_TERRAIN_SESSION = outside.session(pool=16)
 
 
 #: The lowest ground in North America: Badwater Basin, Death Valley, 282 ft
@@ -401,8 +401,8 @@ def _terrain_tile(z: int, x: int, y: int) -> np.ndarray:
         resp = _TERRAIN_SESSION.get(TERRAIN_TILE_URL.format(z=z, x=x, y=y), headers=REQUEST_HEADERS, timeout=20)
         resp.raise_for_status()
         data = resp.content
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes(data)
+        with atomic.atomic_path(path, durable=False) as part:  # a tile lost to a power cut is fetched again
+            part.write_bytes(data)
     # Pillow only here, where a tile is decoded: the planner's airspace
     # column is its one caller, and Pillow comes with the planner's chart
     # requirements. wingtip.pipeline imports this module for its elevation

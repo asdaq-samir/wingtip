@@ -26,6 +26,9 @@ import wingtip_native
 from scipy import ndimage
 from shapely.geometry import shape
 
+from . import outside
+from .atomic import atomic_path
+
 logger = logging.getLogger(__name__)
 
 DIR = Path(__file__).resolve().parents[3] / "data" / "raw" / "natural_earth"
@@ -51,14 +54,12 @@ def _read(name: str) -> object:
     path = DIR / f"ne_50m_{name}.geojson"
     if not path.exists():
         try:
-            resp = requests.get(SOURCES[name], timeout=60)
+            resp = outside.get(SOURCES[name], timeout=60)
             resp.raise_for_status()
         except requests.RequestException as err:
             raise WaterUnavailable(f"{name}: {err}") from err
-        DIR.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".part")
-        tmp.write_bytes(resp.content)
-        tmp.replace(path)
+        with atomic_path(path) as tmp:
+            tmp.write_bytes(resp.content)
     features = json.loads(path.read_text())["features"]
     geometry = shapely.union_all([shape(f["geometry"]) for f in features])
     shapely.prepare(geometry)

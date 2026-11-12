@@ -63,6 +63,7 @@ import time
 from pathlib import Path
 
 from wingtip import cycle_pack, geo, vector_tiles
+from wingtip.atomic import atomic_path
 from wingtip.units import M_PER_FT, M_PER_NM
 from wingtip.vector_tiles import INDEX, LAYERS, VERSION, archive_name
 
@@ -663,12 +664,8 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
         run = subprocess.run(tippecanoe_args(folder, built, pack.cycle, tippecanoe), capture_output=True, text=True)
         if run.returncode != 0:
             raise RuntimeError(f"tippecanoe failed ({run.returncode}): {run.stderr[-2000:]}")
-        part = out_dir / f".{name}.pmtiles.part"
-        try:
+        with atomic_path(path) as part:
             shutil.copyfile(built, part)
-            os.replace(part, path)
-        finally:
-            part.unlink(missing_ok=True)
     index = {
         "cycle": pack.cycle,
         "name": name,
@@ -680,8 +677,8 @@ def build(pack, cache_dir, out_dir=None, *, bbox=None, tippecanoe: str = TIPPECA
         "tolerance_m": TOLERANCE_M,
         "layers": [{"name": layer, "features": counts[layer]} for layer in LAYERS],
     }
-    (out_dir / f"{INDEX}.part").write_text(json.dumps(index, separators=(",", ":")))
-    os.replace(out_dir / f"{INDEX}.part", out_dir / INDEX)
+    with atomic_path(out_dir / INDEX) as part:
+        part.write_text(json.dumps(index, separators=(",", ":")))
     for old in out_dir.glob("*.pmtiles"):
         if old != path:
             old.unlink(missing_ok=True)

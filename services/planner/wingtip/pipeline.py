@@ -16,8 +16,6 @@ for _publish), and loads scikit-learn only when it first scores.
 from __future__ import annotations
 
 import json
-import os
-import tempfile
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -25,6 +23,7 @@ from pathlib import Path
 import pandas as pd
 
 from wingtip import airports, elevation, faa_data, geo, ml_features, osm
+from wingtip.atomic import atomic_path
 from wingtip.model_registry import CANDIDATE_MODEL_DIR, _reject_remote_uri
 
 from wingtip.config import (  # noqa: F401  (re-exported: callers import these from here)
@@ -95,21 +94,13 @@ def _publish(out_path, write) -> Path:
     Every reader takes "the file exists" to mean "the corridor is built":
     the trainers read it, the Dev console lists it. A write cut short -- a full disk, a task
     killed part-way -- used to leave a torn file that read as built until
-    someone deleted it by hand; now it leaves the previous file. The temp
-    name starts with a dot and ends in .part, so no reader's glob
-    (`features_*.parquet`, `*.parquet`) picks it up, and mkstemp makes it
-    unique, as three containers write this directory.
+    someone deleted it by hand; now it leaves the previous file
+    (wingtip.atomic, whose temp name no reader's glob picks up and no
+    other of the three containers writing this directory shares).
     """
     out_path = _ensure_local_output_dir(out_path)
-    fd, tmp = tempfile.mkstemp(dir=out_path.parent, prefix=f".{out_path.name}.", suffix=".part")
-    os.close(fd)
-    try:
+    with atomic_path(out_path) as tmp:
         write(tmp)
-        os.chmod(tmp, 0o644)  # mkstemp's 0600 would hide it from the other services' users
-        os.replace(tmp, out_path)
-    except BaseException:
-        Path(tmp).unlink(missing_ok=True)
-        raise
     return out_path
 
 
@@ -642,11 +633,8 @@ class _Skip(Exception):
 def _write_run_status(status: dict, path: Path) -> None:
     """The run's status file, renamed into place so the planner never
     reads half of one."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(f".{path.name}.tmp")
-    tmp.write_text(json.dumps(status, indent=2))
-    os.chmod(tmp, 0o644)
-    os.replace(tmp, path)
+    with atomic_path(path) as tmp:
+        tmp.write_text(json.dumps(status, indent=2))
 
 
 def _now() -> str:

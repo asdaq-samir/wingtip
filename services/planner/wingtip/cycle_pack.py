@@ -46,6 +46,7 @@ from pathlib import Path
 
 import numpy as np
 
+from .atomic import atomic_path
 from .single_flight import once
 
 log = logging.getLogger(__name__)
@@ -417,10 +418,8 @@ def write(
     for layer, has_attr in (("airspace", True), ("sua", True), ("urban", False)):
         names += [f"{layer}.box", f"{layer}.off", f"{layer}.wkb"] + ([f"{layer}.attr"] if has_attr else [])
     names += list(tables)
-    pack_dir.mkdir(parents=True, exist_ok=True)
     path = pack_dir / f"wingtip-{cycle}.pack"
-    part = path.with_suffix(".part")
-    with _BUILD_LOCK, open(part, "w+b") as f:
+    with _BUILD_LOCK, atomic_path(path) as part, open(part, "w+b") as f:
         w = _Writer(f, names)
         w.put("meta", json.dumps(meta, separators=(",", ":")).encode())
         _layer(w, "airspace", *_airspace(shp_path))
@@ -435,7 +434,6 @@ def write(
         for name, (file, columns) in tables.items():
             w.put(name, _table(file, columns, sizes if name == "airports" else None))
         w.finish(cycle, time.time())
-    part.replace(path)
     for old in pack_dir.glob("wingtip-*.pack"):
         if old != path:
             old.unlink(missing_ok=True)

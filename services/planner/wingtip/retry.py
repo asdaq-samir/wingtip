@@ -1,7 +1,9 @@
-"""The one retry loop behind every external request this package makes:
+"""The retry loop around a whole fetch-and-read, where reading the answer
+can fail as well as the request (a cut-off zip, a body that is not JSON):
 aviationweather.gov, Overpass, the USGS elevation service, the FAA's
 data downloads -- and the one way this package reads a service's own
-reason out of an error response (upstream_detail)."""
+reason out of an error response (upstream_detail). A plain request to
+an outside source is retried by wingtip.outside's session instead."""
 
 import time
 

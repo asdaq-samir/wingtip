@@ -32,6 +32,7 @@ import logging
 import time
 
 from wingtip import crash_drafts, tfr
+from wingtip.atomic import atomic_path
 
 from . import then
 
@@ -80,9 +81,8 @@ def captions(lead: dict, record: dict | None = None) -> dict:
 
 
 def _write(folder, name: str, data) -> None:
-    part = folder / f"{name}.json.part"
-    part.write_text(json.dumps(data, indent=1))
-    part.replace(folder / f"{name}.json")
+    with atomic_path(folder / f"{name}.json") as part:
+        part.write_text(json.dumps(data, indent=1))
 
 
 def _lead_part(lead: dict, record: dict | None) -> dict:

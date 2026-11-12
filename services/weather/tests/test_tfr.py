@@ -104,7 +104,7 @@ def test_the_list_is_one_tfr_per_notam_with_its_detail_and_stored(monkeypatch):
 
     monkeypatch.setattr(tfr, "_DETAILS", tfr.LRUCache(maxsize=8))
     monkeypatch.setattr(tfr, "DETAIL_PAUSE_S", 0)
-    monkeypatch.setattr(tfr.requests, "get", get)
+    monkeypatch.setattr(tfr.outside, "get", get)
     tfr.fetch()
     stored = weather_store.read("tfrs").data
     assert [(t["notam_id"], t["kind"], len(t["geometry"]["coordinates"])) for t in stored] == [("6/1", "Security", 2)]
@@ -135,7 +135,7 @@ def test_a_failed_fetch_leaves_the_list_stored_before(monkeypatch):
     def down(*a, **kw):
         raise requests.ConnectionError("no route to host")
 
-    monkeypatch.setattr(tfr.requests, "get", down)
+    monkeypatch.setattr(tfr.outside, "get", down)
     with pytest.raises(tfr.TfrUnavailable):
         tfr.fetch()
     assert weather_store.read("tfrs").data == [{"notam_id": "6/1"}]

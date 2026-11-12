@@ -29,7 +29,7 @@ from datetime import datetime, timedelta, timezone
 import gribberish
 import numpy as np
 import requests
-from wingtip import weather_store
+from wingtip import outside, weather_store
 from wingtip.config import REQUEST_HEADERS as HEADERS
 
 log = logging.getLogger(__name__)
@@ -73,7 +73,7 @@ def _download_url(template: str, issued: datetime, field: str) -> bytes | None:
     -- the analysis hour's or the forecast hours' (app.glmp_forecast)."""
     url = template.format(day=issued.strftime("%Y%m%d"), hour=issued.strftime("%H"), field=field)
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=20)
+        resp = outside.get(url, headers=HEADERS, timeout=20)
     except requests.RequestException as err:
         raise GlmpUnavailable(f"NOMADS did not answer: {err}") from err
     if resp.status_code == 404:

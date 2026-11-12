@@ -39,7 +39,7 @@ def _answers(monkeypatch, by_product: dict) -> list:
             raise requests.ConnectionError("APRA did not answer")
         return Answer(json.loads((RECORDED / name).read_text()))
 
-    monkeypatch.setattr(apra.requests, "get", get)
+    monkeypatch.setattr(apra.outside, "get", get)
     return asked
 
 

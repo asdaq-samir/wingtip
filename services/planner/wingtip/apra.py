@@ -24,7 +24,7 @@ from datetime import date, datetime
 
 import requests
 
-from . import data_cycles
+from . import data_cycles, outside
 from .config import FAA_HEADERS
 
 log = logging.getLogger(__name__)
@@ -45,7 +45,7 @@ def editions(product: str, edition: str = "current", **params: str) -> list[dict
     it sends them: each an editionDate ("10/29/2026") and, from a /chart,
     a product with its url. APRA answers HTTP 200 with its own status in
     the body, 404 there for an edition it does not have."""
-    resp = requests.get(
+    resp = outside.get(
         f"{APRA_URL}/{product}", params={"edition": edition, **params}, headers={**FAA_HEADERS, "Accept": "application/json"}, timeout=20
     )
     resp.raise_for_status()

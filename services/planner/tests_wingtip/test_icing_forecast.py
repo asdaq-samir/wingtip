@@ -55,7 +55,7 @@ def test_each_leg_is_read_for_the_hour_of_its_middle(monkeypatch):
         asked.append(url)
         return _Answer(_section(8000, 2))
 
-    monkeypatch.setattr(icing_forecast.requests, "get", get)
+    monkeypatch.setattr(icing_forecast.outside, "get", get)
     # Leaving at 14:20Z: leg 1's middle at 14:50 (hour 1 of the 14Z issue),
     # 30 minutes on the ground, leg 2's middle at 16:20 (hour 2).
     start = NOW
@@ -75,14 +75,14 @@ def test_an_issue_not_posted_yet_is_asked_of_the_hour_before(monkeypatch):
         asked.append(url)
         return _Answer({"width": 300, "data_levels": LEVELS, "values": []} if "/14/" in url else _section(6000, 3))
 
-    monkeypatch.setattr(icing_forecast.requests, "get", get)
+    monkeypatch.setattr(icing_forecast.outside, "get", get)
     answer = icing_forecast.along([(41.9, -87.9), (42.5, -89.0)], [6000], [40], None, NOW, now=NOW)
     assert "/20261108/14/01/" in asked[0] and "/20261108/13/02/" in asked[1]
     assert answer["legs"][0]["severity"] == "moderate"
 
 
 def test_a_leg_past_the_forecasts_reach_is_unchecked(monkeypatch):
-    monkeypatch.setattr(icing_forecast.requests, "get", lambda url, headers, timeout: _Answer(_section(6000, 0)))
+    monkeypatch.setattr(icing_forecast.outside, "get", lambda url, headers, timeout: _Answer(_section(6000, 0)))
     later = NOW + 14 * 3600
     answer = icing_forecast.along([(41.9, -87.9), (42.5, -89.0)], [6000], [40], None, later, now=NOW)
     assert answer["unchecked"] == [0]
@@ -94,14 +94,14 @@ def test_no_answer_at_all_is_unavailable_not_clear(monkeypatch):
     def get(url, headers, timeout):
         raise requests.ConnectionError("down")
 
-    monkeypatch.setattr(icing_forecast.requests, "get", get)
+    monkeypatch.setattr(icing_forecast.outside, "get", get)
     with pytest.raises(icing_forecast.IcingForecastUnavailable):
         icing_forecast.along([(41.9, -87.9), (42.5, -89.0)], [6000], [40], None, NOW, now=NOW)
 
 
 def test_a_section_of_another_shape_is_unchecked(monkeypatch):
     monkeypatch.setattr(
-        icing_forecast.requests, "get", lambda url, headers, timeout: _Answer({"width": 2, "data_levels": 30, "values": [0] * 60})
+        icing_forecast.outside, "get", lambda url, headers, timeout: _Answer({"width": 2, "data_levels": 30, "values": [0] * 60})
     )
     answer = icing_forecast.along([(41.9, -87.9), (42.5, -89.0)], [6000], [40], None, NOW, now=NOW)
     assert answer["unchecked"] == [0]

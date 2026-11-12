@@ -18,10 +18,10 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 import pandas as pd
-import requests
 from cachetools import LRUCache
 
-from . import data_cycles
+from . import data_cycles, outside
+from .atomic import atomic_path
 
 # The FAA's site 403s a bare python-requests User-Agent.
 from .config import FAA_HEADERS
@@ -97,7 +97,7 @@ def dof_zip_url(html: str, on: date) -> str:
 def dof_link() -> str:
     """The current DOF zip, off the FAA's DOF page: APRA does not carry
     the obstacle file (wingtip.apra)."""
-    resp = requests.get(DOF_INDEX_URL, headers=FAA_HEADERS, timeout=30)
+    resp = outside.get(DOF_INDEX_URL, headers=FAA_HEADERS, timeout=30)
     resp.raise_for_status()
     return dof_zip_url(resp.text, data_cycles.in_force_day())
 
@@ -234,19 +234,18 @@ def _read_obstacle_cache(dof_dat_path: Path, key: tuple) -> pd.DataFrame | None:
 
 def _write_obstacle_cache(dof_dat_path: Path, key: tuple, df: pd.DataFrame) -> None:
     path = _obstacle_cache_path(dof_dat_path)
-    part = path.with_suffix(".parquet.part")
     try:
         import pyarrow as pa
         import pyarrow.parquet as pq
 
         table = pa.Table.from_pandas(df, preserve_index=False)
         metadata = {**(table.schema.metadata or {}), _OBSTACLE_CACHE_KEY: json.dumps(key).encode()}
-        pq.write_table(table.replace_schema_metadata(metadata), part)
-        part.replace(path)
+        with atomic_path(path) as part:
+            pq.write_table(table.replace_schema_metadata(metadata), part)
     except (ImportError, OSError):
         # Without pyarrow, or on a read-only data directory, only the
         # speed-up is lost: the parse runs again next process.
-        part.unlink(missing_ok=True)
+        pass
 
 
 def load_obstacles(dof_dat_path, bbox: tuple, min_agl_ft: float = 200) -> pd.DataFrame:
