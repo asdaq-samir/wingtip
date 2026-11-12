@@ -62,7 +62,7 @@ def nomads(monkeypatch):
             raise requests.ConnectionError("no route to NOMADS")
         return Answer(200, state["grids"][field]) if hour in state["up"] else Answer(404)
 
-    monkeypatch.setattr(glmp.requests, "get", get)
+    monkeypatch.setattr(glmp.outside, "get", get)
     return state
 
 

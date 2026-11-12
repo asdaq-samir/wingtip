@@ -43,6 +43,7 @@ from pathlib import Path
 
 import requests
 
+from .. import outside
 from ..config import REQUEST_HEADERS, get_settings
 
 METAR_URL = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
@@ -119,7 +120,7 @@ def _keep(kind: str, day: str, found: dict[str, list[dict]]) -> None:
 
 def _get(url: str, params: list[tuple[str, str]]) -> str:
     try:
-        resp = requests.get(url, params=params, headers=REQUEST_HEADERS, timeout=TIMEOUT_S)
+        resp = outside.get(url, params=params, headers=REQUEST_HEADERS, timeout=TIMEOUT_S)
         resp.raise_for_status()
     except requests.RequestException as err:
         raise WeatherHistoryUnavailable(f"The Iowa Environmental Mesonet could not be read: {err}") from err

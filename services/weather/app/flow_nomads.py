@@ -28,7 +28,7 @@ import time
 from datetime import datetime, timedelta
 
 import requests
-from wingtip import weather_store
+from wingtip import outside, weather_store
 from wingtip.config import REQUEST_HEADERS as HEADERS
 
 from . import flow_grid, flow_store
@@ -68,7 +68,7 @@ def hrrr_run(now: datetime) -> datetime:
 
 def download(url: str, params: dict) -> bytes | None:
     try:
-        resp = requests.get(url, params=params, headers=HEADERS, timeout=60)
+        resp = outside.get(url, params=params, headers=HEADERS, timeout=60)
     except requests.RequestException as err:
         raise NomadsUnavailable(f"NOMADS did not answer: {err}") from err
     # A run not posted yet is a 404, or an HTML page saying so.

@@ -38,6 +38,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 from . import charts, data_cycles
+from .atomic import atomic_path
 
 log = logging.getLogger(__name__)
 
@@ -123,10 +124,8 @@ def read_status(root: Path | None = None) -> dict | None:
 def write_status(cycle: str, state: str, detail: str | None = None, root: Path | None = None) -> dict:
     record = {"cycle": cycle, "state": state, "detail": detail, "at": time.time()}
     path = _status_path(root)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(record))
-    tmp.replace(path)
+    with atomic_path(path) as tmp:
+        tmp.write_text(json.dumps(record))
     return record
 
 

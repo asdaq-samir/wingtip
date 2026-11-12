@@ -35,6 +35,7 @@ from datetime import datetime, timedelta
 import gribberish
 import numpy as np
 import requests
+from wingtip import outside
 from wingtip.config import REQUEST_HEADERS as HEADERS
 from wingtip.units import M_PER_FT
 
@@ -70,7 +71,7 @@ def _index(product: str, cycle: datetime, step: int) -> list[tuple[int, int | No
     if time.time() - _NOT_UP.get(key, 0) < NOT_UP_RETRY_S:
         return None
     try:
-        resp = requests.get(_url(product, cycle, step) + ".idx", headers=HEADERS, timeout=30)
+        resp = outside.get(_url(product, cycle, step) + ".idx", headers=HEADERS, timeout=30)
     except requests.RequestException as err:
         raise DafsUnavailable(f"NOMADS did not answer: {err}") from err
     if resp.status_code == 404:
@@ -116,7 +117,7 @@ def find(records, variable: str, level_ft: float | None) -> tuple[int, int | Non
 def _range(url: str, span: tuple[int, int | None]) -> bytes:
     start, end = span
     try:
-        resp = requests.get(url, headers={**HEADERS, "Range": f"bytes={start}-{'' if end is None else end}"}, timeout=60)
+        resp = outside.get(url, headers={**HEADERS, "Range": f"bytes={start}-{'' if end is None else end}"}, timeout=60)
     except requests.RequestException as err:
         raise DafsUnavailable(f"NOMADS did not answer: {err}") from err
     if resp.status_code not in (200, 206) or not resp.content.startswith(b"GRIB"):

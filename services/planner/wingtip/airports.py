@@ -6,16 +6,15 @@ data -- all backed by OurAirports' free, no-API-key-required dataset
 import bisect
 import gzip
 import json
-import os
 import threading
 from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import requests
 
-from . import faa_data, geo
+from . import faa_data, geo, outside
+from .atomic import atomic_path
 from .config import REQUEST_HEADERS
 from .routecsv import locked
 from .single_flight import once
@@ -59,11 +58,10 @@ def _ensure_cached(url: str, cache_path: Path) -> Path:
     cache_path.parent.mkdir(parents=True, exist_ok=True)
     with locked(cache_path):
         if not cache_path.exists():
-            resp = requests.get(url, headers=REQUEST_HEADERS, timeout=30)
+            resp = outside.get(url, headers=REQUEST_HEADERS, timeout=30)
             resp.raise_for_status()
-            partial = cache_path.with_name(cache_path.name + ".part")
-            partial.write_bytes(resp.content)
-            os.replace(partial, cache_path)
+            with atomic_path(cache_path) as partial:
+                partial.write_bytes(resp.content)
     return cache_path
 
 

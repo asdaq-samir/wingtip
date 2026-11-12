@@ -22,7 +22,6 @@ from __future__ import annotations
 import io
 import json
 import logging
-import os
 import re
 import threading
 import xml.etree.ElementTree as ET
@@ -35,7 +34,8 @@ import requests
 from PIL import Image
 from scipy import ndimage
 
-from . import data_cycles
+from . import data_cycles, outside
+from .atomic import atomic_path
 from .config import DATA_DIR
 from .config import FAA_HEADERS as HEADERS
 from .single_flight import once
@@ -118,16 +118,14 @@ def _index(name: str, edition: str, url: str, parse) -> dict:
             index = json.loads(path.read_text())
         else:
             try:
-                resp = requests.get(url, headers=HEADERS, timeout=120)
+                resp = outside.get(url, headers=HEADERS, timeout=120)
                 resp.raise_for_status()
                 index = parse(resp.content)
             except (requests.RequestException, ET.ParseError) as err:
                 log.warning("No %s index for %s: %s", name, edition, err)
                 return {}
-            CACHE_DIR.mkdir(parents=True, exist_ok=True)
-            partial = path.with_name(path.name + ".part")
-            partial.write_text(json.dumps(index))
-            os.replace(partial, path)
+            with atomic_path(path) as partial:
+                partial.write_text(json.dumps(index))
         _HELD[key] = index
         return index
 
@@ -228,16 +226,14 @@ def airport_diagram_png(ident: str, cycle: str, on: date | None = None) -> Path 
         if path.exists():
             return path
         try:
-            resp = requests.get(url, headers=HEADERS, timeout=60)
+            resp = outside.get(url, headers=HEADERS, timeout=60)
             resp.raise_for_status()
             png = _drawn(resp.content)
         except (requests.RequestException, pypdfium2.PdfiumError) as err:
             log.warning("No airport diagram for %s in %s: %s", ident, cycle, err)
             return None
-        path.parent.mkdir(parents=True, exist_ok=True)
-        partial = path.with_name(path.name + ".part")
-        partial.write_bytes(png)
-        os.replace(partial, path)
+        with atomic_path(path) as partial:
+            partial.write_bytes(png)
     return path
 
 
@@ -285,7 +281,7 @@ def _pdf_of(source: str, edition: str, name: str) -> bytes | None:
             return path.read_bytes()
         base = DTPP_BASE if source == "dtpp" else DCS_BASE
         try:
-            resp = requests.get(f"{base}/{edition}/{name}", headers=HEADERS, timeout=60)
+            resp = outside.get(f"{base}/{edition}/{name}", headers=HEADERS, timeout=60)
             if resp.status_code in (403, 404):
                 # S3, which serves the FAA's files, answers 403 for a key that is not there.
                 with _LOCK:
@@ -297,10 +293,8 @@ def _pdf_of(source: str, edition: str, name: str) -> bytes | None:
         except requests.RequestException as err:
             log.warning("No %s %s in %s: %s", source, name, edition, err)
             raise FaaUnreachable(str(err)) from err
-        path.parent.mkdir(parents=True, exist_ok=True)
-        partial = path.with_name(path.name + ".part")
-        partial.write_bytes(resp.content)
-        os.replace(partial, path)
+        with atomic_path(path) as partial:
+            partial.write_bytes(resp.content)
         return resp.content
 
 
@@ -403,10 +397,8 @@ def chart_page_png(source: str, edition: str, name: str, page: int, on: date | N
         except (pypdfium2.PdfiumError, IndexError) as err:
             log.warning("No page %s of %s %s in %s: %s", page, source, name, edition, err)
             return None
-        path.parent.mkdir(parents=True, exist_ok=True)
-        partial = path.with_name(path.name + ".part")
-        partial.write_bytes(png)
-        os.replace(partial, path)
+        with atomic_path(path) as partial:
+            partial.write_bytes(png)
     return path
 
 
@@ -558,9 +550,8 @@ def airport_diagram_runways_png(ident: str, cycle: str, ends: list, on: date | N
             # at every card for the rest of the cycle.
             none.touch()
             return None
-        partial = path.with_name(path.name + ".part")
-        partial.write_bytes(png)
-        os.replace(partial, path)
+        with atomic_path(path) as partial:
+            partial.write_bytes(png)
     return path
 
 

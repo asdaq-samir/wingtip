@@ -24,7 +24,6 @@ from __future__ import annotations
 import gzip
 import json
 import mmap
-import os
 import threading
 from collections import OrderedDict
 from pathlib import Path
@@ -42,6 +41,8 @@ from pmtiles.tile import (
     zxy_to_tileid,
 )
 from pmtiles.writer import optimize_directories
+
+from .atomic import atomic_path
 
 HEADER_BYTES = 127
 #: PMTiles' advice: the header and root directory in the first 16 KB, so
@@ -90,9 +91,7 @@ def write(path: Path, tiles: Iterable[tuple[int, int, int, int, Callable[[], byt
         "max_zoom": last[0],
         "center_zoom": first[0],
     }
-    part = path.with_name(f"{path.name}.{os.getpid()}.part")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with open(part, "wb") as out:
+    with atomic_path(path) as part, open(part, "wb") as out:
         out.write(serialize_header(header))
         out.write(root)
         out.write(meta)
@@ -102,7 +101,6 @@ def write(path: Path, tiles: Iterable[tuple[int, int, int, int, Callable[[], byt
             if len(data) != length:
                 raise OSError(f"tile {tileid_to_zxy(tile_id)} changed size while being packed into {path.name}")
             out.write(data)
-    os.replace(part, path)
     return len(items)
 
 

@@ -25,7 +25,6 @@ from __future__ import annotations
 import io
 import json
 import logging
-import os
 import re
 import threading
 from datetime import date
@@ -38,6 +37,7 @@ import pyproj
 from PIL import Image
 
 from . import plate_page, procedures, publications
+from .atomic import atomic_path
 
 log = logging.getLogger(__name__)
 
@@ -384,11 +384,11 @@ def plate_overlay(ident: str, procedure: str, on: date | None = None) -> dict | 
             picture, corners, page_picture = made
             for path, data in ((png, picture), (page_png, page_picture)):
                 if data is not None:
-                    path.with_name(path.name + ".part").write_bytes(data)
-                    os.replace(path.with_name(path.name + ".part"), path)
+                    with atomic_path(path) as part:
+                        part.write_bytes(data)
             found.update(corners)
         # Kept either way: a plate that does not place is not tried again
         # this cycle, until the placing changes.
-        meta.with_name(meta.name + ".part").write_text(json.dumps(found))
-        os.replace(meta.with_name(meta.name + ".part"), meta)
+        with atomic_path(meta) as part:
+            part.write_text(json.dumps(found))
     return {**found, "png": png, "page_png": page_png} if found["placed"] else None

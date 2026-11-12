@@ -85,7 +85,7 @@ def test_without_the_census_data_nothing_is_ruled_out(monkeypatch, tmp_path):
     def offline(*args, **kwargs):
         raise requests.ConnectionError("offline")
 
-    monkeypatch.setattr(congested.requests, "get", offline)
+    monkeypatch.setattr(congested.outside, "get", offline)
     assert congested.congested(np.array([LAT]), np.array([LON])) is None
 
 

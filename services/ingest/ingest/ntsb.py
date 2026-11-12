@@ -50,7 +50,7 @@ import zipfile
 from collections.abc import Iterator
 from pathlib import Path
 
-import requests
+from wingtip import outside
 from wingtip.config import REQUEST_HEADERS
 from wingtip.history import ntsb
 
@@ -101,7 +101,7 @@ def read_directory(page: str) -> dict[str, dict]:
 
 
 def directory() -> dict[str, dict]:
-    resp = requests.get(DIRECTORY_URL, headers=REQUEST_HEADERS, timeout=DIRECTORY_TIMEOUT_S)
+    resp = outside.get(DIRECTORY_URL, headers=REQUEST_HEADERS, timeout=DIRECTORY_TIMEOUT_S)
     resp.raise_for_status()
     files = read_directory(resp.text)
     if AVALL not in files:
@@ -126,7 +126,7 @@ def deltas_due(files: dict[str, dict], state: dict) -> list[str]:
 
 def _download(name: str, folder: Path) -> Path:
     zipped = folder / name
-    with requests.get(FILE_URL.format(name=name), headers=REQUEST_HEADERS, timeout=DOWNLOAD_TIMEOUT_S, stream=True) as resp:
+    with outside.get(FILE_URL.format(name=name), headers=REQUEST_HEADERS, timeout=DOWNLOAD_TIMEOUT_S, stream=True) as resp:
         resp.raise_for_status()
         with zipped.open("wb") as f:
             for chunk in resp.iter_content(chunk_size=1 << 20):

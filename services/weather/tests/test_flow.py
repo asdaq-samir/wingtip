@@ -153,7 +153,7 @@ def test_each_request_asks_only_what_is_read(monkeypatch):
         asked.append(sorted(k for k in params if k.startswith(("var_", "lev_"))))
         return type("R", (), {"status_code": 200, "ok": True, "content": b"GRIB" + str(len(asked)).encode()})()
 
-    monkeypatch.setattr(flow_nomads.requests, "get", answer)
+    monkeypatch.setattr(flow_nomads.outside, "get", answer)
     body = flow_nomads.hrrr(NOW, 1)
     assert body == b"GRIB1GRIB2GRIB3"
     assert ["lev_surface", "var_CAPE", "var_PRATE", "var_VIS"] in asked

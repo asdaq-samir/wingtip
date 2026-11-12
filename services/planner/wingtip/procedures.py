@@ -22,7 +22,7 @@ from __future__ import annotations
 import logging
 import os
 import re
-import shutil
+import tempfile
 import threading
 from dataclasses import dataclass, field
 from datetime import date
@@ -134,18 +134,16 @@ def cifp_path(on: date | None = None) -> Path:
 def _fetch(url: str, folder: Path) -> None:
     """Extract into a folder of its own and move the file into place whole,
     so a request that comes while the 53 MB is being written does not
-    find it there, cut short, and index it for good."""
-    work = folder.with_name(folder.name + ".part")
-    shutil.rmtree(work, ignore_errors=True)
-    try:
-        download_and_extract(url, work, only={CIFP_FILE})
-        found = next(work.rglob(CIFP_FILE), None)
+    find it there, cut short, and index it for good. The folder's name is
+    its own (mkdtemp), so the planner and a job fetching at once do not
+    write into, or delete, each other's."""
+    folder.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(dir=folder.parent, prefix=f".{folder.name}.") as work:
+        download_and_extract(url, Path(work), only={CIFP_FILE})
+        found = next(Path(work).rglob(CIFP_FILE), None)
         if found is None:
             raise RuntimeError(f"{url} has no {CIFP_FILE}")
-        folder.mkdir(parents=True, exist_ok=True)
         os.replace(found, folder / CIFP_FILE)
-    finally:
-        shutil.rmtree(work, ignore_errors=True)
 
 
 def cifp_cycle(path: Path) -> str:

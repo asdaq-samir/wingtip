@@ -224,7 +224,7 @@ def test_two_stages_asking_for_a_table_at_once_download_it_once_and_both_read_it
         threading.Event().wait(0.05)
         return SlowResponse()
 
-    monkeypatch.setattr(airports.requests, "get", slow_get)
+    monkeypatch.setattr(airports.outside, "get", slow_get)
     path = tmp_path / "runways.csv"
     sizes, errors = [], []
 
@@ -480,7 +480,7 @@ def test_a_table_on_disk_is_read_without_the_lock_or_a_download(airports_csv, mo
         raise AssertionError("touched the lock or the network")
 
     monkeypatch.setattr(airports, "locked", refuse)
-    monkeypatch.setattr(airports.requests, "get", refuse)
+    monkeypatch.setattr(airports.outside, "get", refuse)
     assert airports._ensure_cached("http://unused", airports_csv) == airports_csv
     assert get_airport("KDLH", cache_path=airports_csv)["name"] == "Duluth Intl"
 

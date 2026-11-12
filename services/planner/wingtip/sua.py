@@ -26,6 +26,8 @@ from cachetools import TTLCache
 import shapely
 from shapely.geometry import LineString, Point, shape
 
+from . import outside
+from .atomic import atomic_path
 from .geo import along_track_distance_nm, corridor_bbox
 
 FEATURE_SERVICE = "https://services6.arcgis.com/ssFJjBXIUyZDrSYZ/arcgis/rest/services/Special_Use_Airspace/FeatureServer/0/query"
@@ -183,7 +185,7 @@ def _download() -> list:
             "resultRecordCount": PAGE,
         }
         try:
-            resp = requests.get(FEATURE_SERVICE, params=params, timeout=90)
+            resp = outside.get(FEATURE_SERVICE, params=params, timeout=90)
             resp.raise_for_status()
             answer = resp.json()
         except (requests.RequestException, ValueError) as err:
@@ -266,12 +268,9 @@ def _write_disk(fetched_at: float, held: list) -> None:
         [b for _, _, b in held],
         FIELDS,
     )
-    part = _DISK.with_suffix(".part")
     try:
-        _DISK.parent.mkdir(parents=True, exist_ok=True)
-        with part.open("wb") as f:
+        with atomic_path(_DISK) as part, part.open("wb") as f:
             pickle.dump(payload, f, protocol=pickle.HIGHEST_PROTOCOL)
-        part.replace(_DISK)
     except OSError as err:
         logger.warning("Special-use airspace not kept on disk: %s", err)
 

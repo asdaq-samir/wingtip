@@ -20,11 +20,11 @@ import datetime as dt
 import functools
 import gzip
 import json
-import os
 from pathlib import Path
 
 from .. import airports, notams, weather_store
 from .. import tfr as tfrs_now
+from ..atomic import atomic_path
 from ..config import get_settings
 
 #: How many days' files are kept: a year and a month, for a flight
@@ -53,11 +53,8 @@ def _read(path: Path) -> dict[str, dict]:
 def _write(path: Path, items: dict[str, dict]) -> None:
     """The day's file written whole and put in place at once, so a reader
     never sees half of it."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fresh = path.with_suffix(".tmp")
-    with gzip.open(fresh, "wt", encoding="utf-8") as f:
+    with atomic_path(path) as fresh, gzip.open(fresh, "wt", encoding="utf-8") as f:
         json.dump(sorted(items.values(), key=lambda i: i["id"]), f, separators=(",", ":"))
-    os.replace(fresh, path)
 
 
 def _rounded(coords):
