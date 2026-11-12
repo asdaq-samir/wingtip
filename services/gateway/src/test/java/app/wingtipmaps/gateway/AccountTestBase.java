@@ -119,10 +119,8 @@ abstract class AccountTestBase {
             plannerAsked.add(
                     exchange.getRequestMethod() + " " + exchange.getRequestURI().getPath() + " pilot="
                             + exchange.getRequestHeaders().getFirst("X-Pilot-Id"));
-            // The export's training record asks the engine what the
-            // endorsements say; it answers every field its document
-            // requires, as the planner does: under Jackson 3 the generated
-            // model leaves a missing list null rather than empty.
+            // Every field the document requires, in JSON, as the planner answers: Jackson 3 leaves a
+            // missing list null, and Spring reads an unlabelled body as octet-stream.
             String path = exchange.getRequestURI().getPath();
             byte[] body = (path.equals("/api/pilot/endorsements")
                             ? "{\"checks\":[],\"soloUntil\":null,\"until\":[]}"
@@ -130,7 +128,6 @@ abstract class AccountTestBase {
                                     ? NOTES
                                     : "{\"removed\":1}")
                     .getBytes();
-            // As FastAPI answers: without it, Spring reads the body as octet-stream.
             exchange.getResponseHeaders().set("Content-Type", "application/json");
             exchange.sendResponseHeaders(plannerStatus, body.length);
             exchange.getResponseBody().write(body);
