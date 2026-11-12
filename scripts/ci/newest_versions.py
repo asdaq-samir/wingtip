@@ -18,7 +18,11 @@ Each list is read from its source of truth and asked of its registry:
 
 What docs/versions.md's "Held back" table names (TypeScript 7, Java past
 25, ...) is listed as held, not as new. Pre-releases are not offered
-unless the pin is one already (Material 3's rc, decision 0016).
+unless the pin is one already (Material 3's rc, decision 0016), but for
+the phones' platform libraries (PLATFORM: Compose, Material 3, the rest of
+androidx and Google's) and the simplicity guards' tools, where an rc,
+beta or alpha newer than the pin counts as newest (the owner, 2026-11-12:
+"use the latest libraries and components for each OS even if it's a rc").
 
 The issue, "Newer versions (weekly)", is a checklist, made once and then
 edited, never commented on: at most one GitHub write a week, and none when
@@ -55,7 +59,7 @@ RANK = {"alpha": 0, "a": 0, "beta": 1, "b": 1, "rc": 2, "cr": 2}
 
 def key(version: str) -> tuple:
     """Release numbers, then alpha < beta < rc < the release itself."""
-    m = re.match(r"v?(\d+(?:\.\d+)*)[.-]?([A-Za-z]*)\.?(\d*)", version)
+    m = re.match(r"v?(\d+(?:\.\d+)*)[.-]?([A-Za-z]*)[.-]?(\d*)", version)
     if not m:
         return ((), -1, 0)
     release = tuple(int(n) for n in m.group(1).split("."))
@@ -68,7 +72,7 @@ def kind(version: str) -> str:
     rest = re.sub(r"^v?\d+(?:\.\d+)*", "", version)
     if not rest:
         return ""
-    return "pre" if re.fullmatch(r"[.-]?(alpha|a|beta|b|rc|cr)\.?\d*", rest.lower()) else "other"
+    return "pre" if re.fullmatch(r"[.-]?(alpha|a|beta|b|rc|cr)[.-]?\d*", rest.lower()) else "other"
 
 
 def newer(pinned: str, newest: str | None) -> bool:
@@ -81,9 +85,13 @@ def newer(pinned: str, newest: str | None) -> bool:
     return len(pin[0]) > 1 and new[1:] > pin[1:]
 
 
-def best(versions: list[str], pinned: str) -> str | None:
-    """The newest of a registry's list: releases, and pre-releases only for a pre-release pin."""
-    allowed = {"", "pre"} if kind(pinned) == "pre" else {""}
+# The Android catalog's groups whose pre-releases count as newest.
+PLATFORM = re.compile(r"^(androidx\.|com\.google\.android\.|com\.android\.)")
+
+
+def best(versions: list[str], pinned: str, pre: bool = False) -> str | None:
+    """The newest of a registry's list: releases, and pre-releases for a pre-release pin or when `pre`."""
+    allowed = {"", "pre"} if pre or kind(pinned) == "pre" else {""}
     ok = [v for v in versions if kind(v) in allowed]
     return max(ok, key=key) if ok else None
 
@@ -112,9 +120,22 @@ def eol(product: str, field: str = "latest") -> str | None:
     return best([str(c[field]) for c in json.loads(get(f"https://endoflife.date/api/{product}.json"))], "0")
 
 
-def maven_meta(base: str, group: str, artifact: str, pinned: str) -> str | None:
+def maven_meta(base: str, group: str, artifact: str, pinned: str, pre: bool = False) -> str | None:
     xml = get(f"{base}/{group.replace('.', '/')}/{artifact}/maven-metadata.xml")
-    return best(re.findall(r"<version>([^<]+)</version>", xml), pinned)
+    return best(re.findall(r"<version>([^<]+)</version>", xml), pinned, pre)
+
+
+def npm_all(name: str) -> str | None:
+    """Every published version of an npm package, pre-releases included."""
+    return best(list(json.loads(get(f"https://registry.npmjs.org/{name}"))["versions"]), "0", pre=True)
+
+
+def pypi_all(name: str) -> str | None:
+    return best(list(json.loads(get(f"https://pypi.org/pypi/{name}/json"))["releases"]), "0", pre=True)
+
+
+def github_all(repo: str) -> str | None:
+    return best([r["tag_name"] for r in json.loads(get(f"https://api.github.com/repos/{repo}/releases?per_page=20"))], "0", pre=True)
 
 
 def toolchains() -> list[tuple[str, str, str | None]]:
@@ -135,6 +156,12 @@ def toolchains() -> list[tuple[str, str, str | None]]:
         "prettier": lambda: json.loads(get("https://registry.npmjs.org/prettier/latest"))["version"],
         "palantir-java-format": lambda: maven_meta(central, "com.palantir.javaformat", "palantir-java-format", "1"),
         "ktlint": lambda: maven_meta(central, "com.pinterest.ktlint", "ktlint-cli", "1"),
+        # The simplicity guards' tools, pre-releases counted.
+        "semgrep": lambda: pypi_all("semgrep"),
+        "jscpd": lambda: npm_all("jscpd"),
+        "dependency-cruiser": lambda: npm_all("dependency-cruiser"),
+        "swiftlint": lambda: github_all("realm/SwiftLint"),
+        "detekt": lambda: maven_meta(central, "dev.detekt", "detekt-cli", "0", pre=True),
     }
     out = []
     for name, ask in asks.items():
@@ -195,7 +222,7 @@ def gradle() -> list[tuple[str, str, str | None]]:
         bases = ["https://dl.google.com/dl/android/maven2", "https://repo1.maven.org/maven2"]
         bases = ["https://plugins.gradle.org/m2", *bases] if plugin else bases
         for base in bases:
-            found = safely(maven_meta, base, group, name, pinned)
+            found = safely(maven_meta, base, group, name, pinned, bool(PLATFORM.match(group)))
             if found:
                 return label, pinned, found
         return label, pinned, None

@@ -262,6 +262,13 @@ areas:
       - README.md
       - docs/*.md
       - .claude/skills/checks/SKILL.md
+      # The simplicity rules (docs/CI.md, "Simplicity rules"): the kinds of
+      # source file the budget has counted since 2026-11-12, and the
+      # guards' scripts, rules and baselines.
+      - "**/*.mjs"
+      - "**/*.cs"
+      - "**/*.kts"
+      - scripts/ci/**
 ci_only:
   # A change here can change what any job does: all of them.
   global:

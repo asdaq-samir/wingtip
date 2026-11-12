@@ -1,0 +1,89 @@
+# The planner is called through its generated clients only (CLAUDE.md,
+# "Simplicity rules"; the owner's rule "generate over hand-write",
+# 2026-11-09). A hand-typed path and an untyped answer drift from the API
+# document without a compile error; the generated client fails the build
+# instead. The simplicity audit of 2026-11-12 (finding 6) found the MCP
+# tools calling the planner's own routes by typed-in paths, and five gateway
+# classes each building their own HTTP client to it.
+#
+# The clients: the web's apps/web/src/lib/api/ (over the generated
+# schema), the assistant's generated services/assistant/app/planner_client.py,
+# the gateway's PlannerClient (and its proxy, which forwards the public
+# API), the phones' API/ folders over the generated models.
+rules:
+  - id: planner-http-by-hand-web
+    message: >-
+      A request to an /api/ path written by hand. The web calls the API only
+      through apps/web/src/lib/api/ (typed by the generated schema): add the
+      call there (simplicity audit 2026-11-12, finding 6).
+    severity: ERROR
+    languages: [typescript, javascript]
+    paths:
+      exclude: ["apps/web/src/lib/api/"]
+    patterns:
+      - pattern-either:
+          - pattern-inside: fetch(...)
+          - pattern-inside: new Request(...)
+          - pattern-inside: $XHR.open(...)
+          - pattern-inside: navigator.sendBeacon(...)
+      - pattern-regex: '[`"'']/api/'
+  - id: planner-http-by-hand-python
+    message: >-
+      A request to an /api/ path written by hand. Python reaches the planner
+      through the generated client (services/assistant/app/planner_client.py,
+      from the planner's openapi.json), never by a typed path and an untyped
+      dict (simplicity audit 2026-11-12, finding 6).
+    severity: ERROR
+    languages: [python]
+    paths:
+      exclude: ["services/assistant/app/planner_client.py"]
+    patterns:
+      - pattern-inside: $F(...)
+      # A route's own path in its decorator (@router.get("/api/...")) is
+      # the planner declaring it, not calling it.
+      - pattern-not-regex: '(?ms)^[ \t]*@[\w.]+\(.*?\)[ \t]*\n[ \t]*(async[ \t]+)?def\b'
+      - pattern-not-inside: APIRouter(...)
+      - pattern-not-inside: $APP.include_router(...)
+      - pattern-not-inside: $APP.mount(...)
+      - pattern-regex: '(?<![\w])f?["'']/api/'
+  - id: planner-http-by-hand-java
+    message: >-
+      A URL to the planner built by hand. The gateway asks the planner through
+      PlannerClient and the generated Planner* models only (CLAUDE.md:
+      "asks the planner for a figure (PlannerClient)"; simplicity audit
+      2026-11-12, finding 6).
+    severity: ERROR
+    languages: [java]
+    paths:
+      exclude:
+        - "services/gateway/src/main/java/app/wingtipmaps/gateway/service/PlannerClient.java"
+        - "services/gateway/src/main/java/app/wingtipmaps/gateway/controller/StreamingProxy.java"
+        - "services/gateway/src/main/java/app/wingtipmaps/gateway/controller/UpstreamRoutes.java"
+    patterns:
+      - pattern: $BASE + "$PATH"
+      - metavariable-regex:
+          metavariable: $BASE
+          regex: (?i)^(this\.)?\w*planner\w*$
+      - metavariable-regex:
+          metavariable: $PATH
+          regex: ^/api/
+  - id: planner-http-by-hand-phones
+    message: >-
+      A URL to an /api/ path built by hand outside the app's API folder. The
+      phones call the planner and the gateway through their API/ (iOS) and
+      api/ (Android) clients over the generated models: add the call there
+      (simplicity audit 2026-11-12, finding 6).
+    severity: ERROR
+    languages: [swift, kotlin]
+    paths:
+      exclude:
+        - "apps/ios/Wingtip/API/"
+        - "apps/android/app/src/main/kotlin/app/wingtipmaps/android/api/"
+    patterns:
+      - pattern-either:
+          - pattern-inside: URL(...)
+          - pattern-inside: URLRequest(...)
+          - pattern-inside: $B.url(...)
+          - pattern-inside: $S.toHttpUrl()
+          - pattern-inside: $C.appendingPathComponent(...)
+      - pattern-regex: '"[^"\n]*/api/'

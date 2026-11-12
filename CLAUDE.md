@@ -54,6 +54,35 @@ Functional core, imperative shell, four layers, each with one job
   `scripts/build/build-engine-wasm.sh` (the `.wasm` is committed), and
   the images that link it rebuilt. CI checks every generated file matches.
 
+## Simplicity rules
+
+Hard rules, checked as you write (the edit-time hook), at the push and in
+`guards` (docs/CI.md, "Simplicity rules"). Each names its one home:
+
+- **Unit factors** (0.3048, 1852, 6076 …) only in each language's units
+  module: `wingtip/units.py`, the web's `lib/geo.ts`, `Format/Units.swift`,
+  `format/Units.kt`. Semgrep (`scripts/ci/semgrep/`).
+- **Map maths**: Mercator and tiles only in `lib/map/tileMath.ts` or
+  `wingtip.geo`; hex-to-RGB only in `deckColour`. Semgrep.
+- **The planner only through the generated clients**: the web's `lib/api/`,
+  `planner_client.py`, `PlannerClient`, the phones' API folders; no `/api/`
+  path typed elsewhere. Semgrep, ArchUnit, detekt.
+- **No HTML markers** on the map but the own-ship arrow: draw a layer. Semgrep.
+- **The engine owns every rule and the great-circle maths**: no cited
+  figure outside it (`rules_boundary.py`), no haversine or bearing
+  (Semgrep, ArchUnit); only `wingtip.geo` and the web's `lib/geo.ts` keep
+  their own.
+- **Stock components**: no raw `<button>`, `<details>` or `role="alert"`
+  outside `components/ui` (ESLint).
+- **Feature boundaries**: a web feature only through its `index.ts`
+  (dependency-cruiser); the Python services' `.importlinter` contracts.
+- **No copy-paste** over 100 tokens (jscpd).
+- **New files ≤300 lines**, old ones ≤400 (`file_sizes.py`).
+- **The ratchet only goes down**: `scripts/ci/simplicity_ratchet.py`'s
+  counts (`.shared`, root-screen lines, gateway HTTP clients …) never rise.
+- **Never raise a baseline or an allow list to pass**: fix the code. Each
+  `--write` only lowers one, and CI fails one raised against main.
+
 ## Branches
 
 Code first, validation at the end (decisions 0005 and 0006: "all code
@@ -149,7 +178,7 @@ without it).
 
 | Area | What it runs | On a pull request / after merge / at night (docs/CI.md) |
 |---|---|---|
-| `web` (`apps/web/`) | `npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npx vitest run` | lint in `guards`, the tests the change reaches (`--changed`) and the build / every test, and the `@smoke` browser tests / every browser test |
+| `web` (`apps/web/`) | `npm run types && npx tsc --noEmit && npx eslint . --max-warnings 0 && npx knip && npm run layers && npx vitest run` | lint in `guards`, the tests the change reaches (`--changed`) and the build / every test, and the `@smoke` browser tests / every browser test |
 | `py` (`services/planner/wingtip`, `tests_wingtip/`) | `ruff check wingtip tests_wingtip && lint-imports && pytest tests_wingtip/`, with the engine's wheel | all |
 | `planner` (`services/planner/` app) | `ruff check app tests && lint-imports && pytest tests/` | all |
 | `ingest`, `weather`, `assistant`, `jobs` | each service's ruff and pytest; the assistant's `python -m app.openapi` after a route change | all |
@@ -160,7 +189,7 @@ without it).
 | `site` (`apps/site/`) | `python3 apps/site/build.py && python3 apps/site/check.py` | all |
 | `sim` (`tools/msfs-agent/`, `infra/sim-trial/`) | the agent's `dotnet build`, `dotnet format --verify-no-changes` and `dotnet test` (Docker), `cfn-lint` on the template, `shellcheck` on its scripts | none: the trial's kit, checked on the Mac |
 | `xplane` (`tools/xplane-driver/`) | `ruff check . && pytest tests`, in the planner's wingtip image | `ruff` in `guards` only; its tests none: the trial's kit, checked on the Mac |
-| `arch` (any source file) | `scripts/ci/file_sizes.py --base origin/main` (no new or grown file over 400 lines), `scripts/build/toolchain.sh --check`, `scripts/ci/brand_guard.py` (no raw style value outside `design/tokens.json`), `scripts/ci/dead_python.sh`; CI adds `scripts/ci/rules_boundary.py` (no aviation figure outside the engine) | all |
+| `arch` (any source file) | `scripts/ci/file_sizes.py --base origin/main` (no new file over 300 lines, no grown one over 400), `scripts/build/toolchain.sh --check`, `scripts/ci/brand_guard.py` (no raw style value outside `design/tokens.json`), `scripts/ci/dead_python.sh`; CI adds `scripts/ci/rules_boundary.py` (no aviation figure outside the engine), `semgrep_check.py` (one home per constant or helper), `jscpd_check.py` (no new copy-paste), `simplicity_ratchet.py` (no count above its baseline), and on a phone change `phone_lint.sh` (SwiftLint, detekt) | all |
 
 - **Python outside check.sh** wants `pip install -r requirements-dev.txt`
   (the app) or `requirements-dev-wingtip.txt` (wingtip) in `services/planner`.
@@ -168,9 +197,13 @@ without it).
   run `scripts/build/toolchain.sh` (docs/versions.md).
 - **Formatting:** `scripts/dev/format.sh`, one pinned formatter a language;
   `--check` to check.
+- **Edit-time hook** (`.claude/settings.json`, `scripts/dev/simplicity_hook.py`):
+  after each Edit or Write in apps/, services/, engine/ or tools/, the
+  simplicity rules on that file, a second or two; a break comes back to
+  be fixed at once.
 - **Pre-push hook** (`scripts/dev/install-hooks.sh` once per clone): `tsc`,
-  ESLint, ruff, `cargo check` and `format.sh --check` for what a push
-  changes. Skip it with `--no-verify` or `SKIP_HOOKS=1`; it is no
+  ESLint, ruff, `cargo check`, `format.sh --check` and the simplicity
+  rules for what a push changes. Skip it with `--no-verify` or `SKIP_HOOKS=1`; it is no
   substitute for the table.
 - **An API that changes changes its document:** `python -m app.openapi`
   (the planner, the assistant) or `WRITE_OPENAPI=1 mvn -B test` (the
