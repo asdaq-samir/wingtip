@@ -506,7 +506,12 @@ export function usePlanWorkspace({ panel, setPanel }: Pick<WorkspaceProps, "pane
   // own page and its results; the traffic.
   const { view, setViewPick, pickView, pickPage } = usePanelView({
     cards,
-    route: `${planned.dep}|${planned.stops.join(",")}|${planned.dest}`,
+    // With Load's count, which Fly Here and Plan Again move: a route asked
+    // for again, the same as the one up, brings the plan to the front as a
+    // new one does. Keyed on the points alone, Fly Here to the airport the
+    // route already went to left the sheet on Search (the owner's iPhone,
+    // 2026-11-12: "When I tap fly here, it still shows the search sheet").
+    route: `${planned.dep}|${planned.stops.join(",")}|${planned.dest}|${load}`,
     hasRoute: routed || !!planned.dep || !!planned.dest || planned.stops.length > 0,
     searchParams,
     setSearchParams,

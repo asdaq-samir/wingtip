@@ -221,7 +221,8 @@ export function usePanelView({
   setSearchParams,
 }: {
   cards: ReturnType<typeof useAddressCards>;
-  /** The route as the address has it, any change of which is a new one. */
+  /** The route as the address has it, and the count of times it was asked
+   *  for (Load's): any change of it is a new route, the plan to the front. */
   route: string;
   hasRoute: boolean;
   searchParams: URLSearchParams;

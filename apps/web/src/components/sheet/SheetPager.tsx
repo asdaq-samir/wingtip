@@ -91,8 +91,38 @@ function sidewaysList(target: EventTarget | null, root: HTMLElement): Ends | nul
  *  deliberate pull, not the row's own bounce. */
 const PULL_PAST_END = 48;
 
-export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: number) => void; drag: boolean; pages: ReactNode[] }) {
+export function SheetPager({
+  at,
+  go,
+  drag,
+  pages,
+}: {
+  at: number;
+  go: (page: number) => void;
+  drag: boolean;
+  /** The pages, given the one Embla has selected: the one in sight is
+   *  live, the other inert. */
+  pages: (shown: number) => ReactNode[];
+}) {
   const [api, setApi] = useState<CarouselApi>();
+  // The page in sight is Embla's own selected snap, read at each of its
+  // `select` and `reInit` events, never the app's page: what is live and
+  // what is inert (SheetParts) can then never disagree with what is shown,
+  // whatever builds Embla again or turns its page (the sheet audit,
+  // 2026-11-12: the page in sight inert, nothing on it tappable). Before
+  // Embla is up, the page it opens on.
+  const [shown, setShown] = useState(at);
+  useEffect(() => {
+    if (!api) return;
+    const read = () => setShown(api.selectedScrollSnap());
+    read();
+    api.on("select", read);
+    api.on("reInit", read);
+    return () => {
+      api.off("select", read);
+      api.off("reInit", read);
+    };
+  }, [api]);
   // Whether a drag is the pager's now, read when one starts: the options
   // stay the same object, as any change in them builds Embla again (the
   // React hook's reInit), which put it back on its first page with no
@@ -238,8 +268,8 @@ export function SheetPager({ at, go, drag, pages }: { at: number; go: (page: num
       className="flex min-h-0 flex-1 flex-col print:block"
     >
       <CarouselContent wrapperClassName="flex min-h-0 flex-1 flex-col overflow-clip print:overflow-visible" className="ml-0 min-h-0 flex-1">
-        {pages.map((page, i) => (
-          <CarouselItem key={i} className="flex min-h-0 flex-col pl-0" data-sheet-page={i} data-shown={i === at || undefined}>
+        {pages(shown).map((page, i) => (
+          <CarouselItem key={i} className="flex min-h-0 flex-col pl-0" data-sheet-page={i} data-shown={i === shown || undefined}>
             {page}
           </CarouselItem>
         ))}

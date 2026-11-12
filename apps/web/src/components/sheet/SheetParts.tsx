@@ -308,10 +308,12 @@ export function SheetParts(p: PartsProps) {
         at={at}
         go={go}
         drag={swiped}
-        pages={[
-          scroller(barRow, p.children, searchAlone, at !== 0, sheetHead, false),
+        // Each page inert while it is not the one Embla shows (SheetPager's
+        // `shown`), not while it is not the app's: the two were out of step.
+        pages={(shown) => [
+          scroller(barRow, p.children, searchAlone, shown !== 0, sheetHead, false),
           <>
-            {scroller(headBlock(routeShown, routeAlone, true), second, routeAlone, at !== 1, "0px", footShown)}
+            {scroller(headBlock(routeShown, routeAlone, true), second, routeAlone, shown !== 1, "0px", footShown)}
             {foot}
           </>,
         ]}
