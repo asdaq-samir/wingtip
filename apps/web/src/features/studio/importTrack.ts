@@ -1,3 +1,4 @@
+import { callEngine } from "../../lib/engine/engine";
 import type { ReplayReport } from "../../lib/engine/contract";
 import { readTrack, TrackError } from "../../lib/track";
 import type { AltitudeKind } from "../replay";
@@ -22,38 +23,6 @@ const COLUMNS = {
   track: ["trackdeg", "direction", "track", "heading", "course"],
 } as const;
 
-/** A CSV's rows, each a list of fields: commas, quoted fields with their
- *  doubled quotes (RFC 4180), and CR LF or LF lines. */
-export function csvRows(text: string): string[][] {
-  const rows: string[][] = [];
-  let row: string[] = [],
-    field = "",
-    quoted = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i]!;
-    if (quoted) {
-      if (c === '"' && text[i + 1] === '"') {
-        field += '"';
-        i++;
-      } else if (c === '"') quoted = false;
-      else field += c;
-    } else if (c === '"') quoted = true;
-    else if (c === ",") {
-      row.push(field);
-      field = "";
-    } else if (c === "\n" || c === "\r") {
-      if (c === "\r" && text[i + 1] === "\n") i++;
-      row.push(field);
-      if (row.some((f) => f.trim())) rows.push(row);
-      row = [];
-      field = "";
-    } else field += c;
-  }
-  row.push(field);
-  if (row.some((f) => f.trim())) rows.push(row);
-  return rows;
-}
-
 const key = (name: string) => name.toLowerCase().replace(/[^a-z]/g, "");
 
 /** A time as a CSV gives it: seconds since 1970 (Flightradar24's
@@ -74,7 +43,10 @@ const num = (text: string | undefined) => {
 /** A CSV track's reports; a TrackError, in words for the pilot, where it
  *  has no time and position columns or no rows to use. */
 export function readCsvTrack(text: string): ReplayReport[] {
-  const [head, ...rows] = csvRows(text);
+  // The engine's CSV reader (csv_rows: quoted fields, the line ending and
+  // the delimiter guessed, a byte order mark taken off), its blank lines
+  // left out.
+  const [head, ...rows] = callEngine("csv_rows", { text }).filter((row) => row.some((f) => f.trim()));
   if (!head) throw new TrackError("This file is empty.");
   const names = head.map(key);
   const col = (which: keyof typeof COLUMNS) => names.findIndex((n) => (COLUMNS[which] as readonly string[]).includes(n));

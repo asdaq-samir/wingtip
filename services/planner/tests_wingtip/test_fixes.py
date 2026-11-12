@@ -208,6 +208,6 @@ def test_a_vors_card_has_its_channel_service_volume_and_unusable_sectors(monkeyp
     # Put back afterwards: the remarks read here are this test's, not NASR's.
     monkeypatch.setattr(fixes, "_REMARKS", None)
     assert fixes.navaid_remarks("JOT", "VOR/DME", cache_dir=tmp_path) == [
-        "VOR unusable 072-090 beyond 34 nm below 3000 ft; 130-175 beyond 40 nm."
+        "VOR unusable 072-090 beyond 34 NM below 3000 feet; 130-175 beyond 40 NM."
     ]
     assert fixes.navaid_remarks("OBK", "VOR/DME", cache_dir=tmp_path) == []

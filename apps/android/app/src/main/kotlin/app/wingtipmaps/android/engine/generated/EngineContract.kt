@@ -10755,6 +10755,10 @@ object EngineContract {
         val ceilingFt: Double? = null,
         @SerialName("ceiling_ref")
         val ceilingRef: String,
+        /**
+         * The tab as the map writes it: the name, a colon, a line break, then the floor and the ceiling a hyphen apart.
+         */
+        val text: String,
     )
 
     @Serializable

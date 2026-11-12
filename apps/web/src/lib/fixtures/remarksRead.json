@@ -1,5 +1,5 @@
 {
-  "_note": "remarks_read: an airport's fuel, FBO and courtesy-car remarks (NASR APT_RMK.csv, 2026-10-29) in words, each word worked by hand from the Chart Supplement's Abbreviations (NE, 3 SEP 2026) and JO 7340.2R's decode (engine/crates/weather/src/remarks_read).",
+  "_note": "remarks_read: an airport's fuel, FBO, courtesy-car and radio remarks (NASR APT_RMK.csv, 2026-10-29) and a navaid's (NAV_RMK.csv) in words, each word worked by hand from the Chart Supplement's Abbreviations (NE, 3 SEP 2026) and JO 7340.2R's decode (engine/crates/weather/src/remarks_read).",
   "cases": [
     {
       "about": "KPWK, Chicago Executive: customs by prior permission, transient airplanes clearing customs before the FBO",
@@ -22,6 +22,11 @@
       "about": "KRPD: attended other hours on request, and a courtesy car",
       "remarks": ["ARPT ATNDD OTR HRS O/R THRU FBO.", "CRS CAR AVBL."],
       "lines": ["Airport attended other hours on request through FBO.", "Courtesy car available."]
+    },
+    {
+      "about": "3CK's weather on the CTAF and a VOR's unusable sector (NAV_RMK): ADZY advisory, UNUSBL unusable (JO 7340.2R); the radials and NM kept",
+      "remarks": ["WX ADZY - CTAF 5 CLICKS OR 815-444-1729.", "VOR UNUSBL 010-030 BYD 20 NM BLW 5000."],
+      "lines": ["Weather advisory - CTAF 5 clicks or 815-444-1729.", "VOR unusable 010-030 beyond 20 NM below 5000."]
     }
   ]
 }

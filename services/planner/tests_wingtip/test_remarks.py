@@ -45,9 +45,14 @@ def remarks_csv(tmp_path, monkeypatch):
     return path
 
 
-def test_a_remark_reads_in_plain_english_with_the_names_a_pilot_uses_kept():
-    assert remarks.plain("VOR UNUSBL 010-030 BYD 20 NM BLW 5000.") == "VOR unusable 010-030 beyond 20 nm below 5000."
-    assert remarks.plain("WX ADZY - CTAF 5 CLICKS OR 815-444-1729.") == "Weather advisory - CTAF 5 clicks or 815-444-1729."
+def test_a_remark_reads_in_words_by_the_engine_with_the_names_a_pilot_uses_kept():
+    # The engine's remarks_read (lib/fixtures/remarksRead.json holds it to
+    # each case): a navaid's unusable sector and the weather on the CTAF.
+    assert remarks.read(["VOR UNUSBL 010-030 BYD 20 NM BLW 5000.", "WX ADZY - CTAF 5 CLICKS OR 815-444-1729."]) == [
+        "VOR unusable 010-030 beyond 20 NM below 5000.",
+        "Weather advisory - CTAF 5 clicks or 815-444-1729.",
+    ]
+    assert remarks.read([]) == []
 
 
 def test_an_airports_lights_turned_on_from_the_cockpit_and_its_weather_on_the_ctaf(remarks_csv):

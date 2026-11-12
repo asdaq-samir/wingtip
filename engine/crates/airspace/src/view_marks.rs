@@ -55,8 +55,9 @@ fn point(out: &mut String, p: Pt) {
 /// `{"areas": [{"type", "name", "floor_ft", "ceiling_ft", "rings": [[[lat, lon], ...]], "label": [lat, lon], "tab"}]}`,
 /// restricted kinds after the MOAs, so a restricted area is drawn over a
 /// MOA it lies in; an area two packs hold, once. `tab` is ForeFlight's tab
-/// on its boundary (crate::sua_tab), `{"name", "floor_ft", "floor_ref",
-/// "ceiling_ft", "ceiling_ref", "at": [lat, lon], "angle", "side"}`, null
+/// on its boundary (crate::sua_tab), `{"text", "name", "floor_ft", "floor_ref",
+/// "ceiling_ft", "ceiling_ref", "at": [lat, lon], "angle", "side"}`, `text`
+/// the tab's words as the map writes them; null
 /// where its limits have no figure to write, the pack keeps no codes, or
 /// the piece is one the FAA marks EXCLUSION (crate::sua_tab). A pack
 /// written before the FAA's DESC was kept writes its limits as coded
@@ -345,6 +346,7 @@ mod tests {
         let figure = |k: &str| tab.get(k).and_then(|v| v.as_f64());
         assert_eq!((word("name"), word("floor_ref"), word("ceiling_ref")), ("R-1", "SFC", "MSL"));
         assert_eq!((figure("floor_ft"), figure("ceiling_ft")), (Some(0.0), Some(8999.0)));
+        assert_eq!(word("text"), "R-1:\nSFC-8999");
     }
 
     #[test]
