@@ -1,8 +1,9 @@
 import { cn } from "cn";
 import CloseButton from "../../components/CloseButton";
 import MenuPick from "../../components/MenuPick";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "../../components/ui/card";
 import { useWeatherLayers } from "../../lib/map/sources/weatherLayers";
-import { GLASS } from "../../lib/mapChrome";
+import { GLASS, GLASS_CARD } from "../../lib/mapChrome";
 import { TEXT } from "../../lib/text";
 import { levelName, levelsOf } from "./flowLevels";
 import { FIELDS, lookOf, rampGradient, tickPlace, type ShownField } from "./flowLook";
@@ -73,13 +74,18 @@ export function FlowLegend({
           </span>
         )}
       </div>
-      <section
+      {/* The stock Card in the map's glass, its parts as they come; the
+          card's own spacing is set off so the narrow legend keeps its size. */}
+      <Card
+        role="region"
         aria-label={`${look.name} legend`}
         data-testid="weather-flow-legend"
-        className={cn(GLASS, "pointer-events-auto flex w-32 flex-col rounded-(--radius-card)")}
+        className={cn(GLASS_CARD, "pointer-events-auto w-32 gap-0 rounded-(--radius-card) border-0 py-0 shadow-(--depth-float)")}
       >
-        <p className={cn("border-b border-foreground/10 px-3 py-2 font-semibold", TEXT.note)}>{look.title}</p>
-        <div className="flex h-28 gap-2 px-3 py-3">
+        <CardHeader className="grid-rows-1 gap-0 border-b border-foreground/10 px-3 py-2 [.border-b]:pb-2">
+          <CardTitle className={TEXT.note}>{look.title}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex h-28 gap-2 px-3 py-3">
           <div className="w-1 rounded-full" style={{ background: rampGradient(look.bar) }} aria-hidden="true" />
           <ol className="relative flex-1" aria-label={look.title}>
             {look.ticks.map((t) => (
@@ -92,15 +98,15 @@ export function FlowLegend({
               </li>
             ))}
           </ol>
-        </div>
-        <p
-          className={cn("px-3 pb-2", source.stale ? "text-caution-ink" : "text-muted-foreground", TEXT.caption)}
+        </CardContent>
+        <CardFooter
+          className={cn("block px-3 pb-2 text-pretty", source.stale ? "text-caution-ink" : "text-muted-foreground", TEXT.caption)}
           data-testid="weather-flow-source"
           data-stale={source.stale || undefined}
         >
           {source.text}
-        </p>
-      </section>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
