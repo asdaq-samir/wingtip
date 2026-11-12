@@ -43,7 +43,7 @@ def test_current_cycle_never_fetches_when_told_not_to(monkeypatch):
         raise AssertionError("must not touch the network")
 
     monkeypatch.setattr(charts.requests, "get", boom)
-    monkeypatch.setattr(charts.apra.requests, "get", boom)
+    monkeypatch.setattr(charts.outside, "get", boom)
     monkeypatch.setattr(charts, "_cycle_cache", TTLCache(maxsize=1, ttl=60))
     assert charts.current_cycle(dt.date(2026, 9, 20), fetch=False) == "09-03-2026"
 

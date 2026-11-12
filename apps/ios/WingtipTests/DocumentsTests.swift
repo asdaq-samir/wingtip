@@ -1,4 +1,5 @@
 import Foundation
+import OpenAPIRuntime
 import SwiftUI
 import Testing
 import UIKit
@@ -16,15 +17,19 @@ private func answer(_ key: String) throws -> DocumentAnswer {
     return try DocumentAnswer(data: JSONSerialization.data(withJSONObject: one))
 }
 
-private func member(_ value: JSONValue?, _ key: String) -> JSONValue? {
-    guard case .object(let object)? = value else { return nil }
-    return object[key]
+private func member(_ value: OpenAPIValueContainer?, _ key: String) -> OpenAPIValueContainer? {
+    guard let object = value?.value as? [String: (any Sendable)?], let member = object[key] else { return nil }
+    return try? OpenAPIValueContainer(unvalidatedValue: member)
 }
 
-private func count(_ value: JSONValue?) -> Int? {
-    guard case .array(let list)? = value else { return nil }
-    return list.count
+private func list(_ value: OpenAPIValueContainer?) -> [OpenAPIValueContainer]? {
+    (value?.value as? [(any Sendable)?])?.compactMap { try? OpenAPIValueContainer(unvalidatedValue: $0) }
 }
+
+private func count(_ value: OpenAPIValueContainer?) -> Int? { list(value)?.count }
+
+/// A member there and null, not one left out.
+private func isNull(_ value: OpenAPIValueContainer?) -> Bool { value != nil && value?.value == nil }
 
 /// "Add from a Photo" on the phone (Wingtip/Documents): the reader's
 /// answers decoded, the ask, the read cut to what the pilot confirmed and
@@ -42,8 +47,8 @@ struct DocumentsTests {
         // The JSON keeps what the generated model drops: the distance over
         // 50 ft the engine checks against the ground roll.
         let takeoff = member(handbook.handbook, "takeoff")
-        guard case .array(let rows)? = takeoff else { Issue.record("no takeoff rows"); return }
-        #expect(member(rows.first, "over_obstacle") == .number(1510))
+        guard let rows = list(takeoff) else { Issue.record("no takeoff rows"); return }
+        #expect(member(rows.first, "over_obstacle")?.number == 1510)
 
         let misread = try #require(try answer("misread").read.handbookCheck)
         #expect(misread.items.contains { $0.flags.contains { $0.level == "wrong" } })
@@ -65,16 +70,16 @@ struct DocumentsTests {
         let read = try #require(try answer("handbook").handbook)
         let cut = HandbookReview.confirmedOnly(read, keys: ["cruise.2", "fuel", "takeoff.1"])
         #expect(count(member(cut, "cruise")) == 1)
-        guard case .array(let cruise)? = member(cut, "cruise") else { Issue.record("no cruise rows"); return }
-        #expect(member(cruise.first, "tas") == .number(113))
+        guard let cruise = list(member(cut, "cruise")) else { Issue.record("no cruise rows"); return }
+        #expect(member(cruise.first, "tas")?.number == 113)
         #expect(count(member(cut, "takeoff")) == 1)
         #expect(count(member(cut, "landing")) == 0)
         #expect(count(member(cut, "envelope")) == 0)
-        #expect(member(cut, "climb") == .null)
-        #expect(member(cut, "glide") == .null)
-        #expect(member(cut, "empty") == .null)
-        #expect(member(cut, "max_takeoff_weight") == .null)
-        #expect(member(cut, "fuel") != .null)
+        #expect(isNull(member(cut, "climb")))
+        #expect(isNull(member(cut, "glide")))
+        #expect(isNull(member(cut, "empty")))
+        #expect(isNull(member(cut, "max_takeoff_weight")))
+        #expect(!isNull(member(cut, "fuel")))
 
         // The engine's answer for what is left: the form's figures from the
         // one cruise row and the fuel, and nothing of the climb.
@@ -95,7 +100,7 @@ struct DocumentsTests {
         let tas = check.items.first { $0.key == "cruise.2" }?.figures.first { $0.path == "cruise.2.tas" }
         #expect(tas?.value == 115)
         #expect(HandbookReview.setting(read, path: "cruise.9.tas", to: 1) == read)
-        #expect(member(HandbookReview.setting(read, path: "max_takeoff_weight", to: 2550), "max_takeoff_weight") == .number(2550))
+        #expect(member(HandbookReview.setting(read, path: "max_takeoff_weight", to: 2550), "max_takeoff_weight")?.number == 2550)
     }
 
     @Test func theFormTakesOnlyTheProfilesFiguresToATenth() {

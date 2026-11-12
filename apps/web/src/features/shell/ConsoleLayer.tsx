@@ -20,7 +20,6 @@ const OPEN_POPUP_TRIGGER = '[aria-expanded="true"]:is([aria-haspopup="menu"], [a
  */
 export default function ConsoleLayer({
   label,
-  detent,
   edge,
   onClose,
   finalFocus,
@@ -28,7 +27,6 @@ export default function ConsoleLayer({
   children,
 }: {
   label: string;
-  detent: "medium" | "large";
   edge: "top" | "bottom";
   onClose: () => void;
   /** Where the focus goes as it is put away: the button it was opened from. */
@@ -61,7 +59,6 @@ export default function ConsoleLayer({
           // Named for the suite only while it is up: put away it is there,
           // hidden, for the next tap on Setup.
           data-testid={shown ? "console-sheet" : undefined}
-          data-detent={detent}
           data-edge={edge}
           // A page open in it (Minimums, Airplanes) heads itself with its own
           // name and close, back to Settings: this row steps aside, one ✕ in

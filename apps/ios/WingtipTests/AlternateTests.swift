@@ -11,8 +11,12 @@ struct AlternateTests {
     @Test func theAlternateGoesToThePlannerOnlyUnderIfr() throws {
         var extras = RouteExtras()
         extras.alternate = "KRFD"
-        #expect(try extras.query(procedures: [], rules: .ifr)["alternate"] == "KRFD")
-        #expect(try extras.query(procedures: [], rules: .vfr)["alternate"] == nil)
+        var ifr = NavLogQuery(dep: "C81", dest: "KMSN")
+        var vfr = ifr
+        try extras.apply(to: &ifr, procedures: [], rules: .ifr)
+        try extras.apply(to: &vfr, procedures: [], rules: .vfr)
+        #expect(ifr.alternate == "KRFD")
+        #expect(vfr.alternate == nil)
         extras.alternate = ""
         #expect(extras.filedAlternate(rules: .ifr) == nil)
     }
@@ -35,7 +39,7 @@ struct AlternateTests {
           "minimums":{"ceiling_ft":600,"visibility_sm":2},"reasons":[],"distance_nm":61.2},
          "suggestions":[{"ident":"KJVL","approach":true,"precision":false,"good":true,"ceiling_ft":3000,"visibility_sm":6,"distance_nm":44.0}]}
         """#
-        let answer = try Planner.snakeCase.decode(APIAlternates.self, from: Data(json.utf8))
+        let answer = try Planner.json.decode(APIAlternates.self, from: Data(json.utf8))
         #expect(answer.destination.required && answer.destination.reasons?.first?.contains("does not cover") == true)
         let filed = try #require(answer.alternate)
         #expect(AlternateSection.standing(filed) == "Under its minimums")

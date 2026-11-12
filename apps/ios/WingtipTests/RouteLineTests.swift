@@ -22,7 +22,7 @@ struct RouteLineTests {
     """#
 
     static func routes() throws -> RouteOptions {
-        try Planner.snakeCase.decode(RouteOptions.self, from: Data(answer.utf8))
+        try Planner.json.decode(RouteOptions.self, from: Data(answer.utf8))
     }
 
     @Test func theChipsAreThePlannersWordsInItsOrder() throws {

@@ -10,7 +10,7 @@ import UIKit
 struct ModelsTests {
     @Test func aChartInfoWithNoCDNReadsAsThePlannersOwnTiles() throws {
         let json = #"{"chart_cycle":"09-03-2026","chart_revision":1,"chart_tiles_base":null,"chart_layers":[{"kind":"sec","label":"Sectional","base":true,"min_zoom":5,"max_zoom":12,"over":[]}],"min_zoom":5,"max_zoom":12}"#
-        let info = try Planner.snakeCase.decode(ChartInfo.self, from: Data(json.utf8))
+        let info = try Planner.json.decode(ChartInfo.self, from: Data(json.utf8))
         #expect(info.chartTilesBase == nil && info.chartLayers[0].kind == "sec" && info.chartRevision == 1)
         // Kept and read back by the app's own encoder.
         let again = try JSONDecoder().decode(ChartInfo.self, from: JSONEncoder().encode(info))
@@ -20,14 +20,14 @@ struct ModelsTests {
     @Test func aFieldInViewWithAndWithoutAReport() throws {
         let json = #"{"airports":[{"ident":"KDLH","name":"Duluth Intl","lat":46.84,"lon":-92.19,"kind":"large","flight_category":"MVFR","airspace_class":"D","military":null,"private":false},{"ident":"C81","name":"Campbell","lat":42.32,"lon":-88.07,"kind":"small","flight_category":null,"airspace_class":null,"military":null,"private":true}]}"#
         struct Answer: Decodable { let airports: [AirportPin] }
-        let pins = try Planner.snakeCase.decode(Answer.self, from: Data(json.utf8)).airports
+        let pins = try Planner.json.decode(Answer.self, from: Data(json.utf8)).airports
         #expect(pins[0].flightCategory == "MVFR" && pins[0].airspaceClass == "D" && pins[0].isPrivate == false)
         #expect(pins[1].flightCategory == nil && pins[1].isPrivate == true)
     }
 
     @Test func aCardWithAMetarAndARunwaysWind() throws {
         let json = #"{"ident":"KDLH","name":"Duluth Intl","lat":46.84,"lon":-92.19,"kind":"large","towered":true,"elevation_ft":1428.0,"municipality":"Duluth","region":"MN","airspace_class":"D","runways":[{"ends":"09/27","length_ft":10162,"width_ft":150,"surface":"ASPH","lighted":true,"closed":false,"wind":{"end":"27","headwind_kt":8.0,"crosswind_kt":3.0,"in_use":true}}],"frequencies":[{"type":"TWR","description":"Tower","frequency_mhz":118.3}],"metar":{"raw":"KDLH 241553Z 25012KT 10SM BKN025 08/02 A3005","flight_category":"MVFR","wind_dir_true_deg":250.0,"wind_speed_kt":12.0,"visibility_sm":10.0,"ceiling_ft":2500.0,"temp_c":8.0,"altimeter_in_hg":30.05},"pattern":{"agl_ft":1000.0,"altitude_ft":2400.0,"published":false}}"#
-        let place = try Planner.snakeCase.decode(AirportPlace.self, from: Data(json.utf8))
+        let place = try Planner.json.decode(AirportPlace.self, from: Data(json.utf8))
         #expect(place.runways[0].wind?.end == "27" && place.runways[0].lengthFt == 10162)
         #expect(place.metar?.ceilingFt == 2500 && place.metar?.raw?.hasPrefix("KDLH") == true)
         #expect(place.frequencies[0].frequencyMhz == 118.3 && place.pattern?.altitudeFt == 2400)
@@ -58,11 +58,11 @@ struct CheckpointColourTests {
 struct BriefingTests {
     @Test func aBriefingWithAMissingReportAndANoGo() throws {
         let json = #"{"hazards":[{"type":"SIGMET","hazard":"CONVECTIVE","raw":"WSUS31 KKCI 241455","altitude_low_ft":null,"altitude_high_ft":45000.0}],"forecast":{"min_ceiling_ft":800.0,"min_visibility_sm":2.0,"stations":[{"icaoId":"KDLH","ceiling_ft":800.0,"visibility_sm":2.0,"raw":"TAF KDLH 241130Z"}]},"metars":{"C81":null,"KDLH":{"raw":"KDLH 241553Z 25012KT 2SM BR OVC008","flight_category":"IFR"}},"airports":{},"gairmets":[],"pireps":[],"tfrs":[{"notam_id":"6/1234","along_track_nm":40.0,"crosses":true,"active_now":false,"title":"Stadium"}],"vfr_not_recommended":["IFR at the destination: ceiling 800 ft, visibility 2 SM"],"weather_unavailable":[]}"#
-        let briefing = try Planner.snakeCase.decode(Briefing.self, from: Data(json.utf8))
+        let briefing = try Planner.json.decode(Briefing.self, from: Data(json.utf8))
         #expect(briefing.vfrNotRecommended?.count == 1 && briefing.hazards[0].hazard == "CONVECTIVE")
-        #expect(briefing.metars["KDLH"]??.flightCategory == "IFR")
+        #expect(briefing.metars.additionalProperties["KDLH"]??.flightCategory == "IFR")
         // A station with no report: its key there, its value nothing.
-        #expect(briefing.metars["C81"].flatMap { $0 } == nil && briefing.metars.count == 2)
+        #expect(briefing.metars.additionalProperties["C81"].flatMap { $0 } == nil && briefing.metars.additionalProperties.count == 2)
         #expect(briefing.tfrs?.first?.crosses == true && briefing.forecast.minCeilingFt == 800)
         // The TAF station by the planner's own names (ForecastStation).
         #expect(briefing.forecast.stations[0].icaoId == "KDLH" && briefing.forecast.stations[0].ceilingFt == 800)
@@ -73,7 +73,7 @@ struct BriefingTests {
 struct RoutesTests {
     @Test func theOptionsCarryTheirStopsPathAndWhatTheyCross() throws {
         let json = #"{"options":[{"kind":"weather","kinds":["weather"],"title":"Round the storms by KEAU","stops":["KEAU"],"fuel":["KEAU"],"path":[[42.3,-88.1],[44.9,-91.5],[46.8,-92.2]],"distance_nm":340.0,"air_min":180.0,"ground_min":30.0,"fuel_gal":31.0,"landings":1,"crosses":[],"marginal":[0],"tail_kt":-3.0,"floor_ft":3500}],"own":{"kind":"own","kinds":[],"title":"Your route","stops":[],"fuel":[],"path":[[42.3,-88.1],[46.8,-92.2]],"distance_nm":323.5,"air_min":165.0,"ground_min":0.0,"fuel_gal":29.0,"landings":0,"crosses":[0],"marginal":[]},"direct":[0],"ends":[],"hazards":[{"kind":"storm","name":"Thunderstorms near KMSP"}],"unchecked":["TFRs"]}"#
-        let routes = try Planner.snakeCase.decode(RouteOptions.self, from: Data(json.utf8))
+        let routes = try Planner.json.decode(RouteOptions.self, from: Data(json.utf8))
         #expect(routes.options[0].stops == ["KEAU"] && routes.options[0].path.count == 3 && routes.options[0].marginal == [0])
         #expect(routes.own?.crosses == [0] && routes.hazards[0].name == "Thunderstorms near KMSP" && routes.unchecked == ["TFRs"])
     }
@@ -100,8 +100,10 @@ struct RegisteredTests {
     }
 
     @Test func theFiguresQueryCarriesOnlyWhatIsSet() throws {
-        let q = Figures(cruiseTasKt: 115, usableFuelGal: 36).query.compactMapValues { $0 }
-        #expect(q == ["cruise_tas_kt": "115.0", "usable_fuel_gal": "36.0"])
+        let q = try NavLog.query(dep: "C81", dest: "KDLH", stops: [], aircraft: nil, figures: Figures(cruiseTasKt: 115, usableFuelGal: 36),
+                                 altitudeFt: nil, nearest: false, choice: nil)
+        #expect(q.cruiseTasKt == 115 && q.usableFuelGal == 36)
+        #expect(q.fuelBurnGph == nil && q.glideRatio == nil && q.stops == nil && q.altitudeNearest == nil)
     }
 }
 
@@ -214,7 +216,7 @@ struct TrafficTests {
     @Test func theNearestFieldsRead() throws {
         let json = #"{"airports":[{"ident":"KLOT","name":"Lewis University","lat":41.6,"lon":-88.1,"kind":"small_airport","distance_nm":3.4,"bearing_deg":182.0,"private":false,"longest_runway_ft":6500,"flight_category":"VFR","radio":null}]}"#
         struct Answer: Decodable { let airports: [NearestAirport] }
-        let field = try Planner.snakeCase.decode(Answer.self, from: Data(json.utf8)).airports[0]
+        let field = try Planner.json.decode(Answer.self, from: Data(json.utf8)).airports[0]
         #expect(field.distanceNm == 3.4 && field.longestRunwayFt == 6500 && field.flightCategory == "VFR")
     }
 }

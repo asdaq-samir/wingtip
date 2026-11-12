@@ -18,6 +18,10 @@ maven 3.10.0
 dotnet 11.0.100
 # Below, tools mise and asdf do not install: read by this repo's scripts only.
 xcode 27.2
+# The Swift of Xcode 27.2, the image scripts/build/api-models-apps.sh
+# builds swift-openapi-generator in, and the generator itself.
+swift 6.4.2
+swift-openapi-generator 1.14.4
 # The Android NDK: the app's ndkVersion and engine/bindings/ffi/build-android.sh.
 # One GitHub's ubuntu-26.04 runner image has installed, so CI downloads none.
 android-ndk 30.0.16248370

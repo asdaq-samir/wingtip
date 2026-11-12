@@ -126,8 +126,18 @@ export default function PlanSidebar({
         ident={place}
         from={measuredFrom}
         onClose={closePlace}
-        onFlyHere={(to) => void flyHere(to)}
-        onAddStop={suggestedAt ? () => keepFuelStops(suggestedAt.after, [place]) : addStop}
+        // The route set from the card ends the search it was opened from,
+        // its words and Cancel let go, as the top hit's Fly Here does
+        // (one-search.spec's smoke test, 2026-11-12).
+        onFlyHere={(to) => {
+          model.letGo();
+          void flyHere(to);
+        }}
+        onAddStop={(to) => {
+          model.letGo();
+          if (suggestedAt) keepFuelStops(suggestedAt.after, [place]);
+          else addStop(to);
+        }}
         // Shown but greyed for a point of the route, or past the planner's
         // most stops, with why (the owner, 2026-11-11: "show it but disable it").
         addStopOff={

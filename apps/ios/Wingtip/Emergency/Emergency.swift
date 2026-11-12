@@ -1,6 +1,7 @@
 import CoreLocation
 import Foundation
 import Observation
+import PlannerAPI
 
 /// The emergency assistant's one model (the web's useEmergency): the
 /// fields within a glide ranked by the engine's best_fields from the
@@ -79,11 +80,9 @@ final class Emergency {
             asking = true
             defer { asking = false }
             do {
-                answer = try await Planner.fetch(APIEmergencyFields.self, "/api/emergency/fields", [
-                    "lat": String(fix.coordinate.latitude), "lon": String(fix.coordinate.longitude),
-                    "altitude_ft": fix.altitudeFt.map { String(Int($0.rounded())) }, "aircraft": aircraft,
-                    "glide_ratio": glideRatio.map { String($0) },
-                ], timeout: Planner.inFlight)
+                let asked = Operations.EmergencyFields.Input.Query(lat: fix.coordinate.latitude, lon: fix.coordinate.longitude,
+                                                                   altitudeFt: fix.altitudeFt?.rounded(), aircraft: aircraft, glideRatio: glideRatio)
+                answer = try await Planner.call(.inFlight) { try await $0.emergencyFields(query: asked).ok.body.json }
                 askedKey = key
                 from = .planner
                 problem = nil

@@ -54,7 +54,7 @@ class FlightServiceControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(PLAN))
                 .andExpect(status().isServiceUnavailable())
-                .andExpect(jsonPath("$.error").value(org.hamcrest.Matchers.containsString("1800wxbrief.com")));
+                .andExpect(jsonPath("$.detail").value(org.hamcrest.Matchers.containsString("1800wxbrief.com")));
         mockMvc.perform(post("/api/flight-service/briefings")
                         .with(oidcLogin())
                         .with(csrf())

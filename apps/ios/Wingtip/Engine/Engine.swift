@@ -9,8 +9,9 @@ enum Engine {
     /// The coders every call shares, made once: a JSONEncoder and a
     /// JSONDecoder were made for each call, and a fix a second asks the
     /// engine several times (underway, the traffic's marks). Keys as
-    /// written; the planner's snake-case pair is Planner.snakeEncoder and
-    /// Planner.snakeCase.
+    /// written, as the servers' generated types write theirs; the app's
+    /// own camel-case types are Planner.snakeEncoder's and
+    /// Planner.snakeCase's.
     static let encoder = JSONEncoder()
     static let decoder = JSONDecoder()
     /// Each call an interval in Instruments ("engine", the rule's name),
@@ -33,7 +34,7 @@ enum Engine {
             answer = wt_airspace_at(nil, 0, lat, lon, ground)
         }
         guard let json = taken(answer) else { return nil }
-        return try? Planner.snakeCase.decode(AirspaceAt.self, from: Data(json.utf8))
+        return try? Planner.json.decode(AirspaceAt.self, from: Data(json.utf8))
     }
 
     /// Whether every byte of a pack is as the planner wrote it.

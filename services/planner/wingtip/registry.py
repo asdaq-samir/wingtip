@@ -18,16 +18,15 @@ import contextlib
 import csv
 import io
 import logging
-import os
 import re
 import sqlite3
-import tempfile
 import threading
 import time
 import zipfile
 from pathlib import Path
 
-import requests
+from . import outside
+from .atomic import atomic_path
 
 log = logging.getLogger(__name__)
 
@@ -248,9 +247,7 @@ def build(zip_path: Path, db_path: Path) -> int:
         # thousand models as dicts were a hundred megabytes of the planner's.
         models = {r["CODE"]: (r["MFR"], r["MODEL"], r["NO-ENG"], r["NO-SEATS"]) for r in _rows(archive, "ACFTREF.txt")}
         engines = {r["CODE"]: (r["MFR"], r["MODEL"], r["HORSEPOWER"], r["THRUST"]) for r in _rows(archive, "ENGINE.txt")}
-        fd, tmp = tempfile.mkstemp(dir=db_path.parent, prefix=".registry-", suffix=".sqlite")
-        os.close(fd)
-        try:
+        with atomic_path(db_path, suffix=".sqlite") as tmp:
             db = sqlite3.connect(tmp)
             db.execute("""CREATE TABLE aircraft (n_number TEXT PRIMARY KEY, mode_s_hex TEXT, serial TEXT, manufacturer TEXT,
                 model TEXT, year INTEGER, aircraft_type TEXT, engines INTEGER, seats INTEGER, engine TEXT, engine_type TEXT,
@@ -306,10 +303,6 @@ def build(zip_path: Path, db_path: Path) -> int:
             db.execute("CREATE INDEX aircraft_mode_s ON aircraft (mode_s_hex)")
             db.commit()
             db.close()
-            os.replace(tmp, db_path)
-        finally:
-            if os.path.exists(tmp):
-                os.unlink(tmp)
     return count
 
 
@@ -328,7 +321,7 @@ def refresh(directory: Path = DEFAULT_DIR, force: bool = False) -> bool:
     try:
         directory.mkdir(parents=True, exist_ok=True)
         zip_path = directory / "ReleasableAircraft.zip"
-        resp = requests.get(URL, headers=HEADERS, timeout=300, stream=True)
+        resp = outside.get(URL, headers=HEADERS, timeout=300, stream=True)
         resp.raise_for_status()
         with open(zip_path, "wb") as out:
             for chunk in resp.iter_content(1 << 20):

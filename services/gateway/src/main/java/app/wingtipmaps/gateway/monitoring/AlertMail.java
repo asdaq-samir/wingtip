@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.monitoring;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.service.Mailer;
 import app.wingtipmaps.gateway.service.Typed;
 import java.time.Duration;
@@ -9,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.stereotype.Component;
@@ -33,10 +34,12 @@ public class AlertMail {
     private final Mailer mail;
     private final Set<String> to;
 
-    public AlertMail(
-            Mailer mail,
-            @Value("${app.monitoring.alert-emails:}") String alertEmails,
-            @Value("${app.developer-emails:}") String developerEmails) {
+    @Autowired
+    public AlertMail(Mailer mail, AppProperties app) {
+        this(mail, app.monitoring().alertEmails(), app.developerEmails());
+    }
+
+    public AlertMail(Mailer mail, String alertEmails, String developerEmails) {
         this.mail = mail;
         Set<String> given = Typed.addresses(alertEmails);
         this.to = given.isEmpty() ? Typed.addresses(developerEmails) : given;

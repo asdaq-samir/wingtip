@@ -1,5 +1,4 @@
-import { readFileSync } from "node:fs";
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import {
   clearTheRoute,
   closeNavLog,
@@ -19,7 +18,8 @@ import {
 } from "./helpers";
 import { markWith } from "./marks";
 import { pickAirplane } from "./startState";
-import { fillTime } from "./ariaFields";
+import { departTime, fillTime } from "./ariaFields";
+import { recordedStops } from "./recordedStops";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
 /**
@@ -33,36 +33,12 @@ test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setu
  * planner's, and so is the chart's edition, so the tiles still draw.
  */
 
-const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url), "utf8");
-
 // A recorded route's course is asked for as soon as the route goes in
 // (PlanWorkspace's setRoute), and a test that has what it came for can
 // end with its live half still on the way: it is let go, not failed on.
 test.afterEach(async ({ page }) => {
   await page.unrouteAll({ behavior: "ignoreErrors" });
 });
-
-async function recordedStops(page: Page) {
-  const course = JSON.parse(fixture("stops-course.json"));
-  await page.route(
-    (url) => url.pathname.endsWith("/course") && url.searchParams.get("stops") === "KMSN",
-    async (route) => {
-      const live = new URL(route.request().url());
-      live.searchParams.delete("stops");
-      const chart = await (await route.fetch({ url: live.toString() })).json();
-      const { departure, destination, stops, distance_nm, bearing_deg, course_line } = course;
-      await route.fulfill({ json: { ...chart, departure, destination, stops, distance_nm, bearing_deg, course_line } });
-    },
-  );
-  await page.route(
-    (url) => url.pathname.endsWith("/checkpoints") && url.searchParams.get("stops") === "KMSN",
-    (route) => route.fulfill({ contentType: "application/json", body: fixture("stops-checkpoints.json") }),
-  );
-  await page.route(
-    (url) => url.pathname.endsWith("/navlog") && url.searchParams.get("stops") === "KMSN",
-    (route) => route.fulfill({ contentType: "application/x-ndjson", body: fixture("stops-navlog.ndjson") }),
-  );
-}
 
 test("a stop added in the panel lands the route there: the capsule, the nav log and a fuel check for each flight", async ({ page }) => {
   await recordedStops(page);
@@ -271,20 +247,20 @@ test("a stop is left again at the time picked on its Depart step, 30 minutes aft
   await inSheet(page, leaves);
   await leaves.click();
   await expect(page.getByTestId("depart-clear")).toHaveCount(0);
-  await fillTime(page.getByTestId("depart-time"), hhmm(planned + 15));
+  await fillTime(await departTime(page), hhmm(planned + 15));
   await page.getByTestId("depart-done").click();
   await expect(page).toHaveURL(/ground=KMSN%3A45|ground=KMSN:45/);
   await expect.poll(at).toBe(planned + 15);
   // Back to 30 minutes after it lands, the default: the address says
   // nothing of it.
   await leaves.click();
-  await fillTime(page.getByTestId("depart-time"), hhmm(planned));
+  await fillTime(await departTime(page), hhmm(planned));
   await page.getByTestId("depart-done").click();
   await expect(page).not.toHaveURL(/ground=/);
   // Before it lands: brought to the landing, and said so where it was
   // picked (the audit's finding: it snapped back silently).
   await leaves.click();
-  await fillTime(page.getByTestId("depart-time"), hhmm(planned - 60));
+  await fillTime(await departTime(page), hhmm(planned - 60));
   await expect(page.getByTestId("depart-range")).toContainText("From landing");
   await page.getByTestId("depart-done").click();
   await expect(page).toHaveURL(/ground=KMSN%3A0|ground=KMSN:0/);
@@ -735,11 +711,12 @@ test("a point's menu has its altitude before Remove: an airport's pattern in fee
 // Add Stop, beside Fly Here, at the pilot's ask: the field the route's
 // next stop, after the ones it makes and before its destination; none on
 // a card of the route's own points; with no route, the first point of one.
-test("an airport's card adds it as the route's next stop; a card of the route's own points has none", async ({ page }) => {
+test("an airport's card adds it as the route's next stop; a card of the route's own points has it greyed, saying why", async ({ page }) => {
   await page.goto("/app/plan?dep=C81&dest=KMSN&place=KMSN");
   await expect(page.getByTestId("place-card")).toBeVisible({ timeout: slow(30000) });
   await expect(page.getByTestId("fly-here")).toBeVisible();
-  await expect(page.getByTestId("place-add-stop")).toHaveCount(0);
+  await expect(page.getByTestId("place-add-stop")).toBeDisabled(); // shown, off (0612a82b3)
+  await expect(page.getByTestId("place-add-stop")).toHaveAccessibleName(/already on the route/);
 
   await page.goto("/app/plan?dep=C81&stops=KJVL&dest=KMSN&place=KDLH");
   const add = page.getByTestId("place-add-stop");

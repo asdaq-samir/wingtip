@@ -20,7 +20,8 @@
 # wave's end pass, with Dependabot's alerts flagging an advisory between them.
 numpy==2.5.4        # wingtip.geo, wingtip.ml_features, wingtip.osm, wingtip.weather
 pandas==3.1.1       # wingtip.airports, wingtip.faa_data, wingtip.ml_features, wingtip.pipeline
-requests==2.34.2    # every external source (wingtip.retry)
+requests==2.34.2    # every external source (wingtip.outside, wingtip.retry)
+urllib3==2.8.0      # wingtip.outside's Retry (retry_after_max, backoff_jitter); requests' own pin is only >=1.26
 cachetools==8.0.0   # wingtip.sua's day cache of special-use airspace; planner's own caches
 pyarrow==26.0.1     # wingtip.faa_data's Parquet cache of the obstacle table; the pipeline's feature store
 shapely==2.2.0      # wingtip.airspace polygons, wingtip.weather's hazards, wingtip.osm's representative points

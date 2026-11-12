@@ -17,6 +17,7 @@ import java.time.Duration;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponseException;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
@@ -55,13 +56,15 @@ class StreamingProxyTest {
                 .timeout(Duration.ofMillis(200))
                 .build();
 
-        ResponseEntity<StreamingResponseBody> answer = new StreamingProxy()
-                .exchange(PLANNER, request, response -> ResponseEntity.ok().build());
-
-        assertThat(answer.getStatusCode().value()).isEqualTo(504);
-        ByteArrayOutputStream body = new ByteArrayOutputStream();
-        answer.getBody().writeTo(body);
-        assertThat(body.toString(StandardCharsets.UTF_8)).contains("planner service timed out");
+        assertThatThrownBy(() -> new StreamingProxy()
+                        .exchange(
+                                PLANNER,
+                                request,
+                                response -> ResponseEntity.ok().build()))
+                .isInstanceOfSatisfying(ErrorResponseException.class, refused -> {
+                    assertThat(refused.getStatusCode().value()).isEqualTo(504);
+                    assertThat(refused.getBody().getDetail()).isEqualTo("planner service timed out");
+                });
     }
 
     /** A response the container has recycled -- its client gone mid-stream

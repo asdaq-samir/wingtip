@@ -114,12 +114,12 @@ class PlannerProxyControllerTest {
     @DynamicPropertySource
     static void plannerUrl(DynamicPropertyRegistry registry) {
         registry.add(
-                "planner-service.base-url",
+                "app.planner.base-url",
                 () -> "http://127.0.0.1:" + upstream.getAddress().getPort());
         // The assistant on the same fake, under a prefix of its own, so a
         // test sees which of the two a request was sent to.
         registry.add(
-                "assistant-service.base-url",
+                "app.assistant.base-url",
                 () -> "http://127.0.0.1:" + upstream.getAddress().getPort() + "/assistant");
     }
 

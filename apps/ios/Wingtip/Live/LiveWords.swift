@@ -49,7 +49,7 @@ enum LiveWords {
     /// clearance's delivery, which is not a takeoff and is never called one.
     static func departureLine(_ e: DepartureEvent?) -> String? {
         guard let e else { return nil }
-        let cleared = e.times?["clearance_delivery"]
+        let cleared = e.times?.additionalProperties["clearance_delivery"]
         var head = cleared.map { "Cleared \(zulu($0))" } ?? "Departure event"
         if let at = e.departure { head += " at \(at)" }
         let rest = [e.gate.map { "gate \($0)" }, e.destination.map { "to \($0)" }].compactMap { $0 }

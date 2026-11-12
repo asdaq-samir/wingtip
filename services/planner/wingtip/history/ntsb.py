@@ -30,13 +30,13 @@ Every text is kept and given verbatim, as the NTSB wrote it.
 
 from __future__ import annotations
 
-import os
 import re
 import sqlite3
 from collections import defaultdict
 from collections.abc import Callable, Iterable
 from pathlib import Path
 
+from ..atomic import atomic_path
 from ..config import get_settings
 
 SOURCE = "NTSB aviation accident database (data.ntsb.gov/avdata)"
@@ -208,17 +208,14 @@ def build(rows: Rows, path: Path | None = None) -> int:
     YYYY-MM-DD), and put in place of the old one at once, so a reader never
     sees half of it. How many aircraft it holds."""
     path = path or store_path()
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fresh = path.with_suffix(".building")
-    fresh.unlink(missing_ok=True)
-    db = sqlite3.connect(fresh)
-    try:
-        db.executescript(_SCHEMA)
-        count = _load(db, rows, {}, replace=False)
-        db.commit()
-    finally:
-        db.close()
-    os.replace(fresh, path)
+    with atomic_path(path, suffix=".building") as fresh:
+        db = sqlite3.connect(fresh)
+        try:
+            db.executescript(_SCHEMA)
+            count = _load(db, rows, {}, replace=False)
+            db.commit()
+        finally:
+            db.close()
     return count
 
 

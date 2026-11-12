@@ -45,6 +45,7 @@ from datetime import datetime, timedelta
 
 import numpy as np
 import requests
+from wingtip import outside
 from wingtip.config import REQUEST_HEADERS
 from wingtip.engine import ask
 
@@ -85,7 +86,7 @@ def _get(path: str, params: dict) -> dict | None:
         time.sleep(wait)
     _last_asked[0] = time.monotonic()
     try:
-        resp = requests.get(f"{BASE}/{path}", params=params, headers=HEADERS, timeout=60)
+        resp = outside.get(f"{BASE}/{path}", params=params, headers=HEADERS, timeout=60)
     except requests.RequestException as err:
         raise AwcUnavailable(f"aviationweather.gov did not answer: {err}") from err
     if resp.status_code == 204:

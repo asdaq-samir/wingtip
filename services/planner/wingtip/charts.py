@@ -89,7 +89,8 @@ from .config import (
     VFR_TAC_MIN_ZOOM,
     get_settings,
 )
-from . import apra, chart_faces, tile_archive
+from . import apra, chart_faces, outside, tile_archive
+from .atomic import atomic_path
 from .geo import tile_lat_lon, tile_xy
 
 log = logging.getLogger(__name__)
@@ -587,9 +588,8 @@ def _write_ready(directory: Path, chart: Chart) -> None:
             for r in chart.rasters
         ],
     }
-    tmp = directory / f"{_READY}.part"
-    tmp.write_text(json.dumps(data, indent=1))
-    tmp.replace(directory / _READY)
+    with atomic_path(directory / _READY) as tmp:
+        tmp.write_text(json.dumps(data, indent=1))
 
 
 def _latest_on_disk(kind: ChartKind, name: str) -> Chart | None:
@@ -668,7 +668,7 @@ def _download_and_prepare(kind: ChartKind, name: str, cycle: str) -> Chart:
     url = zip_url(kind, name, cycle)
     archive = directory / "chart.zip.part"
     started = time.time()
-    with requests.get(url, headers=REQUEST_HEADERS, timeout=600, stream=True) as resp:
+    with outside.get(url, headers=REQUEST_HEADERS, timeout=600, stream=True) as resp:
         if resp.status_code != 200:
             raise RuntimeError(f"HTTP {resp.status_code} for {url}")
         with archive.open("wb") as out:
@@ -1178,12 +1178,12 @@ def tile_png(x: int, y: int, zoom: int, kind: str = "sec", scale: int = 1) -> by
 
 
 def _write_atomically(path: Path, data: bytes) -> None:
-    # Named for the thread as well as the process: two of the planner's
-    # request threads rendering the same tile wrote one temp file, and
-    # the second's rename could move the first's half-written bytes.
-    tmp = path.with_name(f"{path.name}.{os.getpid()}.{threading.get_ident()}.part")
-    tmp.write_bytes(data)
-    tmp.replace(path)  # so a killed process cannot leave a torn cache entry
+    # A name of its own for each writer: two of the planner's request
+    # threads rendering one tile shared a temp file once, and the second's
+    # rename moved the first's half-written bytes. Not flushed: a pyramid
+    # pass writes millions of tiles, and what a power cut loses is drawn again.
+    with atomic_path(path, durable=False) as tmp:
+        tmp.write_bytes(data)
 
 
 def tile_image(x: int, y: int, zoom: int, kind: str = "sec") -> Image.Image | None:

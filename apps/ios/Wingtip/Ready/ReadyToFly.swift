@@ -142,7 +142,7 @@ final class ReadyToFly {
         do {
             // The last good ranking kept, and given back with its time when
             // there is no signal (KeptForAir): its age is ready to fly's.
-            let found = try await KeptForAir.answer(.notams, key: key) { try await Planner.postRead(APINotamsRanked.self, "/api/notams/ranked", ask) }
+            let found = try await KeptForAir.answer(.notams, key: key) { try await Planner.call { try await $0.notamsRanked(body: .json(ask)).ok.body.json } }
             guard Self.flightKey(plan) == key else { return }
             notams = found.value; notamsAt = found.keptAt ?? Date(); notamsFor = key; notamsProblem = nil
         } catch {

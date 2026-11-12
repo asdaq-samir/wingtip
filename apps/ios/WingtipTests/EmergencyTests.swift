@@ -29,7 +29,7 @@ struct EmergencyTests {
     }
 
     private func answer() throws -> APIEmergencyFields {
-        try Planner.snakeCase.decode(APIEmergencyFields.self, from: Data(json.utf8))
+        try Planner.json.decode(APIEmergencyFields.self, from: Data(json.utf8))
     }
 
     @Test func thePlannersFieldsAreRankedByTheEngine() throws {

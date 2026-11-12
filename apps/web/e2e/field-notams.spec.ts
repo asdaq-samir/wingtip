@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { settle, sideDrawer } from "./helpers";
+import { inSheet, settle, sideDrawer } from "./helpers";
 
 const card = (page: import("@playwright/test").Page) => sideDrawer(page).getByTestId("place-card");
 
@@ -86,10 +86,15 @@ test("a field's closed runway has its badge, and its NOTAMs keep their text as s
   // A tap opens it in full on a card of its own: its times said once, on
   // its Since and Ends lines (the owner, 2026-11-12: "dates are twice"),
   // and as sent.
+  // The card opens half way (e7bb15ec8): a row under its edge is reached by
+  // pulling it up, as a finger would (inSheet), not by a click through it.
+  await inSheet(page, one);
   await one.click();
   const full = page.getByTestId("place-notam-full");
   await expect(full).not.toContainText("In effect now");
-  await full.getByRole("button", { name: "As Sent" }).click();
+  const sent = full.getByRole("button", { name: "As Sent" });
+  await inSheet(page, sent);
+  await sent.click();
   await expect(full.locator("pre")).toHaveText(raw);
 });
 
@@ -154,6 +159,7 @@ test("a field's NOTAMs show three, and their title opens every one in place and 
 
   const title = section.getByTestId("place-notams-first-more");
   await expect(title).toHaveAttribute("aria-expanded", "false");
+  await inSheet(page, title);
   await title.click();
   await expect(title).toHaveAttribute("aria-expanded", "true");
   const all = section;
@@ -162,6 +168,7 @@ test("a field's NOTAMs show three, and their title opens every one in place and 
   // The glide slope out: a localizer approach (AIM 1-1-9).
   await expect(all.getByTestId("place-notam").nth(4).getByTestId("place-notam-heading")).toHaveText("Glide slope runway 09 out of service");
   // Its title again: back to three.
+  await inSheet(page, title);
   await title.click();
   await expect(section.getByTestId("place-notam")).toHaveCount(3);
   await expect(section).toContainText("3 of 5");
@@ -253,6 +260,7 @@ test("a TFR near the field is its kind, rule, levels and place, its instructions
   await expect(one.getByTestId("place-notam-heading")).toHaveText("Security TFR, 14 CFR 99.7");
   await expect(one.getByTestId("place-notam-where")).toHaveText("3,500 to 18,000 ft MSL, over the field");
   await expect(one).not.toContainText("November");
+  await inSheet(page, one);
   await one.click();
   const cardOf = page.getByTestId("place-notam-card");
   await expect(cardOf.getByText("Security TFR", { exact: true })).toBeVisible();
@@ -262,6 +270,8 @@ test("a TFR near the field is its kind, rule, levels and place, its instructions
   await expect(full.getByTestId("place-tfr-instructions")).toContainText("squawking the discrete code");
   await expect(full.getByTestId("place-tfr-facility-phone")).toHaveAttribute("href", "tel:+18178587503");
   await expect(full).not.toContainText("In effect now");
-  await full.getByRole("button", { name: "TFR as Sent" }).click();
+  const sent = full.getByRole("button", { name: "TFR as Sent" });
+  await inSheet(page, sent);
+  await sent.click();
   await expect(full.locator("pre")).toHaveText(text);
 });

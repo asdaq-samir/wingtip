@@ -34,6 +34,7 @@ from cachetools import LRUCache, TTLCache
 from shapely import STRtree, from_wkb, points as shapely_points, to_wkb
 from shapely.geometry import LineString, Point, shape as shapely_shape
 
+from .atomic import atomic_path
 from .engine import ask as engine
 from .faa_data import _is_icloud_evicted, nasr_zip_url, download_and_extract
 
@@ -283,15 +284,13 @@ def _write_controlled_cache(shp_path: Path, key: tuple, polygons: list) -> None:
             for p in polygons
         ],
     }
-    part = path.with_suffix(path.suffix + ".part")
     try:
-        with part.open("wb") as f:
+        with atomic_path(path) as part, part.open("wb") as f:
             pickle.dump(payload, f, protocol=pickle.HIGHEST_PROTOCOL)
-        part.replace(path)
     except OSError:
         # A read-only data directory only loses the speed-up, never the
         # answer: the parse just runs again next process.
-        part.unlink(missing_ok=True)
+        pass
 
 
 def preload(faa_cache_dir) -> None:

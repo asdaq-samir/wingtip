@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{page :: head('Delete Account')}"></head>
+<body>
+<h1>Delete this account?</h1>
+<p>The Wingtip Maps account for <span class="host" th:text="${email}"></span> will be deleted. This can't be
+  undone.</p>
+<p th:replace="~{page :: what-goes}"></p>
+<form method="post" th:action="@{/delete-account/confirm}">
+  <input type="hidden" name="token" th:value="${token}">
+  <button class="button" type="submit">Delete Account</button>
+</form>
+<a class="button plain" href="/">Keep My Account</a>
+</body>
+</html>

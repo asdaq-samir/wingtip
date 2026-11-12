@@ -2,6 +2,7 @@ package app.wingtipmaps.gateway.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import app.wingtipmaps.gateway.config.TestAppProperties;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.config.oauth2.client.CommonOAuth2Provider;
@@ -19,14 +20,14 @@ class SignInOptionsTest {
                 .clientSecret("secret")
                 .build();
         var config = new SecurityConfig(
-                Optional.of(new InMemoryClientRegistrationRepository(google)), "", "", true, false, "");
+                Optional.of(new InMemoryClientRegistrationRepository(google)), TestAppProperties.with());
         assertThat(config.signInOptions().providers()).containsExactly("google");
         assertThat(config.signInOptions().access()).isEqualTo(SignInOptions.Access.SIGN_IN);
     }
 
     @Test
     void noneWhereOnlyTheEmailedLinkSignsIn() {
-        var config = new SecurityConfig(Optional.empty(), "mailpit", "", true, false, "");
+        var config = new SecurityConfig(Optional.empty(), TestAppProperties.with("spring.mail.host", "mailpit"));
         assertThat(config.signInOptions().providers()).isEmpty();
         assertThat(config.signInOptions().access()).isEqualTo(SignInOptions.Access.SIGN_IN);
     }

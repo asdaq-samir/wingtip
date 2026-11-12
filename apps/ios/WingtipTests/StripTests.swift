@@ -90,7 +90,7 @@ struct FieldCommandsTests {
 /// the ribbon and the head carry; and the head's findings from the
 /// planner's Go / No-Go as GoNoGoTests shapes it, through the glance.
 struct StripDataTests {
-    private static let decoder = Planner.snakeCase
+    private static let decoder = Planner.json
 
     /// Three legs of a route with a stop: C81 to KJVL (a checkpoint on
     /// the way), KJVL to KDLH, the figures the planner's leg lines carry.

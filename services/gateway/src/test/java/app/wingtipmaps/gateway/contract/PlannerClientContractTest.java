@@ -16,6 +16,8 @@ import app.wingtipmaps.gateway.service.CrashDraftMail;
 import app.wingtipmaps.gateway.service.Mailer;
 import app.wingtipmaps.gateway.service.PlannerClient;
 import app.wingtipmaps.gateway.service.PlannerUnavailableException;
+import app.wingtipmaps.gateway.upstream.PlannerApi;
+import app.wingtipmaps.gateway.upstream.Upstreams;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.time.Instant;
@@ -213,7 +215,7 @@ class PlannerClientContractTest {
                             .flatMap(OpenApiContract::answerSchema)
                             .orElseThrow())
                     .toString();
-            PlannerClient client = new PlannerClient(plannerStub.url(), assistantStub.url());
+            PlannerClient client = Upstreams.plannerClient(plannerStub.url(), assistantStub.url());
             Clients clients = new Clients(
                     client,
                     accounts(plannerStub.url()),
@@ -292,7 +294,7 @@ class PlannerClientContractTest {
                 mock(FindByIndexNameSessionRepository.class),
                 mock(TransactionTemplate.class),
                 mock(AppleRevocation.class),
-                plannerUrl);
+                Upstreams.client(PlannerApi.class, plannerUrl));
     }
 
     private static List<LogbookEntry> logbook() {

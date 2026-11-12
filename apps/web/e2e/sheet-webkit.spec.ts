@@ -44,9 +44,12 @@ test(
     await go(page, "/app/plan");
     await grabberTo(page, "full");
     await settled(panel(page));
-    const scroller = panel(page).locator("[data-sheet-scroll]").first();
+    // Search's page, the one up with no route: each of the sheet's two pages
+    // (SheetPager) has its own scroller and head band.
+    const search = panel(page).locator('[data-sheet-page="0"]');
+    const scroller = search.locator("[data-sheet-scroll]").first();
     await scroller.evaluate((el) => el.scrollTo({ top: 240 }));
-    const band = (await panel(page).locator("[data-head-band]").boundingBox())!;
+    const band = (await search.locator("[data-head-band]").boundingBox())!;
     const width = page.viewportSize()!.width;
     for (const x of [20, width / 2, width - 20]) {
       expect((await at(page, x, (await top(page)) - 3)).inPanel, `nothing of the sheet over its top at x ${x}`).toBe(false);

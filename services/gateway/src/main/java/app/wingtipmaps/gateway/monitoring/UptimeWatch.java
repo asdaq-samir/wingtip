@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.monitoring;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import app.wingtipmaps.gateway.planner.model.PlannerFeedHealth;
 import app.wingtipmaps.gateway.planner.model.PlannerFeedState;
 import app.wingtipmaps.gateway.service.SubscriptionService;
@@ -11,13 +12,12 @@ import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.web.server.autoconfigure.ServerProperties;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import tools.jackson.core.JacksonException;
-import tools.jackson.databind.DeserializationFeature;
-import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
@@ -45,14 +45,12 @@ public class UptimeWatch {
 
     private static final Logger log = LoggerFactory.getLogger(UptimeWatch.class);
 
-    /** The planner's answers, generated from its document (the pom's
-     *  planner-models); a field it adds later is ignored. */
-    private static final ObjectMapper JSON = JsonMapper.builder()
-            .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            .build();
-
     private final HealthProbe probe;
     private final AlertMail alerts;
+    /** Boot's own, which ignores a field the planner adds later; its
+     *  answers are generated from its document (the pom's planner-models). */
+    private final JsonMapper json;
+
     private final String plannerBaseUrl;
     /** Each service watched, by name, and where its health is asked. */
     private final Map<String, String> services = new LinkedHashMap<>();
@@ -61,17 +59,34 @@ public class UptimeWatch {
     /** The planner has already waited out a feed's stale minutes. */
     private final Outages feeds = new Outages(Duration.ZERO);
 
+    @Autowired
+    public UptimeWatch(
+            HealthProbe probe, AlertMail alerts, JsonMapper json, AppProperties app, ServerProperties server) {
+        this(
+                probe,
+                alerts,
+                json,
+                app.planner().baseUrl(),
+                app.assistant().baseUrl(),
+                app.claudeFeatures(),
+                app.monitoring().weatherUrl(),
+                server.getPort(),
+                app.monitoring().downAfter());
+    }
+
     public UptimeWatch(
             HealthProbe probe,
             AlertMail alerts,
-            @Value("${planner-service.base-url:http://planner:8000}") String plannerBaseUrl,
-            @Value("${assistant-service.base-url:http://assistant:8000}") String assistantBaseUrl,
-            @Value("${app.claude-features:OFF}") SubscriptionService.ClaudeFeatures claude,
-            @Value("${app.monitoring.weather-url:}") String weatherUrl,
-            @Value("${server.port:8080}") int port,
-            @Value("${app.monitoring.down-after:PT5M}") Duration downAfter) {
+            JsonMapper json,
+            String plannerBaseUrl,
+            String assistantBaseUrl,
+            SubscriptionService.ClaudeFeatures claude,
+            String weatherUrl,
+            int port,
+            Duration downAfter) {
         this.probe = probe;
         this.alerts = alerts;
+        this.json = json;
         this.plannerBaseUrl = trim(plannerBaseUrl);
         this.down = new Outages(downAfter);
         services.put("planner", this.plannerBaseUrl + "/");
@@ -127,7 +142,7 @@ public class UptimeWatch {
         }
         try {
             List<PlannerFeedState> states =
-                    JSON.readValue(answer.body(), PlannerFeedHealth.class).getFeeds();
+                    json.readValue(answer.body(), PlannerFeedHealth.class).getFeeds();
             return states == null ? List.of() : states;
         } catch (JacksonException e) {
             log.warn("the planner's feeds not read: {}", e.getOriginalMessage());

@@ -26,15 +26,16 @@ final class TripPlanner {
     private(set) var used: [String] = []
     private var running: Task<Void, Never>?
 
-    /// One line of the stream folded in (the web's step).
+    /// One line of the stream folded in (the web's step): the document's
+    /// lines, told apart by their `type`.
     func take(_ m: TripMessage) {
-        switch m.type {
-        case "tool": status = m.label
-        case "text": status = nil; words += m.text ?? ""
-        case "plan": proposal = m.proposal
-        case "sources": sources = m.sources ?? []
-        case "error": status = nil; problem = m.words; busy = false
-        default: status = nil; busy = false
+        switch m {
+        case .tool(let tool): status = tool.label
+        case .text(let text): status = nil; words += text.text
+        case .plan(let planned): proposal = planned.proposal
+        case .sources(let found): sources = found.sources
+        case .error(let error): status = nil; problem = error.words; busy = false
+        case .done: status = nil; busy = false
         }
     }
 
@@ -88,30 +89,12 @@ final class TripPlanner {
         return "The trip planner cannot be reached: \(error.localizedDescription)"
     }
 
+    /// The proposal's lines as the assistant writes them, through its
+    /// generated client; the stream ends with its "done" or "error".
     nonisolated static func stream(_ ask: ASTripAsk) -> AsyncThrowingStream<TripMessage, any Error> {
-        AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    let request = try await Planner.request("POST", "/api/trip-plan", json: ask, csrf: true)
-                    let (bytes, response) = try await Gateway.session.bytes(for: request)
-                    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-                    guard status == 200 else {
-                        var body = Data()
-                        for try await byte in bytes { body.append(byte) }
-                        Log.planner.error("the trip planner answered \(status)")
-                        throw Planner.Failure(status: status, detail: Planner.detail(of: body))
-                    }
-                    for try await line in bytes.lines where !line.isEmpty {
-                        let message = try Planner.snakeCase.decode(TripMessage.self, from: Data(line.utf8))
-                        continuation.yield(message)
-                        if message.type == "done" || message.type == "error" { break }
-                    }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            continuation.onTermination = { _ in task.cancel() }
+        // A line of a kind this app does not know yet is skipped.
+        Planner.lines({ try await Planner.ask { try await $0.tripPlan(body: .json(ask)).ok.body.applicationXNdjson } }) {
+            try? Planner.json.decode(TripMessage.self, from: $0)
         }
     }
 }

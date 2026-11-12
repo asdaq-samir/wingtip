@@ -72,7 +72,7 @@ struct ReceiverTests {
                         TrafficAircraft(altitudeFt: 5100, callsign: "N825V", hex: "ab4549", lat: 44.9, lon: -123, seenS: 4)]
         let heard: [EngineContract.HeardPlane] = try Engine.recoded(internet, encoder: Planner.snakeEncoder)
         let merged = try Engine.receiverTraffic(picture: p, internet: heard, ownFt: f.traffic.ownFt, at: f.datagrams[1].at)
-        let planes: [TrafficAircraft] = try Engine.recoded(merged, decoder: Planner.snakeCase)
+        let planes: [TrafficAircraft] = try Engine.recoded(merged)
         #expect(planes.map(\.hex) == ["ab4549", "c0ffee"])
         // 5,000 ft pressure altitude, own ship 3,200 ft by GPS at 3,000 ft
         // pressure altitude: 5,200 ft on own ship's scale.

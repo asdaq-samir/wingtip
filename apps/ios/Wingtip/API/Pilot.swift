@@ -3,7 +3,7 @@ import Foundation
 // The pilot's own things on the gateway: saved flights, the logbook and
 // the currency it works out (FlightController, LogbookController), each
 // the gateway's model generated from its OpenAPI document
-// (Generated/GatewayModels.swift, the GW prefix), named here as the app
+// (WingtipAPI/GatewayAPI, the GW prefix), named here as the app
 // names them. The gateway's dates and figures are shown as given; the app
 // computes no currency of its own (61.56, 61.57 live in the gateway).
 
@@ -31,56 +31,56 @@ typealias CrossCountryReview = GWCrossCountryReviewDto
 /// it comes from, judged by the gateway.
 typealias ExperienceItem = GWExperienceItemDto
 
-extension SavedFlight: Identifiable {}
-extension LogbookEntry: Identifiable {}
-extension InstructorLink: Identifiable {}
-extension SignedEndorsement: Identifiable {}
-extension CrossCountryReview: Identifiable {}
+extension SavedFlight: @retroactive Identifiable {}
+extension LogbookEntry: @retroactive Identifiable {}
+extension InstructorLink: @retroactive Identifiable {}
+extension SignedEndorsement: @retroactive Identifiable {}
+extension CrossCountryReview: @retroactive Identifiable {}
 
 extension Gateway {
-    static func training() async throws -> Training? { try await read(Training.self, "/api/training") }
+    static func training() async throws -> Training? { try await read { try await $0.getTraining().ok.body.json } }
 
     /// An instructor asked in by their address (/api/training/instructors).
     static func askInstructor(email: String) async throws {
-        try await send("POST", "/api/training/instructors", json: GWAskInstructorRequest(email: email))
+        _ = try await call { try await $0.askInstructor(body: .json(GWAskInstructorRequest(email: email))) }
     }
 
-    static func flights() async throws -> [SavedFlight] { try await read([SavedFlight].self, "/api/flights") ?? [] }
-    static func logbook() async throws -> [LogbookEntry] { try await read([LogbookEntry].self, "/api/logbook") ?? [] }
-    static func currency() async throws -> Currency? { try await read(Currency.self, "/api/logbook/currency") }
+    static func flights() async throws -> [SavedFlight] { try await read { try await $0.getFlights().ok.body.json } ?? [] }
+    static func logbook() async throws -> [LogbookEntry] { try await read { try await $0.getLogbook().ok.body.json } ?? [] }
+    static func currency() async throws -> Currency? { try await read { try await $0.currency().ok.body.json } }
 
     /// A flight saved as planned (POST /api/flights).
     static func save(_ flight: SaveFlightRequest) async throws {
-        try await send("POST", "/api/flights", json: flight)
+        _ = try await call { try await $0.save(body: .json(flight)) }
     }
 
     /// A saved flight's name or notes changed (PATCH /api/flights/{id}):
     /// a field left nil is kept, a blank one clears it; the flight's
     /// summary as it now stands comes back.
     static func updateFlight(_ id: Int, _ change: GWUpdateFlightRequest) async throws -> SavedFlight {
-        try await send(SavedFlight.self, "PATCH", "/api/flights/\(id)", json: change)
+        try await call { try await $0.patchFlightsId(path: .init(id: id), body: .json(change)).ok.body.json }
     }
 
     static func deleteFlight(_ id: Int) async throws {
-        try await send("DELETE", "/api/flights/\(id)")
+        _ = try await call { try await $0.deleteFlightsId(path: .init(id: id)) }
     }
 
     /// One of the pilot's flights shared by link (POST /api/flights/{id}/share),
     /// its N-number with it only where `includeTail`; the same link while it
     /// stays shared.
     static func shareFlight(_ id: Int, includeTail: Bool) async throws -> GWFlightShareDto {
-        try await send(GWFlightShareDto.self, "POST", "/api/flights/\(id)/share", json: GWShareFlightRequest(includeTail: includeTail))
+        try await call { try await $0.share(path: .init(id: id), body: .json(GWShareFlightRequest(includeTail: includeTail))).ok.body.json }
     }
 
     /// Stops sharing it (DELETE /api/flights/{id}/share): its link answers
     /// "no longer shared" for everyone it went to.
     static func stopSharing(_ id: Int) async throws {
-        try await send("DELETE", "/api/flights/\(id)/share")
+        _ = try await call { try await $0.deleteFlightsIdShare(path: .init(id: id)) }
     }
 
     /// A flight another pilot shared, read by its token, signed in or not;
     /// nil where it is not (or no longer) shared.
     static func sharedFlight(_ token: String) async throws -> GWSharedFlightDto? {
-        try await read(GWSharedFlightDto.self, "/api/shared-flights/\(token)", none: [404])
+        try await read(none: [404]) { try await $0.shared(path: .init(token: token)).ok.body.json }
     }
 }

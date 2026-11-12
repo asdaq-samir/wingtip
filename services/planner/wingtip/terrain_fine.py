@@ -52,7 +52,8 @@ from pathlib import Path
 import numpy as np
 import requests
 
-from . import elevation, faa_data, geo, ground_grid
+from . import elevation, faa_data, geo, ground_grid, outside
+from .atomic import atomic_path
 from .config import REQUEST_HEADERS
 
 #: The finest zoom built and served (terrain_view.MAX_ZOOM).
@@ -177,24 +178,15 @@ def fine_tile_png(x: int, y: int) -> bytes:
 def _fetch(session: requests.Session, x: int, y: int) -> bool:
     """One tile from the bucket onto disk; False for one it has not (the
     sea past its edge)."""
-    url = elevation.TERRAIN_TILE_URL.format(z=FINE_ZOOM, x=x, y=y)
-    for attempt in range(4):
-        try:
-            resp = session.get(url, headers=REQUEST_HEADERS, timeout=30)
-            if resp.status_code in (403, 404):
-                return False
-            resp.raise_for_status()
-            path = tile_path(x, y)
-            path.parent.mkdir(parents=True, exist_ok=True)
-            # Whole or not at all: written beside, then renamed over.
-            part = path.with_suffix(".part")
-            part.write_bytes(resp.content)
-            part.replace(path)
-            return True
-        except requests.RequestException:
-            if attempt == 3:
-                raise
-    return False
+    # The session asks again after a dropped connection or a busy bucket
+    # (wingtip.outside); a tile is written whole or not at all.
+    resp = session.get(elevation.TERRAIN_TILE_URL.format(z=FINE_ZOOM, x=x, y=y), headers=REQUEST_HEADERS, timeout=30)
+    if resp.status_code in (403, 404):
+        return False
+    resp.raise_for_status()
+    with atomic_path(tile_path(x, y)) as part:
+        part.write_bytes(resp.content)
+    return True
 
 
 def build(workers: int = 12) -> None:
@@ -203,8 +195,7 @@ def build(workers: int = 12) -> None:
     near, steep = scope()
     todo = sorted(t for t in near | steep if not tile_path(*t).exists())
     print(f"{len(near | steep)} tiles in the scope, {len(todo)} to fetch", flush=True)
-    session = requests.Session()
-    session.mount("https://", requests.adapters.HTTPAdapter(pool_connections=1, pool_maxsize=workers))
+    session = outside.session(pool=workers)
     with ThreadPoolExecutor(workers) as pool:
         for i, _ in enumerate(pool.map(lambda t: _fetch(session, *t), todo), 1):
             if i % 1000 == 0 or i == len(todo):

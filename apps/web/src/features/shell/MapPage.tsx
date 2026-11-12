@@ -189,7 +189,6 @@ export default function MapPage({ mode }: { mode: Mode }) {
     <ConsoleInPanelContext.Provider value={consoleInPanel}>
       <ConsoleLayer
         label={consoleLabel}
-        detent={panel === "full" ? "large" : "medium"}
         edge={edge}
         onClose={closeConsole}
         finalFocus={consoleButton}

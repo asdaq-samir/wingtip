@@ -33,6 +33,7 @@ import numpy as np
 import requests
 from scipy.spatial import KDTree
 
+from .atomic import atomic_path
 from .config import DATA_DIR
 from .geo import _arc_nm, _unit_sphere, bearing_deg, distance_nm
 from .retry import with_retries
@@ -99,10 +100,8 @@ def _row(row: dict) -> tuple[str, str] | None:
 def prepare(text_lines, out: Path = PLACES_PATH) -> int:
     """The national file's lines boiled down to PLACES_PATH; how many
     places were kept."""
-    out.parent.mkdir(parents=True, exist_ok=True)
     kept = 0
-    tmp = out.with_suffix(".tmp")
-    with open(tmp, "w", newline="", encoding="utf-8") as f:
+    with atomic_path(out) as tmp, open(tmp, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["kind", "name", "lat", "lon"])
         for row in csv.DictReader(text_lines, delimiter="|"):
@@ -117,7 +116,6 @@ def prepare(text_lines, out: Path = PLACES_PATH) -> int:
                 continue
             writer.writerow([*found, lat, lon])
             kept += 1
-    tmp.replace(out)
     return kept
 
 

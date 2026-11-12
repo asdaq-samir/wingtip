@@ -1,4 +1,5 @@
 import Foundation
+import OpenAPIRuntime
 import Testing
 @testable import Wingtip
 
@@ -11,10 +12,10 @@ import Testing
 @MainActor
 struct OwnFiguresTests {
     /// A type's book as the planner sends it, the figures the engine reads.
-    static let book: [String: JSONValue] = [
-        "name": .string("c172"), "cruise_tas_kt": .number(122), "fuel_burn_gph": .number(8.4), "taxi_fuel_gal": .number(1.4),
-        "climb_tas_kt": .number(74), "climb_rate_fpm_sea_level": .number(730), "service_ceiling_ft": .number(14000),
-        "glide": .object(["ratio": .number(9)]),
+    static let book: [String: OpenAPIValueContainer] = [
+        "name": "c172", "cruise_tas_kt": 122, "fuel_burn_gph": 8.4, "taxi_fuel_gal": 1.4,
+        "climb_tas_kt": 74, "climb_rate_fpm_sea_level": 730, "service_ceiling_ft": 14000,
+        "glide": try! OpenAPIValueContainer(unvalidatedValue: ["ratio": 9.0]),
     ]
 
     private func defaults(_ name: String) throws -> UserDefaults {
@@ -102,10 +103,7 @@ struct OwnFiguresTests {
 
     @Test func figuresGoToThePlannerAndTheEngineByTheirKeys() {
         let f = Figures(cruiseTasKt: 140, taxiFuelGal: 1.2, glideRatio: 9, emptyWeightLb: 1700)
-        let q = f.query.compactMapValues { $0 }
-        // The loading's weight is not the plan's.
-        #expect(q == ["cruise_tas_kt": "140.0", "taxi_fuel_gal": "1.2", "glide_ratio": "9.0"])
-        #expect(f.engine.count == OwnFigure.allCases.count && f.engine["fuel_burn_gph"] == .null && f.engine["empty_weight_lb"] == .number(1700))
+        #expect(f.engine.count == OwnFigure.allCases.count && f.engine["fuel_burn_gph"]?.value == nil && f.engine["empty_weight_lb"]?.number == 1700)
         #expect(f.gateway.taxiFuelGal == 1.2 && f.gateway.emptyWeightLb == 1700)
     }
 

@@ -55,7 +55,7 @@ final class DownloadsModel {
     func load() async {
         refresh()
         do {
-            catalog = try Planner.snakeCase.decode(APIOfflineCatalog.self, from: try await Planner.data(for: Planner.get("/api/offline-charts")))
+            catalog = try await Planner.call { try await $0.offlineCatalog().ok.body.json }
             problem = nil
         } catch {
             problem = "The regions could not be listed: \(error.localizedDescription)"
@@ -74,8 +74,8 @@ final class DownloadsModel {
     /// archive the region has no tiles of counts nothing once the catalog
     /// has sized the region at all.
     func size(of region: APIOfflineRegion) -> Int? {
-        guard !region.sizes.isEmpty else { return nil }
-        return archives.reduce(0) { $0 + Self.sized(region.sizes, $1) }
+        guard !region.sizes.additionalProperties.isEmpty else { return nil }
+        return archives.reduce(0) { $0 + Self.sized(region.sizes.additionalProperties, $1) }
     }
 
     /// The planner's sizes are keyed by archive name, which the snake-case
@@ -97,8 +97,7 @@ final class DownloadsModel {
         busy.insert(regionID)
         defer { busy.remove(regionID) }
         do {
-            let path = "/api/offline-charts/\(cycle)/\(regionID)"
-            let files = try Planner.snakeCase.decode(APIOfflineRegionFiles.self, from: try await Planner.data(for: Planner.get(path)))
+            let files = try await Planner.call { try await $0.offlineRegion(path: .init(cycle: cycle, region: regionID)).ok.body.json }
             let chosen = files.archives.filter { archives.contains($0.archive) }
             guard !chosen.isEmpty else {
                 problem = "\(files.region.name) has none of the charts picked in \(cycle)."
@@ -161,9 +160,8 @@ final class DownloadsModel {
     /// The region id of a box on the map (/api/offline-box, snapped to
     /// the half degree), to download as a region of its own.
     func boxID(west: Double, south: Double, east: Double, north: Double) async -> String? {
-        let query = ["west": west, "south": south, "east": east, "north": north].mapValues { Optional(String($0)) }
-        guard let data = try? await Planner.data(for: Planner.get("/api/offline-box", query)),
-              let box = try? Planner.snakeCase.decode(APIOfflineBox.self, from: data) else { return nil }
+        guard let box = try? await Planner.call(.usual, { try await $0.offlineBox(query: .init(west: west, south: south, east: east, north: north)).ok.body.json })
+        else { return nil }
         return box.id
     }
 }

@@ -29,6 +29,7 @@ from pathlib import Path
 
 import requests
 
+from . import outside
 from .config import DATA_DIR
 from .geo import box_around, distance_nm
 from .units import M_PER_NM
@@ -116,7 +117,7 @@ def latest_release(timeout_s: float = 10.0) -> str:
         if seen and now - seen[0] < 24 * 3600:
             return seen[1]
     try:
-        response = requests.get(RELEASES_URL, timeout=timeout_s)
+        response = outside.get(RELEASES_URL, timeout=timeout_s)
         response.raise_for_status()
         names = re.findall(r"<Prefix>release/([0-9]{4}-[0-9]{2}-[0-9]{2}\.[0-9]+)/</Prefix>", response.text)
         if not names:

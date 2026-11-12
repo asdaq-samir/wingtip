@@ -1,11 +1,12 @@
 package app.wingtipmaps.gateway.controller;
 
+import app.wingtipmaps.gateway.config.AppProperties;
 import io.swagger.v3.oas.annotations.Hidden;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,9 +33,12 @@ public class AssetLinksController {
     private final String packageName;
     private final List<String> fingerprints;
 
-    public AssetLinksController(
-            @Value("${APP_ANDROID_PACKAGE:}") String packageName,
-            @Value("${APP_ANDROID_CERT_SHA256:}") String fingerprints) {
+    @Autowired
+    public AssetLinksController(AppProperties app) {
+        this(app.android().packageName(), app.android().certSha256());
+    }
+
+    public AssetLinksController(String packageName, String fingerprints) {
         this.packageName = packageName.isBlank() ? null : packageName.trim();
         // Read with or without its colons, and written as keytool and the
         // Play Console write one (upper case, colon between each byte); an

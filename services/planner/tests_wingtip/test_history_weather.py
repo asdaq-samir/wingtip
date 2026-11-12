@@ -73,7 +73,7 @@ def test_a_past_day_is_asked_once_and_then_read_from_the_store(monkeypatch):
         asked.append(dict(params)["data"] if url == iem.METAR_URL else "taf")
         return _Answer(200, ASOS)
 
-    monkeypatch.setattr(iem.requests, "get", get)
+    monkeypatch.setattr(iem.outside, "get", get)
     first = iem.day_reports("metar", ["KORD", "KMDW"], DAY, today=TODAY)
     again = iem.day_reports("metar", ["KORD", "KMDW"], DAY, today=TODAY)
     assert asked == ["metar"]
@@ -85,7 +85,7 @@ def test_a_past_day_is_asked_once_and_then_read_from_the_store(monkeypatch):
 
 def test_today_is_asked_each_time_and_a_refusal_is_not_kept(monkeypatch):
     answers = [_Answer(200, ASOS), _Answer(200, ASOS), _Answer(503)]
-    monkeypatch.setattr(iem.requests, "get", lambda *a, **k: answers.pop(0))
+    monkeypatch.setattr(iem.outside, "get", lambda *a, **k: answers.pop(0))
     iem.day_reports("metar", ["KORD"], DAY, today=DAY)
     iem.day_reports("metar", ["KORD"], DAY, today=DAY)
     # Both asks of today went to IEM.
@@ -93,12 +93,12 @@ def test_today_is_asked_each_time_and_a_refusal_is_not_kept(monkeypatch):
     with pytest.raises(iem.WeatherHistoryUnavailable):
         iem.day_reports("metar", ["KORD"], DAY - dt.timedelta(days=1), today=DAY)
     # The refusal kept nothing: the day is asked again.
-    monkeypatch.setattr(iem.requests, "get", lambda *a, **k: _Answer(200, "station,valid,lon,lat,metar\n"))
+    monkeypatch.setattr(iem.outside, "get", lambda *a, **k: _Answer(200, "station,valid,lon,lat,metar\n"))
     assert iem.day_reports("metar", ["KORD"], DAY - dt.timedelta(days=1), today=DAY) == {"KORD": []}
 
 
 def test_a_day_to_come_asks_nothing(monkeypatch):
-    monkeypatch.setattr(iem.requests, "get", lambda *a, **k: pytest.fail("asked IEM"))
+    monkeypatch.setattr(iem.outside, "get", lambda *a, **k: pytest.fail("asked IEM"))
     assert iem.day_reports("taf", ["KORD"], TODAY + dt.timedelta(days=1), today=TODAY) == {"KORD": []}
 
 

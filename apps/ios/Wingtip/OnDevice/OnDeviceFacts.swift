@@ -107,10 +107,10 @@ extension OnDeviceFacts {
     /// the TAF of the station that is the field.
     static func fields(of briefing: Briefing) -> [String: Field] {
         var out: [String: Field] = [:]
-        for (ident, airport) in briefing.airports {
+        for (ident, airport) in briefing.airports.additionalProperties {
             out[ident.uppercased()] = Field(ident: ident.uppercased(), name: airport.name, elevationFt: airport.elevationFt, runways: airport.runways)
         }
-        for (ident, metar) in briefing.metars {
+        for (ident, metar) in briefing.metars.additionalProperties {
             out[ident.uppercased(), default: Field(ident: ident.uppercased())].metar = metar
         }
         for station in briefing.forecast.stations {

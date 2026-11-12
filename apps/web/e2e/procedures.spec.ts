@@ -1,6 +1,6 @@
 import { test, expect, type Locator, type Page } from "@playwright/test";
 import { cardClose, drawn, grabberTo, openTab, settle, settled, sideDrawer, slow } from "./helpers";
-import { tapMark } from "./marks";
+import { procedureRuns as runs, tapMark } from "./marks";
 import { pickAirplane } from "./startState";
 test.beforeEach(({ page }) => pickAirplane(page)); // its figures read (the setup picks none)
 
@@ -247,7 +247,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   await page.getByTestId("procedure-option").filter({ hasText: "ILS RWY 09" }).click();
   await expect(page.getByRole("heading", { name: "KDLH ILS RWY 09" })).toBeVisible();
   await expect.poll(() => asked, { timeout: slow(10000) }).toContain("/api/planner/airport/KDLH/procedures/I09");
-  await expect(page.locator("path.instrument-procedure").first()).toBeAttached({ timeout: slow(10000) });
+  await expect.poll(() => runs(page, "line"), { timeout: slow(10000) }).toBeGreaterThan(0);
   await expect(page).not.toHaveURL(/[?&]procs=/);
   // Its fixes as they are flown, with the altitudes they are crossed at.
   const fixes = page.getByTestId("procedure-fixes");
@@ -273,9 +273,9 @@ test("a field's approach is picked on its own page with its transition, drawn on
 
   // On the map: the transition and the final, the missed approach dashed,
   // its hold, and the fixes with their altitudes.
-  await expect(page.locator("path.instrument-procedure")).toHaveCount(2, { timeout: slow(10000) });
-  await expect(page.locator("path.instrument-procedure-missed")).toHaveCount(1);
-  await expect(page.locator("path.instrument-procedure-hold")).toHaveCount(1);
+  await expect.poll(() => runs(page, "line"), { timeout: slow(10000) }).toBe(2);
+  await expect.poll(() => runs(page, "missed")).toBe(1);
+  await expect.poll(() => runs(page, "hold")).toBe(1);
   await expect.poll(async () => (await drawn(page, "procedure-fixes")).length).toBe(3);
   // Said in the route's box after the destination's pill, and a tap there
   // opens the Procedures.
@@ -308,7 +308,7 @@ test("a field's approach is picked on its own page with its transition, drawn on
   // Put away by its own close.
   await cardClose(page, "procedures-close").click();
   await expect(page.getByTestId("procedure-add")).toHaveCount(0);
-  await expect(page.locator("path.instrument-procedure")).toHaveCount(0);
+  await expect.poll(() => runs(page)).toBe(0);
 });
 
 /**

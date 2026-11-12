@@ -50,8 +50,8 @@ final class ServerFeatures {
     /// A failure leaves it off, never on.
     func refresh(signedIn: Bool, developer: Bool) async {
         do {
-            let capabilities = try await Gateway.read(GWCapabilities.self, "/api/auth/capabilities", none: [])
-            set(ClaudeGate.on(claudeFeatures: capabilities?.claudeFeatures, access: capabilities?.access,
+            let capabilities = try await Gateway.call { try await $0.capabilities().ok.body.json }
+            set(ClaudeGate.on(claudeFeatures: capabilities.claudeFeatures, access: capabilities.access,
                               signedIn: signedIn, developer: developer))
         } catch {
             Log.app.notice("the server's features could not be asked: \(error.localizedDescription, privacy: .public)")

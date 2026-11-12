@@ -35,11 +35,6 @@ final class AlternateCheck {
         var eta: Date
         var tasKt: Double
         var alternate: String
-
-        var query: [String: String?] {
-            ["dest": dest, "eta": ISO8601DateFormatter().string(from: eta),
-             "tas_kt": String(format: "%.0f", tasKt), "alternate": alternate.isEmpty ? nil : alternate]
-        }
     }
 
     /// The question for the plan on the page, or why there is none: under
@@ -94,7 +89,10 @@ final class AlternateCheck {
         asking = true
         defer { asking = false }
         do {
-            let fresh = try await Planner.fetch(APIAlternates.self, "/api/alternate", ask.query)
+            let fresh = try await Planner.call {
+                try await $0.alternate(query: .init(dest: ask.dest, eta: ISO8601DateFormatter().string(from: ask.eta), tasKt: ask.tasKt.rounded(),
+                                                    alternate: ask.alternate.isEmpty ? nil : ask.alternate)).ok.body.json
+            }
             guard !Task.isCancelled else { return }
             answer = fresh
             asked = ask

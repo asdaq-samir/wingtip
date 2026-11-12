@@ -42,7 +42,7 @@ import gribberish
 import numpy as np
 import requests
 import wingtip_native
-from wingtip import weather_store
+from wingtip import outside, weather_store
 from wingtip.config import REQUEST_HEADERS as HEADERS
 
 log = logging.getLogger(__name__)
@@ -329,7 +329,7 @@ def _download(run: datetime, step: int) -> bytes | None:
         **BOX,
     }
     try:
-        resp = requests.get(FILTER_URL, params=params, headers=HEADERS, timeout=30)
+        resp = outside.get(FILTER_URL, params=params, headers=HEADERS, timeout=30)
     except requests.RequestException as err:
         raise ModelWindsUnavailable(f"NOMADS did not answer: {err}") from err
     # A run not posted yet is a 404, or an HTML page saying so.

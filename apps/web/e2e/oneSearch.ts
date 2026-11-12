@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { openPanel, settled, showTabs, sideDrawer } from "./helpers";
+import { openPanel, settled, sheetUpToType, showTabs, sideDrawer } from "./helpers";
 
 /**
  * The one search's ways round the sheet (the owner's one-search design,
@@ -40,6 +40,7 @@ export async function showPlan(page: Page) {
 export async function showSearch(page: Page) {
   await showTabs(page);
   await showPage(page, 0);
+  await sheetUpToType(page);
   await page.getByTestId("search-airports").click();
   await expect(sideDrawer(page).getByTestId("search-home")).toBeVisible();
 }
@@ -49,16 +50,16 @@ export async function showSearch(page: Page) {
 export async function showTraffic(page: Page) {
   await showTabs(page);
   await showPage(page, 0);
+  await sheetUpToType(page);
   await page.getByTestId("search-airports").fill("traffic");
   await sideDrawer(page).getByTestId("search-do-traffic").click();
 }
 
-/** The plan's empty box, with no route, from the one search's own page
- *  (its Plan a Flight), or FPL's bar of the grabber: with no route the sheet opens on the search. */
+/** The plan's empty box, with no route, by FPL's bar of the grabber: with
+ *  no route the sheet opens on the search, whose Plan a Flight went
+ *  (3eb6e1417). */
 export async function planFromSearch(page: Page) {
-  const start = sideDrawer(page).getByTestId("flight-summary-new");
-  if (await start.isVisible()) await start.click();
-  else await showPage(page, 1);
+  await showPage(page, 1);
 }
 
 /** The sheet half way on the plan's empty box, as a fresh load with no
@@ -77,3 +78,29 @@ export const searchAirports = (page: Page) =>
   sideDrawer(page)
     .getByRole("group", { name: /^(Top Hit|Airports)$/ })
     .getByTestId("airport-result");
+
+/** The account's home base kept to this page. Signed in, Home is the
+ *  account's (lib/homeAirport, PUT /api/me/contact) and the suite shares
+ *  one account: a spec that sets Home -- from Favorites, or a link's
+ *  `home=` -- would otherwise set it for every spec after it (Fly Here
+ *  then flew from it). The account's own answer, its home base `home`
+ *  (none by default) at first, and what the page writes kept here. */
+export async function ownHomeBase(page: Page, home: string | null = null) {
+  let me: Record<string, unknown> | null = null;
+  await page.route(
+    (url) => url.pathname === "/api/me",
+    async (route) => {
+      const answer = await route.fetch();
+      me ??= { ...((await answer.json()) as Record<string, unknown>), homeBase: home };
+      await route.fulfill({ response: answer, json: me });
+    },
+  );
+  await page.route(
+    (url) => url.pathname === "/api/me/contact",
+    async (route) => {
+      const { homeBase } = route.request().postDataJSON() as { homeBase: string };
+      me = { ...me, homeBase: homeBase.trim().toUpperCase() || null };
+      await route.fulfill({ json: me });
+    },
+  );
+}

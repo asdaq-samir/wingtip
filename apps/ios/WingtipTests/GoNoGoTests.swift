@@ -33,7 +33,7 @@ struct GoNoGoTests {
     """#
 
     @Test func theAnswerReadsWithEveryFindingItsMarkAndWhereItOpens() throws {
-        let answer = try Planner.snakeCase.decode(GoNoGoAnswer.self, from: Data(Self.answer.utf8))
+        let answer = try Planner.json.decode(GoNoGoAnswer.self, from: Data(Self.answer.utf8))
         #expect(answer.line.finding == "stop" && answer.items.count == 7)
         #expect(answer.items.map(\.key) == ["weather", "airspace", "altitude", "fuel", "runways", "balance", "risk"])
         #expect(answer.items[0].section == "Adverse Conditions")
@@ -46,7 +46,7 @@ struct GoNoGoTests {
 
     @Test func anAnswerWithNoRiskNoLoadingAndNoBalanceStillReads() throws {
         let json = #"{"line":{"finding":"pending","words":"Still checking: Risk"},"items":[{"key":"risk","label":"Risk","finding":"pending","detail":"Waiting on the briefing…","tab":"preflight","section":"Risk Assessment"}],"risk":null,"self_checks":[],"loading":null,"balance":null}"#
-        let answer = try Planner.snakeCase.decode(GoNoGoAnswer.self, from: Data(json.utf8))
+        let answer = try Planner.json.decode(GoNoGoAnswer.self, from: Data(json.utf8))
         #expect(answer.risk == nil && answer.loading == nil && answer.balance == nil)
     }
 
@@ -120,7 +120,7 @@ struct GoNoGoTests {
     }
 
     @Test func eachFindingHasItsMarkAndOpensWhereTheBriefSaysIt() throws {
-        let answer = try Planner.snakeCase.decode(GoNoGoAnswer.self, from: Data(Self.answer.utf8))
+        let answer = try Planner.json.decode(GoNoGoAnswer.self, from: Data(Self.answer.utf8))
         let targets = answer.items.map { VerdictTarget.of($0) }
         // The fuel and the runways are worked from the airplane's figures, and
         // open its profile (the owner, 2026-11-09).

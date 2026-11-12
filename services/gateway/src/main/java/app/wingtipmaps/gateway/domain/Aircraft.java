@@ -1,5 +1,6 @@
 package app.wingtipmaps.gateway.domain;
 
+import app.wingtipmaps.gateway.dto.HandbookFigures;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -14,7 +15,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Map;
 import lombok.Getter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -151,10 +151,11 @@ public class Aircraft {
 
     /** Its handbook figures as its pilot confirmed them from a photographed
      *  page (V36; the engine contract's HandbookFigures), kept as sent;
-     *  null until then. */
+     *  null until then. Hibernate writes and reads the record as the jsonb
+     *  it is kept in. */
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb")
-    private Map<String, Object> handbook;
+    private HandbookFigures handbook;
 
     protected Aircraft() {
         // JPA
@@ -223,7 +224,7 @@ public class Aircraft {
     }
 
     /** Its handbook figures, as confirmed; null takes them away. */
-    public Aircraft keepHandbook(Map<String, Object> figures) {
+    public Aircraft keepHandbook(HandbookFigures figures) {
         this.handbook = figures;
         return this;
     }

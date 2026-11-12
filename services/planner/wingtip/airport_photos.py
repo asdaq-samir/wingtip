@@ -24,7 +24,8 @@ from urllib.parse import unquote
 
 import requests
 
-from . import geo
+from . import geo, outside
+from .atomic import atomic_path
 from .config import DATA_DIR
 from .units import M_PER_NM
 
@@ -85,7 +86,7 @@ def aerial(ident: str, lat: float, lon: float, ends: list[tuple[float, float]], 
         return path
     west, south, east, north = aerial_box(lat, lon, ends)
     try:
-        response = requests.get(
+        response = outside.get(
             USGS_EXPORT,
             params={
                 "bbox": f"{west},{south},{east},{north}",
@@ -103,10 +104,8 @@ def aerial(ident: str, lat: float, lon: float, ends: list[tuple[float, float]], 
         raise PhotoUnavailable(f"The USGS imagery could not be had for {ident}: {err}") from err
     if not response.headers.get("content-type", "").startswith("image/"):
         raise PhotoUnavailable(f"The USGS answered {ident} with {response.headers.get('content-type')!r}, not a picture")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    partial = path.with_suffix(".part")
-    partial.write_bytes(response.content)
-    partial.replace(path)
+    with atomic_path(path) as partial:
+        partial.write_bytes(response.content)
     return path
 
 
@@ -118,7 +117,7 @@ def _plain(value: str | None) -> str:
 def _ask_ground_photo(wikipedia_link: str) -> dict | None:
     title = unquote(wikipedia_link.rstrip("/").rsplit("/", 1)[-1]).replace("_", " ")
     pages = (
-        requests.get(
+        outside.get(
             WIKIPEDIA_API,
             params={"action": "query", "format": "json", "prop": "pageimages", "piprop": "name", "titles": title, "redirects": 1},
             headers=HEADERS,
@@ -132,7 +131,7 @@ def _ask_ground_photo(wikipedia_link: str) -> dict | None:
     if not name:
         return None
     files = (
-        requests.get(
+        outside.get(
             COMMONS_API,
             params={
                 "action": "query",
@@ -175,16 +174,14 @@ def ground_photo_file(ident: str, url: str, cache_dir: Path = PHOTO_DIR) -> Path
     if path.exists() and path.stat().st_size > 0:
         return path
     try:
-        response = requests.get(url, headers=HEADERS, timeout=20)
+        response = outside.get(url, headers=HEADERS, timeout=20)
         response.raise_for_status()
     except requests.RequestException as err:
         raise PhotoUnavailable(f"Commons' photo could not be had for {ident}: {err}") from err
     if not response.headers.get("content-type", "").startswith("image/"):
         raise PhotoUnavailable(f"Commons answered {ident}'s photo with {response.headers.get('content-type')!r}")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    partial = path.with_suffix(".part")
-    partial.write_bytes(response.content)
-    partial.replace(path)
+    with atomic_path(path) as partial:
+        partial.write_bytes(response.content)
     return path
 
 

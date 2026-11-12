@@ -1,5 +1,5 @@
 import { expect, type Page } from "@playwright/test";
-import { mapStill, searchAirports, settle, showTabs, sideDrawer, slow } from "./helpers";
+import { mapStill, searchAirports, settle, sheetUpToType, showTabs, sideDrawer, slow } from "./helpers";
 import type { Back } from "./cardTable";
 import { noCheckpoints } from "./startState";
 
@@ -76,6 +76,7 @@ export async function go(page: Page, url: string) {
 export async function pick(page: Page, typed: string, row: "airport" | "waypoint") {
   await go(page, "/app/plan");
   await showTabs(page);
+  await sheetUpToType(page);
   await page.getByTestId("search-airports").fill(typed);
   const rows = row === "airport" ? searchAirports(page) : sideDrawer(page).getByTestId("search-waypoint");
   await expect(rows.first()).toBeVisible({ timeout: slow(10_000) });
@@ -146,7 +147,17 @@ export async function expectBack(page: Page, back: Back) {
   const panel = sideDrawer(page);
   if (back === "search") await expect(page.getByTestId("search-airports")).toBeVisible();
   if (back === "search-home") await expect(panel.getByTestId("search-home").or(page.getByTestId("search-airports")).first()).toBeVisible();
-  if (back === "plan") await expect(panel.getByTestId("route-box").or(panel.getByTestId("route-line")).first()).toBeVisible();
+  // FPL: its route's row, or at the pill its figures in the row's place
+  // (the owner, 2026-11-11, the canvas's b; sheet-pages.spec).
+  if (back === "plan")
+    await expect(
+      panel
+        .getByTestId("route-box")
+        .or(panel.getByTestId("route-line"))
+        .or(page.getByTestId("panel-foot"))
+        .filter({ visible: true })
+        .first(),
+    ).toBeVisible();
   if (back === "console") await expect(page.getByTestId("console-sheet")).toBeVisible();
   if (back === "traffic") await expect(page.getByTestId("aircraft-search")).toBeVisible();
   if (back === "profile") await expect(page.getByTestId("profile-card")).toBeVisible();

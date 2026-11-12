@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { drawn, mapStill, openMapSettings, settle, slow } from "./helpers";
+import { drawn, grabberTo, mapStill, openMapSettings, settle, slow } from "./helpers";
 
 /**
  * The weather on the map, at the owner's pick (the canvas's map weather,
@@ -72,6 +72,8 @@ test(
 
     // The areas, the PIREPs and the winds at 9,000 ft, from the map's button.
     await openMapSettings(page);
+    // The Map card opens half way, as every card does (e7bb15ec8): pulled all the way up, its rows in reach.
+    await grabberTo(page, "full");
     await expect(page.getByTestId("weather-areas-toggle")).toHaveAttribute("aria-checked", "false");
     await page.getByTestId("weather-areas-toggle").click();
     await page.getByTestId("weather-pireps-toggle").click();
@@ -101,6 +103,7 @@ test(
     // map and its buttons, and the map's button was not reached after one
     // was put away (runs 42219044827 and 42219994020).
     await openMapSettings(page);
+    await grabberTo(page, "full");
     await page.getByTestId("weather-areas-toggle").click();
     await expect.poll(async () => (await areas()).length).toBe(0);
     await page.getByTestId("weather-areas-toggle").click();

@@ -31,6 +31,7 @@ from pathlib import Path
 from pmtiles.tile import zxy_to_tileid
 
 from . import charts, data_cycles, tile_archive
+from .atomic import atomic_path
 from .geo import tile_xy
 from .offline_regions import Region
 
@@ -224,10 +225,8 @@ def _remember(cycle: str, key: str, value: dict) -> dict:
     with _lock(str(path)):
         kept = _estimates(cycle)
         kept[key] = value
-        path.parent.mkdir(parents=True, exist_ok=True)
-        part = path.with_name(f"{path.name}.{threading.get_ident()}.part")
-        part.write_text(json.dumps(kept))
-        part.replace(path)
+        with atomic_path(path) as part:
+            part.write_text(json.dumps(kept))
     return value
 
 

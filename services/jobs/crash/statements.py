@@ -18,6 +18,7 @@ import re
 
 import requests
 from bs4 import BeautifulSoup, Comment, NavigableString, Tag
+from wingtip import outside
 from wingtip.config import FAA_HEADERS
 
 from . import places
@@ -45,7 +46,7 @@ _AIRCRAFT = re.compile(r"^(?:An?|The) (.+?) (?:helicopter |airplane |plane |airc
 
 def fetch(session: requests.Session | None = None) -> str:
     """The page's HTML: one polite request a run."""
-    resp = (session or requests).get(URL, headers=FAA_HEADERS, timeout=TIMEOUT_S)
+    resp = (session or outside).get(URL, headers=FAA_HEADERS, timeout=TIMEOUT_S)
     resp.raise_for_status()
     return resp.text
 
