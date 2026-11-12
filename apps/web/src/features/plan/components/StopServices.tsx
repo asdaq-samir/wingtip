@@ -126,9 +126,10 @@ export function StopServices({
   // "Fuel should move to on the field section"), from its Chart Supplement
   // entry, the remarks in words as the planner gives them (the engine's
   // remarks_read: self-serve, its hours, the FBO's; the owner, 2026-11-11,
-  // "Decode fuel remarks too") under the Fuel row in sight, as the card's
-  // Lights give their words, and only as sent folded under As Written
-  // (the owner's screenshot, 2026-11-11: the words were folded away too).
+  // "Decode fuel remarks too") on a row of their own under the Fuel row,
+  // in sight, and as sent folded under As Written, as the card's Lights
+  // (the owner, 2026-11-11: "fuel remarks and as written can be separate
+  // from fuel").
   const field = [
     <ListRow
       key="fuel"
@@ -141,16 +142,20 @@ export function StopServices({
       onClick={fuelNotam?.onClick}
       chevron={!!fuelNotam}
       value={<span className="font-semibold text-foreground">{s.fuel_types.length ? fuelNames(s.fuel_types) : "None listed"}</span>}
-      description={
-        s.fuel_notes.length > 0 &&
-        s.fuel_notes.map((note) => (
+      data-testid="services-fuel"
+    />,
+    s.fuel_notes.length > 0 && (
+      <ListRow
+        key="fuel-notes"
+        title="Fuel remarks"
+        description={s.fuel_notes.map((note) => (
           <span key={note} className="block" data-testid="services-fuel-note">
             {note}
           </span>
-        ))
-      }
-      data-testid="services-fuel"
-    />,
+        ))}
+        data-testid="services-fuel-remarks"
+      />
+    ),
     s.fuel_remarks.length > 0 && (
       <Collapsible key="fuel-sent">
         <CollapsibleTrigger render={<ListRow title="As Written" chevron data-testid="services-fuel-sent" />} />
