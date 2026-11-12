@@ -25,8 +25,11 @@ if [ "$(cd "$live" 2>/dev/null && pwd -P || echo "$live")" = "$(cd "$main" && pw
   exit 1
 fi
 
-# Tidy first: merged worktrees and branches, stopped containers.
+# Tidy first: merged worktrees and branches, stopped containers; and the
+# merged worktrees left untouched for six hours, with their build outputs
+# (the owner's efficiency rules, 2026-11-12).
 "$(dirname "$0")/tidy-local.sh" || true
+"$(dirname "$0")/tidy-branches.sh" || true
 git -C "$main" fetch -q origin "$branch"
 if [ ! -d "$live" ]; then
   git -C "$main" worktree add -q --detach "$live" "origin/$branch"
@@ -85,6 +88,16 @@ done
 # A volume made under the bookworm image warns on every connection until
 # its collation version is refreshed; once, then a no-op.
 scripts/dev/pg-refresh-collation.sh
+# The web build, once its first build is out, stops: only go-live.sh
+# changes this tree, so a watching build only holds about 1.4 GB (the
+# owner's efficiency rules, 2026-11-12). GO_LIVE_KEEP_WEB_BUILD=1 keeps it.
+if [ "${GO_LIVE_KEEP_WEB_BUILD:-0}" != 1 ]; then
+  for _ in $(seq 1 60); do
+    docker compose -p wingtip logs --since 20m web-build 2>/dev/null | grep -q "built in" && break
+    sleep 10
+  done
+  docker compose -p wingtip stop web-build >/dev/null 2>&1 || true
+fi
 docker compose -p wingtip ps --format '{{.Service}}: {{.Status}}'
 host=$(grep -E '^PHONE_BASE_URL=' .env 2>/dev/null | cut -d= -f2-)
 echo "go-live: live at ${host:-https://localhost:8443}/app"

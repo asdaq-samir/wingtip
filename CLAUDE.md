@@ -85,7 +85,12 @@ integration branch"):
   long test until the live stack runs the current `claude/integration`;
   a brief never asks an agent to verify before pushing.
 - **Then one validation pass**, `scripts/dev/validate-wave.sh` on
-  `claude/integration`, its fixes one commit set; then a few grouped pull
+  `claude/integration`: every area's checks, `@smoke` and the browser
+  specs the wave touched, never the full browser suite, which is CI's
+  nightly (decision 0034). Each branch and each validation agent pushes
+  once, when it's done: a push moves integration past the live stack and
+  the guard holds every test until go-live runs again. Its fixes are one
+  commit set; then a few grouped pull
   requests to `main`, which merge by themselves once "CI passed" is green
   (auto-merge-agents.yml). Nothing merges red. CI failures are fixed in
   that pass, at most once more after it; an asked-for review is put right
@@ -194,12 +199,17 @@ without it).
   a rule tested once at the lowest level, least privilege, macOS for iOS
   only, and small workflows. `guards` (`scripts/ci/guards.sh`) and `CI
   budget` enforce what a script can check.
-- **On the owner's Mac**, every browser run, suite, image build and
-  measurement goes through `scripts/dev/one-at-a-time.sh "<label>"
-  <command>` (three at once with the live stack down, two with it up;
-  `~/.config/wingtip/one-at-a-time` overrides it; `--alone` for a speed
-  measurement). Never wrap `check.sh` in it. A
-  quick check of a minute or two runs outside it.
+- **On the owner's Mac, full throttle without swapping** (the owner,
+  2026-11-12): every browser run, suite, image build, Xcode or Gradle
+  build and measurement goes through `scripts/dev/one-at-a-time.sh
+  "<label>" <command>`, whose turns the swap watcher sets (6 while the Mac
+  isn't swapping, 3 once it is; `install-swap-watch.sh`, docs/LOCAL-DEV.md);
+  `--alone` for a speed measurement. Never wrap `check.sh` in it. A quick
+  check of a minute or two runs outside it. One simulator and one
+  emulator at most. The live stack runs only while the owner tests or an
+  agent needs it (go-live.sh stops the web build once it has built);
+  scratch stacks, their volumes and an agent's build outputs go when it's
+  done.
 
 ## The app on the phone
 
