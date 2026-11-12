@@ -134,17 +134,20 @@ place. A part not yet given is asked again on each run (`kit.fill`).
 
 ### Installing the render agent
 
-The film needs the Mac's GPU, so it runs on the Mac, not in Docker. With
-Node from `.tool-versions` (mise) and `npm ci` in `apps/web` of the live
-checkout:
+The film needs the Mac's GPU, so it runs on the Mac, not in Docker. Node
+(`.tool-versions`' major) is the official build in `~/.local/node`, and
+Playwright comes from `scripts/dev/render`, never from `apps/web`, whose
+`node_modules` the Linux web-build container mounts:
 
 ```bash
+export PATH="$HOME/.local/node/bin:$PATH"
+cd ~/Developer/wingtip-live/scripts/dev/render && npm ci && npx playwright install chromium
 cd ~/Developer/wingtip-live
 node scripts/dev/studio-render.mjs --sign-in   # once: sign in as the developer, close the window
 node scripts/dev/studio-render.mjs             # one pass over the ready drafts
 
 # The agent, every half hour (not installed by any script):
-sed -e "s|__NODE__|$(mise which node)|" -e "s|__REPO__|$HOME/Developer/wingtip-live|" -e "s|__HOME__|$HOME|" \
+sed -e "s|__NODE__|$HOME/.local/node/bin/node|" -e "s|__REPO__|$HOME/Developer/wingtip-live|" -e "s|__HOME__|$HOME|" \
   scripts/dev/launchd/app.wingtipmaps.studio-render.plist > ~/Library/LaunchAgents/app.wingtipmaps.studio-render.plist
 launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/app.wingtipmaps.studio-render.plist
 # and to remove it:

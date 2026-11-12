@@ -5,7 +5,7 @@
   as the owner's own user, on the Mac's GPU: each ready crash draft filmed
   and saved. A template, not installed by any script:
   docs/STUDIO-PIPELINE.md, "Installing the render agent", fills in
-  __NODE__ (mise's node), __REPO__ (a checkout that stays: the live one,
+  __NODE__ (~/.local/node/bin/node), __REPO__ (a checkout that stays: the live one,
   ~/Developer/wingtip-live, not a worktree removed on merge) and __HOME__,
   and bootstraps it with launchctl. A Mac asleep at the half hour runs it at
   the next wake.

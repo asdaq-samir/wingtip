@@ -12,8 +12,9 @@
 //   node scripts/dev/studio-render.mjs              every ready draft, once
 //   node scripts/dev/studio-render.mjs --sign-in    a window to sign in as the developer, once
 //
-// It needs Node (.tool-versions' nodejs, through mise) and apps/web's
-// packages on the Mac (`npm ci` there: Playwright comes from them), and the
+// It needs Node on the Mac (.tool-versions' nodejs; ~/.local/node) and
+// Playwright from scripts/dev/render (`npm ci` there, never in apps/web,
+// whose node_modules the Linux web-build container mounts), and the
 // stack up. The browser keeps its own profile, signed in once with
 // --sign-in, in ~/Library/Application Support/Wingtip/studio-render.
 // scripts/dev/launchd/app.wingtipmaps.studio-render.plist runs it every
@@ -49,7 +50,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-const require = createRequire(join(repo, "apps/web/package.json"));
+const require = createRequire(join(repo, "scripts/dev/render/package.json"));
 const { chromium } = require("@playwright/test");
 
 const WINGTIP_URL = (process.env.WINGTIP_URL ?? "https://localhost:8443").replace(/\/+$/, "");
