@@ -206,9 +206,9 @@ export function lookOf(field: ShownField): FieldLook {
 /** The streaks, white with a breath of blue (Apple Weather's), fainter and
  *  shorter-lived where the wind is light, brighter where it is fast. */
 export const STREAK_RAMP: Stop[] = [
-  [0, tone(WEATHER.flowStreak, 70)],
-  [15, tone(WEATHER.flowStreak, 170)],
-  [40, tone(WEATHER.flowStreak, 255)],
+  [0, tone(WEATHER.flowStreak, 40)],
+  [15, tone(WEATHER.flowStreak, 120)],
+  [40, tone(WEATHER.flowStreak, 220)],
 ];
 
 /** The legend's bar as a CSS gradient, top the highest, its stops at their

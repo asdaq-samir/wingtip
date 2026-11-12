@@ -21,9 +21,11 @@ import { useWeatherFlow, type FlowFrame, type FlowLayer } from "./useWeatherFlow
  *  an iPhone (each streak is a line segment the GPU moves every frame). */
 const STREAKS_PHONE = 2500;
 const STREAKS_WIDE = 5000;
-/** How many frames a streak lives, and how far it moves a frame for a knot. */
-const STREAK_AGE = 22;
-const STREAK_SPEED = 2;
+/** How many frames a streak lives, and how far it moves a frame for a knot:
+ *  short, fine dashes, as Apple Weather's are, not long lines that read as
+ *  falling rain (the owner's iPhone screenshot, 2026-11-12). */
+const STREAK_AGE = 12;
+const STREAK_SPEED = 1.2;
 /** The colour field over the chart: the chart read through it. */
 const FIELD_OPACITY = 0.75;
 const RADAR_CREDIT = "Radar: NWS NEXRAD via Iowa Environmental Mesonet";
@@ -181,7 +183,7 @@ function layersOf(
             numParticles: phone ? STREAKS_PHONE : STREAKS_WIDE,
             maxAge: STREAK_AGE,
             speedFactor: STREAK_SPEED,
-            width: 1.2,
+            width: 0.9,
             palette: STREAK_RAMP,
             animate,
           }),

@@ -26,7 +26,7 @@ export function FlowLegend({ field, frame, radar }: { field: ShownField; frame: 
       data-testid="weather-flow-legend"
       className={cn(
         GLASS,
-        "absolute top-[max(0.5rem,env(safe-area-inset-top))] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] z-[1000] flex w-44 flex-col gap-2 rounded-(--radius-card) p-2",
+        "absolute top-[max(0.5rem,env(safe-area-inset-top))] left-[calc(max(0.5rem,env(safe-area-inset-left))+var(--map-inset-left,0px))] z-[1000] flex w-36 flex-col gap-1.5 rounded-(--radius-card) p-2",
       )}
     >
       <div className="flex items-center justify-between gap-1">
@@ -40,7 +40,7 @@ export function FlowLegend({ field, frame, radar }: { field: ShownField; frame: 
         <CloseButton label="Turn off model weather" onClick={() => set({ flow: "off" })} data-testid="weather-flow-close" />
       </div>
       <p className={cn("font-semibold", TEXT.note)}>{look.title}</p>
-      <div className="flex h-32 gap-2">
+      <div className="flex h-20 gap-2">
         <div className="w-2 rounded-full" style={{ background: rampGradient(look.bar) }} aria-hidden="true" />
         <ol className="relative flex-1" aria-label={look.title}>
           {look.ticks.map((t) => (
