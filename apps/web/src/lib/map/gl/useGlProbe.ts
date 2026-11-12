@@ -1,4 +1,4 @@
-import type { MapGeoJSONFeature } from "maplibre-gl";
+import type { MapGeoJSONFeature, MapSourceDataEvent } from "maplibre-gl";
 import { useEffect, useEffectEvent } from "react";
 import { useGlMap } from "./glLayer";
 
@@ -6,8 +6,9 @@ import { useGlMap } from "./glLayer";
  * What a layer has drawn, where, for the browser tests: an empty element
  * in the map's container carrying `data-<name>` as JSON -- each feature
  * drawn, its `fields` and its place in the map's own points -- written
- * each time the map is idle (data-airport-marks, data-navaid-marks): a
- * canvas drawn by WebGL has no elements for a test to find.
+ * each time the map is idle (data-airport-marks, data-navaid-marks), and
+ * while it moves as tiles come in: a canvas drawn by WebGL has no
+ * elements for a test to find.
  */
 export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSONFeature) => Record<string, unknown>) {
   const { map } = useGlMap();
@@ -65,8 +66,23 @@ export function useGlProbe(name: string, layers: string[], fields: (f: MapGeoJSO
       el.setAttribute(attr, JSON.stringify(out));
     };
     map.on("idle", write);
+    // MapLibre fires no idle until a gesture ends (Map.isMoving counts a
+    // finger held down after a pan), while the tiles that came in under it
+    // are already drawn: written again a quarter second after one comes,
+    // once its marks are placed (map.spec's airports under a finger's pan).
+    let timer = 0;
+    const came = (e: MapSourceDataEvent) => {
+      if (!e.tile || timer || !map.isMoving()) return;
+      timer = window.setTimeout(() => {
+        timer = 0;
+        write();
+      }, 250);
+    };
+    map.on("sourcedata", came);
     return () => {
       map.off("idle", write);
+      map.off("sourcedata", came);
+      window.clearTimeout(timer);
       el.remove();
     };
   }, [map, name, ids]);

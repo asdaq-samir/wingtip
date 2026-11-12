@@ -40,7 +40,10 @@ export function OwnShipGl() {
     const stop = (e: { originalEvent?: Event }) => {
       if (!e.originalEvent) return;
       const ownShip = useOwnShip.getState();
-      if (ownShip.follow) ownShip.setFollow(false);
+      // Only a drag while following ends it: `follow` is the pilot's kept
+      // setting, and a pan at the desk with own ship off left it off for the
+      // air (map.spec's "Keep the map on me").
+      if (ownShip.follow && ownShip.enabled) ownShip.setFollow(false);
       // A flight to the position still waiting on its fix is let go.
       flown.current = ownShip.recentred;
     };
