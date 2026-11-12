@@ -147,12 +147,8 @@ export default defineConfig({
       registerType: "prompt",
       manifest: MANIFEST,
       workbox: {
-        // The first worker takes the page it was installed from at once
-        // (workbox's clients.claim): "prompt" leaves it off, and an
-        // uncontrolled page's fetches pass it by, so Keep Charts Offline
-        // on a first visit cached nothing and still said it had. A new
-        // build still waits (no skipWaiting), so nothing reloads under
-        // the pilot.
+        // The first worker claims its page: an uncontrolled page's keep for
+        // the air cached nothing. A new build still waits (no skipWaiting).
         clientsClaim: true,
         navigateFallback: "/app/index.html",
         navigateFallbackAllowlist: [/^\/app\//],
