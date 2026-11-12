@@ -133,8 +133,8 @@ struct RunwayRowView: View {
     }
 
     @ViewBuilder private var badges: some View {
-        if bestWind { TextBadge("Best Wind", look: .secondary) }
-        if longest { TextBadge("Longest", look: .secondary) }
+        if bestWind { StatusLabel("Best Wind", systemImage: "wind", colour: .secondary) }
+        if longest { StatusLabel("Longest", systemImage: "arrow.left.and.right", colour: .secondary) }
         if let mark { NotamMarkBadge(mark: mark) }
     }
 

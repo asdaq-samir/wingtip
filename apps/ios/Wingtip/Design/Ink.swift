@@ -28,15 +28,6 @@ enum WingtipInk {
     /// The solid surface glass falls back to under Reduce Transparency:
     /// the sheet's own colour, by day or at night.
     static let sheet = Color(dynamic(\.sheet))
-    /// A badge's grounds and words, as the web's stock Badge variants have
-    /// them (TextBadge): the destructive's red, the caution's wash under its
-    /// ink, and the secondary's quiet fill, with the muted words for what
-    /// is not in force.
-    static let destructive = Color(dynamic(\.destructive))
-    static let cautionWash = Color(dynamic(\.cautionWash))
-    static let secondary = Color(dynamic(\.secondary))
-    static let secondaryText = Color(dynamic(\.secondaryForeground))
-    static let mutedText = Color(dynamic(\.mutedForeground))
 
     /// The roles by the appearance, and in the Native look (Look's
     /// "native", read by its key so the widgets, which have no Look, build)

@@ -186,8 +186,10 @@ view without dismissing the sheet").
     (`PageDots`; SwiftUI has no page control of its own in the iOS 27.2
     SDK, only TabView's dots at its foot): a tap moves the page, and
     VoiceOver hears "Page 1 of 2, Search". Their row is 28 points and
-    the control's frame 44, reaching into the grabber's strip and the
-    bar's margin, so nothing grows for the hit area.
+    so is the control: its taps stay out of the system grabber's strip
+    above and the bar below (a 44-point frame there took the grabber's
+    drags; the iPhone stock audit, 2026-11-12). It spans the row's width
+    instead, where nothing else is, so nothing grows for the hit area.
   - The page is `Navigator.sheetPage`: every "show the plan" (a route
     made, Fly Here, a link, a saved flight, `-screen fpl`) turns it to
     FPL, the search coming up (Add a Stop, ⌘F, the microphone) turns it
@@ -1701,6 +1703,17 @@ behaviour; only the content, its order and the brand tokens are ours.
 | Haptics off under Reduce Motion | The system's haptics switch alone decides; a tap is not motion |
 | `SaveLabel`'s drawn-on checkmark | The button's own words ("Saving…"), the saved flight showing in the list |
 
+**Replaced (2026-11-12, the iPhone stock audit).**
+
+| Was hand-built | Now |
+|---|---|
+| `ActivityView` (`UIActivityViewController` in a sheet) | `ShareLink`; a file it sends is made when the share sheet asks for it (`SharedFile`, a `FileRepresentation`), and a saved flight's link by the gateway likewise (`SharedLink`). Save as File below iOS 27 is a `ShareLink` of the file (`SaveFileLink`) |
+| `TextBadge`'s drawn capsules (NOTAM Active and Inactive, a NOTAM's mark, Best Wind, Longest) | A coloured stock `Label` (`StatusLabel`), as the status capsules above |
+| `onTapGesture` with a hand-added `.isButton` (the logbook's row, the figures strip) | `Button` with `.buttonStyle(.plain)` |
+| The NOTAMs header's chevron | The first three rows, then a `DisclosureGroup` of all of them by kind |
+| The Watch's stopwatch redrawn each second (`TimelineView`) | `Text(timerInterval:pauseTime:countsDown:showsHours:)`, counted by the system |
+| The airport diagram's own pinch and pan over a picture of the page (`DiagramOwnShip`) | PDFKit's `PDFView` of the FAA's PDF, vector-sharp at any zoom, own ship a `PDFAnnotation` on the page (`DiagramPDFView`). The other charts stay in `UIScrollView` (`PagesScrollView`): the planner serves them as page pictures, not PDFs |
+
 The altitude is picked in the profile, ForeFlight's way (see
 [The profile](#the-profile-foreflights-way)): the system `Slider` turned
 upright beside the chart, the system `.popover` on a waypoint, and a
@@ -1712,7 +1725,7 @@ are gone.
 | Component | Why there is no stock one |
 |---|---|
 | `RibbonLine` (the strip's route schematic) | A transit-map line of the route's points with the airplane riding it; no system control draws one |
-| `DiagramOwnShip`, `HoldDiagram`, the runway sketch (`Canvas`) | Aviation diagrams: the airport diagram with own ship, a hold's entry sectors, the runways' layout. Swift Charts has no geometry for them |
+| `HoldDiagram`, the runway sketch (`Canvas`) | Aviation diagrams: a hold's entry sectors, the runways' layout. Swift Charts has no geometry for them |
 | `DepartureWindowSection`'s hour tiles | An hourly strip of verdicts, as Weather's hourly forecast; SwiftUI has no hourly-forecast control |
 | Checklist ticks (checklists, emergency, passenger briefing) | iOS has no checkbox (`ToggleStyle.checkbox` is macOS only); the circle-and-tick row is what Reminders draws by hand too |
 | `FactsRow` | Maps' facts row (a caption over each value, four across) has no public SwiftUI view; it is a `Grid`/`HStack` of `Text` |

@@ -141,7 +141,12 @@ struct PictureViewer: View {
 }
 
 /// The pages one under another in a scroll view that pinches and
-/// double-taps to zoom, as UIKit's own does it best.
+/// double-taps to zoom, as UIKit's own does it best. Pictures, not PDFKit:
+/// the planner sends the FAA's charts as its drawings of their pages
+/// (/api/faa-chart/page/…png, a region's booklet cut to the field's pages)
+/// and the photos as pictures, and serves no PDF to draw as vectors; the
+/// airport diagram with own ship, fetched as the FAA's PDF, is PDFKit's
+/// (DiagramPDFView).
 struct ZoomablePictures: UIViewRepresentable {
     let images: [UIImage]
 
